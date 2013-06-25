@@ -6,14 +6,13 @@ MetaPath
 Group: [http://groups.google.com/group/metapath](http://groups.google.com/group/metapath)
 
 Installation
-============
-
+------------
 Source: [https://github.com/fishroot/metapath](https://github.com/fishroot/metapath)
 
 Licensing
-=========
+---------
 MetaPath is available free for any use under the [GPLv3 license](https://www.gnu.org/licenses/gpl.html).
 
 Authors
-=======
+-------
 MetaPath is maintained by [Patrick Michl](https://plus.google.com/100728730509576210790)
