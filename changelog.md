@@ -1,4 +1,12 @@
-#### Version 0.4.40noGPU-20130626 ####
+MetaPath
+========
+
+Visit [https://github.com/fishroot/metapath](https://github.com/fishroot/metapath) for full changelogs and git access.
+
+Changlog
+========
+
+#### 0.4.40noGPU-20130626 ####
 * ANN modeling: autoencoders (Pretraining with RBMs, GRBMs)
 * ANN based trannsformations: dimensionality reducing transformation with autoencoders
 * ANN based analysis: data manipulation tests on various node and node interaction properties of deep networks, correlation analysis
