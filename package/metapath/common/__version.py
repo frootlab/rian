@@ -4,5 +4,5 @@ def version():
     """
     Return metapath version as string.
     """
-    version = '0.4.39noGPU-20130611'
+    version = '0.4.40noGPU-20130626'
     return version

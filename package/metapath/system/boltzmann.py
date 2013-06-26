@@ -6,7 +6,7 @@ import time
 from metapath.system.base import system
 
 class RBM(system):
-    """metaPath restricted boltzmann machine class.
+    """Restricted Boltzmann Machine (RBM).
 
     Restricted Boltzmann Machine with binary visible and binary hidden units.
     Training data has to be binary!
@@ -1040,7 +1040,7 @@ class RBM(system):
         return 1.0 / (1.0 + np.exp(-x))
 
 class GRBM(RBM):
-    """metaPath gauss restricted boltzmann machine class.
+    """Gaussian Restricted Boltzmann Machine (GRBM).
 
     Restricted Boltzmann Machine with gaussian visible units and binary hidden units.
     see: "Improved Learning of Gaussian-Bernoulli Restricted Boltzmann Machines",
@@ -1066,7 +1066,7 @@ class GRBM(RBM):
                 'iterations': 1,
                 'iterationReset': False,
                 'iterationLiftLinks': False,
-                'updates': 200000,
+                'updates': 100000,
                 'updateAlgorithm': 'CD',
                 'updateSamplingSteps': 1,
                 'updateSamplingIterations': 1,
@@ -1253,8 +1253,15 @@ class GRBM(RBM):
             / vData.shape[0] / vVar.T * self._config['optimize']['updateRate']
             * self._config['optimize']['updateFactorWeights']) }
 
+class CRBM(RBM):
+    """Continous Restricted Boltzmann Machine (CRBM).
+
+    Restricted Boltzmann Machine with continous linear visible units and binary hidden units.
+    """
+    pass
+
 class autoencoder(system):
-    """metaPath autoencoder class."""
+    """Autoencoder class."""
 
     def _getSystemDefaultConfig(self):
         """Return autoencoder default configuration as dictionary."""
