@@ -8,13 +8,17 @@ from metapath.system.base import system
 class RBM(system):
     """Restricted Boltzmann Machine (RBM).
 
-    Restricted Boltzmann Machine with binary visible and binary hidden units.
-    Training data has to be binary!
+    Description:
+        Restricted Boltzmann Machine with binary sigmoidal visible units
+        and binary sigmoidal hidden units.
+        Input: binary data, Output: transformed binary data
+
+    Reference:
+        "A Practical Guide to Training Restricted Boltzmann Machines",
+        Geoffrey E. Hinton, University of Toronto, 2010
     """
 
-    #
     # RBM CONFIGURATION
-    #
 
     def _getSystemDefaultConfig(self):
         """Return RBM default configuration as dictionary."""
@@ -103,9 +107,9 @@ class RBM(system):
             and self._config['check']['network'] \
             and self._config['check']['dataset']
 
-    #
     # RBM DATA METHODS
-    #
+
+    # DATA EVALUATION FUNCTIONS
 
     def _checkData(self, data, quiet = False, **kwargs):
         """Check if data is binary."""
@@ -137,8 +141,14 @@ class RBM(system):
         return np.mean(self._getUnitEvalPerformance(data, **kwargs)[0])
 
     def _getDataEvalError(self, data, **kwargs):
-        """Return system performance respective to data."""
+        """Return system error respective to data."""
         return np.sum(self._getUnitEvalError(data, **kwargs)[0])
+
+    # DATA TRANSFORMATION
+
+    def _compress(self, data, **kwargs):
+        """Return expectation values of hidden units."""
+        return self._getDataFromHiddenExpect(data)
 
     def _getDataRepresentation(self, data, transformation = 'visiblevalue', **kwargs):
         """Return system representation of data."""
@@ -167,57 +177,89 @@ class RBM(system):
         """Return reconstructed values of visible units after k steps."""
         vValue = np.copy(data)
         for i in range(k):
-            vValue = self._getVisibleUnitValue(self._getVisibleUnitExpect(
-                self._getHiddenUnitValue(self._getHiddenUnitExpect(vValue))))
+            vValue = self._getVisibleUnitValue(
+                self._getVisibleUnitExpect(
+                    self._getHiddenUnitValue(
+                        self._getHiddenUnitExpect(vValue)
+                    )
+                )
+            )
         return vValue
 
     def _getDataFromVisibleSample(self, data, k = 1, **kwargs):
-        """Return sampled values of visible units after k steps."""
+        """Return sampled values of visible units after k steps.
+        
+        Parameters:
+            data: data of visible units
+            k: number of full Gibbs sampling steps, default "0"
+        """
         vValue = np.copy(data)
         for i in range(k):
-            vValue = self._getVisibleUnitSample(self._getVisibleUnitExpect(
-                self._getHiddenUnitSample(self._getHiddenUnitExpect(vValue))))
+            vValue = self._getVisibleUnitSample(
+                self._getVisibleUnitExpect(
+                    self._getHiddenUnitSample(
+                        self._getHiddenUnitExpect(vValue)
+                    )
+                )
+            )
         return vValue
 
     def _getDataFromHiddenExpect(self, data, k = 0, **kwargs):
         """Return expected values of hidden units.
-        
-        Options:
-            k: number of full Gibbs sampling steps
+
+        Parameters:
+            data: data of visible units
+            k: number of full Gibbs sampling steps, default "0"
         """
         hExpect = self._getHiddenUnitExpect(np.copy(data))
         for i in range(k):
-            hExpect = self._getHiddenUnitExpect(self._getVisibleUnitExpect(hExpect))
+            hExpect = self._getHiddenUnitExpect(
+                self._getVisibleUnitExpect(hExpect)
+            )
         return hExpect
 
     def _getDataFromHiddenValue(self, data, k = 0, **kwargs):
         """Return reconstructed values of hidden units.
 
-        Options:
-            k: number of full Gibbs sampling steps
+        Parameters:
+            data: data of visible units
+            k: number of full Gibbs sampling steps, default "0"
         """
         hValue = self._getHiddenUnitValue(self._getHiddenUnitExpect(np.copy(data)))
         for i in range(k):
-            hValue = self._getHiddenUnitValue(self._getHiddenUnitExpect(
-                self._getVisibleUnitValue(self._getVisibleUnitExpect(hValue))))
+            hValue = self._getHiddenUnitValue(
+                self._getHiddenUnitExpect(
+                    self._getVisibleUnitValue(
+                        self._getVisibleUnitExpect(hValue)
+                    )
+                )
+            )
         return hValue
 
     def _getDataFromHiddenSample(self, data, k = 1, **kwargs):
         """Return sampled values of hidden units.
 
-        Options:
-            k: number of full Gibbs sampling steps
+        Parameters:
+            data: data of visible units
+            k: number of full Gibbs sampling steps, default "0"
         """
         vValue = np.copy(data)
         for i in range(k - 1):
-            vValue = self._getVisibleUnitSample(self._getVisibleUnitExpect(
-                self._getHiddenUnitSample(self._getHiddenUnitExpect(vValue))))
+            vValue = self._getVisibleUnitSample(
+                self._getVisibleUnitExpect(
+                    self._getHiddenUnitSample(
+                        self._getHiddenUnitExpect(vValue)
+                    )
+                )
+            )
         return vValue
 
     def _getDataContrastiveDivergency(self, data):
         """Return reconstructed data using 1-step contrastive divergency sampling (CD-1)."""
         hData = self._getHiddenUnitExpect(data)
-        vModel = self._getVisibleUnitExpect(self._getHiddenUnitSample(hData))
+        vModel = self._getVisibleUnitExpect(
+            self._getHiddenUnitSample(hData)
+        )
         hModel = self._getHiddenUnitExpect(vModel)
         return data, hData, vModel, hModel
 
@@ -256,9 +298,7 @@ class RBM(system):
             hModel += hExpect / m
         return data, hData, vModel, hModel
 
-    #
     # RBM PARAMETER METHODS
-    #
 
     def _initParams(self, data = None):
         """Initialize RBM parameters using data.
@@ -413,9 +453,7 @@ class RBM(system):
         self._updateLinks(**updateLinks)
         return True
 
-    #
     # RBM UNIT METHODS
-    #
 
     def _getUnitsFromConfig(self):
         """Return tuple with lists of unit labels ([visible], [hidden])."""
@@ -607,9 +645,7 @@ class RBM(system):
             return True
         return False
 
-    #
     # RBM VISIBLE UNIT METHODS
-    #
 
     def _getVisibleUnitInformation(self, label):
         """Return informaton about one visible unit."""
@@ -707,9 +743,7 @@ class RBM(system):
         """Return local energy for all visible units as numpy array."""
         return -np.mean(data * self._params['v']['bias'], axis = 0)
 
-    #
     # RBM HIDDEN UNIT METHODS
-    #
 
     def _initHiddenUnitParams(self, data = None):
         """Initialize system parameters of all hidden units using data."""
@@ -796,9 +830,7 @@ class RBM(system):
         hData = self._getHiddenUnitValue(self._getHiddenUnitExpect(data))
         return -np.mean(hData * self._params['h']['bias'], axis = 0)
 
-    #
     # RBM LINK METHODS
-    #
 
     def _getLinksFromConfig(self):
         """Return links from adjacency matrix."""
@@ -1031,9 +1063,7 @@ class RBM(system):
         self._params['W'] += updates['W']
         return True
 
-    #
     # RBM STATIC METHODS
-    #
 
     @staticmethod
     def _sigmoid(x):
@@ -1042,11 +1072,14 @@ class RBM(system):
 class GRBM(RBM):
     """Gaussian Restricted Boltzmann Machine (GRBM).
 
-    Restricted Boltzmann Machine with gaussian visible units and binary hidden units.
-    see: "Improved Learning of Gaussian-Bernoulli Restricted Boltzmann Machines",
-    KyungHyun Cho, Alexander Ilin and Tapani Raiko, ICANN 2011
+    Description:
+        Restricted Boltzmann Machine with continous gaussian visible units
+        and binary sigmoidal hidden units
+        Input: gauss normalized data, Output: transformed binary data
 
-    Training data has to be gauss normalized!
+    Reference:
+        "Improved Learning of Gaussian-Bernoulli Restricted Boltzmann Machines",
+        KyungHyun Cho, Alexander Ilin and Tapani Raiko, ICANN 2011
     """
 
     def _getSystemDefaultConfig(self):
@@ -1256,12 +1289,356 @@ class GRBM(RBM):
 class CRBM(RBM):
     """Continous Restricted Boltzmann Machine (CRBM).
 
-    Restricted Boltzmann Machine with continous linear visible units and binary hidden units.
+    Description:
+        Restricted Boltzmann Machine with continous linear visible units
+        and binary sigmoidal hidden units
+        Input: linear normalized data, Output: transformed binary data
+    
+    Reference:
+    
     """
+
+    #
+    # todo!
+    #
+
     pass
 
-class autoencoder(system):
-    """Autoencoder class."""
+class MLP(system):
+    """Multilayer Perceptron (MLP)."""
+    
+    pass
+
+
+class DBN(system):
+    """Deep Belief Network (DBN).
+
+    Description:
+        Used for data classification and compression / decompression
+
+    Reference:
+    
+    """
+
+    def _getSystemDefaultConfig(self):
+        """Return default configuration as dictionary."""
+        sysModule = '.'.join(self.__module__.split('.')[2:])
+        return {
+            'params': {
+                'visible': 'auto',
+                'hidden': 'auto',
+                'visibleSystem': 'ann.GRBM',
+                'hiddenSystem': 'ann.RBM',
+                'visibleSystemClass': 'GRBM',
+                'visibleSystemPackage': sysModule,
+                'visibleUnitRatio': '1:2',
+                'hiddenSystemClass': 'RBM',
+                'hiddenSystemPackage': sysModule,
+                'hiddenUnitRatio': '2:1' },
+            'optimize': {
+                'visible': None,
+                'hidden': None } ,
+            'visibleParams': { },
+            'visibleInit': { }, # use defaults from visible system
+            'hiddenParams': { },
+            'hiddenInit': { }, # use defaults from hidden system
+            }
+
+    def _configure(self, config = None, network = None, dataset = None, update = False, **kwargs):
+        """Configure system and sybsystems to network and dataset."""
+        if not 'check' in self._config:
+            self._config['check'] = {
+                'config': False, 'network': False,
+                'dataset': False, 'subSystems': False}
+        if not config == None:
+            self._setConfig(config)
+        if not network == None:
+            self._setNetwork(network, update)
+        if not dataset == None:
+            self._setDataset(dataset)
+        if self._config['check']['config'] \
+            and self._config['check']['network'] \
+            and self._config['check']['dataset']:
+            self._setSubSystems()
+        return self._isConfigured()
+
+    def _setConfig(self, config, *args, **kwargs):
+        """Set configuration from dictionary."""
+        mp.dictMerge(self._getSystemDefaultConfig(), self._config)
+        mp.dictMerge(config, self._config)
+        self._setUnits(self._getUnitsFromConfig())
+        self._config['check']['config'] = True
+        return True
+
+    def _setNetwork(self, network, update = False, *args, **kwargs):
+        """Update units to network instance."""
+        if not mp.isNetwork(network):
+            mp.log("error", "could not configure autoencoder: network instance is not valid!")
+            return False
+        self.setUnits(self._getUnitsFromNetwork(network), update)
+        self._config['check']['network'] = True
+        return True
+
+    def _setDataset(self, dataset, *args, **kwargs):
+        """Update units and links to dataset instance. Not used in multilayer ANNs"""
+        if not mp.isDataset(dataset):
+            mp.log("error", "could not configure autoencoder: dataset object is not valid!")
+            return False
+        self._config['check']['dataset'] = True
+        return True
+
+    def _setSubSystems(self):
+        """Configure and initialize subsystems."""
+        mp.log('info', 'configure subsystems')
+        if not 'layers' in self._params:
+            mp.log('warning', 'could not configure subsystems: no layers have been defined')
+            return False
+        self._sub = []
+        layerID = 0
+        nodes = len(self._params['layers'][0]['units'])
+        links = 0
+        errors = 0
+        while layerID < len(self._params['layers']) - 1:
+            layerA = self._params['layers'][layerID]
+            layerB = self._params['layers'][layerID + 1]
+            layerID += 1
+            
+            # create configuration for subsystem
+            if layerA['type'] == 'visible' or layerB['type'] == 'visible':
+                sysName = self._config['params']['visibleSystem']
+            else:
+                sysName = self._config['params']['hiddenSystem']
+            sysConfig = mp.shared['config'].get(type = 'system', name = sysName)
+            if sysConfig == None:
+                mp.log('error', 'could not optimize autoencoder: could not create subsystem \'%s\'' % (sysName))
+                errors += 1
+                continue
+            if not 'params' in sysConfig:
+                sysConfig['params'] = {}
+            if layerID <= (len(self._params['layers']) - 1) / 2:
+                sysConfig['params']['visible'] = layerA['units']
+                sysConfig['params']['hidden'] = layerB['units']
+            else:
+                sysConfig['params']['hidden'] = layerA['units']
+                sysConfig['params']['visible'] = layerB['units']
+
+            # create subsystem
+            import metapath.system
+            system = metapath.system.new(config = sysConfig)
+            nodes += len(layerB['units'])
+            links += len(system.getLinks())
+            self._sub.append(system)
+
+        if not errors:
+            mp.log('info', 'total number of layers: %i' % (len(self._params['layers'])))
+            mp.log('info', 'total number of nodes: %i' % (nodes))
+            mp.log('info', 'total number of links: %i' % (links))
+            self._config['check']['subSystems'] = True
+            return True
+
+        mp.log('error', 'configuration of subsystems failed!')
+        return False
+
+    def _isConfigured(self):
+        """Return configuration state of autoencoder."""
+        return self._config['check']['config'] \
+            and self._config['check']['network'] \
+            and self._config['check']['dataset'] \
+            and self._config['check']['subSystems']
+
+    # UNITS
+
+    def _getUnitsFromConfig(self):
+        """Return tuple of list, containing the unit labels
+        of visible and hidden units using configuration."""
+
+        # create labels for visible input and output layers
+        if isinstance(self._config['params']['visible'], str) \
+            and self._config['params']['visible'] == 'auto':
+            lInput = ([],)
+            lOutput = ([],)
+        elif not isinstance(self._config['params']['visible'], int):
+            lInput = ([],)
+            lOutput = ([],)
+        else:
+            lInput = (['in:v%_i' % (nodeID) for nodeID
+                in range(1, self._config['params']['visible'] + 1)],)
+            lOutput = (['out:v%i' % (nodeID) for nodeID
+                in range(1, self._config['params']['visible'] + 1)],)
+
+        lHidden = self._createHiddenUnitsStackLayout(self._config['params']['hidden'])
+
+        return lInput + lHidden + lOutput
+
+    def _getUnitsFromNetwork(self, network):
+        """Return tuple with lists of unit labels
+        ([input], [h1], [h2], ..., [output]) using network."""
+        import math
+        vList = network.nodes(visible = True)
+        hList = network.nodes(visible = False)
+        vRatioStr = self._config['params']['visibleUnitRatio'].split(':')
+        vRatio = float(vRatioStr[1]) / float(vRatioStr[0])
+        hRatioStr = self._config['params']['hiddenUnitRatio'].split(':')
+        hRatio = float(hRatioStr[1]) / float(hRatioStr[0])
+        units = (vList, )
+        hSize = int(math.ceil(float(len(vList)) * vRatio))
+        hLayer = 1
+        while hSize > len(hList):
+            units += (['h%i:h%i' % (hLayer, num) for num in range(1, hSize + 1)], )
+            hSize = int(math.ceil(float(hSize) * hRatio))
+            hLayer += 1
+        units += (hList, )
+        numLayers = len(units)
+        if numLayers > 2:
+            for layerID in range(1, numLayers - 1)[::-1]:
+                hSize = len(units[layerID])
+                units += (['h%i:h%i' % (hLayer, num) for num in range(1, hSize + 1)], )
+                hLayer += 1
+        units += (vList, )
+
+        return units
+
+    def _createHiddenUnitsStackLayout(self, layout):
+        """Return tuple with hidden unit label lists from tuple with numbers."""
+        # create labels for hidden layers
+        if isinstance(layout, str) and layout == 'auto':
+            lHidden = ([], ) # return empty stack if parameter layout is 'auto'
+        elif not isinstance(layout, tuple):
+            lHidden = ([], ) # return empty stack if parameter layout is not a tuple
+        else:
+            layerID = 1
+            lHidden = ()
+            for lSize in layout:
+                if not isinstance(lSize, int):
+                    lHidden = ([], )
+                    break
+                lHidden += (['h%i:h%i' % (layerID, nodeID) for nodeID in range(1, lSize + 1)], )
+                layerID += 1
+            numLayers = len(layout)
+            if numLayers > 1:
+                for i in range(numLayers - 1)[::-1]:
+                    lSize = layout[i]
+                    lHidden += (['h%i:h%i' % (layerID, nodeID) for nodeID in range(1, lSize + 1)], )
+                    layerID += 1
+
+        return lHidden
+
+    def _setUnits(self, units):
+        """Set unit labels of all layers."""
+        # check units
+        if not isinstance(units, tuple):
+            return False
+        if len(units) < 2:
+            return False
+        for val in units:
+            if not isinstance(val, list):
+                return False
+        self._params['layers'] = []
+        for layerID, labels in enumerate(units):
+            if layerID == 0:
+                name = 'input'
+                type = 'visible'
+            elif layerID == len(units) - 1:
+                name = 'output'
+                type = 'visible'
+            else:
+                name = 'h' + str(layerID)
+                type = 'hidden'
+            self._params['layers'].append(
+                {'name': name, 'type': type, 'units': labels})
+        return True
+
+    def _getUnits(self):
+        """Return a list with units."""
+        # 2DO!!
+        return []
+
+    def _optimizeParams(self, dataset, quiet = False, **config):
+        """Optimize system parameters."""
+
+        # PRETRAINING USING RESTRICTED BOLTZMANN MACHINES
+
+        # try to get pretraining configurations from user parameter
+        vOptConfig = {}
+        hOptConfig = {}
+        if isinstance(config, dict):
+            if 'visible' in config \
+                and isinstance(config['visible'], str):
+                vOptConfigName = config['visible']
+                vOptConfig = mp.shared['config'].get(
+                    type = 'schedule', name = vOptConfigName)
+            if 'hidden' in config \
+                and isinstance(config['hidden'], str):
+                hOptConfigName = config['hidden']
+                hOptConfig = mp.shared['config'].get(
+                    type = 'schedule', name = hOptConfigName)
+
+        # if no configuration name passed or name is invalid
+        # use default configuration
+        if not vOptConfig:
+            vOptConfigName = 'default' #self._config['optimize']['visible']
+            vOptConfig = {} #mp.shared['config'].get(
+                #type = 'schedule', name = vOptConfigName)
+        if not hOptConfig:
+            hOptConfigName = 'default' #self._config['optimize']['hidden']
+            hOptConfig = {} #mp.shared['config'].get(
+                #type = 'schedule', name = hOptConfigName)
+
+        # pretrain subsystems
+        mp.log('info', 'pretraining subsystems')
+        datasetCopy = dataset._get()
+        
+        # pretrain visible subsystem
+        layerA = self._params['layers'][0]['name']
+        layerB = self._params['layers'][1]['name']
+        mp.log('info', 'optimize subsystem \'%s\': using algorithm \'%s\''
+            % (self._sub[0].getName(), vOptConfigName))
+        mp.log('info', 'visible layer: \'%s\', hidden layer: \'%s\'' % (layerA, layerB))
+        self._sub[0].initParams(dataset)
+        self._sub[0].optimizeParams(dataset, **vOptConfig)
+        
+        # pretrain hidden subsystems
+        for sysID in range(1, len(self._sub) / 2):
+            mp.log('info', 'optimize model \'%s\': using algorithm \'%s\''
+                % (self._sub[sysID].getName(), hOptConfigName))
+            # transform data in dataset with previous subsystem
+            dataset.transformData(
+                system = self._sub[sysID - 1],
+                transformation = 'hiddenvalue',
+                colLabels = self._sub[sysID - 1].getUnits(type = 'hidden'))
+            self._sub[sysID].initParams(dataset)
+            self._sub[sysID].optimizeParams(dataset, **hOptConfig)
+
+        # reset data to the initial state
+        dataset._set(**datasetCopy)
+
+        # copy params from encoder to decoder
+        # 2DO
+
+        # finetuning using backpropagation
+        # 2DO
+
+        return True
+
+    def _initParams(self, data = None):
+        """Initialize system parameters using data.
+
+        Not needed for multilayer ANNs since subsystems
+        are initialized during optimization
+        """
+
+        return True
+
+class autoencoder(DBN):
+    """Autoencoder.
+    
+    Description:
+        Used for dimensionality reduction and compression / decompression
+
+    Reference:
+        "Reducing the Dimensionality of Data with Neural Networks",
+        Geoffrey E. Hinton, and R. R. Salakhutdinov, Science Vol 313, July 2006
+    """
 
     def _getSystemDefaultConfig(self):
         """Return autoencoder default configuration as dictionary."""
@@ -1288,9 +1665,7 @@ class autoencoder(system):
             }
 
     def _configure(self, config = None, network = None, dataset = None, update = False, **kwargs):
-        """
-        Configure autoencoder and sybsystems to network and dataset.
-        """
+        """Configure autoencoder and sybsystems to network and dataset."""
         if not 'check' in self._config:
             self._config['check'] = {
                 'config': False, 'network': False,
@@ -1559,7 +1934,7 @@ class autoencoder(system):
             self._sub[sysID].initParams(dataset)
             self._sub[sysID].optimizeParams(dataset, **hOptConfig)
 
-        # reset data to the beginning
+        # reset data to the initial state
         dataset._set(**datasetCopy)
 
         # copy params from encoder to decoder
@@ -1576,5 +1951,16 @@ class autoencoder(system):
         Not needed for autoencoders since subsystems
         are initialized during optimization
         """
-        
+
         return True
+
+class denoisingAE(autoencoder):
+    """Denoising Autoencoder.
+    
+    Description:
+        Used for dimensionality reduction and compression / decompression
+
+    Reference:
+        Vincent08
+    """
+    pass
