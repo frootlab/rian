@@ -11,18 +11,19 @@ Source: [https://github.com/fishroot/metapath](https://github.com/fishroot/metap
 MetaPath is available free for any use under the [GPLv3 license](https://www.gnu.org/licenses/gpl.html).
 
 #### Authors ####
-MetaPath is maintained by [Patrick Michl](https://plus.google.com/100728730509576210790/about) <br>
+MetaPath is maintained by [Patrick Michl](https://www.mathi.uni-heidelberg.de/~pmichl/) <br>
 Group: [http://groups.google.com/group/metapath](http://groups.google.com/group/metapath)
 
 #### Collaboration ####
 The long-term goal is to split the project:
 
-* A *central data mining und data analysis interface* based on deep artificial neuronal networks,
-which allows any data collecting application to reconstruct missing information,
-reduce the dimensionality of the data, classify and analyse the data. Parallel computing is obviously necessary.
+* A *central data mining und data analysis library* based on deep artificial neuronal networks,
+which allows any data mining / data collecting application to: reconstruct missing information,
+reduce the dimensionality of the data, reduce noise, classify data and perform explorative data analysis.
+This library should be fast and clean. Parallel computing is obviously necessary.
 
-* An userfriendly *interface for analysing and visualising Gene Expression Data, NextGen Sequencing Data* etc.
-For example as a bioConductor package.
+* Userfriendly interfaces for various applications:
+** bioConductor *interface for analysing and visualising gene expression data, nextgen sequencing data, etc.*
 
 If you share this vision and want to collaborate you are very welcome!
-Feel free to send me a [mail](https://plus.google.com/100728730509576210790/about).
+Feel free to send me a [mail](https://www.mathi.uni-heidelberg.de/~pmichl/).
