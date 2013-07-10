@@ -22,8 +22,8 @@ which allows any data mining / data collecting application to: reconstruct missi
 reduce the dimensionality of the data, reduce noise, classify data and perform explorative data analysis.
 This library should be fast and clean. Parallel computing is obviously necessary.
 
-* Userfriendly interfaces for various applications:
-** bioConductor *interface for analysing and visualising gene expression data, nextgen sequencing data, etc.*
+* Userfriendly interfaces for various applications: bioConductor
+*interface for analysing and visualising gene expression data, nextgen sequencing data*
 
 If you share this vision and want to collaborate you are very welcome!
 Feel free to send me a [mail](https://www.mathi.uni-heidelberg.de/~pmichl/).
