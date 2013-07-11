@@ -12,7 +12,7 @@ MetaPath is available free for any use under the [GPLv3 license](https://www.gnu
 
 #### Authors ####
 MetaPath is maintained by [Patrick Michl](https://www.mathi.uni-heidelberg.de/~pmichl/) with
-scientific advisory by [Rainer König](http://ibios.dkfz.de/tbi/index.php/network-modeling/people/34-koenig)] <br>
+scientific advisory by [Rainer König](http://ibios.dkfz.de/tbi/index.php/network-modeling/people/34-koenig) <br>
 Developer / User group: [http://groups.google.com/group/metapath](http://groups.google.com/group/metapath)
 
 #### Collaboration ####
