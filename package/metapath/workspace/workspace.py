@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import metapath.common as mp
-import os, copy
+import os, copy, pprint
 
 class workspace:
     """metaPath base class for workspaces"""
@@ -45,6 +45,10 @@ class workspace:
             for item in list:
                 mp.log('info', "'%s'" % (item[2]))
         return len(list)
+
+    def show(self, type = None, name = None, **kwargs):
+        """Print object configuration from type and name"""
+        return pprint.pprint(self._config.get(type, name))
 
     def dataset(self, config = None, quiet = False, **kwargs):
         """Return new dataset instance"""
