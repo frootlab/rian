@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-print 'test'
-
 import sys
 sys.path.append('./package')
 import metapath
@@ -13,14 +11,27 @@ def main():
 
     mp = metapath.open('example')
 
-    model = mp.model(
-        name     = 'sim1Gauss',
+    # create and optimize GRBM (Gaussian Restricted Boltzmann Machine) based model and plot the model graph
+
+    GRBM_model = mp.model(
+        name     = 'sim1-GRBM',
         network  = 'example.etfs(e.size = 4, tf.size = 4, s.size = 4)',
         dataset  = 'example.sim1',
         system   = 'ann.GRBM',
         optimize = 'example.CD')
 
-    mp.plot(model, 'boltzmann.HiddenLayerGraph')
+    mp.plot(GRBM_model, 'ann.HiddenLayerGraph')
+
+    # create and optimize DBN (Deep Beliefe Network) based model and plot the model graph
+
+    AutoEnc_model = mp.model(
+        name     = 'test',
+        network  = 'example.etfs(e.size = 4, tf.size = 4, s.size = 4)',
+        dataset  = 'example.sim1',
+        system   = 'ann.DBN',
+        optimize = 'ann.CD')
+
+    mp.plot(GRBM_model, 'ann.HiddenLayerGraph')
 
 if __name__ == "__main__":
     main()

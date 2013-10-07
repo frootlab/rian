@@ -271,7 +271,7 @@ class dataset:
                 probabilities of sources are
                 1 / number of sources
         """
-        mp.log('info', 'data preprocessing: stratify data using \'%s\'' % (algorithm))
+        mp.log('info', 'preprocessing: stratify data using \'%s\'' % (algorithm))
 
         if algorithm.lower() in ['auto']:
             return True
@@ -288,7 +288,7 @@ class dataset:
             'gauss', 'z-trans':
                 aussian normalization (aka z-transformation)
         """
-        mp.log('info', 'data preprocessing: normalize data using \'%s\'' % (algorithm))
+        mp.log('info', 'preprocessing: normalize data using \'%s\'' % (algorithm))
 
         if algorithm.lower() in ['gauss', 'z-trans']:
 
@@ -326,7 +326,7 @@ class dataset:
 
         if isinstance(algorithm, str) \
             and algorithm.lower() in ['binary', 'bool']:
-            mp.log('info', 'data preprocessing: transform data using \'%s\'' % (algorithm))
+            mp.log('info', 'preprocessing: transform data using \'%s\'' % (algorithm))
             for src in self.data:
 
                 # update source per column (recarray)
@@ -338,7 +338,7 @@ class dataset:
             return True
 
         if mp.isSystem(system):
-            mp.log('info', 'data preprocessing: transform data using system \'%s\'' % (system.getName()))
+            mp.log('info', 'preprocessing: transform data using system \'%s\'' % (system.getName()))
             if not isinstance(colLabels, list):
                 mp.log('info', 'transformation is not possible: no column labels have been given')
                 return False
