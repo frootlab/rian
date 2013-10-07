@@ -6,6 +6,10 @@ Visit [https://github.com/fishroot/metapath](https://github.com/fishroot/metapat
 Changlog
 ========
 
+#### 0.4.44noGPU ####
+**Changes:**
+* *seibablub*
+  * something
 #### 0.4.43noGPU ####
 First announced and partial documented version
 
