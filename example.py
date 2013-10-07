@@ -29,7 +29,7 @@ def main():
         network  = 'example.etfs(e.size = 4, tf.size = 4, s.size = 4)',
         dataset  = 'example.sim1',
         system   = 'ann.DBN',
-        optimize = 'example.codeTestCD)
+        optimize = 'example.codeTestCD')
 
     mp.plot(AutoEnc_model, 'ann.HiddenLayerGraph')
 
