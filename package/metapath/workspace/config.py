@@ -141,7 +141,7 @@ class config:
         """
         import common projects
         """
-        mp.log('info', 'import common configuration files')
+        mp.log('comment', 'import common configuration files')
 
         # get current project
         curProject = self.__project
@@ -163,7 +163,7 @@ class config:
         """
         import configuration files from user project
         """
-        mp.log('info', 'import project configuration files')
+        mp.log('comment', 'import project configuration files')
 
         # check if project exists
         if not project in self.__listUserProjects():

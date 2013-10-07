@@ -87,6 +87,9 @@ def log(type, msg, quiet = False):
             ttyLog.info(msg)
         fileLog.info(clrName + ' -> ' + msg.strip())
         return True
+    if type == 'comment':
+        ttyLog.info(color['blue'] + msg + color['default'])
+        return True
     if type == 'header':
         ttyLog.info(color['green'] + msg + color['default'])
         fileLog.info(clrName + ' -> ' + msg.strip())
