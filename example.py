@@ -18,7 +18,7 @@ def main():
         network  = 'example.etfs(e.size = 4, tf.size = 4, s.size = 4)',
         dataset  = 'example.sim1',
         system   = 'ann.GRBM',
-        optimize = 'example.CD')
+        optimize = 'example.codeTestCD')
 
     mp.plot(GRBM_model, 'ann.HiddenLayerGraph')
 
@@ -29,9 +29,9 @@ def main():
         network  = 'example.etfs(e.size = 4, tf.size = 4, s.size = 4)',
         dataset  = 'example.sim1',
         system   = 'ann.DBN',
-        optimize = 'ann.CD')
+        optimize = 'example.codeTestCD)
 
-    mp.plot(GRBM_model, 'ann.HiddenLayerGraph')
+    mp.plot(AutoEnc_model, 'ann.HiddenLayerGraph')
 
 if __name__ == "__main__":
     main()

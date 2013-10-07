@@ -10,7 +10,7 @@ class model:
     """
 
     #
-    # MODEL CONFIGURATION
+    # METHODS FOR MODEL CONFIGURATION
     #
 
     def __init__(self, config = {}, dataset = None, network = None, system = None, name = None, **kwargs):
@@ -57,7 +57,7 @@ class model:
         return self.__config.copy()
 
     #
-    # MODEL.DATASET
+    # METHODS FOR DATASET CONFIGURATION
     #
 
     def __setDataset(self, dataset):
@@ -248,7 +248,7 @@ class model:
 
     def updateConfig(self):
         """
-        update model configuration
+        Update model configuration
         """
 
         # set version of model

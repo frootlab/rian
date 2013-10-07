@@ -302,7 +302,7 @@ class DBN(system):
         for sysID in range(1, len(self._sub) / 2):
             mp.log('info', 'optimize model \'%s\': using algorithm \'%s\''
                 % (self._sub[sysID].getName(), hOptConfigName))
-            # transform data in dataset with previous subsystem
+            # transform dataset with previous system / fix lower stack
             dataset.transformData(
                 system = self._sub[sysID - 1],
                 transformation = 'hiddenvalue',
