@@ -46,7 +46,9 @@ class DBN(system):
             }
 
     def _configure(self, config = None, network = None, dataset = None, update = False, **kwargs):
-        """Configure system and sybsystems to network and dataset."""
+        """
+        Configure system and sybsystems to network and dataset.
+        """
         if not 'check' in self._config:
             self._config['check'] = {
                 'config': False, 'network': False,
@@ -64,7 +66,9 @@ class DBN(system):
         return self._isConfigured()
 
     def _setConfig(self, config, *args, **kwargs):
-        """Set configuration from dictionary."""
+        """
+        Set configuration from dictionary.
+        """
         mp.dictMerge(self._getSystemDefaultConfig(), self._config)
         mp.dictMerge(config, self._config)
         self._setUnits(self._getUnitsFromConfig())
@@ -72,7 +76,9 @@ class DBN(system):
         return True
 
     def _setNetwork(self, network, update = False, *args, **kwargs):
-        """Update units to network instance."""
+        """
+        Update units to network instance.
+        """
         if not mp.isNetwork(network):
             mp.log("error", "could not configure autoencoder: network instance is not valid!")
             return False
@@ -81,7 +87,9 @@ class DBN(system):
         return True
 
     def _setDataset(self, dataset, *args, **kwargs):
-        """Update units and links to dataset instance. Not used in multilayer ANNs"""
+        """
+        Update units and links to dataset instance. Not used in multilayer ANNs
+        """
         if not mp.isDataset(dataset):
             mp.log("error", "could not configure autoencoder: dataset object is not valid!")
             return False
@@ -89,7 +97,9 @@ class DBN(system):
         return True
 
     def _setSubSystems(self):
-        """Configure and initialize subsystems."""
+        """
+        Configure and initialize subsystems.
+        """
         mp.log('info', 'configure subsystems')
         if not 'layers' in self._params:
             mp.log('warning', 'could not configure subsystems: no layers have been defined')
@@ -141,7 +151,9 @@ class DBN(system):
         return False
 
     def _isConfigured(self):
-        """Return configuration state of autoencoder."""
+        """
+        Return configuration state of DBN.
+        """
         return self._config['check']['config'] \
             and self._config['check']['network'] \
             and self._config['check']['dataset'] \
@@ -150,8 +162,10 @@ class DBN(system):
     # UNITS
 
     def _getUnitsFromConfig(self):
-        """Return tuple of list, containing the unit labels
-        of visible and hidden units using configuration."""
+        """
+        Return tuple of list, containing the unit labels
+        of visible and hidden units using configuration
+        """
 
         # create labels for visible input and output layers
         if isinstance(self._config['params']['visible'], str) \
@@ -172,8 +186,10 @@ class DBN(system):
         return lInput + lHidden + lOutput
 
     def _getUnitsFromNetwork(self, network):
-        """Return tuple with lists of unit labels
-        ([input], [h1], [h2], ..., [output]) using network."""
+        """
+        Return tuple with lists of unit labels
+        ([input], [h1], [h2], ..., [output]) using network.
+        """
         import math
         vList = network.nodes(visible = True)
         hList = network.nodes(visible = False)
@@ -200,7 +216,9 @@ class DBN(system):
         return units
 
     def _createHiddenUnitsStackLayout(self, layout):
-        """Return tuple with hidden unit label lists from tuple with numbers."""
+        """
+        Return tuple with hidden unit label lists from tuple with numbers.
+        """
         # create labels for hidden layers
         if isinstance(layout, str) and layout == 'auto':
             lHidden = ([], ) # return empty stack if parameter layout is 'auto'

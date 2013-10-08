@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import metapath.common as mp
-import numpy as np
-import time
+import numpy, time
 
 from metapath.system.base import system
 
@@ -18,7 +17,7 @@ class RBM(system):
         Geoffrey E. Hinton, University of Toronto, 2010
     """
 
-    # RBM CONFIGURATION
+    # CONFIGURATION
 
     def _getSystemDefaultConfig(self):
         """Return RBM default configuration as dictionary."""
@@ -107,9 +106,9 @@ class RBM(system):
             and self._config['check']['network'] \
             and self._config['check']['dataset']
 
-    # RBM DATA METHODS
+    # DATA
 
-    # DATA EVALUATION FUNCTIONS
+    # DATA EVALUATION
 
     def _checkData(self, data, quiet = False, **kwargs):
         """Check if data is binary."""
@@ -134,15 +133,15 @@ class RBM(system):
         vEnergy = self._getVisibleUnitEvalEnergy(data)
         hEnergy = self._getHiddenUnitEvalEnergy(data)
         lEnergy = self._getLinkEvalEnergy(data)
-        return np.sum(vEnergy) + np.sum(hEnergy) + np.sum(lEnergy)
+        return numpy.sum(vEnergy) + numpy.sum(hEnergy) + numpy.sum(lEnergy)
 
     def _getDataEvalPerformance(self, data, **kwargs):
         """Return system performance respective to data."""
-        return np.mean(self._getUnitEvalPerformance(data, **kwargs)[0])
+        return numpy.mean(self._getUnitEvalPerformance(data, **kwargs)[0])
 
     def _getDataEvalError(self, data, **kwargs):
         """Return system error respective to data."""
-        return np.sum(self._getUnitEvalError(data, **kwargs)[0])
+        return numpy.sum(self._getUnitEvalError(data, **kwargs)[0])
 
     # DATA TRANSFORMATION
 
@@ -168,14 +167,14 @@ class RBM(system):
 
     def _getDataFromVisibleExpect(self, data, k = 1, **kwargs):
         """Return expected values of visible units after k steps."""
-        vExpect = np.copy(data)
+        vExpect = numpy.copy(data)
         for i in range(k):
             vExpect = self._getVisibleUnitExpect(self._getHiddenUnitExpect(vExpect))
         return vExpect
 
     def _getDataFromVisibleValue(self, data, k = 1, **kwargs):
         """Return reconstructed values of visible units after k steps."""
-        vValue = np.copy(data)
+        vValue = numpy.copy(data)
         for i in range(k):
             vValue = self._getVisibleUnitValue(
                 self._getVisibleUnitExpect(
@@ -193,7 +192,7 @@ class RBM(system):
             data: data of visible units
             k: number of full Gibbs sampling steps, default "0"
         """
-        vValue = np.copy(data)
+        vValue = numpy.copy(data)
         for i in range(k):
             vValue = self._getVisibleUnitSample(
                 self._getVisibleUnitExpect(
@@ -243,7 +242,7 @@ class RBM(system):
             data: data of visible units
             k: number of full Gibbs sampling steps, default "0"
         """
-        vValue = np.copy(data)
+        vValue = numpy.copy(data)
         for i in range(k - 1):
             vValue = self._getVisibleUnitSample(
                 self._getVisibleUnitExpect(
@@ -271,8 +270,8 @@ class RBM(system):
             m: number if iterations to calculate mean values
         """
         hData  = self._getHiddenUnitExpect(data)
-        vModel = np.zeros(shape = data.shape)
-        hModel = np.zeros(shape = hData.shape)
+        vModel = numpy.zeros(shape = data.shape)
+        hModel = numpy.zeros(shape = hData.shape)
         for i in range(m):
             for j in range(k):
 
@@ -453,7 +452,7 @@ class RBM(system):
         self._updateLinks(**updateLinks)
         return True
 
-    # RBM UNIT METHODS
+    # UNITS
 
     def _getUnitsFromConfig(self):
         """Return tuple with lists of unit labels ([visible], [hidden])."""
@@ -521,10 +520,10 @@ class RBM(system):
         visibleUnitEval, hiddenUnitEval = eval(
             'self._getUnitEval' + evalFuncs[func][1] + '(data, **kwargs)')
         evalDict = {}
-        if isinstance(visibleUnitEval, np.ndarray):
+        if isinstance(visibleUnitEval, numpy.ndarray):
             for i, v in enumerate(self._params['v']['label']):
                 evalDict[v] = visibleUnitEval[i]
-        if isinstance(hiddenUnitEval, np.ndarray):
+        if isinstance(hiddenUnitEval, numpy.ndarray):
             for j, h in enumerate(self._params['h']['label']):
                 evalDict[h] = hiddenUnitEval[j]
         return evalDict
@@ -546,7 +545,7 @@ class RBM(system):
         """Return mean values of reconstructed units."""
         vData, hData, vModel, hModel \
             = self.sampleContrastiveDivergencyKstep(data, k = k, m = m)
-        return np.mean(vModel, axis = 0), np.mean(hModel, axis = 0)
+        return numpy.mean(vModel, axis = 0), numpy.mean(hModel, axis = 0)
 
     def _getUnitEvalError(self, data, block = [], k = 1, **kwargs):
         """Return euclidean reconstruction error of units.
@@ -554,13 +553,13 @@ class RBM(system):
         error := ||data - model||
         """
         if not block == []:
-            dataCopy = np.copy(data)
+            dataCopy = numpy.copy(data)
             for i in block:
-                dataCopy[:,i] = np.mean(dataCopy[:,i])
+                dataCopy[:,i] = numpy.mean(dataCopy[:,i])
             model = self._getDataFromVisibleExpect(dataCopy, k = k)
         else:
             model = self._getDataFromVisibleExpect(data, k = k)
-        return np.sqrt(((data - model) ** 2).sum(axis = 0)), None
+        return numpy.sqrt(((data - model) ** 2).sum(axis = 0)), None
 
     def _getUnitEvalPerformance(self, data, **kwargs):
         """Return 'absolute data approximation' of units.
@@ -568,7 +567,7 @@ class RBM(system):
         'absolute data approximation' := 1 - error / ||data||
         """
         vErr = self._getUnitEvalError(data, **kwargs)[0]
-        vNorm = np.sqrt((data ** 2).sum(axis = 0))
+        vNorm = numpy.sqrt((data ** 2).sum(axis = 0))
         return 1 - vErr / vNorm, None
 
     def _getUnitEvalIntPerformance(self, data, k = 1, **kwargs):
@@ -578,7 +577,7 @@ class RBM(system):
             where model(v) is generated with: data(u not v) = mean(data(u))
         """
         vSize = len(self._params['v']['label'])
-        relIntApprox = np.empty(vSize)
+        relIntApprox = numpy.empty(vSize)
         for v in range(vSize):
             block = range(vSize)
             block.pop(v)
@@ -592,7 +591,7 @@ class RBM(system):
         'extrinsic performance' := relApprox
             where model(v) is generated with data(v) = mean(data(v))
         """
-        relExtApprox = np.empty(len(self._params['v']['label']))
+        relExtApprox = numpy.empty(len(self._params['v']['label']))
         for v in range(len(self._params['v']['label'])):
             relExtApprox[v] = self._getUnitEvalPerformance(
                 data, block = block + [v], k = k)[0][v]
@@ -604,7 +603,7 @@ class RBM(system):
         'performance' := 1 - error / ||data - mean(data)||
         """
         vErr = self._getUnitEvalError(data = data, **kwargs)[0]
-        vNorm = np.sqrt(((data - np.mean(data, axis = 0)) ** 2).sum(axis = 0))
+        vNorm = numpy.sqrt(((data - numpy.mean(data, axis = 0)) ** 2).sum(axis = 0))
         return 1 - vErr  / vNorm, None
 
     def _getUnitEvalRelativeIntPerformance(self, data, k = 1, **kwargs):
@@ -614,7 +613,7 @@ class RBM(system):
             where model(v) is generated with data(u not v) = mean(data(u))
         """
         vSize = len(self._params['v']['label'])
-        relIntApprox = np.empty(vSize)
+        relIntApprox = numpy.empty(vSize)
         for v in range(vSize):
             block = range(vSize)
             block.pop(v)
@@ -627,7 +626,7 @@ class RBM(system):
         Return "performance (extrinsic)" of units.
         extrelperf := relApprox where model(v) is generated with data(v) = mean(data(v))
         """
-        relExtApprox = np.empty(len(self._params['v']['label']))
+        relExtApprox = numpy.empty(len(self._params['v']['label']))
         for v in range(len(self._params['v']['label'])):
             relExtApprox[v] = self._getUnitEvalRelativePerformance(
                 data = data, block = block + [v], k = k)[0][v]
@@ -663,9 +662,9 @@ class RBM(system):
         """Initialize system parameters of all visible units using data."""
         v = len(self._params['v']['label'])
         if data == None:
-            self._params['v']['bias'] = np.zeros([1, v])
+            self._params['v']['bias'] = numpy.zeros([1, v])
         else:
-            self._params['v']['bias'] = np.mean(data, axis = 0).reshape(1, v)
+            self._params['v']['bias'] = numpy.mean(data, axis = 0).reshape(1, v)
         return True
 
     def _checkVisibleUnitParams(self, params):
@@ -692,10 +691,10 @@ class RBM(system):
         """Return the expected values of all visible units using the values of the hidden units."""
         if self._config['optimize']['useAdjacency']:
             return self._sigmoid(self._params['v']['bias'] +
-                np.dot(hValue, (self._params['W'] * self._params['A']).T))
+                numpy.dot(hValue, (self._params['W'] * self._params['A']).T))
         else:
             return self._sigmoid(self._params['v']['bias']
-                + np.dot(hValue, self._params['W'].T))
+                + numpy.dot(hValue, self._params['W'].T))
 
     def _getVisibleUnitValue(self, vExpect):
         """Return reconstructed values of visible units as numpy array.
@@ -711,7 +710,7 @@ class RBM(system):
         Arguments:
         vExpect -- Expectation values for visible units.
         """
-        return (vExpect > np.random.rand(vExpect.shape[0], vExpect.shape[1])).astype(float)
+        return (vExpect > numpy.random.rand(vExpect.shape[0], vExpect.shape[1])).astype(float)
 
     def _getVisibleUnitUpdates(self, vData, hData, vModel, hModel, **kwargs):
         """Return updates for visible units."""
@@ -747,7 +746,7 @@ class RBM(system):
 
     def _initHiddenUnitParams(self, data = None):
         """Initialize system parameters of all hidden units using data."""
-        self._params['h']['bias'] = 0.5 * np.ones((1, len(self._params['h']['label'])))
+        self._params['h']['bias'] = 0.5 * numpy.ones((1, len(self._params['h']['label'])))
         return True
 
     def _isHiddenUnit(self, label):
@@ -757,7 +756,7 @@ class RBM(system):
     def _getHiddenUnitUpdates(self, vData, hData, vModel, hModel, **kwargs):
         """Return updates for visible units."""
         return { 'bias': (
-            np.mean(hData - hModel, axis = 0).reshape((1, len(self._params['h']['label'])))
+            numpy.mean(hData - hModel, axis = 0).reshape((1, len(self._params['h']['label'])))
             * self._config['optimize']['updateRate']
             * self._config['optimize']['updateFactorHbias']) }
 
@@ -798,10 +797,10 @@ class RBM(system):
         """Return maximum likelihood values of hidden units from given visible units."""
         if self._config['optimize']['useAdjacency']:
             return self._sigmoid(self._params['h']['bias'] +
-                np.dot(vValue, self._params['W'] * self._params['A']))
+                numpy.dot(vValue, self._params['W'] * self._params['A']))
         else:
             return self._sigmoid(self._params['h']['bias'] +
-                np.dot(vValue, self._params['W']))
+                numpy.dot(vValue, self._params['W']))
 
     def _getHiddenUnitValue(self, hExpect):
         """Return reconstructed values of hidden units using their expectation values."""
@@ -809,7 +808,7 @@ class RBM(system):
 
     def _getHiddenUnitSample(self, hExpect):
         """Return the reconstructed values of all hidden units using their expectation values."""
-        return (hExpect > np.random.rand(hExpect.shape[0], hExpect.shape[1])).astype(float)
+        return (hExpect > numpy.random.rand(hExpect.shape[0], hExpect.shape[1])).astype(float)
 
     def _setHiddenUnitParams(self, params):
         """Set parameters of hidden units using dictionary."""
@@ -854,7 +853,7 @@ class RBM(system):
         # create adjacency matrix from links
         vList = self._params['v']['label']
         hList = self._params['h']['label']
-        A = np.empty([len(vList), len(hList)], dtype = bool)
+        A = numpy.empty([len(vList), len(hList)], dtype = bool)
         for i, v in enumerate(vList):
             for j, h in enumerate(hList):
                 A[i, j] = ((v, h) in links or (h, v) in links)
@@ -870,13 +869,13 @@ class RBM(system):
         v = len(self._params['v']['label'])
         h = len(self._params['h']['label'])
         if data == None:
-            self._params['A'] = np.ones([v, h], dtype = bool)
-            self._params['W'] = np.zeros([v, h], dtype = float)
+            self._params['A'] = numpy.ones([v, h], dtype = bool)
+            self._params['W'] = numpy.zeros([v, h], dtype = float)
         else:
             sigma = (self._config['init']['weightSigma']
-                * np.std(data, axis = 0).reshape(1, v).T)
+                * numpy.std(data, axis = 0).reshape(1, v).T)
             self._params['W'] = (self._params['A']
-                * np.random.normal(np.zeros((v, h)), sigma))
+                * numpy.random.normal(np.zeros((v, h)), sigma))
         return True
 
     def _getLinkParams(self, links = []):
@@ -974,7 +973,7 @@ class RBM(system):
             linkParams = self._getLinkParams()
             newLinks = []
             for link in linkParams:
-                if np.abs(linkParams[link]['W']) >= threshold:
+                if numpy.abs(linkParams[link]['W']) >= threshold:
                     continue
                 found = False
                 if (link[0], link[1]) in curLinks:
@@ -1020,7 +1019,7 @@ class RBM(system):
 
         linkEval = eval('self._getLinkEval' + evalFuncs[func][1] + '(data, **kwargs)')
         evalDict = {}
-        if isinstance(linkEval, np.ndarray):
+        if isinstance(linkEval, numpy.ndarray):
             for i, v in enumerate(self._params['v']['label']):
                 for j, h in enumerate(self._params['h']['label']):
                     evalDict[(v,h)] = linkEval[i, j]
@@ -1045,14 +1044,14 @@ class RBM(system):
         hData = self._getHiddenUnitValue(self._getHiddenUnitExpect(data))
         if self._config['optimize']['useAdjacency']:
             return -(self._params['A'] * self._params['W']
-                * np.dot(data.T, hData) / data.shape[0])
-        return -(self._params['W'] * np.dot(data.T, hData) / data.shape[0])
+                * numpy.dot(data.T, hData) / data.shape[0])
+        return -(self._params['W'] * numpy.dot(data.T, hData) / data.shape[0])
 
     def _getLinkUpdates(self, vData, hData, vModel, hModel, **kwargs):
         """
         Return updates for links.
         """
-        return { 'W': (np.dot(vData.T, hData) - np.dot(vModel.T, hModel))
+        return { 'W': (np.dot(vData.T, hData) - numpy.dot(vModel.T, hModel))
             / vData.shape[0] * self._config['optimize']['updateRate']
             * self._config['optimize']['updateFactorWeights']}
 
@@ -1067,7 +1066,7 @@ class RBM(system):
 
     @staticmethod
     def _sigmoid(x):
-        return 1.0 / (1.0 + np.exp(-x))
+        return 1.0 / (1.0 + numpy.exp(-x))
 
 class GRBM(RBM):
     """Gaussian Restricted Boltzmann Machine (GRBM).
@@ -1123,7 +1122,7 @@ class GRBM(RBM):
         """
         Check if data is gauss normalized
         """
-        if np.abs(data.mean()) > 0.05 or np.abs(data.std() - 1) > 0.05:
+        if numpy.abs(data.mean()) > 0.05 or numpy.abs(data.std() - 1) > 0.05:
             if not quiet:
                 mp.log("error", "GRBMs need gauss normalized data!")
             return False
@@ -1143,11 +1142,11 @@ class GRBM(RBM):
         """
         v = len(self._params['v']['label'])
         if data == None:
-            self._params['v']['bias'] = np.zeros([1, v])
-            self._params['v']['lvar'] = np.zeros([1, v])
+            self._params['v']['bias'] = numpy.zeros([1, v])
+            self._params['v']['lvar'] = numpy.zeros([1, v])
         else:
-            self._params['v']['bias'] = np.mean(data, axis = 0).reshape(1, v)
-            self._params['v']['lvar'] = np.log((self._config['init']['vSigma'] * np.ones((1, v))) ** 2)
+            self._params['v']['bias'] = numpy.mean(data, axis = 0).reshape(1, v)
+            self._params['v']['lvar'] = numpy.log((self._config['init']['vSigma'] * numpy.ones((1, v))) ** 2)
         return True
 
     def _initHiddenUnitParams(self, data = None):
@@ -1155,7 +1154,7 @@ class GRBM(RBM):
         Initialize system parameters of all hidden units using data.
         """
         h = len(self._params['h']['label'])
-        self._params['h']['bias'] = np.ones((1, h))
+        self._params['h']['bias'] = numpy.ones((1, h))
         return True
 
     def _getVisibleUnitUpdates(self, vData, hData, vModel, hModel, **kwargs):
@@ -1164,16 +1163,16 @@ class GRBM(RBM):
         """
         v = len(self._params['v']['label'])
         W = self._params['W']
-        vVar = np.exp(self._params['v']['lvar'])
+        vVar = numpy.exp(self._params['v']['lvar'])
         vBias = self._params['v']['bias']
         return {
             'bias': (np.mean(vData - vModel, axis = 0).reshape((1, v))
                 / vVar * self._config['optimize']['updateRate']
                 * self._config['optimize']['updateFactorVbias']),
             'lvar': ((np.mean(0.5 * (vData - vBias) ** 2 - vData
-                * np.dot(hData, W.T), axis = 0) - np.mean(0.5
+                * numpy.dot(hData, W.T), axis = 0) - numpy.mean(0.5
                 * (vModel - vBias) ** 2 - vModel
-                * np.dot(hModel, W.T), axis = 0)).reshape((1, v))
+                * numpy.dot(hModel, W.T), axis = 0)).reshape((1, v))
                 / vVar * self._config['optimize']['updateRate']
                 * self._config['optimize']['updateFactorVlvar']) }
 
@@ -1192,7 +1191,7 @@ class GRBM(RBM):
         id = self._params['v']['label'].index(label)
         return {
             'bias': self._params['v']['bias'][0, id],
-            'sdev': np.sqrt(np.exp(self._params['v']['lvar'][0, id])) }
+            'sdev': numpy.sqrt(np.exp(self._params['v']['lvar'][0, id])) }
 
     def _setVisibleUnitParams(self, params):
         """
@@ -1221,9 +1220,9 @@ class GRBM(RBM):
         hValue -- Values of hidden units.
         """
         if self._config['optimize']['useAdjacency']:
-            return self._params['v']['bias'] + np.dot(hValue, (self._params['W'] * self._params['A']).T)
+            return self._params['v']['bias'] + numpy.dot(hValue, (self._params['W'] * self._params['A']).T)
         else:
-            return self._params['v']['bias'] + np.dot(hValue, self._params['W'].T)
+            return self._params['v']['bias'] + numpy.dot(hValue, self._params['W'].T)
 
     def _getVisibleUnitValue(self, vExpect):
         """
@@ -1241,14 +1240,14 @@ class GRBM(RBM):
         Arguments:
         vExpect -- Expectation values for visible units.
         """
-        return np.random.normal(vExpect, np.sqrt(np.exp(self._params['v']['lvar'])))
+        return numpy.random.normal(vExpect, numpy.sqrt(np.exp(self._params['v']['lvar'])))
 
     def _getVisibleUnitEvalEnergy(self, data):
         """
         Return local energy for all visible units as numpy array.
         """
         return -np.mean((data - self._params['v']['bias']) ** 2
-            / np.exp(self._params['v']['lvar']), axis = 0) / 2
+            / numpy.exp(self._params['v']['lvar']), axis = 0) / 2
 
     # GRBM hidden units
 
@@ -1256,13 +1255,13 @@ class GRBM(RBM):
         """
         Return the expected values of all hidden units using the values of the visible units.
         """
-        vVar = np.exp(self._params['v']['lvar'])
+        vVar = numpy.exp(self._params['v']['lvar'])
         if self._config['optimize']['useAdjacency']:
             return self._sigmoid(self._params['h']['bias'] +
-                np.dot(vValue / vVar, self._params['W'] * self._params['A']))
+                numpy.dot(vValue / vVar, self._params['W'] * self._params['A']))
         else:
             return self._sigmoid(self._params['h']['bias'] +
-                np.dot(vValue / vVar, self._params['W']))
+                numpy.dot(vValue / vVar, self._params['W']))
 
     # GRBM links
 
@@ -1272,17 +1271,17 @@ class GRBM(RBM):
         """
         hData = self._getHiddenUnitExpect(data)
         if self._config['optimize']['useAdjacency']:
-            return -(self._params['A'] * self._params['W'] * np.dot((data
-                / np.exp(self._params['v']['lvar'])).T, hData) / data.shape[0])
-        return -(self._params['W'] * np.dot((data
-            / np.exp(self._params['v']['lvar'])).T, hData) / data.shape[0])
+            return -(self._params['A'] * self._params['W'] * numpy.dot((data
+                / numpy.exp(self._params['v']['lvar'])).T, hData) / data.shape[0])
+        return -(self._params['W'] * numpy.dot((data
+            / numpy.exp(self._params['v']['lvar'])).T, hData) / data.shape[0])
 
     def _getLinkUpdates(self, vData, hData, vModel, hModel, **kwargs):
         """
         Return updates for links.
         """
-        vVar = np.exp(self._params['v']['lvar'])
-        return { 'W': ((np.dot(vData.T, hData) - np.dot(vModel.T, hModel))
+        vVar = numpy.exp(self._params['v']['lvar'])
+        return { 'W': ((np.dot(vData.T, hData) - numpy.dot(vModel.T, hModel))
             / vData.shape[0] / vVar.T * self._config['optimize']['updateRate']
             * self._config['optimize']['updateFactorWeights']) }
 
@@ -1953,14 +1952,3 @@ class autoencoder(DBN):
         """
 
         return True
-
-class denoisingAE(autoencoder):
-    """Denoising Autoencoder.
-    
-    Description:
-        Used for dimensionality reduction and compression / decompression
-
-    Reference:
-        Vincent08
-    """
-    pass
