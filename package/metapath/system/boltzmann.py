@@ -361,7 +361,7 @@ class rbm(system):
 
         # update optimization configuration
         if 'params' in config:
-            config = config['params'][self.getName()]
+            config = config['params'][self.getType()]
             for key in config.keys(): # 2do use dictmerge
                 self._config['optimize'][key] = config[key]
 

@@ -16,7 +16,7 @@ def main():
         network  = 'tlm.tf2anchor',
         dataset  = 'tlm.knockout',
         system   = 'ann.grbm',
-        optimize = 'tlm.CD')
+        optimize = 'tlm.sensitive')
 
     # save model in projects directory
     mp.saveModel(grbmModel)
