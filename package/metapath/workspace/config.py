@@ -41,7 +41,7 @@ class config:
 
         # default basepaths
         self.__basepath = {
-            'user': '~/metapath/',
+            'user': '~/.metapath/',
             'common': '/etc/metapath/common/' }
 
         # get basepath configuration
@@ -98,7 +98,9 @@ class config:
 
         projects = []
         prjDirs = self.__basepath['user'] + '*'
+        
         for prjDir in glob.iglob(self.getPath(prjDirs)):
+            print prjDir
             if not os.path.isdir(prjDir):
                 continue
 
@@ -168,7 +170,7 @@ class config:
         # check if project exists
         if not project in self.__listUserProjects():
             mp.log('warning', """
-                could not load project '%s':
+                could not open project '%s':
                 project folder could not be found in '%s'!
                 """ % (project, self.__basepath['user']))
             return False
@@ -741,42 +743,22 @@ class config:
 
     def getPath(self, str, check = False, create = False):
         """
-        resolve path
+        Resolve and create path
         """
 
         # clean up input string
         path = str.strip()
 
-        # replace metapath vars
-        replace = {
-            'project': self.__project }
+        # expand unix home directory
+        path = os.path.expanduser(path)
 
-        update = True
-        while update:
-            update = False
+        # expand metapath environment variables
+        path = self.__expandPath(path)
 
-            # replace path keys with values
-            for var in self.__path.keys():
-                if '%' + var + '%' in path:
-                    path   = path.replace('%' + var + '%', self.__path[var])
-                    path   = path.replace('//', '/')
-                    update = True
+        # expand unix environment variables
+        path = os.path.expandvars(path)
 
-            # replace basepath keys with values
-            for var in self.__basepath.keys():
-                if '%' + var + '%' in path:
-                    path   = path.replace('%' + var + '%', self.__basepath[var])
-                    path   = path.replace('//', '/')
-                    update = True
-
-            # replace other vars
-            for var in replace:
-                if '%' + var + '%' in path:
-                    path   = path.replace('%' + var + '%', replace[var])
-                    path   = path.replace('//', '/')
-                    update = True
-
-        # create paths
+        # create directory
         if create:
             dir = os.path.dirname(path)
             if not os.path.exists(dir):
@@ -784,8 +766,43 @@ class config:
 
         # check path
         if check and not os.path.exists(path):
-            mp.log('warning', "path '%s' does not exist!" % (path))
+            mp.log('warning', "directory '%s' does not exist!" % (path))
             return False
+
+        return path
+
+    def __expandPath(self, path = ''):
+        """
+        Expand metapath environment variables in string
+        """
+
+        replace = {
+            'project': self.__project }
+
+        update = True
+        while update:
+            update = False
+
+            # expand path vars (keys of self.__path)
+            for var in self.__path.keys():
+                if '%' + var + '%' in path:
+                    path   = path.replace('%' + var + '%', self.__path[var])
+                    path   = path.replace('//', '/')
+                    update = True
+
+            # expand basepath variables (keys of self.__basepath)
+            for var in self.__basepath.keys():
+                if '%' + var + '%' in path:
+                    path   = path.replace('%' + var + '%', self.__basepath[var])
+                    path   = path.replace('//', '/')
+                    update = True
+
+            # expand other variables (keys of replace)
+            for var in replace:
+                if '%' + var + '%' in path:
+                    path   = path.replace('%' + var + '%', replace[var])
+                    path   = path.replace('//', '/')
+                    update = True
 
         return path
 
