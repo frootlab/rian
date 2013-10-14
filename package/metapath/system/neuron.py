@@ -5,13 +5,13 @@ import time
 
 from metapath.system.base import system
 
-class MLP(system):
+class mlp(system):
     """Multilayer Perceptron (MLP)."""
     
     pass
 
 
-class DBN(system):
+class dbn(system):
     """Deep Belief Network (DBN).
 
     Description:
@@ -28,12 +28,12 @@ class DBN(system):
             'params': {
                 'visible': 'auto',
                 'hidden': 'auto',
-                'visibleSystem': 'ann.GRBM',
-                'visibleSystemClass': 'GRBM',
+                'visibleSystem': 'ann.grbm',
+                'visibleSystemClass': 'grbm',
                 'visibleSystemModule': 'boltzmann',
                 'visibleUnitRatio': '1:2',
-                'hiddenSystem': 'ann.RBM',
-                'hiddenSystemClass': 'RBM',
+                'hiddenSystem': 'ann.rbm',
+                'hiddenSystemClass': 'rbm',
                 'hiddenSystemModule': 'boltzmann',
                 'hiddenUnitRatio': '2:1' },
             'optimize': {
@@ -348,7 +348,7 @@ class DBN(system):
 
         return True
 
-class autoencoder(DBN):
+class ae(dbn):
     """Autoencoder.
     
     Description:
@@ -368,11 +368,11 @@ class autoencoder(DBN):
                 'hidden': 'auto',
                 'visibleSystem': 'default',
                 'visibleSystemModule': 'boltzmann',
-                'visibleSystemClass': 'GRBM',
+                'visibleSystemClass': 'grbm',
                 'visibleUnitRatio': '1:2',
                 'hiddenSystem': 'default',
                 'hiddenSystemModule': 'boltzmann',
-                'hiddenSystemClass': 'RBM',
+                'hiddenSystemClass': 'rbm',
                 'hiddenUnitRatio': '2:1' },
             'optimize': {
                 'visible': None,
@@ -688,7 +688,7 @@ class autoencoder(DBN):
 
         return True
 
-class denoisingAE(autoencoder):
+class denoisingAE(ae):
     """Denoising Autoencoder.
     
     Description:

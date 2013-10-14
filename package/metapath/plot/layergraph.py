@@ -46,17 +46,16 @@ class layerGraph(plot):
         edge_weight = self.getEdgeWeights(model)
 
         # labels
-        lbl = {
-            'e':  model.network.node_labels(type = 'e'),
-            'tf': model.network.node_labels(type = 'tf'),
-            's':  model.network.node_labels(type = 's')}
+        visibleLabels = model.network.getNodeGroups(type = 'visible')
+        hiddenLabels = model.network.getNodeGroups(type = 'hidden')
+        lbl = mp.dictMerge(visibleLabels, hiddenLabels)
 
         # graph
         G = model.network.graph
 
         # calculate sizes
         zoom = 1.0
-        scale = min(250.0 / max(len(lbl['e']), len(lbl['tf']), len(lbl['s'])), 30.0)
+        scale = min(250.0 / max([len(lbl[a]) for a in lbl.keys()]), 30.0)
         graph_node_size = scale ** 2
         graph_font_size = 0.4 * scale
         graph_caption_factor = 0.5 + 0.003 * scale
@@ -68,8 +67,8 @@ class layerGraph(plot):
         for node, attr in G.nodes(data = True):
             i = 1.0 / len(lbl[attr['params']['type']])
             x_node = (attr['params']['type_node_id'] + 0.5) * i
-            y_node = attr['params']['type_id'] * 0.5
-            y_caption = (attr['params']['type_id'] - 1) * graph_caption_factor + 0.5
+            y_node = 1 - attr['params']['type_id'] * 0.5
+            y_caption = (1 - attr['params']['type_id']) * graph_caption_factor + 0.5
 
             pos[node] = (x_node, y_node)
             pos_caption[node] = (x_node, y_caption)
@@ -80,6 +79,8 @@ class layerGraph(plot):
         # draw labeled nodes
         for node, attr in G.nodes(data = True):
             type = attr['params']['type']
+            typeid = attr['params']['type_id']
+            isvisible = attr['params']['visible']
             label = attr['label']
 
             weight_sum = 0
@@ -91,10 +92,10 @@ class layerGraph(plot):
             weight_sum = min(0.01 + 0.3 * weight_sum, 1)
             c = 1 - weight_sum
             color = {
-                's': (1, c, c, 1),
-                'tf': (c, 1, c,  1),
-                'e': (1, 1, c, 1)
-            }[type]
+                0: (1, c, c, 1),
+                1: (c, 1, c,  1),
+                2: (1, 1, c, 1)
+            }[typeid]
 
             # draw node
             nx.draw_networkx_nodes(
@@ -115,7 +116,7 @@ class layerGraph(plot):
                 font_weight = 'normal')
 
             # draw node caption
-            if self.settings['node_caption'] and not type == 'tf':
+            if self.settings['node_caption'] and isvisible:
                 nx.draw_networkx_labels(
                     G, pos_caption,
                     font_size = 0.65 * graph_font_size,
@@ -212,12 +213,13 @@ class adjacencyGraph(layerGraph):
             'edge_caption': None }
     
     def getEdgeWeights(self, model):
-        A = model.system.params['A']
+        params = model.system.getParams()
+        A = params['A']
         edge_weight = {}
-        for v, v_label in enumerate(model.system.params['v']['label']):
-            for h, h_label in enumerate(model.system.params['h']['label']):
-                edge_weight[(h_label, v_label)] = A[v, h]
-                edge_weight[(v_label, h_label)] = A[v, h]
+        for v, v_label in enumerate(params['v']['label']):
+            for h, h_label in enumerate(params['h']['label']):
+                edge_weight[(h_label, v_label)] = A[v, h] * 0.1
+                edge_weight[(v_label, h_label)] = A[v, h] * 0.1
 
         return edge_weight
 

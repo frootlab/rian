@@ -829,7 +829,7 @@ class model:
                 could not configure system:
                 model does not contain system instance!""")
             return False
-        
+
         self.__config = config['config'].copy()
         self.network._set(**config['network'])
         self.dataset._set(**config['dataset'])
@@ -858,16 +858,14 @@ class model:
         """
         config = {}
 
-        # model internal configuration
-        if not 'cfg' in dict or 'config' in dict:
+        # model configuration
+        if 'config' in dict.keys():
+            config['config'] = dict['config'].copy()
+        else:
             mp.log('error', """
                 could not set configuration:
                 given dictionary does not contain configuration information!""")
             return None
-        elif 'cfg' in dict:
-            config['config'] = dict['cfg'].copy()
-        else:
-            config['config'] = dict['config'].copy()
 
         # get version of config
         version = config['config']['version']

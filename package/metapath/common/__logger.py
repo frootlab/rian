@@ -101,7 +101,13 @@ def log(type, msg, quiet = False):
         fileLog.warning(clrName + ' -> ' + msg.strip())
         return True
     if type == 'error':
-        ttyLog.error(color['yellow'] + msg + color['default'])
+        ttyLog.error(color['yellow'] + msg + ' (see logfile for debug info)' + color['default'])
+        fileLog.error(clrName + ' -> ' + msg.strip())
+        import traceback
+        for line in traceback.format_stack():
+            fileLog.error(clrName + ' -> ' + line.strip())
+        return True
+    if type == 'debuginfo':
         fileLog.error(clrName + ' -> ' + msg.strip())
         return True
     if type == 'critical':

@@ -840,7 +840,7 @@ class dataset:
 
         try:
             import csv
-            dialect = csv.Sniffer().sniff(csvfile.read(4096))
+            dialect = csv.Sniffer().sniff(csvfile.read(100000))
         except:
             mp.log("warning", 
                 "could not load file '" + file + "': could not determine delimiter!")

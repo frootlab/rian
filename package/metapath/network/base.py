@@ -59,12 +59,6 @@ class network:
         """
         return self.cfg.copy()
 
-    def getName(self):
-        """
-        return name of network (as string)
-        """
-        return self.cfg['name'] if 'name' in self.cfg else ''
-
     def __getNodesFromLayers(self):
         """
         create nodes from layers
@@ -180,9 +174,9 @@ class network:
 
     def getName(self):
         """
-        Return name of network
+        return name of network (as string)
         """
-        return self.cfg['name']
+        return self.cfg['name'] if 'name' in self.cfg else ''
 
     def isEmpty(self):
         """

@@ -73,18 +73,20 @@ class workspace:
             network = {'type': 'auto'}
 
         # create instances
-        dataset = self.__getInstance('dataset', dataset, quiet = True, **kwargs)
-        network = self.__getInstance('network', network, quiet = True, **kwargs)
-        system = self.__getInstance('system', system, quiet = True, **kwargs)
+        dataset = self.__getInstance(type = 'dataset', config = dataset, quiet = True, **kwargs)
+        network = self.__getInstance(type = 'network', config = network, quiet = True, **kwargs)
+        system = self.__getInstance(type = 'system', config = system, quiet = True, **kwargs)
 
         # create model instance
         if dataset == None or network == None or system == None:
-            model = self.__getInstance('model', config, name = name,
-                quiet = quiet, empty = True, **kwargs)
+            # fallback: empty model
+            mp.log('error', 'could not create model! creating empty model as fallback', quiet = quiet)
+            model = self.__getInstance(type = 'model', config = config,
+                name = name, quiet = True, empty = True, **kwargs)
         else:
-            model = self.__getInstance('model', config, name = name,
+            model = self.__getInstance(type = 'model', config = config,
                 dataset = dataset, network = network, system = system,
-                quiet = quiet, **kwargs)
+                name = name, quiet = quiet, **kwargs)
 
         # configure model (optional)
         if configure:
@@ -106,6 +108,7 @@ class workspace:
 
     def __getInstance(self, type = None, config = None, quiet = False, empty = False, **kwargs):
         """Return new instance of given object class and configuration"""
+
         # import module
         import importlib
         module = importlib.import_module("metapath." + str(type))
@@ -113,7 +116,7 @@ class workspace:
         # get objects configuration as dictionary
         config = self.__getConfig(type = type, config = config, quiet = quiet, **kwargs)
         if config == None:
-            mp.log('error', 'instance of type \'%s\' could not be created: unknown configuration!' % (type), quiet = quiet)
+            mp.log('error', 'could not create %s instance: unknown configuration!' % (type), quiet = quiet)
             return None
 
         # create new instance of given class and initialize with configuration
@@ -122,7 +125,8 @@ class workspace:
 
         # check class instance
         if not mp.isInstanceType(instance, type):
-            mp.log('error', 'could not create instance of type \'%s\': configuration is not valid' % (type), quiet = quiet)
+            mp.log('error', 'could not create %s instance: invalid configuration!' % (type), quiet = quiet)
+            mp.log('debuginfo', str(config), quiet = quiet)
             return None
 
         # return instance
@@ -267,7 +271,7 @@ class workspace:
 
         # create empty model instance and set dict
         return self.model(quiet = True,
-            config = config['cfg'],
+            config = config['config'],
             dataset = config['dataset']['cfg'],
             network = config['network']['cfg'],
             system = config['system']['config'],

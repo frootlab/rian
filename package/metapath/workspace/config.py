@@ -100,7 +100,6 @@ class config:
         prjDirs = self.__basepath['user'] + '*'
         
         for prjDir in glob.iglob(self.getPath(prjDirs)):
-            print prjDir
             if not os.path.isdir(prjDir):
                 continue
 
