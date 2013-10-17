@@ -1066,11 +1066,22 @@ class rbm(system):
         self._params['W'] += updates['W']
         return True
 
-    # RBM STATIC METHODS
+    # common activation functions
 
     @staticmethod
     def _sigmoid(x):
+        """Standard logistic function"""
         return 1.0 / (1.0 + numpy.exp(-x))
+
+    @staticmethod
+    def _tanh(x):
+        """Hyperbolic tangens"""
+        return numpy.tanh(x)
+
+    @staticmethod
+    def _tanhEff(x):
+        """Hyperbolic tangens proposed in paper 'Efficient BackProp' by LeCun, Bottou, Orr, Müller"""
+        return 1.7159 * numpy.tanh(0.6666 * x)
 
 class grbm(rbm):
     """Gaussian Restricted Boltzmann Machine (GRBM).

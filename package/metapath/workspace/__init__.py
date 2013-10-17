@@ -7,7 +7,7 @@ def new():
     import metapath.workspace.workspace as workspace
     return workspace.workspace()
 
-def open(project):
+def open(project, quiet = False):
     """
     Return workspace instance from file(s).
     """

@@ -3,13 +3,15 @@ import metapath.common as mp
 import os, copy, pprint
 
 class workspace:
-    """metaPath base class for workspaces"""
+    """
+    Base class for workspaces
+    """
 
     #
     # WORKSPACE CONFIGURATION
     #
 
-    def __init__(self, project = None):
+    def __init__(self, project = None, quiet = False):
 
         # reset local variables
         self._config = None
@@ -32,19 +34,42 @@ class workspace:
         """Import configuration from project and update paths and logfile"""
         return self._config.loadProject(project)
 
-    def list(self, type = None):
-        """Return a list of object configurations"""
-        list = self._config.list(type)
+    def list(self, type = None, namespace = None):
+        """Return a list of known objects"""
+        list = self._config.list(type = type, namespace = namespace)
         if not type:
             for item in list:
                 mp.log('info', "'%s' (%s)" % (item[2], item[1]))
-        elif type == 'model':
+        elif type in ['model', 'script']:
             for item in list:
                 mp.log('info', "'%s'" % (item))
         else:
             for item in list:
                 mp.log('info', "'%s'" % (item[2]))
         return len(list)
+
+    def execute(self, name = None, quiet = False, **kwargs):
+        if not '.' in name:
+            scriptName = self._config.project() + '.' + name
+        else:
+            scriptName = name
+
+        config = self.__getConfig(type = 'script', config = scriptName, quiet = True, **kwargs)
+        
+        if not config and not '.' in name:
+            scriptName = 'base.' + name
+            config = self.__getConfig(type = 'script', config = scriptName, quiet = True, **kwargs)
+        if not config:
+            return False
+        if not os.path.isfile(config['path']):
+            mp.log('error', """
+                could not run script \'%s\': file \'%s\' not found!
+                """ % (scriptName, config['path']), quiet = quiet)
+            return False
+        
+        import imp
+        script = imp.load_source('script', config['path'])
+        return script.main(self, **config['params'])
 
     def show(self, type = None, name = None, **kwargs):
         """Print object configuration from type and name"""
@@ -137,18 +162,21 @@ class workspace:
 
         return instance
 
-    def __getConfig(self, type = None, config = None, merge = ['params'], **kwargs):
+    def __getConfig(self, type = None, config = None, merge = ['params'], quiet = False, **kwargs):
         """Return object configuration as dictionary"""
         if config == None:
             return {}
         if isinstance(config, dict):
+            print 'this should not happen!!! -> I am workspace.py/__getConfig'
+            quit()
             return copy.deepcopy(config)
         elif isinstance(config, str) and isinstance(type, str):
             name, params = mp.strSplitParams(config)
             if 'params' in kwargs and isinstance(kwargs['params'], dict):
                 params = mp.dictMerge(kwargs['params'], params)
             return self._config.get(
-                type = type, name = name, merge = merge, params = params)
+                type = type, name = name,
+                merge = merge, params = params, quiet = quiet)
         return False
 
     def copy(self, model):

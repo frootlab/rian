@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import metapath.common as mp
 
@@ -5,16 +6,16 @@ import metapath.common as mp
 mp.initLogger()
 mp.log("header", "metapath " + mp.version())
 
-def new():
+def new(**kwargs):
     """
     Return workspace instance.
     """
     import metapath.workspace
-    return metapath.workspace.new()
+    return metapath.workspace.new(**kwargs)
 
-def open(project):
+def open(project, **kwargs):
     """
     Return workspace instance.
     """
     import metapath.workspace
-    return metapath.workspace.open(project)
+    return metapath.workspace.open(project, **kwargs)

@@ -17,13 +17,14 @@ class config:
 
         # configuration storage (dict + index)
         self.__store = {
-            'system': {},
-            'network': {},
-            'dataset': {},
-            'schedule': {},
             'analyse': {},
+            'dataset': {},
+            'network': {},
             'plot': {},
-            'report': {} }
+            'report': {},
+            'schedule': {},
+            'script': {},
+            'system': {} }
         self.__index = {}
 
         # current project and paths
@@ -75,6 +76,7 @@ class config:
             'workspace': '%project%/',
             'datasets': '%project%/data/',
             'models': '%project%/models/',
+            'scripts': '%project%/scripts/',
             'networks': '%project%/networks/',
             'plots': '%project%/plots/',
             'reports': '%project%/reports/',
@@ -140,7 +142,7 @@ class config:
 
     def loadCommon(self):
         """
-        import common projects
+        Import common projects
         """
         mp.log('comment', 'import common configuration files')
 
@@ -154,6 +156,7 @@ class config:
             self.__project = project
             self.__updatePaths(base = 'common')
             self.__importConfigFilesFromProject()
+            self.__importScriptFilesFromProject()
 
         # reset to previous project
         self.__project = curProject
@@ -162,7 +165,7 @@ class config:
 
     def loadProject(self, project):
         """
-        import configuration files from user project
+        Import configuration files from user project
         """
         mp.log('comment', 'import project configuration files')
 
@@ -180,14 +183,17 @@ class config:
         # update paths
         self.__updatePaths(base = 'user')
 
+        # update path of cache
+        self.__updateCachePaths()
+
         # update logger to current logfile
         mp.initLogger(logfile = self.__path['logfile'])
 
-        # import workspaces of current project
+        # import object configurations for current project
         self.__importConfigFilesFromProject()
-
-        # update path of cache
-        self.__updateCachePaths()
+        
+        # import scripts for current project
+        self.__importScriptFilesFromProject()
 
         return True
 
@@ -199,7 +205,9 @@ class config:
             self.__store['dataset'][key]['cache_path'] = self.__path['cache']
         return True
 
-    # configuration files
+    #
+    # import configuration files
+    #
 
     def __importConfigFilesFromProject(self, files = None):
         """
@@ -244,10 +252,53 @@ class config:
 
         return True
 
+    #
+    # import script files
+    #
+
+    def __importScriptFilesFromProject(self, files = None):
+        """
+        import all script files from current project path
+        """
+
+        # are files given?
+        if files == None:
+            files = self.__path['scripts'] + '*.py'
+
+        # import definition files
+        for file in glob.iglob(self.getPath(files)):
+            self.__importScriptFile(file)
+
+        return True
+
+    def __importScriptFile(self, file):
+        """
+        import script file from current project
+        """
+
+        # search definition file
+        if os.path.isfile(file):
+            scriptFile = file
+        elif os.path.isfile(self.__path['scripts'] + file):
+            scriptFile = self.__path['scripts'] + file
+        else:
+            mp.log("warning", "script file '%s' does not exist!" % (file))
+            return False
+
+        # logger info
+        mp.log("info", "found script file: '" + scriptFile + "'")
+
+        # import and register objects without testing
+        importer = scriptFileImporter(self)
+        self.__addObjToStore(importer.load(scriptFile))
+
+        return True
+
+    #
+    # import network configuration file
+    #
+
     def __importNetworkConfigFile(self, file, format = None):
-        """
-        Import network configuration from file
-        """
 
         # file
         file = self.getPath(file).strip()
@@ -586,7 +637,7 @@ class config:
         objID = 0
 
         if not type in self.__store.keys():
-            mp.log('error', '2DO')
+            mp.log('error', 'could not register object \'%s\': not supported object type \'%s\'!' % (name, type))
             return False
 
         key = self.__getNewKey(self.__store[type], name)
@@ -619,9 +670,9 @@ class config:
         self.__index.pop(id)
         return True
 
-    def list(self, type = None):
+    def list(self, type = None, namespace = None):
         """
-        List configurations
+        List known objects
         """
 
         if type == 'model':
@@ -633,14 +684,15 @@ class config:
                 models.append(os.path.basename(model)[:-3])
 
             return sorted(models, key = str.lower)
-        
+
         objList = []
         for id in self.__index:
             if type and type != self.__index[id]['type']:
                 continue
-
+            if namespace and namespace != self.__index[id]['project']:
+                continue
             objList.append((id, self.__index[id]['type'], self.__index[id]['name']))
-        return objList
+        return sorted(objList, key = lambda col: col[2])
 
     def __isObjKnown(self, type, name):
         """
@@ -670,7 +722,7 @@ class config:
 
         return {'class': oClass, 'name': oName, 'project': oPrj, 'config':  oConf}
 
-    def get(self, type = None, name = None, merge = ['params'], params = None, id = None):
+    def get(self, type = None, name = None, merge = ['params'], params = None, id = None, quiet = False):
         """
         Return configuration as dictionary for given object
         """
@@ -678,7 +730,7 @@ class config:
             mp.log('warning', """
                 could not get configuration:
                 object class '%s' is not known
-                """ % type)
+                """ % type, quiet = quiet)
             return None
 
         # search 'name' or 'id' in 'section' or take first entry
@@ -694,7 +746,7 @@ class config:
                 mp.log('warning', """
                     could not get configuration:
                     no %s with name '%s' could be found
-                    """ % (type, name))
+                    """ % (type, name), quiet = quiet)
                 return None
 
         # get configuration from type and id
@@ -820,7 +872,32 @@ class config:
         return new
 
 #
-# import metapath config file
+# import script files
+#
+
+class scriptFileImporter:
+
+    project  = None
+
+    def __init__(self, config):
+        self.project = config.project()
+
+    def load(self, file):
+        import os
+        name = self.project + '.' + os.path.splitext(os.path.basename(file))[0]
+        path = file
+
+        return {
+            'class':   'script',
+            'name':    name,
+            'project': self.project,
+            'config':  {
+                'name': name,
+                'path': path
+            }}
+
+#
+# import config file
 #
 
 class configFileImporter:
@@ -846,7 +923,7 @@ class configFileImporter:
         self.project = config.project()
 
     #
-    # definition files
+    # object definition / configuration files
     #
 
     def load(self, file):
@@ -952,6 +1029,13 @@ class networkConfigFileImporter:
             network['type'] = netcfg.get('network', 'type').strip().lower()
         else:
             network['type'] = 'auto'
+
+        # 2DO
+
+        #if network['type'] in ['fulllayer']:
+        
+        #elif network['type'] in ['fulllayer']:
+
 
         # 'layers'
         if 'layers' in netcfg.options('network'):
