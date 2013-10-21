@@ -6,10 +6,12 @@ import sys, getopt, os
 def main(argv):
     project = ''
     script = ''
+    kwargs = ''
     params = {}
 
     try:
-        opts, args = getopt.getopt(argv,"hp:s:",["project=", "script="])
+        opts, args = getopt.getopt(
+            argv, "hp:s:a:", ["project=", "script=", "arguments="])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -22,24 +24,33 @@ def main(argv):
             project = arg
         elif opt in ("-s", "--script"):
             script = arg
+        elif opt in ("-a", "--arguments"):
+            kwargs = arg
 
     if not project or not script:
         usage()
         sys.exit()
 
-    ## create workspace and open project
+    # create workspace and open project
     sys.path.append('./package')
     import metapath
     workspace = metapath.open(project)
-    workspace.execute(name = script, params = params)
+
+    # execute python script
+    workspace.execute(
+        name = script,
+        params = params,
+        arguments = kwargs)
 
 def usage():
-    print """Usage: mprun.py -p <project> -s <script>
+    """Print script usage"""
+
+    print """Usage: mprun.py -p <project> -s <script> [-a <arguments>]
     
     -h --help                 Prints this
-    -p --project              Execute a metapath script
-    -s --script               Print dothis
-    -a --argument (argument)  Print (argument)
+    -p --project              User Namespace / Project
+    -s --script               Basename of script to execute
+    -a --arguments            Arguments passed to script
     """
 
 if __name__ == "__main__":

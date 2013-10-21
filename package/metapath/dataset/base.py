@@ -1,4 +1,6 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 import metapath.common as mp
 import numpy as np
 import copy
@@ -25,26 +27,19 @@ class dataset:
         return True
 
     def getConfig(self):
-        """
-        Return configuration as dictionary
-        """
+        """Return configuration as dictionary"""
         return self.cfg.copy()
 
     def getName(self):
-        """
-        Return name of dataset
-        """
+        """Return name of dataset"""
         return self.cfg['name'] if 'name' in self.cfg else ''
 
     def isEmpty(self):
-        """
-        Return true if dataset is empty
-        """
+        """Return true if dataset is empty"""
         return not 'name' in self.cfg or not self.cfg['name']
 
     def configure(self, network, useCache = True, quiet = False, **kwargs):
-        """
-        Configure dataset to a given network object
+        """Configure dataset to a given network object
 
         Keyword arguments:
         network -- metapath network object
@@ -211,7 +206,7 @@ class dataset:
             self.cfg['rowPartitions']['source'].append(source)
 
         #
-        # DATA IMPORT
+        # IMPORT DATA FROM CSV FILES INTO NUMPY NAMED ARRAY
         #
 
         # import data from sources
@@ -228,6 +223,10 @@ class dataset:
             mp.log('info', 'save cachefile: \'%s\'' % (cacheFile), quiet = quiet)
             self.save(cacheFile)
 
+        #
+        # PREPROCESS DATA
+        #
+
         # preprocess data
         if 'preprocessing' in self.cfg.keys():
             self.preprocessData(**self.cfg['preprocessing'])
@@ -241,9 +240,9 @@ class dataset:
     def preprocessData(self, quiet = False, **dict):
         """Data preprocessing
         
-        1. Stratification
-        2. Normalization
-        3. Transformation
+        1. Data stratification
+        2. Date normalization
+        3. Data transformation
         """
         if not dict:
             return True
@@ -252,15 +251,17 @@ class dataset:
             self.stratifyData(dict['stratify'])
         if 'normalize' in dict.keys():
             self.normalizeData(dict['normalize'])
-        if 'convert' in dict.keys():
-            self.transformData(dict['convert'])
+        if 'transform' in dict.keys():
+            self.transformData(dict['transform'])
 
         return True
 
     def stratifyData(self, algorithm = 'auto'):
-        """Data preprocessing: Stratify data
+        """Stratify data
 
-        algorithm:
+        Keyword arguments:
+        
+        algorithm -- name of algorithm used for stratification
             'none':
                 probabilities of sources are
                 number of all samples / number of samples in source
@@ -282,11 +283,11 @@ class dataset:
         return True
 
     def normalizeData(self, algorithm = 'gauss'):
-        """Data preprocessing: Normalize data
+        """Normalize stratified data
 
-        algorithm:
-            'gauss', 'z-trans':
-                aussian normalization (aka z-transformation)
+        Keyword arguments:
+            algorithm -- name of algorithm used for data normalization
+                'gauss': Gaussian normalization (aka z-transformation)
         """
         mp.log('info', 'preprocessing: normalize data using \'%s\'' % (algorithm))
 
@@ -296,7 +297,7 @@ class dataset:
             # for single source datasets take all data
             # for multi source datasets take a big bunch of stratified data
             if len(self.data.keys()) > 1:
-                data = self.getData(size = 500000, output = 'recarray')
+                data = self.getData(size = 1000000, output = 'recarray')
             else:
                 data = self.getSourceData(source = self.data.keys()[0])
 
@@ -314,28 +315,56 @@ class dataset:
         return False
 
     def transformData(self, algorithm = '', system = None, colLabels = None, **kwargs):
-        """Data preprocessing: Transform data
+        """Transform normalized data
 
-        algorithm:
-            'binary', 'bool':
-                transform gaussian distributed data
-                to binary data
-        
-        system: 
+        Keyword arguments:
+            algorithm -- name of algorithm used for data transformation
+                'gaussToBinary':
+                    Transform Gauss distributed values to binary values in {0, 1}
+                'gaussToWeight':
+                    Transform Gauss distributed values to weights in [0, 1]
+                'gaussToDistance':
+                    Transform Gauss distributed values to distances in [0, 1]
+
+            system -- system instance (with metapath object class 'system')
+                used for model based transformation of data
+
+            colLabels -- ...
         """
 
-        if isinstance(algorithm, str) \
-            and algorithm.lower() in ['binary', 'bool']:
+        if isinstance(algorithm, str):
             mp.log('info', 'preprocessing: transform data using \'%s\'' % (algorithm))
-            for src in self.data:
 
-                # update source per column (recarray)
-                for colName in self.data[src]['array'].dtype.names[1:]:
+            if algorithm.lower() in ['gausstobinary', 'binary']:
+                for src in self.data:
 
-                    # update source data columns
-                    self.data[src]['array'][colName] = \
-                        (self.data[src]['array'][colName] > 0.0).astype(float)
-            return True
+                    # update source per column (recarray)
+                    for colName in self.data[src]['array'].dtype.names[1:]:
+
+                        # update source data columns
+                        self.data[src]['array'][colName] = \
+                            (self.data[src]['array'][colName] > 0.0).astype(float)
+                return True
+            if algorithm.lower() in ['gausstoweight', 'weight']:
+                for src in self.data:
+
+                    # update source per column (recarray)
+                    for colName in self.data[src]['array'].dtype.names[1:]:
+
+                        # update source data columns
+                        self.data[src]['array'][colName] = \
+                            (2.0 / (1.0 + np.exp(-1.0 * self.data[src]['array'][colName] ** 2))).astype(float)
+                return True
+            if algorithm.lower() in ['disttoweight', 'dist']:
+                for src in self.data:
+
+                    # update source per column (recarray)
+                    for colName in self.data[src]['array'].dtype.names[1:]:
+
+                        # update source data columns
+                        self.data[src]['array'][colName] = \
+                            (1.0 - (2.0 / (1.0 + np.exp(-1.0 * self.data[src]['array'][colName] ** 2)))).astype(float)
+                return True
 
         if mp.isSystem(system):
             mp.log('info', 'preprocessing: transform data using system \'%s\'' % (system.getName()))
@@ -351,20 +380,20 @@ class dataset:
 
                 # transform data
                 transArray = system.getDataRepresentation(dataArray, **kwargs)
-                
+
                 # create empty record array
                 numRows = self.data[src]['array']['label'].size
                 colNames = ('label',) + tuple(self.getColLabels())
                 colFormats = ('<U12',) + tuple(['<f8' for x in colNames])
                 newRecArray = np.recarray((numRows,), dtype = zip(colNames, colFormats))
-                
+
                 # set values in record array
                 newRecArray['label'] = self.data[src]['array']['label']
                 for colID, colName in enumerate(newRecArray.dtype.names[1:]):
 
                     # update source data columns
                     newRecArray[colName] = (transArray[:, colID]).astype(float)
-                
+
                 # set record array
                 self.data[src]['array'] = newRecArray
 
@@ -373,8 +402,10 @@ class dataset:
         return False
 
     def getData(self, size = None, rows = '*', columns = '*', output = 'array'):
-        """
-        Return data from cache
+        """Return a given number of stratified samples.
+
+        Keyword arguments:
+        
         """
 
         # get stratified and row filtered data
@@ -411,6 +442,18 @@ class dataset:
         return None
 
     def getSourceData(self, source = None, size = None, rows = '*'):
+        """Return a given number of samples from data source.
+
+        Keyword arguments:
+            source -- name of data source to get data from
+
+            size -- number of samples to return
+                if size is not given just return all samples of given source
+
+            rows -- string that describes a filter for rows to choose from
+
+            useCache -- shall data be cached"""
+
         if not source or not source in self.data:
             mp.log("warning", "unknown data source: '" + source + "'!")
             return None
@@ -418,7 +461,7 @@ class dataset:
             mp.log("warning", "unknown row group: '" + rows + "'!")
             return None
 
-        # filter rows
+        # apply row filter
         if rows == '*' or source + ':*' in self.cfg['rowFilter'][rows]:
             srcArray = self.data[source]['array']
         else:
@@ -433,7 +476,7 @@ class dataset:
                 return rowSelect
             srcArray = np.take(self.data[source]['array'], rowSelect)
 
-        # if size is given, statify data
+        # if argument 'size' is given, statify data
         if size:
             srcFrac = self.data[source]['fraction']
             rowSelect = np.random.randint(srcArray.size, size = round(srcFrac * size))
@@ -441,16 +484,16 @@ class dataset:
 
         return srcArray
 
-    ## has no use at the moment
-    def getMean(self):
+    ### has no use at the moment
+    #def getMean(self):
 
-        mean = 0
-        for src in self.data.keys():
-            srcFrac = self.data[source]['fraction']
-            srcMean = self.data[source]['mean']
-            mean += srcFrac * srcMean
+        #mean = 0
+        #for src in self.data.keys():
+            #srcFrac = self.data[source]['fraction']
+            #srcMean = self.data[source]['mean']
+            #mean += srcFrac * srcMean
 
-        return mean
+        #return mean
 
     # Labels and Groups
 
