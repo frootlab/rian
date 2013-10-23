@@ -3,9 +3,7 @@ import metapath.common as mp
 import os, copy, pprint
 
 class workspace:
-    """
-    Base class for workspaces
-    """
+    """Base class for workspaces."""
 
     #
     # WORKSPACE CONFIGURATION
@@ -13,30 +11,27 @@ class workspace:
 
     def __init__(self, project = None, quiet = False):
 
-        # reset local variables
-        self._config = None
-
         # get base configuration
         import metapath.workspace.config
-        self._config = metapath.workspace.config.config()
+        mp.shared['config'] = metapath.workspace.config.config()
+        
+        # link configuration
+        self._config = mp.shared['config']
 
         # import all common definitions
-        self._config.loadCommon()
+        mp.shared['config'].loadCommon()
 
         # load user definitions
         if not project == None:
             self.load(project)
 
-        # link configuration
-        mp.shared['config'] = self._config
-
     def load(self, project):
         """Import configuration from project and update paths and logfile"""
-        return self._config.loadProject(project)
+        return mp.shared['config'].loadProject(project)
 
     def list(self, type = None, namespace = None):
         """Return a list of known objects"""
-        list = self._config.list(type = type, namespace = namespace)
+        list = mp.shared['config'].list(type = type, namespace = namespace)
         if not type:
             for item in list:
                 mp.log('info', "'%s' (%s)" % (item[2], item[1]))
@@ -50,7 +45,7 @@ class workspace:
 
     def execute(self, name = None, quiet = False, **kwargs):
         if not '.' in name:
-            scriptName = self._config.project() + '.' + name
+            scriptName = mp.shared['config'].project() + '.' + name
         else:
             scriptName = name
 
@@ -73,7 +68,7 @@ class workspace:
 
     def show(self, type = None, name = None, **kwargs):
         """Print object configuration from type and name"""
-        return pprint.pprint(self._config.get(type, name))
+        return pprint.pprint(mp.shared['config'].get(type, name))
 
     def dataset(self, config = None, quiet = False, **kwargs):
         """Return new dataset instance"""
@@ -174,7 +169,7 @@ class workspace:
             name, params = mp.strSplitParams(config)
             if 'params' in kwargs and isinstance(kwargs['params'], dict):
                 params = mp.dictMerge(kwargs['params'], params)
-            return self._config.get(
+            return mp.shared['config'].get(
                 type = type, name = name,
                 merge = merge, params = params, quiet = quiet)
         return False
@@ -200,7 +195,7 @@ class workspace:
         if name == None:
             cfgPlot = config.copy()
         else:
-            cfgPlot = self._config.get('plot', name = name, params = params)
+            cfgPlot = mp.shared['config'].get('plot', name = name, params = params)
 
         # create plot instance
         if not cfgPlot == None:
@@ -228,13 +223,13 @@ class workspace:
         #if not mp.isModel(model):
             #mp.log("error", "could not branch model: 'model' has to be mpModel instance!")
             #return None
-        #if not system == None and not system in self._config.system:
+        #if not system == None and not system in mp.shared['config'].system:
             #mp.log("error", "could not modify model: unknown system name '" + system + "'!")
             #return None
-        #if not network == None and not network in self._config.network:
+        #if not network == None and not network in mp.shared['config'].network:
             #mp.log("error", "could not modify model: unknown network name '" + network + "'!")
             #return None
-        #if not dataset == None and not dataset in self._config.dataset:
+        #if not dataset == None and not dataset in mp.shared['config'].dataset:
             #mp.log("error", "could not modify model: unknown dataset name '" + dataset + "'!")
             #return None
 
@@ -286,8 +281,8 @@ class workspace:
 
         # check file
         if not os.path.exists(file):
-            if os.path.exists(self._config.path('models') + file + '.mp'):
-                file = self._config.path('models') + file + '.mp'
+            if os.path.exists(mp.shared['config'].path('models') + file + '.mp'):
+                file = mp.shared['config'].path('models') + file + '.mp'
             else:
                 mp.log("error", "could not load model '%s': file does not exist." % file)
                 return None
@@ -316,7 +311,7 @@ class workspace:
         # get filename
         if file == None:
             fileName = '%s.mp' % (model.getName())
-            filePath = self._config.path('models')
+            filePath = mp.shared['config'].path('models')
             file = filePath + fileName
         file = mp.getEmptyFile(file)
 
@@ -374,7 +369,7 @@ class workspace:
         if output == 'display':
             file = None
         elif output == 'file' and not file:
-            file = mp.getEmptyFile(self._config.path('plots') + \
+            file = mp.getEmptyFile(mp.shared['config'].path('plots') + \
                 model.getName() + '/' + objPlot.cfg['name'] + \
                 '.' + objPlot.settings['fileformat'])
             mp.log("console", "create plot: " + file)

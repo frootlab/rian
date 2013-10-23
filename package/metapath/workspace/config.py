@@ -6,9 +6,7 @@ import ConfigParser
 import glob
 
 class config:
-    """
-    configuration management
-    """
+    """Configuration management."""
 
     def __init__(self):
 
@@ -418,6 +416,10 @@ class config:
 
             # get network config
             networkCfg = self.__importNetworkConfigFile(file, format)
+            if networkCfg == None:
+                mp.log("warning", 
+                    "skipping network '" + name + "'")
+                return None
             for key in networkCfg:
                 objConf['config'][key] = networkCfg[key]
 
@@ -1006,6 +1008,12 @@ class networkConfigFileImporter:
         pass
 
     def load(self, file):
+        """Return network configuration as dictionary.
+        
+        Keyword Arguments:
+            file -- ini file containing network configuration
+        """
+    
         netcfg = ConfigParser.ConfigParser()
         netcfg.optionxform = str
         netcfg.read(file)
@@ -1014,92 +1022,142 @@ class networkConfigFileImporter:
         # validate 'network' section
         if not 'network' in netcfg.sections():
             mp.log("warning", 
-                "skipping section '" + section + "': "
-                "network file '" + file + "' does not contain section 'network'!")
+                "file '" + file + "' does not contain section 'network'!")
             return None
 
-        # 'nodes': annotation, default: 'none'
-        if 'nodes' in netcfg.options('network'):
-            network['label_format'] = netcfg.get('network', 'nodes').strip()
-        else:
-            network['label_format'] = 'generic:string'
-
-        # type
+        # 'type': type of network
         if 'type' in netcfg.options('network'):
             network['type'] = netcfg.get('network', 'type').strip().lower()
         else:
             network['type'] = 'auto'
 
-        # 2DO
-
-        #if network['type'] in ['fulllayer']:
-        
-        #elif network['type'] in ['fulllayer']:
-
-
-        # 'layers'
-        if 'layers' in netcfg.options('network'):
-            layer = mp.strToList(netcfg.get('network', 'layers'))
-            network['layer']   = []
-            network['visible'] = []
-            network['hidden']  = []
-            for l in layer:
-                type = l.split(':')[0]
-                name = l.split(':')[1]
-                network['layer'].append(name)
-                if type == 'visible':
-                    network['visible'].append(name)
-                else:
-                    network['hidden'].append(name)
+        # 'labelformat': annotation of nodes, default: 'generic:string'
+        if 'labelformat' in netcfg.options('network'):
+            network['label_format'] = netcfg.get('network', 'nodes').strip()
         else:
+            network['label_format'] = 'generic:string'
+
+        # depending on netwtwork type, use different arguments to describe the network
+        if network['type'] in ['layer', 'multilayer', 'auto']: # 2do restrict to multilayer
+            return self.__getMultiLayerNetwork(file, netcfg, network)
+
+        mp.log("warning", 
+            "file '" + file + "' contains unknown network type '" + network['type'] + "'!")
+        return None
+
+    def __getMultiLayerNetwork(self, file, netcfg, network):
+
+        # 'layers': ordered list of network layers
+        if not 'layers' in netcfg.options('network'):
             mp.log("warning", 
-                "skipping section '" + section + "': "
-                "network file '" + network['file'] + "' missing parameter 'layers'!")
+                "file '" + file + "' does not contain parameter 'layers'!")
             return None
+        else:
+            network['layer'] = mp.strToList(netcfg.get('network', 'layers'))
+
+        # init network dictionary
+        network['visible'] = []
+        network['hidden']  = []
+        network['nodes']   = {}
+        network['edges']   = {}
+
+        # parse '[layer *]' sections and add nodes and layer types to network dict
+        for layer in network['layer']:
+            layerSec = 'layer ' + layer
+            if not layerSec in netcfg.sections():
+                mp.log("warning", 
+                    "file '" + file + "' does not contain information about layer '" + layer + "'!")
+                return None
+
+            # get 'type' of layer ('visible', 'hidden')
+            if not 'type' in netcfg.options(layerSec):
+                mp.log("warning", 
+                    "type of layer '" + layer + "' has to be specified ('visible', 'hidden')!")
+                return None
+            if netcfg.get(layerSec, 'type').lower() in ['visible']:
+                network['visible'].append(layer)
+            elif netcfg.get(layerSec, 'type').lower() in ['hidden']:
+                network['hidden'].append(layer)
+            else:
+                mp.log("warning", 
+                    "unknown type of layer '" + layer + "'!")
+                return None
+
+            # get 'nodes' of layer
+            if not 'nodes' in netcfg.options(layerSec) \
+                and not 'size' in netcfg.options(layerSec) \
+                and not 'file' in netcfg.options(layerSec):
+                mp.log("warning", 
+                    "layer '" + layer + "' does not contain node information!")
+                return None
+
+            if 'nodes' in netcfg.options(layerSec):
+                nodeList = mp.strToList(netcfg.get(layerSec, 'nodes'))
+            elif 'size' in netcfg.options(layerSec):
+                nodeList = ['n' + str(i) for i in \
+                    range(1, int(netcfg.get(layerSec, 'size')) + 1)]
+            elif 'file' in netcfg.options(layerSec):
+                fileHandler = open(mp.shared['config'].getPath(netcfg.get(layerSec, 'file')))
+                fileLines = fileHandler.readlines()
+                nodeList = [node.strip() for node in fileLines]
+
+            network['nodes'][layer] = []
+            for node in nodeList:
+                node = node.strip()
+                if node == '':
+                    continue
+                if not node in network['nodes'][layer]:
+                    network['nodes'][layer].append(node)
+
+        # check network layers
         if network['visible'] == []:
             mp.log("warning", 
-                "skipping section '" + section + "': "
                 "network file '" + network['file'] + "' does not contain visible layers!")
             return None
         if network['hidden'] == []:
             mp.log("warning", 
-                "skipping section '" + section + "': "
                 "network file '" + network['file'] + "' does not contain hidden layers!")
             return None
 
-        # get nodes and edges from binding sections
-        nodes = {}
-        edges = {}
+        # parse '[binding *]' sections and add edges to network dict
         for i in range(len(network['layer']) - 1):
             layerA = network['layer'][i]
             layerB = network['layer'][i + 1]
 
-            if not layerA in nodes:
-                nodes[layerA] = []
-            if not layerB in nodes:
-                nodes[layerB] = []
+            edgeType = layerA + '-' + layerB
+            network['edges'][edgeType] = []
+            edgeSec = 'binding ' + edgeType
+            
+            # create full binfing between two layers if not specified
+            if not edgeSec in netcfg.sections():
+                for nodeA in network['nodes'][layerA]:
+                    for nodeB in network['nodes'][layerB]:
+                        network['edges'][edgeType].append((nodeA, nodeB))
+                continue
 
-            edge_type = layerA + '-' + layerB
-            edge_section = edge_type + ' binding'
-            edges[edge_type] = []
-
-            for nodeA in netcfg.options(edge_section):
+            # get edges from '[binding *]' section
+            for nodeA in netcfg.options(edgeSec):
                 nodeA = nodeA.strip()
-                if nodeA == '':
+                if nodeA == '' or \
+                    not nodeA in network['nodes'][layerA]:
                     continue
-                if not nodeA in nodes[layerA]:
-                    nodes[layerA].append(nodeA)
-                nodesB = mp.strToList(netcfg.get(edge_section, nodeA))
-                for nodeB in nodesB:
+                for nodeB in mp.strToList(netcfg.get(edgeSec, nodeA)):
                     nodeB = nodeB.strip()
-                    if nodeB == '':
+                    if nodeB == '' \
+                        or not nodeB in network['nodes'][layerB] \
+                        or (nodeA, nodeB) in network['edges'][edgeType]:
                         continue
-                    if not nodeB in nodes[layerB]:
-                        nodes[layerB].append(nodeB)
-                    if not (nodeA, nodeB) in edges[edge_type]:
-                        edges[edge_type].append((nodeA, nodeB))
+                    network['edges'][edgeType].append((nodeA, nodeB))
 
-        network['nodes'] = nodes
-        network['edges'] = edges
+        # check network binding
+        for i in range(len(network['layer']) - 1):
+            layerA = network['layer'][i]
+            layerB = network['layer'][i + 1]
+
+            edgeType = layerA + '-' + layerB
+            if network['edges'][edgeType] == []:
+                mp.log("warning", 
+                    "layer '" + layerA + "' and layer '" + layerB + "' are not connected!")
+                return None
 
         return network
