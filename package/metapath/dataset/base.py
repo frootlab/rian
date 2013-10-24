@@ -2,10 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import metapath.common as mp
-import numpy as np
-import copy
-import os
-import re
+import numpy, copy, os, re
 
 class dataset:
     """metaPath base class for datasets"""
@@ -353,7 +350,7 @@ class dataset:
 
                         # update source data columns
                         self.data[src]['array'][colName] = \
-                            (2.0 / (1.0 + np.exp(-1.0 * self.data[src]['array'][colName] ** 2))).astype(float)
+                            (2.0 / (1.0 + numpy.exp(-1.0 * self.data[src]['array'][colName] ** 2))).astype(float)
                 return True
             if algorithm.lower() in ['disttoweight', 'dist']:
                 for src in self.data:
@@ -363,7 +360,7 @@ class dataset:
 
                         # update source data columns
                         self.data[src]['array'][colName] = \
-                            (1.0 - (2.0 / (1.0 + np.exp(-1.0 * self.data[src]['array'][colName] ** 2)))).astype(float)
+                            (1.0 - (2.0 / (1.0 + numpy.exp(-1.0 * self.data[src]['array'][colName] ** 2)))).astype(float)
                 return True
 
         if mp.isSystem(system):
@@ -385,7 +382,7 @@ class dataset:
                 numRows = self.data[src]['array']['label'].size
                 colNames = ('label',) + tuple(self.getColLabels())
                 colFormats = ('<U12',) + tuple(['<f8' for x in colNames])
-                newRecArray = np.recarray((numRows,), dtype = zip(colNames, colFormats))
+                newRecArray = numpy.recarray((numRows,), dtype = zip(colNames, colFormats))
 
                 # set values in record array
                 newRecArray['label'] = self.data[src]['array']['label']
@@ -416,11 +413,11 @@ class dataset:
                 srcStack += (self.getSourceData(src, size, rows), )
         if not srcStack:
             return None
-        data = np.concatenate(srcStack)
+        data = numpy.concatenate(srcStack)
 
         # shuffle data
         if size:
-            np.random.shuffle(data)
+            numpy.random.shuffle(data)
 
         # get column ids
         colIDs = list(data.dtype.names[1:])
@@ -469,18 +466,18 @@ class dataset:
             rowFilterFiltered = [
                 row.split(':')[1] for row in rowFilter
                         if row.split(':')[0] in [source, '*']]
-            rowSelect = np.asarray([
+            rowSelect = numpy.asarray([
                 rowid for rowid, row in enumerate(self.data[source]['array']['label'])
                     if row in rowFilterFiltered])
             if rowSelect.size == 0:
                 return rowSelect
-            srcArray = np.take(self.data[source]['array'], rowSelect)
+            srcArray = numpy.take(self.data[source]['array'], rowSelect)
 
         # if argument 'size' is given, statify data
         if size:
             srcFrac = self.data[source]['fraction']
-            rowSelect = np.random.randint(srcArray.size, size = round(srcFrac * size))
-            return np.take(srcArray, rowSelect)
+            rowSelect = numpy.random.randint(srcArray.size, size = round(srcFrac * size))
+            return numpy.take(srcArray, rowSelect)
 
         return srcArray
 
@@ -525,7 +522,7 @@ class dataset:
         labelStack = ()
         for source in self.data:
             labelStack += (self.data[source]['array']['label'],)
-        labels = np.concatenate(labelStack).tolist()
+        labels = numpy.concatenate(labelStack).tolist()
         return labels
 
     def getColGroups(self):
@@ -646,10 +643,10 @@ class dataset:
         # cluster samples using k-means
         mp.log("info", 'cluster distances using k-means with k = %i' % (groups))
         clusters = self.getClusters(algorithm = 'k-means', data = distance, k = groups)
-        cIDs = np.asarray(clusters)
+        cIDs = numpy.asarray(clusters)
         partition = []
         for cID in range(groups):
-            partition.append(np.where(cIDs == cID)[0].tolist())
+            partition.append(numpy.where(cIDs == cID)[0].tolist())
 
         # get labels
         labeledPartition = []
@@ -716,19 +713,19 @@ class dataset:
         for i in range(numCols - 1):
             for j in range(i + 1, numCols):
 
-                npRowIDs = np.arange(numRows)
+                npRowIDs = numpy.arange(numRows)
 
                 # drop rows until corr(i, j) > sigma or too few rows are left
                 rowIDs = npRowIDs.tolist()
-                corr = np.corrcoef(data[:,i], data[:,j])[0, 1]
+                corr = numpy.corrcoef(data[:,i], data[:,j])[0, 1]
 
                 while (size and len(rowIDs) > size) or \
                     (not size and len(rowIDs) > minsize and corr < threshold):
-                    rowCorr = np.zeros(len(rowIDs))
+                    rowCorr = numpy.zeros(len(rowIDs))
 
                     for id in range(len(rowIDs)):
                         mask = rowIDs[:id] + rowIDs[id:][1:]
-                        rowCorr[id] = np.corrcoef(data[mask, i], data[mask, j])[0, 1]
+                        rowCorr[id] = numpy.corrcoef(data[mask, i], data[mask, j])[0, 1]
 
                     rowMaxID = rowCorr.argmax()
                     corr = rowCorr[rowMaxID]
@@ -745,9 +742,9 @@ class dataset:
                 # expand remaining rows over columns
                 colIDs = [i, j]
                 for id in [id for id in range(numCols) if id not in colIDs]:
-                    if np.corrcoef(data[rowIDs, i], data[rowIDs, id])[0, 1] < threshold:
+                    if numpy.corrcoef(data[rowIDs, i], data[rowIDs, id])[0, 1] < threshold:
                         continue
-                    if np.corrcoef(data[rowIDs, j], data[rowIDs, id])[0, 1] < threshold:
+                    if numpy.corrcoef(data[rowIDs, j], data[rowIDs, id])[0, 1] < threshold:
                         continue
                     colIDs.append(id)
 
@@ -789,7 +786,7 @@ class dataset:
         numRows, numCols = data.shape
 
         # create distance matrix using binary metric
-        distance = np.ones(shape = (numRows, len(biclusters)))
+        distance = numpy.ones(shape = (numRows, len(biclusters)))
         for cID, (cRowIDs, cColIDs) in enumerate(biclusters):
             distance[cRowIDs, cID] = 0
 
@@ -801,7 +798,7 @@ class dataset:
         numRows, numCols = data.shape
 
         # calculate differences in correlation
-        corrDiff = np.zeros(shape = (numRows, len(biclusters)))
+        corrDiff = numpy.zeros(shape = (numRows, len(biclusters)))
         for cID, (cRowIDs, cColIDs) in enumerate(biclusters):
             
             # calculate mean correlation within bicluster
@@ -813,19 +810,19 @@ class dataset:
         
         # calculate distances of samples and clusters
         distance = corrDiff
-        #dist = np.nan_to_num(corrDiff / (np.max(np.max(corrDiff, axis = 0), 0.000001)))
+        #dist = numpy.nan_to_num(corrDiff / (numpy.max(numpy.max(corrDiff, axis = 0), 0.000001)))
         #dist = (dist > 0) * dist
         return distance
 
     def getMeanCorr(self, array, axis = 1):
         if not axis:
             array = array.T
-        cCorr = np.asarray([])
+        cCorr = numpy.asarray([])
         for i in range(array.shape[1] - 1):
             for j in range(i + 1, array.shape[1]):
-                cCorr = np.append(cCorr, np.corrcoef(array[:, i], array[:, j])[0, 1])
+                cCorr = numpy.append(cCorr, numpy.corrcoef(array[:, i], array[:, j])[0, 1])
 
-        return np.mean(cCorr)
+        return numpy.mean(cCorr)
 
     def __csvGetData(self, srcName):
         fileCfg = self.cfg['table'][srcName]['source']
@@ -847,7 +844,7 @@ class dataset:
 
         mp.log('info', "import dataset source: " + file)
 
-        return np.loadtxt(file,
+        return numpy.loadtxt(file,
             skiprows = 1,
             delimiter = delim,
             usecols = usecols,
@@ -898,7 +895,7 @@ class dataset:
     #
 
     def save(self, file):
-        np.savez(file,
+        numpy.savez(file,
             cfg = self.cfg,
             data = self.data)
 
@@ -930,7 +927,7 @@ class dataset:
         return file
 
     def load(self, file):
-        npzfile = np.load(file)
+        npzfile = numpy.load(file)
         self.cfg  = npzfile['cfg'].item()
         self.data = npzfile['data'].item()
         return True

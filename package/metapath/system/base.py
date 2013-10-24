@@ -1,8 +1,11 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 import metapath.common as mp
 import copy
 
 class system:
+    """metaPath base class for systems."""
 
     _config = None
     _params = None
@@ -10,17 +13,13 @@ class system:
     # generic system configuration methods
 
     def __init__(self, *args, **kwargs):
-        """
-        Initialize and configure system.
-        """
+        """Initialize and configure system."""
         self._params = {}
         self._config = {}
         self.configure(*args, **kwargs)
 
     def configure(self, *args, **kwargs):
-        """
-        Configure system and subsystems to network and dataset.
-        """
+        """Configure system and subsystems to network and dataset."""
         if not hasattr(self.__class__, '_configure') \
             or not callable(getattr(self.__class__, '_configure')):
             mp.log('info', 'System does not need to be configured')

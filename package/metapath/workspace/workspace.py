@@ -1,15 +1,17 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 import metapath.common as mp
 import os, copy, pprint
 
 class workspace:
-    """Base class for workspaces."""
+    """metaPath base class for workspaces."""
 
     #
     # WORKSPACE CONFIGURATION
     #
 
-    def __init__(self, project = None, quiet = False):
+    def __init__(self, project = None):
         """Initialize shared configuration."""
 
         # get base configuration
@@ -25,10 +27,12 @@ class workspace:
 
     def load(self, project):
         """Import configuration from project and update paths and logfile."""
+
         return mp.shared['config'].loadProject(project)
 
     def list(self, type = None, namespace = None):
         """Return a list of known objects."""
+
         list = mp.shared['config'].list(type = type, namespace = namespace)
         if not type:
             for item in list:
@@ -41,23 +45,23 @@ class workspace:
                 mp.log('info', "'%s'" % (item[2]))
         return len(list)
 
-    def execute(self, name = None, quiet = False, **kwargs):
+    def execute(self, name = None, **kwargs):
         if not '.' in name:
             scriptName = mp.shared['config'].project() + '.' + name
         else:
             scriptName = name
 
-        config = self.__getConfig(type = 'script', config = scriptName, quiet = True, **kwargs)
+        config = self.__getConfig(type = 'script', config = scriptName, **kwargs)
         
         if not config and not '.' in name:
             scriptName = 'base.' + name
-            config = self.__getConfig(type = 'script', config = scriptName, quiet = True, **kwargs)
+            config = self.__getConfig(type = 'script', config = scriptName, **kwargs)
         if not config:
             return False
         if not os.path.isfile(config['path']):
             mp.log('error', """
                 could not run script \'%s\': file \'%s\' not found!
-                """ % (scriptName, config['path']), quiet = quiet)
+                """ % (scriptName, config['path']))
             return False
         
         import imp
@@ -68,96 +72,136 @@ class workspace:
         """Print object configuration from type and name."""
         return pprint.pprint(mp.shared['config'].get(type, name))
 
-    def dataset(self, config = None, quiet = False, **kwargs):
+    def dataset(self, config = None, **kwargs):
         """Return new dataset instance."""
-        return self.__getInstance('dataset', config, quiet, **kwargs)
+        return self.__getInstance('dataset', config, **kwargs)
 
-    def network(self, config = None, quiet = False, **kwargs):
+    def network(self, config = None, **kwargs):
         """Return new network instance."""
-        return self.__getInstance('network', config, quiet, **kwargs)
+        return self.__getInstance('network', config, **kwargs)
 
-    def system(self, config = None, quiet = False, **kwargs):
+    def system(self, config = None, **kwargs):
         """Return new system instance."""
-        return self.__getInstance('system', config, quiet, **kwargs)
+        return self.__getInstance('system', config, **kwargs)
 
     def model(self, config = None,
         dataset = None, network = None, system = None,
         configure = True, initialize = True, name = None,
-        optimize = False, autosave = False, quiet = False, **kwargs):
+        optimize = False, autosave = False, **kwargs):
         """Return new model instance."""
+
+        mp.log('title', 'create new model')
+        mp.setLog(indent = '+1')
 
         # prepare parameters
         if network == None:
             network = {'type': 'auto'}
 
-        # create instances
-        dataset = self.__getInstance(type = 'dataset', config = dataset, quiet = True, **kwargs)
-        network = self.__getInstance(type = 'network', config = network, quiet = True, **kwargs)
-        system = self.__getInstance(type = 'system', config = system, quiet = True, **kwargs)
+        # create dataset instance if not given via keyword arguments
+        if not mp.isDataset(dataset):
+            dataset = self.__getInstance(type = 'dataset', config = dataset, **kwargs)
+        if not mp.isDataset(dataset): 
+            mp.log('error', 'could not create model: dataset is invalid!')
+            mp.setLog(indent = '-1')
+            return None
+
+        # create network instance if not given via keyword arguments
+        if not mp.isNetwork(network):
+            network = self.__getInstance(type = 'network', config = network, **kwargs)
+        if not mp.isNetwork(network): 
+            mp.log('error', 'could not create model: network is invalid!')
+            mp.setLog(indent = '-1')
+            return None
+
+        # create system instance if not given via keyword arguments
+        if not mp.isSystem(system):
+            system = self.__getInstance(type = 'system', config = system, **kwargs)
+        if not mp.isSystem(system):
+            mp.log('error', 'could not create model: system is invalid!')
+            mp.setLog(indent = '-1')
+            return None
+
+        # get name if not given via keyword argument
+        if name == None:
+            name = '-'.join([dataset.getName(), network.getName(), system.getName()])
 
         # create model instance
-        if dataset == None or network == None or system == None:
-            # fallback: empty model
-            mp.log('error', 'could not create model! creating empty model as fallback', quiet = quiet)
-            model = self.__getInstance(type = 'model', config = config,
-                name = name, quiet = True, empty = True, **kwargs)
-        else:
-            model = self.__getInstance(type = 'model', config = config,
-                dataset = dataset, network = network, system = system,
-                name = name, quiet = quiet, **kwargs)
+        model = self.__getInstance(type = 'model', config = config,
+            dataset = dataset, network = network, system = system,
+            name = name, **kwargs)
+
+        ## create model instance
+        #if dataset == None or network == None or system == None:
+            ## fallback: empty model
+            #mp.log('error', 'could not create model! creating empty model as fallback')
+            #model = self.__getInstance(type = 'model', config = config,
+                #name = name, empty = True, **kwargs)
+        #else:
+            #if name == None:
+                #name = '-'.join([dataset.getName(), network.getName(), system.getName()])
+            #model = self.__getInstance(type = 'model', config = config,
+                #dataset = dataset, network = network, system = system,
+                #name = name, **kwargs)
 
         # configure model (optional)
         if configure:
-            model.configure(quiet = quiet)
+            model.configure()
 
         # initialize model parameters (optional)
         if initialize:
-            model.initialize(quiet = quiet)
+            model.initialize()
 
         # optimize model (optional)
         if optimize:
-            self.optimize(model, optimize, quiet = quiet)
+            self.optimize(model, optimize)
 
         # save model (optional)
         if autosave:
             self.saveModel(model)
 
+        mp.setLog(indent = '-1')
+
         return model
 
-    def __getInstance(self, type = None, config = None, quiet = False, empty = False, **kwargs):
+    def __getInstance(self, type = None, config = None, empty = False, **kwargs):
         """Return new instance of given object class and configuration."""
+
+        # return instance
+        if empty:
+            mp.log('info', 'create empty %s instance' % (type))
+        else:
+            mp.log('info', 'create new %s instance' % (type))
+
+        mp.setLog(indent = '+1')
 
         # import module
         import importlib
         module = importlib.import_module("metapath." + str(type))
 
         # get objects configuration as dictionary
-        config = self.__getConfig(type = type, config = config, quiet = quiet, **kwargs)
+        config = self.__getConfig(type = type, config = config, **kwargs)
         if config == None:
-            mp.log('error', 'could not create %s instance: unknown configuration!' % (type), quiet = quiet)
+            mp.log('error', 'could not create %s instance: unknown configuration!' % (type))
+            mp.setLog(indent = '-1')
             return None
 
         # create new instance of given class and initialize with configuration
         instance = module.empty() if empty \
-            else module.new(config = config, quiet = quiet, **kwargs)
+            else module.new(config = config, **kwargs)
 
         # check class instance
         if not mp.isInstanceType(instance, type):
-            mp.log('error', 'could not create %s instance: invalid configuration!' % (type), quiet = quiet)
-            mp.log('debuginfo', str(config), quiet = quiet)
+            mp.log('error', 'could not create %s instance: invalid configuration!' % (type))
+            mp.log('debuginfo', str(config))
+            mp.setLog(indent = '-1')
             return None
 
-        # return instance
-        if empty:
-            mp.log('info', 'create empty %s instance: \'%s\'' % \
-                (type, instance.getName()), quiet = quiet)
-        else:
-            mp.log('info', 'create new %s instance: \'%s\'' % \
-                (type, instance.getName()), quiet = quiet)
+        mp.log('info', 'name of %s is: \'%s\'' % (type, instance.getName()))
 
+        mp.setLog(indent = '-1')
         return instance
 
-    def __getConfig(self, type = None, config = None, merge = ['params'], quiet = False, **kwargs):
+    def __getConfig(self, type = None, config = None, merge = ['params'], **kwargs):
         """Return object configuration as dictionary."""
         if config == None:
             return {}
@@ -171,19 +215,19 @@ class workspace:
                 params = mp.dictMerge(kwargs['params'], params)
             return mp.shared['config'].get(
                 type = type, name = name,
-                merge = merge, params = params, quiet = quiet)
+                merge = merge, params = params)
         return False
 
     def copy(self, model):
         """Return copy of model instance"""
-        return self.model(quiet = True,
+        return self.model(
             config = model.getConfig(),
             dataset = model.dataset.getConfig(),
             network = model.network.getConfig(),
             system = model.system.getConfig(),
             configure = False, initialize = False)._set(model._get())
 
-    def __getPlot(self, name = None, params = {}, config = {}, quiet = False, **options):
+    def __getPlot(self, name = None, params = {}, config = {}, **options):
         """Return new plot instance"""
 
         # return empty plot instance if no configuration information was given
@@ -199,35 +243,39 @@ class workspace:
 
         # create plot instance
         if not cfgPlot == None:
-            if not quiet:
-                mp.log("info", "create plot instance: '" + name + "'")
+            mp.log("info", "create plot instance: '" + name + "'")
             # merge params
             for param in params.keys():
                 cfgPlot['params'][param] = params[param]
             import metapath.plot as plot
             return plot.new(config = cfgPlot)
         else:
-            if not quiet:
-                mp.log("error", "could not create plot instance: unkown plot-id '" + name + "'")
+            mp.log("error", "could not create plot instance: unkown plot-id '" + name + "'")
             return None
 
-    def optimize(self, model, schedule, quiet = False, **kwargs):
+    def optimize(self, model, schedule, **kwargs):
         """Optimize model instance."""
+
+        mp.log('title', 'optimize model')
+        mp.setLog(indent = '+1')
 
         # check model
         if model.isEmpty():
             mp.log('warning', 'empty model can not be optimized!')
+            mp.setLog(indent = '-1')
             return model
 
         # get optimization configuration
         config = self.__getConfig(
             type = 'schedule', config = schedule,
             merge = ['params', model.system.getName()],
-            quiet = True, **kwargs)
+            **kwargs)
 
-        return model.optimize(schedule = config, quiet = quiet)
+        retVal = model.optimize(schedule = config)
+        mp.setLog(indent = '-1')
+        return retVal
 
-    def loadModel(self, file, quiet = False):
+    def loadModel(self, file):
         """Load model settings from file and return model instance."""
 
         # check file
@@ -239,19 +287,19 @@ class workspace:
                 return None
 
         # load model parameters and configuration from file
-        mp.log('info', 'load model: \'%s\'' % file, quiet = quiet)
+        mp.log('info', 'load model: \'%s\'' % file)
         import cPickle, gzip
         config = cPickle.load(gzip.open(file, 'rb'))
 
         # create empty model instance and set dict
-        return self.model(quiet = True,
+        return self.model(
             config = config['config'],
             dataset = config['dataset']['cfg'],
             network = config['network']['cfg'],
             system = config['system']['config'],
             configure = False, initialize = False)._set(config)
 
-    def saveModel(self, model, file = None, quiet = False):
+    def saveModel(self, model, file = None):
         """Save model settings to file and return filepath."""
 
         # check object class
@@ -274,27 +322,26 @@ class workspace:
             protocol = 2)
 
         # create console message
-        if not quiet:
-            finalName = os.path.basename(file)[:-3]
-            mp.log("info", "save model as: '%s'" % (finalName))
+        finalName = os.path.basename(file)[:-3]
+        mp.log("info", "save model as: '%s'" % (finalName))
 
         return file
 
-    def plot(self, model, plot, output = 'file', file = None, quiet = False, **kwargs):
+    def plot(self, model, plot, output = 'file', file = None, **kwargs):
         """Create plot of model."""
 
         singleModelPlot = True
 
         # if 'model' parameter is a string, load model
         if isinstance(model, str):
-            model = self.loadModel(model, quiet = quiet)
+            model = self.loadModel(model)
         # if 'model' parameter is a list of models, load models
         elif isinstance(model, (list, tuple)):
             singleModelPlot = False
             models = model
             for i, model in enumerate(models):
                 if isinstance(model, str):
-                    models[i] = self.loadModel(model, quiet = quiet)
+                    models[i] = self.loadModel(model)
         elif not mp.isModel(model):
             mp.log("warning", "could not create plot: invalid parameter 'model' given")
             return None
@@ -305,14 +352,14 @@ class workspace:
             mergeDict = plotParams
             for param in kwargs.keys():
                 plotParams[param] = kwargs[param]
-            objPlot = self.__getPlot(name = plotName, params = plotParams, quiet = quiet)
+            objPlot = self.__getPlot(name = plotName, params = plotParams)
             if not objPlot:
                 mp.log("warning", "could not create plot: unknown configuration '%s'" % (plotName))
                 return None
         elif isinstance(plot, dict):
-            objPlot = self.__getPlot(config = plot, quiet = quiet)
+            objPlot = self.__getPlot(config = plot)
         else:
-            objPlot = self.__getPlot(quiet = quiet)
+            objPlot = self.__getPlot()
         if not objPlot:
             return None
 

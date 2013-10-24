@@ -1,44 +1,41 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 import metapath.common as mp
-import networkx as nx
-import copy
+import networkx, copy
 
 class network:
+    """metaPath base class for networks."""
 
     #
     # NETWORK CONFIGURATION
     #
 
     def __init__(self, config = {}, **kwargs):
-        
         self.cfg = None
         self.graph = None
         self.setConfig(config)
 
     def setConfig(self, config):
-        """
-        Set configuration of network from dictionary
-        """
-        
+        """Configure network to given dictionary."""
+
         # create valid config config
         if not isinstance(config, dict):
             self.cfg = {}
         else:
             self.cfg = config.copy()
-        if not 'type' in self.cfg:
-            self.cfg['type'] = 'empty'
-
-        # type 'empty' is used for empty networks
-        if self.cfg['type'] == 'empty':
+        if not 'type' in self.cfg or self.cfg['type'] == 'empty':
             self.cfg = {'type': 'empty', 'name': '', 'id': 0}
             return True
 
+        # 2do -> move functionality to network configuration file!
         # type 'auto' is used for networks
         # wich include all dataset columns as visible units
         if self.cfg['type'] == 'auto':
             self.cfg = {'type': 'auto', 'name': '', 'id': 0}
             return True
 
+        # 2do -> move functionality to network configuration file!
         # type 'autolayer' is used for networks
         # wich are created by layers and sizes
         if self.cfg['type'] == 'autolayer':
@@ -48,21 +45,19 @@ class network:
 
         # type 'layer' is used for networks
         # wich are manualy defined, using a file
-        if self.cfg['type'] == 'layer':
+        if self.cfg['type'].lower() in ['layer', 'multilayer']:
             return self.updateGraph()
 
         return False
 
     def getConfig(self):
-        """
-        return configuration as dictionary
-        """
+        """Return configuration as dictionary."""
+
         return self.cfg.copy()
 
     def __getNodesFromLayers(self):
-        """
-        create nodes from layers
-        """
+        """Create nodes from layers."""
+
         self.cfg['nodes'] = {}
         self.cfg['label_format'] = 'generic:string'
         for layer in self.cfg['layer']:
@@ -72,9 +67,8 @@ class network:
         return True
 
     def __getVisibleNodesFromDataset(self, dataset):
-        """
-        create nodes from dataset
-        """
+        """Create nodes from dataset."""
+
         self.cfg['visible'] = []
         self.cfg['label_format'] = 'generic:string'
         if not 'nodes' in self.cfg:
@@ -90,9 +84,8 @@ class network:
         return True
 
     def __getHiddenNodesFromSystem(self, system):
-        """
-        create nodes from system
-        """
+        """Create nodes from system."""
+
         self.cfg['hidden'] = []
         self.cfg['label_format'] = 'generic:string'
         if not 'nodes' in self.cfg:
@@ -125,37 +118,36 @@ class network:
                     for nodeTo in nodesTo]
         return True
 
-    def configure(self, dataset, system, quiet = True):
-        """
-        configure network to dataset and system
-        """
+    def configure(self, dataset, system):
+        """Configure network to dataset and system."""
 
         # check if network instance is empty
         if self.isEmpty():
-            mp.log('info', 'configure network: \'empty\'', quiet = quiet)
+            mp.log('info', 'configuration is not needed: network is \'empty\'')
             return True
 
         # check if dataset instance is available
-        if dataset == None:
-            mp.log("error", 'could not configure network: no dataset instance given!', quiet = quiet)
+        if not mp.isDataset(dataset):
+            mp.log('error', 'could not configure network: no valid dataset instance given!')
             return False
  
          # check if system instance is available
-        if system == None:
-            mp.log("error", 'could not configure network: no system instance given!', quiet = quiet)
+        if not mp.isSystem(system):
+            mp.log('error', 'could not configure network: no valid system instance given!')
             return False
 
-        mp.log('info', 'configure network: \'%s\'' % (self.getName()), quiet = quiet)
+        mp.log('info', 'configure network: \'%s\'' % (self.getName()))
+        mp.setLog(indent = '+1')
 
         # type: 'auto is used for networks
         # wich are created by datasets (visible units)
         # and systems (hidden units)
         if self.cfg['type'] == 'auto':
-            #mp.log('info', 'configure network: \'auto\'', quiet = quiet)
             self.__getVisibleNodesFromDataset(dataset)
             self.__getHiddenNodesFromSystem(system)
             self.__getEdgesFromNodesAndLayers()
             self.updateGraph()
+            mp.setLog(indent = '-1')
             return True
 
         # type: 'autolayer' is used for networks
@@ -164,38 +156,47 @@ class network:
             self.__getNodesFromLayers()
             self.__getEdgesFromNodesAndLayers()
             self.updateGraph()
+            mp.setLog(indent = '-1')
             return True
 
+        # configure network to dataset
         groups = dataset.getColGroups()
+        changes = []
         for group in groups:
-            self.updateGraph(nodelist = {'type': group, 'list': groups[group]})
+            if not group in self.cfg['nodes'] \
+                or not (groups[group] == self.cfg['nodes'][group]):
+                self.updateGraph(nodelist = {'type': group, 'list': groups[group]})
 
+        mp.setLog(indent = '-1')
         return True
 
     def getName(self):
-        """
-        return name of network (as string)
-        """
+        """Return name of network (as string)."""
         return self.cfg['name'] if 'name' in self.cfg else ''
 
     def isEmpty(self):
-        """
-        Return true if network type is 'empty'
-        """
+        """Return true if network type is 'empty'."""
         return self.cfg['type'] == 'empty'
 
     def updateGraph(self,
         nodelist = {'type': None, 'list': []},
         edgelist = {'type': (None, None), 'list': []}):
-        """
-        create NetworkX graph instance
-        """
+        """Create NetworkX graph instance."""
 
-        # update node list from function parameter
+        # update node list from keyword arguments
         if nodelist['type'] in self.cfg['layer']:
+            # count new nodes
+            addNodes = 0
+            for node in nodelist['list']:
+                if not node in self.cfg['nodes'][nodelist['type']]:
+                    newNodes += 1
+            delNodes = 0
+            for node in self.cfg['nodes'][nodelist['type']]:
+                if not node in nodelist['list']:
+                    delNodes += 1
             self.cfg['nodes'][nodelist['type']] = nodelist['list']
 
-        # update edge list from function parameter
+        # update edge list from keyword arguments
         if edgelist['type'][0] in self.cfg['layer'] and edgelist['type'][1] in self.cfg['layer']:
             indexA = self.cfg['layer'].index(edgelist['type'][0])
             indexB = self.cfg['layer'].index(edgelist['type'][1])
@@ -222,12 +223,25 @@ class network:
             self.graph.clear()
             self.graph['name'] = self.cfg['name']
         except:
-            self.graph = nx.Graph(name = self.cfg['name'])
+            self.graph = networkx.Graph(name = self.cfg['name'])
 
         # add nodes to graph
         sort_id = 0
         for layer_id, layer in enumerate(self.cfg['layer']):
             visible = layer in self.cfg['visible']
+            if nodelist['type'] in self.cfg['layer']:
+                if layer == nodelist['type']:
+                    if addNodes > 0:
+                        mp.log('info', 'adding %i nodes to layer: \'%s\'' % (addNodes, layer))
+                    if delNodes > 0:
+                        mp.log('info', 'deleting %i nodes from layer: \'%s\'' % (delNodes, layer))
+            else:
+                if visible:
+                    mp.log('info', 'adding visible layer: \'' + layer + \
+                        '\' (' + str(len(self.cfg['nodes'][layer])) + ' nodes)')
+                else:
+                    mp.log('info', 'adding hidden layer: \'' + layer + \
+                        '\' (' + str(len(self.cfg['nodes'][layer])) + ' nodes)')
             for layer_node_id, node in enumerate(self.cfg['nodes'][layer]):
                 id = layer + ':' + node
 
@@ -433,5 +447,5 @@ class network:
         
         if format == 'gml':
             G = self.graph.copy()
-            nx.write_gml(G, file)
+            networkx.write_gml(G, file)
     

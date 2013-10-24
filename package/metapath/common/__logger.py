@@ -1,16 +1,15 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import os
-import logging
-import inspect
+
+import os, logging, inspect
+
+__shared = {'quiet': False, 'indent': 0}
 
 def initLogger(logfile = None):
-    """
-    initialize loggers ('null', 'tty' and 'file')
-    """
+    """Initialize loggers ('null', 'tty' and 'file')."""
 
     # initialize null logger
     loggerNull = logging.getLogger(__name__ + '.null')
-    #loggerNull.setLevel(logging.INFO)
 
     # remove all previous handlers and set up null handler
     for h in loggerNull.handlers:
@@ -19,8 +18,6 @@ def initLogger(logfile = None):
     if hasattr(logging, 'NullHandler'):
         nullHandler = logging.NullHandler()
         loggerNull.addHandler(nullHandler)
-    #else:
-    #    print 'oh oh -> old python! You need at least python 2.7 - this could result in some errors ...'
 
     # initialize console logger
     loggerConsole = logging.getLogger(__name__ + '.tty')
@@ -40,7 +37,6 @@ def initLogger(logfile = None):
         os.makedirs(os.path.dirname(logfile))
     loggerFile = logging.getLogger(__name__ + '.file')
     loggerFile.setLevel(logging.INFO)
-    #logging.basicConfig()
 
     # remove all previous handlers and set up file handler
     for h in loggerFile.handlers:
@@ -52,12 +48,30 @@ def initLogger(logfile = None):
     loggerFile.addHandler(fileHandler)
     return True
 
+def setLog(quiet = None, indent = None):
+    """Set global logging options."""
+
+    if quiet in [True, False]:
+        __shared['quiet'] = quiet
+    if isinstance(indent, int):
+        __shared['indent'] = indent
+    elif isinstance(indent, str) and indent[0] in ['+', '-']:
+        if indent[0] == '+':
+            __shared['indent'] += int(indent[1:])
+        else:
+            __shared['indent'] -= int(indent[1:])
+    return True
+
 def log(type, msg, quiet = False):
+    """Log message."""
 
     clrStack = inspect.stack()[1]
     clrMethod = clrStack[3]
     clrModule = inspect.getmodule(clrStack[0]).__name__
     clrName = clrModule + '.' + clrMethod
+
+    quiet = __shared['quiet']
+    indent = __shared['indent']
 
     # define colors
     color = {
@@ -80,47 +94,51 @@ def log(type, msg, quiet = False):
     msg = msg.strip().replace('\n','')
     while '  ' in msg:
         msg = msg.replace('  ', ' ')
+    if indent:
+        ttyMsg = '  ' * indent + msg
+    else:
+        ttyMsg = msg
+    fileMsg = clrName + ' -> ' + msg.strip()
 
     # create logging records (depending on loglevels)
     if type == 'info':
         if not quiet:
-            ttyLog.info(msg)
-        fileLog.info(clrName + ' -> ' + msg.strip())
+            ttyLog.info(ttyMsg)
+        fileLog.info(fileMsg)
         return True
-    if type == 'comment':
-        ttyLog.info(color['blue'] + msg + color['default'])
+    if type == 'title':
+        ttyLog.info(color['blue'] + ttyMsg + color['default'])
         return True
     if type == 'header':
-        ttyLog.info(color['green'] + msg + color['default'])
-        fileLog.info(clrName + ' -> ' + msg.strip())
+        ttyLog.info(color['green'] + ttyMsg + color['default'])
+        fileLog.info(fileMsg)
         return True
     if type == 'warning':
         if not quiet:
-            ttyLog.warning(
-                color['yellow'] + msg + color['default'])
-        fileLog.warning(clrName + ' -> ' + msg.strip())
+            ttyLog.warning(color['yellow'] + ttyMsg + color['default'])
+        fileLog.warning(fileMsg)
         return True
     if type == 'error':
-        ttyLog.error(color['yellow'] + msg + ' (see logfile for debug info)' + color['default'])
-        fileLog.error(clrName + ' -> ' + msg.strip())
+        ttyLog.error(color['yellow'] + ttyMsg + ' (see logfile for debug info)' + color['default'])
+        fileLog.error(fileMsg)
         import traceback
         for line in traceback.format_stack():
             fileLog.error(clrName + ' -> ' + line.strip())
         return True
     if type == 'debuginfo':
-        fileLog.error(clrName + ' -> ' + msg.strip())
+        fileLog.error(fileMsg)
         return True
     if type == 'critical':
-        ttyLog.critical(color['yellow'] + msg + color['default'])
-        fileLog.critical(clrName + ' -> ' + msg.strip())
+        ttyLog.critical(color['yellow'] + ttyMsg + color['default'])
+        fileLog.critical(fileMsg)
         return True
 
     # create logging records (depending on logger)
     if type == 'console':
-        ttyLog.info(msg)
+        ttyLog.info(ttyMsg)
         return True
     if type == 'logfile':
-        fileLog.info(clrName + ' -> ' + msg.strip())
+        fileLog.info(fileMsg)
         return True
 
     log('warning', 'unknown logging type \'%s\'!' % (type))

@@ -1,27 +1,23 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 import metapath.common as mp
-import numpy as np
-import copy
-import time
+import numpy, copy, time
 
 class model:
-    """
-    metaPath base class for graphical models
-    """
+    """metaPath base class for graphical models."""
 
     #
     # METHODS FOR MODEL CONFIGURATION
     #
 
     def __init__(self, config = {}, dataset = None, network = None, system = None, name = None, **kwargs):
-        """
-        Initialize model and configure dataset, network and system.
+        """Initialize model and configure dataset, network and system.
 
-        Parameters
-        ----------
-        dataset : dataset instance
-        network : network instance
-        system : system instance
+        Keyword Arguments:
+            dataset -- dataset instance
+            network -- network instance
+            system -- system instance
         """
 
         # initialize local variables
@@ -41,9 +37,8 @@ class model:
             self.updateConfig()
 
     def __setConfig(self, config):
-        """
-        Set configuration from dictionary
-        """
+        """Set configuration from dictionary."""
+
         self.__config = config.copy()
         if not 'branches' in self.__config \
             or not isinstance(self.__config['branches'], dict):
@@ -51,9 +46,8 @@ class model:
         return True
 
     def __getConfig(self):
-        """
-        Return configuration as dictionary
-        """
+        """Return configuration as dictionary."""
+
         return self.__config.copy()
 
     #
@@ -61,15 +55,13 @@ class model:
     #
 
     def __setDataset(self, dataset):
-        """
-        Set dataset
-        """
+        """Set dataset."""
+
         self.dataset = dataset
         return True
 
-    def __confDataset(self, dataset = None, network = None, quiet = False, **kwargs):
-        """
-        configure model.dataset to given dataset and network
+    def __confDataset(self, dataset = None, network = None, **kwargs):
+        """Configure model.dataset to given dataset and network.
 
         Parameters
         ----------
@@ -83,7 +75,7 @@ class model:
 
         # check if dataset instance is valid
         if not mp.isDataset(self.dataset):
-            mp.log('error', 'could not configure dataset: no dataset instance available!', quiet = quiet)
+            mp.log('error', 'could not configure dataset: no dataset instance available!')
             return False
 
         # check if dataset is empty
@@ -92,17 +84,18 @@ class model:
 
         # prepare params
         if not network and not self.network:
-            mp.log("error", 'could not configure dataset: no network instance available!', quiet = quiet)
+            mp.log("error", 'could not configure dataset: no network instance available!')
             return False
 
-        mp.log('info', 'configure dataset: \'%s\'' % (self.dataset.getName()), quiet = quiet)
-        return self.dataset.configure(quiet = quiet,
-            network = network if not network == None else self.network)
+        mp.log('info', 'configure dataset: \'%s\'' % (self.dataset.getName()))
+        mp.setLog(indent = '+1')
+        retVal = self.dataset.configure(network = network \
+            if not network == None else self.network)
+        mp.setLog(indent = '-1')
+        return retVal
 
     def __getDataset(self):
-        """
-        Return link to dataset instance
-        """
+        """Return link to dataset instance."""
         return self.dataset
 
     #
@@ -110,26 +103,23 @@ class model:
     #
 
     def __setNetwork(self, network):
-        """
-        set network
-        """
+        """Set network."""
+
         self.network = network
         return True
 
-    def __confNetwork(self, dataset = None, network = None, system = None, quiet = False, **kwargs):
-        """
-        configure model.network to given network, dataset and system
+    def __confNetwork(self, dataset = None, network = None, system = None, **kwargs):
+        """Configure model.network to given network, dataset and system.
 
-        Parameters
-        ----------
-        dataset : dataset instance
-        network : network instance
+        Keyword Arguments:
+            dataset -- dataset instance
+            network -- network instance
         """
 
         # link network instance
         if mp.isNetwork(network):
             self.network = network
-        
+
         # check if network instance is valid
         if not mp.isNetwork(self.network):
             mp.log('error', 'could not configure network: no network instance available!')
@@ -149,15 +139,14 @@ class model:
             mp.log("error", 'could not configure network: no system was given!')
             return False
 
-        # configure system and 
-        return self.network.configure(quiet = quiet,
+        # configure network 
+        return self.network.configure(
             dataset = dataset if not dataset == None else self.dataset,
             system = system if not system == None else self.system)
 
     def __getNetwork(self):
-        """
-        Return link to network instance
-        """
+        """Return link to network instance."""
+
         return self.network
 
     #
@@ -165,20 +154,18 @@ class model:
     #
 
     def __setSystem(self, system):
-        """
-        Set system
-        """
+        """Set system."""
+
         self.system = system
         return True
 
-    def __confSystem(self, dataset = None, network = None, system = None, quiet = False, **kwargs):
-        """
-        configure model.system to given dataset, network and system
+    def __confSystem(self, dataset = None, network = None, system = None,  **kwargs):
+        """Configure model.system to given dataset, network and system.
 
         Keyword Arguments:
-        dataset -- metapath dataset instance
-        network -- metapath network instance
-        system -- metapath system instance
+            dataset -- metapath dataset instance
+            network -- metapath network instance
+            system -- metapath system instance
         """
 
         # get current system parameters
@@ -211,9 +198,10 @@ class model:
             network = self.network
 
         # configure system
-        if not quiet:
-            mp.log('info', "configure system: '%s'" % (self.system.getName()))
+        mp.log('info', "configure system: '%s'" % (self.system.getName()))
+        mp.setLog(indent = '+1')
         self.system.configure(network = network, dataset = dataset)
+        mp.setLog(indent = '-1')
 
         # overwrite new model parameters with previous
         if prevModelParams:
@@ -222,9 +210,6 @@ class model:
             #2DO create new entry in actual branch
         else:
             self.__config['branches']['main'] = self.system._get()
-
-        ## update self
-        #self.type = self.system.getClass()
 
         return True
 
@@ -266,7 +251,7 @@ class model:
 
         return True
 
-    def configure(self, dataset = None, network = None, system = None, quiet = False, name = None, **kwargs):
+    def configure(self, dataset = None, network = None, system = None,  name = None, **kwargs):
         """
         configure model to dataset, network and system
 
@@ -297,30 +282,26 @@ class model:
             return False
 
         # configure model
-        if not quiet and not self.isEmpty():
+        if not self.isEmpty():
             mp.log("info", "configure model: '" + self.__config['name'] + "'")
         if not self.__confDataset(dataset = dataset,
-            network = network, quiet = quiet):
+            network = network):
             return False
         if not self.__confNetwork(dataset = self.dataset,
-            network = network, system = system, quiet = quiet):
+            network = network, system = system):
             return False
         if not self.__confSystem(dataset = self.dataset,
-            network = self.network, system = system, quiet = quiet):
+            network = self.network, system = system):
             return False
 
         return True
 
     def getName(self):
-        """
-        return name of model
-        """
+        """Return name of model."""
         return self.__config['name'] if 'name' in self.__config else ''
 
     def setName(self, name):
-        """
-        set name of model
-        """
+        """Set name of model."""
         if isinstance(self.__config, dict):
             self.__config['name'] = name
             return True
@@ -385,7 +366,7 @@ class model:
     # MODIFY MODEL PARAMETERS
     #
 
-    def initialize(self, quiet = False, **kwargs):
+    def initialize(self,  **kwargs):
         """
         initialize model parameters and return self
         """
@@ -397,10 +378,10 @@ class model:
 
         # check system and dataset
         if self.dataset == None:
-            mp.log("error", "could not initialize model parameters: dataset is not yet configured!", quiet = quiet)
+            mp.log("error", "could not initialize model parameters: dataset is not yet configured!")
             return False
         if self.system == None:
-            mp.log("error", "could not initialize model parameters: system is not yet configured!", quiet = quiet)
+            mp.log("error", "could not initialize model parameters: system is not yet configured!")
             return False
 
         # initialization makes no sense in dummy systems
@@ -411,7 +392,7 @@ class model:
         self.system.initParams(self.dataset)
         return self
 
-    def optimize(self, schedule = None, quiet = False, **kwargs):
+    def optimize(self, schedule = None,  **kwargs):
         """
         optimize model parameters and return self
         """
@@ -423,26 +404,25 @@ class model:
 
         # check availability of system and dataset
         if self.dataset == None:
-            mp.log("error", "could not optimize model parameters: dataset is not yet configured!", quiet = quiet)
+            mp.log("error", "could not optimize model parameters: dataset is not yet configured!")
             return False
         if self.system == None:
-            mp.log("error", "could not optimize model parameters: system is not yet configured!", quiet = quiet)
+            mp.log("error", "could not optimize model parameters: system is not yet configured!")
             return False
 
         # check if schedule was given
         if not isinstance(schedule, dict):
-            mp.log("error", "could not optimize model parameters: no valid optimization configuration given!", quiet = quiet)
+            mp.log("error", "could not optimize model parameters: no valid optimization configuration given!")
             return False
 
         # optimization of system parameters
-        mp.log('info', 'optimize model \'%s\': using algorithm \'%s\''
-            % (self.getName(), schedule['name']), quiet = quiet)
+        mp.log('info', 'starting optimization schedule: \'%s\'' % (schedule['name']))
             
         if 'stage' in schedule and len(schedule['stage']) > 0:
             for stage, params in enumerate(config['stage']):
                 self.system.optimizeParams(self.dataset, **params)
         elif 'params' in schedule:
-            self.system.optimizeParams(self.dataset, quiet = quiet, **schedule)
+            self.system.optimizeParams(self.dataset, **schedule)
         return self
 
     #
@@ -516,7 +496,7 @@ class model:
         ## TODO: correlation vs causality effect
 
         # create temporary array which does not contain diag entries
-        A = np.zeros((numRelations - numUnits))
+        A = numpy.zeros((numRelations - numUnits))
         k = 0
         for i in range(numUnits):
             for j in range(numUnits):
@@ -525,8 +505,8 @@ class model:
                 A[k] = matrix[i, j]
                 k += 1
 
-        mu = np.mean(A)
-        sigma = np.std(A)
+        mu = numpy.mean(A)
+        sigma = numpy.std(A)
 
         return mu, sigma
 
@@ -537,7 +517,7 @@ class model:
         data = self.getSampleMeasure(self.dataset.getData(), func = func)
 
         # calculate correlation matrix
-        return np.corrcoef(data)
+        return numpy.corrcoef(data)
 
     # calculate sample distance matrix
     def getSampleDistanceMatrix(self, samples = '*', distfunc = 'euclidean', func = 'plain'):
@@ -546,13 +526,13 @@ class model:
         data = self.getSampleMeasure(self.dataset.getData(), func = func)
 
         # calculate distance matrix
-        D = np.zeros(shape = (data.shape[0], data.shape[0]))
+        D = numpy.zeros(shape = (data.shape[0], data.shape[0]))
         for i in range(D.shape[0]):
             for j in range(D.shape[1]):
                 if i > j:
                     continue
 
-                D[i, j] = np.sqrt(np.sum((data[i,:] - data[j,:]) ** 2))
+                D[i, j] = numpy.sqrt(numpy.sum((data[i,:] - data[j,:]) ** 2))
                 D[j, i] = D[i, j]
 
         return D
@@ -608,7 +588,7 @@ class model:
             data = self.dataset.getData(statistics)
 
         vEval, hEval = self.system.getUnitEval(data, func, block, k, m)
-        mEval = np.mean(vEval)
+        mEval = numpy.mean(vEval)
 
         units = {}
         for i, v in enumerate(self.system.params['v']['label']):
@@ -647,7 +627,7 @@ class model:
         # get data and perform data preprocessing
         data = self.dataset.getData(statistics)
         if not preprocessing == None:
-            plain = np.copy(data)
+            plain = numpy.copy(data)
             data = self.system.getDataRepresentation(data, transformation = preprocessing)
 
         # get relation as matrix
@@ -687,7 +667,7 @@ class model:
         numUnits = matrix.shape[0]
 
         # create temporary array which does not contain diag entries
-        A = np.zeros((numRelations - numUnits))
+        A = numpy.zeros((numRelations - numUnits))
         k = 0
         for i in range(numUnits):
             for j in range(numUnits):
@@ -696,21 +676,21 @@ class model:
                 A[k] = matrix[i, j]
                 k += 1
 
-        mu = np.mean(A)
-        sigma = np.std(A)
+        mu = numpy.mean(A)
+        sigma = numpy.std(A)
 
         if type == 'causality':
-            Amax = np.max(A)
-            Aabs = np.abs(A)
+            Amax = numpy.max(A)
+            Aabs = numpy.abs(A)
             Alist = []
             for i in range(Aabs.size):
                 if Aabs[i] > Amax:
                     continue
                 Alist.append(Aabs[i])
-            A = np.array(Alist)
+            A = numpy.array(Alist)
 
-            mu = np.mean(A)
-            sigma = np.std(A)
+            mu = numpy.mean(A)
+            sigma = numpy.std(A)
 
         return mu, sigma
 
@@ -725,10 +705,10 @@ class model:
         """
 
         # create data and calulate correlation matrix
-        M = np.corrcoef(data.T)
+        M = numpy.corrcoef(data.T)
 
         # create output matrix
-        C = np.zeros(shape = (len(units), len(units)))
+        C = numpy.zeros(shape = (len(units), len(units)))
         for i, u1 in enumerate(units):
             k = self.system.getUnitInfo(u1)['id']
             for j, u2 in enumerate(units):
@@ -756,7 +736,7 @@ class model:
             y = self.system.getUnits()[0]
 
         # prepare causality matrix
-        K = np.zeros((len(y), len(x)))
+        K = numpy.zeros((len(y), len(x)))
 
         # calculate unit values without modification
         mp.log("info", 'calculate %s effect on %s' % (modify, self.getUnitEvalInfo(measure)['name']))

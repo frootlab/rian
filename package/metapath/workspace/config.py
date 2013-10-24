@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 import metapath.common as mp
-import os
-import re
-import ConfigParser
-import glob
+import os, re, ConfigParser, glob
 
 class config:
     """Configuration management."""
@@ -11,7 +8,7 @@ class config:
     def __init__(self):
 
         # internal configuration
-        self.__baseconf = 'metapath.ini'
+        self.__baseconf = 'baseconf.ini'
 
         # configuration storage (dict + index)
         self.__store = {
@@ -92,9 +89,7 @@ class config:
                     '%' + base + '%/' + self.__projectPath[key], create = allowWrite)
 
     def __listUserProjects(self):
-        """
-        return list of user projects
-        """
+        """Return list of user projects."""
 
         projects = []
         prjDirs = self.__basepath['user'] + '*'
@@ -108,9 +103,7 @@ class config:
         return projects
 
     def __listCommonProjects(self):
-        """
-        return list of common projects
-        """
+        """Return list of common projects."""
 
         projects = []
         prjDirs = self.__basepath['common'] + '*'
@@ -123,15 +116,13 @@ class config:
         return projects
 
     def project(self):
-        """
-        return name of current project
-        """
+        """Return name of current project."""
+
         return self.__project
 
     def path(self, key = None):
-        """
-        return path
-        """
+        """Return path."""
+
         if isinstance(key, str) and key in self.__path.keys():
             if isinstance(self.__path[key], dict):
                 return self.__path[key].copy()
@@ -139,14 +130,14 @@ class config:
         return self.__path.copy()
 
     def loadCommon(self):
-        """
-        Import common projects
-        """
-        mp.log('comment', 'import common configuration files')
+        """Import common projects."""
+
+        mp.log('title', 'import common configuration files')
+        mp.setLog(indent = '+1')
 
         # get current project
         curProject = self.__project
-        
+
         # 
         for project in self.__listCommonProjects():
 
@@ -159,13 +150,14 @@ class config:
         # reset to previous project
         self.__project = curProject
 
+        mp.setLog(indent = '-1')
         return True
 
     def loadProject(self, project):
-        """
-        Import configuration files from user project
-        """
-        mp.log('comment', 'import project configuration files')
+        """Import configuration files from user project."""
+
+        mp.log('title', 'import project configuration files')
+        mp.setLog(indent = '+1')
 
         # check if project exists
         if not project in self.__listUserProjects():
@@ -193,12 +185,12 @@ class config:
         # import scripts for current project
         self.__importScriptFilesFromProject()
 
+        mp.setLog(indent = '-1')
         return True
 
     def __updateCachePaths(self):
-        """
-        update dataset cache paths to current project
-        """
+        """Update dataset cache paths to current project."""
+
         for key in self.__store['dataset']:
             self.__store['dataset'][key]['cache_path'] = self.__path['cache']
         return True
@@ -208,9 +200,7 @@ class config:
     #
 
     def __importConfigFilesFromProject(self, files = None):
-        """
-        import all config files from current project
-        """
+        """Import all config files from current project."""
 
         # are files given?
         if files == None:
@@ -223,9 +213,7 @@ class config:
         return True
 
     def __importConfigFile(self, file):
-        """
-        Import config file
-        """
+        """Import configuration (.ini) file."""
 
         # search definition file
         if os.path.isfile(file):
@@ -251,13 +239,11 @@ class config:
         return True
 
     #
-    # import script files
+    # Import script files
     #
 
     def __importScriptFilesFromProject(self, files = None):
-        """
-        import all script files from current project path
-        """
+        """Import all script files from current project path."""
 
         # are files given?
         if files == None:
@@ -270,9 +256,7 @@ class config:
         return True
 
     def __importScriptFile(self, file):
-        """
-        import script file from current project
-        """
+        """Import script file from current project."""
 
         # search definition file
         if os.path.isfile(file):
