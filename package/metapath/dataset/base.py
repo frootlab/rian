@@ -12,41 +12,41 @@ class dataset:
     #
 
     def __init__(self, config = {}, **kwargs):
-        """Set configuration of dataset from dictionary"""
+        """Set configuration of dataset from dictionary."""
         self.cfg = None
         self.data = None
         self.setConfig(config)
         self.data = {}
 
     def setConfig(self, config):
-        """Set configuration of dataset from dictionary"""
+        """Set configuration of dataset from dictionary."""
         self.cfg = config.copy()
         return True
 
     def getConfig(self):
-        """Return configuration as dictionary"""
+        """Return configuration as dictionary."""
         return self.cfg.copy()
 
     def getName(self):
-        """Return name of dataset"""
+        """Return name of dataset."""
         return self.cfg['name'] if 'name' in self.cfg else ''
 
     def isEmpty(self):
-        """Return true if dataset is empty"""
+        """Return true if dataset is empty."""
         return not 'name' in self.cfg or not self.cfg['name']
 
-    def configure(self, network, useCache = True, quiet = False, **kwargs):
+    def configure(self, network, useCache = True, **kwargs):
         """Configure dataset to a given network object
 
         Keyword arguments:
-        network -- metapath network object
-        useCache -- shall data be cached
+            network -- metapath network object
+            useCache -- shall data be cached
         """
 
         # load data from cachefile (if caching is used and cachefile exists)
         cacheFile = self.searchCacheFile(network) if useCache else None
         if cacheFile and self.load(cacheFile):
-            mp.log('info', 'load cachefile: \'%s\'' % (cacheFile), quiet = quiet)
+            mp.log('info', 'load cachefile: \'%s\'' % (cacheFile))
 
             # preprocess data
             if 'preprocessing' in self.cfg.keys():
@@ -75,21 +75,21 @@ class dataset:
             netLblFmt = network.cfg['label_format']
 
             # convert network node labels to common format
-            mp.log('info', 'search network nodes in dataset sources', quiet = quiet)
+            mp.log('info', 'search network nodes in dataset sources')
             convNetGroups = {}
             convNetGroupsLost = {}
             convNetNodes = []
             convNetNodesLost = []
             for group in netGroups:
                 convNetGroups[group], convNetGroupsLost[group] = \
-                    metapath.annotation.convert(netGroups[group], input = netLblFmt, quiet = True)
+                    metapath.annotation.convert(netGroups[group], input = netLblFmt)
                 convNetNodes += convNetGroups[group]
                 convNetNodesLost += convNetGroupsLost[group]
 
             # notify if any network node labels could not be converted
             if convNetNodesLost:
-                mp.log('warning', '%s of %s network nodes could not be converted! (see logfile)'
-                    % (len(convNetNodesLost), len(convNetNodes)), quiet = quiet)
+                mp.log('info', '%s of %s network nodes could not be converted! (see logfile)'
+                    % (len(convNetNodesLost), len(convNetNodes)))
                 ## 2DO get original node labels
                 mp.log('logfile', mp.strToList(convNetNodesLost))
 
@@ -114,7 +114,7 @@ class dataset:
 
             # convert column labes
             convColLabels, convColLabelsLost = \
-                metapath.annotation.convert(origColLabels, input = format, quiet = True)
+                metapath.annotation.convert(origColLabels, input = format)
 
             # notify if any dataset columns could not be converted
             if convColLabelsLost:
@@ -217,7 +217,7 @@ class dataset:
         # save cachefile
         if useCache:
             cacheFile = self.createCacheFile(network)
-            mp.log('info', 'save cachefile: \'%s\'' % (cacheFile), quiet = quiet)
+            mp.log('info', 'save cachefile: \'%s\'' % (cacheFile))
             self.save(cacheFile)
 
         #
@@ -234,40 +234,36 @@ class dataset:
     # DATA PREPROCESSING
     #
 
-    def preprocessData(self, quiet = False, **dict):
-        """Data preprocessing
+    def preprocessData(self, **kwargs):
+        """Data preprocessing.
         
-        1. Data stratification
-        2. Date normalization
-        3. Data transformation
+        Description:
+            Process data stratification, normalization and transformation
         """
-        if not dict:
-            return True
 
-        if 'stratify' in dict.keys():
-            self.stratifyData(dict['stratify'])
-        if 'normalize' in dict.keys():
-            self.normalizeData(dict['normalize'])
-        if 'transform' in dict.keys():
-            self.transformData(dict['transform'])
+        if 'stratify' in kwargs.keys():
+            self.stratifyData(kwargs['stratify'])
+        if 'normalize' in kwargs.keys():
+            self.normalizeData(kwargs['normalize'])
+        if 'transform' in kwargs.keys():
+            self.transformData(kwargs['transform'])
 
         return True
 
     def stratifyData(self, algorithm = 'auto'):
-        """Stratify data
+        """Stratify data.
 
         Keyword arguments:
-        
-        algorithm -- name of algorithm used for stratification
-            'none':
-                probabilities of sources are
-                number of all samples / number of samples in source
-            'auto':
-                probabilities of sources are hierarchical distributed
-                as defined in the configuration
-            'equal':
-                probabilities of sources are
-                1 / number of sources
+            algorithm -- name of algorithm used for stratification
+                'none':
+                    probabilities of sources are
+                    number of all samples / number of samples in source
+                'auto':
+                    probabilities of sources are hierarchical distributed
+                    as defined in the configuration
+                'equal':
+                    probabilities of sources are
+                    1 / number of sources
         """
         mp.log('info', 'preprocessing: stratify data using \'%s\'' % (algorithm))
 
@@ -284,7 +280,8 @@ class dataset:
 
         Keyword arguments:
             algorithm -- name of algorithm used for data normalization
-                'gauss': Gaussian normalization (aka z-transformation)
+                'gauss':
+                    Gaussian normalization (aka z-transformation)
         """
         mp.log('info', 'preprocessing: normalize data using \'%s\'' % (algorithm))
 

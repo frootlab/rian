@@ -132,7 +132,7 @@ class config:
     def loadCommon(self):
         """Import common projects."""
 
-        mp.log('title', 'import common configuration files')
+        mp.log('title', 'import common resources')
         mp.setLog(indent = '+1')
 
         # get current project
@@ -144,8 +144,8 @@ class config:
             # set common project, update paths and import workspaces
             self.__project = project
             self.__updatePaths(base = 'common')
-            self.__importConfigFilesFromProject()
-            self.__importScriptFilesFromProject()
+            self.__scanConfigFiles()
+            self.__scanScriptFiles()
 
         # reset to previous project
         self.__project = curProject
@@ -180,10 +180,10 @@ class config:
         mp.initLogger(logfile = self.__path['logfile'])
 
         # import object configurations for current project
-        self.__importConfigFilesFromProject()
+        self.__scanConfigFiles()
         
         # import scripts for current project
-        self.__importScriptFilesFromProject()
+        self.__scanScriptFiles()
 
         mp.setLog(indent = '-1')
         return True
@@ -199,16 +199,21 @@ class config:
     # import configuration files
     #
 
-    def __importConfigFilesFromProject(self, files = None):
+    def __scanConfigFiles(self, files = None):
         """Import all config files from current project."""
+
+        mp.log('info', 'scanning for configuration files')
+        mp.setLog(indent = '+1')
 
         # are files given?
         if files == None:
             files = self.__path['workspace'] + '*.ini'
 
-        # import definition files
+        # import configuration files
         for file in glob.iglob(self.getPath(files)):
             self.__importConfigFile(file)
+
+        mp.setLog(indent = '-1')
 
         return True
 
@@ -239,11 +244,14 @@ class config:
         return True
 
     #
-    # Import script files
+    # Script files
     #
 
-    def __importScriptFilesFromProject(self, files = None):
-        """Import all script files from current project path."""
+    def __scanScriptFiles(self, files = None):
+        """Scan for scripts files in current project."""
+
+        mp.log('info', 'scanning for script files')
+        mp.setLog(indent = '+1')
 
         # are files given?
         if files == None:
@@ -252,6 +260,8 @@ class config:
         # import definition files
         for file in glob.iglob(self.getPath(files)):
             self.__importScriptFile(file)
+
+        mp.setLog(indent = '-1')
 
         return True
 

@@ -46,9 +46,9 @@ class dbn(system):
             }
 
     def _configure(self, config = None, network = None, dataset = None, update = False, **kwargs):
-        """
-        Configure system and sybsystems to network and dataset.
-        """
+        """Configure system and sybsystems to network and dataset."""
+
+        print 'still everything is fine here :)'
         if not 'check' in self._config:
             self._config['check'] = {
                 'config': False, 'network': False,

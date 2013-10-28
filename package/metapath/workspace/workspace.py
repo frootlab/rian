@@ -130,18 +130,9 @@ class workspace:
             dataset = dataset, network = network, system = system,
             name = name, **kwargs)
 
-        ## create model instance
-        #if dataset == None or network == None or system == None:
-            ## fallback: empty model
-            #mp.log('error', 'could not create model! creating empty model as fallback')
-            #model = self.__getInstance(type = 'model', config = config,
-                #name = name, empty = True, **kwargs)
-        #else:
-            #if name == None:
-                #name = '-'.join([dataset.getName(), network.getName(), system.getName()])
-            #model = self.__getInstance(type = 'model', config = config,
-                #dataset = dataset, network = network, system = system,
-                #name = name, **kwargs)
+        ## create empty model instance
+        #model = self.__getInstance(type = 'model', config = config,
+            #name = name, empty = True, **kwargs)
 
         # configure model (optional)
         if configure:
@@ -151,6 +142,8 @@ class workspace:
         if initialize:
             model.initialize()
 
+        mp.setLog(indent = '-1')
+
         # optimize model (optional)
         if optimize:
             self.optimize(model, optimize)
@@ -158,8 +151,6 @@ class workspace:
         # save model (optional)
         if autosave:
             self.saveModel(model)
-
-        mp.setLog(indent = '-1')
 
         return model
 
@@ -205,9 +196,8 @@ class workspace:
         """Return object configuration as dictionary."""
         if config == None:
             return {}
+        # for loading models it's necessary
         if isinstance(config, dict):
-            print 'this should not happen!!! -> I am workspace.py/__getConfig'
-            quit()
             return copy.deepcopy(config)
         elif isinstance(config, str) and isinstance(type, str):
             name, params = mp.strSplitParams(config)
@@ -278,6 +268,9 @@ class workspace:
     def loadModel(self, file):
         """Load model settings from file and return model instance."""
 
+        mp.log('title', 'import model from file')
+        mp.setLog(indent = '+1')
+
         # check file
         if not os.path.exists(file):
             if os.path.exists(mp.shared['config'].path('models') + file + '.mp'):
@@ -291,13 +284,19 @@ class workspace:
         import cPickle, gzip
         config = cPickle.load(gzip.open(file, 'rb'))
 
-        # create empty model instance and set dict
-        return self.model(
+        # create empty model instance and initialize with config
+        model = self.model(
             config = config['config'],
             dataset = config['dataset']['cfg'],
             network = config['network']['cfg'],
             system = config['system']['config'],
-            configure = False, initialize = False)._set(config)
+            configure = False, initialize = False)
+
+        # set config to set model parameters
+        model._set(config)
+        mp.setLog(indent = '-1')
+
+        return model
 
     def saveModel(self, model, file = None):
         """Save model settings to file and return filepath."""
