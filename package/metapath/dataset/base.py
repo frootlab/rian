@@ -43,6 +43,9 @@ class dataset:
             useCache -- shall data be cached
         """
 
+        mp.log('info', 'configure dataset: \'%s\'' % (self.getName()))
+        mp.setLog(indent = '+1')
+
         # load data from cachefile (if caching is used and cachefile exists)
         cacheFile = self.searchCacheFile(network) if useCache else None
         if cacheFile and self.load(cacheFile):
@@ -51,6 +54,7 @@ class dataset:
             # preprocess data
             if 'preprocessing' in self.cfg.keys():
                 self.preprocessData(**self.cfg['preprocessing'])
+            mp.setLog(indent = '-1')
             return True
 
         # create table with one record for every single dataset files 
@@ -228,6 +232,7 @@ class dataset:
         if 'preprocessing' in self.cfg.keys():
             self.preprocessData(**self.cfg['preprocessing'])
 
+        mp.setLog(indent = '-1')
         return True
 
     #
@@ -241,12 +246,15 @@ class dataset:
             Process data stratification, normalization and transformation
         """
 
+        mp.log('info', 'preprocessing data')
+        mp.setLog(indent = '+1')
         if 'stratify' in kwargs.keys():
             self.stratifyData(kwargs['stratify'])
         if 'normalize' in kwargs.keys():
             self.normalizeData(kwargs['normalize'])
         if 'transform' in kwargs.keys():
             self.transformData(kwargs['transform'])
+        mp.setLog(indent = '-1')
 
         return True
 
@@ -265,7 +273,7 @@ class dataset:
                     probabilities of sources are
                     1 / number of sources
         """
-        mp.log('info', 'preprocessing: stratify data using \'%s\'' % (algorithm))
+        mp.log('info', 'stratify data using \'%s\'' % (algorithm))
 
         if algorithm.lower() in ['auto']:
             return True
@@ -283,7 +291,7 @@ class dataset:
                 'gauss':
                     Gaussian normalization (aka z-transformation)
         """
-        mp.log('info', 'preprocessing: normalize data using \'%s\'' % (algorithm))
+        mp.log('info', 'normalize data using \'%s\'' % (algorithm))
 
         if algorithm.lower() in ['gauss', 'z-trans']:
 
@@ -327,7 +335,7 @@ class dataset:
         """
 
         if isinstance(algorithm, str):
-            mp.log('info', 'preprocessing: transform data using \'%s\'' % (algorithm))
+            mp.log('info', 'transform data using \'%s\'' % (algorithm))
 
             if algorithm.lower() in ['gausstobinary', 'binary']:
                 for src in self.data:

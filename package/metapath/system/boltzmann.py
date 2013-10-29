@@ -67,6 +67,12 @@ class rbm(system):
             self._setDataset(dataset)
         return self._isConfigured()
 
+    def _initParamConfiguration(self):
+        self._setUnits(self._getUnitsFromConfig())
+        self._initUnitParams()
+        self._setLinks(self._getLinksFromConfig())
+        self._initLinkParams()
+
     def _setConfig(self, config, *args, **kwargs):
         """Set configuration from dictionary."""
         mp.dictMerge(self._getSystemDefaultConfig(), self._config)
@@ -114,11 +120,11 @@ class rbm(system):
 
     # DATA EVALUATION
 
-    def _checkData(self, data, quiet = False, **kwargs):
-        """Check if data is binary."""
-        if not (data == data.astype(bool)).sum() == data.size:
-            if not quiet:
-                mp.log("error", "RBMs need binary data!")
+    def _checkDataset(self, dataset):
+        """Check if dataset contains binary values."""
+        if not self._isDatasetBinary(dataset):
+            mp.log('error', 'dataset \'%s\' is not valid: RBMs need binary data!' \
+                % (dataset.getName()))
             return False
         return True
 
@@ -353,11 +359,9 @@ class rbm(system):
                 """ % (config['name'], self.getType()))
             return False
 
-        # check dataset consistency
-        if not self._checkData(dataset.getData(1000), quiet = True):
-            # on negative result use more statistics to get sure
-            if not self._checkData(dataset.getData(100000)):
-                return False
+        # check dataset
+        if not self._checkDataset(dataset):
+            return False
 
         # update optimization configuration
         if 'params' in config:
@@ -1097,9 +1101,7 @@ class grbm(rbm):
     """
 
     def _getSystemDefaultConfig(self):
-        """
-        Return GRBM default configuration as dictionary.
-        """
+        """Return GRBM default configuration as dictionary."""
         return {
             'params': {
                 'samples': '*',
@@ -1133,28 +1135,18 @@ class grbm(rbm):
 
     # GRBM data
 
-    def _checkData(self, data, quiet = False, **kwargs):
-        """
-        Check if data is gauss normalized
-        """
-        if numpy.abs(data.mean()) > 0.05 or numpy.abs(data.std() - 1) > 0.05:
-            if not quiet:
-                mp.log("error", "GRBMs need gauss normalized data!")
-            return False
-        return True
+    def _checkDataset(self, dataset):
+        """Check if dataset contains gauss normalized values."""
+        return self._isDatasetGaussNormalized(dataset)
 
     # GRBM visible units
 
     def _getVisibleUnitDistribution(self, label):
-        """
-        Return distribution of visible units.
-        """
+        """Return distribution of visible units."""
         return 'gauss'
 
     def _initVisibleUnitParams(self, data = None):
-        """
-        Initialize system parameters of all visible units using data.
-        """
+        """Initialize system parameters of all visible units using data."""
         v = len(self._params['v']['label'])
         if data == None:
             self._params['v']['bias'] = numpy.zeros([1, v])
@@ -1165,17 +1157,13 @@ class grbm(rbm):
         return True
 
     def _initHiddenUnitParams(self, data = None):
-        """
-        Initialize system parameters of all hidden units using data.
-        """
+        """Initialize system parameters of all hidden units using data."""
         h = len(self._params['h']['label'])
         self._params['h']['bias'] = numpy.ones((1, h))
         return True
 
     def _getVisibleUnitUpdates(self, vData, hData, vModel, hModel, **kwargs):
-        """
-        Return updates for visible units.
-        """
+        """Return updates for visible units."""
         v = len(self._params['v']['label'])
         W = self._params['W']
         vVar = numpy.exp(self._params['v']['lvar'])

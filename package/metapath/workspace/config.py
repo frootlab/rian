@@ -1,4 +1,6 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 import metapath.common as mp
 import os, re, ConfigParser, glob
 
@@ -789,9 +791,7 @@ class config:
         return cfg
 
     def getPath(self, str, check = False, create = False):
-        """
-        Resolve and create path
-        """
+        """Resolve path."""
 
         # clean up input string
         path = str.strip()
@@ -897,7 +897,6 @@ class scriptFileImporter:
 #
 
 class configFileImporter:
-
     generic  = None
     sections = None
     project  = None
@@ -939,9 +938,7 @@ class configFileImporter:
         return objects
 
     def __readSection(self, cfg, section):
-        """
-        parse sections
-        """
+        """Parse sections."""
 
         # use regular expression to match sections
         reSection = re.compile('\A' + '|'.join(self.sections.keys()))
@@ -1003,7 +1000,7 @@ class networkConfigFileImporter:
 
     def load(self, file):
         """Return network configuration as dictionary.
-        
+
         Keyword Arguments:
             file -- ini file containing network configuration
         """
@@ -1019,23 +1016,42 @@ class networkConfigFileImporter:
                 "file '" + file + "' does not contain section 'network'!")
             return None
 
+        # 'package': python module containing the network class
+        if 'package' in netcfg.options('network'):
+            network['package'] = netcfg.get('network', 'package').strip().lower()
+        else:
+            network['package'] = 'base'
+
+        # 'class': network class
+        if 'class' in netcfg.options('network'):
+            network['class'] = netcfg.get('network', 'class').strip().lower()
+        else:
+            network['class'] = 'network'
+
         # 'type': type of network
         if 'type' in netcfg.options('network'):
             network['type'] = netcfg.get('network', 'type').strip().lower()
         else:
             network['type'] = 'auto'
 
+        # 'description': description of the network
+        if 'description' in netcfg.options('network'):
+            network['description'] = netcfg.get('network', 'type').strip()
+        else:
+            network['description'] = ''
+
+        #2do: put in network dependent sections sections
         # 'labelformat': annotation of nodes, default: 'generic:string'
         if 'labelformat' in netcfg.options('network'):
             network['label_format'] = netcfg.get('network', 'nodes').strip()
         else:
             network['label_format'] = 'generic:string'
 
-        # depending on netwtwork type, use different arguments to describe the network
+        # depending on network type, use different arguments to describe the network
         if network['type'] in ['layer', 'multilayer', 'auto']: # 2do restrict to multilayer
             return self.__getMultiLayerNetwork(file, netcfg, network)
 
-        mp.log("warning", 
+        mp.log("warning",
             "file '" + file + "' contains unknown network type '" + network['type'] + "'!")
         return None
 

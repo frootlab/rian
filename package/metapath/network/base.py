@@ -5,7 +5,7 @@ import metapath.common as mp
 import networkx, copy
 
 class network:
-    """metaPath base class for networks."""
+    """Base class for networks."""
 
     #
     # NETWORK CONFIGURATION
@@ -52,12 +52,10 @@ class network:
 
     def getConfig(self):
         """Return configuration as dictionary."""
-
         return self.cfg.copy()
 
     def __getNodesFromLayers(self):
         """Create nodes from layers."""
-
         self.cfg['nodes'] = {}
         self.cfg['label_format'] = 'generic:string'
         for layer in self.cfg['layer']:
@@ -357,7 +355,31 @@ class network:
                 groups[group] = self.node_labels(type = group)
             allGroups[type] = groups
         return allGroups
-    
+
+    #
+    # accessing layers
+    #
+
+    def layer(self, layer):
+        """Return dictionary containing information about a layer."""
+        nodes = self.nodes(type = layer)
+        if not nodes:
+            return None
+        fistNode = self.node(nodes[0])['params']
+        return {
+            'id': fistNode['type_id'],
+            'label': fistNode['type'],
+            'visible': fistNode['visible'],
+            'nodes': nodes}
+
+    def layers(self, **kwargs):
+        """Return ordered list of layers by label."""
+        layerDict = {self.node(node)['params']['type_id']: \
+            {'label': self.node(node)['params']['type']} \
+            for node in self.nodes()}
+        layerList = [layerDict[layer]['label'] for layer in range(0, len(layerDict))]
+        return layerList
+
     #
     # accessing edges
     #
@@ -366,7 +388,7 @@ class network:
         return self.graph.edge[edge]
     
     def edges(self, **params):
-                
+
         # filter search criteria and order entries
         sorted_list = [None] * self.graph.number_of_edges()
 
@@ -399,14 +421,12 @@ class network:
 
         return filtered_list
     
-    def edge_labels(self, **params):
+    def edge_labels(self, **kwargs):
         list = []
-        for src, tgt in self.edges(**params):
+        for src, tgt in self.edges(**kwargs):
             src_label = self.graph.node[src]['label']
             tgt_label = self.graph.node[tgt]['label']
-            
             list.append((src_label, tgt_label))
-        
         return list
     
     #

@@ -5,7 +5,11 @@ import metapath.common as mp
 import numpy, copy, time
 
 class model:
-    """metaPath base class for graphical models."""
+    """Base class for (graphical) models."""
+    
+    dataset = None
+    network = None
+    system = None
 
     #
     # METHODS FOR MODEL CONFIGURATION
@@ -22,32 +26,24 @@ class model:
 
         # initialize local variables
         self.__config = {}
-        self.dataset = None
-        self.network = None
-        self.system  = None
 
         # update model
-        self.__setConfig(config)
         self.setName(name)
-        self.__setDataset(dataset)
-        self.__setNetwork(network)
-        self.__setSystem(system)
+        mp.log('info', 'linking dataset, network and system instances to model')
+        self.dataset = dataset
+        self.network = network
+        self.system = system
 
         if not self.isEmpty() and self.__checkModel():
             self.updateConfig()
 
     def __setConfig(self, config):
         """Set configuration from dictionary."""
-
         self.__config = config.copy()
-        if not 'branches' in self.__config \
-            or not isinstance(self.__config['branches'], dict):
-            self.__config['branches'] = {}
         return True
 
     def __getConfig(self):
         """Return configuration as dictionary."""
-
         return self.__config.copy()
 
     #
@@ -56,18 +52,23 @@ class model:
 
     def __setDataset(self, dataset):
         """Set dataset."""
-
         self.dataset = dataset
         return True
+
+    def __getDataset(self):
+        """Return link to dataset instance."""
+        return self.dataset
 
     def __confDataset(self, dataset = None, network = None, **kwargs):
         """Configure model.dataset to given dataset and network.
 
-        Parameters
-        ----------
-        dataset : dataset instance
-        network : network instance
+        Keyword Arguments:
+            dataset -- dataset instance
+            network -- network instance
         """
+
+        dataset = self.dataset
+        network = self.network
 
         # link dataset instance
         if mp.isDataset(dataset):
@@ -87,16 +88,8 @@ class model:
             mp.log("error", 'could not configure dataset: no network instance available!')
             return False
 
-        mp.log('info', 'configure dataset: \'%s\'' % (self.dataset.getName()))
-        mp.setLog(indent = '+1')
-        retVal = self.dataset.configure(network = network \
+        return self.dataset.configure(network = network \
             if not network == None else self.network)
-        mp.setLog(indent = '-1')
-        return retVal
-
-    def __getDataset(self):
-        """Return link to dataset instance."""
-        return self.dataset
 
     #
     # MODEL.NETWORK
@@ -104,9 +97,12 @@ class model:
 
     def __setNetwork(self, network):
         """Set network."""
-
         self.network = network
         return True
+
+    def __getNetwork(self):
+        """Return link to network instance."""
+        return self.network
 
     def __confNetwork(self, dataset = None, network = None, system = None, **kwargs):
         """Configure model.network to given network, dataset and system.
@@ -144,20 +140,18 @@ class model:
             dataset = dataset if not dataset == None else self.dataset,
             system = system if not system == None else self.system)
 
-    def __getNetwork(self):
-        """Return link to network instance."""
-
-        return self.network
-
     #
     # MODEL.SYSTEM
     #
 
     def __setSystem(self, system):
         """Set system."""
-
         self.system = system
         return True
+
+    def __getSystem(self):
+        """Return link to system instance."""
+        return self.system
 
     def __confSystem(self, dataset = None, network = None, system = None,  **kwargs):
         """Configure model.system to given dataset, network and system.
@@ -198,10 +192,7 @@ class model:
             network = self.network
 
         # configure system
-        mp.log('info', "configure system: '%s'" % (self.system.getName()))
-        mp.setLog(indent = '+1')
         self.system.configure(network = network, dataset = dataset)
-        mp.setLog(indent = '-1')
 
         # overwrite new model parameters with previous
         if prevModelParams:
@@ -212,12 +203,6 @@ class model:
             self.__config['branches']['main'] = self.system._get()
 
         return True
-
-    def __getSystem(self):
-        """
-        Return link to system instance
-        """
-        return self.system
 
     def __checkModel(self, allowNone = False):
         if (allowNone and self.dataset == None) \
@@ -232,9 +217,7 @@ class model:
         return True
 
     def updateConfig(self):
-        """
-        Update model configuration
-        """
+        """Update model configuration."""
 
         # set version of model
         self.__config['version'] = mp.version()
@@ -248,52 +231,73 @@ class model:
                 self.setName('%s-%s-%s' % (
                     self.dataset.getName(), self.network.getName(),
                     self.system.getName()))
-
         return True
 
-    def configure(self, dataset = None, network = None, system = None,  name = None, **kwargs):
-        """
-        configure model to dataset, network and system
+    #def configure(self, dataset = None, network = None, system = None, name = None, **kwargs):
+        #"""Configure model to given dataset, network and system
 
-        Parameters
-        ----------
-        dataset : dataset instance
-        network : network instance
-        system :  system instance
-        """
+        #Keyword Arguments:
+            #dataset -- dataset instance
+            #network -- network instance
+            #system --  system instance
+        #"""
 
-        # verify parameters
-        if dataset == None and self.dataset == None \
-            and network == None and self.network == None \
-            and system == None and self.system == None:
-            if not self.isEmpty():
-                mp.log("error", 'could not configure model: missing information!')
-                return False
-            else:
-                return True
-        if not (dataset == None or mp.isDataset(dataset)):
-            mp.log("error", 'could not configure model: parameter "dataset" is not valid!')
-            return False
-        if not (network == None or mp.isNetwork(network)):
-            mp.log("error", 'could not configure model: parameter "network" is not valid!')
-            return False
-        if not (system == None or mp.isSystem(system)):
-            mp.log("error", 'could not configure model: parameter "system" is not valid!')
-            return False
+        #mp.log('info', 'configure model \'%s\'' % (self.getName()))
+        #mp.setLog(indent = '+1')
 
-        # configure model
-        if not self.isEmpty():
-            mp.log("info", "configure model: '" + self.__config['name'] + "'")
-        if not self.__confDataset(dataset = dataset,
-            network = network):
-            return False
-        if not self.__confNetwork(dataset = self.dataset,
-            network = network, system = system):
-            return False
-        if not self.__confSystem(dataset = self.dataset,
-            network = self.network, system = system):
-            return False
+        ## verify parameters
+        #if dataset == None and self.dataset == None \
+            #and network == None and self.network == None \
+            #and system == None and self.system == None:
+            #if self.isEmpty():
+                #return True
+            #mp.log("error", 'could not configure model: missing information!')
+            #return False
+        #if not (dataset == None or mp.isDataset(dataset)):
+            #mp.log("error", 'could not configure model: parameter "dataset" is not valid!')
+            #return False
+        #if not (network == None or mp.isNetwork(network)):
+            #mp.log("error", 'could not configure model: parameter "network" is not valid!')
+            #return False
+        #if not (system == None or mp.isSystem(system)):
+            #mp.log("error", 'could not configure model: parameter "system" is not valid!')
+            #return False
 
+        ### check classes of given objects
+        ##if not mp.isDataset(dataset):
+            ##mp.log("error", 'could not configure model: dataset is not valid!')
+            ##mp.setLog(indent = '-1')
+            ##return False
+        ##if not mp.isNetwork(network):
+            ##mp.log("error", 'could not configure model: network is not valid!')
+            ##mp.setLog(indent = '-1')
+            ##return False
+        ##if not mp.isSystem(system):
+            ##mp.log("error", 'could not configure model: system is not valid!')
+            ##mp.setLog(indent = '-1')
+            ##return False
+
+        ## configure model
+        #if not self.__confDataset(dataset = dataset,
+            #network = network):
+            #return False
+        #if not self.__confNetwork(dataset = self.dataset,
+            #network = network, system = system):
+            #return False
+        #if not self.__confSystem(dataset = self.dataset,
+            #network = self.network, system = system):
+            #return False
+
+        #return True
+
+    def configure(self):
+        """Configure model."""
+        mp.log('info', 'configure model \'%s\'' % (self.getName()))
+        mp.setLog(indent = '+1')
+        self.dataset.configure(network = self.network)
+        self.network.configure(dataset = self.dataset, system = self.system)
+        self.system.configure(network = self.network, dataset = self.dataset)
+        mp.setLog(indent = '-1')
         return True
 
     def getName(self):
@@ -308,9 +312,7 @@ class model:
         return False
 
     def isEmpty(self):
-        """
-        return true if model is empty
-        """
+        """Return true if model is empty."""
         return not 'name' in self.__config or not self.__config['name']
 
     #

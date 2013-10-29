@@ -5,7 +5,7 @@ import metapath.common as mp
 import os, copy, pprint
 
 class workspace:
-    """metaPath base class for workspaces."""
+    """Base class for workspaces."""
 
     #
     # WORKSPACE CONFIGURATION
@@ -46,6 +46,7 @@ class workspace:
         return len(list)
 
     def execute(self, name = None, **kwargs):
+        """Execute python script."""
         if not '.' in name:
             scriptName = mp.shared['config'].project() + '.' + name
         else:
@@ -93,46 +94,10 @@ class workspace:
         mp.log('title', 'create new model')
         mp.setLog(indent = '+1')
 
-        # prepare parameters
-        if network == None:
-            network = {'type': 'auto'}
-
-        # create dataset instance if not given via keyword arguments
-        if not mp.isDataset(dataset):
-            dataset = self.__getInstance(type = 'dataset', config = dataset, **kwargs)
-        if not mp.isDataset(dataset): 
-            mp.log('error', 'could not create model: dataset is invalid!')
-            mp.setLog(indent = '-1')
-            return None
-
-        # create network instance if not given via keyword arguments
-        if not mp.isNetwork(network):
-            network = self.__getInstance(type = 'network', config = network, **kwargs)
-        if not mp.isNetwork(network): 
-            mp.log('error', 'could not create model: network is invalid!')
-            mp.setLog(indent = '-1')
-            return None
-
-        # create system instance if not given via keyword arguments
-        if not mp.isSystem(system):
-            system = self.__getInstance(type = 'system', config = system, **kwargs)
-        if not mp.isSystem(system):
-            mp.log('error', 'could not create model: system is invalid!')
-            mp.setLog(indent = '-1')
-            return None
-
-        # get name if not given via keyword argument
-        if name == None:
-            name = '-'.join([dataset.getName(), network.getName(), system.getName()])
-
         # create model instance
-        model = self.__getInstance(type = 'model', config = config,
+        model = self.__getModelInstance(config = config,
             dataset = dataset, network = network, system = system,
-            name = name, **kwargs)
-
-        ## create empty model instance
-        #model = self.__getInstance(type = 'model', config = config,
-            #name = name, empty = True, **kwargs)
+            name = name)
 
         # configure model (optional)
         if configure:
@@ -142,8 +107,6 @@ class workspace:
         if initialize:
             model.initialize()
 
-        mp.setLog(indent = '-1')
-
         # optimize model (optional)
         if optimize:
             self.optimize(model, optimize)
@@ -152,17 +115,14 @@ class workspace:
         if autosave:
             self.saveModel(model)
 
+        mp.setLog(indent = '-1')
+
         return model
 
     def __getInstance(self, type = None, config = None, empty = False, **kwargs):
-        """Return new instance of given object class and configuration."""
-
-        # return instance
-        if empty:
-            mp.log('info', 'create empty %s instance' % (type))
-        else:
-            mp.log('info', 'create new %s instance' % (type))
-
+        """Return new instance of given object type and configuration."""
+        mp.log('info', 'create %s %s instance' % \
+            ('empty' if empty else 'new', type))
         mp.setLog(indent = '+1')
 
         # import module
@@ -180,17 +140,62 @@ class workspace:
         instance = module.empty() if empty \
             else module.new(config = config, **kwargs)
 
-        # check class instance
+        # check instance class
         if not mp.isInstanceType(instance, type):
             mp.log('error', 'could not create %s instance: invalid configuration!' % (type))
-            mp.log('debuginfo', str(config))
             mp.setLog(indent = '-1')
             return None
 
         mp.log('info', 'name of %s is: \'%s\'' % (type, instance.getName()))
-
         mp.setLog(indent = '-1')
         return instance
+
+    def __getModelInstance(self, config = None,
+        dataset = None, network = None, system = None, name = None):
+        """Return new model instance."""
+
+        mp.log('info', 'create new model instance')
+        mp.setLog(indent = '+1')
+
+        # prepare parameters
+        if network == None:
+            network = {'type': 'auto'}
+
+        # create dataset instance if not given via keyword arguments
+        if not mp.isDataset(dataset):
+            dataset = self.__getInstance(type = 'dataset', config = dataset)
+        if not mp.isDataset(dataset): 
+            mp.log('error', 'could not create model instance: dataset is invalid!')
+            mp.setLog(indent = '-1')
+            return None
+
+        # create network instance if not given via keyword arguments
+        if not mp.isNetwork(network):
+            network = self.__getInstance(type = 'network', config = network)
+        if not mp.isNetwork(network): 
+            mp.log('error', 'could not create model instance: network is invalid!')
+            mp.setLog(indent = '-1')
+            return None
+
+        # create system instance if not given via keyword arguments
+        if not mp.isSystem(system):
+            system = self.__getInstance(type = 'system', config = system)
+        if not mp.isSystem(system):
+            mp.log('error', 'could not create model instance: system is invalid!')
+            mp.setLog(indent = '-1')
+            return None
+
+        # get name if not given via keyword argument
+        if name == None:
+            name = '-'.join([dataset.getName(), network.getName(), system.getName()])
+
+        # create model instance
+        model = self.__getInstance(type = 'model', config = config,
+            dataset = dataset, network = network, system = system,
+            name = name)
+
+        mp.setLog(indent = '-1')
+        return model
 
     def __getConfig(self, type = None, config = None, merge = ['params'], **kwargs):
         """Return object configuration as dictionary."""
