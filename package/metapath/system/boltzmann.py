@@ -347,39 +347,54 @@ class rbm(system):
             and self._setHiddenUnitParams(params)
             and self._setLinkParams(params))
 
-    def _optimizeParams(self, dataset, quiet = False, **config):
+    def _getParams(self):
+        """Return dictionary with all parameters."""
+        return self._params.copy()
+
+    def _getInvertedParams(self):
+        """Return dictionary with (visible <-> hidden) switched parameters."""
+        return {
+            'v': self._params['h'].copy(),
+            'h': self._params['v'].copy(),
+            'W': self._params['W'].T,
+            'A': self._params['A'].T}
+
+    def _optimizeParams(self, dataset, **kwargs):
         """Optimize system parameters."""
 
-        # check if optimization is supported by this system type
-        if 'params' in config \
-            and not self.getType() in config['params']:
-            mp.log('error', """
-                could not optimize model:
-                optimization '%s' is not supported by '%s'
-                """ % (config['name'], self.getType()))
-            return False
+        # check for 'params' and update configuration
+        if 'params' in kwargs:
+            if not self.getType() in kwargs['params']:
+                mp.log('error', """
+                    could not optimize model:
+                    schedule '%s' does not include '%s'
+                    """ % (kwargs['name'], self.getType()))
+                return False
+            mp.dictMerge(kwargs['params'][self.getType()],
+                self._config['optimize'])
 
         # check dataset
         if not self._checkDataset(dataset):
             return False
 
-        # update optimization configuration
-        if 'params' in config:
-            config = config['params'][self.getType()]
-            for key in config.keys(): # 2do use dictmerge
-                self._config['optimize'][key] = config[key]
-
-        # copy optimization configuration
-        config = self._config['optimize'].copy()
-
         # time estimation
-        if config['estimateTime']:
+        if self._config['optimize']['estimateTime']:
             estimTime = True
             startTime = time.time()
-            mp.log('info', 'estimating time for calculation of %i updates ...' % (config['updates']), quiet = quiet)
+            mp.log('info', """
+                estimating time for calculation
+                of %i updates ...""" % \
+                (self._config['optimize']['updates']))
         else:
             estimTime = False
             startTime = time.time()
+
+        # create bunch of test data if optimization should be inspected
+        if self._config['optimize']['inspect']:
+            testData = dataset.getData()
+
+        # copy optimization configuration
+        config = self._config['optimize'].copy()
 
         # optimization
         for iteration in xrange(config['iterations']):
@@ -398,7 +413,7 @@ class rbm(system):
                     estimStr = time.strftime('%H:%M',
                         time.localtime(time.time() + estim))
                     mp.log('info', 'estimation: %.1fs (finishing time: %s)'
-                        % (estim, estimStr), quiet = quiet)
+                        % (estim, estimStr))
                     estimTime = False
 
                 # get data (sample from minibatches)
@@ -406,11 +421,13 @@ class rbm(system):
                     data = dataset.getData(config['minibatchSize'])
 
                 # inspect optimization
-                if config['inspect'] and epoch % config['inspectInterval'] == 0 and not estimTime: 
-                    mp.log('info', '%s of system after %s updates: %.2f' % (
-                        config['inspectFunction'].title(), epoch,
-                        self._getDataEval(data = dataset.getData(100000),
-                        func = config['inspectFunction'])), quiet = quiet)
+                if config['inspect'] and epoch % config['inspectInterval'] == 0 and not estimTime:
+                    value = self._getDataEval(
+                        data = testData,
+                        func = config['inspectFunction'])
+                    progress = float(epoch) / float(config['updates']) * 100.0
+                    measure = config['inspectFunction'].title()
+                    mp.log('info', 'finished %.1f%%: %s = %.2f' % (progress, measure, value))
 
                 # get system estimations (model)
                 if config['updateAlgorithm'] == 'CD':
@@ -537,15 +554,11 @@ class rbm(system):
         return evalDict
 
     def _getUnitEvalInformation(self, func):
-        """
-        Return information about unit evaluation.
-        """
+        """Return information about unit evaluation."""
         return self._getUnitEval(None, func = func, info = True)
 
     def _getUnitEvalEnergy(self, data, **kwargs):
-        """
-        Return local energy of units.
-        """
+        """Return local energy of units."""
         return (self._getVisibleUnitEvalEnergy(data),
             self._getHiddenUnitEvalEnergy(data))
 
@@ -630,8 +643,8 @@ class rbm(system):
         return relIntApprox, None
 
     def _getUnitEvalRelativeExtPerfomance(self, data, block = [], k = 1, **kwargs):
-        """
-        Return "performance (extrinsic)" of units.
+        """Return "performance (extrinsic)" of units.
+
         extrelperf := relApprox where model(v) is generated with data(v) = mean(data(v))
         """
         relExtApprox = numpy.empty(len(self._params['v']['label']))
@@ -708,7 +721,7 @@ class rbm(system):
         """Return reconstructed values of visible units as numpy array.
 
         Arguments:
-        vExpect -- Expectation values for visible units.
+            vExpect -- Expectation values for visible units.
         """
         return (vExpect > 0.5).astype(float)
 
@@ -716,7 +729,7 @@ class rbm(system):
         """Return gauss distributed samples for visible units as numpy array.
 
         Arguments:
-        vExpect -- Expectation values for visible units.
+            vExpect -- Expectation values for visible units.
         """
         return (vExpect > numpy.random.rand(vExpect.shape[0], vExpect.shape[1])).astype(float)
 
@@ -887,9 +900,7 @@ class rbm(system):
         return True
 
     def _getLinkParams(self, links = []):
-        """
-        Return link parameters
-        """
+        """Return link parameters."""
         if not links:
             links = self._getLinksFromConfig()
 
@@ -911,14 +922,14 @@ class rbm(system):
                     'A': self._params['A'][i, j],
                     'W': self._params['W'][i, j] }
             else:
-                mp.log("warning", 'could not get parameters for link (%s → %s): link could not be found!' % (link[0], link[1]))
+                mp.log('warning', """
+                    could not get parameters for link (%s → %s):
+                    link could not be found!""" % (link[0], link[1]))
                 continue
         return linkParams
 
     def _setLinkParams(self, params):
-        """
-        Set link parameters and update link matrices using dictionary.
-        """
+        """Set link parameters and update link matrices using dictionary."""
         for i, v in enumerate(self._params['v']['label']):
             if not v in params['v']['label']:
                 continue
@@ -932,15 +943,11 @@ class rbm(system):
         return True
 
     def _checkLinkParams(self, params):
-        """
-        Check if system parameter dictionary is valid respective to links.
-        """
+        """Check if system parameter dictionary is valid respective to links."""
         return ('A' in params and 'W' in params)
 
     def _removeLinks(self, links = []):
-        """
-        Remove links from adjacency matrix using list of links.
-        """
+        """Remove links from adjacency matrix using list of links."""
         if not self._checkParams(self._params): # check params
             mp.log("error", "could not remove links: units have not yet been set yet!")
             return False
@@ -963,9 +970,7 @@ class rbm(system):
         return self._setLinks(curLinks)
 
     def _removeLinksByThreshold(self, method = None, threshold = None):
-        """
-        Remove links from adjacency matrix using threshold for parameters.
-        """
+        """Remove links from adjacency matrix using threshold for parameters."""
         if not self._checkParams(self._params): # check params
             mp.log("error", "could not delete links: units have not yet been set yet!")
             return False
@@ -1009,9 +1014,7 @@ class rbm(system):
         return False
 
     def _getLinkEval(self, data, func = 'energy', info = False, **kwargs):
-        """
-        Return unit evaluation.
-        """
+        """Return link evaluation values."""
         evalFuncs = {
             'energy': ['local energy', 'Energy'],
             'adjacency': ['link adjacency', 'Adjacency'],
@@ -1034,21 +1037,15 @@ class rbm(system):
         return evalDict
 
     def _getLinkEvalWeight(self, data, **kwargs):
-        """
-        Return link weights of all links as numpy array.
-        """
+        """Return link weights of all links as numpy array."""
         return self._params['W']
 
     def _getLinkEvalAdjacency(self, data, **kwargs):
-        """
-        Return link adjacency of all links as numpy array.
-        """
+        """Return link adjacency of all links as numpy array."""
         return self._params['A']
 
     def _getLinkEvalEnergy(self, data):
-        """
-        Return link energy of all links as numpy array.
-        """
+        """Return link energy of all links as numpy array."""
         hData = self._getHiddenUnitValue(self._getHiddenUnitExpect(data))
         if self._config['optimize']['useAdjacency']:
             return -(self._params['A'] * self._params['W']
@@ -1056,17 +1053,13 @@ class rbm(system):
         return -(self._params['W'] * numpy.dot(data.T, hData) / data.shape[0])
 
     def _getLinkUpdates(self, vData, hData, vModel, hModel, **kwargs):
-        """
-        Return updates for links.
-        """
+        """Return updates for links."""
         return { 'W': (numpy.dot(vData.T, hData) - numpy.dot(vModel.T, hModel))
             / vData.shape[0] * self._config['optimize']['updateRate']
             * self._config['optimize']['updateFactorWeights']}
 
     def _updateLinks(self, **updates):
-        """
-        Set updates for links.
-        """
+        """Set updates for links."""
         self._params['W'] += updates['W']
         return True
 

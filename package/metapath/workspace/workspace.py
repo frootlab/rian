@@ -107,6 +107,8 @@ class workspace:
         if initialize:
             model.initialize()
 
+        mp.setLog(indent = '-1')
+
         # optimize model (optional)
         if optimize:
             self.optimize(model, optimize)
@@ -114,8 +116,6 @@ class workspace:
         # save model (optional)
         if autosave:
             self.saveModel(model)
-
-        mp.setLog(indent = '-1')
 
         return model
 

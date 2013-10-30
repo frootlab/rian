@@ -334,39 +334,44 @@ class dataset:
             colLabels -- ...
         """
 
-        if isinstance(algorithm, str):
+        if isinstance(algorithm, str) \
+            and algorithm.lower() in ['gausstobinary', 'binary']:
             mp.log('info', 'transform data using \'%s\'' % (algorithm))
+            for src in self.data:
 
-            if algorithm.lower() in ['gausstobinary', 'binary']:
-                for src in self.data:
+                # update source per column (recarray)
+                for colName in self.data[src]['array'].dtype.names[1:]:
 
-                    # update source per column (recarray)
-                    for colName in self.data[src]['array'].dtype.names[1:]:
+                    # update source data columns
+                    self.data[src]['array'][colName] = \
+                        (self.data[src]['array'][colName] > 0.0).astype(float)
+            return True
 
-                        # update source data columns
-                        self.data[src]['array'][colName] = \
-                            (self.data[src]['array'][colName] > 0.0).astype(float)
-                return True
-            if algorithm.lower() in ['gausstoweight', 'weight']:
-                for src in self.data:
+        if isinstance(algorithm, str) \
+            and algorithm.lower() in ['gausstoweight', 'weight']:
+            mp.log('info', 'transform data using \'%s\'' % (algorithm))
+            for src in self.data:
 
-                    # update source per column (recarray)
-                    for colName in self.data[src]['array'].dtype.names[1:]:
+                # update source per column (recarray)
+                for colName in self.data[src]['array'].dtype.names[1:]:
 
-                        # update source data columns
-                        self.data[src]['array'][colName] = \
-                            (2.0 / (1.0 + numpy.exp(-1.0 * self.data[src]['array'][colName] ** 2))).astype(float)
-                return True
-            if algorithm.lower() in ['disttoweight', 'dist']:
-                for src in self.data:
+                    # update source data columns
+                    self.data[src]['array'][colName] = \
+                        (2.0 / (1.0 + numpy.exp(-1.0 * self.data[src]['array'][colName] ** 2))).astype(float)
+            return True
 
-                    # update source per column (recarray)
-                    for colName in self.data[src]['array'].dtype.names[1:]:
+        if isinstance(algorithm, str) \
+            and algorithm.lower() in ['disttoweight', 'dist']:
+            mp.log('info', 'transform data using \'%s\'' % (algorithm))
+            for src in self.data:
 
-                        # update source data columns
-                        self.data[src]['array'][colName] = \
-                            (1.0 - (2.0 / (1.0 + numpy.exp(-1.0 * self.data[src]['array'][colName] ** 2)))).astype(float)
-                return True
+                # update source per column (recarray)
+                for colName in self.data[src]['array'].dtype.names[1:]:
+
+                    # update source data columns
+                    self.data[src]['array'][colName] = \
+                        (1.0 - (2.0 / (1.0 + numpy.exp(-1.0 * self.data[src]['array'][colName] ** 2)))).astype(float)
+            return True
 
         if mp.isSystem(system):
             mp.log('info', 'preprocessing: transform data using system \'%s\'' % (system.getName()))
@@ -398,7 +403,6 @@ class dataset:
 
                 # set record array
                 self.data[src]['array'] = newRecArray
-
             return True
 
         return False

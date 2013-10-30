@@ -30,16 +30,17 @@ class dbn(system):
                 'visible': 'auto',
                 'hidden': 'auto',
                 'visibleSystem': 'ann.grbm',
-                'visibleSystemClass': 'grbm',
                 'visibleSystemModule': 'boltzmann',
+                'visibleSystemClass': 'grbm',
                 'visibleUnitRatio': '1:2',
                 'hiddenSystem': 'ann.rbm',
                 'hiddenSystemClass': 'rbm',
                 'hiddenSystemModule': 'boltzmann',
                 'hiddenUnitRatio': '2:1' },
             'optimize': {
+                'schedule': None,
                 'visible': None,
-                'hidden': None } ,
+                'hidden': None },
             'visibleParams': { },
             'visibleInit': { }, # use defaults from visible system
             'hiddenParams': { },
@@ -82,7 +83,7 @@ class dbn(system):
 
     def _setDataset(self, dataset, *args):
         """Update units and links to dataset instance."""
-        # 2DO check if data is ok for visibleSystemClass
+        #2DO: check if data is ok for visibleSystemClass
         self._config['check']['dataset'] = True
         return True
 
@@ -104,7 +105,7 @@ class dbn(system):
             layerB = self._params['layers'][layerID + 1]
             layerID += 1
             
-            # create configuration for subsystem
+            # get configuration for current subsystem
             if layerA['type'] == 'visible' or layerB['type'] == 'visible':
                 sysName = self._config['params']['visibleSystem']
             else:
@@ -113,7 +114,10 @@ class dbn(system):
             if sysConfig == None:
                 mp.log('error', 'could not optimize autoencoder: could not create subsystem \'%s\'' % (sysName))
                 errors += 1
-                continue
+                return False
+
+            # update configuration
+            sysConfig['name'] = '%s → %s' % (layerA['name'], layerB['name'])
             if not 'params' in sysConfig:
                 sysConfig['params'] = {}
             if layerID <= (len(self._params['layers']) - 1) / 2:
@@ -214,9 +218,7 @@ class dbn(system):
         #return units
 
     def _createHiddenUnitsStackLayout(self, layout):
-        """
-        Return tuple with hidden unit label lists from tuple with numbers.
-        """
+        """Return tuple with hidden unit label lists from tuple with numbers."""
         # create labels for hidden layers
         if isinstance(layout, str) and layout == 'auto':
             lHidden = ([], ) # return empty stack if parameter layout is 'auto'
@@ -270,71 +272,58 @@ class dbn(system):
         # 2DO!!
         return []
 
-    def _optimizeParams(self, dataset, quiet = False, **config):
+    def _optimizeParams(self, dataset, **config):
         """Optimize system parameters."""
 
         # PRETRAINING USING RESTRICTED BOLTZMANN MACHINES
-
-        # try to get pretraining configurations from user parameter
-        vOptConfig = {}
-        hOptConfig = {}
-        if isinstance(config, dict):
-            if 'visible' in config \
-                and isinstance(config['visible'], str):
-                vOptConfigName = config['visible']
-                vOptConfig = mp.shared['config'].get(
-                    type = 'schedule', name = vOptConfigName)
-            if 'hidden' in config \
-                and isinstance(config['hidden'], str):
-                hOptConfigName = config['hidden']
-                hOptConfig = mp.shared['config'].get(
-                    type = 'schedule', name = hOptConfigName)
-
-        # if no configuration name passed or name is invalid
-        # use default configuration
-        if not vOptConfig:
-            vOptConfigName = 'default' #self._config['optimize']['visible']
-            vOptConfig = {} #mp.shared['config'].get(
-                #type = 'schedule', name = vOptConfigName)
-        if not hOptConfig:
-            hOptConfigName = 'default' #self._config['optimize']['hidden']
-            hOptConfig = {} #mp.shared['config'].get(
-                #type = 'schedule', name = hOptConfigName)
-
-        # pretrain subsystems
-        mp.log('info', 'pretraining subsystems')
-        datasetCopy = dataset._get()
-        
-        # pretrain visible subsystem
-        layerA = self._params['layers'][0]['name']
-        layerB = self._params['layers'][1]['name']
-        mp.log('info', 'optimize subsystem \'%s\': using algorithm \'%s\''
-            % (self._sub[0].getName(), vOptConfigName))
-        mp.log('info', 'visible layer: \'%s\', hidden layer: \'%s\'' % (layerA, layerB))
-        self._sub[0].initParams(dataset)
-        self._sub[0].optimizeParams(dataset, **vOptConfig)
-        
-        # pretrain hidden subsystems
-        for sysID in range(1, len(self._sub) / 2):
-            mp.log('info', 'optimize model \'%s\': using algorithm \'%s\''
-                % (self._sub[sysID].getName(), hOptConfigName))
-            # transform dataset with previous system / fix lower stack
-            dataset.transformData(
-                system = self._sub[sysID - 1],
-                transformation = 'hiddenvalue',
-                colLabels = self._sub[sysID - 1].getUnits(type = 'hidden'))
-            self._sub[sysID].initParams(dataset)
-            self._sub[sysID].optimizeParams(dataset, **hOptConfig)
-
-        # reset data to the initial state
-        dataset._set(**datasetCopy)
-
-        # copy params from encoder to decoder
-        # 2DO
+        self._preTraining(dataset, **config)
 
         # finetuning using backpropagation
         # 2DO
 
+        return True
+
+    def _preTraining(self, dataset, **config):
+        """Pretraining system using restricted boltzmann machines."""
+        mp.log('info', 'pretraining system')
+        mp.setLog(indent = '+1')
+
+        # create copy of dataset values (before transformation)
+        datasetCopy = dataset._get()
+
+        # optimize subsystems
+        for sysID in range(0, len(self._sub) / 2):
+            mp.log('info', 'optimize subsystem %s (%s)' % (self._sub[sysID].getName(), self._sub[sysID].getType()))
+            mp.setLog(indent = '+1')
+
+            # link encoder and decoder system
+            encSystem = self._sub[sysID]
+            decSystem = self._sub[len(self._sub) - sysID - 1]
+
+            # transform dataset with previous system / fix lower stack
+            if sysID > 0:
+                dataset.transformData(
+                    system = self._sub[sysID - 1],
+                    transformation = 'hiddenvalue',
+                    colLabels = self._sub[sysID - 1].getUnits(type = 'hidden'))
+
+            # optimize encoder system
+            encSystem.initParams(dataset)
+            encSystem.optimizeParams(dataset, **config)
+
+            # copy parameters from encoder to decoder system
+            mp.log('info', 'copy inverted system parameters to %s' % (decSystem.getName()))
+            decSystem._setParams(encSystem._getInvertedParams())
+
+            print encSystem.getParams()['v']
+            print decSystem.getParams()['h']
+
+            mp.setLog(indent = '-1')
+
+        # reset data to initial state (before transformation)
+        dataset._set(**datasetCopy)
+
+        mp.setLog(indent = '-1')
         return True
 
     def _initParams(self, data = None):
