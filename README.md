@@ -1,20 +1,20 @@
-MetaPath
+Nemoa
 ========
 
-*MetaPath* is a python package for creating and analysing deep neuronal networks from gene expression data.
+*Nemoa* is a python package for creating and analysing deep neuronal networks from gene expression data.
 For a current featurelist see the [changelog](https://github.com/fishroot/metapath/blob/master/changelog.md).
 
 #### Installation ####
 Source: [https://github.com/fishroot/metapath](https://github.com/fishroot/metapath)
 
 #### Licensing ####
-MetaPath is available free for any use under the [GPLv3 license](https://www.gnu.org/licenses/gpl.html).
+Nemoa is available free for any use under the [GPLv3 license](https://www.gnu.org/licenses/gpl.html).
 
 #### Bug reports ####
 Please use the [issue tracker](https://github.com/fishroot/metapath/issues) provided by GitHub to send us bug reports or feature requests.
 
 #### Authors ####
-MetaPath is maintained by [Patrick Michl](https://www.mathi.uni-heidelberg.de/~pmichl/) with
+Nemoa is maintained by [Patrick Michl](https://www.mathi.uni-heidelberg.de/~pmichl/) with
 scientific advisory by Prof. [Rainer König](http://ibios.dkfz.de/tbi/index.php/network-modeling/people/34-koenig) <br>
 Developer / User group: [http://groups.google.com/group/metapath](http://groups.google.com/group/metapath)
 

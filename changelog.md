@@ -1,4 +1,4 @@
-MetaPath
+Nemoa
 ========
 
 Visit [https://github.com/fishroot/metapath](https://github.com/fishroot/metapath) for full changelogs and git access.
@@ -6,10 +6,11 @@ Visit [https://github.com/fishroot/metapath](https://github.com/fishroot/metapat
 Changlog
 ========
 
-#### 0.4.44noGPU ####
+#### 0.4.52noGPU ####
 **Changes:**
-* *seibablub*
-  * something
+* *generic*
+  * changed name from MetaPath to nemoa
+
 #### 0.4.43noGPU ####
 First announced and partial documented version
 
