@@ -1,7 +1,7 @@
 Nemoa
 ========
 
-Visit [https://github.com/fishroot/metapath](https://github.com/fishroot/metapath) for full changelogs and git access.
+Visit [https://github.com/fishroot/metapath](https://github.com/fishroot/nemoa) for full changelogs and git access.
 
 Changlog
 ========
@@ -9,7 +9,7 @@ Changlog
 #### 0.4.52noGPU ####
 **Changes:**
 * *generic*
-  * changed name from MetaPath to nemoa
+  * changed name of project from MetaPath to nemoa
 
 #### 0.4.43noGPU ####
 First announced and partial documented version
