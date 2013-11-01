@@ -1,7 +1,8 @@
 Nemoa
 ========
 
-Visit [https://github.com/fishroot/metapath](https://github.com/fishroot/nemoa) for full changelogs and git access.
+Visit [https://github.com/fishroot/nemoa](https://github.com/fishroot/nemoa)
+for full changelogs and git access.
 
 Changlog
 ========
