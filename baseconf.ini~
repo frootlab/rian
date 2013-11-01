@@ -1,5 +1,0 @@
-# nemoa base configuration
-
-[folders]
-user = ~/nemoa/
-common = ./share/
