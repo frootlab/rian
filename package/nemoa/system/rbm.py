@@ -33,6 +33,7 @@ class rbm(nemoa.system.base.system):
                 'visible': 'auto',
                 'hidden': 'auto' },
             'init': {
+                'initVisible': True,
                 'weightSigma': 0.1 },
             'optimize': {
                 'iterations': 1,
@@ -44,14 +45,15 @@ class rbm(nemoa.system.base.system):
                 'updateAlgorithm': 'CD',
                 'updateSamplingSteps': 1,
                 'updateSamplingIterations': 1,
+                'updateVisible': True,
                 'updateRate': 0.1,
                 'updateFactorWeights': 1.0,
                 'updateFactorHbias': 0.1,
                 'updateFactorVbias': 0.1,
                 'useAdjacency': False,
                 'inspect': True,
-                'inspectFunction': 'error',
-                'inspectInterval': 1000,
+                'inspectFunction': 'performance',
+                'inspectInterval': 2000,
                 'estimateTime': True,
                 'estimateTimeWait': 5.0 }}
 
@@ -82,7 +84,6 @@ class rbm(nemoa.system.base.system):
         self._initUnitParams()
         self._setLinks(self._getLinksFromConfig())
         self._initLinkParams()
-
         self._config['check']['config'] = True
         return True
 
@@ -321,8 +322,10 @@ class rbm(nemoa.system.base.system):
         """Initialize RBM unit parameters using data.
         If no data is given unit parameters are just created
         """
-        return (self._initVisibleUnitParams(data)
-            and self._initHiddenUnitParams(data))
+        if self._config['init']['initVisible']:
+            return (self._initVisibleUnitParams(data)
+                and self._initHiddenUnitParams(data))
+        return self._initHiddenUnitParams(data)
 
     def _setUpdateRates(self, **config):
         """Initialize updates for system parameters."""
@@ -462,18 +465,27 @@ class rbm(nemoa.system.base.system):
                 else:
                     self._removeLinksByThreshold(
                         method = config['iterationLiftLinks'].lower())
+
+        # final information
+        if config['inspect']:
+            value = self._getDataEval(data = testData, func = config['inspectFunction'])
+            measure = config['inspectFunction'].title()
+            nemoa.log('info', 'final: %s = %.2f' % (measure, value))
+
         return True
 
     def _updateParams(self, *args, **kwargs):
         """Update system parameters using reconstructed and sampling data."""
 
         # first calculate all updates (without affecting the calculations)
-        updateVisibleUnits = self._getVisibleUnitUpdates(*args, **kwargs)
+        if self._config['optimize']['updateVisible']:
+            updateVisibleUnits = self._getVisibleUnitUpdates(*args, **kwargs)
         updateHiddenUnits = self._getHiddenUnitUpdates(*args, **kwargs)
         updateLinks = self._getLinkUpdates(*args, **kwargs)
 
         # then update all params
-        self._updateVisibleUnits(**updateVisibleUnits)
+        if self._config['optimize']['updateVisible']:
+            self._updateVisibleUnits(**updateVisibleUnits)
         self._updateHiddenUnits(**updateHiddenUnits)
         self._updateLinks(**updateLinks)
         return True
@@ -894,8 +906,10 @@ class rbm(nemoa.system.base.system):
             self._params['A'] = numpy.ones([v, h], dtype = bool)
             self._params['W'] = numpy.zeros([v, h], dtype = float)
         else:
+            #2DO: this can be done much better
             sigma = (self._config['init']['weightSigma']
-                * numpy.std(data, axis = 0).reshape(1, v).T)
+                * numpy.std(data, axis = 0).reshape(1, v).T) + 0.00001
+            #########
             self._params['W'] = (self._params['A']
                 * numpy.random.normal(numpy.zeros((v, h)), sigma))
         return True
@@ -1103,6 +1117,7 @@ class grbm(rbm):
                 'visible': 'auto',
                 'hidden': 'auto' },
             'init': {
+                'initVisible': True,
                 'vSigma': 0.4,
                 'weightSigma': 0.02 },
             'optimize': {
@@ -1113,6 +1128,7 @@ class grbm(rbm):
                 'updateAlgorithm': 'CD',
                 'updateSamplingSteps': 1,
                 'updateSamplingIterations': 1,
+                'updateVisible': True,
                 'updateRate': 0.005,
                 'updateFactorWeights': 1.0,
                 'updateFactorHbias': 0.1,
@@ -1122,7 +1138,7 @@ class grbm(rbm):
                 'minibatchInterval': 10,
                 'useAdjacency': False,
                 'inspect': True,
-                'inspectFunction': 'error',
+                'inspectFunction': 'performance',
                 'inspectInterval': 1000,
                 'estimateTime': True,
                 'estimateTimeWait': 5.0 }}
@@ -1148,12 +1164,6 @@ class grbm(rbm):
         else:
             self._params['v']['bias'] = numpy.mean(data, axis = 0).reshape(1, v)
             self._params['v']['lvar'] = numpy.log((self._config['init']['vSigma'] * numpy.ones((1, v))) ** 2)
-        return True
-
-    def _initHiddenUnitParams(self, data = None):
-        """Initialize system parameters of all hidden units using data."""
-        h = len(self._params['h']['label'])
-        self._params['h']['bias'] = numpy.ones((1, h))
         return True
 
     def _getVisibleUnitUpdates(self, vData, hData, vModel, hModel, **kwargs):

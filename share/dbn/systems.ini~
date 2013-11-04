@@ -14,3 +14,15 @@ system rbm.rbm:
   updateAlgorithm = 'CD',
   updateRate = 0.05,
   minibatchSize = 1000
+
+[schedule test]
+system rbm.grbm:
+  updates = 100,
+  updateAlgorithm = 'CD',
+  updateRate = 0.005,
+  minibatchSize = 1000
+system rbm.rbm:
+  updates = 100,
+  updateAlgorithm = 'CD',
+  updateRate = 0.05,
+  minibatchSize = 1000
