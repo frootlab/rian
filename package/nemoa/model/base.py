@@ -393,37 +393,44 @@ class model:
         self.system.initParams(self.dataset)
         return self
 
-    def optimize(self, schedule = None,  **kwargs):
-        """
-        optimize model parameters and return self
-        """
+    def optimize(self, schedule = None, **kwargs):
+        """Optimize model instance."""
 
-        # check if model is empty
-        if (self.dataset == None or self.system == None) \
-            and self.isEmpty():
+        nemoa.log('title', 'optimize model')
+        nemoa.setLog(indent = '+1')
+
+        # check model
+        if self.isEmpty():
+            nemoa.log('warning', 'empty model can not be optimized!')
+            nemoa.setLog(indent = '-1')
+            return self
+        if self.dataset == None:
+            nemoa.log('error', 'could not optimize model parameters: dataset is not yet configured!')
+            return self
+        if self.system == None:
+            nemoa.log('error', 'could not optimize model parameters: system is not yet configured!')
             return self
 
-        # check availability of system and dataset
-        if self.dataset == None:
-            nemoa.log("error", "could not optimize model parameters: dataset is not yet configured!")
-            return False
-        if self.system == None:
-            nemoa.log("error", "could not optimize model parameters: system is not yet configured!")
-            return False
+        # get optimization schedule
+        schedule = nemoa.workspace.getConfig(
+            type = 'schedule', config = schedule,
+            merge = ['params', self.system.getName()],
+            **kwargs)
 
-        # check if schedule was given
-        if not isinstance(schedule, dict):
-            nemoa.log("error", "could not optimize model parameters: no valid optimization configuration given!")
-            return False
-
+        # test schedule
+        if not schedule:
+            nemoa.setLog(indent = '-1')
+            return self
+        
         # optimization of system parameters
         nemoa.log('info', 'starting optimization schedule: \'%s\'' % (schedule['name']))
-            
+
         if 'stage' in schedule and len(schedule['stage']) > 0:
             for stage, params in enumerate(config['stage']):
                 self.system.optimizeParams(self.dataset, **params)
         elif 'params' in schedule:
             self.system.optimizeParams(self.dataset, **schedule)
+        nemoa.setLog(indent = '-1')
         return self
 
     #
@@ -879,6 +886,98 @@ class model:
             config['system'] = dict['system'].copy()
 
         return config
+
+    def save(self, file = None):
+        """Save model settings to file and return filepath."""
+        import nemoa.workspace
+        import cPickle, gzip, os
+
+        nemoa.log('title', 'save model to file')
+        nemoa.setLog(indent = '+1')
+
+        # get filename
+        if file == None:
+            fileName = '%s.mp' % (self.getName())
+            filePath = nemoa.workspace.path('models')
+            file = filePath + fileName
+        file = nemoa.common.getEmptyFile(file)
+
+        # save model parameters and configuration to file
+        cPickle.dump(
+            obj = self._get(),
+            file = gzip.open(file, "wb", compresslevel = 3),
+            protocol = 2)
+
+        # create console message
+        finalName = os.path.basename(file)[:-3]
+        nemoa.log('info', 'save model as: \'%s\'' % (finalName))
+
+        nemoa.setLog(indent = '-1')
+        return file
+
+    def plot(self, plot, output = 'file', file = None, **kwargs):
+        """Create plot of model."""
+
+        nemoa.log('title', 'create plot of model')
+        nemoa.setLog(indent = '+1')
+
+        # get plot instance
+        if isinstance(plot, str):
+            plotName, plotParams = nemoa.common.strSplitParams(plot)
+            mergeDict = plotParams
+            for param in kwargs.keys():
+                plotParams[param] = kwargs[param]
+            objPlot = self.__getPlot(name = plotName, params = plotParams)
+            if not objPlot:
+                nemoa.log("warning", "could not create plot: unknown configuration '%s'" % (plotName))
+                return None
+        elif isinstance(plot, dict):
+            objPlot = self.__getPlot(config = plot)
+        else:
+            objPlot = self.__getPlot()
+        if not objPlot:
+            return None
+
+        # prepare filename
+        if output == 'display':
+            file = None
+        elif output == 'file' and not file:
+            file = nemoa.common.getEmptyFile(nemoa.workspace.path('plots') + \
+                self.getName() + '/' + objPlot.cfg['name'] + \
+                '.' + objPlot.settings['fileformat'])
+            nemoa.log('info', 'create plot: ' + file)
+
+        # create plot
+        retVal = objPlot.create(self, file = file)
+        
+        nemoa.setLog(indent = '-1')
+        return retVal
+
+    def __getPlot(self, name = None, params = {}, config = {}, **options):
+        """Return new plot instance"""
+
+        # return empty plot instance if no configuration information was given
+        if not name and not config:
+            import nemoa.plot as plot
+            return plot.new()
+
+        # get plot configuration
+        if name == None:
+            cfgPlot = config.copy()
+        else:
+            cfgPlot = nemoa.workspace.get('plot', name = name, params = params)
+
+        # create plot instance
+        if not cfgPlot == None:
+            nemoa.log("info", "create plot instance: '" + name + "'")
+            # merge params
+            for param in params.keys():
+                cfgPlot['params'][param] = params[param]
+            import nemoa.plot as plot
+            return plot.new(config = cfgPlot)
+        else:
+            nemoa.log("error", "could not create plot instance: unkown plot-id '" + name + "'")
+            return None
 
 class empty(model):
     pass

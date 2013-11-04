@@ -38,7 +38,7 @@ class config:
 
         # default basepaths
         self.__basepath = {
-            'user': '~/.nemoa/',
+            'user': '~/nemoa/',
             'common': '/etc/nemoa/common/' }
 
         # get basepath configuration
@@ -88,6 +88,9 @@ class config:
             for key in self.__projectPath:
                 self.__path[key] = self.getPath(
                     '%' + base + '%/' + self.__projectPath[key], create = allowWrite)
+
+    def listProjects(self):
+        return self.__listUserProjects()
 
     def __listUserProjects(self):
         """Return list of user projects."""

@@ -108,7 +108,8 @@ def log(type, msg, quiet = False):
         fileLog.info(fileMsg)
         return True
     if type == 'title':
-        ttyLog.info(color['blue'] + ttyMsg + color['default'])
+        if not quiet:
+            ttyLog.info(color['blue'] + ttyMsg + color['default'])
         return True
     if type == 'header':
         ttyLog.info(color['green'] + ttyMsg + color['default'])

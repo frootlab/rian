@@ -78,6 +78,8 @@ class dbn(nemoa.system.ann.ann):
     def _configureSubSystems(self):
         """Configure subsystems."""
         import nemoa
+        import nemoa.system
+
         nemoa.log('info', 'configure subsystems')
         nemoa.setLog(indent = '+1')
         if not 'layers' in self._params:
@@ -86,14 +88,14 @@ class dbn(nemoa.system.ann.ann):
             return False
 
         self._sub = []
-        layerID = 0
-        while layerID < len(self._params['layers']) - 1:
-            layerA = self._params['layers'][layerID]
-            layerB = self._params['layers'][layerID + 1]
-            layerID += 1
-            
-            # get settings for current subsystem
-            if 'visible' in [layerA['type'], layerB['type']]:
+        for layerID in range((len(self._params['layers']) - 1)  / 2):
+            encInput = self._params['layers'][layerID]
+            encOutput = self._params['layers'][layerID + 1]
+            decInput = self._params['layers'][-(layerID + 2)]
+            decOutput = self._params['layers'][-(layerID + 1)]
+
+            # get subsystem configuration
+            if encInput['type'] == 'visible':
                 sysUserConf = self._config['params']['visibleSystem']
                 sysModule = self._config['params']['visibleSystemModule']
                 sysClass = self._config['params']['visibleSystemClass']
@@ -101,8 +103,6 @@ class dbn(nemoa.system.ann.ann):
                 sysUserConf = self._config['params']['hiddenSystem']
                 sysModule = self._config['params']['visibleSystemModule']
                 sysClass = self._config['params']['visibleSystemClass']
-
-            # get configuration for current subsystem
             if sysUserConf:
                 sysConfig = nmConfig.get(type = 'system', name = sysUserConf)
                 if sysConfig == None:
@@ -115,34 +115,43 @@ class dbn(nemoa.system.ann.ann):
             else:
                 sysConfig = {'package': sysModule, 'class': sysClass}
 
-            # update configuration
-            sysConfig['name'] = '%s → %s' % (layerA['name'], layerB['name'])
+            # update subsystem configuration
+            sysConfig['name'] = '%s → %s' % (encInput['name'], encOutput['name'])
             if not 'params' in sysConfig:
                 sysConfig['params'] = {}
-            if layerID <= (len(self._params['layers']) - 1) / 2:
-                sysConfig['params']['visible'] = layerA['units']
-                sysConfig['params']['hidden'] = layerB['units']
-            else:
-                sysConfig['params']['hidden'] = layerA['units']
-                sysConfig['params']['visible'] = layerB['units']
+            sysConfig['params']['visible'] = encInput['units']
+            sysConfig['params']['hidden'] = encOutput['units']
 
-            # create subsystem
-            import nemoa.system
+            # create instance of subsystem from configuration
             system = nemoa.system.new(config = sysConfig)
             nemoa.log('info', """
                 adding subsystem: \'%s\' (%s units, %s links)
                 """ % (system.getName(),
                 len(system.getUnits(type = 'visible')) + len(system.getUnits(type = 'hidden')),
                 len(system.getLinks())))
+
+            # link subsystem and parameters layer params
             self._sub.append(system)
+            if layerID == 0:
+                encInput['params'] = system._params['v']
+                decOutput['params'] = system._params['v']
+
+                encOutput['params'] = system._params['h']
+                decInput['params'] = system._params['h']
+            else:
+                # do not link params from upper
+                # upper layer should be linked with pervious subsystem
+                # (higher abstraction layer)
+                encOutput['params'] = system._params['h']
+                decInput['params'] = system._params['h']
 
         self._config['check']['subSystems'] = True
         nemoa.setLog(indent = '-1')
         return True
 
-        nemoa.log('error', 'configuration of subsystems failed!')
-        nemoa.setLog(indent = '-1')
-        return False
+        #nemoa.log('error', 'configuration of subsystems failed!')
+        #nemoa.setLog(indent = '-1')
+        #return False
 
     def _isConfigured(self):
         """Return configuration state of ANN."""
@@ -174,6 +183,18 @@ class dbn(nemoa.system.ann.ann):
         lHidden = self._createHiddenUnitsStackLayout(self._config['params']['hidden'])
 
         return lInput + lHidden + lOutput
+
+    def _getUnitsFromSystem(self, type = None):
+        if type == 'visible':
+            return self._params['v']['label']
+        if type == 'hidden':
+            return self._params['h']['label']
+        if type in self._params['layers']:
+            quit()
+            
+        return (self._params['v']['label'], self._params['h']['label'])
+        print self._params['layers']
+        quit()
 
     def _getUnitsFromNetwork(self, network):
         """Return tuple with lists of unit labels from network."""
@@ -260,8 +281,12 @@ class dbn(nemoa.system.ann.ann):
             else:
                 name = 'h' + str(layerID)
                 type = 'hidden'
-            self._params['layers'].append(
-                {'name': name, 'type': type, 'units': labels})
+            self._params['layers'].append({
+                'name': name,
+                'type': type,
+                'distribution': '',
+                'units': labels,
+                'params': {}})
         return True
 
     def _getUnits(self):
@@ -291,9 +316,14 @@ class dbn(nemoa.system.ann.ann):
         # create copy of dataset values (before transformation)
         datasetCopy = dataset._get()
 
+        ########################################################
+        # 2Do prevent higher level subsystems from updating input unit parameters!!
+        ######################################################
+
         # optimize subsystems
         for sysID in range(0, len(self._sub) / 2):
-            nemoa.log('info', 'optimize subsystem %s (%s)' % (self._sub[sysID].getName(), self._sub[sysID].getType()))
+            nemoa.log('info', 'optimize subsystem %s (%s)' \
+                % (self._sub[sysID].getName(), self._sub[sysID].getType()))
             nemoa.setLog(indent = '+1')
 
             # link encoder and decoder system
@@ -308,8 +338,11 @@ class dbn(nemoa.system.ann.ann):
                     colLabels = self._sub[sysID - 1].getUnits(type = 'hidden'))
 
             # optimize encoder system
-            encSystem.initParams(dataset)
-            encSystem.optimizeParams(dataset, **config)
+            if sysID == 0:
+                encSystem.initParams(dataset)
+                encSystem.optimizeParams(dataset, **config)
+            else:
+                print 'test'
 
             # copy parameters from encoder to decoder system
             nemoa.log('info', 'copy inverted system parameters to %s' % (decSystem.getName()))

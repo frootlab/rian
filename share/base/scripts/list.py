@@ -1,2 +1,2 @@
 def main(workspace, **kwargs):
-    workspace.list(namespace = workspace._config.project())
+    workspace.list(namespace = workspace.project())

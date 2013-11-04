@@ -3,6 +3,8 @@
 
 __shared = {}
 
+# create common configuration instance
+
 def init():
     """Create and link new configuration instance."""
     import nemoa.workspace.config
@@ -10,7 +12,19 @@ def init():
     __shared['config'].loadCommon()
     return True
 
-# wrap config object instance methods to module
+# create workspace instance
+
+def new():
+    """Return new workspace instance."""
+    import nemoa.workspace.workspace
+    return nemoa.workspace.workspace.workspace()
+
+def open(project, quiet = False):
+    """Return new workspace instance and open project."""
+    import nemoa.workspace.workspace
+    return nemoa.workspace.workspace.workspace(project)
+
+# wrap configuration object instance methods to module
 
 def get(*args, **kwargs):
     if not 'config' in __shared:
@@ -42,12 +56,20 @@ def loadProject(*args, **kwargs):
         init()
     return __shared['config'].loadProject(*args, **kwargs)
 
-def new():
-    """Return new workspace instance."""
-    import nemoa.workspace.workspace
-    return nemoa.workspace.workspace.workspace()
-
-def open(project, quiet = False):
-    """Return new workspace instance and open project."""
-    import nemoa.workspace.workspace
-    return nemoa.workspace.workspace.workspace(project)
+def getConfig(type = None, config = None, merge = ['params'], **kwargs):
+    """Return object configuration as dictionary."""
+    if config == None:
+        return {}
+    # for loading models it's necessary
+    import nemoa.common
+    import copy
+    if isinstance(config, dict):
+        return copy.deepcopy(config)
+    elif isinstance(config, str) and isinstance(type, str):
+        name, params = nemoa.common.strSplitParams(config)
+        if 'params' in kwargs and isinstance(kwargs['params'], dict):
+            params = nemoa.common.dictMerge(kwargs['params'], params)
+        return __shared['config'].get(
+            type = type, name = name,
+            merge = merge, params = params)
+    return False
