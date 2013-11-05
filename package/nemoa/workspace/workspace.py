@@ -51,15 +51,12 @@ class workspace:
         """Return a list of known objects."""
         list = nemoa.workspace.list(type = type, namespace = namespace)
         if not type:
-            for item in list:
-                nemoa.log('info', "'%s' (%s)" % (item[2], item[1]))
+            listOfNames = ["%s (%s)" % (item[2], item[1]) for item in list]
         elif type in ['model']:
-            for item in list:
-                nemoa.log('info', "'%s'" % (item))
+            listOfNames = list
         else:
-            for item in list:
-                nemoa.log('info', "'%s'" % (item[2]))
-        return len(list)
+            listOfNames = [item[2] for item in list]
+        return listOfNames
 
     def execute(self, name = None, **kwargs):
         """Execute python script."""

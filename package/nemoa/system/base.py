@@ -9,6 +9,8 @@ class system:
 
     _config = None
     _params = None
+    _units = None
+    _links = None
 
     # generic system configuration methods
 
@@ -210,7 +212,7 @@ class system:
         """Return information about unit evaluation functions."""
         return self._getUnitEvalInformation(*args, **kwargs)
 
-    def setUnits(self, units = [], update = False, *args, **kwargs):
+    def setUnits(self, units = ([], ), update = False, **kwargs):
         """Set units and update system parameters."""
         if update:
             if not self._checkParams(self._params):
@@ -218,16 +220,28 @@ class system:
                 return False
             backup = self.getParams()
             self._setUnits(units)
-            self._initParams()
+            self._linkUnits()
+            self._initUnits()
             return self.setParams(backup)
 
         self._setUnits(units)
-        self._initParams()
+        self._linkUnits()
+        self._initUnits()
+        return True
+
+    def setLinks(self, links = [], update = False, *args, **kwargs):
+        """Set links using list with 2-tuples containing unit labels."""
+        self._setLinks(links)
+        self._linkLinks()
+        self._initLinks()
         return True
 
     def unlinkUnit(self, unit, *args, **kwargs):
         """Unlink unit (if present)."""
         return self._unlinkUnit(unit)
+
+    def deleteUnits(self, type, label):
+        return self._deleteUnit(type, label)
 
     def getLinkEval(self, data, **kwargs):
         """Return dictionary with links and evaluation values."""
@@ -238,10 +252,6 @@ class system:
     def getLinks(self, *args, **kwargs):
         """Return list with 2-tuples containing unit labels."""
         return self._getLinksFromConfig()
-
-    def setLinks(self, links = [], update = False, *args, **kwargs):
-        """Set links using list with 2-tuples containing unit labels."""
-        return self._setLinks(links)
 
     def removeLinks(self, links = [], *args, **kwargs):
         """Remove links from system using list with 2-tuples containing unit labels."""

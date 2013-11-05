@@ -7,11 +7,15 @@ import nemoa.workspace.config
 
 def new(**kwargs):
     """Return workspace instance."""
+    # print welcome message
+    log('header', 'nemoa %s' % (version()))
     import nemoa.workspace
     return nemoa.workspace.new(**kwargs)
 
 def open(project, **kwargs):
     """Return workspace instance."""
+    # print welcome message
+    log('header', 'nemoa %s' % (version()))
     import nemoa.workspace
     return nemoa.workspace.open(project, **kwargs)
 
@@ -20,17 +24,8 @@ def version():
     return '0.4.53noGPU-20131104'
 
 def listProjects():
-    """Print list of projects."""
-    projects = nemoa.workspace.config.config().listProjects()
-    nemoa.log('title', 'scanning for projects')
-    nemoa.setLog(indent = '+1')
-    for project in projects:
-        nemoa.log('info', """
-            project: \'%s\'""" % (project))
-    nemoa.setLog(indent = '-1')
+    """Return list of projects."""
+    return nemoa.workspace.config.config().listProjects()
 
 # initialize logger
 initLogger()
-
-# print welcome message
-log('header', 'nemoa %s' % (version()))

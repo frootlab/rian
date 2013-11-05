@@ -12,7 +12,7 @@ def main(argv):
 
     try:
         opts, args = getopt.getopt(
-            argv, "hp:s:a:", ["project=", "script=", "arguments="])
+            argv, "hvp:s:a:", ["project=", "script=", "arguments="])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -21,6 +21,9 @@ def main(argv):
         if opt == '-h':
             usage()
             sys.exit()
+        elif opt == '-v':
+            version()
+            sys.exit()
         elif opt in ("-p", "--project"):
             project = arg
         elif opt in ("-s", "--script"):
@@ -28,23 +31,15 @@ def main(argv):
         elif opt in ("-a", "--arguments"):
             kwargs = arg
 
-    if (script or kwargs) and not project:
-        usage()
-        sys.exit()
-
     # print list of projects
     if not project:
-        if script or kwargs:
-            usage()
-            sys.exit()
+        usage()
         listProjects()
         sys.exit()
 
     # print list of scripts in project
     if not script:
-        if kwargs:
-            usage()
-            sys.exit()
+        usage()
         listScripts(project)
         sys.exit()
 
@@ -54,7 +49,7 @@ def main(argv):
 def listProjects():
     """Print list of projects to standard output."""
     import nemoa
-    nemoa.listProjects()
+    print 'Projects: ' + ','.join(['%s' % (p) for p in nemoa.listProjects()])
 
 def listScripts(project):
     """Print list of scripts to standard output."""
@@ -62,31 +57,36 @@ def listScripts(project):
     nemoa.setLog(quiet = True)
     workspace = nemoa.open(project)
     nemoa.setLog(quiet = False)
-    nemoa.log('title', 'scanning for scripts in project \'%s\'' % (project))
-    nemoa.setLog(indent = '+1')
-    workspace.list(type = 'script', namespace = workspace.project())
-    nemoa.setLog(indent = '-1')
+    scripts = workspace.list(type = 'script', namespace = workspace.project())
+    print 'Scripts in project %s:\n' % (project)
+    for script in scripts:
+        print '    %s' % (script)
+    print ''
 
 def executeScript(project, script, kwargs):
-    params = {}
     import nemoa
     workspace = nemoa.open(project)
     workspace.execute(
         name = script,
-        params = params,
+        params = {},
         arguments = kwargs)
+
+def version():
+    import nemoa
+    print nemoa.version()
 
 def usage():
     """Print script usage to standard output."""
     
     script = os.path.basename(__file__)
 
-    print """Usage: %s [-p <project> [-s <script> [-a <arguments>]]] [-h]
+    print """Usage: %s [-p <project> [-s <script> [-a <arguments>]]] [-h] [-v]
     
     -h --help                 Print this
     -p --project              User Namespace / Project
     -s --script               Basename of script to execute
     -a --arguments            Arguments passed to script
+    -v --version              Print version
     """ % (script)
 
 if __name__ == "__main__":
