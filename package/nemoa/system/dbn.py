@@ -38,49 +38,8 @@ class dbn(nemoa.system.ann.ann):
             }
         }
 
-    def _configure(self, dataset = None, network = None, **kwargs):
-        """Configure system to network and dataset."""
-        if not 'check' in self._config:
-            self._config['check'] = {
-                'config': True, 'network': False,
-                'dataset': False, 'subSystems': False}
-        if not network == None:
-            self._setNetwork(network)
-        if not dataset == None:
-            self._setDataset(dataset)
-        return self._isConfigured()
-
     def _checkNetwork(self, network):
         return self._isNetworkDBNCompatible(network)
-
-    def _setConfig(self, config, *args, **kwargs):
-        """Set configuration from dictionary."""
-        nemoa.common.dictMerge(self._getSystemDefaultConfig(), self._config)
-        nemoa.common.dictMerge(config, self._config)
-        self.setUnits(self._getUnitsFromConfig())
-        self.setLinks(self._getLinksFromConfig())
-        self._config['check']['config'] = True
-        return True
-
-    def _setNetwork(self, network):
-        """Update units to network instance."""
-        nemoa.log('info', 'get system units and links from network \'%s\'' % (network.getName()))
-        self.setUnits(self._getUnitsFromNetwork(network))
-        self.setLinks()
-        self._config['check']['network'] = True
-        return True
-
-    def _setDataset(self, dataset, *args):
-        """Update units and links to dataset instance."""
-        #2DO: check if data is ok for visibleSystemClass
-        self._config['check']['dataset'] = True
-        return True
-
-    def _isConfigured(self):
-        """Return configuration state of ANN."""
-        return self._config['check']['config'] \
-            and self._config['check']['network'] \
-            and self._config['check']['dataset']
 
     # UNITS
 
@@ -107,22 +66,18 @@ class dbn(nemoa.system.ann.ann):
 
         #return lInput + lHidden + lOutput
 
-    ###############################
-    # 2DO!!!!!!!!!!!!!!!!!!!!!!
-    ###############################
-    #def _getUnitsFromSystem(self, type = None):
-        #if type == 'visible':
-            #return self_params['units'][0]['label']
-        #if type == 'hidden':
-            #return self._params['units'][1]['label']
-        #if type in self._params['units']:
-            #quit()
-            
-        #return (self_params['units'][0]['label'], self._params['units'][1]['label'])
-
     def _getUnitsFromNetwork(self, network):
         """Return tuple with lists of unit labels from network."""
         return tuple([network.nodes(type = layer) for layer in network.layers()])
+
+    def _getUnitsFromConfig(self):
+        return None
+
+    def _getLinksFromConfig(self):
+        return None
+
+    def _getLinksFromNetwork(self, network):
+        return None
 
         #layers = network.layers()
         #inputLayer = layers[0]
@@ -138,8 +93,6 @@ class dbn(nemoa.system.ann.ann):
         #import math
         #vList = network.nodes(visible = True)
         #hList = network.nodes(visible = False)
-        #print self._config['params']
-        #quit()
         #vRatioStr = self._config['params']['visibleUnitRatio'].split(':')
         #vRatio = float(vRatioStr[1]) / float(vRatioStr[0])
         #hRatioStr = self._config['params']['hiddenUnitRatio'].split(':')
@@ -255,7 +208,7 @@ class dbn(nemoa.system.ann.ann):
         nemoa.log('info', 'finetuning system')
         nemoa.setLog(indent = '+1')
 
-        
+        print self._checkParams(self._params)
 
         nemoa.setLog(indent = '-1')
         return True
@@ -267,13 +220,13 @@ class dbn(nemoa.system.ann.ann):
 
         # configure subsystems
         self._preTrainingPrepare()
-        
+
         # optimize subsystems
         self._preTrainingOptimize(dataset, **config)
-        
+
         # import parameters from subsystems
         self._preTrainingImport()
-        
+
         # cleanup subsystem
         self._preTrainingCleanup()
 
@@ -348,9 +301,6 @@ class dbn(nemoa.system.ann.ann):
             if layerID == 0:
                 inUnits['init'] = system._units['visible']
                 outUnits['init'] = system._units['hidden']
-                if not 'init' in system._config:
-                    print system._config
-                    quit()
                 system._config['init']['ignoreUnits'] = []
                 system._config['optimize']['ignoreUnits'] = []
             else:

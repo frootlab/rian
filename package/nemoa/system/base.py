@@ -200,9 +200,9 @@ class system:
         """Return labels of units in system."""
         return self._getUnitsFromSystem(*args, **kwargs)
 
-    def getUnitInfo(self, label, *args, **kwargs):
+    def getUnitInfo(self, *args, **kwargs):
         """Return dictionary with information about a specific unit."""
-        return self._getUnitInformation(label)
+        return self._getUnitInformation(*args, **kwargs)
 
     def getUnitEval(self, data, **kwargs):
         """Return dictionary with units and evaluation values."""
@@ -220,19 +220,19 @@ class system:
                 return False
             backup = self.getParams()
             self._setUnits(units)
-            self._linkUnits()
+            self._indexUnits()
             self._initUnits()
             return self.setParams(backup)
 
         self._setUnits(units)
-        self._linkUnits()
+        self._indexUnits()
         self._initUnits()
         return True
 
-    def setLinks(self, links = [], update = False, *args, **kwargs):
+    def setLinks(self, links = None, update = False, *args, **kwargs):
         """Set links using list with 2-tuples containing unit labels."""
         self._setLinks(links)
-        self._linkLinks()
+        self._indexLinks()
         self._initLinks()
         return True
 
