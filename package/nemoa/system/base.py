@@ -240,8 +240,8 @@ class system:
         """Unlink unit (if present)."""
         return self._unlinkUnit(unit)
 
-    def deleteUnits(self, type, label):
-        return self._deleteUnit(type, label)
+    def removeUnits(self, type, label):
+        return self._removeUnit(type, label)
 
     def getLinkEval(self, data, **kwargs):
         """Return dictionary with links and evaluation values."""

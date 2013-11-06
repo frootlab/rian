@@ -15,28 +15,48 @@ class ann(nemoa.system.base.system):
         return True
 
     def _linkLinks(self):
-        self._links = {units: {'source': [], 'target': []} 
+        self._links = {units: {'source': {}, 'target': {}} 
             for units in self._units.keys()}
         for id in self._params['links'].keys():
             source = self._params['links'][id]['source']
             target = self._params['links'][id]['target']
-            self._links[source]['target'].append(target)
-            self._links[target]['source'].append(source)
+            self._links[source]['target'][target] = \
+                self._params['links'][id]
+            self._links[target]['source'][source] = \
+                self._params['links'][id]
         return True
+
+
+    def _checkUnitParams(self, params):
+        """Check if system parameter dictionary is valid."""
+        return (self._checkVisibleUnitParams(params)
+            and self._checkHiddenUnitParams(params))
+
+    def _checkParams(self, params):
+        """Check if system parameter dictionary is valid."""
+        return (self._checkUnitParams(params)
+            and self._checkLinkParams(params))
+
+
 
     def _initUnits(self, data = None):
         """Initialize system parameteres of all units using data."""
-        for type in self._units.keys():
+        for layerName in self._units.keys():
+            layer = self._units[layerName]
             if 'init' in self._config \
-                and type in self._config['init']['ignoreUnits']:
+                and layerName in self._config['init']['ignoreUnits']:
                 continue
-            elif self._units[type]['class'] == 'bernoulli':
-                self._initBernoulliUnits(type, data)
-            elif self._units[type]['class'] == 'gauss':
-                self._initGaussUnits(type, data)
+            elif layer['class'] == 'bernoulli':
+                self._initBernoulliUnits(layer, data)
+            elif layer['class'] == 'gauss':
+                self._initGaussUnits(layer, data)
             else:
                 return False
         return True
+
+    def _initParams(self, data = None):
+        """Initialize system parameters using data."""
+        return (self._initUnits(data) and self._initLinks(data))
 
     def _initLinks(self, data = None):
         """Initialize system parameteres of all links using data."""
@@ -66,89 +86,75 @@ class ann(nemoa.system.base.system):
             'A': self._params['links'][id]['A'].T,
             'W': self._params['links'][id]['W'].T}
 
-    #def _getUnitParams(self, type):
-        #if self._units[type]['class'] == 'gauss':
-            #return self._getGaussUnitParams(type)
-        #elif self._units[type]['class'] == 'bernoulli':
-            #return self._getBernoulliUnitParams(type)
+    def _removeUnits(self, layer, label = []):
 
-    def _deleteUnits(self, type, label = []):
-        if self._units[type]['class'] == 'gauss':
-            return self._deleteGaussUnits(type, label)
-        elif self._units[type]['class'] == 'bernoulli':
-            return self._deleteBernoulliUnits(type, label)
+        if not layer in self._units:
+            nemoa.log('error', """
+                could not delete units:
+                unknown layer '%'""" % (layer))
+            return False
+
+        # search for labeled units in given layer
+        layer = self._units[layer]
+        links = self._links[layer['name']]
+        select = []
+        for id, unit in enumerate(layer['label']):
+            if not unit in label:
+                select.append(id)
+
+        # delete units from unit parameter arrays
+        if layer['class'] == 'gauss':
+            self._removeGaussUnits(layer, select)
+        elif layer['class'] == 'bernoulli':
+            self._removeBernoulliUnits(layer, select)
+        
+        # delete units from link parameter arrays
+        for src in links['source'].keys():
+            links['source'][src]['A'] = \
+                links['source'][src]['A'][select, :]
+            links['source'][src]['W'] = \
+                links['source'][src]['W'][select, :]
+        for tgt in links['target'].keys():
+            links['target'][tgt]['A'] = \
+                links['target'][tgt]['A'][:, select]
+            links['target'][tgt]['W'] = \
+                links['target'][tgt]['W'][:, select]
+        return True
 
     # Bernoulli Units
 
-    def _initBernoulliUnits(self, type, data = None):
+    def _initBernoulliUnits(self, layer, data = None):
         """Initialize system parameters of bernoulli distributed units using data."""
-        self._units[type]['bias'] = \
-            0.5 * numpy.ones((1, len(self._units[type]['label'])))
+        layer['bias'] = 0.5 * numpy.ones((1, len(layer['label'])))
         return True
 
-    #def _getBernoulliUnitParams(self, type):
-        #return {'bias': self._units[type]['bias']}
-
-    def _deleteBernoulliUnits(self, type, label):
-        select = []
-        for unitID, unit in enumerate(self._units[type]['label']):
-            if not unit in label:
-                select.append(unitID)
-        self._units[type]['bias'] = self._units[type]['bias'][select]
-
-        # 2DO delete units from link matrices
-
-            
-        ## cleanup input layer
-
-        ## get ids for units not to delete
-        #selectUnitIDs = []
-        #for unitID, unit in enumerate(self._units[type]['label']):
-            #if not unit in label:
-                #selectUnitIDs.append(unitID)
-        
-        #inputLayer['params']['label'] = inputLayer['label']
-        #for param in inputLayer['params'].keys():
-            #if param == 'label':
-                #continue
-            #inputLayer['params'][param] = \
-                #inputLayer['params'][param][0, selectUnitIDs]
-        #inputLayerLinks = self._params['links'][(0, 1)]
-        #for param in inputLayerLinks['params'].keys():
-            #if type(inputLayerLinks['params'][param]).__module__ == numpy.__name__:
-                #inputLayerLinks['params'][param] = \
-                    #inputLayerLinks['params'][param][selectUnitIDs, :]
-
+    def _removeBernoulliUnits(self, layer, select):
+        """Delete selection (list of ids) of units from parameter arrays."""
+        layer['bias'] = layer['bias'][0, [select]]
+        return True
 
     # Gauss Units
 
-    def _initGaussUnits(self, type, data = None, vSigma = 0.4):
+    def _initGaussUnits(self, layer, data = None, vSigma = 0.4):
         """Initialize system parameters of gauss distribued units using data."""
-        size = len(self._units[type]['label'])
+        size = len(layer['label'])
         if data == None:
-            self._units[type]['bias'] = numpy.zeros([1, size])
-            self._units[type]['lvar'] = numpy.zeros([1, size])
+            layer['bias'] = numpy.zeros([1, size])
+            layer['lvar'] = numpy.zeros([1, size])
         else:
             if 'vSigma' in self._config['init']:
                 vSigma = self._config['init']['vSigma']
-            self._units[type]['bias'] = \
+            layer['bias'] = \
                 numpy.mean(data, axis = 0).reshape(1, size)
-            self._units[type]['lvar'] = \
+            layer['lvar'] = \
                 numpy.log((vSigma * numpy.ones((1, size))) ** 2)
         return True
 
-    #def _getGaussUnitParams(self, type):
-        #return {
-            #'bias': self._units[type]['bias'],
-            #'lvar': self._units[type]['lvar']}
-
-    def _deleteGaussUnits(self, type, label):
-        select = []
-        for unitID, unit in enumerate(self._units[type]['label']):
-            if not unit in label:
-                select.append(unitID)
-        self._units[type]['bias'] = self._units[type]['bias'][select]
-        self._units[type]['lvar'] = self._units[type]['lvar'][select]
+    def _removeGaussUnits(self, layer, select):
+        """Delete selection (list of ids) of units from parameter arrays."""
+        layer['bias'] = layer['bias'][0, [select]]
+        layer['lvar'] = layer['lvar'][0, [select]]
+        return True
 
     # common activation functions
 

@@ -306,12 +306,12 @@ class rbm(nemoa.system.ann.ann):
 
     # RBM PARAMETER METHODS
 
-    def _initParams(self, data = None):
-        """Initialize RBM parameters using data.
-        If no data is given system parameters are just created
-        """
-        return (self._initUnits(data)
-            and self._initLinkParams(data))
+    #def _initParams(self, data = None):
+        #"""Initialize RBM parameters using data.
+        #If no data is given system parameters are just created
+        #"""
+        #return (self._initUnits(data)
+            #and self._initLinkParams(data))
 
     #def _initUnitParams(self, data = None):
         #"""Initialize RBM unit parameters using data.
@@ -332,16 +332,6 @@ class rbm(nemoa.system.ann.ann):
         return (self._setVisibleUnitUpdateRates(**config)
             and self._setHiddenUnitUpdateRates(**config)
             and self._setLinkUpdateRates(**config))
-
-    def _checkUnitParams(self, params):
-        """Check if system parameter dictionary is valid."""
-        return (self._checkVisibleUnitParams(params)
-            and self._checkHiddenUnitParams(params))
-
-    def _checkParams(self, params):
-        """Check if system parameter dictionary is valid."""
-        return (self._checkUnitParams(params)
-            and self._checkLinkParams(params))
 
     def _setParams(self, params):
         """Set system parameters from dictionary."""
@@ -907,22 +897,6 @@ class rbm(nemoa.system.ann.ann):
         # reset link update
         return True
 
-    def _initLinkParams(self, data = None):
-        """Initialize system parameteres of all links using data."""
-        v = len(self._params['units'][0]['label'])
-        h = len(self._params['units'][1]['label'])
-        if data == None:
-            self._params['links'][(0, 1)]['A'] = numpy.ones([v, h], dtype = bool)
-            self._params['links'][(0, 1)]['W'] = numpy.zeros([v, h], dtype = float)
-        else:
-            #2DO: this can be done much better
-            sigma = (self._config['init']['weightSigma']
-                * numpy.std(data, axis = 0).reshape(1, v).T) + 0.00001
-            #########
-            self._params['links'][(0, 1)]['W'] = (self._params['links'][(0, 1)]['A']
-                * numpy.random.normal(numpy.zeros((v, h)), sigma))
-        return True
-
     def _getLinkParams(self, links = []):
         """Return link parameters."""
         if not links:
@@ -973,7 +947,7 @@ class rbm(nemoa.system.ann.ann):
     def _removeLinks(self, links = []):
         """Remove links from adjacency matrix using list of links."""
         if not self._checkParams(self._params): # check params
-            nemoa.log("error", "could not remove links: units have not yet been set yet!")
+            nemoa.log("error", "could not remove links: units have not been set yet!")
             return False
 
         # search links and update list of current links

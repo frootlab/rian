@@ -27,12 +27,16 @@ class dbn(nemoa.system.ann.ann):
                 'hiddenSystem': None,
                 'hiddenSystemClass': 'rbm',
                 'hiddenSystemModule': 'rbm',
-                },
+            },
+            'init': {
+                'ignoreUnits': []
+            },
             'optimize': {
                 'schedule': None,
                 'visible': None,
-                'hidden': None }
+                'hidden': None
             }
+        }
 
     def _configure(self, dataset = None, network = None, **kwargs):
         """Configure system to network and dataset."""
@@ -194,22 +198,29 @@ class dbn(nemoa.system.ann.ann):
             if not isinstance(val, list):
                 return False
 
+        #
+        # 2DO: get unit class from subsystems!!!!
+        #
+
         # update unit parameters per layer
         self._params['units'] = []
         for layerID, labels in enumerate(units):
             if layerID == 0:
                 name = 'input'
                 visible = True
+                unitClass = 'gauss'
             elif layerID == len(units) - 1:
                 name = 'output'
-                visible = False
+                visible = True
+                unitClass = 'gauss'
             else:
                 name = 'h' + str(layerID)
                 visible = False
+                unitClass = 'bernoulli'
             self._params['units'].append({
                 'name': name,
                 'visible': visible,
-                'class': '',
+                'class': unitClass,
                 'label': labels})
         return True
 
@@ -223,10 +234,10 @@ class dbn(nemoa.system.ann.ann):
                 'target': self._params['units'][layerID + 1]['name']}
         return True
 
-    def _getUnits(self):
-        """Return a list with units."""
-        # 2DO!!
-        return []
+    #def _getUnits(self):
+        #"""Return a list with units."""
+        ## 2DO!!
+        #return []
 
     def _optimizeParams(self, dataset, **config):
         """Optimize system parameters."""
@@ -244,60 +255,36 @@ class dbn(nemoa.system.ann.ann):
         nemoa.log('info', 'finetuning system')
         nemoa.setLog(indent = '+1')
 
+        
+
         nemoa.setLog(indent = '-1')
         return True
 
     def _preTraining(self, dataset, **config):
-        """Pretraining system using restricted boltzmann machines."""
+        """Pretraining ANN using Restricted Boltzmann Machines."""
         nemoa.log('info', 'pretraining system')
         nemoa.setLog(indent = '+1')
 
         # configure subsystems
-        self._preTrainingCreateSubsystems()
-
-        # create copy of dataset values (before transformation)
-        datasetCopy = dataset._get()
-
+        self._preTrainingPrepare()
+        
         # optimize subsystems
-        for sysID in range(len(self._sub)):
-            nemoa.log('info', 'optimize subsystem %s (%s)' \
-                % (self._sub[sysID].getName(), self._sub[sysID].getType()))
-            nemoa.setLog(indent = '+1')
-
-            # link encoder and decoder system
-            system = self._sub[sysID]
-
-            # transform dataset with previous system / fix lower stack
-            if sysID > 0:
-                dataset.transformData(
-                    system = self._sub[sysID - 1],
-                    transformation = 'hiddenvalue',
-                    colLabels = self._sub[sysID - 1].getUnits(type = 'hidden'))
-
-            # initialize system
-            # in higher layers 'initVisible' = False
-            # prevents the system from reinitialization
-            system.initParams(dataset)
-
-            # optimize (free) system parameter
-            system.optimizeParams(dataset, **config)
-
-            nemoa.setLog(indent = '-1')
-
-        # reset data to initial state (before transformation)
-        dataset._set(**datasetCopy)
-
-        # unlink and destroy subsystems
-        self._preTrainingCleanupSubsystems()
+        self._preTrainingOptimize(dataset, **config)
+        
+        # import parameters from subsystems
+        self._preTrainingImport()
+        
+        # cleanup subsystem
+        self._preTrainingCleanup()
 
         nemoa.setLog(indent = '-1')
         return True
 
-    def _preTrainingCreateSubsystems(self):
-        """Prepare pretraining."""
+    def _preTrainingPrepare(self):
+        """Configure subsystems for pretraining."""
+        ### 2DO: Why is this import necessary???
         import nemoa
-        import nemoa.system
-
+        ###
         nemoa.log('info', 'configure subsystems')
         nemoa.setLog(indent = '+1')
         if not 'units' in self._params:
@@ -306,7 +293,8 @@ class dbn(nemoa.system.ann.ann):
             return False
 
         # create and configure subsystems
-        self._sub = []
+        import nemoa.system
+        self._subSystems = []
         for layerID in range((len(self._params['units']) - 1)  / 2):
             inUnits = self._params['units'][layerID]
             outUnits = self._params['units'][layerID + 1]
@@ -351,7 +339,7 @@ class dbn(nemoa.system.ann.ann):
                 len(system.getLinks())))
 
             # link subsystem
-            self._sub.append(system)
+            self._subSystems.append(system)
 
             # link linksparameters of subsystem
             links['init'] = system._params['links'][(0, 1)]
@@ -377,16 +365,53 @@ class dbn(nemoa.system.ann.ann):
         nemoa.setLog(indent = '-1')
         return True
 
-    def _preTrainingCleanupSubsystems(self):
+    def _preTrainingOptimize(self, dataset, **config):
+        """Optimize Subsystems."""
+    
+        # create copy of dataset values (before transformation)
+        datasetCopy = dataset._get()
+
+        # optimize subsystems
+        for sysID in range(len(self._subSystems)):
+            nemoa.log('info', 'optimize subsystem %s (%s)' \
+                % (self._subSystems[sysID].getName(), self._subSystems[sysID].getType()))
+            nemoa.setLog(indent = '+1')
+
+            # link encoder and decoder system
+            system = self._subSystems[sysID]
+
+            # transform dataset with previous system / fix lower stack
+            if sysID > 0:
+                dataset.transformData(
+                    system = self._subSystems[sysID - 1],
+                    transformation = 'hiddenvalue',
+                    colLabels = self._subSystems[sysID - 1].getUnits(type = 'hidden'))
+
+            # initialize system
+            # in higher layers 'initVisible' = False
+            # prevents the system from reinitialization
+            system.initParams(dataset)
+
+            # optimize (free) system parameter
+            system.optimizeParams(dataset, **config)
+
+            nemoa.setLog(indent = '-1')
+
+        # reset data to initial state (before transformation)
+        dataset._set(**datasetCopy)
+        return True
+
+    def _preTrainingImport(self):
         nemoa.log('info', 'initialize system with subsystem parameters')
         nemoa.setLog(indent = '+1')
 
-        # expand unit parameters to all layers
-        inputUnits = self._units['input']['label']
-        outputUnits = self._units['output']['label']
+        # keep original inputs and outputs
+        inputs = self._units['input']['label']
+        outputs = self._units['output']['label']
 
+        # expand unit parameters to all layers
         import numpy
-        nemoa.log('info', 'expand unit and link parameters (enrolling)')
+        nemoa.log('info', 'import unit and link parameters from subsystems (enrolling)')
         inputUnits = self._units['input']['label']
         outputUnits = self._units['output']['label']
         units = self._params['units']
@@ -409,74 +434,21 @@ class dbn(nemoa.system.ann.ann):
             links[(len(units) - id - 2, len(units) - id - 1)] = \
                 self._getTransposedLinks((id, id + 1))
 
-        print links[(0, 1)]
-        print links[(5, 6)]
-        quit()
-
-        # cleanup input layer
-        nemoa.log('info', 'restricting input layer to given input values')
-        inputUnits = self._units['input']['label']
-        outputUnits = self._units['output']['label']
-
-    
-
-        quit()
-                # 2DO
-        # delete units
-        #
-        #
-        #
-        #
-        #
-        #
-        #
-        input = self._units['input']
-        
-        selectUnitIDs = []
-        for unitID, unit in enumerate(inputLayer['params']['label']):
-            if unit in inputLayer['label']:
-                selectUnitIDs.append(unitID)
-        inputLayer['params']['label'] = inputLayer['label']
-        for param in inputLayer['params'].keys():
-            if param == 'label':
-                continue
-            inputLayer['params'][param] = \
-                inputLayer['params'][param][0, selectUnitIDs]
-        inputLayerLinks = self._params['links'][(0, 1)]
-        for param in inputLayerLinks['params'].keys():
-            if type(inputLayerLinks['params'][param]).__module__ == numpy.__name__:
-                inputLayerLinks['params'][param] = \
-                    inputLayerLinks['params'][param][selectUnitIDs, :]
-
-        # cleanup output layer
-        nemoa.log('info', 'restricting output layer to given input values')
-        outputLayer = self._params['units'][-1]
-        selectUnitIDs = []
-        for unitID, unit in enumerate(outputLayer['params']['label']):
-            if unit in outputLayer['label']:
-                selectUnitIDs.append(unitID)
-        outputLayer['params']['label'] = outputLayer['label']
-        for param in outputLayer['params'].keys():
-            if param == 'label':
-                continue
-            outputLayer['params'][param] = \
-                outputLayer['params'][param][0, selectUnitIDs]
-        outputLayerLinks = self._params['links'][(\
-            len(self._params['units']) - 2, \
-            len(self._params['units']) - 1)]
-        for param in outputLayerLinks['params'].keys():
-            if type(outputLayerLinks['params'][param]).__module__ == numpy.__name__:
-                outputLayerLinks['params'][param] = \
-                    outputLayerLinks['params'][param][:, selectUnitIDs]
+        nemoa.log('info', 'cleanup unit and linkage parameter arrays')
+        # remove output units from input layer
+        self._removeUnits('input', outputs)
+        # remove input units from output layer
+        self._removeUnits('output', inputs)
 
         nemoa.setLog(indent = '-1')
         return True
 
-    def _initParams(self, data = None):
-        """Initialize system parameters using data.
-
-        Not needed for multilayer ANNs since subsystems
-        are initialized during optimization
-        """
-        print 'initialising params .... <- 2do'
+    def _preTrainingCleanup(self):
+        del self._subSystems
         return True
+
+    def _initParams(self, data = None):
+        """Initialize DBN parameters.
+        Use of data is not necessary because real initialization
+        of parameters appears in pre training."""
+        return (self._initUnits() and self._initLinks())
