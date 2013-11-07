@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
 class heatmap(plot):
-    
+
     def getSettings(self):
         return {
             'output': 'file',
@@ -20,7 +20,7 @@ class heatmap(plot):
         }
 
 class sampleRelation(heatmap):
-    
+
     def getDefaults(self):
         return {
             'samples': '*',
@@ -98,7 +98,8 @@ class unitRelation(heatmap):
     def create(self, model, file = None):
 
         # convert 'visible' and 'hidden' to list of nodes
-        visible, hidden = model.system.getUnits()
+        visible = model.system.getUnits(visible = True)
+        hidden = model.system.getUnits(visible = False)
         for key in ['units', 'x', 'y']:
             if type(self.settings[key]) == type(list()):
                 continue

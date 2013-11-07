@@ -587,7 +587,8 @@ class model:
 
         # get visible and hidden units
         # and set visble as default for unknown unit lists
-        visible, hidden = self.system.getUnits()
+        visible = self.system.getUnits(visible = True)
+        hidden = self.system.getUnits(visible = False)
         if units:
             x = units
             y = units
@@ -711,9 +712,9 @@ class model:
 
         # set default values to params if not set
         if not x:
-            x = self.system.getUnits()[0]
+            x = self.system.getUnits(visible = True)
         if not y:
-            y = self.system.getUnits()[0]
+            y = self.system.getUnits(visible = True)
 
         # prepare causality matrix
         K = numpy.zeros((len(y), len(x)))

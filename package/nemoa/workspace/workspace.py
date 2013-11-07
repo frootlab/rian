@@ -24,28 +24,9 @@ class workspace:
         """Import configuration from project and update paths and logfile."""
         return nemoa.workspace.loadProject(project)
 
-    #
-    # Wrap configuration
-    #
-
-    #def get(*args, **kwargs):
-        #return __shared['config'].get(*args, **kwargs)
-
-    #def list(self, *args, **kwargs):
-        #return nemoa.workspace.list(*args, **kwargs)
-
-    #def path(*args, **kwargs):
-        #return __shared['config'].path(*args, **kwargs)
 
     def project(self, *args, **kwargs):
         return nemoa.workspace.project(*args, **kwargs)
-
-    #def getPath(*args, **kwargs):
-        #return __shared['config'].getPath(*args, **kwargs)
-
-    #
-    #
-    #
 
     def list(self, type = None, namespace = None):
         """Return a list of known objects."""
@@ -262,80 +243,3 @@ class workspace:
             network = model.network.getConfig(),
             system = model.system.getConfig(),
             configure = False, initialize = False)._set(model._get())
-
-    #def __getPlot(self, name = None, params = {}, config = {}, **options):
-        #"""Return new plot instance"""
-
-        ## return empty plot instance if no configuration information was given
-        #if not name and not config:
-            #import nemoa.plot as plot
-            #return plot.new()
-
-        ## get plot configuration
-        #if name == None:
-            #cfgPlot = config.copy()
-        #else:
-            #cfgPlot = nemoa.workspace.get('plot', name = name, params = params)
-
-        ## create plot instance
-        #if not cfgPlot == None:
-            #nemoa.log("info", "create plot instance: '" + name + "'")
-            ## merge params
-            #for param in params.keys():
-                #cfgPlot['params'][param] = params[param]
-            #import nemoa.plot as plot
-            #return plot.new(config = cfgPlot)
-        #else:
-            #nemoa.log("error", "could not create plot instance: unkown plot-id '" + name + "'")
-            #return None
-
-    #def plot(self, model, plot, output = 'file', file = None, **kwargs):
-        #"""Create plot of model."""
-
-        #singleModelPlot = True
-
-        ## if 'model' parameter is a string, load model
-        #if isinstance(model, str):
-            #model = self.loadModel(model)
-        ## if 'model' parameter is a list of models, load models
-        #elif isinstance(model, (list, tuple)):
-            #singleModelPlot = False
-            #models = model
-            #for i, model in enumerate(models):
-                #if isinstance(model, str):
-                    #models[i] = self.loadModel(model)
-        #elif not nemoa.type.isModel(model):
-            #nemoa.log("warning", "could not create plot: invalid parameter 'model' given")
-            #return None
-
-        ## get plot instance
-        #if isinstance(plot, str):
-            #plotName, plotParams = nemoa.common.strSplitParams(plot)
-            #mergeDict = plotParams
-            #for param in kwargs.keys():
-                #plotParams[param] = kwargs[param]
-            #objPlot = self.__getPlot(name = plotName, params = plotParams)
-            #if not objPlot:
-                #nemoa.log("warning", "could not create plot: unknown configuration '%s'" % (plotName))
-                #return None
-        #elif isinstance(plot, dict):
-            #objPlot = self.__getPlot(config = plot)
-        #else:
-            #objPlot = self.__getPlot()
-        #if not objPlot:
-            #return None
-
-        ## prepare filename
-        #if output == 'display':
-            #file = None
-        #elif output == 'file' and not file:
-            #file = nemoa.common.getEmptyFile(nemoa.workspace.path('plots') + \
-                #model.getName() + '/' + objPlot.cfg['name'] + \
-                #'.' + objPlot.settings['fileformat'])
-            #nemoa.log("console", "create plot: " + file)
-
-        #if singleModelPlot:
-            ## if type of plot not is singleModelPlot
-            #return objPlot.create(model, file = file)
-        #else:
-            #return objPlot.create(models, file = file)

@@ -428,14 +428,6 @@ class rbm(nemoa.system.ann.ann):
         """Return tuple with lists of unit labels ([visible], [hidden]) using dataset for visible."""
         return (dataset.getColLabels(), self._params['units'][1]['label'])
 
-    def _getUnitsFromSystem(self, type = None):
-        """Return tuple with lists of unit labels ([visible], [hidden])."""
-        if type == 'visible':
-            return self._params['units'][0]['label']
-        if type == 'hidden':
-            return self._params['units'][1]['label']
-        return (self._params['units'][0]['label'], self._params['units'][1]['label'])
-
     def _setUnits(self, units):
         """Set visible and hidden units."""
         self._params['units'] = [{
@@ -450,14 +442,6 @@ class rbm(nemoa.system.ann.ann):
             'class': 'bernoulli'
         }]
         return True
-
-    #def _getUnitParams(self, label):
-        #"""Return dictionary with parameters of one specific unit."""
-        #if self._isVisibleUnit(label):
-            #return self._getVisibleUnitParams(label)
-        #if self._isHiddenUnit(label):
-            #return self._getHiddenUnitParams(label)
-        #return False
 
     def _getUnitEval(self, data, func = 'performance', info = False, **kwargs):
         """Return unit evaluation."""

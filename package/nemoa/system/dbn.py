@@ -208,7 +208,6 @@ class dbn(nemoa.system.ann.ann):
         nemoa.log('info', 'finetuning system')
         nemoa.setLog(indent = '+1')
 
-        print self._checkParams(self._params)
 
         nemoa.setLog(indent = '-1')
         return True
@@ -335,7 +334,7 @@ class dbn(nemoa.system.ann.ann):
                 dataset.transformData(
                     system = self._subSystems[sysID - 1],
                     transformation = 'hiddenvalue',
-                    colLabels = self._subSystems[sysID - 1].getUnits(type = 'hidden'))
+                    colLabels = self._subSystems[sysID - 1].getUnits(visible = False))
 
             # initialize system
             # in higher layers 'initVisible' = False

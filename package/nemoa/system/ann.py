@@ -52,20 +52,20 @@ class ann(nemoa.system.base.system):
         return True
 
     def _setDataset(self, dataset, *args, **kwargs):
-        """Update units and links to dataset instance."""
+        """check if dataset columns match with visible units."""
 
         if not nemoa.type.isDataset(dataset):
-            nemoa.log("error", "could not configure system: dataset instance is not valid!")
+            nemoa.log('error', """
+                could not configure system:
+                dataset instance is not valid!""")
             return False
-            dataset.getColLabels()
-        if dataset.getColLabels() != self._params['units'][0]['label']:
-            # 2DO!!
-            # something went wrong
-            print dataset.getColLabels()
-            print self._params['units'][0]['label']
-            print 'I\'m system/ann.py/_setDataset'
-            print 'What\'s wrong with me?'
-            quit()
+
+        # compare visible units labels with dataset columns
+        if dataset.getColLabels() != self.getUnits(visible = True):
+            nemoa.log('error', """
+            could not configure system:
+            visible units differ from dataset columns!""")
+            return False
 
         self._config['check']['dataset'] = True
         return True
@@ -95,10 +95,38 @@ class ann(nemoa.system.base.system):
                 self._params['links'][id]
         return True
 
+    def _getUnitsFromSystem(self, group = False, **kwargs):
+        """Return tuple with lists of unit labels ([units1], [units2], ...)."""
+        filter = []
+        for key in kwargs.keys():
+            if key in self._params['units'][0].keys():
+                filter.append((key, kwargs[key]))
+        layers = ()
+        for layer in self._params['units']:
+            valid = True
+            for key, val in filter:
+                if not layer[key] == val:
+                    valid = False
+                    break
+            if valid:
+                layers += (layer['label'], )
+        if group:
+            return layers
+        units = []
+        for layer in layers:
+            units += layer
+        return units
+
+    def _getLayerOfUnit(self, unit):
+        for id in range(len(self._params['units'])):
+            if unit in self._params['units'][id]['label']:
+                return self._params['units'][id]['name']
+        return None
+
     def _getUnitInformation(self, unit, layer = None):
-        # set first (input) layer if no layer is given
+        # search for layer if no layer is given
         if not layer:
-            layer = self._params['units'][0]['name']
+            layer = self._getLayerOfUnit(unit)
         if not layer in self._units:
             return {}
         layer = self._units[layer]
@@ -203,21 +231,25 @@ class ann(nemoa.system.base.system):
             'A': self._params['links'][id]['A'].T,
             'W': self._params['links'][id]['W'].T}
 
-    def _removeUnits(self, layer, label = []):
+    def _removeUnits(self, layer = None, label = []):
 
-        if not layer in self._units:
+        if not layer == None and not layer in self._units:
             nemoa.log('error', """
-                could not delete units:
+                could not remove units:
                 unknown layer '%'""" % (layer))
             return False
 
         # search for labeled units in given layer
         layer = self._units[layer]
-        links = self._links[layer['name']]
         select = []
+        units = []
         for id, unit in enumerate(layer['label']):
             if not unit in label:
                 select.append(id)
+                units.append(unit)
+
+        # remove units from unit labels
+        layer['label'] = units
 
         # delete units from unit parameter arrays
         if layer['class'] == 'gauss':
@@ -226,6 +258,14 @@ class ann(nemoa.system.base.system):
             self._removeBernoulliUnits(layer, select)
         
         # delete units from link parameter arrays
+        self._removeUnitsLinks(layer, select)
+
+        return True
+
+    def _removeUnitsLinks(self, layer, select):
+        """Remove links to a given list of units."""
+        links = self._links[layer['name']]
+
         for src in links['source'].keys():
             links['source'][src]['A'] = \
                 links['source'][src]['A'][select, :]
@@ -236,9 +276,12 @@ class ann(nemoa.system.base.system):
                 links['target'][tgt]['A'][:, select]
             links['target'][tgt]['W'] = \
                 links['target'][tgt]['W'][:, select]
+
         return True
 
-    # Bernoulli Units
+    #
+    # Sigmoidal / Bernoulli Units
+    #
 
     def _initBernoulliUnits(self, layer, data = None):
         """Initialize system parameters of bernoulli distributed units using data."""
@@ -256,7 +299,26 @@ class ann(nemoa.system.base.system):
     def _getBernoulliUnitInfo(self, layer, unitid):
         return {'bias': layer['bias'][0, unitid]}
 
-    # Gauss Units
+    # activation functions for sigmoidal units
+
+    @staticmethod
+    def _sigmoid(x):
+        """Standard logistic function"""
+        return 1.0 / (1.0 + numpy.exp(-x))
+
+    @staticmethod
+    def _tanh(x):
+        """Hyperbolic tangens"""
+        return numpy.tanh(x)
+
+    @staticmethod
+    def _tanhEff(x):
+        """Hyperbolic tangens proposed in paper 'Efficient BackProp' by LeCun, Bottou, Orr, Müller"""
+        return 1.7159 * numpy.tanh(0.6666 * x)
+
+    #
+    # Gaussian Units
+    #
 
     def _initGaussUnits(self, layer, data = None, vSigma = 0.4):
         """Initialize system parameters of gauss distribued units using data."""
@@ -285,20 +347,3 @@ class ann(nemoa.system.base.system):
     def _getGaussUnitInfo(self, layer, unitid):
         return {'bias': layer['bias'][0, unitid],
             'lvar': layer['lvar'][0, unitid]}
-
-    # common activation functions
-
-    @staticmethod
-    def _sigmoid(x):
-        """Standard logistic function"""
-        return 1.0 / (1.0 + numpy.exp(-x))
-
-    @staticmethod
-    def _tanh(x):
-        """Hyperbolic tangens"""
-        return numpy.tanh(x)
-
-    @staticmethod
-    def _tanhEff(x):
-        """Hyperbolic tangens proposed in paper 'Efficient BackProp' by LeCun, Bottou, Orr, Müller"""
-        return 1.7159 * numpy.tanh(0.6666 * x)

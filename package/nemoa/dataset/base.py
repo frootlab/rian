@@ -383,8 +383,13 @@ class dataset:
 
         if nemoa.type.isSystem(system):
             nemoa.log('info', 'preprocessing: transform data using system \'%s\'' % (system.getName()))
+            nemoa.setLog(indent = '+1')
+            
             if not isinstance(colLabels, list):
-                nemoa.log('info', 'transformation is not possible: no column labels have been given')
+                nemoa.log('error', """
+                    transformation is not possible:
+                    no column labels have been given!.""")
+                nemoa.setLog(indent = '-1')
                 return False
 
             for src in self.data:
@@ -411,6 +416,8 @@ class dataset:
 
                 # set record array
                 self.data[src]['array'] = newRecArray
+            
+            nemoa.setLog(indent = '-1')
             return True
 
         return False
