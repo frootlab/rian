@@ -169,7 +169,7 @@ class dbn(nemoa.system.ann.ann):
             else:
                 name = 'h' + str(layerID)
                 visible = False
-                unitClass = 'bernoulli'
+                unitClass = 'sigmoid'
             self._params['units'].append({
                 'name': name,
                 'visible': visible,

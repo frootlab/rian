@@ -434,12 +434,12 @@ class rbm(nemoa.system.ann.ann):
             'label': units[0],
             'visible': True,
             'name': 'visible',
-            'class': 'bernoulli'
+            'class': 'sigmoid'
         }, {
             'label': units[1],
             'visible': False,
             'name': 'hidden',
-            'class': 'bernoulli'
+            'class': 'sigmoid'
         }]
         return True
 
@@ -602,28 +602,18 @@ class rbm(nemoa.system.ann.ann):
 
     def _getVisibleUnitExpect(self, hValue):
         """Return the expected values of all visible units using the values of the hidden units."""
-        if self._config['optimize']['useAdjacency']:
-            return self._sigmoid(self._params['units'][0]['bias'] +
-                numpy.dot(hValue, (self._params['links'][(0, 1)]['W'] * self._params['links'][(0, 1)]['A']).T))
-        else:
-            return self._sigmoid(self._params['units'][0]['bias']
-                + numpy.dot(hValue, self._params['links'][(0, 1)]['W'].T))
+        return self._getSigmoidFromSigmoidExpect(hValue,
+            source = self._params['units'][1],
+            target = self._params['units'][0],
+            links = self._params['links'][(0, 1)])
 
-    def _getVisibleUnitValue(self, vExpect):
-        """Return reconstructed values of visible units as numpy array.
+    def _getVisibleUnitValue(self, data):
+        """Return reconstructed values of visible units as numpy array."""
+        return self._getBernoulliMedian(data)
 
-        Arguments:
-            vExpect -- Expectation values for visible units.
-        """
-        return (vExpect > 0.5).astype(float)
-
-    def _getVisibleUnitSample(self, vExpect):
-        """Return gauss distributed samples for visible units as numpy array.
-
-        Arguments:
-            vExpect -- Expectation values for visible units.
-        """
-        return (vExpect > numpy.random.rand(vExpect.shape[0], vExpect.shape[1])).astype(float)
+    def _getVisibleUnitSample(self, data):
+        """Return gauss distributed samples for visible units as numpy array."""
+        return self._getBernoulliSample(data)
 
     def _getVisibleUnitUpdates(self, vData, hData, vModel, hModel, **kwargs):
         """Return updates for visible units."""
@@ -636,11 +626,6 @@ class rbm(nemoa.system.ann.ann):
         """Set updates for visible units."""
         self._params['units'][0]['bias'] += updates['bias']
         return True
-
-    #def _getVisibleUnitParams(self, label):
-        #"""Return system parameters of one specific visible unit."""
-        #id = self._params['units'][0]['label'].index(label)
-        #return { 'bias': self._params['units'][0]['bias'][0, id] }
 
     def _setVisibleUnitParams(self, params):
         """Set parameters of visible units using dictionary."""
@@ -656,12 +641,6 @@ class rbm(nemoa.system.ann.ann):
         return -np.mean(data * self._params['units'][0]['bias'], axis = 0)
 
     # RBM HIDDEN UNIT METHODS
-
-    #def _initHiddenUnitParams(self, data = None):
-        #"""Initialize system parameters of all hidden units using data."""
-        
-        #self._params['units'][1]['bias'] = 0.5 * numpy.ones((1, len(self._params['units'][1]['label'])))
-        #return True
 
     def _getHiddenUnitUpdates(self, vData, hData, vModel, hModel, **kwargs):
         """Return updates for visible units."""
@@ -686,27 +665,20 @@ class rbm(nemoa.system.ann.ann):
             return self._config['params']['hidden']
         return []
 
-    #def _getHiddenUnitParams(self, label):
-        #"""Return parameters of a specific hidden unit."""
-        #id = self._params['units'][1]['label'].index(label)
-        #return { 'bias': self._params['units'][1]['bias'][0, id] }
-
     def _getHiddenUnitExpect(self, vValue):
-        """Return maximum likelihood values of hidden units from given visible units."""
-        if self._config['optimize']['useAdjacency']:
-            return self._sigmoid(self._params['units'][1]['bias'] +
-                numpy.dot(vValue, self._params['links'][(0, 1)]['W'] * self._params['links'][(0, 1)]['A']))
-        else:
-            return self._sigmoid(self._params['units'][1]['bias'] +
-                numpy.dot(vValue, self._params['links'][(0, 1)]['W']))
+        """Return the expected values of all hidden units using the values of the visible units."""
+        return self._getSigmoidFromSigmoidExpect(data = vValue,
+            source = self._units['visible'],
+            target = self._units['hidden'],
+            links  = self._links['visible']['target']['hidden'])
 
-    def _getHiddenUnitValue(self, hExpect):
+    def _getHiddenUnitValue(self, data):
         """Return reconstructed values of hidden units using their expectation values."""
-        return (hExpect > 0.5).astype(float)
+        return self._getBernoulliMedian(data, self._params['units'][1])
 
-    def _getHiddenUnitSample(self, hExpect):
+    def _getHiddenUnitSample(self, data):
         """Return the reconstructed values of all hidden units using their expectation values."""
-        return (hExpect > numpy.random.rand(hExpect.shape[0], hExpect.shape[1])).astype(float)
+        return self._getBernoulliSample(data, self._params['units'][1])
 
     def _setHiddenUnitParams(self, params):
         """Set parameters of hidden units using dictionary."""
@@ -716,11 +688,6 @@ class rbm(nemoa.system.ann.ann):
             l = params['units'][1]['label'].index(h)
             self._params['units'][1]['bias'][0, j] = params['units'][1]['bias'][0, l]
         return True
-
-    #def _checkHiddenUnitParams(self, params):
-        #"""Check if system parameter dictionary is valid respective to hidden units."""
-        #return ('units' in params and 'label' in params['units'][1]
-            #and 'bias' in params['units'][1])
 
     def _getHiddenUnitEvalEnergy(self, data):
         """Return system energy for all hidden units as numpy array."""
@@ -994,7 +961,7 @@ class grbm(rbm):
             'label': units[1],
             'visible': False,
             'name': 'hidden',
-            'class': 'bernoulli'
+            'class': 'sigmoid'
         }]
         return True
 
@@ -1040,55 +1007,34 @@ class grbm(rbm):
             self._params['units'][0]['lvar'][0, i] = params['units'][0]['lvar'][0, k]
         return True
 
-    def _getVisibleUnitExpect(self, hValue):
-        """Return expectation values of visible units as numpy array.
+    def _getVisibleUnitExpect(self, data):
+        """Return the expected values of all visible units using the values of the hidden units."""
+        return self._getGaussFromSigmoidExpect(data,
+            source = self._params['units'][1],
+            target = self._params['units'][0],
+            links = self._params['links'][(0, 1)])
 
-        Arguments:
-        hValue -- Values of hidden units.
-        """
-        if self._config['optimize']['useAdjacency']:
-            return self._params['units'][0]['bias'] + numpy.dot(hValue, (self._params['links'][(0, 1)]['W'] * self._params['links'][(0, 1)]['A']).T)
-        else:
-            return self._params['units'][0]['bias'] + numpy.dot(hValue, self._params['links'][(0, 1)]['W'].T)
+    def _getVisibleUnitValue(self, data):
+        """Return reconstructed values of visible units as numpy array."""
+        return self._getGaussMedian(data, self._params['units'][0])
 
-    def _getVisibleUnitValue(self, vExpect):
-        """
-        Return reconstructed values of visible units as numpy array.
-
-        Arguments:
-        vExpect -- Expectation values for visible units.
-        """
-        return vExpect
-
-    def _getVisibleUnitSample(self, vExpect):
-        """
-        Return gauss distributed samples for visible units as numpy array.
-
-        Arguments:
-        vExpect -- Expectation values for visible units.
-        """
-        return numpy.random.normal(vExpect, numpy.sqrt(numpy.exp(self._params['units'][0]['lvar'])))
+    def _getVisibleUnitSample(self, data):
+        """Return gauss distributed samples for visible units as numpy array."""
+        return self._getGaussSample(data, self._params['units'][0])
 
     def _getVisibleUnitEvalEnergy(self, data):
-        """
-        Return local energy for all visible units as numpy array.
-        """
+        """Return local energy for all visible units as numpy array."""
         return -np.mean((data - self._params['units'][0]['bias']) ** 2
             / numpy.exp(self._params['units'][0]['lvar']), axis = 0) / 2
 
     # GRBM hidden units
 
     def _getHiddenUnitExpect(self, vValue):
-        """
-        Return the expected values of all hidden units using the values of the visible units.
-        """
-        vVar = numpy.exp(self._params['units'][0]['lvar'])
-        if self._config['optimize']['useAdjacency']:
-            return self._sigmoid(self._params['units'][1]['bias'] +
-                numpy.dot(vValue / vVar, self._params['links'][(0, 1)]['W'] * self._params['links'][(0, 1)]['A']))
-        else:
-            return self._sigmoid(self._params['units'][1]['bias'] +
-                numpy.dot(vValue / vVar, self._params['links'][(0, 1)]['W']))
+        """Return the expected values of all hidden units using the values of the visible units."""
+        return self._getSigmoidFromGaussExpect(data = vValue,
+            source = self._params['units'][0],
+            target = self._params['units'][1],
+            links = self._params['links'][(0, 1)])
 
     # GRBM links
 
