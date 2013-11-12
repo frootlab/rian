@@ -148,8 +148,9 @@ class config:
             # set common project, update paths and import workspaces
             self.__project = project
             self.__updatePaths(base = 'common')
-            self.__scanConfigFiles()
-            self.__scanScriptFiles()
+            self.__scanForConfigFiles()
+            self.__scanForScripts()
+            self.__scanForNetworks()
 
         # reset to previous project
         self.__project = curProject
@@ -184,10 +185,9 @@ class config:
         nemoa.initLogger(logfile = self.__path['logfile'])
 
         # import object configurations for current project
-        self.__scanConfigFiles()
-        
-        # import scripts for current project
-        self.__scanScriptFiles()
+        self.__scanForConfigFiles()
+        self.__scanForScripts()
+        self.__scanForNetworks()
 
         nemoa.setLog(indent = '-1')
         return True
@@ -203,7 +203,7 @@ class config:
     # import configuration files
     #
 
-    def __scanConfigFiles(self, files = None):
+    def __scanForConfigFiles(self, files = None):
         """Import all config files from current project."""
 
         nemoa.log('info', 'scanning for configuration files')
@@ -234,7 +234,8 @@ class config:
             return False
 
         # logger info
-        nemoa.log("info", "import configuration file: '" + configFile + "'")
+        nemoa.log("info", "parsing configuration file: '" + configFile + "'")
+        nemoa.setLog(indent = '+1')
 
         # import and register objects without testing
         importer = configFileImporter(self)
@@ -245,13 +246,14 @@ class config:
 
         self.__check(objConfList)
 
+        nemoa.setLog(indent = '-1')
         return True
 
     #
     # Script files
     #
 
-    def __scanScriptFiles(self, files = None):
+    def __scanForScripts(self, files = None):
         """Scan for scripts files in current project."""
 
         nemoa.log('info', 'scanning for script files')
@@ -263,13 +265,13 @@ class config:
 
         # import definition files
         for file in glob.iglob(self.getPath(files)):
-            self.__importScriptFile(file)
+            self.__registerScript(file)
 
         nemoa.setLog(indent = '-1')
 
         return True
 
-    def __importScriptFile(self, file):
+    def __registerScript(self, file):
         """Import script file from current project."""
 
         # search definition file
@@ -282,11 +284,12 @@ class config:
             return False
 
         # logger info
-        nemoa.log("info", "found script file: '" + scriptFile + "'")
+        
 
         # import and register objects without testing
         importer = scriptFileImporter(self)
-        self.__addObjToStore(importer.load(scriptFile))
+        script = importer.load(scriptFile)
+        self.__addObjToStore(script)
 
         return True
 
@@ -294,19 +297,35 @@ class config:
     # import network configuration file
     #
 
-    def __importNetworkConfigFile(self, file, format = None):
+    def __scanForNetworks(self, files = None):
+        """Scan for scripts files in current project."""
 
-        # file
-        file = self.getPath(file).strip()
+        nemoa.log('info', 'scanning for networks')
+        nemoa.setLog(indent = '+1')
 
-        # search network file
-        if os.path.isfile(self.__path['networks'] + file):
-            file = os.path.abspath(self.__path['networks'] + file)
-        elif os.path.isfile(file):
-            file = os.path.abspath(file)
+        # are files given?
+        if files == None:
+            files = self.__path['networks'] + '*.ini'
+
+        # import definition files
+        for file in glob.iglob(self.getPath(files)):
+            self.__registerNetwork(file)
+
+        nemoa.setLog(indent = '-1')
+
+        return True
+
+    def __registerNetwork(self, file, format = None):
+
+        # search definition file
+        if os.path.isfile(file):
+            networkFile = file
+        elif os.path.isfile(self.__path['networks'] + file):
+            networkFile = self.__path['networks'] + file
         else:
-            nemoa.log("warning", "network file '" + file + "' does not exist!")
-            return None
+            nemoa.log('warning',
+                "network file '%s' does not exist!" % (file))
+            return False
 
         # format
         if not format:
@@ -315,15 +334,14 @@ class config:
             format    = file_ext.lstrip('.').strip().lower()
 
         if format == 'ini':
-            importer = networkConfigFileImporter()
-            return importer.load(file)
+            importer = networkConfigFileImporter(self)
+            return self.__addObjToStore(importer.load(networkFile))
 
         return None
 
     def __check(self, objConfList):
-        """
-        Check (and update) object configurations and delete invalid objects
-        """
+        """Check (and update) object configurations
+        and delete invalid objects."""
         for objConf in objConfList:
             objConf = self.__checkObjConf(objConf)
             if not objConf:
@@ -331,10 +349,7 @@ class config:
         return True
 
     def __checkObjConf(self, objConf):
-        """
-        Check and update object configuration
-        """
-    
+        """Check and update object configuration."""
         if not 'class' in objConf or not objConf['class']:
             return None
         if not 'name' in objConf:
@@ -364,9 +379,7 @@ class config:
         return None
 
     def __checkNetworkConf(self, objConf):
-        """
-        Check and update network configuration
-        """
+        """Check and update network configuration."""
         type = objConf['class']
         name = objConf['name']
         conf = objConf['config']
@@ -413,7 +426,7 @@ class config:
             format = objConf['config']['source']['file_format']
 
             # get network config
-            networkCfg = self.__importNetworkConfigFile(file, format)
+            networkCfg = self.__registerNetwork(file, format)
             if networkCfg == None:
                 nemoa.log("warning", 
                     "skipping network '" + name + "'")
@@ -424,9 +437,7 @@ class config:
         return objConf
 
     def __checkDatasetConf(self, objConf, frac = 1.0, update = True):
-        """
-        Check and update dataset configuration
-        """
+        """Check and update dataset configuration."""
 
         # allready configured?
         #if not 'class' in objConf.keys():
@@ -626,12 +637,12 @@ class config:
         return objConf
 
     def __addObjToStore(self, objConf):
-        """
-        Add object configuration to object tree
-        """
+        """link object configuration to object dictionary."""
         type = objConf['class']
         name = objConf['name']
         config = objConf['config']
+
+        nemoa.log('info', 'adding %s: %s' % (type, name))
 
         key = None
         objID = 0
@@ -653,9 +664,7 @@ class config:
         return objID
 
     def __delObjConf(self, objConf):
-        """
-        Delete object configuration from object store
-        """
+        """Unlink object configuration from object dictionary."""
         if not objConf:
             return False
         id = self.__getObjIDByName(objConf['class'], objConf['name'])
@@ -671,9 +680,7 @@ class config:
         return True
 
     def list(self, type = None, namespace = None):
-        """
-        List known objects
-        """
+        """List known object configurations."""
 
         if type == 'model':
             models = []
@@ -695,22 +702,16 @@ class config:
         return sorted(objList, key = lambda col: col[2])
 
     def __isObjKnown(self, type, name):
-        """
-        Return true if object is registered
-        """
+        """Return True if object is registered."""
         return self.__getObjIDByName(type, name) in self.__index
 
     def __getObjIDByName(self, type, name):
-        """
-        Return id of object as integer
-        calculated as hash from type and name
-        """
+        """Return id of object as integer
+        calculated as hash from type and name"""
         return nemoa.common.strToHash(str(type) + chr(10) + str(name))
 
     def __getObjByID(self, id):
-        """
-        Return object from store by id
-        """
+        """Return object from store by id."""
         if not id in self.__index:
             nemoa.log('warning', '2DO')
             return None
@@ -868,31 +869,6 @@ class config:
         return new
 
 #
-# import script files
-#
-
-class scriptFileImporter:
-
-    project  = None
-
-    def __init__(self, config):
-        self.project = config.project()
-
-    def load(self, file):
-        import os
-        name = self.project + '.' + os.path.splitext(os.path.basename(file))[0]
-        path = file
-
-        return {
-            'class':   'script',
-            'name':    name,
-            'project': self.project,
-            'config':  {
-                'name': name,
-                'path': path
-            }}
-
-#
 # import config file
 #
 
@@ -993,10 +969,38 @@ class configFileImporter:
             return nemoa.common.strToDict(str)
         return str
 
+#
+# import script files
+#
+
+class scriptFileImporter:
+
+    def __init__(self, config):
+        self.project = config.project()
+
+    def load(self, file):
+        name = self.project + '.' + os.path.splitext(os.path.basename(file))[0]
+        path = file
+
+        return {
+            'class':   'script',
+            'name':    name,
+            'project': self.project,
+            'config':  {
+                'name': name,
+                'path': path
+            }}
+
+#
+# import network files
+#
+
 class networkConfigFileImporter:
 
-    def __init__(self):
-        pass
+    project  = None
+
+    def __init__(self, config):
+        self.project = config.project()
 
     def load(self, file):
         """Return network configuration as dictionary.
@@ -1004,11 +1008,29 @@ class networkConfigFileImporter:
         Keyword Arguments:
             file -- ini file containing network configuration
         """
-    
+
         netcfg = ConfigParser.ConfigParser()
         netcfg.optionxform = str
         netcfg.read(file)
-        network = {}
+
+        name = os.path.splitext(os.path.basename(file))[0]
+        fullname = self.project + '.' + name
+
+        network = {
+            'class': 'network',
+            'name': fullname,
+            'project': self.project,
+            'config': {
+                'package': 'base',
+                'class': 'network',
+                'type': None,
+                'name': name,
+                'source': {
+                    'file': file,
+                    'file_format': 'ini'
+                }
+            }
+        }
 
         # validate 'network' section
         if not 'network' in netcfg.sections():
@@ -1016,46 +1038,52 @@ class networkConfigFileImporter:
                 "file '" + file + "' does not contain section 'network'!")
             return None
 
+        # 'name': name of network
+        if 'name' in netcfg.options('network'):
+            network['config']['name'] = \
+                netcfg.get('network', 'name').strip()
+            network['name'] = self.project + '.' + network['config']['name']
+
         # 'package': python module containing the network class
         if 'package' in netcfg.options('network'):
-            network['package'] = netcfg.get('network', 'package').strip().lower()
-        else:
-            network['package'] = 'base'
+            network['config']['package'] = \
+                netcfg.get('network', 'package').strip().lower()
 
         # 'class': network class
         if 'class' in netcfg.options('network'):
-            network['class'] = netcfg.get('network', 'class').strip().lower()
-        else:
-            network['class'] = 'network'
+            network['config']['class'] = \
+                netcfg.get('network', 'class').strip().lower()
 
         # 'type': type of network
         if 'type' in netcfg.options('network'):
-            network['type'] = netcfg.get('network', 'type').strip().lower()
+            network['config']['type'] = netcfg.get('network', 'type').strip().lower()
         else:
-            network['type'] = 'auto'
+            network['config']['type'] = 'auto'
 
         # 'description': description of the network
         if 'description' in netcfg.options('network'):
-            network['description'] = netcfg.get('network', 'type').strip()
+            network['config']['description'] = netcfg.get('network', 'type').strip()
         else:
-            network['description'] = ''
+            network['config']['description'] = ''
 
         #2do: put in network dependent sections sections
         # 'labelformat': annotation of nodes, default: 'generic:string'
         if 'labelformat' in netcfg.options('network'):
-            network['label_format'] = netcfg.get('network', 'nodes').strip()
+            network['config']['label_format'] = netcfg.get('network', 'nodes').strip()
         else:
-            network['label_format'] = 'generic:string'
+            network['config']['label_format'] = 'generic:string'
 
         # depending on network type, use different arguments to describe the network
-        if network['type'] in ['layer', 'multilayer', 'auto']: # 2do restrict to multilayer
+        if network['config']['type'] in ['layer', 'multilayer', 'auto']: # 2do restrict to multilayer
             return self.__getMultiLayerNetwork(file, netcfg, network)
 
         nemoa.log("warning",
-            "file '" + file + "' contains unknown network type '" + network['type'] + "'!")
+            "file '" + file + "' contains unknown network type '" + network['config']['type'] + "'!")
         return None
 
     def __getMultiLayerNetwork(self, file, netcfg, network):
+
+        config = network['config']
 
         # 'layers': ordered list of network layers
         if not 'layers' in netcfg.options('network'):
@@ -1063,16 +1091,16 @@ class networkConfigFileImporter:
                 "file '" + file + "' does not contain parameter 'layers'!")
             return None
         else:
-            network['layer'] = nemoa.common.strToList(netcfg.get('network', 'layers'))
+            config['layer'] = nemoa.common.strToList(netcfg.get('network', 'layers'))
 
         # init network dictionary
-        network['visible'] = []
-        network['hidden']  = []
-        network['nodes']   = {}
-        network['edges']   = {}
+        config['visible'] = []
+        config['hidden']  = []
+        config['nodes']   = {}
+        config['edges']   = {}
 
         # parse '[layer *]' sections and add nodes and layer types to network dict
-        for layer in network['layer']:
+        for layer in config['layer']:
             layerSec = 'layer ' + layer
             if not layerSec in netcfg.sections():
                 nemoa.log("warning", 
@@ -1085,9 +1113,9 @@ class networkConfigFileImporter:
                     "type of layer '" + layer + "' has to be specified ('visible', 'hidden')!")
                 return None
             if netcfg.get(layerSec, 'type').lower() in ['visible']:
-                network['visible'].append(layer)
+                config['visible'].append(layer)
             elif netcfg.get(layerSec, 'type').lower() in ['hidden']:
-                network['hidden'].append(layer)
+                config['hidden'].append(layer)
             else:
                 nemoa.log("warning", 
                     "unknown type of layer '" + layer + "'!")
@@ -1111,61 +1139,61 @@ class networkConfigFileImporter:
                 fileLines = fileHandler.readlines()
                 nodeList = [node.strip() for node in fileLines]
 
-            network['nodes'][layer] = []
+            config['nodes'][layer] = []
             for node in nodeList:
                 node = node.strip()
                 if node == '':
                     continue
-                if not node in network['nodes'][layer]:
-                    network['nodes'][layer].append(node)
+                if not node in config['nodes'][layer]:
+                    config['nodes'][layer].append(node)
 
         # check network layers
-        if network['visible'] == []:
+        if config['visible'] == []:
             nemoa.log("warning", 
-                "network file '" + network['file'] + "' does not contain visible layers!")
+                "network file '" + config['file'] + "' does not contain visible layers!")
             return None
-        if network['hidden'] == []:
+        if config['hidden'] == []:
             nemoa.log("warning", 
-                "network file '" + network['file'] + "' does not contain hidden layers!")
+                "network file '" + config['file'] + "' does not contain hidden layers!")
             return None
 
         # parse '[binding *]' sections and add edges to network dict
-        for i in range(len(network['layer']) - 1):
-            layerA = network['layer'][i]
-            layerB = network['layer'][i + 1]
+        for i in range(len(config['layer']) - 1):
+            layerA = config['layer'][i]
+            layerB = config['layer'][i + 1]
 
             edgeType = layerA + '-' + layerB
-            network['edges'][edgeType] = []
+            config['edges'][edgeType] = []
             edgeSec = 'binding ' + edgeType
             
             # create full binfing between two layers if not specified
             if not edgeSec in netcfg.sections():
-                for nodeA in network['nodes'][layerA]:
-                    for nodeB in network['nodes'][layerB]:
-                        network['edges'][edgeType].append((nodeA, nodeB))
+                for nodeA in config['nodes'][layerA]:
+                    for nodeB in config['nodes'][layerB]:
+                        config['edges'][edgeType].append((nodeA, nodeB))
                 continue
 
             # get edges from '[binding *]' section
             for nodeA in netcfg.options(edgeSec):
                 nodeA = nodeA.strip()
                 if nodeA == '' or \
-                    not nodeA in network['nodes'][layerA]:
+                    not nodeA in config['nodes'][layerA]:
                     continue
                 for nodeB in nemoa.common.strToList(netcfg.get(edgeSec, nodeA)):
                     nodeB = nodeB.strip()
                     if nodeB == '' \
-                        or not nodeB in network['nodes'][layerB] \
-                        or (nodeA, nodeB) in network['edges'][edgeType]:
+                        or not nodeB in config['nodes'][layerB] \
+                        or (nodeA, nodeB) in config['edges'][edgeType]:
                         continue
-                    network['edges'][edgeType].append((nodeA, nodeB))
+                    config['edges'][edgeType].append((nodeA, nodeB))
 
         # check network binding
-        for i in range(len(network['layer']) - 1):
-            layerA = network['layer'][i]
-            layerB = network['layer'][i + 1]
+        for i in range(len(config['layer']) - 1):
+            layerA = config['layer'][i]
+            layerB = config['layer'][i + 1]
 
             edgeType = layerA + '-' + layerB
-            if network['edges'][edgeType] == []:
+            if config['edges'][edgeType] == []:
                 nemoa.log("warning", 
                     "layer '" + layerA + "' and layer '" + layerB + "' are not connected!")
                 return None

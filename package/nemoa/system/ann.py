@@ -98,7 +98,7 @@ class ann(nemoa.system.base.system):
         for links in self._params['links']:
             x = len(self._units[self._params['links'][links]['source']]['label'])
             y = len(self._units[self._params['links'][links]['target']]['label'])
-            
+
             if data == None:
                 self._params['links'][links]['A'] = numpy.ones([x, y], dtype = bool)
                 self._params['links'][links]['W'] = numpy.zeros([x, y], dtype = float)
@@ -106,7 +106,7 @@ class ann(nemoa.system.base.system):
                 # 2DO can be done much better!!!
                 if 'init' in self._config \
                     and 'weightSigma' in self._config['init']:
-                        sigma = (self._config['init']['weightSigma']
+                        sigma = (self._config['init']['weightSigma'] \
                             * numpy.std(data, axis = 0).reshape(1, x).T) + 0.0001
                 else:
                     sigma = numpy.std(data, axis = 0).reshape(1, x).T + 0.0001
@@ -411,13 +411,13 @@ class ann(nemoa.system.base.system):
         """Return euclidean reconstruction error of units.
         error := ||outputData - modelOutput||
         """
-        if not block == []:
+        if block == []:
+            modelOutput = self._getExpect(inputData, chain)
+        else:
             inputDataCopy = numpy.copy(inputData)
             for i in block:
                 inputDataCopy[:,i] = numpy.mean(inputDataCopy[:,i])
             modelOutput = self._getExpect(inputDataCopy, chain)
-        else:
-            modelOutput = self._getExpect(inputData, chain)
         return numpy.sqrt(((outputData - modelOutput) ** 2).sum(axis = 0))
 
     def _getUnitPerformance(self, inputData, outputData, chain, **kwargs):
@@ -428,7 +428,7 @@ class ann(nemoa.system.base.system):
         """
         error = self._getUnitError(inputData, outputData, chain, **kwargs)
         norm = numpy.sqrt((outputData ** 2).sum(axis = 0))
-        return 1 - error / norm
+        return 1.0 - error / norm
 
     def _getPerformance(self, inputData, outputData, chain, **kwargs):
         """Return system performance respective to data."""

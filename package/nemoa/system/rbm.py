@@ -52,9 +52,9 @@ class rbm(nemoa.system.ann.ann):
                 'useAdjacency': False,
                 'inspect': True,
                 'inspectFunction': 'performance',
-                'inspectInterval': 2000,
+                'inspectTimeInterval': 10.0 ,
                 'estimateTime': True,
-                'estimateTimeWait': 5.0 }}
+                'estimateTimeWait': 15.0 }}
 
     def _initParamConfiguration(self):
         self.setUnits(self._getUnitsFromConfig())
@@ -198,26 +198,15 @@ class rbm(nemoa.system.ann.ann):
         if not self._checkDataset(dataset):
             return False
 
-        # time estimation
-        if self._config['optimize']['estimateTime']:
-            estimTime = True
-            startTime = time.time()
-            nemoa.log('info', """
-                estimating time for calculation
-                of %i updates ...""" % \
-                (self._config['optimize']['updates']))
-        else:
-            estimTime = False
-            startTime = time.time()
-
-        # create bunch of test data if optimization should be inspected
-        if self._config['optimize']['inspect']:
-            testData = dataset.getData()
-
         # copy optimization configuration
         config = self._config['optimize'].copy()
+        
+        # get testData for inspection
+        if config['inspect']:
+            testData = dataset.getData()
+        else:
+            testData = None
 
-        # optimization
         for iteration in xrange(config['iterations']):
 
             # reset params before every itaration
@@ -227,28 +216,9 @@ class rbm(nemoa.system.ann.ann):
             # for each update step (epoch)
             for epoch in xrange(config['updates']):
 
-                # estimate time for calculation
-                if estimTime and (time.time() - startTime) > config['estimateTimeWait']:
-                    estim = ((time.time() - startTime) / (epoch + 1)
-                        * config['updates'] * config['iterations'])
-                    estimStr = time.strftime('%H:%M',
-                        time.localtime(time.time() + estim))
-                    nemoa.log('info', 'estimation: %.1fs (finishing time: %s)'
-                        % (estim, estimStr))
-                    estimTime = False
-
                 # get data (sample from minibatches)
                 if epoch % config['minibatchInterval'] == 0:
                     data = dataset.getData(config['minibatchSize'])
-
-                # inspect optimization
-                if config['inspect'] and epoch % config['inspectInterval'] == 0 and not estimTime:
-                    value = self._getDataEval(
-                        data = testData,
-                        func = config['inspectFunction'])
-                    progress = float(epoch) / float(config['updates']) * 100.0
-                    measure = config['inspectFunction'].title()
-                    nemoa.log('info', 'finished %.1f%%: %s = %.2f' % (progress, measure, value))
 
                 # get system estimations (model)
                 if config['updateAlgorithm'] == 'CD':
@@ -264,6 +234,9 @@ class rbm(nemoa.system.ann.ann):
 
                 # update system params
                 self._updateParams(*sampleData)
+                
+                # inspect
+                self._inspectOptimization(testData)
 
             # optionaly lift edges after every iteration
             if config['iterationLiftLinks']:
@@ -283,12 +256,59 @@ class rbm(nemoa.system.ann.ann):
                     self._removeLinksByThreshold(
                         method = config['iterationLiftLinks'].lower())
 
-        # final information
-        if config['inspect']:
-            value = self._getDataEval(data = testData, func = config['inspectFunction'])
-            measure = config['inspectFunction'].title()
-            nemoa.log('info', 'final: %s = %.2f' % (measure, value))
+        return True
 
+    def _inspectOptimization(self, data = None, reset = False):
+
+        if reset:
+            del self._inspect
+
+        config = self._config['optimize']
+        epochTime = time.time()
+        if hasattr(self, '_inspect'):
+            inspect = self._inspect
+        else:
+            self._inspect = {
+                'startTime': epochTime,
+                'epoch': 0}
+            inspect = self._inspect
+            if config['inspect']:
+                inspect['inspectTime'] = epochTime
+            if config['estimateTime']:
+                inspect['estimateStarted'] = False
+                inspect['estimateEnded'] = False
+        inspect['epoch'] += 1
+
+        if config['estimateTime'] and not inspect['estimateEnded']:
+            if not inspect['estimateStarted']:
+                nemoa.log('info', """
+                    estimating time for calculation
+                    of %i updates ...""" % (config['updates']))
+                inspect['estimateStarted'] = True
+            if (epochTime - inspect['startTime']) > config['estimateTimeWait']:
+                estim = ((epochTime - inspect['startTime']) / (inspect['epoch'] + 1)
+                    * config['updates'] * config['iterations'])
+                estimStr = time.strftime('%H:%M',
+                    time.localtime(time.time() + estim))
+                nemoa.log('info', 'estimation: %.1fs (finishing time: %s)'
+                    % (estim, estimStr))
+                inspect['estimateEnded'] = True
+
+        if config['inspect']:
+            if inspect['epoch'] == config['updates']:
+                value = self._getDataEval(
+                    data = data, func = config['inspectFunction'])
+                measure = config['inspectFunction'].title()
+                nemoa.log('info', 'final: %s = %.2f' % (measure, value))
+            elif ((epochTime - inspect['inspectTime']) > config['inspectTimeInterval']):
+                if not (inspect['estimateStarted'] and not inspect['estimateEnded']):
+                    value = self._getDataEval(
+                        data = data, func = config['inspectFunction'])
+                    progress = float(inspect['epoch']) / float(config['updates']) * 100.0
+                    measure = config['inspectFunction'].title()
+                    nemoa.log('info', 'finished %.1f%%: %s = %.2f' % (progress, measure, value))
+                    inspect['inspectTime'] = epochTime
+        
         return True
 
     def _updateParams(self, *args, **kwargs):
@@ -589,6 +609,8 @@ class rbm(nemoa.system.ann.ann):
         vList = self._params['units'][0]['label']
         hList = self._params['units'][1]['label']
         A = numpy.empty([len(vList), len(hList)], dtype = bool)
+        ## 2DO!! This is very slow
+        ## we could try "for link in links" etc.
         for i, v in enumerate(vList):
             for j, h in enumerate(hList):
                 A[i, j] = ((v, h) in links or (h, v) in links)
@@ -757,7 +779,7 @@ class rbm(nemoa.system.ann.ann):
     def _getLinkUpdates(self, vData, hData, vModel, hModel, **kwargs):
         """Return updates for links."""
         return { 'W': (numpy.dot(vData.T, hData) - numpy.dot(vModel.T, hModel))
-            / vData.shape[0] * self._config['optimize']['updateRate']
+            / float(vData.size) * self._config['optimize']['updateRate']
             * self._config['optimize']['updateFactorWeights']}
 
     def _updateLinks(self, **updates):
@@ -799,7 +821,7 @@ class grbm(rbm):
                 'updateSamplingSteps': 1,
                 'updateSamplingIterations': 1,
                 'ignoreUnits': [],
-                'updateRate': 0.005,
+                'updateRate': 0.01,
                 'updateFactorWeights': 1.0,
                 'updateFactorHbias': 0.1,
                 'updateFactorVbias': 0.1,
@@ -809,9 +831,9 @@ class grbm(rbm):
                 'useAdjacency': False,
                 'inspect': True,
                 'inspectFunction': 'performance',
-                'inspectInterval': 1000,
+                'inspectTimeInterval': 10.0 ,
                 'estimateTime': True,
-                'estimateTimeWait': 5.0 }}
+                'estimateTimeWait': 15.0 }}
 
     # GRBM data
 
@@ -910,7 +932,7 @@ class grbm(rbm):
         """Return updates for links."""
         vVar = numpy.exp(self._params['units'][0]['lvar'])
         return { 'W': ((numpy.dot(vData.T, hData) - numpy.dot(vModel.T, hModel))
-            / vData.shape[0] / vVar.T * self._config['optimize']['updateRate']
+            / float(vData.size) / vVar.T * self._config['optimize']['updateRate']
             * self._config['optimize']['updateFactorWeights']) }
 
 #class crbm(rbm):

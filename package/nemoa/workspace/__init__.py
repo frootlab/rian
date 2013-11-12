@@ -24,7 +24,7 @@ def open(project, quiet = False):
     import nemoa.workspace.workspace
     return nemoa.workspace.workspace.workspace(project)
 
-# wrap configuration object instance methods to module
+# wrap configuration object instance methods to module dict
 
 def get(*args, **kwargs):
     if not 'config' in __shared:
@@ -73,3 +73,5 @@ def getConfig(type = None, config = None, merge = ['params'], **kwargs):
             type = type, name = name,
             merge = merge, params = params)
     return False
+
+

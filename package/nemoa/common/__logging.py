@@ -3,7 +3,11 @@
 
 import os, logging, inspect
 
-__shared = {'quiet': False, 'indent': 0}
+__shared = {
+    'quiet': False,
+    'indent': 0,
+    'debug': False
+}
 
 def initLogger(logfile = None):
     """Initialize loggers ('null', 'tty' and 'file')."""
@@ -49,18 +53,22 @@ def initLogger(logfile = None):
 
     return True
 
-def setLog(quiet = None, indent = None):
+def setLog(**kwargs):
     """Set global logging options."""
 
-    if quiet in [True, False]:
-        __shared['quiet'] = quiet
-    if isinstance(indent, int):
-        __shared['indent'] = indent
-    elif isinstance(indent, str) and indent[0] in ['+', '-']:
-        if indent[0] == '+':
-            __shared['indent'] += int(indent[1:])
-        else:
-            __shared['indent'] -= int(indent[1:])
+    if 'quiet' in kwargs and kwargs['quiet'] in [True, False]:
+        __shared['quiet'] = kwargs['quiet']
+    if 'debug' in kwargs and kwargs['debug'] in [True, False]:
+        __shared['debug'] = kwargs['debug']
+    if 'indent' in kwargs:
+        if isinstance(kwargs['indent'], int):
+            __shared['indent'] = kwargs['indent']
+        elif isinstance(kwargs['indent'], str) \
+            and kwargs['indent'][0] in ['+', '-']:
+            if kwargs['indent'][0] == '+':
+                __shared['indent'] += int(kwargs['indent'][1:])
+            else:
+                __shared['indent'] -= int(kwargs['indent'][1:])
     return True
 
 def log(type, msg, quiet = False):
@@ -71,7 +79,8 @@ def log(type, msg, quiet = False):
     clrModule = inspect.getmodule(clrStack[0]).__name__
     clrName = clrModule + '.' + clrMethod
 
-    quiet = __shared['quiet']
+    quiet  = __shared['quiet']
+    debug  = __shared['debug']
     indent = __shared['indent']
 
     # define colors
@@ -105,16 +114,20 @@ def log(type, msg, quiet = False):
     if type == 'info':
         if not quiet:
             ttyLog.info(ttyMsg)
-        fileLog.info(fileMsg)
+        if debug:
+            fileLog.info(fileMsg)
         return True
     if type == 'title':
         if not quiet:
             ttyLog.info(color['blue'] + ttyMsg + color['default'])
+        if debug:
+            fileLog.info(fileMsg)
         return True
     if type == 'header':
         if not quiet:
             ttyLog.info(color['green'] + ttyMsg + color['default'])
-        fileLog.info(fileMsg)
+        if debug:
+            fileLog.info(fileMsg)
         return True
     if type == 'warning':
         if not quiet:
@@ -126,10 +139,12 @@ def log(type, msg, quiet = False):
         fileLog.error(fileMsg)
         import traceback
         for line in traceback.format_stack():
-            fileLog.error(clrName + ' -> ' + line.strip())
+            msg = line.strip().replace('\n', '-> ').replace('  ', ' ').strip()
+            fileLog.error(msg)
         return True
     if type == 'debuginfo':
-        fileLog.error(fileMsg)
+        if debug:
+            fileLog.error(fileMsg)
         return True
     if type == 'critical':
         ttyLog.critical(color['yellow'] + ttyMsg + color['default'])

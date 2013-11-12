@@ -395,6 +395,7 @@ class model:
         
         # optimization of system parameters
         nemoa.log('info', 'starting optimization schedule: \'%s\'' % (schedule['name']))
+        nemoa.setLog(indent = '+1')
 
         # 2DO: find better solution for multistage optimization
         if 'stage' in schedule and len(schedule['stage']) > 0:
@@ -402,6 +403,8 @@ class model:
                 self.system.optimizeParams(self.dataset, **params)
         elif 'params' in schedule:
             self.system.optimizeParams(self.dataset, **schedule)
+        nemoa.setLog(indent = '-1')
+
         nemoa.setLog(indent = '-1')
         return self
 

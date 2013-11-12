@@ -42,7 +42,7 @@ class workspace:
     def execute(self, name = None, **kwargs):
         """Execute python script."""
         if not '.' in name:
-            scriptName = nemoa.workspace.project() + '.' + name
+            scriptName = self.project() + '.' + name
         else:
             scriptName = name
 
@@ -103,6 +103,11 @@ class workspace:
 
         # configure model (optional)
         if configure:
+            if model == None:
+                nemoa.log('error', """
+                    could not configure model:
+                    model instance is not valid!""")
+                return False
             model.configure()
 
         # initialize model parameters (optional)

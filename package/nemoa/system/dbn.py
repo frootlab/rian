@@ -35,7 +35,12 @@ class dbn(nemoa.system.ann.ann):
                 'schedule': None,
                 'visible': None,
                 'hidden': None,
-                'useAdjacency': False
+                'useAdjacency': False,
+                'inspect': True,
+                'inspectFunction': 'performance',
+                'inspectTimeInterval': 10.0 ,
+                'estimateTime': True,
+                'estimateTimeWait': 15.0
             }
         }
 
@@ -206,7 +211,8 @@ class dbn(nemoa.system.ann.ann):
 
         chain = tuple([layer['name'] for layer in self._params['units']])
         data = dataset.getData(columns = ('input', 'output'))
-        print self._getPerformance(data['input'], data['output'], chain)
+        nemoa.log('info', 'system performance before finetuning: %s' %
+            (self._getPerformance(data['input'], data['output'], chain)))
 
         nemoa.setLog(indent = '-1')
         return True
@@ -286,8 +292,7 @@ class dbn(nemoa.system.ann.ann):
             nemoa.log('info', """
                 adding subsystem: \'%s\' (%s units, %s links)
                 """ % (system.getName(),
-                len(system.getUnits(type = 'visible')) + len(system.getUnits(type = 'hidden')),
-                len(system.getLinks())))
+                len(system.getUnits()), len(system.getLinks())))
 
             # link subsystem
             self._subSystems.append(system)
