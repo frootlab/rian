@@ -434,7 +434,7 @@ class dataset:
         for src in self.data.keys():
             srcArray = self.getSourceData(src, size, rows)
             if srcArray.size > 0:
-                srcStack += (self.getSourceData(src, size, rows), )
+                srcStack += (srcArray, )
         if not srcStack:
             return None
         data = numpy.concatenate(srcStack)
@@ -443,19 +443,26 @@ class dataset:
         if size:
             numpy.random.shuffle(data)
 
-        # get column ids
-        colIDs = list(data.dtype.names[1:])
+        ## get column ids
+        if not isinstance(columns, tuple):
+            return self.__getFormatedData(data,
+                self.getColLabels(columns), output)
+        
+        retDict = {}
+        for colFilter in columns:
+            retDict[colFilter] = self.__getFormatedData(data,
+                self.getColLabels(colFilter), output)
+        return retDict
 
-        # output numpy array
+    def __getFormatedData(self, data, colIDs, output):
         if output == 'array':
+            # return numpy array
             return data[colIDs].view('<f8').reshape(data.size, len(colIDs))
-
-        # output numpy record array
-        if output == 'recarray':
+        elif output == 'recarray':
+            # return numpy record array
             return data[['label'] + colIDs]
-
-        # output row labels as list, data as numpy array
-        if output == 'list,array':
+        elif output == 'list,array':
+            # return row labels as list, data as numpy array
             rlist = data['label'].tolist()
             array = data[colIDs].view('<f8').reshape(data.size, len(colIDs))
             return rlist, array
@@ -526,17 +533,15 @@ class dataset:
         colFilter = self.cfg['colFilter'][group]
         colLabels = []
         for col in self.cfg['columns']:
-            if ('*', '*') in colFilter \
-                or (col[0], '*') in colFilter \
-                or ('*', col[1]) in colFilter \
-                or (col[0], col[1]) in colFilter:
+            if ('*:*') in colFilter \
+                or ('%s:*' % (col[0])) in colFilter \
+                or ('*:%s' % (col[1])) in colFilter \
+                or ('%s:%s' % (col[0], col[1])) in colFilter:
                 colLabels.append('%s:%s' % (col[0], col[1]))
         return colLabels
 
     def __setColLabels(self, colLabels):
-        """
-        Set column labels
-        """
+        """Set column labels."""
         self.cfg['columns'] = ()
         for col in colLabels:
             self.cfg['columns'] += (col.split(':'), )

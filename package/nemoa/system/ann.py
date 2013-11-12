@@ -7,6 +7,10 @@ import nemoa.system.base
 class ann(nemoa.system.base.system):
     """Artificial Neuronal Network (ANN)."""
 
+    ####################################################################
+    # Configuration
+    ####################################################################
+
     def _configure(self, config = {}, network = None, dataset = None, update = False, **kwargs):
         """Configure RBM to network and dataset."""
         if not 'check' in self._config:
@@ -76,11 +80,52 @@ class ann(nemoa.system.base.system):
             and self._config['check']['network'] \
             and self._config['check']['dataset']
 
-    def _indexUnits(self):
-        self._units = {}
-        for id in range(len(self._params['units'])):
-            self._units[self._params['units'][id]['name']] = \
-                self._params['units'][id]
+    def _checkParams(self, params):
+        """Check if system parameter dictionary is valid."""
+        return self._checkUnitParams(params) \
+            and self._checkLinkParams(params)
+
+    def _initParams(self, data = None):
+        """Initialize system parameters using data."""
+        return (self._initUnits(data) and self._initLinks(data))
+
+    ####################################################################
+    # Links
+    ####################################################################
+
+    def _initLinks(self, data = None):
+        """Initialize system parameteres of all links using data."""
+        for links in self._params['links']:
+            x = len(self._units[self._params['links'][links]['source']]['label'])
+            y = len(self._units[self._params['links'][links]['target']]['label'])
+            
+            if data == None:
+                self._params['links'][links]['A'] = numpy.ones([x, y], dtype = bool)
+                self._params['links'][links]['W'] = numpy.zeros([x, y], dtype = float)
+            else:
+                # 2DO can be done much better!!!
+                if 'init' in self._config \
+                    and 'weightSigma' in self._config['init']:
+                        sigma = (self._config['init']['weightSigma']
+                            * numpy.std(data, axis = 0).reshape(1, x).T) + 0.0001
+                else:
+                    sigma = numpy.std(data, axis = 0).reshape(1, x).T + 0.0001
+                self._params['links'][links]['W'] = (self._params['links'][links]['A']
+                    * numpy.random.normal(numpy.zeros((x, y)), sigma))
+        return True
+
+    def _checkLinkParams(self, params):
+        """Check if system parameter dictionary is valid respective to links."""
+        if not isinstance(params, dict) \
+            or not 'links' in params.keys() \
+            or not isinstance(params['links'], dict):
+            return False
+        for id in params['links'].keys():
+            if not isinstance(params['links'][id], dict):
+                return False
+            for attr in ['A', 'W', 'source', 'target']:
+                if not attr in params['links'][id].keys():
+                    return False
         return True
 
     def _indexLinks(self):
@@ -93,6 +138,96 @@ class ann(nemoa.system.base.system):
                 self._params['links'][id]
             self._links[target]['source'][source] = \
                 self._params['links'][id]
+        return True
+
+    #def _getTransposedLinks(self, id):
+        #return {
+            #'source': self._params['links'][id]['target'],
+            #'target': self._params['links'][id]['source'],
+            #'A': self._params['links'][id]['A'].T,
+            #'W': self._params['links'][id]['W'].T}
+
+    def _getWeightsFromLayers(self, source, target):
+        if self._config['optimize']['useAdjacency']:
+            if target['name'] in self._links[source['name']]['target']:
+                return self._links[source['name']]['target'][target['name']]['W'] \
+                    * self._links[source['name']]['target'][target['name']]['A']
+            elif source['name'] in self._links[target['name']]['target']:
+                return (self._links[target['name']]['target'][source['name']]['W'] \
+                    * self._links[source['name']]['target'][target['name']]['A']).T
+        else:
+            if target['name'] in self._links[source['name']]['target']:
+                return self._links[source['name']]['target'][target['name']]['W']
+            elif source['name'] in self._links[target['name']]['target']:
+                return self._links[target['name']]['target'][source['name']]['W'].T
+
+        nemoa.log('error', """Could not get links:
+            Layer '%s' and layer '%s' are not connected.
+            """ % (source['name'], target['name']))
+        return None
+
+    def _removeUnitsLinks(self, layer, select):
+        """Remove links to a given list of units."""
+        links = self._links[layer['name']]
+
+        for src in links['source'].keys():
+            links['source'][src]['A'] = \
+                links['source'][src]['A'][:, select]
+            links['source'][src]['W'] = \
+                links['source'][src]['W'][:, select]
+        for tgt in links['target'].keys():
+            links['target'][tgt]['A'] = \
+                links['target'][tgt]['A'][select, :]
+            links['target'][tgt]['W'] = \
+                links['target'][tgt]['W'][select, :]
+
+        return True
+
+    ####################################################################
+    # Units
+    ####################################################################
+
+    def _initUnits(self, data = None):
+        """Initialize system parameteres of all units using data."""
+        for layerName in self._units.keys():
+            layer = self._units[layerName]
+            if 'init' in self._config \
+                and layerName in self._config['init']['ignoreUnits']:
+                continue
+            elif layer['class'] == 'sigmoid':
+                self._initSigmoidUnits(layer, data)
+            elif layer['class'] == 'gauss':
+                self._initGaussUnits(layer, data)
+            else:
+                return False
+        return True
+
+    def _indexUnits(self):
+        self._units = {}
+        for id in range(len(self._params['units'])):
+            self._units[self._params['units'][id]['name']] = \
+                self._params['units'][id]
+        return True
+
+    def _checkUnitParams(self, params):
+        """Check if system parameter dictionary is valid respective to units."""
+        if not isinstance(params, dict) \
+            or not 'units' in params.keys() \
+            or not isinstance(params['units'], list):
+            return False
+        for id in range(len(params['units'])):
+            layer = params['units'][id]
+            if not isinstance(layer, dict):
+                return False
+            for attr in ['name', 'visible', 'class', 'label']:
+                if not attr in layer.keys():
+                    return False
+            if layer['class'] == 'gauss' \
+                and not self._checkGaussUnits(layer):
+                return False
+            elif params['units'][id]['class'] == 'sigmoid' \
+                and not self._checkSigmoidUnits(layer):
+                return False
         return True
 
     def _getUnitsFromSystem(self, group = False, **kwargs):
@@ -144,65 +279,6 @@ class ann(nemoa.system.base.system):
         info['visible'] = layer['visible']
         return info
 
-    def _checkParams(self, params):
-        """Check if system parameter dictionary is valid."""
-        return self._checkUnitParams(params) \
-            and self._checkLinkParams(params)
-
-    def _checkUnitParams(self, params):
-        """Check if system parameter dictionary is valid respective to units."""
-        if not isinstance(params, dict) \
-            or not 'units' in params.keys() \
-            or not isinstance(params['units'], list):
-            return False
-        for id in range(len(params['units'])):
-            layer = params['units'][id]
-            if not isinstance(layer, dict):
-                return False
-            for attr in ['name', 'visible', 'class', 'label']:
-                if not attr in layer.keys():
-                    return False
-            if layer['class'] == 'gauss' \
-                and not self._checkGaussUnits(layer):
-                return False
-            elif params['units'][id]['class'] == 'sigmoid' \
-                and not self._checkSigmoidUnits(layer):
-                return False
-        return True
-
-    def _checkLinkParams(self, params):
-        """Check if system parameter dictionary is valid respective to links."""
-        if not isinstance(params, dict) \
-            or not 'links' in params.keys() \
-            or not isinstance(params['links'], dict):
-            return False
-        for id in params['links'].keys():
-            if not isinstance(params['links'][id], dict):
-                return False
-            for attr in ['A', 'W', 'source', 'target']:
-                if not attr in params['links'][id].keys():
-                    return False
-        return True
-
-    def _initUnits(self, data = None):
-        """Initialize system parameteres of all units using data."""
-        for layerName in self._units.keys():
-            layer = self._units[layerName]
-            if 'init' in self._config \
-                and layerName in self._config['init']['ignoreUnits']:
-                continue
-            elif layer['class'] == 'sigmoid':
-                self._initSigmoidUnits(layer, data)
-            elif layer['class'] == 'gauss':
-                self._initGaussUnits(layer, data)
-            else:
-                return False
-        return True
-
-    def _initParams(self, data = None):
-        """Initialize system parameters using data."""
-        return (self._initUnits(data) and self._initLinks(data))
-
     def _removeUnits(self, layer = None, label = []):
 
         if not layer == None and not layer in self._units:
@@ -234,65 +310,131 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    #
-    # Links
-    #
+    def _getExpect(self, data, chain):
+        """Return expected values of a layer
+        calculated from a chain of mappings."""
+        if len(chain) == 2:
+            return self._getExpectSourceTarget(data,
+                self._units[chain[0]], self._units[chain[1]])
+        data = numpy.copy(data)
+        for id in range(len(chain) - 1):
+            data = self._getExpectSourceTarget(data,
+                self._units[chain[id]], self._units[chain[id + 1]])
+        return data
 
-    def _initLinks(self, data = None):
-        """Initialize system parameteres of all links using data."""
-        for links in self._params['links']:
-            x = len(self._units[self._params['links'][links]['source']]['label'])
-            y = len(self._units[self._params['links'][links]['target']]['label'])
-            
-            if data == None:
-                self._params['links'][links]['A'] = numpy.ones([x, y], dtype = bool)
-                self._params['links'][links]['W'] = numpy.zeros([x, y], dtype = float)
-            else:
-                # 2DO can be done much better!!!
-                if 'init' in self._config \
-                    and 'weightSigma' in self._config['init']:
-                        sigma = (self._config['init']['weightSigma']
-                            * numpy.std(data, axis = 0).reshape(1, x).T) + 0.0001
-                else:
-                    sigma = numpy.std(data, axis = 0).reshape(1, x).T + 0.0001
-                self._params['links'][links]['W'] = (self._params['links'][links]['A']
-                    * numpy.random.normal(numpy.zeros((x, y)), sigma))
-        return True
+    def _getExpectSourceTarget(self, data, source, target):
+        """Return expected unit values of a layer
+        calculated from the expected valus of another layer."""
+        weights = self._getWeightsFromLayers(source, target)
+        if source['class'] == 'sigmoid' and target['class'] == 'sigmoid':
+            return self._getSigmoidFromSigmoidExpect(data, source, target, weights)
+        elif source['class'] == 'sigmoid' and target['class'] == 'gauss':
+            return self._getGaussFromSigmoidExpect(data, source, target, weights)
+        elif source['class'] == 'gauss' and target['class'] == 'sigmoid':
+            return self._getSigmoidFromGaussExpect(data, source, target, weights)
 
-    def _getTransposedLinks(self, id):
-        return {
-            'source': self._params['links'][id]['target'],
-            'target': self._params['links'][id]['source'],
-            'A': self._params['links'][id]['A'].T,
-            'W': self._params['links'][id]['W'].T}
+    def _getSample(self, data, chain):
+        """Return sampled unit values of a layer
+        calculated from a chain of mappings."""
+        if len(chain) == 1:
+            return self._getUnitSample(data, self._units[chain[0]])
+        elif len(chain) == 2:
+            return self._getUnitSample(
+                self._getExpectSourceTarget(data,
+                    self._units[chain[0]], self._units[chain[1]]),
+                    self._units[chain[1]])
+        data = numpy.copy(data)
+        for id in range(len(chain) - 1):
+            data = self._getUnitSample(
+                self._getExpectSourceTarget(data,
+                    self._units[chain[id]], self._units[chain[id + 1]]),
+                    self._units[chain[id + 1]])
+        return data
 
-    def _getWeightsFromLinks(self, source, target, links):
-        if not self._config['optimize']['useAdjacency'] \
-            and source['name'] in links['source']:
-            return links['W']
-        elif not self._config['optimize']['useAdjacency']:
-            return links['W'].T
-        elif source['name'] in links['source']:
-            return links['W'] * links['A']
+    def _getSampleExpect(self, data, chain):
+        if len(chain) == 1:
+            return data
+        elif len(chain) == 2:
+            return self._getExpectSourceTarget(
+                self._getUnitSample(data, self._units[chain[0]]),
+                self._units[chain[0]], self._units[chain[1]])
+        return self._getExpectSourceTarget(
+            self._getSample(data, chain[0:-1]),
+            self._units[chain[-2]], self._units[chain[-1]])
+
+    def _getValue(self, data, chain):
+        """Return unit median values of a layer
+        calculated from a chain of mappings."""
+        if len(chain) == 1:
+            return self._getUnitMedian(data, self._units[chain[0]])
+        elif len(chain) == 2:
+            return self._getUnitMedian(
+                self._getExpectSourceTarget(data,
+                    self._units[chain[0]], self._units[chain[1]]),
+                    self._units[chain[1]])
+        data = numpy.copy(data)
+        for id in range(len(chain) - 1):
+            data = self._getUnitMedian(
+                self._getExpectSourceTarget(data,
+                    self._units[chain[id]], self._units[chain[id + 1]]),
+                    self._units[chain[id + 1]])
+        return data
+
+    def _getUnitMedian(self, data, layer):
+        if layer['class'] == 'sigmoid':
+            return self._getBernoulliMedian(data, layer)
+        elif layer['class'] == 'gauss':
+            return self._getGaussMedian(data, layer)
+
+    def _getUnitSample(self, data, layer):
+        if layer['class'] == 'sigmoid':
+            return self._getBernoulliSample(data, layer)
+        elif layer['class'] == 'gauss':
+            return self._getGaussSample(data, layer)
+
+    def _getUnitEnergy(self, data, chain):
+        """Return unit energies of a layer
+        calculated from a chain of mappings."""
+        if len(chain) == 1:
+            pass
+        elif len(chain) == 2:
+            data = self._getValue(data, chain)
         else:
-            return (links['W'] * links['A']).T
+            data = self._getValue(self._getExpect(data, chain[0:-1]), chain[-2:])
+        layer = self._units[chain[-1]]
+        if layer['class'] == 'sigmoid':
+            return self._getSigmoidUnitEnergy(data, layer)
+        elif layer['class'] == 'gauss':
+            return self._getGaussUnitEnergy(data, layer)
 
-    def _removeUnitsLinks(self, layer, select):
-        """Remove links to a given list of units."""
-        links = self._links[layer['name']]
+    def _getUnitError(self, inputData, outputData, chain, block = [], **kwargs):
+        """Return euclidean reconstruction error of units.
+        error := ||outputData - modelOutput||
+        """
+        if not block == []:
+            inputDataCopy = numpy.copy(inputData)
+            for i in block:
+                inputDataCopy[:,i] = numpy.mean(inputDataCopy[:,i])
+            modelOutput = self._getExpect(inputDataCopy, chain)
+        else:
+            modelOutput = self._getExpect(inputData, chain)
+        return numpy.sqrt(((outputData - modelOutput) ** 2).sum(axis = 0))
 
-        for src in links['source'].keys():
-            links['source'][src]['A'] = \
-                links['source'][src]['A'][select, :]
-            links['source'][src]['W'] = \
-                links['source'][src]['W'][select, :]
-        for tgt in links['target'].keys():
-            links['target'][tgt]['A'] = \
-                links['target'][tgt]['A'][:, select]
-            links['target'][tgt]['W'] = \
-                links['target'][tgt]['W'][:, select]
+    def _getUnitPerformance(self, inputData, outputData, chain, **kwargs):
+        """Return unit performance respective to data.
+        
+        Description:
+            performance := 1 - error / ||data||
+        """
+        error = self._getUnitError(inputData, outputData, chain, **kwargs)
+        norm = numpy.sqrt((outputData ** 2).sum(axis = 0))
+        return 1 - error / norm
 
-        return True
+    def _getPerformance(self, inputData, outputData, chain, **kwargs):
+        """Return system performance respective to data."""
+        return numpy.mean(self._getUnitPerformance(
+            inputData, outputData, chain, **kwargs))
+
 
     ####################################################################
     # Sigmoidal activated, Bernoulli distributed units
@@ -314,16 +456,18 @@ class ann(nemoa.system.base.system):
     def _getSigmoidUnitInfo(self, layer, unitid):
         return {'bias': layer['bias'][0, unitid]}
 
-    def _getSigmoidFromSigmoidExpect(self, data, source, target, links):
+    def _getSigmoidUnitEnergy(self, data, layer):
+        """Return system energy of sigmoidal units as numpy array."""
+        return -numpy.mean(data * layer['bias'], axis = 0)
+
+    def _getSigmoidFromSigmoidExpect(self, data, source, target, weights):
         """Return expected values of a sigmoid output layer
         calculated from a sigmoid input layer."""
-        weights = self._getWeightsFromLinks(source, target, links)
         return self._sigmoid(target['bias'] + numpy.dot(data, weights))
 
-    def _getSigmoidFromGaussExpect(self, data, source, target, links):
+    def _getSigmoidFromGaussExpect(self, data, source, target, weights):
         """Return expected values of a sigmoid output layer
         calculated from a gaussian input layer."""
-        weights = self._getWeightsFromLinks(source, target, links)
         return self._sigmoid(target['bias'] +
             numpy.dot(data / numpy.exp(source['lvar']), weights))
 
@@ -359,10 +503,9 @@ class ann(nemoa.system.base.system):
     # Linear activated, Gauss distributed units
     ####################################################################
 
-    def _getGaussFromSigmoidExpect(self, data, source, target, links):
+    def _getGaussFromSigmoidExpect(self, data, source, target, weights):
         """Return expected values of a gaussian output layer
         calculated from a sigmoid input layer."""
-        weights = self._getWeightsFromLinks(source, target, links)
         return target['bias'] + numpy.dot(data, weights)
 
     def _getGaussMedianFromExpect(self, data, layer):
@@ -389,6 +532,10 @@ class ann(nemoa.system.base.system):
             layer['lvar'] = \
                 numpy.log((vSigma * numpy.ones((1, size))) ** 2)
         return True
+
+    def _getGaussUnitEnergy(self, data, layer):
+        return -numpy.mean((data - layer['bias']) ** 2
+            / numpy.exp(layer['lvar']), axis = 0) / 2
 
     def _checkGaussUnits(self, layer):
         return 'bias' in layer and 'lvar' in layer

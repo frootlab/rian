@@ -60,20 +60,6 @@ class rbm(nemoa.system.ann.ann):
         self.setUnits(self._getUnitsFromConfig())
         self.setLinks(self._getLinksFromConfig())
 
-    #def _setDataset(self, dataset, *args, **kwargs):
-        #"""Update units and links to dataset instance."""
-        #if not nemoa.type.isDataset(dataset):
-            #nemoa.log("error", "could not configure system: dataset object is not valid!")
-            #return False
-        #if self._getUnitsFromDataset(dataset) != self._getUnitsFromSystem():
-            #units = self._getUnitsFromDataset(dataset)
-            #links = self.getLinks()
-            #self.setUnits(units, update = True)
-            #self.setLinks(links, update = True)
-
-        #self._config['check']['dataset'] = True
-        #return True
-
     # DATA
 
     # DATA EVALUATION
@@ -98,8 +84,8 @@ class rbm(nemoa.system.ann.ann):
 
     def _getDataEvalEnergy(self, data, **kwargs):
         """Return system energy respective to data."""
-        vEnergy = self._getVisibleUnitEvalEnergy(data)
-        hEnergy = self._getHiddenUnitEvalEnergy(data)
+        vEnergy = self._getUnitEnergy(data, ('visible',))
+        hEnergy = self._getUnitEnergy(data, ('visible', 'hidden'))
         lEnergy = self._getLinkEvalEnergy(data)
         return numpy.sum(vEnergy) + numpy.sum(hEnergy) + numpy.sum(lEnergy)
 
@@ -115,119 +101,29 @@ class rbm(nemoa.system.ann.ann):
 
     def _compress(self, data, **kwargs):
         """Return expectation values of hidden units."""
-        return self._getDataFromHiddenExpect(data)
+        return self._getExpect(data, ('visible', 'hidden'))
 
     def _getDataRepresentation(self, data, transformation = 'visiblevalue', **kwargs):
         """Return system representation of data."""
         if transformation == 'visibleexpect':
-            return self._getDataFromVisibleExpect(data)
+            return self._getExpect(data, ('visible', 'hidden', 'visible'))
         if transformation == 'visiblevalue':
-            return self._getDataFromVisibleValue(data)
+            return self._getValue(data, ('visible', 'hidden', 'visible'))
         if transformation == 'visiblesample':
-            return self._getDataFromVisibleSample(data)
+            return self._getSample(data, ('visible', 'hidden', 'visible'))
         if transformation == 'hiddenexpect':
-            return self._getDataFromHiddenExpect(data)
+            return self._getExpect(data, ('visible', 'hidden'))
         if transformation == 'hiddenvalue':
-            return self._getDataFromHiddenValue(data)
+            return self._getValue(data, ('visible', 'hidden'))
         if transformation == 'hiddensample':
-            return self._getDataFromHiddenSample(data)
+            return self._getSample(data, ('visible', 'hidden'))
         return data
-
-    def _getDataFromVisibleExpect(self, data, k = 1, **kwargs):
-        """Return expected values of visible units after k steps."""
-        vExpect = numpy.copy(data)
-        for i in range(k):
-            vExpect = self._getVisibleUnitExpect(self._getHiddenUnitExpect(vExpect))
-        return vExpect
-
-    def _getDataFromVisibleValue(self, data, k = 1, **kwargs):
-        """Return reconstructed values of visible units after k steps."""
-        vValue = numpy.copy(data)
-        for i in range(k):
-            vValue = self._getVisibleUnitValue(
-                self._getVisibleUnitExpect(
-                    self._getHiddenUnitValue(
-                        self._getHiddenUnitExpect(vValue)
-                    )
-                )
-            )
-        return vValue
-
-    def _getDataFromVisibleSample(self, data, k = 1, **kwargs):
-        """Return sampled values of visible units after k steps.
-        
-        Parameters:
-            data: data of visible units
-            k: number of full Gibbs sampling steps, default "0"
-        """
-        vValue = numpy.copy(data)
-        for i in range(k):
-            vValue = self._getVisibleUnitSample(
-                self._getVisibleUnitExpect(
-                    self._getHiddenUnitSample(
-                        self._getHiddenUnitExpect(vValue)
-                    )
-                )
-            )
-        return vValue
-
-    def _getDataFromHiddenExpect(self, data, k = 0, **kwargs):
-        """Return expected values of hidden units.
-
-        Parameters:
-            data: data of visible units
-            k: number of full Gibbs sampling steps, default "0"
-        """
-        hExpect = self._getHiddenUnitExpect(numpy.copy(data))
-        for i in range(k):
-            hExpect = self._getHiddenUnitExpect(
-                self._getVisibleUnitExpect(hExpect)
-            )
-        return hExpect
-
-    def _getDataFromHiddenValue(self, data, k = 0, **kwargs):
-        """Return reconstructed values of hidden units.
-
-        Parameters:
-            data: data of visible units
-            k: number of full Gibbs sampling steps, default "0"
-        """
-        hValue = self._getHiddenUnitValue(self._getHiddenUnitExpect(numpy.copy(data)))
-        for i in range(k):
-            hValue = self._getHiddenUnitValue(
-                self._getHiddenUnitExpect(
-                    self._getVisibleUnitValue(
-                        self._getVisibleUnitExpect(hValue)
-                    )
-                )
-            )
-        return hValue
-
-    def _getDataFromHiddenSample(self, data, k = 1, **kwargs):
-        """Return sampled values of hidden units.
-
-        Parameters:
-            data: data of visible units
-            k: number of full Gibbs sampling steps, default "0"
-        """
-        vValue = numpy.copy(data)
-        for i in range(k - 1):
-            vValue = self._getVisibleUnitSample(
-                self._getVisibleUnitExpect(
-                    self._getHiddenUnitSample(
-                        self._getHiddenUnitExpect(vValue)
-                    )
-                )
-            )
-        return vValue
 
     def _getDataContrastiveDivergency(self, data):
         """Return reconstructed data using 1-step contrastive divergency sampling (CD-1)."""
-        hData = self._getHiddenUnitExpect(data)
-        vModel = self._getVisibleUnitExpect(
-            self._getHiddenUnitSample(hData)
-        )
-        hModel = self._getHiddenUnitExpect(vModel)
+        hData  = self._getExpect(data, ('visible', 'hidden'))
+        vModel = self._getSampleExpect(hData, ('hidden', 'visible'))
+        hModel = self._getExpect(vModel, ('visible', 'hidden'))
         return data, hData, vModel, hModel
 
     def _getDataContrastiveDivergencyKstep(self, data, k = 1, m = 1):
@@ -246,21 +142,20 @@ class rbm(nemoa.system.ann.ann):
                 # calculate hSample from hExpect
                 # in first sampling step init hSample with h_data
                 if j == 0:
-                    hSample = self._getHiddenUnitSample(hData)
+                    hSample = self._getSample(hData, ('hidden', ))
                 else:
-                    hSample = self._getHiddenUnitSample(hExpect)
+                    hSample = self._getSample(hExpect, ('hidden', ))
 
                 # calculate vExpect from hSample
-                vExpect = self._getVisibleUnitExpect(hSample)
+                vExpect = self._getExpect(hSample, ('hidden', 'visible'))
 
                 # calculate hExpect from vSample
                 # in last sampling step use vExpect
                 # instead of vSample to reduce noise
                 if j + 1 == k:
-                    hExpect = self._getHiddenUnitExpect(vExpect)
+                    hExpect = self._getExpect(vExpect, ('visible', 'hidden'))
                 else:
-                    vSample = self._getVisibleUnitSample(vExpect)
-                    hExpect = self._getHiddenUnitExpect(vSample)
+                    hExpect = self._getSampleExpect(vExpect, ('visible', 'hidden'))
             vModel += vExpect / m
             hModel += hExpect / m
         return data, hData, vModel, hModel
@@ -481,37 +376,30 @@ class rbm(nemoa.system.ann.ann):
 
     def _getUnitEvalEnergy(self, data, **kwargs):
         """Return local energy of units."""
-        return (self._getVisibleUnitEvalEnergy(data),
-            self._getHiddenUnitEvalEnergy(data))
+        return (self._getUnitEnergy(data, ('visible',)),
+            self._getUnitEnergy(data, ('visible', 'hidden')))
 
-    def _getUnitEvalExpect(self, data, k = 1, m = 10, **kwargs):
-        """Return mean values of reconstructed units."""
-        vData, hData, vModel, hModel \
-            = self.sampleContrastiveDivergencyKstep(data, k = k, m = m)
-        return numpy.mean(vModel, axis = 0), numpy.mean(hModel, axis = 0)
+    #def _getUnitEvalExpect(self, data, k = 1, m = 10, **kwargs):
+        #"""Return mean values of reconstructed units."""
+        #vData, hData, vModel, hModel \
+            #= self.sampleContrastiveDivergencyKstep(data, k = k, m = m)
+        #return numpy.mean(vModel, axis = 0), numpy.mean(hModel, axis = 0)
 
     def _getUnitEvalError(self, data, block = [], k = 1, **kwargs):
         """Return euclidean reconstruction error of units.
         
         error := ||data - model||
         """
-        if not block == []:
-            dataCopy = numpy.copy(data)
-            for i in block:
-                dataCopy[:,i] = numpy.mean(dataCopy[:,i])
-            model = self._getDataFromVisibleExpect(dataCopy, k = k)
-        else:
-            model = self._getDataFromVisibleExpect(data, k = k)
-        return numpy.sqrt(((data - model) ** 2).sum(axis = 0)), None
+        return self._getUnitError(data, data,
+            ('visible', 'hidden', 'visible'), block), None
 
     def _getUnitEvalPerformance(self, data, **kwargs):
         """Return 'absolute data approximation' of units.
         
         'absolute data approximation' := 1 - error / ||data||
         """
-        vErr = self._getUnitEvalError(data, **kwargs)[0]
-        vNorm = numpy.sqrt((data ** 2).sum(axis = 0))
-        return 1 - vErr / vNorm, None
+        return self._getUnitPerformance(data, data,
+            ('visible', 'hidden', 'visible'), **kwargs), None
 
     def _getUnitEvalIntPerformance(self, data, k = 1, **kwargs):
         """Return 'intrinsic performance' of units.
@@ -545,6 +433,7 @@ class rbm(nemoa.system.ann.ann):
         
         'performance' := 1 - error / ||data - mean(data)||
         """
+        print 'test'
         vErr = self._getUnitEvalError(data = data, **kwargs)[0]
         vNorm = numpy.sqrt(((data - numpy.mean(data, axis = 0)) ** 2).sum(axis = 0))
         return 1 - vErr  / vNorm, None
@@ -600,12 +489,9 @@ class rbm(nemoa.system.ann.ann):
             return self._config['params']['visible']
         return []
 
-    def _getVisibleUnitExpect(self, hValue):
-        """Return the expected values of all visible units using the values of the hidden units."""
-        return self._getSigmoidFromSigmoidExpect(hValue,
-            source = self._params['units'][1],
-            target = self._params['units'][0],
-            links = self._params['links'][(0, 1)])
+    #def _getVisibleUnitExpect(self, data):
+        #"""Return the expected values of all visible units using the values of the hidden units."""
+        #return self._getExpect(data, ('hidden', 'visible'))
 
     def _getVisibleUnitValue(self, data):
         """Return reconstructed values of visible units as numpy array."""
@@ -636,10 +522,6 @@ class rbm(nemoa.system.ann.ann):
             self._params['units'][0]['bias'][0, i] = params['units'][0]['bias'][0, k]
         return True
 
-    def _getVisibleUnitEvalEnergy(self, data):
-        """Return local energy for all visible units as numpy array."""
-        return -np.mean(data * self._params['units'][0]['bias'], axis = 0)
-
     # RBM HIDDEN UNIT METHODS
 
     def _getHiddenUnitUpdates(self, vData, hData, vModel, hModel, **kwargs):
@@ -665,20 +547,13 @@ class rbm(nemoa.system.ann.ann):
             return self._config['params']['hidden']
         return []
 
-    def _getHiddenUnitExpect(self, vValue):
+    def _getHiddenUnitExpect(self, data):
         """Return the expected values of all hidden units using the values of the visible units."""
-        return self._getSigmoidFromSigmoidExpect(data = vValue,
-            source = self._units['visible'],
-            target = self._units['hidden'],
-            links  = self._links['visible']['target']['hidden'])
+        return self._getExpect(data, ('visible', 'hidden'))
 
     def _getHiddenUnitValue(self, data):
         """Return reconstructed values of hidden units using their expectation values."""
         return self._getBernoulliMedian(data, self._params['units'][1])
-
-    def _getHiddenUnitSample(self, data):
-        """Return the reconstructed values of all hidden units using their expectation values."""
-        return self._getBernoulliSample(data, self._params['units'][1])
 
     def _setHiddenUnitParams(self, params):
         """Set parameters of hidden units using dictionary."""
@@ -688,11 +563,6 @@ class rbm(nemoa.system.ann.ann):
             l = params['units'][1]['label'].index(h)
             self._params['units'][1]['bias'][0, j] = params['units'][1]['bias'][0, l]
         return True
-
-    def _getHiddenUnitEvalEnergy(self, data):
-        """Return system energy for all hidden units as numpy array."""
-        hData = self._getHiddenUnitValue(self._getHiddenUnitExpect(data))
-        return -np.mean(hData * self._params['units'][1]['bias'], axis = 0)
 
     # RBM LINK METHODS
 
@@ -1007,12 +877,9 @@ class grbm(rbm):
             self._params['units'][0]['lvar'][0, i] = params['units'][0]['lvar'][0, k]
         return True
 
-    def _getVisibleUnitExpect(self, data):
-        """Return the expected values of all visible units using the values of the hidden units."""
-        return self._getGaussFromSigmoidExpect(data,
-            source = self._params['units'][1],
-            target = self._params['units'][0],
-            links = self._params['links'][(0, 1)])
+    #def _getVisibleUnitExpect(self, data):
+        #"""Return the expected values of all visible units using the values of the hidden units."""
+        #return self._getExpect(data, ('hidden', 'visible'))
 
     def _getVisibleUnitValue(self, data):
         """Return reconstructed values of visible units as numpy array."""
@@ -1022,19 +889,11 @@ class grbm(rbm):
         """Return gauss distributed samples for visible units as numpy array."""
         return self._getGaussSample(data, self._params['units'][0])
 
-    def _getVisibleUnitEvalEnergy(self, data):
-        """Return local energy for all visible units as numpy array."""
-        return -np.mean((data - self._params['units'][0]['bias']) ** 2
-            / numpy.exp(self._params['units'][0]['lvar']), axis = 0) / 2
-
     # GRBM hidden units
 
-    def _getHiddenUnitExpect(self, vValue):
+    def _getHiddenUnitExpect(self, data):
         """Return the expected values of all hidden units using the values of the visible units."""
-        return self._getSigmoidFromGaussExpect(data = vValue,
-            source = self._params['units'][0],
-            target = self._params['units'][1],
-            links = self._params['links'][(0, 1)])
+        return self._getExpect(data, ('visible', 'hidden'))
 
     # GRBM links
 

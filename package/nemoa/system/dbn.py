@@ -34,7 +34,8 @@ class dbn(nemoa.system.ann.ann):
             'optimize': {
                 'schedule': None,
                 'visible': None,
-                'hidden': None
+                'hidden': None,
+                'useAdjacency': False
             }
         }
 
@@ -187,11 +188,6 @@ class dbn(nemoa.system.ann.ann):
                 'target': self._params['units'][layerID + 1]['name']}
         return True
 
-    #def _getUnits(self):
-        #"""Return a list with units."""
-        ## 2DO!!
-        #return []
-
     def _optimizeParams(self, dataset, **config):
         """Optimize system parameters."""
 
@@ -208,6 +204,9 @@ class dbn(nemoa.system.ann.ann):
         nemoa.log('info', 'finetuning system')
         nemoa.setLog(indent = '+1')
 
+        chain = tuple([layer['name'] for layer in self._params['units']])
+        data = dataset.getData(columns = ('input', 'output'))
+        print self._getPerformance(data['input'], data['output'], chain)
 
         nemoa.setLog(indent = '-1')
         return True
@@ -270,7 +269,7 @@ class dbn(nemoa.system.ann.ann):
                 sysConfig = {'package': sysModule, 'class': sysClass}
 
             # update subsystem configuration
-            sysConfig['name'] = '%s → %s' % (inUnits['name'], outUnits['name'])
+            sysConfig['name'] = '%s ↔ %s' % (inUnits['name'], outUnits['name'])
             if not 'params' in sysConfig:
                 sysConfig['params'] = {}
             if inUnits['visible']:
@@ -365,7 +364,7 @@ class dbn(nemoa.system.ann.ann):
         outputUnits = self._units['output']['label']
         units = self._params['units']
         links = self._params['links']
-        for id in range((len(self._params['units']) - 1)  / 2):
+        for id in range((len(units) - 1)  / 2):
             # copy unit parameters
             for attrib in units[id]['init'].keys():
                 if attrib in ['name', 'visible']:
@@ -379,10 +378,13 @@ class dbn(nemoa.system.ann.ann):
                     continue
                 links[(id, id + 1)][attrib] = \
                     links[(id, id + 1)]['init'][attrib]
+                links[(len(units) - id - 2, len(units) - id - 1)][attrib] = \
+                    links[(id, id + 1)]['init'][attrib].T
             del links[(id, id + 1)]['init']
-            links[(len(units) - id - 2, len(units) - id - 1)] = \
-                self._getTransposedLinks((id, id + 1))
 
+        # 2DO clean up decoder hidden layer labels
+
+        # clean up
         nemoa.log('info', 'cleanup unit and linkage parameter arrays')
         # remove output units from input layer
         self._removeUnits('input', outputs)
