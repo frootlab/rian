@@ -448,7 +448,7 @@ class inspector:
                 self.__inspect = False
             elif self.__state['epoch'] == config['updates'] and not self.__data == None:
                 value = self.__system._getDataEval(
-                    data = data, func = config['inspectFunction'])
+                    data = self.__data, func = config['inspectFunction'])
                 measure = config['inspectFunction'].title()
                 nemoa.log('info', 'final: %s = %.2f' % (measure, value))
             elif ((epochTime - self.__state['inspectTime']) > config['inspectTimeInterval']) \
