@@ -204,44 +204,18 @@ class dbn(nemoa.system.ann.ann):
         self._fineTuning(dataset, **config)
         return True
 
-    def _fineTuning(self, dataset, **config):
-        """Finetuning system using backpropagation."""
-        nemoa.log('info', 'finetuning system')
-        nemoa.setLog(indent = '+1')
-
-        chain = tuple([layer['name'] for layer in self._params['units']])
-        data = dataset.getData(columns = ('input', 'output'))
-        nemoa.log('info', 'system performance before finetuning: %s' %
-            (self._getPerformance(data['input'], data['output'], chain)))
-
-        nemoa.setLog(indent = '-1')
-        return True
-
     def _preTraining(self, dataset, **config):
         """Pretraining ANN using Restricted Boltzmann Machines."""
+        import nemoa
+        import nemoa.system
+
         nemoa.log('info', 'pretraining system')
         nemoa.setLog(indent = '+1')
 
-        # configure subsystems
-        self._preTrainingPrepare()
+        #
+        # Configure subsystems for pretraining
+        #
 
-        # optimize subsystems
-        self._preTrainingOptimize(dataset, **config)
-
-        # import parameters from subsystems
-        self._preTrainingImport()
-
-        # cleanup subsystem
-        self._preTrainingCleanup()
-
-        nemoa.setLog(indent = '-1')
-        return True
-
-    def _preTrainingPrepare(self):
-        """Configure subsystems for pretraining."""
-        ### 2DO: Why is this import necessary???
-        import nemoa
-        ###
         nemoa.log('info', 'configure subsystems')
         nemoa.setLog(indent = '+1')
         if not 'units' in self._params:
@@ -250,8 +224,7 @@ class dbn(nemoa.system.ann.ann):
             return False
 
         # create and configure subsystems
-        import nemoa.system
-        self._subSystems = []
+        subSystems = []
         for layerID in range((len(self._params['units']) - 1)  / 2):
             inUnits = self._params['units'][layerID]
             outUnits = self._params['units'][layerID + 1]
@@ -295,7 +268,7 @@ class dbn(nemoa.system.ann.ann):
                 len(system.getUnits()), len(system.getLinks())))
 
             # link subsystem
-            self._subSystems.append(system)
+            subSystems.append(system)
 
             # link linksparameters of subsystem
             links['init'] = system._params['links'][(0, 1)]
@@ -316,29 +289,29 @@ class dbn(nemoa.system.ann.ann):
 
         self._config['check']['subSystems'] = True
         nemoa.setLog(indent = '-1')
-        return True
 
-    def _preTrainingOptimize(self, dataset, **config):
-        """Optimize Subsystems."""
+        #
+        # Optimize subsystems
+        #
     
         # create copy of dataset values (before transformation)
         datasetCopy = dataset._get()
 
         # optimize subsystems
-        for sysID in range(len(self._subSystems)):
+        for sysID in range(len(subSystems)):
             nemoa.log('info', 'optimize subsystem %s (%s)' \
-                % (self._subSystems[sysID].getName(), self._subSystems[sysID].getType()))
+                % (subSystems[sysID].getName(), subSystems[sysID].getType()))
             nemoa.setLog(indent = '+1')
 
             # link encoder and decoder system
-            system = self._subSystems[sysID]
+            system = subSystems[sysID]
 
             # transform dataset with previous system / fix lower stack
             if sysID > 0:
                 dataset.transformData(
-                    system = self._subSystems[sysID - 1],
+                    system = subSystems[sysID - 1],
                     transformation = 'hiddenvalue',
-                    colLabels = self._subSystems[sysID - 1].getUnits(visible = False))
+                    colLabels = subSystems[sysID - 1].getUnits(visible = False))
 
             # initialize system
             # in higher layers 'initVisible' = False
@@ -352,9 +325,11 @@ class dbn(nemoa.system.ann.ann):
 
         # reset data to initial state (before transformation)
         dataset._set(**datasetCopy)
-        return True
 
-    def _preTrainingImport(self):
+        #
+        # Copy and enrolle parameters of subsystems to dbn
+        #
+
         nemoa.log('info', 'initialize system with subsystem parameters')
         nemoa.setLog(indent = '+1')
 
@@ -372,7 +347,11 @@ class dbn(nemoa.system.ann.ann):
         for id in range((len(units) - 1)  / 2):
             # copy unit parameters
             for attrib in units[id]['init'].keys():
+                # keep name and visibility of layers
                 if attrib in ['name', 'visible']:
+                    continue
+                # keep labels of hidden layers
+                if attrib == 'label' and not units[id]['visible']:
                     continue
                 units[id][attrib] = units[id]['init'][attrib]
                 units[-(id + 1)][attrib] = units[id][attrib]
@@ -387,20 +366,31 @@ class dbn(nemoa.system.ann.ann):
                     links[(id, id + 1)]['init'][attrib].T
             del links[(id, id + 1)]['init']
 
-        # 2DO clean up decoder hidden layer labels
-
-        # clean up
+        #
+        # Cleanup units and links of visible layers
+        #
+        
         nemoa.log('info', 'cleanup unit and linkage parameter arrays')
-        # remove output units from input layer
         self._removeUnits('input', outputs)
-        # remove input units from output layer
         self._removeUnits('output', inputs)
 
-        nemoa.setLog(indent = '-1')
+        nemoa.setLog(indent = '-2')
         return True
 
-    def _preTrainingCleanup(self):
-        del self._subSystems
+    def _fineTuning(self, dataset, **config):
+        """Finetuning system using backpropagation."""
+        nemoa.log('info', 'finetuning system')
+        nemoa.setLog(indent = '+1')
+
+        chain = tuple([layer['name'] for layer in self._params['units']])
+        data = dataset.getData(columns = ('input', 'output'))
+        nemoa.log('info', 'system performance before finetuning: %s' %
+            (self._getPerformance(data['input'], data['output'], chain)))
+
+
+
+
+        nemoa.setLog(indent = '-1')
         return True
 
     def _initParams(self, data = None):

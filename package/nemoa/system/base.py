@@ -406,12 +406,11 @@ class inspector:
         self.__state = {}
 
     def trigger(self):
-        config = self.__system._config['optimize']
-        
-        if config == None:
-            return False
+        """Update epoch and time and calculate """
 
         import time
+
+        config = self.__system._config['optimize']
         epochTime = time.time()
 
         if self.__state == {}:
@@ -453,7 +452,7 @@ class inspector:
                 nemoa.log('info', 'final: %s = %.2f' % (measure, value))
             elif ((epochTime - self.__state['inspectTime']) > config['inspectTimeInterval']) \
                 and not self.__data == None \
-                and not (self.__state['estimateStarted'] and not self.__state['estimateEnded']):
+                and not (self.__estimate and self.__state['estimateStarted'] and not self.__state['estimateEnded']):
                 value = self.__system._getDataEval(
                     data = self.__data, func = config['inspectFunction'])
                 progress = float(self.__state['epoch']) / float(config['updates']) * 100.0

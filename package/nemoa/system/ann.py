@@ -90,7 +90,7 @@ class ann(nemoa.system.base.system):
         return (self._initUnits(data) and self._initLinks(data))
 
     ####################################################################
-    # Links
+    # System Links
     ####################################################################
 
     def _initLinks(self, data = None):
@@ -184,7 +184,7 @@ class ann(nemoa.system.base.system):
         return True
 
     ####################################################################
-    # Units
+    # System Units
     ####################################################################
 
     def _initUnits(self, data = None):
@@ -352,6 +352,8 @@ class ann(nemoa.system.base.system):
         return data
 
     def _getSampleExpect(self, data, chain):
+        """Return expected value
+        for a chain mappings of sampled units values."""
         if len(chain) == 1:
             return data
         elif len(chain) == 2:
@@ -379,6 +381,19 @@ class ann(nemoa.system.base.system):
                     self._units[chain[id]], self._units[chain[id + 1]]),
                     self._units[chain[id + 1]])
         return data
+
+    def _getValueExpect(self, data, chain):
+        """Return expected value
+        for a chain of mappings of maximum likelihood units values."""
+        if len(chain) == 1:
+            return data
+        elif len(chain) == 2:
+            return self._getExpectSourceTarget(
+                self._getUnitSample(data, self._units[chain[0]]),
+                self._units[chain[0]], self._units[chain[1]])
+        return self._getExpectSourceTarget(
+            self._getValue(data, chain[0:-1]),
+            self._units[chain[-2]], self._units[chain[-1]])
 
     def _getUnitMedian(self, data, layer):
         if layer['class'] == 'sigmoid':
@@ -434,7 +449,6 @@ class ann(nemoa.system.base.system):
         """Return system performance respective to data."""
         return numpy.mean(self._getUnitPerformance(
             inputData, outputData, chain, **kwargs))
-
 
     ####################################################################
     # Sigmoidal activated, Bernoulli distributed units
