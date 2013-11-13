@@ -183,6 +183,8 @@ class rbm(nemoa.system.ann.ann):
     def _optimizeParams(self, dataset, **kwargs):
         """Optimize system parameters."""
 
+        import nemoa.common
+
         # check for 'params' and update configuration
         if 'params' in kwargs:
             if not self.getType() in kwargs['params']:
@@ -200,12 +202,12 @@ class rbm(nemoa.system.ann.ann):
 
         # copy optimization configuration
         config = self._config['optimize'].copy()
-        
-        # get testData for inspection
+
+        # initialise inspector
         if config['inspect']:
-            testData = dataset.getData()
-        else:
-            testData = None
+            import nemoa.system.base
+            inspector = nemoa.system.base.inspector(self)
+            inspector.setTestData(dataset.getData())
 
         for iteration in xrange(config['iterations']):
 
@@ -236,7 +238,7 @@ class rbm(nemoa.system.ann.ann):
                 self._updateParams(*sampleData)
                 
                 # inspect
-                self._inspectOptimization(testData)
+                inspector.trigger()
 
             # optionaly lift edges after every iteration
             if config['iterationLiftLinks']:
@@ -258,58 +260,58 @@ class rbm(nemoa.system.ann.ann):
 
         return True
 
-    def _inspectOptimization(self, data = None, reset = False):
+    #def _inspectOptimization(self, data = None, reset = False):
 
-        if reset:
-            del self._inspect
+        #if reset:
+            #del self._inspect
 
-        config = self._config['optimize']
-        epochTime = time.time()
-        if hasattr(self, '_inspect'):
-            inspect = self._inspect
-        else:
-            self._inspect = {
-                'startTime': epochTime,
-                'epoch': 0}
-            inspect = self._inspect
-            if config['inspect']:
-                inspect['inspectTime'] = epochTime
-            if config['estimateTime']:
-                inspect['estimateStarted'] = False
-                inspect['estimateEnded'] = False
-        inspect['epoch'] += 1
+        #config = self._config['optimize']
+        #epochTime = time.time()
+        #if hasattr(self, '_inspect'):
+            #inspect = self._inspect
+        #else:
+            #self._inspect = {
+                #'startTime': epochTime,
+                #'epoch': 0}
+            #inspect = self._inspect
+            #if config['inspect']:
+                #inspect['inspectTime'] = epochTime
+            #if config['estimateTime']:
+                #inspect['estimateStarted'] = False
+                #inspect['estimateEnded'] = False
+        #inspect['epoch'] += 1
 
-        if config['estimateTime'] and not inspect['estimateEnded']:
-            if not inspect['estimateStarted']:
-                nemoa.log('info', """
-                    estimating time for calculation
-                    of %i updates ...""" % (config['updates']))
-                inspect['estimateStarted'] = True
-            if (epochTime - inspect['startTime']) > config['estimateTimeWait']:
-                estim = ((epochTime - inspect['startTime']) / (inspect['epoch'] + 1)
-                    * config['updates'] * config['iterations'])
-                estimStr = time.strftime('%H:%M',
-                    time.localtime(time.time() + estim))
-                nemoa.log('info', 'estimation: %.1fs (finishing time: %s)'
-                    % (estim, estimStr))
-                inspect['estimateEnded'] = True
+        #if config['estimateTime'] and not inspect['estimateEnded']:
+            #if not inspect['estimateStarted']:
+                #nemoa.log('info', """
+                    #estimating time for calculation
+                    #of %i updates ...""" % (config['updates']))
+                #inspect['estimateStarted'] = True
+            #if (epochTime - inspect['startTime']) > config['estimateTimeWait']:
+                #estim = ((epochTime - inspect['startTime']) / (inspect['epoch'] + 1)
+                    #* config['updates'] * config['iterations'])
+                #estimStr = time.strftime('%H:%M',
+                    #time.localtime(time.time() + estim))
+                #nemoa.log('info', 'estimation: %.1fs (finishing time: %s)'
+                    #% (estim, estimStr))
+                #inspect['estimateEnded'] = True
 
-        if config['inspect']:
-            if inspect['epoch'] == config['updates']:
-                value = self._getDataEval(
-                    data = data, func = config['inspectFunction'])
-                measure = config['inspectFunction'].title()
-                nemoa.log('info', 'final: %s = %.2f' % (measure, value))
-            elif ((epochTime - inspect['inspectTime']) > config['inspectTimeInterval']):
-                if not (inspect['estimateStarted'] and not inspect['estimateEnded']):
-                    value = self._getDataEval(
-                        data = data, func = config['inspectFunction'])
-                    progress = float(inspect['epoch']) / float(config['updates']) * 100.0
-                    measure = config['inspectFunction'].title()
-                    nemoa.log('info', 'finished %.1f%%: %s = %.2f' % (progress, measure, value))
-                    inspect['inspectTime'] = epochTime
+        #if config['inspect']:
+            #if inspect['epoch'] == config['updates']:
+                #value = self._getDataEval(
+                    #data = data, func = config['inspectFunction'])
+                #measure = config['inspectFunction'].title()
+                #nemoa.log('info', 'final: %s = %.2f' % (measure, value))
+            #elif ((epochTime - inspect['inspectTime']) > config['inspectTimeInterval']):
+                #if not (inspect['estimateStarted'] and not inspect['estimateEnded']):
+                    #value = self._getDataEval(
+                        #data = data, func = config['inspectFunction'])
+                    #progress = float(inspect['epoch']) / float(config['updates']) * 100.0
+                    #measure = config['inspectFunction'].title()
+                    #nemoa.log('info', 'finished %.1f%%: %s = %.2f' % (progress, measure, value))
+                    #inspect['inspectTime'] = epochTime
         
-        return True
+        #return True
 
     def _updateParams(self, *args, **kwargs):
         """Update system parameters using reconstructed and sampling data."""

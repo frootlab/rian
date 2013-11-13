@@ -358,3 +358,108 @@ class empty(system):
 
     def initParams(self, *args, **kwargs):
         return True
+
+class inspector:
+
+    __inspect = True
+    __estimate = True
+    __data = None
+    __config = None
+    __system = None
+    __state = {}
+    
+    def __init__(self, system = None):
+        self.__configure(system)
+
+    def __configure(self, system):
+        """Configure inspector to given nemoa.system instance."""
+        if not nemoa.type.isSystem(system):
+            nemoa.log('warning', """
+                could not configure inspector:
+                system is not valid!""")
+            return False
+        if not hasattr(system, '_config'):
+            nemoa.log('warning', """
+                could not configure inspector:
+                system contains no configuration!""")
+            return False
+        if not 'optimize' in system._config:
+            nemoa.log('warning', """
+                could not configure inspector:
+                system contains no configuration for optimization!""")
+            return False
+        # link system
+        self.__system = system
+        self.__inspect = system._config['optimize']['inspect'] \
+            if 'inspect' in system._config['optimize'] \
+            else True
+        self.__estimate = system._config['optimize']['estimateTime'] \
+            if 'estimateTime' in system._config['optimize'] \
+            else True
+        
+    def setTestData(self, data):
+        """Set numpy array with destdata."""
+        self.__data = data
+
+    def reset(self):
+        """Reset inspection."""
+        self.__state = {}
+
+    def trigger(self):
+        config = self.__system._config['optimize']
+        
+        if config == None:
+            return False
+
+        import time
+        epochTime = time.time()
+
+        if self.__state == {}:
+            self.__state = {
+                'startTime': epochTime,
+                'epoch': 0}
+            if self.__inspect:
+                self.__state['inspectTime'] = epochTime
+            if self.__estimate:
+                self.__state['estimateStarted'] = False
+                self.__state['estimateEnded'] = False
+        self.__state['epoch'] += 1
+
+        if self.__estimate and not self.__state['estimateEnded']:
+            if not self.__state['estimateStarted']:
+                nemoa.log('info', """
+                    estimating time for calculation
+                    of %i updates ...""" % (config['updates']))
+                self.__state['estimateStarted'] = True
+            if (epochTime - self.__state['startTime']) > config['estimateTimeWait']:
+                estim = ((epochTime - self.__state['startTime']) / (self.__state['epoch'] + 1)
+                    * config['updates'] * config['iterations'])
+                estimStr = time.strftime('%H:%M',
+                    time.localtime(time.time() + estim))
+                nemoa.log('info', 'estimation: %.1fs (finishing time: %s)'
+                    % (estim, estimStr))
+                self.__state['estimateEnded'] = True
+
+        if self.__inspect:
+            if self.__data == None:
+                nemoa.log('warning', """monitoring the process
+                    of optimization is not possible:
+                    testdata is needed!""")
+                self.__inspect = False
+            elif self.__state['epoch'] == config['updates'] and not self.__data == None:
+                value = self.__system._getDataEval(
+                    data = data, func = config['inspectFunction'])
+                measure = config['inspectFunction'].title()
+                nemoa.log('info', 'final: %s = %.2f' % (measure, value))
+            elif ((epochTime - self.__state['inspectTime']) > config['inspectTimeInterval']) \
+                and not self.__data == None \
+                and not (self.__state['estimateStarted'] and not self.__state['estimateEnded']):
+                value = self.__system._getDataEval(
+                    data = self.__data, func = config['inspectFunction'])
+                progress = float(self.__state['epoch']) / float(config['updates']) * 100.0
+                measure = config['inspectFunction'].title()
+                nemoa.log('info', """finished %.1f%%: %s = %.2f""" \
+                    % (progress, measure, value))
+                self.__state['inspectTime'] = epochTime
+        
+        return True
