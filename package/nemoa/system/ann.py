@@ -95,7 +95,7 @@ class ann(nemoa.system.base.system):
 
     def getPerformance(self, *args, **kwargs):
         """Return data reconstruction performance of system."""
-        return numpy.mean(self.getUnitPerformance(*args, **kwargs))c
+        return numpy.mean(self.getUnitPerformance(*args, **kwargs))
 
     ####################################################################
     # Links
@@ -305,14 +305,14 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def getMapping(self):
+    def _getMapping(self):
         return tuple([layer['name'] for layer in self._params['units']])
 
     def _getExpect(self, data, chain = None):
         """Return expected values of a layer
         calculated from a chain of mappings."""
         if chain == None:
-            chain = self.getMapping()
+            chain = self._getMapping()
         if len(chain) == 2:
             return self.units[chain[1]].expect(data,
                 self.units[chain[0]].params)
@@ -330,7 +330,7 @@ class ann(nemoa.system.base.system):
                 for the last step instead of sampled values"""
 
         if chain == None:
-            chain = self.getMapping()
+            chain = self._getMapping()
         if expectLast:
             if len(chain) == 1:
                 return data
@@ -361,7 +361,7 @@ class ann(nemoa.system.base.system):
                 for the last step instead of maximum likelihood values"""
 
         if chain == None:
-            chain = self.getMapping()
+            chain = self._getMapping()
         if expectLast:
             if len(chain) == 1:
                 return data
@@ -402,7 +402,7 @@ class ann(nemoa.system.base.system):
         error := ||outputData - modelOutput||
         """
         if chain == None:
-            chain = self.getMapping()
+            chain = self._getMapping()
         if block == []:
             modelOutput = self._getExpect(inputData, chain)
         else:
