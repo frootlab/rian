@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# Module contains various types of restricted boltzmann machines
-# aimed for standalone modeling and pretraining artificial neuronal networks
-#
 
 import nemoa, numpy, time
 import nemoa.system.ann
+
+########################################################################
+# Module contains various types of restricted boltzmann machines
+# aimed for standalone modeling and per layer pretraining
+# of artificial neuronal networks
+########################################################################
 
 class rbm(nemoa.system.ann.ann):
     """Restricted Boltzmann Machine (RBM).
@@ -18,12 +20,12 @@ class rbm(nemoa.system.ann.ann):
 
     Reference:
         "A Practical Guide to Training Restricted Boltzmann Machines",
-        Geoffrey E. Hinton, University of Toronto, 2010
-    """
+        Geoffrey E. Hinton, University of Toronto, 2010"""
 
     # CONFIGURATION
 
-    def _getSystemDefaultConfig(self):
+    @staticmethod
+    def _getSystemDefaultConfig():
         """Return RBM default configuration as dictionary."""
         return {
             'params': {
@@ -54,7 +56,7 @@ class rbm(nemoa.system.ann.ann):
                 'inspectFunction': 'performance',
                 'inspectTimeInterval': 10.0 ,
                 'estimateTime': True,
-                'estimateTimeWait': 15.0 }}
+                'estimateTimeWait': 20.0 }}
 
     def _initParamConfiguration(self):
         self.setUnits(self._getUnitsFromConfig())
@@ -133,7 +135,7 @@ class rbm(nemoa.system.ann.ann):
             k: number of full Gibbs sampling steps
             m: number if iterations to calculate mean values
         """
-        hData  = self._getHiddenUnitExpect(data)
+        hData  = self._getExpect(data, ('visible', 'hidden'))
         vModel = numpy.zeros(shape = data.shape)
         hModel = numpy.zeros(shape = hData.shape)
         for i in range(m):
@@ -260,59 +262,6 @@ class rbm(nemoa.system.ann.ann):
 
         return True
 
-    #def _inspectOptimization(self, data = None, reset = False):
-
-        #if reset:
-            #del self._inspect
-
-        #config = self._config['optimize']
-        #epochTime = time.time()
-        #if hasattr(self, '_inspect'):
-            #inspect = self._inspect
-        #else:
-            #self._inspect = {
-                #'startTime': epochTime,
-                #'epoch': 0}
-            #inspect = self._inspect
-            #if config['inspect']:
-                #inspect['inspectTime'] = epochTime
-            #if config['estimateTime']:
-                #inspect['estimateStarted'] = False
-                #inspect['estimateEnded'] = False
-        #inspect['epoch'] += 1
-
-        #if config['estimateTime'] and not inspect['estimateEnded']:
-            #if not inspect['estimateStarted']:
-                #nemoa.log('info', """
-                    #estimating time for calculation
-                    #of %i updates ...""" % (config['updates']))
-                #inspect['estimateStarted'] = True
-            #if (epochTime - inspect['startTime']) > config['estimateTimeWait']:
-                #estim = ((epochTime - inspect['startTime']) / (inspect['epoch'] + 1)
-                    #* config['updates'] * config['iterations'])
-                #estimStr = time.strftime('%H:%M',
-                    #time.localtime(time.time() + estim))
-                #nemoa.log('info', 'estimation: %.1fs (finishing time: %s)'
-                    #% (estim, estimStr))
-                #inspect['estimateEnded'] = True
-
-        #if config['inspect']:
-            #if inspect['epoch'] == config['updates']:
-                #value = self._getDataEval(
-                    #data = data, func = config['inspectFunction'])
-                #measure = config['inspectFunction'].title()
-                #nemoa.log('info', 'final: %s = %.2f' % (measure, value))
-            #elif ((epochTime - inspect['inspectTime']) > config['inspectTimeInterval']):
-                #if not (inspect['estimateStarted'] and not inspect['estimateEnded']):
-                    #value = self._getDataEval(
-                        #data = data, func = config['inspectFunction'])
-                    #progress = float(inspect['epoch']) / float(config['updates']) * 100.0
-                    #measure = config['inspectFunction'].title()
-                    #nemoa.log('info', 'finished %.1f%%: %s = %.2f' % (progress, measure, value))
-                    #inspect['inspectTime'] = epochTime
-        
-        #return True
-
     def _updateParams(self, *args, **kwargs):
         """Update system parameters using reconstructed and sampling data."""
 
@@ -325,9 +274,9 @@ class rbm(nemoa.system.ann.ann):
 
         # and then update all unit and link parameters
         if not 'visible' in self._config['optimize']['ignoreUnits']:
-            self._updateVisibleUnits(**updateVisibleUnits)
+            self.sigmoidUnits.update(self._units['visible'], updateVisibleUnits)
         if not 'hidden' in self._config['optimize']['ignoreUnits']:
-            self._updateHiddenUnits(**updateHiddenUnits)
+            self.sigmoidUnits.update(self._units['hidden'], updateHiddenUnits)
         self._updateLinks(**updateLinks)
         return True
 
@@ -343,7 +292,7 @@ class rbm(nemoa.system.ann.ann):
 
     def _getUnitsFromDataset(self, dataset):
         """Return tuple with lists of unit labels ([visible], [hidden]) using dataset for visible."""
-        return (dataset.getColLabels(), self._params['units'][1]['label'])
+        return (dataset.getColLabels(), self._units['hidden']['label'])
 
     def _setUnits(self, units):
         """Set visible and hidden units."""
@@ -385,10 +334,10 @@ class rbm(nemoa.system.ann.ann):
             'self._getUnitEval' + evalFuncs[func][1] + '(data, **kwargs)')
         evalDict = {}
         if isinstance(visibleUnitEval, numpy.ndarray):
-            for i, v in enumerate(self._params['units'][0]['label']):
+            for i, v in enumerate(self._units['visible']['label']):
                 evalDict[v] = visibleUnitEval[i]
         if isinstance(hiddenUnitEval, numpy.ndarray):
-            for j, h in enumerate(self._params['units'][1]['label']):
+            for j, h in enumerate(self._units['hidden']['label']):
                 evalDict[h] = hiddenUnitEval[j]
         return evalDict
 
@@ -400,12 +349,6 @@ class rbm(nemoa.system.ann.ann):
         """Return local energy of units."""
         return (self._getUnitEnergy(data, ('visible',)),
             self._getUnitEnergy(data, ('visible', 'hidden')))
-
-    #def _getUnitEvalExpect(self, data, k = 1, m = 10, **kwargs):
-        #"""Return mean values of reconstructed units."""
-        #vData, hData, vModel, hModel \
-            #= self.sampleContrastiveDivergencyKstep(data, k = k, m = m)
-        #return numpy.mean(vModel, axis = 0), numpy.mean(hModel, axis = 0)
 
     def _getUnitEvalError(self, data, block = [], k = 1, **kwargs):
         """Return euclidean reconstruction error of units.
@@ -429,7 +372,7 @@ class rbm(nemoa.system.ann.ann):
         'intrinsic performance' := relperf
             where model(v) is generated with: data(u not v) = mean(data(u))
         """
-        vSize = len(self._params['units'][0]['label'])
+        vSize = len(self._units['visible']['label'])
         relIntApprox = numpy.empty(vSize)
         for v in range(vSize):
             block = range(vSize)
@@ -444,8 +387,8 @@ class rbm(nemoa.system.ann.ann):
         'extrinsic performance' := relApprox
             where model(v) is generated with data(v) = mean(data(v))
         """
-        relExtApprox = numpy.empty(len(self._params['units'][0]['label']))
-        for v in range(len(self._params['units'][0]['label'])):
+        relExtApprox = numpy.empty(len(self._units['visible']['label']))
+        for v in range(len(self._units['visible']['label'])):
             relExtApprox[v] = self._getUnitEvalPerformance(
                 data, block = block + [v], k = k)[0][v]
         return relExtApprox, None
@@ -466,7 +409,7 @@ class rbm(nemoa.system.ann.ann):
         'intrinsic relative performance' := relperf
             where model(v) is generated with data(u not v) = mean(data(u))
         """
-        vSize = len(self._params['units'][0]['label'])
+        vSize = len(self._units['visible']['label'])
         relIntApprox = numpy.empty(vSize)
         for v in range(vSize):
             block = range(vSize)
@@ -480,20 +423,20 @@ class rbm(nemoa.system.ann.ann):
 
         extrelperf := relApprox where model(v) is generated with data(v) = mean(data(v))
         """
-        relExtApprox = numpy.empty(len(self._params['units'][0]['label']))
-        for v in range(len(self._params['units'][0]['label'])):
+        relExtApprox = numpy.empty(len(self._units['visible']['label']))
+        for v in range(len(self._units['visible']['label'])):
             relExtApprox[v] = self._getUnitEvalRelativePerformance(
                 data = data, block = block + [v], k = k)[0][v]
         return relExtApprox, None
 
     def _unlinkUnit(self, unit):
         """Delete unit links in adjacency matrix."""
-        if unit in self._params['units'][0]['label']:
-            i = self._params['units'][0]['label'].index(unit)
+        if unit in self._units['visible']['label']:
+            i = self._units['visible']['label'].index(unit)
             self._params['links'][(0, 1)]['A'][i,:] = False
             return True
-        if unit in self._params['units'][1]['label']:
-            i = self._params['units'][1]['label'].index(unit)
+        if unit in self._units['hidden']['label']:
+            i = self._units['hidden']['label'].index(unit)
             self._params['links'][(0, 1)]['A'][:,i] = False
             return True
         return False
@@ -511,52 +454,33 @@ class rbm(nemoa.system.ann.ann):
             return self._config['params']['visible']
         return []
 
-    #def _getVisibleUnitExpect(self, data):
-        #"""Return the expected values of all visible units using the values of the hidden units."""
-        #return self._getExpect(data, ('hidden', 'visible'))
-
     def _getVisibleUnitValue(self, data):
         """Return reconstructed values of visible units as numpy array."""
-        return self._getBernoulliMedian(data)
+        return self.sigmoidUnits.getValueFromExpect(data)
 
     def _getVisibleUnitSample(self, data):
         """Return gauss distributed samples for visible units as numpy array."""
-        return self._getBernoulliSample(data)
+        return self.sigmoidUnits.getSampleFromExpect(data)
 
     def _getVisibleUnitUpdates(self, vData, hData, vModel, hModel, **kwargs):
         """Return updates for visible units."""
-        v = len(self._params['units'][0]['label'])
+        v = len(self._units['visible']['label'])
         return { 'bias': (numpy.mean(vData - vModel, axis = 0).reshape((1, v))
             * self._config['optimize']['updateRate']
             * self._config['optimize']['updateFactorVbias']) }
 
-    def _updateVisibleUnits(self, **updates):
-        """Set updates for visible units."""
-        self._params['units'][0]['bias'] += updates['bias']
-        return True
-
     def _setVisibleUnitParams(self, params):
         """Set parameters of visible units using dictionary."""
-        for i, v in enumerate(self._params['units'][0]['label']):
-            if not v in params['units'][0]['label']:
-                continue
-            k = params['units'][0]['label'].index(v)
-            self._params['units'][0]['bias'][0, i] = params['units'][0]['bias'][0, k]
-        return True
+        return self.sigmoidUnits.overwrite(self._units['visible'], params['units'][0])
 
     # RBM HIDDEN UNIT METHODS
 
     def _getHiddenUnitUpdates(self, vData, hData, vModel, hModel, **kwargs):
         """Return updates for visible units."""
         return { 'bias': (
-            numpy.mean(hData - hModel, axis = 0).reshape((1, len(self._params['units'][1]['label'])))
+            numpy.mean(hData - hModel, axis = 0).reshape((1, len(self._units['hidden']['label'])))
             * self._config['optimize']['updateRate']
             * self._config['optimize']['updateFactorHbias']) }
-
-    def _updateHiddenUnits(self, **updates):
-        """Set updates for hidden units."""
-        self._params['units'][1]['bias'] += updates['bias']
-        return True
 
     def _getHiddenUnitsFromConfig(self):
         """Return list of hidden unit labels using configuration."""
@@ -569,30 +493,21 @@ class rbm(nemoa.system.ann.ann):
             return self._config['params']['hidden']
         return []
 
-    def _getHiddenUnitExpect(self, data):
-        """Return the expected values of all hidden units using the values of the visible units."""
-        return self._getExpect(data, ('visible', 'hidden'))
-
     def _getHiddenUnitValue(self, data):
         """Return reconstructed values of hidden units using their expectation values."""
-        return self._getBernoulliMedian(data, self._params['units'][1])
+        return self.sigmoidUnits.getValueFromExpect(data, self._units['hidden'])
 
     def _setHiddenUnitParams(self, params):
         """Set parameters of hidden units using dictionary."""
-        for j, h in enumerate(self._params['units'][1]['label']):
-            if not h in params['units'][1]['label']:
-                continue
-            l = params['units'][1]['label'].index(h)
-            self._params['units'][1]['bias'][0, j] = params['units'][1]['bias'][0, l]
-        return True
+        return self.sigmoidUnits.overwrite(self._units['hidden'], params['units'][1])
 
     # RBM LINK METHODS
 
     def _getLinksFromConfig(self):
         """Return links from adjacency matrix."""
         links = []
-        for i, v in enumerate(self._params['units'][0]['label']):
-            for j, h in enumerate(self._params['units'][1]['label']):
+        for i, v in enumerate(self._units['visible']['label']):
+            for j, h in enumerate(self._units['hidden']['label']):
                 if not 'A' in self._params or self._params['links'][(0, 1)]['A'][i, j]:
                     links.append((v, h))
         return links
@@ -608,11 +523,11 @@ class rbm(nemoa.system.ann.ann):
             return False
 
         # create adjacency matrix from links
-        vList = self._params['units'][0]['label']
-        hList = self._params['units'][1]['label']
+        vList = self._units['visible']['label']
+        hList = self._units['hidden']['label']
         A = numpy.empty([len(vList), len(hList)], dtype = bool)
-        ## 2DO!! This is very slow
-        ## we could try "for link in links" etc.
+
+        # 2DO!! This is very slow: we could try "for link in links" etc.
         for i, v in enumerate(vList):
             for j, h in enumerate(hList):
                 A[i, j] = ((v, h) in links or (h, v) in links)
@@ -635,8 +550,8 @@ class rbm(nemoa.system.ann.ann):
             links = self._getLinksFromConfig()
 
         # create dict with link params
-        vList = self._params['units'][0]['label']
-        hList = self._params['units'][1]['label']
+        vList = self._units['visible']['label']
+        hList = self._units['hidden']['label']
         linkParams = {}
         for link in links:
             if link[0] in vList and link[1] in hList:
@@ -660,11 +575,11 @@ class rbm(nemoa.system.ann.ann):
 
     def _setLinkParams(self, params):
         """Set link parameters and update link matrices using dictionary."""
-        for i, v in enumerate(self._params['units'][0]['label']):
+        for i, v in enumerate(self._units['visible']['label']):
             if not v in params['units'][0]['label']:
                 continue
             k = params['units'][0]['label'].index(v)
-            for j, h in enumerate(self._params['units'][1]['label']):
+            for j, h in enumerate(self._units['hidden']['label']):
                 if not h in params['units'][1]['label']:
                     continue
                 l = params['units'][1]['label'].index(h)
@@ -728,14 +643,12 @@ class rbm(nemoa.system.ann.ann):
         if count == 0:
             return False
 
-        # inform
         nemoa.log('console', 'deleted %i of %i links. (see logfile)' % (count, countAll))
 
         # set modified list of current links
         if self._setLinks(curLinks):
             return count
 
-        # some error happened
         nemoa.log('warning', 'could not set links! (see logfile)')
         return False
 
@@ -757,8 +670,8 @@ class rbm(nemoa.system.ann.ann):
         linkEval = eval('self._getLinkEval' + evalFuncs[func][1] + '(data, **kwargs)')
         evalDict = {}
         if isinstance(linkEval, numpy.ndarray):
-            for i, v in enumerate(self._params['units'][0]['label']):
-                for j, h in enumerate(self._params['units'][1]['label']):
+            for i, v in enumerate(self._units['visible']['label']):
+                for j, h in enumerate(self._units['hidden']['label']):
                     evalDict[(v,h)] = linkEval[i, j]
         return evalDict
 
@@ -772,7 +685,7 @@ class rbm(nemoa.system.ann.ann):
 
     def _getLinkEvalEnergy(self, data):
         """Return link energy of all links as numpy array."""
-        hData = self._getHiddenUnitValue(self._getHiddenUnitExpect(data))
+        hData = self._getHiddenUnitValue(self._getExpect(data, ('visible', 'hidden')))
         if self._config['optimize']['useAdjacency']:
             return -(self._params['links'][(0, 1)]['A'] * self._params['links'][(0, 1)]['W']
                 * numpy.dot(data.T, hData) / data.shape[0])
@@ -799,10 +712,10 @@ class grbm(rbm):
 
     Reference:
         "Improved Learning of Gaussian-Bernoulli Restricted Boltzmann Machines",
-        KyungHyun Cho, Alexander Ilin and Tapani Raiko, ICANN 2011
-    """
+        KyungHyun Cho, Alexander Ilin and Tapani Raiko, ICANN 2011"""
 
-    def _getSystemDefaultConfig(self):
+    @staticmethod
+    def _getSystemDefaultConfig():
         """Return GRBM default configuration as dictionary."""
         return {
             'params': {
@@ -835,7 +748,7 @@ class grbm(rbm):
                 'inspectFunction': 'performance',
                 'inspectTimeInterval': 10.0 ,
                 'estimateTime': True,
-                'estimateTimeWait': 15.0 }}
+                'estimateTimeWait': 20.0 }}
 
     # GRBM data
 
@@ -859,14 +772,33 @@ class grbm(rbm):
         }]
         return True
 
+
+    def _updateParams(self, *args, **kwargs):
+        """Update system parameters using reconstructed and sampling data."""
+
+        # first calculate all updates (without affecting the calculations)
+        if not 'visible' in self._config['optimize']['ignoreUnits']:
+            updateVisibleUnits = self._getVisibleUnitUpdates(*args, **kwargs)
+        if not 'hidden' in self._config['optimize']['ignoreUnits']:
+            updateHiddenUnits = self._getHiddenUnitUpdates(*args, **kwargs)
+        updateLinks = self._getLinkUpdates(*args, **kwargs)
+
+        # and then update all unit and link parameters
+        if not 'visible' in self._config['optimize']['ignoreUnits']:
+            self.gaussUnits.update(self._units['visible'], updateVisibleUnits)
+        if not 'hidden' in self._config['optimize']['ignoreUnits']:
+            self.sigmoidUnits.update(self._units['hidden'], updateHiddenUnits)
+        self._updateLinks(**updateLinks)
+        return True
+
     # GRBM visible units
 
     def _getVisibleUnitUpdates(self, vData, hData, vModel, hModel, **kwargs):
         """Return updates for visible units."""
-        v = len(self._params['units'][0]['label'])
+        v = len(self._units['visible']['label'])
         W = self._params['links'][(0, 1)]['W']
-        vVar = numpy.exp(self._params['units'][0]['lvar'])
-        vBias = self._params['units'][0]['bias']
+        vVar = numpy.exp(self._units['visible']['lvar'])
+        vBias = self._units['visible']['bias']
         return {
             'bias': (numpy.mean(vData - vModel, axis = 0).reshape((1, v))
                 / vVar * self._config['optimize']['updateRate']
@@ -878,79 +810,39 @@ class grbm(rbm):
                 / vVar * self._config['optimize']['updateRate']
                 * self._config['optimize']['updateFactorVlvar']) }
 
-    def _updateVisibleUnits(self, **updates):
-        """Set updates for visible units."""
-        self._params['units'][0]['bias'] += updates['bias']
-        self._params['units'][0]['lvar'] += updates['lvar']
-        return True
-
     def _getVisibleUnitParams(self, label):
         """Return system parameters of one specific visible unit."""
-        id = self._params['units'][0]['label'].index(label)
+        id = self._units['visible']['label'].index(label)
         return {
-            'bias': self._params['units'][0]['bias'][0, id],
-            'sdev': numpy.sqrt(numpy.exp(self._params['units'][0]['lvar'][0, id])) }
+            'bias': self._units['visible']['bias'][0, id],
+            'sdev': numpy.sqrt(numpy.exp(self._units['visible']['lvar'][0, id])) }
 
     def _setVisibleUnitParams(self, params):
         """Set parameters of visible units using dictionary."""
-        for i, v in enumerate(self._params['units'][0]['label']):
-            if not v in params['units'][0]['label']:
-                continue
-            k = params['units'][0]['label'].index(v)
-            self._params['units'][0]['bias'][0, i] = params['units'][0]['bias'][0, k]
-            self._params['units'][0]['lvar'][0, i] = params['units'][0]['lvar'][0, k]
-        return True
-
-    #def _getVisibleUnitExpect(self, data):
-        #"""Return the expected values of all visible units using the values of the hidden units."""
-        #return self._getExpect(data, ('hidden', 'visible'))
+        return self.gaussUnits.overwrite(self._units['visible'], params['units'][0])
 
     def _getVisibleUnitValue(self, data):
         """Return reconstructed values of visible units as numpy array."""
-        return self._getGaussMedian(data, self._params['units'][0])
+        return self.gaussUnits.getValueFromExpect(data, self._units['visible'])
 
     def _getVisibleUnitSample(self, data):
         """Return gauss distributed samples for visible units as numpy array."""
-        return self._getGaussSample(data, self._params['units'][0])
-
-    # GRBM hidden units
-
-    def _getHiddenUnitExpect(self, data):
-        """Return the expected values of all hidden units using the values of the visible units."""
-        return self._getExpect(data, ('visible', 'hidden'))
+        return self.gaussUnits.getSampleFromExpect(data, self._units['visible'])
 
     # GRBM links
 
     def _getLinkEvalEnergy(self, data):
         """Return link energy of all links as numpy array."""
-        hData = self._getHiddenUnitExpect(data)
+        hData = self._getExpect(data, ('visible', 'hidden'))
         if self._config['optimize']['useAdjacency']:
             return -(self._params['links'][(0, 1)]['A'] * self._params['links'][(0, 1)]['W'] * numpy.dot((data
-                / numpy.exp(self._params['units'][0]['lvar'])).T, hData) / data.shape[0])
+                / numpy.exp(self._units['visible']['lvar'])).T, hData) / data.shape[0])
         return -(self._params['links'][(0, 1)]['W'] * numpy.dot((data
-            / numpy.exp(self._params['units'][0]['lvar'])).T, hData) / data.shape[0])
+            / numpy.exp(self._units['visible']['lvar'])).T, hData) / data.shape[0])
 
     def _getLinkUpdates(self, vData, hData, vModel, hModel, **kwargs):
         """Return updates for links."""
-        vVar = numpy.exp(self._params['units'][0]['lvar'])
+        vVar = numpy.exp(self._units['visible']['lvar'])
         return { 'W': ((numpy.dot(vData.T, hData) - numpy.dot(vModel.T, hModel))
             / float(vData.size) / vVar.T * self._config['optimize']['updateRate']
             * self._config['optimize']['updateFactorWeights']) }
-
-#class crbm(rbm):
-    #"""Continous Restricted Boltzmann Machine (CRBM).
-
-    #Description:
-        #Restricted Boltzmann Machine with continous linear visible units
-        #and binary sigmoidal hidden units
-        #Input: linear normalized data, Output: transformed binary data
-    
-    #Reference:
-    
-    #"""
-
-    ##
-    ## todo!
-    ##
-
-    #pass

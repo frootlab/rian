@@ -233,8 +233,6 @@ class dbn(nemoa.system.ann.ann):
             # get subsystem configuration
             sysType = 'visible' if inUnits['visible'] else 'hidden'
             sysUserConf = self._config['params'][sysType + 'System']
-            sysModule = self._config['params'][sysType + 'SystemModule']
-            sysClass = self._config['params'][sysType + 'SystemClass']
             if sysUserConf:
                 sysConfig = nmConfig.get(type = 'system', name = sysUserConf)
                 if sysConfig == None:
@@ -245,7 +243,10 @@ class dbn(nemoa.system.ann.ann):
                     nemoa.setLog(indent = '-1')
                     return False
             else:
-                sysConfig = {'package': sysModule, 'class': sysClass}
+                sysConfig = {
+                    'package': self._config['params'][sysType + 'SystemModule'],
+                    'class': self._config['params'][sysType + 'SystemClass']
+                }
 
             # update subsystem configuration
             sysConfig['name'] = '%s ↔ %s' % (inUnits['name'], outUnits['name'])

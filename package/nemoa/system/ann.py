@@ -4,6 +4,22 @@
 import numpy
 import nemoa.system.base
 
+
+# common activation functions
+
+def sigmoid(x):
+    """Standard logistic function."""
+    return 1.0 / (1.0 + numpy.exp(-x))
+
+def tanh(x):
+    """Standard hyperbolic tangens function."""
+    return numpy.tanh(x)
+
+def tanhEff(x):
+    """Hyperbolic tangens function, proposed in paper:
+    'Efficient BackProp' by LeCun, Bottou, Orr, Müller"""
+    return 1.7159 * numpy.tanh(0.6666 * x)
+
 class ann(nemoa.system.base.system):
     """Artificial Neuronal Network (ANN)."""
 
@@ -140,13 +156,6 @@ class ann(nemoa.system.base.system):
                 self._params['links'][id]
         return True
 
-    #def _getTransposedLinks(self, id):
-        #return {
-            #'source': self._params['links'][id]['target'],
-            #'target': self._params['links'][id]['source'],
-            #'A': self._params['links'][id]['A'].T,
-            #'W': self._params['links'][id]['W'].T}
-
     def _getWeightsFromLayers(self, source, target):
         if self._config['optimize']['useAdjacency']:
             if target['name'] in self._links[source['name']]['target']:
@@ -184,7 +193,7 @@ class ann(nemoa.system.base.system):
         return True
 
     ####################################################################
-    # System Units
+    # Units
     ####################################################################
 
     def _initUnits(self, data = None):
@@ -195,9 +204,13 @@ class ann(nemoa.system.base.system):
                 and layerName in self._config['init']['ignoreUnits']:
                 continue
             elif layer['class'] == 'sigmoid':
-                self._initSigmoidUnits(layer, data)
+                self.sigmoidUnits.initialize(layer, data)
             elif layer['class'] == 'gauss':
-                self._initGaussUnits(layer, data)
+                if 'vSigma' in self._config['init']:
+                    self.gaussUnits.initialize(layer, data,
+                        vSigma = self._config['init']['vSigma'])
+                else:
+                    self.gaussUnits.initialize(layer, data)
             else:
                 return False
         return True
@@ -223,10 +236,10 @@ class ann(nemoa.system.base.system):
                 if not attr in layer.keys():
                     return False
             if layer['class'] == 'gauss' \
-                and not self._checkGaussUnits(layer):
+                and not self.gaussUnits.check(layer):
                 return False
             elif params['units'][id]['class'] == 'sigmoid' \
-                and not self._checkSigmoidUnits(layer):
+                and not self.sigmoidUnits.check(layer):
                 return False
         return True
 
@@ -269,9 +282,9 @@ class ann(nemoa.system.base.system):
             return {}
         unitid = layer['label'].index(unit)
         if layer['class'] == 'gauss':
-            info = self._getGaussUnitInfo(layer, unitid)
+            info = self.gaussUnits.get(layer, unitid)
         elif layer['class'] == 'sigmoid':
-            info = self._getSigmoidUnitInfo(layer, unitid)
+            info = self.sigmoidUnits.get(layer, unitid)
         else:
             info = {}
         info['id'] = unitid
@@ -301,10 +314,10 @@ class ann(nemoa.system.base.system):
 
         # delete units from unit parameter arrays
         if layer['class'] == 'gauss':
-            self._removeGaussUnits(layer, select)
+            self.gaussUnits.remove(layer, select)
         elif layer['class'] == 'sigmoid':
-            self._removeSigmoidUnits(layer, select)
-        
+            self.sigmoidUnits.remove(layer, select)
+
         # delete units from link parameter arrays
         self._removeUnitsLinks(layer, select)
 
@@ -327,11 +340,11 @@ class ann(nemoa.system.base.system):
         calculated from the expected valus of another layer."""
         weights = self._getWeightsFromLayers(source, target)
         if source['class'] == 'sigmoid' and target['class'] == 'sigmoid':
-            return self._getSigmoidFromSigmoidExpect(data, source, target, weights)
+            return self.sigmoidUnits.expectFromSigmoidInput(data, source, target, weights)
         elif source['class'] == 'sigmoid' and target['class'] == 'gauss':
-            return self._getGaussFromSigmoidExpect(data, source, target, weights)
+            return self.gaussUnits.expectFromSigmoidInput(data, source, target, weights)
         elif source['class'] == 'gauss' and target['class'] == 'sigmoid':
-            return self._getSigmoidFromGaussExpect(data, source, target, weights)
+            return self.sigmoidUnits.expectFromGaussInput(data, source, target, weights)
 
     def _getSample(self, data, chain):
         """Return sampled unit values of a layer
@@ -397,15 +410,15 @@ class ann(nemoa.system.base.system):
 
     def _getUnitMedian(self, data, layer):
         if layer['class'] == 'sigmoid':
-            return self._getBernoulliMedian(data, layer)
+            return self.sigmoidUnits.getValueFromExpect(data, layer)
         elif layer['class'] == 'gauss':
-            return self._getGaussMedian(data, layer)
+            return self.gaussUnits.getValueFromExpect(data, layer)
 
     def _getUnitSample(self, data, layer):
         if layer['class'] == 'sigmoid':
-            return self._getBernoulliSample(data, layer)
+            return self.sigmoidUnits.getSampleFromExpect(data, layer)
         elif layer['class'] == 'gauss':
-            return self._getGaussSample(data, layer)
+            return self.gaussUnits.getSampleFromExpect(data, layer)
 
     def _getUnitEnergy(self, data, chain):
         """Return unit energies of a layer
@@ -418,9 +431,9 @@ class ann(nemoa.system.base.system):
             data = self._getValue(self._getExpect(data, chain[0:-1]), chain[-2:])
         layer = self._units[chain[-1]]
         if layer['class'] == 'sigmoid':
-            return self._getSigmoidUnitEnergy(data, layer)
+            return self.sigmoidUnits.energy(data, layer)
         elif layer['class'] == 'gauss':
-            return self._getGaussUnitEnergy(data, layer)
+            return self.gaussUnits.energy(data, layer)
 
     def _getUnitError(self, inputData, outputData, chain, block = [], **kwargs):
         """Return euclidean reconstruction error of units.
@@ -450,116 +463,145 @@ class ann(nemoa.system.base.system):
         return numpy.mean(self._getUnitPerformance(
             inputData, outputData, chain, **kwargs))
 
-    ####################################################################
-    # Sigmoidal activated, Bernoulli distributed units
-    ####################################################################
+    class units(): pass
 
-    def _initSigmoidUnits(self, layer, data = None):
-        """Initialize system parameters of sigmoid distributed units using data."""
-        layer['bias'] = 0.5 * numpy.ones((1, len(layer['label'])))
-        return True
+    class sigmoidUnits(units):
+        """Units with sigmoidal activation and binary distribution."""
 
-    def _checkSigmoidUnits(self, layer):
-        return 'bias' in layer
+        @staticmethod
+        def initialize(layer, data = None):
+            """Initialize system parameters of sigmoid distributed units using data."""
+            layer['bias'] = 0.5 * numpy.ones((1, len(layer['label'])))
+            return True
 
-    def _removeSigmoidUnits(self, layer, select):
-        """Delete selection (list of ids) of units from parameter arrays."""
-        layer['bias'] = layer['bias'][0, [select]]
-        return True
+        @staticmethod
+        def update(layer, updates):
+            """Update parameter of sigmoid units."""
+            layer['bias'] += updates['bias']
+            return True
 
-    def _getSigmoidUnitInfo(self, layer, unitid):
-        return {'bias': layer['bias'][0, unitid]}
+        @staticmethod
+        def overwrite(layer, params):
+            """Merge parameters of sigmoid units."""
+            for i, u in enumerate(params['label']):
+                if u in layer['label']:
+                    l = layer['label'].index(u)
+                    layer['bias'][0, l] = params['bias'][0, i]
+            return True
 
-    def _getSigmoidUnitEnergy(self, data, layer):
-        """Return system energy of sigmoidal units as numpy array."""
-        return -numpy.mean(data * layer['bias'], axis = 0)
+        @staticmethod
+        def remove(layer, select):
+            """Delete selection (list of ids) of units from parameter arrays."""
+            layer['bias'] = layer['bias'][0, [select]]
+            return True
 
-    def _getSigmoidFromSigmoidExpect(self, data, source, target, weights):
-        """Return expected values of a sigmoid output layer
-        calculated from a sigmoid input layer."""
-        return self._sigmoid(target['bias'] + numpy.dot(data, weights))
+        @staticmethod
+        def check(layer):
+            return 'bias' in layer
 
-    def _getSigmoidFromGaussExpect(self, data, source, target, weights):
-        """Return expected values of a sigmoid output layer
-        calculated from a gaussian input layer."""
-        return self._sigmoid(target['bias'] +
-            numpy.dot(data / numpy.exp(source['lvar']), weights))
+        @staticmethod
+        def energy(data, layer):
+            """Return system energy of sigmoidal units as numpy array."""
+            return -numpy.mean(data * layer['bias'], axis = 0)
 
-    def _getBernoulliMedian(self, data, layer):
-        """Return median of bernoulli distributed layer
-        calculated from expected values."""
-        return (data > 0.5).astype(float)
+        @staticmethod
+        def expectFromSigmoidInput(data, source, target, weights):
+            """Return expected values of a sigmoid output layer
+            calculated from a sigmoid input layer."""
+            return sigmoid(target['bias'] + numpy.dot(data, weights))
 
-    def _getBernoulliSample(self, data, layer):
-        """Return sample of bernoulli distributed layer
-        calculated from expected value."""
-        return (data > numpy.random.rand(data.shape[0], data.shape[1])).astype(float)
+        @staticmethod
+        def expectFromGaussInput(data, source, target, weights):
+            """Return expected values of a sigmoid output layer
+            calculated from a gaussian input layer."""
+            return sigmoid(target['bias'] +
+                numpy.dot(data / numpy.exp(source['lvar']), weights))
 
-    # common activation functions for sigmoidal units
+        @staticmethod
+        def getValueFromExpect(data, layer):
+            """Return median of bernoulli distributed layer
+            calculated from expected values."""
+            return (data > 0.5).astype(float)
 
-    @staticmethod
-    def _sigmoid(x):
-        """Standard logistic function."""
-        return 1.0 / (1.0 + numpy.exp(-x))
+        @staticmethod
+        def getSampleFromExpect(data, layer):
+            """Return sample of bernoulli distributed layer
+            calculated from expected value."""
+            return (data > numpy.random.rand(data.shape[0], data.shape[1])).astype(float)
 
-    @staticmethod
-    def _tanh(x):
-        """Standard hyperbolic tangens function."""
-        return numpy.tanh(x)
+        @staticmethod
+        def get(layer, unitid):
+            return {'bias': layer['bias'][0, unitid]}
 
-    @staticmethod
-    def _tanhEff(x):
-        """Hyperbolic tangens function, proposed in paper:
-        'Efficient BackProp' by LeCun, Bottou, Orr, Müller"""
-        return 1.7159 * numpy.tanh(0.6666 * x)
+    class gaussUnits(units):
+        """Units with linear activation and gaussian distribution"""
 
-    ####################################################################
-    # Linear activated, Gauss distributed units
-    ####################################################################
+        @staticmethod
+        def initialize(layer, data = None, vSigma = 0.4):
+            """Initialize system parameters of gauss distribued units using data."""
+            size = len(layer['label'])
+            if data == None:
+                layer['bias'] = numpy.zeros([1, size])
+                layer['lvar'] = numpy.zeros([1, size])
+            else:
+                layer['bias'] = \
+                    numpy.mean(data, axis = 0).reshape(1, size)
+                layer['lvar'] = \
+                    numpy.log((vSigma * numpy.ones((1, size))) ** 2)
+            return True
 
-    def _getGaussFromSigmoidExpect(self, data, source, target, weights):
-        """Return expected values of a gaussian output layer
-        calculated from a sigmoid input layer."""
-        return target['bias'] + numpy.dot(data, weights)
+        @staticmethod
+        def update(layer, updates):
+            """Update Gauss units."""
+            layer['bias'] += updates['bias']
+            layer['lvar'] += updates['lvar']
+            return True
 
-    def _getGaussMedianFromExpect(self, data, layer):
-        """Return median of gauss distributed layer
-        calculated from expected values."""
-        return data
+        @staticmethod
+        def overwrite(layer, params):
+            """Merge parameters of gaussian units."""
+            for i, u in enumerate(params['label']):
+                if u in layer['label']:
+                    l = layer['label'].index(u)
+                    layer['bias'][0, l] = params['bias'][0, i]
+                    layer['lvar'][0, l] = params['lvar'][0, i]
+            return True
 
-    def _getGaussSampleFromExpect(self, data, layer):
-        """Return sample of gauss distributed layer
-        calculated from expected values."""
-        return numpy.random.normal(data, numpy.sqrt(numpy.exp(layer['lvar'])))
+        @staticmethod
+        def expectFromSigmoidInput(data, source, target, weights):
+            """Return expected values of a gaussian output layer
+            calculated from a sigmoid input layer."""
+            return target['bias'] + numpy.dot(data, weights)
 
-    def _initGaussUnits(self, layer, data = None, vSigma = 0.4):
-        """Initialize system parameters of gauss distribued units using data."""
-        size = len(layer['label'])
-        if data == None:
-            layer['bias'] = numpy.zeros([1, size])
-            layer['lvar'] = numpy.zeros([1, size])
-        else:
-            if 'vSigma' in self._config['init']:
-                vSigma = self._config['init']['vSigma']
-            layer['bias'] = \
-                numpy.mean(data, axis = 0).reshape(1, size)
-            layer['lvar'] = \
-                numpy.log((vSigma * numpy.ones((1, size))) ** 2)
-        return True
+        @staticmethod
+        def remove(layer, select):
+            """Delete selection (list of ids) of units from parameter arrays."""
+            layer['bias'] = layer['bias'][0, [select]]
+            layer['lvar'] = layer['lvar'][0, [select]]
+            return True
 
-    def _getGaussUnitEnergy(self, data, layer):
-        return -numpy.mean((data - layer['bias']) ** 2
-            / numpy.exp(layer['lvar']), axis = 0) / 2
+        @staticmethod
+        def check(layer):
+            return 'bias' in layer and 'lvar' in layer
 
-    def _checkGaussUnits(self, layer):
-        return 'bias' in layer and 'lvar' in layer
+        @staticmethod
+        def energy(data, layer):
+            return -numpy.mean((data - layer['bias']) ** 2
+                / numpy.exp(layer['lvar']), axis = 0) / 2
 
-    def _removeGaussUnits(self, layer, select):
-        """Delete selection (list of ids) of units from parameter arrays."""
-        layer['bias'] = layer['bias'][0, [select]]
-        layer['lvar'] = layer['lvar'][0, [select]]
-        return True
+        @staticmethod
+        def getValueFromExpect(data, layer):
+            """Return median of gauss distributed layer
+            calculated from expected values."""
+            return data
 
-    def _getGaussUnitInfo(self, layer, unitid):
-        return {'bias': layer['bias'][0, unitid],
-            'lvar': layer['lvar'][0, unitid]}
+        @staticmethod
+        def getSampleFromExpect(data, layer):
+            """Return sample of gauss distributed layer
+            calculated from expected values."""
+            return numpy.random.normal(data, numpy.sqrt(numpy.exp(layer['lvar'])))
+
+        @staticmethod
+        def get(layer, unitid):
+            return {'bias': layer['bias'][0, unitid],
+                'lvar': layer['lvar'][0, unitid]}
