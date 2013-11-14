@@ -162,8 +162,10 @@ class system:
 
     def initParams(self, dataset, *args, **kwargs):
         """Initialize system parameters using dataset instance."""
-        if not nemoa.type.isDataset(dataset): # check dataset instance
-            nemoa.log("error", "could not initilize system parameters: invalid 'dataset' instance given!")
+        if not nemoa.type.isDataset(dataset):
+            nemoa.log('error', """
+                could not initilize system parameters:
+                invalid 'dataset' instance given!""")
             return False
         if 'samples' in self._config['params']: # using row filter
             data = dataset.getData(100000, rows = self._config['params']['samples'])

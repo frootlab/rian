@@ -4,22 +4,6 @@
 import numpy
 import nemoa.system.base
 
-
-# common activation functions
-
-def sigmoid(x):
-    """Standard logistic function."""
-    return 1.0 / (1.0 + numpy.exp(-x))
-
-def tanh(x):
-    """Standard hyperbolic tangens function."""
-    return numpy.tanh(x)
-
-def tanhEff(x):
-    """Hyperbolic tangens function, proposed in paper:
-    'Efficient BackProp' by LeCun, Bottou, Orr, Müller"""
-    return 1.7159 * numpy.tanh(0.6666 * x)
-
 class ann(nemoa.system.base.system):
     """Artificial Neuronal Network (ANN)."""
 
@@ -105,8 +89,16 @@ class ann(nemoa.system.base.system):
         """Initialize system parameters using data."""
         return (self._initUnits(data) and self._initLinks(data))
 
+    def getError(self, *args, **kwargs):
+        """Return euclidean data reconstruction error of system."""
+        return numpy.sum(self.getError(*args, **kwargs))
+
+    def getPerformance(self, *args, **kwargs):
+        """Return data reconstruction performance of system."""
+        return numpy.mean(self.getUnitPerformance(*args, **kwargs))c
+
     ####################################################################
-    # System Links
+    # Links
     ####################################################################
 
     def _initLinks(self, data = None):
@@ -146,13 +138,17 @@ class ann(nemoa.system.base.system):
 
     def _indexLinks(self):
         self._links = {units: {'source': {}, 'target': {}} 
-            for units in self._units.keys()}
+            for units in self.units.keys()}
         for id in self._params['links'].keys():
             source = self._params['links'][id]['source']
             target = self._params['links'][id]['target']
             self._links[source]['target'][target] = \
                 self._params['links'][id]
+            self.units[source].target = \
+                self._params['links'][id]
             self._links[target]['source'][source] = \
+                self._params['links'][id]
+            self.units[target].source = \
                 self._params['links'][id]
         return True
 
@@ -198,28 +194,26 @@ class ann(nemoa.system.base.system):
 
     def _initUnits(self, data = None):
         """Initialize system parameteres of all units using data."""
-        for layerName in self._units.keys():
-            layer = self._units[layerName]
-            if 'init' in self._config \
-                and layerName in self._config['init']['ignoreUnits']:
-                continue
-            elif layer['class'] == 'sigmoid':
-                self.sigmoidUnits.initialize(layer, data)
-            elif layer['class'] == 'gauss':
-                if 'vSigma' in self._config['init']:
-                    self.gaussUnits.initialize(layer, data,
-                        vSigma = self._config['init']['vSigma'])
-                else:
-                    self.gaussUnits.initialize(layer, data)
-            else:
-                return False
+        for layerName in self.units.keys():
+            self.units[layerName].initialize(data)
+
         return True
 
     def _indexUnits(self):
         self._units = {}
+        self.units = {}
         for id in range(len(self._params['units'])):
-            self._units[self._params['units'][id]['name']] = \
-                self._params['units'][id]
+            unitClass = self._params['units'][id]['class']
+            name = self._params['units'][id]['name']
+            if unitClass == 'sigmoid':
+                self.units[name] = self.sigmoidUnits()
+            elif unitClass == 'gauss':
+                self.units[name] = self.gaussUnits()
+            else:
+                print 'shit happens!'
+                quit()
+            self.units[name].params = self._params['units'][id]
+            self._units[name] = self._params['units'][id]
         return True
 
     def _checkUnitParams(self, params):
@@ -275,42 +269,30 @@ class ann(nemoa.system.base.system):
         # search for layer if no layer is given
         if not layer:
             layer = self._getLayerOfUnit(unit)
-        if not layer in self._units:
+        if not layer in self.units:
             return {}
-        layer = self._units[layer]
-        if not unit in layer['label']:
-            return {}
-        unitid = layer['label'].index(unit)
-        if layer['class'] == 'gauss':
-            info = self.gaussUnits.get(layer, unitid)
-        elif layer['class'] == 'sigmoid':
-            info = self.sigmoidUnits.get(layer, unitid)
-        else:
-            info = {}
-        info['id'] = unitid
-        info['class'] = layer['class']
-        info['visible'] = layer['visible']
-        return info
+        return self.units[layer].get(unit)
 
     def _removeUnits(self, layer = None, label = []):
 
-        if not layer == None and not layer in self._units:
+        if not layer == None and not layer in self.units.keys():
             nemoa.log('error', """
                 could not remove units:
                 unknown layer '%'""" % (layer))
             return False
 
         # search for labeled units in given layer
-        layer = self._units[layer]
+        
+        layer = self.units[layer].params
         select = []
-        units = []
+        labels = []
         for id, unit in enumerate(layer['label']):
             if not unit in label:
                 select.append(id)
-                units.append(unit)
+                labels.append(unit)
 
         # remove units from unit labels
-        layer['label'] = units
+        layer['label'] = labels
 
         # delete units from unit parameter arrays
         if layer['class'] == 'gauss':
@@ -323,122 +305,104 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _getExpect(self, data, chain):
+    def getMapping(self):
+        return tuple([layer['name'] for layer in self._params['units']])
+
+    def _getExpect(self, data, chain = None):
         """Return expected values of a layer
         calculated from a chain of mappings."""
+        if chain == None:
+            chain = self.getMapping()
         if len(chain) == 2:
-            return self._getExpectSourceTarget(data,
-                self._units[chain[0]], self._units[chain[1]])
+            return self.units[chain[1]].expect(data,
+                self.units[chain[0]].params)
         data = numpy.copy(data)
         for id in range(len(chain) - 1):
-            data = self._getExpectSourceTarget(data,
-                self._units[chain[id]], self._units[chain[id + 1]])
+            data = self.units[chain[id + 1]].expect(data,
+                self.units[chain[id]].params)
         return data
 
-    def _getExpectSourceTarget(self, data, source, target):
-        """Return expected unit values of a layer
-        calculated from the expected valus of another layer."""
-        weights = self._getWeightsFromLayers(source, target)
-        if source['class'] == 'sigmoid' and target['class'] == 'sigmoid':
-            return self.sigmoidUnits.expectFromSigmoidInput(data, source, target, weights)
-        elif source['class'] == 'sigmoid' and target['class'] == 'gauss':
-            return self.gaussUnits.expectFromSigmoidInput(data, source, target, weights)
-        elif source['class'] == 'gauss' and target['class'] == 'sigmoid':
-            return self.sigmoidUnits.expectFromGaussInput(data, source, target, weights)
+    def getUnitSamples(self, data, chain = None, expectLast = False):
+        """Return sampled unit values calculated from a chain of mappings.
+        
+        Keyword Arguments:
+            expectLast -- return expectation values of the units
+                for the last step instead of sampled values"""
 
-    def _getSample(self, data, chain):
-        """Return sampled unit values of a layer
-        calculated from a chain of mappings."""
-        if len(chain) == 1:
-            return self._getUnitSample(data, self._units[chain[0]])
-        elif len(chain) == 2:
-            return self._getUnitSample(
-                self._getExpectSourceTarget(data,
-                    self._units[chain[0]], self._units[chain[1]]),
-                    self._units[chain[1]])
-        data = numpy.copy(data)
-        for id in range(len(chain) - 1):
-            data = self._getUnitSample(
-                self._getExpectSourceTarget(data,
-                    self._units[chain[id]], self._units[chain[id + 1]]),
-                    self._units[chain[id + 1]])
-        return data
-
-    def _getSampleExpect(self, data, chain):
-        """Return expected value
-        for a chain mappings of sampled units values."""
-        if len(chain) == 1:
+        if chain == None:
+            chain = self.getMapping()
+        if expectLast:
+            if len(chain) == 1:
+                return data
+            elif len(chain) == 2:
+                return  self.units[chain[1]].expect(
+                    self.units[chain[0]].getSamples(data),
+                    self.units[chain[0]].params)
+            return self.units[chain[-1]].expect(
+                self.getUnitSamples(data, chain[0:-1]),
+                self.units[chain[-2]].params)
+        else:
+            if len(chain) == 1:
+                return self.units[chain[0]].getSamples(data)
+            elif len(chain) == 2:
+                return self.units[chain[1]].getSamplesFromInput(
+                    data, self.units[chain[0]])
+            data = numpy.copy(data)
+            for id in range(len(chain) - 1):
+                data = self.units[chain[id + 1]].getSamplesFromInput(
+                    data, self.units[chain[id]])
             return data
-        elif len(chain) == 2:
-            return self._getExpectSourceTarget(
-                self._getUnitSample(data, self._units[chain[0]]),
-                self._units[chain[0]], self._units[chain[1]])
-        return self._getExpectSourceTarget(
-            self._getSample(data, chain[0:-1]),
-            self._units[chain[-2]], self._units[chain[-1]])
 
-    def _getValue(self, data, chain):
-        """Return unit median values of a layer
-        calculated from a chain of mappings."""
-        if len(chain) == 1:
-            return self._getUnitMedian(data, self._units[chain[0]])
-        elif len(chain) == 2:
-            return self._getUnitMedian(
-                self._getExpectSourceTarget(data,
-                    self._units[chain[0]], self._units[chain[1]]),
-                    self._units[chain[1]])
-        data = numpy.copy(data)
-        for id in range(len(chain) - 1):
-            data = self._getUnitMedian(
-                self._getExpectSourceTarget(data,
-                    self._units[chain[id]], self._units[chain[id + 1]]),
-                    self._units[chain[id + 1]])
-        return data
+    def getUnitValues(self, data, chain = None, expectLast = False):
+        """Return unit values calculated from a chain of mappings.
+        
+        Keyword Arguments:
+            expectLast -- return expectation values of the units
+                for the last step instead of maximum likelihood values"""
 
-    def _getValueExpect(self, data, chain):
-        """Return expected value
-        for a chain of mappings of maximum likelihood units values."""
-        if len(chain) == 1:
+        if chain == None:
+            chain = self.getMapping()
+        if expectLast:
+            if len(chain) == 1:
+                return data
+            elif len(chain) == 2:
+                return self.units[chain[1]].expect(
+                    self.units[chain[0]].getSamples(data),
+                    self.units[chain[0]].params)
+            return self.units[chain[-1]].expect(
+                self.getUnitValues(data, chain[0:-1]),
+                self.units[chain[-2]].params)
+        else:
+            if len(chain) == 1:
+                return self.units[chain[0]].getValues(data)
+            elif len(chain) == 2:
+                return self.units[chain[1]].getValues(
+                    self.units[chain[1]].expect(data,
+                    self.units[chain[0]].params))
+            data = numpy.copy(data)
+            for id in range(len(chain) - 1):
+                data = self.units[chain[id + 1]].getValues(
+                    self.units[chain[id + 1]].expect(data,
+                    self.units[chain[id]].params))
             return data
-        elif len(chain) == 2:
-            return self._getExpectSourceTarget(
-                self._getUnitSample(data, self._units[chain[0]]),
-                self._units[chain[0]], self._units[chain[1]])
-        return self._getExpectSourceTarget(
-            self._getValue(data, chain[0:-1]),
-            self._units[chain[-2]], self._units[chain[-1]])
 
-    def _getUnitMedian(self, data, layer):
-        if layer['class'] == 'sigmoid':
-            return self.sigmoidUnits.getValueFromExpect(data, layer)
-        elif layer['class'] == 'gauss':
-            return self.gaussUnits.getValueFromExpect(data, layer)
-
-    def _getUnitSample(self, data, layer):
-        if layer['class'] == 'sigmoid':
-            return self.sigmoidUnits.getSampleFromExpect(data, layer)
-        elif layer['class'] == 'gauss':
-            return self.gaussUnits.getSampleFromExpect(data, layer)
-
-    def _getUnitEnergy(self, data, chain):
+    def getUnitEnergy(self, data, chain = None):
         """Return unit energies of a layer
         calculated from a chain of mappings."""
         if len(chain) == 1:
             pass
         elif len(chain) == 2:
-            data = self._getValue(data, chain)
+            data = self.getUnitValues(data, chain)
         else:
-            data = self._getValue(self._getExpect(data, chain[0:-1]), chain[-2:])
-        layer = self._units[chain[-1]]
-        if layer['class'] == 'sigmoid':
-            return self.sigmoidUnits.energy(data, layer)
-        elif layer['class'] == 'gauss':
-            return self.gaussUnits.energy(data, layer)
+            data = self.getUnitValues(self._getExpect(data, chain[0:-1]), chain[-2:])
+        return self.units[chain[-1]].energy(data)
 
-    def _getUnitError(self, inputData, outputData, chain, block = [], **kwargs):
+    def getUnitError(self, inputData, outputData, chain = None, block = [], **kwargs):
         """Return euclidean reconstruction error of units.
         error := ||outputData - modelOutput||
         """
+        if chain == None:
+            chain = self.getMapping()
         if block == []:
             modelOutput = self._getExpect(inputData, chain)
         else:
@@ -448,45 +412,91 @@ class ann(nemoa.system.base.system):
             modelOutput = self._getExpect(inputDataCopy, chain)
         return numpy.sqrt(((outputData - modelOutput) ** 2).sum(axis = 0))
 
-    def _getUnitPerformance(self, inputData, outputData, chain, **kwargs):
+    def getUnitPerformance(self, inputData, outputData, *args, **kwargs):
         """Return unit performance respective to data.
         
         Description:
             performance := 1 - error / ||data||
         """
-        error = self._getUnitError(inputData, outputData, chain, **kwargs)
+        error = self.getUnitError(inputData, outputData, *args, **kwargs)
         norm = numpy.sqrt((outputData ** 2).sum(axis = 0))
         return 1.0 - error / norm
 
-    def _getPerformance(self, inputData, outputData, chain, **kwargs):
-        """Return system performance respective to data."""
-        return numpy.mean(self._getUnitPerformance(
-            inputData, outputData, chain, **kwargs))
+    class units():
+        """Class to unify common unit attributes."""
 
-    class units(): pass
+        params = {}
+        source = {}
+        target = {}
+
+        def __init__(self):
+            pass
+
+        #def select(self, labels):
+            #select = []
+            #for id, unit in enumerate(self.params['label']):
+                #if not unit in labels:
+                    #select.append(id)
+            #return select
+
+        def expect(self, data, source):
+            if source['class'] == 'sigmoid':
+                return self.expectFromSigmoidInput(data, source,
+                    self.getWeights(source))
+            elif source['class'] == 'gauss':
+                return self.expectFromGaussInput(data, source,
+                    self.getWeights(source))
+
+        def getSamplesFromInput(self, data, source):
+            if source['class'] == 'sigmoid':
+                return self.getSamples(self.expectFromSigmoidInput(
+                    data, source, self.getWeights(source)))
+            elif source['class'] == 'gauss':
+                return self.getSamples(self.expectFromGaussInput(
+                    data, source, self.getWeights(source)))
+
+        def getWeights(self, source):
+        
+        # 2DO
+                #if self._config['optimize']['useAdjacency']:
+            #if target['name'] in self._links[source['name']]['target']:
+                #return self._links[source['name']]['target'][target['name']]['W'] \
+                    #* self._links[source['name']]['target'][target['name']]['A']
+            #elif source['name'] in self._links[target['name']]['target']:
+                #return (self._links[target['name']]['target'][source['name']]['W'] \
+                    #* self._links[source['name']]['target'][target['name']]['A']).T
+
+            if 'source' in self.source \
+                and source['name'] == self.source['source']:
+                return self.source['W']
+            elif 'target' in self.target \
+                and source['name'] == self.target['target']:
+                return self.target['W'].T
+
+            nemoa.log('error', """Could not get links:
+                Layers '%s' and '%s' are not connected.
+                """ % (source['name'], self.params['name']))
+            return None
 
     class sigmoidUnits(units):
-        """Units with sigmoidal activation and binary distribution."""
+        """Units with sigmoidal activation function and binary distribution."""
 
-        @staticmethod
-        def initialize(layer, data = None):
+        def initialize(self, data = None):
             """Initialize system parameters of sigmoid distributed units using data."""
-            layer['bias'] = 0.5 * numpy.ones((1, len(layer['label'])))
+            self.params['bias'] = 0.5 * numpy.ones((1, len(self.params['label'])))
             return True
 
-        @staticmethod
-        def update(layer, updates):
+        def update(self, updates):
             """Update parameter of sigmoid units."""
-            layer['bias'] += updates['bias']
+            self.params['bias'] += updates['bias']
             return True
 
-        @staticmethod
-        def overwrite(layer, params):
+        def overwrite(self, params):
             """Merge parameters of sigmoid units."""
             for i, u in enumerate(params['label']):
-                if u in layer['label']:
-                    l = layer['label'].index(u)
-                    layer['bias'][0, l] = params['bias'][0, i]
+                if u in self.params['label']:
+                    l = self.params['label'].index(u)
+                    self.params['bias'][0, l] = params['bias'][0, i]
             return True
 
         @staticmethod
@@ -499,79 +509,87 @@ class ann(nemoa.system.base.system):
         def check(layer):
             return 'bias' in layer
 
-        @staticmethod
-        def energy(data, layer):
+        def energy(self, data):
             """Return system energy of sigmoidal units as numpy array."""
-            return -numpy.mean(data * layer['bias'], axis = 0)
+            return -numpy.mean(data * self.params['bias'], axis = 0)
 
-        @staticmethod
-        def expectFromSigmoidInput(data, source, target, weights):
+        def expectFromSigmoidInput(self, data, source, weights):
             """Return expected values of a sigmoid output layer
             calculated from a sigmoid input layer."""
-            return sigmoid(target['bias'] + numpy.dot(data, weights))
+            return self.sigmoid(self.params['bias'] + numpy.dot(data, weights))
 
-        @staticmethod
-        def expectFromGaussInput(data, source, target, weights):
+        def expectFromGaussInput(self, data, source, weights):
             """Return expected values of a sigmoid output layer
             calculated from a gaussian input layer."""
-            return sigmoid(target['bias'] +
+            return self.sigmoid(self.params['bias'] +
                 numpy.dot(data / numpy.exp(source['lvar']), weights))
 
-        @staticmethod
-        def getValueFromExpect(data, layer):
+        def getValues(self, data):
             """Return median of bernoulli distributed layer
             calculated from expected values."""
             return (data > 0.5).astype(float)
 
-        @staticmethod
-        def getSampleFromExpect(data, layer):
+        def getSamples(self, data):
             """Return sample of bernoulli distributed layer
             calculated from expected value."""
-            return (data > numpy.random.rand(data.shape[0], data.shape[1])).astype(float)
+            return (data > numpy.random.rand(
+                data.shape[0], data.shape[1])).astype(float)
+
+        def get(self, unit):
+            id = self.params['label'].index(unit)
+            return {
+                'label': unit, 'id': id, 'class': self.params['class'],
+                'visible': self.params['visible'],
+                'bias': self.params['bias'][0, id]}
+
+        # common activation functions
 
         @staticmethod
-        def get(layer, unitid):
-            return {'bias': layer['bias'][0, unitid]}
+        def sigmoid(x):
+            """Standard logistic function."""
+            return 1.0 / (1.0 + numpy.exp(-x))
+
+        @staticmethod
+        def tanh(x):
+            """Standard hyperbolic tangens function."""
+            return numpy.tanh(x)
+
+        @staticmethod
+        def tanhEff(x):
+            """Hyperbolic tangens function, proposed in paper:
+            'Efficient BackProp' by LeCun, Bottou, Orr, Müller"""
+            return 1.7159 * numpy.tanh(0.6666 * x)
 
     class gaussUnits(units):
-        """Units with linear activation and gaussian distribution"""
+        """Units with linear activation function and gaussian distribution"""
 
-        @staticmethod
-        def initialize(layer, data = None, vSigma = 0.4):
+        def initialize(self, data = None, vSigma = 0.4):
             """Initialize system parameters of gauss distribued units using data."""
-            size = len(layer['label'])
+            size = len(self.params['label'])
             if data == None:
-                layer['bias'] = numpy.zeros([1, size])
-                layer['lvar'] = numpy.zeros([1, size])
+                self.params['bias'] = numpy.zeros([1, size])
+                self.params['lvar'] = numpy.zeros([1, size])
             else:
-                layer['bias'] = \
+                self.params['bias'] = \
                     numpy.mean(data, axis = 0).reshape(1, size)
-                layer['lvar'] = \
+                self.params['lvar'] = \
                     numpy.log((vSigma * numpy.ones((1, size))) ** 2)
             return True
 
-        @staticmethod
-        def update(layer, updates):
+        def update(self, updates):
             """Update Gauss units."""
-            layer['bias'] += updates['bias']
-            layer['lvar'] += updates['lvar']
+            self.params['bias'] += updates['bias']
+            self.params['lvar'] += updates['lvar']
             return True
 
-        @staticmethod
-        def overwrite(layer, params):
+        def overwrite(self, params):
             """Merge parameters of gaussian units."""
             for i, u in enumerate(params['label']):
-                if u in layer['label']:
-                    l = layer['label'].index(u)
-                    layer['bias'][0, l] = params['bias'][0, i]
-                    layer['lvar'][0, l] = params['lvar'][0, i]
+                if u in self.params['label']:
+                    l = self.params['label'].index(u)
+                    self.params['bias'][0, l] = params['bias'][0, i]
+                    self.params['lvar'][0, l] = params['lvar'][0, i]
             return True
-
-        @staticmethod
-        def expectFromSigmoidInput(data, source, target, weights):
-            """Return expected values of a gaussian output layer
-            calculated from a sigmoid input layer."""
-            return target['bias'] + numpy.dot(data, weights)
 
         @staticmethod
         def remove(layer, select):
@@ -580,28 +598,34 @@ class ann(nemoa.system.base.system):
             layer['lvar'] = layer['lvar'][0, [select]]
             return True
 
+        def expectFromSigmoidInput(self, data, source, weights):
+            """Return expected values of a gaussian output layer
+            calculated from a sigmoid input layer."""
+            return self.params['bias'] + numpy.dot(data, weights)
+
         @staticmethod
         def check(layer):
             return 'bias' in layer and 'lvar' in layer
 
-        @staticmethod
-        def energy(data, layer):
-            return -numpy.mean((data - layer['bias']) ** 2
-                / numpy.exp(layer['lvar']), axis = 0) / 2
+        def energy(self, data):
+            return -numpy.mean((data - self.params['bias']) ** 2
+                / numpy.exp(self.params['lvar']), axis = 0) / 2
 
-        @staticmethod
-        def getValueFromExpect(data, layer):
+        def getValues(self, data):
             """Return median of gauss distributed layer
             calculated from expected values."""
             return data
 
-        @staticmethod
-        def getSampleFromExpect(data, layer):
+        def getSamples(self, data):
             """Return sample of gauss distributed layer
             calculated from expected values."""
-            return numpy.random.normal(data, numpy.sqrt(numpy.exp(layer['lvar'])))
+            return numpy.random.normal(
+                data, numpy.sqrt(numpy.exp(self.params['lvar'])))
 
-        @staticmethod
-        def get(layer, unitid):
-            return {'bias': layer['bias'][0, unitid],
-                'lvar': layer['lvar'][0, unitid]}
+        def get(self, unit):
+            id = self.params['label'].index(unit)
+            return {
+                'label': unit, 'id': id, 'class': self.params['class'],
+                'visible': self.params['visible'],
+                'bias': self.params['bias'][0, id],
+                'lvar': self.params['bias'][0, id]}
