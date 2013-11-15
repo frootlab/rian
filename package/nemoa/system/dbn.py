@@ -299,9 +299,13 @@ class dbn(nemoa.system.ann.ann):
         nemoa.log('info', 'finetuning system')
         nemoa.setLog(indent = '+1')
 
-        data = dataset.getData(columns = ('input', 'output'))
+        #data = dataset.getData(columns = ('input', 'output'))
+        #nemoa.log('info', 'system performance before finetuning: %.3f' %
+            #(self.getPerformance(data['input'], data['output'])))
+
+        data = dataset.getData(columns = ('in', 'out'))
         nemoa.log('info', 'system performance before finetuning: %.3f' %
-            (self.getPerformance(data['input'], data['output'])))
+            (self.getPerformance(data['in'], data['out'])))
 
         nemoa.setLog(indent = '-1')
         return True

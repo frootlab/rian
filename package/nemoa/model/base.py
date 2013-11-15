@@ -265,7 +265,7 @@ class model:
         return 'check' in self.__config \
             and self.__config['check']['dataset'] \
             and self.__config['check']['network'] \
-            and self.__config['check']['system'] \
+            and self.__config['check']['system']
 
     def getName(self):
         """Return name of model."""

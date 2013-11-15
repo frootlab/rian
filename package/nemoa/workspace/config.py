@@ -427,7 +427,7 @@ class config:
 
             # get network config
             networkCfg = self.__registerNetwork(file, format)
-            if networkCfg == None:
+            if not networkCfg:
                 nemoa.log("warning", 
                     "skipping network '" + name + "'")
                 return None
@@ -638,6 +638,9 @@ class config:
 
     def __addObjToStore(self, objConf):
         """link object configuration to object dictionary."""
+        if not isinstance(objConf, dict):
+            return False
+        
         type = objConf['class']
         name = objConf['name']
         config = objConf['config']

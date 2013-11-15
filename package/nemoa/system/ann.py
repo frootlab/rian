@@ -67,8 +67,8 @@ class ann(nemoa.system.base.system):
         # compare visible units labels with dataset columns
         if dataset.getColLabels() != self.getUnits(visible = True):
             nemoa.log('error', """
-            could not configure system:
-            visible units differ from dataset columns!""")
+                could not configure system:
+                visible units differ from dataset columns!""")
             return False
 
         self._config['check']['dataset'] = True

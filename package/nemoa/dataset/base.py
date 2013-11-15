@@ -13,7 +13,6 @@ class dataset:
     def __init__(self, config = {}, **kwargs):
         """Set configuration of dataset from dictionary."""
         self.cfg = None
-        self.data = None
         self.setConfig(config)
         self.data = {}
 
@@ -84,7 +83,11 @@ class dataset:
         else:
             # get grouped network node labels and label format
             netGroups = network.getNodeGroups(type = 'visible')
-            netLblFmt = network.cfg['label_format']
+            
+            netGroupsOrder = []
+            for layer in netGroups:
+                netGroupsOrder.append((network.layer(layer)['id'], layer))
+            netGroupsOrder = sorted(netGroupsOrder)
 
             # convert network node labels to common format
             nemoa.log('info', 'search network nodes in dataset sources')
@@ -92,7 +95,8 @@ class dataset:
             convNetGroupsLost = {}
             convNetNodes = []
             convNetNodesLost = []
-            for group in netGroups:
+            netLblFmt = network.cfg['label_format']
+            for id, group in netGroupsOrder:
                 convNetGroups[group], convNetGroupsLost[group] = \
                     nemoa.annotation.convert(netGroups[group], input = netLblFmt)
                 convNetNodes += convNetGroups[group]
@@ -141,7 +145,7 @@ class dataset:
                 numLost = 0
                 numAll = 0
                 lostNodes = {}
-                for group in netGroups:
+                for id, group in netGroupsOrder:
                     lostNodesConv = [val for val in convNetGroups[group] if val not in convColLabels]
                     numAll += len(convNetGroups[group])
                     if not lostNodesConv:
@@ -181,7 +185,7 @@ class dataset:
 
         # search network nodes in dataset columns
         self.cfg['columns'] = ()
-        for group in netGroups:
+        for groupid, group in netGroupsOrder:
             for id, col in enumerate(convNetGroups[group]):
                 if not col in interColLabels:
                     continue
@@ -511,17 +515,6 @@ class dataset:
             return numpy.take(srcArray, rowSelect)
 
         return srcArray
-
-    ### has no use at the moment
-    #def getMean(self):
-
-        #mean = 0
-        #for src in self.data.keys():
-            #srcFrac = self.data[source]['fraction']
-            #srcMean = self.data[source]['mean']
-            #mean += srcFrac * srcMean
-
-        #return mean
 
     # Labels and Groups
 
