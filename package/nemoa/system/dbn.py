@@ -49,29 +49,6 @@ class dbn(nemoa.system.ann.ann):
 
     # UNITS
 
-    #def _getUnitsFromConfig(self):
-        #"""Return tuple of list, containing the unit labels
-        #of visible and hidden units using configuration
-        #"""
-
-        ## create labels for visible input and output layers
-        #if isinstance(self._config['params']['visible'], str) \
-            #and self._config['params']['visible'] == 'auto':
-            #lInput = ([],)
-            #lOutput = ([],)
-        #elif not isinstance(self._config['params']['visible'], int):
-            #lInput = ([],)
-            #lOutput = ([],)
-        #else:
-            #lInput = (['in:v%_i' % (nodeID) for nodeID
-                #in range(1, self._config['params']['visible'] + 1)],)
-            #lOutput = (['out:v%i' % (nodeID) for nodeID
-                #in range(1, self._config['params']['visible'] + 1)],)
-
-        #lHidden = self._createHiddenUnitsStackLayout(self._config['params']['hidden'])
-
-        #return lInput + lHidden + lOutput
-
     def _getUnitsFromNetwork(self, network):
         """Return tuple with lists of unit labels from network."""
         return tuple([network.nodes(type = layer) for layer in network.layers()])
@@ -84,67 +61,6 @@ class dbn(nemoa.system.ann.ann):
 
     def _getLinksFromNetwork(self, network):
         return None
-
-        #layers = network.layers()
-        #inputLayer = layers[0]
-        #outputLayer = layers[-1]
-        #visible = network.nodes(type = inputLayer) + network.nodes(type = outputLayer)
-
-        #units = (visible, )
-        #for layer in layers[1:-1]:
-            #units += (network.nodes(type = layer), )
-        #units += (visible, )
-        #return units
-
-        #import math
-        #vList = network.nodes(visible = True)
-        #hList = network.nodes(visible = False)
-        #vRatioStr = self._config['params']['visibleUnitRatio'].split(':')
-        #vRatio = float(vRatioStr[1]) / float(vRatioStr[0])
-        #hRatioStr = self._config['params']['hiddenUnitRatio'].split(':')
-        #hRatio = float(hRatioStr[1]) / float(hRatioStr[0])
-        #units = (vList, )
-        #hSize = int(math.ceil(float(len(vList)) * vRatio))
-        #hLayer = 1
-        #while hSize > len(hList):
-            #units += (['h%i:h%i' % (hLayer, num) for num in range(1, hSize + 1)], )
-            #hSize = int(math.ceil(float(hSize) * hRatio))
-            #hLayer += 1
-        #units += (hList, )
-        #numLayers = len(units)
-        #if numLayers > 2:
-            #for layerID in range(1, numLayers - 1)[::-1]:
-                #hSize = len(units[layerID])
-                #units += (['h%i:h%i' % (hLayer, num) for num in range(1, hSize + 1)], )
-                #hLayer += 1
-        #units += (vList, )
-
-        #return units
-
-    #def _createHiddenUnitsStackLayout(self, layout):
-        #"""Return tuple with hidden unit label lists from tuple with numbers."""
-        ## create labels for hidden layers
-        #if isinstance(layout, str) and layout == 'auto':
-            #lHidden = ([], ) # return empty stack if parameter layout is 'auto'
-        #elif not isinstance(layout, tuple):
-            #lHidden = ([], ) # return empty stack if parameter layout is not a tuple
-        #else:
-            #layerID = 1
-            #lHidden = ()
-            #for lSize in layout:
-                #if not isinstance(lSize, int):
-                    #lHidden = ([], )
-                    #break
-                #lHidden += (['h%i:h%i' % (layerID, nodeID) for nodeID in range(1, lSize + 1)], )
-                #layerID += 1
-            #numLayers = len(layout)
-            #if numLayers > 1:
-                #for i in range(numLayers - 1)[::-1]:
-                    #lSize = layout[i]
-                    #lHidden += (['h%i:h%i' % (layerID, nodeID) for nodeID in range(1, lSize + 1)], )
-                    #layerID += 1
-
-        #return lHidden
 
     def _setUnits(self, units):
         """Set unit labels of all layers."""
@@ -294,7 +210,7 @@ class dbn(nemoa.system.ann.ann):
         #
         # Optimize subsystems
         #
-    
+
         # create copy of dataset values (before transformation)
         datasetCopy = dataset._get()
 
@@ -384,7 +300,7 @@ class dbn(nemoa.system.ann.ann):
         nemoa.setLog(indent = '+1')
 
         data = dataset.getData(columns = ('input', 'output'))
-        nemoa.log('info', 'system performance before finetuning: %s' %
+        nemoa.log('info', 'system performance before finetuning: %.3f' %
             (self.getPerformance(data['input'], data['output'])))
 
         nemoa.setLog(indent = '-1')

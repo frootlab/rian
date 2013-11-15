@@ -399,7 +399,7 @@ class dataset:
                 self.__setColLabels(colLabels)
 
                 # transform data
-                transArray = system.getDataRepresentation(dataArray, **kwargs)
+                transArray = system.mapData(dataArray, **kwargs)
 
                 # create empty record array
                 numRows = self.data[src]['array']['label'].size

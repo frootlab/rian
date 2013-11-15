@@ -210,7 +210,6 @@ class ann(nemoa.system.base.system):
             elif unitClass == 'gauss':
                 self.units[name] = self.gaussUnits()
             else:
-                print 'shit happens!'
                 quit()
             self.units[name].params = self._params['units'][id]
             self._units[name] = self._params['units'][id]
@@ -308,7 +307,7 @@ class ann(nemoa.system.base.system):
     def _getMapping(self):
         return tuple([layer['name'] for layer in self._params['units']])
 
-    def _getExpect(self, data, chain = None):
+    def getUnitExpect(self, data, chain = None):
         """Return expected values of a layer
         calculated from a chain of mappings."""
         if chain == None:
@@ -394,7 +393,7 @@ class ann(nemoa.system.base.system):
         elif len(chain) == 2:
             data = self.getUnitValues(data, chain)
         else:
-            data = self.getUnitValues(self._getExpect(data, chain[0:-1]), chain[-2:])
+            data = self.getUnitValues(self.getUnitExpect(data, chain[0:-1]), chain[-2:])
         return self.units[chain[-1]].energy(data)
 
     def getUnitError(self, inputData, outputData, chain = None, block = [], **kwargs):
@@ -404,12 +403,12 @@ class ann(nemoa.system.base.system):
         if chain == None:
             chain = self._getMapping()
         if block == []:
-            modelOutput = self._getExpect(inputData, chain)
+            modelOutput = self.getUnitExpect(inputData, chain)
         else:
             inputDataCopy = numpy.copy(inputData)
             for i in block:
                 inputDataCopy[:,i] = numpy.mean(inputDataCopy[:,i])
-            modelOutput = self._getExpect(inputDataCopy, chain)
+            modelOutput = self.getUnitExpect(inputDataCopy, chain)
         return numpy.sqrt(((outputData - modelOutput) ** 2).sum(axis = 0))
 
     def getUnitPerformance(self, inputData, outputData, *args, **kwargs):

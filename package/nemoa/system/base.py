@@ -154,9 +154,9 @@ class system:
         """Return system specific data evaluation."""
         return self._getDataEval(data, **kwargs)
 
-    def getDataRepresentation(self, data, **kwargs):
+    def mapData(self, data, **kwargs):
         """Return system representation of data."""
-        return self._getDataRepresentation(data, **kwargs)
+        return self._mapData(data, **kwargs)
 
     # generic parameter methods
 
@@ -298,7 +298,6 @@ class system:
         """Check if the network is compatible to deep beliefe networks."""
         layers = network.layers()
         return True
-        
 
     #
     # common dataset check functions
@@ -451,7 +450,7 @@ class inspector:
                 value = self.__system._getDataEval(
                     data = self.__data, func = config['inspectFunction'])
                 measure = config['inspectFunction'].title()
-                nemoa.log('info', 'final: %s = %.2f' % (measure, value))
+                nemoa.log('info', 'final: %s = %.3f' % (measure, value))
             elif ((epochTime - self.__state['inspectTime']) > config['inspectTimeInterval']) \
                 and not self.__data == None \
                 and not (self.__estimate and self.__state['estimateStarted'] and not self.__state['estimateEnded']):
@@ -459,7 +458,7 @@ class inspector:
                     data = self.__data, func = config['inspectFunction'])
                 progress = float(self.__state['epoch']) / float(config['updates']) * 100.0
                 measure = config['inspectFunction'].title()
-                nemoa.log('info', """finished %.1f%%: %s = %.2f""" \
+                nemoa.log('info', """finished %.1f%%: %s = %.3f""" \
                     % (progress, measure, value))
                 self.__state['inspectTime'] = epochTime
         
