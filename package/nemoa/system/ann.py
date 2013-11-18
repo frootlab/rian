@@ -104,8 +104,8 @@ class ann(nemoa.system.base.system):
     def _initLinks(self, data = None):
         """Initialize system parameteres of all links using data."""
         for links in self._params['links']:
-            x = len(self._units[self._params['links'][links]['source']]['label'])
-            y = len(self._units[self._params['links'][links]['target']]['label'])
+            x = len(self.units[self._params['links'][links]['source']].params['label'])
+            y = len(self.units[self._params['links'][links]['target']].params['label'])
 
             if data == None:
                 self._params['links'][links]['A'] = numpy.ones([x, y], dtype = bool)
@@ -199,8 +199,26 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _indexUnits(self):
-        self._units = {}
+    def _setUnits(self, units):
+        """Set unit labels of all layers."""
+        if not isinstance(units, list):
+            return False
+        if len(units) < 2:
+            return False
+        self._params['units'] = units
+
+        # get unit classes from system config
+        visibleUnitsClass = self._config['params']['visibleClass']
+        hiddenUnitsClass = self._config['params']['hiddenClass']
+        for id in range(len(self._params['units'])):
+            if self._params['units'][id]['visible'] == True:
+                self._params['units'][id]['class'] \
+                    = visibleUnitsClass
+            else:
+                self._params['units'][id]['class'] \
+                    = hiddenUnitsClass
+        
+        # update 'units' dictionary
         self.units = {}
         for id in range(len(self._params['units'])):
             unitClass = self._params['units'][id]['class']
@@ -210,9 +228,12 @@ class ann(nemoa.system.base.system):
             elif unitClass == 'gauss':
                 self.units[name] = self.gaussUnits()
             else:
-                quit()
+                nemoa.log('error', """
+                    could not create system:
+                    unit class '%s' is not supported!
+                    """ % (unitClass))
+                return False
             self.units[name].params = self._params['units'][id]
-            self._units[name] = self._params['units'][id]
         return True
 
     def _checkUnitParams(self, params):
@@ -258,14 +279,27 @@ class ann(nemoa.system.base.system):
             units += layer
         return units
 
+    def _getUnitsFromNetwork(self, network):
+        """Return tuple with lists of unit labels from network."""
+        units = [{'name': layer, 'label':
+            network.nodes(type = layer)}
+            for layer in network.layers()]
+        for group in units:
+            group['visible'] = \
+                network.node(group['label'][0])['params']['visible']
+            group['id'] = \
+                network.node(group['label'][0])['params']['type_id']
+        return units
+
     def _getLayerOfUnit(self, unit):
+        """Return name of layer of given unit."""
         for id in range(len(self._params['units'])):
             if unit in self._params['units'][id]['label']:
                 return self._params['units'][id]['name']
         return None
 
     def _getUnitInformation(self, unit, layer = None):
-        # search for layer if no layer is given
+        """Return dict information for a given unit."""
         if not layer:
             layer = self._getLayerOfUnit(unit)
         if not layer in self.units:
@@ -273,7 +307,7 @@ class ann(nemoa.system.base.system):
         return self.units[layer].get(unit)
 
     def _removeUnits(self, layer = None, label = []):
-
+        """Remove units from parameter space."""
         if not layer == None and not layer in self.units.keys():
             nemoa.log('error', """
                 could not remove units:

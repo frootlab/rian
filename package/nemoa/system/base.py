@@ -214,7 +214,7 @@ class system:
         """Return information about unit evaluation functions."""
         return self._getUnitEvalInformation(*args, **kwargs)
 
-    def setUnits(self, units = ([], ), update = False, **kwargs):
+    def setUnits(self, units = [{}], update = False, **kwargs):
         """Set units and update system parameters."""
         if update:
             if not self._checkParams(self._params):
@@ -222,12 +222,10 @@ class system:
                 return False
             backup = self.getParams()
             self._setUnits(units)
-            self._indexUnits()
             self._initUnits()
             return self.setParams(backup)
 
         self._setUnits(units)
-        self._indexUnits()
         self._initUnits()
         return True
 

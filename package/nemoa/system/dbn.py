@@ -21,6 +21,8 @@ class dbn(nemoa.system.ann.ann):
             'params': {
                 'visible': 'auto',
                 'hidden': 'auto',
+                'visibleClass': 'gauss',
+                'hiddenClass': 'sigmoid',
                 'visibleSystem': None,
                 'visibleSystemModule': 'rbm',
                 'visibleSystemClass': 'grbm',
@@ -49,9 +51,9 @@ class dbn(nemoa.system.ann.ann):
 
     # UNITS
 
-    def _getUnitsFromNetwork(self, network):
-        """Return tuple with lists of unit labels from network."""
-        return tuple([network.nodes(type = layer) for layer in network.layers()])
+    #def _getUnitsFromNetwork(self, network):
+        #"""Return tuple with lists of unit labels from network."""
+        #return tuple([network.nodes(type = layer) for layer in network.layers()])
 
     def _getUnitsFromConfig(self):
         return None
@@ -62,43 +64,6 @@ class dbn(nemoa.system.ann.ann):
     def _getLinksFromNetwork(self, network):
         return None
 
-    def _setUnits(self, units):
-        """Set unit labels of all layers."""
-        # check units
-        if not isinstance(units, tuple):
-            return False
-        if len(units) < 2:
-            return False
-        for val in units:
-            if not isinstance(val, list):
-                return False
-
-        #
-        # 2DO: get unit class from subsystems!!!!
-        #
-
-        # update unit parameters per layer
-        self._params['units'] = []
-        for layerID, labels in enumerate(units):
-            if layerID == 0:
-                name = 'input'
-                visible = True
-                unitClass = 'gauss'
-            elif layerID == len(units) - 1:
-                name = 'output'
-                visible = True
-                unitClass = 'gauss'
-            else:
-                name = 'h' + str(layerID)
-                visible = False
-                unitClass = 'sigmoid'
-            self._params['units'].append({
-                'name': name,
-                'visible': visible,
-                'class': unitClass,
-                'label': labels})
-        return True
-
     def _setLinks(self, *args, **kwargs):
 
         # update link parameters
@@ -108,6 +73,14 @@ class dbn(nemoa.system.ann.ann):
                 'source': self._params['units'][layerID]['name'],
                 'target': self._params['units'][layerID + 1]['name']}
         return True
+
+    def unitsInput(self):
+        """Return input Layer."""
+        return self.units[self._params['units'][0]['name']]
+    
+    def unitsOutput(self):
+        """Return output Layer."""
+        return self.units[self._params['units'][-1]['name']]
 
     def _optimizeParams(self, dataset, **config):
         """Optimize system parameters."""
@@ -192,8 +165,8 @@ class dbn(nemoa.system.ann.ann):
 
             # link layerparameters of subsystem
             if layerID == 0:
-                inUnits['init'] = system._units['visible']
-                outUnits['init'] = system._units['hidden']
+                inUnits['init'] = system.units['visible'].params
+                outUnits['init'] = system.units['hidden'].params
                 system._config['init']['ignoreUnits'] = []
                 system._config['optimize']['ignoreUnits'] = []
             else:
@@ -251,14 +224,14 @@ class dbn(nemoa.system.ann.ann):
         nemoa.setLog(indent = '+1')
 
         # keep original inputs and outputs
-        inputs = self._units['input']['label']
-        outputs = self._units['output']['label']
+        inputs = self.unitsInput().params['label']
+        outputs = self.unitsOutput().params['label']
 
         # expand unit parameters to all layers
         import numpy
         nemoa.log('info', 'import unit and link parameters from subsystems (enrolling)')
-        inputUnits = self._units['input']['label']
-        outputUnits = self._units['output']['label']
+        inputUnits = self.unitsInput().params['label']
+        outputUnits = self.unitsOutput().params['label']
         units = self._params['units']
         links = self._params['links']
         for id in range((len(units) - 1)  / 2):
@@ -288,8 +261,8 @@ class dbn(nemoa.system.ann.ann):
         #
         
         nemoa.log('info', 'cleanup unit and linkage parameter arrays')
-        self._removeUnits('input', outputs)
-        self._removeUnits('output', inputs)
+        self._removeUnits(self.unitsInput().params['name'], outputs)
+        self._removeUnits(self.unitsOutput().params['name'], inputs)
 
         nemoa.setLog(indent = '-2')
         return True
@@ -299,13 +272,11 @@ class dbn(nemoa.system.ann.ann):
         nemoa.log('info', 'finetuning system')
         nemoa.setLog(indent = '+1')
 
-        #data = dataset.getData(columns = ('input', 'output'))
-        #nemoa.log('info', 'system performance before finetuning: %.3f' %
-            #(self.getPerformance(data['input'], data['output'])))
-
-        data = dataset.getData(columns = ('in', 'out'))
+        unitsInput = self.unitsInput().params['name']
+        unitsOutput = self.unitsOutput().params['name']
+        data = dataset.getData(columns = (unitsInput, unitsOutput))
         nemoa.log('info', 'system performance before finetuning: %.3f' %
-            (self.getPerformance(data['in'], data['out'])))
+            (self.getPerformance(data[unitsInput], data[unitsOutput])))
 
         nemoa.setLog(indent = '-1')
         return True
