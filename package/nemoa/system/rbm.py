@@ -38,7 +38,7 @@ class rbm(nemoa.system.ann.ann):
             'init': {
                 'checkDataset': True,
                 'ignoreUnits': [],
-                'weightSigma': 0.1 },
+                'wSigma': 0.5 },
             'optimize': {
                 'iterations': 1,
                 'iterationReset': False,
@@ -726,8 +726,7 @@ class grbm(rbm):
             'init': {
                 'checkDataset': True,
                 'ignoreUnits': [],
-                'vSigma': 0.4,
-                'weightSigma': 0.02 },
+                'wSigma': 0.5 },
             'optimize': {
                 'iterations': 1,
                 'iterationReset': False,

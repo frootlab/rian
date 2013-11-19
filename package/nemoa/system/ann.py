@@ -16,14 +16,14 @@ class ann(nemoa.system.base.system):
         if not 'check' in self._config:
             self._config['check'] = {'config': False, 'network': False, 'dataset': False}
 
-        self._setConfig(config)
+        self._updateConfig(config)
         if not network == None:
             self._setNetwork(network, update)
         if not dataset == None:
             self._setDataset(dataset)
         return self._isConfigured()
 
-    def _setConfig(self, config, *args, **kwargs):
+    def _updateConfig(self, config, *args, **kwargs):
         """Set configuration from dictionary."""
         nemoa.common.dictMerge(self._getSystemDefaultConfig(), self._config)
         nemoa.common.dictMerge(config, self._config)
@@ -36,6 +36,12 @@ class ann(nemoa.system.base.system):
             self.setLinks(links, update = False)
 
         self._config['check']['config'] = True
+        return True
+
+    def _updateUnitsAndLinks(self, *args, **kwargs):
+        nemoa.log('info', 'update system units and links')
+        self.setUnits(self._params['units'], update = True)
+        self.setLinks(self._params['links'], update = True)
         return True
 
     def _setNetwork(self, network, update = False, *args, **kwargs):
@@ -85,9 +91,22 @@ class ann(nemoa.system.base.system):
         return self._checkUnitParams(params) \
             and self._checkLinkParams(params)
 
-    def _initParams(self, data = None):
-        """Initialize system parameters using data."""
-        return (self._initUnits(data) and self._initLinks(data))
+    def _initParams(self, dataset = None):
+        """Initialize system parameters.
+
+        Keyword Arguments:
+            dataset -- nemoa dataset instance
+
+        Description:
+            Initialize all unit and link parameters to dataset.
+        """
+        if not nemoa.type.isDataset(dataset):
+            nemoa.log('error', """
+                could not initilize system parameters:
+                invalid dataset instance given!""")
+            return False
+        return self._initUnits(dataset) \
+            and self._initLinks(dataset)
 
     def getError(self, *args, **kwargs):
         """Return euclidean data reconstruction error of system."""
@@ -101,25 +120,54 @@ class ann(nemoa.system.base.system):
     # Links
     ####################################################################
 
-    def _initLinks(self, data = None):
-        """Initialize system parameteres of all links using data."""
-        for links in self._params['links']:
-            x = len(self.units[self._params['links'][links]['source']].params['label'])
-            y = len(self.units[self._params['links'][links]['target']].params['label'])
+    def _initLinks(self, dataset = None):
+        """Initialize link parameteres (weights).
 
-            if data == None:
-                self._params['links'][links]['A'] = numpy.ones([x, y], dtype = bool)
-                self._params['links'][links]['W'] = numpy.zeros([x, y], dtype = float)
+        Keyword Arguments:
+            dataset -- nemoa dataset instance OR None
+
+        Description:
+            If dataset is None, initialize weights matrices with zeros
+            and all adjacency matrices with ones.
+            if dataset is nemoa network instance,
+            initialize weights with random values, that fit ....
+        """
+        if not(dataset == None) and \
+            not nemoa.type.isDataset(dataset):
+            nemoa.log('error', """
+                could not initilize link parameters:
+                invalid dataset argument given!""")
+            return False
+
+        for links in self._params['links']:
+            source = self._params['links'][links]['source']
+            target = self._params['links'][links]['target']
+            A = self._params['links'][links]['A']
+            x = len(self.units[source].params['label'])
+            y = len(self.units[target].params['label'])
+            alpha = self._config['init']['wSigma'] \
+                if 'wSigma' in self._config['init'] else 1.0
+            sigma = numpy.ones([x, 1], dtype = float) * alpha / x
+
+            if dataset == None:
+                random = numpy.random.normal(numpy.zeros((x, y)), sigma)
+            elif source in dataset.getColGroups():
+                rows = self._config['params']['samples'] \
+                    if 'samples' in self._config['params'] else '*'
+                data = dataset.getData(100000, rows = rows, cols = source)
+                random = numpy.random.normal(numpy.zeros((x, y)),
+                    sigma * numpy.std(data, axis = 0).reshape(1, x).T)
+            elif dataset.getColLabels('*') \
+                == self.units[source].params['label']:
+                rows = self._config['params']['samples'] \
+                    if 'samples' in self._config['params'] else '*'
+                data = dataset.getData(100000, rows = rows, cols = '*')
+                random = numpy.random.normal(numpy.zeros((x, y)),
+                    sigma * numpy.std(data, axis = 0).reshape(1, x).T)
             else:
-                # 2DO can be done much better!!!
-                if 'init' in self._config \
-                    and 'weightSigma' in self._config['init']:
-                        sigma = (self._config['init']['weightSigma'] \
-                            * numpy.std(data, axis = 0).reshape(1, x).T) + 0.0001
-                else:
-                    sigma = numpy.std(data, axis = 0).reshape(1, x).T + 0.0001
-                self._params['links'][links]['W'] = (self._params['links'][links]['A']
-                    * numpy.random.normal(numpy.zeros((x, y)), sigma))
+                random = numpy.random.normal(numpy.zeros((x, y)), sigma)
+
+            self._params['links'][links]['W'] = A * random
         return True
 
     def _checkLinkParams(self, params):
@@ -192,11 +240,34 @@ class ann(nemoa.system.base.system):
     # Units
     ####################################################################
 
-    def _initUnits(self, data = None):
-        """Initialize system parameteres of all units using data."""
-        for layerName in self.units.keys():
-            self.units[layerName].initialize(data)
+    def _initUnits(self, dataset = None):
+        """Initialize unit parameteres.
 
+        Keyword Arguments:
+            dataset -- nemoa dataset instance OR None
+
+        Description:
+            Initialize all unit parameters.
+        """
+        if not(dataset == None) and \
+            not nemoa.type.isDataset(dataset):
+            nemoa.log('error', """
+                could not initilize unit parameters:
+                invalid dataset argument given!""")
+            return False
+
+        for layerName in self.units.keys():
+            if dataset == None \
+                or self.units[layerName].params['visible'] == False:
+                data = None
+            else:
+                rows = self._config['params']['samples'] \
+                    if 'samples' in self._config['params'] else '*'
+                cols = layerName \
+                    if layerName in dataset.getColGroups() else '*'
+                data = dataset.getData(100000, rows = rows, cols = cols)
+
+            self.units[layerName].initialize(data)
         return True
 
     def _setUnits(self, units):
@@ -217,7 +288,7 @@ class ann(nemoa.system.base.system):
             else:
                 self._params['units'][id]['class'] \
                     = hiddenUnitsClass
-        
+
         # update 'units' dictionary
         self.units = {}
         for id in range(len(self._params['units'])):
@@ -455,7 +526,7 @@ class ann(nemoa.system.base.system):
         norm = numpy.sqrt((outputData ** 2).sum(axis = 0))
         return 1.0 - error / norm
 
-    class units():
+    class annUnits():
         """Class to unify common unit attributes."""
 
         params = {}
@@ -464,13 +535,6 @@ class ann(nemoa.system.base.system):
 
         def __init__(self):
             pass
-
-        #def select(self, labels):
-            #select = []
-            #for id, unit in enumerate(self.params['label']):
-                #if not unit in labels:
-                    #select.append(id)
-            #return select
 
         def expect(self, data, source):
             if source['class'] == 'sigmoid':
@@ -511,7 +575,7 @@ class ann(nemoa.system.base.system):
                 """ % (source['name'], self.params['name']))
             return None
 
-    class sigmoidUnits(units):
+    class sigmoidUnits(annUnits):
         """Units with sigmoidal activation function and binary distribution."""
 
         def initialize(self, data = None):
@@ -593,7 +657,7 @@ class ann(nemoa.system.base.system):
             'Efficient BackProp' by LeCun, Bottou, Orr, Müller"""
             return 1.7159 * numpy.tanh(0.6666 * x)
 
-    class gaussUnits(units):
+    class gaussUnits(annUnits):
         """Units with linear activation function and gaussian distribution"""
 
         def initialize(self, data = None, vSigma = 0.4):

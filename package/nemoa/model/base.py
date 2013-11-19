@@ -817,9 +817,7 @@ class model:
         return self
 
     def importConfigFromDict(self, dict):
-        """
-        check if config is valid
-        """
+        """check if config is valid."""
         config = {}
 
         # model configuration

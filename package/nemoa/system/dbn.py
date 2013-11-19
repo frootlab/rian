@@ -31,7 +31,9 @@ class dbn(nemoa.system.ann.ann):
                 'hiddenSystemModule': 'rbm',
             },
             'init': {
-                'ignoreUnits': []
+                'checkDataset': True,
+                'ignoreUnits': [],
+                'wSigma': 0.5
             },
             'optimize': {
                 'schedule': None,
@@ -65,9 +67,13 @@ class dbn(nemoa.system.ann.ann):
         # update link parameters
         self._params['links'] = {}
         for layerID in range(len(self._params['units']) - 1):
+            source = self._params['units'][layerID]['name']
+            target = self._params['units'][layerID + 1]['name']
+            x = len(self.units[source].params['label'])
+            y = len(self.units[target].params['label'])
             self._params['links'][(layerID, layerID + 1)] = {
-                'source': self._params['units'][layerID]['name'],
-                'target': self._params['units'][layerID + 1]['name']}
+                'source': source, 'target': target,
+                'A': numpy.ones([x, y], dtype = bool)}
         return True
 
     def unitsInput(self):
@@ -124,7 +130,7 @@ class dbn(nemoa.system.ann.ann):
                     nemoa.log('error', """
                         could not configure system:
                         unknown system configuration \'%s\'
-                        """ % (sysUserConf))
+                    """ % (sysUserConf))
                     nemoa.setLog(indent = '-1')
                     return False
             else:
@@ -270,15 +276,10 @@ class dbn(nemoa.system.ann.ann):
 
         unitsInput = self.unitsInput().params['name']
         unitsOutput = self.unitsOutput().params['name']
-        data = dataset.getData(columns = (unitsInput, unitsOutput))
+        cols = (unitsInput, unitsOutput)
+        data = dataset.getData(cols = cols)
         nemoa.log('info', 'system performance before finetuning: %.3f' %
             (self.getPerformance(data[unitsInput], data[unitsOutput])))
 
         nemoa.setLog(indent = '-1')
         return True
-
-    def _initParams(self, data = None):
-        """Initialize DBN parameters.
-        Use of data is not necessary because real initialization
-        of parameters appears in pre training."""
-        return (self._initUnits() and self._initLinks())

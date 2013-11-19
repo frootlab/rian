@@ -24,7 +24,6 @@ class workspace:
         """Import configuration from project and update paths and logfile."""
         return nemoa.workspace.loadProject(project)
 
-
     def project(self, *args, **kwargs):
         return nemoa.workspace.project(*args, **kwargs)
 

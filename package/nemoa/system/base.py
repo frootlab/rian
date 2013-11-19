@@ -72,11 +72,12 @@ class system:
     def _set(self, **dict):
         """Set system settings (config, params) from dictionary."""
         if 'config' in dict:
+            self._config = copy.deepcopy(dict['config'])
             ## 2Do
             ## IF the set command gets another package or class -> Error!
-            self._config = copy.deepcopy(dict['config'])
         if 'params' in dict:
             self._params = copy.deepcopy(dict['params'])
+        self._updateUnitsAndLinks()
         return True
 
     def isEmpty(self):
@@ -160,18 +161,21 @@ class system:
 
     # generic parameter methods
 
-    def initParams(self, dataset, *args, **kwargs):
-        """Initialize system parameters using dataset instance."""
+    def initParams(self, dataset = None):
+        """Initialize system parameters.
+
+        Keyword Arguments:
+            dataset -- nemoa dataset instance
+
+        Description:
+            Initialize all system parameters to dataset.
+        """
         if not nemoa.type.isDataset(dataset):
             nemoa.log('error', """
                 could not initilize system parameters:
-                invalid 'dataset' instance given!""")
+                invalid dataset instance given!""")
             return False
-        if 'samples' in self._config['params']: # using row filter
-            data = dataset.getData(100000, rows = self._config['params']['samples'])
-        else:
-            data = dataset.getData(100000)
-        return self._initParams(data) # initilize parameters
+        return self._initParams(dataset)
 
     def getParams(self, *args, **kwargs):
         """Return dictinary with all system parameters."""
@@ -218,12 +222,12 @@ class system:
         """Set units and update system parameters."""
         if update:
             if not self._checkParams(self._params):
-                nemoa.log("error", "could not update units: units have not yet been set!")
+                nemoa.log('error', """
+                    could not update units:
+                    units have not yet been set!""")
                 return False
-            backup = self.getParams()
             self._setUnits(units)
-            self._initUnits()
-            return self.setParams(backup)
+            return True
 
         self._setUnits(units)
         self._initUnits()
@@ -269,51 +273,60 @@ class system:
     # Common network tests
     ####################################################################
 
-    def _isNetworkMLPCompatible(self, network):
-        """Check for MPL compatibility of network.
-        
+    def _isNetworkMLPCompatible(self, network = None):
+        """Check if a network is compatible to multilayer perceptrons.
+
+        Keyword Arguments:
+            network -- nemoa network instance
+
         Description:
-            Return True if:
+            Return True if the following conditions are satisfied:
             (1) The network contains at least three layers
             (2) All layers of the network are not empty
-            (3) The first and last layer of the network are visible
-            (4) All middle layers of the network are hidden
+            (3) The first and last layer of the network are visible,
+                all middle layers of the network are hidden
         """
-        layers = network.layers()
-        if len(layers) < 3:
+        if not nemoa.type.isNetwork(network):
+            nemoa.log('error', """
+                could not test network:
+                invalid network instance given!""")
+            return False
+        if len(network.layers()) < 3:
             nemoa.log('error', """
                 Multilayer networks need at least three layers!""")
             return False
         for layer in network.layers():
-            layerAttrib = network.layer(layer)
-            if not len(layerAttrib['nodes']):
+            if not len(network.layer(layer)['nodes']) > 0:
                 nemoa.log('error', """
                     Feedforward networks do not allow empty layers!""")
                 return False
-            if layer in [layers[0], layers[-1]]:
-                if not layerAttrib['visible']:
-                    nemoa.log('error', """
-                        The first and the last layer
-                        of a multilayer feedforward network have to be visible!""")
-                    return False
-            else:
-                if layerAttrib['visible']:
-                    nemoa.log('error', """
-                        The middle layers of a multilayer feedforward
-                        networks have to be hidden!""")
-                    return False
+            if not network.layer(layer)['visible'] \
+                == (layer in [network.layers()[0], network.layers()[-1]]):
+                nemoa.log('error', """
+                    The first and the last layer
+                    of a multilayer feedforward network have to be visible,
+                    middle layers have to be hidden!""")
+                return False
         return True
 
-    def _isNetworkDBNCompatible(self, network):
-        """Check if the network is compatible to deep beliefe networks.
-        
+    def _isNetworkDBNCompatible(self, network = None):
+        """Check if a network is compatible to deep beliefe networks.
+
+        Keyword Arguments:
+            network -- nemoa network instance
+
         Description:
-            Return True if:
+            Return True if the following conditions are satisfied:
             (1) The network is MPL compatible
             (2) The network contains an odd number of layers
             (3) The hidden layers are symmetric to the central layer
                 related to their number of nodes
         """
+        if not nemoa.type.isNetwork(network):
+            nemoa.log('error', """
+                could not test network:
+                invalid network instance given!""")
+            return False
         if not self._isNetworkMLPCompatible(network):
             return False
         if not len(network.layers()) % 2 == 1:
@@ -337,20 +350,57 @@ class system:
     # Common dataset tests
     ####################################################################
 
-    def _isDatasetBinary(self, dataset):
-        """Returns true if a given dataset contains binary data."""
+    def _isDatasetBinary(self, dataset = None):
+        """Check if a dataset contains only binary data.
+
+        Keyword Arguments:
+            dataset -- nemoa dataset instance
+
+        Description:
+            Return True if a given dataset contains only binary data.
+        """
+        if not nemoa.type.isDataset(dataset):
+            nemoa.log('error', """
+                could not test dataset:
+                invalid dataset instance given!""")
+            return False
         data = dataset.getData(1000)
         if not (data == data.astype(bool)).sum() == data.size:
-            nemoa.log('error', 'The dataset does not contain binary data!')
+            nemoa.log('error', """
+                The dataset does not contain binary data!""")
             return False
         return True
 
-    def _isDatasetGaussNormalized(self, dataset):
-        """Returns true if a given dataset contains gauss normalized data."""
+    def _isDatasetGaussNormalized(self, dataset = None):
+        """Check if a dataset contains gauss normalized data.
+
+        Keyword Arguments:
+            dataset -- nemoa dataset instance
+
+        Description:
+            Return True if the following conditions are satisfied:
+            (1) The mean value of 100k random samples
+                of the dataset is < 0.05
+            (2) The standard deviation 100k random samples
+                of the dataset is < 1.05
+        """
+        if not nemoa.type.isDataset(dataset):
+            nemoa.log('error', """
+                could not test dataset:
+                invalid dataset instance given!""")
+            return False
         data = dataset.getData(100000)
-        if numpy.abs(data.mean()) > 0.05 \
-            or numpy.abs(data.std() - 1) > 0.05:
-            nemoa.log('error', 'The dataset does not contain (gauss) normalized data!')
+        mean = data.mean()
+        sdev = data.std()
+        if numpy.abs(mean) >= 0.05:
+            nemoa.log('error', """
+                The dataset does not contain gauss normalized data:
+                The mean value is %.3f!""" % (mean))
+            return False
+        if data.std() >= 1.05:
+            nemoa.log('error', """
+                The dataset does not contain gauss normalized data:
+                The standard deviation is %.3f!""" % (sdev))
             return False
         return True
 

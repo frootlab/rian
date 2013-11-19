@@ -329,9 +329,9 @@ class dataset:
         return False
 
     def transformData(self, algorithm = '', system = None, colLabels = None, **kwargs):
-        """Transform normalized data
+        """Transform dataset.
 
-        Keyword arguments:
+        Keyword Arguments:
             algorithm -- name of algorithm used for data transformation
                 'gaussToBinary':
                     Transform Gauss distributed values to binary values in {0, 1}
@@ -420,17 +420,24 @@ class dataset:
 
                 # set record array
                 self.data[src]['array'] = newRecArray
-            
+
             nemoa.setLog(indent = '-1')
             return True
 
         return False
 
-    def getData(self, size = None, rows = '*', columns = '*', output = 'array'):
+    def getData(self, size = None, rows = '*', cols = '*', output = 'array'):
         """Return a given number of stratified samples.
 
-        Keyword arguments:
+        Keyword Arguments:
+            size -- Number of samples
+                if size is None, return all samples (unstratified)
+            rows -- string describing row filter
+            cols -- name of column group
+            output -- output format: 'array', 'recarray', 'list,array'
         
+        Description:
+            ...
         """
 
         # get stratified and row filtered data
@@ -447,16 +454,20 @@ class dataset:
         if size:
             numpy.random.shuffle(data)
 
-        ## get column ids
-        if not isinstance(columns, tuple):
+        # get column ids
+        if isinstance(cols, str):
             return self.__getFormatedData(data,
-                self.getColLabels(columns), output)
+                self.getColLabels(cols), output)
+        elif isinstance(cols, list):
+            return self.__getFormatedData(data, cols, output)
+        elif isinstance(cols, tuple):
+            retDict = {}
+            for colFilter in cols:
+                retDict[colFilter] = self.__getFormatedData(data,
+                    self.getColLabels(colFilter), output)
+            return retDict
         
-        retDict = {}
-        for colFilter in columns:
-            retDict[colFilter] = self.__getFormatedData(data,
-                self.getColLabels(colFilter), output)
-        return retDict
+        return None
 
     def __getFormatedData(self, data, colIDs, output):
         if output == 'array':
