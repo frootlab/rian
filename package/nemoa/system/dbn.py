@@ -51,10 +51,6 @@ class dbn(nemoa.system.ann.ann):
 
     # UNITS
 
-    #def _getUnitsFromNetwork(self, network):
-        #"""Return tuple with lists of unit labels from network."""
-        #return tuple([network.nodes(type = layer) for layer in network.layers()])
-
     def _getUnitsFromConfig(self):
         return None
 

@@ -265,41 +265,77 @@ class system:
         """Return parameters of links."""
         return self._getLinkParams(links)
 
-    #
-    # common network check functions
-    #
+    ####################################################################
+    # Common network tests
+    ####################################################################
 
     def _isNetworkMLPCompatible(self, network):
-        """Check if the network is compatible to multi layer perceptrons."""
+        """Check for MPL compatibility of network.
+        
+        Description:
+            Return True if:
+            (1) The network contains at least three layers
+            (2) All layers of the network are not empty
+            (3) The first and last layer of the network are visible
+            (4) All middle layers of the network are hidden
+        """
         layers = network.layers()
         if len(layers) < 3:
-            nemoa.log('error', 'Multilayer networks need at least three layers!')
+            nemoa.log('error', """
+                Multilayer networks need at least three layers!""")
             return False
-        firstLayer = layers[0]
-        lastLayer = layers[-1]
         for layer in network.layers():
             layerAttrib = network.layer(layer)
             if not len(layerAttrib['nodes']):
-                nemoa.log('error', 'Feedforward networks do not allow empty layers!')
+                nemoa.log('error', """
+                    Feedforward networks do not allow empty layers!""")
                 return False
-            if layer in [firstLayer, lastLayer]:
+            if layer in [layers[0], layers[-1]]:
                 if not layerAttrib['visible']:
-                    nemoa.log('error', 'The first and the last layer of a multilayer feedforward network have to be visible!')
+                    nemoa.log('error', """
+                        The first and the last layer
+                        of a multilayer feedforward network have to be visible!""")
                     return False
             else:
                 if layerAttrib['visible']:
-                    nemoa.log('error', 'The middle layers of a multilayer feedforward networks have to be hidden!')
+                    nemoa.log('error', """
+                        The middle layers of a multilayer feedforward
+                        networks have to be hidden!""")
                     return False
         return True
 
     def _isNetworkDBNCompatible(self, network):
-        """Check if the network is compatible to deep beliefe networks."""
+        """Check if the network is compatible to deep beliefe networks.
+        
+        Description:
+            Return True if:
+            (1) The network is MPL compatible
+            (2) The network contains an odd number of layers
+            (3) The hidden layers are symmetric to the central layer
+                related to their number of nodes
+        """
+        if not self._isNetworkMLPCompatible(network):
+            return False
+        if not len(network.layers()) % 2 == 1:
+            nemoa.log('error', """
+                DBN / Autoencoder networks expect
+                an odd number of layers!""")
+            return False
         layers = network.layers()
+        size = len(layers)
+        for id in range(1, (size - 1) / 2):
+            if not len(network.layer(layers[id])['nodes']) \
+                == len(network.layer(layers[-id-1])['nodes']):
+                nemoa.log('error', """
+                    DBN / Autoencoder networks expect
+                    a symmetric number of hidden nodes,
+                    related tp their central layer!""")
+                return False
         return True
 
-    #
-    # common dataset check functions
-    #
+    ####################################################################
+    # Common dataset tests
+    ####################################################################
 
     def _isDatasetBinary(self, dataset):
         """Returns true if a given dataset contains binary data."""
