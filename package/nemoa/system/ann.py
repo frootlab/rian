@@ -109,8 +109,8 @@ class ann(nemoa.system.base.system):
             and self._initLinks(dataset)
 
     def getError(self, *args, **kwargs):
-        """Return euclidean data reconstruction error of system."""
-        return numpy.sum(self.getError(*args, **kwargs))
+        """Return data reconstruction error of system."""
+        return 0.5 * numpy.sum(self.getError(*args, **kwargs) ** 2)
 
     def getPerformance(self, *args, **kwargs):
         """Return data reconstruction performance of system."""
@@ -409,8 +409,8 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _getMapping(self):
-        return tuple([layer['name'] for layer in self._params['units']])
+    #def _getMapping(self):
+    #    return tuple([layer['name'] for layer in self._params['units']])
 
     def getUnitExpect(self, data, chain = None):
         """Return expected values of a layer
@@ -501,30 +501,36 @@ class ann(nemoa.system.base.system):
             data = self.getUnitValues(self.getUnitExpect(data, chain[0:-1]), chain[-2:])
         return self.units[chain[-1]].energy(data)
 
-    def getUnitError(self, inputData, outputData, chain = None, block = [], **kwargs):
+    def getUnitError(self, dataIn, dataOut, chain = None, block = [], **kwargs):
         """Return euclidean reconstruction error of units.
-        error := ||outputData - modelOutput||
+        
+        Description:
+            distance := ||dataOut - modelOut||
         """
         if chain == None:
             chain = self._getMapping()
         if block == []:
-            modelOutput = self.getUnitExpect(inputData, chain)
+            modelOut = self.getUnitExpect(dataIn, chain)
         else:
-            inputDataCopy = numpy.copy(inputData)
+            dataInCopy = numpy.copy(dataIn)
             for i in block:
-                inputDataCopy[:,i] = numpy.mean(inputDataCopy[:,i])
-            modelOutput = self.getUnitExpect(inputDataCopy, chain)
-        return numpy.sqrt(((outputData - modelOutput) ** 2).sum(axis = 0))
+                dataInCopy[:,i] = numpy.mean(dataInCopy[:,i])
+            modelOut = self.getUnitExpect(dataInCopy, chain)
+        return numpy.sqrt(((dataOut - modelOut) ** 2).sum(axis = 0))
 
-    def getUnitPerformance(self, inputData, outputData, *args, **kwargs):
-        """Return unit performance respective to data.
-        
+    def getUnitPerformance(self, dataIn, dataOut, *args, **kwargs):
+        """Return unit performance respective to input and output data.
+
+        Arguments:
+            dataIn -- Numpy array containing real input data for system
+            dataOut -- Numpy array containing real output data of system
+
         Description:
             performance := 1 - error / ||data||
         """
-        error = self.getUnitError(inputData, outputData, *args, **kwargs)
-        norm = numpy.sqrt((outputData ** 2).sum(axis = 0))
-        return 1.0 - error / norm
+        err = self.getUnitError(dataIn, dataOut, *args, **kwargs)
+        nrm = numpy.sqrt((dataOut ** 2).sum(axis = 0))
+        return 1.0 - err / nrm
 
     class annUnits():
         """Class to unify common unit attributes."""

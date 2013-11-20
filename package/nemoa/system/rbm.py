@@ -28,6 +28,10 @@ class rbm(nemoa.system.ann.ann):
     def _getSystemDefaultConfig():
         """Return RBM default configuration as dictionary."""
         return {
+            'default': {
+                'input': 0,
+                'output': 0,
+                'mapping': [0,1,0] },
             'params': {
                 'samples': '*',
                 'subnet': '*',
@@ -716,6 +720,10 @@ class grbm(rbm):
     def _getSystemDefaultConfig():
         """Return GRBM default configuration as dictionary."""
         return {
+            'default': {
+                'input': 0,
+                'output': 0,
+                'mapping': [0,1,0] },
             'params': {
                 'samples': '*',
                 'subnet': '*',

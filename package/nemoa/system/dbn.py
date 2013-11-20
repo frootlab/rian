@@ -18,6 +18,10 @@ class dbn(nemoa.system.ann.ann):
         """Return default configuration as dictionary."""
         sysModule = '.'.join(self.__module__.split('.')[2:])
         return {
+            'default': {
+                'input': 0,
+                'output': -1,
+                'mapping': 'auto'},
             'params': {
                 'visible': 'auto',
                 'hidden': 'auto',
@@ -28,13 +32,11 @@ class dbn(nemoa.system.ann.ann):
                 'visibleSystemClass': 'grbm',
                 'hiddenSystem': None,
                 'hiddenSystemClass': 'rbm',
-                'hiddenSystemModule': 'rbm',
-            },
+                'hiddenSystemModule': 'rbm' },
             'init': {
                 'checkDataset': True,
                 'ignoreUnits': [],
-                'wSigma': 0.5
-            },
+                'wSigma': 0.5 },
             'optimize': {
                 'schedule': None,
                 'visible': None,
@@ -44,8 +46,7 @@ class dbn(nemoa.system.ann.ann):
                 'inspectFunction': 'performance',
                 'inspectTimeInterval': 10.0 ,
                 'estimateTime': True,
-                'estimateTimeWait': 15.0
-            }
+                'estimateTimeWait': 15.0 }
         }
 
     def _checkNetwork(self, network):

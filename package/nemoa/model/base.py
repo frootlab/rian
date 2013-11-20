@@ -408,6 +408,20 @@ class model:
         nemoa.setLog(indent = '-1')
         return self
 
+    ####################################################################
+    # scalar model evaluation functions
+    ####################################################################
+
+    #def getPerformance(self):
+        #"""Return euclidean data reconstruction performance of system."""
+        #inGroup = self.system.
+        #outGroup =
+        
+        
+        #data = self.dataset.getData()
+        
+
+
     #
     # GENERAL INFORMATION
     #
