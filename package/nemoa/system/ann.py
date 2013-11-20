@@ -307,6 +307,9 @@ class ann(nemoa.system.base.system):
             self.units[name].params = self._params['units'][id]
         return True
 
+    def _getMapping(self):
+        return tuple([layer['name'] for layer in self._params['units']])
+
     def _checkUnitParams(self, params):
         """Check if system parameter dictionary is valid respective to units."""
         if not isinstance(params, dict) \
@@ -409,113 +412,108 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    #def _getMapping(self):
-    #    return tuple([layer['name'] for layer in self._params['units']])
-
-    def getUnitExpect(self, data, chain = None):
-        """Return expected values of a layer
-        calculated from a chain of mappings."""
-        if chain == None:
-            chain = self._getMapping()
-        if len(chain) == 2:
-            return self.units[chain[1]].expect(data,
-                self.units[chain[0]].params)
+    def getUnitExpect(self, data, mapping = None):
+        """Return expected values of a layer."""
+        if mapping == None:
+            mapping = self._getMapping()
+        if len(mapping) == 2:
+            return self.units[mapping[1]].expect(data,
+                self.units[mapping[0]].params)
         data = numpy.copy(data)
-        for id in range(len(chain) - 1):
-            data = self.units[chain[id + 1]].expect(data,
-                self.units[chain[id]].params)
+        for id in range(len(mapping) - 1):
+            data = self.units[mapping[id + 1]].expect(data,
+                self.units[mapping[id]].params)
         return data
 
-    def getUnitSamples(self, data, chain = None, expectLast = False):
-        """Return sampled unit values calculated from a chain of mappings.
+    def getUnitSamples(self, data, mapping = None, expectLast = False):
+        """Return sampled unit values calculated from mapping.
         
         Keyword Arguments:
             expectLast -- return expectation values of the units
                 for the last step instead of sampled values"""
 
-        if chain == None:
-            chain = self._getMapping()
+        if mapping == None:
+            mapping = self._getMapping()
         if expectLast:
-            if len(chain) == 1:
+            if len(mapping) == 1:
                 return data
-            elif len(chain) == 2:
-                return  self.units[chain[1]].expect(
-                    self.units[chain[0]].getSamples(data),
-                    self.units[chain[0]].params)
-            return self.units[chain[-1]].expect(
-                self.getUnitSamples(data, chain[0:-1]),
-                self.units[chain[-2]].params)
+            elif len(mapping) == 2:
+                return  self.units[mapping[1]].expect(
+                    self.units[mapping[0]].getSamples(data),
+                    self.units[mapping[0]].params)
+            return self.units[mapping[-1]].expect(
+                self.getUnitSamples(data, mapping[0:-1]),
+                self.units[mapping[-2]].params)
         else:
-            if len(chain) == 1:
-                return self.units[chain[0]].getSamples(data)
-            elif len(chain) == 2:
-                return self.units[chain[1]].getSamplesFromInput(
-                    data, self.units[chain[0]])
+            if len(mapping) == 1:
+                return self.units[mapping[0]].getSamples(data)
+            elif len(mapping) == 2:
+                return self.units[mapping[1]].getSamplesFromInput(
+                    data, self.units[mapping[0]])
             data = numpy.copy(data)
-            for id in range(len(chain) - 1):
-                data = self.units[chain[id + 1]].getSamplesFromInput(
-                    data, self.units[chain[id]])
+            for id in range(len(mapping) - 1):
+                data = self.units[mapping[id + 1]].getSamplesFromInput(
+                    data, self.units[mapping[id]])
             return data
 
-    def getUnitValues(self, data, chain = None, expectLast = False):
-        """Return unit values calculated from a chain of mappings.
+    def getUnitValues(self, data, mapping = None, expectLast = False):
+        """Return unit values calculated from mappings.
         
         Keyword Arguments:
             expectLast -- return expectation values of the units
                 for the last step instead of maximum likelihood values"""
 
-        if chain == None:
-            chain = self._getMapping()
+        if mapping == None:
+            mapping = self._getMapping()
         if expectLast:
-            if len(chain) == 1:
+            if len(mapping) == 1:
                 return data
-            elif len(chain) == 2:
-                return self.units[chain[1]].expect(
-                    self.units[chain[0]].getSamples(data),
-                    self.units[chain[0]].params)
-            return self.units[chain[-1]].expect(
-                self.getUnitValues(data, chain[0:-1]),
-                self.units[chain[-2]].params)
+            elif len(mapping) == 2:
+                return self.units[mapping[1]].expect(
+                    self.units[mapping[0]].getSamples(data),
+                    self.units[mapping[0]].params)
+            return self.units[mapping[-1]].expect(
+                self.getUnitValues(data, mapping[0:-1]),
+                self.units[mapping[-2]].params)
         else:
-            if len(chain) == 1:
-                return self.units[chain[0]].getValues(data)
-            elif len(chain) == 2:
-                return self.units[chain[1]].getValues(
-                    self.units[chain[1]].expect(data,
-                    self.units[chain[0]].params))
+            if len(mapping) == 1:
+                return self.units[mapping[0]].getValues(data)
+            elif len(mapping) == 2:
+                return self.units[mapping[1]].getValues(
+                    self.units[mapping[1]].expect(data,
+                    self.units[mapping[0]].params))
             data = numpy.copy(data)
-            for id in range(len(chain) - 1):
-                data = self.units[chain[id + 1]].getValues(
-                    self.units[chain[id + 1]].expect(data,
-                    self.units[chain[id]].params))
+            for id in range(len(mapping) - 1):
+                data = self.units[mapping[id + 1]].getValues(
+                    self.units[mapping[id + 1]].expect(data,
+                    self.units[mapping[id]].params))
             return data
 
-    def getUnitEnergy(self, data, chain = None):
-        """Return unit energies of a layer
-        calculated from a chain of mappings."""
-        if len(chain) == 1:
+    def getUnitEnergy(self, data, mapping = None):
+        """Return unit energies of a layer."""
+        if len(mapping) == 1:
             pass
-        elif len(chain) == 2:
-            data = self.getUnitValues(data, chain)
+        elif len(mapping) == 2:
+            data = self.getUnitValues(data, mapping)
         else:
-            data = self.getUnitValues(self.getUnitExpect(data, chain[0:-1]), chain[-2:])
-        return self.units[chain[-1]].energy(data)
+            data = self.getUnitValues(self.getUnitExpect(data, mapping[0:-1]), mapping[-2:])
+        return self.units[mapping[-1]].energy(data)
 
-    def getUnitError(self, dataIn, dataOut, chain = None, block = [], **kwargs):
+    def getUnitError(self, dataIn, dataOut, mapping = None, block = [], **kwargs):
         """Return euclidean reconstruction error of units.
         
         Description:
             distance := ||dataOut - modelOut||
         """
-        if chain == None:
-            chain = self._getMapping()
+        if mapping == None:
+            mapping = self._getMapping()
         if block == []:
-            modelOut = self.getUnitExpect(dataIn, chain)
+            modelOut = self.getUnitExpect(dataIn, mapping)
         else:
             dataInCopy = numpy.copy(dataIn)
             for i in block:
                 dataInCopy[:,i] = numpy.mean(dataInCopy[:,i])
-            modelOut = self.getUnitExpect(dataInCopy, chain)
+            modelOut = self.getUnitExpect(dataInCopy, mapping)
         return numpy.sqrt(((dataOut - modelOut) ** 2).sum(axis = 0))
 
     def getUnitPerformance(self, dataIn, dataOut, *args, **kwargs):

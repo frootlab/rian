@@ -18,10 +18,6 @@ class dbn(nemoa.system.ann.ann):
         """Return default configuration as dictionary."""
         sysModule = '.'.join(self.__module__.split('.')[2:])
         return {
-            'default': {
-                'input': 0,
-                'output': -1,
-                'mapping': 'auto'},
             'params': {
                 'visible': 'auto',
                 'hidden': 'auto',
@@ -77,13 +73,13 @@ class dbn(nemoa.system.ann.ann):
                 'A': numpy.ones([x, y], dtype = bool)}
         return True
 
-    def unitsInput(self):
-        """Return input Layer."""
-        return self.units[self._params['units'][0]['name']]
+    #def unitsInput(self):
+        #"""Return input Layer."""
+        #return self.units[self._params['units'][0]['name']]
     
-    def unitsOutput(self):
-        """Return output Layer."""
-        return self.units[self._params['units'][-1]['name']]
+    #def unitsOutput(self):
+        #"""Return output Layer."""
+        #return self.units[self._params['units'][-1]['name']]
 
     def _optimizeParams(self, dataset, **config):
         """Optimize system parameters."""
@@ -227,14 +223,12 @@ class dbn(nemoa.system.ann.ann):
         nemoa.setLog(indent = '+1')
 
         # keep original inputs and outputs
-        inputs = self.unitsInput().params['label']
-        outputs = self.unitsOutput().params['label']
+        inputs = self.units[self._getMapping()[0]]['label']
+        outputs = self.units[self._getMapping()[-1]]['label']
 
         # expand unit parameters to all layers
         import numpy
         nemoa.log('info', 'import unit and link parameters from subsystems (enrolling)')
-        inputUnits = self.unitsInput().params['label']
-        outputUnits = self.unitsOutput().params['label']
         units = self._params['units']
         links = self._params['links']
         for id in range((len(units) - 1)  / 2):
@@ -264,8 +258,8 @@ class dbn(nemoa.system.ann.ann):
         #
         
         nemoa.log('info', 'cleanup unit and linkage parameter arrays')
-        self._removeUnits(self.unitsInput().params['name'], outputs)
-        self._removeUnits(self.unitsOutput().params['name'], inputs)
+        self._removeUnits(self._getMapping()[0], outputs)
+        self._removeUnits(self._getMapping()[-1], inputs)
 
         nemoa.setLog(indent = '-2')
         return True
@@ -275,12 +269,9 @@ class dbn(nemoa.system.ann.ann):
         nemoa.log('info', 'finetuning system')
         nemoa.setLog(indent = '+1')
 
-        unitsInput = self.unitsInput().params['name']
-        unitsOutput = self.unitsOutput().params['name']
-        cols = (unitsInput, unitsOutput)
-        data = dataset.getData(cols = cols)
+
         nemoa.log('info', 'system performance before finetuning: %.3f' %
-            (self.getPerformance(data[unitsInput], data[unitsOutput])))
+            (self.getPerformance(data[inputs], data[outputs])))
 
         nemoa.setLog(indent = '-1')
         return True

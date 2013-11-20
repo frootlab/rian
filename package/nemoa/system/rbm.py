@@ -28,10 +28,6 @@ class rbm(nemoa.system.ann.ann):
     def _getSystemDefaultConfig():
         """Return RBM default configuration as dictionary."""
         return {
-            'default': {
-                'input': 0,
-                'output': 0,
-                'mapping': [0,1,0] },
             'params': {
                 'samples': '*',
                 'subnet': '*',
@@ -45,8 +41,6 @@ class rbm(nemoa.system.ann.ann):
                 'wSigma': 0.5 },
             'optimize': {
                 'iterations': 1,
-                'iterationReset': False,
-                'iterationLiftLinks': False,
                 'minibatchSize': 100,
                 'minibatchInterval': 10,
                 'updates': 100000,
@@ -72,6 +66,11 @@ class rbm(nemoa.system.ann.ann):
     # DATA
 
     # DATA EVALUATION
+
+    def _getMapping(self):
+        visible = self._params['units'][0]['name']
+        hidden = self._params['units'][1]['name']
+        return (visible, hidden, visible)
 
     def _checkDataset(self, dataset):
         """Check if dataset contains binary values."""
@@ -238,10 +237,6 @@ class rbm(nemoa.system.ann.ann):
 
         for iteration in xrange(config['iterations']):
 
-            # reset params before every itaration
-            if config['iterationReset']:
-                self.resetParams(dataset)
-
             # for each update step (epoch)
             for epoch in xrange(config['updates']):
 
@@ -267,23 +262,23 @@ class rbm(nemoa.system.ann.ann):
                 # inspect
                 inspector.trigger()
 
-            # optionaly lift edges after every iteration
-            if config['iterationLiftLinks']:
-                if '_' in config['iterationLiftLinks']:
-                    liftingParams = config['iterationLiftLinks'].split('_')
-                    method = liftingParams[0].lower()
-                    if method == 'maxcutoff':
-                        maxcutoff = float(liftingParams[1])
-                        threshold = maxcutoff * (float(iteration + 1) / float(config['iterations']))
-                    else:
-                        threshold = float(liftingParams[1])
+            ## optionaly lift edges after every iteration
+            #if config['iterationLiftLinks']:
+                #if '_' in config['iterationLiftLinks']:
+                    #liftingParams = config['iterationLiftLinks'].split('_')
+                    #method = liftingParams[0].lower()
+                    #if method == 'maxcutoff':
+                        #maxcutoff = float(liftingParams[1])
+                        #threshold = maxcutoff * (float(iteration + 1) / float(config['iterations']))
+                    #else:
+                        #threshold = float(liftingParams[1])
 
-                    self._removeLinksByThreshold(
-                        method = method,
-                        threshold = threshold)
-                else:
-                    self._removeLinksByThreshold(
-                        method = config['iterationLiftLinks'].lower())
+                    #self._removeLinksByThreshold(
+                        #method = method,
+                        #threshold = threshold)
+                #else:
+                    #self._removeLinksByThreshold(
+                        #method = config['iterationLiftLinks'].lower())
 
         return True
 
@@ -611,47 +606,47 @@ class rbm(nemoa.system.ann.ann):
         # set modified list of current links
         return self._setLinks(curLinks)
 
-    def _removeLinksByThreshold(self, method = None, threshold = None):
-        """Remove links from adjacency matrix using threshold for parameters."""
-        if not self._checkParams(self._params): # check params
-            nemoa.log("error", "could not delete links: units have not yet been set yet!")
-            return False
-        if not method: # check method
-            return False
+    #def _removeLinksByThreshold(self, method = None, threshold = None):
+        #"""Remove links from adjacency matrix using threshold for parameters."""
+        #if not self._checkParams(self._params): # check params
+            #nemoa.log("error", "could not delete links: units have not yet been set yet!")
+            #return False
+        #if not method: # check method
+            #return False
 
-        curLinks = self._getLinksFromConfig() # get current links
+        #curLinks = self._getLinksFromConfig() # get current links
 
-        # delete links by absolute weight threshold
-        count = 0
-        countAll = len(curLinks)
-        if method in ['cutoff', 'maxcutoff']:
-            linkParams = self._getLinkParams()
-            newLinks = []
-            for link in linkParams:
-                if numpy.abs(linkParams[link]['W']) >= threshold:
-                    continue
-                found = False
-                if (link[0], link[1]) in curLinks:
-                    del curLinks[curLinks.index((link[0], link[1]))]
-                    found = True
-                if (link[1], link[0]) in curLinks:
-                    del curLinks[curLinks.index((link[1], link[0]))]
-                    found = True
-                if found:
-                    count += 1
-                    nemoa.log('logfile', 'delete link (%s → %s): weight < %.2f' % (link[0], link[1], threshold))
+        ## delete links by absolute weight threshold
+        #count = 0
+        #countAll = len(curLinks)
+        #if method in ['cutoff', 'maxcutoff']:
+            #linkParams = self._getLinkParams()
+            #newLinks = []
+            #for link in linkParams:
+                #if numpy.abs(linkParams[link]['W']) >= threshold:
+                    #continue
+                #found = False
+                #if (link[0], link[1]) in curLinks:
+                    #del curLinks[curLinks.index((link[0], link[1]))]
+                    #found = True
+                #if (link[1], link[0]) in curLinks:
+                    #del curLinks[curLinks.index((link[1], link[0]))]
+                    #found = True
+                #if found:
+                    #count += 1
+                    #nemoa.log('logfile', 'delete link (%s → %s): weight < %.2f' % (link[0], link[1], threshold))
 
-        if count == 0:
-            return False
+        #if count == 0:
+            #return False
 
-        nemoa.log('console', 'deleted %i of %i links. (see logfile)' % (count, countAll))
+        #nemoa.log('console', 'deleted %i of %i links. (see logfile)' % (count, countAll))
 
-        # set modified list of current links
-        if self._setLinks(curLinks):
-            return count
+        ## set modified list of current links
+        #if self._setLinks(curLinks):
+            #return count
 
-        nemoa.log('warning', 'could not set links! (see logfile)')
-        return False
+        #nemoa.log('warning', 'could not set links! (see logfile)')
+        #return False
 
     def _getLinkEval(self, data, func = 'energy', info = False, **kwargs):
         """Return link evaluation values."""
@@ -720,10 +715,6 @@ class grbm(rbm):
     def _getSystemDefaultConfig():
         """Return GRBM default configuration as dictionary."""
         return {
-            'default': {
-                'input': 0,
-                'output': 0,
-                'mapping': [0,1,0] },
             'params': {
                 'samples': '*',
                 'subnet': '*',
@@ -737,8 +728,6 @@ class grbm(rbm):
                 'wSigma': 0.5 },
             'optimize': {
                 'iterations': 1,
-                'iterationReset': False,
-                'iterationLiftLinks': False,
                 'updates': 100000,
                 'updateAlgorithm': 'CD',
                 'updateSamplingSteps': 1,
@@ -754,7 +743,7 @@ class grbm(rbm):
                 'useAdjacency': False,
                 'inspect': True,
                 'inspectFunction': 'performance',
-                'inspectTimeInterval': 10.0 ,
+                'inspectTimeInterval': 20.0 ,
                 'estimateTime': True,
                 'estimateTimeWait': 20.0 }}
 
