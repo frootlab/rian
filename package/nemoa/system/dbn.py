@@ -19,6 +19,8 @@ class dbn(nemoa.system.ann.ann):
         sysModule = '.'.join(self.__module__.split('.')[2:])
         return {
             'params': {
+                'preTraining': True,
+                'fineTuning': True,
                 'visible': 'auto',
                 'hidden': 'auto',
                 'visibleClass': 'gauss',
@@ -50,46 +52,26 @@ class dbn(nemoa.system.ann.ann):
 
     # UNITS
 
-    def _getUnitsFromConfig(self):
-        return None
+    #def _getUnitsFromConfig(self):
+        #return None
 
-    def _getLinksFromConfig(self):
-        return None
+    #def _getLinksFromConfig(self):
+        #return None
 
-    def _getLinksFromNetwork(self, network):
-        return None
+    #def _getLinksFromNetwork(self, network):
+        #return None
 
-    def _setLinks(self, *args, **kwargs):
-
-        # update link parameters
-        self._params['links'] = {}
-        for layerID in range(len(self._params['units']) - 1):
-            source = self._params['units'][layerID]['name']
-            target = self._params['units'][layerID + 1]['name']
-            x = len(self.units[source].params['label'])
-            y = len(self.units[target].params['label'])
-            self._params['links'][(layerID, layerID + 1)] = {
-                'source': source, 'target': target,
-                'A': numpy.ones([x, y], dtype = bool)}
-        return True
-
-    #def unitsInput(self):
-        #"""Return input Layer."""
-        #return self.units[self._params['units'][0]['name']]
-    
-    #def unitsOutput(self):
-        #"""Return output Layer."""
-        #return self.units[self._params['units'][-1]['name']]
-
-    def _optimizeParams(self, dataset, **config):
+    def _optimizeParams(self, dataset, **schedule):
         """Optimize system parameters."""
 
         # pretraining neuronal network using
         # layerwise restricted boltzmann machines as subsystems
-        self._preTraining(dataset, **config)
+        if schedule['params']['dbn.dbn']['preTraining']:
+            self._preTraining(dataset, **schedule)
 
         # finetuning neuronal network using backpropagation
-        self._fineTuning(dataset, **config)
+        if schedule['params']['dbn.dbn']['fineTuning']:
+            self._fineTuning(dataset, **schedule)
         return True
 
     def _preTraining(self, dataset, **config):
@@ -223,8 +205,9 @@ class dbn(nemoa.system.ann.ann):
         nemoa.setLog(indent = '+1')
 
         # keep original inputs and outputs
-        inputs = self.units[self._getMapping()[0]]['label']
-        outputs = self.units[self._getMapping()[-1]]['label']
+        mapping = self._getMapping()
+        inputs = self.units[mapping[0]].params['label']
+        outputs = self.units[mapping[-1]].params['label']
 
         # expand unit parameters to all layers
         import numpy
@@ -232,10 +215,11 @@ class dbn(nemoa.system.ann.ann):
         units = self._params['units']
         links = self._params['links']
         for id in range((len(units) - 1)  / 2):
+
             # copy unit parameters
             for attrib in units[id]['init'].keys():
                 # keep name and visibility of layers
-                if attrib in ['name', 'visible']:
+                if attrib in ['name', 'visible', 'id']:
                     continue
                 # keep labels of hidden layers
                 if attrib == 'label' and not units[id]['visible']:
@@ -243,6 +227,7 @@ class dbn(nemoa.system.ann.ann):
                 units[id][attrib] = units[id]['init'][attrib]
                 units[-(id + 1)][attrib] = units[id][attrib]
             del units[id]['init']
+
             # copy link parameters and transpose numpy arrays
             for attrib in links[(id, id + 1)]['init'].keys():
                 if attrib in ['source', 'target']:
@@ -268,10 +253,52 @@ class dbn(nemoa.system.ann.ann):
         """Finetuning system using backpropagation."""
         nemoa.log('info', 'finetuning system')
         nemoa.setLog(indent = '+1')
+        
+        mapping = self._getMapping()
+        inputs = mapping[0]
+        outputs = mapping[-1]
+        data = dataset.getData(cols = (inputs, outputs))
+
+        inData = self.getUnitValues(data[inputs], mapping = ('tf', 'h'))
+        outData = data[outputs]
+        calcData = numpy.dot(inData.T, outData)
+
+        inModel = inData
+        vVar = self.units['anchor'].params['lvar']
+        
+        for i in range(1000000):
+            outModel = self.getUnitExpect(inData, mapping = ('h', 'anchor'))
+            calcModel = numpy.dot(inModel.T, outModel)
+            calcDiff = (calcData - calcModel) / float(outData.size)
+            calcDiffVar = calcDiff / vVar
+            
+            self._params['links'][(1,2)]['W'] += 0.0001 * calcDiffVar
+            
+            if (i % 100) == 1:
+                print numpy.mean((outModel - outData) ** 2)
+        
+        print self._params['links'][(1,2)]['W'] + 0.1 * calcDiffVar
+
+        quit()
+        print self.getUnitValues(data[inputs])
+        print data[outputs]
+        
+        print numpy.max(self._params['links'][(1,2)]['W'])
+        quit()
 
 
-        nemoa.log('info', 'system performance before finetuning: %.3f' %
-            (self.getPerformance(data[inputs], data[outputs])))
+
+        #def getLinkUpdates(self, vData, hData, vModel, hModel, **kwargs):
+            #"""Return updates for links."""
+            #vVar = numpy.exp(self.units['visible'].params['lvar'])
+            #return { 'W': ((numpy.dot(vData.T, hData) - numpy.dot(vModel.T, hModel))
+                #/ float(vData.size) / vVar.T * self._config['optimize']['updateRate']
+                #* self._config['optimize']['updateFactorWeights']) }
+
+        print 0.5 * numpy.sum((self.getUnitValues(data[inputs]) - data[outputs]) ** 2)
+        print mapping
+        print self.units[inputs].params
+        print self.units[outputs].params
 
         nemoa.setLog(indent = '-1')
         return True

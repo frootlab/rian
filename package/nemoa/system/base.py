@@ -204,7 +204,7 @@ class system:
 
     def getUnits(self, *args, **kwargs):
         """Return labels of units in system."""
-        return self._getUnitsFromSystem(*args, **kwargs)
+        return self._getUnits(*args, **kwargs)
 
     def getUnitInfo(self, *args, **kwargs):
         """Return dictionary with information about a specific unit."""
@@ -220,21 +220,25 @@ class system:
 
     def setUnits(self, units = [{}], update = False, **kwargs):
         """Set units and update system parameters."""
-        if update:
-            if not self._checkParams(self._params):
-                nemoa.log('error', """
-                    could not update units:
-                    units have not yet been set!""")
-                return False
-            self._setUnits(units)
-            return True
+        #if update:
+            #if not self._checkParams(self._params):
+                #nemoa.log('error', """
+                    #could not update units:
+                    #units have not yet been set!""")
+                #return False
+            #self._setUnits(units)
+            #return True
 
         self._setUnits(units)
-        self._initUnits()
+        
+        if not update:
+            self._initUnits()
         return True
 
     def setLinks(self, links = None, update = False, *args, **kwargs):
         """Set links using list with 2-tuples containing unit labels."""
+        if update:
+            return self._indexLinks()
         self._setLinks(links)
         self._indexLinks()
         self._initLinks()

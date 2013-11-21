@@ -110,7 +110,7 @@ class ann(nemoa.system.base.system):
 
     def getError(self, *args, **kwargs):
         """Return data reconstruction error of system."""
-        return 0.5 * numpy.sum(self.getError(*args, **kwargs) ** 2)
+        return 0.5 * numpy.sum(self.getUnitError(*args, **kwargs) ** 2)
 
     def getPerformance(self, *args, **kwargs):
         """Return data reconstruction performance of system."""
@@ -270,8 +270,35 @@ class ann(nemoa.system.base.system):
             self.units[layerName].initialize(data)
         return True
 
+    def _getUnits(self, group = False, **kwargs):
+        """Return tuple with units that match a given property.
+        
+        Examples:
+            return visible units: self._getUnits(visible = True)
+        """
+
+        filter = []
+        for key in kwargs.keys():
+            if key in self._params['units'][0].keys():
+                filter.append((key, kwargs[key]))
+        layers = ()
+        for layer in self._params['units']:
+            valid = True
+            for key, val in filter:
+                if not layer[key] == val:
+                    valid = False
+                    break
+            if valid:
+                layers += (layer['label'], )
+        if group:
+            return layers
+        units = []
+        for layer in layers:
+            units += layer
+        return units
+
     def _setUnits(self, units):
-        """Set unit labels of all layers."""
+        """Create instances for units."""
         if not isinstance(units, list):
             return False
         if len(units) < 2:
@@ -289,7 +316,8 @@ class ann(nemoa.system.base.system):
                 self._params['units'][id]['class'] \
                     = hiddenUnitsClass
 
-        # update 'units' dictionary
+        # create instances of unit classes
+        # and link units params to local params dict
         self.units = {}
         for id in range(len(self._params['units'])):
             unitClass = self._params['units'][id]['class']
@@ -305,6 +333,20 @@ class ann(nemoa.system.base.system):
                     """ % (unitClass))
                 return False
             self.units[name].params = self._params['units'][id]
+        return True
+
+    def _setLinks(self, links):
+
+        # update link parameters
+        self._params['links'] = {}
+        for layerID in range(len(self._params['units']) - 1):
+            source = self._params['units'][layerID]['name']
+            target = self._params['units'][layerID + 1]['name']
+            x = len(self.units[source].params['label'])
+            y = len(self.units[target].params['label'])
+            self._params['links'][(layerID, layerID + 1)] = {
+                'source': source, 'target': target,
+                'A': numpy.ones([x, y], dtype = bool)}
         return True
 
     def _getMapping(self):
@@ -330,28 +372,6 @@ class ann(nemoa.system.base.system):
                 and not self.sigmoidUnits.check(layer):
                 return False
         return True
-
-    def _getUnitsFromSystem(self, group = False, **kwargs):
-        """Return tuple with lists of unit labels ([units1], [units2], ...)."""
-        filter = []
-        for key in kwargs.keys():
-            if key in self._params['units'][0].keys():
-                filter.append((key, kwargs[key]))
-        layers = ()
-        for layer in self._params['units']:
-            valid = True
-            for key, val in filter:
-                if not layer[key] == val:
-                    valid = False
-                    break
-            if valid:
-                layers += (layer['label'], )
-        if group:
-            return layers
-        units = []
-        for layer in layers:
-            units += layer
-        return units
 
     def _getUnitsFromNetwork(self, network):
         """Return tuple with lists of unit labels from network."""
@@ -557,7 +577,7 @@ class ann(nemoa.system.base.system):
                     data, source, self.getWeights(source)))
 
         def getWeights(self, source):
-        
+
         # 2DO
                 #if self._config['optimize']['useAdjacency']:
             #if target['name'] in self._links[source['name']]['target']:
@@ -566,7 +586,6 @@ class ann(nemoa.system.base.system):
             #elif source['name'] in self._links[target['name']]['target']:
                 #return (self._links[target['name']]['target'][source['name']]['W'] \
                     #* self._links[source['name']]['target'][target['name']]['A']).T
-
             if 'source' in self.source \
                 and source['name'] == self.source['source']:
                 return self.source['W']
