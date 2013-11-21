@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa, numpy, time
-import nemoa.system.ann
+import nemoa.system.ann, numpy, time
 
 ########################################################################
 # Module contains various types of restricted boltzmann machines
@@ -80,16 +79,6 @@ class rbm(nemoa.system.ann.ann):
             return False
         return True
 
-    def _getDataEval(self, data, func = 'energy', **kwargs):
-        """Return data evaluation respective to system parameters."""
-        if func == 'energy':
-            return self._getDataEvalEnergy(data, **kwargs)
-        if func == 'performance':
-            return self._getDataEvalPerformance(data, **kwargs)
-        if func == 'error':
-            return self._getDataEvalError(data, **kwargs)
-        return False
-
     def _getDataEvalEnergy(self, data, **kwargs):
         """Return system energy respective to data."""
         vEnergy = self.getUnitEnergy(data, ('visible',))
@@ -97,13 +86,31 @@ class rbm(nemoa.system.ann.ann):
         lEnergy = self._getLinkEvalEnergy(data)
         return numpy.sum(vEnergy) + numpy.sum(hEnergy) + numpy.sum(lEnergy)
 
-    def _getDataEvalPerformance(self, data, **kwargs):
-        """Return system performance respective to data."""
-        return numpy.mean(self._getUnitEvalPerformance(data, **kwargs)[0])
+    #def _getDataEvalPerformance(self, data, **kwargs):
+        #"""Return system performance respective to data."""
+        #return numpy.mean(self._getUnitEvalPerformance(data, **kwargs)[0])
 
     def _getDataEvalError(self, data, **kwargs):
         """Return system error respective to data."""
         return numpy.sum(self._getUnitEvalError(data, **kwargs)[0])
+
+    def getUnitError(self, data, mapping = None, block = [], **kwargs):
+        """Return euclidean reconstruction error of units.
+        
+        Description:
+            distance := ||dataOut - modelOut||
+        """
+
+        if mapping == None:
+            mapping = self._getMapping()
+        if block == []:
+            modelOut = self.getUnitExpect(data[0], mapping)
+        else:
+            dataInCopy = numpy.copy(data[0])
+            for i in block:
+                dataInCopy[:,i] = numpy.mean(dataInCopy[:,i])
+            modelOut = self.getUnitExpect(dataInCopy, mapping)
+        return numpy.sqrt(((data[1] - modelOut) ** 2).sum(axis = 0))
 
     @staticmethod
     def _getUnitsFromNetwork(network):
@@ -208,18 +215,6 @@ class rbm(nemoa.system.ann.ann):
     def _optimizeParams(self, dataset, **kwargs):
         """Optimize system parameters."""
 
-        import nemoa.common
-
-        # check for 'params' and update configuration
-        if 'params' in kwargs:
-            if not self.getType() in kwargs['params']:
-                nemoa.log('error', """
-                    could not optimize model:
-                    schedule '%s' does not include '%s'
-                    """ % (kwargs['name'], self.getType()))
-                return False
-            nemoa.common.dictMerge(kwargs['params'][self.getType()],
-                self._config['optimize'])
         config = self._config['optimize']
         init = self._config['init']
 
@@ -231,9 +226,9 @@ class rbm(nemoa.system.ann.ann):
 
         # initialise inspector
         if config['inspect']:
-            import nemoa.system.base
             inspector = nemoa.system.base.inspector(self)
-            inspector.setTestData(dataset.getData())
+            testData = dataset.getData()
+            inspector.setTestData(data = (testData, testData))
 
         for iteration in xrange(config['iterations']):
 
@@ -389,13 +384,12 @@ class rbm(nemoa.system.ann.ann):
         return self.getUnitError(data, data,
             ('visible', 'hidden', 'visible'), block), None
 
-    def _getUnitEvalPerformance(self, data, **kwargs):
-        """Return 'absolute data approximation' of units.
+    #def _getUnitEvalPerformance(self, data, **kwargs):
+        #"""Return 'absolute data approximation' of units.
         
-        'absolute data approximation' := 1 - error / ||data||
-        """
-        return self.getUnitPerformance(data, data,
-            ('visible', 'hidden', 'visible'), **kwargs), None
+        #'absolute data approximation' := 1 - error / ||data||
+        #"""
+        #return self.getUnitPerformance(data, **kwargs), None
 
     def _getUnitEvalIntPerformance(self, data, k = 1, **kwargs):
         """Return 'intrinsic performance' of units.
@@ -818,5 +812,5 @@ class grbm(rbm):
         """Return updates for links."""
         vVar = numpy.exp(self.units['visible'].params['lvar'])
         return { 'W': ((numpy.dot(vData.T, hData) - numpy.dot(vModel.T, hModel))
-            / float(vData.size) / vVar.T * self._config['optimize']['updateRate']
-            * self._config['optimize']['updateFactorWeights']) }
+            / float(vData.size) * self._config['optimize']['updateRate']
+            * self._config['optimize']['updateFactorWeights']) / vVar.T}

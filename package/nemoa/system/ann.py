@@ -108,13 +108,23 @@ class ann(nemoa.system.base.system):
         return self._initUnits(dataset) \
             and self._initLinks(dataset)
 
-    def getError(self, *args, **kwargs):
-        """Return data reconstruction error of system."""
-        return 0.5 * numpy.sum(self.getUnitError(*args, **kwargs) ** 2)
+    def _getDataEval(self, data, func = 'performance', **kwargs):
+        """Return data evaluation respective."""
+        if func == 'energy':
+            return self._getDataEvalEnergy(data, **kwargs)
+        if func == 'performance':
+            return self.getPerformance(data, **kwargs)
+        if func == 'error':
+            return self._getDataEvalError(data, **kwargs)
+        return False
 
-    def getPerformance(self, *args, **kwargs):
+    def getError(self, data, *args, **kwargs):
+        """Return data reconstruction error of system."""
+        return 0.5 * numpy.sum(self.getUnitError(data, *args, **kwargs) ** 2)
+
+    def getPerformance(self, data, *args, **kwargs):
         """Return data reconstruction performance of system."""
-        return numpy.mean(self.getUnitPerformance(*args, **kwargs))
+        return numpy.mean(self.getUnitPerformance(data, *args, **kwargs))
 
     ####################################################################
     # Links
@@ -432,18 +442,18 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def getUnitExpect(self, data, mapping = None):
+    def getUnitExpect(self, inData, mapping = None):
         """Return expected values of a layer."""
         if mapping == None:
             mapping = self._getMapping()
         if len(mapping) == 2:
-            return self.units[mapping[1]].expect(data,
+            return self.units[mapping[1]].expect(inData,
                 self.units[mapping[0]].params)
-        data = numpy.copy(data)
+        outData = numpy.copy(inData)
         for id in range(len(mapping) - 1):
-            data = self.units[mapping[id + 1]].expect(data,
+            outData = self.units[mapping[id + 1]].expect(outData,
                 self.units[mapping[id]].params)
-        return data
+        return outData
 
     def getUnitSamples(self, data, mapping = None, expectLast = False):
         """Return sampled unit values calculated from mapping.
@@ -519,24 +529,25 @@ class ann(nemoa.system.base.system):
             data = self.getUnitValues(self.getUnitExpect(data, mapping[0:-1]), mapping[-2:])
         return self.units[mapping[-1]].energy(data)
 
-    def getUnitError(self, dataIn, dataOut, mapping = None, block = [], **kwargs):
+    def getUnitError(self, data, mapping = None, block = [], **kwargs):
         """Return euclidean reconstruction error of units.
         
         Description:
             distance := ||dataOut - modelOut||
         """
+
         if mapping == None:
             mapping = self._getMapping()
         if block == []:
-            modelOut = self.getUnitExpect(dataIn, mapping)
+            modelOut = self.getUnitExpect(data[0], mapping)
         else:
-            dataInCopy = numpy.copy(dataIn)
+            dataInCopy = numpy.copy(data[0])
             for i in block:
                 dataInCopy[:,i] = numpy.mean(dataInCopy[:,i])
             modelOut = self.getUnitExpect(dataInCopy, mapping)
-        return numpy.sqrt(((dataOut - modelOut) ** 2).sum(axis = 0))
+        return numpy.sqrt(((data[1] - modelOut) ** 2).sum(axis = 0))
 
-    def getUnitPerformance(self, dataIn, dataOut, *args, **kwargs):
+    def getUnitPerformance(self, data, *args, **kwargs):
         """Return unit performance respective to input and output data.
 
         Arguments:
@@ -546,8 +557,9 @@ class ann(nemoa.system.base.system):
         Description:
             performance := 1 - error / ||data||
         """
-        err = self.getUnitError(dataIn, dataOut, *args, **kwargs)
-        nrm = numpy.sqrt((dataOut ** 2).sum(axis = 0))
+
+        err = self.getUnitError(data, *args, **kwargs)
+        nrm = numpy.sqrt((data[1] ** 2).sum(axis = 0))
         return 1.0 - err / nrm
 
     class annUnits():

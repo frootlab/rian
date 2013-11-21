@@ -461,11 +461,11 @@ class dataset:
         elif isinstance(cols, list):
             return self.__getFormatedData(data, cols, output)
         elif isinstance(cols, tuple):
-            retDict = {}
+            retVal = tuple([])
             for colFilter in cols:
-                retDict[colFilter] = self.__getFormatedData(data,
-                    self.getColLabels(colFilter), output)
-            return retDict
+                retVal += (self.__getFormatedData(data,
+                    self.getColLabels(colFilter), output), )
+            return retVal
         
         return None
 

@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa, numpy, time
-import nemoa.system.ann
+import nemoa.system.ann, numpy, time
 
 class dbn(nemoa.system.ann.ann):
     """Deep Belief Network (DBN).
@@ -36,6 +35,9 @@ class dbn(nemoa.system.ann.ann):
                 'ignoreUnits': [],
                 'wSigma': 0.5 },
             'optimize': {
+                'iterations': 1,
+                'updates': 10000,
+                'updateRate': 0.1,
                 'schedule': None,
                 'visible': None,
                 'hidden': None,
@@ -52,14 +54,14 @@ class dbn(nemoa.system.ann.ann):
 
     # UNITS
 
-    #def _getUnitsFromConfig(self):
-        #return None
+    def _getUnitsFromConfig(self):
+        return None
 
-    #def _getLinksFromConfig(self):
-        #return None
+    def _getLinksFromConfig(self):
+        return None
 
-    #def _getLinksFromNetwork(self, network):
-        #return None
+    def _getLinksFromNetwork(self, network):
+        return None
 
     def _optimizeParams(self, dataset, **schedule):
         """Optimize system parameters."""
@@ -76,8 +78,6 @@ class dbn(nemoa.system.ann.ann):
 
     def _preTraining(self, dataset, **config):
         """Pretraining ANN using Restricted Boltzmann Machines."""
-        import nemoa
-        import nemoa.system
 
         nemoa.log('info', 'pretraining system')
         nemoa.setLog(indent = '+1')
@@ -210,7 +210,6 @@ class dbn(nemoa.system.ann.ann):
         outputs = self.units[mapping[-1]].params['label']
 
         # expand unit parameters to all layers
-        import numpy
         nemoa.log('info', 'import unit and link parameters from subsystems (enrolling)')
         units = self._params['units']
         links = self._params['links']
@@ -253,52 +252,42 @@ class dbn(nemoa.system.ann.ann):
         """Finetuning system using backpropagation."""
         nemoa.log('info', 'finetuning system')
         nemoa.setLog(indent = '+1')
-        
+
+        # get mapping
         mapping = self._getMapping()
         inputs = mapping[0]
         outputs = mapping[-1]
-        data = dataset.getData(cols = (inputs, outputs))
 
-        inData = self.getUnitValues(data[inputs], mapping = ('tf', 'h'))
-        outData = data[outputs]
+        testData = dataset.getData(cols = (inputs, outputs))
+
+        # initialise inspector
+        if self._config['optimize']['inspect']:
+            inspector = nemoa.system.base.inspector(self)
+            inspector.setTestData(testData)
+
+        # optimize weights in last layer
+        data = dataset.getData(cols = (inputs, outputs))
+        inData = self.getUnitValues(data[0], mapping = ('tf', 'h'))
+        outData = data[1]
         calcData = numpy.dot(inData.T, outData)
 
         inModel = inData
         vVar = self.units['anchor'].params['lvar']
         
-        for i in range(1000000):
-            outModel = self.getUnitExpect(inData, mapping = ('h', 'anchor'))
+        for epoch in xrange(self._config['optimize']['updates']):
+            outModel = self.getUnitValues(inData, mapping = ('h', 'anchor'))
+            
             calcModel = numpy.dot(inModel.T, outModel)
             calcDiff = (calcData - calcModel) / float(outData.size)
-            calcDiffVar = calcDiff / vVar
+            calcDiffVar = calcDiff # / vVar
             
-            self._params['links'][(1,2)]['W'] += 0.0001 * calcDiffVar
+            self._params['links'][(1,2)]['W'] += self._config['optimize']['updateRate'] * calcDiffVar
             
-            if (i % 100) == 1:
-                print numpy.mean((outModel - outData) ** 2)
-        
-        print self._params['links'][(1,2)]['W'] + 0.1 * calcDiffVar
-
-        quit()
-        print self.getUnitValues(data[inputs])
-        print data[outputs]
-        
-        print numpy.max(self._params['links'][(1,2)]['W'])
-        quit()
-
-
-
-        #def getLinkUpdates(self, vData, hData, vModel, hModel, **kwargs):
-            #"""Return updates for links."""
-            #vVar = numpy.exp(self.units['visible'].params['lvar'])
-            #return { 'W': ((numpy.dot(vData.T, hData) - numpy.dot(vModel.T, hModel))
-                #/ float(vData.size) / vVar.T * self._config['optimize']['updateRate']
-                #* self._config['optimize']['updateFactorWeights']) }
-
-        print 0.5 * numpy.sum((self.getUnitValues(data[inputs]) - data[outputs]) ** 2)
-        print mapping
-        print self.units[inputs].params
-        print self.units[outputs].params
+            # inspect
+            inspector.trigger()
+            
+            #if (i % 100) == 1:
+                #nemoa.log('info', 'Performance: ' + str(self.getPerformance(data[inputs], dataOut = outData)))
 
         nemoa.setLog(indent = '-1')
         return True

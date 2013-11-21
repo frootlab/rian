@@ -198,6 +198,18 @@ class system:
 
     def optimizeParams(self, *args, **kwargs):
         """Optimize system parameters using dataset and preferred algorithm."""
+
+        # get optimization schedule
+        if 'params' in kwargs:
+            if not self.getType() in kwargs['params']:
+                nemoa.log('error', """
+                    could not optimize model:
+                    schedule '%s' does not include '%s'
+                    """ % (kwargs['name'], self.getType()))
+                return False
+            nemoa.common.dictMerge(kwargs['params'][self.getType()],
+                self._config['optimize'])
+
         return self._optimizeParams(*args, **kwargs)
 
     # generic unit methods
@@ -534,13 +546,12 @@ class inspector:
                     of optimization is not possible:
                     testdata is needed!""")
                 self.__inspect = False
-            elif self.__state['epoch'] == config['updates'] and not self.__data == None:
+            elif self.__state['epoch'] == config['updates']:
                 value = self.__system._getDataEval(
                     data = self.__data, func = config['inspectFunction'])
                 measure = config['inspectFunction'].title()
                 nemoa.log('info', 'final: %s = %.3f' % (measure, value))
             elif ((epochTime - self.__state['inspectTime']) > config['inspectTimeInterval']) \
-                and not self.__data == None \
                 and not (self.__estimate and self.__state['estimateStarted'] and not self.__state['estimateEnded']):
                 value = self.__system._getDataEval(
                     data = self.__data, func = config['inspectFunction'])
