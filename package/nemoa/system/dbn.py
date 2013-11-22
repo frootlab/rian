@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa.system.ann, numpy, time
+########################################################################
+# Module contains special forms of multilayer feedforward              #
+# artificial neuronal networks aimed for data modeling                 #
+########################################################################
+
+import nemoa.system.ann, numpy
 
 class dbn(nemoa.system.ann.ann):
     """Deep Belief Network (DBN).
@@ -13,9 +18,9 @@ class dbn(nemoa.system.ann.ann):
     
     """
 
-    def _getSystemDefaultConfig(self):
-        """Return default configuration as dictionary."""
-        sysModule = '.'.join(self.__module__.split('.')[2:])
+    @staticmethod
+    def _getDefault(key):
+        """Return DBN default configuration as dictionary."""
         return {
             'params': {
                 'preTraining': True,
@@ -31,10 +36,12 @@ class dbn(nemoa.system.ann.ann):
                 'hiddenSystemClass': 'rbm',
                 'hiddenSystemModule': 'rbm' },
             'init': {
-                'checkDataset': True,
+                'checkDataset': False,
                 'ignoreUnits': [],
                 'wSigma': 0.5 },
             'optimize': {
+                'checkDataset': False,
+                'ignoreUnits': [],
                 'iterations': 1,
                 'updates': 10000,
                 'updateRate': 0.1,
@@ -46,8 +53,7 @@ class dbn(nemoa.system.ann.ann):
                 'inspectFunction': 'performance',
                 'inspectTimeInterval': 10.0 ,
                 'estimateTime': True,
-                'estimateTimeWait': 15.0 }
-        }
+                'estimateTimeWait': 15.0 }}[key]
 
     def _checkNetwork(self, network):
         return self._isNetworkDBNCompatible(network)
@@ -63,7 +69,7 @@ class dbn(nemoa.system.ann.ann):
     def _getLinksFromNetwork(self, network):
         return None
 
-    def _optimizeParams(self, dataset, **schedule):
+    def _optimizeParams(self, dataset, schedule):
         """Optimize system parameters."""
 
         # pretraining neuronal network using
@@ -273,19 +279,19 @@ class dbn(nemoa.system.ann.ann):
 
         inModel = inData
         vVar = self.units['anchor'].params['lvar']
-        
+
         for epoch in xrange(self._config['optimize']['updates']):
             outModel = self.getUnitValues(inData, mapping = ('h', 'anchor'))
-            
+
             calcModel = numpy.dot(inModel.T, outModel)
             calcDiff = (calcData - calcModel) / float(outData.size)
             calcDiffVar = calcDiff # / vVar
-            
+
             self._params['links'][(1,2)]['W'] += self._config['optimize']['updateRate'] * calcDiffVar
-            
+
             # inspect
             inspector.trigger()
-            
+
             #if (i % 100) == 1:
                 #nemoa.log('info', 'Performance: ' + str(self.getPerformance(data[inputs], dataOut = outData)))
 

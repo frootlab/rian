@@ -1,47 +1,39 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import numpy
-import nemoa.system.base
+########################################################################
+# Module contains base class for generic artificial neuronal networks  #
+# aimed to provide common attributes and subclasses                    #
+# to special forms of artifiacial neuronal networks                    #
+########################################################################
+
+import nemoa.system.base, numpy
 
 class ann(nemoa.system.base.system):
-    """Artificial Neuronal Network (ANN)."""
+    """Artificial Neuronal Network (ANN).
 
-    ####################################################################
-    # Configuration
-    ####################################################################
+    Description:
+        Artificial Neuronal Networks are graphical models.
+
+    Reference:
+    """
 
     def _configure(self, config = {}, network = None, dataset = None, update = False, **kwargs):
         """Configure RBM to network and dataset."""
         if not 'check' in self._config:
             self._config['check'] = {'config': False, 'network': False, 'dataset': False}
 
-        self._updateConfig(config)
+        self.updateConfiguration(config)
         if not network == None:
             self._setNetwork(network, update)
         if not dataset == None:
             self._setDataset(dataset)
         return self._isConfigured()
 
-    def _updateConfig(self, config, *args, **kwargs):
-        """Set configuration from dictionary."""
-        nemoa.common.dictMerge(self._getSystemDefaultConfig(), self._config)
-        nemoa.common.dictMerge(config, self._config)
-
-        units = self._getUnitsFromConfig()
-        if units:
-            self.setUnits(units, update = False)
-        links = self._getLinksFromConfig()
-        if links:
-            self.setLinks(links, update = False)
-
-        self._config['check']['config'] = True
-        return True
-
     def _updateUnitsAndLinks(self, *args, **kwargs):
         nemoa.log('info', 'update system units and links')
-        self.setUnits(self._params['units'], update = True)
-        self.setLinks(self._params['links'], update = True)
+        self.setUnits(self._params['units'], initialize = False)
+        self.setLinks(self._params['links'], initialize = False)
         return True
 
     def _setNetwork(self, network, update = False, *args, **kwargs):
@@ -108,14 +100,15 @@ class ann(nemoa.system.base.system):
         return self._initUnits(dataset) \
             and self._initLinks(dataset)
 
+
     def _getDataEval(self, data, func = 'performance', **kwargs):
-        """Return data evaluation respective."""
+        """Return scalar value for system evaluation."""
         if func == 'energy':
             return self._getDataEvalEnergy(data, **kwargs)
         if func == 'performance':
             return self.getPerformance(data, **kwargs)
         if func == 'error':
-            return self._getDataEvalError(data, **kwargs)
+            return self.getError(data, **kwargs)
         return False
 
     def getError(self, data, *args, **kwargs):
@@ -211,6 +204,7 @@ class ann(nemoa.system.base.system):
         return True
 
     def _getWeightsFromLayers(self, source, target):
+        """Return ..."""
         if self._config['optimize']['useAdjacency']:
             if target['name'] in self._links[source['name']]['target']:
                 return self._links[source['name']]['target'][target['name']]['W'] \
@@ -223,7 +217,6 @@ class ann(nemoa.system.base.system):
                 return self._links[source['name']]['target'][target['name']]['W']
             elif source['name'] in self._links[target['name']]['target']:
                 return self._links[target['name']]['target'][source['name']]['W'].T
-
         nemoa.log('error', """Could not get links:
             Layer '%s' and layer '%s' are not connected.
             """ % (source['name'], target['name']))
@@ -360,6 +353,7 @@ class ann(nemoa.system.base.system):
         return True
 
     def _getMapping(self):
+        """Return tuple with names of layers from input to output."""
         return tuple([layer['name'] for layer in self._params['units']])
 
     def _checkUnitParams(self, params):
@@ -441,6 +435,10 @@ class ann(nemoa.system.base.system):
         self._removeUnitsLinks(layer, select)
 
         return True
+
+    ####################################################################
+    # Unit evaluation                                                  #
+    ####################################################################
 
     def getUnitExpect(self, inData, mapping = None):
         """Return expected values of a layer."""
@@ -562,8 +560,20 @@ class ann(nemoa.system.base.system):
         nrm = numpy.sqrt((data[1] ** 2).sum(axis = 0))
         return 1.0 - err / nrm
 
+    ####################################################################
+    # Artificial neuronal network links                                #
+    ####################################################################
+
+    class annLinks():
+        """Class to unify common ann link attributes."""
+        pass
+
+    ####################################################################
+    # Artificial neuronal network units                                #
+    ####################################################################
+
     class annUnits():
-        """Class to unify common unit attributes."""
+        """Class to unify common ann unit attributes."""
 
         params = {}
         source = {}
@@ -609,6 +619,10 @@ class ann(nemoa.system.base.system):
                 Layers '%s' and '%s' are not connected.
                 """ % (source['name'], self.params['name']))
             return None
+
+    ####################################################################
+    # Sigmoidal artificial neuronal network units                      #
+    ####################################################################
 
     class sigmoidUnits(annUnits):
         """Units with sigmoidal activation function and binary distribution."""
@@ -692,11 +706,15 @@ class ann(nemoa.system.base.system):
             'Efficient BackProp' by LeCun, Bottou, Orr, Müller"""
             return 1.7159 * numpy.tanh(0.6666 * x)
 
+    ####################################################################
+    # Gaussian artificial neuronal network units                       #
+    ####################################################################
+
     class gaussUnits(annUnits):
         """Units with linear activation function and gaussian distribution"""
 
         def initialize(self, data = None, vSigma = 0.4):
-            """Initialize system parameters of gauss distribued units using data."""
+            """Initialize parameters of gauss distributed units."""
             size = len(self.params['label'])
             if data == None:
                 self.params['bias'] = numpy.zeros([1, size])
@@ -709,7 +727,7 @@ class ann(nemoa.system.base.system):
             return True
 
         def update(self, updates):
-            """Update Gauss units."""
+            """Update gaussian units."""
             self.params['bias'] += updates['bias']
             self.params['lvar'] += updates['lvar']
             return True

@@ -1,14 +1,9 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import nemoa
-import numpy as np
 
-from nemoa.plot.base import plot
+import nemoa.plot.base, numpy, matplotlib
 
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-
-class heatmap(plot):
+class heatmap(nemoa.plot.base.plot):
 
     def getSettings(self):
         return {
@@ -35,7 +30,7 @@ class sampleRelation(heatmap):
             relation = self.settings['relation'] )
 
         # create figure object
-        fig = plt.figure()
+        fig = matplotlib.pyplot.figure()
         ax = fig.add_subplot(111)
         ax.grid(True)
         cax = ax.imshow(data,
@@ -46,13 +41,13 @@ class sampleRelation(heatmap):
         # get labels and set plot ticks and labels
         labels = model.dataset.getRowLabels()
 
-        plt.yticks(
-            len(labels) - np.arange(len(labels)) - 0.5,
+        matplotlib.pyplot.yticks(
+            len(labels) - numpy.arange(len(labels)) - 0.5,
             tuple(labels),
             fontsize = 9)
             
-        plt.xticks(
-            np.arange(len(labels)) + 0.5,
+        matplotlib.pyplot.xticks(
+            numpy.arange(len(labels)) + 0.5,
             tuple(labels),
             fontsize = 9,
             rotation = 70)
@@ -69,17 +64,17 @@ class sampleRelation(heatmap):
                 self.settings['relation'])
             
             # draw title
-            plt.title(title, fontsize = 11)
+            matplotlib.pyplot.title(title, fontsize = 11)
         
         # output
         if file:
-            plt.savefig(file, dpi = self.settings['dpi'])
+            matplotlib.pyplot.savefig(file, dpi = self.settings['dpi'])
         else:
-            plt.show()
+            matplotlib.pyplot.show()
         
         # clear current figure object and release memory
-        plt.clf()
-        plt.close(fig)
+        matplotlib.pyplot.clf()
+        matplotlib.pyplot.close(fig)
 
         return True
 
@@ -128,7 +123,7 @@ class unitRelation(heatmap):
             statistics = self.settings['statistics'])
 
         # create figure object
-        fig = plt.figure()
+        fig = matplotlib.pyplot.figure()
         ax = fig.add_subplot(111)
         ax.grid(True)
         cax = ax.imshow(data,
@@ -138,16 +133,16 @@ class unitRelation(heatmap):
 
         # create labels for x-axis
         xLabels = model.network.getNodeLabels(self.settings['x'])
-        plt.xticks(
-            np.arange(len(xLabels)) + 0.5,
+        matplotlib.pyplot.xticks(
+            numpy.arange(len(xLabels)) + 0.5,
             tuple(xLabels),
             fontsize = 8,
             rotation = 65)
 
         # create labels for y-axis
         yLabels = model.network.getNodeLabels(self.settings['y'])
-        plt.yticks(
-            len(yLabels) - np.arange(len(yLabels)) - 0.5,
+        matplotlib.pyplot.yticks(
+            len(yLabels) - numpy.arange(len(yLabels)) - 0.5,
             tuple(yLabels),
             fontsize = 8)
 
@@ -161,16 +156,16 @@ class unitRelation(heatmap):
             title = "%s: %s" % (model.dataset.cfg['name'], nemoa.common.strSplitParams(self.settings['relation'])[0])
 
             # draw title
-            plt.title(title, fontsize = 11)
+            matplotlib.pyplot.title(title, fontsize = 11)
 
         # output
         if file:
-            plt.savefig(file, dpi = self.settings['dpi'])
+            matplotlib.pyplot.savefig(file, dpi = self.settings['dpi'])
         else:
-            plt.show()
+            matplotlib.pyplot.show()
 
         # clear current figure object and release memory
-        plt.clf()
-        plt.close(fig)
+        matplotlib.pyplot.clf()
+        matplotlib.pyplot.close(fig)
 
         return True

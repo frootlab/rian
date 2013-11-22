@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa, numpy, copy, os, re
+import nemoa, numpy, copy, os, re, scipy.cluster.vq, csv
 
 class dataset:
     """Base class for datasets"""
@@ -40,15 +40,6 @@ class dataset:
             network -- nemoa network object
             useCache -- shall data be cached
         """
-        #####
-        ##### WHY IS THIS NECESSARY???
-        #####
-
-        import nemoa # <------------
-
-        #####
-        #####
-        #####
 
         nemoa.log('info', 'configure dataset: \'%s\'' % (self.getName()))
         nemoa.setLog(indent = '+1')
@@ -74,8 +65,6 @@ class dataset:
         #
         # ANNOTATION
         #
-
-        import nemoa.annotation
 
         # get nodes from network and convert to common format
         if network.cfg['type'] == 'auto':
@@ -160,9 +149,14 @@ class dataset:
 
                 # notify if any network nodes could not be found
                 if numLost:
-                    nemoa.log("warning", "%i of %i network nodes could not be found in dataset source! (logfile)" % (numLost, numAll))
+                    nemoa.log("warning", """
+                        %i of %i network nodes
+                        could not be found in
+                        dataset source! (logfile)""" % (numLost, numAll))
                     for group in lostNodes:
-                        nemoa.log("logfile", "missing nodes (group %s): " % (group) + ", ".join(lostNodes[group]))
+                        nemoa.log("logfile", """
+                            missing nodes (group %s): """ % (group)
+                            + ", ".join(lostNodes[group]))
 
             # prepare dictionary for column source ids
             colLabels[src] = {
@@ -175,7 +169,8 @@ class dataset:
         for src in colLabels:
             list = colLabels[src]['conv']
             blackList = [list[i] for i in colLabels[src]['notusecols']]
-            interColLabels = [val for val in interColLabels if val in list and not val in blackList]
+            interColLabels = [val for val in interColLabels \
+                if val in list and not val in blackList]
 
         # if network type is 'auto', set network visible nodes
         # to intersected data from database files (without label column)
@@ -489,12 +484,9 @@ class dataset:
 
         Keyword arguments:
             source -- name of data source to get data from
-
             size -- number of samples to return
                 if size is not given just return all samples of given source
-
             rows -- string that describes a filter for rows to choose from
-
             useCache -- shall data be cached"""
 
         if not source or not source in self.data:
@@ -703,8 +695,7 @@ class dataset:
         return None
 
     def getKMeansClusters(self, data, k = 3):
-        from scipy.cluster.vq import kmeans,vq
-        return vq(data, kmeans(data, k)[0])[0]
+        return scipy.cluster.vq.vq(data, scipy.cluster.vq.kmeans(data, k)[0])[0]
 
     #
     # BICLUSTERING
@@ -908,7 +899,6 @@ class dataset:
         csvfile = open(file, 'rb')
 
         try:
-            import csv
             dialect = csv.Sniffer().sniff(csvfile.read(100000))
         except:
             nemoa.log("warning", 

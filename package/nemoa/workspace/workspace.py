@@ -1,22 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa, os, copy, pprint
+import nemoa, os, copy, pprint, importlib, cPickle, gzip, imp
 
 class workspace:
     """Base class for workspaces."""
 
-    #
-    # WORKSPACE CONFIGURATION
-    #
-
     def __init__(self, project = None):
         """Initialize shared configuration."""
-
-        # get base configuration
         nemoa.workspace.init()
-
-        # load user definitions
         if not project == None:
             self.load(project)
 
@@ -45,11 +37,13 @@ class workspace:
         else:
             scriptName = name
 
-        config = nemoa.workspace.getConfig(type = 'script', config = scriptName, **kwargs)
+        config = nemoa.workspace.getConfig(
+            type = 'script', config = scriptName, **kwargs)
         
         if not config and not '.' in name:
             scriptName = 'base.' + name
-            config = nemoa.workspace.getConfig(type = 'script', config = scriptName, **kwargs)
+            config = nemoa.workspace.getConfig(
+                type = 'script', config = scriptName, **kwargs)
         if not config:
             return False
         if not os.path.isfile(config['path']):
@@ -57,8 +51,7 @@ class workspace:
                 could not run script \'%s\': file \'%s\' not found!
                 """ % (scriptName, config['path']))
             return False
-        
-        import imp
+
         script = imp.load_source('script', config['path'])
         return script.main(self, **config['params'])
 
@@ -131,23 +124,26 @@ class workspace:
         nemoa.setLog(indent = '+1')
 
         # import module
-        import importlib
         module = importlib.import_module("nemoa." + str(type))
 
         # get objects configuration as dictionary
         config = nemoa.workspace.getConfig(type = type, config = config, **kwargs)
         if config == None:
-            nemoa.log('error', 'could not create %s instance: unknown configuration!' % (type))
+            nemoa.log('error', """
+                could not create %s instance:
+                unknown configuration!""" % (type))
             nemoa.setLog(indent = '-1')
             return None
 
-        # create new instance of given class and initialize with configuration
+        # create and initialize new instance of given class
         instance = module.empty() if empty \
             else module.new(config = config, **kwargs)
 
         # check instance class
         if not nemoa.type.isInstanceType(instance, type):
-            nemoa.log('error', 'could not create %s instance: invalid configuration!' % (type))
+            nemoa.log('error', """
+                could not create %s instance:
+                invalid configuration!""" % (type))
             nemoa.setLog(indent = '-1')
             return None
 
@@ -168,25 +164,34 @@ class workspace:
 
         # create dataset instance if not given via keyword arguments
         if not nemoa.type.isDataset(dataset):
-            dataset = self.__getInstance(type = 'dataset', config = dataset)
+            dataset = self.__getInstance(
+                type = 'dataset', config = dataset)
         if not nemoa.type.isDataset(dataset): 
-            nemoa.log('error', 'could not create model instance: dataset is invalid!')
+            nemoa.log('error', """
+                could not create model instance:
+                dataset is invalid!""")
             nemoa.setLog(indent = '-1')
             return None
 
         # create network instance if not given via keyword arguments
         if not nemoa.type.isNetwork(network):
-            network = self.__getInstance(type = 'network', config = network)
+            network = self.__getInstance(
+                type = 'network', config = network)
         if not nemoa.type.isNetwork(network): 
-            nemoa.log('error', 'could not create model instance: network is invalid!')
+            nemoa.log('error', """
+                could not create model instance:
+                network is invalid!""")
             nemoa.setLog(indent = '-1')
             return None
 
         # create system instance if not given via keyword arguments
         if not nemoa.type.isSystem(system):
-            system = self.__getInstance(type = 'system', config = system)
+            system = self.__getInstance(
+                type = 'system', config = system)
         if not nemoa.type.isSystem(system):
-            nemoa.log('error', 'could not create model instance: system is invalid!')
+            nemoa.log('error', """
+                could not create model instance:
+                system is invalid!""")
             nemoa.setLog(indent = '-1')
             return None
 
@@ -195,9 +200,9 @@ class workspace:
             name = '-'.join([dataset.getName(), network.getName(), system.getName()])
 
         # create model instance
-        model = self.__getInstance(type = 'model', config = config,
-            dataset = dataset, network = network, system = system,
-            name = name)
+        model = self.__getInstance(
+            type = 'model', config = config, name = name,
+            dataset = dataset, network = network, system = system)
 
         nemoa.setLog(indent = '-1')
         return model
@@ -221,7 +226,6 @@ class workspace:
 
         # load model parameters and configuration from file
         nemoa.log('info', 'load model: \'%s\'' % file)
-        import cPickle, gzip
         modelDict = cPickle.load(gzip.open(file, 'rb'))
 
         model = self.__getModelInstance(

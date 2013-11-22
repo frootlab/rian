@@ -1,30 +1,30 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa.system.ann, numpy, time
+########################################################################
+# This python module contains various types of restricted              #
+# boltzmann machines aimed for data modeling and per layer pretraining #
+# of multilayer feedforward artificial neuronal networks               #
+########################################################################
 
-########################################################################
-# Module contains various types of restricted boltzmann machines
-# aimed for standalone modeling and per layer pretraining
-# of artificial neuronal networks
-########################################################################
+import nemoa.system.ann, numpy
 
 class rbm(nemoa.system.ann.ann):
     """Restricted Boltzmann Machine (RBM).
 
     Description:
-        Restricted Boltzmann Machine with binary sigmoidal visible units
-        and binary sigmoidal hidden units.
-        Input: binary data, Output: transformed binary data
+        Restricted Boltzmann Machines are energy based undirected
+        artificial neuronal networks with two layers: 'visible' and 'hidden'.
+        The visible layer contains binary distributed sigmoidal units
+        to model data. The hidden layer contains binary distributed
+        sigmoidal units to model relations in the data.
 
     Reference:
         "A Practical Guide to Training Restricted Boltzmann Machines",
         Geoffrey E. Hinton, University of Toronto, 2010"""
 
-    # CONFIGURATION
-
     @staticmethod
-    def _getSystemDefaultConfig():
+    def _getDefault(key):
         """Return RBM default configuration as dictionary."""
         return {
             'params': {
@@ -39,6 +39,8 @@ class rbm(nemoa.system.ann.ann):
                 'ignoreUnits': [],
                 'wSigma': 0.5 },
             'optimize': {
+                'checkDataset': True,
+                'ignoreUnits': [],
                 'iterations': 1,
                 'minibatchSize': 100,
                 'minibatchInterval': 10,
@@ -46,7 +48,6 @@ class rbm(nemoa.system.ann.ann):
                 'updateAlgorithm': 'CD',
                 'updateSamplingSteps': 1,
                 'updateSamplingIterations': 1,
-                'ignoreUnits': [],
                 'updateRate': 0.1,
                 'updateFactorWeights': 1.0,
                 'updateFactorHbias': 0.1,
@@ -56,11 +57,7 @@ class rbm(nemoa.system.ann.ann):
                 'inspectFunction': 'performance',
                 'inspectTimeInterval': 10.0 ,
                 'estimateTime': True,
-                'estimateTimeWait': 20.0 }}
-
-    def _initParamConfiguration(self):
-        self.setUnits(self._getUnitsFromConfig())
-        self.setLinks(self._getLinksFromConfig())
+                'estimateTimeWait': 20.0 }}[key]
 
     # DATA
 
@@ -74,8 +71,9 @@ class rbm(nemoa.system.ann.ann):
     def _checkDataset(self, dataset):
         """Check if dataset contains binary values."""
         if not self._isDatasetBinary(dataset):
-            nemoa.log('error', 'dataset \'%s\' is not valid: RBMs need binary data!' \
-                % (dataset.getName()))
+            nemoa.log('error', """
+                dataset \'%s\' is not valid:
+                RBMs need binary data!""" % (dataset.getName()))
             return False
         return True
 
@@ -84,11 +82,9 @@ class rbm(nemoa.system.ann.ann):
         vEnergy = self.getUnitEnergy(data, ('visible',))
         hEnergy = self.getUnitEnergy(data, ('visible', 'hidden'))
         lEnergy = self._getLinkEvalEnergy(data)
-        return numpy.sum(vEnergy) + numpy.sum(hEnergy) + numpy.sum(lEnergy)
-
-    #def _getDataEvalPerformance(self, data, **kwargs):
-        #"""Return system performance respective to data."""
-        #return numpy.mean(self._getUnitEvalPerformance(data, **kwargs)[0])
+        return numpy.sum(vEnergy) \
+            + numpy.sum(hEnergy) \
+            + numpy.sum(lEnergy)
 
     def _getDataEvalError(self, data, **kwargs):
         """Return system error respective to data."""
@@ -134,23 +130,30 @@ class rbm(nemoa.system.ann.ann):
     def _mapData(self, data, transformation = 'visiblevalue', **kwargs):
         """Return system representation of data."""
         if transformation == 'visibleexpect':
-            return self.getUnitExpect(data, ('visible', 'hidden', 'visible'))
+            return self.getUnitExpect(data,
+                ('visible', 'hidden', 'visible'))
         if transformation == 'visiblevalue':
-            return self.getUnitValues(data, ('visible', 'hidden', 'visible'))
+            return self.getUnitValues(data,
+                ('visible', 'hidden', 'visible'))
         if transformation == 'visiblesample':
-            return self.getUnitSamples(data, ('visible', 'hidden', 'visible'))
+            return self.getUnitSamples(data,
+                ('visible', 'hidden', 'visible'))
         if transformation == 'hiddenexpect':
-            return self.getUnitExpect(data, ('visible', 'hidden'))
+            return self.getUnitExpect(data,
+                ('visible', 'hidden'))
         if transformation == 'hiddenvalue':
-            return self.getUnitValues(data, ('visible', 'hidden'))
+            return self.getUnitValues(data,
+                ('visible', 'hidden'))
         if transformation == 'hiddensample':
-            return self.getUnitSamples(data, ('visible', 'hidden'))
+            return self.getUnitSamples(data,
+                ('visible', 'hidden'))
         return data
 
     def _getDataContrastiveDivergency(self, data):
         """Return reconstructed data using 1-step contrastive divergency sampling (CD-1)."""
         hData  = self.getUnitExpect(data, ('visible', 'hidden'))
-        vModel = self.getUnitSamples(hData, ('hidden', 'visible'), expectLast = True)
+        vModel = self.getUnitSamples(hData, ('hidden', 'visible'),
+            expectLast = True)
         hModel = self.getUnitExpect(vModel, ('visible', 'hidden'))
         return data, hData, vModel, hModel
 
@@ -212,7 +215,7 @@ class rbm(nemoa.system.ann.ann):
         """Return dictionary with all parameters."""
         return self._params.copy()
 
-    def _optimizeParams(self, dataset, **kwargs):
+    def _optimizeParams(self, dataset, schedule):
         """Optimize system parameters."""
 
         config = self._config['optimize']
@@ -247,7 +250,9 @@ class rbm(nemoa.system.ann.ann):
                         k = config['updateSamplingSteps'],
                         m = config['updateSamplingIterations'])
                 else:
-                    nemoa.log('error', "could not optimize model: unknown optimization algorithm '%s'" %
+                    nemoa.log('error', """
+                        could not optimize model:
+                        unknown optimization algorithm '%s'""" %
                         (config['updateAlgorithm']))
                     return False
 
@@ -256,24 +261,6 @@ class rbm(nemoa.system.ann.ann):
                 
                 # inspect
                 inspector.trigger()
-
-            ## optionaly lift edges after every iteration
-            #if config['iterationLiftLinks']:
-                #if '_' in config['iterationLiftLinks']:
-                    #liftingParams = config['iterationLiftLinks'].split('_')
-                    #method = liftingParams[0].lower()
-                    #if method == 'maxcutoff':
-                        #maxcutoff = float(liftingParams[1])
-                        #threshold = maxcutoff * (float(iteration + 1) / float(config['iterations']))
-                    #else:
-                        #threshold = float(liftingParams[1])
-
-                    #self._removeLinksByThreshold(
-                        #method = method,
-                        #threshold = threshold)
-                #else:
-                    #self._removeLinksByThreshold(
-                        #method = config['iterationLiftLinks'].lower())
 
         return True
 
@@ -301,7 +288,8 @@ class rbm(nemoa.system.ann.ann):
         """Return tuple with unit information created from config."""
 
         if isinstance(self._config['params']['visible'], int):
-            vLabel = ['v:v%i' % (num) for num in range(1, self._config['params']['visible'] + 1)]
+            vLabel = ['v:v%i' % (num) for num \
+                in range(1, self._config['params']['visible'] + 1)]
         elif isinstance(self._config['params']['visible'], list):
             for node in self._config['params']['visible']:
                 if not isinstance(node, str):
@@ -310,7 +298,8 @@ class rbm(nemoa.system.ann.ann):
         else:
             vLabel = []
         if isinstance(self._config['params']['hidden'], int):
-            hLabel = ['h:h%i' % (num) for num in range(1, self._config['params']['hidden'] + 1)]
+            hLabel = ['h:h%i' % (num) for num \
+                in range(1, self._config['params']['hidden'] + 1)]
         elif isinstance(self._config['params']['hidden'], list):
             for node in self._config['params']['hidden']:
                 if not isinstance(node, str):
@@ -353,7 +342,10 @@ class rbm(nemoa.system.ann.ann):
             return {
                 'name': evalFuncs[func][0]}
         if not func in evalFuncs:
-            nemoa.log("warning", "could not evaluate units: unknown unit evaluation function '" + func + "'")
+            nemoa.log("warning", """
+                could not evaluate units:
+                unknown unit evaluation function '%s'
+                """ % (func))
             return False
 
         visibleUnitEval, hiddenUnitEval = eval(
@@ -383,13 +375,6 @@ class rbm(nemoa.system.ann.ann):
         """
         return self.getUnitError(data, data,
             ('visible', 'hidden', 'visible'), block), None
-
-    #def _getUnitEvalPerformance(self, data, **kwargs):
-        #"""Return 'absolute data approximation' of units.
-        
-        #'absolute data approximation' := 1 - error / ||data||
-        #"""
-        #return self.getUnitPerformance(data, **kwargs), None
 
     def _getUnitEvalIntPerformance(self, data, k = 1, **kwargs):
         """Return 'intrinsic performance' of units.
@@ -509,7 +494,10 @@ class rbm(nemoa.system.ann.ann):
     def _setLinks(self, links = []):
         """Set links and create link adjacency matrix."""
         if not self._checkUnitParams(self._params):
-            nemoa.log('error', "could not set links: units have not yet been set yet!")
+            nemoa.log('error', """
+                could not set links:
+                units have not yet been set yet!
+                """)
             return False
 
         # create adjacency matrix from links
@@ -580,7 +568,9 @@ class rbm(nemoa.system.ann.ann):
     def _removeLinks(self, links = []):
         """Remove links from adjacency matrix using list of links."""
         if not self._checkParams(self._params): # check params
-            nemoa.log("error", "could not remove links: units have not been set yet!")
+            nemoa.log("error", """
+                could not remove links:
+                units have not been set yet!""")
             return False
 
         # search links and update list of current links
@@ -594,53 +584,14 @@ class rbm(nemoa.system.ann.ann):
                 del curLinks[curLinks.index((link[1], link[0]))]
                 found = True
             if not found:
-                nemoa.log("warning", 'could not delete link (%s → %s): link could not be found!' % (link[0], link[1]))
+                nemoa.log("warning", """
+                    could not delete link (%s → %s):
+                    link could not be found!
+                    """ % (link[0], link[1]))
                 continue
 
         # set modified list of current links
         return self._setLinks(curLinks)
-
-    #def _removeLinksByThreshold(self, method = None, threshold = None):
-        #"""Remove links from adjacency matrix using threshold for parameters."""
-        #if not self._checkParams(self._params): # check params
-            #nemoa.log("error", "could not delete links: units have not yet been set yet!")
-            #return False
-        #if not method: # check method
-            #return False
-
-        #curLinks = self._getLinksFromConfig() # get current links
-
-        ## delete links by absolute weight threshold
-        #count = 0
-        #countAll = len(curLinks)
-        #if method in ['cutoff', 'maxcutoff']:
-            #linkParams = self._getLinkParams()
-            #newLinks = []
-            #for link in linkParams:
-                #if numpy.abs(linkParams[link]['W']) >= threshold:
-                    #continue
-                #found = False
-                #if (link[0], link[1]) in curLinks:
-                    #del curLinks[curLinks.index((link[0], link[1]))]
-                    #found = True
-                #if (link[1], link[0]) in curLinks:
-                    #del curLinks[curLinks.index((link[1], link[0]))]
-                    #found = True
-                #if found:
-                    #count += 1
-                    #nemoa.log('logfile', 'delete link (%s → %s): weight < %.2f' % (link[0], link[1], threshold))
-
-        #if count == 0:
-            #return False
-
-        #nemoa.log('console', 'deleted %i of %i links. (see logfile)' % (count, countAll))
-
-        ## set modified list of current links
-        #if self._setLinks(curLinks):
-            #return count
-
-        #nemoa.log('warning', 'could not set links! (see logfile)')
-        #return False
 
     def _getLinkEval(self, data, func = 'energy', info = False, **kwargs):
         """Return link evaluation values."""
@@ -654,10 +605,14 @@ class rbm(nemoa.system.ann.ann):
             return {
                 'name': evalFuncs[func][0]}
         if not func in evalFuncs:
-            nemoa.log("warning", "could not evaluate units: unknown link evaluation function '" + func + "'")
+            nemoa.log("warning", """
+                could not evaluate units:
+                unknown link evaluation function '%s'
+                """ % (func))
             return False
 
-        linkEval = eval('self._getLinkEval' + evalFuncs[func][1] + '(data, **kwargs)')
+        linkEval = eval('self._getLinkEval' + evalFuncs[func][1] \
+            + '(data, **kwargs)')
         evalDict = {}
         if isinstance(linkEval, numpy.ndarray):
             for i, v in enumerate(self.units['visible'].params['label']):
@@ -697,16 +652,18 @@ class grbm(rbm):
     """Gaussian Restricted Boltzmann Machine (GRBM).
 
     Description:
-        Restricted Boltzmann Machine with continous gaussian visible units
-        and binary sigmoidal hidden units
-        Input: gauss normalized data, Output: transformed binary data
+        Gaussian Restricted Boltzmann Machines are energy based undirected
+        artificial neuronal networks with two layers: 'visible' and 'hidden'.
+        The visible layer contains gauss distributed sigmoidal units
+        to model data. The hidden layer contains binary distributed
+        sigmoidal units to model relations in the data.
 
     Reference:
         "Improved Learning of Gaussian-Bernoulli Restricted Boltzmann Machines",
         KyungHyun Cho, Alexander Ilin and Tapani Raiko, ICANN 2011"""
 
     @staticmethod
-    def _getSystemDefaultConfig():
+    def _getDefault(key):
         """Return GRBM default configuration as dictionary."""
         return {
             'params': {
@@ -721,12 +678,13 @@ class grbm(rbm):
                 'ignoreUnits': [],
                 'wSigma': 0.5 },
             'optimize': {
+                'checkDataset': True,
+                'ignoreUnits': [],
                 'iterations': 1,
                 'updates': 100000,
                 'updateAlgorithm': 'CD',
                 'updateSamplingSteps': 1,
                 'updateSamplingIterations': 1,
-                'ignoreUnits': [],
                 'updateRate': 0.01,
                 'updateFactorWeights': 1.0,
                 'updateFactorHbias': 0.1,
@@ -739,7 +697,7 @@ class grbm(rbm):
                 'inspectFunction': 'performance',
                 'inspectTimeInterval': 20.0 ,
                 'estimateTime': True,
-                'estimateTimeWait': 20.0 }}
+                'estimateTimeWait': 20.0 }}[key]
 
     # GRBM data
 
@@ -803,14 +761,18 @@ class grbm(rbm):
         """Return link energy of all links as numpy array."""
         hData = self.getUnitExpect(data, ('visible', 'hidden'))
         if self._config['optimize']['useAdjacency']:
-            return -(self._params['links'][(0, 1)]['A'] * self._params['links'][(0, 1)]['W'] * numpy.dot((data
-                / numpy.exp(self.units['visible'].params['lvar'])).T, hData) / data.shape[0])
+            return -(self._params['links'][(0, 1)]['A']
+                * self._params['links'][(0, 1)]['W'] * numpy.dot((data
+                / numpy.exp(self.units['visible'].params['lvar'])).T, hData)
+                / data.shape[0])
         return -(self._params['links'][(0, 1)]['W'] * numpy.dot((data
-            / numpy.exp(self.units['visible'].params['lvar'])).T, hData) / data.shape[0])
+            / numpy.exp(self.units['visible'].params['lvar'])).T, hData)
+            / data.shape[0])
 
     def _getLinkUpdates(self, vData, hData, vModel, hModel, **kwargs):
         """Return updates for links."""
         vVar = numpy.exp(self.units['visible'].params['lvar'])
-        return { 'W': ((numpy.dot(vData.T, hData) - numpy.dot(vModel.T, hModel))
+        return { 'W': ((numpy.dot(vData.T, hData)
+            - numpy.dot(vModel.T, hModel))
             / float(vData.size) * self._config['optimize']['updateRate']
             * self._config['optimize']['updateFactorWeights']) / vVar.T}

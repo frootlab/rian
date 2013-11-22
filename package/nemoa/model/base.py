@@ -1,33 +1,33 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa, numpy, copy, time
+import nemoa, numpy, copy, time, cPickle, gzip, os
 
 class model:
     """Base class for (graphical) models."""
     
     dataset = None
     network = None
-    system = None
+    system  = None
 
     #
     # METHODS FOR MODEL CONFIGURATION
     #
 
-    def __init__(self, config = {}, dataset = None, network = None, system = None, name = None, **kwargs):
+    def __init__(self, config = {}, dataset = None, network = None, system = None, **kwargs):
         """Initialize model and configure dataset, network and system.
 
         Keyword Arguments:
             dataset -- dataset instance
             network -- network instance
-            system -- system instance
+            system  -- system instance
         """
 
-        # initialize local variables
+        # initialize private class variables
         self.__config = {}
 
         # update model
-        self.setName(name)
+        self.setName(kwargs['name'] if 'name' in kwargs else None)
         nemoa.log('info', 'linking dataset, network and system instances to model')
         self.dataset = dataset
         self.network = network
@@ -331,12 +331,14 @@ class model:
 
         return False
 
-    #
-    # MODIFY MODEL PARAMETERS
-    #
+    ####################################################################
+    # Model / System parameter modification functions
+    ####################################################################
 
-    def initialize(self,  **kwargs):
+    def initialize(self):
         """Initialize model parameters and return self."""
+
+        #2DO: just check if system is configured
 
         # check if model is empty and can not be initialized
         if (self.dataset == None or self.system == None) \
@@ -345,19 +347,25 @@ class model:
 
         # check if model is configured
         if not self.__isConfigured():
-            nemoa.log('error', 'could not initialize model: model is not yet configured!')
+            nemoa.log('error', """
+                could not initialize model:
+                model is not yet configured!""")
             return False
 
-        # check system and dataset
-        if self.dataset == None:
-            nemoa.log("error", "could not initialize model parameters: dataset is not yet configured!")
-            return False
-        if self.system == None:
-            nemoa.log("error", "could not initialize model parameters: system is not yet configured!")
+        # check dataset
+        if not nemoa.type.isDataset(self.dataset):
+            nemoa.log("error", """
+                could not initialize model parameters:
+                dataset is not yet configured!""")
             return False
 
-        # initialization makes no sense in dummy systems
-        if self.system.isEmpty():
+        # check system
+        if not nemoa.type.isSystem(self.system):
+            nemoa.log("error", """
+                could not initialize model parameters:
+                system is not yet configured!""")
+            return False
+        elif self.system.isEmpty():
             return False
 
         # initialize system parameters
@@ -365,20 +373,25 @@ class model:
         return self
 
     def optimize(self, schedule = None, **kwargs):
-        """Optimize model instance."""
+        """Optimize system parameters."""
+
+        #2DO: just check if system is initialized
 
         nemoa.log('title', 'optimize model')
         nemoa.setLog(indent = '+1')
 
         # check if model is empty
         if self.isEmpty():
-            nemoa.log('warning', 'empty model can not be optimized!')
+            nemoa.log('warning', """
+                empty models can not be optimized!""")
             nemoa.setLog(indent = '-1')
             return self
 
         # check if model is configured
         if not self.__isConfigured():
-            nemoa.log('error', 'could not optimize model: model is not yet configured!')
+            nemoa.log('error', """
+                could not optimize model:
+                model is not yet configured!""")
             nemoa.setLog(indent = '-1')
             return False
 
@@ -387,14 +400,17 @@ class model:
             type = 'schedule', config = schedule,
             merge = ['params', self.system.getName()],
             **kwargs)
-
-        # test schedule
         if not schedule:
+            nemoa.log('error', """
+                could not optimize system parameters:
+                optimization schedule is not valid!""")
             nemoa.setLog(indent = '-1')
             return self
         
         # optimization of system parameters
-        nemoa.log('info', 'starting optimization schedule: \'%s\'' % (schedule['name']))
+        nemoa.log('info', """
+            starting optimization schedule: '%s'
+            """ % (schedule['name']))
         nemoa.setLog(indent = '+1')
 
         # 2DO: find better solution for multistage optimization
@@ -402,14 +418,14 @@ class model:
             for stage, params in enumerate(config['stage']):
                 self.system.optimizeParams(self.dataset, **params)
         elif 'params' in schedule:
-            self.system.optimizeParams(self.dataset, **schedule)
-        nemoa.setLog(indent = '-1')
+            self.system.optimizeParams(
+                dataset = self.dataset, schedule = schedule)
 
-        nemoa.setLog(indent = '-1')
+        nemoa.setLog(indent = '-2')
         return self
 
     ####################################################################
-    # scalar model evaluation functions
+    # Scalar model evaluation functions
     ####################################################################
 
     def getPerformance(self):
@@ -824,8 +840,7 @@ class model:
         ## and do something like self.configure ...
 
         # create system
-        import nemoa.system as system
-        self.system = system.new(
+        self.system = nemoa.system.new(
             config  = config['system']['config'].copy(),
             network = self.network,
             dataset = self.dataset
@@ -881,8 +896,6 @@ class model:
 
     def save(self, file = None):
         """Save model settings to file and return filepath."""
-        import nemoa.workspace
-        import cPickle, gzip, os
 
         nemoa.log('title', 'save model to file')
         nemoa.setLog(indent = '+1')
@@ -956,8 +969,7 @@ class model:
 
         # return empty plot instance if no configuration information was given
         if not name and not config:
-            import nemoa.plot as plot
-            return plot.new()
+            return nemoa.plot.new()
 
         # get plot configuration
         if name == None:
@@ -971,8 +983,7 @@ class model:
             # merge params
             for param in params.keys():
                 cfgPlot['params'][param] = params[param]
-            import nemoa.plot as plot
-            return plot.new(config = cfgPlot)
+            return nemoa.plot.new(config = cfgPlot)
         else:
             nemoa.log("error", "could not create plot instance: unkown plot-id '" + name + "'")
             return None

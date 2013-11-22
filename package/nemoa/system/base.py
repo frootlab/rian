@@ -1,39 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa
-import copy, numpy
+import nemoa, copy, numpy, time
 
 class system:
     """Base class for systems."""
 
-    _config = None
-    _params = None
-    _units = None
-    _links = None
-
-    # generic system configuration methods
-
     def __init__(self, *args, **kwargs):
         """Initialize system configuration and system parameter configuration."""
     
-        # set default system configuration dictionary
-        if hasattr(self.__class__, '_getSystemDefaultConfig') \
-            and callable(getattr(self.__class__, '_getSystemDefaultConfig')):
-            self._config = self._getSystemDefaultConfig()
-        else:
-            self._config = {}
-
-        # merge with given configuration dictionary
-        if 'config' in kwargs \
-            and isinstance(kwargs['config'], dict):
-            nemoa.common.dictMerge(kwargs['config'], self._config)
-
-        # set default system parameter configuration dictionary
-        self._params = {}
-        if hasattr(self.__class__, '_initParamConfiguration') \
-            and callable(getattr(self.__class__, '_initParamConfiguration')):
-            self._initParamConfiguration()
+        # set configuration and update units and links
+        self.setConfig(kwargs['config'] if 'config' in kwargs else {})
 
     def configure(self, dataset = None, network = None, *args, **kwargs):
         """Configure system and subsystems to network and dataset."""
@@ -43,16 +20,64 @@ class system:
         nemoa.log('info', "configure system '%s'" % (self.getName()))
         nemoa.setLog(indent = '+1')
         if not self.checkNetwork(network):
-            nemoa.log('error', 'system could not be configured: network is not valid!')
+            nemoa.log('error', """
+                system could not be configured:
+                network is not valid!""")
             nemoa.setLog(indent = '-1')
             return False
         if not self.checkDataset(dataset):
-            nemoa.log('error', 'system could not be configured: dataset is not valid!')
+            nemoa.log('error', """
+                system could not be configured:
+                dataset is not valid!""")
             nemoa.setLog(indent = '-1')
             return False
         retVal = self._configure(dataset = dataset, network = network, *args, **kwargs)
         nemoa.setLog(indent = '-1')
         return retVal
+
+    def setConfig(self, config):
+        """Set configuration."""
+        
+        # create local configuration dictionary
+        if not hasattr(self, '_config'):
+            self._config = {'check': {}}
+            for key in ['params', 'init', 'optimize']:
+                if not key in self._config:
+                    self._config[key] = self._getDefault(key)
+        
+        # overwrite / merge local with given configuration
+        nemoa.common.dictMerge(config, self._config)
+
+        # create / update local unit and link dictionaries
+        if not hasattr(self, '_params'):
+            self._params = {}
+        self.setUnits(self._getUnitsFromConfig())
+        self.setLinks(self._getLinksFromConfig())
+
+        self._config['check']['config'] = True
+        return True
+
+    def setUnits(self, units = None, initialize = True):
+        """Set units and update system parameters."""
+        if not 'units' in self._params:
+            self._params['units'] = []
+        if not hasattr(self, 'units'):
+            self.units = {}
+        if initialize:
+            return self._setUnits(units) \
+                and self._initUnits()
+        return self._setUnits(units)
+
+    def setLinks(self, links = None, initialize = True):
+        """Set links using list with 2-tuples containing unit labels."""
+        if not 'links' in self._params:
+            self._params['links'] = {}
+        if not hasattr(self, 'links'):
+            self.links = {}
+        if initialize:
+            return self._setLinks(links) \
+                and self._indexLinks() and self._initLinks()
+        return self._indexLinks()
 
     def getName(self):
         """Return name of system."""
@@ -184,7 +209,9 @@ class system:
     def setParams(self, params, update = True):
         """Set system parameters using from dictionary."""
         if not self._checkParams(params): # check parameter dictionary
-            nemoa.log("error", "could not set system parameters: invalid 'params' dictionary given!")
+            nemoa.log("error", """
+                could not set system parameters:
+                invalid 'params' dictionary given!""")
             return False
         if update:
             self._setParams(params)
@@ -196,21 +223,33 @@ class system:
         """Reset system parameters using dataset instance."""
         return self.initParams(dataset)
 
-    def optimizeParams(self, *args, **kwargs):
-        """Optimize system parameters using dataset and preferred algorithm."""
+    def optimizeParams(self, dataset, schedule):
+        """Optimize system parameters using data and given schedule."""
 
-        # get optimization schedule
-        if 'params' in kwargs:
-            if not self.getType() in kwargs['params']:
-                nemoa.log('error', """
-                    could not optimize model:
-                    schedule '%s' does not include '%s'
-                    """ % (kwargs['name'], self.getType()))
-                return False
-            nemoa.common.dictMerge(kwargs['params'][self.getType()],
-                self._config['optimize'])
+        # check schedule
+        if 'params' in schedule \
+            and not self.getType() in schedule['params']:
+            nemoa.log('error', """
+                could not optimize model:
+                optimization schedule '%s' does not include '%s'
+                """ % (schedule['name'], self.getType()))
+            return False
 
-        return self._optimizeParams(*args, **kwargs)
+        # update local optimization schedule
+        config = self._getDefault('optimize')
+        nemoa.common.dictMerge(self._config['optimize'], config)
+        nemoa.common.dictMerge(schedule['params'][self.getType()] \
+            if 'params' in schedule else {}, config)
+        self._config['optimize'] = config
+
+        # check dataset
+        if (not 'checkDataset' in config
+            or config['checkDataset'] == True) \
+            and not self._checkDataset(dataset):
+            return False
+
+        # optimize system parameters
+        return self._optimizeParams(dataset, schedule)
 
     # generic unit methods
 
@@ -229,32 +268,6 @@ class system:
     def getUnitEvalInfo(self, *args, **kwargs):
         """Return information about unit evaluation functions."""
         return self._getUnitEvalInformation(*args, **kwargs)
-
-    def setUnits(self, units = [{}], update = False, **kwargs):
-        """Set units and update system parameters."""
-        #if update:
-            #if not self._checkParams(self._params):
-                #nemoa.log('error', """
-                    #could not update units:
-                    #units have not yet been set!""")
-                #return False
-            #self._setUnits(units)
-            #return True
-
-        self._setUnits(units)
-        
-        if not update:
-            self._initUnits()
-        return True
-
-    def setLinks(self, links = None, update = False, *args, **kwargs):
-        """Set links using list with 2-tuples containing unit labels."""
-        if update:
-            return self._indexLinks()
-        self._setLinks(links)
-        self._indexLinks()
-        self._initLinks()
-        return True
 
     def unlinkUnit(self, unit, *args, **kwargs):
         """Unlink unit (if present)."""
@@ -468,7 +481,7 @@ class inspector:
     __config = None
     __system = None
     __state = {}
-    
+
     def __init__(self, system = None):
         self.__configure(system)
 
@@ -509,8 +522,6 @@ class inspector:
     def trigger(self):
         """Update epoch and time and calculate """
 
-        import time
-
         config = self.__system._config['optimize']
         epochTime = time.time()
 
@@ -525,14 +536,17 @@ class inspector:
                 self.__state['estimateEnded'] = False
         self.__state['epoch'] += 1
 
+        # estimate time needed to finish current optimization schedule
         if self.__estimate and not self.__state['estimateEnded']:
             if not self.__state['estimateStarted']:
                 nemoa.log('info', """
                     estimating time for calculation
                     of %i updates ...""" % (config['updates']))
                 self.__state['estimateStarted'] = True
-            if (epochTime - self.__state['startTime']) > config['estimateTimeWait']:
-                estim = ((epochTime - self.__state['startTime']) / (self.__state['epoch'] + 1)
+            if (epochTime - self.__state['startTime']) \
+                > config['estimateTimeWait']:
+                estim = ((epochTime - self.__state['startTime']) \
+                    / (self.__state['epoch'] + 1)
                     * config['updates'] * config['iterations'])
                 estimStr = time.strftime('%H:%M',
                     time.localtime(time.time() + estim))
@@ -540,24 +554,29 @@ class inspector:
                     % (estim, estimStr))
                 self.__state['estimateEnded'] = True
 
+        # iterative evaluate model in a given time interval
         if self.__inspect:
             if self.__data == None:
-                nemoa.log('warning', """monitoring the process
-                    of optimization is not possible:
+                nemoa.log('warning', """
+                    monitoring the process of optimization is not possible:
                     testdata is needed!""")
                 self.__inspect = False
             elif self.__state['epoch'] == config['updates']:
-                value = self.__system._getDataEval(
+                value = self.__system.getDataEval(
                     data = self.__data, func = config['inspectFunction'])
                 measure = config['inspectFunction'].title()
                 nemoa.log('info', 'final: %s = %.3f' % (measure, value))
-            elif ((epochTime - self.__state['inspectTime']) > config['inspectTimeInterval']) \
-                and not (self.__estimate and self.__state['estimateStarted'] and not self.__state['estimateEnded']):
-                value = self.__system._getDataEval(
+            elif ((epochTime - self.__state['inspectTime']) \
+                > config['inspectTimeInterval']) \
+                and not (self.__estimate \
+                and self.__state['estimateStarted'] \
+                and not self.__state['estimateEnded']):
+                value = self.__system.getDataEval(
                     data = self.__data, func = config['inspectFunction'])
-                progress = float(self.__state['epoch']) / float(config['updates']) * 100.0
+                progress = float(self.__state['epoch']) \
+                    / float(config['updates']) * 100.0
                 measure = config['inspectFunction'].title()
-                nemoa.log('info', """finished %.1f%%: %s = %.3f""" \
+                nemoa.log('info', """finished %.1f%%: %s = %.5f""" \
                     % (progress, measure, value))
                 self.__state['inspectTime'] = epochTime
         

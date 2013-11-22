@@ -1,31 +1,17 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import nemoa
 
-from .unitrelationgraph import *
-from .samplerelationgraph import *
+import importlib
 
-def new(config = {}, **kwargs):
+def new(*args, **kwargs):
+    """Return new nemoa.plot.[package].[class] instance."""
+    config = kwargs['config'] if 'config' in kwargs \
+        else {'package': 'base', 'class': 'empty'}
+    module = importlib.import_module('nemoa.plot.' + config['package'])
+    if hasattr(module, config['class']):
+        return getattr(module, config['class'])(*args, **kwargs)
+    return None
 
-    # return 'empty plot instance' if no configuration is given
-    if config == None:
-        import nemoa.plot.base
-        return nemoa.plot.base.empty()
-
-    # import package
-    if not 'package' in config:
-        nemoa.log("warning", "could not create plot: config is not valid")
-        return None
-    package = 'nemoa.plot.' + config['package']
-    try:
-        exec "import %s" % (package)
-    except:
-        nemoa.log("warning", "could not create plot: package '%s' could not be found! (case sensitive)" % (package))
-        return None
-
-    # create class instance
-    try:
-        exec "plot = %s.%s(config = config)" % (package, config['class'])
-        return plot
-    except:
-        nemoa.log("warning", "could not create plot: class '%s' could not be found in package '%s'!" % (config['class'], package))
-        return None
+def empty():
+    """Return new nemoa.plot.base.empty instance."""
+    return new()
