@@ -43,7 +43,7 @@ class system:
             self._config = {'check': {}}
             for key in ['params', 'init', 'optimize']:
                 if not key in self._config:
-                    self._config[key] = self._getDefault(key)
+                    self._config[key] = self.default(key)
         
         # overwrite / merge local with given configuration
         nemoa.common.dictMerge(config, self._config)
@@ -236,7 +236,7 @@ class system:
             return False
 
         # update local optimization schedule
-        config = self._getDefault('optimize')
+        config = self.default('optimize')
         nemoa.common.dictMerge(self._config['optimize'], config)
         nemoa.common.dictMerge(schedule['params'][self.getType()] \
             if 'params' in schedule else {}, config)
@@ -550,7 +550,7 @@ class inspector:
                     * config['updates'] * config['iterations'])
                 estimStr = time.strftime('%H:%M',
                     time.localtime(time.time() + estim))
-                nemoa.log('info', 'estimation: %.1fs (finishing time: %s)'
+                nemoa.log('info', 'estimation: %ds (finishing time: %s)'
                     % (estim, estimStr))
                 self.__state['estimateEnded'] = True
 
@@ -576,7 +576,7 @@ class inspector:
                 progress = float(self.__state['epoch']) \
                     / float(config['updates']) * 100.0
                 measure = config['inspectFunction'].title()
-                nemoa.log('info', """finished %.1f%%: %s = %.5f""" \
+                nemoa.log('info', """finished %.1f%%: %s = %0.4f""" \
                     % (progress, measure, value))
                 self.__state['inspectTime'] = epochTime
         

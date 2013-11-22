@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 ########################################################################
-# Module contains base class for generic artificial neuronal networks  #
-# aimed to provide common attributes and subclasses                    #
-# to special forms of artifiacial neuronal networks                    #
+# This python module contains a generic class for layered artificial   #
+# neuronal networks aimed to provide common attributes and subclasses  #
+# to special subtypes of artificial neuronal networks                  #
 ########################################################################
 
 import nemoa.system.base, numpy
@@ -99,6 +99,89 @@ class ann(nemoa.system.base.system):
             return False
         return self._initUnits(dataset) \
             and self._initLinks(dataset)
+
+    def _backpropagation(self, dataset, schedule):
+        nemoa.log('info', 'starting backpropagation of error')
+        nemoa.setLog(indent = '+1')
+
+        # get mapping
+        mapping = self._getMapping()
+        inputs = mapping[0]
+        outputs = mapping[-1]
+
+        # initialise inspector
+        if self._config['optimize']['inspect']:
+            inspector = nemoa.system.base.inspector(self)
+            inspector.setTestData(\
+                dataset.getData(cols = (inputs, outputs)))
+
+        # optimize weights in last layer
+        data = dataset.getData(cols = (inputs, outputs))
+
+        ################################################################
+        # test to optimize hidden layer
+        # -> fails # how to?
+        ################################################################
+
+        lDataIn = data[0]
+        lDataOut = self.getUnitValues(data[1], mapping = ('anchor', 'h'))
+        lData = (lDataIn, lDataOut)
+
+        for epoch in xrange(self._config['optimize']['updates']):
+        
+            # update params, starting from last layer to first layer
+            lModelOut = self.getUnitValues(lDataIn, mapping = ('tf', 'h'))
+            lModel = (lDataIn, lModelOut)
+
+            updates = self.units['h'].updates(data = lData, model = lModel, source = self.units['tf'].params)
+            self.units['h'].update(updates)
+
+            # monitoring of optimization process
+            inspector.trigger()
+
+        inspector.reset()
+
+        ################################################################
+        # test to optimize anchor layer
+        # -> looks ok
+        ################################################################
+        
+        lDataIn = self.getUnitValues(data[0], mapping = ('tf', 'h'))
+
+        for epoch in xrange(self._config['optimize']['updates']):
+        
+            # update params, starting from last layer to first layer
+            lModelOut = self.getUnitValues(lDataIn, mapping = ('h', 'anchor'))
+            lData = (lDataIn, data[1])
+            lModel = (lDataIn, lModelOut)
+
+            updates = self.units['anchor'].updates(data = lData, model = lModel, source = self.units['h'].params)
+            self.units['anchor'].update(updates)
+
+            # monitoring of optimization process
+            inspector.trigger()
+        quit()
+
+
+        calcData = numpy.dot(inData.T, outData)
+
+        inModel = inData
+        vVar = self.units['anchor'].params['lvar']
+
+        for epoch in xrange(self._config['optimize']['updates']):
+            outModel = self.getUnitValues(inData, mapping = ('h', 'anchor'))
+
+            calcModel = numpy.dot(inModel.T, outModel)
+            calcDiff = (calcData - calcModel) / float(outData.size)
+            calcDiffVar = calcDiff # / vVar
+
+            self._params['links'][(1,2)]['W'] += \
+                self._config['optimize']['updateRate'] * calcDiffVar
+
+
+
+        nemoa.setLog(indent = '-1')
+        return True
 
 
     def _getDataEval(self, data, func = 'performance', **kwargs):
@@ -590,6 +673,9 @@ class ann(nemoa.system.base.system):
                 return self.expectFromGaussInput(data, source,
                     self.getWeights(source))
 
+        def updates(self, data, model, source):
+            return self.getParamUpdates(data, model, self.getWeights(source))
+
         def getSamplesFromInput(self, data, source):
             if source['class'] == 'sigmoid':
                 return self.getSamples(self.expectFromSigmoidInput(
@@ -669,6 +755,14 @@ class ann(nemoa.system.base.system):
             calculated from a gaussian input layer."""
             return self.sigmoid(self.params['bias'] +
                 numpy.dot(data / numpy.exp(source['lvar']), weights))
+
+        def getParamUpdates(self, data, model, weights):
+            """Return parameter updates of a sigmoidal output layer
+            calculated from real data and modeled data."""
+            shape = (1, len(self.params['label']))
+            updBias = \
+                numpy.mean(data[1] - model[1], axis = 0).reshape(shape)
+            return { 'bias': updBias }
 
         def getValues(self, data):
             """Return median of bernoulli distributed layer
@@ -752,6 +846,25 @@ class ann(nemoa.system.base.system):
             """Return expected values of a gaussian output layer
             calculated from a sigmoid input layer."""
             return self.params['bias'] + numpy.dot(data, weights)
+
+        def getParamUpdates(self, data, model, weights):
+            """Return parameter updates of a gaussian output layer
+            calculated from real data and modeled data."""
+            shape = (1, len(self.params['label']))
+            var = numpy.exp(self.params['lvar'])
+            bias = self.params['bias']
+            
+            updBias = \
+                numpy.mean(data[1] - model[1], axis = 0).reshape(shape) / var
+            updData = \
+                numpy.mean(0.5 * (data[1] - bias) ** 2 - data[1]
+                * numpy.dot(data[0], weights), axis = 0)
+            updModel = \
+                numpy.mean(0.5 * (model[1] - bias) ** 2 - model[1]
+                * numpy.dot(model[0], weights), axis = 0)
+            updLVar = (updData - updModel).reshape(shape) / var
+
+            return { 'bias': updBias, 'lvar': updLVar }
 
         @staticmethod
         def check(layer):

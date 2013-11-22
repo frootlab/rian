@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 ########################################################################
-# This python module contains various types of restricted              #
+# This python module contains various classes of restricted            #
 # boltzmann machines aimed for data modeling and per layer pretraining #
 # of multilayer feedforward artificial neuronal networks               #
 ########################################################################
@@ -24,7 +24,7 @@ class rbm(nemoa.system.ann.ann):
         Geoffrey E. Hinton, University of Toronto, 2010"""
 
     @staticmethod
-    def _getDefault(key):
+    def default(key):
         """Return RBM default configuration as dictionary."""
         return {
             'params': {
@@ -85,28 +85,6 @@ class rbm(nemoa.system.ann.ann):
         return numpy.sum(vEnergy) \
             + numpy.sum(hEnergy) \
             + numpy.sum(lEnergy)
-
-    def _getDataEvalError(self, data, **kwargs):
-        """Return system error respective to data."""
-        return numpy.sum(self._getUnitEvalError(data, **kwargs)[0])
-
-    def getUnitError(self, data, mapping = None, block = [], **kwargs):
-        """Return euclidean reconstruction error of units.
-        
-        Description:
-            distance := ||dataOut - modelOut||
-        """
-
-        if mapping == None:
-            mapping = self._getMapping()
-        if block == []:
-            modelOut = self.getUnitExpect(data[0], mapping)
-        else:
-            dataInCopy = numpy.copy(data[0])
-            for i in block:
-                dataInCopy[:,i] = numpy.mean(dataInCopy[:,i])
-            modelOut = self.getUnitExpect(dataInCopy, mapping)
-        return numpy.sqrt(((data[1] - modelOut) ** 2).sum(axis = 0))
 
     @staticmethod
     def _getUnitsFromNetwork(network):
@@ -663,7 +641,7 @@ class grbm(rbm):
         KyungHyun Cho, Alexander Ilin and Tapani Raiko, ICANN 2011"""
 
     @staticmethod
-    def _getDefault(key):
+    def default(key):
         """Return GRBM default configuration as dictionary."""
         return {
             'params': {

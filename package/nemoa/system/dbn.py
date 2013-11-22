@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 ########################################################################
-# Module contains special forms of multilayer feedforward              #
-# artificial neuronal networks aimed for data modeling                 #
+# This python module contains special classes of multilayer            #
+# feedforward artificial neuronal networks aimed for data modeling     #
 ########################################################################
 
 import nemoa.system.ann, numpy
@@ -19,7 +19,7 @@ class dbn(nemoa.system.ann.ann):
     """
 
     @staticmethod
-    def _getDefault(key):
+    def default(key):
         """Return DBN default configuration as dictionary."""
         return {
             'params': {
@@ -75,22 +75,22 @@ class dbn(nemoa.system.ann.ann):
         # pretraining neuronal network using
         # layerwise restricted boltzmann machines as subsystems
         if schedule['params']['dbn.dbn']['preTraining']:
-            self._preTraining(dataset, **schedule)
+            self._preTraining(dataset, schedule)
 
         # finetuning neuronal network using backpropagation
         if schedule['params']['dbn.dbn']['fineTuning']:
-            self._fineTuning(dataset, **schedule)
+            self._fineTuning(dataset, schedule)
         return True
 
-    def _preTraining(self, dataset, **config):
+    def _preTraining(self, dataset, schedule):
         """Pretraining ANN using Restricted Boltzmann Machines."""
 
         nemoa.log('info', 'pretraining system')
         nemoa.setLog(indent = '+1')
 
-        #
-        # Configure subsystems for pretraining
-        #
+        ################################################################
+        # Configure subsystems for pretraining                         #
+        ################################################################
 
         nemoa.log('info', 'configure subsystems')
         nemoa.setLog(indent = '+1')
@@ -167,9 +167,9 @@ class dbn(nemoa.system.ann.ann):
         self._config['check']['subSystems'] = True
         nemoa.setLog(indent = '-1')
 
-        #
-        # Optimize subsystems
-        #
+        ################################################################
+        # Optimize subsystems                                          #
+        ################################################################
 
         # create copy of dataset values (before transformation)
         datasetCopy = dataset._get()
@@ -196,16 +196,16 @@ class dbn(nemoa.system.ann.ann):
             system.initParams(dataset)
 
             # optimize (free) system parameter
-            system.optimizeParams(dataset, **config)
+            system.optimizeParams(dataset, schedule)
 
             nemoa.setLog(indent = '-1')
 
         # reset data to initial state (before transformation)
         dataset._set(**datasetCopy)
 
-        #
-        # Copy and enrolle parameters of subsystems to dbn
-        #
+        ################################################################
+        # Copy and enrolle parameters of subsystems to dbn             #
+        ################################################################
 
         nemoa.log('info', 'initialize system with subsystem parameters')
         nemoa.setLog(indent = '+1')
@@ -243,10 +243,10 @@ class dbn(nemoa.system.ann.ann):
                     links[(id, id + 1)]['init'][attrib].T
             del links[(id, id + 1)]['init']
 
-        #
-        # Cleanup units and links of visible layers
-        #
-        
+        ################################################################
+        # Cleanup units and links of visible layers                    #
+        ################################################################
+
         nemoa.log('info', 'cleanup unit and linkage parameter arrays')
         self._removeUnits(self._getMapping()[0], outputs)
         self._removeUnits(self._getMapping()[-1], inputs)
@@ -254,46 +254,10 @@ class dbn(nemoa.system.ann.ann):
         nemoa.setLog(indent = '-2')
         return True
 
-    def _fineTuning(self, dataset, **config):
-        """Finetuning system using backpropagation."""
+    def _fineTuning(self, dataset, schedule):
+        """Finetuning system using Backpropagation of Error."""
         nemoa.log('info', 'finetuning system')
         nemoa.setLog(indent = '+1')
-
-        # get mapping
-        mapping = self._getMapping()
-        inputs = mapping[0]
-        outputs = mapping[-1]
-
-        testData = dataset.getData(cols = (inputs, outputs))
-
-        # initialise inspector
-        if self._config['optimize']['inspect']:
-            inspector = nemoa.system.base.inspector(self)
-            inspector.setTestData(testData)
-
-        # optimize weights in last layer
-        data = dataset.getData(cols = (inputs, outputs))
-        inData = self.getUnitValues(data[0], mapping = ('tf', 'h'))
-        outData = data[1]
-        calcData = numpy.dot(inData.T, outData)
-
-        inModel = inData
-        vVar = self.units['anchor'].params['lvar']
-
-        for epoch in xrange(self._config['optimize']['updates']):
-            outModel = self.getUnitValues(inData, mapping = ('h', 'anchor'))
-
-            calcModel = numpy.dot(inModel.T, outModel)
-            calcDiff = (calcData - calcModel) / float(outData.size)
-            calcDiffVar = calcDiff # / vVar
-
-            self._params['links'][(1,2)]['W'] += self._config['optimize']['updateRate'] * calcDiffVar
-
-            # inspect
-            inspector.trigger()
-
-            #if (i % 100) == 1:
-                #nemoa.log('info', 'Performance: ' + str(self.getPerformance(data[inputs], dataOut = outData)))
-
+        self._backpropagation(dataset, schedule)
         nemoa.setLog(indent = '-1')
         return True
