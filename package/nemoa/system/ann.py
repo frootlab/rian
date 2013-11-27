@@ -101,7 +101,8 @@ class ann(nemoa.system.base.system):
             and self._initLinks(dataset)
 
     def _backpropagation(self, dataset, schedule):
-        nemoa.log('info', 'starting backpropagation of error')
+        nemoa.log('info', 'starting logistic coding cost minimization')
+        #nemoa.log('info', 'starting backpropagation of error')
         nemoa.setLog(indent = '+1')
 
         # get mapping
@@ -115,74 +116,174 @@ class ann(nemoa.system.base.system):
             inspector.setTestData(\
                 dataset.getData(cols = (inputs, outputs)))
 
-        # optimize weights in last layer
+        # get training data
         data = dataset.getData(cols = (inputs, outputs))
 
         ################################################################
-        # test to optimize hidden layer
-        # -> fails # how to?
+        # test to optimize both link layers
+        # -> 2DO
         ################################################################
 
-        lDataIn = data[0]
-        lDataOut = self.getUnitValues(data[1], mapping = ('anchor', 'h'))
-        lData = (lDataIn, lDataOut)
-
         for epoch in xrange(self._config['optimize']['updates']):
+
+            #
+            # input link layer
+            #
         
             # update params, starting from last layer to first layer
+            lDataIn = data[0]
+            lDataOut = self.getUnitValues(data[1], mapping = ('anchor', 'h'))
+            lData = (lDataIn, lDataOut)
             lModelOut = self.getUnitValues(lDataIn, mapping = ('tf', 'h'))
             lModel = (lDataIn, lModelOut)
 
-            updates = self.units['h'].updates(data = lData, model = lModel, source = self.units['tf'].params)
-            self.units['h'].update(updates)
+            updates01 = self.annLinks().updates(data = lData, model = lModel)
 
-            # monitoring of optimization process
-            inspector.trigger()
-
-        inspector.reset()
-
-        ################################################################
-        # test to optimize anchor layer
-        # -> looks ok
-        ################################################################
-        
-        lDataIn = self.getUnitValues(data[0], mapping = ('tf', 'h'))
-
-        for epoch in xrange(self._config['optimize']['updates']):
+            #
+            # output link layer
+            #
         
             # update params, starting from last layer to first layer
+            lDataIn = self.getUnitValues(data[0], mapping = ('tf', 'h'))
             lModelOut = self.getUnitValues(lDataIn, mapping = ('h', 'anchor'))
             lData = (lDataIn, data[1])
             lModel = (lDataIn, lModelOut)
 
-            updates = self.units['anchor'].updates(data = lData, model = lModel, source = self.units['h'].params)
-            self.units['anchor'].update(updates)
+            updates12 = self.annLinks().updates(data = lData, model = lModel)
 
-            # monitoring of optimization process
-            inspector.trigger()
-        quit()
+            #
+            # output unit layer
+            #
 
+            updates2 = self.units['anchor'].updates(data = lData, model = lModel, source = self.units['h'].params)
+            
+            #
+            #
+            #
 
-        calcData = numpy.dot(inData.T, outData)
+            updateRate = 0.1
 
-        inModel = inData
-        vVar = self.units['anchor'].params['lvar']
+            weightRate = 1.0
+            biasRate = 0.01
+            lvarRate = 0.0
 
-        for epoch in xrange(self._config['optimize']['updates']):
-            outModel = self.getUnitValues(inData, mapping = ('h', 'anchor'))
+            layerInRate = 0.1
+            layerOutRate = 1.0
 
-            calcModel = numpy.dot(inModel.T, outModel)
-            calcDiff = (calcData - calcModel) / float(outData.size)
-            calcDiffVar = calcDiff # / vVar
+            self._params['links'][(0,1)]['W'] += \
+                self._config['optimize']['updateRate'] \
+                * updates01['W'] * updateRate * weightRate * layerInRate
 
             self._params['links'][(1,2)]['W'] += \
-                self._config['optimize']['updateRate'] * calcDiffVar
+                self._config['optimize']['updateRate'] \
+                * updates12['W'] * updateRate * weightRate * layerOutRate
 
+            updates2['lvar'] = updateRate * lvarRate * layerOutRate * updates2['lvar']
+            updates2['bias'] = updateRate * biasRate * layerOutRate * updates2['bias']
+            #print updates2
 
+            self.units['anchor'].update(updates2)
+
+            inspector.trigger()
+            
+            #if inspector.difference() < 0:
+            #    nemoa.log('warning', """
+            #        aborting optimization:
+            #        diverging weights and objective function!""")
+            #    break
+
+        #quit()
+
+        #################################################################
+        ## test to optimize input link layer (tf -> hidden)
+        ## -> looks good
+        #################################################################
+
+        #lDataIn = data[0]
+        #lDataOut = self.getUnitValues(data[1], mapping = ('anchor', 'h'))
+        #lData = (lDataIn, lDataOut)
+
+        #for epoch in xrange(self._config['optimize']['updates']):
+        
+            ## update params, starting from last layer to first layer
+            #lModelOut = self.getUnitValues(lDataIn, mapping = ('tf', 'h'))
+            #lModel = (lDataIn, lModelOut)
+            
+            #updates = self.annLinks().updates(data = lData, model = lModel)
+            
+            #self._params['links'][(0,1)]['W'] += \
+                #self._config['optimize']['updateRate'] * updates['W']
+
+            #inspector.trigger()
+        
+        #quit()
+
+        #################################################################
+        ## test to optimize hidden layer
+        ## -> fails # why?
+        #################################################################
+
+        #lDataIn = data[0]
+        #lDataOut = self.getUnitValues(data[1], mapping = ('anchor', 'h'))
+        #lData = (lDataIn, lDataOut)
+
+        #for epoch in xrange(self._config['optimize']['updates']):
+        
+            ## update params, starting from last layer to first layer
+            #lModelOut = self.getUnitValues(lDataIn, mapping = ('tf', 'h'))
+            #lModel = (lDataIn, lModelOut)
+
+            #updates = self.units['h'].updates(data = lData, model = lModel, source = self.units['tf'].params)
+            #self.units['h'].update(updates)
+
+            ## monitoring of optimization process
+            #inspector.trigger()
+
+        #inspector.reset()
+
+        #################################################################
+        ## test to optimize output unit layer (anchor)
+        ## -> looks good!
+        #################################################################
+        
+        #lDataIn = self.getUnitValues(data[0], mapping = ('tf', 'h'))
+
+        #for epoch in xrange(self._config['optimize']['updates']):
+        
+            ## update params, starting from last layer to first layer
+            #lModelOut = self.getUnitValues(lDataIn, mapping = ('h', 'anchor'))
+            #lData = (lDataIn, data[1])
+            #lModel = (lDataIn, lModelOut)
+
+            #updates = self.units['anchor'].updates(data = lData, model = lModel, source = self.units['h'].params)
+            #self.units['anchor'].update(updates)
+
+            ## monitoring of optimization process
+            #inspector.trigger()
+
+        #################################################################
+        ## test to optimize output link layer (hidden -> anchor)
+        ## -> looks good
+        #################################################################
+
+        #lDataIn = self.getUnitValues(data[0], mapping = ('tf', 'h'))
+
+        #for epoch in xrange(self._config['optimize']['updates']):
+        
+            ## update params, starting from last layer to first layer
+            #lModelOut = self.getUnitValues(lDataIn, mapping = ('h', 'anchor'))
+            #lData = (lDataIn, data[1])
+            #lModel = (lDataIn, lModelOut)
+            
+            #updates = self.annLinks().updates(data = lData, model = lModel)
+            
+            #self._params['links'][(1,2)]['W'] += \
+                #self._config['optimize']['updateRate'] * updates['W']
+
+            #inspector.trigger()
 
         nemoa.setLog(indent = '-1')
         return True
-
 
     def _getDataEval(self, data, func = 'performance', **kwargs):
         """Return scalar value for system evaluation."""
@@ -649,6 +750,27 @@ class ann(nemoa.system.base.system):
 
     class annLinks():
         """Class to unify common ann link attributes."""
+
+        params = {}
+
+        def __init__(self):
+            pass
+
+        @staticmethod
+        def updates(data, model):
+            """Return weight updates of a link layer."""
+            pData = numpy.dot(data[0].T, data[1])
+            pModel = numpy.dot(model[0].T, model[1])
+            wDelta = (pData - pModel) / float(data[1].size)
+            #calcDiff = (pData - pModel) / float(data[1].size)
+            #calcDiffVar = calcDiff # / vVar
+            return { 'W': wDelta }
+            #shape = (1, len(self.params['label']))
+            #updBias = \
+            #    numpy.mean(data[1] - model[1], axis = 0).reshape(shape)
+            #return { 'bias': updBias }
+
+
         pass
 
     ####################################################################

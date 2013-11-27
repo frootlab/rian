@@ -519,6 +519,16 @@ class inspector:
         """Reset inspection."""
         self.__state = {}
 
+    def difference(self):
+        if not 'inspection' in self.__state:
+            return 0.0
+        if self.__state['inspection'] == None:
+            return 0.0
+        if self.__state['inspection'].shape[0] < 2:
+            return 0.0
+        return self.__state['inspection'][-1, 1] - \
+            self.__state['inspection'][-2, 1]
+
     def trigger(self):
         """Update epoch and time and calculate """
 
@@ -528,7 +538,8 @@ class inspector:
         if self.__state == {}:
             self.__state = {
                 'startTime': epochTime,
-                'epoch': 0}
+                'epoch': 0,
+                'inspection': None}
             if self.__inspect:
                 self.__state['inspectTime'] = epochTime
             if self.__estimate:
@@ -579,5 +590,12 @@ class inspector:
                 nemoa.log('info', """finished %.1f%%: %s = %0.4f""" \
                     % (progress, measure, value))
                 self.__state['inspectTime'] = epochTime
-        
+                if self.__state['inspection'] == None:
+                    self.__state['inspection'] = \
+                        numpy.array([[progress, value]])
+                else:
+                    self.__state['inspection'] = \
+                        numpy.vstack((self.__state['inspection'], \
+                        numpy.array([[progress, value]])))
+
         return True
