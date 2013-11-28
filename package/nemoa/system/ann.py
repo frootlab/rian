@@ -100,17 +100,26 @@ class ann(nemoa.system.base.system):
         return self._initUnits(dataset) \
             and self._initLinks(dataset)
 
+    #
+    # 2DO: implement GRprop!!
+    #
+
+    def _bpGRprop(self, dataset, schedule):
+        pass
+
     def _backpropagation(self, dataset, schedule):
-        nemoa.log('info', 'starting logistic coding cost minimization')
-        #nemoa.log('info', 'starting backpropagation of error')
+        return self._Rprop(dataset, schedule)
+
+    def _Rprop(self, dataset, schedule):
+        nemoa.log('info', 'starting resiliant coding cost minimization')
         nemoa.setLog(indent = '+1')
 
         # get mapping
-        mapping = self._getMapping()
-        inputs = mapping[0]
-        outputs = mapping[-1]
+        layers = self._getMapping()
+        inputs = layers[0]
+        outputs = layers[-1]
 
-        # initialise inspector
+        # init inspector
         if self._config['optimize']['inspect']:
             inspector = nemoa.system.base.inspector(self)
             inspector.setTestData(\
@@ -119,70 +128,160 @@ class ann(nemoa.system.base.system):
         # get training data
         data = dataset.getData(cols = (inputs, outputs))
 
-        ################################################################
-        # test to optimize both link layers
-        # -> 2DO
-        ################################################################
+        # initialize update rates
+        incFactor = 1.2
+        decFactor = 0.5
+        initialUpdateRate = 0.01
+        minFactor = 0.000006
+        maxFactor = 50
+        unitUpdates = {}
+        unitUpdateRates = {}
+        linkUpdates = {}
+        linkUpdateRates = {}
 
+        for inID, lName in enumerate(layers[1:]):
+            
+            # get values for real data and model data
+            lData = (
+                self.getUnitValues(data[0], mapping = layers[:inID + 1]),
+                self.getUnitValues(data[1], mapping = layers[inID + 1:][::-1]))
+            lModel = (lData[0],
+                self.getUnitValues(lData[0], mapping = layers[inID:(inID + 2)]))
+
+            # calulate updates for unit layer
+            unitUpdates[lName] = \
+                self.units[lName].getUpdates(data = lData, model = lModel,
+                source = self.units[layers[inID]].params)
+            unitUpdateRates[lName] = \
+                self.units[lName].multiply(
+                    self.units[lName].one(unitUpdates[lName]), initialUpdateRate)
+
+            # calculate updates for link layer
+            linkUpdates[(inID, inID + 1)] = \
+                self.annLinks().getUpdates(data = lData, model = lModel)
+            linkUpdateRates[(inID, inID + 1)] = \
+                self.annLinks().multiply(
+                    self.annLinks().one(linkUpdates[(inID, inID + 1)]), initialUpdateRate)
+
+        inspector.appendToStore(
+            units = unitUpdates, unitRates = unitUpdateRates,
+            links = linkUpdates, linkRates = linkUpdateRates)
+
+        # update parameters
         for epoch in xrange(self._config['optimize']['updates']):
 
-            #
-            # input link layer
-            #
-        
-            # update params, starting from last layer to first layer
-            lDataIn = data[0]
-            lDataOut = self.getUnitValues(data[1], mapping = ('anchor', 'h'))
-            lData = (lDataIn, lDataOut)
-            lModelOut = self.getUnitValues(lDataIn, mapping = ('tf', 'h'))
-            lModel = (lDataIn, lModelOut)
+            # obtain previous / initial updates and update rates
+            prevUpdates = inspector.getLastFromStore()
+            prevUnitUpdates = prevUpdates['units']
+            prevUnitRates = prevUpdates['unitRates']
+            prevLinkUpdates = prevUpdates['links']
+            prevLinkRates = prevUpdates['linkRates']
 
-            updates01 = self.annLinks().updates(data = lData, model = lModel)
+            # obtain direction and magnitude for updates (gradient descent)
+            unitUpdates = {}
+            unitUpdateRates = {}
+            linkUpdates = {}
+            linkUpdateRates = {}
+
+            for inID, lName in enumerate(layers[1:]):
+
+                # get values for real data and model data
+                lData = (
+                    self.getUnitValues(data[0], mapping = layers[:inID + 1]),
+                    self.getUnitValues(data[1], mapping = layers[inID + 1:][::-1]))
+                lModel = (lData[0],
+                    self.getUnitValues(lData[0], mapping = layers[inID:(inID + 2)]))
+
+                # calulate updates for unit layer
+                unitUpdates[lName] = \
+                    self.units[lName].getUpdates(data = lData, model = lModel,
+                    source = self.units[layers[inID]].params)
+                unitUpdateRates[lName] = \
+                    self.units[lName].multiply(
+                    self.units[lName].minmax(
+                    self.units[lName].multiply(prevUnitRates[lName],
+                    self.units[lName].sign(self.units[lName].multiply(
+                    prevUnitUpdates[lName], unitUpdates[lName]),
+                    (decFactor, 0.0, incFactor))), minFactor, maxFactor),
+                    self.units[lName].sign(unitUpdates[lName]))
+
+                # calculate updates for link layer
+                linkUpdates[(inID, inID + 1)] = \
+                    self.annLinks().getUpdates(data = lData, model = lModel)
+                linkUpdateRates[(inID, inID + 1)] = \
+                    self.units[lName].multiply(
+                    self.annLinks().minmax(
+                    self.annLinks().multiply(prevLinkRates[(inID, inID + 1)],
+                    self.annLinks().sign(self.annLinks().multiply(
+                    prevLinkUpdates[(inID, inID + 1)], linkUpdates[(inID, inID + 1)]),
+                    (decFactor, 0.0, incFactor))), minFactor, maxFactor),
+                    self.annLinks().sign(linkUpdates[(inID, inID + 1)]))
+
+            inspector.appendToStore(
+                units = unitUpdates,
+                unitRates = unitUpdateRates,
+                links = linkUpdates,
+                linkRates = linkUpdateRates)
 
             #
-            # output link layer
+            # 2DO!
+            # Do not use derived function for assuming update rates!!!!
+            # This could (and will) lead to diverging objective functions
+            # see paper about GRprop
             #
-        
-            # update params, starting from last layer to first layer
-            lDataIn = self.getUnitValues(data[0], mapping = ('tf', 'h'))
-            lModelOut = self.getUnitValues(lDataIn, mapping = ('h', 'anchor'))
-            lData = (lDataIn, data[1])
-            lModel = (lDataIn, lModelOut)
-
-            updates12 = self.annLinks().updates(data = lData, model = lModel)
-
-            #
-            # output unit layer
-            #
-
-            updates2 = self.units['anchor'].updates(data = lData, model = lModel, source = self.units['h'].params)
             
-            #
-            #
-            #
+            # set updates
+            for inID, lName in enumerate(layers[1:]):
 
-            updateRate = 0.1
+                updateRate = 0.1
 
-            weightRate = 1.0
-            biasRate = 0.01
-            lvarRate = 0.0
+                weightRate = 1.0
+                biasRate = 0.01
+                lvarRate = 0.0
 
-            layerInRate = 0.1
-            layerOutRate = 1.0
+                layerInRate = 0.1
+                layerOutRate = 1.0
 
-            self._params['links'][(0,1)]['W'] += \
-                self._config['optimize']['updateRate'] \
-                * updates01['W'] * updateRate * weightRate * layerInRate
+                ##self.units[lName].update(unitUpdates[lName])
+                self._params['links'][(inID, inID + 1)]['W'] += \
+                    linkUpdateRates[(inID, inID + 1)]['W']
+                
+                #self._params['links'][(inID, inID + 1)]['W'] += \
+                    #self._config['optimize']['updateRate'] \
+                    #* linkUpdates[(inID, inID + 1)]['W'] * updateRate * weightRate * layerInRate
 
-            self._params['links'][(1,2)]['W'] += \
-                self._config['optimize']['updateRate'] \
-                * updates12['W'] * updateRate * weightRate * layerOutRate
+            ##
+            ## output unit layer
+            ##
 
-            updates2['lvar'] = updateRate * lvarRate * layerOutRate * updates2['lvar']
-            updates2['bias'] = updateRate * biasRate * layerOutRate * updates2['bias']
-            #print updates2
+            #updates2 = self.units['anchor'].getUpdates(data = lData, model = lModel, source = self.units['h'].params)
+            
+            ##
+            ##
+            ##
 
-            self.units['anchor'].update(updates2)
+            #updateRate = 0.1
+
+            #weightRate = 1.0
+            #biasRate = 0.01
+            #lvarRate = 0.0
+
+            #layerInRate = 0.1
+            #layerOutRate = 1.0
+
+            #self._params['links'][(0,1)]['W'] += \
+                #self._config['optimize']['updateRate'] \
+                #* updates01['W'] * updateRate * weightRate * layerInRate
+
+            #self._params['links'][(1,2)]['W'] += \
+                #self._config['optimize']['updateRate'] \
+                #* updates12['W'] * updateRate * weightRate * layerOutRate
+
+            #updates2['lvar'] = updateRate * lvarRate * layerOutRate * updates2['lvar']
+            #updates2['bias'] = updateRate * biasRate * layerOutRate * updates2['bias']
+            ##print updates2
+
+            #self.units['anchor'].update(updates2)
 
             inspector.trigger()
             
@@ -209,7 +308,7 @@ class ann(nemoa.system.base.system):
             #lModelOut = self.getUnitValues(lDataIn, mapping = ('tf', 'h'))
             #lModel = (lDataIn, lModelOut)
             
-            #updates = self.annLinks().updates(data = lData, model = lModel)
+            #updates = self.annLinks().getUpdates(data = lData, model = lModel)
             
             #self._params['links'][(0,1)]['W'] += \
                 #self._config['optimize']['updateRate'] * updates['W']
@@ -233,7 +332,7 @@ class ann(nemoa.system.base.system):
             #lModelOut = self.getUnitValues(lDataIn, mapping = ('tf', 'h'))
             #lModel = (lDataIn, lModelOut)
 
-            #updates = self.units['h'].updates(data = lData, model = lModel, source = self.units['tf'].params)
+            #updates = self.units['h'].getUpdates(data = lData, model = lModel, source = self.units['tf'].params)
             #self.units['h'].update(updates)
 
             ## monitoring of optimization process
@@ -255,7 +354,7 @@ class ann(nemoa.system.base.system):
             #lData = (lDataIn, data[1])
             #lModel = (lDataIn, lModelOut)
 
-            #updates = self.units['anchor'].updates(data = lData, model = lModel, source = self.units['h'].params)
+            #updates = self.units['anchor'].getUpdates(data = lData, model = lModel, source = self.units['h'].params)
             #self.units['anchor'].update(updates)
 
             ## monitoring of optimization process
@@ -275,7 +374,7 @@ class ann(nemoa.system.base.system):
             #lData = (lDataIn, data[1])
             #lModel = (lDataIn, lModelOut)
             
-            #updates = self.annLinks().updates(data = lData, model = lModel)
+            #updates = self.annLinks().getUpdates(data = lData, model = lModel)
             
             #self._params['links'][(1,2)]['W'] += \
                 #self._config['optimize']['updateRate'] * updates['W']
@@ -757,21 +856,58 @@ class ann(nemoa.system.base.system):
             pass
 
         @staticmethod
-        def updates(data, model):
+        def getUpdates(data, model):
             """Return weight updates of a link layer."""
             pData = numpy.dot(data[0].T, data[1])
             pModel = numpy.dot(model[0].T, model[1])
             wDelta = (pData - pModel) / float(data[1].size)
-            #calcDiff = (pData - pModel) / float(data[1].size)
-            #calcDiffVar = calcDiff # / vVar
             return { 'W': wDelta }
-            #shape = (1, len(self.params['label']))
-            #updBias = \
-            #    numpy.mean(data[1] - model[1], axis = 0).reshape(shape)
-            #return { 'bias': updBias }
 
+        # lets calculate with link params
 
-        pass
+        @staticmethod
+        def one(dict):
+            return {key: numpy.ones(shape = dict[key].shape) for key in dict.keys()}
+
+        @staticmethod
+        def zero(dict):
+            return {key: numpy.zeros(shape = dict[key].shape) for key in dict.keys()}
+
+        @staticmethod
+        def sign(dict, remap = None):
+            if remap == None:
+                return {key: numpy.sign(dict[key]) for key in dict.keys()}
+            return {key:
+                (remap[0] * (numpy.sign(dict[key]) < 0.0)
+                + remap[1] * (numpy.sign(dict[key]) == 0.0)
+                + remap[2] * (numpy.sign(dict[key]) > 0.0)) for key in dict.keys()}
+
+        @staticmethod
+        def minmax(dict, min = None, max = None):
+            if min == None:
+                return {key: numpy.minimum(dict[key], max)
+                    for key in dict.keys()}
+            if max == None:
+                return {key: numpy.maximum(dict[key], min)
+                    for key in dict.keys()}
+            return {key: numpy.maximum(numpy.minimum(dict[key], max), min)
+                for key in dict.keys()}
+
+        @staticmethod
+        def sum(left, right):
+            if isinstance(left, float) or isinstance(left, int):
+                return {key: left + right[key] for key in left.keys()}
+            if isinstance(right, float) or isinstance(right, int):
+                return {key: left[key] + right for key in left.keys()}
+            return {key: left[key] + right[key] for key in left.keys()}
+
+        @staticmethod
+        def multiply(left, right):
+            if isinstance(left, float) or isinstance(left, int):
+                return {key: left * right[key] for key in left.keys()}
+            if isinstance(right, float) or isinstance(right, int):
+                return {key: left[key] * right for key in left.keys()}
+            return {key: left[key] * right[key] for key in left.keys()}
 
     ####################################################################
     # Artificial neuronal network units                                #
@@ -795,7 +931,7 @@ class ann(nemoa.system.base.system):
                 return self.expectFromGaussInput(data, source,
                     self.getWeights(source))
 
-        def updates(self, data, model, source):
+        def getUpdates(self, data, model, source):
             return self.getParamUpdates(data, model, self.getWeights(source))
 
         def getSamplesFromInput(self, data, source):
@@ -827,6 +963,52 @@ class ann(nemoa.system.base.system):
                 Layers '%s' and '%s' are not connected.
                 """ % (source['name'], self.params['name']))
             return None
+
+        # lets calculate with unit params
+
+        @staticmethod
+        def one(dict):
+            return {key: numpy.ones(shape = dict[key].shape) for key in dict.keys()}
+
+        @staticmethod
+        def zero(dict):
+            return {key: numpy.zeros(shape = dict[key].shape) for key in dict.keys()}
+
+        @staticmethod
+        def sign(dict, remap = None):
+            if remap == None:
+                return {key: numpy.sign(dict[key]) for key in dict.keys()}
+            return {key:
+                (remap[0] * (numpy.sign(dict[key]) < 0.0)
+                + remap[1] * (numpy.sign(dict[key]) == 0.0)
+                + remap[2] * (numpy.sign(dict[key]) > 0.0)) for key in dict.keys()}
+
+        @staticmethod
+        def minmax(dict, min = None, max = None):
+            if min == None:
+                return {key: numpy.minimum(dict[key], max)
+                    for key in dict.keys()}
+            if max == None:
+                return {key: numpy.maximum(dict[key], min)
+                    for key in dict.keys()}
+            return {key: numpy.maximum(numpy.minimum(dict[key], max), min)
+                for key in dict.keys()}
+
+        @staticmethod
+        def sum(left, right):
+            if isinstance(left, float) or isinstance(left, int):
+                return {key: left + right[key] for key in left.keys()}
+            if isinstance(right, float) or isinstance(right, int):
+                return {key: left[key] + right for key in left.keys()}
+            return {key: left[key] + right[key] for key in left.keys()}
+
+        @staticmethod
+        def multiply(left, right):
+            if isinstance(left, float) or isinstance(left, int):
+                return {key: left * right[key] for key in left.keys()}
+            if isinstance(right, float) or isinstance(right, int):
+                return {key: left[key] * right for key in left.keys()}
+            return {key: left[key] * right[key] for key in left.keys()}
 
     ####################################################################
     # Sigmoidal artificial neuronal network units                      #

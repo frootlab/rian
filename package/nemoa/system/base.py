@@ -481,6 +481,7 @@ class inspector:
     __config = None
     __system = None
     __state = {}
+    __store = []
 
     def __init__(self, system = None):
         self.__configure(system)
@@ -518,6 +519,17 @@ class inspector:
     def reset(self):
         """Reset inspection."""
         self.__state = {}
+        self.__store = []
+
+    def appendToStore(self, **kwargs):
+        self.__store.append(kwargs)
+        return True
+
+    def getPreviousFromStore(self):
+        return self.__store[-2] if len(self.__store) > 1 else {}
+
+    def getLastFromStore(self):
+        return self.__store[-1] if len(self.__store) > 0 else {}
 
     def difference(self):
         if not 'inspection' in self.__state:
