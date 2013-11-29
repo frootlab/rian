@@ -43,8 +43,8 @@ class dbn(nemoa.system.ann.ann):
                 'checkDataset': False,
                 'ignoreUnits': [],
                 'iterations': 1,
+                'algorithm': 'rprop',
                 'updates': 10000,
-                'updateRate': 0.1,
                 'schedule': None,
                 'visible': None,
                 'hidden': None,
@@ -255,9 +255,14 @@ class dbn(nemoa.system.ann.ann):
         return True
 
     def _fineTuning(self, dataset, schedule):
-        """Finetuning system using Backpropagation of Error."""
+        """Finetuning system using a variant of backpropagation of error."""
         nemoa.log('info', 'finetuning system')
         nemoa.setLog(indent = '+1')
-        self._backpropagation(dataset, schedule)
+        if self._config['optimize']['algorithm'].lower() == 'rprop':
+            self._optimizeRprop(dataset, schedule)
+        else:
+            nemoa.log('warning', """
+                unknown algorithm %s
+                """ % (self._config['optimize']['algorithm']))
         nemoa.setLog(indent = '-1')
         return True

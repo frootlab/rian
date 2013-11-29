@@ -45,7 +45,7 @@ class rbm(nemoa.system.ann.ann):
                 'minibatchSize': 100,
                 'minibatchInterval': 10,
                 'updates': 100000,
-                'updateAlgorithm': 'CD',
+                'algorithm': 'CD',
                 'updateSamplingSteps': 1,
                 'updateSamplingIterations': 1,
                 'updateRate': 0.1,
@@ -221,9 +221,9 @@ class rbm(nemoa.system.ann.ann):
                     data = dataset.getData(config['minibatchSize'])
 
                 # get system estimations (model)
-                if config['updateAlgorithm'] == 'CD':
+                if config['algorithm'] == 'CD':
                     sampleData = self._getDataContrastiveDivergency(data)
-                elif config['updateAlgorithm'] == 'CDk':
+                elif config['algorithm'] == 'CDk':
                     sampleData = self._getDataContrastiveDivergencyKstep(data,
                         k = config['updateSamplingSteps'],
                         m = config['updateSamplingIterations'])
@@ -231,7 +231,7 @@ class rbm(nemoa.system.ann.ann):
                     nemoa.log('error', """
                         could not optimize model:
                         unknown optimization algorithm '%s'""" %
-                        (config['updateAlgorithm']))
+                        (config['algorithm']))
                     return False
 
                 # update system params
@@ -660,7 +660,7 @@ class grbm(rbm):
                 'ignoreUnits': [],
                 'iterations': 1,
                 'updates': 100000,
-                'updateAlgorithm': 'CD',
+                'algorithm': 'CD',
                 'updateSamplingSteps': 1,
                 'updateSamplingIterations': 1,
                 'updateRate': 0.01,

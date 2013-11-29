@@ -521,15 +521,19 @@ class inspector:
         self.__state = {}
         self.__store = []
 
-    def appendToStore(self, **kwargs):
-        self.__store.append(kwargs)
+    def writeToStore(self, id = -1, append = False, **kwargs):
+        if len(self.__store) == (abs(id) - 1) or append == True:
+            self.__store.append(kwargs)
+            return True
+        if len(self.__store) < id:
+            nemoa.log('error', """
+                could not write to store, wrong index!""")
+            return False
+        self.__store[id] = kwargs
         return True
 
-    def getPreviousFromStore(self):
-        return self.__store[-2] if len(self.__store) > 1 else {}
-
-    def getLastFromStore(self):
-        return self.__store[-1] if len(self.__store) > 0 else {}
+    def readFromStore(self, id = -1):
+        return self.__store[id] if len(self.__store) >= abs(id) else {}
 
     def difference(self):
         if not 'inspection' in self.__state:

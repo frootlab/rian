@@ -23,7 +23,7 @@ class ann(nemoa.system.base.system):
         if not 'check' in self._config:
             self._config['check'] = {'config': False, 'network': False, 'dataset': False}
 
-        self.updateConfiguration(config)
+        self.setConfig(config)
         if not network == None:
             self._setNetwork(network, update)
         if not dataset == None:
@@ -46,8 +46,8 @@ class ann(nemoa.system.base.system):
             nemoa.setLog(indent = '-1')
             return False
 
-        self.setUnits(self._getUnitsFromNetwork(network), update = update)
-        self.setLinks(self._getLinksFromNetwork(network), update = update)
+        self.setUnits(self._getUnitsFromNetwork(network), initialize = (update == False))
+        self.setLinks(self._getLinksFromNetwork(network), initialize = (update == False))
 
         self._config['check']['network'] = True
         nemoa.setLog(indent = '-1')
@@ -104,13 +104,7 @@ class ann(nemoa.system.base.system):
     # 2DO: implement GRprop!!
     #
 
-    def _bpGRprop(self, dataset, schedule):
-        pass
-
-    def _backpropagation(self, dataset, schedule):
-        return self._Rprop(dataset, schedule)
-
-    def _Rprop(self, dataset, schedule):
+    def _optimizeRprop(self, dataset, schedule):
         nemoa.log('info', 'starting resiliant coding cost minimization')
         nemoa.setLog(indent = '+1')
 
@@ -129,11 +123,10 @@ class ann(nemoa.system.base.system):
         data = dataset.getData(cols = (inputs, outputs))
 
         # initialize update rates
-        incFactor = 1.2
-        decFactor = 0.5
-        initialUpdateRate = 0.01
-        minFactor = 0.000006
-        maxFactor = 50
+        acceleration = (0.5, 1.0, 1.2)
+        initialUpdateRate = 0.1
+        minFactor = 0.00001
+        maxFactor = 50.0
         unitUpdates = {}
         unitUpdateRates = {}
         linkUpdates = {}
@@ -163,7 +156,7 @@ class ann(nemoa.system.base.system):
                 self.annLinks().multiply(
                     self.annLinks().one(linkUpdates[(inID, inID + 1)]), initialUpdateRate)
 
-        inspector.appendToStore(
+        inspector.writeToStore(
             units = unitUpdates, unitRates = unitUpdateRates,
             links = linkUpdates, linkRates = linkUpdateRates)
 
@@ -171,7 +164,7 @@ class ann(nemoa.system.base.system):
         for epoch in xrange(self._config['optimize']['updates']):
 
             # obtain previous / initial updates and update rates
-            prevUpdates = inspector.getLastFromStore()
+            prevUpdates = inspector.readFromStore()
             prevUnitUpdates = prevUpdates['units']
             prevUnitRates = prevUpdates['unitRates']
             prevLinkUpdates = prevUpdates['links']
@@ -201,27 +194,51 @@ class ann(nemoa.system.base.system):
                     self.units[lName].minmax(
                     self.units[lName].multiply(prevUnitRates[lName],
                     self.units[lName].sign(self.units[lName].multiply(
-                    prevUnitUpdates[lName], unitUpdates[lName]),
-                    (decFactor, 0.0, incFactor))), minFactor, maxFactor),
+                    prevUnitUpdates[lName], unitUpdates[lName]), acceleration)), minFactor, maxFactor),
                     self.units[lName].sign(unitUpdates[lName]))
 
                 # calculate updates for link layer
                 linkUpdates[(inID, inID + 1)] = \
                     self.annLinks().getUpdates(data = lData, model = lModel)
                 linkUpdateRates[(inID, inID + 1)] = \
-                    self.units[lName].multiply(
+                    self.annLinks().multiply(
                     self.annLinks().minmax(
                     self.annLinks().multiply(prevLinkRates[(inID, inID + 1)],
                     self.annLinks().sign(self.annLinks().multiply(
                     prevLinkUpdates[(inID, inID + 1)], linkUpdates[(inID, inID + 1)]),
-                    (decFactor, 0.0, incFactor))), minFactor, maxFactor),
+                    acceleration)), minFactor, maxFactor),
                     self.annLinks().sign(linkUpdates[(inID, inID + 1)]))
 
-            inspector.appendToStore(
+                #prv = prevLinkUpdates[(inID, inID + 1)]
+                #cur = linkUpdates[(inID, inID + 1)]
+                #chd = {key: numpy.sign(prv[key] * cur[key]) for key in cur.keys()}
+                #(decFactor * (numpy.sign(dict[key]) < 0.0)
+                #+ 0.0 * (numpy.sign(dict[key]) == 0.0)
+                #+ remap[2] * (numpy.sign(dict[key]) > 0.0)
+                
+                #linkUpdateRates[(inID, inID + 1)] = \
+                    #self.annLinks().multiply(
+                    #self.annLinks().minmax(
+                    #self.annLinks().multiply(prevLinkRates[(inID, inID + 1)],
+                    #self.annLinks().sign(
+                        #{key: prv[key] * cur[key] for key in cur.keys()},
+                    #(decFactor, 0.0, incFactor))), minFactor, maxFactor),
+                    #{key: numpy.sign(linkUpdates[(inID, inID + 1)][key]) for key in linkUpdates[(inID, inID + 1)].keys()}
+                    #)
+                
+                #print '%.6f' % (linkUpdateRates[(inID, inID + 1)]['W'].mean())
+
+            inspector.writeToStore(
                 units = unitUpdates,
                 unitRates = unitUpdateRates,
                 links = linkUpdates,
                 linkRates = linkUpdateRates)
+
+            # update parameters
+            for inID, lName in enumerate(layers[1:]):
+                self._params['links'][(inID, inID + 1)]['W'] += \
+                    linkUpdateRates[(inID, inID + 1)]['W']
+                #self.units[lName].update(unitUpdateRates[lName])
 
             #
             # 2DO!
@@ -229,18 +246,18 @@ class ann(nemoa.system.base.system):
             # This could (and will) lead to diverging objective functions
             # see paper about GRprop
             #
-            
+
             # set updates
             for inID, lName in enumerate(layers[1:]):
 
-                updateRate = 0.1
+                #updateRate = 0.1
 
-                weightRate = 1.0
-                biasRate = 0.01
-                lvarRate = 0.0
+                #weightRate = 1.0
+                #biasRate = 0.01
+                #lvarRate = 0.0
 
-                layerInRate = 0.1
-                layerOutRate = 1.0
+                #layerInRate = 0.1
+                #layerOutRate = 1.0
 
                 ##self.units[lName].update(unitUpdates[lName])
                 self._params['links'][(inID, inID + 1)]['W'] += \
