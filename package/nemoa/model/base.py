@@ -433,14 +433,14 @@ class model:
         dataIn = self.system._getMapping()[0]
         dataOut = self.system._getMapping()[-1]
         data = self.dataset.getData(cols = (dataIn, dataOut))
-        return self.system.getPerformance(data[dataIn], data[dataOut])
+        return self.system.getPerformance(data)
 
     def getError(self):
         """Return data reconstruction error of system."""
         dataIn = self.system._getMapping()[0]
         dataOut = self.system._getMapping()[-1]
         data = self.dataset.getData(cols = (dataIn, dataOut))
-        return self.system.getError(data[dataIn], data[dataOut])
+        return self.system.getError(data)
 
     #
     # GENERAL INFORMATION

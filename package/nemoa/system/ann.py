@@ -105,26 +105,83 @@ class ann(nemoa.system.base.system):
     #
 
     def _optimizeRprop(self, dataset, schedule):
-        nemoa.log('info', 'starting resiliant coding cost minimization')
+        nemoa.log('info', 'starting resiliant backpropagation (Rprop)')
         nemoa.setLog(indent = '+1')
 
-        # get mapping
+        # get training data
         layers = self._getMapping()
-        inputs = layers[0]
-        outputs = layers[-1]
+        inLayer = layers[0]
+        outLayer = layers[-1]
+        data = dataset.getData(cols = (inLayer, outLayer))
 
-        # init inspector
+        # init inspector with training data as test data
         if self._config['optimize']['inspect']:
             inspector = nemoa.system.base.inspector(self)
-            inspector.setTestData(\
-                dataset.getData(cols = (inputs, outputs)))
+            inspector.setTestData(data)
 
-        # get training data
-        data = dataset.getData(cols = (inputs, outputs))
+
+        # update parameters
+        for epoch in xrange(self._config['optimize']['updates']):
+
+            print self.getPerformance(data)
+
+            # 1. Forward pass (compute estimated values, from given output)
+
+            out = {}
+            for id, layer in enumerate(layers):
+                if id == 0:
+                    out[layer] = data[0]
+                    continue
+                out[layer] = self.getUnitExpect(
+                    out[layers[id - 1]], layers[id - 1:id + 1])
+
+            # 2. Backward pass (backpropagate deltas, from given output)
+
+            delta = {}
+            for id in range(len(layers) - 1)[::-1]:
+                src = layers[id]
+                tgt = layers[id + 1]
+                if id == len(layers) - 2:
+                    delta[(src, tgt)] = out[tgt] - data[1]
+                    continue
+                inData = self.units[tgt].params['bias'] \
+                    + numpy.dot(out[src], self._params['links'][(id, id + 1)]['W'])
+                DinData = ((1.0 / (1.0 + numpy.exp(-inData)))
+                    * (1.0 - 1.0 / (1.0 + numpy.exp(-inData))))
+                delta[(src, tgt)] = numpy.dot(delta[(tgt, layers[id + 2])],
+                    self._params['links'][(id + 1, id + 2)]['W'].T) * DinData
+
+            # 3. Compute updates
+
+            updates = {}
+            for id, layer in enumerate(layers[:-1]):
+                src = layer
+                tgt = layers[id + 1]
+                updates[(src, tgt)] = {}
+                updates[(src, tgt)]['W'] = -1.0 \
+                    * numpy.dot(out[src].T, delta[src, tgt]) \
+                    / out[src].size
+
+            # 4. update parameters
+            
+            for id, layer in enumerate(layers[:-1]):
+                src = layer
+                tgt = layers[id + 1]
+                self._params['links'][(id, id + 1)]['W'] += \
+                    updates[(src, tgt)]['W']
+
+
+
+
+
+            #quit() 
+            continue
+
+
 
         # initialize update rates
         acceleration = (0.5, 1.0, 1.2)
-        initialUpdateRate = 0.1
+        initialUpdateRate = 0.001
         minFactor = 0.00001
         maxFactor = 50.0
         unitUpdates = {}
@@ -132,6 +189,32 @@ class ann(nemoa.system.base.system):
         linkUpdates = {}
         linkUpdateRates = {}
 
+
+        quit()
+        
+            #values
+            
+            ## get values for real data and model data
+            #lData = (
+                #self.getUnitValues(data[0], mapping = layers[:inID + 1]),
+                #self.getUnitValues(data[1], mapping = layers[inID + 1:][::-1]))
+            #lModel = (lData[0],
+                #self.getUnitValues(lData[0], mapping = layers[inID:(inID + 2)]))
+
+        
+
+        
+        # 3. compute updates
+
+
+
+        #
+        # crap!
+        #
+
+        quit()
+
+        # init inspector with first step
         for inID, lName in enumerate(layers[1:]):
             
             # get values for real data and model data
@@ -160,8 +243,14 @@ class ann(nemoa.system.base.system):
             units = unitUpdates, unitRates = unitUpdateRates,
             links = linkUpdates, linkRates = linkUpdateRates)
 
+        #print self.getPerformance(data)
+        #print inspector.readFromStore()
+        #quit()
+
         # update parameters
         for epoch in xrange(self._config['optimize']['updates']):
+
+            print self.getPerformance(data)
 
             # obtain previous / initial updates and update rates
             prevUpdates = inspector.readFromStore()
@@ -880,6 +969,15 @@ class ann(nemoa.system.base.system):
             wDelta = (pData - pModel) / float(data[1].size)
             return { 'W': wDelta }
 
+        #def calcLogisticUpdates(self, data, model, weights):
+            #"""Return parameter updates of a sigmoidal output layer
+            #calculated from real data and modeled data."""
+            #shape = (1, len(self.params['label']))
+            #updBias = \
+                #numpy.mean(data[1] - model[1], axis = 0).reshape(shape)
+            #return { 'bias': updBias }
+
+
         # lets calculate with link params
 
         @staticmethod
@@ -950,6 +1048,10 @@ class ann(nemoa.system.base.system):
 
         def getUpdates(self, data, model, source):
             return self.getParamUpdates(data, model, self.getWeights(source))
+
+        def getDelta(self, inData, outDelta, source, target):
+            return self.getDeltaFromBackpropagation(inData, outDelta,
+                self.getWeights(source), self.getWeights(target))
 
         def getSamplesFromInput(self, data, source):
             if source['class'] == 'sigmoid':
@@ -1085,6 +1187,25 @@ class ann(nemoa.system.base.system):
                 numpy.mean(data[1] - model[1], axis = 0).reshape(shape)
             return { 'bias': updBias }
 
+        def getDeltaFromBackpropagation(self, data_in, delta_out, W_in, W_out):
+            return numpy.dot(delta_out, W_out) * self.Dlogistic((self.params['bias'] + numpy.dot(data_in, W_in)))
+
+        #def calcLinearUpdates(self, data, model, weights):
+            #"""Return parameter updates of a linear output layer
+            #calculated from real data and modeled data."""
+            #shape = (1, len(self.params['label']))
+            #updBias = \
+                #numpy.mean(data[1] - model[1], axis = 0).reshape(shape)
+            #return { 'bias': updBias }
+
+        #def calcLogisticUpdates(self, data, model, weights):
+            #"""Return parameter updates of a sigmoidal output layer
+            #calculated from real data and modeled data."""
+            #shape = (1, len(self.params['label']))
+            #updBias = \
+                #numpy.mean(data[1] - model[1], axis = 0).reshape(shape)
+            #return { 'bias': updBias }
+
         def getValues(self, data):
             """Return median of bernoulli distributed layer
             calculated from expected values."""
@@ -1111,9 +1232,25 @@ class ann(nemoa.system.base.system):
             return 1.0 / (1.0 + numpy.exp(-x))
 
         @staticmethod
+        def logistic(x):
+            """Standard logistic function."""
+            return 1.0 / (1.0 + numpy.exp(-x))
+
+        @staticmethod
+        def Dlogistic(x):
+            """Derivation of standard logistic function."""
+            return ((1.0 / (1.0 + numpy.exp(-x)))
+                * (1.0 - 1.0 / (1.0 + numpy.exp(-x))))
+
+        @staticmethod
         def tanh(x):
             """Standard hyperbolic tangens function."""
             return numpy.tanh(x)
+
+        @staticmethod
+        def Dtanh(x):
+            """Derivation of standard hyperbolic tangens function."""
+            return 1.0 - tanh(x) ** 2
 
         @staticmethod
         def tanhEff(x):

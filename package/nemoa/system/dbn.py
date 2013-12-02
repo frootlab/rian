@@ -80,6 +80,7 @@ class dbn(nemoa.system.ann.ann):
         # finetuning neuronal network using backpropagation
         if schedule['params']['dbn.dbn']['fineTuning']:
             self._fineTuning(dataset, schedule)
+
         return True
 
     def _preTraining(self, dataset, schedule):
