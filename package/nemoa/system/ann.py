@@ -104,6 +104,156 @@ class ann(nemoa.system.base.system):
     # 2DO: implement GRprop!!
     #
 
+    def _optimizeGetValues(self, inputData):
+        """Forward pass (compute estimated values, from given input)"""
+
+        layers = self._getMapping()
+        out = {}
+        for id, layer in enumerate(layers):
+            if id == 0:
+                out[layer] = inputData
+                continue
+            out[layer] = self.getUnitExpect(
+                out[layers[id - 1]], layers[id - 1:id + 1])
+        return out
+
+    def _optimizeGetDeltas(self, outputData, out):
+        """Return weight delta from backpropagation of error"""
+
+        layers = self._getMapping()
+        delta = {}
+        for id in range(len(layers) - 1)[::-1]:
+            src = layers[id]
+            tgt = layers[id + 1]
+            if id == len(layers) - 2:
+                delta[(src, tgt)] = out[tgt] - outputData
+                continue
+            inData = self.units[tgt].params['bias'] \
+                + numpy.dot(out[src], self._params['links'][(id, id + 1)]['W'])
+            grad = self.units[tgt].grad(inData)
+            delta[(src, tgt)] = numpy.dot(delta[(tgt, layers[id + 2])],
+                self._params['links'][(id + 1, id + 2)]['W'].T) * grad
+        return delta
+
+    def _optimizeGetDirections(self, out, delta):
+        """Compute parameter update directions from weight deltas."""
+
+        layers = self._getMapping()
+        links = {}
+        units = {}
+        for id, src in enumerate(layers[:-1]):
+            tgt = layers[id + 1]
+            units[tgt] = \
+                self.units[tgt].getUpdatesFromDelta(delta[src, tgt])
+            links[(src, tgt)] = \
+                self.annLinks.getUpdatesFromDelta(out[src], delta[src, tgt])
+        return {'units': units, 'links': links}
+
+    def _optimizeGetRpropRates(self, inspector, dirs):
+        """Compute parameter update rates from weight deltas."""
+
+        def getDict(dict, val):
+            return {key: val * numpy.ones(shape = dict[key].shape) \
+                for key in dict.keys()}
+
+        # Rprop parameters
+        acceleration = (0.5, 1.0, 1.2)
+        initRate = 0.001
+        minFactor = 0.000001
+        maxFactor = 50.0
+
+        # get previous rates and directions
+        prev = inspector.readFromStore()
+        if not prev:
+            links = {}
+            units = {}
+            layers = self._getMapping()
+            for id, src in enumerate(layers[:-1]):
+                tgt = layers[id + 1]
+                units[tgt] = \
+                    getDict(dirs['units'][tgt], initRate)
+                links[(src, tgt)] = \
+                    getDict(dirs['links'][(src, tgt)], initRate)
+            prev = {'dirs': dirs, 'rates':
+                {'links': links, 'units': units}}
+
+        # calulate current rates
+        links = {}
+        units = {}
+        layers = self._getMapping()
+        for id, src in enumerate(layers[:-1]):
+            tgt = layers[id + 1]
+            
+            # calculate current rates for units
+            units[tgt] = \
+                self.units[tgt].multiply(
+                self.units[tgt].minmax(
+                self.units[tgt].multiply(prev['rates']['units'][tgt],
+                self.units[tgt].sign(
+                self.units[tgt].multiply(
+                prev['dirs']['units'][tgt], dirs['units'][tgt]),
+                acceleration)), minFactor, maxFactor),
+                self.units[tgt].sign(dirs['units'][tgt]))
+
+            # calculate current rates for links
+            links[(src, tgt)] = \
+                self.annLinks().multiply(
+                self.annLinks().minmax(
+                self.annLinks().multiply(prev['rates']['links'][(src, tgt)],
+                self.annLinks().sign(
+                self.annLinks().multiply(
+                prev['dirs']['links'][(src, tgt)], dirs['links'][(src, tgt)]),
+                acceleration)), minFactor, maxFactor),
+                self.annLinks().sign(dirs['links'][(src, tgt)]))
+
+        inspector.writeToStore(dirs = dirs,
+            rates = {'links': links, 'units': units})
+
+        return {'links': links, 'units': units}
+
+    def _optimizeUpdateParams(self, updates):
+        """Update parameters"""
+        layers = self._getMapping()
+        for id, layer in enumerate(layers[:-1]):
+            src = layer
+            tgt = layers[id + 1]
+            self._params['links'][(id, id + 1)]['W'] += \
+                updates['links'][(src, tgt)]['W']
+            self.units[tgt].update(updates['units'][tgt])
+        return True
+
+    def _optimizeBackpropagation(self, dataset, schedule):
+        nemoa.log('info', 'starting backpropagation')
+        nemoa.setLog(indent = '+1')
+
+        # get training data
+        layers = self._getMapping()
+        inLayer = layers[0]
+        outLayer = layers[-1]
+        data = dataset.getData(cols = (inLayer, outLayer))
+
+        # init inspector with training data as test data
+        inspector = nemoa.system.base.inspector(self)
+        if self._config['optimize']['inspect']:
+            inspector.setTestData(data)
+
+        # update parameters
+        for epoch in xrange(self._config['optimize']['updates']):
+
+            # 1. Forward pass (compute value estimations from given input)
+            out = self._optimizeGetValues(data[0])
+            # 2. Backward pass (compute deltas from backpropagation of error)
+            delta = self._optimizeGetDeltas(data[1], out)
+            # 3. Compute parameter update directions from deltas
+            dirs = self._optimizeGetDirections(out, delta)
+            # 6. Update parameters
+            self._optimizeUpdateParams(dirs)
+            # 7. trigger inspector
+            inspector.trigger()
+
+        nemoa.setLog(indent = '-1')
+        return True
+
     def _optimizeRprop(self, dataset, schedule):
         nemoa.log('info', 'starting resiliant backpropagation (Rprop)')
         nemoa.setLog(indent = '+1')
@@ -115,377 +265,25 @@ class ann(nemoa.system.base.system):
         data = dataset.getData(cols = (inLayer, outLayer))
 
         # init inspector with training data as test data
+        inspector = nemoa.system.base.inspector(self)
         if self._config['optimize']['inspect']:
-            inspector = nemoa.system.base.inspector(self)
             inspector.setTestData(data)
 
-
         # update parameters
         for epoch in xrange(self._config['optimize']['updates']):
 
-            print self.getPerformance(data)
-
-            # 1. Forward pass (compute estimated values, from given output)
-
-            out = {}
-            for id, layer in enumerate(layers):
-                if id == 0:
-                    out[layer] = data[0]
-                    continue
-                out[layer] = self.getUnitExpect(
-                    out[layers[id - 1]], layers[id - 1:id + 1])
-
-            # 2. Backward pass (backpropagate deltas, from given output)
-
-            delta = {}
-            for id in range(len(layers) - 1)[::-1]:
-                src = layers[id]
-                tgt = layers[id + 1]
-                if id == len(layers) - 2:
-                    delta[(src, tgt)] = out[tgt] - data[1]
-                    continue
-                inData = self.units[tgt].params['bias'] \
-                    + numpy.dot(out[src], self._params['links'][(id, id + 1)]['W'])
-                DinData = ((1.0 / (1.0 + numpy.exp(-inData)))
-                    * (1.0 - 1.0 / (1.0 + numpy.exp(-inData))))
-                delta[(src, tgt)] = numpy.dot(delta[(tgt, layers[id + 2])],
-                    self._params['links'][(id + 1, id + 2)]['W'].T) * DinData
-
-            # 3. Compute updates
-
-            updates = {}
-            for id, layer in enumerate(layers[:-1]):
-                src = layer
-                tgt = layers[id + 1]
-                updates[(src, tgt)] = {}
-                updates[(src, tgt)]['W'] = -1.0 \
-                    * numpy.dot(out[src].T, delta[src, tgt]) \
-                    / out[src].size
-
-            # 4. update parameters
-            
-            for id, layer in enumerate(layers[:-1]):
-                src = layer
-                tgt = layers[id + 1]
-                self._params['links'][(id, id + 1)]['W'] += \
-                    updates[(src, tgt)]['W']
-
-
-
-
-
-            #quit() 
-            continue
-
-
-
-        # initialize update rates
-        acceleration = (0.5, 1.0, 1.2)
-        initialUpdateRate = 0.001
-        minFactor = 0.00001
-        maxFactor = 50.0
-        unitUpdates = {}
-        unitUpdateRates = {}
-        linkUpdates = {}
-        linkUpdateRates = {}
-
-
-        quit()
-        
-            #values
-            
-            ## get values for real data and model data
-            #lData = (
-                #self.getUnitValues(data[0], mapping = layers[:inID + 1]),
-                #self.getUnitValues(data[1], mapping = layers[inID + 1:][::-1]))
-            #lModel = (lData[0],
-                #self.getUnitValues(lData[0], mapping = layers[inID:(inID + 2)]))
-
-        
-
-        
-        # 3. compute updates
-
-
-
-        #
-        # crap!
-        #
-
-        quit()
-
-        # init inspector with first step
-        for inID, lName in enumerate(layers[1:]):
-            
-            # get values for real data and model data
-            lData = (
-                self.getUnitValues(data[0], mapping = layers[:inID + 1]),
-                self.getUnitValues(data[1], mapping = layers[inID + 1:][::-1]))
-            lModel = (lData[0],
-                self.getUnitValues(lData[0], mapping = layers[inID:(inID + 2)]))
-
-            # calulate updates for unit layer
-            unitUpdates[lName] = \
-                self.units[lName].getUpdates(data = lData, model = lModel,
-                source = self.units[layers[inID]].params)
-            unitUpdateRates[lName] = \
-                self.units[lName].multiply(
-                    self.units[lName].one(unitUpdates[lName]), initialUpdateRate)
-
-            # calculate updates for link layer
-            linkUpdates[(inID, inID + 1)] = \
-                self.annLinks().getUpdates(data = lData, model = lModel)
-            linkUpdateRates[(inID, inID + 1)] = \
-                self.annLinks().multiply(
-                    self.annLinks().one(linkUpdates[(inID, inID + 1)]), initialUpdateRate)
-
-        inspector.writeToStore(
-            units = unitUpdates, unitRates = unitUpdateRates,
-            links = linkUpdates, linkRates = linkUpdateRates)
-
-        #print self.getPerformance(data)
-        #print inspector.readFromStore()
-        #quit()
-
-        # update parameters
-        for epoch in xrange(self._config['optimize']['updates']):
-
-            print self.getPerformance(data)
-
-            # obtain previous / initial updates and update rates
-            prevUpdates = inspector.readFromStore()
-            prevUnitUpdates = prevUpdates['units']
-            prevUnitRates = prevUpdates['unitRates']
-            prevLinkUpdates = prevUpdates['links']
-            prevLinkRates = prevUpdates['linkRates']
-
-            # obtain direction and magnitude for updates (gradient descent)
-            unitUpdates = {}
-            unitUpdateRates = {}
-            linkUpdates = {}
-            linkUpdateRates = {}
-
-            for inID, lName in enumerate(layers[1:]):
-
-                # get values for real data and model data
-                lData = (
-                    self.getUnitValues(data[0], mapping = layers[:inID + 1]),
-                    self.getUnitValues(data[1], mapping = layers[inID + 1:][::-1]))
-                lModel = (lData[0],
-                    self.getUnitValues(lData[0], mapping = layers[inID:(inID + 2)]))
-
-                # calulate updates for unit layer
-                unitUpdates[lName] = \
-                    self.units[lName].getUpdates(data = lData, model = lModel,
-                    source = self.units[layers[inID]].params)
-                unitUpdateRates[lName] = \
-                    self.units[lName].multiply(
-                    self.units[lName].minmax(
-                    self.units[lName].multiply(prevUnitRates[lName],
-                    self.units[lName].sign(self.units[lName].multiply(
-                    prevUnitUpdates[lName], unitUpdates[lName]), acceleration)), minFactor, maxFactor),
-                    self.units[lName].sign(unitUpdates[lName]))
-
-                # calculate updates for link layer
-                linkUpdates[(inID, inID + 1)] = \
-                    self.annLinks().getUpdates(data = lData, model = lModel)
-                linkUpdateRates[(inID, inID + 1)] = \
-                    self.annLinks().multiply(
-                    self.annLinks().minmax(
-                    self.annLinks().multiply(prevLinkRates[(inID, inID + 1)],
-                    self.annLinks().sign(self.annLinks().multiply(
-                    prevLinkUpdates[(inID, inID + 1)], linkUpdates[(inID, inID + 1)]),
-                    acceleration)), minFactor, maxFactor),
-                    self.annLinks().sign(linkUpdates[(inID, inID + 1)]))
-
-                #prv = prevLinkUpdates[(inID, inID + 1)]
-                #cur = linkUpdates[(inID, inID + 1)]
-                #chd = {key: numpy.sign(prv[key] * cur[key]) for key in cur.keys()}
-                #(decFactor * (numpy.sign(dict[key]) < 0.0)
-                #+ 0.0 * (numpy.sign(dict[key]) == 0.0)
-                #+ remap[2] * (numpy.sign(dict[key]) > 0.0)
-                
-                #linkUpdateRates[(inID, inID + 1)] = \
-                    #self.annLinks().multiply(
-                    #self.annLinks().minmax(
-                    #self.annLinks().multiply(prevLinkRates[(inID, inID + 1)],
-                    #self.annLinks().sign(
-                        #{key: prv[key] * cur[key] for key in cur.keys()},
-                    #(decFactor, 0.0, incFactor))), minFactor, maxFactor),
-                    #{key: numpy.sign(linkUpdates[(inID, inID + 1)][key]) for key in linkUpdates[(inID, inID + 1)].keys()}
-                    #)
-                
-                #print '%.6f' % (linkUpdateRates[(inID, inID + 1)]['W'].mean())
-
-            inspector.writeToStore(
-                units = unitUpdates,
-                unitRates = unitUpdateRates,
-                links = linkUpdates,
-                linkRates = linkUpdateRates)
-
-            # update parameters
-            for inID, lName in enumerate(layers[1:]):
-                self._params['links'][(inID, inID + 1)]['W'] += \
-                    linkUpdateRates[(inID, inID + 1)]['W']
-                #self.units[lName].update(unitUpdateRates[lName])
-
-            #
-            # 2DO!
-            # Do not use derived function for assuming update rates!!!!
-            # This could (and will) lead to diverging objective functions
-            # see paper about GRprop
-            #
-
-            # set updates
-            for inID, lName in enumerate(layers[1:]):
-
-                #updateRate = 0.1
-
-                #weightRate = 1.0
-                #biasRate = 0.01
-                #lvarRate = 0.0
-
-                #layerInRate = 0.1
-                #layerOutRate = 1.0
-
-                ##self.units[lName].update(unitUpdates[lName])
-                self._params['links'][(inID, inID + 1)]['W'] += \
-                    linkUpdateRates[(inID, inID + 1)]['W']
-                
-                #self._params['links'][(inID, inID + 1)]['W'] += \
-                    #self._config['optimize']['updateRate'] \
-                    #* linkUpdates[(inID, inID + 1)]['W'] * updateRate * weightRate * layerInRate
-
-            ##
-            ## output unit layer
-            ##
-
-            #updates2 = self.units['anchor'].getUpdates(data = lData, model = lModel, source = self.units['h'].params)
-            
-            ##
-            ##
-            ##
-
-            #updateRate = 0.1
-
-            #weightRate = 1.0
-            #biasRate = 0.01
-            #lvarRate = 0.0
-
-            #layerInRate = 0.1
-            #layerOutRate = 1.0
-
-            #self._params['links'][(0,1)]['W'] += \
-                #self._config['optimize']['updateRate'] \
-                #* updates01['W'] * updateRate * weightRate * layerInRate
-
-            #self._params['links'][(1,2)]['W'] += \
-                #self._config['optimize']['updateRate'] \
-                #* updates12['W'] * updateRate * weightRate * layerOutRate
-
-            #updates2['lvar'] = updateRate * lvarRate * layerOutRate * updates2['lvar']
-            #updates2['bias'] = updateRate * biasRate * layerOutRate * updates2['bias']
-            ##print updates2
-
-            #self.units['anchor'].update(updates2)
-
+            # 1. Forward pass (compute value estimations from given input)
+            out = self._optimizeGetValues(data[0])
+            # 2. Backward pass (compute deltas from backpropagation of error)
+            delta = self._optimizeGetDeltas(data[1], out)
+            # 3. Compute parameter update directions from deltas
+            dirs = self._optimizeGetDirections(out, delta)
+            # 4. Compute parameter update magnitudes from deltas
+            rates = self._optimizeGetRpropRates(inspector, dirs)
+            # 6. Update parameters
+            self._optimizeUpdateParams(rates)
+            # 7. trigger inspector
             inspector.trigger()
-            
-            #if inspector.difference() < 0:
-            #    nemoa.log('warning', """
-            #        aborting optimization:
-            #        diverging weights and objective function!""")
-            #    break
-
-        #quit()
-
-        #################################################################
-        ## test to optimize input link layer (tf -> hidden)
-        ## -> looks good
-        #################################################################
-
-        #lDataIn = data[0]
-        #lDataOut = self.getUnitValues(data[1], mapping = ('anchor', 'h'))
-        #lData = (lDataIn, lDataOut)
-
-        #for epoch in xrange(self._config['optimize']['updates']):
-        
-            ## update params, starting from last layer to first layer
-            #lModelOut = self.getUnitValues(lDataIn, mapping = ('tf', 'h'))
-            #lModel = (lDataIn, lModelOut)
-            
-            #updates = self.annLinks().getUpdates(data = lData, model = lModel)
-            
-            #self._params['links'][(0,1)]['W'] += \
-                #self._config['optimize']['updateRate'] * updates['W']
-
-            #inspector.trigger()
-        
-        #quit()
-
-        #################################################################
-        ## test to optimize hidden layer
-        ## -> fails # why?
-        #################################################################
-
-        #lDataIn = data[0]
-        #lDataOut = self.getUnitValues(data[1], mapping = ('anchor', 'h'))
-        #lData = (lDataIn, lDataOut)
-
-        #for epoch in xrange(self._config['optimize']['updates']):
-        
-            ## update params, starting from last layer to first layer
-            #lModelOut = self.getUnitValues(lDataIn, mapping = ('tf', 'h'))
-            #lModel = (lDataIn, lModelOut)
-
-            #updates = self.units['h'].getUpdates(data = lData, model = lModel, source = self.units['tf'].params)
-            #self.units['h'].update(updates)
-
-            ## monitoring of optimization process
-            #inspector.trigger()
-
-        #inspector.reset()
-
-        #################################################################
-        ## test to optimize output unit layer (anchor)
-        ## -> looks good!
-        #################################################################
-        
-        #lDataIn = self.getUnitValues(data[0], mapping = ('tf', 'h'))
-
-        #for epoch in xrange(self._config['optimize']['updates']):
-        
-            ## update params, starting from last layer to first layer
-            #lModelOut = self.getUnitValues(lDataIn, mapping = ('h', 'anchor'))
-            #lData = (lDataIn, data[1])
-            #lModel = (lDataIn, lModelOut)
-
-            #updates = self.units['anchor'].getUpdates(data = lData, model = lModel, source = self.units['h'].params)
-            #self.units['anchor'].update(updates)
-
-            ## monitoring of optimization process
-            #inspector.trigger()
-
-        #################################################################
-        ## test to optimize output link layer (hidden -> anchor)
-        ## -> looks good
-        #################################################################
-
-        #lDataIn = self.getUnitValues(data[0], mapping = ('tf', 'h'))
-
-        #for epoch in xrange(self._config['optimize']['updates']):
-        
-            ## update params, starting from last layer to first layer
-            #lModelOut = self.getUnitValues(lDataIn, mapping = ('h', 'anchor'))
-            #lData = (lDataIn, data[1])
-            #lModel = (lDataIn, lModelOut)
-            
-            #updates = self.annLinks().getUpdates(data = lData, model = lModel)
-            
-            #self._params['links'][(1,2)]['W'] += \
-                #self._config['optimize']['updateRate'] * updates['W']
-
-            #inspector.trigger()
 
         nemoa.setLog(indent = '-1')
         return True
@@ -969,6 +767,10 @@ class ann(nemoa.system.base.system):
             wDelta = (pData - pModel) / float(data[1].size)
             return { 'W': wDelta }
 
+        @staticmethod
+        def getUpdatesFromDelta(data, delta):
+            return { 'W': -numpy.dot(data.T, delta) / data.size }
+
         #def calcLogisticUpdates(self, data, model, weights):
             #"""Return parameter updates of a sigmoidal output layer
             #calculated from real data and modeled data."""
@@ -1185,26 +987,21 @@ class ann(nemoa.system.base.system):
             shape = (1, len(self.params['label']))
             updBias = \
                 numpy.mean(data[1] - model[1], axis = 0).reshape(shape)
-            return { 'bias': updBias }
+            return {'bias': updBias}
+
+        def getUpdatesFromDelta(self, delta):
+            shape = (1, len(self.params['label']))
+            return {'bias': -numpy.mean(delta, axis = 0).reshape(shape)}
 
         def getDeltaFromBackpropagation(self, data_in, delta_out, W_in, W_out):
             return numpy.dot(delta_out, W_out) * self.Dlogistic((self.params['bias'] + numpy.dot(data_in, W_in)))
 
-        #def calcLinearUpdates(self, data, model, weights):
-            #"""Return parameter updates of a linear output layer
-            #calculated from real data and modeled data."""
-            #shape = (1, len(self.params['label']))
-            #updBias = \
-                #numpy.mean(data[1] - model[1], axis = 0).reshape(shape)
-            #return { 'bias': updBias }
-
-        #def calcLogisticUpdates(self, data, model, weights):
-            #"""Return parameter updates of a sigmoidal output layer
-            #calculated from real data and modeled data."""
-            #shape = (1, len(self.params['label']))
-            #updBias = \
-                #numpy.mean(data[1] - model[1], axis = 0).reshape(shape)
-            #return { 'bias': updBias }
+        @staticmethod
+        def grad(x):
+            """Return gradiant of standard logistic function."""
+            numpy.seterr(over = 'ignore')
+            return ((1.0 / (1.0 + numpy.exp(-x)))
+                * (1.0 - 1.0 / (1.0 + numpy.exp(-x))))
 
         def getValues(self, data):
             """Return median of bernoulli distributed layer
@@ -1284,6 +1081,31 @@ class ann(nemoa.system.base.system):
             self.params['lvar'] += updates['lvar']
             return True
 
+        def getParamUpdates(self, data, model, weights):
+            """Return parameter updates of a gaussian output layer
+            calculated from real data and modeled data."""
+            shape = (1, len(self.params['label']))
+            var = numpy.exp(self.params['lvar'])
+            bias = self.params['bias']
+            
+            updBias = \
+                numpy.mean(data[1] - model[1], axis = 0).reshape(shape) / var
+            updData = \
+                numpy.mean(0.5 * (data[1] - bias) ** 2 - data[1]
+                * numpy.dot(data[0], weights), axis = 0)
+            updModel = \
+                numpy.mean(0.5 * (model[1] - bias) ** 2 - model[1]
+                * numpy.dot(model[0], weights), axis = 0)
+            updLVar = (updData - updModel).reshape(shape) / var
+
+            return { 'bias': updBias, 'lvar': updLVar }
+
+        def getUpdatesFromDelta(self, delta):
+            shape = (1, len(self.params['label']))
+            return {
+                'bias': -numpy.mean(delta, axis = 0).reshape(shape),
+                'lvar': -numpy.zeros(shape = shape)}
+
         def overwrite(self, params):
             """Merge parameters of gaussian units."""
             for i, u in enumerate(params['label']):
@@ -1305,24 +1127,10 @@ class ann(nemoa.system.base.system):
             calculated from a sigmoid input layer."""
             return self.params['bias'] + numpy.dot(data, weights)
 
-        def getParamUpdates(self, data, model, weights):
-            """Return parameter updates of a gaussian output layer
-            calculated from real data and modeled data."""
-            shape = (1, len(self.params['label']))
-            var = numpy.exp(self.params['lvar'])
-            bias = self.params['bias']
-            
-            updBias = \
-                numpy.mean(data[1] - model[1], axis = 0).reshape(shape) / var
-            updData = \
-                numpy.mean(0.5 * (data[1] - bias) ** 2 - data[1]
-                * numpy.dot(data[0], weights), axis = 0)
-            updModel = \
-                numpy.mean(0.5 * (model[1] - bias) ** 2 - model[1]
-                * numpy.dot(model[0], weights), axis = 0)
-            updLVar = (updData - updModel).reshape(shape) / var
-
-            return { 'bias': updBias, 'lvar': updLVar }
+        @staticmethod
+        def grad(x):
+            """Return gradient of activation function."""
+            return 1.0
 
         @staticmethod
         def check(layer):
