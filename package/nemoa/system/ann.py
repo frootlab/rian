@@ -135,81 +135,100 @@ class ann(nemoa.system.base.system):
                 self._params['links'][(id + 1, id + 2)]['W'].T) * grad
         return delta
 
-    def _optimizeGetDirections(self, out, delta):
-        """Compute parameter update directions from weight deltas."""
-
-        layers = self._getMapping()
-        links = {}
-        units = {}
-        for id, src in enumerate(layers[:-1]):
-            tgt = layers[id + 1]
-            units[tgt] = \
-                self.units[tgt].getUpdatesFromDelta(delta[src, tgt])
-            links[(src, tgt)] = \
-                self.annLinks.getUpdatesFromDelta(out[src], delta[src, tgt])
-        return {'units': units, 'links': links}
-
-    def _optimizeGetRpropRates(self, inspector, dirs):
-        """Compute parameter update rates from weight deltas."""
+    def _optimizeGetRPropUpdates(self, out, delta, inspector):
 
         def getDict(dict, val):
-            return {key: val * numpy.ones(shape = dict[key].shape) \
+            return {key: val * numpy.ones(shape = dict[key].shape)
                 for key in dict.keys()}
 
-        # Rprop parameters
-        acceleration = (0.5, 1.0, 1.2)
+        def getUpdate(prevGradient, prevUpdate, gradient, accel, minFactor, maxFactor):
+            update = {}
+            for key in gradient.keys():
+                sign = numpy.sign(gradient[key])
+                a = numpy.sign(prevGradient[key]) * sign
+                magnitude = numpy.maximum(numpy.minimum(prevUpdate[key] \
+                    * (accel[0] * (a == -1) + accel[1] * (a == 0)
+                    + accel[2] * (a == 1)), maxFactor), minFactor)
+                update[key] = magnitude * sign
+            return update
+
+        # RProp parameters
+        accel = (0.5, 1.0, 1.2)
         initRate = 0.001
         minFactor = 0.000001
         maxFactor = 50.0
 
-        # get previous rates and directions
+        layers = self._getMapping()
+
+        # Compute gradient from delta rule
+        grad = {'units': {}, 'links': {}}
+        for id, src in enumerate(layers[:-1]):
+            tgt = layers[id + 1]
+            grad['units'][tgt] = \
+                self.units[tgt].getUpdatesFromDelta(delta[src, tgt])
+            grad['links'][(src, tgt)] = \
+                self.annLinks.getUpdatesFromDelta(out[src], delta[src, tgt])
+
+        # Get previous gradients and updates
         prev = inspector.readFromStore()
         if not prev:
-            links = {}
-            units = {}
-            layers = self._getMapping()
+            prev = {
+                'gradient': grad,
+                'update': {'units': {}, 'links': {}}}
             for id, src in enumerate(layers[:-1]):
                 tgt = layers[id + 1]
-                units[tgt] = \
-                    getDict(dirs['units'][tgt], initRate)
-                links[(src, tgt)] = \
-                    getDict(dirs['links'][(src, tgt)], initRate)
-            prev = {'dirs': dirs, 'rates':
-                {'links': links, 'units': units}}
+                prev['update']['units'][tgt] = \
+                    getDict(grad['units'][tgt], initRate)
+                prev['update']['links'][(src, tgt)] = \
+                    getDict(grad['links'][(src, tgt)], initRate)
+        prevGradient = prev['gradient']
+        prevUpdate = prev['update']
 
-        # calulate current rates
-        links = {}
-        units = {}
-        layers = self._getMapping()
+        # Compute updates
+        update = {'units': {}, 'links': {}}
         for id, src in enumerate(layers[:-1]):
             tgt = layers[id + 1]
             
             # calculate current rates for units
-            units[tgt] = \
-                self.units[tgt].multiply(
-                self.units[tgt].minmax(
-                self.units[tgt].multiply(prev['rates']['units'][tgt],
-                self.units[tgt].sign(
-                self.units[tgt].multiply(
-                prev['dirs']['units'][tgt], dirs['units'][tgt]),
-                acceleration)), minFactor, maxFactor),
-                self.units[tgt].sign(dirs['units'][tgt]))
+            update['units'][tgt] = \
+                getUpdate(
+                    prevGradient['units'][tgt],
+                    prevUpdate['units'][tgt],
+                    grad['units'][tgt],
+                    accel, minFactor, maxFactor)
 
             # calculate current rates for links
-            links[(src, tgt)] = \
-                self.annLinks().multiply(
-                self.annLinks().minmax(
-                self.annLinks().multiply(prev['rates']['links'][(src, tgt)],
-                self.annLinks().sign(
-                self.annLinks().multiply(
-                prev['dirs']['links'][(src, tgt)], dirs['links'][(src, tgt)]),
-                acceleration)), minFactor, maxFactor),
-                self.annLinks().sign(dirs['links'][(src, tgt)]))
+            update['links'][(src, tgt)] = \
+                getUpdate(
+                    prevGradient['links'][(src, tgt)],
+                    prevUpdate['links'][(src, tgt)],
+                    grad['links'][(src, tgt)],
+                    accel, minFactor, maxFactor)
 
-        inspector.writeToStore(dirs = dirs,
-            rates = {'links': links, 'units': units})
+        # Save updates to store
+        inspector.writeToStore(gradient = grad, update = update)
 
-        return {'links': links, 'units': units}
+        return update
+
+    def _optimizeGetBPropUpdates(self, out, delta):
+        """Compute parameter update directions from weight deltas."""
+
+        def getUpdate(gradient, rate):
+            return {key: rate * gradient[key] for key in gradient.keys()}
+
+        # RProp parameters
+        rate = 0.1
+
+        layers = self._getMapping()
+        links = {}
+        units = {}
+        for id, src in enumerate(layers[:-1]):
+            tgt = layers[id + 1]
+            units[tgt] = getUpdate(
+                self.units[tgt].getUpdatesFromDelta(delta[src, tgt]), rate)
+            links[(src, tgt)] = getUpdate(
+                self.annLinks.getUpdatesFromDelta(out[src], delta[src, tgt]), rate)
+        return {'units': units, 'links': links}
 
     def _optimizeUpdateParams(self, updates):
         """Update parameters"""
@@ -222,7 +241,7 @@ class ann(nemoa.system.base.system):
             self.units[tgt].update(updates['units'][tgt])
         return True
 
-    def _optimizeBackpropagation(self, dataset, schedule):
+    def _optimizeBProp(self, dataset, schedule):
         nemoa.log('info', 'starting backpropagation')
         nemoa.setLog(indent = '+1')
 
@@ -240,21 +259,21 @@ class ann(nemoa.system.base.system):
         # update parameters
         for epoch in xrange(self._config['optimize']['updates']):
 
-            # 1. Forward pass (compute value estimations from given input)
+            # Forward pass (compute value estimations from given input)
             out = self._optimizeGetValues(data[0])
-            # 2. Backward pass (compute deltas from backpropagation of error)
+            # Backward pass (compute deltas from backpropagation of error)
             delta = self._optimizeGetDeltas(data[1], out)
-            # 3. Compute parameter update directions from deltas
-            dirs = self._optimizeGetDirections(out, delta)
-            # 6. Update parameters
-            self._optimizeUpdateParams(dirs)
-            # 7. trigger inspector
+            # Compute updates
+            updates = self._optimizeGetBPropUpdates(out, delta)
+            # Update parameters
+            self._optimizeUpdateParams(updates)
+            # Trigger inspector
             inspector.trigger()
 
         nemoa.setLog(indent = '-1')
         return True
 
-    def _optimizeRprop(self, dataset, schedule):
+    def _optimizeRProp(self, dataset, schedule):
         nemoa.log('info', 'starting resiliant backpropagation (Rprop)')
         nemoa.setLog(indent = '+1')
 
@@ -272,17 +291,15 @@ class ann(nemoa.system.base.system):
         # update parameters
         for epoch in xrange(self._config['optimize']['updates']):
 
-            # 1. Forward pass (compute value estimations from given input)
+            # Forward pass (compute value estimations from given input)
             out = self._optimizeGetValues(data[0])
-            # 2. Backward pass (compute deltas from backpropagation of error)
+            # Backward pass (compute deltas from backpropagation of error)
             delta = self._optimizeGetDeltas(data[1], out)
-            # 3. Compute parameter update directions from deltas
-            dirs = self._optimizeGetDirections(out, delta)
-            # 4. Compute parameter update magnitudes from deltas
-            rates = self._optimizeGetRpropRates(inspector, dirs)
-            # 6. Update parameters
-            self._optimizeUpdateParams(rates)
-            # 7. trigger inspector
+            # Compute updates
+            updates = self._optimizeGetRPropUpdates(out, delta, inspector)
+            # Update parameters
+            self._optimizeUpdateParams(updates)
+            # Trigger inspector
             inspector.trigger()
 
         nemoa.setLog(indent = '-1')

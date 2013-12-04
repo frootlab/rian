@@ -259,8 +259,10 @@ class dbn(nemoa.system.ann.ann):
         """Finetuning system using a variant of backpropagation of error."""
         nemoa.log('info', 'finetuning system')
         nemoa.setLog(indent = '+1')
-        if self._config['optimize']['algorithm'].lower() == 'rprop':
-            self._optimizeRprop(dataset, schedule)
+        if self._config['optimize']['algorithm'].lower() in ['bprop', 'backpropagation']:
+            self._optimizeBProp(dataset, schedule)
+        elif self._config['optimize']['algorithm'].lower() == 'rprop':
+            self._optimizeRProp(dataset, schedule)
         else:
             nemoa.log('warning', """
                 unknown algorithm %s
