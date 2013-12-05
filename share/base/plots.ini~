@@ -1,0 +1,62 @@
+[plot Histogram]
+description:
+  Plot all dataset values as histogram
+package = histogram
+class = dataHistogram
+params:
+  bins = 120,
+  facecolor = 'lightgrey',
+  edgecolor = 'black',
+  histtype = 'bar',
+  linewidth = 0.5
+
+[plot Network]
+package = layergraph
+class = adjacencyGraph
+params:
+  edge_weight = 'adjacency',
+  edge_zoom = 5.0,
+  dpi = 300
+
+[plot CorrelationHeatmap]
+package = heatmap
+class = unitRelation
+params:
+  relation = 'correlation',
+  statistics = 100000
+
+[plot CorrelationNetwork]
+description:
+  Plot correlations of units as network
+type = unitrelationgraph
+params:
+  relation = 'correlation',
+  threshold = 2.0
+
+[plot sampleCorrelationHistogram]
+description:
+  Plot correlation of samples as histogram
+type = samplerelationhistogram
+params:
+  relation = 'correlation',
+  bins = 120,
+  facecolor = 'lightgrey',
+  edgecolor = 'black',
+  histtype = 'bar',
+  linewidth = 0.5
+
+[plot sampleCorrelationHeatmap]
+description:
+  Plot correlation of samples as heatmap
+type = samplerelationmatrix
+params:
+  relation = 'correlation'
+
+[plot sampleCorrelationGraph]
+description:
+  Plot correlation of samples as graph
+type = samplerelationgraph
+params:
+  relation = 'correlation',
+  filter_threshold = 1.55,
+  edge_zoom = 1.0

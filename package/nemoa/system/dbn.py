@@ -245,7 +245,7 @@ class dbn(nemoa.system.ann.ann):
             del links[(id, id + 1)]['init']
 
         ################################################################
-        # Cleanup units and links of visible layers                    #
+        # Remove input units from output layer, vice versa             #
         ################################################################
 
         nemoa.log('info', 'cleanup unit and linkage parameter arrays')
@@ -261,7 +261,7 @@ class dbn(nemoa.system.ann.ann):
         nemoa.setLog(indent = '+1')
         if self._config['optimize']['algorithm'].lower() in ['bprop', 'backpropagation']:
             self._optimizeBProp(dataset, schedule)
-        elif self._config['optimize']['algorithm'].lower() == 'rprop':
+        elif self._config['optimize']['algorithm'].lower() == ['rprop', 'resiliant backpropagation']:
             self._optimizeRProp(dataset, schedule)
         else:
             nemoa.log('warning', """

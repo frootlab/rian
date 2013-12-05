@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa, numpy, copy, time, cPickle, gzip, os
+import nemoa, numpy, copy, time, os
 
 class model:
-    """Base class for (graphical) models."""
+    """Base class for graphical models."""
     
     dataset = None
     network = None
@@ -23,15 +23,17 @@ class model:
             system  -- system instance
         """
 
-        # initialize private class variables
+        # initialize private scope class attributes
         self.__config = {}
 
-        # update model
+        # update model name
         self.setName(kwargs['name'] if 'name' in kwargs else None)
-        nemoa.log('info', 'linking dataset, network and system instances to model')
+        nemoa.log('info', """
+            linking dataset, network and system instances to model""")
+
         self.dataset = dataset
         self.network = network
-        self.system = system
+        self.system  = system
 
         if not self.isEmpty() and self.__checkModel():
             self.updateConfig()
@@ -908,14 +910,16 @@ class model:
         file = nemoa.common.getEmptyFile(file)
 
         # save model parameters and configuration to file
-        cPickle.dump(
-            obj = self._get(),
-            file = gzip.open(file, "wb", compresslevel = 3),
-            protocol = 2)
+        nemoa.common.dictToFile(self._get(), file)
+        #cPickle.dump(
+            #obj = self._get(),
+            #file = gzip.open(file, "wb", compresslevel = 3),
+            #protocol = 2)
 
         # create console message
-        finalName = os.path.basename(file)[:-3]
-        nemoa.log('info', 'save model as: \'%s\'' % (finalName))
+        nemoa.log('info', """
+            save model as: '%s'
+            """ % (os.path.basename(file)[:-3]))
 
         nemoa.setLog(indent = '-1')
         return file

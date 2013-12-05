@@ -56,6 +56,7 @@ class ann(nemoa.system.base.system):
     def _setDataset(self, dataset, *args, **kwargs):
         """check if dataset columns match with visible units."""
 
+        # check dataset instance
         if not nemoa.type.isDataset(dataset):
             nemoa.log('error', """
                 could not configure system:

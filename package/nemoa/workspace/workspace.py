@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa, os, copy, pprint, importlib, cPickle, gzip, imp
+import nemoa, os, copy, importlib, imp
 
 class workspace:
     """Base class for workspaces."""
@@ -10,13 +10,14 @@ class workspace:
         """Initialize shared configuration."""
         nemoa.workspace.init()
         if not project == None:
-            self.load(project)
+            nemoa.workspace.loadProject(project)
 
     def load(self, project):
         """Import configuration from project and update paths and logfile."""
         return nemoa.workspace.loadProject(project)
 
     def project(self, *args, **kwargs):
+        """Return name of project."""
         return nemoa.workspace.project(*args, **kwargs)
 
     def list(self, type = None, namespace = None):
@@ -57,7 +58,7 @@ class workspace:
 
     def show(self, type = None, name = None, **kwargs):
         """Print object configuration from type and name."""
-        return pprint.pprint(nemoa.workspace.get(type, name))
+        return nemoa.common.printDict(nemoa.workspace.get(type, name))
 
     def dataset(self, config = None, **kwargs):
         """Return new dataset instance."""
@@ -71,10 +72,7 @@ class workspace:
         """Return new system instance."""
         return self.__getInstance('system', config, **kwargs)
 
-    def model(self, config = None,
-        dataset = None, network = None, system = None,
-        configure = True, initialize = True, name = None,
-        optimize = False, **kwargs):
+    def model(self, config = None, name = None, **kwargs):
         """Return new model instance."""
 
         # if keyword argument 'file' is given
@@ -86,32 +84,45 @@ class workspace:
         nemoa.setLog(indent = '+1')
 
         # create model instance
+        if not 'dataset' in kwargs \
+            or not 'network' in kwargs \
+            or not 'system' in kwargs:
+            nemoa.log('error', """
+                could not create model:
+                dataset, network and system parameters needed!""")
+            nemoa.setLog(indent = '-1')
+            return None
         model = self.__getModelInstance(
-            config = config,
-            dataset = dataset,
-            network = network,
-            system = system,
-            name = name)
+            config = config, name = name,
+            dataset = kwargs['dataset'],
+            network = kwargs['network'],
+            system  = kwargs['system'])
 
-        # configure model (optional)
-        if configure:
+        # configure model (optional, default: True)
+        if not 'configure' in kwargs \
+            or ('configure' in kwargs \
+            and kwargs['configure'] == True):
             if model == None:
                 nemoa.log('error', """
                     could not configure model:
                     model instance is not valid!""")
-                return False
+                nemoa.setLog(indent = '-1')
+                return None
             model.configure()
 
         # initialize model parameters (optional)
-        if initialize:
+        if 'initialize' in kwargs \
+            and kwargs['initialize'] == True:
             model.initialize()
 
         # optimize model (optional)
-        if optimize:
+        if 'optimize' in kwargs \
+            and not kwargs['optimize'] == False:
             model.optimize(optimize)
 
-        # save model (optional)
-        if 'autosave' in kwargs and kwargs['autosave']:
+        # save model to file (optional)
+        if 'save' in kwargs \
+            and not kwargs['save']:
             model.save()
 
         nemoa.setLog(indent = '-1')
@@ -226,7 +237,7 @@ class workspace:
 
         # load model parameters and configuration from file
         nemoa.log('info', 'load model: \'%s\'' % file)
-        modelDict = cPickle.load(gzip.open(file, 'rb'))
+        modelDict = nemoa.common.dictFromFile(file)
 
         model = self.__getModelInstance(
             config = modelDict['config'],

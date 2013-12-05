@@ -98,7 +98,7 @@ class dataset:
                 ## 2DO get original node labels
                 nemoa.log('logfile', nemoa.common.strToList(convNetNodesLost))
 
-        # get columns from dataset files and convert to common format 
+        # get columns from dataset files and convert to common format
         colLabels = {}
         for src in self.cfg['table']:
             nemoa.log("info", "configure dataset source: '%s'" % (src))
@@ -887,7 +887,7 @@ class dataset:
         r = re.compile(regEx, re.VERBOSE)
         
         if type and type == 'r-table':
-            colLabels = ['label'] + r.findall(firstline)
+            colLabels = [label.strip('\"\'') for label in ['label'] + r.findall(firstline)]
         else:
             colLabels = r.findall(firstline)
 
