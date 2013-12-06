@@ -181,18 +181,28 @@ class dataset:
         # search network nodes in dataset columns
         self.cfg['columns'] = ()
         for groupid, group in netGroupsOrder:
+            found = 0
             for id, col in enumerate(convNetGroups[group]):
                 if not col in interColLabels:
                     continue
+                found += 1
 
                 # add column (use network label and group)
                 self.cfg['columns'] += ((group, netGroups[group][id]), )
-
                 for src in colLabels:
                     colLabels[src]['usecols'] += (colLabels[src]['conv'].index(col), )
+            if not found:
+                nemoa.log('error', """
+                    no node from network group '%s'
+                    could be found in dataset source!
+                    """ % (group))
+                nemoa.setLog(indent = '-1')
+                return False
 
-        # update source file config
+        # test and update source file config
         for src in colLabels:
+            print src, str(len(colLabels[src]['usecols']))
+            
             self.cfg['table'][src]['source']['usecols'] = colLabels[src]['usecols']
 
         #

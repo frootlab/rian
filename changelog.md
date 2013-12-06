@@ -9,7 +9,7 @@ Changlog
 
 #### 0.4.61noGPU ####
 * *data modeling*
-  * added ANN optimization with Rprop
+  * added ANN optimization with Rprop, Gprop
 
 #### 0.4.52noGPU ####
 **Changes:**
