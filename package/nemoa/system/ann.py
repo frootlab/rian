@@ -17,10 +17,10 @@ class ann(nemoa.system.base.system):
     Description:
         Artificial Neuronal Networks are graphical models.
 
-    Reference
-        Rumelhart, D. E., Hinton, G. E., and Williams, R. J. (1986),
-        Learning representations by back-propagating errors. Nature, 323, 533--536.
-    """
+    Reference:
+        "Learning representations by back-propagating errors",
+        Rumelhart, D. E., Hinton, G. E., and Williams, R. J. (1986)"""
+
     ####################################################################
     # Configuration                                                    #
     ####################################################################
@@ -314,7 +314,7 @@ class ann(nemoa.system.base.system):
         return True
 
     ####################################################################
-    # Evaluation funktions                                             #
+    # System evaluation                                                #
     ####################################################################
 
     def _getDataEval(self, data, func = 'performance', **kwargs):
@@ -334,140 +334,6 @@ class ann(nemoa.system.base.system):
     def getPerformance(self, data, *args, **kwargs):
         """Return data reconstruction performance of system."""
         return numpy.mean(self.getUnitPerformance(data, *args, **kwargs))
-
-    ####################################################################
-    # Links                                                            #
-    ####################################################################
-
-    def _setLinks(self, links):
-
-        # update link parameters
-        self._params['links'] = {}
-        for layerID in range(len(self._params['units']) - 1):
-            source = self._params['units'][layerID]['name']
-            target = self._params['units'][layerID + 1]['name']
-            x = len(self.units[source].params['label'])
-            y = len(self.units[target].params['label'])
-            self._params['links'][(layerID, layerID + 1)] = {
-                'source': source, 'target': target,
-                'A': numpy.ones([x, y], dtype = bool)}
-        return True
-
-    def _initLinks(self, dataset = None):
-        """Initialize link parameteres (weights).
-
-        Keyword Arguments:
-            dataset -- nemoa dataset instance OR None
-
-        Description:
-            If dataset is None, initialize weights matrices with zeros
-            and all adjacency matrices with ones.
-            if dataset is nemoa network instance,
-            initialize weights with random values, that fit ....
-        """
-        if not(dataset == None) and \
-            not nemoa.type.isDataset(dataset):
-            nemoa.log('error', """
-                could not initilize link parameters:
-                invalid dataset argument given!""")
-            return False
-
-        for links in self._params['links']:
-            source = self._params['links'][links]['source']
-            target = self._params['links'][links]['target']
-            A = self._params['links'][links]['A']
-            x = len(self.units[source].params['label'])
-            y = len(self.units[target].params['label'])
-            alpha = self._config['init']['wSigma'] \
-                if 'wSigma' in self._config['init'] else 1.0
-            sigma = numpy.ones([x, 1], dtype = float) * alpha / x
-
-            if dataset == None:
-                random = numpy.random.normal(numpy.zeros((x, y)), sigma)
-            elif source in dataset.getColGroups():
-                rows = self._config['params']['samples'] \
-                    if 'samples' in self._config['params'] else '*'
-                data = dataset.getData(100000, rows = rows, cols = source)
-                random = numpy.random.normal(numpy.zeros((x, y)),
-                    sigma * numpy.std(data, axis = 0).reshape(1, x).T)
-            elif dataset.getColLabels('*') \
-                == self.units[source].params['label']:
-                rows = self._config['params']['samples'] \
-                    if 'samples' in self._config['params'] else '*'
-                data = dataset.getData(100000, rows = rows, cols = '*')
-                random = numpy.random.normal(numpy.zeros((x, y)),
-                    sigma * numpy.std(data, axis = 0).reshape(1, x).T)
-            else:
-                random = numpy.random.normal(numpy.zeros((x, y)), sigma)
-
-            self._params['links'][links]['W'] = A * random
-        return True
-
-    def _checkLinkParams(self, params):
-        """Check if system parameter dictionary is valid respective to links."""
-        if not isinstance(params, dict) \
-            or not 'links' in params.keys() \
-            or not isinstance(params['links'], dict):
-            return False
-        for id in params['links'].keys():
-            if not isinstance(params['links'][id], dict):
-                return False
-            for attr in ['A', 'W', 'source', 'target']:
-                if not attr in params['links'][id].keys():
-                    return False
-        return True
-
-    def _indexLinks(self):
-        self._links = {units: {'source': {}, 'target': {}} 
-            for units in self.units.keys()}
-        for id in self._params['links'].keys():
-            source = self._params['links'][id]['source']
-            target = self._params['links'][id]['target']
-            self._links[source]['target'][target] = \
-                self._params['links'][id]
-            self.units[source].target = \
-                self._params['links'][id]
-            self._links[target]['source'][source] = \
-                self._params['links'][id]
-            self.units[target].source = \
-                self._params['links'][id]
-        return True
-
-    def _getWeightsFromLayers(self, source, target):
-        """Return ..."""
-        if self._config['optimize']['useAdjacency']:
-            if target['name'] in self._links[source['name']]['target']:
-                return self._links[source['name']]['target'][target['name']]['W'] \
-                    * self._links[source['name']]['target'][target['name']]['A']
-            elif source['name'] in self._links[target['name']]['target']:
-                return (self._links[target['name']]['target'][source['name']]['W'] \
-                    * self._links[source['name']]['target'][target['name']]['A']).T
-        else:
-            if target['name'] in self._links[source['name']]['target']:
-                return self._links[source['name']]['target'][target['name']]['W']
-            elif source['name'] in self._links[target['name']]['target']:
-                return self._links[target['name']]['target'][source['name']]['W'].T
-        nemoa.log('error', """Could not get links:
-            Layer '%s' and layer '%s' are not connected.
-            """ % (source['name'], target['name']))
-        return None
-
-    def _removeUnitsLinks(self, layer, select):
-        """Remove links to a given list of units."""
-        links = self._links[layer['name']]
-
-        for src in links['source'].keys():
-            links['source'][src]['A'] = \
-                links['source'][src]['A'][:, select]
-            links['source'][src]['W'] = \
-                links['source'][src]['W'][:, select]
-        for tgt in links['target'].keys():
-            links['target'][tgt]['A'] = \
-                links['target'][tgt]['A'][select, :]
-            links['target'][tgt]['W'] = \
-                links['target'][tgt]['W'][select, :]
-
-        return True
 
     ####################################################################
     # Units                                                            #
@@ -674,21 +540,6 @@ class ann(nemoa.system.base.system):
         return True
 
     ####################################################################
-    # Layers                                                           #
-    ####################################################################
-
-    def _getLayerOfUnit(self, unit):
-        """Return name of layer of given unit."""
-        for id in range(len(self._params['units'])):
-            if unit in self._params['units'][id]['label']:
-                return self._params['units'][id]['name']
-        return None
-
-    def _getMapping(self):
-        """Return tuple with names of layers from input to output."""
-        return tuple([layer['name'] for layer in self._params['units']])
-
-    ####################################################################
     # Unit evaluation                                                  #
     ####################################################################
 
@@ -831,6 +682,155 @@ class ann(nemoa.system.base.system):
         err = self.getUnitError(data, *args, **kwargs)
         nrm = numpy.sqrt((data[1] ** 2).sum(axis = 0))
         return 1.0 - err / nrm
+
+    ####################################################################
+    # Links                                                            #
+    ####################################################################
+
+    def _setLinks(self, links):
+
+        # update link parameters
+        self._params['links'] = {}
+        for layerID in range(len(self._params['units']) - 1):
+            source = self._params['units'][layerID]['name']
+            target = self._params['units'][layerID + 1]['name']
+            x = len(self.units[source].params['label'])
+            y = len(self.units[target].params['label'])
+            self._params['links'][(layerID, layerID + 1)] = {
+                'source': source, 'target': target,
+                'A': numpy.ones([x, y], dtype = bool)}
+        return True
+
+    def _initLinks(self, dataset = None):
+        """Initialize link parameteres (weights).
+
+        Keyword Arguments:
+            dataset -- nemoa dataset instance OR None
+
+        Description:
+            If dataset is None, initialize weights matrices with zeros
+            and all adjacency matrices with ones.
+            if dataset is nemoa network instance,
+            initialize weights with random values, that fit ....
+        """
+        if not(dataset == None) and \
+            not nemoa.type.isDataset(dataset):
+            nemoa.log('error', """
+                could not initilize link parameters:
+                invalid dataset argument given!""")
+            return False
+
+        for links in self._params['links']:
+            source = self._params['links'][links]['source']
+            target = self._params['links'][links]['target']
+            A = self._params['links'][links]['A']
+            x = len(self.units[source].params['label'])
+            y = len(self.units[target].params['label'])
+            alpha = self._config['init']['wSigma'] \
+                if 'wSigma' in self._config['init'] else 1.0
+            sigma = numpy.ones([x, 1], dtype = float) * alpha / x
+
+            if dataset == None:
+                random = numpy.random.normal(numpy.zeros((x, y)), sigma)
+            elif source in dataset.getColGroups():
+                rows = self._config['params']['samples'] \
+                    if 'samples' in self._config['params'] else '*'
+                data = dataset.getData(100000, rows = rows, cols = source)
+                random = numpy.random.normal(numpy.zeros((x, y)),
+                    sigma * numpy.std(data, axis = 0).reshape(1, x).T)
+            elif dataset.getColLabels('*') \
+                == self.units[source].params['label']:
+                rows = self._config['params']['samples'] \
+                    if 'samples' in self._config['params'] else '*'
+                data = dataset.getData(100000, rows = rows, cols = '*')
+                random = numpy.random.normal(numpy.zeros((x, y)),
+                    sigma * numpy.std(data, axis = 0).reshape(1, x).T)
+            else:
+                random = numpy.random.normal(numpy.zeros((x, y)), sigma)
+
+            self._params['links'][links]['W'] = A * random
+        return True
+
+    def _checkLinkParams(self, params):
+        """Check if system parameter dictionary is valid respective to links."""
+        if not isinstance(params, dict) \
+            or not 'links' in params.keys() \
+            or not isinstance(params['links'], dict):
+            return False
+        for id in params['links'].keys():
+            if not isinstance(params['links'][id], dict):
+                return False
+            for attr in ['A', 'W', 'source', 'target']:
+                if not attr in params['links'][id].keys():
+                    return False
+        return True
+
+    def _indexLinks(self):
+        self._links = {units: {'source': {}, 'target': {}} 
+            for units in self.units.keys()}
+        for id in self._params['links'].keys():
+            source = self._params['links'][id]['source']
+            target = self._params['links'][id]['target']
+            self._links[source]['target'][target] = \
+                self._params['links'][id]
+            self.units[source].target = \
+                self._params['links'][id]
+            self._links[target]['source'][source] = \
+                self._params['links'][id]
+            self.units[target].source = \
+                self._params['links'][id]
+        return True
+
+    def _getWeightsFromLayers(self, source, target):
+        """Return ..."""
+        if self._config['optimize']['useAdjacency']:
+            if target['name'] in self._links[source['name']]['target']:
+                return self._links[source['name']]['target'][target['name']]['W'] \
+                    * self._links[source['name']]['target'][target['name']]['A']
+            elif source['name'] in self._links[target['name']]['target']:
+                return (self._links[target['name']]['target'][source['name']]['W'] \
+                    * self._links[source['name']]['target'][target['name']]['A']).T
+        else:
+            if target['name'] in self._links[source['name']]['target']:
+                return self._links[source['name']]['target'][target['name']]['W']
+            elif source['name'] in self._links[target['name']]['target']:
+                return self._links[target['name']]['target'][source['name']]['W'].T
+        nemoa.log('error', """Could not get links:
+            Layer '%s' and layer '%s' are not connected.
+            """ % (source['name'], target['name']))
+        return None
+
+    def _removeUnitsLinks(self, layer, select):
+        """Remove links to a given list of units."""
+        links = self._links[layer['name']]
+
+        for src in links['source'].keys():
+            links['source'][src]['A'] = \
+                links['source'][src]['A'][:, select]
+            links['source'][src]['W'] = \
+                links['source'][src]['W'][:, select]
+        for tgt in links['target'].keys():
+            links['target'][tgt]['A'] = \
+                links['target'][tgt]['A'][select, :]
+            links['target'][tgt]['W'] = \
+                links['target'][tgt]['W'][select, :]
+
+        return True
+
+    ####################################################################
+    # Layers                                                           #
+    ####################################################################
+
+    def _getLayerOfUnit(self, unit):
+        """Return name of layer of given unit."""
+        for id in range(len(self._params['units'])):
+            if unit in self._params['units'][id]['label']:
+                return self._params['units'][id]['name']
+        return None
+
+    def _getMapping(self):
+        """Return tuple with names of layers from input to output."""
+        return tuple([layer['name'] for layer in self._params['units']])
 
     ####################################################################
     # Generic / static information                                     #
