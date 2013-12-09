@@ -6,6 +6,10 @@ import nemoa, copy, numpy, time
 class system:
     """Base class for systems."""
 
+    ####################################################################
+    # System configuration                                             #
+    ####################################################################
+
     def __init__(self, *args, **kwargs):
         """Initialize system configuration and system parameter configuration."""
     
@@ -35,9 +39,18 @@ class system:
         nemoa.setLog(indent = '-1')
         return retVal
 
+    def setName(self, name):
+        """Set name of system."""
+        if not isinstance(name, str): return False
+        self._config['name'] = name
+        return True
+
+    def getConfig(self):
+        """Return system configuration as dictionary."""
+        return self._config.copy()
+
     def setConfig(self, config):
         """Set configuration."""
-        
         # create local configuration dictionary
         if not hasattr(self, '_config'):
             self._config = {'check': {}}
@@ -57,65 +70,9 @@ class system:
         self._config['check']['config'] = True
         return True
 
-    def setUnits(self, units = None, initialize = True):
-        """Set units and update system parameters."""
-        if not 'units' in self._params:
-            self._params['units'] = []
-        if not hasattr(self, 'units'):
-            self.units = {}
-        if initialize:
-            return self._setUnits(units) \
-                and self._initUnits()
-        return self._setUnits(units)
-
-    def setLinks(self, links = None, initialize = True):
-        """Set links using list with 2-tuples containing unit labels."""
-        if not 'links' in self._params:
-            self._params['links'] = {}
-        if not hasattr(self, 'links'):
-            self.links = {}
-        if initialize:
-            return self._setLinks(links) \
-                and self._indexLinks() and self._initLinks()
-        return self._indexLinks()
-
-    def getName(self):
-        """Return name of system."""
-        return self._config['name']
-
-    def _get(self, sec = None):
-        """Return all system settings (config, params) as dictionary."""
-        dict = {
-            'config': copy.deepcopy(self._config),
-            'params': copy.deepcopy(self._params) }
-        if not sec:
-            return dict
-        if sec in dict:
-            return dict[sec]
-        return False
-
-    def _set(self, **dict):
-        """Set system settings (config, params) from dictionary."""
-        if 'config' in dict:
-            self._config = copy.deepcopy(dict['config'])
-            ## 2Do
-            ## IF the set command gets another package or class -> Error!
-        if 'params' in dict:
-            self._params = copy.deepcopy(dict['params'])
-        self._updateUnitsAndLinks()
-        return True
-
-    def isEmpty(self):
-        """Return true if system is a dummy."""
-        return False
-
     def isConfigured(self):
         """Return configuration state of system."""
         return self._isConfigured()
-
-    def getConfig(self):
-        """Return system configuration as dictionary."""
-        return self._config.copy()
 
     def setNetwork(self, *args, **kwargs):
         """Update units and links to network instance."""
@@ -143,48 +100,119 @@ class system:
             return True
         return self._checkDataset(dataset)
 
-    # name
+    def isEmpty(self):
+        """Return true if system is a dummy."""
+        return False
 
-    def getName(self):
-        """Return name of system."""
-        return self._config['name'] if 'name' in self._config else ''
+    ####################################################################
+    # System interface to unit instances                               #
+    ####################################################################
 
-    def setName(self, name):
-        """Set name of system."""
-        if not isinstance(name, str):
-            return False
-        self._config['name'] = name
+    def getUnits(self, *args, **kwargs):
+        """Return labels of units in system."""
+        return self._getUnits(*args, **kwargs)
+
+    def setUnits(self, units = None, initialize = True):
+        """Set units and update system parameters."""
+        if not 'units' in self._params:
+            self._params['units'] = []
+        if not hasattr(self, 'units'):
+            self.units = {}
+        if initialize:
+            return self._setUnits(units) \
+                and self._initUnits()
+        return self._setUnits(units)
+
+    def getUnitGroups(self):
+        """Return list of unit groups / layers."""
+        return [grp['name'] for grp in self._params['units']]
+
+    def getUnitInfo(self, *args, **kwargs):
+        """Return dictionary with information about a specific unit."""
+        return self._getUnitInformation(*args, **kwargs)
+
+    def getUnitEval(self, data, **kwargs):
+        """Return dictionary with units and evaluation values."""
+        return self._getUnitEval(data, **kwargs)
+
+    def unlinkUnit(self, unit):
+        """Unlink unit (if present)."""
+        return self._unlinkUnit(unit)
+
+    def removeUnits(self, type, label):
+        """Remove unit."""
+        return self._removeUnit(type, label)
+
+    ####################################################################
+    # System interface to link instances                               #
+    ####################################################################
+
+    def setLinks(self, links = None, initialize = True):
+        """Set links using list with 2-tuples containing unit labels."""
+        if not 'links' in self._params:
+            self._params['links'] = {}
+        if not hasattr(self, 'links'):
+            self.links = {}
+        if initialize:
+            return self._setLinks(links) \
+                and self._indexLinks() and self._initLinks()
+        return self._indexLinks()
+
+    def getLinks(self, *args, **kwargs):
+        """Return list with 2-tuples containing unit labels."""
+        return self._getLinksFromConfig()
+
+    def removeLinks(self, links = [], *args, **kwargs):
+        """Remove links from system using list with 2-tuples containing unit labels."""
+        return self._removeLinks(links)
+
+    def removeLinksByThreshold(self, method = None, threshold = None, *args, **kwargs):
+        """Remove links from system using a threshold for link parameters."""
+        return self._removeLinksByThreshold(method, threshold)
+
+    def getLinkParams(self, links = [], *args, **kwargs):
+        """Return parameters of links."""
+        return self._getLinkParams(links)
+
+    def getLinkEval(self, data, **kwargs):
+        """Return dictionary with links and evaluation values."""
+        return self._getLinkEval(data, **kwargs)
+        
+    
+    
+    
+        
+        
+        
+        
+        
+
+
+    def _get(self, sec = None):
+        """Return all system settings (config, params) as dictionary."""
+        dict = {
+            'config': copy.deepcopy(self._config),
+            'params': copy.deepcopy(self._params) }
+        if not sec:
+            return dict
+        if sec in dict:
+            return dict[sec]
+        return False
+
+    def _set(self, **dict):
+        """Set system settings (config, params) from dictionary."""
+        if 'config' in dict:
+            self._config = copy.deepcopy(dict['config'])
+            ## 2Do
+            ## IF the set command gets another package or class -> Error!
+        if 'params' in dict:
+            self._params = copy.deepcopy(dict['params'])
+        self._updateUnitsAndLinks()
         return True
 
-    # class
-
-    def getClass(self):
-        """Return class of system."""
-        return self._config['class']
-
-    # type
-
-    def getType(self):
-        """Return type of system."""
-        return '%s.%s' % (self._config['package'], self._config['class'])
-
-    # description
-
-    def getDescription(self):
-        """Return description of system."""
-        return self.__doc__
-
-    # generic data methods
-
-    def getDataEval(self, data, **kwargs):
-        """Return system specific data evaluation."""
-        return self._getDataEval(data, **kwargs)
-
-    def mapData(self, data, **kwargs):
-        """Return system representation of data."""
-        return self._mapData(data, **kwargs)
-
-    # generic parameter methods
+    ####################################################################
+    # System parameter modification                                    #
+    ####################################################################
 
     def initParams(self, dataset = None):
         """Initialize system parameters.
@@ -251,55 +279,8 @@ class system:
         # optimize system parameters
         return self._optimizeParams(dataset, schedule)
 
-    # generic unit methods
-
-    def getUnits(self, *args, **kwargs):
-        """Return labels of units in system."""
-        return self._getUnits(*args, **kwargs)
-
-    def getUnitInfo(self, *args, **kwargs):
-        """Return dictionary with information about a specific unit."""
-        return self._getUnitInformation(*args, **kwargs)
-
-    def getUnitEval(self, data, **kwargs):
-        """Return dictionary with units and evaluation values."""
-        return self._getUnitEval(data, **kwargs)
-
-    def getUnitEvalInfo(self, *args, **kwargs):
-        """Return information about unit evaluation functions."""
-        return self._getUnitEvalInformation(*args, **kwargs)
-
-    def unlinkUnit(self, unit, *args, **kwargs):
-        """Unlink unit (if present)."""
-        return self._unlinkUnit(unit)
-
-    def removeUnits(self, type, label):
-        return self._removeUnit(type, label)
-
-    def getLinkEval(self, data, **kwargs):
-        """Return dictionary with links and evaluation values."""
-        return self._getLinkEval(data, **kwargs)
-
-    # generic link methods
-
-    def getLinks(self, *args, **kwargs):
-        """Return list with 2-tuples containing unit labels."""
-        return self._getLinksFromConfig()
-
-    def removeLinks(self, links = [], *args, **kwargs):
-        """Remove links from system using list with 2-tuples containing unit labels."""
-        return self._removeLinks(links)
-
-    def removeLinksByThreshold(self, method = None, threshold = None, *args, **kwargs):
-        """Remove links from system using a threshold for link parameters."""
-        return self._removeLinksByThreshold(method, threshold)
-
-    def getLinkParams(self, links = [], *args, **kwargs):
-        """Return parameters of links."""
-        return self._getLinkParams(links)
-
     ####################################################################
-    # Common network tests
+    # Common network tests                                             #
     ####################################################################
 
     def _isNetworkMLPCompatible(self, network = None):
@@ -326,8 +307,8 @@ class system:
             return False
         for layer in network.layers():
             if not len(network.layer(layer)['nodes']) > 0:
-                nemoa.log('error', """
-                    Feedforward networks do not allow empty layers!""")
+                nemoa.log('error',
+                    'Feedforward networks do not allow empty layers!')
                 return False
             if not network.layer(layer)['visible'] \
                 == (layer in [network.layers()[0], network.layers()[-1]]):
@@ -376,7 +357,7 @@ class system:
         return True
 
     ####################################################################
-    # Common dataset tests
+    # Common dataset tests                                             #
     ####################################################################
 
     def _isDatasetBinary(self, dataset = None):
@@ -432,6 +413,67 @@ class system:
                 The standard deviation is %.3f!""" % (sdev))
             return False
         return True
+
+    ####################################################################
+    # Evaluate                                                         #
+    ####################################################################
+
+    def getDataEval(self, data, **kwargs):
+        """Return system specific data evaluation."""
+        return self._getDataEval(data, **kwargs)
+
+    ####################################################################
+    # Data transformation methods                                      #
+    ####################################################################
+
+    def mapData(self, data, **kwargs):
+        """Return system representation of data."""
+        return self._mapData(data, **kwargs)
+
+    ####################################################################
+    # Generic / static system information                              #
+    ####################################################################
+
+    def about(self, *args):
+        """Return generic information about various parts of the system.
+        
+        Arguments:
+            *args -- tuple of strings, containing a breadcrump trail to
+                a specific information about the system
+
+        Examples:
+            about('units', 'measure', 'error')
+                Returns information about the "error" measurement
+                function of the systems units.
+        """
+        if args[0] in ['units', 'links']:
+            if args[1] == 'measure':
+                if args[0] == 'units': methods = self.getUnitMethods()
+                if args[0] == 'links': methods = self.getLinkMethods()
+                if not args[2] in methods.keys(): return None
+                if not args[3] in methods[args[2]].keys(): return None
+                return methods[args[2]][args[3]]
+        if args[0] == 'name': return self.getName()
+        if args[0] == 'class': return self.getClass()
+        if args[0] == 'type': return self.getType()
+        if args[0] == 'description': return getDescription()
+        return None
+
+    def getName(self):
+        """Return name of system."""
+        return self._config['name'] #if 'name' in self._config else ''
+
+    def getClass(self):
+        """Return class of system."""
+        return self._config['class']
+
+    def getType(self):
+        """Return type of system."""
+        return '%s.%s' % (self._config['package'], self._config['class'])
+
+    def getDescription(self):
+        """Return description of system."""
+        return self.__doc__
 
 class empty(system):
 

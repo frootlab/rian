@@ -337,10 +337,6 @@ class rbm(nemoa.system.ann.ann):
                 evalDict[h] = hiddenUnitEval[j]
         return evalDict
 
-    def _getUnitEvalInformation(self, func):
-        """Return information about unit evaluation."""
-        return self._getUnitEval(None, func = func, info = True)
-
     def _getUnitEvalEnergy(self, data, **kwargs):
         """Return local energy of units."""
         return (self.getUnitEnergy(data, ('visible',)),

@@ -478,9 +478,41 @@ class ann(nemoa.system.base.system):
             self.units[layerName].initialize(data)
         return True
 
+    def _getUnitEval(self, data, func = 'performance', **kwargs):
+        """Return unit evaluation."""
+        
+        fDict = self.getUnitMethods()
+        if not func in fDict.keys():
+            nemoa.log('error', """
+                could not evaluate units:
+                unknown unit evaluation function '%s'
+                """ % (func))
+            return False
+
+        method = fDict[func]['method']
+        if not hasattr(self, method):
+            nemoa.log('error', """
+                could not evaluate units:
+                unsupported unit evaluation method '%s'
+                """ % (method))
+            return False
+
+        unitEval = eval('self.' + fDict[func]['method'] + '(data, **kwargs)')
+
+        print 'test'
+        quit()
+        evalDict = {}
+        if isinstance(visibleUnitEval, numpy.ndarray):
+            for i, v in enumerate(self.units['visible'].params['label']):
+                evalDict[v] = visibleUnitEval[i]
+        if isinstance(hiddenUnitEval, numpy.ndarray):
+            for j, h in enumerate(self.units['hidden'].params['label']):
+                evalDict[h] = hiddenUnitEval[j]
+        return evalDict
+
     def _getUnits(self, group = False, **kwargs):
         """Return tuple with units that match a given property.
-        
+
         Examples:
             return visible units: self._getUnits(visible = True)
         """
@@ -498,7 +530,7 @@ class ann(nemoa.system.base.system):
                     break
             if valid:
                 layers += (layer['label'], )
-        if group:
+        if group == True:
             return layers
         units = []
         for layer in layers:
@@ -764,6 +796,41 @@ class ann(nemoa.system.base.system):
         err = self.getUnitError(data, *args, **kwargs)
         nrm = numpy.sqrt((data[1] ** 2).sum(axis = 0))
         return 1.0 - err / nrm
+
+    ####################################################################
+    # Generic / static system information                              #
+    ####################################################################
+
+    def getUnitMethods(self):
+        return {
+            'energy': {
+                'name': 'local energy',
+                'method': '...'},
+            'expect': {
+                'name': 'expectation values',
+                'method': '...'},
+            'error': {
+                'name': 'data reconstruction error',
+                'method': '...'},
+            'performance': {
+                'name': 'performance',
+                'method': '...'},
+            'intperformance': {
+                'name': 'self performance',
+                'method': 'IntPerformance'},
+            'extperformance': {
+                'name': 'foreign performance',
+                'method': 'ExtPerformance'},
+            'relperformance': {
+                'name': 'relative performance',
+                'method': 'RelativePerformance'},
+            'relintperformance': {
+                'name': 'relative self performance',
+                'method': 'RelativeIntPerformance'},
+            'relextperformance': {
+                'name': 'relative foreign performance',
+                'method': 'RelativeExtPerformance'}
+        }
 
     ####################################################################
     # Artificial neuronal network links                                #

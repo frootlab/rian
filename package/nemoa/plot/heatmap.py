@@ -82,7 +82,6 @@ class unitRelation(heatmap):
 
     def getDefaults(self):
         return {
-            'units': 'visible',
             'x': None,
             'y': None,
             'relation': 'correlation()',
@@ -92,34 +91,26 @@ class unitRelation(heatmap):
 
     def create(self, model, file = None):
 
-        # convert 'visible' and 'hidden' to list of nodes
-        visible = model.system.getUnits(visible = True)
-        hidden = model.system.getUnits(visible = False)
-        for key in ['units', 'x', 'y']:
-            if type(self.settings[key]) == type(list()):
+        # use layer names for x and y
+        # special case: units in ['visible', 'hidden']
+        params = self.settings['params']
+        for key in ['x', 'y']:
+            if isinstance(params[key], list):
+                # 2DO: check units
                 continue
-            if not type(self.settings[key]) == type(str()):
-                self.settings[key] = []
-                continue
-            if self.settings[key].lower().strip() == 'visible':
-                self.settings[key] = visible
-            elif settings[key].lower().strip() == 'hidden':
-                self.settings[key] = hidden
-
-        # set independent units (y) and dependent units (x)
-        if self.settings['units']:
-            self.settings['x'] = self.settings['units']
-            self.settings['y'] = self.settings['units']
-        elif not self.settings['x'] and self.settings['y']:
-            self.settings['x'] = visible
-        elif self.settings['x'] and not self.settings['y']:
-            self.settings['y'] = visible
+            if not isinstance(params[key], str) \
+                or not params[key] in model.groups():
+                nemoa.log('error', """
+                    could not create plot:
+                    unsupported value for parameter '%s': %s!
+                    """ % (key, params[key]))
+                return False
+            params[key] = model.units(group = params[key])
 
         # calculate relation matrix
         data = model.getUnitRelationMatrix(
-            units = self.settings['units'],
-            x = self.settings['x'],
-            y = self.settings['y'],
+            x = params['x'],
+            y = params['y'],
             preprocessing = self.settings['preprocessing'],
             relation = self.settings['relation'],
             statistics = self.settings['statistics'])
@@ -130,11 +121,11 @@ class unitRelation(heatmap):
         ax.grid(True)
         cax = ax.imshow(data,
             cmap = matplotlib.cm.hot_r,
-            interpolation = self.settings['interpolation'],
-            extent = (0, len(self.settings['x']), 0, len(self.settings['y'])))
+            interpolation = settings['interpolation'],
+            extent = (0, len(params['x']), 0, len(params['y'])))
 
         # create labels for x-axis
-        xLabels = model.network.getNodeLabels(self.settings['x'])
+        xLabels = model.network.getNodeLabels(params['x'])
         matplotlib.pyplot.xticks(
             numpy.arange(len(xLabels)) + 0.5,
             tuple(xLabels),
@@ -142,7 +133,7 @@ class unitRelation(heatmap):
             rotation = 65)
 
         # create labels for y-axis
-        yLabels = model.network.getNodeLabels(self.settings['y'])
+        yLabels = model.network.getNodeLabels(params['y'])
         matplotlib.pyplot.yticks(
             len(yLabels) - numpy.arange(len(yLabels)) - 0.5,
             tuple(yLabels),
@@ -155,7 +146,8 @@ class unitRelation(heatmap):
 
         # draw figure title / caption
         if self.settings['show_figure_caption']:
-            title = "%s: %s" % (model.dataset.cfg['name'], nemoa.common.strSplitParams(self.settings['relation'])[0])
+            title = "%s: %s" % (model.dataset.cfg['name'],
+                nemoa.common.strSplitParams(self.settings['relation'])[0])
 
             # draw title
             matplotlib.pyplot.title(title, fontsize = 11)

@@ -202,7 +202,7 @@ class dataset:
         # test and update source file config
         for src in colLabels:
             print src, str(len(colLabels[src]['usecols']))
-            
+
             self.cfg['table'][src]['source']['usecols'] = colLabels[src]['usecols']
 
         #
