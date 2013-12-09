@@ -3,8 +3,10 @@
 
 ########################################################################
 # This python module contains a generic class for layered artificial   #
-# neuronal networks aimed to provide common attributes and subclasses  #
-# to special subtypes of artificial neuronal networks                  #
+# neural networks aimed to provide common attributes, methods and      #
+# optimization strategies like backpropagation and subclasses like     #
+# different types of units to special subtypes of artificial neural    #
+# networks like restricted boltzmann machines or deep beliefe networks #
 ########################################################################
 
 import nemoa.system.base, numpy
@@ -15,11 +17,16 @@ class ann(nemoa.system.base.system):
     Description:
         Artificial Neuronal Networks are graphical models.
 
-    Reference:
+    Reference
+        Rumelhart, D. E., Hinton, G. E., and Williams, R. J. (1986),
+        Learning representations by back-propagating errors. Nature, 323, 533--536.
     """
+    ####################################################################
+    # Configuration                                                    #
+    ####################################################################
 
     def _configure(self, config = {}, network = None, dataset = None, update = False, **kwargs):
-        """Configure RBM to network and dataset."""
+        """Configure ANN to network and dataset."""
         if not 'check' in self._config:
             self._config['check'] = {'config': False, 'network': False, 'dataset': False}
 
@@ -84,6 +91,10 @@ class ann(nemoa.system.base.system):
         return self._checkUnitParams(params) \
             and self._checkLinkParams(params)
 
+    ####################################################################
+    # Modification of Parameters                                       #
+    ####################################################################
+
     def _initParams(self, dataset = None):
         """Initialize system parameters.
 
@@ -100,10 +111,6 @@ class ann(nemoa.system.base.system):
             return False
         return self._initUnits(dataset) \
             and self._initLinks(dataset)
-
-    #
-    # 2DO: implement GRprop!!
-    #
 
     def _optimizeGetValues(self, inputData):
         """Forward pass (compute estimated values, from given input)"""
@@ -306,6 +313,10 @@ class ann(nemoa.system.base.system):
         nemoa.setLog(indent = '-1')
         return True
 
+    ####################################################################
+    # Evaluation funktions                                             #
+    ####################################################################
+
     def _getDataEval(self, data, func = 'performance', **kwargs):
         """Return scalar value for system evaluation."""
         if func == 'energy':
@@ -325,8 +336,22 @@ class ann(nemoa.system.base.system):
         return numpy.mean(self.getUnitPerformance(data, *args, **kwargs))
 
     ####################################################################
-    # Links
+    # Links                                                            #
     ####################################################################
+
+    def _setLinks(self, links):
+
+        # update link parameters
+        self._params['links'] = {}
+        for layerID in range(len(self._params['units']) - 1):
+            source = self._params['units'][layerID]['name']
+            target = self._params['units'][layerID + 1]['name']
+            x = len(self.units[source].params['label'])
+            y = len(self.units[target].params['label'])
+            self._params['links'][(layerID, layerID + 1)] = {
+                'source': source, 'target': target,
+                'A': numpy.ones([x, y], dtype = bool)}
+        return True
 
     def _initLinks(self, dataset = None):
         """Initialize link parameteres (weights).
@@ -445,7 +470,7 @@ class ann(nemoa.system.base.system):
         return True
 
     ####################################################################
-    # Units
+    # Units                                                            #
     ####################################################################
 
     def _initUnits(self, dataset = None):
@@ -575,24 +600,6 @@ class ann(nemoa.system.base.system):
             self.units[name].params = self._params['units'][id]
         return True
 
-    def _setLinks(self, links):
-
-        # update link parameters
-        self._params['links'] = {}
-        for layerID in range(len(self._params['units']) - 1):
-            source = self._params['units'][layerID]['name']
-            target = self._params['units'][layerID + 1]['name']
-            x = len(self.units[source].params['label'])
-            y = len(self.units[target].params['label'])
-            self._params['links'][(layerID, layerID + 1)] = {
-                'source': source, 'target': target,
-                'A': numpy.ones([x, y], dtype = bool)}
-        return True
-
-    def _getMapping(self):
-        """Return tuple with names of layers from input to output."""
-        return tuple([layer['name'] for layer in self._params['units']])
-
     def _checkUnitParams(self, params):
         """Check if system parameter dictionary is valid respective to units."""
         if not isinstance(params, dict) \
@@ -625,13 +632,6 @@ class ann(nemoa.system.base.system):
             group['id'] = \
                 network.node(group['label'][0])['params']['type_id']
         return units
-
-    def _getLayerOfUnit(self, unit):
-        """Return name of layer of given unit."""
-        for id in range(len(self._params['units'])):
-            if unit in self._params['units'][id]['label']:
-                return self._params['units'][id]['name']
-        return None
 
     def _getUnitInformation(self, unit, layer = None):
         """Return dict information for a given unit."""
@@ -674,19 +674,40 @@ class ann(nemoa.system.base.system):
         return True
 
     ####################################################################
+    # Layers                                                           #
+    ####################################################################
+
+    def _getLayerOfUnit(self, unit):
+        """Return name of layer of given unit."""
+        for id in range(len(self._params['units'])):
+            if unit in self._params['units'][id]['label']:
+                return self._params['units'][id]['name']
+        return None
+
+    def _getMapping(self):
+        """Return tuple with names of layers from input to output."""
+        return tuple([layer['name'] for layer in self._params['units']])
+
+    ####################################################################
     # Unit evaluation                                                  #
     ####################################################################
 
-    def getUnitExpect(self, inData, mapping = None):
-        """Return expected values of a layer."""
+    def getUnitExpect(self, data, mapping = None):
+        """Return expected values of a layer.
+        
+        Keyword Arguments:
+            mapping -- tuple of strings containing the mapping
+                from input layer (first argument of tuple)
+                to output layer (last argument of tuple)
+        """
         if mapping == None:
             mapping = self._getMapping()
         if len(mapping) == 2:
-            return self.units[mapping[1]].expect(inData,
+            return self.units[mapping[1]].expect(data,
                 self.units[mapping[0]].params)
-        outData = numpy.copy(inData)
+        output = numpy.copy(data)
         for id in range(len(mapping) - 1):
-            outData = self.units[mapping[id + 1]].expect(outData,
+            output = self.units[mapping[id + 1]].expect(output,
                 self.units[mapping[id]].params)
         return outData
 
@@ -694,9 +715,12 @@ class ann(nemoa.system.base.system):
         """Return sampled unit values calculated from mapping.
         
         Keyword Arguments:
+            mapping -- tuple of strings containing the mapping
+                from input layer (first argument of tuple)
+                to output layer (last argument of tuple)
             expectLast -- return expectation values of the units
-                for the last step instead of sampled values"""
-
+                for the last step instead of sampled values
+        """
         if mapping == None:
             mapping = self._getMapping()
         if expectLast:
@@ -725,9 +749,12 @@ class ann(nemoa.system.base.system):
         """Return unit values calculated from mappings.
         
         Keyword Arguments:
+            mapping -- tuple of strings containing the mapping
+                from input layer (first argument of tuple)
+                to output layer (last argument of tuple)
             expectLast -- return expectation values of the units
-                for the last step instead of maximum likelihood values"""
-
+                for the last step instead of maximum likelihood values
+        """
         if mapping == None:
             mapping = self._getMapping()
         if expectLast:
@@ -755,7 +782,13 @@ class ann(nemoa.system.base.system):
             return data
 
     def getUnitEnergy(self, data, mapping = None):
-        """Return unit energies of a layer."""
+        """Return unit energies of a layer.
+        
+        Keyword Arguments:
+            mapping -- tuple of strings containing the mapping
+                from input layer (first argument of tuple)
+                to output layer (last argument of tuple)
+        """
         if len(mapping) == 1:
             pass
         elif len(mapping) == 2:
@@ -766,11 +799,14 @@ class ann(nemoa.system.base.system):
 
     def getUnitError(self, data, mapping = None, block = [], **kwargs):
         """Return euclidean reconstruction error of units.
-        
-        Description:
-            distance := ||dataOut - modelOut||
-        """
 
+        Keyword Arguments:
+            mapping -- tuple of strings containing the mapping
+                from input layer (first argument of tuple)
+                to output layer (last argument of tuple)
+            block -- list of string containing labels of units in the input
+                layer that are blocked by setting the values to their means
+        """
         if mapping == None:
             mapping = self._getMapping()
         if block == []:
@@ -783,38 +819,38 @@ class ann(nemoa.system.base.system):
         return numpy.sqrt(((data[1] - modelOut) ** 2).sum(axis = 0))
 
     def getUnitPerformance(self, data, *args, **kwargs):
-        """Return unit performance respective to input and output data.
+        """Return unit reconstruction performance.
 
         Arguments:
-            dataIn -- Numpy array containing real input data for system
-            dataOut -- Numpy array containing real output data of system
+            data -- 2-tuple with numpy arrays containing input and output data
+                coresponding to the first and the last layer in the mapping
 
         Description:
             performance := 1 - error / ||data||
         """
-
         err = self.getUnitError(data, *args, **kwargs)
         nrm = numpy.sqrt((data[1] ** 2).sum(axis = 0))
         return 1.0 - err / nrm
 
     ####################################################################
-    # Generic / static system information                              #
+    # Generic / static information                                     #
     ####################################################################
 
     def getUnitMethods(self):
+        """Return dictionary with unit method names."""
         return {
             'energy': {
                 'name': 'local energy',
-                'method': '...'},
+                'method': 'getUnitEnergy'},
             'expect': {
                 'name': 'expectation values',
-                'method': '...'},
+                'method': 'getUnitExpect'},
             'error': {
                 'name': 'data reconstruction error',
-                'method': '...'},
+                'method': 'getUnitError'},
             'performance': {
                 'name': 'performance',
-                'method': '...'},
+                'method': 'getUnitPerformance'},
             'intperformance': {
                 'name': 'self performance',
                 'method': 'IntPerformance'},
@@ -833,7 +869,7 @@ class ann(nemoa.system.base.system):
         }
 
     ####################################################################
-    # Artificial neuronal network links                                #
+    # Link classes                                                     #
     ####################################################################
 
     class annLinks():
@@ -912,7 +948,7 @@ class ann(nemoa.system.base.system):
             return {key: left[key] * right[key] for key in left.keys()}
 
     ####################################################################
-    # Artificial neuronal network units                                #
+    # Unit classes                                                     #
     ####################################################################
 
     class annUnits():
@@ -1017,7 +1053,7 @@ class ann(nemoa.system.base.system):
             return {key: left[key] * right[key] for key in left.keys()}
 
     ####################################################################
-    # Sigmoidal artificial neuronal network units                      #
+    # Sigmoidal unit class                                             #
     ####################################################################
 
     class sigmoidUnits(annUnits):
@@ -1141,7 +1177,7 @@ class ann(nemoa.system.base.system):
             return 1.7159 * numpy.tanh(0.6666 * x)
 
     ####################################################################
-    # Gaussian artificial neuronal network units                       #
+    # Gaussian unit class                                              #
     ####################################################################
 
     class gaussUnits(annUnits):
