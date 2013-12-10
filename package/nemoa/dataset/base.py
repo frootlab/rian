@@ -63,7 +63,7 @@ class dataset:
             self.cfg['table'][self.cfg['name']]['fraction'] = 1.0
 
         #
-        # ANNOTATION
+        # Annotation
         #
 
         # get nodes from network and convert to common format
@@ -199,10 +199,8 @@ class dataset:
                 nemoa.setLog(indent = '-1')
                 return False
 
-        # test and update source file config
+        # update source file config
         for src in colLabels:
-            print src, str(len(colLabels[src]['usecols']))
-
             self.cfg['table'][src]['source']['usecols'] = colLabels[src]['usecols']
 
         #
@@ -252,15 +250,20 @@ class dataset:
         nemoa.setLog(indent = '-1')
         return True
 
-    #
-    # DATA PREPROCESSING
-    #
+    ####################################################################
+    # Data preprocessing                                               #
+    ####################################################################
 
     def preprocessData(self, **kwargs):
         """Data preprocessing.
-        
+
+        Keyword Arguments:
+            stratify -- see algorithm in stratifyData
+            normalize -- see algorithm in normalizeData
+            transform -- see algorithm in transformData
+
         Description:
-            Process data stratification, normalization and transformation
+            Process stratification, normalization and transformation.
         """
 
         nemoa.log('info', 'preprocessing data')

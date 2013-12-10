@@ -108,9 +108,8 @@ class unitRelation(heatmap):
             params[key] = model.units(group = params[key])
 
         # calculate relation matrix
-        data = model.getUnitRelationMatrix(
-            x = params['x'],
-            y = params['y'],
+        data = model.getUnitRelations(
+            units = (params['x'], params['y']),
             preprocessing = self.settings['preprocessing'],
             relation = self.settings['relation'],
             statistics = self.settings['statistics'])

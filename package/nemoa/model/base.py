@@ -417,15 +417,15 @@ class model:
 
     def getPerformance(self):
         """Return euclidean data reconstruction performance of system."""
-        dataIn = self.system._getMapping()[0]
-        dataOut = self.system._getMapping()[-1]
+        dataIn = self.system.getMapping()[0]
+        dataOut = self.system.getMapping()[-1]
         data = self.dataset.getData(cols = (dataIn, dataOut))
         return self.system.getPerformance(data)
 
     def getError(self):
         """Return data reconstruction error of system."""
-        dataIn = self.system._getMapping()[0]
-        dataOut = self.system._getMapping()[-1]
+        dataIn = self.system.getMapping()[0]
+        dataOut = self.system.getMapping()[-1]
         data = self.dataset.getData(cols = (dataIn, dataOut))
         return self.system.getError(data)
 
@@ -433,60 +433,22 @@ class model:
     # Evaluation of unit relations                                     #
     ####################################################################
 
-    def getUnitRelationMatrix(self, units = None, x = None, y = None,
-        relation = 'correlation()', preprocessing = None, statistics = 10000):
+    def getUnitRelations(self, **kwargs):
+        """Return numpy array containing unit relations."""
 
-        # 2DO! kick parameter "units"
+        preprocess = 'preprocessing' in kwargs \
+            and isinstance(kwargs['preprocessing'], dict)
 
-        # get visible and hidden units
-        # and set visble as default for unknown unit lists
-        visible = self.system.getUnits(visible = True)
-        hidden = self.system.getUnits(visible = False)
-        if units:
-            x = units
-            y = units
-        elif x and not y:
-            units = x
-            y = x
-        elif not x and y:
-            units = y
-            x = y
-        elif not x and not y:
-            units = visible
-            x = visible
-            y = visible
+        if preprocess:
+            datasetCopy = self.dataset._get()
+            self.dataset.preprocessData(**kwargs['preprocessing'])
 
-        relFunc, relParams = nemoa.common.strSplitParams(relation)
+        matrix = self.system.getUnitRelations(self.dataset, **kwargs)
 
-        # get data and perform data preprocessing
-        data = self.dataset.getData(statistics)
-        if not preprocessing == None:
-            plain = numpy.copy(data)
-            data = self.system.getDataRepresentation(data, transformation = preprocessing)
+        if preprocess:
+            self.dataset._set(datasetCopy)
 
-        # get relation as matrix
-        if relFunc == 'correlation':
-            M = self.__getUnitCorrelationMatrix(units = units, data = data, **relParams)
-        elif relFunc == 'causality':
-            M = self.__getUnitCausalityMatrix(x = x, y = y, data = data, **relParams)
-        else:
-            return None
-
-        # transform matrix
-        if 'transform' in relParams:
-            if 'C' in relParams['transform']:
-                if not preprocessing == None:
-                    C = self.__getUnitCorrelationMatrix(units = units, data = plain)
-                else:
-                    C = self.__getUnitCorrelationMatrix(units = units, data = data)
-            try:
-                T = eval(relParams['transform'])
-            except:
-                nemoa.log('warning', 'could not transform unit relation matrix: invalid syntax!')
-                return M
-            return T
-
-        return M
+        return matrix
 
     def getUnitRelationMatrixMuSigma(self, matrix, relation):
 
@@ -527,108 +489,6 @@ class model:
             sigma = numpy.std(A)
 
         return mu, sigma
-
-    def __getUnitCorrelationMatrix(self, units = None, data = None, **kwargs):
-
-        """
-        Description:
-        calculate correlation matrix
-
-        Keyword arguments:
-        units -- list of strings with valid unitIDs
-        """
-
-        # create data and calulate correlation matrix
-        M = numpy.corrcoef(data.T)
-
-        # create output matrix
-        C = numpy.zeros(shape = (len(units), len(units)))
-        for i, u1 in enumerate(units):
-            k = self.system.getUnitInfo(u1)['id']
-            for j, u2 in enumerate(units):
-                l = self.system.getUnitInfo(u2)['id']
-                C[i, j] = M[k, l]
-
-        return C
-
-    def __getUnitCausalityMatrix(self, x, y,
-        measure = 'relapprox', modify = 'setmean', data = None, **kwargs):
-        """Return numpy array with data manipulation results.
-
-        Keyword Arguments:
-            y -- list with labels of manipulated units on y axis of matrix
-            x -- list with labels of effected units on x axis of matrix+
-            modify -- type of manipulation
-            measure -- name of measurement function
-            data -- numpy array with data to test
-
-        Description:
-            Manipulate unit values and measure effect on other units,
-            respective to given data
-        """
-
-        # prepare causality matrix
-        K = numpy.zeros((len(y), len(x)))
-
-        # calculate unit values without modification
-        func = self.about('system', 'units', 'measure', measure, 'name')
-        nemoa.log('info', 'calculate %s effect on %s' % (modify, func))
-        tStart = time.time()
-        #
-        #
-        #
-        #
-        #
-        #
-        #
-        #
-        #
-        #
-        #
-        #
-        uLink  = self.getUnitEval(func = measure, data = data)
-        #
-        #
-        ##
-        ##
-        #
-        #
-        #
-        #
-        #
-        ##
-        ##
-        tStop  = time.time()
-        nemoa.log("info", 'estimated duration: %.1fs' % ((tStop - tStart) * len(y)))
-
-        for i, kUnit in enumerate(y):
-
-            # modify unit and calculate unit values
-            if modify == 'unlink':
-                links = self.system.getLinks()
-                self.system.unlinkUnit(kUnit)
-                uUnlink = self.getUnitEval(func = measure, data = data)
-                self.system.setLinks(links)
-            elif modify == 'setmean':
-                uID = self.system.getUnitInfo(kUnit)['id']
-                uUnlink = self.getUnitEval(func = measure, data = data, block = [uID])
-
-            # store difference in causality matrix
-            for j, mUnit in enumerate(x):
-                if mUnit == kUnit:
-                    continue
-                K[i,j] = uUnlink[mUnit] - uLink[mUnit]
-
-        return K
-
-
-
-
-
-
-
-
-
 
     ##
     ## MODEL PARAMETER HANDLING

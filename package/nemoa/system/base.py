@@ -422,6 +422,152 @@ class system:
         """Return system specific data evaluation."""
         return self._getDataEval(data, **kwargs)
 
+    def getUnitRelations(self, dataset, units = None,
+        relation = 'correlation()', preprocessing = None, statistics = 10000):
+
+        # get default mapping and data
+        mapping = self.getMapping()
+        data = dataset.getData(cols = (mapping[0], mapping[-1]))
+
+        # get units, unit groups and mapping between unit groups
+        if not isinstance(units, tuple) or not len(units) == 2:
+            src = mapping[0]
+            tgt = mapping[-1]
+            x = self.getUnits(name = src)
+            y = self.getUnits(name = tgt)
+        else:
+            x = units[0]
+            y = units[1]
+            src = self.getGroupOfUnit(x[0])
+            tgt = self.getGroupOfUnit(y[0])
+        
+        # modify mapping and dat if necessary
+        if not src == mapping[0]:
+            data[0] = self.getUnitExpect(data[0], mapping
+                = self.getMapping(src = mapping[0], tgt = src))
+        if not tgt == mapping[-1]:
+            data[1] = self.getUnitExpect(data[1], mapping
+                = self.getMapping(src = mapping[-1], tgt = tgt))
+        if not src == mapping[0] or not tgt == mapping[1]:
+            mapping = self.getMapping(src = src, tgt = tgt)
+
+        # get method and method specific parameters
+        method, params = nemoa.common.strSplitParams(relation)
+        
+        # get relation as numpy array
+        if method == 'correlation':
+            M = self.getUnitCorrelationMatrix(units = units,
+                mapping = mapping, data = data, **params)
+        elif method == 'causality':
+            M = self.getUnitCausalityMatrix(units = units,
+                mapping = mapping, data = data, **params)
+        else:
+            nemoa.log('error', """could not evaluate unit relations:
+                unknown relation '%s'""" % (method))
+            return None
+
+        print 'test'
+
+        quit()
+
+        # transform matrix
+        if 'transform' in relParams:
+            if 'C' in relParams['transform']:
+                if not preprocessing == None:
+                    C = self.getUnitCorrelationMatrix(units = units, data = plain)
+                else:
+                    C = self.getUnitCorrelationMatrix(units = units, data = data)
+            try:
+                T = eval(relParams['transform'])
+            except:
+                nemoa.log('warning', 'could not transform unit relation matrix: invalid syntax!')
+                return M
+            return T
+
+        return M
+
+    def getUnitCorrelationMatrix(self, units = None, mapping = None, data = None, **kwargs):
+        """Return correlation matrix as numpy array.
+
+        Keyword arguments:
+            units -- list of strings with valid unitIDs"""
+
+        # create data and calulate correlation matrix
+        M = numpy.corrcoef(data.T)
+
+        # create output matrix
+        C = numpy.zeros(shape = (len(units), len(units)))
+        for i, u1 in enumerate(units):
+            k = self.system.getUnitInfo(u1)['id']
+            for j, u2 in enumerate(units):
+                l = self.system.getUnitInfo(u2)['id']
+                C[i, j] = M[k, l]
+
+        return C
+
+    def getUnitCausalityMatrix(self, units, mapping = None,
+        data = None, modify = 'knockout', eval = 'error', **kwargs):
+        """Return numpy array with data manipulation results.
+
+        Keyword Arguments:
+            y -- list with labels of manipulated units on y axis of matrix
+            x -- list with labels of effected units on x axis of matrix+
+            modify -- type of manipulation
+            measure -- name of measurement function
+            data -- numpy array with data to test
+
+        Description:
+            Manipulate unit values and measure effect on other units,
+            respective to given data"""
+
+        # prepare causality matrix
+        x = units[0]
+        y = units[1]
+        K = numpy.zeros((len(y), len(x)))
+
+        # calculate unit values without modification
+        methodName = self.about('units', 'method', eval, 'name')
+        nemoa.log('info', 'calculate %s effect on %s' % (modify, methodName))
+        tStart = time.time()
+        uLink  = self.getUnitEval(eval = eval, data = data, mapping = mapping)
+        byebye
+        #
+        #
+        ##
+        ##
+        #
+        #
+        #
+        #
+        #
+        ##
+        ##
+        tStop  = time.time()
+        nemoa.log("info", 'estimated duration: %.1fs' % ((tStop - tStart) * len(y)))
+
+        for i, kUnit in enumerate(y):
+
+            # modify unit and calculate unit values
+            if modify == 'unlink':
+                links = self.system.getLinks()
+                self.system.unlinkUnit(kUnit)
+                uUnlink = self.getUnitEval(func = measure, data = data)
+                self.system.setLinks(links)
+            elif modify in ['knockout', 'setmean', 'ignore']:
+                uID = self.system.getUnitInfo(kUnit)['id']
+                uUnlink = self.getUnitEval(func = measure, data = data, block = [uID])
+
+            # store difference in causality matrix
+            for j, mUnit in enumerate(x):
+                if mUnit == kUnit:
+                    continue
+                K[i,j] = uUnlink[mUnit] - uLink[mUnit]
+
+        return K
+
+
+
+
     ####################################################################
     # Data transformation methods                                      #
     ####################################################################
@@ -447,7 +593,7 @@ class system:
                 function of the systems units.
         """
         if args[0] in ['units', 'links']:
-            if args[1] == 'measure':
+            if args[1] == 'method':
                 if args[0] == 'units': methods = self.getUnitMethods()
                 if args[0] == 'links': methods = self.getLinkMethods()
                 if not args[2] in methods.keys(): return None

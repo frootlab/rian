@@ -22,10 +22,18 @@ class ann(nemoa.system.base.system):
     # Configuration                                                    #
     ####################################################################
 
-    def _configure(self, config = {}, network = None, dataset = None, update = False, **kwargs):
-        """Configure ANN to network and dataset."""
+    def _configure(self, config = {}, network = None, dataset = None, update = False):
+        """Configure ANN to network and dataset.
+        
+        Keyword Arguments:
+            config -- dictionary containing system configuration
+            network -- nemoa network instance
+            dataset -- nemoa dataset instance
+        """
+
         if not 'check' in self._config:
-            self._config['check'] = {'config': False, 'network': False, 'dataset': False}
+            self._config['check'] = {
+                'config': False, 'network': False, 'dataset': False}
 
         self.setConfig(config)
         if not network == None:
@@ -112,7 +120,7 @@ class ann(nemoa.system.base.system):
     def _optimizeGetValues(self, inputData):
         """Forward pass (compute estimated values, from given input)"""
 
-        layers = self._getMapping()
+        layers = self.getMapping()
         out = {}
         for id, layer in enumerate(layers):
             if id == 0:
@@ -125,7 +133,7 @@ class ann(nemoa.system.base.system):
     def _optimizeGetDeltas(self, outputData, out):
         """Return weight delta from backpropagation of error"""
 
-        layers = self._getMapping()
+        layers = self.getMapping()
         delta = {}
         for id in range(len(layers) - 1)[::-1]:
             src = layers[id]
@@ -163,7 +171,7 @@ class ann(nemoa.system.base.system):
         minFactor = 0.000001
         maxFactor = 50.0
 
-        layers = self._getMapping()
+        layers = self.getMapping()
 
         # Compute gradient from delta rule
         grad = {'units': {}, 'links': {}}
@@ -224,7 +232,7 @@ class ann(nemoa.system.base.system):
         # RProp parameters
         rate = 0.1
 
-        layers = self._getMapping()
+        layers = self.getMapping()
         links = {}
         units = {}
         for id, src in enumerate(layers[:-1]):
@@ -237,7 +245,7 @@ class ann(nemoa.system.base.system):
 
     def _optimizeUpdateParams(self, updates):
         """Update parameters"""
-        layers = self._getMapping()
+        layers = self.getMapping()
         for id, layer in enumerate(layers[:-1]):
             src = layer
             tgt = layers[id + 1]
@@ -251,7 +259,7 @@ class ann(nemoa.system.base.system):
         nemoa.setLog(indent = '+1')
 
         # get training data
-        layers = self._getMapping()
+        layers = self.getMapping()
         inLayer = layers[0]
         outLayer = layers[-1]
         data = dataset.getData(cols = (inLayer, outLayer))
@@ -283,7 +291,7 @@ class ann(nemoa.system.base.system):
         nemoa.setLog(indent = '+1')
 
         # get training data
-        layers = self._getMapping()
+        layers = self.getMapping()
         inLayer = layers[0]
         outLayer = layers[-1]
         data = dataset.getData(cols = (inLayer, outLayer))
@@ -366,37 +374,27 @@ class ann(nemoa.system.base.system):
             self.units[layerName].initialize(data)
         return True
 
-    def _getUnitEval(self, data, func = 'performance', **kwargs):
+    def _getUnitEval(self, data, eval = 'performance', mapping = None, **kwargs):
         """Return unit evaluation."""
         
-        fDict = self.getUnitMethods()
-        if not func in fDict.keys():
+        methods = self.getUnitMethods()
+        if not eval in methods.keys():
             nemoa.log('error', """
-                could not evaluate units:
-                unknown unit evaluation function '%s'
-                """ % (func))
+                could not evaluate units: unsupported unit method '%s'
+                """ % (eval))
             return False
 
-        method = fDict[func]['method']
+        method = methods[eval]['method']
         if not hasattr(self, method):
             nemoa.log('error', """
-                could not evaluate units:
-                unsupported unit evaluation method '%s'
+                could not evaluate units: unsupported unit method '%s'
                 """ % (method))
             return False
 
-        unitEval = eval('self.' + fDict[func]['method'] + '(data, **kwargs)')
+        labels = self.getUnits(name = mapping[-1])
+        values = getattr(self, method)(data, **kwargs)
 
-        print 'test'
-        quit()
-        evalDict = {}
-        if isinstance(visibleUnitEval, numpy.ndarray):
-            for i, v in enumerate(self.units['visible'].params['label']):
-                evalDict[v] = visibleUnitEval[i]
-        if isinstance(hiddenUnitEval, numpy.ndarray):
-            for j, h in enumerate(self.units['hidden'].params['label']):
-                evalDict[h] = hiddenUnitEval[j]
-        return evalDict
+        return {unit: values[id] for id, unit in enumerate(labels)}
 
     def _getUnits(self, group = False, **kwargs):
         """Return tuple with units that match a given property.
@@ -499,7 +497,7 @@ class ann(nemoa.system.base.system):
     def _getUnitInformation(self, unit, layer = None):
         """Return dict information for a given unit."""
         if not layer:
-            layer = self._getLayerOfUnit(unit)
+            layer = self.getGroupOfUnit(unit)
         if not layer in self.units:
             return {}
         return self.units[layer].get(unit)
@@ -544,12 +542,14 @@ class ann(nemoa.system.base.system):
         """Return expected values of a layer.
         
         Keyword Arguments:
+            data -- numpy array containing data corresponding
+                to the input layer (first argument of mapping)
             mapping -- tuple of strings containing the mapping
                 from input layer (first argument of tuple)
                 to output layer (last argument of tuple)
         """
         if mapping == None:
-            mapping = self._getMapping()
+            mapping = self.getMapping()
         if len(mapping) == 2:
             return self.units[mapping[1]].expect(data,
                 self.units[mapping[0]].params)
@@ -557,7 +557,7 @@ class ann(nemoa.system.base.system):
         for id in range(len(mapping) - 1):
             output = self.units[mapping[id + 1]].expect(output,
                 self.units[mapping[id]].params)
-        return outData
+        return output
 
     def getUnitSamples(self, data, mapping = None, expectLast = False):
         """Return sampled unit values calculated from mapping.
@@ -570,7 +570,7 @@ class ann(nemoa.system.base.system):
                 for the last step instead of sampled values
         """
         if mapping == None:
-            mapping = self._getMapping()
+            mapping = self.getMapping()
         if expectLast:
             if len(mapping) == 1:
                 return data
@@ -604,7 +604,7 @@ class ann(nemoa.system.base.system):
                 for the last step instead of maximum likelihood values
         """
         if mapping == None:
-            mapping = self._getMapping()
+            mapping = self.getMapping()
         if expectLast:
             if len(mapping) == 1:
                 return data
@@ -645,10 +645,13 @@ class ann(nemoa.system.base.system):
             data = self.getUnitValues(self.getUnitExpect(data, mapping[0:-1]), mapping[-2:])
         return self.units[mapping[-1]].energy(data)
 
-    def getUnitError(self, data, mapping = None, block = [], **kwargs):
+    def getUnitError(self, data, mapping = None, block = None, **kwargs):
         """Return euclidean reconstruction error of units.
 
         Keyword Arguments:
+            data -- 2-tuple with numpy arrays containing input and
+                output data coresponding to the first and the last layer
+                in the mapping
             mapping -- tuple of strings containing the mapping
                 from input layer (first argument of tuple)
                 to output layer (last argument of tuple)
@@ -656,8 +659,8 @@ class ann(nemoa.system.base.system):
                 layer that are blocked by setting the values to their means
         """
         if mapping == None:
-            mapping = self._getMapping()
-        if block == []:
+            mapping = self.getMapping()
+        if block == None:
             modelOut = self.getUnitExpect(data[0], mapping)
         else:
             dataInCopy = numpy.copy(data[0])
@@ -670,8 +673,9 @@ class ann(nemoa.system.base.system):
         """Return unit reconstruction performance.
 
         Arguments:
-            data -- 2-tuple with numpy arrays containing input and output data
-                coresponding to the first and the last layer in the mapping
+            data -- 2-tuple with numpy arrays containing input and
+                output data coresponding to the first and the last layer
+                in the mapping
 
         Description:
             performance := 1 - error / ||data||
@@ -815,19 +819,30 @@ class ann(nemoa.system.base.system):
         return True
 
     ####################################################################
-    # Layers                                                           #
+    # Unit groups / Layers                                             #
     ####################################################################
 
-    def _getLayerOfUnit(self, unit):
-        """Return name of layer of given unit."""
+    def getGroupOfUnit(self, unit):
+        """Return name of unit group of given unit."""
         for id in range(len(self._params['units'])):
             if unit in self._params['units'][id]['label']:
                 return self._params['units'][id]['name']
         return None
 
-    def _getMapping(self):
-        """Return tuple with names of layers from input to output."""
-        return tuple([layer['name'] for layer in self._params['units']])
+    def getMapping(self, src = None, tgt = None):
+        """Return tuple with names of unit groups from source to target.
+        
+        Keyword Arguments:
+            src -- name of source unit group
+            tgt -- name of target unit group
+        """
+        mapping = tuple([g['name'] for g in self._params['units']])
+        sid = mapping.index(src) \
+            if isinstance(src, str) and src in mapping else 0
+        tid = mapping.index(tgt) \
+            if isinstance(tgt, str) and tgt in mapping else len(mapping)
+        return mapping[sid:tid + 1] if sid <= tid \
+            else mapping[tid:sid + 1][::-1]
 
     ####################################################################
     # Generic / static information                                     #

@@ -212,7 +212,7 @@ class dbn(nemoa.system.ann.ann):
         nemoa.setLog(indent = '+1')
 
         # keep original inputs and outputs
-        mapping = self._getMapping()
+        mapping = self.getMapping()
         inputs = self.units[mapping[0]].params['label']
         outputs = self.units[mapping[-1]].params['label']
 
@@ -249,8 +249,8 @@ class dbn(nemoa.system.ann.ann):
         ################################################################
 
         nemoa.log('info', 'cleanup unit and linkage parameter arrays')
-        self._removeUnits(self._getMapping()[0], outputs)
-        self._removeUnits(self._getMapping()[-1], inputs)
+        self._removeUnits(self.getMapping()[0], outputs)
+        self._removeUnits(self.getMapping()[-1], inputs)
 
         nemoa.setLog(indent = '-2')
         return True

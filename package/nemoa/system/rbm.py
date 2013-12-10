@@ -63,10 +63,10 @@ class rbm(nemoa.system.ann.ann):
 
     # DATA EVALUATION
 
-    def _getMapping(self):
-        visible = self._params['units'][0]['name']
-        hidden = self._params['units'][1]['name']
-        return (visible, hidden, visible)
+    def getMapping(self):
+        v = self._params['units'][0]['name']
+        h = self._params['units'][1]['name']
+        return (v, h, v)
 
     def _checkDataset(self, dataset):
         """Check if dataset contains binary values."""
