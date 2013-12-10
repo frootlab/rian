@@ -4,7 +4,7 @@
 import nemoa, copy, numpy, time
 
 class system:
-    """Base class for systems."""
+    """Base class for graphical models."""
 
     ####################################################################
     # System configuration                                             #

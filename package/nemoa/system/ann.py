@@ -12,10 +12,7 @@
 import nemoa.system.base, numpy
 
 class ann(nemoa.system.base.system):
-    """Artificial Neuronal Network (ANN).
-
-    Description:
-        Artificial Neuronal Networks are graphical models.
+    """Artificial Neuronal Network (ANN) / Backpropagation Networks.
 
     Reference:
         "Learning representations by back-propagating errors",
