@@ -35,10 +35,10 @@ class layerGraph(plot):
         if self.settings['node_caption']:
 
             # get node captions
-            node_caption = model._getUnitEval(func = self.settings['node_caption'])
+            node_caption = model._getUnitEval(eval = self.settings['node_caption'])
 
             # get model caption
-            funcName = model.system.getUnitEvalInfo(func = self.settings['node_caption'])['name']
+            funcName = model.system.getUnitEvalInfo(eval = self.settings['node_caption'])['name']
             model_caption = float(sum([node_caption[u] for u in node_caption.keys()]))/len(node_caption)
             caption  = 'Average ' + funcName + ': $\mathrm{%.1f' % (100 * model_caption) + '\%}$'
 

@@ -391,6 +391,9 @@ class ann(nemoa.system.base.system):
                 """ % (method))
             return False
 
+        if mapping == None:
+            mapping = self.getMapping()
+
         labels = self.getUnits(name = mapping[-1])
         values = getattr(self, method)(data, **kwargs)
 

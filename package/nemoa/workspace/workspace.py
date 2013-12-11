@@ -72,13 +72,12 @@ class workspace:
         """Return new system instance."""
         return self.__getInstance('system', config, **kwargs)
 
+    def loadModel(self, file):
+        """Load model from file."""
+        return self.__getModelInstanceFromFile(file)
+
     def model(self, config = None, name = None, **kwargs):
         """Return new model instance."""
-
-        # if keyword argument 'file' is given
-        # try to get model from file
-        if 'file' in kwargs:
-            return self.__getModelInstanceFromFile(kwargs['file'])
 
         nemoa.log('title', 'create model')
         nemoa.setLog(indent = '+1')

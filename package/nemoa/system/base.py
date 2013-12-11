@@ -423,7 +423,8 @@ class system:
         return self._getDataEval(data, **kwargs)
 
     def getUnitRelations(self, dataset, units = None,
-        relation = 'correlation()', preprocessing = None, statistics = 10000):
+        relation = 'correlation()',
+        preprocessing = None, statistics = 10000):
 
         # get default mapping and data
         mapping = self.getMapping()
@@ -431,82 +432,112 @@ class system:
 
         # get units, unit groups and mapping between unit groups
         if not isinstance(units, tuple) or not len(units) == 2:
-            src = mapping[0]
-            tgt = mapping[-1]
-            x = self.getUnits(name = src)
-            y = self.getUnits(name = tgt)
+            units = (self.getUnits(name = mapping[0]), \
+                self.getUnits(name = mapping[-1]))
+        elif isinstance(units[0], str) or isinstance(units[1], str):
+            if isinstance(units[0], str):
+                units[0] = self.getUnits(name = units[0])
+            if isinstance(units[1], str):
+                units[1] = self.getUnits(name = units[1])
+        elif isinstance(units[0], list) and isinstance(units[1], list):
+            #2do: get expected values for hidden units
+            pass
         else:
-            x = units[0]
-            y = units[1]
-            src = self.getGroupOfUnit(x[0])
-            tgt = self.getGroupOfUnit(y[0])
-        
-        # modify mapping and dat if necessary
-        if not src == mapping[0]:
-            data[0] = self.getUnitExpect(data[0], mapping
-                = self.getMapping(src = mapping[0], tgt = src))
-        if not tgt == mapping[-1]:
-            data[1] = self.getUnitExpect(data[1], mapping
-                = self.getMapping(src = mapping[-1], tgt = tgt))
-        if not src == mapping[0] or not tgt == mapping[1]:
-            mapping = self.getMapping(src = src, tgt = tgt)
+            #2do proper error handling
+            quit()
+
+        ## get default mapping and data
+        #mapping = self.getMapping()
+        #data = dataset.getData(cols = (mapping[0], mapping[-1]))
+
+        ## get units, unit groups and mapping between unit groups
+        #if not isinstance(units, tuple) or not len(units) == 2:
+            #units = (self.getUnits(name = mapping[0]), self.getUnits(name = mapping[-1]))
+        #elif isinstance(units[0], str) or isinstance(units[1], str):
+            #if isinstance(units[0], str):
+                #units[0] = self.getUnits(name = units[0])
+            #if isinstance(units[1], str):
+                #units[1] = self.getUnits(name = units[1])
+        #elif isinstance(units[0], list) and isinstance(units[1], list):
+            ##2do: get expected values for hidden units
+            #pass
+        #else:
+            ##2do proper error handling
+            #quit()
+            #x   = units[0]
+            #src = self.getGroupOfUnit(units[0][0])
+        #else:
+            #src = mapping[0]
+            #x   = self.getUnits(name = mapping[0])
+        #if isinstance(units[1], list):
+            #y   = units[1]
+            #tgt = self.getGroupOfUnit(units[1][0])
+        #else:
+            #tgt = mapping[-1]
+            #y   = self.getUnits(name = mapping[-1])
+
+        ## modify mapping and data if necessary
+        #if not src == mapping[0]:
+            #data[0] = self.getUnitExpect(data[0], mapping
+                #= self.getMapping(src = mapping[0], tgt = src))
+        #if not tgt == mapping[-1]:
+            #data[1] = self.getUnitExpect(data[1], mapping
+                #= self.getMapping(src = mapping[-1], tgt = tgt))
+        #if not src == mapping[0] or not tgt == mapping[-1]:
+            #mapping = self.getMapping(src = src, tgt = tgt)
 
         # get method and method specific parameters
         method, params = nemoa.common.strSplitParams(relation)
         
         # get relation as numpy array
         if method == 'correlation':
-            M = self.getUnitCorrelationMatrix(units = units,
-                mapping = mapping, data = data, **params)
+            M = self.getUnitCorrelation(\
+                units = units, data = data, **params)
         elif method == 'causality':
-            M = self.getUnitCausalityMatrix(units = units,
-                mapping = mapping, data = data, **params)
+            M = self.getUnitCausality(\
+                units = units, data = data, mapping = mapping, **params)
         else:
             nemoa.log('error', """could not evaluate unit relations:
                 unknown relation '%s'""" % (method))
             return None
 
-        print 'test'
-
-        quit()
-
         # transform matrix
-        if 'transform' in relParams:
-            if 'C' in relParams['transform']:
-                if not preprocessing == None:
-                    C = self.getUnitCorrelationMatrix(units = units, data = plain)
-                else:
-                    C = self.getUnitCorrelationMatrix(units = units, data = data)
+        if 'transform' in params:
+            if 'C' in params['transform']:
+                C = self.getUnitCorrelationMatrix(units = units, data = data)
             try:
-                T = eval(relParams['transform'])
+                T = eval(params['transform'])
             except:
-                nemoa.log('warning', 'could not transform unit relation matrix: invalid syntax!')
+                nemoa.log('error', """
+                    could not transform unit relation matrix:
+                    invalid syntax!""")
                 return M
             return T
 
         return M
 
-    def getUnitCorrelationMatrix(self, units = None, mapping = None, data = None, **kwargs):
+    def getUnitCorrelation(self, units = None, data = None, **kwargs):
         """Return correlation matrix as numpy array.
 
         Keyword arguments:
             units -- list of strings with valid unitIDs"""
 
         # create data and calulate correlation matrix
-        M = numpy.corrcoef(data.T)
+        M = numpy.corrcoef(numpy.hstack(data).T)
+        uList = units[0] + units[1]
 
         # create output matrix
-        C = numpy.zeros(shape = (len(units), len(units)))
-        for i, u1 in enumerate(units):
-            k = self.system.getUnitInfo(u1)['id']
-            for j, u2 in enumerate(units):
-                l = self.system.getUnitInfo(u2)['id']
+        C = numpy.zeros(shape = (len(units[0]), len(units[1])))
+        for i, u1 in enumerate(units[0]):
+            k = uList.index(u1)
+            for j, u2 in enumerate(units[1]):
+                l = uList.index(u2)
                 C[i, j] = M[k, l]
 
         return C
 
-    def getUnitCausalityMatrix(self, units, mapping = None,
-        data = None, modify = 'knockout', eval = 'error', **kwargs):
+    def getUnitCausality(self, units, data = None, mapping = None,
+        modify = 'knockout', eval = 'error', **kwargs):
         """Return numpy array with data manipulation results.
 
         Keyword Arguments:
@@ -521,52 +552,47 @@ class system:
             respective to given data"""
 
         # prepare causality matrix
-        x = units[0]
-        y = units[1]
-        K = numpy.zeros((len(y), len(x)))
+        K = numpy.zeros((len(units[0]), len(units[1])))
 
         # calculate unit values without modification
         methodName = self.about('units', 'method', eval, 'name')
-        nemoa.log('info', 'calculate %s effect on %s' % (modify, methodName))
+        nemoa.log('info', """
+            calculate %s effect on %s""" % (modify, methodName))
         tStart = time.time()
-        uLink  = self.getUnitEval(eval = eval, data = data, mapping = mapping)
-        byebye
-        #
-        #
-        ##
-        ##
-        #
-        #
-        #
-        #
-        #
-        ##
-        ##
-        tStop  = time.time()
-        nemoa.log("info", 'estimated duration: %.1fs' % ((tStop - tStart) * len(y)))
+        default = self.getUnitEval(eval = eval, \
+            data = data, mapping = mapping)
+        estimation = (time.time() - tStart) * len(units[0])
+        nemoa.log('info', """
+            estimated duration: %.1fs""" % (estimation))
 
-        for i, kUnit in enumerate(y):
+        srcUnits = self.getUnits(name = mapping[0])
+
+        modi = {}
+        for i, srcUnit in enumerate(units[0]):
 
             # modify unit and calculate unit values
-            if modify == 'unlink':
-                links = self.system.getLinks()
-                self.system.unlinkUnit(kUnit)
-                uUnlink = self.getUnitEval(func = measure, data = data)
-                self.system.setLinks(links)
-            elif modify in ['knockout', 'setmean', 'ignore']:
-                uID = self.system.getUnitInfo(kUnit)['id']
-                uUnlink = self.getUnitEval(func = measure, data = data, block = [uID])
+            if modify == 'knockout':
+                id = srcUnits.index(srcUnit)
+                modi = self.getUnitEval(eval = eval,
+                    data = data, mapping = mapping, block = [id])
+            #2DO: fix unlink
+            #elif modify == 'unlink':
+                #links = self.getLinks()
+                #self.unlinkUnit(kUnit)
+                #uUnlink = self.getUnitEval(func = measure, data = data)
+                #self.system.setLinks(links)
+            else:
+                nemoa.log('error', """could not create causality matrix:
+                    unknown data manipulation function '%s'!""" % (modify))
+                return None
 
             # store difference in causality matrix
-            for j, mUnit in enumerate(x):
-                if mUnit == kUnit:
+            for j, tgtUnit in enumerate(units[1]):
+                if srcUnit == tgtUnit:
                     continue
-                K[i,j] = uUnlink[mUnit] - uLink[mUnit]
+                K[i,j] = modi[tgtUnit] - default[tgtUnit]
 
         return K
-
-
-
 
     ####################################################################
     # Data transformation methods                                      #

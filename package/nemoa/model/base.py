@@ -443,12 +443,12 @@ class model:
             datasetCopy = self.dataset._get()
             self.dataset.preprocessData(**kwargs['preprocessing'])
 
-        matrix = self.system.getUnitRelations(self.dataset, **kwargs)
+        R = self.system.getUnitRelations(self.dataset, **kwargs)
 
         if preprocess:
             self.dataset._set(datasetCopy)
 
-        return matrix
+        return R
 
     def getUnitRelationMatrixMuSigma(self, matrix, relation):
 

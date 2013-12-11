@@ -82,8 +82,7 @@ class unitRelation(heatmap):
 
     def getDefaults(self):
         return {
-            'x': None,
-            'y': None,
+            'units': (None, None),
             'relation': 'correlation()',
             'preprocessing': None,
             'statistics': 10000
@@ -91,25 +90,18 @@ class unitRelation(heatmap):
 
     def create(self, model, file = None):
 
-        # use layer names for x and y
-        # special case: units in ['visible', 'hidden']
-        params = self.settings['params']
-        for key in ['x', 'y']:
-            if isinstance(params[key], list):
-                # 2DO: check units
-                continue
-            if not isinstance(params[key], str) \
-                or not params[key] in model.groups():
-                nemoa.log('error', """
-                    could not create plot:
-                    unsupported value for parameter '%s': %s!
-                    """ % (key, params[key]))
-                return False
-            params[key] = model.units(group = params[key])
+        params = self.settings['params'] if 'params' in self.settings \
+            else {}
+
+        # update self.units
+        if not isinstance(self.settings['units'], tuple) \
+            or not isinstance(self.settings['units'][0], list):
+            mapping = model.system.getMapping()
+            self.settings['units'] = (model.units(mapping[0]), model.units(mapping[-1]))
 
         # calculate relation matrix
-        data = model.getUnitRelations(
-            units = (params['x'], params['y']),
+        R = model.getUnitRelations(
+            units = self.settings['units'],
             preprocessing = self.settings['preprocessing'],
             relation = self.settings['relation'],
             statistics = self.settings['statistics'])
@@ -118,13 +110,14 @@ class unitRelation(heatmap):
         fig = matplotlib.pyplot.figure()
         ax = fig.add_subplot(111)
         ax.grid(True)
-        cax = ax.imshow(data,
+        cax = ax.imshow(R,
             cmap = matplotlib.cm.hot_r,
-            interpolation = settings['interpolation'],
-            extent = (0, len(params['x']), 0, len(params['y'])))
+            interpolation = self.settings['interpolation'],
+            extent = (0, R.shape[1], 0, R.shape[0]))
 
         # create labels for x-axis
-        xLabels = model.network.getNodeLabels(params['x'])
+        xLabelIDs = self.settings['units'][1]
+        xLabels = model.network.getNodeLabels(xLabelIDs)
         matplotlib.pyplot.xticks(
             numpy.arange(len(xLabels)) + 0.5,
             tuple(xLabels),
@@ -132,7 +125,8 @@ class unitRelation(heatmap):
             rotation = 65)
 
         # create labels for y-axis
-        yLabels = model.network.getNodeLabels(params['y'])
+        yLabelIDs = self.settings['units'][0]
+        yLabels = model.network.getNodeLabels(yLabelIDs)
         matplotlib.pyplot.yticks(
             len(yLabels) - numpy.arange(len(yLabels)) - 0.5,
             tuple(yLabels),
