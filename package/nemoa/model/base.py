@@ -796,6 +796,9 @@ class model:
             return False
 
         # get plot instance
+        nemoa.log('info', 'create plot instance')
+        nemoa.setLog(indent = '+1')
+
         if isinstance(plot, str):
             plotName, plotParams = nemoa.common.strSplitParams(plot)
             mergeDict = plotParams
@@ -804,6 +807,7 @@ class model:
             objPlot = self.__getPlot(name = plotName, params = plotParams)
             if not objPlot:
                 nemoa.log("warning", "could not create plot: unknown configuration '%s'" % (plotName))
+                nemoa.setLog(indent = '-1')
                 return None
         elif isinstance(plot, dict):
             objPlot = self.__getPlot(config = plot)
@@ -819,12 +823,12 @@ class model:
             file = nemoa.common.getEmptyFile(nemoa.workspace.path('plots') + \
                 self.getName() + '/' + objPlot.cfg['name'] + \
                 '.' + objPlot.settings['fileformat'])
-            nemoa.log('info', 'create plot: ' + file)
 
         # create plot
         retVal = objPlot.create(self, file = file)
+        nemoa.log('info', 'save plot: ' + file)
         
-        nemoa.setLog(indent = '-1')
+        nemoa.setLog(indent = '-2')
         return retVal
 
     def __getPlot(self, name = None, params = {}, config = {}, **options):
@@ -835,19 +839,17 @@ class model:
 
         # get plot configuration
         if name == None: cfgPlot = config.copy()
-        else:
-            cfgPlot = nemoa.workspace.get('plot', name = name, params = params)
-
-        # create plot instance
-        if not cfgPlot == None:
-            nemoa.log("info", "create plot instance: '" + name + "'")
-            # merge params
-            for param in params.keys():
-                cfgPlot['params'][param] = params[param]
-            return nemoa.plot.new(config = cfgPlot)
-        else:
-            nemoa.log("error", "could not create plot instance: unkown plot-id '" + name + "'")
+        else: cfgPlot = nemoa.workspace.get( \
+            'plot', name = name, params = params)
+        if cfgPlot == None:
+            nemoa.log('error', """
+                could not create plot instance:
+                unkown plot-id '%s'""" % (name))
             return None
+        for param in params.keys():
+            cfgPlot['params'][param] = params[param]
+
+        return nemoa.plot.new(config = cfgPlot)
 
     ####################################################################
     # Generic / static model information                               #

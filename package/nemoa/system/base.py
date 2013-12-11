@@ -424,7 +424,7 @@ class system:
 
     def getUnitRelations(self, dataset, units = None,
         relation = 'correlation()',
-        preprocessing = None, statistics = 10000):
+        preprocessing = None, statistics = 10000, **kwargs):
 
         # get default mapping and data
         mapping = self.getMapping()
@@ -487,8 +487,9 @@ class system:
             #mapping = self.getMapping(src = src, tgt = tgt)
 
         # get method and method specific parameters
-        method, params = nemoa.common.strSplitParams(relation)
-        
+        method, ukwargs = nemoa.common.strSplitParams(relation)
+        params = nemoa.common.dictMerge(ukwargs, kwargs)
+
         # get relation as numpy array
         if method == 'correlation':
             M = self.getUnitCorrelation(\

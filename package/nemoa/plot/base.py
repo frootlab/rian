@@ -16,17 +16,15 @@ class plot:
     #
 
     def __init__(self, config = None):
-        if not config:
-            return
-
         self.setConfig(config)
 
     def setConfig(self, config):
-        """
-        initialize plot configuration, using configuration dictionary
-        """
+        """Initialize plot configuration with dictionary."""
 
         self.cfg = {}
+        if config == None:
+            return None
+
         self.cfg['name'] = config['name']
         self.cfg['id'] = config['id']
         self.cfg['input'] = 'model'
@@ -39,6 +37,8 @@ class plot:
         # set configured settings
         for key, value in config['params'].items():
             self.settings[key] = value
+        
+        return True
 
     def getName(self):
         """

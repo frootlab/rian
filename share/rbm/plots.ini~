@@ -1,5 +1,15 @@
 # MODEL WEIGHT GRAPH
 
+[plot HiddenLayerGraph]
+package = layergraph
+class = weightGraph
+params:
+  node_caption = 'performance',
+  edge_caption = 'none',
+  edge_weight = 'weights',
+  edge_threshold = 0.0,
+  edge_zoom = 2.0
+
 # DIMENSIONALITY REDUCTION VALIDATION
 
 [plot CorrelationHeatmap]

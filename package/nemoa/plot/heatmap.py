@@ -14,69 +14,69 @@ class heatmap(nemoa.plot.base.plot):
             'interpolation': 'nearest'
         }
 
-class sampleRelation(heatmap):
+#class sampleRelation(heatmap):
 
-    def getDefaults(self):
-        return {
-            'samples': '*',
-            'relation': 'distance_euclidean_hexpect'
-        }
+    #def getDefaults(self):
+        #return {
+            #'samples': '*',
+            #'relation': 'distance_euclidean_hexpect'
+        #}
 
-    def create(self, model, file = None):
+    #def create(self, model, file = None):
 
-        # calculate sample relation matrix
-        data = model.getSampleRelationMatrix(
-            samples  = self.settings['samples'],
-            relation = self.settings['relation'] )
+        ## calculate sample relation matrix
+        #data = model.getSampleRelationMatrix(
+            #samples  = self.settings['samples'],
+            #relation = self.settings['relation'] )
 
-        # create figure object
-        fig = matplotlib.pyplot.figure()
-        ax = fig.add_subplot(111)
-        ax.grid(True)
-        cax = ax.imshow(data,
-            cmap = matplotlib.cm.hot_r,
-            interpolation = self.settings['interpolation'],
-            extent = (0, data.shape[0], 0, data.shape[1]))
+        ## create figure object
+        #fig = matplotlib.pyplot.figure()
+        #ax = fig.add_subplot(111)
+        #ax.grid(True)
+        #cax = ax.imshow(data,
+            #cmap = matplotlib.cm.hot_r,
+            #interpolation = self.settings['interpolation'],
+            #extent = (0, data.shape[0], 0, data.shape[1]))
 
-        # get labels and set plot ticks and labels
-        labels = model.dataset.getRowLabels()
+        ## get labels and set plot ticks and labels
+        #labels = model.dataset.getRowLabels()
 
-        matplotlib.pyplot.yticks(
-            len(labels) - numpy.arange(len(labels)) - 0.5,
-            tuple(labels),
-            fontsize = 9)
+        #matplotlib.pyplot.yticks(
+            #len(labels) - numpy.arange(len(labels)) - 0.5,
+            #tuple(labels),
+            #fontsize = 9)
             
-        matplotlib.pyplot.xticks(
-            numpy.arange(len(labels)) + 0.5,
-            tuple(labels),
-            fontsize = 9,
-            rotation = 70)
+        #matplotlib.pyplot.xticks(
+            #numpy.arange(len(labels)) + 0.5,
+            #tuple(labels),
+            #fontsize = 9,
+            #rotation = 70)
         
-        # add colorbar
-        cbar = fig.colorbar(cax)
-        for tick in cbar.ax.get_yticklabels():
-            tick.set_fontsize(9)
+        ## add colorbar
+        #cbar = fig.colorbar(cax)
+        #for tick in cbar.ax.get_yticklabels():
+            #tick.set_fontsize(9)
 
-        # draw figure title / caption
-        if self.settings['show_figure_caption']:
+        ## draw figure title / caption
+        #if self.settings['show_figure_caption']:
             
-            title = "%s: %s" % (model.dataset.cfg['name'],
-                self.settings['relation'])
+            #title = "%s: %s" % (model.dataset.cfg['name'],
+                #self.settings['relation'])
             
-            # draw title
-            matplotlib.pyplot.title(title, fontsize = 11)
+            ## draw title
+            #matplotlib.pyplot.title(title, fontsize = 11)
         
-        # output
-        if file:
-            matplotlib.pyplot.savefig(file, dpi = self.settings['dpi'])
-        else:
-            matplotlib.pyplot.show()
+        ## output
+        #if file:
+            #matplotlib.pyplot.savefig(file, dpi = self.settings['dpi'])
+        #else:
+            #matplotlib.pyplot.show()
         
-        # clear current figure object and release memory
-        matplotlib.pyplot.clf()
-        matplotlib.pyplot.close(fig)
+        ## clear current figure object and release memory
+        #matplotlib.pyplot.clf()
+        #matplotlib.pyplot.close(fig)
 
-        return True
+        #return True
 
 class unitRelation(heatmap):
 
@@ -84,6 +84,8 @@ class unitRelation(heatmap):
         return {
             'units': (None, None),
             'relation': 'correlation()',
+            'modify': 'knockout',
+            'eval': 'error',
             'preprocessing': None,
             'statistics': 10000
         }
@@ -104,6 +106,8 @@ class unitRelation(heatmap):
             units = self.settings['units'],
             preprocessing = self.settings['preprocessing'],
             relation = self.settings['relation'],
+            eval = self.settings['eval'],
+            modify = self.settings['modify'],
             statistics = self.settings['statistics'])
 
         # create figure object

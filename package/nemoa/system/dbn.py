@@ -245,7 +245,7 @@ class dbn(nemoa.system.ann.ann):
             del links[(id, id + 1)]['init']
 
         ################################################################
-        # Remove input units from output layer, vice versa             #
+        # Remove input units from output layer, and vice versa         #
         ################################################################
 
         nemoa.log('info', 'cleanup unit and linkage parameter arrays')
