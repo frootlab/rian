@@ -91,7 +91,6 @@ class unitRelation(heatmap):
         }
 
     def create(self, model, file = None):
-
         params = self.settings['params'] if 'params' in self.settings \
             else {}
 
@@ -99,7 +98,8 @@ class unitRelation(heatmap):
         if not isinstance(self.settings['units'], tuple) \
             or not isinstance(self.settings['units'][0], list):
             mapping = model.system.getMapping()
-            self.settings['units'] = (model.units(mapping[0]), model.units(mapping[-1]))
+            self.settings['units'] = (model.units(group = mapping[0])[0],
+                model.units(group = mapping[-1])[0])
 
         # calculate relation matrix
         R = model.getUnitRelations(

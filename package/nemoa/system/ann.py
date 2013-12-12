@@ -76,7 +76,12 @@ class ann(nemoa.system.base.system):
             return False
 
         # compare visible units labels with dataset columns
-        if dataset.getColLabels() != self.getUnits(visible = True):
+        mapping = self.getMapping()
+        unitsInGroups = self.getUnits(visible = True)
+        units = []
+        for group in unitsInGroups:
+            units += group
+        if dataset.getColLabels() != units:
             nemoa.log('error', """
                 could not configure system:
                 visible units differ from dataset columns!""")
@@ -394,37 +399,10 @@ class ann(nemoa.system.base.system):
         if mapping == None:
             mapping = self.getMapping()
 
-        labels = self.getUnits(name = mapping[-1])
+        labels = self.getUnits(group = mapping[-1])[0]
         values = getattr(self, method)(data, **kwargs)
 
         return {unit: values[id] for id, unit in enumerate(labels)}
-
-    def _getUnits(self, group = False, **kwargs):
-        """Return tuple with units that match a given property.
-
-        Examples:
-            return visible units: self._getUnits(visible = True)
-        """
-
-        filter = []
-        for key in kwargs.keys():
-            if key in self._params['units'][0].keys():
-                filter.append((key, kwargs[key]))
-        layers = ()
-        for layer in self._params['units']:
-            valid = True
-            for key, val in filter:
-                if not layer[key] == val:
-                    valid = False
-                    break
-            if valid:
-                layers += (layer['label'], )
-        if group == True:
-            return layers
-        units = []
-        for layer in layers:
-            units += layer
-        return units
 
     def _setUnits(self, units):
         """Create instances for units."""
@@ -804,6 +782,27 @@ class ann(nemoa.system.base.system):
             """ % (source['name'], target['name']))
         return None
 
+    def _getLinksFromConfig(self):
+        """Return links from adjacency matrix."""
+        groups = self.getGroups()
+        if not groups:
+            return None
+
+        links = ()
+        for g in range(len(groups) - 1):
+            s = groups[g]
+            t = groups[g + 1]
+            
+            lg = []
+            for i, u in enumerate(self.units[s].params['label']):
+                for j, v in enumerate(self.units[t].params['label']):
+                    if not 'A' in self._params \
+                        or self._params['links'][(g, g + 1)]['A'][i, j]:
+                        lg.append((u, v))
+
+            links += (lg, )
+        return links
+
     def _removeUnitsLinks(self, layer, select):
         """Remove links to a given list of units."""
         links = self._links[layer['name']]
@@ -822,15 +821,8 @@ class ann(nemoa.system.base.system):
         return True
 
     ####################################################################
-    # Unit groups / Layers                                             #
+    # Unit groups                                                      #
     ####################################################################
-
-    def getGroupOfUnit(self, unit):
-        """Return name of unit group of given unit."""
-        for id in range(len(self._params['units'])):
-            if unit in self._params['units'][id]['label']:
-                return self._params['units'][id]['name']
-        return None
 
     def getMapping(self, src = None, tgt = None):
         """Return tuple with names of unit groups from source to target.
@@ -856,31 +848,40 @@ class ann(nemoa.system.base.system):
         return {
             'energy': {
                 'name': 'local energy',
-                'method': 'getUnitEnergy'},
+                'method': 'getUnitEnergy',
+                'format': '%.1f'},
             'expect': {
                 'name': 'expectation values',
-                'method': 'getUnitExpect'},
+                'method': 'getUnitExpect',
+                'format': '%.1f'},
             'error': {
                 'name': 'data reconstruction error',
-                'method': 'getUnitError'},
+                'method': 'getUnitError',
+                'format': '%.1f'},
             'performance': {
                 'name': 'performance',
-                'method': 'getUnitPerformance'},
+                'method': 'getUnitPerformance',
+                'format': '%.1f'},
             'intperformance': {
                 'name': 'self performance',
-                'method': 'IntPerformance'},
+                'method': 'IntPerformance',
+                'format': '%.1f'},
             'extperformance': {
                 'name': 'foreign performance',
-                'method': 'ExtPerformance'},
+                'method': 'ExtPerformance',
+                'format': '%.1f'},
             'relperformance': {
                 'name': 'relative performance',
-                'method': 'RelativePerformance'},
+                'method': 'RelativePerformance',
+                'format': '%.1f'},
             'relintperformance': {
                 'name': 'relative self performance',
-                'method': 'RelativeIntPerformance'},
+                'method': 'RelativeIntPerformance',
+                'format': '%.1f'},
             'relextperformance': {
                 'name': 'relative foreign performance',
-                'method': 'RelativeExtPerformance'}
+                'method': 'RelativeExtPerformance',
+                'format': '%.1f'}
         }
 
     ####################################################################

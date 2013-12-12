@@ -383,7 +383,7 @@ class network:
     #
     # accessing edges
     #
-    
+
     def edge(self, edge):
         return self.graph.edge[edge]
     

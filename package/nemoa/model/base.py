@@ -126,23 +126,29 @@ class model:
         nemoa.log('info', 'configure model \'%s\'' % (self.getName()))
         nemoa.setLog(indent = '+1')
         if not 'check' in self.__config:
-            self.__config['check'] = {'dataset': False, 'network': False, 'System': False}
+            self.__config['check'] = {'dataset': False,
+                'network': False, 'System': False}
         self.__config['check']['dataset'] = \
             self.dataset.configure(network = self.network)
         if not self.__config['check']['dataset']:
-            nemoa.log('error', 'could not configure model: dataset could not be configured!')
+            nemoa.log('error', """could not configure model: dataset
+                could not be configured!""")
             nemoa.setLog(indent = '-1')
             return False
         self.__config['check']['network'] = \
-            self.network.configure(dataset = self.dataset, system = self.system)
+            self.network.configure(dataset = self.dataset,
+                system = self.system)
         if not self.__config['check']['network']:
-            nemoa.log('error', 'could not configure model: network could not be configured!')
+            nemoa.log('error', """could not configure model: network
+                could not be configured!""")
             nemoa.setLog(indent = '-1')
             return False
         self.__config['check']['system'] = \
-            self.system.configure(network = self.network, dataset = self.dataset)
+            self.system.configure(network = self.network,
+                dataset = self.dataset)
         if not self.__config['check']['system']:
-            nemoa.log('error', 'could not configure model: system could not be configured!')
+            nemoa.log('error', """could not configure model: system
+                could not be configured!""")
             nemoa.setLog(indent = '-1')
             return False
         nemoa.setLog(indent = '-1')
@@ -156,7 +162,7 @@ class model:
             and self.__config['check']['system']
 
     ####################################################################
-    # Model -> System parameter modification                           #
+    # Model parameter modification methods                             #
     ####################################################################
 
     def initialize(self):
@@ -171,22 +177,19 @@ class model:
 
         # check if model is configured
         if not self.__isConfigured():
-            nemoa.log('error', """
-                could not initialize model:
+            nemoa.log('error', """could not initialize model parameters:
                 model is not yet configured!""")
             return False
 
         # check dataset
         if not nemoa.type.isDataset(self.dataset):
-            nemoa.log("error", """
-                could not initialize model parameters:
+            nemoa.log("error", """could not initialize model parameters:
                 dataset is not yet configured!""")
             return False
 
         # check system
         if not nemoa.type.isSystem(self.system):
-            nemoa.log("error", """
-                could not initialize model parameters:
+            nemoa.log("error", """could not initialize model parameters:
                 system is not yet configured!""")
             return False
         elif self.system.isEmpty():
@@ -194,6 +197,10 @@ class model:
 
         # initialize system parameters
         self.system.initParams(self.dataset)
+        
+        # update network
+        self.system.updateNetwork(self.network)
+
         return self
 
     def optimize(self, schedule = None, **kwargs):
@@ -245,7 +252,12 @@ class model:
             self.system.optimizeParams(
                 dataset = self.dataset, schedule = schedule)
 
-        nemoa.setLog(indent = '-2')
+        nemoa.setLog(indent = '-1')
+
+        # update network
+        self.system.updateNetwork(self.network)
+
+        nemoa.setLog(indent = '-1')
         return self
 
     ####################################################################
@@ -655,10 +667,11 @@ class model:
     # UNIT EVALUATION
     #
 
-    def getUnitEval(self, data = None, statistics = 10000, **kwargs):
+    def getUnitEval(self, data = None, statistics = None, **kwargs):
         """Return dictionary with units and evaluation values."""
-        if data == None: # get data if not given
-            data = self.dataset.getData(statistics)
+        if data == None:
+            data = self.dataset.getData( size = statistics,
+                cols = self.groups(visible = True))
         return self.system.getUnitEval(data, **kwargs)
 
     #
@@ -870,17 +883,16 @@ class model:
         """Return true if model is empty."""
         return not 'name' in self.__config or not self.__config['name']
 
-    def groups(self):
+    def groups(self, **kwargs):
         """Return list with unit groups."""
-        return self.system.getUnitGroups()
+        return self.system.getGroups(**kwargs)
 
-    def units(self, group = None):
-        """Return list of units in a given group.
-        
-        Keyword Arguments:
-            group -- name of unit group
-        """
-        return self.system.getUnits(name = group)
+    def units(self, **kwargs):
+        """Return tuple with lists of units."""
+        return self.system.getUnits(**kwargs)
+
+    def links(self, **kwargs):
+        return self.system.getLinks(**kwargs)
 
     def unit(self, unit):
         """Return information about one unit.
@@ -892,11 +904,11 @@ class model:
 
     def link(self, link):
         """Return information about one link
-        
+
         Keyword Argument:
             link -- name of link
         """
-        return self.network.edge(link)
+        return self.network.graph[link[0]][link[1]]
 
     def about(self, *args):
         """Return generic information about various parts of the model.
@@ -908,7 +920,7 @@ class model:
         Examples:
             about('dataset', 'preprocessing', 'transformation')
             
-            about('system', 'units', 'measure', 'error')
+            about('system', 'units', 'method', 'error', 'description')
                 Returns information about the "error" measurement
                 function of the systems units.
         """

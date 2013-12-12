@@ -63,9 +63,6 @@ class dbn(nemoa.system.ann.ann):
     def _getUnitsFromConfig(self):
         return None
 
-    def _getLinksFromConfig(self):
-        return None
-
     def _getLinksFromNetwork(self, network):
         return None
 

@@ -62,8 +62,7 @@ class system:
         nemoa.common.dictMerge(config, self._config)
 
         # create / update local unit and link dictionaries
-        if not hasattr(self, '_params'):
-            self._params = {}
+        if not hasattr(self, '_params'): self._params = {}
         self.setUnits(self._getUnitsFromConfig())
         self.setLinks(self._getLinksFromConfig())
 
@@ -78,10 +77,21 @@ class system:
         """Update units and links to network instance."""
         return self._setNetwork(*args, **kwargs)
 
+    def updateNetwork(self, network):
+        """update params in network."""
+        if not nemoa.type.isNetwork(network): return False
+        G = network.graph
+        for u, v, d in G.edges(data = True):
+            params = self.getLink((u, v))
+            if not params: params = self.getLink((v, u))
+            if not params: continue
+            nemoa.common.dictMerge(params, G[u][v]['params'])
+            G[u][v]['weight'] = params['weight']
+        return True
+
     def checkNetwork(self, network, *args, **kwargs):
         """Check if network is valid for system."""
-        if not nemoa.type.isNetwork(network):
-            return False
+        if not nemoa.type.isNetwork(network): return False
         if not (hasattr(self.__class__, '_checkNetwork') \
             and callable(getattr(self.__class__, '_checkNetwork'))):
             return True
@@ -93,8 +103,7 @@ class system:
 
     def checkDataset(self, dataset, *args, **kwargs):
         """Check if network is valid for system."""
-        if not nemoa.type.isDataset(dataset):
-            return False
+        if not nemoa.type.isDataset(dataset): return False
         if not (hasattr(self.__class__, '_checkDataset') \
             and callable(getattr(self.__class__, '_checkDataset'))):
             return True
@@ -105,12 +114,33 @@ class system:
         return False
 
     ####################################################################
-    # System interface to unit instances                               #
+    # Units                                                            #
     ####################################################################
 
-    def getUnits(self, *args, **kwargs):
-        """Return labels of units in system."""
-        return self._getUnits(*args, **kwargs)
+    def getUnits(self, **kwargs):
+        """Return tuple with lists of units that match a given property.
+
+        Examples:
+            return visible units: getUnits(visible = True)
+        """
+
+        filter = []
+        for key in kwargs.keys():
+            if key == 'group':
+                key = 'name'
+                kwargs['name'] = kwargs['group']
+            if key in self._params['units'][0].keys():
+                filter.append((key, kwargs[key]))
+        groups = ()
+        for group in self._params['units']:
+            valid = True
+            for key, val in filter:
+                if not group[key] == val:
+                    valid = False
+                    break
+            if valid:
+                groups += (group['label'], )
+        return groups
 
     def setUnits(self, units = None, initialize = True):
         """Set units and update system parameters."""
@@ -123,17 +153,13 @@ class system:
                 and self._initUnits()
         return self._setUnits(units)
 
-    def getUnitGroups(self):
-        """Return list of unit groups / layers."""
-        return [grp['name'] for grp in self._params['units']]
-
     def getUnitInfo(self, *args, **kwargs):
         """Return dictionary with information about a specific unit."""
         return self._getUnitInformation(*args, **kwargs)
 
-    def getUnitEval(self, data, **kwargs):
+    def getUnitEval(self, *args, **kwargs):
         """Return dictionary with units and evaluation values."""
-        return self._getUnitEval(data, **kwargs)
+        return self._getUnitEval(*args, **kwargs)
 
     def unlinkUnit(self, unit):
         """Unlink unit (if present)."""
@@ -144,7 +170,43 @@ class system:
         return self._removeUnit(type, label)
 
     ####################################################################
-    # System interface to link instances                               #
+    # Unit groups                                                      #
+    ####################################################################
+
+    def getGroups(self, **kwargs):
+        """Return tuple with groups that match a given property.
+
+        Examples:
+            return visible groups:
+                getGroups(visible = True)
+            search for group 'MyGroup':
+                getGroups(name = 'MyGroup')
+        """
+
+        filter = []
+        for key in kwargs.keys():
+            if key in self._params['units'][0].keys():
+                filter.append((key, kwargs[key]))
+        groups = ()
+        for group in self._params['units']:
+            valid = True
+            for key, val in filter:
+                if not group[key] == val:
+                    valid = False
+                    break
+            if valid:
+                groups += (group['name'], )
+        return groups
+
+    def getGroupOfUnit(self, unit):
+        """Return name of unit group of given unit."""
+        for id in range(len(self._params['units'])):
+            if unit in self._params['units'][id]['label']:
+                return self._params['units'][id]['name']
+        return None
+
+    ####################################################################
+    # Links                                                            #
     ####################################################################
 
     def setLinks(self, links = None, initialize = True):
@@ -166,9 +228,24 @@ class system:
         """Remove links from system using list with 2-tuples containing unit labels."""
         return self._removeLinks(links)
 
-    def removeLinksByThreshold(self, method = None, threshold = None, *args, **kwargs):
-        """Remove links from system using a threshold for link parameters."""
-        return self._removeLinksByThreshold(method, threshold)
+    #def removeLinksByThreshold(self, method = None, threshold = None, *args, **kwargs):
+        #"""Remove links from system using a threshold for link parameters."""
+        #return self._removeLinksByThreshold(method, threshold)
+
+    def getLink(self, link):
+        srcUnit = link[0]
+        tgtUnit = link[1]
+        srcGrp  = self.getGroupOfUnit(srcUnit)
+        tgtGrp  = self.getGroupOfUnit(tgtUnit)
+        if not srcGrp in self._links \
+            or not tgtGrp in self._links[srcGrp]['target']:
+            return None
+        linkGrp = self._links[srcGrp]['target'][tgtGrp]
+        srcID   = self.units[srcGrp].params['label'].index(srcUnit)
+        tgtID   = self.units[tgtGrp].params['label'].index(tgtUnit)
+        return {
+            'adjacency': linkGrp['A'][srcID, tgtID],
+            'weight': linkGrp['W'][srcID, tgtID]}
 
     def getLinkParams(self, links = [], *args, **kwargs):
         """Return parameters of links."""
@@ -340,19 +417,17 @@ class system:
         if not self._isNetworkMLPCompatible(network):
             return False
         if not len(network.layers()) % 2 == 1:
-            nemoa.log('error', """
-                DBN / Autoencoder networks expect
-                an odd number of layers!""")
+            nemoa.log('error', """DBN / Autoencoder networks expect an
+                odd number of layers!""")
             return False
         layers = network.layers()
         size = len(layers)
         for id in range(1, (size - 1) / 2):
             if not len(network.layer(layers[id])['nodes']) \
                 == len(network.layer(layers[-id-1])['nodes']):
-                nemoa.log('error', """
-                    DBN / Autoencoder networks expect
-                    a symmetric number of hidden nodes,
-                    related tp their central layer!""")
+                nemoa.log('error', """DBN / Autoencoder networks expect
+                    a symmetric number of hidden nodes, related tp their
+                    central layer!""")
                 return False
         return True
 
@@ -432,59 +507,20 @@ class system:
 
         # get units, unit groups and mapping between unit groups
         if not isinstance(units, tuple) or not len(units) == 2:
-            units = (self.getUnits(name = mapping[0]), \
-                self.getUnits(name = mapping[-1]))
+            units = (self.getUnits(group = mapping[0]), \
+                self.getUnits(group = mapping[-1]))
         elif isinstance(units[0], str) or isinstance(units[1], str):
             if isinstance(units[0], str):
-                units[0] = self.getUnits(name = units[0])
+                units[0] = self.getUnits(group = units[0])
             if isinstance(units[1], str):
-                units[1] = self.getUnits(name = units[1])
+                units[1] = self.getUnits(group = units[1])
         elif isinstance(units[0], list) and isinstance(units[1], list):
             #2do: get expected values for hidden units
             pass
         else:
-            #2do proper error handling
-            quit()
-
-        ## get default mapping and data
-        #mapping = self.getMapping()
-        #data = dataset.getData(cols = (mapping[0], mapping[-1]))
-
-        ## get units, unit groups and mapping between unit groups
-        #if not isinstance(units, tuple) or not len(units) == 2:
-            #units = (self.getUnits(name = mapping[0]), self.getUnits(name = mapping[-1]))
-        #elif isinstance(units[0], str) or isinstance(units[1], str):
-            #if isinstance(units[0], str):
-                #units[0] = self.getUnits(name = units[0])
-            #if isinstance(units[1], str):
-                #units[1] = self.getUnits(name = units[1])
-        #elif isinstance(units[0], list) and isinstance(units[1], list):
-            ##2do: get expected values for hidden units
-            #pass
-        #else:
-            ##2do proper error handling
-            #quit()
-            #x   = units[0]
-            #src = self.getGroupOfUnit(units[0][0])
-        #else:
-            #src = mapping[0]
-            #x   = self.getUnits(name = mapping[0])
-        #if isinstance(units[1], list):
-            #y   = units[1]
-            #tgt = self.getGroupOfUnit(units[1][0])
-        #else:
-            #tgt = mapping[-1]
-            #y   = self.getUnits(name = mapping[-1])
-
-        ## modify mapping and data if necessary
-        #if not src == mapping[0]:
-            #data[0] = self.getUnitExpect(data[0], mapping
-                #= self.getMapping(src = mapping[0], tgt = src))
-        #if not tgt == mapping[-1]:
-            #data[1] = self.getUnitExpect(data[1], mapping
-                #= self.getMapping(src = mapping[-1], tgt = tgt))
-        #if not src == mapping[0] or not tgt == mapping[-1]:
-            #mapping = self.getMapping(src = src, tgt = tgt)
+            nemoa.log('error', """could not evaluate unit relations:
+                parameter units contains invalid values!""")
+            return None
 
         # get method and method specific parameters
         method, ukwargs = nemoa.common.strSplitParams(relation)
@@ -566,7 +602,7 @@ class system:
         nemoa.log('info', """
             estimated duration: %.1fs""" % (estimation))
 
-        srcUnits = self.getUnits(name = mapping[0])
+        srcUnits = self.getUnits(group = mapping[0])[0]
 
         modi = {}
         for i, srcUnit in enumerate(units[0]):
