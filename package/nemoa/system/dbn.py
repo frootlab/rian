@@ -136,11 +136,12 @@ class dbn(nemoa.system.ann.ann):
 
             # create instance of subsystem from configuration
             system = nemoa.system.new(config = sysConfig)
+            unitCount = sum([len(group) for group in system.getUnits()])
+            linkCount = len(system.getLinks())
 
             nemoa.log('info', """
                 adding subsystem: \'%s\' (%s units, %s links)
-                """ % (system.getName(),
-                len(system.getUnits()), len(system.getLinks())))
+                """ % (system.getName(), unitCount, linkCount))
 
             # link subsystem
             subSystems.append(system)
@@ -183,10 +184,10 @@ class dbn(nemoa.system.ann.ann):
 
             # transform dataset with previous system / fix lower stack
             if sysID > 0:
-                dataset.transformData(
-                    system = subSystems[sysID - 1],
-                    transformation = 'hiddenvalue',
-                    colLabels = subSystems[sysID - 1].getUnits(visible = False))
+                prevSys = subSystems[sysID - 1]
+                transCols = prevSys.getUnits(visible = False)[0]
+                dataset.transformData(system = prevSys,
+                    transformation = 'hiddenvalue', colLabels = transCols)
 
             # initialize system
             # in higher layers 'initVisible' = False

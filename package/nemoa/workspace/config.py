@@ -1125,22 +1125,24 @@ class networkConfigFileImporter:
                 return None
 
             # get 'nodes' of layer
-            if not 'nodes' in netcfg.options(layerSec) \
-                and not 'size' in netcfg.options(layerSec) \
-                and not 'file' in netcfg.options(layerSec):
-                nemoa.log("warning", 
-                    "layer '" + layer + "' does not contain node information!")
-                return None
-
             if 'nodes' in netcfg.options(layerSec):
                 nodeList = nemoa.common.strToList(netcfg.get(layerSec, 'nodes'))
             elif 'size' in netcfg.options(layerSec):
                 nodeList = ['n' + str(i) for i in \
                     range(1, int(netcfg.get(layerSec, 'size')) + 1)]
             elif 'file' in netcfg.options(layerSec):
-                fileHandler = open(nemoa.workspace.getPath(netcfg.get(layerSec, 'file')))
-                fileLines = fileHandler.readlines()
+                listFile = nemoa.workspace.getPath(netcfg.get(layerSec, 'file'))
+                if not os.path.exists(listFile):
+                    nemoa.log('error', """
+                        listfile '%s' does not exists!""" % (listFile))
+                    return None
+                with open(listFile, 'r') as listFile: 
+                    fileLines = listFile.readlines()
                 nodeList = [node.strip() for node in fileLines]
+            else:
+                nemoa.log("warning", 
+                    "layer '" + layer + "' does not contain node information!")
+                return None
 
             config['nodes'][layer] = []
             for node in nodeList:

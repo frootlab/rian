@@ -854,6 +854,10 @@ class ann(nemoa.system.base.system):
                 'name': 'expectation values',
                 'method': 'getUnitExpect',
                 'format': '%.1f'},
+            'values': {
+                'name': 'reconstructed values',
+                'method': 'getUnitValues',
+                'format': '%.1f'},
             'error': {
                 'name': 'data reconstruction error',
                 'method': 'getUnitError',

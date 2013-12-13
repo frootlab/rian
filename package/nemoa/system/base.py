@@ -533,6 +533,9 @@ class system:
         elif method == 'causality':
             M = self.getUnitCausality(\
                 units = units, data = data, mapping = mapping, **params)
+        elif method == 'propagation':
+            M = self.getUnitPropagation(\
+                units = units, data = data, mapping = mapingg, **params)
         else:
             nemoa.log('error', """could not evaluate unit relations:
                 unknown relation '%s'""" % (method))
@@ -630,6 +633,52 @@ class system:
                 K[i,j] = modi[tgtUnit] - default[tgtUnit]
 
         return K
+
+    def getUnitPropagation(self, units, data = None, mapping = None,
+        modify = 'knockout', eval = 'values', **kwargs):
+        """Return data propagation matrix as numpy array."""
+        
+        # prepare data propagation matrix
+        K = numpy.zeros((len(units[0]), len(units[1])))
+
+        srcUnits = self.getUnits(group = mapping[0])[0]
+
+        modi = {}
+        for i, srcUnit in enumerate(units[0]):
+            id = srcUnits.index(srcUnit)
+            # bad style could be better!!
+            ids = [srcUnits.index(unit) for unit in srcUnits
+                \ if not srcUnits.index(unit) == id]
+            zeroData = numpy.zeros((1, len(units[0])))
+            oneData  = zeroData.copy()
+            quit()
+            
+            zero = self.getUnitEval(eval = eval, \
+                data = data, mapping = mapping, block = [id])
+            one = self.getUnitEval(eval = eval,
+                data = data, mapping = mapping, block = [id])
+
+
+
+
+
+
+
+
+
+        # create data and calulate correlation matrix
+        M = numpy.corrcoef(numpy.hstack(data).T)
+        uList = units[0] + units[1]
+
+        # create output matrix
+        C = numpy.zeros(shape = (len(units[0]), len(units[1])))
+        for i, u1 in enumerate(units[0]):
+            k = uList.index(u1)
+            for j, u2 in enumerate(units[1]):
+                l = uList.index(u2)
+                C[i, j] = M[k, l]
+
+        return C
 
     ####################################################################
     # Data transformation methods                                      #

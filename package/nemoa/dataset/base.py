@@ -6,9 +6,7 @@ import nemoa, numpy, copy, os, re, scipy.cluster.vq, csv
 class dataset:
     """Base class for datasets"""
 
-    #
-    # DATASET CONFIGURATION
-    #
+    # Configuration
 
     def __init__(self, config = {}, **kwargs):
         """Set configuration of dataset from dictionary."""
@@ -101,7 +99,8 @@ class dataset:
         # get columns from dataset files and convert to common format
         colLabels = {}
         for src in self.cfg['table']:
-            nemoa.log("info", "configure dataset source: '%s'" % (src))
+            nemoa.log('info', """
+                configure dataset source: '%s'""" % (src))
             srcCnf = self.cfg['table'][src]
 
             # get column labels from csv-file
@@ -909,16 +908,16 @@ class dataset:
     def csvGetDelimiter(self, file):
         """Return estimated delimiter of csv file."""
 
-        csvfile = open(file, 'rb')
-
-        try:
-            dialect = csv.Sniffer().sniff(csvfile.read(100000))
-        except:
-            nemoa.log("warning", 
-                "could not load file '" + file + "': could not determine delimiter!")
-            return None
-
-        csvfile.close()
+        with open(file, 'rb') as csvfile:
+            try:
+                size = len(csvfile.readline())
+                probe = csvfile.read(size * 32)
+                dialect = csv.Sniffer().sniff(probe)
+            except:
+                nemoa.log('warning', """ 
+                    could not import csv file '%s':
+                    could not determine delimiter!""" % (file))
+                return None
 
         return dialect.delimiter
 
