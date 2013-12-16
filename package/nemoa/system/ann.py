@@ -389,6 +389,8 @@ class ann(nemoa.system.base.system):
                 """ % (eval))
             return False
 
+        eval = 'performance'
+
         method = methods[eval]['method']
         if not hasattr(self, method):
             nemoa.log('error', """
@@ -401,6 +403,13 @@ class ann(nemoa.system.base.system):
 
         labels = self.getUnits(group = mapping[-1])[0]
         values = getattr(self, method)(data, **kwargs)
+
+        print values
+        quit()
+
+        print labels
+        print {unit: values[:,id] for id, unit in enumerate(labels)}
+        quit()
 
         return {unit: values[id] for id, unit in enumerate(labels)}
 

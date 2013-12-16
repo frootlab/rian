@@ -535,7 +535,7 @@ class system:
                 units = units, data = data, mapping = mapping, **params)
         elif method == 'propagation':
             M = self.getUnitPropagation(\
-                units = units, data = data, mapping = mapingg, **params)
+                units = units, data = data, mapping = mapping, **params)
         else:
             nemoa.log('error', """could not evaluate unit relations:
                 unknown relation '%s'""" % (method))
@@ -641,22 +641,52 @@ class system:
         # prepare data propagation matrix
         K = numpy.zeros((len(units[0]), len(units[1])))
 
-        srcUnits = self.getUnits(group = mapping[0])[0]
+        #srcUnits = self.getUnits(group = mapping[0])[0]
+
+        print self.getUnitEval(eval = 'expect', \
+            data = numpy.zeros(shape = (2, len(units[0]))), mapping = mapping)
+        quit()
+
+        zeroExpect = self.getUnitEval(eval = 'expect', \
+            data = (numpy.zeros((1, len(units[0]))), numpy.zeros((1, len(units[1])))), mapping = mapping)
+        print zeroExpect
+        quit()
 
         modi = {}
-        for i, srcUnit in enumerate(units[0]):
-            id = srcUnits.index(srcUnit)
-            # bad style could be better!!
-            ids = [srcUnits.index(unit) for unit in srcUnits
-                \ if not srcUnits.index(unit) == id]
+        for i, unit in enumerate(units[0]):
+            otherUnits = range(len(units[0]))
+            otherUnits.pop(i)
             zeroData = numpy.zeros((1, len(units[0])))
             oneData  = zeroData.copy()
-            quit()
-            
-            zero = self.getUnitEval(eval = eval, \
-                data = data, mapping = mapping, block = [id])
+            oneData[0, i]  = 1.0
+
+            zero = self.getUnitEval(eval = 'expect', \
+                data = (zeroData, ), mapping = mapping, block = [])
             one = self.getUnitEval(eval = eval,
-                data = data, mapping = mapping, block = [id])
+                data = (oneData, ), mapping = mapping, block = otherUnits)
+            
+            print zero
+            #print one
+            
+            #print list(srcUnits).pop(i)
+        
+        quit()
+            #id = srcUnits.index(srcUnit)
+            ## bad style could be better!!
+            #ids = srcUnits
+            #ids = srcUnits[:srcUnits.index(unit)] \
+                #srcUnits[srcUnits.index(unit) + 1 :]
+            
+             #[srcUnits.index(unit) for unit in srcUnits
+                #\ if not srcUnits.index(unit) == id]
+            #zeroData = numpy.zeros((1, len(units[0])))
+            #oneData  = zeroData.copy()
+            #quit()
+            
+            #zero = self.getUnitEval(eval = eval, \
+                #data = data, mapping = mapping, block = [id])
+            #one = self.getUnitEval(eval = eval,
+                #data = data, mapping = mapping, block = [id])
 
 
 
@@ -666,19 +696,19 @@ class system:
 
 
 
-        # create data and calulate correlation matrix
-        M = numpy.corrcoef(numpy.hstack(data).T)
-        uList = units[0] + units[1]
+        ## create data and calulate correlation matrix
+        #M = numpy.corrcoef(numpy.hstack(data).T)
+        #uList = units[0] + units[1]
 
-        # create output matrix
-        C = numpy.zeros(shape = (len(units[0]), len(units[1])))
-        for i, u1 in enumerate(units[0]):
-            k = uList.index(u1)
-            for j, u2 in enumerate(units[1]):
-                l = uList.index(u2)
-                C[i, j] = M[k, l]
+        ## create output matrix
+        #C = numpy.zeros(shape = (len(units[0]), len(units[1])))
+        #for i, u1 in enumerate(units[0]):
+            #k = uList.index(u1)
+            #for j, u2 in enumerate(units[1]):
+                #l = uList.index(u2)
+                #C[i, j] = M[k, l]
 
-        return C
+        #return C
 
     ####################################################################
     # Data transformation methods                                      #
