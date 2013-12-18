@@ -312,6 +312,7 @@ class dataset:
                 'gauss':
                     Gaussian normalization (aka z-transformation)
         """
+
         nemoa.log('info', 'normalize data using \'%s\'' % (algorithm))
 
         if algorithm.lower() in ['gauss', 'z-trans']:
@@ -333,6 +334,7 @@ class dataset:
                     allSdev = data[colName].std()
                     self.data[src]['array'][colName] = \
                         (self.data[src]['array'][colName] - allMean) / allSdev
+
             return True
 
         return False
