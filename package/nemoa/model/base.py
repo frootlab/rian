@@ -445,22 +445,15 @@ class model:
     # Evaluation of unit relations                                     #
     ####################################################################
 
-    def getUnitRelations(self, **kwargs):
+    def getUnitRelation(self, preprocessing = None, **kwargs):
         """Return numpy array containing unit relations."""
 
-        preprocess = 'preprocessing' in kwargs \
-            and isinstance(kwargs['preprocessing'], dict)
-
-        if preprocess:
+        if isinstance(preprocessing, dict):
             datasetCopy = self.dataset._get()
             self.dataset.preprocessData(**kwargs['preprocessing'])
-
-        R = self.system.getUnitRelations(self.dataset, **kwargs)
-
-        if preprocess:
-            self.dataset._set(datasetCopy)
-
-        return R
+        relation = self.system.getUnitRelation(self.dataset, **kwargs)
+        if isinstance(preprocessing, dict): self.dataset._set(datasetCopy)
+        return relation
 
     def getUnitRelationMatrixMuSigma(self, matrix, relation):
 

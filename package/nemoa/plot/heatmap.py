@@ -102,7 +102,7 @@ class unitRelation(heatmap):
                 model.units(group = mapping[-1])[0])
 
         # calculate relation matrix
-        R = model.getUnitRelations(
+        R = model.getUnitRelation(
             units = self.settings['units'],
             preprocessing = self.settings['preprocessing'],
             relation = self.settings['relation'],

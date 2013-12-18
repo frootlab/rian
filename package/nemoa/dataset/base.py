@@ -31,7 +31,7 @@ class dataset:
         """Return true if dataset is empty."""
         return not 'name' in self.cfg or not self.cfg['name']
 
-    def configure(self, network, useCache = True, **kwargs):
+    def configure(self, network, useCache = False, **kwargs):
         """Configure dataset to a given network object
 
         Keyword arguments:
@@ -60,9 +60,9 @@ class dataset:
             self.cfg['table'][self.cfg['name']] = conf
             self.cfg['table'][self.cfg['name']]['fraction'] = 1.0
 
-        #
-        # Annotation
-        #
+        ################################################################
+        # Annotation                                                   #
+        ################################################################
 
         # get nodes from network and convert to common format
         if network.cfg['type'] == 'auto':
@@ -70,7 +70,7 @@ class dataset:
         else:
             # get grouped network node labels and label format
             netGroups = network.getNodeGroups(type = 'visible')
-            
+
             netGroupsOrder = []
             for layer in netGroups:
                 netGroupsOrder.append((network.layer(layer)['id'], layer))
@@ -91,9 +91,10 @@ class dataset:
 
             # notify if any network node labels could not be converted
             if convNetNodesLost:
-                nemoa.log('info', '%s of %s network nodes could not be converted! (see logfile)'
+                nemoa.log('info', """%s of %s network nodes
+                    could not be converted! (see logfile)"""
                     % (len(convNetNodesLost), len(convNetNodes)))
-                ## 2DO get original node labels
+                ## 2DO get original node labels for log file
                 nemoa.log('logfile', nemoa.common.strToList(convNetNodesLost))
 
         # get columns from dataset files and convert to common format
@@ -125,7 +126,8 @@ class dataset:
                 nemoa.log("warning", 
                     "%i of %i dataset columns could not be converted! (logfile)"
                         % (len(convColLabelsLost), len(convColLabels)))
-                nemoa.log("logfile", ", ".join([convColLabels[i] for i in convColLabelsLost]))
+                nemoa.log("logfile", ", ".join([convColLabels[i] \
+                    for i in convColLabelsLost]))
 
             if not network.cfg['type'] == 'auto':
 
@@ -134,7 +136,9 @@ class dataset:
                 numAll = 0
                 lostNodes = {}
                 for id, group in netGroupsOrder:
-                    lostNodesConv = [val for val in convNetGroups[group] if val not in convColLabels]
+                    lostNodesConv = \
+                        [val for val in convNetGroups[group] \
+                        if val not in convColLabels]
                     numAll += len(convNetGroups[group])
                     if not lostNodesConv:
                         continue
@@ -174,13 +178,15 @@ class dataset:
         # if network type is 'auto', set network visible nodes
         # to intersected data from database files (without label column)
         if network.cfg['type'] == 'auto':
-            netGroups['v'] = [label for label in interColLabels if not label == 'label']
+            netGroups['v'] = [label for label in interColLabels \
+                if not label == 'label']
             convNetGroups = netGroups
 
         # search network nodes in dataset columns
         self.cfg['columns'] = ()
         for groupid, group in netGroupsOrder:
             found = 0
+
             for id, col in enumerate(convNetGroups[group]):
                 if not col in interColLabels:
                     continue
@@ -188,8 +194,8 @@ class dataset:
 
                 # add column (use network label and group)
                 self.cfg['columns'] += ((group, netGroups[group][id]), )
-                for src in colLabels:
-                    colLabels[src]['usecols'] += (colLabels[src]['conv'].index(col), )
+                for src in colLabels: colLabels[src]['usecols'] \
+                    += (colLabels[src]['conv'].index(col), )
             if not found:
                 nemoa.log('error', """
                     no node from network group '%s'
@@ -199,12 +205,12 @@ class dataset:
                 return False
 
         # update source file config
-        for src in colLabels:
-            self.cfg['table'][src]['source']['usecols'] = colLabels[src]['usecols']
+        for src in colLabels: self.cfg['table'][src]['source']['usecols'] \
+            = colLabels[src]['usecols']
 
-        #
-        # COLUMN & ROW FILTERS
-        #
+        ################################################################
+        # Column & Row Filters                                         #
+        ################################################################
 
         # add column filters and partitions from network node groups
         self.cfg['colFilter'] = {'*': ['*:*']}
@@ -220,9 +226,9 @@ class dataset:
             self.cfg['rowFilter'][source] = [source + ':*']
             self.cfg['rowPartitions']['source'].append(source)
 
-        #
-        # IMPORT DATA FROM CSV FILES INTO NUMPY NAMED ARRAY
-        #
+        ################################################################
+        # Import data from CSV-files into numpy arrays                 #
+        ################################################################
 
         # import data from sources
         nemoa.log('info', 'import data from sources')
@@ -237,10 +243,6 @@ class dataset:
             cacheFile = self.createCacheFile(network)
             nemoa.log('info', 'save cachefile: \'%s\'' % (cacheFile))
             self.save(cacheFile)
-
-        #
-        # PREPROCESS DATA
-        #
 
         # preprocess data
         if 'preprocessing' in self.cfg.keys():
@@ -432,6 +434,12 @@ class dataset:
             return True
 
         return False
+
+    def getValue(self, row = None, col = None):
+        retVal = self.getData(cols = ([col]), output = 'list,array')
+        retList = retVal[0]
+        retData = retVal[1]
+        return retData[retList.index(row)]
 
     def getData(self, size = None, rows = '*', cols = '*', output = 'array'):
         """Return a given number of stratified samples.

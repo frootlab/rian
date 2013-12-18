@@ -379,7 +379,8 @@ class ann(nemoa.system.base.system):
             self.units[layerName].initialize(data)
         return True
 
-    def _getUnitEval(self, data, eval = 'performance', mapping = None, **kwargs):
+    def _getUnitEval(self, data, eval = 'performance',
+        mapping = None, **kwargs):
         """Return unit evaluation."""
         
         methods = self.getUnitMethods()
@@ -389,8 +390,6 @@ class ann(nemoa.system.base.system):
                 """ % (eval))
             return False
 
-        eval = 'performance'
-
         method = methods[eval]['method']
         if not hasattr(self, method):
             nemoa.log('error', """
@@ -398,20 +397,34 @@ class ann(nemoa.system.base.system):
                 """ % (method))
             return False
 
+        inFmt = methods[eval]['inDataFmt']
+        params = kwargs
+        if   inFmt == 0: pass
+        elif inFmt == 1: params['data'] = data[0]
+        elif inFmt == 2: params['data'] = data[1]
+        elif inFmt == 3: params['data'] = data
+        else:
+            nemoa.log('error', """
+                could not evaluate units: unsupported unit method '%s'
+                """ % (method))
+            return False
+
+        values = getattr(self, method)(**params)
+
         if mapping == None:
             mapping = self.getMapping()
-
         labels = self.getUnits(group = mapping[-1])[0]
-        values = getattr(self, method)(data, **kwargs)
 
-        print values
-        quit()
-
-        print labels
-        print {unit: values[:,id] for id, unit in enumerate(labels)}
-        quit()
-
-        return {unit: values[id] for id, unit in enumerate(labels)}
+        outFmt = methods[eval]['outDataFmt']
+        if outFmt == 0: return {unit: values[:, id] \
+            for id, unit in enumerate(labels)}
+        elif outFmt == 1: return {unit: values[id] \
+            for id, unit in enumerate(labels)}
+        else:
+            nemoa.log('error', """
+                could not evaluate units: unsupported unit method '%s'
+                """ % (method))
+            return False
 
     def _setUnits(self, units):
         """Create instances for units."""
@@ -528,7 +541,7 @@ class ann(nemoa.system.base.system):
     # Unit evaluation                                                  #
     ####################################################################
 
-    def getUnitExpect(self, data, mapping = None):
+    def getUnitExpect(self, data, mapping = None, block = None):
         """Return expected values of a layer.
         
         Keyword Arguments:
@@ -540,14 +553,20 @@ class ann(nemoa.system.base.system):
         """
         if mapping == None:
             mapping = self.getMapping()
+        if block == None:
+            inData = data
+        else:
+            inData = numpy.copy(data)
+            for i in block:
+                inData[:,i] = numpy.mean(inData[:,i])
         if len(mapping) == 2:
-            return self.units[mapping[1]].expect(data,
+            return self.units[mapping[1]].expect(inData,
                 self.units[mapping[0]].params)
-        output = numpy.copy(data)
+        outData = numpy.copy(inData)
         for id in range(len(mapping) - 1):
-            output = self.units[mapping[id + 1]].expect(output,
+            outData = self.units[mapping[id + 1]].expect(outData,
                 self.units[mapping[id]].params)
-        return output
+        return outData
 
     def getUnitSamples(self, data, mapping = None, expectLast = False):
         """Return sampled unit values calculated from mapping.
@@ -583,7 +602,7 @@ class ann(nemoa.system.base.system):
                     data, self.units[mapping[id]])
             return data
 
-    def getUnitValues(self, data, mapping = None, expectLast = False):
+    def getUnitValues(self, data, mapping = None, expectLast = False, block = None):
         """Return unit values calculated from mappings.
         
         Keyword Arguments:
@@ -595,24 +614,30 @@ class ann(nemoa.system.base.system):
         """
         if mapping == None:
             mapping = self.getMapping()
+        if block == None:
+            inData = data
+        else:
+            inData = numpy.copy(data)
+            for i in block:
+                inData[:,i] = numpy.mean(inData[:,i])
         if expectLast:
             if len(mapping) == 1:
-                return data
+                return inData
             elif len(mapping) == 2:
                 return self.units[mapping[1]].expect(
-                    self.units[mapping[0]].getSamples(data),
+                    self.units[mapping[0]].getSamples(inData),
                     self.units[mapping[0]].params)
             return self.units[mapping[-1]].expect(
                 self.getUnitValues(data, mapping[0:-1]),
                 self.units[mapping[-2]].params)
         else:
             if len(mapping) == 1:
-                return self.units[mapping[0]].getValues(data)
+                return self.units[mapping[0]].getValues(inData)
             elif len(mapping) == 2:
                 return self.units[mapping[1]].getValues(
-                    self.units[mapping[1]].expect(data,
+                    self.units[mapping[1]].expect(inData,
                     self.units[mapping[0]].params))
-            data = numpy.copy(data)
+            data = numpy.copy(inData)
             for id in range(len(mapping) - 1):
                 data = self.units[mapping[id + 1]].getValues(
                     self.units[mapping[id + 1]].expect(data,
@@ -853,47 +878,67 @@ class ann(nemoa.system.base.system):
     ####################################################################
 
     def getUnitMethods(self):
-        """Return dictionary with unit method names."""
+        """Return dictionary with unit method information."""
         return {
             'energy': {
                 'name': 'local energy',
                 'method': 'getUnitEnergy',
+                'inDataFmt': 0,
+                'outDataFmt': 0,
                 'format': '%.1f'},
             'expect': {
                 'name': 'expectation values',
                 'method': 'getUnitExpect',
+                'inDataFmt': 1,
+                'outDataFmt': 0,
                 'format': '%.1f'},
             'values': {
                 'name': 'reconstructed values',
                 'method': 'getUnitValues',
+                'inDataFmt': 1,
+                'outDataFmt': 0,
                 'format': '%.1f'},
             'error': {
                 'name': 'data reconstruction error',
                 'method': 'getUnitError',
+                'inDataFmt': 3,
+                'outDataFmt': 1,
                 'format': '%.1f'},
             'performance': {
                 'name': 'performance',
                 'method': 'getUnitPerformance',
+                'inDataFmt': 3,
+                'outDataFmt': 1,
                 'format': '%.1f'},
             'intperformance': {
                 'name': 'self performance',
                 'method': 'IntPerformance',
+                'inDataFmt': 3,
+                'outDataFmt': 1,
                 'format': '%.1f'},
             'extperformance': {
                 'name': 'foreign performance',
                 'method': 'ExtPerformance',
+                'inDataFmt': 3,
+                'outDataFmt': 1,
                 'format': '%.1f'},
             'relperformance': {
                 'name': 'relative performance',
                 'method': 'RelativePerformance',
+                'inDataFmt': 3,
+                'outDataFmt': 1,
                 'format': '%.1f'},
             'relintperformance': {
                 'name': 'relative self performance',
                 'method': 'RelativeIntPerformance',
+                'inDataFmt': 3,
+                'outDataFmt': 1,
                 'format': '%.1f'},
             'relextperformance': {
                 'name': 'relative foreign performance',
                 'method': 'RelativeExtPerformance',
+                'inDataFmt': 3,
+                'outDataFmt': 1,
                 'format': '%.1f'}
         }
 

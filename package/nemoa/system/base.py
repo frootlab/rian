@@ -497,45 +497,48 @@ class system:
         """Return system specific data evaluation."""
         return self._getDataEval(data, **kwargs)
 
-    def getUnitRelations(self, dataset, units = None,
-        relation = 'correlation()',
-        preprocessing = None, statistics = 10000, **kwargs):
+    def assertUnitTuple(self, units = None):
+        """Return tuple with lists of valid input and output units."""
 
-        # get default mapping and data
         mapping = self.getMapping()
-        data = dataset.getData(cols = (mapping[0], mapping[-1]))
+        if units == None: return (self.getUnits(group = mapping[0])[0], \
+            self.getUnits(group = mapping[-1])[0])
+        if isinstance(units[0], str):
+            units[0] = self.getUnits(group = units[0])[0]
+        elif isinstance(units[0], list): pass
+        if isinstance(units[1], str):
+            units[1] = self.getUnits(group = units[1])[0]
+        elif isinstance(units[1], list): pass
 
-        # get units, unit groups and mapping between unit groups
-        if not isinstance(units, tuple) or not len(units) == 2:
-            units = (self.getUnits(group = mapping[0]), \
-                self.getUnits(group = mapping[-1]))
-        elif isinstance(units[0], str) or isinstance(units[1], str):
-            if isinstance(units[0], str):
-                units[0] = self.getUnits(group = units[0])
-            if isinstance(units[1], str):
-                units[1] = self.getUnits(group = units[1])
         elif isinstance(units[0], list) and isinstance(units[1], list):
-            #2do: get expected values for hidden units
+            #2do: test if units are valid
             pass
         else:
             nemoa.log('error', """could not evaluate unit relations:
-                parameter units contains invalid values!""")
-            return None
+                parameter units has invalid format!""")
+            return None    
+
+        return units
+    
+    def getUnitRelation(self, dataset, stat = 10000, units = None,
+        relation = 'correlation()', format = 'array', **kwargs):
+
+        # get mapping, data and units
+        mapping = self.getMapping()
+        data = dataset.getData(cols = (mapping[0], mapping[-1]))
+        units = self.assertUnitTuple(units)
 
         # get method and method specific parameters
         method, ukwargs = nemoa.common.strSplitParams(relation)
         params = nemoa.common.dictMerge(ukwargs, kwargs)
 
         # get relation as numpy array
-        if method == 'correlation':
-            M = self.getUnitCorrelation(\
-                units = units, data = data, **params)
-        elif method == 'causality':
-            M = self.getUnitCausality(\
-                units = units, data = data, mapping = mapping, **params)
-        elif method == 'propagation':
-            M = self.getUnitPropagation(\
-                units = units, data = data, mapping = mapping, **params)
+        if method == 'correlation': M = self.getUnitCorrelation(\
+            units = units, data = data, **params)
+        elif method == 'causality': M = self.getUnitCausality(\
+            units = units, data = data, mapping = mapping, **params)
+        elif method == 'propagation': M = self.getUnitPropagation(\
+            units = units, data = data, mapping = mapping, **params)
         else:
             nemoa.log('error', """could not evaluate unit relations:
                 unknown relation '%s'""" % (method))
@@ -547,14 +550,15 @@ class system:
                 C = self.getUnitCorrelationMatrix(units = units, data = data)
             try:
                 T = eval(params['transform'])
+                M = T
             except:
                 nemoa.log('error', """
                     could not transform unit relation matrix:
                     invalid syntax!""")
-                return M
-            return T
 
-        return M
+        # create formated output
+        if format == 'array': return M
+        if format == 'dict': return nemoa.common.dictFromArray(M, units)
 
     def getUnitCorrelation(self, units = None, data = None, **kwargs):
         """Return correlation matrix as numpy array.
@@ -563,6 +567,8 @@ class system:
             units -- list of strings with valid unitIDs"""
 
         # create data and calulate correlation matrix
+        if units == None: units = self.assertUnitTuple(units)
+
         M = numpy.corrcoef(numpy.hstack(data).T)
         uList = units[0] + units[1]
 
@@ -592,6 +598,7 @@ class system:
             respective to given data"""
 
         # prepare causality matrix
+        if units == None: units = self.assertUnitTuple(units)
         K = numpy.zeros((len(units[0]), len(units[1])))
 
         # calculate unit values without modification
@@ -639,76 +646,25 @@ class system:
         """Return data propagation matrix as numpy array."""
         
         # prepare data propagation matrix
-        K = numpy.zeros((len(units[0]), len(units[1])))
+        M = numpy.zeros((len(units[0]), len(units[1])))
 
-        #srcUnits = self.getUnits(group = mapping[0])[0]
-
-        print self.getUnitEval(eval = 'expect', \
-            data = numpy.zeros(shape = (2, len(units[0]))), mapping = mapping)
-        quit()
-
-        zeroExpect = self.getUnitEval(eval = 'expect', \
-            data = (numpy.zeros((1, len(units[0]))), numpy.zeros((1, len(units[1])))), mapping = mapping)
-        print zeroExpect
-        quit()
-
-        modi = {}
-        for i, unit in enumerate(units[0]):
+        zero = self.getUnitEval(eval = 'expect', \
+            data = (numpy.zeros((1, len(units[0]))), ), mapping = mapping)
+        for i, inUnit in enumerate(units[0]):
             otherUnits = range(len(units[0]))
             otherUnits.pop(i)
-            zeroData = numpy.zeros((1, len(units[0])))
-            oneData  = zeroData.copy()
-            oneData[0, i]  = 1.0
-
-            zero = self.getUnitEval(eval = 'expect', \
-                data = (zeroData, ), mapping = mapping, block = [])
-            one = self.getUnitEval(eval = eval,
+            oneData = numpy.zeros((1, len(units[0])))
+            oneData[0, i] = 2.0
+            one = self.getUnitEval(eval = 'expect',
                 data = (oneData, ), mapping = mapping, block = otherUnits)
-            
-            print zero
-            #print one
-            
-            #print list(srcUnits).pop(i)
-        
-        quit()
-            #id = srcUnits.index(srcUnit)
-            ## bad style could be better!!
-            #ids = srcUnits
-            #ids = srcUnits[:srcUnits.index(unit)] \
-                #srcUnits[srcUnits.index(unit) + 1 :]
-            
-             #[srcUnits.index(unit) for unit in srcUnits
-                #\ if not srcUnits.index(unit) == id]
-            #zeroData = numpy.zeros((1, len(units[0])))
-            #oneData  = zeroData.copy()
-            #quit()
-            
-            #zero = self.getUnitEval(eval = eval, \
-                #data = data, mapping = mapping, block = [id])
-            #one = self.getUnitEval(eval = eval,
-                #data = data, mapping = mapping, block = [id])
+            mOneData = numpy.zeros((1, len(units[0])))
+            mOneData[0, i] = -2.0
+            mOne = self.getUnitEval(eval = 'expect',
+                data = (mOneData, ), mapping = mapping, block = otherUnits)
+            for o, outUnit in enumerate(units[1]):
+                M[i, o] = numpy.abs(one[outUnit] - mOne[outUnit])
 
-
-
-
-
-
-
-
-
-        ## create data and calulate correlation matrix
-        #M = numpy.corrcoef(numpy.hstack(data).T)
-        #uList = units[0] + units[1]
-
-        ## create output matrix
-        #C = numpy.zeros(shape = (len(units[0]), len(units[1])))
-        #for i, u1 in enumerate(units[0]):
-            #k = uList.index(u1)
-            #for j, u2 in enumerate(units[1]):
-                #l = uList.index(u2)
-                #C[i, j] = M[k, l]
-
-        #return C
+        return M
 
     ####################################################################
     # Data transformation methods                                      #
