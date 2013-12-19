@@ -35,7 +35,8 @@ class system:
                 dataset is not valid!""")
             nemoa.setLog(indent = '-1')
             return False
-        retVal = self._configure(dataset = dataset, network = network, *args, **kwargs)
+        retVal = self._configure(dataset = dataset, network = network,
+            *args, **kwargs)
         nemoa.setLog(indent = '-1')
         return retVal
 
@@ -645,24 +646,19 @@ class system:
         modify = 'knockout', eval = 'values', **kwargs):
         """Return data propagation matrix as numpy array."""
         
-        # prepare data propagation matrix
-        M = numpy.zeros((len(units[0]), len(units[1])))
-
-        zero = self.getUnitEval(eval = 'expect', \
-            data = (numpy.zeros((1, len(units[0]))), ), mapping = mapping)
+        # create empty array
+        M = numpy.empty(shape = (len(units[0]), len(units[1])))
+        meanData = data[0].mean(axis = 0).reshape((1, len(units[0])))
         for i, inUnit in enumerate(units[0]):
-            otherUnits = range(len(units[0]))
-            otherUnits.pop(i)
-            oneData = numpy.zeros((1, len(units[0])))
-            oneData[0, i] = 2.0
-            one = self.getUnitEval(eval = 'expect',
-                data = (oneData, ), mapping = mapping, block = otherUnits)
-            mOneData = numpy.zeros((1, len(units[0])))
-            mOneData[0, i] = -2.0
-            mOne = self.getUnitEval(eval = 'expect',
-                data = (mOneData, ), mapping = mapping, block = otherUnits)
+            posData = meanData.copy()
+            posData[0, i] += 0.5
+            negData = meanData.copy()
+            negData[0, i] -= 0.5
             for o, outUnit in enumerate(units[1]):
-                M[i, o] = numpy.abs(one[outUnit] - mOne[outUnit])
+                M[i, o] = self.getUnitEval(eval = 'expect',
+                    data = posData, mapping = mapping)[outUnit] \
+                    - self.getUnitEval(eval = 'expect',
+                    data = negData, mapping = mapping)[outUnit]
 
         return M
 

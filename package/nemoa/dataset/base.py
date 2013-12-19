@@ -354,7 +354,7 @@ class dataset:
             system -- system instance (with nemoa object class 'system')
                 used for model based transformation of data
 
-            colLabels -- ...
+            colLabels -- if 
         """
 
         if isinstance(algorithm, str) \
@@ -473,46 +473,33 @@ class dataset:
 
         # get column ids
         if isinstance(cols, str):
-            return self.__getFormatedData(data,
+            return self.formatData(data,
                 self.getColLabels(cols), output)
         elif isinstance(cols, list):
-            return self.__getFormatedData(data, cols, output)
+            return self.formatData(data, cols, output)
         elif isinstance(cols, tuple):
             retVal = tuple([])
             for colFilter in cols:
-                retVal += (self.__getFormatedData(data,
+                retVal += (self.formatData(data,
                     self.getColLabels(colFilter), output), )
             return retVal
         
         return None
 
-    def __getFormatedData(self, data, colIDs, output):
-        if output == 'array':
-            # return numpy array
-            return data[colIDs].view('<f8').reshape(data.size, len(colIDs))
-        elif output == 'recarray':
-            # return numpy record array
-            return data[['label'] + colIDs]
-        elif output == 'list,array':
-            # return row labels as list, data as numpy array
-            rlist = data['label'].tolist()
-            array = data[colIDs].view('<f8').reshape(data.size, len(colIDs))
-            return rlist, array
+    def getSourceData(self, source, size = None, rows = '*'):
+        """Return a given number of samples from a given data source.
 
-        return None
-
-    def getSourceData(self, source = None, size = None, rows = '*'):
-        """Return a given number of samples from data source.
-
-        Keyword arguments:
+        Keyword Arguments:
             source -- name of data source to get data from
-            size -- number of samples to return
-                if size is not given just return all samples of given source
-            rows -- string that describes a filter for rows to choose from
-            useCache -- shall data be cached"""
+            size -- number of random choosen samples to return
+                default: return all samples of given source
+            rows -- string describing a row filter
+                default: do not filter rows"""
 
-        if not source or not source in self.data:
-            nemoa.log("warning", "unknown data source: '" + source + "'!")
+        if not isinstance(source, str) or not source in self.data:
+            nemoa.log('error', """
+                Could not get data from source:
+                Unknown source: '%s'!""" % (source))
             return None
         if not rows in self.cfg['rowFilter']:
             nemoa.log("warning", "unknown row group: '" + rows + "'!")
@@ -540,6 +527,31 @@ class dataset:
             return numpy.take(srcArray, rowSelect)
 
         return srcArray
+
+    def formatData(self, data, cols, format):
+        """Return """
+        
+        # check columns
+        if not len(cols) == len(set(cols)):
+            nemoa.log('error', """
+                Could not retrieve data:
+                Columns have to be unique!""")
+            return None
+        known = self.getColLabels()
+        for col in cols:
+            if not col in known:
+                nemoa.log('error', """
+                    Could not retrieve data:
+                    Uknown column '%s'!""" % (col))
+                return None
+    
+        if format == 'array': return data[cols].view('<f8').reshape(
+            data.size, len(cols))
+        if format == 'recarray': return data[['label'] + cols]
+        if format == 'list,array': return data['label'].tolist(), \
+            data[cols].view('<f8').reshape(data.size, len(cols))
+
+        return None
 
     # Labels and Groups
 

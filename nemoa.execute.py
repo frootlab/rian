@@ -1,59 +1,40 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys, getopt, os
+import sys
+sys.path.append('./package')
+import nemoa, getopt, os
 
 def main(argv):
-    sys.path.append('./package')
 
     project = ''
-    script = ''
-    kwargs = ''
+    script  = ''
+    kwargs  = ''
 
-    try:
-        opts, args = getopt.getopt(
-            argv, "hvp:s:a:", ["project=", "script=", "arguments="])
-    except getopt.GetoptError:
-        usage()
-        sys.exit(2)
+    # get arguments
+    try: opts, args = getopt.getopt(argv, "hvp:s:a:",
+        ["project=", "script=", "arguments="])
+    except getopt.GetoptError: usage(); sys.exit(2)
 
+    # parse arguments
     for opt, arg in opts:
-        if opt == '-h':
-            usage()
-            sys.exit()
-        elif opt == '-v':
-            version()
-            sys.exit()
-        elif opt in ("-p", "--project"):
-            project = arg
-        elif opt in ("-s", "--script"):
-            script = arg
-        elif opt in ("-a", "--arguments"):
-            kwargs = arg
+        if opt == '-h': usage(); sys.exit()
+        elif opt == '-v': version(); sys.exit()
+        elif opt in ("-p", "--project"):   project = arg
+        elif opt in ("-s", "--script"):    script = arg
+        elif opt in ("-a", "--arguments"): kwargs = arg
 
-    # print list of projects
-    if not project:
-        usage()
-        listProjects()
-        sys.exit()
+    # do something
+    if not project: usage(); projects(); sys.exit()
+    if not script: usage(); scripts(project); sys.exit()
+    execute(project, script, kwargs)
 
-    # print list of scripts in project
-    if not script:
-        usage()
-        listScripts(project)
-        sys.exit()
-
-    # execute script
-    executeScript(project, script, kwargs)
-
-def listProjects():
+def projects():
     """Print list of projects to standard output."""
-    import nemoa
     print 'Projects: ' + ','.join(['%s' % (p) for p in nemoa.listProjects()])
 
-def listScripts(project):
+def scripts(project):
     """Print list of scripts to standard output."""
-    import nemoa
     nemoa.setLog(quiet = True)
     workspace = nemoa.open(project)
     nemoa.setLog(quiet = False)
@@ -63,23 +44,14 @@ def listScripts(project):
         print '    %s' % (script)
     print ''
 
-def executeScript(project, script, kwargs):
-    import nemoa
+def execute(project, script, kwargs):
     workspace = nemoa.open(project)
-    workspace.execute(
-        name = script,
-        params = {},
-        arguments = kwargs)
+    workspace.execute(name = script, arguments = kwargs)
 
-def version():
-    import nemoa
-    print nemoa.version()
+def version(): print nemoa.version()
 
 def usage():
     """Print script usage to standard output."""
-    
-    script = os.path.basename(__file__)
-
     print """Usage: %s [-p <project> [-s <script> [-a <arguments>]]] [-h] [-v]
     
     -h --help                 Print this
@@ -87,7 +59,7 @@ def usage():
     -s --script               Basename of script to execute
     -a --arguments            Arguments passed to script
     -v --version              Print version
-    """ % (script)
+    """ % (os.path.basename(__file__))
 
 if __name__ == "__main__":
    main(sys.argv[1:])
