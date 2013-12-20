@@ -22,7 +22,8 @@ class ann(nemoa.system.base.system):
     # Configuration                                                    #
     ####################################################################
 
-    def _configure(self, config = {}, network = None, dataset = None, update = False):
+    def _configure(self, config = {},
+        network = None, dataset = None, update = False):
         """Configure ANN to network and dataset.
         
         Keyword Arguments:
@@ -50,16 +51,20 @@ class ann(nemoa.system.base.system):
 
     def _setNetwork(self, network, update = False, *args, **kwargs):
         """Update units and links to network instance."""
-        nemoa.log('info', 'get system units and links from network \'%s\'' % (network.getName()))
+        nemoa.log('info', """get system units and links from network '%s'
+            """ % (network.getName()))
         nemoa.setLog(indent = '+1')
 
         if not nemoa.type.isNetwork(network):
-            nemoa.log("error", "could not configure system: network instance is not valid!")
+            nemoa.log("error", """could not configure system:
+                network instance is not valid!""")
             nemoa.setLog(indent = '-1')
             return False
 
-        self.setUnits(self._getUnitsFromNetwork(network), initialize = (update == False))
-        self.setLinks(self._getLinksFromNetwork(network), initialize = (update == False))
+        self.setUnits(self._getUnitsFromNetwork(network),
+            initialize = (update == False))
+        self.setLinks(self._getLinksFromNetwork(network),
+            initialize = (update == False))
 
         self._config['check']['network'] = True
         nemoa.setLog(indent = '-1')
@@ -159,11 +164,11 @@ class ann(nemoa.system.base.system):
             return {key: val * numpy.ones(shape = dict[key].shape)
                 for key in dict.keys()}
 
-        def getUpdate(prevGradient, prevUpdate, gradient, accel, minFactor, maxFactor):
+        def getUpdate(prevGrad, prevUpdate, grad, accel, minFactor, maxFactor):
             update = {}
-            for key in gradient.keys():
-                sign = numpy.sign(gradient[key])
-                a = numpy.sign(prevGradient[key]) * sign
+            for key in grad.keys():
+                sign = numpy.sign(grad[key])
+                a = numpy.sign(prevGrad[key]) * sign
                 magnitude = numpy.maximum(numpy.minimum(prevUpdate[key] \
                     * (accel[0] * (a == -1) + accel[1] * (a == 0)
                     + accel[2] * (a == 1)), maxFactor), minFactor)
@@ -231,8 +236,8 @@ class ann(nemoa.system.base.system):
     def _optimizeGetBPropUpdates(self, out, delta):
         """Compute parameter update directions from weight deltas."""
 
-        def getUpdate(gradient, rate):
-            return {key: rate * gradient[key] for key in gradient.keys()}
+        def getUpdate(grad, rate):
+            return {key: rate * grad[key] for key in grad.keys()}
 
         # RProp parameters
         rate = 0.1
@@ -243,9 +248,11 @@ class ann(nemoa.system.base.system):
         for id, src in enumerate(layers[:-1]):
             tgt = layers[id + 1]
             units[tgt] = getUpdate(
-                self.units[tgt].getUpdatesFromDelta(delta[src, tgt]), rate)
+                self.units[tgt].getUpdatesFromDelta(
+                delta[src, tgt]), rate)
             links[(src, tgt)] = getUpdate(
-                self.annLinks.getUpdatesFromDelta(out[src], delta[src, tgt]), rate)
+                self.annLinks.getUpdatesFromDelta(out[src],
+                delta[src, tgt]), rate)
         return {'units': units, 'links': links}
 
     def _optimizeUpdateParams(self, updates):

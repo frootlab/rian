@@ -145,11 +145,6 @@ class unitRelation(heatmap):
         if self.settings['show_figure_caption']:
             title = nemoa.common.strSplitParams(
                 self.settings['relation'])[0].title()
-            #title = model.about('system', 'units', 'method', self.settings['eval'], 'name')
-            #title = model.dataset.cfg['name']
-            
-            #title = "%s: %s" % (model.dataset.cfg['name'],
-                #nemoa.common.strSplitParams(self.settings['relation'])[0])
 
             # draw title
             matplotlib.pyplot.title(title, fontsize = 11)

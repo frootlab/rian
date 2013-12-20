@@ -452,7 +452,7 @@ class dataset:
             rows -- string describing row filter
             cols -- name of column group
             output -- output format: 'array', 'recarray', 'list,array'
-        
+
         Description:
             ...
         """
