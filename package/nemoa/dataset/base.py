@@ -927,21 +927,27 @@ class dataset:
 
         return colLabels
 
-    def csvGetDelimiter(self, file):
+    @staticmethod
+    def csvGetDelimiter(file):
         """Return estimated delimiter of csv file."""
 
-        with open(file, 'rb') as csvfile:
-            try:
-                size = len(csvfile.readline())
-                probe = csvfile.read(size * 32)
-                dialect = csv.Sniffer().sniff(probe)
-            except:
-                nemoa.log('warning', """ 
-                    could not import csv file '%s':
-                    could not determine delimiter!""" % (file))
-                return None
+        found = False
+        lines = 10
+        while not found and lines < 100:
+            with open(file, 'rb') as csvfile:
+                probe = csvfile.read(len(csvfile.readline()) * lines)
+                try:
+                    dialect = csv.Sniffer().sniff(probe)
+                    found = True
+                except:
+                    lines += 10
 
-        return dialect.delimiter
+        if found: return dialect.delimiter
+
+        nemoa.log('warning', """ 
+            could not import csv file '%s':
+            could not determine delimiter!""" % (file))
+        return None
 
     #
     # object configuration handling
