@@ -682,49 +682,49 @@ class dataset:
     def getRowPartitionList(self):
         return self.cfg['rowPartitions'].keys()
 
-    def createRowPartition(self, algorithm = 'bcca', **params):
-        if algorithm == 'bcca':
-            partition = self.getBccaPartition(**params)
-        else:
-            nemoa.log("warning", "unknown partition function '%s'")
+    #def createRowPartition(self, algorithm = 'bcca', **params):
+        #if algorithm == 'bcca':
+            #partition = self.getBccaPartition(**params)
+        #else:
+            #nemoa.log("warning", "unknown partition function '%s'")
 
-        # add partition
-        return self.addRowPartition(algorithm, partition)
+        ## add partition
+        #return self.addRowPartition(algorithm, partition)
 
-    def getBccaPartition(self, **params):
-        rowLabels, data = self.getData(output = 'list,array')
-        numRows, numCols = data.shape
+    #def getBccaPartition(self, **params):
+        #rowLabels, data = self.getData(output = 'list,array')
+        #numRows, numCols = data.shape
 
-        # check parameters
-        if 'groups' in params:
-            groups = params['groups']
-        else:
-            nemoa.log("warning", "parameter 'groups' is needed to create BCCA partition!")
-            return []
+        ## check parameters
+        #if 'groups' in params:
+            #groups = params['groups']
+        #else:
+            #nemoa.log("warning", "parameter 'groups' is needed to create BCCA partition!")
+            #return []
 
-        # get BCCA biclusters
-        biclusters = self.getBccaBiclusters(**params)
+        ## get BCCA biclusters
+        #biclusters = self.getBccaBiclusters(**params)
 
-        # get bicluster distances
-        distance = self.getBiclusterDistance(biclusters, **params)
+        ## get bicluster distances
+        #distance = self.getBiclusterDistance(biclusters, **params)
 
-        # cluster samples using k-means
-        nemoa.log("info", 'cluster distances using k-means with k = %i' % (groups))
-        clusters = self.getClusters(algorithm = 'k-means', data = distance, k = groups)
-        cIDs = numpy.asarray(clusters)
-        partition = []
-        for cID in range(groups):
-            partition.append(numpy.where(cIDs == cID)[0].tolist())
+        ## cluster samples using k-means
+        #nemoa.log("info", 'cluster distances using k-means with k = %i' % (groups))
+        #clusters = self.getClusters(algorithm = 'k-means', data = distance, k = groups)
+        #cIDs = numpy.asarray(clusters)
+        #partition = []
+        #for cID in range(groups):
+            #partition.append(numpy.where(cIDs == cID)[0].tolist())
 
-        # get labels
-        labeledPartition = []
-        for pID, c in enumerate(partition):
-            labels = []
-            for sID in c:
-                labels.append(rowLabels[sID])
-            labeledPartition.append(list(set(labels)))
+        ## get labels
+        #labeledPartition = []
+        #for pID, c in enumerate(partition):
+            #labels = []
+            #for sID in c:
+                #labels.append(rowLabels[sID])
+            #labeledPartition.append(list(set(labels)))
 
-        return labeledPartition
+        #return labeledPartition
 
     #
     # CLUSTERING
@@ -834,62 +834,62 @@ class dataset:
     # BICLUSTER DISTANCES
     #
 
-    def getBiclusterDistance(self, biclusters, **params):
-        if 'distance' in params:
-            type = params['distance']
-        else:
-            type = 'correlation'
+    #def getBiclusterDistance(self, biclusters, **params):
+        #if 'distance' in params:
+            #type = params['distance']
+        #else:
+            #type = 'correlation'
 
-        if type == 'hamming':
-            return self.getBiclusterHammingDistance(biclusters)
-        elif type == 'correlation':
-            return self.getBiclusterCorrelationDistance(biclusters)
+        #if type == 'hamming':
+            #return self.getBiclusterHammingDistance(biclusters)
+        #elif type == 'correlation':
+            #return self.getBiclusterCorrelationDistance(biclusters)
 
-        nemoa.log("warning", "   unknown distance type '" + type + "'!")
-        return None
+        #nemoa.log("warning", "   unknown distance type '" + type + "'!")
+        #return None
 
-    def getBiclusterHammingDistance(self, biclusters):
-        data = self.getData(output = 'array')
-        numRows, numCols = data.shape
+    #def getBiclusterHammingDistance(self, biclusters):
+        #data = self.getData(output = 'array')
+        #numRows, numCols = data.shape
 
-        # create distance matrix using binary metric
-        distance = numpy.ones(shape = (numRows, len(biclusters)))
-        for cID, (cRowIDs, cColIDs) in enumerate(biclusters):
-            distance[cRowIDs, cID] = 0
+        ## create distance matrix using binary metric
+        #distance = numpy.ones(shape = (numRows, len(biclusters)))
+        #for cID, (cRowIDs, cColIDs) in enumerate(biclusters):
+            #distance[cRowIDs, cID] = 0
 
-        return distance
+        #return distance
 
-    def getBiclusterCorrelationDistance(self, biclusters):
-        ## EXPERIMENTAL!!
-        data = self.getData(output = 'array')
-        numRows, numCols = data.shape
+    #def getBiclusterCorrelationDistance(self, biclusters):
+        ### EXPERIMENTAL!!
+        #data = self.getData(output = 'array')
+        #numRows, numCols = data.shape
 
-        # calculate differences in correlation
-        corrDiff = numpy.zeros(shape = (numRows, len(biclusters)))
-        for cID, (cRowIDs, cColIDs) in enumerate(biclusters):
+        ## calculate differences in correlation
+        #corrDiff = numpy.zeros(shape = (numRows, len(biclusters)))
+        #for cID, (cRowIDs, cColIDs) in enumerate(biclusters):
             
-            # calculate mean correlation within bicluster
-            cCorr = self.getMeanCorr(data[cRowIDs, :][:, cColIDs])
+            ## calculate mean correlation within bicluster
+            #cCorr = self.getMeanCorr(data[cRowIDs, :][:, cColIDs])
             
-            # calculate mean correlation by appending single rows
-            for rowID in range(numRows):
-                corrDiff[rowID, cID] = cCorr - self.getMeanCorr(data[cRowIDs + [rowID], :][:, cColIDs])
+            ## calculate mean correlation by appending single rows
+            #for rowID in range(numRows):
+                #corrDiff[rowID, cID] = cCorr - self.getMeanCorr(data[cRowIDs + [rowID], :][:, cColIDs])
         
-        # calculate distances of samples and clusters
-        distance = corrDiff
-        #dist = numpy.nan_to_num(corrDiff / (numpy.max(numpy.max(corrDiff, axis = 0), 0.000001)))
-        #dist = (dist > 0) * dist
-        return distance
+        ## calculate distances of samples and clusters
+        #distance = corrDiff
+        ##dist = numpy.nan_to_num(corrDiff / (numpy.max(numpy.max(corrDiff, axis = 0), 0.000001)))
+        ##dist = (dist > 0) * dist
+        #return distance
 
-    def getMeanCorr(self, array, axis = 1):
-        if not axis:
-            array = array.T
-        cCorr = numpy.asarray([])
-        for i in range(array.shape[1] - 1):
-            for j in range(i + 1, array.shape[1]):
-                cCorr = numpy.append(cCorr, numpy.corrcoef(array[:, i], array[:, j])[0, 1])
+    #def getMeanCorr(self, array, axis = 1):
+        #if not axis:
+            #array = array.T
+        #cCorr = numpy.asarray([])
+        #for i in range(array.shape[1] - 1):
+            #for j in range(i + 1, array.shape[1]):
+                #cCorr = numpy.append(cCorr, numpy.corrcoef(array[:, i], array[:, j])[0, 1])
 
-        return numpy.mean(cCorr)
+        #return numpy.mean(cCorr)
 
     def __csvGetData(self, name):
         conf = self.cfg['table'][name]['source']
