@@ -99,16 +99,17 @@ class dataset:
 
         # get columns from dataset files and convert to common format
         colLabels = {}
+        nemoa.log('info', 'configure data sources')
+        nemoa.setLog(indent = '+1')
         for src in self.cfg['table']:
             nemoa.log('info', """
-                configure dataset source: '%s'""" % (src))
+                configure '%s'""" % (src))
             srcCnf = self.cfg['table'][src]
 
             # get column labels from csv-file
             if 'csvtype' in srcCnf['source']:
                 csvType = srcCnf['source']['csvtype'].strip().lower()
-            else:
-                csvType = None
+            else: csvType = None
             origColLabels = self.csvGetColLabels(srcCnf['source']['file'], type = csvType)
 
             # set annotation format
@@ -166,6 +167,8 @@ class dataset:
                 'conv': convColLabels,
                 'usecols': (),
                 'notusecols': convColLabelsLost }
+
+        nemoa.setLog(indent = '-1')
 
         # intersect converted dataset column labels
         interColLabels = colLabels[colLabels.keys()[0]]['conv']
@@ -232,11 +235,13 @@ class dataset:
 
         # import data from sources
         nemoa.log('info', 'import data from sources')
+        nemoa.setLog(indent = '+1')
         self.data = {}
         for src in self.cfg['table']:
             self.data[src] = {
                 'fraction': self.cfg['table'][src]['fraction'],
                 'array': self.__csvGetData(src) }
+        nemoa.setLog(indent = '-1')
 
         # save cachefile
         if useCache:
@@ -329,6 +334,8 @@ class dataset:
             # get mean and standard deviation per column (recarray)
             # and update the values
             for src in self.data:
+                if self.data[src]['array'] == None:
+                    continue
                 for colName in self.data[src]['array'].dtype.names[1:]:
                     allMean = data[colName].mean()
                     allSdev = data[colName].std()
@@ -461,29 +468,25 @@ class dataset:
         srcStack = ()
         for src in self.data.keys():
             srcArray = self.getSourceData(src, size, rows)
-            if srcArray.size > 0:
-                srcStack += (srcArray, )
-        if not srcStack:
-            return None
+            if srcArray == None or not srcArray.size: continue
+            srcStack += (srcArray, )
+        if not srcStack: return None
         data = numpy.concatenate(srcStack)
 
         # shuffle data
-        if size:
-            numpy.random.shuffle(data)
+        if size: numpy.random.shuffle(data)
 
         # get column ids
-        if isinstance(cols, str):
-            return self.formatData(data,
-                self.getColLabels(cols), output)
-        elif isinstance(cols, list):
-            return self.formatData(data, cols, output)
+        if isinstance(cols, str): return self.formatData(data,
+            self.getColLabels(cols), output)
+        elif isinstance(cols, list): return self.formatData(data,
+            cols, output)
         elif isinstance(cols, tuple):
             retVal = tuple([])
             for colFilter in cols:
                 retVal += (self.formatData(data,
                     self.getColLabels(colFilter), output), )
             return retVal
-        
         return None
 
     def getSourceData(self, source, size = None, rows = '*'):
@@ -496,13 +499,19 @@ class dataset:
             rows -- string describing a row filter
                 default: do not filter rows"""
 
-        if not isinstance(source, str) or not source in self.data:
+        if not isinstance(source, str) \
+            or not source in self.data:
             nemoa.log('error', """
-                Could not get data from source:
+                could not get data from source:
                 Unknown source: '%s'!""" % (source))
             return None
         if not rows in self.cfg['rowFilter']:
             nemoa.log("warning", "unknown row group: '" + rows + "'!")
+            return None
+        if self.data[source]['array'] == None:
+            nemoa.log('error', """
+                could not get data from source:
+                Unknown source: '%s'!""" % (source))
             return None
 
         # apply row filter
@@ -534,15 +543,15 @@ class dataset:
         # check columns
         if not len(cols) == len(set(cols)):
             nemoa.log('error', """
-                Could not retrieve data:
+                could not retrieve data:
                 Columns have to be unique!""")
             return None
         known = self.getColLabels()
         for col in cols:
             if not col in known:
                 nemoa.log('error', """
-                    Could not retrieve data:
-                    Uknown column '%s'!""" % (col))
+                    could not retrieve data:
+                    Unknown column '%s'!""" % (col))
                 return None
     
         if format == 'array': return data[cols].view('<f8').reshape(
@@ -882,31 +891,32 @@ class dataset:
 
         return numpy.mean(cCorr)
 
-    def __csvGetData(self, srcName):
-        fileCfg = self.cfg['table'][srcName]['source']
-        file = fileCfg['file']
+    def __csvGetData(self, name):
+        conf = self.cfg['table'][name]['source']
+        file = conf['file']
+        delim = conf['delimiter'] if 'delimiter' in conf \
+            else self.csvGetDelimiter(file)
+        cols = conf['usecols']
+        names = tuple(self.getColLabels())
+        formats = tuple(['<f8' for x in names])
+        if not 'rows' in conf or conf['rows']:
+            cols = (0,) + cols
+            names = ('label',) + names
+            formats = ('<U12',) + formats
+        dtype = {'names': names, 'formats': formats}
 
-        if 'delimiter' in fileCfg:
-            delim = fileCfg['delimiter']
-        else:
-            delim = self.csvGetDelimiter(file)
+        nemoa.log('info', "import data from csv file: " + file)
 
-        usecols    = fileCfg['usecols']
-        colNames   = tuple(self.getColLabels())
-        colFormats = tuple(['<f8' for x in colNames])
+        try:
+            #data = numpy.genfromtxt(file, skiprows = 1, delimiter = delim,
+                #usecols = cols, dtype = dtype)
+            data = numpy.loadtxt(file, skiprows = 1, delimiter = delim,
+                usecols = cols, dtype = dtype)
+        except:
+            nemoa.log('error', 'could not import data from file!')
+            return None
 
-        if not ('rows' in fileCfg and not fileCfg['rows']):
-            usecols = (0,) + usecols
-            colNames = ('label',) + colNames
-            colFormats = ('<U12',) + colFormats
-
-        nemoa.log('info', "import dataset source: " + file)
-
-        return numpy.loadtxt(file,
-            skiprows = 1,
-            delimiter = delim,
-            usecols = usecols,
-            dtype = {'names': colNames, 'formats': colFormats})
+        return data
 
     def csvGetColLabels(self, file, delim = None, type = None):
         """Return list with column labels (first row) from csv file."""
