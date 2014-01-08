@@ -233,14 +233,11 @@ class ann(nemoa.system.base.system):
 
         return update
 
-    def _optimizeGetBPropUpdates(self, out, delta):
+    def _optimizeGetBPropUpdates(self, out, delta, rate = 0.1):
         """Compute parameter update directions from weight deltas."""
 
         def getUpdate(grad, rate):
             return {key: rate * grad[key] for key in grad.keys()}
-
-        # RProp parameters
-        rate = 0.1
 
         layers = self.getMapping()
         links = {}
