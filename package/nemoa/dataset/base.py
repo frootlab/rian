@@ -918,6 +918,15 @@ class dataset:
 
         return data
 
+    def exportDataToFile(self, file, type):
+        """Export data to file."""
+        #
+        # 2DO: test!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        #
+        data = self.getData()
+        numpy.savetxt(file, data)
+        return True
+
     def csvGetColLabels(self, file, delim = None, type = None):
         """Return list with column labels (first row) from csv file."""
         if not delim:
