@@ -274,12 +274,9 @@ class dataset:
 
         nemoa.log('info', 'preprocessing data')
         nemoa.setLog(indent = '+1')
-        if 'stratify' in kwargs.keys():
-            self.stratifyData(kwargs['stratify'])
-        if 'normalize' in kwargs.keys():
-            self.normalizeData(kwargs['normalize'])
-        if 'transform' in kwargs.keys():
-            self.transformData(kwargs['transform'])
+        if 'stratify'  in kwargs.keys(): self.stratifyData(kwargs['stratify'])
+        if 'normalize' in kwargs.keys(): self.normalizeData(kwargs['normalize'])
+        if 'transform' in kwargs.keys(): self.transformData(kwargs['transform'])
         nemoa.setLog(indent = '-1')
 
         return True
@@ -418,7 +415,7 @@ class dataset:
                 data = self.data[src]['array']
                 colList = data.dtype.names[1:]
                 dataArray = data[list(colList)].view('<f8').reshape(data.size, len(list(colList)))
-                self.__setColLabels(colLabels)
+                self.setColLabels(colLabels)
 
                 # transform data
                 transArray = system.mapData(dataArray, **kwargs)
@@ -444,11 +441,15 @@ class dataset:
 
         return False
 
+    def getCorruptedData(self, data, corruption = 0.2):
+        """Return numpy array with partly corrupted data."""
+        return data * numpy.random.binomial(
+            size = data.shape, n = 1, p = 1 - corruption)
+
     def getValue(self, row = None, col = None):
+        """Return single value from dataset."""
         retVal = self.getData(cols = ([col]), output = 'list,array')
-        retList = retVal[0]
-        retData = retVal[1]
-        return retData[retList.index(row)]
+        return retVal[1][retVal[0].index(row)]
 
     def getData(self, size = None, rows = '*', cols = '*', output = 'array'):
         """Return a given number of stratified samples.
@@ -562,125 +563,125 @@ class dataset:
 
         return None
 
-    # Labels and Groups
+    # Column Labels and Column Groups
 
     def getColLabels(self, group = '*'):
+        """Return list of strings containing column groups and labels."""
         if group == '*':
             return ['%s:%s' % (col[0], col[1]) for col in self.cfg['columns']]
-        if not group in self.cfg['colFilter']:
-            return []
+        if not group in self.cfg['colFilter']: return []
         colFilter = self.cfg['colFilter'][group]
-        colLabels = []
+        labels = []
         for col in self.cfg['columns']:
             if ('*:*') in colFilter \
                 or ('%s:*' % (col[0])) in colFilter \
                 or ('*:%s' % (col[1])) in colFilter \
                 or ('%s:%s' % (col[0], col[1])) in colFilter:
-                colLabels.append('%s:%s' % (col[0], col[1]))
-        return colLabels
+                labels.append('%s:%s' % (col[0], col[1]))
+        return labels
 
-    def __setColLabels(self, colLabels):
-        """Set column labels."""
+    def setColLabels(self, labels):
+        """Set column labels from list of strings."""
         self.cfg['columns'] = ()
-        for col in colLabels:
+        for col in labels:
             self.cfg['columns'] += (col.split(':'), )
         return True
 
-    def getRowLabels(self):
-        labelStack = ()
-        for source in self.data:
-            labelStack += (self.data[source]['array']['label'],)
-        labels = numpy.concatenate(labelStack).tolist()
-        return labels
+    #def getRowLabels(self):
+        #labelStack = ()
+        #for source in self.data:
+            #labelStack += (self.data[source]['array']['label'],)
+        #labels = numpy.concatenate(labelStack).tolist()
+        #return labels
 
-    def getColGroups(self):
-        groups = {}
-        for group, label in self.cfg['columns']:
-            if not group in groups:
-                groups[group] = []
-            groups[group].append(label)
-        return groups
+    #def getColGroups(self):
+        #groups = {}
+        #for group, label in self.cfg['columns']:
+            #if not group in groups:
+                #groups[group] = []
+            #groups[group].append(label)
+        #return groups
 
-    def getRowGroups(self):
-        pass
+    #def getRowGroups(self):
+        #pass
 
     #
     # FILTERS
     #
 
-    def addRowFilter(self, name, filter):
-        # create unique name for filter
-        filterName = name
-        i = 1
-        while filterName in self.cfg['rowFilter']:
-            i += 1
-            filterName = '%s.%i' % (name, i)
+    #def addRowFilter(self, name, filter):
+        ## create unique name for filter
+        #filterName = name
+        #i = 1
+        #while filterName in self.cfg['rowFilter']:
+            #i += 1
+            #filterName = '%s.%i' % (name, i)
 
-        # TODO: check filter
-        self.cfg['rowFilter'][filterName] = filter
-        return filterName
+        ## TODO: check filter
+        #self.cfg['rowFilter'][filterName] = filter
+        #return filterName
 
-    def delRowFilter(self, name):
-        if name in self.cfg['rowFilter']:
-            del self.cfg['rowFilter'][name]
-            return True
-        return False
+    #def delRowFilter(self, name):
+        #if name in self.cfg['rowFilter']:
+            #del self.cfg['rowFilter'][name]
+            #return True
+        #return False
 
-    def getRowFilter(self, name):
-        if not name in self.cfg['rowFilter']:
-            nemoa.log("warning", "unknown row filter '" + name + "'!")
-            return []
-        return self.cfg['rowFilter'][name]
+    #def getRowFilter(self, name):
+        #if not name in self.cfg['rowFilter']:
+            #nemoa.log("warning", "unknown row filter '" + name + "'!")
+            #return []
+        #return self.cfg['rowFilter'][name]
 
-    def getRowFilterList(self):
-        return self.cfg['rowFilter'].keys()
+    #def getRowFilterList(self):
+        #return self.cfg['rowFilter'].keys()
 
-    def addColFilter(self):
-        pass
+    #def addColFilter(self):
+        #pass
 
-    def delColFilter(self, name):
-        if name in self.cfg['colFilter']:
-            del self.cfg['colFilter'][name]
-            return True
-        return False
+    #def delColFilter(self, name):
+        #if name in self.cfg['colFilter']:
+            #del self.cfg['colFilter'][name]
+            #return True
+        #return False
 
-    def getColFilters(self):
-        return self.cfg['colFilter']
+    #def getColFilters(self):
+        #return self.cfg['colFilter']
 
     #
     # PARTITIONS
     #
 
-    def addRowPartition(self, name, partition):
-        if name in self.cfg['rowPartitions']:
-            nemoa.log("warning", "row partition '" + name + "' allready exists!")
+    #def addRowPartition(self, name, partition):
+        #if name in self.cfg['rowPartitions']:
+            #nemoa.log("warning", "row partition '" + name + "' allready exists!")
 
-        # create unique name for partition
-        partitionName = name
-        i = 1
-        while partitionName in self.cfg['rowPartitions']:
-            i += 1
-            partitionName = '%s.%i' % (name, i)
+        ## create unique name for partition
+        #partitionName = name
+        #i = 1
+        #while partitionName in self.cfg['rowPartitions']:
+            #i += 1
+            #partitionName = '%s.%i' % (name, i)
 
-        filterNames = []
-        for id, filter in enumerate(partition):
-            filterNames.append(
-                self.addRowFilter('%s.%i' % (name, id + 1), filter))
+        #filterNames = []
+        #for id, filter in enumerate(partition):
+            #filterNames.append(
+                #self.addRowFilter('%s.%i' % (name, id + 1), filter))
 
-        self.cfg['rowPartitions'][partitionName] = filterNames
-        return partitionName
+        #self.cfg['rowPartitions'][partitionName] = filterNames
+        #return partitionName
 
-    def delRowPartition(self, name):
-        pass
+    #def delRowPartition(self, name):
+        #pass
 
-    def getRowPartition(self, name):
-        if not name in self.cfg['rowPartitions']:
-            nemoa.log("warning", "unknown row partition '" + name + "'!")
-            return []
-        return self.cfg['rowPartitions'][name]
+    #def getRowPartition(self, name):
+        #if not name in self.cfg['rowPartitions']:
+            #nemoa.log("warning", "unknown row partition '" + name + "'!")
+            #return []
+        #return self.cfg['rowPartitions'][name]
 
-    def getRowPartitionList(self):
-        return self.cfg['rowPartitions'].keys()
+    #def getRowPartitionList(self):
+        #return self.cfg['rowPartitions'].keys()
 
     #def createRowPartition(self, algorithm = 'bcca', **params):
         #if algorithm == 'bcca':
