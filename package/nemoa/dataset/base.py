@@ -730,105 +730,105 @@ class dataset:
     # CLUSTERING
     #
 
-    def getClusters(self, algorithm = 'k-means', **params):
-        if algorithm == 'k-means':
-            return self.getKMeansClusters(**params)
+    #def getClusters(self, algorithm = 'k-means', **params):
+        #if algorithm == 'k-means':
+            #return self.getKMeansClusters(**params)
 
-        nemoa.log("warning", "unsupported clustering algorithm '" + algorithm + "'!")
-        return None
+        #nemoa.log("warning", "unsupported clustering algorithm '" + algorithm + "'!")
+        #return None
 
-    def getKMeansClusters(self, data, k = 3):
-        return scipy.cluster.vq.vq(data, scipy.cluster.vq.kmeans(data, k)[0])[0]
+    #def getKMeansClusters(self, data, k = 3):
+        #return scipy.cluster.vq.vq(data, scipy.cluster.vq.kmeans(data, k)[0])[0]
 
     #
     # BICLUSTERING
     #
 
-    def getBiclusters(self, algorithm = 'bcca', **params):
-        if algorithm == 'bcca':
-            return getBccaBiclusters(**params)
+    #def getBiclusters(self, algorithm = 'bcca', **params):
+        #if algorithm == 'bcca':
+            #return getBccaBiclusters(**params)
 
-        nemoa.log("warning", "unsupported biclustering algorithm '" + algorithm + "'!")
-        return None
+        #nemoa.log("warning", "unsupported biclustering algorithm '" + algorithm + "'!")
+        #return None
 
-    def getBccaBiclusters(self, **params):
-        data = self.getData(output = 'array')
-        numRows, numCols = data.shape
+    #def getBccaBiclusters(self, **params):
+        #data = self.getData(output = 'array')
+        #numRows, numCols = data.shape
 
-        # check params
-        if not 'threshold' in params:
-            nemoa.log("info", "param 'threshold' is needed for BCCA Clustering!")
-            return []
-        if not ('minsize' in params or 'size' in params):
-            nemoa.log("info", "param 'size' or 'minsize' is needed for BCCA Clustering!")
-            return []
+        ## check params
+        #if not 'threshold' in params:
+            #nemoa.log("info", "param 'threshold' is needed for BCCA Clustering!")
+            #return []
+        #if not ('minsize' in params or 'size' in params):
+            #nemoa.log("info", "param 'size' or 'minsize' is needed for BCCA Clustering!")
+            #return []
 
-        # get params
-        threshold = params['threshold']
-        if 'minsize' in params:
-            minsize = params['minsize']
-            size = 0
-        else:
-            minsize = 3
-            size = params['size']
+        ## get params
+        #threshold = params['threshold']
+        #if 'minsize' in params:
+            #minsize = params['minsize']
+            #size = 0
+        #else:
+            #minsize = 3
+            #size = params['size']
 
-        # start clustering
-        nemoa.log("info", 'detecting bi-correlation clusters')
-        startTime = time.time()
+        ## start clustering
+        #nemoa.log("info", 'detecting bi-correlation clusters')
+        #startTime = time.time()
 
-        biclusters = []
-        for i in range(numCols - 1):
-            for j in range(i + 1, numCols):
+        #biclusters = []
+        #for i in range(numCols - 1):
+            #for j in range(i + 1, numCols):
 
-                npRowIDs = numpy.arange(numRows)
+                #npRowIDs = numpy.arange(numRows)
 
-                # drop rows until corr(i, j) > sigma or too few rows are left
-                rowIDs = npRowIDs.tolist()
-                corr = numpy.corrcoef(data[:,i], data[:,j])[0, 1]
+                ## drop rows until corr(i, j) > sigma or too few rows are left
+                #rowIDs = npRowIDs.tolist()
+                #corr = numpy.corrcoef(data[:,i], data[:,j])[0, 1]
 
-                while (size and len(rowIDs) > size) or \
-                    (not size and len(rowIDs) > minsize and corr < threshold):
-                    rowCorr = numpy.zeros(len(rowIDs))
+                #while (size and len(rowIDs) > size) or \
+                    #(not size and len(rowIDs) > minsize and corr < threshold):
+                    #rowCorr = numpy.zeros(len(rowIDs))
 
-                    for id in range(len(rowIDs)):
-                        mask = rowIDs[:id] + rowIDs[id:][1:]
-                        rowCorr[id] = numpy.corrcoef(data[mask, i], data[mask, j])[0, 1]
+                    #for id in range(len(rowIDs)):
+                        #mask = rowIDs[:id] + rowIDs[id:][1:]
+                        #rowCorr[id] = numpy.corrcoef(data[mask, i], data[mask, j])[0, 1]
 
-                    rowMaxID = rowCorr.argmax()
-                    corr = rowCorr[rowMaxID]
-                    rowIDs.pop(rowMaxID)
+                    #rowMaxID = rowCorr.argmax()
+                    #corr = rowCorr[rowMaxID]
+                    #rowIDs.pop(rowMaxID)
 
-                if i == 0 and j == 1:
-                    elapsed = time.time() - startTime
-                    estimated = elapsed * numCols ** 2 / 2
-                    nemoa.log("info", 'estimated duration: %.1fs' % (estimated))
+                #if i == 0 and j == 1:
+                    #elapsed = time.time() - startTime
+                    #estimated = elapsed * numCols ** 2 / 2
+                    #nemoa.log("info", 'estimated duration: %.1fs' % (estimated))
 
-                if corr < threshold:
-                    continue
+                #if corr < threshold:
+                    #continue
 
                 # expand remaining rows over columns
-                colIDs = [i, j]
-                for id in [id for id in range(numCols) if id not in colIDs]:
-                    if numpy.corrcoef(data[rowIDs, i], data[rowIDs, id])[0, 1] < threshold:
-                        continue
-                    if numpy.corrcoef(data[rowIDs, j], data[rowIDs, id])[0, 1] < threshold:
-                        continue
-                    colIDs.append(id)
+                #colIDs = [i, j]
+                #for id in [id for id in range(numCols) if id not in colIDs]:
+                    #if numpy.corrcoef(data[rowIDs, i], data[rowIDs, id])[0, 1] < threshold:
+                        #continue
+                    #if numpy.corrcoef(data[rowIDs, j], data[rowIDs, id])[0, 1] < threshold:
+                        #continue
+                    #colIDs.append(id)
 
                 # append bicluster if not yet existing
-                bicluster = (list(set(rowIDs)), list(set(colIDs)))
-                if not bicluster in biclusters:
-                    biclusters.append(bicluster)
+                #bicluster = (list(set(rowIDs)), list(set(colIDs)))
+                #if not bicluster in biclusters:
+                    #biclusters.append(bicluster)
 
-        # info
-        if size:
-            nemoa.log("info", 'found %i biclusters with: correlation > %.2f, number of samples = %i' \
-                % (len(biclusters), threshold, size))
-        else:
-            nemoa.log("info", 'found %i biclusters with: correlation > %.2f, number of samples > %i' \
-                % (len(biclusters), threshold, minsize - 1))
+        ## info
+        #if size:
+            #nemoa.log("info", 'found %i biclusters with: correlation > %.2f, number of samples = %i' \
+                #% (len(biclusters), threshold, size))
+        #else:
+            #nemoa.log("info", 'found %i biclusters with: correlation > %.2f, number of samples > %i' \
+                #% (len(biclusters), threshold, minsize - 1))
 
-        return biclusters
+        #return biclusters
 
     #
     # BICLUSTER DISTANCES
@@ -918,15 +918,6 @@ class dataset:
 
         return data
 
-    def exportDataToFile(self, file, type):
-        """Export data to file."""
-        #
-        # 2DO: test!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        #
-        data = self.getData()
-        numpy.savetxt(file, data)
-        return True
-
     def csvGetColLabels(self, file, delim = None, type = None):
         """Return list with column labels (first row) from csv file."""
         if not delim:
@@ -976,6 +967,18 @@ class dataset:
         numpy.savez(file,
             cfg = self.cfg,
             data = self.data)
+
+    def exportDataToFile(self, file):
+        """Export data to file."""
+        #
+        # 2DO: test!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        #
+        fileExt = nemoa.common.getFileExt(file)
+        if fileExt in ['csv', 'tsv', 'txt']:
+            return numpy.savetxt(file, self.getData())
+        if fileExt in ['gz', 'data']:
+            return numpy.savez(file, cfg = self.cfg, data = self.data)
+        return False
 
     def getCacheFile(self, network):
         """Return cache file path."""
