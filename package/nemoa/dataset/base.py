@@ -441,10 +441,28 @@ class dataset:
 
         return False
 
-    def getCorruptedData(self, data, corruption = 0.2):
-        """Return numpy array with partly corrupted data."""
-        return data * numpy.random.binomial(
+    def getCorruptedData(self, data, algorithm = 'mn', corruption = 0.2):
+        """Return numpy array with (partly) corrupted data.
+
+        Keyword Arguments:
+            algorith -- string describing algorithm for corruption
+                'mn': Masking Noise
+                    A fraction of every sample is forced to zero
+                'gs': Gaussian Noise
+                    Additive isotropic Gaussian noise
+                'sp': Salt-and-pepper noise
+                    A fraction of every sample is forced to min or max
+                    with equal possibility
+                    
+            corruption -- float describing the strengt of the corruption
+                The parameter depends on the used algorithm
+        """
+        if algorithm == 'mn': return data * numpy.random.binomial(
             size = data.shape, n = 1, p = 1 - corruption)
+        #if algorithm == 'sp': return
+        #if algorithm == 'gs': return
+        nemoa.log('warning', "unkown corruption algorithm '%s'!" % (algorithm))
+        return data
 
     def getValue(self, row = None, col = None):
         """Return single value from dataset."""
