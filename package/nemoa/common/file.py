@@ -1,9 +1,7 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import os
 
-#
-# file operations
-#
+import os
 
 def getEmptyFile(file):
     file_dirname = os.path.dirname(file) + '/'

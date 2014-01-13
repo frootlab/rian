@@ -2,12 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os, logging, inspect
-
-__shared = {
-    'quiet': False,
-    'indent': 0,
-    'debug': False
-}
+__shared = {'quiet': False, 'indent': 0, 'debug': False}
 
 def initLogger(logfile = None):
     """Initialize loggers ('null', 'tty' and 'file')."""

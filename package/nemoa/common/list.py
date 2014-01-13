@@ -1,9 +1,7 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#
-# list operations
-#
+import types
 
 def isList(list):
-    import types
     return type(list) is types.ListType

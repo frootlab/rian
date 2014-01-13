@@ -110,7 +110,8 @@ class dataset:
             if 'csvtype' in srcCnf['source']:
                 csvType = srcCnf['source']['csvtype'].strip().lower()
             else: csvType = None
-            origColLabels = self.csvGetColLabels(srcCnf['source']['file'], type = csvType)
+            origColLabels = nemoa.common.csvGetColLabels(
+                srcCnf['source']['file'], type = csvType)
 
             # set annotation format
             if 'columns' in srcCnf['source']:
@@ -240,7 +241,7 @@ class dataset:
         for src in self.cfg['table']:
             self.data[src] = {
                 'fraction': self.cfg['table'][src]['fraction'],
-                'array': self.__csvGetData(src) }
+                'array': self.csvGetData(src) }
         nemoa.setLog(indent = '-1')
 
         # save cachefile
@@ -441,22 +442,27 @@ class dataset:
 
         return False
 
-    def getCorruptedData(self, data, algorithm = 'mn', corruption = 0.2):
+    def getCorruptedData(self, data = None, size = None, algorithm = 'mn', corruption = 0.5):
         """Return numpy array with (partly) corrupted data.
 
         Keyword Arguments:
+            data -- numpy array containing data
+                if not given, all data is taken
             algorith -- string describing algorithm for corruption
-                'mn': Masking Noise
-                    A fraction of every sample is forced to zero
                 'gs': Gaussian Noise
                     Additive isotropic Gaussian noise
+                'mn': Masking Noise
+                    A fraction of every sample is forced to zero
                 'sp': Salt-and-pepper noise
                     A fraction of every sample is forced to min or max
                     with equal possibility
-                    
             corruption -- float describing the strengt of the corruption
                 The parameter depends on the used algorithm
         """
+        if data == None:
+            if size == None: data = self.getData()
+            else: data = self.getData(size = size)
+
         if algorithm == 'mn': return data * numpy.random.binomial(
             size = data.shape, n = 1, p = 1 - corruption)
         #if algorithm == 'sp': return
@@ -612,13 +618,12 @@ class dataset:
         #labels = numpy.concatenate(labelStack).tolist()
         #return labels
 
-    #def getColGroups(self):
-        #groups = {}
-        #for group, label in self.cfg['columns']:
-            #if not group in groups:
-                #groups[group] = []
-            #groups[group].append(label)
-        #return groups
+    def getColGroups(self):
+        groups = {}
+        for group, label in self.cfg['columns']:
+            if not group in groups: groups[group] = []
+            groups[group].append(label)
+        return groups
 
     #def getRowGroups(self):
         #pass
@@ -910,13 +915,13 @@ class dataset:
 
         #return numpy.mean(cCorr)
 
-    def __csvGetData(self, name):
-        conf = self.cfg['table'][name]['source']
-        file = conf['file']
-        delim = conf['delimiter'] if 'delimiter' in conf \
-            else self.csvGetDelimiter(file)
-        cols = conf['usecols']
-        names = tuple(self.getColLabels())
+    def csvGetData(self, name):
+        conf    = self.cfg['table'][name]['source']
+        file    = conf['file']
+        delim   = conf['delimiter'] if 'delimiter' in conf \
+            else nemoa.common.csvGetDelimiter(file)
+        cols    = conf['usecols']
+        names   = tuple(self.getColLabels())
         formats = tuple(['<f8' for x in names])
         if not 'rows' in conf or conf['rows']:
             cols = (0,) + cols
@@ -936,47 +941,6 @@ class dataset:
             return None
 
         return data
-
-    def csvGetColLabels(self, file, delim = None, type = None):
-        """Return list with column labels (first row) from csv file."""
-        if not delim:
-            delim = self.csvGetDelimiter(file)
-
-        f = open(file, 'r')
-        firstline = f.readline()
-        f.close()
-
-        regEx = r'''\s*([^DELIM"']+?|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')\s*(?:DELIM|$)'''.replace('DELIM', re.escape(delim))
-        r = re.compile(regEx, re.VERBOSE)
-        
-        if type and type == 'r-table':
-            colLabels = [label.strip('\"\'') for label in ['label'] + r.findall(firstline)]
-        else:
-            colLabels = r.findall(firstline)
-
-        return colLabels
-
-    @staticmethod
-    def csvGetDelimiter(file):
-        """Return estimated delimiter of csv file."""
-
-        found = False
-        lines = 10
-        while not found and lines < 100:
-            with open(file, 'rb') as csvfile:
-                probe = csvfile.read(len(csvfile.readline()) * lines)
-                try:
-                    dialect = csv.Sniffer().sniff(probe)
-                    found = True
-                except:
-                    lines += 10
-
-        if found: return dialect.delimiter
-
-        nemoa.log('warning', """ 
-            could not import csv file '%s':
-            could not determine delimiter!""" % (file))
-        return None
 
     #
     # object configuration handling
