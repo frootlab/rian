@@ -333,12 +333,9 @@ class ann(nemoa.system.base.system):
 
     def _getDataEval(self, data, func = 'performance', **kwargs):
         """Return scalar value for system evaluation."""
-        if func == 'energy':
-            return self._getDataEvalEnergy(data, **kwargs)
-        if func == 'performance':
-            return self.getPerformance(data, **kwargs)
-        if func == 'error':
-            return self.getError(data, **kwargs)
+        if func == 'energy': return self._getDataEvalEnergy(data, **kwargs)
+        if func == 'performance': return self.getPerformance(data, **kwargs)
+        if func == 'error': return self.getError(data, **kwargs)
         return False
 
     def getError(self, data, *args, **kwargs):
@@ -348,6 +345,25 @@ class ann(nemoa.system.base.system):
     def getPerformance(self, data, *args, **kwargs):
         """Return data reconstruction performance of system."""
         return numpy.mean(self.getUnitPerformance(data, *args, **kwargs))
+
+    ####################################################################
+    # Data Transformation                                              #
+    ####################################################################
+
+    def mapData(self, data, mapping = None, transform = 'expect'):
+        """Return system representation of data.
+
+        Keyword Arguments:
+            mapping -- tuple of strings describing the mapping function
+            transform -- mapping algorithm
+        """
+
+        if mapping == None: mapping = self.getMapping()
+        if transform == 'expect': return self.getUnitExpect(data, mapping)
+        if transform == 'value': return self.getUnitValues(data, mapping)
+        if transform == 'sample': return self.getUnitSamples(data, mapping)
+        return nemoa.log('error', """could not map data:
+            unknown mapping algorithm '%s'""" % (transform))
 
     ####################################################################
     # Units                                                            #
@@ -362,12 +378,10 @@ class ann(nemoa.system.base.system):
         Description:
             Initialize all unit parameters.
         """
-        if not(dataset == None) and \
-            not nemoa.type.isDataset(dataset):
-            nemoa.log('error', """
+        if not(dataset == None) and not nemoa.type.isDataset(dataset):
+            return nemoa.log('error', """
                 could not initilize unit parameters:
                 invalid dataset argument given!""")
-            return False
 
         for layerName in self.units.keys():
             if dataset == None \
@@ -388,18 +402,11 @@ class ann(nemoa.system.base.system):
         """Return unit evaluation."""
         
         methods = self.getUnitMethods()
-        if not eval in methods.keys():
-            nemoa.log('error', """
-                could not evaluate units: unsupported unit method '%s'
-                """ % (eval))
-            return False
-
+        if not eval in methods.keys(): return nemoa.log('error', """
+            could not evaluate units: unsupported unit method '%s'""" % (eval))
         method = methods[eval]['method']
-        if not hasattr(self, method):
-            nemoa.log('error', """
-                could not evaluate units: unsupported unit method '%s'
-                """ % (method))
-            return False
+        if not hasattr(self, method): return nemoa.log('error', """
+            could not evaluate units: unsupported unit method '%s'""" % (method))
 
         inFmt = methods[eval]['inDataFmt']
         params = kwargs
@@ -407,16 +414,11 @@ class ann(nemoa.system.base.system):
         elif inFmt == 1: params['data'] = data[0]
         elif inFmt == 2: params['data'] = data[1]
         elif inFmt == 3: params['data'] = data
-        else:
-            nemoa.log('error', """
-                could not evaluate units: unsupported unit method '%s'
-                """ % (method))
-            return False
+        else: return nemoa.log('error', """could not evaluate units:
+            unsupported unit method '%s'""" % (method))
 
         values = getattr(self, method)(**params)
-
-        if mapping == None:
-            mapping = self.getMapping()
+        if mapping == None: mapping = self.getMapping()
         labels = self.getUnits(group = mapping[-1])[0]
 
         outFmt = methods[eval]['outDataFmt']
@@ -424,11 +426,8 @@ class ann(nemoa.system.base.system):
             for id, unit in enumerate(labels)}
         elif outFmt == 1: return {unit: values[id] \
             for id, unit in enumerate(labels)}
-        else:
-            nemoa.log('error', """
-                could not evaluate units: unsupported unit method '%s'
-                """ % (method))
-            return False
+        return nemoa.log('error', """could not evaluate units:
+            unsupported unit method '%s'""" % (method))
 
     def _setUnits(self, units):
         """Create instances for units."""
@@ -472,8 +471,7 @@ class ann(nemoa.system.base.system):
         """Check if system parameter dictionary is valid respective to units."""
         if not isinstance(params, dict) \
             or not 'units' in params.keys() \
-            or not isinstance(params['units'], list):
-            return False
+            or not isinstance(params['units'], list): return False
         for id in range(len(params['units'])):
             layer = params['units'][id]
             if not isinstance(layer, dict):
@@ -503,22 +501,17 @@ class ann(nemoa.system.base.system):
 
     def _getUnitInformation(self, unit, layer = None):
         """Return dict information for a given unit."""
-        if not layer:
-            layer = self.getGroupOfUnit(unit)
-        if not layer in self.units:
-            return {}
+        if not layer: layer = self.getGroupOfUnit(unit)
+        if not layer in self.units: return {}
         return self.units[layer].get(unit)
 
     def _removeUnits(self, layer = None, label = []):
         """Remove units from parameter space."""
         if not layer == None and not layer in self.units.keys():
-            nemoa.log('error', """
-                could not remove units:
+            return nemoa.log('error', """could not remove units:
                 unknown layer '%'""" % (layer))
-            return False
 
         # search for labeled units in given layer
-        
         layer = self.units[layer].params
         select = []
         labels = []
@@ -555,21 +548,17 @@ class ann(nemoa.system.base.system):
                 from input layer (first argument of tuple)
                 to output layer (last argument of tuple)
         """
-        if mapping == None:
-            mapping = self.getMapping()
-        if block == None:
-            inData = data
+        if mapping == None: mapping = self.getMapping()
+        if block == None: inData = data
         else:
             inData = numpy.copy(data)
-            for i in block:
-                inData[:,i] = numpy.mean(inData[:,i])
-        if len(mapping) == 2:
-            return self.units[mapping[1]].expect(inData,
-                self.units[mapping[0]].params)
+            for i in block: inData[:,i] = numpy.mean(inData[:,i])
+        if len(mapping) == 2: return self.units[mapping[1]].expect(
+            inData, self.units[mapping[0]].params)
         outData = numpy.copy(inData)
         for id in range(len(mapping) - 1):
-            outData = self.units[mapping[id + 1]].expect(outData,
-                self.units[mapping[id]].params)
+            outData = self.units[mapping[id + 1]].expect(
+                outData, self.units[mapping[id]].params)
         return outData
 
     def getUnitSamples(self, data, mapping = None, expectLast = False):
@@ -582,8 +571,7 @@ class ann(nemoa.system.base.system):
             expectLast -- return expectation values of the units
                 for the last step instead of sampled values
         """
-        if mapping == None:
-            mapping = self.getMapping()
+        if mapping == None: mapping = self.getMapping()
         if expectLast:
             if len(mapping) == 1:
                 return data
@@ -616,31 +604,24 @@ class ann(nemoa.system.base.system):
             expectLast -- return expectation values of the units
                 for the last step instead of maximum likelihood values
         """
-        if mapping == None:
-            mapping = self.getMapping()
-        if block == None:
-            inData = data
+        if mapping == None: mapping = self.getMapping()
+        if block == None: inData = data
         else:
             inData = numpy.copy(data)
-            for i in block:
-                inData[:,i] = numpy.mean(inData[:,i])
+            for i in block: inData[:,i] = numpy.mean(inData[:,i])
         if expectLast:
-            if len(mapping) == 1:
-                return inData
-            elif len(mapping) == 2:
-                return self.units[mapping[1]].expect(
-                    self.units[mapping[0]].getSamples(inData),
-                    self.units[mapping[0]].params)
+            if len(mapping) == 1: return inData
+            elif len(mapping) == 2: return self.units[mapping[1]].expect(
+                self.units[mapping[0]].getSamples(inData),
+                self.units[mapping[0]].params)
             return self.units[mapping[-1]].expect(
                 self.getUnitValues(data, mapping[0:-1]),
                 self.units[mapping[-2]].params)
         else:
-            if len(mapping) == 1:
-                return self.units[mapping[0]].getValues(inData)
-            elif len(mapping) == 2:
-                return self.units[mapping[1]].getValues(
-                    self.units[mapping[1]].expect(inData,
-                    self.units[mapping[0]].params))
+            if len(mapping) == 1: return self.units[mapping[0]].getValues(inData)
+            elif len(mapping) == 2: return self.units[mapping[1]].getValues(
+                self.units[mapping[1]].expect(inData,
+                self.units[mapping[0]].params))
             data = numpy.copy(inData)
             for id in range(len(mapping) - 1):
                 data = self.units[mapping[id + 1]].getValues(
@@ -656,12 +637,10 @@ class ann(nemoa.system.base.system):
                 from input layer (first argument of tuple)
                 to output layer (last argument of tuple)
         """
-        if len(mapping) == 1:
-            pass
-        elif len(mapping) == 2:
-            data = self.getUnitValues(data, mapping)
-        else:
-            data = self.getUnitValues(self.getUnitExpect(data, mapping[0:-1]), mapping[-2:])
+        if len(mapping) == 1: pass
+        elif len(mapping) == 2: data = self.getUnitValues(data, mapping)
+        else: data = self.getUnitValues(
+            self.getUnitExpect(data, mapping[0:-1]), mapping[-2:])
         return self.units[mapping[-1]].energy(data)
 
     def getUnitError(self, data, mapping = None, block = None, **kwargs):
@@ -677,14 +656,11 @@ class ann(nemoa.system.base.system):
             block -- list of string containing labels of units in the input
                 layer that are blocked by setting the values to their means
         """
-        if mapping == None:
-            mapping = self.getMapping()
-        if block == None:
-            modelOut = self.getUnitExpect(data[0], mapping)
+        if mapping == None: mapping = self.getMapping()
+        if block == None: modelOut = self.getUnitExpect(data[0], mapping)
         else:
             dataInCopy = numpy.copy(data[0])
-            for i in block:
-                dataInCopy[:,i] = numpy.mean(dataInCopy[:,i])
+            for i in block: dataInCopy[:,i] = numpy.mean(dataInCopy[:,i])
             modelOut = self.getUnitExpect(dataInCopy, mapping)
         return numpy.sqrt(((data[1] - modelOut) ** 2).sum(axis = 0))
 

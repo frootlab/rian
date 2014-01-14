@@ -105,7 +105,7 @@ class rbm(nemoa.system.ann.ann):
         """Return expectation values of hidden units."""
         return self.getUnitExpect(data, ('visible', 'hidden'))
 
-    def _mapData(self, data, transformation = 'visiblevalue', **kwargs):
+    def mapData(self, data, transformation = 'visiblevalue', **kwargs):
         """Return system representation of data."""
         if transformation == 'visibleexpect':
             return self.getUnitExpect(data,

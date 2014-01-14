@@ -185,9 +185,11 @@ class dbn(nemoa.system.ann.ann):
             # transform dataset with previous system / fix lower stack
             if sysID > 0:
                 prevSys = subSystems[sysID - 1]
-                transCols = prevSys.getUnits(visible = False)[0]
-                dataset.transformData(system = prevSys,
-                    transformation = 'hiddenvalue', colLabels = transCols)
+                visible = prevSys._params['units'][0]['name']
+                hidden  = prevSys._params['units'][1]['name']
+                mapping = (visible, hidden)
+                dataset.transformData(algorithm = 'system', system = prevSys,
+                    mapping = mapping, transform = 'value')
 
             # initialize system
             # in higher layers 'initVisible' = False

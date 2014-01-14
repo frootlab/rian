@@ -340,11 +340,13 @@ class dataset:
 
         return False
 
-    def transformData(self, algorithm = '', system = None, colLabels = None, **kwargs):
+    def transformData(self, algorithm = 'system', system = None, mapping = None, **kwargs):
         """Transform dataset.
 
         Keyword Arguments:
             algorithm -- name of algorithm used for data transformation
+                'system':
+                    Transform data using nemoa system instance
                 'gaussToBinary':
                     Transform Gauss distributed values to binary values in {0, 1}
                 'gaussToWeight':
@@ -353,12 +355,47 @@ class dataset:
                     Transform Gauss distributed values to distances in [0, 1]
             system -- nemoa system instance (nemoa object root class 'system')
                 used for model based transformation of data
-            colLabels -- ...
+            mapping -- ...
         """
 
         if not isinstance(algorithm, str): return False
 
-        if algorithm.lower() in ['gausstobinary', 'binary']:
+        if algorithm.lower() == 'system':
+            if not nemoa.type.isSystem(system): return False
+            nemoa.log('info', 'transform data using system \'%s\'' % (system.getName()))
+            nemoa.setLog(indent = '+1')
+
+            if mapping == None: mapping = system.getMapping()
+            sourceColumns = system.getUnits(group = mapping[0])[0]
+            targetColumns = system.getUnits(group = mapping[-1])[0]
+            self.setColLabels(sourceColumns)
+            for src in self.data:
+                data = self.data[src]['array']
+                dataArray = data[sourceColumns].view('<f8').reshape(
+                    data.size, len(sourceColumns))
+                transArray = system.mapData(dataArray, mapping = mapping, **kwargs)
+
+                # create empty record array
+                numRows = self.data[src]['array']['label'].size
+                colNames = ('label',) + tuple(targetColumns)
+                colFormats = ('<U12',) + tuple(['<f8' for x in targetColumns])
+                newRecArray = numpy.recarray((numRows,),
+                    dtype = zip(colNames, colFormats))
+
+                # set values in record array
+                newRecArray['label'] = self.data[src]['array']['label']
+                for colID, colName in enumerate(newRecArray.dtype.names[1:]):
+
+                    # update source data columns
+                    newRecArray[colName] = (transArray[:, colID]).astype(float)
+
+                # set record array
+                self.data[src]['array'] = newRecArray
+
+            self.setColLabels(targetColumns)
+            nemoa.setLog(indent = '-1')
+            return True
+        elif algorithm.lower() in ['gausstobinary', 'binary']:
             nemoa.log('info', 'transform data using \'%s\'' % (algorithm))
             for src in self.data:
                 # update source per column (recarray)
@@ -386,48 +423,6 @@ class dataset:
                     self.data[src]['array'][colName] = \
                         (1.0 - (2.0 / (1.0 + numpy.exp(-1.0 * \
                         self.data[src]['array'][colName] ** 2)))).astype(float)
-            return True
-
-        if nemoa.type.isSystem(system):
-            nemoa.log('info', 'transform data using system \'%s\'' % (system.getName()))
-            nemoa.setLog(indent = '+1')
-            
-            if not isinstance(colLabels, list):
-                nemoa.log('error', """
-                    transformation is not possible:
-                    no column labels have been given!.""")
-                nemoa.setLog(indent = '-1')
-                return False
-
-            for src in self.data:
-                data = self.data[src]['array']
-                colList = data.dtype.names[1:]
-                dataArray = data[list(colList)].view('<f8').reshape(
-                    data.size, len(list(colList)))
-                self.setColLabels(colLabels)
-
-                # transform data
-                transArray = system.mapData(dataArray, **kwargs)
-
-                # create empty record array
-                numRows = self.data[src]['array']['label'].size
-                colNames = ('label',) + tuple(self.getColLabels())
-                colFormats = ('<U12',) + tuple(['<f8' for x in colNames])
-                newRecArray = numpy.recarray((numRows,),
-                    dtype = zip(colNames, colFormats))
-
-                # set values in record array
-                newRecArray['label'] = self.data[src]['array']['label']
-                for colID, colName in enumerate(newRecArray.dtype.names[1:]):
-
-                    # update source data columns
-                    newRecArray[colName] = \
-                        (transArray[:, colID]).astype(float)
-
-                # set record array
-                self.data[src]['array'] = newRecArray
-
-            nemoa.setLog(indent = '-1')
             return True
 
         return nemoa.log('error',
@@ -599,9 +594,7 @@ class dataset:
 
     def setColLabels(self, labels):
         """Set column labels from list of strings."""
-        self.cfg['columns'] = ()
-        for col in labels:
-            self.cfg['columns'] += (col.split(':'), )
+        self.cfg['columns'] = tuple([col.split(':') for col in labels])
         return True
 
     #def getRowLabels(self):
@@ -940,6 +933,7 @@ class dataset:
     #
 
     def save(self, file):
+        """Export dataset to numpy zip compressed file."""
         numpy.savez(file, cfg = self.cfg, data = self.data)
 
     def exportDataToFile(self, file, **kwargs):
@@ -948,15 +942,22 @@ class dataset:
         file = nemoa.common.getEmptyFile(file)
         type = nemoa.common.getFileExt(file).lower()
 
+        nemoa.log('title', 'export data to file')
+        nemoa.setLog(indent = '+1')
+
         nemoa.log('info', 'exporting data to file: \'%s\'' % (file))
-        if type in ['gz', 'data']: return self.save(file)
-        if type in ['csv', 'tsv', 'txt']:
+        if type in ['gz', 'data']:
+            retVal = self.save(file)
+        elif type in ['csv', 'tsv', 'txt']:
             cols, data = self.getData(output = ('cols','recarray'))
-            return nemoa.common.csvSaveData(file, data,
+            retVal = nemoa.common.csvSaveData(file, data,
                 cols = [''] + cols, **kwargs)
-        return nemoa.log('error', """
+        else: retVal = nemoa.log('error', """
             could not export dataset:
             unsupported file type '%s'""" % (type))
+
+        nemoa.setLog(indent = '-1')
+        return retVal
 
     def getCacheFile(self, network):
         """Return cache file path."""
