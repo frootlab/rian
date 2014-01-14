@@ -1,51 +1,42 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os, logging, inspect
+import os, logging, inspect, traceback
 __shared = {'quiet': False, 'indent': 0, 'debug': False}
 
 def initLogger(logfile = None):
-    """Initialize loggers ('null', 'tty' and 'file')."""
+    """Initialize loggers and set up handlers."""
 
-    # initialize null logger
+    # initialize null logger, remove all previous handlers
+    # and set up null handler
     loggerNull = logging.getLogger(__name__ + '.null')
-
-    # remove all previous handlers and set up null handler
-    for h in loggerNull.handlers:
-        loggerNull.removeHandler(h)
-    
+    for h in loggerNull.handlers: loggerNull.removeHandler(h)
     if hasattr(logging, 'NullHandler'):
         nullHandler = logging.NullHandler()
         loggerNull.addHandler(nullHandler)
 
-    # initialize console logger
+    # initialize console logger, remove all previous handlers
+    # and set up console handler
     loggerConsole = logging.getLogger(__name__ + '.tty')
     loggerConsole.setLevel(logging.INFO)
-
-    # remove all previous handlers and set up console handler
-    for h in loggerConsole.handlers:
-        loggerConsole.removeHandler(h)
+    for h in loggerConsole.handlers: loggerConsole.removeHandler(h)
     consoleHandler = logging.StreamHandler()
     consoleHandler.setFormatter(logging.Formatter(fmt = '%(message)s'))
     loggerConsole.addHandler(consoleHandler)
 
-    # initialize file logger
-    if not logfile:
-        return True
-    if not os.path.exists(os.path.dirname(logfile)):
-        os.makedirs(os.path.dirname(logfile))
+    # initialize file logger, remove all previous handlers
+    # and set up file handler
+    if not logfile: return True
+    if not os.path.exists(os.path.dirname(logfile)): os.makedirs(
+        os.path.dirname(logfile))
     loggerFile = logging.getLogger(__name__ + '.file')
     loggerFile.setLevel(logging.INFO)
-
-    # remove all previous handlers and set up file handler
-    for h in loggerFile.handlers:
-        loggerFile.removeHandler(h)
+    for h in loggerFile.handlers: loggerFile.removeHandler(h)
     fileHandler = logging.FileHandler(logfile)
     fileHandler.setFormatter(logging.Formatter(
         fmt = '%(asctime)s %(levelname)s %(message)s',
         datefmt = '%m/%d/%Y %H:%M:%S'))
     loggerFile.addHandler(fileHandler)
-
     return True
 
 def setLog(**kwargs):
@@ -88,7 +79,7 @@ def log(type, msg, quiet = False):
 
     # get loggers
     loggers = logging.Logger.manager.loggerDict.keys()
-    ttyLog = logging.getLogger(__name__ + '.tty') \
+    ttyLog  = logging.getLogger(__name__ + '.tty') \
         if __name__ + '.tty' in loggers \
         else logging.getLogger(__name__ + '.null')
     fileLog = logging.getLogger(__name__ + '.file') \
@@ -96,55 +87,42 @@ def log(type, msg, quiet = False):
         else logging.getLogger(__name__ + '.null')
 
     # format message
-    msg = msg.strip().replace('\n','')
-    while '  ' in msg:
-        msg = msg.replace('  ', ' ')
-    if indent:
-        ttyMsg = '  ' * indent + msg
-    else:
-        ttyMsg = msg
+    msg = msg.strip().replace('\n', '')
+    while '  ' in msg: msg = msg.replace('  ', ' ')
+    ttyMsg = '  ' * indent + msg if indent else msg
     fileMsg = clrName + ' -> ' + msg.strip()
 
     # create logging records (depending on loglevels)
     if type == 'info':
-        if not quiet:
-            ttyLog.info(ttyMsg)
-        if debug:
-            fileLog.info(fileMsg)
+        if not quiet: ttyLog.info(ttyMsg)
+        if debug: fileLog.info(fileMsg)
         return True
     if type == 'title':
-        if not quiet:
-            ttyLog.info(color['blue'] + ttyMsg + color['default'])
-        if debug:
-            fileLog.info(fileMsg)
+        if not quiet: ttyLog.info(color['blue'] + ttyMsg + color['default'])
+        if debug: fileLog.info(fileMsg)
         return True
     if type == 'header':
-        if not quiet:
-            ttyLog.info(color['green'] + ttyMsg + color['default'])
-        if debug:
-            fileLog.info(fileMsg)
+        if not quiet: ttyLog.info(color['green'] + ttyMsg + color['default'])
+        if debug: fileLog.info(fileMsg)
         return True
     if type == 'warning':
-        if not quiet:
-            ttyLog.warning(color['yellow'] + ttyMsg + color['default'])
+        if not quiet: ttyLog.warning(color['yellow'] + ttyMsg + color['default'])
         fileLog.warning(fileMsg)
-        return True
+        return False
     if type == 'error':
         ttyLog.error(color['yellow'] + ttyMsg + ' (see logfile for debug info)' + color['default'])
         fileLog.error(fileMsg)
-        import traceback
         for line in traceback.format_stack():
             msg = line.strip().replace('\n', '-> ').replace('  ', ' ').strip()
             fileLog.error(msg)
-        return True
+        return False
     if type == 'debuginfo':
-        if debug:
-            fileLog.error(fileMsg)
-        return True
+        if debug: fileLog.error(fileMsg)
+        return False
     if type == 'critical':
         ttyLog.critical(color['yellow'] + ttyMsg + color['default'])
         fileLog.critical(fileMsg)
-        return True
+        return False
 
     # create logging records (depending on logger)
     if type == 'console':

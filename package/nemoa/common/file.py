@@ -1,43 +1,57 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
+import os, nemoa
 
 def getEmptyFile(file):
-    file_dirname = os.path.dirname(file) + '/'
-    file_name = os.path.basename(file)
-    file_base_name, file_ext = os.path.splitext(file_name)
-    file_base = file_dirname + file_base_name
-
-    # search unused filename
-    if os.path.exists(file):
-        file_id = 2
-        while os.path.exists('%s (%s)%s' % (file_base, file_id, file_ext)):
-            file_id += 1
-        file = '%s (%s)%s' % (file_base, file_id, file_ext)
+    """Return file path for new file."""
+    fileDir = getFilePath(file)
 
     # create path if not available
-    if not os.path.exists(os.path.dirname(file)):
-        os.makedirs(os.path.dirname(file))
+    if not os.path.exists(fileDir):
+        nemoa.log('info', 'creating directory \'%s\'' % (fileDir))
+        os.makedirs(os.path.dirname(fileDir))
+
+    fileName = getFileName(file)
+    fileBaseName, fileExt = os.path.splitext(fileName)
+    fileBase = fileDir + '/' + fileBaseName
+
+    # search unused filename
+    file = fileBase + fileExt
+    if os.path.exists(file):
+        fileNameID = 2
+        while os.path.exists('%s (%s)%s' % (fileBase, fileNameID, fileExt)):
+            fileNameID += 1
+        file = '%s (%s)%s' % (fileBase, fileNameID, fileExt)
 
     return file
 
+def getFileName(file):
+    """Return file name from given file path as string."""
+    return os.path.basename(file)
+
 def getFileExt(file):
+    """Return file extension from given file path as string."""
     fileName = os.path.basename(file)
     fileExt  = os.path.splitext(fileName)[1].lstrip('.')
     return fileExt
 
+def getFilePath(file):
+    """Return normalized filepath from given file path as string."""
+    filePath = os.path.expanduser(file)
+    filePath = os.path.expandvars(filePath)
+    filePath = os.path.abspath(filePath)
+    filePath = os.path.normpath(filePath)
+    return os.path.dirname(filePath)
+
 def getEmptySubdir(basepath, subdir = None):
 
     # create path if not available
-    if not os.path.exists(basepath):
-        os.makedirs(basepath)
+    if not os.path.exists(basepath): os.makedirs(basepath)
 
     #
-    if folder:
-        pre = basepath + folder + '_'
-    else:
-        pre = basepath
+    if folder: pre = basepath + folder + '_'
+    else: pre = basepath
 
     # search for unused subfolder, starting with 1
     i = 1
@@ -53,12 +67,9 @@ def getEmptySubdir(basepath, subdir = None):
 def getSubdirFromHash(basepath, str):
 
     # create path if not available
-    if not os.path.exists(basepath):
-        os.makedirs(basepath)
+    if not os.path.exists(basepath): os.makedirs(basepath)
 
     # create new subfolder
     subDir = '%s%s/' % (basepath, strToHash(str))
-    if not os.path.exists(subDir):
-        os.makedirs(subDir)
-
+    if not os.path.exists(subDir): os.makedirs(subDir)
     return os.path.abspath(subDir) + '/'

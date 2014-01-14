@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
+import sys, getopt, os
+
 sys.path.append('./package')
-import nemoa, getopt, os
+import nemoa
 
 def main(argv):
 
@@ -40,8 +41,7 @@ def scripts(project):
     nemoa.setLog(quiet = False)
     scripts = workspace.list(type = 'script', namespace = workspace.project())
     print 'Scripts in project %s:\n' % (project)
-    for script in scripts:
-        print '    %s' % (script)
+    for script in scripts: print '    %s' % (script)
     print ''
 
 def execute(project, script, kwargs):
