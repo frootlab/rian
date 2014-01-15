@@ -5,24 +5,22 @@ import os, nemoa
 
 def getEmptyFile(file):
     """Return file path for new file."""
-    fileDir = getFilePath(file)
+    fDir = getFilePath(file)
 
-    # create path if not available
-    if not os.path.exists(fileDir):
-        nemoa.log('info', 'creating directory \'%s\'' % (fileDir))
-        os.makedirs(os.path.dirname(fileDir))
-
-    fileName = getFileName(file)
-    fileBaseName, fileExt = os.path.splitext(fileName)
-    fileBase = fileDir + '/' + fileBaseName
+    # create directory if not available
+    if not os.path.exists(fDir):
+        nemoa.log('info', 'creating directory \'%s\'' % (fDir))
+        os.makedirs(fDir)
 
     # search unused filename
-    file = fileBase + fileExt
-    if os.path.exists(file):
-        fileNameID = 2
-        while os.path.exists('%s (%s)%s' % (fileBase, fileNameID, fileExt)):
-            fileNameID += 1
-        file = '%s (%s)%s' % (fileBase, fileNameID, fileExt)
+    fName = getFileName(file)
+    fBaseName, fExt = os.path.splitext(fName)
+    fBase = '%s/%s' % (fDir, fBaseName)
+    file = fBase + fExt
+    fID  = 1
+    while os.path.exists(file):
+        fID += 1
+        file = '%s (%s)%s' % (fBase, fID, fExt)
 
     return file
 

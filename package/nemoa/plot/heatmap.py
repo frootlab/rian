@@ -122,38 +122,31 @@ class unitRelation(heatmap):
         # create labels for x-axis
         xLabelIDs = self.settings['units'][1]
         xLabels = model.network.getNodeLabels(xLabelIDs)
-        matplotlib.pyplot.xticks(
-            numpy.arange(len(xLabels)) + 0.5,
-            tuple(xLabels),
-            fontsize = 8,
-            rotation = 65)
-
-        # create labels for y-axis
         yLabelIDs = self.settings['units'][0]
         yLabels = model.network.getNodeLabels(yLabelIDs)
+        fontsize = 400.0 / float(max(len(xLabels), len(yLabels)))
+
+        # plot labels
+        matplotlib.pyplot.xticks(
+            numpy.arange(len(xLabels)) + 0.5,
+            tuple(xLabels), fontsize = fontsize, rotation = 65)
         matplotlib.pyplot.yticks(
             len(yLabels) - numpy.arange(len(yLabels)) - 0.5,
-            tuple(yLabels),
-            fontsize = 8)
+            tuple(yLabels), fontsize = fontsize)
 
         # create colorbar
         cbar = fig.colorbar(cax)
-        for tick in cbar.ax.get_yticklabels():
-            tick.set_fontsize(9)
+        for tick in cbar.ax.get_yticklabels(): tick.set_fontsize(9)
 
-        # draw figure title / caption
-        if self.settings['show_figure_caption']:
-            title = nemoa.common.strSplitParams(
-                self.settings['relation'])[0].title()
-
-            # draw title
-            matplotlib.pyplot.title(title, fontsize = 11)
+        # plot title
+        if self.settings['show_figure_caption']: matplotlib.pyplot.title(
+            nemoa.common.strSplitParams(
+            self.settings['relation'])[0].title(), fontsize = 11)
 
         # output
-        if file:
-            matplotlib.pyplot.savefig(file, dpi = self.settings['dpi'])
-        else:
-            matplotlib.pyplot.show()
+        if file: matplotlib.pyplot.savefig(
+            file, dpi = self.settings['dpi'])
+        else: matplotlib.pyplot.show()
 
         # clear current figure object and release memory
         matplotlib.pyplot.clf()

@@ -52,6 +52,8 @@ class rbm(nemoa.system.ann.ann):
                 'updateFactorWeights': 1.0,
                 'updateFactorHbias': 0.1,
                 'updateFactorVbias': 0.1,
+                'corruptionAlgorithm': None,
+                'corruptionFactor': 0.0,
                 'useAdjacency': False,
                 'inspect': True,
                 'inspectFunction': 'performance',
@@ -177,8 +179,7 @@ class rbm(nemoa.system.ann.ann):
 
     def _setUpdateRates(self, **config):
         """Initialize updates for system parameters."""
-        if not 'optimize' in self._config:
-            self._config['optimize'] = {}
+        if not 'optimize' in self._config: self._config['optimize'] = {}
         return (self._setVisibleUnitUpdateRates(**config)
             and self._setHiddenUnitUpdateRates(**config)
             and self._setLinkUpdateRates(**config))
@@ -202,8 +203,7 @@ class rbm(nemoa.system.ann.ann):
         # check dataset
         if (not 'checkDataset' in init
             or init['checkDataset'] == True) \
-            and not self._checkDataset(dataset):
-            return False
+            and not self._checkDataset(dataset): return False
 
         # initialise inspector
         if config['inspect']:
@@ -211,34 +211,28 @@ class rbm(nemoa.system.ann.ann):
             testData = dataset.getData()
             inspector.setTestData(data = (testData, testData))
 
-        for iteration in xrange(config['iterations']):
+        # for each update step (epoch)
+        for epoch in xrange(config['updates']):
 
-            # for each update step (epoch)
-            for epoch in xrange(config['updates']):
+            # get data (sample from minibatches)
+            if epoch % config['minibatchInterval'] == 0:
+                data = dataset.getData(config['minibatchSize'])
 
-                # get data (sample from minibatches)
-                if epoch % config['minibatchInterval'] == 0:
-                    data = dataset.getData(config['minibatchSize'])
+            # get system estimations (model)
+            if config['algorithm'] == 'CD': sampleData = \
+                self._getDataContrastiveDivergency(data)
+            elif config['algorithm'] == 'CDk': sampleData = \
+                self._getDataContrastiveDivergencyKstep(data,
+                    k = config['updateSamplingSteps'],
+                    m = config['updateSamplingIterations'])
+            else: return nemoa.log('error', """could not optimize model:
+                unknown optimization algorithm '%s'""" % (config['algorithm']))
 
-                # get system estimations (model)
-                if config['algorithm'] == 'CD':
-                    sampleData = self._getDataContrastiveDivergency(data)
-                elif config['algorithm'] == 'CDk':
-                    sampleData = self._getDataContrastiveDivergencyKstep(data,
-                        k = config['updateSamplingSteps'],
-                        m = config['updateSamplingIterations'])
-                else:
-                    nemoa.log('error', """
-                        could not optimize model:
-                        unknown optimization algorithm '%s'""" %
-                        (config['algorithm']))
-                    return False
-
-                # update system params
-                self._updateParams(*sampleData)
-                
-                # inspect
-                inspector.trigger()
+            # update system params
+            self._updateParams(*sampleData)
+            
+            # inspect
+            inspector.trigger()
 
         return True
 
@@ -666,6 +660,8 @@ class grbm(rbm):
                 'updateFactorVlvar': 0.01,
                 'minibatchSize': 100,
                 'minibatchInterval': 10,
+                'corruptionAlgorithm': None,
+                'corruptionFactor': 0.0,
                 'useAdjacency': False,
                 'inspect': True,
                 'inspectFunction': 'performance',

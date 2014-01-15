@@ -325,7 +325,7 @@ class dataset:
             # for multi source datasets take a big bunch of stratified data
             if len(self.data.keys()) > 1: data = \
                 self.getData(size = 1000000, output = 'recarray')
-            else: data = self.getSourceData(source = self.data.keys()[0])
+            else: data = self.getSingleSourceData(source = self.data.keys()[0])
 
             # iterative update sources
             # get mean and standard deviation per column (recarray)
@@ -429,100 +429,77 @@ class dataset:
             """could not transform data:
             unknown algorithm '%s'!""" % (algorithm))
 
-    def getCorruptedData(self, data = None, size = None,
-        algorithm = 'mn', corruption = 0.5):
-        """Return numpy array with (partly) corrupted data.
-
-        Keyword Arguments:
-            data -- numpy array containing data
-                if not given, all data is taken
-            algorith -- string describing algorithm for corruption
-                'gs': Gaussian Noise
-                    Additive isotropic Gaussian noise
-                'mn': Masking Noise
-                    A fraction of every sample is forced to zero
-                'sp': Salt-and-pepper noise
-                    A fraction of every sample is forced to min or max
-                    with equal possibility
-            corruption -- float describing the strengt of the corruption
-                The parameter depends on the used algorithm
-        """
-        if data == None:
-            if size == None: data = self.getData()
-            else: data = self.getData(size = size)
-
-        if algorithm == 'mn': return data * numpy.random.binomial(
-            size = data.shape, n = 1, p = 1 - corruption)
-        #if algorithm == 'sp': return
-        #if algorithm == 'gs': return
-        nemoa.log('warning', "unkown corruption algorithm '%s'!" % (algorithm))
-        return data
-
     def getValue(self, row = None, col = None):
         """Return single value from dataset."""
         retVal = self.getData(cols = ([col]), output = 'list,array')
         return retVal[1][retVal[0].index(row)]
 
-    def getData(self, size = 0, rows = '*', cols = '*', output = 'array'):
+    def getData(self, size = 0, rows = '*', cols = '*',
+        output = 'array', corruption = None, corruptionFactor = 0.0):
         """Return a given number of stratified samples.
 
         Keyword Arguments:
             size -- Number of samples
                 default: value 0 returns all samples unstratified
             rows -- string describing row filter
-                default: value '*' does not filter rows
+                default: value '*' selects all rows
             cols -- name of column group
-                default: value '*' does not filter columns
-            output -- tuple of format strings. Supported format strings:
+                default: value '*' selects all columns
+            output -- tuple of strings describing data output. Supported strings:
                 'array': numpy array just containing data
                 'recarray': numpy record array
                 'cols': list with column names
                 'rows': list with row names
         """
 
-        # get stratified and row filtered data
+        # Stratification and row filtering
         srcStack = ()
-        for src in self.data.keys():
-            srcArray = self.getSourceData(src, size, rows)
-            if srcArray == None or not srcArray.size: continue
-            srcStack += (srcArray, )
-        if not srcStack: return None
+        for source in self.data.keys():
+            srcData = self.getSingleSourceData(source,
+                size = size, rows = rows)
+            if srcData == False or srcData.size == 0: continue
+            srcStack += (srcData, )
+        if not srcStack: return nemoa.log('error',
+            'could not get data: no valid data sources found!')
         data = numpy.concatenate(srcStack)
-
-        # shuffle data
         if size: numpy.random.shuffle(data)
 
-        # get column ids
-        if isinstance(cols, str): return self.getFormatedData(data,
-            self.getColLabels(cols), format = output)
-        elif isinstance(cols, list): return self.getFormatedData(data,
-            cols, format = output)
-        elif isinstance(cols, tuple):
-            retVal = tuple([])
-            for colFilter in cols:
-                retVal += (self.getFormatedData(data,
-                    self.getColLabels(colFilter), output), )
-            return retVal
-        return None
+        # Optionally corrupt data
+        # to improve stability in stochastical learning
+        if not corruption == None: data = \
+            getCorruptedData(data, algorithm = corruption, corruptionFactor = 0.5)
 
-    def getSourceData(self, source, size = 0, rows = '*'):
-        """Return samples from a single data source.
+        # Format data
+        if isinstance(cols, str): return self.getFormatedData(data,
+            cols = self.getColLabels(cols), output = output)
+        elif isinstance(cols, list): return self.getFormatedData(data,
+            cols = cols, output = output)
+        elif isinstance(cols, tuple): return tuple([self.getFormatedData(data,
+            cols = self.getColLabels(grp), output = output) for grp in cols])
+        return nemoa.log('error',
+            'could not get data: invalid argument for columns!')
+
+    def getSingleSourceData(self, source, size = 0, rows = '*'):
+        """Return numpy recarray with data from a single source.
 
         Keyword Arguments:
             source -- name of data source to get data from
             size -- number of random choosen samples to return
                 default: value 0 returns all samples of given source
-            rows -- string describing a row filter with wirldcards
-                default: value '*' does not filter rows
+            rows -- string describing a row filter using wildcards
+                default: value '*' selects all rows
         """
 
-        if not isinstance(source, str) or not source in self.data \
-            or self.data[source]['array'] == None:
-            return nemoa.log('error', """could not get data from source:
-                unknown source: '%s'!""" % (source))
-        if not rows in self.cfg['rowFilter']:
-            return nemoa.log('error', """could not get data from source:
-                unknown row folter: '%s'!""" % (rows))
+        # Check source
+        if not isinstance(source, str) \
+            or not source in self.data \
+            or not isinstance(self.data[source]['array'], numpy.ndarray): \
+            return nemoa.log('error',
+            "could not retrieve data: invalid source: '%s'!" % (source))
+
+        # Check row Filter
+        if not rows in self.cfg['rowFilter']: return nemoa.log('error',
+            "could not retrieve data: invalid row filter: '%s'!" % (rows))
 
         # Apply row filter
         if rows == '*' or source + ':*' in self.cfg['rowFilter'][rows]:
@@ -538,28 +515,58 @@ class dataset:
             if rowSelect.size == 0: return rowSelect
             srcArray = numpy.take(self.data[source]['array'], rowSelect)
 
-        # If argument 'size' is 0, do not statify data
-        if size == 0: return srcArray
-
+        # Stratify and return data as numpy record array
+        if size == 0 or size == None: return srcArray
         srcFrac = self.data[source]['fraction']
         rowSelect = numpy.random.randint(srcArray.size,
             size = round(srcFrac * size))
         return numpy.take(srcArray, rowSelect)
 
-    def getFormatedData(self, data, cols, format = 'array'):
-        """Return data in given format."""
+    def getCorruptedData(self, data, algorithm = 'mn', factor = 0.5):
+        """Return numpy array with (partly) corrupted data.
+
+        Keyword Arguments:
+            algorithm -- string describing algorithm for corruption
+                'gs': Gaussian Noise
+                    Additive isotropic Gaussian noise
+                'mn': Masking Noise
+                    A fraction of every sample is forced to zero
+                'sp': Salt-and-pepper noise
+                    A fraction of every sample is forced to min or max
+                    with equal possibility
+            factor -- float in [0, 1] describing the strengt of the corruption
+                The influence of the parameter depends on the used algorithm
+        """
+
+        if algorithm == None: return data
+        elif algorithm == 'mn': return data * numpy.random.binomial(
+            size = data.shape, n = 1, p = 1 - factor)
+        #elif algorithm == 'sp': return
+        #elif algorithm == 'gs': return
+        else return nemoa.log('error',
+            "unkown corruption algorithm '%s'!" % (algorithm))
+
+    def getFormatedData(self, data, cols = '*', output = 'array'):
+        """Return data in given format.
+
+        Keyword Arguments:
+            cols -- name of column group
+                default: value '*' does not filter columns
+            format"""
         
         # check columns
-        if not len(cols) == len(set(cols)): return nemoa.log('error',
-            'could not retrieve data: columns are not unique!')
-        unknown = [col for col in cols if col not in self.getColLabels()]
-        if len(unknown) > 0: return nemoa.log('error',
-            "could not retrieve data: unknown columns '%s'!" % (unknown))
+        if cols == '*': cols = self.getColLabels()
+        elif not len(cols) == len(set(cols)): return nemoa.log('error',
+            "could not retrieve data: columns are not unique!")
+        elif [c for c in cols if c not in self.getColLabels()]: \
+            return nemoa.log('error',
+            "could not retrieve data: unknown columns!")
     
         # check format
-        if isinstance(format, str): fmtTuple = (format, )
-        elif isinstance(format, tuple): fmtTuple = format
-        else: return False
+        if isinstance(output, str): fmtTuple = (output, )
+        elif isinstance(output, tuple): fmtTuple = output
+        else: return nemoa.log('error',
+            "could not retrieve data: inval 'format' argument!")
 
         # format data
         retTuple = ()
@@ -572,7 +579,7 @@ class dataset:
                 [col.split(':')[1] for col in cols], )
             elif fmtStr in ['rows', 'list']: retTuple += (
                 data['label'].tolist(), )
-        if isinstance(format, str): return retTuple[0]
+        if isinstance(output, str): return retTuple[0]
         return retTuple
 
     # Column Labels and Column Groups
