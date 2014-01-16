@@ -69,18 +69,19 @@ class dbn(nemoa.system.ann.ann):
     def _optimizeParams(self, dataset, schedule):
         """Optimize system parameters."""
 
-        # pretraining neuronal network using
-        # layerwise restricted boltzmann machines as subsystems
-        if schedule['params']['dbn.dbn']['preTraining']:
-            self._preTraining(dataset, schedule)
+        cnf = self._config['optimize']
 
-        # finetuning neuronal network using backpropagation
-        if schedule['params']['dbn.dbn']['fineTuning']:
-            self._fineTuning(dataset, schedule)
+        # forward pretraining of neuronal network using
+        # restricted boltzmann machines as subsystems
+        if cnf['preTraining']: self.optimizePreTraining(dataset, schedule)
+
+        # backward finetuning of neuronal network
+        # using backpropagation of error
+        if cnf['fineTuning']: self.optimizeFineTuning(dataset, schedule)
 
         return True
 
-    def _preTraining(self, dataset, schedule):
+    def optimizePreTraining(self, dataset, schedule):
         """Pretraining ANN using Restricted Boltzmann Machines."""
 
         nemoa.log('info', 'pretraining system')
@@ -110,8 +111,7 @@ class dbn(nemoa.system.ann.ann):
             if sysUserConf:
                 sysConfig = nmConfig.get(type = 'system', name = sysUserConf)
                 if sysConfig == None:
-                    nemoa.log('error', """
-                        could not configure system:
+                    nemoa.log('error', """could not configure system:
                         unknown system configuration \'%s\'
                     """ % (sysUserConf))
                     nemoa.setLog(indent = '-1')
@@ -124,8 +124,7 @@ class dbn(nemoa.system.ann.ann):
 
             # update subsystem configuration
             sysConfig['name'] = '%s ↔ %s' % (inUnits['name'], outUnits['name'])
-            if not 'params' in sysConfig:
-                sysConfig['params'] = {}
+            if not 'params' in sysConfig: sysConfig['params'] = {}
             if inUnits['visible']:
                 sysConfig['params']['visible'] = \
                     self._params['units'][0]['label'] \
@@ -139,8 +138,7 @@ class dbn(nemoa.system.ann.ann):
             unitCount = sum([len(group) for group in system.getUnits()])
             linkCount = len(system.getLinks())
 
-            nemoa.log('info', """
-                adding subsystem: \'%s\' (%s units, %s links)
+            nemoa.log('info', """adding subsystem: \'%s\' (%s units, %s links)
                 """ % (system.getName(), unitCount, linkCount))
 
             # link subsystem
@@ -255,17 +253,16 @@ class dbn(nemoa.system.ann.ann):
         nemoa.setLog(indent = '-2')
         return True
 
-    def _fineTuning(self, dataset, schedule):
+    def optimizeFineTuning(self, dataset, schedule):
         """Finetuning system using a variant of backpropagation of error."""
         nemoa.log('info', 'finetuning system')
         nemoa.setLog(indent = '+1')
-        if self._config['optimize']['algorithm'].lower() in ['bprop', 'backpropagation']:
-            self._optimizeBProp(dataset, schedule)
-        elif self._config['optimize']['algorithm'].lower() == ['rprop', 'resiliant backpropagation']:
-            self._optimizeRProp(dataset, schedule)
-        else:
-            nemoa.log('warning', """
-                unknown algorithm %s
-                """ % (self._config['optimize']['algorithm']))
+
+        cnf = self._config['optimize']
+        if cnf['algorithm'].lower() == 'bprop': self.optimizeBProp(dataset, schedule)
+        elif cnf['algorithm'].lower() == 'rprop': self.optimizeRProp(dataset, schedule)
+        else: nemoa.log('warning', 'unknown algorithm %s' %
+            (self._config['optimize']['algorithm']))
+
         nemoa.setLog(indent = '-1')
         return True

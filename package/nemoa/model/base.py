@@ -47,50 +47,20 @@ class model:
         """Return configuration as dictionary."""
         return self.__config.copy()
 
+    def exportDataToFile(self, *args, **kwargs):
+        """Export data to file."""
+        return self.dataset.exportDataToFile(*args, **kwargs)
+
     def importConfigFromDict(self, dict):
-        """check if config is valid."""
-        config = {}
-
-        # model configuration
-        if 'config' in dict.keys():
-            config['config'] = dict['config'].copy()
-        else:
-            nemoa.log('error', """
-                could not set configuration:
-                given dictionary does not contain configuration information!""")
-            return None
-
-        # get version of config
-        version = config['config']['version']
-
-        # dataset configuration
-        if not 'dataset' in dict:
-            nemoa.log('error', """
-                could not configure dataset:
-                given dictionary does not contain dataset information!""")
-            return None
-        else:
-            config['dataset'] = dict['dataset'].copy()
-
-        # network configuration
-        if not 'network' in dict:
-            nemoa.log('error', """
-                could not configure network:
-                given dictionary does not contain network information!""")
-            return None
-        else:
-            config['network'] = dict['network'].copy()
-
-        # system configuration
-        if not 'system' in dict:
-            nemoa.log('error', """
-                could not configure system:
-                given dictionary does not contain system information!""")
-            return None
-        else:
-            config['system'] = dict['system'].copy()
-
-        return config
+        """Import numpy configuration from dictionary."""
+        # copy dataset, network and system configuration
+        keys = ['config', 'dataset', 'network', 'system']
+        for key in keys:
+            if not key in dict: return nemoa.log('error', """
+                could not import configuration:
+                given dictionary does not contain '%s' information!
+                """ % (key))
+        return {key: dict[key].copy() for key in keys}
 
     def __checkModel(self, allowNone = False):
         if (allowNone and self.dataset == None) \

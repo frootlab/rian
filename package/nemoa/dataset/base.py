@@ -114,10 +114,8 @@ class dataset:
                 srcCnf['source']['file'], type = csvType)
 
             # set annotation format
-            if 'columns' in srcCnf['source']:
-                format = srcCnf['source']['columns']
-            else:
-                format = 'generic:string'
+            format = srcCnf['source']['columns'] \
+                if 'columns' in srcCnf['source'] else 'generic:string'
 
             # convert column labes
             convColLabels, convColLabelsLost = \
@@ -142,21 +140,17 @@ class dataset:
                         [val for val in convNetGroups[group] \
                         if val not in convColLabels]
                     numAll += len(convNetGroups[group])
-                    if not lostNodesConv:
-                        continue
+                    if not lostNodesConv: continue
                     numLost += len(lostNodesConv)
 
                     # get original labels
-                    lostNodes[group] = []
-                    for val in lostNodesConv:
-                        pos = convNetGroups[group].index(val)
-                        lostNodes[group].append(netGroups[group][pos])
+                    lostNodes[group] = [netGroups[group][
+                        convNetGroups[group].index(val)] for val in lostNodesConv]
 
                 # notify if any network nodes could not be found
                 if numLost:
                     nemoa.log("warning", """
-                        %i of %i network nodes
-                        could not be found in
+                        %i of %i network nodes could not be found in
                         dataset source! (logfile)""" % (numLost, numAll))
                     for group in lostNodes:
                         nemoa.log("logfile", """
@@ -359,9 +353,10 @@ class dataset:
         """
 
         if not isinstance(algorithm, str): return False
-
         if algorithm.lower() == 'system':
-            if not nemoa.type.isSystem(system): return False
+            if not nemoa.type.isSystem(system): return nemoa.log('error',
+                """could not transform data using system:
+                parameter 'system' is invalid!""")
             nemoa.log('info', 'transform data using system \'%s\'' % (system.getName()))
             nemoa.setLog(indent = '+1')
 
@@ -527,10 +522,10 @@ class dataset:
 
         Keyword Arguments:
             algorithm -- string describing algorithm for corruption
-                'gs': Gaussian Noise
-                    Additive isotropic Gaussian noise
                 'mn': Masking Noise
                     A fraction of every sample is forced to zero
+                'gs': Gaussian Noise
+                    Additive isotropic Gaussian noise
                 'sp': Salt-and-pepper noise
                     A fraction of every sample is forced to min or max
                     with equal possibility
@@ -541,9 +536,10 @@ class dataset:
         if algorithm == None: return data
         elif algorithm == 'mn': return data * numpy.random.binomial(
             size = data.shape, n = 1, p = 1 - factor)
+        elif algorithm == 'gs': return data * numpy.random.normal(
+            size = data.shape, loc = 0.0, scale = factor)
         #elif algorithm == 'sp': return
-        #elif algorithm == 'gs': return
-        else return nemoa.log('error',
+        else: return nemoa.log('error',
             "unkown corruption algorithm '%s'!" % (algorithm))
 
     def getFormatedData(self, data, cols = '*', output = 'array'):
@@ -944,7 +940,7 @@ class dataset:
         numpy.savez(file, cfg = self.cfg, data = self.data)
 
     def exportDataToFile(self, file, **kwargs):
-        """Export dataset to file."""
+        """Export data to file."""
 
         file = nemoa.common.getEmptyFile(file)
         type = nemoa.common.getFileExt(file).lower()
@@ -953,8 +949,7 @@ class dataset:
         nemoa.setLog(indent = '+1')
 
         nemoa.log('info', 'exporting data to file: \'%s\'' % (file))
-        if type in ['gz', 'data']:
-            retVal = self.save(file)
+        if type in ['gz', 'data']: retVal = self.save(file)
         elif type in ['csv', 'tsv', 'txt']:
             cols, data = self.getData(output = ('cols','recarray'))
             retVal = nemoa.common.csvSaveData(file, data,

@@ -20,24 +20,22 @@ def csvGetColLabels(file, delim = None, type = None):
         for label in ['label'] + r.findall(firstline)]
     return []
 
-def csvGetDelimiter(file):
+def csvGetDelimiter(file, delimiters = [',', ';', '\t', ' ']):
     """Return estimated delimiter of csv file."""
 
     found = False
     lines = 10
-    while not found and lines < 100:
+    while not found and lines <= 50:
         with open(file, 'rb') as csvfile:
             probe = csvfile.read(len(csvfile.readline()) * lines)
             try:
-                dialect = csv.Sniffer().sniff(probe)
+                dialect = csv.Sniffer().sniff(probe, delimiters)
                 found = True
             except:
                 lines += 10
     if found: return dialect.delimiter
-    nemoa.log('warning', """
-        could not import csv file '%s':
+    return nemoa.log('warning', """could not import csv file '%s':
         could not determine delimiter!""" % (file))
-    return None
 
 #def csvGetData(name, conf):
     ##conf    = self.cfg['table'][name]['source']

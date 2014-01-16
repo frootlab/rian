@@ -19,7 +19,7 @@ class ann(nemoa.system.base.system):
         Rumelhart, D. E., Hinton, G. E., and Williams, R. J. (1986)"""
 
     ####################################################################
-    # Configuration                                                    #
+    # 1. Artificial Neuronal Network Configuration Interface           #
     ####################################################################
 
     def _configure(self, config = {},
@@ -32,15 +32,11 @@ class ann(nemoa.system.base.system):
             dataset -- nemoa dataset instance
         """
 
-        if not 'check' in self._config:
-            self._config['check'] = {
-                'config': False, 'network': False, 'dataset': False}
-
+        if not 'check' in self._config: self._config['check'] = {
+            'config': False, 'network': False, 'dataset': False}
         self.setConfig(config)
-        if not network == None:
-            self._setNetwork(network, update)
-        if not dataset == None:
-            self._setDataset(dataset)
+        if not network == None: self._setNetwork(network, update)
+        if not dataset == None: self._setDataset(dataset)
         return self._isConfigured()
 
     def _updateUnitsAndLinks(self, *args, **kwargs):
@@ -56,7 +52,7 @@ class ann(nemoa.system.base.system):
         nemoa.setLog(indent = '+1')
 
         if not nemoa.type.isNetwork(network):
-            nemoa.log("error", """could not configure system:
+            nemoa.log('error', """could not configure system:
                 network instance is not valid!""")
             nemoa.setLog(indent = '-1')
             return False
@@ -74,23 +70,16 @@ class ann(nemoa.system.base.system):
         """check if dataset columns match with visible units."""
 
         # check dataset instance
-        if not nemoa.type.isDataset(dataset):
-            nemoa.log('error', """
-                could not configure system:
-                dataset instance is not valid!""")
-            return False
+        if not nemoa.type.isDataset(dataset): return nemoa.log('error',
+            'could not configure system: dataset instance is not valid!')
 
         # compare visible units labels with dataset columns
         mapping = self.getMapping()
         unitsInGroups = self.getUnits(visible = True)
         units = []
-        for group in unitsInGroups:
-            units += group
-        if dataset.getColLabels() != units:
-            nemoa.log('error', """
-                could not configure system:
-                visible units differ from dataset columns!""")
-            return False
+        for group in unitsInGroups: units += group
+        if dataset.getColLabels() != units: return nemoa.log('error',
+            'could not configure system: visible units differ from dataset columns!')
 
         self._config['check']['dataset'] = True
         return True
@@ -107,8 +96,10 @@ class ann(nemoa.system.base.system):
             and self._checkLinkParams(params)
 
     ####################################################################
-    # Modification of Parameters                                       #
+    # 2. Artificial Neuronal Network Parameter Interface               #
     ####################################################################
+
+    # 2.1 Parameter Initialization
 
     def _initParams(self, dataset = None):
         """Initialize system parameters.
@@ -119,13 +110,13 @@ class ann(nemoa.system.base.system):
         Description:
             Initialize all unit and link parameters to dataset.
         """
-        if not nemoa.type.isDataset(dataset):
-            nemoa.log('error', """
-                could not initilize system parameters:
-                invalid dataset instance given!""")
-            return False
-        return self._initUnits(dataset) \
-            and self._initLinks(dataset)
+        if not nemoa.type.isDataset(dataset): return nemoa.log('error',
+            'could not initilize system: invalid dataset instance given!')
+        return self._initUnits(dataset) and self._initLinks(dataset)
+
+    # 2.1 Parameter Optimization
+
+    # 2.1.0 Generic Parameter Optimization Functions
 
     def _optimizeGetValues(self, inputData):
         """Forward pass (compute estimated values, from given input)"""
@@ -158,11 +149,109 @@ class ann(nemoa.system.base.system):
                 self._params['links'][(id + 1, id + 2)]['W'].T) * grad
         return delta
 
+    def _optimizeUpdateParams(self, updates):
+        """Update parameters"""
+        layers = self.getMapping()
+        for id, layer in enumerate(layers[:-1]):
+            src = layer
+            tgt = layers[id + 1]
+            self._params['links'][(id, id + 1)]['W'] += \
+                updates['links'][(src, tgt)]['W']
+            self.units[tgt].update(updates['units'][tgt])
+        return True
+
+    # 2.1.1 Backpropagation of Error (BPROP) specific Functions
+
+    def optimizeBProp(self, dataset, schedule):
+        nemoa.log('info', 'starting backpropagation')
+        nemoa.setLog(indent = '+1')
+
+        # get training data
+        layers = self.getMapping()
+        inLayer = layers[0]
+        outLayer = layers[-1]
+        data = dataset.getData(cols = (inLayer, outLayer))
+
+        # init inspector with training data as test data
+        inspector = nemoa.system.base.inspector(self)
+        if self._config['optimize']['inspect']: inspector.setTestData(data)
+
+        # update parameters
+        for epoch in xrange(self._config['optimize']['updates']):
+
+            # Get data (sample from minibatches)
+            #if epoch % config['minibatchInterval'] == 0:
+            #    data = dataset.getData(size = config['minibatchSize'], cols = (inLayer, outLayer))
+            # Forward pass (Compute value estimations from given input)
+            out = self._optimizeGetValues(data[0])
+            # Backward pass (Compute deltas from backpropagation of error)
+            delta = self._optimizeGetDeltas(data[1], out)
+            # Compute parameter updates
+            updates = self._optimizeGetBPropUpdates(out, delta)
+            # Update parameters
+            self._optimizeUpdateParams(updates)
+            # Trigger inspector
+            inspector.trigger()
+
+        nemoa.setLog(indent = '-1')
+        return True
+
+    def _optimizeGetBPropUpdates(self, out, delta, rate = 0.1):
+        """Compute parameter update directions from weight deltas."""
+
+        def getUpdate(grad, rate): return {
+            key: rate * grad[key] for key in grad.keys()}
+
+        layers = self.getMapping()
+        links = {}
+        units = {}
+        for id, src in enumerate(layers[:-1]):
+            tgt = layers[id + 1]
+            units[tgt] = getUpdate(
+                self.units[tgt].getUpdatesFromDelta(
+                delta[src, tgt]), rate)
+            links[(src, tgt)] = getUpdate(
+                self.annLinks.getUpdatesFromDelta(out[src],
+                delta[src, tgt]), rate)
+        return {'units': units, 'links': links}
+
+    # 2.1.2 Resilient Backpropagation (RPROP) specific Functions
+
+    def optimizeRProp(self, dataset, schedule):
+        nemoa.log('info', 'starting resiliant backpropagation (Rprop)')
+        nemoa.setLog(indent = '+1')
+
+        # get training data
+        layers = self.getMapping()
+        inLayer = layers[0]
+        outLayer = layers[-1]
+        data = dataset.getData(cols = (inLayer, outLayer))
+
+        # init inspector with training data as test data
+        inspector = nemoa.system.base.inspector(self)
+        if self._config['optimize']['inspect']: inspector.setTestData(data)
+
+        # update parameters
+        for epoch in xrange(self._config['optimize']['updates']):
+
+            # Forward pass (Compute value estimations from given input)
+            out = self._optimizeGetValues(data[0])
+            # Backward pass (Compute deltas from backpropagation of error)
+            delta = self._optimizeGetDeltas(data[1], out)
+            # Compute updates
+            updates = self._optimizeGetRPropUpdates(out, delta, inspector)
+            # Update parameters
+            self._optimizeUpdateParams(updates)
+            # Trigger inspector
+            inspector.trigger()
+
+        nemoa.setLog(indent = '-1')
+        return True
+
     def _optimizeGetRPropUpdates(self, out, delta, inspector):
 
-        def getDict(dict, val):
-            return {key: val * numpy.ones(shape = dict[key].shape)
-                for key in dict.keys()}
+        def getDict(dict, val): return {key: val * numpy.ones(
+            shape = dict[key].shape) for key in dict.keys()}
 
         def getUpdate(prevGrad, prevUpdate, grad, accel, minFactor, maxFactor):
             update = {}
@@ -176,8 +265,8 @@ class ann(nemoa.system.base.system):
             return update
 
         # RProp parameters
-        accel = (0.5, 1.0, 1.2)
-        initRate = 0.001
+        accel     = (0.5, 1.0, 1.2)
+        initRate  = 0.001
         minFactor = 0.000001
         maxFactor = 50.0
 
@@ -213,122 +302,26 @@ class ann(nemoa.system.base.system):
             tgt = layers[id + 1]
             
             # calculate current rates for units
-            update['units'][tgt] = \
-                getUpdate(
-                    prevGradient['units'][tgt],
-                    prevUpdate['units'][tgt],
-                    grad['units'][tgt],
-                    accel, minFactor, maxFactor)
+            update['units'][tgt] = getUpdate(
+                prevGradient['units'][tgt],
+                prevUpdate['units'][tgt],
+                grad['units'][tgt],
+                accel, minFactor, maxFactor)
 
             # calculate current rates for links
-            update['links'][(src, tgt)] = \
-                getUpdate(
-                    prevGradient['links'][(src, tgt)],
-                    prevUpdate['links'][(src, tgt)],
-                    grad['links'][(src, tgt)],
-                    accel, minFactor, maxFactor)
+            update['links'][(src, tgt)] = getUpdate(
+                prevGradient['links'][(src, tgt)],
+                prevUpdate['links'][(src, tgt)],
+                grad['links'][(src, tgt)],
+                accel, minFactor, maxFactor)
 
         # Save updates to store
         inspector.writeToStore(gradient = grad, update = update)
 
         return update
 
-    def _optimizeGetBPropUpdates(self, out, delta, rate = 0.1):
-        """Compute parameter update directions from weight deltas."""
-
-        def getUpdate(grad, rate):
-            return {key: rate * grad[key] for key in grad.keys()}
-
-        layers = self.getMapping()
-        links = {}
-        units = {}
-        for id, src in enumerate(layers[:-1]):
-            tgt = layers[id + 1]
-            units[tgt] = getUpdate(
-                self.units[tgt].getUpdatesFromDelta(
-                delta[src, tgt]), rate)
-            links[(src, tgt)] = getUpdate(
-                self.annLinks.getUpdatesFromDelta(out[src],
-                delta[src, tgt]), rate)
-        return {'units': units, 'links': links}
-
-    def _optimizeUpdateParams(self, updates):
-        """Update parameters"""
-        layers = self.getMapping()
-        for id, layer in enumerate(layers[:-1]):
-            src = layer
-            tgt = layers[id + 1]
-            self._params['links'][(id, id + 1)]['W'] += \
-                updates['links'][(src, tgt)]['W']
-            self.units[tgt].update(updates['units'][tgt])
-        return True
-
-    def _optimizeBProp(self, dataset, schedule):
-        nemoa.log('info', 'starting backpropagation')
-        nemoa.setLog(indent = '+1')
-
-        # get training data
-        layers = self.getMapping()
-        inLayer = layers[0]
-        outLayer = layers[-1]
-        data = dataset.getData(cols = (inLayer, outLayer))
-
-        # init inspector with training data as test data
-        inspector = nemoa.system.base.inspector(self)
-        if self._config['optimize']['inspect']:
-            inspector.setTestData(data)
-
-        # update parameters
-        for epoch in xrange(self._config['optimize']['updates']):
-
-            # Forward pass (compute value estimations from given input)
-            out = self._optimizeGetValues(data[0])
-            # Backward pass (compute deltas from backpropagation of error)
-            delta = self._optimizeGetDeltas(data[1], out)
-            # Compute updates
-            updates = self._optimizeGetBPropUpdates(out, delta)
-            # Update parameters
-            self._optimizeUpdateParams(updates)
-            # Trigger inspector
-            inspector.trigger()
-
-        nemoa.setLog(indent = '-1')
-        return True
-
-    def _optimizeRProp(self, dataset, schedule):
-        nemoa.log('info', 'starting resiliant backpropagation (Rprop)')
-        nemoa.setLog(indent = '+1')
-
-        # get training data
-        layers = self.getMapping()
-        inLayer = layers[0]
-        outLayer = layers[-1]
-        data = dataset.getData(cols = (inLayer, outLayer))
-
-        # init inspector with training data as test data
-        inspector = nemoa.system.base.inspector(self)
-        if self._config['optimize']['inspect']:
-            inspector.setTestData(data)
-
-        # update parameters
-        for epoch in xrange(self._config['optimize']['updates']):
-
-            # Forward pass (compute value estimations from given input)
-            out = self._optimizeGetValues(data[0])
-            # Backward pass (compute deltas from backpropagation of error)
-            delta = self._optimizeGetDeltas(data[1], out)
-            # Compute updates
-            updates = self._optimizeGetRPropUpdates(out, delta, inspector)
-            # Update parameters
-            self._optimizeUpdateParams(updates)
-            # Trigger inspector
-            inspector.trigger()
-
-        nemoa.setLog(indent = '-1')
-        return True
-
     ####################################################################
-    # System evaluation                                                #
+    # System Evaluation                                                #
     ####################################################################
 
     def _getDataEval(self, data, func = 'performance', **kwargs):
@@ -976,12 +969,10 @@ class ann(nemoa.system.base.system):
 
         @staticmethod
         def minmax(dict, min = None, max = None):
-            if min == None:
-                return {key: numpy.minimum(dict[key], max)
-                    for key in dict.keys()}
-            if max == None:
-                return {key: numpy.maximum(dict[key], min)
-                    for key in dict.keys()}
+            if min == None: return {key: numpy.minimum(dict[key], max)
+                for key in dict.keys()}
+            if max == None: return {key: numpy.maximum(dict[key], min)
+                for key in dict.keys()}
             return {key: numpy.maximum(numpy.minimum(dict[key], max), min)
                 for key in dict.keys()}
 
@@ -1031,12 +1022,10 @@ class ann(nemoa.system.base.system):
                 self.getWeights(source), self.getWeights(target))
 
         def getSamplesFromInput(self, data, source):
-            if source['class'] == 'sigmoid':
-                return self.getSamples(self.expectFromSigmoidInput(
-                    data, source, self.getWeights(source)))
-            elif source['class'] == 'gauss':
-                return self.getSamples(self.expectFromGaussInput(
-                    data, source, self.getWeights(source)))
+            if source['class'] == 'sigmoid': return self.getSamples(
+                self.expectFromSigmoidInput(data, source, self.getWeights(source)))
+            elif source['class'] == 'gauss': return self.getSamples(
+                self.expectFromGaussInput(data, source, self.getWeights(source)))
 
         def getWeights(self, source):
 
@@ -1055,10 +1044,9 @@ class ann(nemoa.system.base.system):
                 and source['name'] == self.target['target']:
                 return self.target['W'].T
 
-            nemoa.log('error', """Could not get links:
-                Layers '%s' and '%s' are not connected.
+            return nemoa.log('error', """Could not get links:
+                Layers '%s' and '%s' are not connected!
                 """ % (source['name'], self.params['name']))
-            return None
 
         # lets calculate with unit params
 
@@ -1081,12 +1069,10 @@ class ann(nemoa.system.base.system):
 
         @staticmethod
         def minmax(dict, min = None, max = None):
-            if min == None:
-                return {key: numpy.minimum(dict[key], max)
-                    for key in dict.keys()}
-            if max == None:
-                return {key: numpy.maximum(dict[key], min)
-                    for key in dict.keys()}
+            if min == None: return {key: numpy.minimum(dict[key], max)
+                for key in dict.keys()}
+            if max == None: return {key: numpy.maximum(dict[key], min)
+                for key in dict.keys()}
             return {key: numpy.maximum(numpy.minimum(dict[key], max), min)
                 for key in dict.keys()}
 
@@ -1159,17 +1145,16 @@ class ann(nemoa.system.base.system):
         def getParamUpdates(self, data, model, weights):
             """Return parameter updates of a sigmoidal output layer
             calculated from real data and modeled data."""
-            shape = (1, len(self.params['label']))
-            updBias = \
-                numpy.mean(data[1] - model[1], axis = 0).reshape(shape)
-            return {'bias': updBias}
+            return {'bias': numpy.mean(data[1] - model[1],
+                axis = 0).reshape((1, len(self.params['label'])))}
 
         def getUpdatesFromDelta(self, delta):
-            shape = (1, len(self.params['label']))
-            return {'bias': -numpy.mean(delta, axis = 0).reshape(shape)}
+            return {'bias': -numpy.mean(delta,
+                axis = 0).reshape((1, len(self.params['label'])))}
 
         def getDeltaFromBackpropagation(self, data_in, delta_out, W_in, W_out):
-            return numpy.dot(delta_out, W_out) * self.Dlogistic((self.params['bias'] + numpy.dot(data_in, W_in)))
+            return numpy.dot(delta_out, W_out) * \
+                self.Dlogistic((self.params['bias'] + numpy.dot(data_in, W_in)))
 
         @staticmethod
         def grad(x):
@@ -1178,12 +1163,14 @@ class ann(nemoa.system.base.system):
             return ((1.0 / (1.0 + numpy.exp(-x)))
                 * (1.0 - 1.0 / (1.0 + numpy.exp(-x))))
 
-        def getValues(self, data):
+        @staticmethod
+        def getValues(data):
             """Return median of bernoulli distributed layer
             calculated from expected values."""
             return (data > 0.5).astype(float)
 
-        def getSamples(self, data):
+        @staticmethod
+        def getSamples(data):
             """Return sample of bernoulli distributed layer
             calculated from expected value."""
             return (data > numpy.random.rand(
@@ -1191,8 +1178,7 @@ class ann(nemoa.system.base.system):
 
         def get(self, unit):
             id = self.params['label'].index(unit)
-            return {
-                'label': unit, 'id': id, 'class': self.params['class'],
+            return {'label': unit, 'id': id, 'class': self.params['class'],
                 'visible': self.params['visible'],
                 'bias': self.params['bias'][0, id]}
 
@@ -1315,7 +1301,8 @@ class ann(nemoa.system.base.system):
             return -numpy.mean((data - self.params['bias']) ** 2
                 / numpy.exp(self.params['lvar']), axis = 0) / 2
 
-        def getValues(self, data):
+        @staticmethod
+        def getValues(data):
             """Return median of gauss distributed layer
             calculated from expected values."""
             return data
