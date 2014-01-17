@@ -144,8 +144,7 @@ class unitRelation(heatmap):
             self.settings['relation'])[0].title(), fontsize = 11)
 
         # output
-        if file: matplotlib.pyplot.savefig(
-            file, dpi = self.settings['dpi'])
+        if file: matplotlib.pyplot.savefig(file, dpi = self.settings['dpi'])
         else: matplotlib.pyplot.show()
 
         # clear current figure object and release memory
