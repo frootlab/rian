@@ -33,11 +33,7 @@ class workspace:
 
     def execute(self, name = None, **kwargs):
         """Execute python script."""
-        if not '.' in name:
-            scriptName = self.project() + '.' + name
-        else:
-            scriptName = name
-
+        scriptName = name if '.' in name else '%s.%s' % (self.project(), name)
         config = nemoa.workspace.getConfig(
             type = 'script', config = scriptName, **kwargs)
         
@@ -45,13 +41,10 @@ class workspace:
             scriptName = 'base.' + name
             config = nemoa.workspace.getConfig(
                 type = 'script', config = scriptName, **kwargs)
-        if not config:
-            return False
-        if not os.path.isfile(config['path']):
-            nemoa.log('error', """
-                could not run script \'%s\': file \'%s\' not found!
-                """ % (scriptName, config['path']))
-            return False
+        if not config: return False
+        if not os.path.isfile(config['path']): return nemoa.log('error', """
+            could not run script \'%s\': file \'%s\' not found!
+            """ % (scriptName, config['path']))
 
         script = imp.load_source('script', config['path'])
         return script.main(self, **config['params'])
@@ -111,18 +104,14 @@ class workspace:
 
         # initialize model parameters (optional)
         if 'initialize' in kwargs \
-            and kwargs['initialize'] == True:
-            model.initialize()
+            and kwargs['initialize'] == True: model.initialize()
 
         # optimize model (optional)
         if 'optimize' in kwargs \
-            and not kwargs['optimize'] == False:
-            model.optimize(optimize)
+            and not kwargs['optimize'] == False: model.optimize(optimize)
 
         # save model to file (optional)
-        if 'save' in kwargs \
-            and not kwargs['save']:
-            model.save()
+        if 'save' in kwargs and not kwargs['save']: model.save()
 
         nemoa.setLog(indent = '-1')
         return model
@@ -169,13 +158,11 @@ class workspace:
         nemoa.setLog(indent = '+1')
 
         # prepare parameters
-        if network == None:
-            network = {'type': 'auto'}
+        if network == None: network = {'type': 'auto'}
 
         # create dataset instance if not given via keyword arguments
-        if not nemoa.type.isDataset(dataset):
-            dataset = self.__getInstance(
-                type = 'dataset', config = dataset)
+        if not nemoa.type.isDataset(dataset): dataset = \
+            self.__getInstance(type = 'dataset', config = dataset)
         if not nemoa.type.isDataset(dataset): 
             nemoa.log('error', """
                 could not create model instance:
@@ -184,9 +171,8 @@ class workspace:
             return None
 
         # create network instance if not given via keyword arguments
-        if not nemoa.type.isNetwork(network):
-            network = self.__getInstance(
-                type = 'network', config = network)
+        if not nemoa.type.isNetwork(network): network = \
+            self.__getInstance(type = 'network', config = network)
         if not nemoa.type.isNetwork(network): 
             nemoa.log('error', """
                 could not create model instance:
@@ -195,9 +181,8 @@ class workspace:
             return None
 
         # create system instance if not given via keyword arguments
-        if not nemoa.type.isSystem(system):
-            system = self.__getInstance(
-                type = 'system', config = system)
+        if not nemoa.type.isSystem(system): system = \
+            self.__getInstance(type = 'system', config = system)
         if not nemoa.type.isSystem(system):
             nemoa.log('error', """
                 could not create model instance:

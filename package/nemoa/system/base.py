@@ -410,26 +410,20 @@ class system:
             (3) The hidden layers are symmetric to the central layer
                 related to their number of nodes
         """
-        if not nemoa.type.isNetwork(network):
-            nemoa.log('error', """
-                could not test network:
-                invalid network instance given!""")
-            return False
-        if not self._isNetworkMLPCompatible(network):
-            return False
-        if not len(network.layers()) % 2 == 1:
-            nemoa.log('error', """DBN / Autoencoder networks expect an
-                odd number of layers!""")
-            return False
+        if not nemoa.type.isNetwork(network): return nemoa.log('error',
+            'could not test network: invalid network instance given!')
+        if not self._isNetworkMLPCompatible(network): return False
+        if not len(network.layers()) % 2 == 1: return nemoa.log('error',
+            'DBN / Autoencoder networks expect an odd number of layers!')
+
         layers = network.layers()
         size = len(layers)
         for id in range(1, (size - 1) / 2):
-            if not len(network.layer(layers[id])['nodes']) \
-                == len(network.layer(layers[-id-1])['nodes']):
-                nemoa.log('error', """DBN / Autoencoder networks expect
-                    a symmetric number of hidden nodes, related tp their
-                    central layer!""")
-                return False
+            symmetric = len(network.layer(layers[id])['nodes']) \
+                == len(network.layer(layers[-id-1])['nodes'])
+            if not symmetric: return nemoa.log('error',
+                """DBN / Autoencoder networks expect a symmetric
+                number of hidden nodes, related to their central layer!""")
         return True
 
     ####################################################################
@@ -437,7 +431,7 @@ class system:
     ####################################################################
 
     def _isDatasetBinary(self, dataset = None):
-        """Check if a dataset contains only binary data.
+        """Test if a dataset contains only binary data.
 
         Keyword Arguments:
             dataset -- nemoa dataset instance
@@ -451,15 +445,15 @@ class system:
 
         data = dataset.getData()
 
-        isBinary = (data == data.astype(bool)).sum() == data.size)
+        binary = ((data == data.astype(bool)).sum() == data.size)
 
-        if not iBinary: return nemoa.log('error',
+        if not binary: return nemoa.log('error',
             'The dataset does not contain binary data!')
 
         return True
 
     def _isDatasetGaussNormalized(self, dataset = None):
-        """Check if a dataset contains gauss normalized data.
+        """Test if a dataset contains gauss normalized data.
 
         Keyword Arguments:
             dataset -- nemoa dataset instance

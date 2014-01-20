@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys, getopt, os
+from subprocess import call
 
 sys.path.append('./package')
 import nemoa
@@ -13,14 +14,19 @@ def main(argv):
     kwargs  = ''
 
     # get arguments
-    try: opts, args = getopt.getopt(argv, "hvp:s:a:",
+    try: opts, args = getopt.getopt(argv, "hvip:s:a:",
         ["project=", "script=", "arguments="])
     except getopt.GetoptError: usage(); sys.exit(2)
 
+    if len(opts) == 0:
+        interactive()
+        sys.exit()
+    
     # parse arguments
     for opt, arg in opts:
         if opt == '-h': usage(); sys.exit()
         elif opt == '-v': version(); sys.exit()
+        elif opt == '-i': interactive(); sys.exit()
         elif opt in ("-p", "--project"):   project = arg
         elif opt in ("-s", "--script"):    script = arg
         elif opt in ("-a", "--arguments"): kwargs = arg
@@ -47,6 +53,9 @@ def scripts(project):
 def execute(project, script, kwargs):
     workspace = nemoa.open(project)
     workspace.execute(name = script, arguments = kwargs)
+
+def interactive():
+    call('ipython')
 
 def version(): print nemoa.version()
 

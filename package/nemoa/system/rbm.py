@@ -109,24 +109,18 @@ class rbm(nemoa.system.ann.ann):
 
     def mapData(self, data, transformation = 'visiblevalue', **kwargs):
         """Return system representation of data."""
-        if transformation == 'visibleexpect':
-            return self.getUnitExpect(data,
-                ('visible', 'hidden', 'visible'))
-        if transformation == 'visiblevalue':
-            return self.getUnitValues(data,
-                ('visible', 'hidden', 'visible'))
-        if transformation == 'visiblesample':
-            return self.getUnitSamples(data,
-                ('visible', 'hidden', 'visible'))
-        if transformation == 'hiddenexpect':
-            return self.getUnitExpect(data,
-                ('visible', 'hidden'))
-        if transformation == 'hiddenvalue':
-            return self.getUnitValues(data,
-                ('visible', 'hidden'))
-        if transformation == 'hiddensample':
-            return self.getUnitSamples(data,
-                ('visible', 'hidden'))
+        if transformation == 'visibleexpect': return self.getUnitExpect(
+            data, ('visible', 'hidden', 'visible'))
+        if transformation == 'visiblevalue': return self.getUnitValues(
+            data, ('visible', 'hidden', 'visible'))
+        if transformation == 'visiblesample': return self.getUnitSamples(
+            data, ('visible', 'hidden', 'visible'))
+        if transformation == 'hiddenexpect': return self.getUnitExpect(
+            data, ('visible', 'hidden'))
+        if transformation == 'hiddenvalue': return self.getUnitValues(
+            data, ('visible', 'hidden'))
+        if transformation == 'hiddensample': return self.getUnitSamples(
+            data, ('visible', 'hidden'))
         return data
 
     def _getDataContrastiveDivergency(self, data):
