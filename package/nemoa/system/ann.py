@@ -831,8 +831,6 @@ class ann(nemoa.system.base.system):
         return mapping[sid:tid + 1] if sid <= tid \
             else mapping[tid:sid + 1][::-1]
 
-    def get
-
     ####################################################################
     # Generic / static information                                     #
     ####################################################################
