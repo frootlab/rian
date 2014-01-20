@@ -523,8 +523,8 @@ class system:
 
         # get mapping, data and units
         mapping = self.getMapping()
-        data = dataset.getData(cols = (mapping[0], mapping[-1]))
-        units = self.assertUnitTuple(units)
+        data    = dataset.getData(cols = (mapping[0], mapping[-1]))
+        units   = self.assertUnitTuple(units)
 
         # get method and method specific parameters
         method, ukwargs = nemoa.common.strSplitParams(relation)
@@ -537,10 +537,8 @@ class system:
             units = units, data = data, mapping = mapping, **params)
         elif method == 'propagation': M = self.getUnitPropagation(\
             units = units, data = data, mapping = mapping, **params)
-        else:
-            nemoa.log('error', """could not evaluate unit relations:
-                unknown relation '%s'""" % (method))
-            return None
+        else: return nemoa.log('error',
+            "could not evaluate unit relations: unknown relation '%s'" % (method))
 
         # transform matrix
         if 'transform' in params:
@@ -601,14 +599,14 @@ class system:
 
         # calculate unit values without modification
         methodName = self.about('units', 'method', eval, 'name')
-        nemoa.log('info', """
-            calculate %s effect on %s""" % (modify, methodName))
+        nemoa.log('info',
+            'calculate %s effect on %s' % (modify, methodName))
         tStart = time.time()
         default = self.getUnitEval(eval = eval, \
             data = data, mapping = mapping)
         estimation = (time.time() - tStart) * len(units[0])
-        nemoa.log('info', """
-            estimated duration: %.1fs""" % (estimation))
+        nemoa.log('info',
+            'estimated duration: %.1fs' % (estimation))
 
         srcUnits = self.getUnits(group = mapping[0])[0]
 
@@ -660,15 +658,26 @@ class system:
         return M
 
     ####################################################################
-    # Data transformation methods                                      #
+    # Data Transformation                                              #
     ####################################################################
 
-    def mapData(self, data, **kwargs):
-        """Return system representation of data."""
-        return self._mapData(data, **kwargs)
+    def mapData(self, data, mapping = None, transform = 'expect'):
+        """Return system representation of data.
+
+        Keyword Arguments:
+            mapping -- tuple of strings describing the mapping function
+            transform -- mapping algorithm
+        """
+
+        if mapping == None: mapping = self.getMapping()
+        if transform == 'expect': return self.getUnitExpect(data, mapping)
+        if transform == 'value':  return self.getUnitValues(data, mapping)
+        if transform == 'sample': return self.getUnitSamples(data, mapping)
+        return nemoa.log('error', """could not map data:
+            unknown mapping algorithm '%s'""" % (transform))
 
     ####################################################################
-    # Generic / static system information                              #
+    # Metadata of System                                               #
     ####################################################################
 
     def about(self, *args):

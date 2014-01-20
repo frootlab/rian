@@ -344,25 +344,6 @@ class ann(nemoa.system.base.system):
         return numpy.mean(self.getUnitPerformance(data, *args, **kwargs))
 
     ####################################################################
-    # Data Transformation                                              #
-    ####################################################################
-
-    def mapData(self, data, mapping = None, transform = 'expect'):
-        """Return system representation of data.
-
-        Keyword Arguments:
-            mapping -- tuple of strings describing the mapping function
-            transform -- mapping algorithm
-        """
-
-        if mapping == None: mapping = self.getMapping()
-        if transform == 'expect': return self.getUnitExpect(data, mapping)
-        if transform == 'value': return self.getUnitValues(data, mapping)
-        if transform == 'sample': return self.getUnitSamples(data, mapping)
-        return nemoa.log('error', """could not map data:
-            unknown mapping algorithm '%s'""" % (transform))
-
-    ####################################################################
     # Units                                                            #
     ####################################################################
 

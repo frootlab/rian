@@ -359,10 +359,12 @@ class dataset:
                 parameter 'system' is invalid!""")
             nemoa.log('info', 'transform data using system \'%s\'' % (system.getName()))
             nemoa.setLog(indent = '+1')
-
+            
             if mapping == None: mapping = system.getMapping()
+
             sourceColumns = system.getUnits(group = mapping[0])[0]
             targetColumns = system.getUnits(group = mapping[-1])[0]
+
             self.setColLabels(sourceColumns)
             for src in self.data:
                 data = self.data[src]['array']
