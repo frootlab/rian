@@ -19,7 +19,7 @@ def open(project, **kwargs):
 
 def version():
     """Return version as string."""
-    return '0.4.66noGPU-20140119'
+    return '0.4.67noGPU-20140120'
 
 def listProjects():
     """Return list of projects."""
