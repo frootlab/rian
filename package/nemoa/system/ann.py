@@ -332,11 +332,15 @@ class ann(nemoa.system.base.system):
         return False
 
     def getError(self, data, *args, **kwargs):
-        """Return data reconstruction error of system."""
+        """Return reconstruction error of system."""
         return 0.5 * numpy.sum(self.getUnitError(data, *args, **kwargs) ** 2)
 
+    def getMeanError(self, data, *args, **kwargs):
+        """Return mean reconstruction error of output units."""
+        return numpy.mean(self.getUnitError(data, *args, **kwargs))
+
     def getPerformance(self, data, *args, **kwargs):
-        """Return data reconstruction performance of system."""
+        """Return mean reconstruction performance output units."""
         return numpy.mean(self.getUnitPerformance(data, *args, **kwargs))
 
     ####################################################################
