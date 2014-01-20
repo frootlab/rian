@@ -445,16 +445,17 @@ class system:
         Description:
             Return True if a given dataset contains only binary data.
         """
-        if not nemoa.type.isDataset(dataset):
-            nemoa.log('error', """
-                could not test dataset:
-                invalid dataset instance given!""")
-            return False
-        data = dataset.getData(1000)
-        if not (data == data.astype(bool)).sum() == data.size:
-            nemoa.log('error', """
-                The dataset does not contain binary data!""")
-            return False
+
+        if not nemoa.type.isDataset(dataset): return nemoa.log('error',
+            'could not test dataset: invalid dataset instance given!')
+
+        data = dataset.getData()
+
+        isBinary = (data == data.astype(bool)).sum() == data.size)
+
+        if not iBinary: return nemoa.log('error',
+            'The dataset does not contain binary data!')
+
         return True
 
     def _isDatasetGaussNormalized(self, dataset = None):
@@ -465,29 +466,31 @@ class system:
 
         Description:
             Return True if the following conditions are satisfied:
-            (1) The mean value of 100k random samples
-                of the dataset is < 0.05
-            (2) The standard deviation 100k random samples
-                of the dataset is < 1.05
+            (1) The absolute mean value of a given number of random samples
+                of the dataset is below a given maximum (default 0.05)
+            (2) The standard deviation of a given number of random samples
+                of the dataset is below a given maximum (default 1.05)
         """
-        if not nemoa.type.isDataset(dataset):
-            nemoa.log('error', """
-                could not test dataset:
-                invalid dataset instance given!""")
-            return False
-        data = dataset.getData(100000)
+
+        if not nemoa.type.isDataset(dataset): return nemoa.log('error',
+            'could not test dataset: invalid dataset instance given!')
+
+        size    = 100000 # number of samples
+        maxMean = 0.05   # allowed maximum for absolute mean value
+        maxSdev = 1.05   # allowed maximum for standard deviation
+
+        data = dataset.getData(size)
+
         mean = data.mean()
+        if numpy.abs(mean) >= maxMean: return  nemoa.log('error', """
+            The dataset does not contain gauss normalized data:
+            The mean value is %.3f!""" % (mean))
+
         sdev = data.std()
-        if numpy.abs(mean) >= 0.05:
-            nemoa.log('error', """
-                The dataset does not contain gauss normalized data:
-                The mean value is %.3f!""" % (mean))
-            return False
-        if data.std() >= 1.05:
-            nemoa.log('error', """
-                The dataset does not contain gauss normalized data:
-                The standard deviation is %.3f!""" % (sdev))
-            return False
+        if sdev >= maxSdev: return nemoa.log('error', """
+            The dataset does not contain gauss normalized data:
+            The standard deviation is %.3f!""" % (sdev))
+
         return True
 
     ####################################################################
