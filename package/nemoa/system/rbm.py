@@ -103,25 +103,9 @@ class rbm(nemoa.system.ann.ann):
 
     # DATA TRANSFORMATION
 
-    def _compress(self, data, **kwargs):
-        """Return expectation values of hidden units."""
-        return self.getUnitExpect(data, ('visible', 'hidden'))
-
-    #def mapData(self, data, transformation = 'visiblevalue', **kwargs):
-        #"""Return system representation of data."""
-        #if transformation == 'visibleexpect': return self.getUnitExpect(
-            #data, ('visible', 'hidden', 'visible'))
-        #if transformation == 'visiblevalue': return self.getUnitValues(
-            #data, ('visible', 'hidden', 'visible'))
-        #if transformation == 'visiblesample': return self.getUnitSamples(
-            #data, ('visible', 'hidden', 'visible'))
-        #if transformation == 'hiddenexpect': return self.getUnitExpect(
-            #data, ('visible', 'hidden'))
-        #if transformation == 'hiddenvalue': return self.getUnitValues(
-            #data, ('visible', 'hidden'))
-        #if transformation == 'hiddensample': return self.getUnitSamples(
-            #data, ('visible', 'hidden'))
-        #return data
+    #def _compress(self, data, **kwargs):
+        #"""Return expectation values of hidden units."""
+        #return self.getUnitExpect(data, ('visible', 'hidden'))
 
     def _getDataContrastiveDivergency(self, data):
         """Return reconstructed data using 1-step contrastive divergency sampling (CD-1)."""

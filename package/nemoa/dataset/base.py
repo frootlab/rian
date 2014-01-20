@@ -345,7 +345,7 @@ class dataset:
                     Transform Gauss distributed values to binary values in {0, 1}
                 'gaussToWeight':
                     Transform Gauss distributed values to weights in [0, 1]
-                'gaussToDistance':
+                'gaussToDistance': ??
                     Transform Gauss distributed values to distances in [0, 1]
             system -- nemoa system instance (nemoa object root class 'system')
                 used for model based transformation of data
@@ -353,6 +353,8 @@ class dataset:
         """
 
         if not isinstance(algorithm, str): return False
+
+        # system based data transformation
         if algorithm.lower() == 'system':
             if not nemoa.type.isSystem(system): return nemoa.log('error',
                 """could not transform data using system:
@@ -392,6 +394,8 @@ class dataset:
             self.setColLabels(targetColumns)
             nemoa.setLog(indent = '-1')
             return True
+
+        # gauss to binary data transformation
         elif algorithm.lower() in ['gausstobinary', 'binary']:
             nemoa.log('info', 'transform data using \'%s\'' % (algorithm))
             for src in self.data:
@@ -401,6 +405,8 @@ class dataset:
                     self.data[src]['array'][colName] = \
                         (self.data[src]['array'][colName] > 0.0).astype(float)
             return True
+
+        # gauss to weight in [0, 1] data transformation
         elif algorithm.lower() in ['gausstoweight', 'weight']:
             nemoa.log('info', 'transform data using \'%s\'' % (algorithm))
             for src in self.data:
@@ -411,7 +417,10 @@ class dataset:
                         (2.0 / (1.0 + numpy.exp(-1.0 * \
                         self.data[src]['array'][colName] ** 2))).astype(float)
             return True
-        elif algorithm.lower() in ['disttoweight', 'dist']:
+
+        # gauss to distance data transformation
+        # ????
+        elif algorithm.lower() in ['gausstodistance', 'distance']:
             nemoa.log('info', 'transform data using \'%s\'' % (algorithm))
             for src in self.data:
                 # update source per column (recarray)
@@ -422,9 +431,8 @@ class dataset:
                         self.data[src]['array'][colName] ** 2)))).astype(float)
             return True
 
-        return nemoa.log('error',
-            """could not transform data:
-            unknown algorithm '%s'!""" % (algorithm))
+        return nemoa.log('error'
+            "could not transform data: unknown algorithm '%s'!" % (algorithm))
 
     def getValue(self, row = None, col = None):
         """Return single value from dataset."""
@@ -993,7 +1001,7 @@ class dataset:
     def _get(self, sec = None):
         dict = {
             'data': copy.deepcopy(self.data),
-            'cfg': copy.deepcopy(self.cfg)
+            'cfg':  copy.deepcopy(self.cfg)
         }
 
         if not sec: return dict

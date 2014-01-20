@@ -624,10 +624,8 @@ class system:
                 #self.unlinkUnit(kUnit)
                 #uUnlink = self.getUnitEval(func = measure, data = data)
                 #self.system.setLinks(links)
-            else:
-                nemoa.log('error', """could not create causality matrix:
-                    unknown data manipulation function '%s'!""" % (modify))
-                return None
+            else: return nemoa.log('error', """could not create causality matrix:
+                unknown data manipulation function '%s'!""" % (modify))
 
             # store difference in causality matrix
             for j, tgtUnit in enumerate(units[1]):
