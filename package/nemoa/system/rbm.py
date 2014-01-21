@@ -103,10 +103,6 @@ class rbm(nemoa.system.ann.ann):
 
     # DATA TRANSFORMATION
 
-    #def _compress(self, data, **kwargs):
-        #"""Return expectation values of hidden units."""
-        #return self.getUnitExpect(data, ('visible', 'hidden'))
-
     def _getDataContrastiveDivergency(self, data):
         """Return reconstructed data using 1-step contrastive divergency sampling (CD-1)."""
         hData  = self.getUnitExpect(data, ('visible', 'hidden'))

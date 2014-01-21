@@ -40,14 +40,14 @@ class ann(nemoa.system.base.system):
         return self._isConfigured()
 
     def _updateUnitsAndLinks(self, *args, **kwargs):
-        nemoa.log('info', 'update system units and links')
+        nemoa.log('update system units and links')
         self.setUnits(self._params['units'], initialize = False)
         self.setLinks(self._params['links'], initialize = False)
         return True
 
     def _setNetwork(self, network, update = False, *args, **kwargs):
         """Update units and links to network instance."""
-        nemoa.log('info', """get system units and links from network '%s'
+        nemoa.log("""get system units and links from network '%s'
             """ % (network.getName()))
         nemoa.setLog(indent = '+1')
 
@@ -163,7 +163,7 @@ class ann(nemoa.system.base.system):
     # 2.1.1 Backpropagation of Error (BPROP) specific Functions
 
     def optimizeBProp(self, dataset, schedule):
-        nemoa.log('info', 'starting backpropagation')
+        nemoa.log('starting backpropagation')
         nemoa.setLog(indent = '+1')
 
         # get training data
@@ -218,7 +218,7 @@ class ann(nemoa.system.base.system):
     # 2.1.2 Resilient Backpropagation (RPROP) specific Functions
 
     def optimizeRProp(self, dataset, schedule):
-        nemoa.log('info', 'starting resiliant backpropagation (Rprop)')
+        nemoa.log('starting resiliant backpropagation (Rprop)')
         nemoa.setLog(indent = '+1')
 
         # get training data

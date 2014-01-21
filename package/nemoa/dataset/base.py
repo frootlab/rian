@@ -39,13 +39,13 @@ class dataset:
             useCache -- shall data be cached
         """
 
-        nemoa.log('info', 'configure dataset: \'%s\'' % (self.getName()))
+        nemoa.log('configure dataset: \'%s\'' % (self.getName()))
         nemoa.setLog(indent = '+1')
 
         # load data from cachefile (if caching is used and cachefile exists)
         cacheFile = self.searchCacheFile(network) if useCache else None
         if cacheFile and self.load(cacheFile):
-            nemoa.log('info', 'load cachefile: \'%s\'' % (cacheFile))
+            nemoa.log('load cachefile: \'%s\'' % (cacheFile))
 
             # preprocess data
             if 'preprocessing' in self.cfg.keys():
@@ -77,7 +77,7 @@ class dataset:
             netGroupsOrder = sorted(netGroupsOrder)
 
             # convert network node labels to common format
-            nemoa.log('info', 'search network nodes in dataset sources')
+            nemoa.log('search network nodes in dataset sources')
             convNetGroups = {}
             convNetGroupsLost = {}
             convNetNodes = []
@@ -91,7 +91,7 @@ class dataset:
 
             # notify if any network node labels could not be converted
             if convNetNodesLost:
-                nemoa.log('info', """%s of %s network nodes
+                nemoa.log("""%s of %s network nodes
                     could not be converted! (see logfile)"""
                     % (len(convNetNodesLost), len(convNetNodes)))
                 ## 2DO get original node labels for log file
@@ -99,10 +99,10 @@ class dataset:
 
         # get columns from dataset files and convert to common format
         colLabels = {}
-        nemoa.log('info', 'configure data sources')
+        nemoa.log('configure data sources')
         nemoa.setLog(indent = '+1')
         for src in self.cfg['table']:
-            nemoa.log('info', """
+            nemoa.log("""
                 configure '%s'""" % (src))
             srcCnf = self.cfg['table'][src]
 
@@ -229,7 +229,7 @@ class dataset:
         ################################################################
 
         # import data from sources
-        nemoa.log('info', 'import data from sources')
+        nemoa.log('import data from sources')
         nemoa.setLog(indent = '+1')
         self.data = {}
         for src in self.cfg['table']:
@@ -241,7 +241,7 @@ class dataset:
         # save cachefile
         if useCache:
             cacheFile = self.createCacheFile(network)
-            nemoa.log('info', 'save cachefile: \'%s\'' % (cacheFile))
+            nemoa.log('save cachefile: \'%s\'' % (cacheFile))
             self.save(cacheFile)
 
         # preprocess data
@@ -267,7 +267,7 @@ class dataset:
             Process stratification, normalization and transformation.
         """
 
-        nemoa.log('info', 'preprocessing data')
+        nemoa.log('preprocessing data')
         nemoa.setLog(indent = '+1')
         if 'stratify'  in kwargs.keys(): self.stratifyData(kwargs['stratify'])
         if 'normalize' in kwargs.keys(): self.normalizeData(kwargs['normalize'])
@@ -291,7 +291,7 @@ class dataset:
                     probabilities of sources are
                     1 / number of sources
         """
-        nemoa.log('info', 'stratify data using \'%s\'' % (algorithm))
+        nemoa.log('stratify data using \'%s\'' % (algorithm))
 
         if algorithm.lower() in ['auto']:
             return True
@@ -310,7 +310,7 @@ class dataset:
                     Gaussian normalization (aka z-transformation)
         """
 
-        nemoa.log('info', 'normalize data using \'%s\'' % (algorithm))
+        nemoa.log('normalize data using \'%s\'' % (algorithm))
 
         if algorithm.lower() in ['gauss', 'z-trans']:
 
@@ -359,7 +359,7 @@ class dataset:
             if not nemoa.type.isSystem(system): return nemoa.log('error',
                 """could not transform data using system:
                 parameter 'system' is invalid!""")
-            nemoa.log('info', 'transform data using system \'%s\'' % (system.getName()))
+            nemoa.log('transform data using system \'%s\'' % (system.getName()))
             nemoa.setLog(indent = '+1')
             
             if mapping == None: mapping = system.getMapping()
@@ -397,7 +397,7 @@ class dataset:
 
         # gauss to binary data transformation
         elif algorithm.lower() in ['gausstobinary', 'binary']:
-            nemoa.log('info', 'transform data using \'%s\'' % (algorithm))
+            nemoa.log('transform data using \'%s\'' % (algorithm))
             for src in self.data:
                 # update source per column (recarray)
                 for colName in self.data[src]['array'].dtype.names[1:]:
@@ -408,7 +408,7 @@ class dataset:
 
         # gauss to weight in [0, 1] data transformation
         elif algorithm.lower() in ['gausstoweight', 'weight']:
-            nemoa.log('info', 'transform data using \'%s\'' % (algorithm))
+            nemoa.log('transform data using \'%s\'' % (algorithm))
             for src in self.data:
                 # update source per column (recarray)
                 for colName in self.data[src]['array'].dtype.names[1:]:
@@ -421,7 +421,7 @@ class dataset:
         # gauss to distance data transformation
         # ????
         elif algorithm.lower() in ['gausstodistance', 'distance']:
-            nemoa.log('info', 'transform data using \'%s\'' % (algorithm))
+            nemoa.log('transform data using \'%s\'' % (algorithm))
             for src in self.data:
                 # update source per column (recarray)
                 for colName in self.data[src]['array'].dtype.names[1:]:
@@ -928,7 +928,7 @@ class dataset:
             formats = ('<U12',) + formats
         dtype = {'names': names, 'formats': formats}
 
-        nemoa.log('info', "import data from csv file: " + file)
+        nemoa.log("import data from csv file: " + file)
 
         try:
             #data = numpy.genfromtxt(file, skiprows = 1, delimiter = delim,
@@ -955,10 +955,10 @@ class dataset:
         file = nemoa.common.getEmptyFile(file)
         type = nemoa.common.getFileExt(file).lower()
 
-        nemoa.log('title', 'export data to file')
+        nemoa.log('export data to file')
         nemoa.setLog(indent = '+1')
 
-        nemoa.log('info', 'exporting data to file: \'%s\'' % (file))
+        nemoa.log('exporting data to file: \'%s\'' % (file))
         if type in ['gz', 'data']: retVal = self.save(file)
         elif type in ['csv', 'tsv', 'txt']:
             cols, data = self.getData(output = ('cols','recarray'))

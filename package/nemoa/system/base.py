@@ -21,7 +21,7 @@ class system:
         if not hasattr(self.__class__, '_configure') \
             or not callable(getattr(self.__class__, '_configure')):
             return True
-        nemoa.log('info', "configure system '%s'" % (self.getName()))
+        nemoa.log("configure system '%s'" % (self.getName()))
         nemoa.setLog(indent = '+1')
         if not self.checkNetwork(network):
             nemoa.log('error', """
@@ -599,13 +599,13 @@ class system:
 
         # calculate unit values without modification
         methodName = self.about('units', 'method', eval, 'name')
-        nemoa.log('info',
+        nemoa.log(
             'calculate %s effect on %s' % (modify, methodName))
         tStart = time.time()
         default = self.getUnitEval(eval = eval, \
             data = data, mapping = mapping)
         estimation = (time.time() - tStart) * len(units[0])
-        nemoa.log('info',
+        nemoa.log(
             'estimated duration: %.1fs' % (estimation))
 
         srcUnits = self.getUnits(group = mapping[0])[0]
@@ -852,7 +852,7 @@ class inspector:
         # estimate time needed to finish current optimization schedule
         if self.__estimate and not self.__state['estimateEnded']:
             if not self.__state['estimateStarted']:
-                nemoa.log('info', """
+                nemoa.log("""
                     estimating time for calculation
                     of %i updates ...""" % (config['updates']))
                 self.__state['estimateStarted'] = True
@@ -863,7 +863,7 @@ class inspector:
                     * config['updates'] * config['iterations'])
                 estimStr = time.strftime('%H:%M',
                     time.localtime(time.time() + estim))
-                nemoa.log('info', 'estimation: %ds (finishing time: %s)'
+                nemoa.log('estimation: %ds (finishing time: %s)'
                     % (estim, estimStr))
                 self.__state['estimateEnded'] = True
 
@@ -878,7 +878,7 @@ class inspector:
                 value = self.__system.getDataEval(
                     data = self.__data, func = config['inspectFunction'])
                 measure = config['inspectFunction'].title()
-                nemoa.log('info', 'final: %s = %.3f' % (measure, value))
+                nemoa.log('final: %s = %.3f' % (measure, value))
             elif ((epochTime - self.__state['inspectTime']) \
                 > config['inspectTimeInterval']) \
                 and not (self.__estimate \
@@ -889,7 +889,7 @@ class inspector:
                 progress = float(self.__state['epoch']) \
                     / float(config['updates']) * 100.0
                 measure = config['inspectFunction'].title()
-                nemoa.log('info', """finished %.1f%%: %s = %0.4f""" \
+                nemoa.log("""finished %.1f%%: %s = %0.4f""" \
                     % (progress, measure, value))
                 self.__state['inspectTime'] = epochTime
                 if self.__state['inspection'] == None:

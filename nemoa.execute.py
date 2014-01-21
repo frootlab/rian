@@ -12,6 +12,7 @@ def main(argv):
     project = ''
     script  = ''
     kwargs  = ''
+    ipython = False
 
     # get arguments
     try: opts, args = getopt.getopt(argv, "hvip:s:a:",
@@ -26,13 +27,18 @@ def main(argv):
     for opt, arg in opts:
         if opt == '-h': usage(); sys.exit()
         elif opt == '-v': version(); sys.exit()
-        elif opt == '-i': interactive(); sys.exit()
+        elif opt == '-i': ipython = True
         elif opt in ("-p", "--project"):   project = arg
         elif opt in ("-s", "--script"):    script = arg
         elif opt in ("-a", "--arguments"): kwargs = arg
 
     # do something
-    if not project: usage(); projects(); sys.exit()
+    if not project:
+        if ipython:
+            interactive()
+            sys.exit()
+        usage(); projects(); sys.exit()
+
     if not script: usage(); scripts(project); sys.exit()
     execute(project, script, kwargs)
 
@@ -51,11 +57,12 @@ def scripts(project):
     print ''
 
 def execute(project, script, kwargs):
+    nemoa.welcome()
     workspace = nemoa.open(project)
     workspace.execute(name = script, arguments = kwargs)
 
 def interactive():
-    call('ipython')
+    call(['ipython', 'nemoa.interactive.py', '-i'])
 
 def version(): print nemoa.version()
 

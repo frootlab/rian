@@ -33,8 +33,7 @@ class config:
         self.__updateBasepath()
 
     def __updateBasepath(self):
-        if not os.path.exists(self.__baseconf):
-            return False
+        if not os.path.exists(self.__baseconf): return False
 
         # default basepaths
         self.__basepath = {
@@ -136,7 +135,7 @@ class config:
     def loadCommon(self):
         """Import common projects."""
 
-        nemoa.log('title', 'import common resources')
+        nemoa.log('import common resources')
         nemoa.setLog(indent = '+1')
 
         # get current project
@@ -161,7 +160,7 @@ class config:
     def loadProject(self, project):
         """Import configuration files from user project."""
 
-        nemoa.log('title', 'import project configuration files')
+        nemoa.log('import project configuration files')
         nemoa.setLog(indent = '+1')
 
         # check if project exists
@@ -206,7 +205,7 @@ class config:
     def __scanForConfigFiles(self, files = None):
         """Import all config files from current project."""
 
-        nemoa.log('info', 'scanning for configuration files')
+        nemoa.log('scanning for configuration files')
         nemoa.setLog(indent = '+1')
 
         # are files given?
@@ -256,7 +255,7 @@ class config:
     def __scanForScripts(self, files = None):
         """Scan for scripts files in current project."""
 
-        nemoa.log('info', 'scanning for script files')
+        nemoa.log('scanning for script files')
         nemoa.setLog(indent = '+1')
 
         # are files given?
@@ -300,7 +299,7 @@ class config:
     def __scanForNetworks(self, files = None):
         """Scan for scripts files in current project."""
 
-        nemoa.log('info', 'scanning for networks')
+        nemoa.log('scanning for networks')
         nemoa.setLog(indent = '+1')
 
         # are files given?
@@ -645,7 +644,7 @@ class config:
         name = objConf['name']
         config = objConf['config']
 
-        nemoa.log('info', 'adding %s: %s' % (type, name))
+        nemoa.log('adding %s: %s' % (type, name))
 
         key = None
         objID = 0
@@ -859,8 +858,7 @@ class config:
 
     def __getNewKey(self, dict, key):
 
-        if not key in dict:
-            return key
+        if not key in dict: return key
 
         i = 1
         while True:

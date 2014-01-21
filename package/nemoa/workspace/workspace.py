@@ -72,7 +72,7 @@ class workspace:
     def model(self, config = None, name = None, **kwargs):
         """Return new model instance."""
 
-        nemoa.log('title', 'create model')
+        nemoa.log('create model')
         nemoa.setLog(indent = '+1')
 
         # create model instance
@@ -118,7 +118,7 @@ class workspace:
 
     def __getInstance(self, type = None, config = None, empty = False, **kwargs):
         """Return new instance of given object type and configuration."""
-        nemoa.log('info', 'create %s %s instance' % \
+        nemoa.log('create %s %s instance' % \
             ('empty' if empty else '', type))
         nemoa.setLog(indent = '+1')
 
@@ -146,7 +146,7 @@ class workspace:
             nemoa.setLog(indent = '-1')
             return None
 
-        nemoa.log('info', 'name of %s is: \'%s\'' % (type, instance.getName()))
+        nemoa.log('name of %s is: \'%s\'' % (type, instance.getName()))
         nemoa.setLog(indent = '-1')
         return instance
 
@@ -154,7 +154,7 @@ class workspace:
         dataset = None, network = None, system = None, name = None):
         """Return new model instance."""
 
-        nemoa.log('info', 'create model instance')
+        nemoa.log('create model instance')
         nemoa.setLog(indent = '+1')
 
         # prepare parameters
@@ -205,7 +205,7 @@ class workspace:
     def __getModelInstanceFromFile(self, file):
         """Return new model instance and set configuration and parameters from file."""
 
-        nemoa.log('title', 'load model from file')
+        nemoa.log('load model from file')
         nemoa.setLog(indent = '+1')
 
         # check file
@@ -213,14 +213,12 @@ class workspace:
             if os.path.exists(
                 nemoa.workspace.path('models') + file + '.mp'):
                 file = nemoa.workspace.path('models') + file + '.mp'
-            else:
-                nemoa.log("error", """
-                    could not load model '%s':
-                    file does not exist.""" % file)
-                return None
+            else: return nemoa.log("error", """
+                could not load model '%s':
+                file does not exist.""" % file)
 
         # load model parameters and configuration from file
-        nemoa.log('info', 'load model: \'%s\'' % file)
+        nemoa.log('load model: \'%s\'' % file)
         modelDict = nemoa.common.dictFromFile(file)
 
         model = self.__getModelInstance(
@@ -230,10 +228,8 @@ class workspace:
             system = modelDict['system']['config'],
             name = modelDict['config']['name'])
 
-        if not nemoa.type.isModel(model):
-            return None
-        else:
-            model._set(modelDict)
+        if nemoa.type.isModel(model): model._set(modelDict)
+        else: return None 
 
         nemoa.setLog(indent = '-1')
         return model

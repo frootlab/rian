@@ -84,14 +84,14 @@ class dbn(nemoa.system.ann.ann):
     def optimizePreTraining(self, dataset, schedule):
         """Pretraining ANN using Restricted Boltzmann Machines."""
 
-        nemoa.log('info', 'pretraining system')
+        nemoa.log('pretraining system')
         nemoa.setLog(indent = '+1')
 
         ################################################################
         # Configure subsystems for pretraining                         #
         ################################################################
 
-        nemoa.log('info', 'configure subsystems')
+        nemoa.log('configure subsystems')
         nemoa.setLog(indent = '+1')
         if not 'units' in self._params:
             nemoa.log('error', 'could not configure subsystems: no layers have been defined')
@@ -138,7 +138,7 @@ class dbn(nemoa.system.ann.ann):
             unitCount = sum([len(group) for group in system.getUnits()])
             linkCount = len(system.getLinks())
 
-            nemoa.log('info', """adding subsystem: \'%s\' (%s units, %s links)
+            nemoa.log("""adding subsystem: \'%s\' (%s units, %s links)
                 """ % (system.getName(), unitCount, linkCount))
 
             # link subsystem
@@ -173,7 +173,7 @@ class dbn(nemoa.system.ann.ann):
 
         # optimize subsystems
         for sysID in range(len(subSystems)):
-            nemoa.log('info', 'optimize subsystem %s (%s)' \
+            nemoa.log('optimize subsystem %s (%s)' \
                 % (subSystems[sysID].getName(), subSystems[sysID].getType()))
             nemoa.setLog(indent = '+1')
 
@@ -206,7 +206,7 @@ class dbn(nemoa.system.ann.ann):
         # Copy and enrolle parameters of subsystems to dbn             #
         ################################################################
 
-        nemoa.log('info', 'initialize system with subsystem parameters')
+        nemoa.log('initialize system with subsystem parameters')
         nemoa.setLog(indent = '+1')
 
         # keep original inputs and outputs
@@ -215,7 +215,7 @@ class dbn(nemoa.system.ann.ann):
         outputs = self.units[mapping[-1]].params['label']
 
         # expand unit parameters to all layers
-        nemoa.log('info', 'import unit and link parameters from subsystems (enrolling)')
+        nemoa.log('import unit and link parameters from subsystems (enrolling)')
         units = self._params['units']
         links = self._params['links']
         for id in range((len(units) - 1)  / 2):
@@ -246,7 +246,7 @@ class dbn(nemoa.system.ann.ann):
         # Remove input units from output layer, and vice versa         #
         ################################################################
 
-        nemoa.log('info', 'cleanup unit and linkage parameter arrays')
+        nemoa.log('cleanup unit and linkage parameter arrays')
         self._removeUnits(self.getMapping()[0], outputs)
         self._removeUnits(self.getMapping()[-1], inputs)
 
@@ -255,7 +255,7 @@ class dbn(nemoa.system.ann.ann):
 
     def optimizeFineTuning(self, dataset, schedule):
         """Finetuning system using a variant of backpropagation of error."""
-        nemoa.log('info', 'finetuning system')
+        nemoa.log('finetuning system')
         nemoa.setLog(indent = '+1')
 
         cnf = self._config['optimize']

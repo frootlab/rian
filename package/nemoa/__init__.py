@@ -9,13 +9,15 @@ import nemoa.annotation
 
 def new(**kwargs):
     """Return workspace instance."""
-    log('header', 'nemoa %s' % (version()))
     return nemoa.workspace.new(**kwargs)
 
 def open(project, **kwargs):
     """Return workspace instance."""
-    log('header', 'nemoa %s' % (version()))
     return nemoa.workspace.open(project, **kwargs)
+
+def welcome():
+    """Print welcome message."""
+    return log('header', 'nemoa %s' % (version()))
 
 def version():
     """Return version as string."""
