@@ -25,10 +25,10 @@ class mpAnalyse:
 
         # check object class
         if not obj_model.__class__.__name__ == 'mpModel':
-            nemoa.log("error", "could not run analysis: 'model' has to be mpModel instance!")
+            nemoa.log('error', "could not run analysis: 'model' has to be mpModel instance!")
             return False
 
-        nemoa.log('info', 'analyse model:')
+        nemoa.log('analyse model:')
 
         # create plots
         default = {
@@ -51,7 +51,7 @@ class mpAnalyse:
                         params[key] = default[key]
 
                 file = self.path + obj_model.cfg['name'] + '/' + plotid + '.' + params['fileformat']
-                nemoa.log('info', " * plot '" + plotid + "'")
+                nemoa.log(" * plot '" + plotid + "'")
                 plot.mpPlot(obj_model, plot = type, file = file, **params)
 
         if 'reports' in self.cfg:

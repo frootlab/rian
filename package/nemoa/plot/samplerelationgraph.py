@@ -46,10 +46,10 @@ def plotSampleRelationGraph(model, file = None, **params):
     # info
     numFilter = np.sum(M)
     if numFilter == 0:
-        nemoa.log("warning", "   no relation passed filter")
+        nemoa.log('warning', "   no relation passed filter")
         return False
     else:
-        nemoa.log("info", "   %i relations passed filter (%.1f%%)" % \
+        nemoa.log("   %i relations passed filter (%.1f%%)" % \
             (numFilter, float(numFilter) / float(M.shape[0] ** 2 - M.shape[0]) * 100))
 
     # get weights from relations and filter by mask
@@ -79,7 +79,7 @@ def plotSampleRelationGraph(model, file = None, **params):
     numCols = int(np.sqrt(numSub) * 4 / 3)
 
     if numSub > 1:
-        nemoa.log("info", "   %i complexes found" % (numSub))
+        nemoa.log("   %i complexes found" % (numSub))
 
     # create plots for all subgraphs
     for sub in range(numSub):

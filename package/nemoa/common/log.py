@@ -40,7 +40,7 @@ def initLogger(logfile = None):
     return True
 
 def setLog(**kwargs):
-    """Set global logging options."""
+    """Set global logging parameters."""
 
     if 'mode' in kwargs and kwargs['mode'] in ['exec', 'shell', 'debug', 'silent']:
         __shared['mode'] = kwargs['mode']
@@ -52,6 +52,10 @@ def setLog(**kwargs):
             size = int(kwargs['indent'][1:])
             __shared['indent'] += size if kwargs['indent'][0] == '+' else -size
     return True
+
+def getLog():
+    """Return global loging parameters."""
+    return __shared
 
 def log(*args):
     """Log message."""

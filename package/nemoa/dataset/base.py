@@ -23,7 +23,7 @@ class dataset:
         """Return configuration as dictionary."""
         return self.cfg.copy()
 
-    def getName(self):
+    def name(self):
         """Return name of dataset."""
         return self.cfg['name'] if 'name' in self.cfg else ''
 
@@ -38,7 +38,7 @@ class dataset:
             network -- nemoa network object
             useCache -- shall data be cached"""
 
-        nemoa.log('configure dataset: \'%s\'' % (self.getName()))
+        nemoa.log('configure dataset: \'%s\'' % (self.name()))
         nemoa.setLog(indent = '+1')
 
         # load data from cachefile (if caching is used and cachefile exists)
@@ -354,7 +354,7 @@ class dataset:
             if not nemoa.type.isSystem(system): return nemoa.log('error',
                 """could not transform data using system:
                 parameter 'system' is invalid!""")
-            nemoa.log('transform data using system \'%s\'' % (system.getName()))
+            nemoa.log('transform data using system \'%s\'' % (system.name()))
             nemoa.setLog(indent = '+1')
             
             if mapping == None: mapping = system.getMapping()
@@ -540,6 +540,7 @@ class dataset:
             size = data.shape, n = 1, p = 1 - factor)
         elif algorithm == 'gs': return data * numpy.random.normal(
             size = data.shape, loc = 0.0, scale = factor)
+        #2do!: implement salt and pepper noise
         #elif algorithm == 'sp': return
         else: return nemoa.log('error',
             "unkown corruption algorithm '%s'!" % (algorithm))
@@ -555,16 +556,16 @@ class dataset:
         # check columns
         if cols == '*': cols = self.getColLabels()
         elif not len(cols) == len(set(cols)): return nemoa.log('error',
-            "could not retrieve data: columns are not unique!")
+            'could not retrieve data: columns are not unique!')
         elif [c for c in cols if c not in self.getColLabels()]: \
             return nemoa.log('error',
-            "could not retrieve data: unknown columns!")
+            'could not retrieve data: unknown columns!')
     
         # check format
         if isinstance(output, str): fmtTuple = (output, )
         elif isinstance(output, tuple): fmtTuple = output
         else: return nemoa.log('error',
-            "could not retrieve data: inval 'format' argument!")
+            "could not retrieve data: invalid 'format' argument!")
 
         # format data
         retTuple = ()
@@ -724,7 +725,7 @@ class dataset:
         #distance = self.getBiclusterDistance(biclusters, **params)
 
         ## cluster samples using k-means
-        #nemoa.log("info", 'cluster distances using k-means with k = %i' % (groups))
+        #nemoa.log('cluster distances using k-means with k = %i' % (groups))
         #clusters = self.getClusters(algorithm = 'k-means', data = distance, k = groups)
         #cIDs = numpy.asarray(clusters)
         #partition = []
@@ -772,10 +773,10 @@ class dataset:
 
         ## check params
         #if not 'threshold' in params:
-            #nemoa.log("info", "param 'threshold' is needed for BCCA Clustering!")
+            #nemoa.log("param 'threshold' is needed for BCCA Clustering!")
             #return []
         #if not ('minsize' in params or 'size' in params):
-            #nemoa.log("info", "param 'size' or 'minsize' is needed for BCCA Clustering!")
+            #nemoa.log("param 'size' or 'minsize' is needed for BCCA Clustering!")
             #return []
 
         ## get params
@@ -788,7 +789,7 @@ class dataset:
             #size = params['size']
 
         ## start clustering
-        #nemoa.log("info", 'detecting bi-correlation clusters')
+        #nemoa.log('detecting bi-correlation clusters')
         #startTime = time.time()
 
         #biclusters = []
@@ -816,7 +817,7 @@ class dataset:
                 #if i == 0 and j == 1:
                     #elapsed = time.time() - startTime
                     #estimated = elapsed * numCols ** 2 / 2
-                    #nemoa.log("info", 'estimated duration: %.1fs' % (estimated))
+                    #nemoa.log('estimated duration: %.1fs' % (estimated))
 
                 #if corr < threshold:
                     #continue
@@ -837,10 +838,10 @@ class dataset:
 
         ## info
         #if size:
-            #nemoa.log("info", 'found %i biclusters with: correlation > %.2f, number of samples = %i' \
+            #nemoa.log('found %i biclusters with: correlation > %.2f, number of samples = %i' \
                 #% (len(biclusters), threshold, size))
         #else:
-            #nemoa.log("info", 'found %i biclusters with: correlation > %.2f, number of samples > %i' \
+            #nemoa.log('found %i biclusters with: correlation > %.2f, number of samples > %i' \
                 #% (len(biclusters), threshold, minsize - 1))
 
         #return biclusters

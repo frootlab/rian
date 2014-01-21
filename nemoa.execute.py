@@ -48,9 +48,10 @@ def projects():
 
 def scripts(project):
     """Print list of scripts to standard output."""
-    nemoa.setLog(quiet = True)
+    logParams = nemoa.getLog()
+    nemoa.setLog(mode = 'silent')
     workspace = nemoa.open(project)
-    nemoa.setLog(quiet = False)
+    nemoa.setLog(mode = logParams['mode'])
     scripts = workspace.list(type = 'script', namespace = workspace.project())
     print 'Scripts in project %s:\n' % (project)
     for script in scripts: print '    %s' % (script)

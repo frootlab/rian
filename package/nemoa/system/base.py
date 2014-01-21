@@ -21,7 +21,7 @@ class system:
         if not hasattr(self.__class__, '_configure') \
             or not callable(getattr(self.__class__, '_configure')):
             return True
-        nemoa.log("configure system '%s'" % (self.getName()))
+        nemoa.log("configure system '%s'" % (self.name()))
         nemoa.setLog(indent = '+1')
         if not self.checkNetwork(network):
             nemoa.log('error', """
@@ -690,13 +690,13 @@ class system:
                 if not args[2] in methods.keys(): return None
                 if not args[3] in methods[args[2]].keys(): return None
                 return methods[args[2]][args[3]]
-        if args[0] == 'name': return self.getName()
+        if args[0] == 'name': return self.name()
         if args[0] == 'class': return self.getClass()
         if args[0] == 'type': return self.getType()
         if args[0] == 'description': return getDescription()
         return None
 
-    def getName(self):
+    def name(self):
         """Return name of system."""
         return self._config['name'] #if 'name' in self._config else ''
 

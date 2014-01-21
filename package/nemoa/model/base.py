@@ -28,7 +28,7 @@ class model:
 
         # update model name
         self.setName(kwargs['name'] if 'name' in kwargs else None)
-        nemoa.log('info', """
+        nemoa.log("""
             linking dataset, network and system instances to model""")
 
         self.dataset = dataset
@@ -82,18 +82,18 @@ class model:
 
         # set name of model
         if not 'name' in self.__config or not self.__config['name']:
-            if not self.network.getName():
+            if not self.network.name():
                 self.setName('%s-%s' % (
-                    self.dataset.getName(), self.system.getName()))
+                    self.dataset.name(), self.system.name()))
             else:
                 self.setName('%s-%s-%s' % (
-                    self.dataset.getName(), self.network.getName(),
-                    self.system.getName()))
+                    self.dataset.name(), self.network.name(),
+                    self.system.name()))
         return True
 
     def configure(self):
         """Configure model."""
-        nemoa.log('info', 'configure model \'%s\'' % (self.getName()))
+        nemoa.log('configure model \'%s\'' % (self.name()))
         nemoa.setLog(indent = '+1')
         if not 'check' in self.__config:
             self.__config['check'] = {'dataset': False,
@@ -153,13 +153,13 @@ class model:
 
         # check dataset
         if not nemoa.type.isDataset(self.dataset):
-            nemoa.log("error", """could not initialize model parameters:
+            nemoa.log('error', """could not initialize model parameters:
                 dataset is not yet configured!""")
             return False
 
         # check system
         if not nemoa.type.isSystem(self.system):
-            nemoa.log("error", """could not initialize model parameters:
+            nemoa.log('error', """could not initialize model parameters:
                 system is not yet configured!""")
             return False
         elif self.system.isEmpty():
@@ -178,7 +178,7 @@ class model:
 
         #2DO: just check if system is initialized
 
-        nemoa.log('title', 'optimize model')
+        nemoa.log('optimize model')
         nemoa.setLog(indent = '+1')
 
         # check if model is empty
@@ -199,7 +199,7 @@ class model:
         # get optimization schedule
         schedule = nemoa.workspace.getConfig(
             type = 'schedule', config = schedule,
-            merge = ['params', self.system.getName()],
+            merge = ['params', self.system.name()],
             **kwargs)
         if not schedule:
             nemoa.log('error', """
@@ -209,7 +209,7 @@ class model:
             return self
         
         # optimization of system parameters
-        nemoa.log('info', """
+        nemoa.log("""
             starting optimization schedule: '%s'
             """ % (schedule['name']))
         nemoa.setLog(indent = '+1')
@@ -343,73 +343,30 @@ class model:
         """Return link to system instance."""
         return self.system
 
-    #def __confSystem(self, dataset = None, network = None, system = None,  **kwargs):
-        #"""Configure model.system to given dataset, network and system.
-
-        #Keyword Arguments:
-            #dataset -- nemoa dataset instance
-            #network -- nemoa network instance
-            #system -- nemoa system instance
-        #"""
-
-        ## get current system parameters
-        #if nemoa.type.isSystem(system) and nemoa.type.isSystem(self.system):
-            #prevModelParams = self.system._get()
-        #else:
-            #prevModelParams = None
-
-        ## link system instance
-        #if nemoa.type.isSystem(system):
-            #self.system = system
-        
-        ## verify system instance
-        #if not nemoa.type.isSystem(self.system): nemoa.log('error',
-            #'could not configure system: no system instance available!')
-            #return False
-
-        ## verify dataset instance
-        #if not (nemoa.type.isDataset(self.dataset) or nemoa.type.isDataset(dataset)):
-            #nemoa.log('error', 'could not configure system: no dataset instance available!')
-            #return False
-        #elif not nemoa.type.isDataset(dataset): dataset = self.dataset
-
-        ## verify network instance
-        #if not (nemoa.type.isNetwork(self.network) or nemoa.type.isNetwork(network)):
-            #nemoa.log('error', 'could not configure system: no network instance available!')
-            #return False
-        #elif not nemoa.type.isNetwork(network): network = self.network
-
-        ## configure system
-        #if not self.system.configure(network = network, dataset = dataset):
-            #return False
-
-        ## overwrite new model parameters with previous
-        #if prevModelParams:
-            #nemoa.log('info', 'get model parameters from previous model')
-            #self.system._overwrite_conf(**modelParams)
-            ##2DO create new entry in actual branch
-        #else:
-            #self.__config['branches']['main'] = self.system._get()
-
-        #return True
-
     ####################################################################
     # Scalar model evaluation functions                                #
     ####################################################################
 
-    def getPerformance(self):
+    def performance(self):
         """Return euclidean data reconstruction performance of system."""
         dataIn = self.system.getMapping()[0]
         dataOut = self.system.getMapping()[-1]
         data = self.dataset.getData(cols = (dataIn, dataOut))
         return self.system.getPerformance(data)
 
-    def getError(self):
+    def error(self):
         """Return data reconstruction error of system."""
         dataIn = self.system.getMapping()[0]
         dataOut = self.system.getMapping()[-1]
         data = self.dataset.getData(cols = (dataIn, dataOut))
         return self.system.getError(data)
+
+    def meanError(self):
+        """Return mean data reconstruction error of output units."""
+        dataIn = self.system.getMapping()[0]
+        dataOut = self.system.getMapping()[-1]
+        data = self.dataset.getData(cols = (dataIn, dataOut))
+        return self.system.getMeanError(data)
 
     ####################################################################
     # Evaluation of unit relations                                     #
@@ -430,7 +387,7 @@ class model:
         # parse relation
         reType = re.search('\Acorrelation|causality', relation.lower())
         if not reType:
-            nemoa.log("warning", "unknown unit relation '" + relation + "'!")
+            nemoa.log('warning', "unknown unit relation '" + relation + "'!")
             return None
         type = reType.group()
 
@@ -470,13 +427,13 @@ class model:
     ##
 
     #def findRelatedSampleGroups(self, **params):
-        #nemoa.log("info", "find related sample groups in dataset:")
+        #nemoa.log("find related sample groups in dataset:")
 
         #partition = self.dataset.createRowPartition(**params)
         #return self.dataset.getRowPartition(partition)
 
     #def createBranches(self, modify, method, **params):
-        #nemoa.log("info", 'create model branches:')
+        #nemoa.log('create model branches:')
         
         #if modify == 'dataset':
             #if method == 'filter':
@@ -505,7 +462,7 @@ class model:
                     ## save system params in branch
                     #self.__config['branches'][branch] = self.system._get()
 
-                    #nemoa.log("info", "add model branch: '" + branch + "'")
+                    #nemoa.log("add model branch: '" + branch + "'")
 
                 ## reset system params to main branch
                 #self.system._set(**mainParams)
@@ -513,108 +470,6 @@ class model:
                 #return True
 
         #return False
-
-    ##
-    ## RELATIONS BETWEEN SAMPLES
-    ##
-
-    #def getSampleMeasure(self, data, func = None):
-
-        #if not func or func == 'plain':
-            #return data
-
-        #return self.system.getSampleMeasure(data, func)
-
-    #def getSampleRelationInfo(self, relation):
-
-        #rel  = {}
-        #list = relation.lower().split('_')
-
-        ## get relation type
-        #reType = re.search('\Adistance|correlation', relation.lower())
-        #if reType:
-            #rel['type'] = reType.group()
-        #else:
-            #rel['type'] = None
-            #nemoa.log("warning", "unknown sample relation '" + relation + "'!")
-
-        ## get relation params and info
-        #rel['params'] = {}
-        #rel['properties'] = {}
-        #if rel['type'] == 'correlation':
-            #rel['properties']['symmetric'] = True
-            #if len(list) > 1:
-                #rel['params']['func'] = list[1]
-        #elif rel['type'] == 'distance':
-            #rel['properties']['symmetric'] = False
-            #if len(list) > 1:
-                #rel['params']['distfunc'] = list[1]
-            #if len(list) > 2:
-                #rel['params']['func'] = list[2]
-
-        #return rel
-
-    #def getSampleRelationMatrix(self, samples = '*', relation = 'distance_euclidean_hexpect'):
-
-        #rel = self.getSampleRelationInfo(relation)
-
-        #if rel['type'] == 'correlation':
-            #return self.getSampleCorrelationMatrix(**rel['params'])
-        #if rel['type'] == 'distance':
-            #return self.getSampleDistanceMatrix(samples, **rel['params'])
-
-        #return None
-
-    #def getSampleRelationMatrixMuSigma(self, matrix, relation):
-
-        #rel = self.getSampleRelationInfo(relation)
-
-        #numRelations = matrix.size
-        #numUnits = matrix.shape[0]
-
-        ### TODO: correlation vs causality effect
-
-        ## create temporary array which does not contain diag entries
-        #A = numpy.zeros((numRelations - numUnits))
-        #k = 0
-        #for i in range(numUnits):
-            #for j in range(numUnits):
-                #if i == j:
-                    #continue
-                #A[k] = matrix[i, j]
-                #k += 1
-
-        #mu = numpy.mean(A)
-        #sigma = numpy.std(A)
-
-        #return mu, sigma
-
-    ## calculate correlation matrix
-    #def getSampleCorrelationMatrix(self, func = 'plain'):
-
-        ## get data
-        #data = self.getSampleMeasure(self.dataset.getData(), func = func)
-
-        ## calculate correlation matrix
-        #return numpy.corrcoef(data)
-
-    ## calculate sample distance matrix
-    #def getSampleDistanceMatrix(self, samples = '*', distfunc = 'euclidean', func = 'plain'):
-
-        ## get data
-        #data = self.getSampleMeasure(self.dataset.getData(), func = func)
-
-        ## calculate distance matrix
-        #D = numpy.zeros(shape = (data.shape[0], data.shape[0]))
-        #for i in range(D.shape[0]):
-            #for j in range(D.shape[1]):
-                #if i > j:
-                    #continue
-
-                #D[i, j] = numpy.sqrt(numpy.sum((data[i,:] - data[j,:]) ** 2))
-                #D[j, i] = D[i, j]
-
-        #return D
 
     #
     # SYSTEM EVALUATION
@@ -738,12 +593,12 @@ class model:
     def save(self, file = None):
         """Save model settings to file and return filepath."""
 
-        nemoa.log('title', 'save model to file')
+        nemoa.log('save model to file')
         nemoa.setLog(indent = '+1')
 
         # get filename
         if file == None:
-            fileName = '%s.mp' % (self.getName())
+            fileName = '%s.mp' % (self.name())
             filePath = nemoa.workspace.path('models')
             file = filePath + fileName
         file = nemoa.common.getEmptyFile(file)
@@ -752,17 +607,19 @@ class model:
         nemoa.common.dictToFile(self._get(), file)
 
         # create console message
-        nemoa.log('info', """
-            save model as: '%s'
-            """ % (os.path.basename(file)[:-3]))
+        nemoa.log("save model as: '%s'" % (os.path.basename(file)[:-3]))
 
         nemoa.setLog(indent = '-1')
         return file
 
+    def show(self, plot, **kwargs):
+        """Create plot of model with output to display."""
+        return self.plot(plot, output = 'show', **kwargs)
+
     def plot(self, plot, output = 'file', file = None, **kwargs):
         """Create plot of model."""
 
-        nemoa.log('title', 'create plot of model')
+        nemoa.log('create plot of model')
         nemoa.setLog(indent = '+1')
 
         # check if model is configured
@@ -772,7 +629,7 @@ class model:
             return False
 
         # get plot instance
-        nemoa.log('info', 'create plot instance')
+        nemoa.log('create plot instance')
         nemoa.setLog(indent = '+1')
 
         if isinstance(plot, str):
@@ -782,27 +639,23 @@ class model:
                 plotParams[param] = kwargs[param]
             objPlot = self.__getPlot(name = plotName, params = plotParams)
             if not objPlot:
-                nemoa.log("warning", "could not create plot: unknown configuration '%s'" % (plotName))
+                nemoa.log('warning', "could not create plot: unknown configuration '%s'" % (plotName))
                 nemoa.setLog(indent = '-1')
                 return None
-        elif isinstance(plot, dict):
-            objPlot = self.__getPlot(config = plot)
-        else:
-            objPlot = self.__getPlot()
-        if not objPlot:
-            return None
+        elif isinstance(plot, dict): objPlot = self.__getPlot(config = plot)
+        else: objPlot = self.__getPlot()
+        if not objPlot: return None
 
         # prepare filename
-        if output == 'display':
-            file = None
+        if output == 'display': file = None
         elif output == 'file' and not file:
             file = nemoa.common.getEmptyFile(nemoa.workspace.path('plots') + \
-                self.getName() + '/' + objPlot.cfg['name'] + \
+                self.name() + '/' + objPlot.cfg['name'] + \
                 '.' + objPlot.settings['fileformat'])
 
         # create plot
         retVal = objPlot.create(self, file = file)
-        nemoa.log('info', 'save plot: ' + file)
+        if not file == None: nemoa.log('save plot: ' + file)
         
         nemoa.setLog(indent = '-2')
         return retVal
@@ -831,7 +684,7 @@ class model:
     # Generic / static model information                               #
     ####################################################################
 
-    def getName(self):
+    def name(self):
         """Return name of model."""
         return self.__config['name'] if 'name' in self.__config else ''
 
@@ -890,7 +743,7 @@ class model:
         if args[0] == 'dataset': return self.dataset.about(*args[1:])
         if args[0] == 'network': return self.network.about(*args[1:])
         if args[0] == 'system':  return self.system.about(*args[1:])
-        if args[0] == 'name':    return self.getName()
+        if args[0] == 'name':    return self.name()
         return None
 
 #class empty(model):

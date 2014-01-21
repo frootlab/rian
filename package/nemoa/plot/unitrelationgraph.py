@@ -56,7 +56,7 @@ def plotUnitRelationGraph(model, file = None, **params):
     if settings['filter'] == None:
         M = np.ones((numUnits, numUnits), dtype = 'bool')
     else:
-        nemoa.log("info", "   calculate filter mask: %s > %.1f sigma" % \
+        nemoa.log("   calculate filter mask: %s > %.1f sigma" % \
             (settings['filter'], settings['threshold']))
 
         # get filter relation matrix
@@ -80,17 +80,17 @@ def plotUnitRelationGraph(model, file = None, **params):
         # info
         numFilter = np.sum(M)
         if numFilter == 0:
-            nemoa.log("warning", "   no relation passed filter")
+            nemoa.log('warning', "   no relation passed filter")
             return False
 
-        nemoa.log("info", "   %i relations passed filter (%.1f%%)" % \
+        nemoa.log("   %i relations passed filter (%.1f%%)" % \
             (numFilter, float(numFilter) / float(numRelations - numUnits) * 100))
 
     #
     # GET WEIGHTS
     #
 
-    nemoa.log("info", "   calculate edge weights: " + settings['relation'])
+    nemoa.log("   calculate edge weights: " + settings['relation'])
 
     # use filter results if relation and filter are the same
     if settings['relation'] == settings['filter']:
@@ -106,7 +106,7 @@ def plotUnitRelationGraph(model, file = None, **params):
 
     # normalize weights
     if np.max(W) == 0:
-        nemoa.log("warning", '   no weights > 0 found')
+        nemoa.log('warning', '   no weights > 0 found')
         return False
     else:
         W = W / np.max(W)
@@ -154,7 +154,7 @@ def plotUnitRelationGraph(model, file = None, **params):
     Gsub = nx.connected_component_subgraphs(G.to_undirected())
     numSub = len(Gsub)
     if numSub > 1:
-        nemoa.log("info", "   %i disconnected complexes found" % (numSub))
+        nemoa.log("   %i disconnected complexes found" % (numSub))
 
     for sub in range(numSub):
         for node in Gsub[sub].nodes():

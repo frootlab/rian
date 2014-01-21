@@ -9,7 +9,7 @@ def getEmptyFile(file):
 
     # create directory if not available
     if not os.path.exists(fDir):
-        nemoa.log('info', 'creating directory \'%s\'' % (fDir))
+        nemoa.log('creating directory \'%s\'' % (fDir))
         os.makedirs(fDir)
 
     # search unused filename

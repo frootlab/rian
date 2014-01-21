@@ -121,7 +121,7 @@ class network:
 
         # check if network instance is empty
         if self.isEmpty():
-            nemoa.log('info', 'configuration is not needed: network is \'empty\'')
+            nemoa.log('configuration is not needed: network is \'empty\'')
             return True
 
         # check if dataset instance is available
@@ -134,7 +134,7 @@ class network:
             nemoa.log('error', 'could not configure network: no valid system instance given!')
             return False
 
-        nemoa.log('info', 'configure network: \'%s\'' % (self.getName()))
+        nemoa.log('configure network: \'%s\'' % (self.name()))
         nemoa.setLog(indent = '+1')
 
         # type: 'auto is used for networks
@@ -168,7 +168,7 @@ class network:
         nemoa.setLog(indent = '-1')
         return True
 
-    def getName(self):
+    def name(self):
         """Return name of network (as string)."""
         return self.cfg['name'] if 'name' in self.cfg else ''
 
@@ -230,15 +230,15 @@ class network:
             if nodelist['type'] in self.cfg['layer']:
                 if layer == nodelist['type']:
                     if addNodes > 0:
-                        nemoa.log('info', 'adding %i nodes to layer: \'%s\'' % (addNodes, layer))
+                        nemoa.log('adding %i nodes to layer: \'%s\'' % (addNodes, layer))
                     if delNodes > 0:
-                        nemoa.log('info', 'deleting %i nodes from layer: \'%s\'' % (delNodes, layer))
+                        nemoa.log('deleting %i nodes from layer: \'%s\'' % (delNodes, layer))
             else:
                 if visible:
-                    nemoa.log('info', 'adding visible layer: \'' + layer + \
+                    nemoa.log('adding visible layer: \'' + layer + \
                         '\' (' + str(len(self.cfg['nodes'][layer])) + ' nodes)')
                 else:
-                    nemoa.log('info', 'adding hidden layer: \'' + layer + \
+                    nemoa.log('adding hidden layer: \'' + layer + \
                         '\' (' + str(len(self.cfg['nodes'][layer])) + ' nodes)')
             for layer_node_id, node in enumerate(self.cfg['nodes'][layer]):
                 id = layer + ':' + node
@@ -339,7 +339,7 @@ class network:
         # get groups of specific node type 
         if type:
             if not type in self.cfg:
-                nemoa.log("warning", "unknown node type '" + str(type) + "'!")
+                nemoa.log('warning', "unknown node type '" + str(type) + "'!")
                 return None
             
             groups = {}
@@ -456,14 +456,14 @@ class network:
 
     def save_graph(self, file = None, format = 'gml'):
         if file == None:
-            nemoa.log("critical", "no save path was given")
+            nemoa.log('critical', "no save path was given")
             
         # create path if not available
         if not os.path.exists(os.path.dirname(file)):
             os.makedirs(os.path.dirname(file))
 
         # everythink seems to be fine
-        # nemoa.log("info", "saving graph to %s" % (file))
+        # nemoa.log("saving graph to %s" % (file))
         
         if format == 'gml':
             G = self.graph.copy()

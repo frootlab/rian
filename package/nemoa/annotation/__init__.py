@@ -21,7 +21,7 @@ def convert(list, input, output = None, filter = False, quiet = True):
         inputClass  = input.lower().split(':')[0].strip()
         inputFormat = input.lower().split(':')[1].strip()
     else:
-        nemoa.log("warning", 'could not convert list: unknown input format "' + input + '"!')
+        nemoa.log('warning', 'could not convert list: unknown input format "' + input + '"!')
         return None
 
     # 'output'
@@ -40,7 +40,7 @@ def convert(list, input, output = None, filter = False, quiet = True):
 
     # 'input' vs 'output'
     if inputClass != outputClass:
-        nemoa.log("warning", '"' + inputClass + '" can not be converted to "' + outputClass + '"')
+        nemoa.log('warning', '"' + inputClass + '" can not be converted to "' + outputClass + '"')
         return None
 
     # trivial cases

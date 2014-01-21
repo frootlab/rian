@@ -7,7 +7,7 @@ def report(self, model, file, **params):
     
     # check object class
     if not model.__class__.__name__ == 'mp_model':
-        nemoa.log("error", "could not create table: 'model' has to be mp_model instance!")
+        nemoa.log('error', "could not create table: 'model' has to be mp_model instance!")
         return False
     
     # set default settings

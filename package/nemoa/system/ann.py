@@ -47,7 +47,7 @@ class ann(nemoa.system.base.system):
     def _setNetwork(self, network, update = False, *args, **kwargs):
         """Update units and links to network instance."""
         nemoa.log("""get system units and links from network '%s'
-            """ % (network.getName()))
+            """ % (network.name()))
         nemoa.setLog(indent = '+1')
 
         if not nemoa.type.isNetwork(network):
@@ -336,7 +336,7 @@ class ann(nemoa.system.base.system):
 
     def getMeanError(self, data, *args, **kwargs):
         """Return mean reconstruction error of output units."""
-        return numpy.mean(self.getUnitError(data, *args, **kwargs))
+        return numpy.mean(self.getUnitMeanError(data, *args, **kwargs))
 
     def getPerformance(self, data, *args, **kwargs):
         """Return mean reconstruction performance output units."""
@@ -634,6 +634,26 @@ class ann(nemoa.system.base.system):
             for i in block: dataInCopy[:,i] = numpy.mean(dataInCopy[:,i])
             modelOut = self.getUnitExpect(dataInCopy, mapping)
         return numpy.sqrt(((data[1] - modelOut) ** 2).sum(axis = 0))
+
+    def getUnitMeanError(self, data, mapping = None, block = None, **kwargs):
+        """Return mean reconstruction error of units.
+
+        Keyword Arguments:
+            data -- 2-tuple with numpy arrays containing input and
+                output data coresponding to the first and the last layer
+                in the mapping
+            mapping -- tuple of strings containing the mapping
+                from input layer (first argument of tuple)
+                to output layer (last argument of tuple)
+            block -- list of string containing labels of units in the input
+                layer that are blocked by setting the values to their means"""
+        if mapping == None: mapping = self.getMapping()
+        if block == None: modelOut = self.getUnitExpect(data[0], mapping)
+        else:
+            dataInCopy = numpy.copy(data[0])
+            for i in block: dataInCopy[:,i] = numpy.mean(dataInCopy[:,i])
+            modelOut = self.getUnitExpect(dataInCopy, mapping)
+        return numpy.mean(numpy.abs(data[1] - modelOut), axis = 0)
 
     def getUnitPerformance(self, data, *args, **kwargs):
         """Return unit reconstruction performance.

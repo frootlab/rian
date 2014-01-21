@@ -135,7 +135,7 @@ class config:
     def loadCommon(self):
         """Import common projects."""
 
-        nemoa.log('import common resources')
+        nemoa.log('import shared resources')
         nemoa.setLog(indent = '+1')
 
         # get current project
@@ -160,7 +160,7 @@ class config:
     def loadProject(self, project):
         """Import configuration files from user project."""
 
-        nemoa.log('import project configuration files')
+        nemoa.log('import private resources')
         nemoa.setLog(indent = '+1')
 
         # check if project exists
@@ -233,7 +233,7 @@ class config:
             return False
 
         # logger info
-        nemoa.log("info", "parsing configuration file: '" + configFile + "'")
+        nemoa.log("parsing configuration file: '" + configFile + "'")
         nemoa.setLog(indent = '+1')
 
         # import and register objects without testing
@@ -559,7 +559,7 @@ class config:
         # 2DO: REPAIR STAGES IN OPTIMIZATION!!!!!!
         #
         ####
-"""
+        """
         # create 'stage'
         if not 'stage' in conf or not conf['stage']:
             conf['stage'] = []
@@ -670,14 +670,11 @@ class config:
 
         return {'class': oClass, 'name': oName, 'project': oPrj, 'config':  oConf}
 
-    def get(self, type = None, name = None, merge = ['params'], params = None, id = None, quiet = False):
+    def get(self, type = None, name = None, merge = ['params'], params = None, id = None):
         """Return configuration as dictionary for given object."""
-        if not type in self.__store.keys():
-            nemoa.log('warning', """
-                could not get configuration:
-                object class '%s' is not known
-                """ % type, quiet = quiet)
-            return None
+        if not type in self.__store.keys(): return nemoa.log('warning', """
+            could not get configuration:
+            object class '%s' is not known """ % type)
 
         # search 'name' or 'id' in 'section' or take first entry
         cfg = None
@@ -688,12 +685,9 @@ class config:
                 cfg = self.__store[type][name].copy()
             elif 'base.' + name in self.__store[type].keys():
                 cfg = self.__store[type]['base.' + name].copy()
-            else:
-                nemoa.log('warning', """
-                    could not get configuration:
-                    no %s with name '%s' could be found
-                    """ % (type, name), quiet = quiet)
-                return None
+            else: return nemoa.log('warning', """
+                could not get configuration:
+                no %s with name '%s' could be found""" % (type, name))
 
         # get configuration from type and id
         elif id:
@@ -701,23 +695,15 @@ class config:
                 if not self.__store[type][name]['id'] == id:
                     continue
                 cfg = self.__store[type][name]
-            if cfg == None:
-                nemoa.log('warning', """
-                    could not get configuration:
-                    no %s with id %i could be found
-                    """ % (type, id))
-                return None
+            if cfg == None: return nemoa.log('warning', """
+                could not get configuration:
+                no %s with id %i could be found """ % (type, id))
         
         # could not identify configuration
-        else:
-            nemoa.log('warning', """
-                could not get configuration:
-                'id' or 'name' of object is needed
-                """)
-            return None
+        else: return nemoa.log('warning',
+            "could not get configuration: 'id' or 'name' of object is needed!")
 
-        if not cfg:
-            return None
+        if not cfg: return None
 
         # optionaly merge sub dictionaries
         # defined by a list of keys and a dictionary
@@ -756,21 +742,18 @@ class config:
         # create directory
         if create:
             dir = os.path.dirname(path)
-            if not os.path.exists(dir):
-                os.makedirs(dir)
+            if not os.path.exists(dir): os.makedirs(dir)
 
         # check path
-        if check and not os.path.exists(path):
-            nemoa.log('warning', "directory '%s' does not exist!" % (path))
-            return False
+        if check and not os.path.exists(path): return nemoa.log('warning',
+            "directory '%s' does not exist!" % (path))
 
         return path
 
     def __expandPath(self, path = ''):
         """Expand nemoa environment variables in string"""
 
-        replace = {
-            'project': self.__project }
+        replace = { 'project': self.__project }
 
         update = True
         while update:

@@ -139,7 +139,7 @@ class dbn(nemoa.system.ann.ann):
             linkCount = len(system.getLinks())
 
             nemoa.log("""adding subsystem: \'%s\' (%s units, %s links)
-                """ % (system.getName(), unitCount, linkCount))
+                """ % (system.name(), unitCount, linkCount))
 
             # link subsystem
             subSystems.append(system)
@@ -174,7 +174,7 @@ class dbn(nemoa.system.ann.ann):
         # optimize subsystems
         for sysID in range(len(subSystems)):
             nemoa.log('optimize subsystem %s (%s)' \
-                % (subSystems[sysID].getName(), subSystems[sysID].getType()))
+                % (subSystems[sysID].name(), subSystems[sysID].getType()))
             nemoa.setLog(indent = '+1')
 
             # link encoder and decoder system

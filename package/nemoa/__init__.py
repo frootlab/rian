@@ -21,7 +21,7 @@ def welcome():
 
 def version():
     """Return version as string."""
-    return '0.4.67noGPU-20140120'
+    return '0.4.68noGPU-20140121'
 
 def listProjects():
     """Return list of projects."""

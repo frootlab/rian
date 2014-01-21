@@ -30,7 +30,7 @@ class layerGraph(plot):
         if 'title' in self.settings:
             title = self.settings['title']
         else:
-            title = model.getName()
+            title = model.name()
 
         # use captions
         if self.settings['node_caption']:

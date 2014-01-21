@@ -75,7 +75,7 @@ class rbm(nemoa.system.ann.ann):
         if not self._isDatasetBinary(dataset):
             nemoa.log('error', """
                 dataset \'%s\' is not valid:
-                RBMs need binary data!""" % (dataset.getName()))
+                RBMs need binary data!""" % (dataset.name()))
             return False
         return True
 

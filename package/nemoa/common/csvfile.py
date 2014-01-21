@@ -50,7 +50,7 @@ def csvGetDelimiter(file, delimiters = [',', ';', '\t', ' ']):
         #formats = ('<U12',) + formats
     #dtype = {'names': names, 'formats': formats}
 
-    #nemoa.log('info', "import data from csv file: " + file)
+    #nemoa.log("import data from csv file: " + file)
 
     #try:
         ##data = numpy.genfromtxt(file, skiprows = 1, delimiter = delim,

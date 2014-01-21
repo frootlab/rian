@@ -40,7 +40,7 @@ class plot:
         
         return True
 
-    def getName(self):
+    def name(self):
         """
         Return name of plot
         """

@@ -19,7 +19,7 @@ def new():
     import nemoa.workspace.workspace
     return nemoa.workspace.workspace.workspace()
 
-def open(project, quiet = False):
+def open(project):
     """Return new workspace instance and open project."""
     import nemoa.workspace.workspace
     return nemoa.workspace.workspace.workspace(project)

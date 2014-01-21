@@ -9,26 +9,22 @@ class workspace:
     def __init__(self, project = None):
         """Initialize shared configuration."""
         nemoa.workspace.init()
-        if not project == None:
-            nemoa.workspace.loadProject(project)
+        if not project == None: nemoa.workspace.loadProject(project)
 
     def load(self, project):
         """Import configuration from project and update paths and logfile."""
         return nemoa.workspace.loadProject(project)
 
-    def project(self, *args, **kwargs):
-        """Return name of project."""
+    def name(self, *args, **kwargs):
+        """Return name of workspace."""
         return nemoa.workspace.project(*args, **kwargs)
 
     def list(self, type = None, namespace = None):
         """Return a list of known objects."""
         list = nemoa.workspace.list(type = type, namespace = namespace)
-        if not type:
-            listOfNames = ["%s (%s)" % (item[2], item[1]) for item in list]
-        elif type in ['model']:
-            listOfNames = list
-        else:
-            listOfNames = [item[2] for item in list]
+        if not type: listOfNames = list #["%s (%s)" % (item[2], item[1]) for item in list]
+        elif type in ['model']: listOfNames = list
+        else: listOfNames = [item[2] for item in list]
         return listOfNames
 
     def execute(self, name = None, **kwargs):
@@ -65,10 +61,6 @@ class workspace:
         """Return new system instance."""
         return self.__getInstance('system', config, **kwargs)
 
-    def loadModel(self, file):
-        """Load model from file."""
-        return self.__getModelInstanceFromFile(file)
-
     def model(self, config = None, name = None, **kwargs):
         """Return new model instance."""
 
@@ -79,6 +71,9 @@ class workspace:
         if not 'dataset' in kwargs \
             or not 'network' in kwargs \
             or not 'system' in kwargs:
+            if isinstance(config, str):
+                return self.importModelFromFile(config)
+
             nemoa.log('error', """
                 could not create model:
                 dataset, network and system parameters needed!""")
@@ -102,16 +97,9 @@ class workspace:
                 return None
             model.configure()
 
-        # initialize model parameters (optional)
+        # initialize model parameters (optional, default: True)
         if 'initialize' in kwargs \
             and kwargs['initialize'] == True: model.initialize()
-
-        # optimize model (optional)
-        if 'optimize' in kwargs \
-            and not kwargs['optimize'] == False: model.optimize(optimize)
-
-        # save model to file (optional)
-        if 'save' in kwargs and not kwargs['save']: model.save()
 
         nemoa.setLog(indent = '-1')
         return model
@@ -146,7 +134,7 @@ class workspace:
             nemoa.setLog(indent = '-1')
             return None
 
-        nemoa.log('name of %s is: \'%s\'' % (type, instance.getName()))
+        nemoa.log('name of %s is: \'%s\'' % (type, instance.name()))
         nemoa.setLog(indent = '-1')
         return instance
 
@@ -192,7 +180,7 @@ class workspace:
 
         # get name if not given via keyword argument
         if name == None:
-            name = '-'.join([dataset.getName(), network.getName(), system.getName()])
+            name = '-'.join([dataset.name(), network.name(), system.name()])
 
         # create model instance
         model = self.__getInstance(
@@ -202,7 +190,7 @@ class workspace:
         nemoa.setLog(indent = '-1')
         return model
 
-    def __getModelInstanceFromFile(self, file):
+    def importModelFromFile(self, file):
         """Return new model instance and set configuration and parameters from file."""
 
         nemoa.log('load model from file')
@@ -222,11 +210,11 @@ class workspace:
         modelDict = nemoa.common.dictFromFile(file)
 
         model = self.__getModelInstance(
-            config = modelDict['config'],
+            name    = modelDict['config']['name'],
+            config  = modelDict['config'],
             dataset = modelDict['dataset']['cfg'],
             network = modelDict['network']['cfg'],
-            system = modelDict['system']['config'],
-            name = modelDict['config']['name'])
+            system  = modelDict['system']['config'])
 
         if nemoa.type.isModel(model): model._set(modelDict)
         else: return None 
