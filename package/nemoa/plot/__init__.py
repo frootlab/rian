@@ -7,6 +7,7 @@ def new(*args, **kwargs):
     """Return new nemoa.plot.[package].[class] instance."""
     config = kwargs['config'] if 'config' in kwargs \
         else {'package': 'base', 'class': 'empty'}
+    if not 'package' in config: return None
     module = importlib.import_module('nemoa.plot.' + config['package'])
     if hasattr(module, config['class']):
         return getattr(module, config['class'])(*args, **kwargs)

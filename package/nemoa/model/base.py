@@ -64,21 +64,18 @@ class model:
 
     def __checkModel(self, allowNone = False):
         if (allowNone and self.dataset == None) \
-            or not nemoa.type.isDataset(self.dataset):
-            return False
+            or not nemoa.type.isDataset(self.dataset): return False
         if (allowNone and self.network == None) \
-            or not nemoa.type.isNetwork(self.network):
-            return False
+            or not nemoa.type.isNetwork(self.network): return False
         if (allowNone and self.system == None) \
-            or not nemoa.type.isSystem(self.system):
-            return False
+            or not nemoa.type.isSystem(self.system): return False
         return True
 
     def updateConfig(self):
         """Update model configuration."""
 
         # set version of model
-        self.__config['version'] = nemoa.version()
+        self.__config['version'] = nemoa.version
 
         # set name of model
         if not 'name' in self.__config or not self.__config['name']:

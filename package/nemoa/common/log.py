@@ -96,7 +96,8 @@ def log(*args):
     # format message
     msg = msg.strip().replace('\n', '')
     while '  ' in msg: msg = msg.replace('  ', ' ')
-    ttyMsg = '  ' * indent + msg if indent else msg
+    if mode == 'shell' or indent == 0: ttyMsg = msg
+    else: ttyMsg = '  ' * indent + msg
     fileMsg = clrName + ' -> ' + msg.strip()
 
     # create logging records (depending on loglevels)
@@ -133,7 +134,7 @@ def log(*args):
         if mode == 'debug': fileLog.error(fileMsg)
         return False
     if type == 'shellinfo':
-        if mode == 'shell': ttyLog.info(strip(ttyMsg))
+        if mode == 'shell': ttyLog.info(ttyMsg)
         return True
 
     # create logging records (depending on logger)

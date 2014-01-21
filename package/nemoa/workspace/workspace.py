@@ -29,7 +29,7 @@ class workspace:
 
     def execute(self, name = None, **kwargs):
         """Execute python script."""
-        scriptName = name if '.' in name else '%s.%s' % (self.project(), name)
+        scriptName = name if '.' in name else '%s.%s' % (self.name(), name)
         config = nemoa.workspace.getConfig(
             type = 'script', config = scriptName, **kwargs)
         
@@ -106,12 +106,11 @@ class workspace:
 
     def __getInstance(self, type = None, config = None, empty = False, **kwargs):
         """Return new instance of given object type and configuration."""
-        nemoa.log('create %s %s instance' % \
-            ('empty' if empty else '', type))
+        nemoa.log('create%s %s instance' % (' empty' if empty else '', type))
         nemoa.setLog(indent = '+1')
 
         # import module
-        module = importlib.import_module("nemoa." + str(type))
+        module = importlib.import_module('nemoa.' + str(type))
 
         # get objects configuration as dictionary
         config = nemoa.workspace.getConfig(type = type, config = config, **kwargs)

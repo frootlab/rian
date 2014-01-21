@@ -1,14 +1,11 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import nemoa
-import numpy as np
-import networkx as nx
-import matplotlib
+
+import nemoa.plot.base, numpy, networkx, matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
-from nemoa.plot.base import plot
-
-class layerGraph(plot):
+class layerGraph(nemoa.plot.base.plot):
 
     def getSettings(self):
         return {
@@ -27,10 +24,8 @@ class layerGraph(plot):
     def create(self, model, file = None):
 
         # get title
-        if 'title' in self.settings:
-            title = self.settings['title']
-        else:
-            title = model.name()
+        if 'title' in self.settings: title = self.settings['title']
+        else: title = model.name()
 
         # use captions
         if self.settings['node_caption']:
@@ -88,14 +83,6 @@ class layerGraph(plot):
             isvisible = attr['params']['visible']
             label = attr['label']
 
-            #weight_sum = 0.0
-            #for (n1, n2, edge_attr) in G.edges(nbunch = [node], data = True):
-                #weight_sum += np.abs(G[n1][n2]['weight'])
-
-            #weight_sum = min(0.01 + 0.3 * weight_sum, 1)
-            ##c = 1 - weight_sum
-            #c = 0.5
-            #print isvisible
             color = {
                 True: {
                     'bg':   (0.27, 0.51, 0.70, 1.0),
@@ -106,7 +93,7 @@ class layerGraph(plot):
             }[isvisible]
 
             # draw node
-            nx.draw_networkx_nodes(
+            networkx.draw_networkx_nodes(
                 G, pos,
                 node_size  = graph_node_size,
                 linewidths = graphLineWidth,
@@ -116,8 +103,8 @@ class layerGraph(plot):
 
             # draw node label
             node_font_size = \
-                1.5 * graph_font_size / np.sqrt(max(len(node) - 1, 1))
-            nx.draw_networkx_labels(
+                1.5 * graph_font_size / numpy.sqrt(max(len(node) - 1, 1))
+            networkx.draw_networkx_labels(
                 G, pos,
                 font_size = node_font_size,
                 labels = {node: label},
@@ -126,9 +113,8 @@ class layerGraph(plot):
 
             # draw node caption
             if self.settings['node_caption'] and isvisible:
-                if not node in nodeCaption:
-                    continue 
-                nx.draw_networkx_labels(
+                if not node in nodeCaption: continue 
+                networkx.draw_networkx_labels(
                     G, pos_caption,
                     font_size = 0.75 * graph_font_size,
                     labels = {node: ' $' + '%d' % (100 * nodeCaption[node]) + '\%$'},
@@ -138,23 +124,20 @@ class layerGraph(plot):
         for (v, h) in G.edges():
 
             if self.settings['edge_weight'] == 'adjacency' \
-                or not self.settings['edge_color']:
-                color = 'black'
-            elif G[v][h]['weight'] < 0.0:
-                color = 'red'
-            else:
-                color = 'green'
+                or not self.settings['edge_color']: color = 'black'
+            elif G[v][h]['weight'] < 0.0: color = 'red'
+            else: color = 'green'
 
-            if np.abs(G[v][h]['weight']) > self.settings['edge_threshold']:
+            if numpy.abs(G[v][h]['weight']) > self.settings['edge_threshold']:
 
                 if self.settings['edge_color']:
-                    edgeLineWidth = np.abs(np.abs(G[v][h]['weight'])) \
+                    edgeLineWidth = numpy.abs(numpy.abs(G[v][h]['weight'])) \
                         * graphLineWidth * self.settings['edge_zoom']
                 else:
                     edgeLineWidth = graphLineWidth
 
                 # draw edges
-                nx.draw_networkx_edges(
+                networkx.draw_networkx_edges(
                     G, pos,
                     width = edgeLineWidth,
                     edgelist = [(v, h)],
@@ -165,8 +148,8 @@ class layerGraph(plot):
                 # draw edge labels
                 if self.settings['edge_caption'] != 'none' and self.settings['edge_weight'] != 'adjacency':
                     size = graph_font_size / 1.5
-                    label = ' $' + ('%.2g' % (np.abs(G[v][h]['weight']))) + '$'
-                    nx.draw_networkx_edge_labels(
+                    label = ' $' + ('%.2g' % (numpy.abs(G[v][h]['weight']))) + '$'
+                    networkx.draw_networkx_edge_labels(
                         G, pos,
                         edge_labels = {(v, h): label},
                         font_color = color,

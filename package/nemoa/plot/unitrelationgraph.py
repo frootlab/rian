@@ -1,10 +1,24 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 import nemoa
 
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib.patches import FancyArrowPatch, Circle
+
+class graph(nemoa.plot.base.plot):
+
+    def getSettings(self):
+        return {
+            'output': 'file',
+            'fileformat': 'pdf',
+            'dpi': 600,
+            'show_figure_caption': True,
+            'interpolation': 'nearest'
+        }
+
 
 def plotUnitRelationGraph(model, file = None, **params):
 

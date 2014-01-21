@@ -542,10 +542,8 @@ class system:
             try:
                 T = eval(params['transform'])
                 M = T
-            except:
-                nemoa.log('error', """
-                    could not transform unit relation matrix:
-                    invalid syntax!""")
+            except: nemoa.log('error',
+                "could not transform unit relation matrix: invalid syntax!")
 
         # create formated output
         if format == 'array': return M
