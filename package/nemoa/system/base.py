@@ -72,7 +72,9 @@ class system:
 
     def isConfigured(self):
         """Return configuration state of system."""
-        return self._isConfigured()
+        return self._config['check']['config'] \
+            and self._config['check']['network'] \
+            and self._config['check']['dataset']
 
     def setNetwork(self, *args, **kwargs):
         """Update units and links to network instance."""

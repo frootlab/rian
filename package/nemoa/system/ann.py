@@ -36,7 +36,7 @@ class ann(nemoa.system.base.system):
         self.setConfig(config)
         if not network == None: self._setNetwork(network, update)
         if not dataset == None: self._setDataset(dataset)
-        return self._isConfigured()
+        return self.isConfigured()
 
     def _updateUnitsAndLinks(self, *args, **kwargs):
         nemoa.log('update system units and links')
@@ -83,12 +83,6 @@ class ann(nemoa.system.base.system):
         self._config['check']['dataset'] = True
         return True
 
-    def _isConfigured(self):
-        """Return configuration state of ANN."""
-        return self._config['check']['config'] \
-            and self._config['check']['network'] \
-            and self._config['check']['dataset']
-
     def _checkParams(self, params):
         """Check if system parameter dictionary is valid."""
         return self._checkUnitParams(params) \
@@ -108,16 +102,17 @@ class ann(nemoa.system.base.system):
 
         Description:
             Initialize all unit and link parameters to dataset."""
+
         if not nemoa.type.isDataset(dataset): return nemoa.log('error',
             'could not initilize system: invalid dataset instance given!')
         return self._initUnits(dataset) and self._initLinks(dataset)
 
     # 2.1 Parameter Optimization
 
-    # 2.1.0 Generic Parameter Optimization Functions
+    # 2.1.0 Generic Parameter Functions
 
     def _optimizeGetValues(self, inputData):
-        """Forward pass (compute estimated values, from given input)"""
+        """Forward pass (compute estimated values, from given input)."""
 
         layers = self.getMapping()
         out = {}
@@ -129,8 +124,8 @@ class ann(nemoa.system.base.system):
                 out[layers[id - 1]], layers[id - 1:id + 1])
         return out
 
-    def _optimizeGetDeltas(self, outputData, out):
-        """Return weight delta from backpropagation of error"""
+    def getParamDeltas(self, outputData, out):
+        """Return weight delta from backpropagation of error."""
 
         layers = self.getMapping()
         delta = {}
@@ -147,8 +142,9 @@ class ann(nemoa.system.base.system):
                 self._params['links'][(id + 1, id + 2)]['W'].T) * grad
         return delta
 
-    def _optimizeUpdateParams(self, updates):
-        """Update parameters"""
+    def updateParams(self, updates):
+        """Update parameters from dictionary."""
+
         layers = self.getMapping()
         for id, layer in enumerate(layers[:-1]):
             src = layer
@@ -161,6 +157,8 @@ class ann(nemoa.system.base.system):
     # 2.1.1 Backpropagation of Error (BPROP) specific Functions
 
     def optimizeBProp(self, dataset, schedule):
+        """Optimize parameters using backpropagation."""
+
         nemoa.log('starting backpropagation')
         nemoa.setLog(indent = '+1')
 
@@ -183,18 +181,18 @@ class ann(nemoa.system.base.system):
             # Forward pass (Compute value estimations from given input)
             out = self._optimizeGetValues(data[0])
             # Backward pass (Compute deltas from backpropagation of error)
-            delta = self._optimizeGetDeltas(data[1], out)
+            delta = self.getParamDeltas(data[1], out)
             # Compute parameter updates
-            updates = self._optimizeGetBPropUpdates(out, delta)
+            updates = self.getParamUpdatesBProp(out, delta)
             # Update parameters
-            self._optimizeUpdateParams(updates)
+            self.updateParams(updates)
             # Trigger inspector
             inspector.trigger()
 
         nemoa.setLog(indent = '-1')
         return True
 
-    def _optimizeGetBPropUpdates(self, out, delta, rate = 0.1):
+    def getParamUpdatesBProp(self, out, delta, rate = 0.1):
         """Compute parameter update directions from weight deltas."""
 
         def getUpdate(grad, rate): return {
@@ -211,11 +209,14 @@ class ann(nemoa.system.base.system):
             links[(src, tgt)] = getUpdate(
                 self.annLinks.getUpdatesFromDelta(out[src],
                 delta[src, tgt]), rate)
+
         return {'units': units, 'links': links}
 
     # 2.1.2 Resilient Backpropagation (RPROP) specific Functions
 
     def optimizeRProp(self, dataset, schedule):
+        """Optimize parameters using resiliant backpropagation."""
+
         nemoa.log('starting resiliant backpropagation (Rprop)')
         nemoa.setLog(indent = '+1')
 
@@ -235,18 +236,18 @@ class ann(nemoa.system.base.system):
             # Forward pass (Compute value estimations from given input)
             out = self._optimizeGetValues(data[0])
             # Backward pass (Compute deltas from backpropagation of error)
-            delta = self._optimizeGetDeltas(data[1], out)
+            delta = self.getParamDeltas(data[1], out)
             # Compute updates
-            updates = self._optimizeGetRPropUpdates(out, delta, inspector)
+            updates = self.getParamUpdatesRProp(out, delta, inspector)
             # Update parameters
-            self._optimizeUpdateParams(updates)
+            self.updateParams(updates)
             # Trigger inspector
             inspector.trigger()
 
         nemoa.setLog(indent = '-1')
         return True
 
-    def _optimizeGetRPropUpdates(self, out, delta, inspector):
+    def getParamUpdatesRProp(self, out, delta, inspector):
 
         def getDict(dict, val): return {key: val * numpy.ones(
             shape = dict[key].shape) for key in dict.keys()}
