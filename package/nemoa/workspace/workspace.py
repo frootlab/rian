@@ -22,7 +22,7 @@ class workspace:
     def list(self, type = None, namespace = None):
         """Return a list of known objects."""
         list = nemoa.workspace.list(type = type, namespace = namespace)
-        if not type: listOfNames = list #["%s (%s)" % (item[2], item[1]) for item in list]
+        if not type: listOfNames = ["%s (%s)" % (item[2], item[1]) for item in list]
         elif type in ['model']: listOfNames = list
         else: listOfNames = [item[2] for item in list]
         return listOfNames
@@ -39,7 +39,7 @@ class workspace:
                 type = 'script', config = scriptName, **kwargs)
         if not config: return False
         if not os.path.isfile(config['path']): return nemoa.log('error', """
-            could not run script \'%s\': file \'%s\' not found!
+            could not run script '%s': file '%s' not found!
             """ % (scriptName, config['path']))
 
         script = imp.load_source('script', config['path'])
