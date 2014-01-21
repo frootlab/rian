@@ -36,8 +36,7 @@ class dataset:
 
         Keyword arguments:
             network -- nemoa network object
-            useCache -- shall data be cached
-        """
+            useCache -- shall data be cached"""
 
         nemoa.log('configure dataset: \'%s\'' % (self.getName()))
         nemoa.setLog(indent = '+1')
@@ -123,7 +122,7 @@ class dataset:
 
             # notify if any dataset columns could not be converted
             if convColLabelsLost:
-                nemoa.log("warning", 
+                nemoa.log('warning', 
                     "%i of %i dataset columns could not be converted! (logfile)"
                         % (len(convColLabelsLost), len(convColLabels)))
                 nemoa.log("logfile", ", ".join([convColLabels[i] \
@@ -149,7 +148,7 @@ class dataset:
 
                 # notify if any network nodes could not be found
                 if numLost:
-                    nemoa.log("warning", """
+                    nemoa.log('warning', """
                         %i of %i network nodes could not be found in
                         dataset source! (logfile)""" % (numLost, numAll))
                     for group in lostNodes:
@@ -264,8 +263,7 @@ class dataset:
             transform -- see algorithm in transformData
 
         Description:
-            Process stratification, normalization and transformation.
-        """
+            Process stratification, normalization and transformation."""
 
         nemoa.log('preprocessing data')
         nemoa.setLog(indent = '+1')
@@ -289,8 +287,7 @@ class dataset:
                     as defined in the configuration
                 'equal':
                     probabilities of sources are
-                    1 / number of sources
-        """
+                    1 / number of sources"""
         nemoa.log('stratify data using \'%s\'' % (algorithm))
 
         if algorithm.lower() in ['auto']:
@@ -307,8 +304,7 @@ class dataset:
         Keyword arguments:
             algorithm -- name of algorithm used for data normalization
                 'gauss':
-                    Gaussian normalization (aka z-transformation)
-        """
+                    Gaussian normalization (aka z-transformation)"""
 
         nemoa.log('normalize data using \'%s\'' % (algorithm))
 
@@ -349,8 +345,7 @@ class dataset:
                     Transform Gauss distributed values to distances in [0, 1]
             system -- nemoa system instance (nemoa object root class 'system')
                 used for model based transformation of data
-            mapping -- ...
-        """
+            mapping -- ..."""
 
         if not isinstance(algorithm, str): return False
 
@@ -454,8 +449,7 @@ class dataset:
                 'array': numpy array just containing data
                 'recarray': numpy record array
                 'cols': list with column names
-                'rows': list with row names
-        """
+                'rows': list with row names"""
 
         # Stratification and row filtering
         srcStack = ()
@@ -492,8 +486,7 @@ class dataset:
             size -- number of random choosen samples to return
                 default: value 0 returns all samples of given source
             rows -- string describing a row filter using wildcards
-                default: value '*' selects all rows
-        """
+                default: value '*' selects all rows"""
 
         # Check source
         if not isinstance(source, str) \
@@ -540,8 +533,7 @@ class dataset:
                     A fraction of every sample is forced to min or max
                     with equal possibility
             factor -- float in [0, 1] describing the strengt of the corruption
-                The influence of the parameter depends on the used algorithm
-        """
+                The influence of the parameter depends on the used algorithm"""
 
         if algorithm == None: return data
         elif algorithm == 'mn': return data * numpy.random.binomial(
@@ -651,7 +643,7 @@ class dataset:
 
     #def getRowFilter(self, name):
         #if not name in self.cfg['rowFilter']:
-            #nemoa.log("warning", "unknown row filter '" + name + "'!")
+            #nemoa.log('warning', "unknown row filter '" + name + "'!")
             #return []
         #return self.cfg['rowFilter'][name]
 
@@ -676,7 +668,7 @@ class dataset:
 
     #def addRowPartition(self, name, partition):
         #if name in self.cfg['rowPartitions']:
-            #nemoa.log("warning", "row partition '" + name + "' allready exists!")
+            #nemoa.log('warning', "row partition '" + name + "' allready exists!")
 
         ## create unique name for partition
         #partitionName = name
@@ -698,7 +690,7 @@ class dataset:
 
     #def getRowPartition(self, name):
         #if not name in self.cfg['rowPartitions']:
-            #nemoa.log("warning", "unknown row partition '" + name + "'!")
+            #nemoa.log('warning', "unknown row partition '" + name + "'!")
             #return []
         #return self.cfg['rowPartitions'][name]
 
@@ -709,7 +701,7 @@ class dataset:
         #if algorithm == 'bcca':
             #partition = self.getBccaPartition(**params)
         #else:
-            #nemoa.log("warning", "unknown partition function '%s'")
+            #nemoa.log('warning', "unknown partition function '%s'")
 
         ## add partition
         #return self.addRowPartition(algorithm, partition)
@@ -722,7 +714,7 @@ class dataset:
         #if 'groups' in params:
             #groups = params['groups']
         #else:
-            #nemoa.log("warning", "parameter 'groups' is needed to create BCCA partition!")
+            #nemoa.log('warning', "parameter 'groups' is needed to create BCCA partition!")
             #return []
 
         ## get BCCA biclusters
@@ -757,7 +749,7 @@ class dataset:
         #if algorithm == 'k-means':
             #return self.getKMeansClusters(**params)
 
-        #nemoa.log("warning", "unsupported clustering algorithm '" + algorithm + "'!")
+        #nemoa.log('warning', "unsupported clustering algorithm '" + algorithm + "'!")
         #return None
 
     #def getKMeansClusters(self, data, k = 3):
@@ -771,7 +763,7 @@ class dataset:
         #if algorithm == 'bcca':
             #return getBccaBiclusters(**params)
 
-        #nemoa.log("warning", "unsupported biclustering algorithm '" + algorithm + "'!")
+        #nemoa.log('warning', "unsupported biclustering algorithm '" + algorithm + "'!")
         #return None
 
     #def getBccaBiclusters(self, **params):
@@ -868,7 +860,7 @@ class dataset:
         #elif type == 'correlation':
             #return self.getBiclusterCorrelationDistance(biclusters)
 
-        #nemoa.log("warning", "   unknown distance type '" + type + "'!")
+        #nemoa.log('warning', "   unknown distance type '" + type + "'!")
         #return None
 
     #def getBiclusterHammingDistance(self, biclusters):

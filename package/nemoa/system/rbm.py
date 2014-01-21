@@ -116,8 +116,7 @@ class rbm(nemoa.system.ann.ann):
         
         Options:
             k: number of full Gibbs sampling steps
-            m: number if iterations to calculate mean values
-        """
+            m: number if iterations to calculate mean values"""
         hData  = self.getUnitExpect(data, ('visible', 'hidden'))
         vModel = numpy.zeros(shape = data.shape)
         hModel = numpy.zeros(shape = hData.shape)
@@ -288,7 +287,7 @@ class rbm(nemoa.system.ann.ann):
             return {
                 'name': evalFuncs[func][0]}
         if not func in evalFuncs:
-            nemoa.log("warning", """
+            nemoa.log('warning', """
                 could not evaluate units:
                 unknown unit evaluation function '%s'
                 """ % (func))
@@ -313,8 +312,7 @@ class rbm(nemoa.system.ann.ann):
     def _getUnitEvalError(self, data, block = [], k = 1, **kwargs):
         """Return euclidean reconstruction error of units.
         
-        error := ||data - model||
-        """
+        error := ||data - model||"""
         return self.getUnitError(data, data,
             ('visible', 'hidden', 'visible'), block), None
 
@@ -322,8 +320,7 @@ class rbm(nemoa.system.ann.ann):
         """Return 'intrinsic performance' of units.
 
         'intrinsic performance' := relperf
-            where model(v) is generated with: data(u not v) = mean(data(u))
-        """
+            where model(v) is generated with: data(u not v) = mean(data(u))"""
         vSize = len(self.units['visible'].params['label'])
         relIntApprox = numpy.empty(vSize)
         for v in range(vSize):
@@ -337,8 +334,7 @@ class rbm(nemoa.system.ann.ann):
         """Return 'extrinsic performance' of units.
         
         'extrinsic performance' := relApprox
-            where model(v) is generated with data(v) = mean(data(v))
-        """
+            where model(v) is generated with data(v) = mean(data(v))"""
         relExtApprox = numpy.empty(len(self.units['visible'].params['label']))
         for v in range(len(self.units['visible'].params['label'])):
             relExtApprox[v] = self._getUnitEvalPerformance(
@@ -348,8 +344,7 @@ class rbm(nemoa.system.ann.ann):
     def _getUnitEvalRelativePerformance(self, data, **kwargs):
         """Return 'performance' of units.
         
-        'performance' := 1 - error / ||data - mean(data)||
-        """
+        'performance' := 1 - error / ||data - mean(data)||"""
         vErr = self._getUnitEvalError(data = data, **kwargs)[0]
         vNorm = numpy.sqrt(((data - numpy.mean(data, axis = 0)) ** 2).sum(axis = 0))
         return 1 - vErr  / vNorm, None
@@ -358,8 +353,7 @@ class rbm(nemoa.system.ann.ann):
         """Return 'intrinsic relative performance' of units
         
         'intrinsic relative performance' := relperf
-            where model(v) is generated with data(u not v) = mean(data(u))
-        """
+            where model(v) is generated with data(u not v) = mean(data(u))"""
         vSize = len(self.units['visible'].params['label'])
         relIntApprox = numpy.empty(vSize)
         for v in range(vSize):
@@ -372,8 +366,7 @@ class rbm(nemoa.system.ann.ann):
     def _getUnitEvalRelativeExtPerfomance(self, data, block = [], k = 1, **kwargs):
         """Return "performance (extrinsic)" of units.
 
-        extrelperf := relApprox where model(v) is generated with data(v) = mean(data(v))
-        """
+        extrelperf := relApprox where model(v) is generated with data(v) = mean(data(v))"""
         relExtApprox = numpy.empty(len(self.units['visible'].params['label']))
         for v in range(len(self.units['visible'].params['label'])):
             relExtApprox[v] = self._getUnitEvalRelativePerformance(
@@ -510,7 +503,7 @@ class rbm(nemoa.system.ann.ann):
     def _removeLinks(self, links = []):
         """Remove links from adjacency matrix using list of links."""
         if not self._checkParams(self._params): # check params
-            nemoa.log("error", """
+            nemoa.log('error', """
                 could not remove links:
                 units have not been set yet!""")
             return False
@@ -526,7 +519,7 @@ class rbm(nemoa.system.ann.ann):
                 del curLinks[curLinks.index((link[1], link[0]))]
                 found = True
             if not found:
-                nemoa.log("warning", """
+                nemoa.log('warning', """
                     could not delete link (%s → %s):
                     link could not be found!
                     """ % (link[0], link[1]))
@@ -547,7 +540,7 @@ class rbm(nemoa.system.ann.ann):
             return {
                 'name': evalFuncs[func][0]}
         if not func in evalFuncs:
-            nemoa.log("warning", """
+            nemoa.log('warning', """
                 could not evaluate units:
                 unknown link evaluation function '%s'
                 """ % (func))

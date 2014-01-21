@@ -122,8 +122,7 @@ class system:
         """Return tuple with lists of units that match a given property.
 
         Examples:
-            return visible units: getUnits(visible = True)
-        """
+            return visible units: getUnits(visible = True)"""
 
         filter = []
         for key in kwargs.keys():
@@ -181,8 +180,7 @@ class system:
             return visible groups:
                 getGroups(visible = True)
             search for group 'MyGroup':
-                getGroups(name = 'MyGroup')
-        """
+                getGroups(name = 'MyGroup')"""
 
         filter = []
         for key in kwargs.keys():
@@ -299,8 +297,7 @@ class system:
             dataset -- nemoa dataset instance
 
         Description:
-            Initialize all system parameters to dataset.
-        """
+            Initialize all system parameters to dataset."""
         if not nemoa.type.isDataset(dataset):
             nemoa.log('error', """
                 could not initilize system parameters:
@@ -315,7 +312,7 @@ class system:
     def setParams(self, params, update = True):
         """Set system parameters using from dictionary."""
         if not self._checkParams(params): # check parameter dictionary
-            nemoa.log("error", """
+            nemoa.log('error', """
                 could not set system parameters:
                 invalid 'params' dictionary given!""")
             return False
@@ -372,8 +369,7 @@ class system:
             (1) The network contains at least three layers
             (2) All layers of the network are not empty
             (3) The first and last layer of the network are visible,
-                all middle layers of the network are hidden
-        """
+                all middle layers of the network are hidden"""
         if not nemoa.type.isNetwork(network):
             nemoa.log('error', """
                 could not test network:
@@ -408,8 +404,7 @@ class system:
             (1) The network is MPL compatible
             (2) The network contains an odd number of layers
             (3) The hidden layers are symmetric to the central layer
-                related to their number of nodes
-        """
+                related to their number of nodes"""
         if not nemoa.type.isNetwork(network): return nemoa.log('error',
             'could not test network: invalid network instance given!')
         if not self._isNetworkMLPCompatible(network): return False
@@ -437,8 +432,7 @@ class system:
             dataset -- nemoa dataset instance
 
         Description:
-            Return True if a given dataset contains only binary data.
-        """
+            Return True if a given dataset contains only binary data."""
 
         if not nemoa.type.isDataset(dataset): return nemoa.log('error',
             'could not test dataset: invalid dataset instance given!')
@@ -463,8 +457,7 @@ class system:
             (1) The absolute mean value of a given number of random samples
                 of the dataset is below a given maximum (default 0.05)
             (2) The standard deviation of a given number of random samples
-                of the dataset is below a given maximum (default 1.05)
-        """
+                of the dataset is below a given maximum (default 1.05)"""
 
         if not nemoa.type.isDataset(dataset): return nemoa.log('error',
             'could not test dataset: invalid dataset instance given!')
@@ -664,8 +657,7 @@ class system:
 
         Keyword Arguments:
             mapping -- tuple of strings describing the mapping function
-            transform -- mapping algorithm
-        """
+            transform -- mapping algorithm"""
 
         if mapping == None: mapping = self.getMapping()
         if transform == 'expect': return self.getUnitExpect(data, mapping)
@@ -688,8 +680,7 @@ class system:
         Examples:
             about('units', 'measure', 'error')
                 Returns information about the "error" measurement
-                function of the systems units.
-        """
+                function of the systems units."""
         if args[0] in ['units', 'links']:
             if args[1] == 'method':
                 if args[0] == 'units': methods = self.getUnitMethods()

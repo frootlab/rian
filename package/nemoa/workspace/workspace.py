@@ -213,7 +213,7 @@ class workspace:
             if os.path.exists(
                 nemoa.workspace.path('models') + file + '.mp'):
                 file = nemoa.workspace.path('models') + file + '.mp'
-            else: return nemoa.log("error", """
+            else: return nemoa.log('error', """
                 could not load model '%s':
                 file does not exist.""" % file)
 

@@ -29,8 +29,7 @@ class ann(nemoa.system.base.system):
         Keyword Arguments:
             config -- dictionary containing system configuration
             network -- nemoa network instance
-            dataset -- nemoa dataset instance
-        """
+            dataset -- nemoa dataset instance"""
 
         if not 'check' in self._config: self._config['check'] = {
             'config': False, 'network': False, 'dataset': False}
@@ -108,8 +107,7 @@ class ann(nemoa.system.base.system):
             dataset -- nemoa dataset instance
 
         Description:
-            Initialize all unit and link parameters to dataset.
-        """
+            Initialize all unit and link parameters to dataset."""
         if not nemoa.type.isDataset(dataset): return nemoa.log('error',
             'could not initilize system: invalid dataset instance given!')
         return self._initUnits(dataset) and self._initLinks(dataset)
@@ -354,8 +352,7 @@ class ann(nemoa.system.base.system):
             dataset -- nemoa dataset instance OR None
 
         Description:
-            Initialize all unit parameters.
-        """
+            Initialize all unit parameters."""
         if not(dataset == None) and not nemoa.type.isDataset(dataset):
             return nemoa.log('error', """
                 could not initilize unit parameters:
@@ -524,8 +521,7 @@ class ann(nemoa.system.base.system):
                 to the input layer (first argument of mapping)
             mapping -- tuple of strings containing the mapping
                 from input layer (first argument of tuple)
-                to output layer (last argument of tuple)
-        """
+                to output layer (last argument of tuple)"""
         if mapping == None: mapping = self.getMapping()
         if block == None: inData = data
         else:
@@ -547,8 +543,7 @@ class ann(nemoa.system.base.system):
                 from input layer (first argument of tuple)
                 to output layer (last argument of tuple)
             expectLast -- return expectation values of the units
-                for the last step instead of sampled values
-        """
+                for the last step instead of sampled values"""
         if mapping == None: mapping = self.getMapping()
         if expectLast:
             if len(mapping) == 1:
@@ -580,8 +575,7 @@ class ann(nemoa.system.base.system):
                 from input layer (first argument of tuple)
                 to output layer (last argument of tuple)
             expectLast -- return expectation values of the units
-                for the last step instead of maximum likelihood values
-        """
+                for the last step instead of maximum likelihood values"""
         if mapping == None: mapping = self.getMapping()
         if block == None: inData = data
         else:
@@ -613,8 +607,7 @@ class ann(nemoa.system.base.system):
         Keyword Arguments:
             mapping -- tuple of strings containing the mapping
                 from input layer (first argument of tuple)
-                to output layer (last argument of tuple)
-        """
+                to output layer (last argument of tuple)"""
         if len(mapping) == 1: pass
         elif len(mapping) == 2: data = self.getUnitValues(data, mapping)
         else: data = self.getUnitValues(
@@ -632,8 +625,7 @@ class ann(nemoa.system.base.system):
                 from input layer (first argument of tuple)
                 to output layer (last argument of tuple)
             block -- list of string containing labels of units in the input
-                layer that are blocked by setting the values to their means
-        """
+                layer that are blocked by setting the values to their means"""
         if mapping == None: mapping = self.getMapping()
         if block == None: modelOut = self.getUnitExpect(data[0], mapping)
         else:
@@ -651,8 +643,7 @@ class ann(nemoa.system.base.system):
                 in the mapping
 
         Description:
-            performance := 1 - error / ||data||
-        """
+            performance := 1 - error / ||data||"""
         err = self.getUnitError(data, *args, **kwargs)
         nrm = numpy.sqrt((data[1] ** 2).sum(axis = 0))
         return 1.0 - err / nrm
@@ -685,8 +676,7 @@ class ann(nemoa.system.base.system):
             If dataset is None, initialize weights matrices with zeros
             and all adjacency matrices with ones.
             if dataset is nemoa network instance,
-            initialize weights with random values, that fit ....
-        """
+            initialize weights with random values, that fit ...."""
         if not(dataset == None) and \
             not nemoa.type.isDataset(dataset):
             nemoa.log('error', """
@@ -821,8 +811,7 @@ class ann(nemoa.system.base.system):
         
         Keyword Arguments:
             src -- name of source unit group
-            tgt -- name of target unit group
-        """
+            tgt -- name of target unit group"""
         mapping = tuple([g['name'] for g in self._params['units']])
         sid = mapping.index(src) \
             if isinstance(src, str) and src in mapping else 0
