@@ -528,9 +528,9 @@ class system:
         # get relation as numpy array
         if method == 'correlation': M = self.getUnitCorrelation(\
             units = units, data = data, **params)
-        elif method == 'causality': M = self.getUnitCausality(\
+        elif method == 'interaction': M = self.getUnitInteraction(\
             units = units, data = data, mapping = mapping, **params)
-        elif method == 'propagation': M = self.getUnitPropagation(\
+        elif method == 'knockout': M = self.getUnitKnockout(\
             units = units, data = data, mapping = mapping, **params)
         else: return nemoa.log('error',
             "could not evaluate unit relations: unknown relation '%s'" % (method))
@@ -571,7 +571,7 @@ class system:
 
         return C
 
-    def getUnitCausality(self, units, data = None, mapping = None,
+    def getUnitKnockout(self, units, data = None, mapping = None,
         modify = 'knockout', eval = 'error', **kwargs):
         """Return numpy array with data manipulation results.
 
@@ -586,7 +586,7 @@ class system:
             Manipulate unit values and measure effect on other units,
             respective to given data"""
 
-        # prepare causality matrix
+        # prepare knockout matrix
         if units == None: units = self.assertUnitTuple(units)
         K = numpy.zeros((len(units[0]), len(units[1])))
 
@@ -617,10 +617,10 @@ class system:
                 #self.unlinkUnit(kUnit)
                 #uUnlink = self.getUnitEval(func = measure, data = data)
                 #self.system.setLinks(links)
-            else: return nemoa.log('error', """could not create causality matrix:
+            else: return nemoa.log('error', """could not create knockout matrix:
                 unknown data manipulation function '%s'!""" % (modify))
 
-            # store difference in causality matrix
+            # store difference in knockout matrix
             for j, tgtUnit in enumerate(units[1]):
                 if srcUnit == tgtUnit:
                     continue
@@ -628,9 +628,9 @@ class system:
 
         return K
 
-    def getUnitPropagation(self, units, data = None, mapping = None,
+    def getUnitInteraction(self, units, data = None, mapping = None,
         modify = 'knockout', eval = 'values', **kwargs):
-        """Return data propagation matrix as numpy array."""
+        """Return unit interaction matrix as numpy array."""
         
         # create empty array
         M = numpy.empty(shape = (len(units[0]), len(units[1])))

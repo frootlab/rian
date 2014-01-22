@@ -382,7 +382,7 @@ class model:
     def getUnitRelationMatrixMuSigma(self, matrix, relation):
 
         # parse relation
-        reType = re.search('\Acorrelation|causality', relation.lower())
+        reType = re.search('\Acorrelation|knockout', relation.lower())
         if not reType:
             nemoa.log('warning', "unknown unit relation '" + relation + "'!")
             return None
@@ -404,7 +404,7 @@ class model:
         mu = numpy.mean(A)
         sigma = numpy.std(A)
 
-        if type == 'causality':
+        if type == 'knockout':
             Amax = numpy.max(A)
             Aabs = numpy.abs(A)
             Alist = []

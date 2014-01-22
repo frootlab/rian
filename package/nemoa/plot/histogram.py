@@ -88,7 +88,7 @@ class unitRelation(histogram):
     def getDefaults(self):
         return {
             'units': 'visible', 'x': None, 'y': None,
-            'relation': 'causality_relapprox_setmean',
+            'relation': 'knockout',
             'statistics': 100000 }
 
     def getData(self, model):

@@ -11,9 +11,9 @@ class layerGraph(nemoa.plot.base.plot):
         return {
             'output': 'file',
             'fileformat': 'pdf',
-            'dpi': 600,
+            'dpi': 300,
             'show_figure_caption': True,
-            'edge_caption': 'weights',
+            'edge_caption': None,
             'edge_threshold': 0.0,
             'edge_weight': None,
             'edge_color': False,
@@ -28,19 +28,23 @@ class layerGraph(nemoa.plot.base.plot):
         else: title = model.name()
 
         # use captions
-        if self.settings['node_caption']:
+        if not self.settings['node_caption'] == None:
 
-            # get node captions
+            # get and check node caption relation
             method = self.settings['node_caption']
-            nodeCaption = model.getUnitEval(eval = method)
-
-            # get model caption
             fPath = ('system', 'units', 'method', method)
-            fName = model.about(*(fPath + ('name', ))).title()
-            fFormat = model.about(*(fPath + ('format', )))
-            caption  = 'Average ' + fName + ': $\mathrm{%.1f' \
-                % (100 * float(sum([nodeCaption[u] \
-                for u in nodeCaption.keys()])) / len(nodeCaption)) + '\%}$'
+            fAbout = model.about(*(fPath + ('name', )))
+            
+            if hasattr(fAbout, 'title'):
+                fName = model.about(*(fPath + ('name', ))).title()
+                fFormat = model.about(*(fPath + ('format', )))
+                nodeCaption = model.getUnitEval(eval = method)
+                caption  = 'Average ' + fName + ': $\mathrm{%.1f' \
+                    % (100 * float(sum([nodeCaption[u] \
+                    for u in nodeCaption.keys()])) / len(nodeCaption)) + '\%}$'
+            else:
+                self.settings['node_caption'] = None
+                caption = None
 
         # get unit labels
         units = model.units()
@@ -133,8 +137,7 @@ class layerGraph(nemoa.plot.base.plot):
                 if self.settings['edge_color']:
                     edgeLineWidth = numpy.abs(numpy.abs(G[v][h]['weight'])) \
                         * graphLineWidth * self.settings['edge_zoom']
-                else:
-                    edgeLineWidth = graphLineWidth
+                else: edgeLineWidth = graphLineWidth
 
                 # draw edges
                 networkx.draw_networkx_edges(
@@ -146,7 +149,8 @@ class layerGraph(nemoa.plot.base.plot):
                     alpha = 1.0)
 
                 # draw edge labels
-                if self.settings['edge_caption'] != 'none' and self.settings['edge_weight'] != 'adjacency':
+                if not self.settings['edge_caption'] == None \
+                    and not self.settings['edge_weight'] == 'adjacency':
                     size = graph_font_size / 1.5
                     label = ' $' + ('%.2g' % (numpy.abs(G[v][h]['weight']))) + '$'
                     networkx.draw_networkx_edge_labels(
@@ -215,7 +219,7 @@ class weightGraph(layerGraph):
         return {
             'edge_threshold': 0.0,
             'edge_weight': 'weights',
-            'node_caption': 'relapprox',
+            'node_caption': None,
             'edge_caption': None }
     
     def getEdgeWeights(self, model):
