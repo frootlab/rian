@@ -681,19 +681,13 @@ class config:
 
         # get configuration from type and name
         if name:
-            if name in self.__store[type].keys():
-                cfg = self.__store[type][name].copy()
-            elif 'base.' + name in self.__store[type].keys():
-                cfg = self.__store[type]['base.' + name].copy()
-            else: return nemoa.log('warning', """
-                could not get configuration:
-                no %s with name '%s' could be found""" % (type, name))
+            if not name in self.__store[type].keys(): return False
+            cfg = self.__store[type][name].copy()
 
         # get configuration from type and id
         elif id:
             for name in self.__store[type].keys():
-                if not self.__store[type][name]['id'] == id:
-                    continue
+                if not self.__store[type][name]['id'] == id: continue
                 cfg = self.__store[type][name]
             if cfg == None: return nemoa.log('warning', """
                 could not get configuration:

@@ -31,6 +31,10 @@ class dataset:
         """Return true if dataset is empty."""
         return not 'name' in self.cfg or not self.cfg['name']
 
+    def isConfigured(self):
+        """Return true if dataset is configured."""
+        return len(self.data.keys()) > 0
+
     def configure(self, network, useCache = False, **kwargs):
         """Configure dataset to a given network object
 
@@ -64,8 +68,7 @@ class dataset:
         ################################################################
 
         # get nodes from network and convert to common format
-        if network.cfg['type'] == 'auto':
-            netGroups = {'v': None}
+        if network.cfg['type'] == 'auto': netGroups = {'v': None}
         else:
             # get grouped network node labels and label format
             netGroups = network.getNodeGroups(type = 'visible')
@@ -90,8 +93,7 @@ class dataset:
 
             # notify if any network node labels could not be converted
             if convNetNodesLost:
-                nemoa.log("""%s of %s network nodes
-                    could not be converted! (see logfile)"""
+                nemoa.log('%s of %s network nodes could not be converted! (see logfile)'
                     % (len(convNetNodesLost), len(convNetNodes)))
                 ## 2DO get original node labels for log file
                 nemoa.log('logfile', nemoa.common.strToList(convNetNodesLost))
@@ -101,8 +103,7 @@ class dataset:
         nemoa.log('configure data sources')
         nemoa.setLog(indent = '+1')
         for src in self.cfg['table']:
-            nemoa.log("""
-                configure '%s'""" % (src))
+            nemoa.log("configure '%s'" % (src))
             srcCnf = self.cfg['table'][src]
 
             # get column labels from csv-file

@@ -114,9 +114,8 @@ class workspace:
 
         # get objects configuration as dictionary
         config = nemoa.workspace.getConfig(type = type, config = config, **kwargs)
-        if config == None:
-            nemoa.log('error', """
-                could not create %s instance:
+        if not isinstance(config, dict):
+            nemoa.log('error', """could not create %s instance:
                 unknown configuration!""" % (type))
             nemoa.setLog(indent = '-1')
             return None
@@ -127,8 +126,7 @@ class workspace:
 
         # check instance class
         if not nemoa.type.isInstanceType(instance, type):
-            nemoa.log('error', """
-                could not create %s instance:
+            nemoa.log('error', """could not create %s instance:
                 invalid configuration!""" % (type))
             nemoa.setLog(indent = '-1')
             return None
