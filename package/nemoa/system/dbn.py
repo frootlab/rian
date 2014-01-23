@@ -173,7 +173,7 @@ class dbn(nemoa.system.ann.ann):
 
         # optimize subsystems
         for sysID in range(len(subSystems)):
-            nemoa.log('optimize subsystem %s (%s)' \
+            nemoa.log('note', 'optimize subsystem %s (%s)' \
                 % (subSystems[sysID].name(), subSystems[sysID].getType()))
             nemoa.setLog(indent = '+1')
 
@@ -189,9 +189,7 @@ class dbn(nemoa.system.ann.ann):
                 dataset.transformData(algorithm = 'system', system = prevSys,
                     mapping = mapping, transform = 'value')
 
-            # initialize system
-            # in higher layers 'initVisible' = False
-            # prevents the system from reinitialization
+            # initialize (free) system parameters
             system.initParams(dataset)
 
             # optimize (free) system parameter

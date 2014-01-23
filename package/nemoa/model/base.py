@@ -341,29 +341,31 @@ class model:
         return self.system
 
     ####################################################################
+    # Model interface to dataset instance                              #
+    ####################################################################
+
+    def getData(self, dataset = None, **kwargs):
+        """Return data from dataset."""
+        if not nemoa.type.isDataset(dataset): dataset = self.dataset
+        i = self.system.getMapping()[0]
+        o = self.system.getMapping()[-1]
+        return dataset.getData(cols = (i, o), **kwargs)
+
+    ####################################################################
     # Scalar model evaluation functions                                #
     ####################################################################
 
-    def performance(self):
+    def performance(self, dataset = None):
         """Return euclidean data reconstruction performance of system."""
-        dataIn = self.system.getMapping()[0]
-        dataOut = self.system.getMapping()[-1]
-        data = self.dataset.getData(cols = (dataIn, dataOut))
-        return self.system.getPerformance(data)
+        return self.system.getPerformance(self.getData(dataset = dataset))
 
-    def error(self):
+    def error(self, dataset = None):
         """Return data reconstruction error of system."""
-        dataIn = self.system.getMapping()[0]
-        dataOut = self.system.getMapping()[-1]
-        data = self.dataset.getData(cols = (dataIn, dataOut))
-        return self.system.getError(data)
+        return self.system.getError(self.getData(dataset = dataset))
 
-    def meanError(self):
+    def meanError(self, dataset = None):
         """Return mean data reconstruction error of output units."""
-        dataIn = self.system.getMapping()[0]
-        dataOut = self.system.getMapping()[-1]
-        data = self.dataset.getData(cols = (dataIn, dataOut))
-        return self.system.getMeanError(data)
+        return self.system.getMeanError(self.getData(dataset = dataset))
 
     ####################################################################
     # Evaluation of unit relations                                     #
@@ -379,45 +381,45 @@ class model:
         if isinstance(preprocessing, dict): self.dataset._set(datasetCopy)
         return relation
 
-    def getUnitRelationMatrixMuSigma(self, matrix, relation):
+    #def getUnitRelationMatrixMuSigma(self, matrix, relation):
 
-        # parse relation
-        reType = re.search('\Acorrelation|knockout', relation.lower())
-        if not reType:
-            nemoa.log('warning', "unknown unit relation '" + relation + "'!")
-            return None
-        type = reType.group()
+        ## parse relation
+        #reType = re.search('\Acorrelation|knockout', relation.lower())
+        #if not reType:
+            #nemoa.log('warning', "unknown unit relation '" + relation + "'!")
+            #return None
+        #type = reType.group()
 
-        numRelations = matrix.size
-        numUnits = matrix.shape[0]
+        #numRelations = matrix.size
+        #numUnits = matrix.shape[0]
 
-        # create temporary array which does not contain diag entries
-        A = numpy.zeros((numRelations - numUnits))
-        k = 0
-        for i in range(numUnits):
-            for j in range(numUnits):
-                if i == j:
-                    continue
-                A[k] = matrix[i, j]
-                k += 1
+        ## create temporary array which does not contain diag entries
+        #A = numpy.zeros((numRelations - numUnits))
+        #k = 0
+        #for i in range(numUnits):
+            #for j in range(numUnits):
+                #if i == j:
+                    #continue
+                #A[k] = matrix[i, j]
+                #k += 1
 
-        mu = numpy.mean(A)
-        sigma = numpy.std(A)
+        #mu = numpy.mean(A)
+        #sigma = numpy.std(A)
 
-        if type == 'knockout':
-            Amax = numpy.max(A)
-            Aabs = numpy.abs(A)
-            Alist = []
-            for i in range(Aabs.size):
-                if Aabs[i] > Amax:
-                    continue
-                Alist.append(Aabs[i])
-            A = numpy.array(Alist)
+        #if type == 'knockout':
+            #Amax = numpy.max(A)
+            #Aabs = numpy.abs(A)
+            #Alist = []
+            #for i in range(Aabs.size):
+                #if Aabs[i] > Amax:
+                    #continue
+                #Alist.append(Aabs[i])
+            #A = numpy.array(Alist)
 
-            mu = numpy.mean(A)
-            sigma = numpy.std(A)
+            #mu = numpy.mean(A)
+            #sigma = numpy.std(A)
 
-        return mu, sigma
+        #return mu, sigma
 
     ##
     ## MODEL PARAMETER HANDLING
@@ -468,15 +470,15 @@ class model:
 
         #return False
 
-    #
-    # SYSTEM EVALUATION
-    #
+    ##
+    ## SYSTEM EVALUATION
+    ##
 
-    def _getEval(self, data = None, statistics = 100000, **kwargs):
-        """Return dictionary with units and evaluation values."""
-        if data == None: # get data if not given
-            data = self.dataset.getData(statistics)
-        return self.system.getDataEval(data, **kwargs)
+    #def _getEval(self, data = None, statistics = 100000, **kwargs):
+        #"""Return dictionary with units and evaluation values."""
+        #if data == None: # get data if not given
+            #data = self.dataset.getData(statistics)
+        #return self.system.getDataEval(data, **kwargs)
 
     #
     # UNIT EVALUATION
@@ -484,9 +486,8 @@ class model:
 
     def getUnitEval(self, data = None, statistics = None, **kwargs):
         """Return dictionary with units and evaluation values."""
-        if data == None:
-            data = self.dataset.getData( size = statistics,
-                cols = self.groups(visible = True))
+        if data == None: data = self.dataset.getData(size = statistics,
+            cols = self.groups(visible = True))
         return self.system.getUnitEval(data, **kwargs)
 
     #
@@ -495,8 +496,7 @@ class model:
 
     def _getLinkEval(self, data= None, statistics = 10000, **kwargs):
         """Return dictionary with links and evaluation values."""
-        if data == None: # get data if not given
-            data = self.dataset.getData(statistics)
+        if data == None: data = self.dataset.getData(statistics)
         return self.system.getLinkEval(data, **kwargs)
 
     #
@@ -507,8 +507,7 @@ class model:
         k = 1, m = 1, statistics = 10000):
 
         # set default values to params if not set
-        if data == None:
-            data = self.dataset.getData(statistics)
+        if data == None: data = self.dataset.getData(statistics)
 
         vEval, hEval = self.system.getUnitEval(data, func, block, k, m)
         mEval = numpy.mean(vEval)
@@ -533,38 +532,24 @@ class model:
             'system': self.system._get() if hasattr(self.system, '_get') else None
         }
 
-        if not sec:
-            return dict
-        if sec in dict:
-            return dict[sec]
-
+        if not sec: return dict
+        if sec in dict: return dict[sec]
         return None
 
     def _set(self, dict):
-        """
-        set configuration, parameters and data of model from given dictionary
-        return true if no error occured
-        """
+        """Set configuration, parameters and data of model from given dictionary
+        return true if no error occured"""
 
         # get config from dict
         config = self.importConfigFromDict(dict)
 
         # check self
-        if not nemoa.type.isDataset(self.dataset):
-            nemoa.log('error', """
-                could not configure dataset:
-                model does not contain dataset instance!""")
-            return False
-        if not nemoa.type.isNetwork(self.network):
-            nemoa.log('error', """
-                could not configure network:
-                model does not contain network instance!""")
-            return False
-        if not nemoa.type.isSystem(self.system):
-            nemoa.log('error', """
-                could not configure system:
-                model does not contain system instance!""")
-            return False
+        if not nemoa.type.isDataset(self.dataset): return nemoa.log('error',
+            'could not configure dataset: model does not contain dataset instance!')
+        if not nemoa.type.isNetwork(self.network): return nemoa.log('error',
+            'could not configure network: model does not contain network instance!')
+        if not nemoa.type.isSystem(self.system): return nemoa.log('error',
+            'could not configure system: model does not contain system instance!')
 
         self.__config = config['config'].copy()
         self.network._set(**config['network'])
@@ -581,8 +566,7 @@ class model:
         self.system = nemoa.system.new(
             config  = config['system']['config'].copy(),
             network = self.network,
-            dataset = self.dataset
-        )
+            dataset = self.dataset )
         self.system._set(**config['system'])
 
         return self
@@ -664,17 +648,11 @@ class model:
         if not name and not config: return nemoa.plot.new()
 
         # get plot configuration
-        if name == None: cfgPlot = config.copy()
-        else: cfgPlot = nemoa.workspace.get( \
-            'plot', name = name, params = params)
-        if cfgPlot == None:
-            nemoa.log('error', """
-                could not create plot instance:
-                unkown plot-id '%s'""" % (name))
-            return None
-        for param in params.keys():
-            cfgPlot['params'][param] = params[param]
-
+        cfgPlot = config.copy() if name == None \
+            else nemoa.workspace.get('plot', name = name, params = params)
+        if cfgPlot == None: return nemoa.log('error',
+            "could not create plot instance: unkown plot-id '%s'" % (name))
+        for key in params.keys(): cfgPlot['params'][key] = params[key]
         return nemoa.plot.new(config = cfgPlot)
 
     ####################################################################
@@ -742,6 +720,3 @@ class model:
         if args[0] == 'system':  return self.system.about(*args[1:])
         if args[0] == 'name':    return self.name()
         return None
-
-#class empty(model):
-    #pass

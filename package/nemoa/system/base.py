@@ -140,19 +140,14 @@ class system:
                 if not group[key] == val:
                     valid = False
                     break
-            if valid:
-                groups += (group['label'], )
+            if valid: groups += (group['label'], )
         return groups
 
     def setUnits(self, units = None, initialize = True):
         """Set units and update system parameters."""
-        if not 'units' in self._params:
-            self._params['units'] = []
-        if not hasattr(self, 'units'):
-            self.units = {}
-        if initialize:
-            return self._setUnits(units) \
-                and self._initUnits()
+        if not 'units' in self._params: self._params['units'] = []
+        if not hasattr(self, 'units'): self.units = {}
+        if initialize: return self._setUnits(units) and self._initUnits()
         return self._setUnits(units)
 
     def getUnitInfo(self, *args, **kwargs):
@@ -195,8 +190,7 @@ class system:
                 if not group[key] == val:
                     valid = False
                     break
-            if valid:
-                groups += (group['name'], )
+            if valid: groups += (group['name'], )
         return groups
 
     def getGroupOfUnit(self, unit):
@@ -212,13 +206,10 @@ class system:
 
     def setLinks(self, links = None, initialize = True):
         """Set links using list with 2-tuples containing unit labels."""
-        if not 'links' in self._params:
-            self._params['links'] = {}
-        if not hasattr(self, 'links'):
-            self.links = {}
-        if initialize:
-            return self._setLinks(links) \
-                and self._indexLinks() and self._initLinks()
+        if not 'links' in self._params: self._params['links'] = {}
+        if not hasattr(self, 'links'): self.links = {}
+        if initialize: return self._setLinks(links) \
+            and self._indexLinks() and self._initLinks()
         return self._indexLinks()
 
     def getLinks(self, *args, **kwargs):
@@ -239,8 +230,7 @@ class system:
         srcGrp  = self.getGroupOfUnit(srcUnit)
         tgtGrp  = self.getGroupOfUnit(tgtUnit)
         if not srcGrp in self._links \
-            or not tgtGrp in self._links[srcGrp]['target']:
-            return None
+            or not tgtGrp in self._links[srcGrp]['target']: return None
         linkGrp = self._links[srcGrp]['target'][tgtGrp]
         srcID   = self.units[srcGrp].params['label'].index(srcUnit)
         tgtID   = self.units[tgtGrp].params['label'].index(tgtUnit)
@@ -255,38 +245,23 @@ class system:
     def getLinkEval(self, data, **kwargs):
         """Return dictionary with links and evaluation values."""
         return self._getLinkEval(data, **kwargs)
-        
-    
-    
-    
-        
-        
-        
-        
-        
-
 
     def _get(self, sec = None):
         """Return all system settings (config, params) as dictionary."""
         dict = {
             'config': copy.deepcopy(self._config),
             'params': copy.deepcopy(self._params) }
-        if not sec:
-            return dict
-        if sec in dict:
-            return dict[sec]
+        if not sec: return dict
+        if sec in dict: return dict[sec]
         return False
 
     def _set(self, **dict):
         """Set system settings (config, params) from dictionary."""
-        if 'config' in dict:
-            self._config = copy.deepcopy(dict['config'])
-            ## 2Do
-            ## IF the set command gets another package or class -> Error!
-        if 'params' in dict:
-            self._params = copy.deepcopy(dict['params'])
-        self._updateUnitsAndLinks()
-        return True
+        ## 2do!: if another package or class -> Error!
+
+        if 'config' in dict: self._config = copy.deepcopy(dict['config'])
+        if 'params' in dict: self._params = copy.deepcopy(dict['params'])
+        return self._updateUnitsAndLinks()
 
     ####################################################################
     # System parameter modification                                    #
@@ -300,11 +275,9 @@ class system:
 
         Description:
             Initialize all system parameters to dataset."""
-        if not nemoa.type.isDataset(dataset):
-            nemoa.log('error', """
-                could not initilize system parameters:
-                invalid dataset instance given!""")
-            return False
+        if not nemoa.type.isDataset(dataset): return nemoa.log('error',
+            """could not initilize system parameters:
+            invalid dataset instance given!""")
         return self._initParams(dataset)
 
     def getParams(self, *args, **kwargs):
@@ -313,15 +286,11 @@ class system:
 
     def setParams(self, params, update = True):
         """Set system parameters using from dictionary."""
-        if not self._checkParams(params): # check parameter dictionary
-            nemoa.log('error', """
-                could not set system parameters:
-                invalid 'params' dictionary given!""")
-            return False
-        if update:
-            self._setParams(params)
-        else: # without update just overwrite local params
-            self._params = copy.deepcopy(params)
+        if not self._checkParams(params): return nemoa.log('error',
+            """could not set system parameters:
+            invalid 'params' dictionary given!""")
+        if update: self._setParams(params)
+        else: self._params = copy.deepcopy(params)
         return True
 
     def resetParams(self, dataset):
@@ -333,12 +302,10 @@ class system:
 
         # check schedule
         if 'params' in schedule \
-            and not self.getType() in schedule['params']:
-            nemoa.log('error', """
-                could not optimize model:
-                optimization schedule '%s' does not include '%s'
-                """ % (schedule['name'], self.getType()))
-            return False
+            and not self.getType() in schedule['params']: return nemoa.log(
+            'error', """could not optimize model:
+            optimization schedule '%s' does not include '%s'
+            """ % (schedule['name'], self.getType()))
 
         # update local optimization schedule
         config = self.default('optimize')
@@ -350,8 +317,7 @@ class system:
         # check dataset
         if (not 'checkDataset' in config
             or config['checkDataset'] == True) \
-            and not self._checkDataset(dataset):
-            return False
+            and not self._checkDataset(dataset): return False
 
         # optimize system parameters
         return self._optimizeParams(dataset, schedule)
@@ -372,27 +338,18 @@ class system:
             (2) All layers of the network are not empty
             (3) The first and last layer of the network are visible,
                 all middle layers of the network are hidden"""
-        if not nemoa.type.isNetwork(network):
-            nemoa.log('error', """
-                could not test network:
-                invalid network instance given!""")
-            return False
-        if len(network.layers()) < 3:
-            nemoa.log('error', """
-                Multilayer networks need at least three layers!""")
-            return False
+        if not nemoa.type.isNetwork(network): return nemoa.log('error',
+            'could not test network: invalid network instance given!')
+        if len(network.layers()) < 3: return nemoa.log('error',
+            'Multilayer networks need at least three layers!')
         for layer in network.layers():
-            if not len(network.layer(layer)['nodes']) > 0:
-                nemoa.log('error',
-                    'Feedforward networks do not allow empty layers!')
-                return False
+            if not len(network.layer(layer)['nodes']) > 0: return nemoa.log(
+                'error', 'Feedforward networks do not allow empty layers!')
             if not network.layer(layer)['visible'] \
                 == (layer in [network.layers()[0], network.layers()[-1]]):
-                nemoa.log('error', """
-                    The first and the last layer
+                return nemoa.log('error', """The first and the last layer
                     of a multilayer feedforward network have to be visible,
                     middle layers have to be hidden!""")
-                return False
         return True
 
     def _isNetworkDBNCompatible(self, network = None):
@@ -440,7 +397,6 @@ class system:
             'could not test dataset: invalid dataset instance given!')
 
         data = dataset.getData()
-
         binary = ((data == data.astype(bool)).sum() == data.size)
 
         if not binary: return nemoa.log('error',
@@ -506,10 +462,8 @@ class system:
         elif isinstance(units[0], list) and isinstance(units[1], list):
             #2do: test if units are valid
             pass
-        else:
-            nemoa.log('error', """could not evaluate unit relations:
-                parameter units has invalid format!""")
-            return None    
+        else: return nemoa.log('error', """could not evaluate unit relations:
+            parameter units has invalid format!""")
 
         return units
     
@@ -542,8 +496,8 @@ class system:
             try:
                 T = eval(params['transform'])
                 M = T
-            except: nemoa.log('error',
-                "could not transform unit relation matrix: invalid syntax!")
+            except: return nemoa.log('error',
+                'could not transform unit relation matrix: invalid syntax!')
 
         # create formated output
         if format == 'array': return M
@@ -598,8 +552,7 @@ class system:
         default = self.getUnitEval(eval = eval, \
             data = data, mapping = mapping)
         estimation = (time.time() - tStart) * len(units[0])
-        nemoa.log(
-            'estimated duration: %.1fs' % (estimation))
+        nemoa.log('estimated duration: %.1fs' % (estimation))
 
         srcUnits = self.getUnits(group = mapping[0])[0]
 
@@ -622,8 +575,7 @@ class system:
 
             # store difference in knockout matrix
             for j, tgtUnit in enumerate(units[1]):
-                if srcUnit == tgtUnit:
-                    continue
+                if srcUnit == tgtUnit: continue
                 K[i,j] = modi[tgtUnit] - default[tgtUnit]
 
         return K
@@ -719,36 +671,16 @@ class empty(system):
             'description': 'dummy system',
             'name': 'empty' }
 
-    def isEmpty(self, *args, **kwargs):
-        """Return true if system is just a dummy."""
-        return True
-
-    def configure(self, *args, **kwargs):
-        return True
-
-    def setConfig(self, *args, **kwargs):
-        return True
-
-    def setNetwork(self, *args, **kwargs):
-        return True
-
-    def setDataset(self, *args, **kwargs):
-        return True
-
-    def _getUnitsFromNetwork(self, *args, **kwargs):
-        return True
-
-    def _getLinksFromNetwork(self, *args, **kwargs):
-        return True
-
-    def setUnits(self, *args, **kwargs):
-        return True
-
-    def setLinks(self, *args, **kwargs):
-        return True
-
-    def initParams(self, *args, **kwargs):
-        return True
+    def isEmpty(self, *args, **kwargs): return True
+    def configure(self, *args, **kwargs): return True
+    def setConfig(self, *args, **kwargs): return True
+    def setNetwork(self, *args, **kwargs): return True
+    def setDataset(self, *args, **kwargs): return True
+    def _getUnitsFromNetwork(self, *args, **kwargs): return True
+    def _getLinksFromNetwork(self, *args, **kwargs): return True
+    def setUnits(self, *args, **kwargs): return True
+    def setLinks(self, *args, **kwargs): return True
+    def initParams(self, *args, **kwargs): return True
 
 class inspector:
 
@@ -765,21 +697,13 @@ class inspector:
 
     def __configure(self, system):
         """Configure inspector to given nemoa.system instance."""
-        if not nemoa.type.isSystem(system):
-            nemoa.log('warning', """
-                could not configure inspector:
-                system is not valid!""")
-            return False
-        if not hasattr(system, '_config'):
-            nemoa.log('warning', """
-                could not configure inspector:
-                system contains no configuration!""")
-            return False
-        if not 'optimize' in system._config:
-            nemoa.log('warning', """
-                could not configure inspector:
-                system contains no configuration for optimization!""")
-            return False
+        if not nemoa.type.isSystem(system): return nemoa.log('warning',
+            'could not configure inspector: system is not valid!')
+        if not hasattr(system, '_config'): return nemoa.log('warning',
+            'could not configure inspector: system contains no configuration!')
+        if not 'optimize' in system._config: return nemoa.log('warning',
+            'could not configure inspector: system contains no configuration for optimization!')
+
         # link system
         self.__system = system
         self.__inspect = system._config['optimize']['inspect'] \
@@ -802,10 +726,8 @@ class inspector:
         if len(self.__store) == (abs(id) - 1) or append == True:
             self.__store.append(kwargs)
             return True
-        if len(self.__store) < id:
-            nemoa.log('error', """
-                could not write to store, wrong index!""")
-            return False
+        if len(self.__store) < id: return nemoa.log('error',
+            'could not write to store, wrong index!')
         self.__store[id] = kwargs
         return True
 
@@ -813,12 +735,9 @@ class inspector:
         return self.__store[id] if len(self.__store) >= abs(id) else {}
 
     def difference(self):
-        if not 'inspection' in self.__state:
-            return 0.0
-        if self.__state['inspection'] == None:
-            return 0.0
-        if self.__state['inspection'].shape[0] < 2:
-            return 0.0
+        if not 'inspection' in self.__state: return 0.0
+        if self.__state['inspection'] == None: return 0.0
+        if self.__state['inspection'].shape[0] < 2: return 0.0
         return self.__state['inspection'][-1, 1] - \
             self.__state['inspection'][-2, 1]
 
@@ -833,8 +752,7 @@ class inspector:
                 'startTime': epochTime,
                 'epoch': 0,
                 'inspection': None}
-            if self.__inspect:
-                self.__state['inspectTime'] = epochTime
+            if self.__inspect: self.__state['inspectTime'] = epochTime
             if self.__estimate:
                 self.__state['estimateStarted'] = False
                 self.__state['estimateEnded'] = False
@@ -886,9 +804,8 @@ class inspector:
                 if self.__state['inspection'] == None:
                     self.__state['inspection'] = \
                         numpy.array([[progress, value]])
-                else:
-                    self.__state['inspection'] = \
-                        numpy.vstack((self.__state['inspection'], \
-                        numpy.array([[progress, value]])))
+                else: self.__state['inspection'] = \
+                    numpy.vstack((self.__state['inspection'], \
+                    numpy.array([[progress, value]])))
 
         return True

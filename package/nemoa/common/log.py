@@ -108,6 +108,12 @@ def log(*args):
         if indent > 0 or mode == 'shell': ttyLog.info(ttyMsg)
         else: ttyLog.info(color['blue'] + ttyMsg + color['default'])
         return True
+    if type == 'note':
+        if mode == 'debug': fileLog.info(fileMsg)
+        if mode == 'silent': return True
+        if indent > 0 or mode == 'shell': ttyLog.info(ttyMsg)
+        else: ttyLog.info(color['blue'] + ttyMsg + color['default'])
+        return True
     if type == 'header':
         if mode == 'debug': fileLog.info(fileMsg)
         if mode == 'silent': return True
@@ -133,9 +139,6 @@ def log(*args):
     if type == 'debuginfo':
         if mode == 'debug': fileLog.error(fileMsg)
         return False
-    if type == 'shellinfo':
-        if mode == 'shell': ttyLog.info(ttyMsg)
-        return True
 
     # create logging records (depending on logger)
     if type == 'console':
