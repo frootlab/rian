@@ -7,7 +7,7 @@ import nemoa.workspace.config
 import nemoa.plot
 import nemoa.annotation
 
-__version = ['0.4.68', 'noGPU-20140121']
+__version = ['0.4.69', 'noGPU-20140127']
 
 def new(**kwargs):
     """Return workspace instance."""
