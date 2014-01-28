@@ -7,26 +7,25 @@ import nemoa.workspace.config
 import nemoa.plot
 import nemoa.annotation
 
-__version = ['0.4.69', 'noGPU-20140127']
+__version = ('0.4.70', 'noGPU-20140128')
+initLogger()
 
 def new(**kwargs):
-    """Return workspace instance."""
+    """Return new workspace instance."""
     return nemoa.workspace.new(**kwargs)
 
-def open(project, **kwargs):
-    """Return workspace instance."""
-    return nemoa.workspace.open(project, **kwargs)
+def open(workspace, **kwargs):
+    """Open and return workspace instance."""
+    return nemoa.workspace.open(workspace, **kwargs)
 
 def welcome():
-    """Print welcome message."""
-    return log('header', 'nemoa %s' % (__version[0] + __version[1]))
+    """Print welcome message to standard output."""
+    return log('header', 'nemoa ' + __version[0] + __version[1])
 
 def version():
-    """Return version as list."""
+    """Return version number and identifier string as tuple."""
     return __version
 
-def listProjects():
-    """Return list of projects."""
-    return nemoa.workspace.config.config().listProjects()
-
-initLogger()
+def workspaces():
+    """Return list of workspaces."""
+    return nemoa.workspace.config.config().listWorkspaces()

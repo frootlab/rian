@@ -28,15 +28,13 @@ class model:
 
         # update model name
         self.setName(kwargs['name'] if 'name' in kwargs else None)
-        nemoa.log("""
-            linking dataset, network and system instances to model""")
+        nemoa.log('linking dataset, network and system instances to model')
 
         self.dataset = dataset
         self.network = network
         self.system  = system
 
-        if not self.isEmpty() and self.__checkModel():
-            self.updateConfig()
+        if not self.isEmpty() and self.__checkModel(): self.updateConfig()
 
     def __setConfig(self, config):
         """Set configuration from dictionary."""
@@ -173,27 +171,24 @@ class model:
     def optimize(self, schedule = None, **kwargs):
         """Optimize system parameters."""
 
-        #2DO: just check if system is initialized
-
         nemoa.log('optimize model')
         nemoa.setLog(indent = '+1')
 
         # check if model is empty
         if self.isEmpty():
-            nemoa.log('warning', """
-                empty models can not be optimized!""")
+            nemoa.log('warning', "empty models can not be optimized!")
             nemoa.setLog(indent = '-1')
             return self
 
         # check if model is configured
         if not self.__isConfigured():
-            nemoa.log('error', """
-                could not optimize model:
-                model is not yet configured!""")
+            nemoa.log('error',
+                'could not optimize model: model is not yet configured!')
             nemoa.setLog(indent = '-1')
             return False
 
         # get optimization schedule
+        if schedule == None: schedule = self.system.name() + '.default'
         schedule = nemoa.workspace.getConfig(
             type = 'schedule', config = schedule,
             merge = ['params', self.system.name()],
@@ -206,9 +201,7 @@ class model:
             return self
         
         # optimization of system parameters
-        nemoa.log("""
-            starting optimization schedule: '%s'
-            """ % (schedule['name']))
+        nemoa.log("starting optimization schedule: '%s'" % (schedule['name']))
         nemoa.setLog(indent = '+1')
 
         # 2DO: find better solution for multistage optimization
@@ -641,19 +634,25 @@ class model:
         nemoa.setLog(indent = '-2')
         return retVal
 
-    def __getPlot(self, name = None, params = {}, config = {}, **options):
+    def __getPlot(self, name = None, params = None, config = None, **options):
         """Return new plot instance"""
 
         # return empty plot instance if no configuration information was given
         if not name and not config: return nemoa.plot.new()
 
         # get plot configuration
-        cfgPlot = config.copy() if name == None \
-            else nemoa.workspace.get('plot', name = name, params = params)
-        if cfgPlot == None: return nemoa.log('error',
-            "could not create plot instance: unkown plot-id '%s'" % (name))
-        for key in params.keys(): cfgPlot['params'][key] = params[key]
-        return nemoa.plot.new(config = cfgPlot)
+        if isinstance(name, str):
+            cfg = nemoa.workspace.get('plot', name = name, params = params)
+            if not isinstance(cfg, dict): return nemoa.log('error',
+            "could not create plot instance: unsupported plot '%s'" % (name))
+        elif isinstance(config, dict):
+            cfg = config
+
+        # overwrite config with given params
+        if isinstance(params, dict):
+            for key in params.keys(): cfg['params'][key] = params[key]
+
+        return nemoa.plot.new(config = cfg)
 
     ####################################################################
     # Generic / static model information                               #

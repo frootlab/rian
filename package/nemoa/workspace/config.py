@@ -88,12 +88,12 @@ class config:
                 self.__path[key] = self.getPath(
                     '%' + base + '%/' + self.__projectPath[key], create = allowWrite)
 
-    def listProjects(self):
-        return self.__listUserProjects()
+    def listWorkspaces(self):
+        """Return list of user workspaces."""
+        return self.__listUserWorkspaces()
 
-    def __listUserProjects(self):
-        """Return list of user projects."""
-
+    def __listUserWorkspaces(self):
+        """Return list of user workspaces."""
         projects = []
         prjDirs = self.__basepath['user'] + '*'
         
@@ -106,8 +106,7 @@ class config:
         return projects
 
     def __listCommonProjects(self):
-        """Return list of common projects."""
-
+        """Return list of shared workspaces."""
         projects = []
         prjDirs = self.__basepath['common'] + '*'
         for prjDir in glob.iglob(self.getPath(prjDirs)):
@@ -164,7 +163,7 @@ class config:
         nemoa.setLog(indent = '+1')
 
         # check if project exists
-        if not project in self.__listUserProjects():
+        if not project in self.__listUserWorkspaces():
             nemoa.log('warning', """
                 could not open project '%s':
                 project folder could not be found in '%s'!

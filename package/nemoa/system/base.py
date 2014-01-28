@@ -772,7 +772,7 @@ class inspector:
                     * config['updates'] * config['iterations'])
                 estimStr = time.strftime('%H:%M',
                     time.localtime(time.time() + estim))
-                nemoa.log('estimation: %ds (finishing time: %s)'
+                nemoa.log('note', 'estimation: %ds (finishing time: %s)'
                     % (estim, estimStr))
                 self.__state['estimateEnded'] = True
 

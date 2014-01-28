@@ -43,8 +43,8 @@ def main(argv):
     execute(project, script, kwargs)
 
 def projects():
-    """Print list of projects to standard output."""
-    print 'Projects: ' + ','.join(['%s' % (p) for p in nemoa.listProjects()])
+    """Print list of workspaces to standard output."""
+    print 'Projects: ' + ','.join(['%s' % (p) for p in nemoa.workspaces()])
 
 def scripts(project):
     """Print list of scripts to standard output."""
