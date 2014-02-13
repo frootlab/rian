@@ -63,7 +63,12 @@ def execute(project, script, kwargs):
     workspace.execute(name = script, arguments = kwargs)
 
 def interactive():
-    call(['ipython', 'nemoa.interactive.py', '-i'])
+    try:
+        call(['ipython', 'nemoa.interactive.py', '-i'])
+    except:
+        nemoa.log('error', """
+            could not start interactive nemoa shell:
+            you have to install ipython!""")
 
 def version(): print nemoa.version()
 
