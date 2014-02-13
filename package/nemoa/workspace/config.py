@@ -483,7 +483,7 @@ class config:
                 if srcObjConf['config']['type'] == 'file':
 
                     # update auto fraction
-                    srcObjConf['config']['source']['fraction'] = frac / len(srcList)
+                    srcObjConf['config']['fraction'] = frac / len(srcList)
 
                     # clean up and link config
                     srcObjConf['config'].pop('type')

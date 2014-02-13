@@ -291,13 +291,15 @@ class dataset:
                     1 / number of sources"""
         nemoa.log('stratify data using \'%s\'' % (algorithm))
 
-        if algorithm.lower() in ['auto']:
+        if algorithm.lower() in ['auto']: return True
+        if algorithm.lower() in ['none']:
+            for src in self.data: self.data[src]['fraction'] = None
             return True
         if algorithm.lower() in ['equal']:
             frac = 1.0 / float(len(self.data))
-            for src in self.data:
-                self.data[src]['fraction'] = frac
-        return True
+            for src in self.data: self.data[src]['fraction'] = frac
+            return True
+        return False
 
     def normalizeData(self, algorithm = 'gauss'):
         """Normalize stratified data
@@ -517,6 +519,7 @@ class dataset:
         # Stratify and return data as numpy record array
         if size == 0 or size == None: return srcArray
         srcFrac = self.data[source]['fraction']
+        if srcFrac == 1.0 or srcFrac == None: return srcArray
         rowSelect = numpy.random.randint(srcArray.size,
             size = round(srcFrac * size))
         return numpy.take(srcArray, rowSelect)
