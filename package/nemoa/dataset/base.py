@@ -292,8 +292,8 @@ class dataset:
         nemoa.log('stratify data using \'%s\'' % (algorithm))
 
         if algorithm.lower() in ['none']:
-			allSize = 0
-			for src in self.data: allSize += self.data[src]['array'].shape[0]
+            allSize = 0
+            for src in self.data: allSize += self.data[src]['array'].shape[0]
             for src in self.data: self.data[src]['fraction'] = \
                 float(allSize) / float(self.data[src]['array'].shape[0])
             return True
