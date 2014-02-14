@@ -7,7 +7,7 @@ import nemoa.workspace.config
 import nemoa.plot
 import nemoa.annotation
 
-__version = ('0.4.71', 'noGPU-20140214')
+__version = ('0.4.72', 'noGPU-20140214')
 initLogger()
 
 def new(**kwargs):
