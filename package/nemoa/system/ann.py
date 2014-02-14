@@ -384,8 +384,12 @@ class ann(nemoa.system.base.system):
         if not hasattr(self, method): return nemoa.log('error', """
             could not evaluate units: unsupported unit method '%s'""" % (method))
 
-        inFmt = methods[eval]['inDataFmt']
         params = kwargs
+
+        if mapping == None: mapping = self.getMapping()
+        params['mapping'] = mapping
+
+        inFmt = methods[eval]['inDataFmt']
         if   inFmt == 0: pass
         elif inFmt == 1: params['data'] = data[0]
         elif inFmt == 2: params['data'] = data[1]
@@ -394,7 +398,6 @@ class ann(nemoa.system.base.system):
             unsupported unit method '%s'""" % (method))
 
         values = getattr(self, method)(**params)
-        if mapping == None: mapping = self.getMapping()
         labels = self.getUnits(group = mapping[-1])[0]
 
         outFmt = methods[eval]['outDataFmt']
@@ -535,6 +538,46 @@ class ann(nemoa.system.base.system):
             outData = self.units[mapping[id + 1]].expect(
                 outData, self.units[mapping[id]].params)
         return outData
+
+    def getUnitMean(self, data, mapping = None, block = None, **kwargs):
+        """Return mean of reconstructed unit values.
+
+        Keyword Arguments:
+            data -- 2-tuple with numpy arrays containing input and
+                output data coresponding to the first and the last layer
+                in the mapping
+            mapping -- tuple of strings containing the mapping
+                from input layer (first argument of tuple)
+                to output layer (last argument of tuple)
+            block -- list of string containing labels of units in the input
+                layer that are blocked by setting the values to their means"""
+        if mapping == None: mapping = self.getMapping()
+        if block == None: modelOut = self.getUnitExpect(data[0], mapping)
+        else:
+            dataInCopy = numpy.copy(data[0])
+            for i in block: dataInCopy[:,i] = numpy.mean(dataInCopy[:,i])
+            modelOut = self.getUnitExpect(dataInCopy, mapping)
+        return modelOut.mean(axis = 0)
+
+    def getUnitVariance(self, data, mapping = None, block = None, **kwargs):
+        """Return variance of reconstructed unit values.
+
+        Keyword Arguments:
+            data -- 2-tuple with numpy arrays containing input and
+                output data coresponding to the first and the last layer
+                in the mapping
+            mapping -- tuple of strings containing the mapping
+                from input layer (first argument of tuple)
+                to output layer (last argument of tuple)
+            block -- list of string containing labels of units in the input
+                layer that are blocked by setting the values to their means"""
+        if mapping == None: mapping = self.getMapping()
+        if block == None: modelOut = self.getUnitExpect(data[0], mapping)
+        else:
+            dataInCopy = numpy.copy(data[0])
+            for i in block: dataInCopy[:,i] = numpy.mean(dataInCopy[:,i])
+            modelOut = self.getUnitExpect(dataInCopy, mapping)
+        return modelOut.var(axis = 0)
 
     def getUnitSamples(self, data, mapping = None, expectLast = False):
         """Return sampled unit values calculated from mapping.
@@ -872,6 +915,18 @@ class ann(nemoa.system.base.system):
                 'inDataFmt': 3,
                 'outDataFmt': 1,
                 'format': '%.1f'},
+            'mean': {
+                'name': 'data reconstruction mean values',
+                'method': 'getUnitMean',
+                'inDataFmt': 3,
+                'outDataFmt': 1,
+                'format': '%.3f'},
+            'variance': {
+                'name': 'data reconstruction variance',
+                'method': 'getUnitVariance',
+                'inDataFmt': 3,
+                'outDataFmt': 1,
+                'format': '%.3f'},
             'performance': {
                 'name': 'performance',
                 'method': 'getUnitPerformance',
