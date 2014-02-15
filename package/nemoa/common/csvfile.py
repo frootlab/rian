@@ -8,6 +8,8 @@ def csvGetColLabels(file, delim = None, type = None):
 
     # get delimiter
     if not delim: delim = csvGetDelimiter(file)
+    if not delim: return nemoa.log('error',
+        'could not get column labels: unknown delimiter!')
 
     # get first line
     with open(file, 'r') as f: firstline = f.readline()

@@ -42,7 +42,8 @@ class dataset:
             network -- nemoa network object
             useCache -- shall data be cached"""
 
-        nemoa.log('configure dataset: \'%s\'' % (self.name()))
+        nemoa.log("configure dataset '%s' to network '%s'" % \
+            (self.name(), network.name()))
         nemoa.setLog(indent = '+1')
 
         # load data from cachefile (if caching is used and cachefile exists)
@@ -112,6 +113,7 @@ class dataset:
             else: csvType = None
             origColLabels = nemoa.common.csvGetColLabels(
                 srcCnf['source']['file'], type = csvType)
+            if not origColLabels: continue
 
             # set annotation format
             format = srcCnf['source']['columns'] \
@@ -441,38 +443,63 @@ class dataset:
         return retVal[1][retVal[0].index(row)]
 
     def getData(self, size = 0, rows = '*', cols = '*',
-        output = 'array', corruption = None, corruptionFactor = 0.0):
+        corruption = (None, 0.0), output = 'array'):
         """Return a given number of stratified samples.
 
         Keyword Arguments:
-            size -- Number of samples
+            size -- Size of data (Number of samples)
                 default: value 0 returns all samples unstratified
-            rows -- string describing row filter
+            rows -- string describing row filter (row groups)
                 default: value '*' selects all rows
-            cols -- name of column group
+            cols -- string describing column filter (column group)
                 default: value '*' selects all columns
-            output -- tuple of strings describing data output. Supported strings:
+            corruption -- 2-tuple describing corruption
+                first entry of tuple: type of corruption
+                    None: no corruption
+                    'mn': Masking Noise
+                        A fraction of every sample is forced to zero
+                    'gs': Gaussian Noise
+                        Additive isotropic Gaussian noise
+                    'sp': Salt-and-pepper noise
+                        A fraction of every sample is forced to min or max
+                        with equal possibility
+                second entry of tuple: corruption factor
+                    float in interval [0.0, 1.0] describing the strengt
+                    of the corruption. The influence of the parameter
+                    depends on the corruption type
+                default: (None, 0.5)
+            fmt -- tuple of strings describing data output. Supported strings:
                 'array': numpy array just containing data
                 'recarray': numpy record array
                 'cols': list with column names
                 'rows': list with row names"""
 
-        # Stratification and row filtering
+        # Check Configuration and Keyword Arguments
+        if not self.isConfigured(): return nemoa.log('error',
+            'could not get data: dataset is not yet configured!')
+        if not isinstance(size, int) or size < 0: return nemoa.log(
+            'error', 'could not get data: invalid argument size!')
+
+        # Stratify and filter data
         srcStack = ()
         for source in self.data.keys():
-            srcData = self.getSingleSourceData(source,
-                size = size, rows = rows)
+            if size > 0: srcData = self.getSingleSourceData(source,
+                size = size + 1, rows = rows)
+            else: srcData = self.getSingleSourceData(source, rows = rows)
             if srcData == False or srcData.size == 0: continue
             srcStack += (srcData, )
         if not srcStack: return nemoa.log('error',
             'could not get data: no valid data sources found!')
         data = numpy.concatenate(srcStack)
-        if size: numpy.random.shuffle(data)
 
-        # Optionally corrupt data
-        # to improve stability in stochastical learning
-        if not corruption == None: data = \
-            getCorruptedData(data, algorithm = corruption, corruptionFactor = 0.5)
+        # Randomize data order and correct size (optionally)
+        if size:
+            numpy.random.shuffle(data)
+            data = data[:size]
+
+        # Corrupt data (optionally)
+        if not corruption[0] == None: data = \
+            getCorruptedData(data, algorithm = corruption[0], factor = corruption[1])
 
         # Format data
         if isinstance(cols, str): return self.getFormatedData(data,

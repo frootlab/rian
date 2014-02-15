@@ -163,6 +163,7 @@ class ann(nemoa.system.base.system):
         nemoa.setLog(indent = '+1')
 
         # get training data
+        config = self._config['optimize']
         layers = self.getMapping()
         inLayer = layers[0]
         outLayer = layers[-1]
@@ -176,8 +177,9 @@ class ann(nemoa.system.base.system):
         for epoch in xrange(self._config['optimize']['updates']):
 
             # Get data (sample from minibatches)
-            #if epoch % config['minibatchInterval'] == 0:
-            #    data = dataset.getData(size = config['minibatchSize'], cols = (inLayer, outLayer))
+            if epoch % config['minibatchInterval'] == 0:
+                data = dataset.getData(size = config['minibatchSize'],
+                    cols = (inLayer, outLayer))
             # Forward pass (Compute value estimations from given input)
             out = self._optimizeGetValues(data[0])
             # Backward pass (Compute deltas from backpropagation of error)
@@ -221,6 +223,7 @@ class ann(nemoa.system.base.system):
         nemoa.setLog(indent = '+1')
 
         # get training data
+        config = self._config['optimize']
         layers = self.getMapping()
         inLayer = layers[0]
         outLayer = layers[-1]
@@ -233,6 +236,10 @@ class ann(nemoa.system.base.system):
         # update parameters
         for epoch in xrange(self._config['optimize']['updates']):
 
+            # Get data (sample from minibatches)
+            if epoch % config['minibatchInterval'] == 0:
+                data = dataset.getData(size = config['minibatchSize'],
+                    cols = (inLayer, outLayer))
             # Forward pass (Compute value estimations from given input)
             out = self._optimizeGetValues(data[0])
             # Backward pass (Compute deltas from backpropagation of error)

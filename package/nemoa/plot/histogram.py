@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa.plot.base, matplotlib
+import nemoa.plot.base, matplotlib, matplotlib.pyplot
 
 class histogram(nemoa.plot.base.plot):
 

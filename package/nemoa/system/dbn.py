@@ -43,7 +43,9 @@ class dbn(nemoa.system.ann.ann):
                 'checkDataset': False,
                 'ignoreUnits': [],
                 'iterations': 1,
-                'algorithm': 'rprop',
+                'algorithm': 'bprop',
+                'minibatchSize': 100,
+                'minibatchInterval': 10,
                 'updates': 10000,
                 'schedule': None,
                 'visible': None,
@@ -253,7 +255,8 @@ class dbn(nemoa.system.ann.ann):
 
     def optimizeFineTuning(self, dataset, schedule):
         """Finetuning system using a variant of backpropagation of error."""
-        nemoa.log('finetuning system')
+        nemoa.log('note', 'optimize system %s (%s)' \
+            % (self.name(), self.getType()))
         nemoa.setLog(indent = '+1')
 
         cnf = self._config['optimize']
