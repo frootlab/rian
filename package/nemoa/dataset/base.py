@@ -453,9 +453,9 @@ class dataset:
                 default: value '*' selects all rows
             cols -- string describing column filter (column group)
                 default: value '*' selects all columns
-            corruption -- 2-tuple describing corruption
-                first entry of tuple: type of corruption
-                    None: no corruption
+            corruption -- 2-tuple describing artificial data corruption
+                first entry of tuple: type of corruption / noise model
+                    'no': no corruption
                     'mn': Masking Noise
                         A fraction of every sample is forced to zero
                     'gs': Gaussian Noise
@@ -463,16 +463,18 @@ class dataset:
                     'sp': Salt-and-pepper noise
                         A fraction of every sample is forced to min or max
                         with equal possibility
+                    default: Value None equals to 'no'
                 second entry of tuple: corruption factor
                     float in interval [0.0, 1.0] describing the strengt
                     of the corruption. The influence of the parameter
                     depends on the corruption type
-                default: (None, 0.5)
+                    default: Value 0.5
             fmt -- tuple of strings describing data output. Supported strings:
                 'array': numpy array just containing data
                 'recarray': numpy record array
                 'cols': list with column names
-                'rows': list with row names"""
+                'rows': list with row names
+                default: 'array'"""
 
         # Check Configuration and Keyword Arguments
         if not self.isConfigured(): return nemoa.log('error',
@@ -492,7 +494,7 @@ class dataset:
             'could not get data: no valid data sources found!')
         data = numpy.concatenate(srcStack)
 
-        # Randomize data order and correct size (optionally)
+        # Shuffle data and correct size (optionally)
         if size:
             numpy.random.shuffle(data)
             data = data[:size]
@@ -508,11 +510,8 @@ class dataset:
             'could not get data: invalid argument for columns!')
 
         # Corrupt data (optionally)
-        if not corruption[0] == None: return \
-            self.getCorruptedData(fmtData, algorithm = corruption[0], \
-            factor = corruption[1])
-
-        return fmtData
+        return self.getCorruptedData(fmtData, \
+            type = corruption[0], factor = corruption[1])
 
     def getSingleSourceData(self, source, size = 0, rows = '*'):
         """Return numpy recarray with data from a single source.
@@ -556,11 +555,11 @@ class dataset:
             size = round(srcFrac * size))
         return numpy.take(srcArray, rowSelect)
 
-    def getCorruptedData(self, data, algorithm = 'mn', factor = 0.5):
+    def getCorruptedData(self, data, type = None, factor = 0.5):
         """Return numpy array with (partly) corrupted data.
 
         Keyword Arguments:
-            algorithm -- string describing algorithm for corruption
+            type -- string describing algorithm for corruption
                 'mn': Masking Noise
                     A fraction of every sample is forced to zero
                 'gs': Gaussian Noise
@@ -568,10 +567,11 @@ class dataset:
                 'sp': Salt-and-pepper noise
                     A fraction of every sample is forced to min or max
                     with equal possibility
-            factor -- float in [0, 1] describing the strengt of the corruption
-                The influence of the parameter depends on the used algorithm"""
+            factor -- float describing the strengt of the corruption
+                The influence of the parameter depends on the
+                type of the corruption"""
 
-        if algorithm == None: return data
+        if algorithm in [None, 'no']: return data
         elif algorithm == 'mn': return data * numpy.random.binomial(
             size = data.shape, n = 1, p = 1 - factor)
         elif algorithm == 'gs': return data + numpy.random.normal(

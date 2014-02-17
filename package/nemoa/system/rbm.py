@@ -52,7 +52,7 @@ class rbm(nemoa.system.ann.ann):
                 'updateFactorWeights': 1.0,
                 'updateFactorHbias': 0.1,
                 'updateFactorVbias': 0.1,
-                'corruptionAlgorithm': None,
+                'corruptionType': None,
                 'corruptionFactor': 0.5,
                 'useAdjacency': False,
                 'inspect': True,
@@ -177,8 +177,7 @@ class rbm(nemoa.system.ann.ann):
 
         config = self._config['optimize']
         init = self._config['init']
-        corruption = (config['corruptionAlgorithm'], \
-            config['corruptionFactor'])
+        corruption = (config['corruptionType'], config['corruptionFactor'])
         batchsize = config['minibatchSize']
 
         # for each update step (epoch)
@@ -624,7 +623,7 @@ class grbm(rbm):
                 'updateFactorVlvar': 0.01,
                 'minibatchSize': 100,
                 'minibatchInterval': 10,
-                'corruptionAlgorithm': None,
+                'corruptionType': None,
                 'corruptionFactor': 0.5,
                 'useAdjacency': False,
                 'inspect': True,
