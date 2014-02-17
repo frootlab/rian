@@ -300,27 +300,39 @@ class system:
     def optimizeParams(self, dataset, schedule):
         """Optimize system parameters using data and given schedule."""
 
-        # check schedule
-        if 'params' in schedule \
-            and not self.getType() in schedule['params']: return nemoa.log(
+        # check if optimization schedule exists for current system
+        # and update optimization settings
+        if not 'params' in schedule:
+            config = self.default('optimize')
+            nemoa.common.dictMerge(self._config['optimize'], config)
+            self._config['optimize'] = config    
+        elif not self.getType() in schedule['params']: return nemoa.log(
             'error', """could not optimize model:
-            optimization schedule '%s' does not include '%s'
+            optimization schedule '%s' does not include system '%s'
             """ % (schedule['name'], self.getType()))
+        else:
+            config = self.default('optimize')
+            nemoa.common.dictMerge(self._config['optimize'], config)
+            nemoa.common.dictMerge(schedule['params'][self.getType()], config)
+            self._config['optimize'] = config
 
-        # update local optimization schedule
-        config = self.default('optimize')
-        nemoa.common.dictMerge(self._config['optimize'], config)
-        nemoa.common.dictMerge(schedule['params'][self.getType()] \
-            if 'params' in schedule else {}, config)
-        self._config['optimize'] = config
+        ################################################################
+        # System independent optimization settings                     #
+        ################################################################
 
         # check dataset
-        if (not 'checkDataset' in config
-            or config['checkDataset'] == True) \
+        if (not 'checkDataset' in config or config['checkDataset'] == True) \
             and not self._checkDataset(dataset): return False
 
+        # initialize inspector
+        if 'inspect' in config and config['inspect'] == False:
+            inspector = None
+        else:
+            inspector = nemoa.system.base.inspector(self)
+            inspector.setTestData(self.getTestData(dataset)) 
+
         # optimize system parameters
-        return self._optimizeParams(dataset, schedule)
+        return self._optimizeParams(dataset, schedule, inspector)
 
     ####################################################################
     # Common network tests                                             #

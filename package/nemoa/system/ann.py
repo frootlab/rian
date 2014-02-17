@@ -156,30 +156,19 @@ class ann(nemoa.system.base.system):
 
     # 2.1.1 Backpropagation of Error (BPROP) specific Functions
 
-    def optimizeBProp(self, dataset, schedule):
+    def optimizeBProp(self, dataset, schedule, inspector):
         """Optimize parameters using backpropagation."""
 
-        nemoa.log('starting backpropagation')
-        nemoa.setLog(indent = '+1')
-
-        # get training data
         config = self._config['optimize']
         layers = self.getMapping()
-        inLayer = layers[0]
-        outLayer = layers[-1]
-        data = dataset.getData(cols = (inLayer, outLayer))
-
-        # init inspector with training data as test data
-        inspector = nemoa.system.base.inspector(self)
-        if self._config['optimize']['inspect']: inspector.setTestData(data)
 
         # update parameters
-        for epoch in xrange(self._config['optimize']['updates']):
+        for epoch in xrange(config['updates']):
 
             # Get data (sample from minibatches)
             if epoch % config['minibatchInterval'] == 0:
                 data = dataset.getData(size = config['minibatchSize'],
-                    cols = (inLayer, outLayer))
+                    cols = (layers[0], layers[-1]))
             # Forward pass (Compute value estimations from given input)
             out = self._optimizeGetValues(data[0])
             # Backward pass (Compute deltas from backpropagation of error)
@@ -189,9 +178,8 @@ class ann(nemoa.system.base.system):
             # Update parameters
             self.updateParams(updates)
             # Trigger inspector
-            inspector.trigger()
+            if not inspector == None: inspector.trigger()
 
-        nemoa.setLog(indent = '-1')
         return True
 
     def getParamUpdatesBProp(self, out, delta, rate = 0.1):
@@ -216,30 +204,19 @@ class ann(nemoa.system.base.system):
 
     # 2.1.2 Resilient Backpropagation (RPROP) specific Functions
 
-    def optimizeRProp(self, dataset, schedule):
+    def optimizeRProp(self, dataset, schedule, inspector):
         """Optimize parameters using resiliant backpropagation."""
 
-        nemoa.log('starting resiliant backpropagation (Rprop)')
-        nemoa.setLog(indent = '+1')
-
-        # get training data
         config = self._config['optimize']
         layers = self.getMapping()
-        inLayer = layers[0]
-        outLayer = layers[-1]
-        data = dataset.getData(cols = (inLayer, outLayer))
-
-        # init inspector with training data as test data
-        inspector = nemoa.system.base.inspector(self)
-        if self._config['optimize']['inspect']: inspector.setTestData(data)
 
         # update parameters
-        for epoch in xrange(self._config['optimize']['updates']):
+        for epoch in xrange(config['updates']):
 
             # Get data (sample from minibatches)
             if epoch % config['minibatchInterval'] == 0:
                 data = dataset.getData(size = config['minibatchSize'],
-                    cols = (inLayer, outLayer))
+                    cols = (layers[0], layers[-1]))
             # Forward pass (Compute value estimations from given input)
             out = self._optimizeGetValues(data[0])
             # Backward pass (Compute deltas from backpropagation of error)
@@ -249,9 +226,8 @@ class ann(nemoa.system.base.system):
             # Update parameters
             self.updateParams(updates)
             # Trigger inspector
-            inspector.trigger()
+            if not inspector == None: inspector.trigger()
 
-        nemoa.setLog(indent = '-1')
         return True
 
     def getParamUpdatesRProp(self, out, delta, inspector):
@@ -891,6 +867,11 @@ class ann(nemoa.system.base.system):
         return mapping[sid:tid + 1] if sid <= tid \
             else mapping[tid:sid + 1][::-1]
 
+    def getTestData(self, dataset):
+        """Return tuple with default test data."""
+        return dataset.getData(
+            cols = (self.getMapping()[0], self.getMapping()[-1]))
+
     ####################################################################
     # Generic / static information                                     #
     ####################################################################
@@ -995,15 +976,6 @@ class ann(nemoa.system.base.system):
         @staticmethod
         def getUpdatesFromDelta(data, delta):
             return { 'W': -numpy.dot(data.T, delta) / data.size }
-
-        #def calcLogisticUpdates(self, data, model, weights):
-            #"""Return parameter updates of a sigmoidal output layer
-            #calculated from real data and modeled data."""
-            #shape = (1, len(self.params['label']))
-            #updBias = \
-                #numpy.mean(data[1] - model[1], axis = 0).reshape(shape)
-            #return { 'bias': updBias }
-
 
         # lets calculate with link params
 

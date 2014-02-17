@@ -53,7 +53,7 @@ class rbm(nemoa.system.ann.ann):
                 'updateFactorHbias': 0.1,
                 'updateFactorVbias': 0.1,
                 'corruptionAlgorithm': None,
-                'corruptionFactor': 0.0,
+                'corruptionFactor': 0.5,
                 'useAdjacency': False,
                 'inspect': True,
                 'inspectFunction': 'performance',
@@ -69,6 +69,11 @@ class rbm(nemoa.system.ann.ann):
         v = self._params['units'][0]['name']
         h = self._params['units'][1]['name']
         return (v, h, v)
+
+    def getTestData(self, dataset):
+        """Return tuple with default test data."""
+        data = dataset.getData()
+        return (data, data)
 
     def _checkDataset(self, dataset):
         """Check if dataset contains binary values."""
@@ -167,29 +172,21 @@ class rbm(nemoa.system.ann.ann):
         """Return dictionary with all parameters."""
         return self._params.copy()
 
-    def _optimizeParams(self, dataset, schedule):
+    def _optimizeParams(self, dataset, schedule, inspector):
         """Optimize system parameters."""
 
         config = self._config['optimize']
         init = self._config['init']
-
-        # check dataset
-        if (not 'checkDataset' in init
-            or init['checkDataset'] == True) \
-            and not self._checkDataset(dataset): return False
-
-        # initialise inspector
-        if config['inspect']:
-            inspector = nemoa.system.base.inspector(self)
-            testData = dataset.getData()
-            inspector.setTestData(data = (testData, testData))
+        corruption = (config['corruptionAlgorithm'], \
+            config['corruptionFactor'])
+        batchsize = config['minibatchSize']
 
         # for each update step (epoch)
         for epoch in xrange(config['updates']):
 
             # get data (sample from minibatches)
-            if epoch % config['minibatchInterval'] == 0:
-                data = dataset.getData(config['minibatchSize'])
+            if epoch % config['minibatchInterval'] == 0: data = \
+                dataset.getData(size = batchsize, corruption = corruption)
 
             # get system estimations (model)
             if config['algorithm'] == 'CD': sampleData = \
@@ -205,7 +202,7 @@ class rbm(nemoa.system.ann.ann):
             self._updateParams(*sampleData)
             
             # inspect
-            inspector.trigger()
+            if not inspector == None: inspector.trigger()
 
         return True
 
@@ -589,7 +586,7 @@ class grbm(rbm):
     Description:
         Gaussian Restricted Boltzmann Machines are energy based undirected
         artificial neuronal networks with two layers: 'visible' and 'hidden'.
-        The visible layer contains gauss distributed sigmoidal units
+        The visible layer contains gauss distributed gaussian units
         to model data. The hidden layer contains binary distributed
         sigmoidal units to model relations in the data.
 
@@ -628,7 +625,7 @@ class grbm(rbm):
                 'minibatchSize': 100,
                 'minibatchInterval': 10,
                 'corruptionAlgorithm': None,
-                'corruptionFactor': 0.0,
+                'corruptionFactor': 0.5,
                 'useAdjacency': False,
                 'inspect': True,
                 'inspectFunction': 'performance',

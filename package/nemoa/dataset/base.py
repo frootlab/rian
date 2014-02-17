@@ -497,19 +497,22 @@ class dataset:
             numpy.random.shuffle(data)
             data = data[:size]
 
-        # Corrupt data (optionally)
-        if not corruption[0] == None: data = \
-            getCorruptedData(data, algorithm = corruption[0], factor = corruption[1])
-
         # Format data
-        if isinstance(cols, str): return self.getFormatedData(data,
+        if isinstance(cols, str): fmtData = self.getFormatedData(data,
             cols = self.getColLabels(cols), output = output)
-        elif isinstance(cols, list): return self.getFormatedData(data,
+        elif isinstance(cols, list): fmtData = self.getFormatedData(data,
             cols = cols, output = output)
-        elif isinstance(cols, tuple): return tuple([self.getFormatedData(data,
+        elif isinstance(cols, tuple): fmtData = tuple([self.getFormatedData(data,
             cols = self.getColLabels(grp), output = output) for grp in cols])
-        return nemoa.log('error',
+        else: return nemoa.log('error',
             'could not get data: invalid argument for columns!')
+
+        # Corrupt data (optionally)
+        if not corruption[0] == None: return \
+            self.getCorruptedData(fmtData, algorithm = corruption[0], \
+            factor = corruption[1])
+
+        return fmtData
 
     def getSingleSourceData(self, source, size = 0, rows = '*'):
         """Return numpy recarray with data from a single source.
@@ -571,7 +574,7 @@ class dataset:
         if algorithm == None: return data
         elif algorithm == 'mn': return data * numpy.random.binomial(
             size = data.shape, n = 1, p = 1 - factor)
-        elif algorithm == 'gs': return data * numpy.random.normal(
+        elif algorithm == 'gs': return data + numpy.random.normal(
             size = data.shape, loc = 0.0, scale = factor)
         #2do!: implement salt and pepper noise
         #elif algorithm == 'sp': return
@@ -975,7 +978,7 @@ class dataset:
         """Export dataset to numpy zip compressed file."""
         numpy.savez(file, cfg = self.cfg, data = self.data)
 
-    def exportDataToFile(self, file, **kwargs):
+    def export(self, file, **kwargs):
         """Export data to file."""
 
         file = nemoa.common.getEmptyFile(file)
@@ -986,8 +989,8 @@ class dataset:
 
         nemoa.log('exporting data to file: \'%s\'' % (file))
         if type in ['gz', 'data']: retVal = self.save(file)
-        elif type in ['csv', 'tsv', 'txt']:
-            cols, data = self.getData(output = ('cols','recarray'))
+        elif type in ['csv', 'tsv', 'tab', 'txt']:
+            cols, data = self.getData(output = ('cols', 'recarray'))
             retVal = nemoa.common.csvSaveData(file, data,
                 cols = [''] + cols, **kwargs)
         else: retVal = nemoa.log('error', """

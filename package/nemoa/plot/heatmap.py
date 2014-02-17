@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa, nemoa.plot.base, numpy, matplotlib
+import nemoa, nemoa.plot.base, numpy, matplotlib, matplotlib.pyplot
 
 class heatmap(nemoa.plot.base.plot):
 

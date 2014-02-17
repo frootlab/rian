@@ -45,9 +45,14 @@ class model:
         """Return configuration as dictionary."""
         return self.__config.copy()
 
-    def exportDataToFile(self, *args, **kwargs):
+    def exportOutputData(self, *args, **kwargs):
         """Export data to file."""
-        return self.dataset.exportDataToFile(*args, **kwargs)
+        # copy dataset
+        dataSettings = self.dataset._get()
+        self.dataset.transformData(system = self.system)
+        self.dataset.export(*args, **kwargs)
+        self.dataset._set(dataSettings)
+        return True
 
     def importConfigFromDict(self, dict):
         """Import numpy configuration from dictionary."""
@@ -188,10 +193,12 @@ class model:
             return False
 
         # get optimization schedule
-        if schedule == None: schedule = self.system.name() + '.default'
+        if schedule == None: schedule = self.system.getType() + '.default'
+        elif not '.' in schedule: schedule = \
+            self.system.getType() + '.' + schedule
         schedule = nemoa.workspace.getConfig(
             type = 'schedule', config = schedule,
-            merge = ['params', self.system.name()],
+            merge = ['params', self.system.getType()],
             **kwargs)
         if not schedule:
             nemoa.log('error', """
@@ -477,7 +484,7 @@ class model:
     # UNIT EVALUATION
     #
 
-    def getUnitEval(self, data = None, statistics = None, **kwargs):
+    def getUnitEval(self, data = None, statistics = 0, **kwargs):
         """Return dictionary with units and evaluation values."""
         if data == None: data = self.dataset.getData(size = statistics,
             cols = self.groups(visible = True))
@@ -586,11 +593,12 @@ class model:
         nemoa.setLog(indent = '-1')
         return file
 
-    def show(self, plot, **kwargs):
+    def show(self, *args, **kwargs):
         """Create plot of model with output to display."""
-        return self.plot(plot, output = 'show', **kwargs)
+        kwargs['output'] = 'show'
+        return self.plot(*args, **kwargs)
 
-    def plot(self, plot, output = 'file', file = None, **kwargs):
+    def plot(self, plot = None, output = 'file', file = None, **kwargs):
         """Create plot of model."""
 
         nemoa.log('create plot of model')
@@ -606,6 +614,7 @@ class model:
         nemoa.log('create plot instance')
         nemoa.setLog(indent = '+1')
 
+        if plot == None: plot = self.system.getType() + '.default'
         if isinstance(plot, str):
             plotName, plotParams = nemoa.common.strSplitParams(plot)
             mergeDict = plotParams
