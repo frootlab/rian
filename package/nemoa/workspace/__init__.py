@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa, copy
+import nemoa, copy, nemoa.workspace.config, nemoa.workspace.workspace
 
 __shared = {}
 
@@ -9,7 +9,6 @@ __shared = {}
 
 def init():
     """Create and link new configuration instance."""
-    import nemoa.workspace.config
     __shared['config'] = nemoa.workspace.config.config()
     __shared['config'].loadCommon()
     return True
@@ -18,12 +17,10 @@ def init():
 
 def new():
     """Return new workspace instance."""
-    import nemoa.workspace.workspace
     return nemoa.workspace.workspace.workspace()
 
 def open(project):
     """Return new workspace instance and open project."""
-    import nemoa.workspace.workspace
     return nemoa.workspace.workspace.workspace(project)
 
 # wrap configuration object instance methods to module dict
@@ -62,14 +59,14 @@ def getConfig(type = None, config = None, merge = ['params'], **kwargs):
     if 'params' in kwargs and isinstance(kwargs['params'], dict):
         params = nemoa.common.dictMerge(kwargs['params'], params)
 
-    config = __shared['config'].get(type = type, name = name,
-        merge = merge, params = params)
-    if not config: config = __shared['config'].get(type = type,
-        name = '%s.%s' % (project(), name), merge = merge, params = params)
-    if not config: config = __shared['config'].get(type = type,
-        name = 'base.' + name, merge = merge, params = params)
-    if not config: return nemoa.log('warning', """
+    # get config
+    if not name: name = project() + '.default'
+    for cfgName in [name, '%s.%s' % (project(), name),
+        name + '.default', 'base.' + name]:
+        cfg = __shared['config'].get(type = type, name = cfgName,
+            merge = merge, params = params)
+        if isinstance(config, dict): break
+    if not cfg: return nemoa.log('error', """
         could not get configuration:
         no %s with name '%s' could be found""" % (type, name))
-
-    return config
+    return cfg

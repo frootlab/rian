@@ -63,7 +63,7 @@ class histogram(nemoa.plot.base.plot):
     def getTitle(self, model):
         return "Data distribution of '" + model.dataset.cfg['name'] + "'"
 
-class dataHistogram(histogram):
+class data(histogram):
 
     def getDefaults(self):
         return {'statistics': 10000}
@@ -72,18 +72,18 @@ class dataHistogram(histogram):
     def getTitle(self, model):
         return "Data distribution of '" + model.dataset.cfg['name'] + "'"
 
-class sampleRelation(histogram):
+#class sampleRelation(histogram):
 
-    def getDefaults(self):
-        return {'samples': '*', 'relation': 'correlation'}
-    def getData(self, model):
-        return model.getSampleRelationMatrix(
-            samples = settings['samples'],
-            relation = settings['relation']).flatten()
-    def getTitle(self, model):
-        return "Distribution of sample " + self.settings['relation']
+    #def getDefaults(self):
+        #return {'samples': '*', 'relation': 'correlation'}
+    #def getData(self, model):
+        #return model.getSampleRelationMatrix(
+            #samples = settings['samples'],
+            #relation = settings['relation']).flatten()
+    #def getTitle(self, model):
+        #return "Distribution of sample " + self.settings['relation']
 
-class unitRelation(histogram):
+class relation(histogram):
 
     def getDefaults(self):
         return {

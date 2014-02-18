@@ -18,9 +18,9 @@ class model:
         """Initialize model and configure dataset, network and system.
 
         Keyword Arguments:
-            dataset -- dataset instance
-            network -- network instance
-            system  -- system instance
+            dataset -- nemoa dataset instance
+            network -- nemoa network instance
+            system  -- nemoa system instance
         """
 
         # initialize private scope class attributes
@@ -606,7 +606,8 @@ class model:
 
         # check if model is configured
         if not self.__isConfigured():
-            nemoa.log('error', 'could not create plot of model: model is not yet configured!')
+            nemoa.log('error', """could not create plot of model:
+                model is not yet configured!""")
             nemoa.setLog(indent = '-1')
             return False
 
@@ -618,8 +619,7 @@ class model:
         if isinstance(plot, str):
             plotName, plotParams = nemoa.common.strSplitParams(plot)
             mergeDict = plotParams
-            for param in kwargs.keys():
-                plotParams[param] = kwargs[param]
+            for param in kwargs.keys(): plotParams[param] = kwargs[param]
             objPlot = self.__getPlot(name = plotName, params = plotParams)
             if not objPlot:
                 nemoa.log('warning', "could not create plot: unknown configuration '%s'" % (plotName))
@@ -651,11 +651,15 @@ class model:
 
         # get plot configuration
         if isinstance(name, str):
-            cfg = nemoa.workspace.get('plot', name = name, params = params)
+            for plotName in [name,
+                '%s.%s' % (self.system.getType(), name),
+                'base.' + name]:
+                cfg = nemoa.workspace.get('plot', \
+                   name = plotName, params = params)
+                if isinstance(cfg, dict): break
             if not isinstance(cfg, dict): return nemoa.log('error',
             "could not create plot instance: unsupported plot '%s'" % (name))
-        elif isinstance(config, dict):
-            cfg = config
+        elif isinstance(config, dict): cfg = config
 
         # overwrite config with given params
         if isinstance(params, dict):

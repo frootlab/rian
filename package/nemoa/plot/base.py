@@ -1,19 +1,13 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import nemoa
 
-#
-# plot object (template)
-#
+import nemoa, matplotlib.pyplot
 
 class plot:
 
     cfg = None
     settings = None
     defaults = None
-
-    #
-    # PLOT CONFIGURATION
-    #
 
     def __init__(self, config = None):
         self.setConfig(config)
@@ -41,9 +35,7 @@ class plot:
         return True
 
     def name(self):
-        """
-        Return name of plot
-        """
+        """Return name of plot. """
         return self.cfg['name']
 
     def getSettings(self):
@@ -57,5 +49,14 @@ class plot:
         return {}
 
     def create(self, model, file = None):
-        pass
+        
+        # common matplotlib settings
+        matplotlib.rc('font', family = 'serif')
+
+        self._create(model, file)
+
+        # clear figures and release memory
+        matplotlib.pyplot.close("all")
+
+        return True
         

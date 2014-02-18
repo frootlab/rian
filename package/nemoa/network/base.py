@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa
-import networkx, copy
+import nemoa, networkx, copy
 
 class network:
     """Base class for networks."""

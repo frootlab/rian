@@ -23,8 +23,6 @@ class dbn(nemoa.system.ann.ann):
         """Return DBN default configuration as dictionary."""
         return {
             'params': {
-                'preTraining': True,
-                'fineTuning': True,
                 'visible': 'auto',
                 'hidden': 'auto',
                 'visibleClass': 'gauss',
@@ -40,6 +38,8 @@ class dbn(nemoa.system.ann.ann):
                 'ignoreUnits': [],
                 'wSigma': 0.5 },
             'optimize': {
+                'preTraining': True,
+                'fineTuning': True,
                 'checkDataset': False,
                 'ignoreUnits': [],
                 'iterations': 1,
@@ -73,19 +73,25 @@ class dbn(nemoa.system.ann.ann):
     def _optimizeParams(self, dataset, schedule, inspector):
         """Optimize system parameters."""
 
+        cfg = self._config['optimize']
+
+        print cfg
+        print schedule
+        quit()
+
         # forward pretraining of neuronal network using
         # restricted boltzmann machines as subsystems
-        if self._config['optimize']['preTraining']:
-            self.optimizePreTraining(dataset, schedule, inspector)
+        if cfg['preTraining']:
+            self._optimizePreTraining(dataset, schedule, inspector)
 
         # backward finetuning of neuronal network
         # using backpropagation of error
-        if self._config['optimize']['fineTuning']:
-            self.optimizeFineTuning(dataset, schedule, inspector)
+        if cfg['fineTuning']:
+            self._optimizeFineTuning(dataset, schedule, inspector)
 
         return True
 
-    def optimizePreTraining(self, dataset, schedule, inspector):
+    def _optimizePreTraining(self, dataset, schedule, inspector):
         """Pretraining model using restricted boltzmann machines."""
 
         nemoa.log('pretraining model')
@@ -256,7 +262,7 @@ class dbn(nemoa.system.ann.ann):
         nemoa.setLog(indent = '-2')
         return True
 
-    def optimizeFineTuning(self, dataset, schedule, inspector):
+    def _optimizeFineTuning(self, dataset, schedule, inspector):
         """Finetuning model using backpropagation of error."""
         nemoa.log('finetuning model')
         nemoa.setLog(indent = '+1')

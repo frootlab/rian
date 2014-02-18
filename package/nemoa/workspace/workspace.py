@@ -45,9 +45,9 @@ class workspace:
         script = imp.load_source('script', config['path'])
         return script.main(self, **config['params'])
 
-    def show(self, type = None, name = None, **kwargs):
-        """Print object configuration from type and name."""
-        return nemoa.common.printDict(nemoa.workspace.get(type, name))
+#    def show(self, type = None, name = None, **kwargs):
+#        """Print object configuration from type and name."""
+#        return nemoa.common.printDict(nemoa.workspace.get(type, name))
 
     def dataset(self, config = None, **kwargs):
         """Return new dataset instance."""
@@ -89,7 +89,8 @@ class workspace:
         module = importlib.import_module('nemoa.' + str(type))
 
         # get objects configuration as dictionary
-        config = nemoa.workspace.getConfig(type = type, config = config, **kwargs)
+        config = nemoa.workspace.getConfig(type = type,
+            config = config, **kwargs)
         if not isinstance(config, dict):
             nemoa.log('error', """could not create %s instance:
                 unknown configuration!""" % (type))

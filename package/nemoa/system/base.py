@@ -234,9 +234,12 @@ class system:
         linkGrp = self._links[srcGrp]['target'][tgtGrp]
         srcID   = self.units[srcGrp].params['label'].index(srcUnit)
         tgtID   = self.units[tgtGrp].params['label'].index(tgtUnit)
+        weight  = linkGrp['W'][srcID, tgtID]
+        norm    = float(numpy.sum(linkGrp['A'])) / numpy.sum(numpy.abs(linkGrp['W']))
         return {
             'adjacency': linkGrp['A'][srcID, tgtID],
-            'weight': linkGrp['W'][srcID, tgtID]}
+            'weight': weight,
+            'interaction': norm * weight}
 
     def getLinkParams(self, links = [], *args, **kwargs):
         """Return parameters of links."""
@@ -329,7 +332,7 @@ class system:
             inspector = None
         else:
             inspector = nemoa.system.base.inspector(self)
-            inspector.setTestData(self.getTestData(dataset)) 
+            inspector.setTestData(self._getTestData(dataset)) 
 
         # optimize system parameters
         return self._optimizeParams(dataset, schedule, inspector)
@@ -458,7 +461,7 @@ class system:
         """Return system specific data evaluation."""
         return self._getDataEval(data, **kwargs)
 
-    def assertUnitTuple(self, units = None):
+    def _assertUnitTuple(self, units = None):
         """Return tuple with lists of valid input and output units."""
 
         mapping = self.getMapping()
@@ -485,7 +488,7 @@ class system:
         # get mapping, data and units
         mapping = self.getMapping()
         data    = dataset.getData(cols = (mapping[0], mapping[-1]))
-        units   = self.assertUnitTuple(units)
+        units   = self._assertUnitTuple(units)
 
         # get method and method specific parameters
         method, ukwargs = nemoa.common.strSplitParams(relation)
@@ -522,7 +525,7 @@ class system:
             units -- list of strings with valid unitIDs"""
 
         # create data and calulate correlation matrix
-        if units == None: units = self.assertUnitTuple(units)
+        if units == None: units = self._assertUnitTuple(units)
 
         M = numpy.corrcoef(numpy.hstack(data).T)
         uList = units[0] + units[1]
@@ -553,7 +556,7 @@ class system:
             respective to given data"""
 
         # prepare knockout matrix
-        if units == None: units = self.assertUnitTuple(units)
+        if units == None: units = self._assertUnitTuple(units)
         K = numpy.zeros((len(units[0]), len(units[1])))
 
         # calculate unit values without modification
@@ -663,11 +666,11 @@ class system:
         return self._config['name'] #if 'name' in self._config else ''
 
     def getClass(self):
-        """Return class of system."""
+        """Return system class."""
         return self._config['class']
 
     def getType(self):
-        """Return type of system."""
+        """Return sytem type."""
         return '%s.%s' % (self._config['package'], self._config['class'])
 
     def getDescription(self):

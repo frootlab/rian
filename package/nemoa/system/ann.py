@@ -867,7 +867,7 @@ class ann(nemoa.system.base.system):
         return mapping[sid:tid + 1] if sid <= tid \
             else mapping[tid:sid + 1][::-1]
 
-    def getTestData(self, dataset):
+    def _getTestData(self, dataset):
         """Return tuple with default test data."""
         return dataset.getData(
             cols = (self.getMapping()[0], self.getMapping()[-1]))
@@ -1032,16 +1032,13 @@ class ann(nemoa.system.base.system):
         source = {}
         target = {}
 
-        def __init__(self):
-            pass
+        def __init__(self): pass
 
         def expect(self, data, source):
-            if source['class'] == 'sigmoid':
-                return self.expectFromSigmoidInput(data, source,
-                    self.getWeights(source))
-            elif source['class'] == 'gauss':
-                return self.expectFromGaussInput(data, source,
-                    self.getWeights(source))
+            if source['class'] == 'sigmoid': return \
+                self.expectFromSigmoidInput(data, source, self.getWeights(source))
+            elif source['class'] == 'gauss': return \
+                self.expectFromGaussInput(data, source, self.getWeights(source))
 
         def getUpdates(self, data, model, source):
             return self.getParamUpdates(data, model, self.getWeights(source))
@@ -1089,10 +1086,9 @@ class ann(nemoa.system.base.system):
 
         @staticmethod
         def sign(dict, remap = None):
-            if remap == None:
-                return {key: numpy.sign(dict[key]) for key in dict.keys()}
-            return {key:
-                (remap[0] * (numpy.sign(dict[key]) < 0.0)
+            if remap == None: return {key: numpy.sign(dict[key]) \
+                for key in dict.keys()}
+            return {key: (remap[0] * (numpy.sign(dict[key]) < 0.0)
                 + remap[1] * (numpy.sign(dict[key]) == 0.0)
                 + remap[2] * (numpy.sign(dict[key]) > 0.0)) for key in dict.keys()}
 
@@ -1277,7 +1273,7 @@ class ann(nemoa.system.base.system):
             shape = (1, len(self.params['label']))
             var = numpy.exp(self.params['lvar'])
             bias = self.params['bias']
-            
+
             updBias = \
                 numpy.mean(data[1] - model[1], axis = 0).reshape(shape) / var
             updData = \
@@ -1339,8 +1335,8 @@ class ann(nemoa.system.base.system):
         def getSamples(self, data):
             """Return sample of gauss distributed layer
             calculated from expected values."""
-            return numpy.random.normal(
-                data, numpy.sqrt(numpy.exp(self.params['lvar'])))
+            sigma = numpy.sqrt(numpy.exp(self.params['lvar']))
+            return numpy.random.normal(data, sigma)
 
         def get(self, unit):
             id = self.params['label'].index(unit)

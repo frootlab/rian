@@ -3,21 +3,15 @@
 
 import nemoa, nemoa.plot.base, numpy, matplotlib, matplotlib.pyplot
 
-class heatmap(nemoa.plot.base.plot):
+class relation(nemoa.plot.base.plot):
 
     def getSettings(self):
         return {
             'output': 'file',
             'fileformat': 'pdf',
-            'dpi': 600,
+            'dpi': 200,
             'show_figure_caption': True,
-            'interpolation': 'nearest'
-        }
-
-class unitRelation(heatmap):
-
-    def getDefaults(self):
-        return {
+            'interpolation': 'nearest',
             'units': (None, None),
             'relation': 'correlation()',
             'modify': 'knockout',
@@ -26,11 +20,11 @@ class unitRelation(heatmap):
             'statistics': 10000
         }
 
-    def create(self, model, file = None):
+    def _create(self, model, file = None):
         params = self.settings['params'] if 'params' in self.settings \
             else {}
 
-        # update self.units
+        # update unit information
         if not isinstance(self.settings['units'], tuple) \
             or not isinstance(self.settings['units'][0], list):
             mapping = model.system.getMapping()
@@ -50,7 +44,7 @@ class unitRelation(heatmap):
         if not isinstance(R, numpy.ndarray): return nemoa.log('error',
             'could not plot heatmap: relation matrix is not valid!')
 
-        # create figure object
+        # create A4 figure object figsize = (8.27, 11.69)
         fig = matplotlib.pyplot.figure()
         ax = fig.add_subplot(111)
         ax.grid(True)
@@ -59,12 +53,15 @@ class unitRelation(heatmap):
             interpolation = self.settings['interpolation'],
             extent = (0, R.shape[1], 0, R.shape[0]))
 
-        # create labels for x-axis
+        # create labels for axis
+        maxFontSize = 12.0
+        
         xLabelIDs = self.settings['units'][1]
         xLabels = model.network.getNodeLabels(xLabelIDs)
         yLabelIDs = self.settings['units'][0]
         yLabels = model.network.getNodeLabels(yLabelIDs)
-        fontsize = 400.0 / float(max(len(xLabels), len(yLabels)))
+        fontsize = min(maxFontSize, \
+            400.0 / float(max(len(xLabels), len(yLabels))))
 
         # plot labels
         matplotlib.pyplot.xticks(
@@ -81,14 +78,10 @@ class unitRelation(heatmap):
         # plot title
         if self.settings['show_figure_caption']: matplotlib.pyplot.title(
             nemoa.common.strSplitParams(
-            self.settings['relation'])[0].title(), fontsize = 11)
+            self.settings['relation'])[0].title(), fontsize = maxFontSize)
 
         # output
         if file: matplotlib.pyplot.savefig(file, dpi = self.settings['dpi'])
         else: matplotlib.pyplot.show()
-
-        # clear current figure object and release memory
-        matplotlib.pyplot.clf()
-        matplotlib.pyplot.close(fig)
 
         return True

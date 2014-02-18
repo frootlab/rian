@@ -455,12 +455,12 @@ class dataset:
                 default: value '*' selects all columns
             corruption -- 2-tuple describing artificial data corruption
                 first entry of tuple: type of corruption / noise model
-                    'no': no corruption
-                    'mn': Masking Noise
+                    'none': no corruption
+                    'mask': Masking Noise
                         A fraction of every sample is forced to zero
-                    'gs': Gaussian Noise
+                    'gauss': Gaussian Noise
                         Additive isotropic Gaussian noise
-                    'sp': Salt-and-pepper noise
+                    'salt': Salt-and-pepper noise
                         A fraction of every sample is forced to min or max
                         with equal possibility
                     default: Value None equals to 'no'
@@ -560,26 +560,26 @@ class dataset:
 
         Keyword Arguments:
             type -- string describing algorithm for corruption
-                'mn': Masking Noise
+                'mask': Masking Noise
                     A fraction of every sample is forced to zero
-                'gs': Gaussian Noise
+                'gauss': Gaussian Noise
                     Additive isotropic Gaussian noise
-                'sp': Salt-and-pepper noise
+                'salt': Salt-and-pepper noise
                     A fraction of every sample is forced to min or max
                     with equal possibility
             factor -- float describing the strengt of the corruption
                 The influence of the parameter depends on the
                 type of the corruption"""
 
-        if algorithm in [None, 'no']: return data
-        elif algorithm == 'mn': return data * numpy.random.binomial(
+        if type in [None, 'none']: return data
+        elif type == 'mask': return data * numpy.random.binomial(
             size = data.shape, n = 1, p = 1 - factor)
-        elif algorithm == 'gs': return data + numpy.random.normal(
+        elif type == 'gauss': return data + numpy.random.normal(
             size = data.shape, loc = 0.0, scale = factor)
         #2do!: implement salt and pepper noise
-        #elif algorithm == 'sp': return
+        #elif type == 'salt': return
         else: return nemoa.log('error',
-            "unkown corruption algorithm '%s'!" % (algorithm))
+            "unkown data corruption type '%s'!" % (type))
 
     def getFormatedData(self, data, cols = '*', output = 'array'):
         """Return data in given format.
