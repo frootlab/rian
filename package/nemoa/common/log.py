@@ -96,22 +96,29 @@ def log(*args):
     # format message
     msg = msg.strip().replace('\n', '')
     while '  ' in msg: msg = msg.replace('  ', ' ')
-    if mode == 'shell' or indent == 0: ttyMsg = msg
-    else: ttyMsg = '  ' * indent + msg
+    if mode == 'shell':
+        pre = color['blue'] + '> ' + color['default']
+        ttyMsg = msg
+    else:
+        pre = ''
+        ttyMsg = '  ' * indent + msg
     fileMsg = clrName + ' -> ' + msg.strip()
 
     # create logging records (depending on loglevels)
     if type == 'info':
         if mode == 'debug': fileLog.info(fileMsg)
         if mode == 'silent': return True
-        if mode == 'shell' and indent > 0: return True
-        if indent > 0 or mode == 'shell': ttyLog.info(ttyMsg)
-        else: ttyLog.info(color['blue'] + ttyMsg + color['default'])
+        if mode == 'shell':
+            if indent > 0: return True
+            else: ttyLog.info(pre + ttyMsg)
+        else:
+             if indent > 0: ttyLog.info(ttyMsg)
+             else: ttyLog.info(color['blue'] + ttyMsg + color['default'])
         return True
     if type == 'note':
         if mode == 'debug': fileLog.info(fileMsg)
         if mode == 'silent': return True
-        if indent > 0 or mode == 'shell': ttyLog.info(ttyMsg)
+        if indent > 0 or mode == 'shell': ttyLog.info(pre + ttyMsg)
         else: ttyLog.info(color['blue'] + ttyMsg + color['default'])
         return True
     if type == 'header':
@@ -121,18 +128,18 @@ def log(*args):
         ttyLog.info(color['green'] + ttyMsg + color['default'])
         return True
     if type == 'warning':
-        if not mode == 'silent': ttyLog.warning(color['yellow'] + ttyMsg + color['default'])
+        if not mode == 'silent': ttyLog.warning(pre + color['yellow'] + ttyMsg + color['default'])
         fileLog.warning(fileMsg)
         return False
     if type == 'error':
-        ttyLog.error(color['yellow'] + ttyMsg + ' (see logfile for debug info)' + color['default'])
+        ttyLog.error(pre + color['yellow'] + ttyMsg + ' (see logfile for debug info)' + color['default'])
         fileLog.error(fileMsg)
         for line in traceback.format_stack():
             msg = line.strip().replace('\n', '-> ').replace('  ', ' ').strip()
             fileLog.error(msg)
         return False
     if type == 'critical':
-        ttyLog.critical(color['yellow'] + ttyMsg + color['default'])
+        ttyLog.critical(pre + color['yellow'] + ttyMsg + color['default'])
         fileLog.critical(fileMsg)
         return False
 
@@ -142,7 +149,7 @@ def log(*args):
 
     # create logging records (depending on logger)
     if type == 'console':
-        ttyLog.info(ttyMsg)
+        ttyLog.info(pre + ttyMsg)
         return True
     if type == 'logfile':
         fileLog.info(fileMsg)

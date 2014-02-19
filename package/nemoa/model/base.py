@@ -677,10 +677,9 @@ class model:
 
     def setName(self, name):
         """Set name of model."""
-        if isinstance(self.__config, dict):
-            self.__config['name'] = name
-            return True
-        return False
+        if not isinstance(self.__config, dict): return False
+        self.__config['name'] = name
+        return self
 
     def isEmpty(self):
         """Return true if model is empty."""
@@ -727,8 +726,17 @@ class model:
                 Returns information about the "error" measurement
                 function of the systems units.
         """
+        if not args: return {
+            'name':        self.name(),
+            'description': '',
+            'dataset':     self.dataset.about(*args[1:]),
+            'network':     self.network.about(*args[1:]),
+            'system':      self.system.about(*args[1:])
+        }
+
+        if args[0] == 'name': return self.name()
+        if args[0] == 'description': return ''
         if args[0] == 'dataset': return self.dataset.about(*args[1:])
         if args[0] == 'network': return self.network.about(*args[1:])
-        if args[0] == 'system':  return self.system.about(*args[1:])
-        if args[0] == 'name':    return self.name()
+        if args[0] == 'system': return self.system.about(*args[1:])
         return None

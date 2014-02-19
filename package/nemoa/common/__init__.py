@@ -6,3 +6,4 @@ from .string import *
 from .list import *
 from .dict import *
 from .csvfile import *
+from .console import *

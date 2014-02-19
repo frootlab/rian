@@ -9,12 +9,13 @@ from matplotlib.patches import FancyArrowPatch, Circle
 class structure(nemoa.plot.base.plot):
 
     @staticmethod
-    def snake(x, factor = 1.0):
+    def _snake(x, factor = 1.0):
         return numpy.abs(x) * (1.0 / (1.0 + numpy.exp(-10.0 * factor
             * (x + 0.5))) + 1.0 / (1.0 + numpy.exp(-10.0 * factor
             * (x - 0.5))) - 1.0)
 
-    def getSettings(self):
+    @staticmethod
+    def _default():
         return {
             'output': 'file',
             'fileformat': 'pdf',
@@ -32,7 +33,6 @@ class structure(nemoa.plot.base.plot):
         }
 
     def _create(self, model, file = None):
-        #ax = plt.subplot(1, 1, 1)
 
         # use captions
         if self.settings['nodeCaption']:
@@ -154,10 +154,10 @@ class structure(nemoa.plot.base.plot):
             if not attr: continue
 
             weight = attr[self.settings['edges']]
-            
+
             # boost edge contrast
             if self.settings['edgeContrastBoost'] > 0.0:
-                weight = self.snake(weight,
+                weight = self._snake(weight,
                     factor = self.settings['edgeContrastBoost'])
 
             # check if weight satisfies threshold
@@ -193,12 +193,6 @@ class structure(nemoa.plot.base.plot):
                 font_size = size,
                 font_weight = 'normal')
 
-        # draw title
-        if self.settings['showTitle']: plt.figtext(
-            .5, .85, self.settings['title'] \
-            if isinstance(self.settings['title'], str) \
-            else model.name(), fontsize = 10, ha = 'center')
-
         # draw caption
         if self.settings['graphCaption']:
             if self.settings['nodeCaption']:
@@ -215,19 +209,12 @@ class structure(nemoa.plot.base.plot):
 
         plt.axis('off')
 
-        # output
-        if file: plt.savefig(file, dpi = self.settings['dpi'])
-        else: plt.show()
-
-        # clear current figure object and release memory
-        plt.clf()
-        plt.close(fig)
-
         return True
 
 class relation(nemoa.plot.base.plot):
 
-    def getSettings(self):
+    @staticmethod
+    def _default():
         return {
             'output': 'file',
             'fileformat': 'pdf',
@@ -255,8 +242,7 @@ class relation(nemoa.plot.base.plot):
 
         # overwrite default settings with parameters
         for key, value in params.items():
-            if key in settings:
-                settings[key] = value
+            if key in settings: settings[key] = value
 
         # set default settings for filter and sign
         if not settings['sign']: settings['sign'] = settings['relation']
@@ -281,7 +267,7 @@ class relation(nemoa.plot.base.plot):
         if settings['filter'] == None:
             M = np.ones((numUnits, numUnits), dtype = 'bool')
         else:
-            nemoa.log("   calculate filter mask: %s > %.1f sigma" % \
+            nemoa.log("calculate filter mask: %s > %.1f sigma" % \
                 (settings['filter'], settings['threshold']))
 
             # get filter relation matrix
@@ -299,23 +285,22 @@ class relation(nemoa.plot.base.plot):
             M = np.abs(F - mu) > settings['threshold'] * sigma
 
             # ignore self relation
-            for i in range(numUnits):
-                M[i, i] = False
+            for i in range(numUnits): M[i, i] = False
 
             # info
             numFilter = np.sum(M)
             if numFilter == 0:
-                nemoa.log('warning', "   no relation passed filter")
+                nemoa.log('warning', "no relation passed filter")
                 return False
 
-            nemoa.log("   %i relations passed filter (%.1f%%)" % \
+            nemoa.log("%i relations passed filter (%.1f%%)" % \
                 (numFilter, float(numFilter) / float(numRelations - numUnits) * 100))
 
         #
         # GET WEIGHTS
         #
 
-        nemoa.log("   calculate edge weights: " + settings['relation'])
+        nemoa.log("calculate edge weights: " + settings['relation'])
 
         # use filter results if relation and filter are the same
         if settings['relation'] == settings['filter']:
@@ -330,25 +315,19 @@ class relation(nemoa.plot.base.plot):
         W = np.abs(R) * M
 
         # normalize weights
-        if np.max(W) == 0:
-            nemoa.log('warning', '   no weights > 0 found')
-            return False
-        else:
-            W = W / np.max(W)
+        if np.max(W) == 0: return nemoa.log('error', 'no weights > 0 found')
+        else: W = W / np.max(W)
 
         #
         # GET SIGN OF RELATIONS
         #
 
-        if settings['sign'] == settings['relation']:
-            S = np.sign(R) * M
-        elif settings['sign'] == settings['filter']:
-            S = np.sign(F) * M
-        else:
-            S = model.getUnitRelationMatrix(
-                units = settings['units'],
-                relation = settings['sign'],
-                statistics = settings['statistics'])
+        if settings['sign'] == settings['relation']: S = np.sign(R) * M
+        elif settings['sign'] == settings['filter']: S = np.sign(F) * M
+        else: S = model.getUnitRelationMatrix(
+            units = settings['units'],
+            relation = settings['sign'],
+            statistics = settings['statistics'])
 
         #
         # CREATE GRAPH AND FIND DISCONNECTED SUBGRAPHS

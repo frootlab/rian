@@ -167,10 +167,6 @@ class network:
         nemoa.setLog(indent = '-1')
         return True
 
-    def name(self):
-        """Return name of network (as string)."""
-        return self.cfg['name'] if 'name' in self.cfg else ''
-
     def isEmpty(self):
         """Return true if network type is 'empty'."""
         return self.cfg['type'] == 'empty'
@@ -467,4 +463,30 @@ class network:
         if format == 'gml':
             G = self.graph.copy()
             networkx.write_gml(G, file)
-    
+
+    ####################################################################
+    # Metadata of Network                                              #
+    ####################################################################
+
+    def about(self, *args):
+        """Return generic information about various parts of the network.
+        
+        Arguments:
+            *args -- tuple of strings, containing a breadcrump trail to
+                a specific information about the dataset
+
+        Examples:
+            about()"""
+
+        if not args: return {
+            'name': self.name(),
+            'description': self.__doc__
+        }
+
+        if args[0] == 'name': return self.name()
+        if args[0] == 'description': return self.__doc__
+        return None
+
+    def name(self):
+        """Return name of network (as string)."""
+        return self.cfg['name'] if 'name' in self.cfg else ''

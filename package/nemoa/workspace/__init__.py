@@ -65,8 +65,8 @@ def getConfig(type = None, config = None, merge = ['params'], **kwargs):
         name + '.default', 'base.' + name]:
         cfg = __shared['config'].get(type = type, name = cfgName,
             merge = merge, params = params)
-        if isinstance(config, dict): break
-    if not cfg: return nemoa.log('error', """
+        if isinstance(cfg, dict): return cfg
+
+    return nemoa.log('error', """
         could not get configuration:
         no %s with name '%s' could be found""" % (type, name))
-    return cfg

@@ -23,10 +23,6 @@ class dataset:
         """Return configuration as dictionary."""
         return self.cfg.copy()
 
-    def name(self):
-        """Return name of dataset."""
-        return self.cfg['name'] if 'name' in self.cfg else ''
-
     def isEmpty(self):
         """Return true if dataset is empty."""
         return not 'name' in self.cfg or not self.cfg['name']
@@ -1041,3 +1037,30 @@ class dataset:
         if 'data' in dict: self.data = copy.deepcopy(dict['data'])
         if 'cfg' in dict: self.cfg = copy.deepcopy(dict['cfg'])
         return True
+
+    ####################################################################
+    # Metadata of Dataset                                              #
+    ####################################################################
+
+    def about(self, *args):
+        """Return generic information about various parts of the dataset.
+        
+        Arguments:
+            *args -- tuple of strings, containing a breadcrump trail to
+                a specific information about the dataset
+
+        Examples:
+            about()"""
+
+        if not args: return {
+            'name': self.name(),
+            'description': self.__doc__
+        }
+
+        if args[0] == 'name': return self.name()
+        if args[0] == 'description': return self.__doc__
+        return None
+
+    def name(self):
+        """Return name of dataset."""
+        return self.cfg['name'] if 'name' in self.cfg else ''

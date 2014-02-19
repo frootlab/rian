@@ -24,7 +24,7 @@ class plot:
         self.cfg['input'] = 'model'
 
         # append / overwrite settings with default settings
-        self.settings = self.getSettings()
+        self.settings = self._default()
         for key, value in self.getDefaults().items():
             self.settings[key] = value
 
@@ -38,10 +38,11 @@ class plot:
         """Return name of plot. """
         return self.cfg['name']
 
-    def getSettings(self):
+    @staticmethod
+    def _default():
         return {
             'fileformat': 'pdf',
-            'dpi': 600,
+            'dpi': 300,
             'output': 'file',
             'show_figure_caption': True }
 
@@ -53,10 +54,27 @@ class plot:
         # common matplotlib settings
         matplotlib.rc('font', family = 'serif')
 
-        self._create(model, file)
-
-        # clear figures and release memory
+        # close previous figures
         matplotlib.pyplot.close("all")
 
+        # create plot (in memory)
+        self._create(model, file)
+
+        # draw title
+        if 'title' in self.settings \
+            and isinstance(self.settings['title'], str):
+            title = self.settings['title']
+        else: title = self._getTitle(model)
+        matplotlib.pyplot.title(title, fontsize = 11)
+
+        # output
+        if file: matplotlib.pyplot.savefig(file, dpi = self.settings['dpi'])
+        else: matplotlib.pyplot.show()
+
+        # clear figures and release memory
+        matplotlib.pyplot.clf()
+
         return True
-        
+
+    def _getTitle(self, model):
+        return model.name()

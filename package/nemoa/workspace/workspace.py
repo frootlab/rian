@@ -65,19 +65,19 @@ class workspace:
         """Return model instance."""
 
         # try to import model from file
-        if isinstance(name, str) and name in self.list(type = 'model'):
-            if 'network' in kwargs or 'dataset' in kwargs or 'system' in kwargs \
-                or 'config' in kwargs: return nemoa.log('warning', """
-                could not create model:
-                a model with name '%s' allready exists!""" % (name))
+        if isinstance(name, str) and not kwargs:
+            if not name in self.list(type = 'model'): return \
+                nemoa.log('warning', """could not import model:
+                a model with name '%s' does not exists!""" % (name))
             return self.__importModelFromFile(name)
 
-        # try to create new model
+        # check keyword arguments
         if not ('network' in kwargs and 'dataset' in kwargs \
-            and 'system' in kwargs):
-            return nemoa.log('warning', """
-                could not create model:
-                dataset, network and system parameters needed!""")
+            and 'system' in kwargs): return nemoa.log('warning', """
+            could not create model:
+            dataset, network and system parameters needed!""")
+
+        # try to create new model
         return self.__createNewModel(name, **kwargs)
 
     def __getInstance(self, type = None, config = None, empty = False, **kwargs):

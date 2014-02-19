@@ -75,10 +75,6 @@ class dbn(nemoa.system.ann.ann):
 
         cfg = self._config['optimize']
 
-        print cfg
-        print schedule
-        quit()
-
         # forward pretraining of neuronal network using
         # restricted boltzmann machines as subsystems
         if cfg['preTraining']:

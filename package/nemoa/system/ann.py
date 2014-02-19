@@ -178,7 +178,7 @@ class ann(nemoa.system.base.system):
             # Update parameters
             self.updateParams(updates)
             # Trigger inspector
-            if not inspector == None: inspector.trigger()
+            inspector.trigger()
 
         return True
 
@@ -225,8 +225,8 @@ class ann(nemoa.system.base.system):
             updates = self.getParamUpdatesRProp(out, delta, inspector)
             # Update parameters
             self.updateParams(updates)
-            # Trigger inspector
-            if not inspector == None: inspector.trigger()
+            # Trigger inspector (getch, calc inspect function etc)
+            inspector.trigger()
 
         return True
 
@@ -282,7 +282,7 @@ class ann(nemoa.system.base.system):
         update = {'units': {}, 'links': {}}
         for id, src in enumerate(layers[:-1]):
             tgt = layers[id + 1]
-            
+
             # calculate current rates for units
             update['units'][tgt] = getUpdate(
                 prevGradient['units'][tgt],

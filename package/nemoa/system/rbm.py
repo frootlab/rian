@@ -45,15 +45,17 @@ class rbm(nemoa.system.ann.ann):
                 'minibatchSize': 100,
                 'minibatchInterval': 10,
                 'updates': 100000,
-                'algorithm': 'CD',
-                'updateSamplingSteps': 1,
-                'updateSamplingIterations': 1,
+                'algorithm': 'cd',
+                'updateCdkSteps': 1, # number of gibbs steps in cdk
+                'updateCdkIterations': 1, # number of iterations in cdk
                 'updateRate': 0.1,
                 'updateFactorWeights': 1.0,
                 'updateFactorHbias': 0.1,
                 'updateFactorVbias': 0.1,
                 'sparsityFactor': 0.0,
-                'sparsityPropability': 0.5,
+                'sparsityExpect': 0.5,
+                'selectivityFactor': 0.0,
+                'selectivitySize': 0.5,
                 'corruptionType': None,
                 'corruptionFactor': 0.5,
                 'useAdjacency': False,
@@ -118,12 +120,14 @@ class rbm(nemoa.system.ann.ann):
         hModel = self.getUnitExpect(vModel, ('visible', 'hidden'))
         return data, hData, vModel, hModel
 
-    def _getDataContrastiveDivergencyKstep(self, data, k = 1, m = 1):
+    def _getDataContrastiveDivergencyKstep(self, data):
         """Return mean value of reconstructed data using k-step contrastive divergency sampling (CD-k).
         
         Options:
             k: number of full Gibbs sampling steps
             m: number if iterations to calculate mean values"""
+        k = self._config['optimize']['updateCdkSteps'],
+        m = self._config['optimize']['updateCdkIterations']
         hData  = self.getUnitExpect(data, ('visible', 'hidden'))
         vModel = numpy.zeros(shape = data.shape)
         hModel = numpy.zeros(shape = hData.shape)
@@ -132,24 +136,17 @@ class rbm(nemoa.system.ann.ann):
 
                 # calculate hSample from hExpect
                 # in first sampling step init hSample with h_data
-                if j == 0:
-                    hSample = self.getUnitSamples(hData, ('hidden', ))
-                else:
-                    hSample = self.getUnitSamples(hExpect, ('hidden', ))
+                if j == 0: hSample = self.getUnitSamples(hData, ('hidden', ))
+                else: hSample = self.getUnitSamples(hExpect, ('hidden', ))
 
                 # calculate vExpect from hSample
-                vExpect = self.getUnitExpect(hSample,
-                    ('hidden', 'visible'))
+                vExpect = self.getUnitExpect(hSample, ('hidden', 'visible'))
 
                 # calculate hExpect from vSample
                 # in last sampling step use vExpect
                 # instead of vSample to reduce noise
-                if j + 1 == k:
-                    hExpect = self.getUnitExpect(vExpect,
-                        ('visible', 'hidden'))
-                else:
-                    hExpect = self.getUnitSamples(vExpect,
-                        ('visible', 'hidden'), expectLast = True)
+                if j + 1 == k: hExpect = self.getUnitExpect(vExpect, ('visible', 'hidden'))
+                else: hExpect = self.getUnitSamples(vExpect, ('visible', 'hidden'), expectLast = True)
 
             vModel += vExpect / m
             hModel += hExpect / m
@@ -183,10 +180,17 @@ class rbm(nemoa.system.ann.ann):
         batchsize = cfg['minibatchSize']
         algorithm = cfg['algorithm'].lower()
 
-        if cfg['sparsityFactor'] > 0.0: nemoa.log(
-            'note', 'using penalty term for sparse coding')
-        if not cfg['corruptionType'] in [None, 'none']: nemoa.log(
-            'note', 'using data corruption for denoising')
+        if cfg['sparsityFactor'] > 0.0: nemoa.log('note', """
+            using l1-norm penalty term for sparse coding
+            with expectation value %.2f""" % (cfg['sparsityExpect']))
+        if cfg['selectivityFactor'] > 0.0: nemoa.log('note', """
+            using l2-norm penalty term for selective coding
+            with expectation value %.2f""" % (cfg['selectivitySize']))
+        if isinstance(cfg['corruptionType'], str) \
+            and not cfg['corruptionType'].lower() == 'none': nemoa.log(
+            'note', """using data corruption for denoising with
+            noise model '%s (%.2f)'""" % (
+            cfg['corruptionType'], cfg['corruptionFactor']))
 
         # for each update step (epoch)
         for epoch in xrange(cfg['updates']):
@@ -205,11 +209,13 @@ class rbm(nemoa.system.ann.ann):
             else: return nemoa.log('error', """could not optimize model:
                 unknown optimization algorithm '%s'""" % (algorithm))
 
-            # update system params
+            # Update system params
             self._updateParams(*dTuple)
 
-            # inspect
-            if not inspector == None: inspector.trigger()
+            # Trigger inspector (getch, calc inspect function etc)
+            event = inspector.trigger()
+            if event:
+                if event == 'abort': break
 
         return True
 
@@ -229,12 +235,51 @@ class rbm(nemoa.system.ann.ann):
         if not 'hidden' in ignore: self.units['hidden'].update(deltaH)
         if not 'links' in ignore: self._updateLinks(**deltaL)
 
-        # calculate sparsity updates
+        # calculate sparsity, and selectivity updates
         if cfg['sparsityFactor'] > 0.0:
             if not 'hidden' in ignore: self.units['hidden'].update(
-                self._getSparsityDeltaH(*dTuple))
+                self._getDeltaHSparsity(*dTuple))
+        if cfg['selectivityFactor'] > 0.0:
+            if not 'hidden' in ignore: self.units['hidden'].update(
+                self._getDeltaHSparsity(*dTuple))
 
         return True
+
+    def _getDeltaV(self, vData, hData, vModel, hModel, **kwargs):
+        """Return updates for visible units."""
+        v = len(self.units['visible'].params['label'])
+        return { 'bias': (numpy.mean(vData - vModel, axis = 0).reshape((1, v))
+            * self._config['optimize']['updateRate']
+            * self._config['optimize']['updateFactorVbias']) }
+
+    def _getDeltaL(self, vData, hData, vModel, hModel, **kwargs):
+        """Return updates for links."""
+        return { 'W': (numpy.dot(vData.T, hData) - numpy.dot(vModel.T, hModel))
+            / float(vData.size) * self._config['optimize']['updateRate']
+            * self._config['optimize']['updateFactorWeights']}
+
+    def _getDeltaH(self, vData, hData, vModel, hModel, **kwargs):
+        """Return updates for visible units."""
+        return { 'bias': (
+            numpy.mean(hData - hModel, axis = 0).reshape((1, len(self.units['hidden'].params['label'])))
+            * self._config['optimize']['updateRate']
+            * self._config['optimize']['updateFactorHbias']) }
+
+    def _getDeltaHSparsity(self, vData, hData, vModel, hModel):
+        # shall hData be recalculated?
+        # self.getUnitExpect(vData, ('visible', 'hidden'))
+        p = self._config['optimize']['sparsityExpect']
+        return { 'bias': - (numpy.abs(numpy.mean(hData, axis = 0) - p)
+            * self._config['optimize']['updateRate']
+            * self._config['optimize']['sparsityFactor']) }
+
+    def _getDeltaHSelectivity(self, vData, hData, vModel, hModel):
+        return { 'bias': 0.0 * (
+            - numpy.abs(numpy.mean(self.getUnitExpect(vData,
+            ('visible', 'hidden')), axis = 0)
+            - self._config['optimize']['selectivityFactor'])
+            * self._config['optimize']['updateRate']
+            * self._config['optimize']['selectivityFactor']) }
 
     # UNITS
 
@@ -396,33 +441,11 @@ class rbm(nemoa.system.ann.ann):
 
     # RBM VISIBLE UNIT METHODS
 
-    def _getDeltaV(self, vData, hData, vModel, hModel, **kwargs):
-        """Return updates for visible units."""
-        v = len(self.units['visible'].params['label'])
-        return { 'bias': (numpy.mean(vData - vModel, axis = 0).reshape((1, v))
-            * self._config['optimize']['updateRate']
-            * self._config['optimize']['updateFactorVbias']) }
-
     def _setVisibleUnitParams(self, params):
         """Set parameters of visible units using dictionary."""
         return self.units['visible'].overwrite(params['units'][0])
 
     # RBM HIDDEN UNIT METHODS
-
-    def _getDeltaH(self, vData, hData, vModel, hModel, **kwargs):
-        """Return updates for visible units."""
-        return { 'bias': (
-            numpy.mean(hData - hModel, axis = 0).reshape((1, len(self.units['hidden'].params['label'])))
-            * self._config['optimize']['updateRate']
-            * self._config['optimize']['updateFactorHbias']) }
-
-    def _getSparsityDeltaH(self, vData, hData, vModel, hModel):
-        return { 'bias': (
-            - numpy.abs(numpy.mean(self.getUnitExpect(vData,
-            ('visible', 'hidden')), axis = 0)
-            - self._config['optimize']['sparsityPropability'])
-            * self._config['optimize']['updateRate']
-            * self._config['optimize']['sparsityFactor']) }
 
     def _setHiddenUnitParams(self, params):
         """Set parameters of hidden units using dictionary."""
@@ -589,12 +612,6 @@ class rbm(nemoa.system.ann.ann):
                 * numpy.dot(data.T, hData) / data.shape[0])
         return -(self._params['links'][(0, 1)]['W'] * numpy.dot(data.T, hData) / data.shape[0])
 
-    def _getDeltaL(self, vData, hData, vModel, hModel, **kwargs):
-        """Return updates for links."""
-        return { 'W': (numpy.dot(vData.T, hData) - numpy.dot(vModel.T, hModel))
-            / float(vData.size) * self._config['optimize']['updateRate']
-            * self._config['optimize']['updateFactorWeights']}
-
     def _updateLinks(self, **updates):
         """Set updates for links."""
         self._params['links'][(0, 1)]['W'] += updates['W']
@@ -617,6 +634,7 @@ class grbm(rbm):
     @staticmethod
     def default(key):
         """Return GRBM default configuration as dictionary."""
+
         return {
             'params': {
                 'samples': '*',
@@ -630,55 +648,39 @@ class grbm(rbm):
                 'ignoreUnits': [],
                 'wSigma': 0.5 },
             'optimize': {
-                'checkDataset': True,
-                'ignoreUnits': [],
-                'iterations': 1,
-                'updates': 100000,
-                'algorithm': 'CD',
-                'updateSamplingSteps': 1,
-                'updateSamplingIterations': 1,
-                'updateRate': 0.01,
-                'updateFactorWeights': 1.0,
-                'updateFactorHbias': 0.1,
-                'updateFactorVbias': 0.1,
-                'updateFactorVlvar': 0.01,
-                'minibatchSize': 100,
-                'minibatchInterval': 10,
-                'corruptionType': None,
-                'corruptionFactor': 0.5,
-                'sparsityFactor': 0.0,
-                'useAdjacency': False,
-                'inspect': True,
-                'inspectFunction': 'performance',
-                'inspectTimeInterval': 20.0 ,
-                'estimateTime': True,
-                'estimateTimeWait': 20.0 }}[key]
+                'checkDataset': True, # check if data is gauss normalized
+                'ignoreUnits': [], # do not ignore units on update (needed for stacked updates)
+                'iterations': 1, # number of repeating the whole update process
+                'updates': 100000, # number of update steps / epochs
+                'algorithm': 'cd', # contrastive divergency (1 gibbs step)
+                'updateCdkSteps': 1, # number of gibbs steps in cdk
+                'updateCdkIterations': 1, # number of iterations in cdk
+                'updateRate': 0.001, # update rate (depends in algorithm)
+                'updateFactorWeights': 1.0, # factor for weight updates (related to update rate)
+                'updateFactorHbias': 0.1, # factor for hidden unit bias updates (related to update rate)
+                'updateFactorVbias': 0.1, # factor for visible unit bias updates (related to update rate)
+                'updateFactorVlvar': 0.01, # factor for visible unit logarithmic variance updates (related to update rate)
+                'minibatchSize': 500, # number of samples used to calculate updates
+                'minibatchInterval': 1, # number of updates the same minibatch is used 
+                'corruptionType': 'none', # do not use corruption
+                'corruptionFactor': 0.0, # no corruption of data
+                'sparsityFactor': 0.0, # no sparsity update
+                'sparsityExpect': 0.5, # aimed value for l2-norm penalty
+                'selectivityFactor': 0.0, # no selectivity update
+                'selectivitySize': 0.5, # aimed value for l2-norm penalty
+                'useAdjacency': False, # do not use selective weight updates
+                'inspect': True, # inspect optimization process
+                'inspectFunction': 'performance', # inspection function
+                'inspectTimeInterval': 20.0, # time interval for calculation the inspection function
+                'estimateTime': True, # initally estimate time for whole optimization process
+                'estimateTimeWait': 20.0 # time intervall used for time estimation
+            }}[key]
 
     # GRBM data
 
     def _checkDataset(self, dataset):
         """Check if dataset contains gauss normalized values."""
         return self._isDatasetGaussNormalized(dataset)
-
-    #def _updateParams(self, *args, **kwargs):
-        #"""Update system parameters using reconstructed and sampling data."""
-
-        ## first calculate all updates (without affecting the calculations)
-        #if not 'visible' in self._config['optimize']['ignoreUnits']:
-            #updateVisibleUnits = self._getDeltaV(*args, **kwargs)
-        #if not 'hidden' in self._config['optimize']['ignoreUnits']:
-            #updateHiddenUnits = self._getDeltaH(*args, **kwargs)
-        #updateLinks = self._getDeltaL(*args, **kwargs)
-
-        ## and then update all unit and link parameters
-        #if not 'visible' in self._config['optimize']['ignoreUnits']:
-            #self.units['visible'].update(updateVisibleUnits)
-            ##self.gaussUnits.update(self.units['visible'].params, updateVisibleUnits)
-        #if not 'hidden' in self._config['optimize']['ignoreUnits']:
-            #self.units['hidden'].update(updateHiddenUnits)
-            ##self.sigmoidUnits.update(self.units['hidden'].params, updateHiddenUnits)
-        #self._updateLinks(**updateLinks)
-        #return True
 
     # GRBM visible units
 

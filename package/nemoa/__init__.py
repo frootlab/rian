@@ -3,11 +3,9 @@
 
 from .common.log import *
 import nemoa.common.type as type
-import nemoa.workspace.config
-import nemoa.plot
-import nemoa.annotation
+import nemoa.workspace.config, nemoa.plot, nemoa.annotation
 
-__version = ('0.4.73', 'noGPU-20140215')
+__version = ('0.4.74', 'noGPU-20140219')
 initLogger()
 
 def new(**kwargs):

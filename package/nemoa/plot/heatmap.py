@@ -5,11 +5,12 @@ import nemoa, nemoa.plot.base, numpy, matplotlib, matplotlib.pyplot
 
 class relation(nemoa.plot.base.plot):
 
-    def getSettings(self):
+    @staticmethod
+    def _default():
         return {
             'output': 'file',
             'fileformat': 'pdf',
-            'dpi': 200,
+            'dpi': 300,
             'show_figure_caption': True,
             'interpolation': 'nearest',
             'units': (None, None),
@@ -57,9 +58,11 @@ class relation(nemoa.plot.base.plot):
         maxFontSize = 12.0
         
         xLabelIDs = self.settings['units'][1]
-        xLabels = model.network.getNodeLabels(xLabelIDs)
+        xLabels = [nemoa.common.strToUnitStr(label) \
+            for label in model.network.getNodeLabels(xLabelIDs)]
         yLabelIDs = self.settings['units'][0]
-        yLabels = model.network.getNodeLabels(yLabelIDs)
+        yLabels = [nemoa.common.strToUnitStr(label) \
+            for label in model.network.getNodeLabels(yLabelIDs)]
         fontsize = min(maxFontSize, \
             400.0 / float(max(len(xLabels), len(yLabels))))
 
@@ -75,13 +78,8 @@ class relation(nemoa.plot.base.plot):
         cbar = fig.colorbar(cax)
         for tick in cbar.ax.get_yticklabels(): tick.set_fontsize(9)
 
-        # plot title
-        if self.settings['show_figure_caption']: matplotlib.pyplot.title(
-            nemoa.common.strSplitParams(
-            self.settings['relation'])[0].title(), fontsize = maxFontSize)
-
-        # output
-        if file: matplotlib.pyplot.savefig(file, dpi = self.settings['dpi'])
-        else: matplotlib.pyplot.show()
-
         return True
+
+    def _getTitle(self, model):
+        return nemoa.common.strSplitParams(
+            self.settings['relation'])[0].title()
