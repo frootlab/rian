@@ -57,7 +57,7 @@ class system:
             self._config = {'check': {}}
             for key in ['params', 'init', 'optimize']:
                 if not key in self._config:
-                    self._config[key] = self.default(key)
+                    self._config[key] = self._default(key)
         
         # overwrite / merge local with given configuration
         nemoa.common.dictMerge(config, self._config)
@@ -306,7 +306,7 @@ class system:
         # check if optimization schedule exists for current system
         # and merge default, existing and given schedule 
         if not 'params' in schedule:
-            config = self.default('optimize')
+            config = self._default('optimize')
             nemoa.common.dictMerge(self._config['optimize'], config)
             self._config['optimize'] = config    
         elif not self.getType() in schedule['params']: return nemoa.log(
@@ -314,7 +314,7 @@ class system:
             optimization schedule '%s' does not include system '%s'
             """ % (schedule['name'], self.getType()))
         else:
-            config = self.default('optimize')
+            config = self._default('optimize')
             nemoa.common.dictMerge(self._config['optimize'], config)
             nemoa.common.dictMerge(schedule['params'][self.getType()], config)
             self._config['optimize'] = config

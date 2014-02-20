@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 ########################################################################
-# This python module contains special classes of multilayer            #
-# feedforward artificial neuronal networks aimed for data modeling     #
+# This python module contains a deep beliefe network implemnentation   #
+# aimed for multilayer data modeling and data dimensionality reduction #
 ########################################################################
 
 import nemoa.system.ann, numpy
@@ -12,14 +12,18 @@ class dbn(nemoa.system.ann.ann):
     """Deep Belief Network (DBN).
 
     Description:
-        Used for data classification and compression / decompression
+        Deep Belief Networks are Symmetric Atrificial Neural Networks
+        which are optimized in to steps: 1. Pretraining, using
+        Restricted Boltzmann Machines as per Layer Builing Blocks
+        2. Finetuning, using Backpropagation of Error. DBNs are commonly
+        used for data classification and compression / decompression.
 
     Reference:
-    
-    """
+        "Reducing the dimensionality of data with neural networks",
+        G. E. Hinton, R. R. Salakhutdinov, Science, 2006 """
 
     @staticmethod
-    def default(key): return {
+    def _default(key): return {
         'params': {
             'visible': 'auto',
             'hidden': 'auto',

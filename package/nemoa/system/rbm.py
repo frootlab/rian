@@ -24,7 +24,7 @@ class rbm(nemoa.system.ann.ann):
         Geoffrey E. Hinton, University of Toronto, 2010"""
 
     @staticmethod
-    def default(key): return {
+    def _default(key): return {
         'params': {
             'samples': '*',
             'subnet': '*',
@@ -652,60 +652,58 @@ class grbm(rbm):
     """Gaussian Restricted Boltzmann Machine (GRBM).
 
     Description:
-        Gaussian Restricted Boltzmann Machines are energy based undirected
-        artificial neuronal networks with two layers: 'visible' and 'hidden'.
-        The visible layer contains gauss distributed gaussian units
-        to model data. The hidden layer contains binary distributed
-        sigmoidal units to model relations in the data.
+        Gaussian Restricted Boltzmann Machines are energy based
+        undirected artificial neuronal networks with two layers: visible
+        and hidden. The visible layer contains gauss distributed
+        gaussian units to model data. The hidden layer contains binary
+        distributed sigmoidal units to model relations in the data.
 
     Reference:
-        "Improved Learning of Gaussian-Bernoulli Restricted Boltzmann Machines",
-        KyungHyun Cho, Alexander Ilin and Tapani Raiko, ICANN 2011"""
+        "Improved Learning of Gaussian-Bernoulli Restricted Boltzmann
+        Machines", KyungHyun Cho, Alexander Ilin and Tapani Raiko,
+        ICANN 2011 """
 
     @staticmethod
-    def default(key):
-        """Return GRBM default configuration as dictionary."""
-
-        return {
-            'params': {
-                'samples': '*',
-                'subnet': '*',
-                'visible': 'sigmoid',
-                'hidden': 'sigmoid',
-                'visibleClass': 'gauss',
-                'hiddenClass': 'sigmoid' },
-            'init': {
-                'checkDataset': True,
-                'ignoreUnits': [],
-                'wSigma': 0.5 },
-            'optimize': {
-                'checkDataset': True, # check if data is gauss normalized
-                'ignoreUnits': [], # do not ignore units on update (needed for stacked updates)
-                'iterations': 1, # number of repeating the whole update process
-                'updates': 100000, # number of update steps / epochs
-                'updateGradient': 'cd', # gradient for updates: contrastive divergency (1 gibbs step)
-                'updateCdkSteps': 1, # number of gibbs steps in cdk
-                'updateCdkIterations': 1, # number of iterations in cdk
-                'updateRate': 0.001, # update rate (depends in algorithm)
-                'updateFactorWeights': 1.0, # factor for weight updates (related to update rate)
-                'updateFactorHbias': 0.1, # factor for hidden unit bias updates (related to update rate)
-                'updateFactorVbias': 0.1, # factor for visible unit bias updates (related to update rate)
-                'updateFactorVlvar': 0.01, # factor for visible unit logarithmic variance updates (related to update rate)
-                'minibatchSize': 500, # number of samples used to calculate updates
-                'minibatchInterval': 1, # number of updates the same minibatch is used 
-                'corruptionType': 'none', # do not use corruption
-                'corruptionFactor': 0.0, # no corruption of data
-                'sparsityFactor': 0.0, # no sparsity update
-                'sparsityExpect': 0.5, # aimed value for l2-norm penalty
-                'selectivityFactor': 0.0, # no selectivity update
-                'selectivitySize': 0.5, # aimed value for l2-norm penalty
-                'useAdjacency': False, # do not use selective weight updates
-                'inspect': True, # inspect optimization process
-                'inspectFunction': 'performance', # inspection function
-                'inspectTimeInterval': 20.0, # time interval for calculation the inspection function
-                'estimateTime': True, # initally estimate time for whole optimization process
-                'estimateTimeWait': 20.0 # time intervall used for time estimation
-            }}[key]
+    def _default(key): return {
+        'params': {
+            'samples': '*',
+            'subnet': '*',
+            'visible': 'sigmoid',
+            'hidden': 'sigmoid',
+            'visibleClass': 'gauss',
+            'hiddenClass': 'sigmoid' },
+        'init': {
+            'checkDataset': True,
+            'ignoreUnits': [],
+            'wSigma': 0.5 },
+        'optimize': {
+            'checkDataset': True, # check if data is gauss normalized
+            'ignoreUnits': [], # do not ignore units on update (needed for stacked updates)
+            'iterations': 1, # number of repeating the whole update process
+            'updates': 100000, # number of update steps / epochs
+            'updateGradient': 'cd', # gradient for updates: contrastive divergency (1 gibbs step)
+            'updateCdkSteps': 1, # number of gibbs steps in cdk
+            'updateCdkIterations': 1, # number of iterations in cdk
+            'updateRate': 0.001, # update rate (depends in algorithm)
+            'updateFactorWeights': 1.0, # factor for weight updates (related to update rate)
+            'updateFactorHbias': 0.1, # factor for hidden unit bias updates (related to update rate)
+            'updateFactorVbias': 0.1, # factor for visible unit bias updates (related to update rate)
+            'updateFactorVlvar': 0.01, # factor for visible unit logarithmic variance updates (related to update rate)
+            'minibatchSize': 500, # number of samples used to calculate updates
+            'minibatchInterval': 1, # number of updates the same minibatch is used 
+            'corruptionType': 'none', # do not use corruption
+            'corruptionFactor': 0.0, # no corruption of data
+            'sparsityFactor': 0.0, # no sparsity update
+            'sparsityExpect': 0.5, # aimed value for l2-norm penalty
+            'selectivityFactor': 0.0, # no selectivity update
+            'selectivitySize': 0.5, # aimed value for l2-norm penalty
+            'useAdjacency': False, # do not use selective weight updates
+            'inspect': True, # inspect optimization process
+            'inspectFunction': 'performance', # inspection function
+            'inspectTimeInterval': 20.0, # time interval for calculation the inspection function
+            'estimateTime': True, # initally estimate time for whole optimization process
+            'estimateTimeWait': 20.0 # time intervall used for time estimation
+        }}[key]
 
     # GRBM data
 
