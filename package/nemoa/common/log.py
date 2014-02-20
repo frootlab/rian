@@ -42,7 +42,8 @@ def initLogger(logfile = None):
 def setLog(**kwargs):
     """Set global logging parameters."""
 
-    if 'mode' in kwargs and kwargs['mode'] in ['exec', 'shell', 'debug', 'silent']:
+    if 'mode' in kwargs and kwargs['mode'] \
+        in ['exec', 'shell', 'debug', 'silent']:
         __shared['mode'] = kwargs['mode']
     if 'indent' in kwargs:
         if isinstance(kwargs['indent'], int):
@@ -50,7 +51,8 @@ def setLog(**kwargs):
         elif isinstance(kwargs['indent'], str) \
             and kwargs['indent'][0] in ['+', '-']:
             size = int(kwargs['indent'][1:])
-            __shared['indent'] += size if kwargs['indent'][0] == '+' else -size
+            __shared['indent'] += size \
+                if kwargs['indent'][0] == '+' else -size
     return True
 
 def getLog():
@@ -155,5 +157,4 @@ def log(*args):
         fileLog.info(fileMsg)
         return True
 
-    log('warning', 'unknown logging type \'%s\'!' % (type))
-    return False
+    return log('warning', "unknown logging type '%s'!" % (type))

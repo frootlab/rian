@@ -170,15 +170,15 @@ class ann(nemoa.system.base.system):
     def optimizeBProp(self, dataset, schedule, inspector):
         """Optimize parameters using backpropagation."""
 
-        config = self._config['optimize']
+        cnf = self._config['optimize']
         layers = self.getMapping()
 
         # update parameters
-        for epoch in xrange(config['updates']):
+        for epoch in xrange(cnf['updates']):
 
             # Get data (sample from minibatches)
-            if epoch % config['minibatchInterval'] == 0:
-                data = dataset.getData(size = config['minibatchSize'],
+            if epoch % cnf['minibatchInterval'] == 0:
+                data = dataset.getData(size = cnf['minibatchSize'],
                     cols = (layers[0], layers[-1]))
             # Forward pass (Compute value estimations from given input)
             out = self._optimizeGetValues(data[0])
@@ -188,8 +188,10 @@ class ann(nemoa.system.base.system):
             updates = self.getParamUpdatesBProp(out, delta)
             # Update parameters
             self.updateParams(updates)
-            # Trigger inspector
-            inspector.trigger()
+            # Trigger inspector (getch, calc inspect function etc)
+            event = inspector.trigger()
+            if event:
+                if event == 'abort': break
 
         return True
 
@@ -218,15 +220,15 @@ class ann(nemoa.system.base.system):
     def optimizeRProp(self, dataset, schedule, inspector):
         """Optimize parameters using resiliant backpropagation."""
 
-        config = self._config['optimize']
+        cnf = self._config['optimize']
         layers = self.getMapping()
 
         # update parameters
-        for epoch in xrange(config['updates']):
+        for epoch in xrange(cnf['updates']):
 
             # Get data (sample from minibatches)
-            if epoch % config['minibatchInterval'] == 0:
-                data = dataset.getData(size = config['minibatchSize'],
+            if epoch % cnf['minibatchInterval'] == 0:
+                data = dataset.getData(size = cnf['minibatchSize'],
                     cols = (layers[0], layers[-1]))
             # Forward pass (Compute value estimations from given input)
             out = self._optimizeGetValues(data[0])
@@ -237,7 +239,9 @@ class ann(nemoa.system.base.system):
             # Update parameters
             self.updateParams(updates)
             # Trigger inspector (getch, calc inspect function etc)
-            inspector.trigger()
+            event = inspector.trigger()
+            if event:
+                if event == 'abort': break
 
         return True
 
