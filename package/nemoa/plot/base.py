@@ -16,8 +16,7 @@ class plot:
         """Initialize plot configuration with dictionary."""
 
         self.cfg = {}
-        if config == None:
-            return None
+        if config == None: return None
 
         self.cfg['name'] = config['name']
         self.cfg['id'] = config['id']
@@ -31,7 +30,7 @@ class plot:
         # set configured settings
         for key, value in config['params'].items():
             self.settings[key] = value
-        
+
         return True
 
     def name(self):
@@ -39,18 +38,17 @@ class plot:
         return self.cfg['name']
 
     @staticmethod
-    def _default():
-        return {
-            'fileformat': 'pdf',
-            'dpi': 300,
-            'output': 'file',
-            'show_figure_caption': True }
+    def _default(): return {
+        'fileformat': 'pdf',
+        'dpi': 300,
+        'output': 'file',
+        'show_figure_caption': True }
 
     def getDefaults(self):
         return {}
 
     def create(self, model, file = None):
-        
+
         # common matplotlib settings
         matplotlib.rc('font', family = 'serif')
 
@@ -58,7 +56,7 @@ class plot:
         matplotlib.pyplot.close("all")
 
         # create plot (in memory)
-        self._create(model, file)
+        self._create(model)
 
         # draw title
         if 'title' in self.settings \

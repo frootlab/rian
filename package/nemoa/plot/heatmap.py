@@ -6,22 +6,20 @@ import nemoa, nemoa.plot.base, numpy, matplotlib, matplotlib.pyplot
 class relation(nemoa.plot.base.plot):
 
     @staticmethod
-    def _default():
-        return {
-            'output': 'file',
-            'fileformat': 'pdf',
-            'dpi': 300,
-            'show_figure_caption': True,
-            'interpolation': 'nearest',
-            'units': (None, None),
-            'relation': 'correlation()',
-            'modify': 'knockout',
-            'eval': 'error',
-            'preprocessing': None,
-            'statistics': 10000
-        }
+    def _default(): return {
+        'output': 'file',
+        'fileformat': 'pdf',
+        'dpi': 300,
+        'show_figure_caption': True,
+        'interpolation': 'nearest',
+        'units': (None, None),
+        'relation': 'correlation()',
+        'modify': 'knockout',
+        'eval': 'error',
+        'preprocessing': None,
+        'statistics': 10000 }
 
-    def _create(self, model, file = None):
+    def _create(self, model):
         params = self.settings['params'] if 'params' in self.settings \
             else {}
 
@@ -80,6 +78,5 @@ class relation(nemoa.plot.base.plot):
 
         return True
 
-    def _getTitle(self, model):
-        return nemoa.common.strSplitParams(
-            self.settings['relation'])[0].title()
+    def _getTitle(self, model): return nemoa.common.strSplitParams(
+        self.settings['relation'])[0].title()

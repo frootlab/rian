@@ -19,45 +19,43 @@ class dbn(nemoa.system.ann.ann):
     """
 
     @staticmethod
-    def default(key):
-        """Return DBN default configuration as dictionary."""
-        return {
-            'params': {
-                'visible': 'auto',
-                'hidden': 'auto',
-                'visibleClass': 'gauss',
-                'hiddenClass': 'sigmoid',
-                'visibleSystem': None,
-                'visibleSystemModule': 'rbm',
-                'visibleSystemClass': 'grbm',
-                'hiddenSystem': None,
-                'hiddenSystemClass': 'rbm',
-                'hiddenSystemModule': 'rbm' },
-            'init': {
-                'checkDataset': False,
-                'ignoreUnits': [],
-                'wSigma': 0.5 },
-            'optimize': {
-                'preTraining': True,
-                'fineTuning': True,
-                'checkDataset': False,
-                'ignoreUnits': [],
-                'iterations': 1,
-                'algorithm': 'bprop',
-                'preTraining': True,
-                'fineTuning': True,
-                'minibatchSize': 100,
-                'minibatchInterval': 10,
-                'updates': 10000,
-                'schedule': None,
-                'visible': None,
-                'hidden': None,
-                'useAdjacency': False,
-                'inspect': True,
-                'inspectFunction': 'performance',
-                'inspectTimeInterval': 10.0 ,
-                'estimateTime': True,
-                'estimateTimeWait': 15.0 }}[key]
+    def default(key): return {
+        'params': {
+            'visible': 'auto',
+            'hidden': 'auto',
+            'visibleClass': 'gauss',
+            'hiddenClass': 'sigmoid',
+            'visibleSystem': None,
+            'visibleSystemModule': 'rbm',
+            'visibleSystemClass': 'grbm',
+            'hiddenSystem': None,
+            'hiddenSystemClass': 'rbm',
+            'hiddenSystemModule': 'rbm' },
+        'init': {
+            'checkDataset': False,
+            'ignoreUnits': [],
+            'wSigma': 0.5 },
+        'optimize': {
+            'preTraining': True,
+            'fineTuning': True,
+            'checkDataset': False,
+            'ignoreUnits': [],
+            'iterations': 1,
+            'updateGradient': 'bprop',
+            'preTraining': True,
+            'fineTuning': True,
+            'minibatchSize': 100,
+            'minibatchInterval': 10,
+            'updates': 10000,
+            'schedule': None,
+            'visible': None,
+            'hidden': None,
+            'useAdjacency': False,
+            'inspect': True,
+            'inspectFunction': 'performance',
+            'inspectTimeInterval': 10.0 ,
+            'estimateTime': True,
+            'estimateTimeWait': 15.0 }}[key]
 
     def _checkNetwork(self, network):
         return self._isNetworkDBNCompatible(network)
@@ -77,13 +75,11 @@ class dbn(nemoa.system.ann.ann):
 
         # forward pretraining of neuronal network using
         # restricted boltzmann machines as subsystems
-        if cfg['preTraining']:
-            self._optimizePreTraining(dataset, schedule, inspector)
+        if cfg['preTraining']: self._optimizePreTraining(dataset, schedule, inspector)
 
         # backward finetuning of neuronal network
         # using backpropagation of error
-        if cfg['fineTuning']:
-            self._optimizeFineTuning(dataset, schedule, inspector)
+        if cfg['fineTuning']: self._optimizeFineTuning(dataset, schedule, inspector)
 
         return True
 
@@ -122,11 +118,9 @@ class dbn(nemoa.system.ann.ann):
                     """ % (sysUserConf))
                     nemoa.setLog(indent = '-1')
                     return False
-            else:
-                sysConfig = {
-                    'package': self._config['params'][sysType + 'SystemModule'],
-                    'class': self._config['params'][sysType + 'SystemClass']
-                }
+            else: sysConfig = {
+                'package': self._config['params'][sysType + 'SystemModule'],
+                 'class': self._config['params'][sysType + 'SystemClass'] }
 
             # update subsystem configuration
             sysConfig['name'] = '%s ↔ %s' % (inUnits['name'], outUnits['name'])
@@ -135,8 +129,7 @@ class dbn(nemoa.system.ann.ann):
                 sysConfig['params']['visible'] = \
                     self._params['units'][0]['label'] \
                     + self._params['units'][-1]['label']
-            else:
-                sysConfig['params']['visible'] = inUnits['label']
+            else: sysConfig['params']['visible'] = inUnits['label']
             sysConfig['params']['hidden'] = outUnits['label']
 
             # create instance of subsystem from configuration
@@ -181,7 +174,7 @@ class dbn(nemoa.system.ann.ann):
         for sysID in range(len(subSystems)):
             # link subsystem
             system = subSystems[sysID]
-            algorithm = system._config['optimize']['algorithm']
+            algorithm = system._config['optimize']['updateGradient']
             
             nemoa.log('note', "optimize '%s' (%s) using algorithm '%s'" % \
                 (system.name(), system.getType(), algorithm))
@@ -260,6 +253,7 @@ class dbn(nemoa.system.ann.ann):
 
     def _optimizeFineTuning(self, dataset, schedule, inspector):
         """Finetuning model using backpropagation of error."""
+
         nemoa.log('finetuning model')
         nemoa.setLog(indent = '+1')
 
@@ -267,15 +261,15 @@ class dbn(nemoa.system.ann.ann):
         # Optimize system parameters                                   #
         ################################################################
 
-        algorithm = self._config['optimize']['algorithm'].lower()
+        algorithm = self._config['optimize']['updateGradient'].lower()
 
-        nemoa.log('note', "optimize '%s' (%s) using algorithm '%s'" % \
+        nemoa.log('note', "optimize '%s' (%s) using gradient '%s'" % \
             (self.name(), self.getType(), algorithm))
         nemoa.setLog(indent = '+1')
 
         if   algorithm == 'bprop': self.optimizeBProp(dataset, schedule, inspector)
         elif algorithm == 'rprop': self.optimizeRProp(dataset, schedule, inspector)
-        else: nemoa.log('error', "unknown algorithm '%s'!" % (algorithm))
+        else: nemoa.log('error', "unknown gradient '%s'!" % (algorithm))
 
         nemoa.setLog(indent = '-2')
         return True

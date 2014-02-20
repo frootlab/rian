@@ -344,12 +344,16 @@ class model:
     # Model interface to dataset instance                              #
     ####################################################################
 
-    def getData(self, dataset = None, **kwargs):
+    def getData(self, dataset = None, layer = None, transform = 'expect', **kwargs):
         """Return data from dataset."""
         if not nemoa.type.isDataset(dataset): dataset = self.dataset
-        i = self.system.getMapping()[0]
-        o = self.system.getMapping()[-1]
-        return dataset.getData(cols = (i, o), **kwargs)
+        if not isinstance(layer, str):
+            i = self.system.getMapping()[0]
+            o = self.system.getMapping()[-1]
+            return dataset.getData(cols = (i, o), **kwargs)
+        mapping = self.system.getMapping(tgt = layer)
+        data = dataset.getData(cols = self.system.getMapping()[0], **kwargs)
+        return self.system.mapData(data, mapping = mapping, transform = transform)
 
     ####################################################################
     # Scalar model evaluation functions                                #

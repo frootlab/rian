@@ -59,12 +59,17 @@ def getConfig(type = None, config = None, merge = ['params'], **kwargs):
     if 'params' in kwargs and isinstance(kwargs['params'], dict):
         params = nemoa.common.dictMerge(kwargs['params'], params)
 
+    search = [name, '%s.%s' % (project(), name),
+        name + '.default', 'base.' + name]
+    if isinstance(config, str):
+        search += [config, '%s.%s' % (project(), config),
+        config + '.default', 'base.' + config]
+
     # get config
     if not name: name = project() + '.default'
-    for cfgName in [name, '%s.%s' % (project(), name),
-        name + '.default', 'base.' + name]:
-        cfg = __shared['config'].get(type = type, name = cfgName,
-            merge = merge, params = params)
+    for cfgName in search:
+        cfg = __shared['config'].get(
+            type = type, name = cfgName, merge = merge, params = params)
         if isinstance(cfg, dict): return cfg
 
     return nemoa.log('error', """

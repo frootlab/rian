@@ -45,10 +45,6 @@ class workspace:
         script = imp.load_source('script', config['path'])
         return script.main(self, **config['params'])
 
-#    def show(self, type = None, name = None, **kwargs):
-#        """Print object configuration from type and name."""
-#        return nemoa.common.printDict(nemoa.workspace.get(type, name))
-
     def dataset(self, config = None, **kwargs):
         """Return new dataset instance."""
         return self.__getInstance('dataset', config, **kwargs)

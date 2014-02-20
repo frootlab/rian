@@ -32,7 +32,7 @@ class structure(nemoa.plot.base.plot):
             'edgeZoom': 1.0
         }
 
-    def _create(self, model, file = None):
+    def _create(self, model):
 
         # use captions
         if self.settings['nodeCaption']:
@@ -208,22 +208,19 @@ class structure(nemoa.plot.base.plot):
                     plt.figtext(.5, .11, caption, fontsize = 9, ha = 'center')
 
         plt.axis('off')
-
         return True
 
 class relation(nemoa.plot.base.plot):
 
     @staticmethod
-    def _default():
-        return {
-            'output': 'file',
-            'fileformat': 'pdf',
-            'dpi': 600,
-            'show_figure_caption': True,
-            'interpolation': 'nearest'
-        }
+    def _default(): return {
+        'output': 'file',
+        'fileformat': 'pdf',
+        'dpi': 300,
+        'show_figure_caption': True,
+        'interpolation': 'nearest' }
 
-    def _create(self, model, file = None, **params):
+    def _create(self, model, **params):
 
         # default settings
         settings = {
@@ -375,9 +372,11 @@ class relation(nemoa.plot.base.plot):
         # CREATE PLOT
         #
 
-        return self.plotGraph(graph = G, file = file, **settings)
+        self._plotGraph(graph = G, **settings)
 
-    def plotGraph(self, graph, file = None, **params):
+        return True
+
+    def _plotGraph(self, graph, file = None, **params):
         ax = plt.subplot(1, 1, 1)
 
         # calculate positions
@@ -499,16 +498,5 @@ class relation(nemoa.plot.base.plot):
         ax.autoscale()
         ax.axis('off')
         plt.axis('equal')
-
-        # draw figure title / caption
-        if params['title']:
-            plt.figtext(.5, .92, title, fontsize = 10, ha = 'center')
-
-        # output
-        if file: plt.savefig(file, dpi = params['dpi'])
-        else: plt.show()
-
-        # clear current figure object and release memory
-        plt.close("all")
 
         return True

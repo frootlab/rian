@@ -4,7 +4,7 @@
 ########################################################################
 # This python module contains various classes of restricted            #
 # boltzmann machines aimed for data modeling and per layer pretraining #
-# of multilayer feedforward artificial neuronal networks               #
+# of multilayer feedforward artificial neural networks                 #
 ########################################################################
 
 import nemoa.system.ann, numpy
@@ -24,46 +24,44 @@ class rbm(nemoa.system.ann.ann):
         Geoffrey E. Hinton, University of Toronto, 2010"""
 
     @staticmethod
-    def default(key):
-        """Return RBM default configuration as dictionary."""
-        return {
-            'params': {
-                'samples': '*',
-                'subnet': '*',
-                'visible': 'auto',
-                'hidden': 'auto',
-                'visibleClass': 'sigmoid',
-                'hiddenClass': 'sigmoid' },
-            'init': {
-                'checkDataset': True,
-                'ignoreUnits': [],
-                'wSigma': 0.5 },
-            'optimize': {
-                'checkDataset': True,
-                'ignoreUnits': [],
-                'iterations': 1,
-                'minibatchSize': 100,
-                'minibatchInterval': 10,
-                'updates': 100000,
-                'algorithm': 'cd',
-                'updateCdkSteps': 1, # number of gibbs steps in cdk
-                'updateCdkIterations': 1, # number of iterations in cdk
-                'updateRate': 0.1,
-                'updateFactorWeights': 1.0,
-                'updateFactorHbias': 0.1,
-                'updateFactorVbias': 0.1,
-                'sparsityFactor': 0.0,
-                'sparsityExpect': 0.5,
-                'selectivityFactor': 0.0,
-                'selectivitySize': 0.5,
-                'corruptionType': None,
-                'corruptionFactor': 0.5,
-                'useAdjacency': False,
-                'inspect': True,
-                'inspectFunction': 'performance',
-                'inspectTimeInterval': 10.0 ,
-                'estimateTime': True,
-                'estimateTimeWait': 20.0 }}[key]
+    def default(key): return {
+        'params': {
+            'samples': '*',
+            'subnet': '*',
+            'visible': 'auto',
+            'hidden': 'auto',
+            'visibleClass': 'sigmoid',
+            'hiddenClass': 'sigmoid' },
+        'init': {
+            'checkDataset': True,
+            'ignoreUnits': [],
+            'wSigma': 0.5 },
+        'optimize': {
+            'checkDataset': True,
+            'ignoreUnits': [],
+            'iterations': 1,
+            'minibatchSize': 100,
+            'minibatchInterval': 10,
+            'updates': 100000,
+            'updateGradient': 'cd',
+            'updateCdkSteps': 1,
+            'updateCdkIterations': 1,
+            'updateRate': 0.1,
+            'updateFactorWeights': 1.0,
+            'updateFactorHbias': 0.1,
+            'updateFactorVbias': 0.1,
+            'sparsityFactor': 0.0,
+            'sparsityExpect': 0.5,
+            'selectivityFactor': 0.0,
+            'selectivitySize': 0.5,
+            'corruptionType': None,
+            'corruptionFactor': 0.5,
+            'useAdjacency': False,
+            'inspect': True,
+            'inspectFunction': 'performance',
+            'inspectTimeInterval': 10.0 ,
+            'estimateTime': True,
+            'estimateTimeWait': 20.0 }}[key]
 
     # DATA
 
@@ -112,46 +110,6 @@ class rbm(nemoa.system.ann.ann):
 
     # DATA TRANSFORMATION
 
-    def _getDataContrastiveDivergency(self, data):
-        """Return reconstructed data using 1-step contrastive divergency sampling (CD-1)."""
-        hData  = self.getUnitExpect(data, ('visible', 'hidden'))
-        vModel = self.getUnitSamples(hData, ('hidden', 'visible'),
-            expectLast = True)
-        hModel = self.getUnitExpect(vModel, ('visible', 'hidden'))
-        return data, hData, vModel, hModel
-
-    def _getDataContrastiveDivergencyKstep(self, data):
-        """Return mean value of reconstructed data using k-step contrastive divergency sampling (CD-k).
-        
-        Options:
-            k: number of full Gibbs sampling steps
-            m: number if iterations to calculate mean values"""
-        k = self._config['optimize']['updateCdkSteps'],
-        m = self._config['optimize']['updateCdkIterations']
-        hData  = self.getUnitExpect(data, ('visible', 'hidden'))
-        vModel = numpy.zeros(shape = data.shape)
-        hModel = numpy.zeros(shape = hData.shape)
-        for i in range(m):
-            for j in range(k):
-
-                # calculate hSample from hExpect
-                # in first sampling step init hSample with h_data
-                if j == 0: hSample = self.getUnitSamples(hData, ('hidden', ))
-                else: hSample = self.getUnitSamples(hExpect, ('hidden', ))
-
-                # calculate vExpect from hSample
-                vExpect = self.getUnitExpect(hSample, ('hidden', 'visible'))
-
-                # calculate hExpect from vSample
-                # in last sampling step use vExpect
-                # instead of vSample to reduce noise
-                if j + 1 == k: hExpect = self.getUnitExpect(vExpect, ('visible', 'hidden'))
-                else: hExpect = self.getUnitSamples(vExpect, ('visible', 'hidden'), expectLast = True)
-
-            vModel += vExpect / m
-            hModel += hExpect / m
-        return data, hData, vModel, hModel
-
     # RBM PARAMETER METHODS
 
     def _setUpdateRates(self, **config):
@@ -178,7 +136,7 @@ class rbm(nemoa.system.ann.ann):
         init = self._config['init']
         corruption = (cfg['corruptionType'], cfg['corruptionFactor'])
         batchsize = cfg['minibatchSize']
-        algorithm = cfg['algorithm'].lower()
+        algorithm = cfg['updateGradient'].lower()
 
         if cfg['sparsityFactor'] > 0.0: nemoa.log('note', """
             using l1-norm penalty term for sparse coding
@@ -219,6 +177,50 @@ class rbm(nemoa.system.ann.ann):
 
         return True
 
+    ####################################################################
+    # Contrastive Divergency                                           #
+    ####################################################################
+
+    def _getDataContrastiveDivergency(self, data):
+        """Return reconstructed data using 1-step contrastive divergency sampling (CD-1)."""
+        hData  = self.getUnitExpect(data, ('visible', 'hidden'))
+        vModel = self.getUnitSamples(hData, ('hidden', 'visible'),
+            expectLast = True)
+        hModel = self.getUnitExpect(vModel, ('visible', 'hidden'))
+        return data, hData, vModel, hModel
+
+    def _getDataContrastiveDivergencyKstep(self, data):
+        """Return mean value of reconstructed data using k-step contrastive divergency sampling (CD-k).
+        
+        Options:
+            k: number of full Gibbs sampling steps
+            m: number if iterations to calculate mean values"""
+        k = self._config['optimize']['updateCdkSteps'],
+        m = self._config['optimize']['updateCdkIterations']
+        hData  = self.getUnitExpect(data, ('visible', 'hidden'))
+        vModel = numpy.zeros(shape = data.shape)
+        hModel = numpy.zeros(shape = hData.shape)
+        for i in range(m):
+            for j in range(k):
+
+                # calculate hSample from hExpect
+                # in first sampling step init hSample with h_data
+                if j == 0: hSample = self.getUnitSamples(hData, ('hidden', ))
+                else: hSample = self.getUnitSamples(hExpect, ('hidden', ))
+
+                # calculate vExpect from hSample
+                vExpect = self.getUnitExpect(hSample, ('hidden', 'visible'))
+
+                # calculate hExpect from vSample
+                # in last sampling step use vExpect
+                # instead of vSample to reduce noise
+                if j + 1 == k: hExpect = self.getUnitExpect(vExpect, ('visible', 'hidden'))
+                else: hExpect = self.getUnitSamples(vExpect, ('visible', 'hidden'), expectLast = True)
+
+            vModel += vExpect / m
+            hModel += hExpect / m
+        return data, hData, vModel, hModel
+
     def _updateParams(self, *dTuple):
         """Update system parameters using reconstructed and sampling data."""
 
@@ -226,9 +228,9 @@ class rbm(nemoa.system.ann.ann):
         ignore = cfg['ignoreUnits']
 
         # calculate updates (without affecting the calculations)
-        if not 'visible' in ignore: deltaV = self._getDeltaV(*dTuple)
-        if not 'hidden' in ignore: deltaH = self._getDeltaH(*dTuple)
-        if not 'links' in ignore: deltaL = self._getDeltaL(*dTuple)
+        if not 'visible' in ignore: deltaV = self._getUpdateCdVisible(*dTuple)
+        if not 'hidden' in ignore: deltaH = self._getUpdateCdHidden(*dTuple)
+        if not 'links' in ignore: deltaL = self._getUpdateCdLinks(*dTuple)
 
         # update parameters
         if not 'visible' in ignore: self.units['visible'].update(deltaV)
@@ -238,42 +240,71 @@ class rbm(nemoa.system.ann.ann):
         # calculate sparsity, and selectivity updates
         if cfg['sparsityFactor'] > 0.0:
             if not 'hidden' in ignore: self.units['hidden'].update(
-                self._getDeltaHSparsity(*dTuple))
+                self._getUpdateKlHidden(*dTuple))
         if cfg['selectivityFactor'] > 0.0:
             if not 'hidden' in ignore: self.units['hidden'].update(
-                self._getDeltaHSparsity(*dTuple))
+                self._getUpdateKlHidden(*dTuple))
 
         return True
 
-    def _getDeltaV(self, vData, hData, vModel, hModel, **kwargs):
-        """Return updates for visible units."""
+    def _getUpdateCdVisible(self, vData, hData, vModel, hModel, **kwargs):
+        """Return cd gradient based updates for visible units.
+
+        Description:
+            constrastive divergency gradient of hidden units parameters """
+
+        cfg = self._config['optimize']
+
+        r = cfg['updateRate'] * cfg['updateFactorVbias'] # update rate
         v = len(self.units['visible'].params['label'])
-        return { 'bias': (numpy.mean(vData - vModel, axis = 0).reshape((1, v))
-            * self._config['optimize']['updateRate']
-            * self._config['optimize']['updateFactorVbias']) }
+        diff = numpy.mean(vData - vModel, axis = 0).reshape((1, v))
 
-    def _getDeltaL(self, vData, hData, vModel, hModel, **kwargs):
-        """Return updates for links."""
-        return { 'W': (numpy.dot(vData.T, hData) - numpy.dot(vModel.T, hModel))
-            / float(vData.size) * self._config['optimize']['updateRate']
-            * self._config['optimize']['updateFactorWeights']}
+        return { 'bias': r * diff }
 
-    def _getDeltaH(self, vData, hData, vModel, hModel, **kwargs):
-        """Return updates for visible units."""
-        return { 'bias': (
-            numpy.mean(hData - hModel, axis = 0).reshape((1, len(self.units['hidden'].params['label'])))
-            * self._config['optimize']['updateRate']
-            * self._config['optimize']['updateFactorHbias']) }
+    def _getUpdateCdHidden(self, vData, hData, vModel, hModel, **kwargs):
+        """Return cd gradient based updates for hidden units.
 
-    def _getDeltaHSparsity(self, vData, hData, vModel, hModel):
-        # shall hData be recalculated?
-        # self.getUnitExpect(vData, ('visible', 'hidden'))
-        p = self._config['optimize']['sparsityExpect']
-        return { 'bias': - (numpy.abs(numpy.mean(hData, axis = 0) - p)
-            * self._config['optimize']['updateRate']
-            * self._config['optimize']['sparsityFactor']) }
+        Description:
+            constrastive divergency gradient of hidden units parameters """
 
-    def _getDeltaHSelectivity(self, vData, hData, vModel, hModel):
+        cfg = self._config['optimize']
+
+        h = len(self.units['hidden'].params['label'])
+        r = cfg['updateRate'] * cfg['updateFactorHbias'] # update rate
+        diff = numpy.mean(hData - hModel, axis = 0).reshape((1, h))
+
+        return { 'bias': r * diff }
+
+    def _getUpdateCdLinks(self, vData, hData, vModel, hModel, **kwargs):
+        """Return cd gradient based updates for links.
+
+        Description:
+            constrastive divergency gradient of link parameters """
+
+        cfg = self._config['optimize']
+
+        r = cfg['updateRate'] * cfg['updateFactorWeights'] # update rate
+        D = numpy.dot(vData.T, hData) / float(vData.size)
+        M = numpy.dot(vModel.T, hModel) / float(vData.size)
+
+        return { 'W': r * (D - M) }
+
+    def _getUpdateKlHidden(self, vData, hData, vModel, hModel):
+        """Return sparsity updates for hidden units.
+
+        Description:
+            Kullback-Leibler penalty (cross entropy) gradient
+            of hidden unit parameters. """
+
+        cfg = self._config['optimize']
+
+        p = cfg['sparsityExpect'] # target expectation value for units
+        q = numpy.mean(hData, axis = 0) # expectation value (over samples)
+        r = cfg['updateRate'] * cfg ['sparsityFactor'] # update rate
+
+        return { 'bias': r * (q - p) }
+
+    def _getUpdateSelHidden(self, vData, hData, vModel, hModel):
         return { 'bias': 0.0 * (
             - numpy.abs(numpy.mean(self.getUnitExpect(vData,
             ('visible', 'hidden')), axis = 0)
@@ -652,7 +683,7 @@ class grbm(rbm):
                 'ignoreUnits': [], # do not ignore units on update (needed for stacked updates)
                 'iterations': 1, # number of repeating the whole update process
                 'updates': 100000, # number of update steps / epochs
-                'algorithm': 'cd', # contrastive divergency (1 gibbs step)
+                'updateGradient': 'cd', # gradient for updates: contrastive divergency (1 gibbs step)
                 'updateCdkSteps': 1, # number of gibbs steps in cdk
                 'updateCdkIterations': 1, # number of iterations in cdk
                 'updateRate': 0.001, # update rate (depends in algorithm)
@@ -684,29 +715,47 @@ class grbm(rbm):
 
     # GRBM visible units
 
-    def _getDeltaV(self, vData, hData, vModel, hModel, **kwargs):
-        """Return updates for visible units."""
+    def _getUpdateCdVisible(self, vData, hData, vModel, hModel, **kwargs):
+        """Return cd gradient based updates for visible units.
+
+        Description:
+            Constrastive divergency gradient of visible unit parameters
+            using an modified energy function for faster convergence.
+            See reference for modified Energy function."""
+
         cfg = self._config['optimize']
+
         v = len(self.units['visible'].params['label'])
         W = self._params['links'][(0, 1)]['W']
-        vVar = numpy.exp(self.units['visible'].params['lvar'])
-        vBias = self.units['visible'].params['bias']
-        return {
-            'bias': (numpy.mean(vData - vModel, axis = 0).reshape((1, v))
-                / vVar * cfg['updateRate'] * cfg['updateFactorVbias']),
-            'lvar': ((
-                numpy.mean(0.5 * (vData - vBias) ** 2 - vData * numpy.dot(hData, W.T), axis = 0)
-                - numpy.mean(0.5 * (vModel - vBias) ** 2 - vModel * numpy.dot(hModel, W.T), axis = 0)
-                ).reshape((1, v))
-                / vVar * cfg['updateRate'] * cfg['updateFactorVlvar']) }
+        var = numpy.exp(self.units['visible'].params['lvar'])
+        b = self.units['visible'].params['bias']
+        r1 = cfg['updateRate'] * cfg['updateFactorVbias']
+        r2 = cfg['updateRate'] * cfg['updateFactorVlvar']
+        d = numpy.mean(0.5 * (vData - b) ** 2 \
+            - vData * numpy.dot(hData, W.T), axis = 0).reshape((1, v))
+        m = numpy.mean(0.5 * (vModel - b) ** 2 \
+            - vModel * numpy.dot(hModel, W.T), axis = 0).reshape((1, v))
+        diff = numpy.mean(vData - vModel, axis = 0).reshape((1, v))
 
-    def _getDeltaL(self, vData, hData, vModel, hModel, **kwargs):
-        """Return updates for links."""
+        return {
+            'bias': r1 * diff / var,
+            'lvar': r2 * (d - m) / var }
+
+    def _getUpdateCdLinks(self, vData, hData, vModel, hModel, **kwargs):
+        """Return cd gradient based updates for links.
+
+        Description:
+            constrastive divergency gradient of link parameters
+            using an modified energy function for faster convergence.
+            See reference for modified Energy function."""
+
         cfg = self._config['optimize']
-        vVar = numpy.exp(self.units['visible'].params['lvar'])
-        return { 'W': ((numpy.dot(vData.T, hData) - numpy.dot(vModel.T, hModel))
-            / float(vData.size)
-            * cfg['updateRate'] * cfg['updateFactorWeights']) / vVar.T}
+        var = numpy.exp(self.units['visible'].params['lvar']).T # variance of visible units
+        r = cfg['updateRate'] * cfg['updateFactorWeights'] # update rate
+        D = numpy.dot(vData.T, hData) / float(vData.size)
+        M = numpy.dot(vModel.T, hModel) / float(vData.size)
+
+        return { 'W': r * (D - M) / var }
 
     def _getVisibleUnitParams(self, label):
         """Return system parameters of one specific visible unit."""
