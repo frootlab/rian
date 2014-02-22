@@ -426,11 +426,8 @@ class ann(nemoa.system.base.system):
         hiddenUnitsClass = self._config['params']['hiddenClass']
         for id in range(len(self._params['units'])):
             if self._params['units'][id]['visible'] == True:
-                self._params['units'][id]['class'] \
-                    = visibleUnitsClass
-            else:
-                self._params['units'][id]['class'] \
-                    = hiddenUnitsClass
+                self._params['units'][id]['class'] = visibleUnitsClass
+            else: self._params['units'][id]['class'] = hiddenUnitsClass
 
         # create instances of unit classes
         # and link units params to local params dict
@@ -525,7 +522,7 @@ class ann(nemoa.system.base.system):
 
     def getUnitExpect(self, data, mapping = None, block = None):
         """Return expected values of a layer.
-        
+
         Keyword Arguments:
             data -- numpy array containing data corresponding
                 to the input layer (first argument of mapping)

@@ -596,7 +596,7 @@ class system:
     def getUnitInteraction(self, units, data = None, mapping = None,
         modify = 'knockout', eval = 'values', **kwargs):
         """Return unit interaction matrix as numpy array."""
-        
+
         # create empty array
         M = numpy.empty(shape = (len(units[0]), len(units[1])))
         meanData = data[0].mean(axis = 0).reshape((1, len(units[0])))

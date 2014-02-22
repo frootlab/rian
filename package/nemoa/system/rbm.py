@@ -50,7 +50,7 @@ class rbm(nemoa.system.ann.ann):
             'updateFactorWeights': 1.0,
             'updateFactorHbias': 0.1,
             'updateFactorVbias': 0.1,
-            'sparsityFactor': 0.0,
+            'sparsityRate': 0.0,
             'sparsityExpect': 0.5,
             'selectivityFactor': 0.0,
             'selectivitySize': 0.5,
@@ -125,20 +125,13 @@ class rbm(nemoa.system.ann.ann):
             and self._setHiddenUnitParams(params)
             and self._setLinkParams(params))
 
-    def _getParams(self):
-        """Return dictionary with all parameters."""
-        return self._params.copy()
-
     def _optimizeParams(self, dataset, schedule, inspector):
         """Optimize system parameters."""
 
         cfg = self._config['optimize']
-        init = self._config['init']
-        corruption = (cfg['corruptionType'], cfg['corruptionFactor'])
-        batchsize = cfg['minibatchSize']
         algorithm = cfg['updateGradient'].lower()
 
-        if cfg['sparsityFactor'] > 0.0: nemoa.log('note', """
+        if cfg['sparsityRate'] > 0.0: nemoa.log('note', """
             using l1-norm penalty term for sparse coding
             with expectation value %.2f""" % (cfg['sparsityExpect']))
         if cfg['selectivityFactor'] > 0.0: nemoa.log('note', """
@@ -150,22 +143,104 @@ class rbm(nemoa.system.ann.ann):
             noise model '%s (%.2f)'""" % (
             cfg['corruptionType'], cfg['corruptionFactor']))
 
+        if algorithm == 'cd':
+            return self.optimizeCd(dataset, schedule, inspector)
+        elif algorithm == 'cdk':
+            return self.optimizeCdk(dataset, schedule, inspector)
+        elif algorithm == 'vrcd':
+            return self.optimizeVrcd(dataset, schedule, inspector)
+        return nemoa.log('error', """could not optimize model:
+            unknown optimization algorithm '%s'""" % (algorithm))
+
+    def optimizeCdk(self, dataset, schedule, inspector):
+        """Optimize system parameters."""
+
+        cfg  = self._config['optimize']
+        corr = (cfg['corruptionType'], cfg['corruptionFactor'])
+        size = cfg['minibatchSize']
+        k = cfg['updateSamplingSteps']
+        m = cfg['updateSamplingIterations']
+
         # for each update step (epoch)
         for epoch in xrange(cfg['updates']):
 
             # get data (sample from minibatches)
             if epoch % cfg['minibatchInterval'] == 0: data = \
-                dataset.getData(size = batchsize, corruption = corruption)
+                dataset.getData(size = size, corruption = corr)
+            # get system estimations (model)
+            dTuple = self.getCdkSamples(data, k = k, m = m)
+            # Update system params
+            self._updateParams(*dTuple)
+            # Trigger inspector (getch, calc inspect function etc)
+            event = inspector.trigger()
+            if event:
+                if event == 'abort': break
+
+        return True
+
+    def optimizeCd(self, dataset, schedule, inspector):
+        """Optimize system parameters."""
+
+        cfg  = self._config['optimize']
+        corr = (cfg['corruptionType'], cfg['corruptionFactor'])
+        size = cfg['minibatchSize']
+
+        # for each update step (epoch)
+        for epoch in xrange(cfg['updates']):
+
+            # get data (sample from minibatches)
+            if epoch % cfg['minibatchInterval'] == 0: data = \
+                dataset.getData(size = size, corruption = corr)
+            # get system estimations (model)
+            dTuple = self.getCdSamples(data)
+            # Update system params
+            self._updateParams(*dTuple)
+            # Trigger inspector (getch, calc inspect function etc)
+            event = inspector.trigger()
+            if event:
+                if event == 'abort': break
+
+        return True
+
+    def optimizeVrcd(self, dataset, schedule, inspector):
+        """Optimize parameters using variance resiliant constrastive divergency."""
+
+        cfg  = self._config['optimize']
+        corr = (cfg['corruptionType'], cfg['corruptionFactor'])
+        size = cfg['minibatchSize']
+
+        # initialise store with weight variance
+        wVar = numpy.array([numpy.var(
+            self._params['links'][(0, 1)]['W'])])
+        inspector.writeToStore(wVar = wVar, delWVar = [])
+
+        tailSize = 10
+        A = numpy.array([numpy.arange(0, tailSize), numpy.ones(tailSize)])
+        cfg['updateSparsityInterval'] = 100
+        cfg['updateVcdWait'] = 1000
+
+        # for each update step (epoch)
+        for epoch in xrange(cfg['updates']):
+
+            # get data (sample from minibatches)
+            if epoch % cfg['minibatchInterval'] == 0: data = \
+                dataset.getData(size = size, corruption = corr)
 
             # get system estimations (model)
-            if algorithm == 'cd': dTuple = \
-                self._getDataContrastiveDivergency(data)
-            elif algorithm == 'cdk': dTuple = \
-                self._getDataContrastiveDivergencyKstep(data,
-                    k = cfg['updateSamplingSteps'],
-                    m = cfg['updateSamplingIterations'])
-            else: return nemoa.log('error', """could not optimize model:
-                unknown optimization algorithm '%s'""" % (algorithm))
+            dTuple = self.getCdSamples(data)
+
+            # adapt update rate
+            if epoch % cfg['updateSparsityInterval'] == 0 \
+                and epoch > cfg['updateVcdWait'] - tailSize:
+                wVar = numpy.append([numpy.var(
+                    self._params['links'][(0, 1)]['W'])],
+                    inspector.readFromStore()['wVar'])
+                if wVar.shape[0] > tailSize:
+                    wVar = wVar[:tailSize]
+                    delw = numpy.abs( numpy.linalg.lstsq(A.T, wVar)[0][0] )
+                    cfg['updateRate'] = numpy.max(delw, 0.001)
+
+                inspector.writeToStore(wVar = wVar)
 
             # Update system params
             self._updateParams(*dTuple)
@@ -181,7 +256,7 @@ class rbm(nemoa.system.ann.ann):
     # Contrastive Divergency                                           #
     ####################################################################
 
-    def _getDataContrastiveDivergency(self, data):
+    def getCdSamples(self, data):
         """Return reconstructed data using 1-step contrastive divergency sampling (CD-1)."""
         hData  = self.getUnitExpect(data, ('visible', 'hidden'))
         vModel = self.getUnitSamples(hData, ('hidden', 'visible'),
@@ -189,14 +264,16 @@ class rbm(nemoa.system.ann.ann):
         hModel = self.getUnitExpect(vModel, ('visible', 'hidden'))
         return data, hData, vModel, hModel
 
-    def _getDataContrastiveDivergencyKstep(self, data):
+    def getCdkSamples(self, data):
         """Return mean value of reconstructed data using k-step contrastive divergency sampling (CD-k).
         
         Options:
             k: number of full Gibbs sampling steps
-            m: number if iterations to calculate mean values"""
+            m: number if iterations to calculate mean values """
+
         k = self._config['optimize']['updateCdkSteps'],
         m = self._config['optimize']['updateCdkIterations']
+
         hData  = self.getUnitExpect(data, ('visible', 'hidden'))
         vModel = numpy.zeros(shape = data.shape)
         hModel = numpy.zeros(shape = hData.shape)
@@ -219,6 +296,7 @@ class rbm(nemoa.system.ann.ann):
 
             vModel += vExpect / m
             hModel += hExpect / m
+
         return data, hData, vModel, hModel
 
     def _updateParams(self, *dTuple):
@@ -238,7 +316,7 @@ class rbm(nemoa.system.ann.ann):
         if not 'links' in ignore: self._updateLinks(**deltaL)
 
         # calculate sparsity, and selectivity updates
-        if cfg['sparsityFactor'] > 0.0:
+        if cfg['sparsityRate'] > 0.0:
             if not 'hidden' in ignore: self.units['hidden'].update(
                 self._getUpdateKlHidden(*dTuple))
         if cfg['selectivityFactor'] > 0.0:
@@ -300,9 +378,30 @@ class rbm(nemoa.system.ann.ann):
 
         p = cfg['sparsityExpect'] # target expectation value for units
         q = numpy.mean(hData, axis = 0) # expectation value (over samples)
-        r = cfg['updateRate'] * cfg ['sparsityFactor'] # update rate
+        r = cfg['sparsityRate'] # update rate
+        
+        #print r
+        #print cfg['updateRate']
+        
+        #units = (self.getUnits()[0], self.getUnits()[0])
+        #data  = (vData, vData)
+        #print 'interactions: ', numpy.var(self.getUnitInteraction(units = units, data = data))
+        #print 'Weights: ', numpy.var(W)
 
-        return { 'bias': r * (q - p) }
+        #p = 0.1 + numpy.array(numpy.zeros(q.shape[0])).reshape(q.shape)
+        #p = 0.5 * numpy.array(range(q.shape[0])).reshape(q.shape) / float(q.shape[0] - 1)
+        #p = 0.5 * numpy.array([0.0, 1.0, 1.0]).reshape(q.shape)
+        #p[0] = 0.5
+        #p[1] = 0.5
+
+        #print p
+        r = numpy.max(cfg['updateRate'], r)
+
+        #print 1.0 - 2.0 * numpy.mean(numpy.abs(q - p))
+
+        dBias = - r * (q - p)
+
+        return { 'bias': dBias }
 
     def _getUpdateSelHidden(self, vData, hData, vModel, hModel):
         return { 'bias': 0.0 * (
@@ -354,40 +453,40 @@ class rbm(nemoa.system.ann.ann):
         """Return tuple with lists of unit labels ([visible], [hidden]) using dataset for visible."""
         return (dataset.getColLabels(), self.units['hidden'].params['label'])
 
-    def _getUnitEval(self, data, func = 'performance', info = False, **kwargs):
-        """Return unit evaluation."""
-        evalFuncs = {
-            'energy': ['local energy', 'Energy'],
-            'expect': ['expectation values', 'Expect'],
-            'error': ['reconstruction error', 'Error'],
-            'performance': ['performance', 'Performance'],
-            'intperformance': ['self performance', 'IntPerformance'],
-            'extperformance': ['foreign performance', 'ExtPerformance'],
-            'relperformance': ['relative performance', 'RelativePerformance'],
-            'relintperformance': ['relative self performance', 'RelativeIntPerformance'],
-            'relextperformance': ['relative foreign performance', 'RelativeExtPerformance'] }
-        if info:
-            if not func in evalFuncs:
-                return False
-            return {
-                'name': evalFuncs[func][0]}
-        if not func in evalFuncs:
-            nemoa.log('warning', """
-                could not evaluate units:
-                unknown unit evaluation function '%s'
-                """ % (func))
-            return False
+    #def _getUnitEval(self, data, func = 'performance', info = False, **kwargs):
+        #"""Return unit evaluation."""
+        #evalFuncs = {
+            #'energy': ['local energy', 'Energy'],
+            #'expect': ['expectation values', 'Expect'],
+            #'error': ['reconstruction error', 'Error'],
+            #'performance': ['performance', 'Performance'],
+            #'intperformance': ['self performance', 'IntPerformance'],
+            #'extperformance': ['foreign performance', 'ExtPerformance'],
+            #'relperformance': ['relative performance', 'RelativePerformance'],
+            #'relintperformance': ['relative self performance', 'RelativeIntPerformance'],
+            #'relextperformance': ['relative foreign performance', 'RelativeExtPerformance'] }
+        #if info:
+            #if not func in evalFuncs:
+                #return False
+            #return {
+                #'name': evalFuncs[func][0]}
+        #if not func in evalFuncs:
+            #nemoa.log('warning', """
+                #could not evaluate units:
+                #unknown unit evaluation function '%s'
+                #""" % (func))
+            #return False
 
-        visibleUnitEval, hiddenUnitEval = eval(
-            'self._getUnitEval' + evalFuncs[func][1] + '(data, **kwargs)')
-        evalDict = {}
-        if isinstance(visibleUnitEval, numpy.ndarray):
-            for i, v in enumerate(self.units['visible'].params['label']):
-                evalDict[v] = visibleUnitEval[i]
-        if isinstance(hiddenUnitEval, numpy.ndarray):
-            for j, h in enumerate(self.units['hidden'].params['label']):
-                evalDict[h] = hiddenUnitEval[j]
-        return evalDict
+        #visibleUnitEval, hiddenUnitEval = eval(
+            #'self._getUnitEval' + evalFuncs[func][1] + '(data, **kwargs)')
+        #evalDict = {}
+        #if isinstance(visibleUnitEval, numpy.ndarray):
+            #for i, v in enumerate(self.units['visible'].params['label']):
+                #evalDict[v] = visibleUnitEval[i]
+        #if isinstance(hiddenUnitEval, numpy.ndarray):
+            #for j, h in enumerate(self.units['hidden'].params['label']):
+                #evalDict[h] = hiddenUnitEval[j]
+        #return evalDict
 
     def _getUnitEvalEnergy(self, data, **kwargs):
         """Return local energy of units."""
@@ -693,7 +792,7 @@ class grbm(rbm):
             'minibatchInterval': 1, # number of updates the same minibatch is used 
             'corruptionType': 'none', # do not use corruption
             'corruptionFactor': 0.0, # no corruption of data
-            'sparsityFactor': 0.0, # no sparsity update
+            'sparsityRate': 0.0, # sparsity update update
             'sparsityExpect': 0.5, # aimed value for l2-norm penalty
             'selectivityFactor': 0.0, # no selectivity update
             'selectivitySize': 0.5, # aimed value for l2-norm penalty

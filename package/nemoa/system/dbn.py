@@ -115,6 +115,7 @@ class dbn(nemoa.system.ann.ann):
             sysType = 'visible' if inUnits['visible'] else 'hidden'
             sysUserConf = self._config['params'][sysType + 'System']
             if sysUserConf:
+                # 2Do: nmConfig??
                 sysConfig = nmConfig.get(type = 'system', name = sysUserConf)
                 if sysConfig == None:
                     nemoa.log('error', """could not configure system:
@@ -126,13 +127,11 @@ class dbn(nemoa.system.ann.ann):
                 'package': self._config['params'][sysType + 'SystemModule'],
                  'class': self._config['params'][sysType + 'SystemClass'] }
 
-            # update subsystem configuration
+            # create subsystem configuration
             sysConfig['name'] = '%s ↔ %s' % (inUnits['name'], outUnits['name'])
             if not 'params' in sysConfig: sysConfig['params'] = {}
-            if inUnits['visible']:
-                sysConfig['params']['visible'] = \
-                    self._params['units'][0]['label'] \
-                    + self._params['units'][-1]['label']
+            if inUnits['visible']: sysConfig['params']['visible'] = \
+                self._params['units'][0]['label'] + self._params['units'][-1]['label']
             else: sysConfig['params']['visible'] = inUnits['label']
             sysConfig['params']['hidden'] = outUnits['label']
 
@@ -192,6 +191,9 @@ class dbn(nemoa.system.ann.ann):
                 mapping = (visible, hidden)
                 dataset.transformData(algorithm = 'system', system = prevSys,
                     mapping = mapping, transform = 'value')
+
+            # add dataset column filter 'visible'
+            dataset.setColFilter('visible', system.getUnits(group = 'visible'))
 
             # initialize (free) system parameters
             system.initParams(dataset)

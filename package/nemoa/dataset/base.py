@@ -649,6 +649,11 @@ class dataset:
             groups[group].append(label)
         return groups
 
+    def setColFilter(self, group, columns):
+        # 2Do: check columns!
+        self.cfg['colFilter'][group] = columns
+        return True
+
     #def getRowGroups(self):
         #pass
 
