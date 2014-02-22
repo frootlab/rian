@@ -333,7 +333,14 @@ class system:
             inspector.setTestData(self._getTestData(dataset)) 
 
         # optimize system parameters
-        return self._optimizeParams(dataset, schedule, inspector)
+        algorithm = config['algorithm'].title()
+        nemoa.log('note', "optimize '%s' (%s) using algorithm '%s'" % \
+            (self.name(), self.getType(), algorithm))
+        nemoa.setLog(indent = '+1')
+        retVal = self._optimizeParams(dataset, schedule, inspector)
+        nemoa.setLog(indent = '-1')
+
+        return retVal
 
     ####################################################################
     # Common network tests                                             #

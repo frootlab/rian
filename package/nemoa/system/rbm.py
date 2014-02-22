@@ -43,7 +43,7 @@ class rbm(nemoa.system.ann.ann):
             'minibatchSize': 100,
             'minibatchInterval': 10,
             'updates': 100000,
-            'updateGradient': 'cd',
+            'algorithm': 'vrcd',
             'updateCdkSteps': 1,
             'updateCdkIterations': 1,
             'updateRate': 0.1,
@@ -129,7 +129,7 @@ class rbm(nemoa.system.ann.ann):
         """Optimize system parameters."""
 
         cfg = self._config['optimize']
-        algorithm = cfg['updateGradient'].lower()
+        algorithm = cfg['algorithm'].lower()
 
         if cfg['sparsityRate'] > 0.0: nemoa.log('note', """
             using l1-norm penalty term for sparse coding
@@ -149,6 +149,8 @@ class rbm(nemoa.system.ann.ann):
             return self.optimizeCdk(dataset, schedule, inspector)
         elif algorithm == 'vrcd':
             return self.optimizeVrcd(dataset, schedule, inspector)
+        elif algorithm == 'vrcdk':
+            return self.optimizeVrcdk(dataset, schedule, inspector)
         return nemoa.log('error', """could not optimize model:
             unknown optimization algorithm '%s'""" % (algorithm))
 
@@ -158,8 +160,8 @@ class rbm(nemoa.system.ann.ann):
         cfg  = self._config['optimize']
         corr = (cfg['corruptionType'], cfg['corruptionFactor'])
         size = cfg['minibatchSize']
-        k = cfg['updateSamplingSteps']
-        m = cfg['updateSamplingIterations']
+        k = cfg['updateCdkSteps']
+        m = cfg['updateCdkIterations']
 
         # for each update step (epoch)
         for epoch in xrange(cfg['updates']):
@@ -168,7 +170,7 @@ class rbm(nemoa.system.ann.ann):
             if epoch % cfg['minibatchInterval'] == 0: data = \
                 dataset.getData(size = size, corruption = corr)
             # get system estimations (model)
-            dTuple = self.getCdkSamples(data, k = k, m = m)
+            dTuple = self.getCdkSamples(data)
             # Update system params
             self._updateParams(*dTuple)
             # Trigger inspector (getch, calc inspect function etc)
@@ -212,12 +214,13 @@ class rbm(nemoa.system.ann.ann):
         # initialise store with weight variance
         wVar = numpy.array([numpy.var(
             self._params['links'][(0, 1)]['W'])])
-        inspector.writeToStore(wVar = wVar, delWVar = [])
+        inspector.writeToStore(wVar = wVar)
 
-        tailSize = 10
-        A = numpy.array([numpy.arange(0, tailSize), numpy.ones(tailSize)])
-        cfg['updateSparsityInterval'] = 100
-        cfg['updateVcdWait'] = 1000
+        lenght = cfg['updateVrcdLenght']
+        A = numpy.array([numpy.arange(0, lenght), numpy.ones(lenght)])
+        
+        # initialise update rate
+        cfg['updateRate'] = cfg['updateVrcdInitRate']
 
         # for each update step (epoch)
         for epoch in xrange(cfg['updates']):
@@ -230,15 +233,71 @@ class rbm(nemoa.system.ann.ann):
             dTuple = self.getCdSamples(data)
 
             # adapt update rate
-            if epoch % cfg['updateSparsityInterval'] == 0 \
-                and epoch > cfg['updateVcdWait'] - tailSize:
+            if epoch % cfg['updateVrcdInterval'] == 0 \
+                and epoch > cfg['updateVrcdWait'] - lenght:
                 wVar = numpy.append([numpy.var(
                     self._params['links'][(0, 1)]['W'])],
                     inspector.readFromStore()['wVar'])
-                if wVar.shape[0] > tailSize:
-                    wVar = wVar[:tailSize]
-                    delw = numpy.abs( numpy.linalg.lstsq(A.T, wVar)[0][0] )
-                    cfg['updateRate'] = numpy.max(delw, 0.001)
+                if wVar.shape[0] > lenght:
+                    wVar = wVar[:lenght]
+                    delw = cfg['updateVrcdFactor'] * \
+                        numpy.abs(numpy.linalg.lstsq(A.T, wVar)[0][0])
+                    cfg['updateRate'] = numpy.max(delw, cfg['updateVrcdOffset'])
+
+                inspector.writeToStore(wVar = wVar)
+
+            # Update system params
+            self._updateParams(*dTuple)
+
+            # Trigger inspector (getch, calc inspect function etc)
+            event = inspector.trigger()
+            if event:
+                if event == 'abort': break
+
+        return True
+
+    def optimizeVrcdk(self, dataset, schedule, inspector):
+        """Optimize parameters using variance resiliant constrastive divergency."""
+
+        cfg  = self._config['optimize']
+        corr = (cfg['corruptionType'], cfg['corruptionFactor'])
+        size = cfg['minibatchSize']
+
+        k = cfg['updateCdkSteps']
+        m = cfg['updateCdkIterations']
+
+        # initialise store with weight variance
+        wVar = numpy.array([numpy.var(
+            self._params['links'][(0, 1)]['W'])])
+        inspector.writeToStore(wVar = wVar)
+
+        lenght = cfg['updateVrcdLenght']
+        A = numpy.array([numpy.arange(0, lenght), numpy.ones(lenght)])
+        
+        # initialise update rate
+        cfg['updateRate'] = cfg['updateVrcdInitRate']
+
+        # for each update step (epoch)
+        for epoch in xrange(cfg['updates']):
+
+            # get data (sample from minibatches)
+            if epoch % cfg['minibatchInterval'] == 0: data = \
+                dataset.getData(size = size, corruption = corr)
+
+            # get system estimations (model)
+            dTuple = self.getCdkSamples(data)
+
+            # adapt update rate
+            if epoch % cfg['updateVrcdInterval'] == 0 \
+                and epoch > cfg['updateVrcdWait'] - lenght:
+                wVar = numpy.append([numpy.var(
+                    self._params['links'][(0, 1)]['W'])],
+                    inspector.readFromStore()['wVar'])
+                if wVar.shape[0] > lenght:
+                    wVar = wVar[:lenght]
+                    delw = cfg['updateVrcdFactor'] * \
+                        numpy.abs(numpy.linalg.lstsq(A.T, wVar)[0][0])
+                    cfg['updateRate'] = numpy.max(delw, cfg['updateVrcdOffset'])
 
                 inspector.writeToStore(wVar = wVar)
 
@@ -271,8 +330,10 @@ class rbm(nemoa.system.ann.ann):
             k: number of full Gibbs sampling steps
             m: number if iterations to calculate mean values """
 
-        k = self._config['optimize']['updateCdkSteps'],
-        m = self._config['optimize']['updateCdkIterations']
+        cfg = self._config['optimize']
+
+        k = cfg['updateCdkSteps']
+        m = cfg['updateCdkIterations']
 
         hData  = self.getUnitExpect(data, ('visible', 'hidden'))
         vModel = numpy.zeros(shape = data.shape)
@@ -403,14 +464,6 @@ class rbm(nemoa.system.ann.ann):
 
         return { 'bias': dBias }
 
-    def _getUpdateSelHidden(self, vData, hData, vModel, hModel):
-        return { 'bias': 0.0 * (
-            - numpy.abs(numpy.mean(self.getUnitExpect(vData,
-            ('visible', 'hidden')), axis = 0)
-            - self._config['optimize']['selectivityFactor'])
-            * self._config['optimize']['updateRate']
-            * self._config['optimize']['selectivityFactor']) }
-
     # UNITS
 
     def _getUnitsFromConfig(self):
@@ -424,8 +477,7 @@ class rbm(nemoa.system.ann.ann):
                 if not isinstance(node, str):
                     return None
             vLabel = self._config['params']['visible']
-        else:
-            vLabel = []
+        else: vLabel = []
         if isinstance(self._config['params']['hidden'], int):
             hLabel = ['h:h%i' % (num) for num \
                 in range(1, self._config['params']['hidden'] + 1)]
@@ -434,59 +486,17 @@ class rbm(nemoa.system.ann.ann):
                 if not isinstance(node, str):
                     return None
             hLabel = self._config['params']['hidden']
-        else:
-            hLabel = []
+        else: hLabel = []
 
         return [{
-            'id': 0,
-            'name': 'visible',
-            'visible': True,
-            'label': vLabel,
+            'id': 0, 'name': 'visible', 'visible': True, 'label': vLabel,
         }, {
-            'id': 1,
-            'name': 'hidden',
-            'visible': False,
-            'label': hLabel
+            'id': 1, 'name': 'hidden', 'visible': False, 'label': hLabel
         }]
 
     def _getUnitsFromDataset(self, dataset):
         """Return tuple with lists of unit labels ([visible], [hidden]) using dataset for visible."""
         return (dataset.getColLabels(), self.units['hidden'].params['label'])
-
-    #def _getUnitEval(self, data, func = 'performance', info = False, **kwargs):
-        #"""Return unit evaluation."""
-        #evalFuncs = {
-            #'energy': ['local energy', 'Energy'],
-            #'expect': ['expectation values', 'Expect'],
-            #'error': ['reconstruction error', 'Error'],
-            #'performance': ['performance', 'Performance'],
-            #'intperformance': ['self performance', 'IntPerformance'],
-            #'extperformance': ['foreign performance', 'ExtPerformance'],
-            #'relperformance': ['relative performance', 'RelativePerformance'],
-            #'relintperformance': ['relative self performance', 'RelativeIntPerformance'],
-            #'relextperformance': ['relative foreign performance', 'RelativeExtPerformance'] }
-        #if info:
-            #if not func in evalFuncs:
-                #return False
-            #return {
-                #'name': evalFuncs[func][0]}
-        #if not func in evalFuncs:
-            #nemoa.log('warning', """
-                #could not evaluate units:
-                #unknown unit evaluation function '%s'
-                #""" % (func))
-            #return False
-
-        #visibleUnitEval, hiddenUnitEval = eval(
-            #'self._getUnitEval' + evalFuncs[func][1] + '(data, **kwargs)')
-        #evalDict = {}
-        #if isinstance(visibleUnitEval, numpy.ndarray):
-            #for i, v in enumerate(self.units['visible'].params['label']):
-                #evalDict[v] = visibleUnitEval[i]
-        #if isinstance(hiddenUnitEval, numpy.ndarray):
-            #for j, h in enumerate(self.units['hidden'].params['label']):
-                #evalDict[h] = hiddenUnitEval[j]
-        #return evalDict
 
     def _getUnitEvalEnergy(self, data, **kwargs):
         """Return local energy of units."""
@@ -599,10 +609,7 @@ class rbm(nemoa.system.ann.ann):
     def _setLinks(self, links = []):
         """Set links and create link adjacency matrix."""
         if not self._checkUnitParams(self._params):
-            nemoa.log('error', """
-                could not set links:
-                units have not yet been set yet!
-                """)
+            nemoa.log('error', 'could not set links: units have not yet been set yet!')
             return False
 
         # create adjacency matrix from links
@@ -616,8 +623,7 @@ class rbm(nemoa.system.ann.ann):
                 A[i, j] = ((v, h) in links or (h, v) in links)
 
         # update link adjacency matrix
-        if not 'links' in self._params:
-            self._params['links'] = {}
+        if not 'links' in self._params: self._params['links'] = {}
         if not (0, 1) in self._params['links']:
             self._params['links'][(0, 1)] = {}
         self._params['links'][(0, 1)]['A'] = A
@@ -780,9 +786,9 @@ class grbm(rbm):
             'ignoreUnits': [], # do not ignore units on update (needed for stacked updates)
             'iterations': 1, # number of repeating the whole update process
             'updates': 100000, # number of update steps / epochs
-            'updateGradient': 'cd', # gradient for updates: contrastive divergency (1 gibbs step)
-            'updateCdkSteps': 1, # number of gibbs steps in cdk
-            'updateCdkIterations': 1, # number of iterations in cdk
+            'algorithm': 'cd', # algorithm used for updates
+            'updateCdkSteps': 1, # number of gibbs steps in cdk sampling
+            'updateCdkIterations': 1, # number of iterations in cdk sampling
             'updateRate': 0.001, # update rate (depends in algorithm)
             'updateFactorWeights': 1.0, # factor for weight updates (related to update rate)
             'updateFactorHbias': 0.1, # factor for hidden unit bias updates (related to update rate)

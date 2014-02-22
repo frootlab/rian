@@ -45,7 +45,7 @@ class dbn(nemoa.system.ann.ann):
             'checkDataset': False,
             'ignoreUnits': [],
             'iterations': 1,
-            'updateGradient': 'bprop',
+            'algorithm': 'bprop',
             'preTraining': True,
             'fineTuning': True,
             'minibatchSize': 100,
@@ -177,11 +177,6 @@ class dbn(nemoa.system.ann.ann):
         for sysID in range(len(subSystems)):
             # link subsystem
             system = subSystems[sysID]
-            algorithm = system._config['optimize']['updateGradient']
-            
-            nemoa.log('note', "optimize '%s' (%s) using algorithm '%s'" % \
-                (system.name(), system.getType(), algorithm))
-            nemoa.setLog(indent = '+1')
 
             # transform dataset with previous system / fix lower stack
             if sysID > 0:
@@ -200,8 +195,6 @@ class dbn(nemoa.system.ann.ann):
 
             # optimize (free) system parameter
             system.optimizeParams(dataset, schedule)
-
-            nemoa.setLog(indent = '-1')
 
         # reset data to initial state (before transformation)
         dataset._set(**datasetCopy)
@@ -267,9 +260,9 @@ class dbn(nemoa.system.ann.ann):
         # Optimize system parameters                                   #
         ################################################################
 
-        algorithm = self._config['optimize']['updateGradient'].lower()
+        algorithm = self._config['optimize']['algorithm'].lower()
 
-        nemoa.log('note', "optimize '%s' (%s) using gradient '%s'" % \
+        nemoa.log('note', "optimize '%s' (%s) using algorithm '%s'" % \
             (self.name(), self.getType(), algorithm))
         nemoa.setLog(indent = '+1')
 
