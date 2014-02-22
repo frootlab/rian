@@ -234,15 +234,15 @@ class rbm(nemoa.system.ann.ann):
 
             # adapt update rate
             if epoch % cfg['updateVrcdInterval'] == 0 \
-                and epoch > cfg['updateVrcdWait'] - lenght:
+                and epoch > cfg['updateVrcdWait']:
                 wVar = numpy.append([numpy.var(
                     self._params['links'][(0, 1)]['W'])],
                     inspector.readFromStore()['wVar'])
                 if wVar.shape[0] > lenght:
                     wVar = wVar[:lenght]
-                    delw = cfg['updateVrcdFactor'] * \
-                        numpy.abs(numpy.linalg.lstsq(A.T, wVar)[0][0])
-                    cfg['updateRate'] = numpy.max(delw, cfg['updateVrcdOffset'])
+                    grad = - numpy.linalg.lstsq(A.T, wVar)[0][0]
+                    delw = cfg['updateVrcdFactor'] * grad
+                    cfg['updateRate'] = numpy.max(delw, cfg['updateVrcdMin'])
 
                 inspector.writeToStore(wVar = wVar)
 
@@ -295,9 +295,64 @@ class rbm(nemoa.system.ann.ann):
                     inspector.readFromStore()['wVar'])
                 if wVar.shape[0] > lenght:
                     wVar = wVar[:lenght]
-                    delw = cfg['updateVrcdFactor'] * \
-                        numpy.abs(numpy.linalg.lstsq(A.T, wVar)[0][0])
-                    cfg['updateRate'] = numpy.max(delw, cfg['updateVrcdOffset'])
+                    grad = numpy.linalg.lstsq(A.T, wVar)[0][0]
+                    delw = cfg['updateVrcdFactor'] * numpy.abs(grad)
+                    cfg['updateRate'] = numpy.max(delw, cfg['updateVrcdMin'])
+
+                inspector.writeToStore(wVar = wVar)
+
+            # Update system params
+            self._updateParams(*dTuple)
+
+            # Trigger inspector (getch, calc inspect function etc)
+            event = inspector.trigger()
+            if event:
+                if event == 'abort': break
+
+        return True
+
+    def optimizeRcdk(self, dataset, schedule, inspector):
+        """Optimize parameters using variance resiliant constrastive divergency."""
+
+        cfg  = self._config['optimize']
+        corr = (cfg['corruptionType'], cfg['corruptionFactor'])
+        size = cfg['minibatchSize']
+
+        k = cfg['updateCdkSteps']
+        m = cfg['updateCdkIterations']
+
+        # initialise store with weight variance
+        W = self._params['links'][(0, 1)]['W']
+        wVar = numpy.array([numpy.var(W)])
+        inspector.writeToStore(wVar = wVar)
+
+        lenght = cfg['updateVrcdLenght']
+        A = numpy.array([numpy.arange(0, lenght), numpy.ones(lenght)])
+        
+        # initialise update rate
+        cfg['updateRate'] = cfg['updateVrcdInitRate']
+
+        # for each update step (epoch)
+        for epoch in xrange(cfg['updates']):
+
+            # get data (sample from minibatches)
+            if epoch % cfg['minibatchInterval'] == 0: data = \
+                dataset.getData(size = size, corruption = corr)
+
+            # get system estimations (model)
+            dTuple = self.getCdkSamples(data)
+
+            # adapt update rate
+            if epoch % cfg['updateVrcdInterval'] == 0 \
+                and epoch > cfg['updateVrcdWait'] - lenght:
+                wVar = numpy.append([numpy.var(
+                    self._params['links'][(0, 1)]['W'])],
+                    inspector.readFromStore()['wVar'])
+                if wVar.shape[0] > lenght:
+                    wVar = wVar[:lenght]
+                    grad = numpy.linalg.lstsq(A.T, wVar)[0][0]
+                    delw = cfg['updateVrcdFactor'] * numpy.abs(grad)
+                    cfg['updateRate'] = numpy.max(delw, cfg['updateVrcdMin'])
 
                 inspector.writeToStore(wVar = wVar)
 
@@ -446,8 +501,6 @@ class rbm(nemoa.system.ann.ann):
         
         #units = (self.getUnits()[0], self.getUnits()[0])
         #data  = (vData, vData)
-        #print 'interactions: ', numpy.var(self.getUnitInteraction(units = units, data = data))
-        #print 'Weights: ', numpy.var(W)
 
         #p = 0.1 + numpy.array(numpy.zeros(q.shape[0])).reshape(q.shape)
         #p = 0.5 * numpy.array(range(q.shape[0])).reshape(q.shape) / float(q.shape[0] - 1)
@@ -458,7 +511,7 @@ class rbm(nemoa.system.ann.ann):
         #print p
         r = numpy.max(cfg['updateRate'], r)
 
-        #print 1.0 - 2.0 * numpy.mean(numpy.abs(q - p))
+        print 'distribution Performance', 1.0 - 2.0 * numpy.mean(numpy.abs(q - p))
 
         dBias = - r * (q - p)
 
