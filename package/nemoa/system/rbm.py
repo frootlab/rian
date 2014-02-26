@@ -508,10 +508,9 @@ class rbm(nemoa.system.ann.ann):
         #p[0] = 0.5
         #p[1] = 0.5
 
-        #print p
         r = numpy.max(cfg['updateRate'], r)
 
-        print 'distribution Performance', 1.0 - 2.0 * numpy.mean(numpy.abs(q - p))
+        #print 'distribution Performance', 1.0 - 2.0 * numpy.mean(numpy.abs(q - p))
 
         dBias = - r * (q - p)
 
