@@ -356,18 +356,48 @@ class model:
         return self.system.mapData(data, mapping = mapping, transform = transform)
 
     ####################################################################
-    # Scalar model evaluation functions                                #
+    # (scalar) model evaluation                                        #
     ####################################################################
 
-    def performance(self, dataset = None, type = 'mse'):
-        """Return data reconstruction performance of system."""
-        data = self.getData(dataset = dataset)
-        return self.system.getPerformance(data, type = type)
+    def error(self, dataset = None, **kwargs):
+        """Return data reconstruction error of model."""
 
-    def error(self, dataset = None, type = 'mse'):
-        """Return data reconstruction error of system."""
         data = self.getData(dataset = dataset)
-        return self.system.getError(data, type = type)
+        error = self.system.getError(data, **kwargs)
+
+        return error
+
+    def accuracy(self, dataset = None, **kwargs):
+        """Return data reconstruction accuracy of model."""
+
+        data = self.getData(dataset = dataset)
+        accuracy = self.system.getAccuracy(data, **kwargs)
+
+        return accuracy
+
+    def precision(self, dataset = None, **kwargs):
+        """Return data reconstruction precision of model."""
+
+        data = self.getData(dataset = dataset)
+        precision = self.system.getPrecision(data, **kwargs)
+
+        return precision
+
+    def correlation(self, dataset = None, **kwargs):
+        """Return data reconstruction correlation of model."""
+
+        data = self.getData(dataset = dataset)
+        correlation = self.system.getCorrelation(data, **kwargs)
+
+        return correlation
+
+    def energy(self, dataset = None, **kwargs):
+        """Return data reconstruction energy of model."""
+
+        data = self.getData(dataset = dataset)
+        energy = self.system.getEnergy(data, **kwargs)
+
+        return energy
 
     ####################################################################
     # Evaluation of unit relations                                     #
@@ -471,16 +501,6 @@ class model:
                 #return True
 
         #return False
-
-    ##
-    ## SYSTEM EVALUATION
-    ##
-
-    #def _getEval(self, data = None, statistics = 100000, **kwargs):
-        #"""Return dictionary with units and evaluation values."""
-        #if data == None: # get data if not given
-            #data = self.dataset.getData(statistics)
-        #return self.system.getDataEval(data, **kwargs)
 
     #
     # UNIT EVALUATION

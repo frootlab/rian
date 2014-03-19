@@ -58,7 +58,7 @@ class rbm(nemoa.system.ann.ann):
             'corruptionFactor': 0.5,
             'useAdjacency': False,
             'inspect': True,
-            'inspectFunction': 'performance',
+            'inspectFunction': 'accuracy',
             'inspectTimeInterval': 10.0 ,
             'estimateTime': True,
             'estimateTimeWait': 20.0 }}[key]
@@ -91,9 +91,7 @@ class rbm(nemoa.system.ann.ann):
         vEnergy = self.getUnitEnergy(data, ('visible',))
         hEnergy = self.getUnitEnergy(data, ('visible', 'hidden'))
         lEnergy = self._getLinkEvalEnergy(data)
-        return numpy.sum(vEnergy) \
-            + numpy.sum(hEnergy) \
-            + numpy.sum(lEnergy)
+        return numpy.sum(vEnergy) + numpy.sum(hEnergy) + numpy.sum(lEnergy)
 
     @staticmethod
     def _getUnitsFromNetwork(network):
@@ -514,7 +512,7 @@ class rbm(nemoa.system.ann.ann):
 
         r = max(cfg['updateRate'], r)
 
-        #print 'distribution Performance', 1.0 - 2.0 * numpy.mean(numpy.abs(q - p))
+        #print 'distribution accuracy', 1.0 - 2.0 * numpy.mean(numpy.abs(q - p))
 
         dBias = - r * (q - p)
 
@@ -566,60 +564,60 @@ class rbm(nemoa.system.ann.ann):
         return self.getUnitError(data, data,
             ('visible', 'hidden', 'visible'), block), None
 
-    def _getUnitEvalIntPerformance(self, data, k = 1, **kwargs):
-        """Return 'intrinsic performance' of units.
+    def _getUnitEvalIntAccuracy(self, data, k = 1, **kwargs):
+        """Return 'intrinsic accuracy' of units.
 
-        'intrinsic performance' := relperf
+        'intrinsic accuracy' := relperf
             where model(v) is generated with: data(u not v) = mean(data(u))"""
         vSize = len(self.units['visible'].params['label'])
         relIntApprox = numpy.empty(vSize)
         for v in range(vSize):
             block = range(vSize)
             block.pop(v)
-            relIntApprox[v] = self._getUnitEvalPerformance(
+            relIntApprox[v] = self._getUnitEvalAccuracy(
                 data, block = block, k = k)[0][v]
         return relIntApprox, None
 
-    def _getUnitEvalExtPerformance(self, data, block = [], k = 1, **kwargs):
-        """Return 'extrinsic performance' of units.
+    def _getUnitEvalExtAccuracy(self, data, block = [], k = 1, **kwargs):
+        """Return 'extrinsic accuracy' of units.
         
-        'extrinsic performance' := relApprox
+        'extrinsic accuracy' := relApprox
             where model(v) is generated with data(v) = mean(data(v))"""
         relExtApprox = numpy.empty(len(self.units['visible'].params['label']))
         for v in range(len(self.units['visible'].params['label'])):
-            relExtApprox[v] = self._getUnitEvalPerformance(
+            relExtApprox[v] = self._getUnitEvalAccuracy(
                 data, block = block + [v], k = k)[0][v]
         return relExtApprox, None
 
-    def _getUnitEvalRelativePerformance(self, data, **kwargs):
-        """Return 'performance' of units.
+    #def _getUnitEvalRelativeAccuracy(self, data, **kwargs):
+        #"""Return 'accuracy' of units.
         
-        'performance' := 1 - error / ||data - mean(data)||"""
-        vErr = self._getUnitEvalError(data = data, **kwargs)[0]
-        vNorm = numpy.sqrt(((data - numpy.mean(data, axis = 0)) ** 2).sum(axis = 0))
-        return 1 - vErr  / vNorm, None
+        #'accuracy' := 1 - error / ||data - mean(data)||"""
+        #vErr = self._getUnitEvalError(data = data, **kwargs)[0]
+        #vNorm = numpy.sqrt(((data - numpy.mean(data, axis = 0)) ** 2).sum(axis = 0))
+        #return 1 - vErr  / vNorm, None
 
-    def _getUnitEvalRelativeIntPerformance(self, data, k = 1, **kwargs):
-        """Return 'intrinsic relative performance' of units
+    def _getUnitEvalRelativeIntAccuracy(self, data, k = 1, **kwargs):
+        """Return 'intrinsic relative accuracy' of units
         
-        'intrinsic relative performance' := relperf
+        'intrinsic relative accuracy' := relperf
             where model(v) is generated with data(u not v) = mean(data(u))"""
         vSize = len(self.units['visible'].params['label'])
         relIntApprox = numpy.empty(vSize)
         for v in range(vSize):
             block = range(vSize)
             block.pop(v)
-            relIntApprox[v] = self._getUnitEvalRelativePerformance(
+            relIntApprox[v] = self._getUnitEvalRelativeAccuracy(
                 data = data, block = block, k = k)[0][v]
         return relIntApprox, None
 
-    def _getUnitEvalRelativeExtPerfomance(self, data, block = [], k = 1, **kwargs):
-        """Return "performance (extrinsic)" of units.
+    def _getUnitEvalRelativeExtAccuracy(self, data, block = [], k = 1, **kwargs):
+        """Return "accuracy (extrinsic)" of units.
 
         extrelperf := relApprox where model(v) is generated with data(v) = mean(data(v))"""
         relExtApprox = numpy.empty(len(self.units['visible'].params['label']))
         for v in range(len(self.units['visible'].params['label'])):
-            relExtApprox[v] = self._getUnitEvalRelativePerformance(
+            relExtApprox[v] = self._getUnitEvalRelativeAccuracy(
                 data = data, block = block + [v], k = k)[0][v]
         return relExtApprox, None
 
@@ -860,7 +858,7 @@ class grbm(rbm):
             'selectivitySize': 0.5, # aimed value for l2-norm penalty
             'useAdjacency': False, # do not use selective weight updates
             'inspect': True, # inspect optimization process
-            'inspectFunction': 'performance', # inspection function
+            'inspectFunction': 'accuracy', # inspection function
             'inspectTimeInterval': 20.0, # time interval for calculation the inspection function
             'estimateTime': True, # initally estimate time for whole optimization process
             'estimateTimeWait': 20.0 # time intervall used for time estimation

@@ -321,24 +321,22 @@ class ann(nemoa.system.base.system):
     # System Evaluation                                                #
     ####################################################################
 
-    def _getDataEval(self, data, func = 'performance', **kwargs):
-        """Return scalar value for system evaluation. """
+    def getError(self, *args, **kwargs):
+        """Return sum of data reconstruction errors of output units. """
+        return numpy.sum(self.getUnitError(*args, **kwargs))
 
-        if func == 'energy': return self._getDataEvalEnergy(data, **kwargs)
-        if func == 'performance': return self.getPerformance(data, **kwargs)
-        if func == 'error': return self.getError(data, **kwargs)
+    def getAccuracy(self, *args, **kwargs):
+        """Return mean data reconstruction accuracy of output units. """
+        return numpy.mean(self.getUnitAccuracy(*args, **kwargs))
 
-        return False
+    def getPrecision(self, *args, **kwargs):
+        """Return mean data reconstruction precision of output units. """
+        return numpy.mean(self.getUnitPrecision(*args, **kwargs))
 
-    def getError(self, data, **kwargs):
-        """Return reconstruction error of system. """
-
-        return 0.5 * numpy.sum(self.getUnitError(data, **kwargs) ** 2)
-
-    def getPerformance(self, data, *args, **kwargs):
-        """Return mean reconstruction performance output units. """
-
-        return numpy.mean(self.getUnitPerformance(data, *args, **kwargs))
+    def getEnergy(self, *args, **kwargs):
+        """Return system energy. """
+        energy = self._getDataEvalEnergy(data, **kwargs)
+        return energy
 
     ####################################################################
     # Units                                                            #
@@ -373,8 +371,7 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _getUnitEval(self, data, eval = 'performance',
-        mapping = None, **kwargs):
+    def _getUnitEval(self, data, eval = 'accuracy', mapping = None, **kwargs):
         """Return unit evaluation."""
         
         methods = self.getUnitMethods()
@@ -662,41 +659,8 @@ class ann(nemoa.system.base.system):
 
         return self.units[mapping[-1]].energy(data)
 
-    @staticmethod
-    def getUnitErrorOfType(dOut, mOut, type = 'mse'):
-
-        # return Sum of Errors (SE)
-        if type.lower() in ['se']: return \
-            numpy.sum(numpy.abs(dOut - mOut), axis = 0)
-        # return Sum of Squared Errors (SSE)
-        if type.lower() in ['sse']: return \
-            numpy.sum((dOut - mOut) ** 2, axis = 0)
-        # return Root Sum of Squared Errors (RSSE)
-        if type.lower() in ['rsse']: return \
-            numpy.sqrt(numpy.sum((dOut - mOut) ** 2, axis = 0))
-        # return Mean of Errors (ME)
-        if type.lower() in ['me']: return \
-            numpy.mean(numpy.abs(dOut - mOut), axis = 0)
-        # return Mean of Squared Errors (MSE)
-        if type.lower() in ['mse']: return \
-            numpy.mean((dOut - mOut) ** 2, axis = 0)
-        # return Root Mean of Squared Errors (RMSE)
-        if type.lower() in ['rmse']: return \
-            numpy.sqrt(numpy.mean((dOut - mOut) ** 2, axis = 0))
-        # return Standard Deviation of Errors (SDE)
-        if type.lower() in ['sde']: return \
-            numpy.std(numpy.abs(dOut - mOut), axis = 0)
-        # return Standard Deviation of Squared Error (SDSE)
-        if type.lower() in ['sdse']: return \
-            numpy.std((dOut - mOut) ** 2, axis = 0)
-        # return Root Standard Deviation of Squared Errors (RSDSE)
-        if type.lower() in ['rsdse']: return \
-            numpy.sqrt(numpy.std((dOut - mOut) ** 2, axis = 0))
-
-        return nemoa.log('error', "unknown error type '%s'" % (type))
-
-    def getUnitError(self, data, mapping = None, block = None, type = 'mse', **kwargs):
-        """Return reconstruction error of units, depending on type.
+    def getUnitResiduals(self, data, mapping = None, block = None, **kwargs):
+        """Return reconstruction residuals of units.
 
         Keyword Arguments:
             data -- 2-tuple with numpy arrays containing input and
@@ -706,61 +670,78 @@ class ann(nemoa.system.base.system):
                 from input layer (first argument of tuple)
                 to output layer (last argument of tuple)
             block -- list of strings containing labels of units in the input
-                layer that are blocked by setting the values to their means
-            type -- type of error / deviation
-                'SE': Sum of Errors
-                'SSE': Sum of Squared Errors
-                'RSSE': Root Sum of Squared Errors
-                'ME': Mean of Errors
-                'MSE': Mean of Squared Errors
-                'RMSE': Root Mean of Squared Errors
-                'SDE': Standard Deviation of Errors
-                'SDSE': Standard Deviation of Squared Errors
-                'RSDSE': Root Standard Deviation of Squared Errors """
+                layer that are blocked by setting the values to their means """
 
         dIn, dOut = data
 
         # set mapping: inLayer to outLayer (if not set)
         if mapping == None: mapping = self.getMapping()
 
-        # block units (optional)
-        if not block == None:
+        # set unit values to mean (optional)
+        if isinstance(block, list):
             dIn = numpy.copy(dIn)
-            for i in block: dIn[:,i] = numpy.mean(dIn[:,i])
+            for i in block: dIn[:, i] = numpy.mean(dIn[:, i])
 
-        # calculate estimated / expected output values
+        # calculate estimated output values
         mOut = self.getUnitExpect(dIn, mapping)
 
-        return self.getUnitErrorOfType(dOut, mOut, type = type)
+        # calculate residuals
+        res = dOut - mOut
 
-    def getUnitPerformance(self, data, type = 'mse', **kwargs):
-        """Return unit reconstruction performance.
+        return res
+
+    def getUnitError(self, data, norm = 'ME', **kwargs):
+        """Return reconstruction error of units (depending on norm)
+
+        Keyword Arguments:
+            data -- see getUnitResiduals
+            mapping -- see getUnitResiduals
+            block -- see getUnitResiduals
+            norm -- used norm to calculate data reconstuction error
+                from residuals. see getDataMean for a list of provided norms """
+
+        res = self.getUnitResiduals(data, **kwargs)
+        error = self.getDataMean(res, norm = norm)
+
+        return error
+
+    def getUnitAccuracy(self, data, norm = 'MSE', **kwargs):
+        """Return unit reconstruction accuracy.
 
         Arguments:
-            data -- 2-tuple with numpy arrays containing input and
-                output data coresponding to the first and the last layer
-                in the mapping
-            type -- type of error / deviation
-                'SE': Sum of Errors
-                'SSE': Sum of Squared Errors
-                'RSSE': Root Sum of Squared Errors
-                'ME': Mean of Errors
-                'MSE': Mean of Squared Errors
-                'RMSE': Root Mean of Squared Errors
-                'SDE': Standard Deviation of Errors
-                'SDSE': Standard Deviation of Squared Errors
-                'RSDSE': Root Standard Deviation of Squared Errors
+            data -- see getUnitResiduals
+            mapping -- see getUnitResiduals
+            block -- see getUnitResiduals
+            norm -- used norm to calculate accuracy
+                see getDataNorm for a list of provided norms
 
         Description:
-            performance := 1 - error / ||data||. """
+            accuracy := 1 - norm(residuals) / norm(data). """
 
-        dIn, dOut = data
+        res = self.getUnitResiduals(data, **kwargs)
+        normres = self.getDataMean(res, norm = norm)
+        normdat = self.getDataMean(data[1], norm = norm)
 
-        err = self.getUnitError(data, type = type, **kwargs)
-        nrm = self.getUnitErrorOfType(dOut,
-          numpy.mean(dOut, axis = 0), type = type)
-        
-        return 1.0 - err / nrm
+        return 1.0 - normres / normdat
+
+    def getUnitPrecision(self, data, norm = 'SD', **kwargs):
+        """Return unit reconstruction precision.
+
+        Arguments:
+            data -- see getUnitResiduals
+            mapping -- see getUnitResiduals
+            block -- see getUnitResiduals
+            norm -- used norm to calculate precision
+                see getDataDeviation for a list of provided norms
+
+        Description:
+            precision := 1 - dev(residuals) / dev(data). """
+
+        res = self.getUnitResiduals(data, **kwargs)
+        devres = self.getDataDeviation(res, norm = norm)
+        devdat = self.getDataDeviation(data[1], norm = norm)
+
+        return 1.0 - devres / devdat
 
     def getUnitRCorr(self, data, mapping = None, block = None, **kwargs):
         """Return reconstruction correlation of units.
@@ -972,7 +953,7 @@ class ann(nemoa.system.base.system):
             cols = (self.getMapping()[0], self.getMapping()[-1]))
 
     ####################################################################
-    # Generic / static information                                     #
+    # System Information                                               #
     ####################################################################
 
     @staticmethod
@@ -1001,6 +982,18 @@ class ann(nemoa.system.base.system):
             'inDataFmt': 3,
             'outDataFmt': 1,
             'format': '%.1f'},
+        'accuracy': {
+            'name': 'data reconstruction accuracy',
+            'method': 'getUnitAccuracy',
+            'inDataFmt': 3,
+            'outDataFmt': 1,
+            'format': '%.2f'},
+        'precision': {
+            'name': 'data reconstruction precision',
+            'method': 'getUnitPrecision',
+            'inDataFmt': 3,
+            'outDataFmt': 1,
+            'format': '%.2f'},
         'rcorr': {
             'name': 'data reconstruction correlation',
             'method': 'getUnitRCorr',
@@ -1019,42 +1012,39 @@ class ann(nemoa.system.base.system):
             'inDataFmt': 3,
             'outDataFmt': 1,
             'format': '%.3f'},
-        'performance': {
-            'name': 'performance',
-            'method': 'getUnitPerformance',
+        'intaccuracy': {
+            'name': 'self accuracy',
+            'method': 'IntAccuracy',
             'inDataFmt': 3,
             'outDataFmt': 1,
             'format': '%.1f'},
-        'intperformance': {
-            'name': 'self performance',
-            'method': 'IntPerformance',
+        'extaccuracy': {
+            'name': 'foreign accuracy',
+            'method': 'ExtAccuracy',
             'inDataFmt': 3,
             'outDataFmt': 1,
             'format': '%.1f'},
-        'extperformance': {
-            'name': 'foreign performance',
-            'method': 'ExtPerformance',
+        'relaccuracy': {
+            'name': 'relative accuracy',
+            'method': 'RelativeAccuracy',
             'inDataFmt': 3,
             'outDataFmt': 1,
             'format': '%.1f'},
-        'relperformance': {
-            'name': 'relative performance',
-            'method': 'RelativePerformance',
+        'relintaccuracy': {
+            'name': 'relative self accuracy',
+            'method': 'RelativeIntAccuracy',
             'inDataFmt': 3,
             'outDataFmt': 1,
             'format': '%.1f'},
-        'relintperformance': {
-            'name': 'relative self performance',
-            'method': 'RelativeIntPerformance',
-            'inDataFmt': 3,
-            'outDataFmt': 1,
-            'format': '%.1f'},
-        'relextperformance': {
-            'name': 'relative foreign performance',
-            'method': 'RelativeExtPerformance',
+        'relextaccuracy': {
+            'name': 'relative foreign accuracy',
+            'method': 'RelativeExtAccuracy',
             'inDataFmt': 3,
             'outDataFmt': 1,
             'format': '%.1f' }}
+
+    @staticmethod
+    def getLinkMethods(): return {}
 
     ####################################################################
     # Link classes                                                     #

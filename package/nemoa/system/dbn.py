@@ -56,7 +56,7 @@ class dbn(nemoa.system.ann.ann):
             'hidden': None,
             'useAdjacency': False,
             'inspect': True,
-            'inspectFunction': 'performance',
+            'inspectFunction': 'accuracy',
             'inspectTimeInterval': 10.0 ,
             'estimateTime': True,
             'estimateTimeWait': 15.0 }}[key]

@@ -462,9 +462,88 @@ class system:
     # Evaluate                                                         #
     ####################################################################
 
-    def getDataEval(self, data, **kwargs):
+    def getDataEval(self, data, func = 'energy', **kwargs):
         """Return system specific data evaluation."""
-        return self._getDataEval(data, **kwargs)
+
+        if func == 'energy': return self.getEnergy(data, **kwargs)
+        if func == 'error': return self.getError(data, **kwargs)
+        if func == 'accuracy': return self.getAccuracy(data, **kwargs)
+        if func == 'precision': return self.getPrecision(data, **kwargs)
+
+    @staticmethod
+    def getDataSum(data, norm = 'S'):
+        """Return sum of data.
+
+        Keyword Arguments:
+            data -- numpy array containing data
+            norm -- data mean norm
+                'S': Sum of Values
+                'SE', 'L1': Sum of Errors / L1 Norm
+                'SSE': Sum of Squared Errors
+                'RSSE': Root Sum of Squared Errors
+                default: 'S' """
+
+        norm = norm.upper()
+
+        # Sum of Values (S)
+        if norm in ['S']: return numpy.sum(data, axis = 0)
+        # Sum of Errors (SE) / L1-Norm (L1)
+        if norm in ['SE', 'L1']: return numpy.sum(numpy.abs(data), axis = 0)
+        # Sum of Squared Errors (SSE)
+        if norm in ['SSE']: return numpy.sum(data ** 2, axis = 0)
+        # Root Sum of Squared Errors (RSSE)
+        if norm in ['RSSE']: return numpy.sqrt(numpy.sum(data ** 2, axis = 0))
+
+        return nemoa.log('error', "unknown data sum norm '%s'" % (norm))
+
+    @staticmethod
+    def getDataMean(data, norm = 'M'):
+        """Return mean of data.
+
+        Keyword Arguments:
+            data -- numpy array containing data
+            norm -- data mean norm
+                'M': Arithmetic Mean of Values
+                'ME': Mean of Errors
+                'MSE': Mean of Squared Errors
+                'RMSE', 'L2': Root Mean of Squared Errors / L2 Norm
+                default: 'M' """
+
+        norm = norm.upper()
+
+        # Mean of Values (M)
+        if norm in ['M']: return numpy.mean(data, axis = 0)
+        # Mean of Errors (ME)
+        if norm in ['ME']: return numpy.mean(numpy.abs(data), axis = 0)
+        # Mean of Squared Errors (MSE)
+        if norm in ['MSE']: return numpy.mean(data ** 2, axis = 0)
+        # Root Mean of Squared Errors (RMSE) / L2-Norm (L2)
+        if norm in ['RMSE', 'L2']: return numpy.sqrt(numpy.mean(data ** 2, axis = 0))
+
+        return nemoa.log('error', "unknown data mean norm '%s'" % (norm))
+
+    @staticmethod
+    def getDataDeviation(data, norm = 'SD'):
+        """Return deviation of data.
+
+        Keyword Arguments:
+            data -- numpy array containing data
+            norm -- data deviation norm
+                'SD': Standard Deviation of Values
+                'SDE': Standard Deviation of Errors
+                'SDSE': Standard Deviation of Squared Errors
+                default: 'SD' """
+
+        norm = norm.upper()
+
+        # Standard Deviation of Data (SD)
+        if norm in ['SD']: return numpy.std(data, axis = 0)
+        # Standard Deviation of Errors (SDE)
+        if norm in ['SDE']: return numpy.std(numpy.abs(data), axis = 0)
+        # Standard Deviation of Squared Errors (SDSE)
+        if norm in ['SDSE']: return numpy.std(data ** 2, axis = 0)
+
+        return nemoa.log('error', "unknown data deviation norm '%s'" % (deviation))
 
     def _assertUnitTuple(self, units = None):
         """Return tuple with lists of valid input and output units."""
@@ -658,7 +737,11 @@ class system:
             'name': self.name(),
             'description': self.__doc__,
             'class': self._config['class'],
-            'type': self.getType()
+            'type': self.getType(),
+            'units': {
+                'methods': self.getUnitMethods() },
+            'links': {
+                'links': self.getLinkMethods() }
         }
 
         if args[0] == 'name': return self.name()
@@ -807,7 +890,7 @@ class inspector:
                     % (estim, estimStr))
                 self.__state['estimateEnded'] = True
 
-        # iterative evaluate model in a given time interval
+        # evaluate model (in a given time interval)
         if self.__inspect:
             if self.__data == None:
                 nemoa.log('warning', """
@@ -824,8 +907,10 @@ class inspector:
                 and not (self.__estimate \
                 and self.__state['estimateStarted'] \
                 and not self.__state['estimateEnded']):
-                value = self.__system.getDataEval(
-                    data = self.__data, func = cfg['inspectFunction'])
+                func = cfg['inspectFunction']
+                value = self.__system.getDataEval(data = self.__data, func = func)
+                print func
+                print self.__system.about('units', 'methods', func)
                 progress = float(self.__state['epoch']) \
                     / float(cfg['updates']) * 100.0
                 measure = cfg['inspectFunction'].title()
