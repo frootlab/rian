@@ -330,15 +330,10 @@ class ann(nemoa.system.base.system):
 
         return False
 
-    def getError(self, data, *args, **kwargs):
+    def getError(self, data, **kwargs):
         """Return reconstruction error of system. """
 
-        return 0.5 * numpy.sum(self.getUnitError(data, *args, **kwargs) ** 2)
-
-    def getMeanError(self, data, *args, **kwargs):
-        """Return mean reconstruction error of output units. """
-
-        return numpy.mean(self.getUnitMeanError(data, *args, **kwargs))
+        return 0.5 * numpy.sum(self.getUnitError(data, **kwargs) ** 2)
 
     def getPerformance(self, data, *args, **kwargs):
         """Return mean reconstruction performance output units. """
@@ -667,8 +662,41 @@ class ann(nemoa.system.base.system):
 
         return self.units[mapping[-1]].energy(data)
 
-    def getUnitError(self, data, mapping = None, block = None, **kwargs):
-        """Return euclidean reconstruction error of units.
+    @staticmethod
+    def getUnitErrorOfType(dOut, mOut, type = 'mse'):
+
+        # return Sum of Errors (SE)
+        if type.lower() in ['se']: return \
+            numpy.sum(numpy.abs(dOut - mOut), axis = 0)
+        # return Sum of Squared Errors (SSE)
+        if type.lower() in ['sse']: return \
+            numpy.sum((dOut - mOut) ** 2, axis = 0)
+        # return Root Sum of Squared Errors (RSSE)
+        if type.lower() in ['rsse']: return \
+            numpy.sqrt(numpy.sum((dOut - mOut) ** 2, axis = 0))
+        # return Mean of Errors (ME)
+        if type.lower() in ['me']: return \
+            numpy.mean(numpy.abs(dOut - mOut), axis = 0)
+        # return Mean of Squared Errors (MSE)
+        if type.lower() in ['mse']: return \
+            numpy.mean((dOut - mOut) ** 2, axis = 0)
+        # return Root Mean of Squared Errors (RMSE)
+        if type.lower() in ['rmse']: return \
+            numpy.sqrt(numpy.mean((dOut - mOut) ** 2, axis = 0))
+        # return Standard Deviation of Errors (SDE)
+        if type.lower() in ['sde']: return \
+            numpy.std(numpy.abs(dOut - mOut), axis = 0)
+        # return Standard Deviation of Squared Error (SDSE)
+        if type.lower() in ['sdse']: return \
+            numpy.std((dOut - mOut) ** 2, axis = 0)
+        # return Root Standard Deviation of Squared Errors (RSDSE)
+        if type.lower() in ['rsdse']: return \
+            numpy.sqrt(numpy.std((dOut - mOut) ** 2, axis = 0))
+
+        return nemoa.log('error', "unknown error type '%s'" % (type))
+
+    def getUnitError(self, data, mapping = None, block = None, type = 'mse', **kwargs):
+        """Return reconstruction error of units, depending on type.
 
         Keyword Arguments:
             data -- 2-tuple with numpy arrays containing input and
@@ -677,55 +705,86 @@ class ann(nemoa.system.base.system):
             mapping -- tuple of strings containing the mapping
                 from input layer (first argument of tuple)
                 to output layer (last argument of tuple)
-            block -- list of string containing labels of units in the input
-                layer that are blocked by setting the values to their means """
+            block -- list of strings containing labels of units in the input
+                layer that are blocked by setting the values to their means
+            type -- type of error / deviation
+                'SE': Sum of Errors
+                'SSE': Sum of Squared Errors
+                'RSSE': Root Sum of Squared Errors
+                'ME': Mean of Errors
+                'MSE': Mean of Squared Errors
+                'RMSE': Root Mean of Squared Errors
+                'SDE': Standard Deviation of Errors
+                'SDSE': Standard Deviation of Squared Errors
+                'RSDSE': Root Standard Deviation of Squared Errors """
 
+        dIn, dOut = data
+
+        # set mapping: inLayer to outLayer (if not set)
         if mapping == None: mapping = self.getMapping()
-        if block == None: modelOut = self.getUnitExpect(data[0], mapping)
-        else:
-            dataInCopy = numpy.copy(data[0])
-            for i in block: dataInCopy[:,i] = numpy.mean(dataInCopy[:,i])
-            modelOut = self.getUnitExpect(dataInCopy, mapping)
 
-        return numpy.sqrt(((data[1] - modelOut) ** 2).sum(axis = 0))
+        # block units (optional)
+        if not block == None:
+            dIn = numpy.copy(dIn)
+            for i in block: dIn[:,i] = numpy.mean(dIn[:,i])
 
-    def getUnitMeanError(self, data, mapping = None, block = None, **kwargs):
-        """Return mean reconstruction error of units.
+        # calculate estimated / expected output values
+        mOut = self.getUnitExpect(dIn, mapping)
 
-        Keyword Arguments:
-            data -- 2-tuple with numpy arrays containing input and
-                output data coresponding to the first and the last layer
-                in the mapping
-            mapping -- tuple of strings containing the mapping
-                from input layer (first argument of tuple)
-                to output layer (last argument of tuple)
-            block -- list of string containing labels of units in the input
-                layer that are blocked by setting the values to their means """
+        return self.getUnitErrorOfType(dOut, mOut, type = type)
 
-        if mapping == None: mapping = self.getMapping()
-        if block == None: modelOut = self.getUnitExpect(data[0], mapping)
-        else:
-            dataInCopy = numpy.copy(data[0])
-            for i in block: dataInCopy[:,i] = numpy.mean(dataInCopy[:,i])
-            modelOut = self.getUnitExpect(dataInCopy, mapping)
-
-        return numpy.mean(numpy.abs(data[1] - modelOut), axis = 0)
-
-    def getUnitPerformance(self, data, *args, **kwargs):
+    def getUnitPerformance(self, data, type = 'mse', **kwargs):
         """Return unit reconstruction performance.
 
         Arguments:
             data -- 2-tuple with numpy arrays containing input and
                 output data coresponding to the first and the last layer
                 in the mapping
+            type -- type of error / deviation
+                'SE': Sum of Errors
+                'SSE': Sum of Squared Errors
+                'RSSE': Root Sum of Squared Errors
+                'ME': Mean of Errors
+                'MSE': Mean of Squared Errors
+                'RMSE': Root Mean of Squared Errors
+                'SDE': Standard Deviation of Errors
+                'SDSE': Standard Deviation of Squared Errors
+                'RSDSE': Root Standard Deviation of Squared Errors
 
         Description:
             performance := 1 - error / ||data||. """
 
-        err = self.getUnitError(data, *args, **kwargs)
-        nrm = numpy.sqrt((data[1] ** 2).sum(axis = 0))
+        dIn, dOut = data
 
+        err = self.getUnitError(data, type = type, **kwargs)
+        nrm = self.getUnitErrorOfType(dOut,
+          numpy.mean(dOut, axis = 0), type = type)
+        
         return 1.0 - err / nrm
+
+    def getUnitRCorr(self, data, mapping = None, block = None, **kwargs):
+        """Return reconstruction correlation of units.
+
+        Keyword Arguments:
+            data -- 2-tuple with numpy arrays containing input and
+                output data coresponding to the first and the last layer
+                in the mapping
+            mapping -- tuple of strings containing the mapping
+                from input layer (first argument of tuple)
+                to output layer (last argument of tuple)
+            block -- list of string containing labels of units in the input
+                layer that are blocked by setting the values to their means """
+
+        if mapping == None: mapping = self.getMapping()
+        if block == None: modelOut = self.getUnitExpect(data[0], mapping)
+        else:
+            dataInCopy = numpy.copy(data[0])
+            for i in block: dataInCopy[:,i] = numpy.mean(dataInCopy[:,i])
+            modelOut = self.getUnitExpect(dataInCopy, mapping)
+
+        M = numpy.corrcoef(numpy.hstack(data).T)
+
+        return numpy.sqrt(numpy.sum((data[1] - modelOut) ** 2, axis = 0))
 
     ####################################################################
     # Links                                                            #
@@ -939,6 +998,12 @@ class ann(nemoa.system.base.system):
         'error': {
             'name': 'data reconstruction error',
             'method': 'getUnitError',
+            'inDataFmt': 3,
+            'outDataFmt': 1,
+            'format': '%.1f'},
+        'rcorr': {
+            'name': 'data reconstruction correlation',
+            'method': 'getUnitRCorr',
             'inDataFmt': 3,
             'outDataFmt': 1,
             'format': '%.1f'},
@@ -1197,7 +1262,11 @@ class ann(nemoa.system.base.system):
         def initialize(self, data = None):
             """Initialize system parameters of sigmoid distributed units using data. """
 
-            self.params['bias'] = 0.5 * numpy.ones((1, len(self.params['label'])))
+            size = len(self.params['label'])
+            shape = (1, size)
+
+            self.params['bias'] = 0.5 * numpy.ones(shape)
+            #self.params['bias'] = numpy.zeros(shape)
 
             return True
 

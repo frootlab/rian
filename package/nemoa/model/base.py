@@ -359,17 +359,15 @@ class model:
     # Scalar model evaluation functions                                #
     ####################################################################
 
-    def performance(self, dataset = None):
-        """Return euclidean data reconstruction performance of system."""
-        return self.system.getPerformance(self.getData(dataset = dataset))
+    def performance(self, dataset = None, type = 'mse'):
+        """Return data reconstruction performance of system."""
+        data = self.getData(dataset = dataset)
+        return self.system.getPerformance(data, type = type)
 
-    def error(self, dataset = None):
+    def error(self, dataset = None, type = 'mse'):
         """Return data reconstruction error of system."""
-        return self.system.getError(self.getData(dataset = dataset))
-
-    def meanError(self, dataset = None):
-        """Return mean data reconstruction error of output units."""
-        return self.system.getMeanError(self.getData(dataset = dataset))
+        data = self.getData(dataset = dataset)
+        return self.system.getError(data, type = type)
 
     ####################################################################
     # Evaluation of unit relations                                     #

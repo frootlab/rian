@@ -33,11 +33,11 @@ class rbm(nemoa.system.ann.ann):
             'visibleClass': 'sigmoid',
             'hiddenClass': 'sigmoid' },
         'init': {
-            'checkDataset': True,
+            'checkDataset': False,
             'ignoreUnits': [],
             'wSigma': 0.5 },
         'optimize': {
-            'checkDataset': True,
+            'checkDataset': False,
             'ignoreUnits': [],
             'iterations': 1,
             'minibatchSize': 100,
@@ -242,7 +242,11 @@ class rbm(nemoa.system.ann.ann):
                     wVar = wVar[:lenght]
                     grad = - numpy.linalg.lstsq(A.T, wVar)[0][0]
                     delw = cfg['updateVrcdFactor'] * grad
-                    cfg['updateRate'] = numpy.max(delw, cfg['updateVrcdMin'])
+                    rMin = cfg['updateVrcdMin']
+                    rMax = cfg['updateVrcdMax']
+
+                    cfg['updateRate'] = min(max(delw, rMin), rMax)
+                    #print cfg['updateRate']
 
                 inspector.writeToStore(wVar = wVar)
 
@@ -508,7 +512,7 @@ class rbm(nemoa.system.ann.ann):
         #p[0] = 0.5
         #p[1] = 0.5
 
-        r = numpy.max(cfg['updateRate'], r)
+        r = max(cfg['updateRate'], r)
 
         #print 'distribution Performance', 1.0 - 2.0 * numpy.mean(numpy.abs(q - p))
 

@@ -90,7 +90,7 @@ class dbn(nemoa.system.ann.ann):
     def _optimizePreTraining(self, dataset, schedule, inspector):
         """Pretraining model using restricted boltzmann machines."""
 
-        nemoa.log('pretraining model')
+        nemoa.log('note', 'pretraining model')
         nemoa.setLog(indent = '+1')
 
         ################################################################
@@ -185,7 +185,7 @@ class dbn(nemoa.system.ann.ann):
                 hidden  = prevSys._params['units'][1]['name']
                 mapping = (visible, hidden)
                 dataset.transformData(algorithm = 'system', system = prevSys,
-                    mapping = mapping, transform = 'value')
+                    mapping = mapping, transform = 'expect')
 
             # add dataset column filter 'visible'
             dataset.setColFilter('visible', system.getUnits(group = 'visible'))
@@ -253,7 +253,7 @@ class dbn(nemoa.system.ann.ann):
     def _optimizeFineTuning(self, dataset, schedule, inspector):
         """Finetuning model using backpropagation of error."""
 
-        nemoa.log('finetuning model')
+        nemoa.log('note', 'finetuning model')
         nemoa.setLog(indent = '+1')
 
         ################################################################
@@ -262,13 +262,9 @@ class dbn(nemoa.system.ann.ann):
 
         algorithm = self._config['optimize']['algorithm'].lower()
 
-        nemoa.log('note', "optimize '%s' (%s) using algorithm '%s'" % \
-            (self.name(), self.getType(), algorithm))
-        nemoa.setLog(indent = '+1')
-
         if   algorithm == 'bprop': self.optimizeBProp(dataset, schedule, inspector)
         elif algorithm == 'rprop': self.optimizeRProp(dataset, schedule, inspector)
         else: nemoa.log('error', "unknown gradient '%s'!" % (algorithm))
 
-        nemoa.setLog(indent = '-2')
+        nemoa.setLog(indent = '-1')
         return True
