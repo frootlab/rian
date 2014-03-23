@@ -723,7 +723,7 @@ class system:
 
     def about(self, *args):
         """Return generic information about various parts of the system.
-        
+
         Arguments:
             *args -- tuple of strings, containing a breadcrump trail to
                 a specific information about the system
@@ -748,11 +748,15 @@ class system:
         if args[0] == 'description': return self.__doc__
         if args[0] == 'class': return self._config['class']
         if args[0] in ['units', 'links']:
-            if args[1] == 'method':
+            if args[1] == 'methods':
                 if args[0] == 'units': methods = self.getUnitMethods()
                 if args[0] == 'links': methods = self.getLinkMethods()
-                if not args[2] in methods.keys(): return None
-                if not args[3] in methods[args[2]].keys(): return None
+                if len(args) == 2: return methods
+                if not args[2] in methods.keys(): return nemoa.log(
+                    'error', "unknown unit method: '%s'!" % (args[2]))
+                if len(args) == 3: return methods[args[2]]
+                if not args[3] in methods[args[2]].keys(): return nemoa.log(
+                    'error', "unknown unit method property: '%s'!" % (args[3]))
                 return methods[args[2]][args[3]]
         if args[0] == 'type': return self.getType()
         return None
@@ -850,27 +854,12 @@ class inspector:
         cfg = self.__system._config['optimize']
         epochTime = time.time()
 
-        if self.__state == {}:
-            nemoa.log('note', "press 'q' if you want to abort the optimization")
-            self.__state = {
-                'startTime': epochTime,
-                'epoch': 0,
-                'inspection': None,
-                'abort': False}
-            if self.__inspect: self.__state['inspectTime'] = epochTime
-            if self.__estimate:
-                self.__state['estimateStarted'] = False
-                self.__state['estimateEnded'] = False
+        if self.__state == {}: self.__initState()
+
         self.__state['epoch'] += 1
 
         # check keyboard input
-        c = nemoa.common.getch()
-        if isinstance(c, str):
-            if c == 'q':
-                nemoa.log('note', '... aborting optimization')
-                self.__system._config['optimize']['updates'] = \
-                    self.__state['epoch']
-                self.__state['abort'] = True
+        self.__triggerKeyEvent()
 
         # estimate time needed to finish current optimization schedule
         if self.__estimate and not self.__state['estimateEnded']:
@@ -891,39 +880,85 @@ class inspector:
                 self.__state['estimateEnded'] = True
 
         # evaluate model (in a given time interval)
-        if self.__inspect:
-            if self.__data == None:
-                nemoa.log('warning', """
-                    monitoring the process of optimization is not possible:
-                    testdata is needed!""")
-                self.__inspect = False
-            elif self.__state['epoch'] == cfg['updates']:
-                value = self.__system.getDataEval(
-                    data = self.__data, func = cfg['inspectFunction'])
-                measure = cfg['inspectFunction'].title()
-                nemoa.log('note', 'final: %s = %.3f' % (measure, value))
-            elif ((epochTime - self.__state['inspectTime']) \
-                > cfg['inspectTimeInterval']) \
-                and not (self.__estimate \
-                and self.__state['estimateStarted'] \
-                and not self.__state['estimateEnded']):
-                func = cfg['inspectFunction']
-                value = self.__system.getDataEval(data = self.__data, func = func)
-                print func
-                print self.__system.about('units', 'methods', func)
-                progress = float(self.__state['epoch']) \
-                    / float(cfg['updates']) * 100.0
-                measure = cfg['inspectFunction'].title()
-                nemoa.log('note', 'finished %.1f%%: %s = %0.4f' \
-                    % (progress, measure, value))
-                self.__state['inspectTime'] = epochTime
-                if self.__state['inspection'] == None:
-                    self.__state['inspection'] = \
-                        numpy.array([[progress, value]])
-                else: self.__state['inspection'] = \
-                    numpy.vstack((self.__state['inspection'], \
-                    numpy.array([[progress, value]])))
+        if self.__inspect: self.__triggerEvaluation()
 
         if self.__state['abort']: return 'abort'
 
         return True
+
+    def __initState(self):
+
+        epochTime = time.time()
+
+        nemoa.log('note', "press 'q' if you want to abort the optimization")
+        self.__state = {
+            'startTime': epochTime,
+            'epoch': 0,
+            'inspection': None,
+            'abort': False}
+        if self.__inspect: self.__state['inspectTime'] = epochTime
+        if self.__estimate:
+            self.__state['estimateStarted'] = False
+            self.__state['estimateEnded'] = False
+
+        return True
+
+    def __triggerKeyEvent(self):
+        """Check Keyboard."""
+
+        c = nemoa.common.getch()
+        if isinstance(c, str):
+            if c == 'q':
+                nemoa.log('note', '... aborting optimization')
+                self.__system._config['optimize']['updates'] = \
+                    self.__state['epoch']
+                self.__state['abort'] = True
+
+        return True
+
+    def __triggerEvaluation(self):
+        """Evaluate Model."""
+
+        cfg = self.__system._config['optimize']
+        epochTime = time.time()
+
+        if self.__data == None:
+            nemoa.log('warning', """
+                monitoring the process of optimization is not possible:
+                testdata is needed!""")
+            self.__inspect = False
+            return False
+
+        if self.__state['epoch'] == cfg['updates']:
+            func = cfg['inspectFunction']
+            funcCfg = self.__system.about('units', 'methods', func)
+            funcVal = self.__system.getDataEval(data = self.__data, func = func)
+            out = 'final: %s = ' + funcCfg['format']
+            return nemoa.log('note', out % (funcCfg['name'], funcVal))
+
+        if ((epochTime - self.__state['inspectTime']) \
+            > cfg['inspectTimeInterval']) \
+            and not (self.__estimate \
+            and self.__state['estimateStarted'] \
+            and not self.__state['estimateEnded']):
+            func = cfg['inspectFunction']
+            funcCfg = self.__system.about('units', 'methods', func)
+            funcVal = self.__system.getDataEval(data = self.__data, func = func)
+            progress = float(self.__state['epoch']) \
+                / float(cfg['updates']) * 100.0
+
+            # update time of last evaluation
+            self.__state['inspectTime'] = epochTime
+
+            # add evaluation to array
+            if self.__state['inspection'] == None:
+                self.__state['inspection'] = \
+                    numpy.array([[progress, funcVal]])
+            else: self.__state['inspection'] = \
+                numpy.vstack((self.__state['inspection'], \
+                numpy.array([[progress, funcVal]])))
+
+            out = 'finished %.1f%%: %s = ' + funcCfg['format']
+            return nemoa.log('note', out % (progress, funcCfg['name'], funcVal))
+
+        return False
