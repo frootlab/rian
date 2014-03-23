@@ -86,13 +86,6 @@ class rbm(nemoa.system.ann.ann):
             return False
         return True
 
-    def _getDataEvalEnergy(self, data, **kwargs):
-        """Return system energy respective to data."""
-        vEnergy = self.getUnitEnergy(data, ('visible',))
-        hEnergy = self.getUnitEnergy(data, ('visible', 'hidden'))
-        lEnergy = self._getLinkEvalEnergy(data)
-        return numpy.sum(vEnergy) + numpy.sum(hEnergy) + numpy.sum(lEnergy)
-
     @staticmethod
     def _getUnitsFromNetwork(network):
         """Return tuple with lists of unit labels from network."""
@@ -244,7 +237,6 @@ class rbm(nemoa.system.ann.ann):
                     rMax = cfg['updateVrcdMax']
 
                     cfg['updateRate'] = min(max(delw, rMin), rMax)
-                    #print cfg['updateRate']
 
                 inspector.writeToStore(wVar = wVar)
 
@@ -497,9 +489,6 @@ class rbm(nemoa.system.ann.ann):
         p = cfg['sparsityExpect'] # target expectation value for units
         q = numpy.mean(hData, axis = 0) # expectation value (over samples)
         r = cfg['sparsityRate'] # update rate
-        
-        #print r
-        #print cfg['updateRate']
         
         #units = (self.getUnits()[0], self.getUnits()[0])
         #data  = (vData, vData)
@@ -793,15 +782,6 @@ class rbm(nemoa.system.ann.ann):
         """Return link adjacency of all links as numpy array."""
         return self._params['links'][(0, 1)]['A']
 
-    def _getLinkEvalEnergy(self, data):
-        """Return link energy of all links as numpy array."""
-        hData = self.units['hidden'].getValues(self.getUnitExpect(data, ('visible', 'hidden')))
-
-        if self._config['optimize']['useAdjacency']:
-            return -(self._params['links'][(0, 1)]['A'] * self._params['links'][(0, 1)]['W']
-                * numpy.dot(data.T, hData) / data.shape[0])
-        return -(self._params['links'][(0, 1)]['W'] * numpy.dot(data.T, hData) / data.shape[0])
-
     def _updateLinks(self, **updates):
         """Set updates for links."""
         self._params['links'][(0, 1)]['W'] += updates['W']
@@ -924,17 +904,3 @@ class grbm(rbm):
     def _setVisibleUnitParams(self, params):
         """Set parameters of visible units using dictionary."""
         return self.units['visible'].overwrite(params['units'][0])
-
-    # GRBM links
-
-    def _getLinkEvalEnergy(self, data):
-        """Return link energy of all links as numpy array."""
-        hData = self.getUnitExpect(data, ('visible', 'hidden'))
-        if self._config['optimize']['useAdjacency']:
-            return -(self._params['links'][(0, 1)]['A']
-                * self._params['links'][(0, 1)]['W'] * numpy.dot((data
-                / numpy.exp(self.units['visible'].params['lvar'])).T, hData)
-                / data.shape[0])
-        return -(self._params['links'][(0, 1)]['W'] * numpy.dot((data
-            / numpy.exp(self.units['visible'].params['lvar'])).T, hData)
-            / data.shape[0])

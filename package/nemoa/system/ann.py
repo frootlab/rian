@@ -210,7 +210,7 @@ class ann(nemoa.system.base.system):
                 self.units[tgt].getUpdatesFromDelta(
                 delta[src, tgt]), rate)
             links[(src, tgt)] = getUpdate(
-                self.annLinks.getUpdatesFromDelta(out[src],
+                self.LinkLayer.getUpdatesFromDelta(out[src],
                 delta[src, tgt]), rate)
 
         return {'units': units, 'links': links}
@@ -276,7 +276,7 @@ class ann(nemoa.system.base.system):
             grad['units'][tgt] = \
                 self.units[tgt].getUpdatesFromDelta(delta[src, tgt])
             grad['links'][(src, tgt)] = \
-                self.annLinks.getUpdatesFromDelta(out[src], delta[src, tgt])
+                self.LinkLayer.getUpdatesFromDelta(out[src], delta[src, tgt])
 
         # Get previous gradients and updates
         prev = inspector.readFromStore()
@@ -333,10 +333,23 @@ class ann(nemoa.system.base.system):
         """Return mean data reconstruction precision of output units. """
         return numpy.mean(self.getUnitPrecision(*args, **kwargs))
 
-    def getEnergy(self, *args, **kwargs):
+    def getEnergy(self, data, *args, **kwargs):
         """Return system energy. """
-        energy = self._getDataEvalEnergy(data, **kwargs)
-        return energy
+
+        mapping = list(self.getMapping())
+        E = 0.0
+
+        # get energy of units
+        for i in range(1, len(mapping) + 1): E += \
+            numpy.sum(self.getUnitEnergy(data[0],
+            mapping = tuple(mapping[:i])))
+
+        # get energy of links
+        for i in range(1, len(mapping)): E += \
+            numpy.sum(self.getLinkEnergy(data[0],
+            mapping = tuple(mapping[:i+1])))
+
+        return E
 
     ####################################################################
     # Units                                                            #
@@ -427,8 +440,8 @@ class ann(nemoa.system.base.system):
         for id in range(len(self._params['units'])):
             unitClass = self._params['units'][id]['class']
             name = self._params['units'][id]['name']
-            if unitClass == 'sigmoid': self.units[name] = self.sigmoidUnits()
-            elif unitClass == 'gauss': self.units[name] = self.gaussUnits()
+            if unitClass == 'sigmoid': self.units[name] = self.SUnitLayer()
+            elif unitClass == 'gauss': self.units[name] = self.GUnitLayer()
             else: return nemoa.log('error', """
                 could not create system:
                 unit class '%s' is not supported!""" % (unitClass))
@@ -450,10 +463,10 @@ class ann(nemoa.system.base.system):
                 if not attr in layer.keys():
                     return False
             if layer['class'] == 'gauss' \
-                and not self.gaussUnits.check(layer):
+                and not self.GUnitLayer.check(layer):
                 return False
             elif params['units'][id]['class'] == 'sigmoid' \
-                and not self.sigmoidUnits.check(layer):
+                and not self.SUnitLayer.check(layer):
                 return False
 
         return True
@@ -499,9 +512,9 @@ class ann(nemoa.system.base.system):
 
         # delete units from unit parameter arrays
         if layer['class'] == 'gauss':
-            self.gaussUnits.remove(layer, select)
+            self.GUnitLayer.remove(layer, select)
         elif layer['class'] == 'sigmoid':
-            self.sigmoidUnits.remove(layer, select)
+            self.SUnitLayer.remove(layer, select)
 
         # delete units from link parameter arrays
         self._removeUnitsLinks(layer, select)
@@ -646,7 +659,7 @@ class ann(nemoa.system.base.system):
 
     def getUnitEnergy(self, data, mapping = None):
         """Return unit energies of a layer.
-        
+
         Keyword Arguments:
             mapping -- tuple of strings containing the mapping
                 from input layer (first argument of tuple)
@@ -1046,16 +1059,61 @@ class ann(nemoa.system.base.system):
     @staticmethod
     def getLinkMethods(): return {}
 
+    def getLinkEnergy(self, data, mapping = None):
+        """Return link energies of a layer.
+        
+        Keyword Arguments:
+            mapping -- tuple of strings containing the mapping
+                from input layer (first argument of tuple)
+                to output layer (last argument of tuple) """
+
+        if len(mapping) == 1:
+            return nemoa.log('error', 'bad implementation of ann.getLinkEnergy')
+        elif len(mapping) == 2:
+            dIn  = data
+            dOut = self.getUnitValues(dIn, mapping)
+        else:
+            dIn  = self.getUnitExpect(data, mapping[0:-1])
+            dOut = self.getUnitValues(dIn, mapping[-2:])
+
+        sID = self.getMapping().index(mapping[-2])
+        tID = self.getMapping().index(mapping[-1])
+        links = self._params['links'][(sID, tID)]
+        src = self.units[mapping[-2]].params
+        tgt = self.units[mapping[-1]].params
+
+        return self.LinkLayer.energy(dIn, dOut, src, tgt, links)
+
     ####################################################################
-    # Link classes                                                     #
+    # Link Layer Classes                                               #
     ####################################################################
 
-    class annLinks():
+    class LinkLayer():
         """Class to unify common ann link attributes."""
 
         params = {}
 
         def __init__(self): pass
+
+        @staticmethod
+        def energy(dIn, dOut, src, tgt, links):
+            """Return link energy as numpy array."""
+            W = links['W']
+            A = links['A']
+            dSize = dIn.shape[0]
+            classes = {'gauss': 0, 'sigmoid': 1}
+            srcType = classes[src['class']]
+            tgtType = classes[tgt['class']]
+            lType = (srcType, tgtType)
+
+            if lType == (0, 0): return \
+                -(A * W * numpy.dot((dIn / numpy.exp(src['lvar'])).T, dOut) / dSize)
+            if lType == (0, 1): return \
+                -(A * W * numpy.dot((dIn / numpy.exp(src['lvar'])).T, dOut) / dSize)
+            if lType == (1, 0): return \
+                -(A * W * numpy.dot(dIn.T, dOut) / dSize)
+            if lType == (1, 1): return \
+                -(A * W * numpy.dot(dIn.T, dOut) / dSize)
 
         @staticmethod
         def getUpdates(data, model):
@@ -1129,10 +1187,16 @@ class ann(nemoa.system.base.system):
             return {key: left[key] * right[key] for key in left.keys()}
 
     ####################################################################
-    # Unit classes                                                     #
+    # Gaussian to Sigmoidal Link Layer                                 #
     ####################################################################
 
-    class annUnits():
+#    class GSLinkLayer(LinkLayer):
+
+    ####################################################################
+    # Unit Layer Classes                                               #
+    ####################################################################
+
+    class UnitLayer():
         """Class to unify common ann unit attributes."""
 
         params = {}
@@ -1144,9 +1208,9 @@ class ann(nemoa.system.base.system):
         def expect(self, data, source):
 
             if source['class'] == 'sigmoid': return \
-                self.expectFromSigmoidInput(data, source, self.getWeights(source))
+                self.expectFromSLayer(data, source, self.getWeights(source))
             elif source['class'] == 'gauss': return \
-                self.expectFromGaussInput(data, source, self.getWeights(source))
+                self.expectFromGLayer(data, source, self.getWeights(source))
 
             return False
 
@@ -1156,15 +1220,15 @@ class ann(nemoa.system.base.system):
 
         def getDelta(self, inData, outDelta, source, target):
 
-            return self.getDeltaFromBackpropagation(inData, outDelta,
+            return self.deltaFromBPROP(inData, outDelta,
                 self.getWeights(source), self.getWeights(target))
 
         def getSamplesFromInput(self, data, source):
 
             if source['class'] == 'sigmoid': return self.getSamples(
-                self.expectFromSigmoidInput(data, source, self.getWeights(source)))
+                self.expectFromSLayer(data, source, self.getWeights(source)))
             elif source['class'] == 'gauss': return self.getSamples(
-                self.expectFromGaussInput(data, source, self.getWeights(source)))
+                self.expectFromGLayer(data, source, self.getWeights(source)))
 
             return False
 
@@ -1243,11 +1307,13 @@ class ann(nemoa.system.base.system):
             return {key: left[key] * right[key] for key in left.keys()}
 
     ####################################################################
-    # Sigmoidal unit class                                             #
+    # Sigmoidal Unit Layer                                             #
     ####################################################################
 
-    class sigmoidUnits(annUnits):
-        """Units with sigmoidal activation function and binary distribution. """
+    class SUnitLayer(UnitLayer):
+        """Sigmoidal Unit Layer.
+        
+        Layer of units with sigmoidal activation function and binary distribution. """
 
         def initialize(self, data = None):
             """Initialize system parameters of sigmoid distributed units using data. """
@@ -1297,7 +1363,7 @@ class ann(nemoa.system.base.system):
 
             return - numpy.mean(data * bias, axis = 0)
 
-        def expectFromSigmoidInput(self, data, source, weights):
+        def expectFromSLayer(self, data, source, weights):
             """Return expected values of a sigmoid output layer
             calculated from a sigmoid input layer. """
 
@@ -1305,7 +1371,7 @@ class ann(nemoa.system.base.system):
 
             return self.sigmoid(bias + numpy.dot(data, weights))
 
-        def expectFromGaussInput(self, data, source, weights):
+        def expectFromGLayer(self, data, source, weights):
             """Return expected values of a sigmoid output layer
             calculated from a gaussian input layer. """
 
@@ -1328,7 +1394,7 @@ class ann(nemoa.system.base.system):
 
             return {'bias': - numpy.mean(delta, axis = 0).reshape((1, size))}
 
-        def getDeltaFromBackpropagation(self, data_in, delta_out, W_in, W_out):
+        def deltaFromBPROP(self, data_in, delta_out, W_in, W_out):
 
             bias = self.params['bias']
 
@@ -1410,10 +1476,10 @@ class ann(nemoa.system.base.system):
             return 1.7159 * numpy.tanh(0.6666 * x)
 
     ####################################################################
-    # Gaussian unit class                                              #
+    # Gaussian Unit Layer                                              #
     ####################################################################
 
-    class gaussUnits(annUnits):
+    class GUnitLayer(UnitLayer):
         """Units with linear activation function and gaussian distribution"""
 
         def initialize(self, data = None, vSigma = 0.4):
@@ -1488,7 +1554,7 @@ class ann(nemoa.system.base.system):
 
             return True
 
-        def expectFromSigmoidInput(self, data, source, weights):
+        def expectFromSLayer(self, data, source, weights):
             """Return expected values of a gaussian output layer
             calculated from a sigmoid input layer. """
 
@@ -1509,8 +1575,9 @@ class ann(nemoa.system.base.system):
 
             bias = self.params['bias']
             lvar = numpy.exp(self.params['lvar'])
+            energy = - 0.5 * numpy.mean((data - bias) ** 2, axis = 0) / lvar
 
-            return - 0.5 * numpy.mean((data - bias) ** 2, axis = 0) / lvar
+            return energy.reshape(bias.size)
 
         @staticmethod
         def getValues(data):
@@ -1539,4 +1606,3 @@ class ann(nemoa.system.base.system):
             return {
                 'label': unit, 'id': id, 'class': cl,
                 'visible': visible, 'bias': bias, 'lvar': lvar }
-
