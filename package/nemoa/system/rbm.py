@@ -541,74 +541,17 @@ class rbm(nemoa.system.ann.ann):
         """Return tuple with lists of unit labels ([visible], [hidden]) using dataset for visible."""
         return (dataset.getColLabels(), self.units['hidden'].params['label'])
 
-    def _getUnitEvalEnergy(self, data, **kwargs):
-        """Return local energy of units."""
-        return (self.getUnitEnergy(data, ('visible',)),
-            self.getUnitEnergy(data, ('visible', 'hidden')))
+#    def _getUnitEvalEnergy(self, data, **kwargs):
+#        """Return local energy of units."""
+#        return (self.getUnitEnergy(data, ('visible',)),
+#            self.getUnitEnergy(data, ('visible', 'hidden')))
 
-    def _getUnitEvalError(self, data, block = [], k = 1, **kwargs):
-        """Return euclidean reconstruction error of units.
-        
-        error := ||data - model||"""
-        return self.getUnitError(data, data,
-            ('visible', 'hidden', 'visible'), block), None
-
-    def _getUnitEvalIntAccuracy(self, data, k = 1, **kwargs):
-        """Return 'intrinsic accuracy' of units.
-
-        'intrinsic accuracy' := relperf
-            where model(v) is generated with: data(u not v) = mean(data(u))"""
-        vSize = len(self.units['visible'].params['label'])
-        relIntApprox = numpy.empty(vSize)
-        for v in range(vSize):
-            block = range(vSize)
-            block.pop(v)
-            relIntApprox[v] = self._getUnitEvalAccuracy(
-                data, block = block, k = k)[0][v]
-        return relIntApprox, None
-
-    def _getUnitEvalExtAccuracy(self, data, block = [], k = 1, **kwargs):
-        """Return 'extrinsic accuracy' of units.
-        
-        'extrinsic accuracy' := relApprox
-            where model(v) is generated with data(v) = mean(data(v))"""
-        relExtApprox = numpy.empty(len(self.units['visible'].params['label']))
-        for v in range(len(self.units['visible'].params['label'])):
-            relExtApprox[v] = self._getUnitEvalAccuracy(
-                data, block = block + [v], k = k)[0][v]
-        return relExtApprox, None
-
-    #def _getUnitEvalRelativeAccuracy(self, data, **kwargs):
-        #"""Return 'accuracy' of units.
-        
-        #'accuracy' := 1 - error / ||data - mean(data)||"""
-        #vErr = self._getUnitEvalError(data = data, **kwargs)[0]
-        #vNorm = numpy.sqrt(((data - numpy.mean(data, axis = 0)) ** 2).sum(axis = 0))
-        #return 1 - vErr  / vNorm, None
-
-    def _getUnitEvalRelativeIntAccuracy(self, data, k = 1, **kwargs):
-        """Return 'intrinsic relative accuracy' of units
-        
-        'intrinsic relative accuracy' := relperf
-            where model(v) is generated with data(u not v) = mean(data(u))"""
-        vSize = len(self.units['visible'].params['label'])
-        relIntApprox = numpy.empty(vSize)
-        for v in range(vSize):
-            block = range(vSize)
-            block.pop(v)
-            relIntApprox[v] = self._getUnitEvalRelativeAccuracy(
-                data = data, block = block, k = k)[0][v]
-        return relIntApprox, None
-
-    def _getUnitEvalRelativeExtAccuracy(self, data, block = [], k = 1, **kwargs):
-        """Return "accuracy (extrinsic)" of units.
-
-        extrelperf := relApprox where model(v) is generated with data(v) = mean(data(v))"""
-        relExtApprox = numpy.empty(len(self.units['visible'].params['label']))
-        for v in range(len(self.units['visible'].params['label'])):
-            relExtApprox[v] = self._getUnitEvalRelativeAccuracy(
-                data = data, block = block + [v], k = k)[0][v]
-        return relExtApprox, None
+#    def _getUnitEvalError(self, data, block = [], k = 1, **kwargs):
+#        """Return euclidean reconstruction error of units.
+#        
+#        error := ||data - model||"""
+#        return self.getUnitError(data, data,
+#            ('visible', 'hidden', 'visible'), block), None
 
     def _unlinkUnit(self, unit):
         """Delete unit links in adjacency matrix."""
@@ -747,40 +690,40 @@ class rbm(nemoa.system.ann.ann):
         # set modified list of current links
         return self._setLinks(curLinks)
 
-    def _getLinkEval(self, data, func = 'energy', info = False, **kwargs):
-        """Return link evaluation values."""
-        evalFuncs = {
-            'energy': ['local energy', 'Energy'],
-            'adjacency': ['link adjacency', 'Adjacency'],
-            'weight': ['link weight', 'Weight'] }
-        if info:
-            if not func in evalFuncs:
-                return False
-            return {
-                'name': evalFuncs[func][0]}
-        if not func in evalFuncs:
-            nemoa.log('warning', """
-                could not evaluate units:
-                unknown link evaluation function '%s'
-                """ % (func))
-            return False
+    #def _getLinkEval(self, data, func = 'energy', info = False, **kwargs):
+        #"""Return link evaluation values."""
+        #evalFuncs = {
+            #'energy': ['local energy', 'Energy'],
+            #'adjacency': ['link adjacency', 'Adjacency'],
+            #'weight': ['link weight', 'Weight'] }
+        #if info:
+            #if not func in evalFuncs:
+                #return False
+            #return {
+                #'name': evalFuncs[func][0]}
+        #if not func in evalFuncs:
+            #nemoa.log('warning', """
+                #could not evaluate units:
+                #unknown link evaluation function '%s'
+                #""" % (func))
+            #return False
 
-        linkEval = eval('self._getLinkEval' + evalFuncs[func][1] \
-            + '(data, **kwargs)')
-        evalDict = {}
-        if isinstance(linkEval, numpy.ndarray):
-            for i, v in enumerate(self.units['visible'].params['label']):
-                for j, h in enumerate(self.units['hidden'].params['label']):
-                    evalDict[(v,h)] = linkEval[i, j]
-        return evalDict
+        #linkEval = eval('self._getLinkEval' + evalFuncs[func][1] \
+            #+ '(data, **kwargs)')
+        #evalDict = {}
+        #if isinstance(linkEval, numpy.ndarray):
+            #for i, v in enumerate(self.units['visible'].params['label']):
+                #for j, h in enumerate(self.units['hidden'].params['label']):
+                    #evalDict[(v,h)] = linkEval[i, j]
+        #return evalDict
 
-    def _getLinkEvalWeight(self, data, **kwargs):
-        """Return link weights of all links as numpy array."""
-        return self._params['links'][(0, 1)]['W']
+    #def _getLinkEvalWeight(self, data, **kwargs):
+        #"""Return link weights of all links as numpy array."""
+        #return self._params['links'][(0, 1)]['W']
 
-    def _getLinkEvalAdjacency(self, data, **kwargs):
-        """Return link adjacency of all links as numpy array."""
-        return self._params['links'][(0, 1)]['A']
+    #def _getLinkEvalAdjacency(self, data, **kwargs):
+        #"""Return link adjacency of all links as numpy array."""
+        #return self._params['links'][(0, 1)]['A']
 
     def _updateLinks(self, **updates):
         """Set updates for links."""

@@ -45,7 +45,7 @@ class structure(nemoa.plot.base.plot):
             if hasattr(fAbout, 'title'):
                 fName = model.about(*(fPath + ('name', ))).title()
                 fFormat = model.about(*(fPath + ('format', )))
-                nodeCaption = model.getUnitEval(eval = method)
+                nodeCaption = model.evalUnits(func = method)
                 caption  = 'Average ' + fName + ': $\mathrm{%.1f' \
                     % (100 * float(sum([nodeCaption[u] \
                     for u in nodeCaption.keys()])) / len(nodeCaption)) + '\%}$'

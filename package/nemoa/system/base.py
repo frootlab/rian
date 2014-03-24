@@ -154,10 +154,6 @@ class system:
         """Return dictionary with information about a specific unit."""
         return self._getUnitInformation(*args, **kwargs)
 
-    def getUnitEval(self, *args, **kwargs):
-        """Return dictionary with units and evaluation values."""
-        return self._getUnitEval(*args, **kwargs)
-
     def unlinkUnit(self, unit):
         """Unlink unit (if present)."""
         return self._unlinkUnit(unit)
@@ -244,10 +240,6 @@ class system:
     def getLinkParams(self, links = [], *args, **kwargs):
         """Return parameters of links."""
         return self._getLinkParams(links)
-
-    def getLinkEval(self, data, **kwargs):
-        """Return dictionary with links and evaluation values."""
-        return self._getLinkEval(data, **kwargs)
 
     def _get(self, sec = None):
         """Return all system settings (config, params) as dictionary."""
@@ -462,14 +454,6 @@ class system:
     # Evaluate                                                         #
     ####################################################################
 
-    def getDataEval(self, data, func = 'energy', **kwargs):
-        """Return system specific data evaluation."""
-
-        if func == 'energy': return self.getEnergy(data, **kwargs)
-        if func == 'error': return self.getError(data, **kwargs)
-        if func == 'accuracy': return self.getAccuracy(data, **kwargs)
-        if func == 'precision': return self.getPrecision(data, **kwargs)
-
     @staticmethod
     def getDataSum(data, norm = 'S'):
         """Return sum of data.
@@ -625,7 +609,7 @@ class system:
         return C
 
     def getUnitKnockout(self, units, data = None, mapping = None,
-        modify = 'knockout', eval = 'error', **kwargs):
+        modify = 'knockout', func = 'error', **kwargs):
         """Return numpy array with data manipulation results.
 
         Keyword Arguments:
@@ -644,12 +628,11 @@ class system:
         K = numpy.zeros((len(units[0]), len(units[1])))
 
         # calculate unit values without modification
-        methodName = self.about('units', 'method', eval, 'name')
+        methodName = self.about('units', 'eval', func, 'name')
         nemoa.log(
             'calculate %s effect on %s' % (modify, methodName))
         tStart = time.time()
-        default = self.getUnitEval(eval = eval, \
-            data = data, mapping = mapping)
+        default = self.evalUnits(data, func = func, mapping = mapping)
         estimation = (time.time() - tStart) * len(units[0])
         nemoa.log('estimated duration: %.1fs' % (estimation))
 
@@ -661,13 +644,13 @@ class system:
             # modify unit and calculate unit values
             if modify == 'knockout':
                 id = srcUnits.index(srcUnit)
-                modi = self.getUnitEval(eval = eval,
-                    data = data, mapping = mapping, block = [id])
+                modi = self.evalUnits(data, func = func,
+                    mapping = mapping, block = [id])
             #2DO: fix unlink
             #elif modify == 'unlink':
                 #links = self.getLinks()
                 #self.unlinkUnit(kUnit)
-                #uUnlink = self.getUnitEval(func = measure, data = data)
+                #uUnlink = self.evalUnits(func = measure, data = data)
                 #self.system.setLinks(links)
             else: return nemoa.log('error', """could not create knockout matrix:
                 unknown data manipulation function '%s'!""" % (modify))
@@ -680,7 +663,7 @@ class system:
         return K
 
     def getUnitInteraction(self, units, data = None, mapping = None,
-        modify = 'knockout', eval = 'values', **kwargs):
+        modify = 'knockout', func = 'values', **kwargs):
         """Return unit interaction matrix as numpy array."""
 
         # create empty array
@@ -692,10 +675,26 @@ class system:
             negData = meanData.copy()
             negData[0, i] -= 0.5
             for o, outUnit in enumerate(units[1]):
-                M[i, o] = self.getUnitEval(eval = 'expect',
-                    data = posData, mapping = mapping)[outUnit] \
-                    - self.getUnitEval(eval = 'expect',
-                    data = negData, mapping = mapping)[outUnit]
+                M[i, o] = self.evalUnits(posData, func = 'expect',
+                    mapping = mapping)[outUnit] \
+                    + self.evalUnits(negData, func = 'expect',
+                    mapping = mapping)[outUnit]
+
+        return M
+
+    def getUnitImpact(self, units, data = None, mapping = None,
+        modify = 'knockout', func = 'values', **kwargs):
+        """Return unit interaction matrix as numpy array."""
+
+        # create empty array
+        M = numpy.empty(shape = (len(units[0]), len(units[1])))
+        meanData = data[0].mean(axis = 0).reshape((1, len(units[0])))
+        for i, inUnit in enumerate(units[0]):
+            cData = meanData.copy()
+            cData[0, i] = data[0][0, i]
+            for o, outUnit in enumerate(units[1]):
+                M[i, o] = self.evalUnits(cData, func = 'expect',
+                    mapping = mapping)[outUnit]
 
         return M
 
@@ -729,7 +728,7 @@ class system:
                 a specific information about the system
 
         Examples:
-            about('units', 'measure', 'error')
+            about('units', 'eval', 'error')
                 Returns information about the "error" measurement
                 function of the systems units."""
 
@@ -739,26 +738,35 @@ class system:
             'class': self._config['class'],
             'type': self.getType(),
             'units': {
-                'methods': self.getUnitMethods() },
+                'eval': self._getUnitEvalMethods().keys() },
             'links': {
-                'links': self.getLinkMethods() }
+                'eval': self._getUnitEvalMethods().keys() }
         }
 
         if args[0] == 'name': return self.name()
         if args[0] == 'description': return self.__doc__
         if args[0] == 'class': return self._config['class']
+        if args[0] == 'type': return self.getType()
+        if args[0] == 'eval':
+            methods = self._getEvalMethods()
+            if len(args) == 1: return methods.keys()
+            if not args[1] in methods.keys(): return nemoa.log(
+                'error', "unknown evaluation method: '%s'!" % (args[2]))
+            if len(args) == 2: return methods[args[1]]
+            if not args[2] in methods[args[1]].keys(): return nemoa.log(
+                'error', "unknown evaluation method property: '%s'!" % (args[2]))
+            return methods[args[1]][args[2]]
         if args[0] in ['units', 'links']:
-            if args[1] == 'methods':
-                if args[0] == 'units': methods = self.getUnitMethods()
-                if args[0] == 'links': methods = self.getLinkMethods()
-                if len(args) == 2: return methods
+            if args[1] == 'eval':
+                if args[0] == 'units': methods = self._getUnitEvalMethods()
+                if args[0] == 'links': methods = self._getLinkEvalMethods()
+                if len(args) == 2: return methods.keys()
                 if not args[2] in methods.keys(): return nemoa.log(
-                    'error', "unknown unit method: '%s'!" % (args[2]))
+                    'error', "unknown evaluation method: '%s'!" % (args[2]))
                 if len(args) == 3: return methods[args[2]]
                 if not args[3] in methods[args[2]].keys(): return nemoa.log(
-                    'error', "unknown unit method property: '%s'!" % (args[3]))
+                    'error', "unknown evaluation method property: '%s'!" % (args[3]))
                 return methods[args[2]][args[3]]
-        if args[0] == 'type': return self.getType()
         return None
 
     def name(self):
@@ -880,7 +888,7 @@ class inspector:
                 self.__state['estimateEnded'] = True
 
         # evaluate model (in a given time interval)
-        if self.__inspect: self.__triggerEvaluation()
+        if self.__inspect: self.__triggerEval()
 
         if self.__state['abort']: return 'abort'
 
@@ -916,7 +924,7 @@ class inspector:
 
         return True
 
-    def __triggerEvaluation(self):
+    def __triggerEval(self):
         """Evaluate Model."""
 
         cfg = self.__system._config['optimize']
@@ -930,35 +938,33 @@ class inspector:
             return False
 
         if self.__state['epoch'] == cfg['updates']:
-            func = cfg['inspectFunction']
-            funcCfg = self.__system.about('units', 'methods', func)
-            funcVal = self.__system.getDataEval(data = self.__data, func = func)
-            out = 'final: %s = ' + funcCfg['format']
-            return nemoa.log('note', out % (funcCfg['name'], funcVal))
+            func  = cfg['inspectFunction']
+            prop  = self.__system.about('eval', func)
+            value = self.__system.eval(data = self.__data, func = func)
+            out   = 'final: %s = ' + prop['format']
+            return nemoa.log('note', out % (prop['name'], value))
 
         if ((epochTime - self.__state['inspectTime']) \
             > cfg['inspectTimeInterval']) \
             and not (self.__estimate \
             and self.__state['estimateStarted'] \
             and not self.__state['estimateEnded']):
-            func = cfg['inspectFunction']
-            funcCfg = self.__system.about('units', 'methods', func)
-            funcVal = self.__system.getDataEval(data = self.__data, func = func)
-            progress = float(self.__state['epoch']) \
-                / float(cfg['updates']) * 100.0
+            func  = cfg['inspectFunction']
+            prop  = self.__system.about('eval', func)
+            value = self.__system.eval(data = self.__data, func = func)
+            progr = float(self.__state['epoch']) / float(cfg['updates']) * 100.0
 
             # update time of last evaluation
             self.__state['inspectTime'] = epochTime
 
             # add evaluation to array
             if self.__state['inspection'] == None:
-                self.__state['inspection'] = \
-                    numpy.array([[progress, funcVal]])
+                self.__state['inspection'] = numpy.array([[progr, value]])
             else: self.__state['inspection'] = \
                 numpy.vstack((self.__state['inspection'], \
-                numpy.array([[progress, funcVal]])))
+                numpy.array([[progr, value]])))
 
-            out = 'finished %.1f%%: %s = ' + funcCfg['format']
-            return nemoa.log('note', out % (progress, funcCfg['name'], funcVal))
+            out = 'finished %.1f%%: %s = ' + prop['format']
+            return nemoa.log('note', out % (progr, prop['name'], value))
 
         return False

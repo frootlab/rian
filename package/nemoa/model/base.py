@@ -502,50 +502,60 @@ class model:
 
         #return False
 
-    #
-    # UNIT EVALUATION
-    #
-
-    def getUnitEval(self, data = None, statistics = 0, **kwargs):
-        """Return dictionary with units and evaluation values."""
-        if data == None: data = self.dataset.getData(size = statistics,
-            cols = self.groups(visible = True))
-        return self.system.getUnitEval(data, **kwargs)
-
-    #
-    # LINK EVALUATION
-    #
-
-    def _getLinkEval(self, data= None, statistics = 10000, **kwargs):
-        """Return dictionary with links and evaluation values."""
-        if data == None: data = self.dataset.getData(statistics)
-        return self.system.getLinkEval(data, **kwargs)
+#    def _getLinkEval(self, data= None, statistics = 10000, **kwargs):
+#        """Return dictionary with links and evaluation values."""
+#        if data == None: data = self.dataset.getData(statistics)
+#        return self.system.getLinkEval(data, **kwargs)
 
     #
     # MODEL EVALUATION
     #
 
-    def eval(self, func = 'expect', data = None, block = [],
-        k = 1, m = 1, statistics = 10000):
+    # 2Do
+    # use system.eval()
 
-        # set default values to params if not set
-        if data == None: data = self.dataset.getData(statistics)
+    #def eval(self, func = 'expect', data = None, block = [],
+        #k = 1, m = 1, statistics = 10000):
 
-        vEval, hEval = self.system.getUnitEval(data, func, block, k, m)
-        mEval = numpy.mean(vEval)
+        ## set default values to params if not set
+        #if data == None: data = self.dataset.getData(statistics)
 
-        units = {}
-        for i, v in enumerate(self.system.params['v']['label']):
-            units[v] = vEval[i]
-        for j, h in enumerate(self.system.params['h']['label']):
-            units[h] = hEval[j]
+        #vEval, hEval = self.system.evalUnits(data, func = func, block = block, k = k, m = m)
+        #mEval = numpy.mean(vEval)
 
-        return mEval, units
+        #units = {}
+        #for i, v in enumerate(self.system.params['v']['label']):
+            #units[v] = vEval[i]
+        #for j, h in enumerate(self.system.params['h']['label']):
+            #units[h] = hEval[j]
+#
+#        return mEval, units
+
+    def eval(self, func = None, data = None, statistics = 0, **kwargs):
+        """Return model evaluation value."""
+        if data == None: data = self.dataset.getData(
+            size = statistics, cols = self.groups(visible = True))
+        if isinstance(func, str): kwargs['func'] = func
+        return self.system.eval(data, **kwargs)
+
+    def evalUnits(self, func = None, data = None, statistics = 0, **kwargs):
+        """Return dictionary with units and evaluation values."""
+        if data == None: data = self.dataset.getData(
+            size = statistics, cols = self.groups(visible = True))
+        if isinstance(func, str): kwargs['func'] = func
+        return self.system.evalUnits(data, **kwargs)
+
+    def evalLinks(self, func = None, data = None, statistics = 0, **kwargs):
+        """Return dictionary with units and evaluation values."""
+        if data == None: data = self.dataset.getData(
+            size = statistics, cols = self.groups(visible = True))
+        if isinstance(func, str): kwargs['func'] = func
+        return self.system.evalLinks(data, **kwargs)
 
     #
     # get / set all model parameters as dictionary
     #
-    
+
     def _get(self, sec = None):
         dict = {
             'config': copy.deepcopy(self.__config),
@@ -744,7 +754,7 @@ class model:
         Examples:
             about('dataset', 'preprocessing', 'transformation')
             
-            about('system', 'units', 'method', 'error', 'description')
+            about('system', 'units', 'eval', 'error', 'description')
                 Returns information about the "error" measurement
                 function of the systems units.
         """

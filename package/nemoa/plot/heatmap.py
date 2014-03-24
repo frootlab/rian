@@ -35,7 +35,7 @@ class relation(nemoa.plot.base.plot):
             units = self.settings['units'],
             preprocessing = self.settings['preprocessing'],
             relation = self.settings['relation'],
-            eval = self.settings['eval'],
+            func = self.settings['eval'],
             modify = self.settings['modify'],
             statistics = self.settings['statistics'])
         
