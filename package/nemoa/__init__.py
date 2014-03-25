@@ -5,7 +5,7 @@ from .common.log import *
 import nemoa.common.type as type
 import nemoa.workspace.config, nemoa.plot, nemoa.annotation
 
-__version = ('0.4.79', 'noGPU-20140324')
+__version = ('0.4.80', 'noGPU-20140330')
 initLogger()
 
 def new(**kwargs):
@@ -18,7 +18,7 @@ def open(workspace, **kwargs):
 
 def welcome():
     """Print welcome message to standard output."""
-    return log('header', 'nemoa ' + __version[0] + __version[1])
+    return log('header', 'nemoa ' + __version[0])
 
 def version():
     """Return version number and identifier string as tuple."""

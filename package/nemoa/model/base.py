@@ -356,14 +356,35 @@ class model:
         return self.system.mapData(data, mapping = mapping, transform = transform)
 
     ####################################################################
-    # (scalar) model evaluation                                        #
+    # Model Evaluation                                                 #
     ####################################################################
+
+    def eval(self, *args, **kwargs):
+        """Return model evaluation value."""
+
+        if len(args) == 0 or args[0] == 'system':
+            if 'data' in kwargs.keys():
+                data = kwargs['data']
+                del kwargs['data']
+            else:
+                if 'statistics' in kwargs.keys():
+                    statistics = kwargs['statistics']
+                    del kwargs['statistics']
+                else: statistics = 0
+                data = self.dataset.getData(
+                    size = statistics, cols = self.groups(visible = True))
+                return self.system.eval(data, *args[1:], **kwargs)
+        if args[0] == 'dataset':
+            return self.dataset.eval(*args[1:], **kwargs)
+        if args[0] == 'network':
+            return self.network.eval(*args[1:], **kwargs)
+        return nemoa.log('warning', 'could not evaluate model')
 
     def error(self, dataset = None, **kwargs):
         """Return data reconstruction error of model."""
 
         data = self.getData(dataset = dataset)
-        error = self.system.getError(data, **kwargs)
+        error = self.system.evalError(data, **kwargs)
 
         return error
 
@@ -371,7 +392,7 @@ class model:
         """Return data reconstruction accuracy of model."""
 
         data = self.getData(dataset = dataset)
-        accuracy = self.system.getAccuracy(data, **kwargs)
+        accuracy = self.system.evalAccuracy(data, **kwargs)
 
         return accuracy
 
@@ -379,7 +400,7 @@ class model:
         """Return data reconstruction precision of model."""
 
         data = self.getData(dataset = dataset)
-        precision = self.system.getPrecision(data, **kwargs)
+        precision = self.system.evalPrecision(data, **kwargs)
 
         return precision
 
@@ -387,7 +408,7 @@ class model:
         """Return data reconstruction correlation of model."""
 
         data = self.getData(dataset = dataset)
-        correlation = self.system.getCorrelation(data, **kwargs)
+        correlation = self.system.evalCorrelation(data, **kwargs)
 
         return correlation
 
@@ -395,7 +416,7 @@ class model:
         """Return data reconstruction energy of model."""
 
         data = self.getData(dataset = dataset)
-        energy = self.system.getEnergy(data, **kwargs)
+        energy = self.system.evalEnergy(data, **kwargs)
 
         return energy
 
@@ -530,27 +551,6 @@ class model:
             #units[h] = hEval[j]
 #
 #        return mEval, units
-
-    def eval(self, func = None, data = None, statistics = 0, **kwargs):
-        """Return model evaluation value."""
-        if data == None: data = self.dataset.getData(
-            size = statistics, cols = self.groups(visible = True))
-        if isinstance(func, str): kwargs['func'] = func
-        return self.system.eval(data, **kwargs)
-
-    def evalUnits(self, func = None, data = None, statistics = 0, **kwargs):
-        """Return dictionary with units and evaluation values."""
-        if data == None: data = self.dataset.getData(
-            size = statistics, cols = self.groups(visible = True))
-        if isinstance(func, str): kwargs['func'] = func
-        return self.system.evalUnits(data, **kwargs)
-
-    def evalLinks(self, func = None, data = None, statistics = 0, **kwargs):
-        """Return dictionary with units and evaluation values."""
-        if data == None: data = self.dataset.getData(
-            size = statistics, cols = self.groups(visible = True))
-        if isinstance(func, str): kwargs['func'] = func
-        return self.system.evalLinks(data, **kwargs)
 
     #
     # get / set all model parameters as dictionary
@@ -754,7 +754,7 @@ class model:
         Examples:
             about('dataset', 'preprocessing', 'transformation')
             
-            about('system', 'units', 'eval', 'error', 'description')
+            about('system', 'units', 'error', 'description')
                 Returns information about the "error" measurement
                 function of the systems units.
         """

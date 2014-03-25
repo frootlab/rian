@@ -451,6 +451,24 @@ class system:
         return True
 
     ####################################################################
+    # System Evaluation                                                #
+    ####################################################################
+
+    def eval(self, data, *args, **kwargs):
+        if len(args) == 0:
+            return self.evalSystem(data, **kwargs)
+        if args[0] == 'units':
+            return self.evalUnits(data, *args[1:], **kwargs)
+        if args[0] == 'links':
+            return self.evalLinks(data, *args[1:], **kwargs)
+        if args[0] == 'relations':
+            return self.evalRelations(data, *args[1:], **kwargs)
+        if args[0] in self._getSystemEvalMethods().keys():
+            return self.evalSystem(data, *args, **kwargs)
+        return nemoa.log('warning',
+            "could not evaluate system: unknown method '%s'" % (args[0]))
+
+    ####################################################################
     # Evaluate                                                         #
     ####################################################################
 
@@ -586,117 +604,21 @@ class system:
         if format == 'array': return M
         if format == 'dict': return nemoa.common.dictFromArray(M, units)
 
-    def getUnitCorrelation(self, units = None, data = None, **kwargs):
-        """Return correlation matrix as numpy array.
+    #def getUnitImpact(self, units, data = None, mapping = None,
+        #modify = 'knockout', func = 'values', **kwargs):
+        #"""Return unit interaction matrix as numpy array."""
 
-        Keyword arguments:
-            units -- list of strings with valid unitIDs"""
+        ## create empty array
+        #M = numpy.empty(shape = (len(units[0]), len(units[1])))
+        #meanData = data[0].mean(axis = 0).reshape((1, len(units[0])))
+        #for i, inUnit in enumerate(units[0]):
+            #cData = meanData.copy()
+            #cData[0, i] = data[0][0, i]
+            #for o, outUnit in enumerate(units[1]):
+                #M[i, o] = self.evalUnits(cData, func = 'expect',
+                    #mapping = mapping)[outUnit]
 
-        # create data and calulate correlation matrix
-        if units == None: units = self._assertUnitTuple(units)
-
-        M = numpy.corrcoef(numpy.hstack(data).T)
-        uList = units[0] + units[1]
-
-        # create output matrix
-        C = numpy.zeros(shape = (len(units[0]), len(units[1])))
-        for i, u1 in enumerate(units[0]):
-            k = uList.index(u1)
-            for j, u2 in enumerate(units[1]):
-                l = uList.index(u2)
-                C[i, j] = M[k, l]
-
-        return C
-
-    def getUnitKnockout(self, units, data = None, mapping = None,
-        modify = 'knockout', func = 'error', **kwargs):
-        """Return numpy array with data manipulation results.
-
-        Keyword Arguments:
-            y -- list with labels of manipulated units on y axis of matrix
-            x -- list with labels of effected units on x axis of matrix+
-            modify -- type of manipulation
-            measure -- name of measurement function
-            data -- numpy array with data to test
-
-        Description:
-            Manipulate unit values and measure effect on other units,
-            respective to given data"""
-
-        # prepare knockout matrix
-        if units == None: units = self._assertUnitTuple(units)
-        K = numpy.zeros((len(units[0]), len(units[1])))
-
-        # calculate unit values without modification
-        methodName = self.about('units', 'eval', func, 'name')
-        nemoa.log(
-            'calculate %s effect on %s' % (modify, methodName))
-        tStart = time.time()
-        default = self.evalUnits(data, func = func, mapping = mapping)
-        estimation = (time.time() - tStart) * len(units[0])
-        nemoa.log('estimated duration: %.1fs' % (estimation))
-
-        srcUnits = self.getUnits(group = mapping[0])[0]
-
-        modi = {}
-        for i, srcUnit in enumerate(units[0]):
-
-            # modify unit and calculate unit values
-            if modify == 'knockout':
-                id = srcUnits.index(srcUnit)
-                modi = self.evalUnits(data, func = func,
-                    mapping = mapping, block = [id])
-            #2DO: fix unlink
-            #elif modify == 'unlink':
-                #links = self.getLinks()
-                #self.unlinkUnit(kUnit)
-                #uUnlink = self.evalUnits(func = measure, data = data)
-                #self.system.setLinks(links)
-            else: return nemoa.log('error', """could not create knockout matrix:
-                unknown data manipulation function '%s'!""" % (modify))
-
-            # store difference in knockout matrix
-            for j, tgtUnit in enumerate(units[1]):
-                if srcUnit == tgtUnit: continue
-                K[i,j] = modi[tgtUnit] - default[tgtUnit]
-
-        return K
-
-    def getUnitInteraction(self, units, data = None, mapping = None,
-        modify = 'knockout', func = 'values', **kwargs):
-        """Return unit interaction matrix as numpy array."""
-
-        # create empty array
-        M = numpy.empty(shape = (len(units[0]), len(units[1])))
-        meanData = data[0].mean(axis = 0).reshape((1, len(units[0])))
-        for i, inUnit in enumerate(units[0]):
-            posData = meanData.copy()
-            posData[0, i] += 0.5
-            negData = meanData.copy()
-            negData[0, i] -= 0.5
-            for o, outUnit in enumerate(units[1]):
-                M[i, o] = self.evalUnits(posData, func = 'expect',
-                    mapping = mapping)[outUnit] \
-                    + self.evalUnits(negData, func = 'expect',
-                    mapping = mapping)[outUnit]
-
-        return M
-
-    def getUnitImpact(self, units, data = None, mapping = None,
-        modify = 'knockout', func = 'values', **kwargs):
-        """Return unit interaction matrix as numpy array."""
-
-        # create empty array
-        M = numpy.empty(shape = (len(units[0]), len(units[1])))
-        meanData = data[0].mean(axis = 0).reshape((1, len(units[0])))
-        for i, inUnit in enumerate(units[0]):
-            cData = meanData.copy()
-            cData[0, i] = data[0][0, i]
-            for o, outUnit in enumerate(units[1]):
-                M[i, o] = self.evalUnits(cData, func = 'expect',
-                    mapping = mapping)[outUnit]
-
-        return M
+        #return M
 
     ####################################################################
     # Data Transformation                                              #
@@ -728,46 +650,31 @@ class system:
                 a specific information about the system
 
         Examples:
-            about('units', 'eval', 'error')
+            about('units', 'error')
                 Returns information about the "error" measurement
                 function of the systems units."""
 
-        if not args: return {
+        # create information dictionary
+        about = nemoa.common.dictMerge({
             'name': self.name(),
             'description': self.__doc__,
             'class': self._config['class'],
             'type': self.getType(),
-            'units': {
-                'eval': self._getUnitEvalMethods().keys() },
-            'links': {
-                'eval': self._getUnitEvalMethods().keys() }
-        }
+            'units': self._getUnitEvalMethods(),
+            'links': self._getLinkEvalMethods(),
+            'relations': self._getRelationEvalMethods()
+        }, self._getSystemEvalMethods())
 
-        if args[0] == 'name': return self.name()
-        if args[0] == 'description': return self.__doc__
-        if args[0] == 'class': return self._config['class']
-        if args[0] == 'type': return self.getType()
-        if args[0] == 'eval':
-            methods = self._getEvalMethods()
-            if len(args) == 1: return methods.keys()
-            if not args[1] in methods.keys(): return nemoa.log(
-                'error', "unknown evaluation method: '%s'!" % (args[2]))
-            if len(args) == 2: return methods[args[1]]
-            if not args[2] in methods[args[1]].keys(): return nemoa.log(
-                'error', "unknown evaluation method property: '%s'!" % (args[2]))
-            return methods[args[1]][args[2]]
-        if args[0] in ['units', 'links']:
-            if args[1] == 'eval':
-                if args[0] == 'units': methods = self._getUnitEvalMethods()
-                if args[0] == 'links': methods = self._getLinkEvalMethods()
-                if len(args) == 2: return methods.keys()
-                if not args[2] in methods.keys(): return nemoa.log(
-                    'error', "unknown evaluation method: '%s'!" % (args[2]))
-                if len(args) == 3: return methods[args[2]]
-                if not args[3] in methods[args[2]].keys(): return nemoa.log(
-                    'error', "unknown evaluation method property: '%s'!" % (args[3]))
-                return methods[args[2]][args[3]]
-        return None
+        retDict = about
+        path = ['system']
+        for arg in args:
+            if not isinstance(retDict, dict): return retDict
+            if not arg in retDict.keys(): return nemoa.log(
+                'warning', "%s has no property '%s'" % (' → '.join(path), arg))
+            path.append(arg)
+            retDict = retDict[arg]
+        if not isinstance(retDict, dict): return retDict
+        return {key: retDict[key] for key in retDict.keys()}
 
     def name(self):
         """Return name of system."""
@@ -939,7 +846,7 @@ class inspector:
 
         if self.__state['epoch'] == cfg['updates']:
             func  = cfg['inspectFunction']
-            prop  = self.__system.about('eval', func)
+            prop  = self.__system.about(func)
             value = self.__system.eval(data = self.__data, func = func)
             out   = 'final: %s = ' + prop['format']
             return nemoa.log('note', out % (prop['name'], value))
@@ -950,7 +857,7 @@ class inspector:
             and self.__state['estimateStarted'] \
             and not self.__state['estimateEnded']):
             func  = cfg['inspectFunction']
-            prop  = self.__system.about('eval', func)
+            prop  = self.__system.about(func)
             value = self.__system.eval(data = self.__data, func = func)
             progr = float(self.__state['epoch']) / float(cfg['updates']) * 100.0
 

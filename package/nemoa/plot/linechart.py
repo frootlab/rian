@@ -18,7 +18,7 @@ class linechart(plot):
             'facecolor': 'lightgrey',
             'edgecolor': 'black',
             'linewidth': 0.5,
-            'valuation': 'performance()'
+            'valuation': 'accuracy'
         }
 
     def create(self, models, file = None):

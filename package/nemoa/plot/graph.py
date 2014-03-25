@@ -23,7 +23,7 @@ class structure(nemoa.plot.base.plot):
             'showTitle': True,
             'title': None,
             'graphCaption': True,
-            'nodeCaption': 'performance',
+            'nodeCaption': 'accuracy',
             'nodeSort': 'weight',
             'edges': 'interaction',
             'edgeCaption': False,
@@ -39,13 +39,13 @@ class structure(nemoa.plot.base.plot):
 
             # get and check node caption relation
             method = self.settings['nodeCaption']
-            fPath = ('system', 'units', 'method', method)
+            fPath = ('system', 'units', method)
             fAbout = model.about(*(fPath + ('name', )))
             
             if hasattr(fAbout, 'title'):
                 fName = model.about(*(fPath + ('name', ))).title()
                 fFormat = model.about(*(fPath + ('format', )))
-                nodeCaption = model.evalUnits(func = method)
+                nodeCaption = model.eval(*fPath)
                 caption  = 'Average ' + fName + ': $\mathrm{%.1f' \
                     % (100 * float(sum([nodeCaption[u] \
                     for u in nodeCaption.keys()])) / len(nodeCaption)) + '\%}$'

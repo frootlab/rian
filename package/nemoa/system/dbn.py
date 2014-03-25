@@ -262,8 +262,8 @@ class dbn(nemoa.system.ann.ann):
 
         algorithm = self._config['optimize']['algorithm'].lower()
 
-        if   algorithm == 'bprop': self.optimizeBProp(dataset, schedule, inspector)
-        elif algorithm == 'rprop': self.optimizeRProp(dataset, schedule, inspector)
+        if   algorithm == 'bprop': self._optimizeBPROP(dataset, schedule, inspector)
+        elif algorithm == 'rprop': self._optimizeRPROP(dataset, schedule, inspector)
         else: nemoa.log('error', "unknown gradient '%s'!" % (algorithm))
 
         nemoa.setLog(indent = '-1')
