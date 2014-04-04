@@ -764,56 +764,67 @@ class ann(nemoa.system.base.system):
             'name': 'energy',
             'description': 'energy of units',
             'method': 'evalUnitEnergy',
+            'show': 'diagram',
             'args': 'input', 'return': 'scalar', 'format': '%.3f'},
         'expect': {
             'name': 'expect',
             'description': 'reconstructed values',
             'method': 'evalUnitExpect',
+            'show': 'histogram',
             'args': 'input', 'return': 'vector', 'format': '%.3f'},
         'values': {
             'name': 'values',
             'description': 'reconstructed values',
             'method': 'evalUnitValues',
+            'show': 'histogram',
             'args': 'input', 'return': 'vector', 'format': '%.3f'},
         'samples': {
             'name': 'samples',
             'description': 'reconstructed samples',
             'method': 'evalUnitSamples',
+            'show': 'histogram',
             'args': 'input', 'return': 'vector', 'format': '%.3f'},
         'mean': {
             'name': 'mean values',
             'description': 'mean of reconstructed values',
             'method': 'evalUnitMean',
+            'show': 'diagram',
             'args': 'input', 'return': 'scalar', 'format': '%.3f'},
         'variance': {
             'name': 'variance',
             'description': 'variance of reconstructed values',
             'method': 'evalUnitVariance',
+            'show': 'diagram',
             'args': 'input', 'return': 'scalar', 'format': '%.3f'},
         'residuals': {
             'name': 'residuals',
             'description': 'residuals of reconstructed values',
             'method': 'evalUnitResiduals',
+            'show': 'histogram',
             'args': 'all', 'return': 'vector', 'format': '%.3f'},
         'error': {
             'name': 'error',
             'description': 'error of reconstructed values',
             'method': 'evalUnitError',
+            'show': 'diagram',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'accuracy': {
             'name': 'accuracy',
             'description': 'accuracy of reconstructed values',
             'method': 'evalUnitAccuracy',
+            'show': 'diagram',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'precision': {
             'name': 'precision',
             'description': 'precision of reconstructed values',
             'method': 'evalUnitPrecision',
+            'show': 'diagram',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'correlation': {
             'name': 'correlation',
             'description': 'correlation of reconstructed to real values',
             'method': 'evalUnitCorrelation',
+            'show': 'diagram',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'}
         }
 
@@ -1174,6 +1185,7 @@ class ann(nemoa.system.base.system):
             'name': 'energy',
             'description': 'local energy of links',
             'method': 'evalLinkEnergy',
+            'show': 'graph',
             'args': 'input', 'return': 'scalar', 'format': '%.3f'}
         }
 
@@ -1256,18 +1268,27 @@ class ann(nemoa.system.base.system):
     def _getRelationEvalMethods(): return {
         'correlation': {
             'name': 'correlation',
-            'description': 'data correlation',
+            'description': 'data correlation between inputs and outputs',
             'method': 'evalRelCorrelation',
+            'show': 'heatmap',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'knockout': {
             'name': 'knockout',
-            'description': 'knockout effect',
+            'description': 'knockout effect from inputs to outputs',
             'method': 'evalRelKnockout',
+            'show': 'heatmap',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'interaction': {
             'name': 'interaction',
-            'description': 'interaction',
+            'description': 'linear slope of induced values from inputs to outputs',
             'method': 'evalRelInteraction',
+            'show': 'heatmap',
+            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
+        'impact': {
+            'name': 'impact',
+            'description': 'deviation of induced values from inputs to outputs',
+            'method': 'evalRelImpact',
+            'show': 'heatmap',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'}
         }
 
@@ -1346,6 +1367,40 @@ class ann(nemoa.system.base.system):
 
         Description:
             Measure unit interaction to other units,
+            respective to given data """
+
+        inLabels = self.getUnits(group = mapping[0])[0]
+        outLabels = self.getUnits(group = mapping[-1])[0]
+
+        # prepare interaction matrix
+        R = numpy.zeros((len(inLabels), len(outLabels)))
+
+        # calculate interaction
+        meanData = data[0].mean(axis = 0).reshape((1, len(inLabels)))
+        for inId, inUnit in enumerate(inLabels):
+            posData = meanData.copy()
+            posData[0, inId] += 0.5
+            negData = meanData.copy()
+            negData[0, inId] -= 0.5
+            for outId, outUnit in enumerate(outLabels):
+                R[inId, outId] = self.evalUnits(posData, func = 'expect',
+                    mapping = mapping)[outUnit] \
+                    - self.evalUnits(negData, func = 'expect',
+                    mapping = mapping)[outUnit]
+
+        return R
+
+    def evalRelDeviation(self, data, mapping = None, **kwargs):
+        """Return deviation matrix as numpy array.
+
+        Keyword Arguments:
+            data -- 2-tuple with numpy arrays: input data and output data
+            mapping -- tuple of strings containing the mapping
+                from input layer (first argument of tuple)
+                to output layer (last argument of tuple)
+
+        Description:
+            Measure unit impact to other units,
             respective to given data """
 
         inLabels = self.getUnits(group = mapping[0])[0]
