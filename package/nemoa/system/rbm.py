@@ -366,10 +366,10 @@ class rbm(nemoa.system.ann.ann):
 
     def getCdSamples(self, data):
         """Return reconstructed data using 1-step contrastive divergency sampling (CD-1)."""
-        hData  = self.getUnitExpect(data, ('visible', 'hidden'))
-        vModel = self.getUnitSamples(hData, ('hidden', 'visible'),
+        hData  = self.evalUnitExpect(data, ('visible', 'hidden'))
+        vModel = self.evalUnitSamples(hData, ('hidden', 'visible'),
             expectLast = True)
-        hModel = self.getUnitExpect(vModel, ('visible', 'hidden'))
+        hModel = self.evalUnitExpect(vModel, ('visible', 'hidden'))
         return data, hData, vModel, hModel
 
     def getCdkSamples(self, data):
@@ -392,17 +392,17 @@ class rbm(nemoa.system.ann.ann):
 
                 # calculate hSample from hExpect
                 # in first sampling step init hSample with h_data
-                if j == 0: hSample = self.getUnitSamples(hData, ('hidden', ))
-                else: hSample = self.getUnitSamples(hExpect, ('hidden', ))
+                if j == 0: hSample = self.evalUnitSamples(hData, ('hidden', ))
+                else: hSample = self.evalUnitSamples(hExpect, ('hidden', ))
 
                 # calculate vExpect from hSample
-                vExpect = self.getUnitExpect(hSample, ('hidden', 'visible'))
+                vExpect = self.evalUnitExpect(hSample, ('hidden', 'visible'))
 
                 # calculate hExpect from vSample
                 # in last sampling step use vExpect
                 # instead of vSample to reduce noise
-                if j + 1 == k: hExpect = self.getUnitExpect(vExpect, ('visible', 'hidden'))
-                else: hExpect = self.getUnitSamples(vExpect, ('visible', 'hidden'), expectLast = True)
+                if j + 1 == k: hExpect = self.evalUnitExpect(vExpect, ('visible', 'hidden'))
+                else: hExpect = self.evalUnitSamples(vExpect, ('visible', 'hidden'), expectLast = True)
 
             vModel += vExpect / m
             hModel += hExpect / m

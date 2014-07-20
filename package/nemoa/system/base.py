@@ -632,9 +632,9 @@ class system:
             transform -- mapping algorithm"""
 
         if mapping == None: mapping = self.getMapping()
-        if transform == 'expect': return self.getUnitExpect(data, mapping)
-        if transform == 'value':  return self.getUnitValues(data, mapping)
-        if transform == 'sample': return self.getUnitSamples(data, mapping)
+        if transform == 'expect': return self.evalUnitExpect(data, mapping)
+        if transform == 'value':  return self.evalUnitValues(data, mapping)
+        if transform == 'sample': return self.evalUnitSamples(data, mapping)
         return nemoa.log('error', """could not map data:
             unknown mapping algorithm '%s'""" % (transform))
 
