@@ -829,7 +829,7 @@ class ann(nemoa.system.base.system):
         }
 
     def evalUnitExpect(self, data, mapping = None, block = None):
-        """Return expected values of a layer.
+        """Return (most) expected values of a layer.
 
         Keyword Arguments:
             data -- numpy array containing data corresponding
@@ -955,9 +955,13 @@ class ann(nemoa.system.base.system):
         """Return unit energies of a layer.
 
         Keyword Arguments:
+            data -- input data
             mapping -- tuple of strings containing the mapping
                 from input layer (first argument of tuple)
                 to output layer (last argument of tuple) """
+
+        # set mapping: inLayer to outLayer (if not set)
+        if mapping == None: mapping = self.getMapping()
 
         data = self.evalUnitExpect(data, mapping)
 
@@ -1215,7 +1219,7 @@ class ann(nemoa.system.base.system):
         return self.LinkLayer.energy(dIn, dOut, src, tgt, links)
 
     ####################################################################
-    # (Artificial Neuronal Network) Relation Evaluation                #
+    # (Artificial Neuronal Network) Relations between Units            #
     ####################################################################
 
     def evalRelations(self, data, func = 'correlation', relations = None, **kwargs):
@@ -1243,25 +1247,46 @@ class ann(nemoa.system.base.system):
         elif argsType == 'output': evalArgs.append(data[1])
         elif argsType == 'all':    evalArgs.append(data)
 
+        # extract 'transform' and 'format' from keyword arguments
+        if 'transform' in kwargs.keys():
+            transform = kwargs['transform']
+            del kwargs['transform']
+        else: transform = ''
+        if not isinstance(transform, str): transform = ''
+        if 'format' in kwargs.keys():
+            retFmt = kwargs['format']
+            del kwargs['format']
+        else: retFmt = 'dict'
+        if not isinstance(retFmt, str): retFmt = 'dict'
+
         # prepare keyword arguments for evaluation function
         evalKwargs = kwargs.copy()
         if not 'mapping' in evalKwargs.keys() \
             or evalKwargs['mapping'] == None:
             evalKwargs['mapping'] = self.getMapping()
 
-        # evaluate
+        # evaluate relations and get information about relation values
         values = getattr(self, method)(*evalArgs, **evalKwargs)
+        valuesFmt = methods[func]['return']
 
-        # create relation dictionary
-        inLabels = self.getUnits(group = evalKwargs['mapping'][0])[0]
-        outLabels = self.getUnits(group = evalKwargs['mapping'][-1])[0]
-        outFmt = methods[func]['return']
-        if outFmt == 'scalar':
-            relDict = {}
-            for inId, inUnit in enumerate(inLabels):
-                for outId, outUnit in enumerate(outLabels):
-                    relDict[(inUnit, outUnit)] = values[inId, outId]
-            return relDict
+        # create formated return values
+        if valuesFmt == 'scalar':
+            if transform:
+                M = values
+                if 'C' in transform: C = self.evalRelCorrelation(data)
+                try:
+                    T = eval(transform)
+                    values = T
+                except: return nemoa.log('error',
+                    'could not transform relations: invalid syntax!')
+
+            # create formated output
+            if retFmt == 'array': return values
+            if retFmt == 'dict':
+                inUnits = self.getUnits(group = evalKwargs['mapping'][0])[0]
+                outUnits = self.getUnits(group = evalKwargs['mapping'][-1])[0]
+                return nemoa.common.dictFromArray(values, (inUnits, outUnits))
+
         return nemoa.log('warning', 'could not perform evaluation')
 
     @staticmethod
@@ -1301,6 +1326,7 @@ class ann(nemoa.system.base.system):
                 from input layer (first argument of tuple)
                 to output layer (last argument of tuple) """
 
+        if not mapping: mapping = self.getMapping()
         inLabels = self.getUnits(group = mapping[0])[0]
         outLabels = self.getUnits(group = mapping[-1])[0]
 
@@ -1331,6 +1357,7 @@ class ann(nemoa.system.base.system):
             Knockout units and measure effect on other units,
             respective to given data """
 
+        if not mapping: mapping = self.getMapping()
         inLabels = self.getUnits(group = mapping[0])[0]
         outLabels = self.getUnits(group = mapping[-1])[0]
 
@@ -1369,6 +1396,7 @@ class ann(nemoa.system.base.system):
             Measure unit interaction to other units,
             respective to given data """
 
+        if not mapping: mapping = self.getMapping()
         inLabels = self.getUnits(group = mapping[0])[0]
         outLabels = self.getUnits(group = mapping[-1])[0]
 
@@ -1403,6 +1431,7 @@ class ann(nemoa.system.base.system):
             Measure unit impact to other units,
             respective to given data """
 
+        if not mapping: mapping = self.getMapping()
         inLabels = self.getUnits(group = mapping[0])[0]
         outLabels = self.getUnits(group = mapping[-1])[0]
 
@@ -1500,60 +1529,60 @@ class ann(nemoa.system.base.system):
 
         # lets calculate with link params
 
-        @staticmethod
-        def one(dict):
+        #@staticmethod
+        #def one(dict):
 
-            return {key: numpy.ones(shape = dict[key].shape) \
-                for key in dict.keys()}
+            #return {key: numpy.ones(shape = dict[key].shape) \
+                #for key in dict.keys()}
 
-        @staticmethod
-        def zero(dict):
+        #@staticmethod
+        #def zero(dict):
 
-            return {key: numpy.zeros(shape = dict[key].shape) \
-                for key in dict.keys()}
+            #return {key: numpy.zeros(shape = dict[key].shape) \
+                #for key in dict.keys()}
 
-        @staticmethod
-        def sign(dict, remap = None):
+        #@staticmethod
+        #def sign(dict, remap = None):
 
-            if remap == None: return {key: numpy.sign(dict[key]) \
-                for key in dict.keys()}
+            #if remap == None: return {key: numpy.sign(dict[key]) \
+                #for key in dict.keys()}
 
-            return {key:
-                (remap[0] * (numpy.sign(dict[key]) < 0.0)
-                + remap[1] * (numpy.sign(dict[key]) == 0.0)
-                + remap[2] * (numpy.sign(dict[key]) > 0.0)) \
-                for key in dict.keys()}
+            #return {key:
+                #(remap[0] * (numpy.sign(dict[key]) < 0.0)
+                #+ remap[1] * (numpy.sign(dict[key]) == 0.0)
+                #+ remap[2] * (numpy.sign(dict[key]) > 0.0)) \
+                #for key in dict.keys()}
 
-        @staticmethod
-        def minmax(dict, min = None, max = None):
+        #@staticmethod
+        #def minmax(dict, min = None, max = None):
 
-            if min == None: return {key: numpy.minimum(dict[key], max)
-                for key in dict.keys()}
-            if max == None: return {key: numpy.maximum(dict[key], min)
-                for key in dict.keys()}
+            #if min == None: return {key: numpy.minimum(dict[key], max)
+                #for key in dict.keys()}
+            #if max == None: return {key: numpy.maximum(dict[key], min)
+                #for key in dict.keys()}
 
-            return {key: numpy.maximum(numpy.minimum(dict[key], max), min)
-                for key in dict.keys()}
+            #return {key: numpy.maximum(numpy.minimum(dict[key], max), min)
+                #for key in dict.keys()}
 
-        @staticmethod
-        def sum(left, right):
+        #@staticmethod
+        #def sum(left, right):
 
-            if isinstance(left, float) or isinstance(left, int):
-                return {key: left + right[key] for key in left.keys()}
-            if isinstance(right, float) or isinstance(right, int):
-                return {key: left[key] + right for key in left.keys()}
+            #if isinstance(left, float) or isinstance(left, int):
+                #return {key: left + right[key] for key in left.keys()}
+            #if isinstance(right, float) or isinstance(right, int):
+                #return {key: left[key] + right for key in left.keys()}
 
-            return {key: left[key] + right[key] for key in left.keys()}
+            #return {key: left[key] + right[key] for key in left.keys()}
 
-        @staticmethod
-        def multiply(left, right):
+        #@staticmethod
+        #def multiply(left, right):
 
-            if isinstance(left, float) or isinstance(left, int):
-                return {key: left * right[key] for key in left.keys()}
-            if isinstance(right, float) or isinstance(right, int):
-                return {key: left[key] * right for key in left.keys()}
+            #if isinstance(left, float) or isinstance(left, int):
+                #return {key: left * right[key] for key in left.keys()}
+            #if isinstance(right, float) or isinstance(right, int):
+                #return {key: left[key] * right for key in left.keys()}
 
-            return {key: left[key] * right[key] for key in left.keys()}
+            #return {key: left[key] * right[key] for key in left.keys()}
 
     ####################################################################
     # Gaussian to Sigmoidal Link Layer                                 #
@@ -1629,56 +1658,56 @@ class ann(nemoa.system.base.system):
 
         # lets calculate with unit params
 
-        @staticmethod
-        def one(dict):
+        #@staticmethod
+        #def one(dict):
 
-            return {key: numpy.ones(shape = dict[key].shape) for key in dict.keys()}
+            #return {key: numpy.ones(shape = dict[key].shape) for key in dict.keys()}
 
-        @staticmethod
-        def zero(dict):
+        #@staticmethod
+        #def zero(dict):
 
-            return {key: numpy.zeros(shape = dict[key].shape) for key in dict.keys()}
+            #return {key: numpy.zeros(shape = dict[key].shape) for key in dict.keys()}
 
-        @staticmethod
-        def sign(dict, remap = None):
+        #@staticmethod
+        #def sign(dict, remap = None):
 
-            if remap == None: return {key: numpy.sign(dict[key]) \
-                for key in dict.keys()}
+            #if remap == None: return {key: numpy.sign(dict[key]) \
+                #for key in dict.keys()}
 
-            return {key: (remap[0] * (numpy.sign(dict[key]) < 0.0)
-                + remap[1] * (numpy.sign(dict[key]) == 0.0)
-                + remap[2] * (numpy.sign(dict[key]) > 0.0)) for key in dict.keys()}
+            #return {key: (remap[0] * (numpy.sign(dict[key]) < 0.0)
+                #+ remap[1] * (numpy.sign(dict[key]) == 0.0)
+                #+ remap[2] * (numpy.sign(dict[key]) > 0.0)) for key in dict.keys()}
 
-        @staticmethod
-        def minmax(dict, min = None, max = None):
+        #@staticmethod
+        #def minmax(dict, min = None, max = None):
 
-            if min == None: return {key: numpy.minimum(dict[key], max)
-                for key in dict.keys()}
-            if max == None: return {key: numpy.maximum(dict[key], min)
-                for key in dict.keys()}
+            #if min == None: return {key: numpy.minimum(dict[key], max)
+                #for key in dict.keys()}
+            #if max == None: return {key: numpy.maximum(dict[key], min)
+                #for key in dict.keys()}
 
-            return {key: numpy.maximum(numpy.minimum(dict[key], max), min)
-                for key in dict.keys()}
+            #return {key: numpy.maximum(numpy.minimum(dict[key], max), min)
+                #for key in dict.keys()}
 
-        @staticmethod
-        def sum(left, right):
+        #@staticmethod
+        #def sum(left, right):
 
-            if isinstance(left, float) or isinstance(left, int):
-                return {key: left + right[key] for key in left.keys()}
-            if isinstance(right, float) or isinstance(right, int):
-                return {key: left[key] + right for key in left.keys()}
+            #if isinstance(left, float) or isinstance(left, int):
+                #return {key: left + right[key] for key in left.keys()}
+            #if isinstance(right, float) or isinstance(right, int):
+                #return {key: left[key] + right for key in left.keys()}
 
-            return {key: left[key] + right[key] for key in left.keys()}
+            #return {key: left[key] + right[key] for key in left.keys()}
 
-        @staticmethod
-        def multiply(left, right):
+        #@staticmethod
+        #def multiply(left, right):
 
-            if isinstance(left, float) or isinstance(left, int):
-                return {key: left * right[key] for key in left.keys()}
-            if isinstance(right, float) or isinstance(right, int):
-                return {key: left[key] * right for key in left.keys()}
+            #if isinstance(left, float) or isinstance(left, int):
+                #return {key: left * right[key] for key in left.keys()}
+            #if isinstance(right, float) or isinstance(right, int):
+                #return {key: left[key] * right for key in left.keys()}
 
-            return {key: left[key] * right[key] for key in left.keys()}
+            #return {key: left[key] * right[key] for key in left.keys()}
 
     ####################################################################
     # Sigmoidal Unit Layer                                             #

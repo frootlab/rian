@@ -14,6 +14,7 @@ class relation(nemoa.plot.base.plot):
         'interpolation': 'nearest',
         'units': (None, None),
         'relation': 'correlation()',
+        'transform': '',
         'modify': 'knockout',
         'eval': 'error',
         'preprocessing': None,
@@ -30,16 +31,15 @@ class relation(nemoa.plot.base.plot):
             self.settings['units'] = (model.units(group = mapping[0])[0],
                 model.units(group = mapping[-1])[0])
 
-        # calculate relation matrix
-        R = model.getUnitRelation(
-            units = self.settings['units'],
+
+        #2Do allow subsets of units
+        # calculate and test relation matrix
+        R = model.eval('system', 'relations', self.settings['relation'],
             preprocessing = self.settings['preprocessing'],
-            relation = self.settings['relation'],
-            func = self.settings['eval'],
-            modify = self.settings['modify'],
-            statistics = self.settings['statistics'])
-        
-        # test relation matrix
+            masure = self.settings['eval'],
+            statistics = self.settings['statistics'],
+            transform = self.settings['transform'],
+            format = 'array')
         if not isinstance(R, numpy.ndarray): return nemoa.log('error',
             'could not plot heatmap: relation matrix is not valid!')
 

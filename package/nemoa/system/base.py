@@ -568,41 +568,44 @@ class system:
 
         return units
     
-    def getUnitRelation(self, dataset, stat = 10000, units = None,
-        relation = 'correlation()', format = 'array', **kwargs):
+    #def getUnitRelation(self, dataset, relation = 'correlation()',
+        #stat = 10000, units = None, format = 'array', **kwargs):
 
-        # get mapping, data and units
-        mapping = self.getMapping()
-        data    = dataset.getData(cols = (mapping[0], mapping[-1]))
-        units   = self._assertUnitTuple(units)
+        ## get mapping, data and units
+        #mapping = self.getMapping()
+        #data    = dataset.getData(cols = (mapping[0], mapping[-1])) # 2Do: use stat
+        #units   = self._assertUnitTuple(units)
 
-        # get method and method specific parameters
-        method, ukwargs = nemoa.common.strSplitParams(relation)
-        params = nemoa.common.dictMerge(ukwargs, kwargs)
+        ## get method and method specific parameters
+        #relName, relKwargs = nemoa.common.strSplitParams(relation)
+        #params = nemoa.common.dictMerge(relKwargs, kwargs)
 
-        # get relation as numpy array
-        if method == 'correlation': M = self.getUnitCorrelation(\
-            units = units, data = data, **params)
-        elif method == 'interaction': M = self.getUnitInteraction(\
-            units = units, data = data, mapping = mapping, **params)
-        elif method == 'knockout': M = self.getUnitKnockout(\
-            units = units, data = data, mapping = mapping, **params)
-        else: return nemoa.log('error',
-            "could not evaluate unit relations: unknown relation '%s'" % (method))
+        ## get relation as numpy array
+        #print params
+        #M = self.evalRelation(data, relation = relName, units = units, **params)
+        #quit()
+        #if method == 'correlation': M = self.evalRelCorrelation(\
+            #units = units, data = data, **params)
+        #elif method == 'interaction': M = self.evalRelInteraction(\
+            #units = units, data = data, mapping = mapping, **params)
+        #elif method == 'knockout': M = self.evalRelKnockout(\
+            #units = units, data = data, mapping = mapping, **params)
+        #else: return nemoa.log('error',
+            #"could not evaluate unit relations: unknown relation '%s'" % (method))
 
-        # transform matrix
-        if 'transform' in params:
-            if 'C' in params['transform']:
-                C = self.getUnitCorrelationMatrix(units = units, data = data)
-            try:
-                T = eval(params['transform'])
-                M = T
-            except: return nemoa.log('error',
-                'could not transform unit relation matrix: invalid syntax!')
+        ## transform matrix
+        #if 'transform' in params:
+            #if 'C' in params['transform']:
+                #C = self.getUnitCorrelationMatrix(units = units, data = data)
+            #try:
+                #T = eval(params['transform'])
+                #M = T
+            #except: return nemoa.log('error',
+                #'could not transform unit relation matrix: invalid syntax!')
 
-        # create formated output
-        if format == 'array': return M
-        if format == 'dict': return nemoa.common.dictFromArray(M, units)
+        ## create formated output
+        #if format == 'array': return M
+        #if format == 'dict': return nemoa.common.dictFromArray(M, units)
 
     #def getUnitImpact(self, units, data = None, mapping = None,
         #modify = 'knockout', func = 'values', **kwargs):

@@ -9,12 +9,6 @@ from matplotlib.patches import FancyArrowPatch, Circle
 class structure(nemoa.plot.base.plot):
 
     @staticmethod
-    def _snake(x, factor = 1.0):
-        return numpy.abs(x) * (1.0 / (1.0 + numpy.exp(-10.0 * factor
-            * (x + 0.5))) + 1.0 / (1.0 + numpy.exp(-10.0 * factor
-            * (x - 0.5))) - 1.0)
-
-    @staticmethod
     def _default():
         return {
             'output': 'file',
@@ -210,6 +204,12 @@ class structure(nemoa.plot.base.plot):
         plt.axis('off')
         return True
 
+    @staticmethod
+    def _snake(x, factor = 1.0):
+        return numpy.abs(x) * (1.0 / (1.0 + numpy.exp(-10.0 * factor
+            * (x + 0.5))) + 1.0 / (1.0 + numpy.exp(-10.0 * factor
+            * (x - 0.5))) - 1.0)
+
 class relation(nemoa.plot.base.plot):
 
     @staticmethod
@@ -217,61 +217,103 @@ class relation(nemoa.plot.base.plot):
         'output': 'file',
         'fileformat': 'pdf',
         'dpi': 300,
-        'show_figure_caption': True,
-        'interpolation': 'nearest' }
+        'graphCaption': True,
+        'units': (None, None),
+        'relation': 'correlation',
+        'threshold': 2.0,
+        'transform': '',
+        'measure': 'error',
+        'preprocessing': None,
+        'statistics': 10000,
+        'nodeCaption': 'accuracy',
+        'layout': 'fruchterman_reingold',
+        'filter': None,
+        'sign': 'correlation' }
 
     def _create(self, model, **params):
+        params = self.settings['params'] if 'params' in self.settings \
+            else {}
 
-        # default settings
-        settings = {
-            'units': 'visible',
-            'relation': 'knockout_relapprox_setmean',
-            'threshold': 2.0,
-            'filter': None,
-            'sign': 'correlation',
-            'statistics': 10000,
-            'edge_zoom': 1.0,
-            'dpi': 300,
-            'layout': 'fruchterman_reingold',
-            'show_figure_caption': True,
-            'title': None
-        }
+        # get default units and mapping
+        mapping = model.system.getMapping()
+        inUnits = model.units(group = mapping[0])[0]
+        outUnits = model.units(group = mapping[-1])[0]
 
-        # overwrite default settings with parameters
-        for key, value in params.items():
-            if key in settings: settings[key] = value
+        # update unit information
+        if not isinstance(self.settings['units'], tuple) \
+            or not isinstance(self.settings['units'][0], list) \
+            or not isinstance(self.settings['units'][1], list):
+            self.settings['units'] = (inUnits, outUnits)
 
-        # set default settings for filter and sign
-        if not settings['sign']: settings['sign'] = settings['relation']
-        if not settings['filter']: settings['filter'] = settings['relation']
+        # calculate relation weights
+        R = model.eval('system', 'relations', self.settings['relation'],
+            preprocessing = self.settings['preprocessing'],
+            measure = self.settings['measure'],
+            statistics = self.settings['statistics'],
+            transform = self.settings['transform'])
+        if not isinstance(R, dict): return nemoa.log('error',
+            'could not create relation graph: invalid weight relation!')
 
-        # get lists of visible and hidden units
-        visible, hidden = model.system.getUnits()
-        if settings['units'] == 'visible': settings['units'] = visible
-        elif settings['units'] == 'hidden': settings['units'] = hidden
+        # calculate relation signs
+        S = model.eval('system', 'relations', self.settings['sign'],
+            preprocessing = self.settings['preprocessing'],
+            measure = self.settings['measure'],
+            statistics = self.settings['statistics'],
+            transform = '1.0 * (M > 0.0)')
+        if not isinstance(S, dict): return nemoa.log('error',
+            'could not create relation graph: invalid sign relation!')
+
+        # calculate values for node captions
+        if self.settings['nodeCaption']:
+
+            # get and check node caption relation
+            method = self.settings['nodeCaption']
+            fPath = ('system', 'units', method)
+            fAbout = model.about(*fPath)
+
+            if isinstance(fAbout, dict) and 'name' in fAbout.keys():
+                fName = model.about(*(fPath + ('name', ))).title()
+                fFormat = model.about(*(fPath + ('format', )))
+                nodeCaption = model.eval(*fPath)
+                caption  = 'Average ' + fName + ': $\mathrm{%.1f' \
+                    % (100.0 * float(sum([nodeCaption[u] \
+                    for u in nodeCaption.keys()])) / len(nodeCaption)) + '\%}$'
+            else:
+                nodeCaption = None
+                caption = None
 
         # get title of model
-        if settings['show_figure_caption']: settings['title'] = model.cfg['name']
+        if self.settings['graphCaption']: self.settings['title'] = model.name()
 
-        # get number of units and relations
-        numUnits = len(settings['units'])
-        numRelations = numUnits ** 2
+        # get unit labels, number of units and number of relations
+        units = self.settings['units']
+        inUnits = units[0]
+        outUnits = units[1]
+        numUnits = len(inUnits) + len(outUnits)
+        numRelations = len(inUnits) * len(outUnits)
 
-        #
-        # GET FILTER MASK FOR RELATIONS
-        #
+        # get filter mask for relations
 
-        if settings['filter'] == None:
-            M = np.ones((numUnits, numUnits), dtype = 'bool')
+        if self.settings['filter'] == None:
+            M = np.ones((len(inUnits), len(outUnits)), dtype = 'bool')
         else:
             nemoa.log("calculate filter mask: %s > %.1f sigma" % \
-                (settings['filter'], settings['threshold']))
+                (self.settings['filter'], self.settings['threshold']))
 
             # get filter relation matrix
+            # calculate relation weights
+            F = model.eval('system', 'relations', self.settings['filter'],
+                preprocessing = self.settings['preprocessing'],
+                measure = self.settings['measure'],
+                statistics = self.settings['statistics'],
+                transform = self.settings['transform'])
+            if not isinstance(F, dict): return nemoa.log('error',
+                'could not create relation graph: invalid filter relation!')
+
             F = model.getUnitRelationMatrix(
-                units = settings['units'],
-                relation = settings['filter'],
-                statistics = settings['statistics'])
+                units = units,
+                relation = self.settings['filter'],
+                statistics = self.settings['statistics'])
 
             # get sigma and mu
             mu, sigma = model.getUnitRelationMatrixMuSigma(
@@ -292,6 +334,38 @@ class relation(nemoa.plot.base.plot):
 
             nemoa.log("%i relations passed filter (%.1f%%)" % \
                 (numFilter, float(numFilter) / float(numRelations - numUnits) * 100))
+
+        #xLen = max([len(u) for u in units])
+        #yLen = len(units)
+
+        ## calculate sizes
+        #zoom = 1.0
+        #scale = min(250.0 / xLen, 150.0 / yLen, 30.0)
+        #graphNodeSize = scale ** 2
+        #graphFontSize = 0.4 * scale
+        #graphCaptionFactor = 0.5 + 0.003 * scale
+        #graphLineWidth = 0.3
+
+        # default settings
+        #settings = {
+            #'units': 'visible',
+            #'edge_zoom': 1.0,
+            #'dpi': 300,
+            #'title': None
+        #}
+
+        ## overwrite default settings with parameters
+        #for key, value in params.items():
+            #if key in settings: settings[key] = value
+
+        ## set default settings for filter and sign
+        #if not settings['sign']: settings['sign'] = settings['relation']
+        #if not settings['filter']: settings['filter'] = settings['relation']
+
+        # get lists of visible and hidden units
+        #visible, hidden = model.system.getUnits()
+        #if settings['units'] == 'visible': settings['units'] = visible
+        #elif settings['units'] == 'hidden': settings['units'] = hidden
 
         #
         # GET WEIGHTS
@@ -375,6 +449,9 @@ class relation(nemoa.plot.base.plot):
         self._plotGraph(graph = G, **settings)
 
         return True
+
+    def _getTitle(self, model): return nemoa.common.strSplitParams(
+        self.settings['relation'])[0].title()
 
     def _plotGraph(self, graph, file = None, **params):
         ax = plt.subplot(1, 1, 1)

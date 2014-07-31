@@ -362,18 +362,33 @@ class model:
     def eval(self, *args, **kwargs):
         """Return model evaluation value."""
 
-        if len(args) == 0 or args[0] == 'system':
+        if len(args) == 0: args = ('system', )
+
+        if args[0] == 'system':
+
+            # get data with given dataset 'preprocessing'
+            # and 'statistics' parameter
             if 'data' in kwargs.keys():
                 data = kwargs['data']
                 del kwargs['data']
             else:
+                if 'preprocessing' in kwargs.keys():
+                    preprocessing = kwargs['preprocessing']
+                    del kwargs['preprocessing']
+                else: preprocessing = {}
+                if not isinstance(preprocessing, dict): preprocessing = {}
+                if preprocessing:
+                    datasetCopy = self.dataset._get()
+                    self.dataset.preprocessData(preprocessing)
                 if 'statistics' in kwargs.keys():
                     statistics = kwargs['statistics']
                     del kwargs['statistics']
                 else: statistics = 0
                 data = self.dataset.getData(
                     size = statistics, cols = self.groups(visible = True))
-                return self.system.eval(data, *args[1:], **kwargs)
+                if preprocessing: self.dataset._set(datasetCopy)
+
+            return self.system.eval(data, *args[1:], **kwargs)
         if args[0] == 'dataset':
             return self.dataset.eval(*args[1:], **kwargs)
         if args[0] == 'network':
@@ -424,15 +439,15 @@ class model:
     # Evaluation of unit relations                                     #
     ####################################################################
 
-    def getUnitRelation(self, preprocessing = None, **kwargs):
-        """Return numpy array containing unit relations."""
+    #def getUnitRelation(self, preprocessing = None, **kwargs):
+        #"""Return numpy array containing unit relations."""
 
-        if isinstance(preprocessing, dict):
-            datasetCopy = self.dataset._get()
-            self.dataset.preprocessData(**kwargs['preprocessing'])
-        relation = self.system.getUnitRelation(self.dataset, **kwargs)
-        if isinstance(preprocessing, dict): self.dataset._set(datasetCopy)
-        return relation
+        #if isinstance(preprocessing, dict):
+            #datasetCopy = self.dataset._get()
+            #self.dataset.preprocessData(**kwargs['preprocessing'])
+        #relation = self.system.getUnitRelation(self.dataset, **kwargs)
+        #if isinstance(preprocessing, dict): self.dataset._set(datasetCopy)
+        #return relation
 
     #def getUnitRelationMatrixMuSigma(self, matrix, relation):
 

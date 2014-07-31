@@ -306,7 +306,7 @@ class rbm(nemoa.system.ann.ann):
         return True
 
     def optimizeRcdk(self, dataset, schedule, inspector):
-        """Optimize parameters using variance resiliant constrastive divergency."""
+        """Optimize parameters using resiliant k step constrastive divergency."""
 
         cfg  = self._config['optimize']
         corr = (cfg['corruptionType'], cfg['corruptionFactor'])
