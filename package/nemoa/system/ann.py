@@ -25,7 +25,7 @@ class ann(nemoa.system.base.system):
     def _configure(self, config = {},
         network = None, dataset = None, update = False):
         """Configure ANN to network and dataset.
-        
+
         Keyword Arguments:
             config -- dictionary containing system configuration
             network -- nemoa network instance
@@ -313,7 +313,7 @@ class ann(nemoa.system.base.system):
 
     def _indexLinks(self):
 
-        self._links = {units: {'source': {}, 'target': {}} 
+        self._links = {units: {'source': {}, 'target': {}}
             for units in self.units.keys()}
         for id in self._params['links'].keys():
             source = self._params['links'][id]['source']
@@ -359,7 +359,7 @@ class ann(nemoa.system.base.system):
         for g in range(len(groups) - 1):
             s = groups[g]
             t = groups[g + 1]
-            
+
             lg = []
             for i, u in enumerate(self.units[s].params['label']):
                 for j, v in enumerate(self.units[t].params['label']):
@@ -889,7 +889,7 @@ class ann(nemoa.system.base.system):
 
     def evalUnitSamples(self, data, mapping = None, block = None, expectLast = False):
         """Return sampled unit values calculated from mapping.
-        
+
         Keyword Arguments:
             mapping -- tuple of strings containing the mapping
                 from input layer (first argument of tuple)
@@ -1099,7 +1099,7 @@ class ann(nemoa.system.base.system):
 
     #def _getUnitEvalExtAccuracy(self, data, block = [], k = 1, **kwargs):
         #"""Return 'extrinsic accuracy' of units.
-        
+
         #'extrinsic accuracy' := relApprox
             #where model(v) is generated with data(v) = mean(data(v))"""
         #relExtApprox = numpy.empty(len(self.units['visible'].params['label']))
@@ -1110,7 +1110,7 @@ class ann(nemoa.system.base.system):
 
     #def _getUnitEvalRelativeIntAccuracy(self, data, k = 1, **kwargs):
         #"""Return 'intrinsic relative accuracy' of units
-        
+
         #'intrinsic relative accuracy' := relperf
             #where model(v) is generated with data(u not v) = mean(data(u))"""
         #vSize = len(self.units['visible'].params['label'])
@@ -1195,7 +1195,7 @@ class ann(nemoa.system.base.system):
 
     def evalLinkEnergy(self, data, mapping = None, **kwargs):
         """Return link energies of a layer.
-        
+
         Keyword Arguments:
             mapping -- tuple of strings containing the mapping
                 from input layer (first argument of tuple)
@@ -1247,7 +1247,8 @@ class ann(nemoa.system.base.system):
         elif argsType == 'output': evalArgs.append(data[1])
         elif argsType == 'all':    evalArgs.append(data)
 
-        # extract 'transform' and 'format' from keyword arguments
+        # extract keyword arguments:
+        # 'transform', 'format' and 'evalStat'
         if 'transform' in kwargs.keys():
             transform = kwargs['transform']
             del kwargs['transform']
@@ -1258,6 +1259,11 @@ class ann(nemoa.system.base.system):
             del kwargs['format']
         else: retFmt = 'dict'
         if not isinstance(retFmt, str): retFmt = 'dict'
+        if 'evalStat' in kwargs.keys():
+            evalStat = kwargs['evalStat']
+            del kwargs['evalStat']
+        else: evalStat = True
+        if not isinstance(evalStat, bool): evalStat = True
 
         # prepare keyword arguments for evaluation function
         evalKwargs = kwargs.copy()
@@ -1269,8 +1275,14 @@ class ann(nemoa.system.base.system):
         values = getattr(self, method)(*evalArgs, **evalKwargs)
         valuesFmt = methods[func]['return']
 
-        # create formated return values
+        # create formated return values as matrix or dict
+        # (for scalar relation evaluations)
         if valuesFmt == 'scalar':
+            # optionally transform relation using 'transform' string
+            # syntax for 'transform' string:
+            #     'M' is the relation
+            #     'C' is the standard correlation
+            # example: 'M**2 - C'
             if transform:
                 M = values
                 if 'C' in transform: C = self.evalRelCorrelation(data)
@@ -1280,14 +1292,48 @@ class ann(nemoa.system.base.system):
                 except: return nemoa.log('error',
                     'could not transform relations: invalid syntax!')
 
-            # create formated output
-            if retFmt == 'array': return values
-            if retFmt == 'dict':
+            # create formated return values
+            if retFmt == 'array': retVal = values
+            elif retFmt == 'dict':
                 inUnits = self.getUnits(group = evalKwargs['mapping'][0])[0]
                 outUnits = self.getUnits(group = evalKwargs['mapping'][-1])[0]
-                return nemoa.common.dictFromArray(values, (inUnits, outUnits))
+                retVal = nemoa.common.dictFromArray(values, (inUnits, outUnits))
 
-        return nemoa.log('warning', 'could not perform evaluation')
+                # optionally evaluate statistical values over all relations
+                if evalStat:
+                    A = numpy.array([retVal[key] for key in retVal.keys()
+                        if not key[0].split(':')[1] == key[1].split(':')[1]])
+                    retVal['mean'] = numpy.mean(A)
+                    retVal['std'] = numpy.std(A)
+            else: return nemoa.log('warning', 'could not perform evaluation')
+
+            return retVal
+
+
+
+                    ## parse relation
+                    #reType = re.search('\Acorrelation|knockout', relation.lower())
+                    #if not reType:
+                    #    nemoa.log('warning', "unknown unit relation '" + relation + "'!")
+                    #    return None
+                    #type = reType.group()
+
+
+
+        #if type == 'knockout':
+            #Amax = numpy.max(A)
+            #Aabs = numpy.abs(A)
+            #Alist = []
+            #for i in range(Aabs.size):
+                #if Aabs[i] > Amax:
+                    #continue
+                #Alist.append(Aabs[i])
+            #A = numpy.array(Alist)
+
+            #mu = numpy.mean(A)
+            #sigma = numpy.std(A)
+
+        #return mu, sigma
 
     @staticmethod
     def _getRelationEvalMethods(): return {
@@ -1459,7 +1505,7 @@ class ann(nemoa.system.base.system):
 
     def getMapping(self, src = None, tgt = None):
         """Return tuple with names of unit groups from source to target.
-        
+
         Keyword Arguments:
             src -- name of source unit group
             tgt -- name of target unit group """
@@ -1715,7 +1761,7 @@ class ann(nemoa.system.base.system):
 
     class UnitLayerSigmoid(UnitLayer):
         """Sigmoidal Unit Layer.
-        
+
         Layer of units with sigmoidal activation function and binary distribution. """
 
         def initialize(self, data = None):

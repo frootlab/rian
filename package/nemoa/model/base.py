@@ -5,7 +5,7 @@ import nemoa, numpy, copy, time, os
 
 class model:
     """Base class for graphical models."""
-    
+
     dataset = None
     network = None
     system  = None
@@ -167,7 +167,7 @@ class model:
 
         # initialize system parameters
         self.system.initParams(self.dataset)
-        
+
         # update network
         self.system.updateNetwork(self.network)
 
@@ -206,7 +206,7 @@ class model:
                 optimization schedule is not valid!""")
             nemoa.setLog(indent = '-1')
             return self
-        
+
         # optimization of system parameters
         nemoa.log("starting optimization schedule: '%s'" % (schedule['name']))
         nemoa.setLog(indent = '+1')
@@ -314,7 +314,7 @@ class model:
                 could not configure network:
                 no dataset instance available!""")
             return False
- 
+
          # check if system instance is available
         if self.system == None and system == None:
             nemoa.log('error', """
@@ -322,7 +322,7 @@ class model:
                 no system was given!""")
             return False
 
-        # configure network 
+        # configure network
         return self.network.configure(
             dataset = dataset if not dataset == None else self.dataset,
             system = system if not system == None else self.system)
@@ -360,18 +360,20 @@ class model:
     ####################################################################
 
     def eval(self, *args, **kwargs):
-        """Return model evaluation value."""
+        """Return model evaluation."""
 
+        # evaluation of system
         if len(args) == 0: args = ('system', )
-
         if args[0] == 'system':
-
-            # get data with given dataset 'preprocessing'
-            # and 'statistics' parameter
+            # get data for system evaluation
             if 'data' in kwargs.keys():
+                # get data from keyword argument
+
                 data = kwargs['data']
                 del kwargs['data']
             else:
+                # fetch data from dataset using parameters:
+                # 'preprocessing', 'statistics'
                 if 'preprocessing' in kwargs.keys():
                     preprocessing = kwargs['preprocessing']
                     del kwargs['preprocessing']
@@ -389,10 +391,15 @@ class model:
                 if preprocessing: self.dataset._set(datasetCopy)
 
             return self.system.eval(data, *args[1:], **kwargs)
+
+        # evaluation of dataset
         if args[0] == 'dataset':
             return self.dataset.eval(*args[1:], **kwargs)
+
+        # evaluation of network
         if args[0] == 'network':
             return self.network.eval(*args[1:], **kwargs)
+
         return nemoa.log('warning', 'could not evaluate model')
 
     def error(self, dataset = None, **kwargs):
@@ -439,55 +446,7 @@ class model:
     # Evaluation of unit relations                                     #
     ####################################################################
 
-    #def getUnitRelation(self, preprocessing = None, **kwargs):
-        #"""Return numpy array containing unit relations."""
 
-        #if isinstance(preprocessing, dict):
-            #datasetCopy = self.dataset._get()
-            #self.dataset.preprocessData(**kwargs['preprocessing'])
-        #relation = self.system.getUnitRelation(self.dataset, **kwargs)
-        #if isinstance(preprocessing, dict): self.dataset._set(datasetCopy)
-        #return relation
-
-    #def getUnitRelationMatrixMuSigma(self, matrix, relation):
-
-        ## parse relation
-        #reType = re.search('\Acorrelation|knockout', relation.lower())
-        #if not reType:
-            #nemoa.log('warning', "unknown unit relation '" + relation + "'!")
-            #return None
-        #type = reType.group()
-
-        #numRelations = matrix.size
-        #numUnits = matrix.shape[0]
-
-        ## create temporary array which does not contain diag entries
-        #A = numpy.zeros((numRelations - numUnits))
-        #k = 0
-        #for i in range(numUnits):
-            #for j in range(numUnits):
-                #if i == j:
-                    #continue
-                #A[k] = matrix[i, j]
-                #k += 1
-
-        #mu = numpy.mean(A)
-        #sigma = numpy.std(A)
-
-        #if type == 'knockout':
-            #Amax = numpy.max(A)
-            #Aabs = numpy.abs(A)
-            #Alist = []
-            #for i in range(Aabs.size):
-                #if Aabs[i] > Amax:
-                    #continue
-                #Alist.append(Aabs[i])
-            #A = numpy.array(Alist)
-
-            #mu = numpy.mean(A)
-            #sigma = numpy.std(A)
-
-        #return mu, sigma
 
     ##
     ## MODEL PARAMETER HANDLING
@@ -501,7 +460,7 @@ class model:
 
     #def createBranches(self, modify, method, **params):
         #nemoa.log('create model branches:')
-        
+
         #if modify == 'dataset':
             #if method == 'filter':
                 #filters = params['filter']
@@ -511,7 +470,7 @@ class model:
 
                 ## create branches for filters
                 #for filter in filters:
-                    
+
                     #branch = self.dataset.cfg['name'] + '.' + filter
 
                     ## copy params from main branch
@@ -686,7 +645,7 @@ class model:
         # create plot
         retVal = objPlot.create(self, file = file)
         if not file == None: nemoa.log('save plot: ' + file)
-        
+
         nemoa.setLog(indent = '-2')
         return retVal
 
@@ -745,7 +704,7 @@ class model:
 
     def unit(self, unit):
         """Return information about one unit.
-        
+
         Keyword Argument:
             unit -- name of unit
         """
@@ -768,7 +727,7 @@ class model:
 
         Examples:
             about('dataset', 'preprocessing', 'transformation')
-            
+
             about('system', 'units', 'error', 'description')
                 Returns information about the "error" measurement
                 function of the systems units.

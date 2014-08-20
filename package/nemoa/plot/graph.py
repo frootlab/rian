@@ -35,7 +35,7 @@ class structure(nemoa.plot.base.plot):
             method = self.settings['nodeCaption']
             fPath = ('system', 'units', method)
             fAbout = model.about(*(fPath + ('name', )))
-            
+
             if hasattr(fAbout, 'title'):
                 fName = model.about(*(fPath + ('name', ))).title()
                 fFormat = model.about(*(fPath + ('format', )))
@@ -101,7 +101,7 @@ class structure(nemoa.plot.base.plot):
                 isVisible = attr['params']['visible']
                 if not isVisible: label = \
                     nemoa.common.strToUnitStr('n%d' % (uid + 1))
-                else: label = nemoa.common.strToUnitStr(attr['label']) 
+                else: label = nemoa.common.strToUnitStr(attr['label'])
 
                 color = {
                     True: {
@@ -133,7 +133,7 @@ class structure(nemoa.plot.base.plot):
 
                 # draw node caption
                 if self.settings['nodeCaption'] and isVisible:
-                    if not unit in nodeCaption: continue 
+                    if not unit in nodeCaption: continue
                     networkx.draw_networkx_labels(
                         G, posCap, font_size = 0.75 * graphFontSize,
                         labels = {unit: ' $' + '%d' % (100 * nodeCaption[unit]) + '\%$'},
@@ -219,16 +219,17 @@ class relation(nemoa.plot.base.plot):
         'dpi': 300,
         'graphCaption': True,
         'units': (None, None),
-        'relation': 'correlation',
-        'threshold': 2.0,
-        'transform': '',
-        'measure': 'error',
         'preprocessing': None,
         'statistics': 10000,
+        'relation': 'correlation',
+        'transform': '',
+        'sign': 'correlation',
+        'filter': None,
+        'threshold': 1.0,
+        'measure': 'error',
         'nodeCaption': 'accuracy',
         'layout': 'fruchterman_reingold',
-        'filter': None,
-        'sign': 'correlation' }
+        'edgeZoom': 1.0 }
 
     def _create(self, model, **params):
         params = self.settings['params'] if 'params' in self.settings \
@@ -245,7 +246,8 @@ class relation(nemoa.plot.base.plot):
             or not isinstance(self.settings['units'][1], list):
             self.settings['units'] = (inUnits, outUnits)
 
-        # calculate relation weights
+        # calculate relation for weights
+        nemoa.log('calculate edge weights: ' + self.settings['relation'])
         R = model.eval('system', 'relations', self.settings['relation'],
             preprocessing = self.settings['preprocessing'],
             measure = self.settings['measure'],
@@ -254,12 +256,57 @@ class relation(nemoa.plot.base.plot):
         if not isinstance(R, dict): return nemoa.log('error',
             'could not create relation graph: invalid weight relation!')
 
-        # calculate relation signs
-        S = model.eval('system', 'relations', self.settings['sign'],
-            preprocessing = self.settings['preprocessing'],
-            measure = self.settings['measure'],
-            statistics = self.settings['statistics'],
-            transform = '1.0 * (M > 0.0)')
+        # calculate relation for filter and mask
+        if self.settings['filter'] == None \
+            or self.settings['filter'] == self.settings['relation']:
+            # create filter mask by using threshold for 'sigma'
+            F = {key: key[0].split(':')[1] != key[1].split(':')[1]
+                and numpy.abs(R[key] - R['mean']) > self.settings['threshold'] * R['std']
+                for key in R.keys() if isinstance(key, tuple)}
+            print F
+        #if self.settings['filter'] == None:
+            ## per default create filter mask by filtering 'identity' relations
+            #F = {key: key[0].split(':')[1] != key[1].split(':')[1]
+                #for key in R.keys() if isinstance(key, tuple)}
+        #elif self.settings['filter'] == self.settings['relation']:
+            ## create filter mask by using threshold for 'sigma'
+            #F = {key: key[0].split(':')[1] != key[1].split(':')[1]
+                #and numpy.abs(R[key] - R['mean']) > self.settings['threshold'] * R['std']
+                #for key in R.keys() if isinstance(key, tuple)}
+        else:
+            FR = model.eval('system', 'relations', self.settings['filter'],
+                preprocessing = self.settings['preprocessing'],
+                measure = self.settings['measure'],
+                statistics = self.settings['statistics'])
+            # create filter mask by using threshold for 'sigma'
+            F = {key: key[0].split(':')[1] != key[1].split(':')[1]
+                and numpy.abs(FR[key] - FR['mean']) > settings['threshold'] * FR['std']
+                for key in R.keys() if isinstance(key, tuple)}
+            # info
+            numPass = sum([int(F[key]) for key in F.keys()])
+            numRel  = len(F.keys())
+            if not numFilter: return nemoa.log('warning',
+                'no relation passed filter!')
+            nemoa.log("%i relations passed filter (%.1f%%)" % \
+                (numPass, 100.0 * float(numPass) / float(numRel)))
+        if not isinstance(F, dict): return nemoa.log('error',
+            'could not create relation graph: invalid filter relation!')
+
+        # calculate weights from weight relation and filter mask
+        W = {key: numpy.abs(R[key]) * F[key] for key in F.keys()}
+
+        # calculate relation for signs and signs
+        if self.settings['sign'] == None \
+            or self.settings['sign'] == self.settings['relation']:
+            S = {key: 2.0 * (1.0 * (R[key] > 0.0) - 0.5) * int(F[key])
+                for key in F.keys()}
+        else:
+            SR = model.eval('system', 'relations', self.settings['sign'],
+                preprocessing = self.settings['preprocessing'],
+                measure = self.settings['measure'],
+                statistics = self.settings['statistics'])
+            S = {key: 2.0 * (1.0 * (SR[key] > 0.0) - 0.5) * int(F[key])
+                for key in F.keys()}
         if not isinstance(S, dict): return nemoa.log('error',
             'could not create relation graph: invalid sign relation!')
 
@@ -268,7 +315,7 @@ class relation(nemoa.plot.base.plot):
 
             # get and check node caption relation
             method = self.settings['nodeCaption']
-            fPath = ('system', 'units', method)
+            fPath  = ('system', 'units', method)
             fAbout = model.about(*fPath)
 
             if isinstance(fAbout, dict) and 'name' in fAbout.keys():
@@ -285,58 +332,43 @@ class relation(nemoa.plot.base.plot):
         # get title of model
         if self.settings['graphCaption']: self.settings['title'] = model.name()
 
-        # get unit labels, number of units and number of relations
+        #
+        # CREATE GRAPH AND FIND DISCONNECTED SUBGRAPHS
+        #
+
         units = self.settings['units']
-        inUnits = units[0]
+        inUnits  = units[0]
         outUnits = units[1]
-        numUnits = len(inUnits) + len(outUnits)
-        numRelations = len(inUnits) * len(outUnits)
 
-        # get filter mask for relations
+        # create graph and add edges and attributes
+        G = networkx.MultiDiGraph()
+        edges = []
+        for inUnit in inUnits:
+            for outUnit in outUnits: edges.append((inUnit, outUnit))
+        for edge in edges:
+            if not F[edge]: continue
+            color = {1: 'green', 0: 'black', -1: 'red'}[S[edge]]
+            G.add_edge(*edge, weight = W[edge], sign = S[edge],
+                color = color)
 
-        if self.settings['filter'] == None:
-            M = np.ones((len(inUnits), len(outUnits)), dtype = 'bool')
-        else:
-            nemoa.log("calculate filter mask: %s > %.1f sigma" % \
-                (self.settings['filter'], self.settings['threshold']))
+        # find disconnected subgraphs
+        Gsub = networkx.connected_component_subgraphs(G.to_undirected())
+        numSub = len(Gsub)
+        if numSub > 1: nemoa.log("%i disconnected complexes found" % (numSub))
 
-            # get filter relation matrix
-            # calculate relation weights
-            F = model.eval('system', 'relations', self.settings['filter'],
-                preprocessing = self.settings['preprocessing'],
-                measure = self.settings['measure'],
-                statistics = self.settings['statistics'],
-                transform = self.settings['transform'])
-            if not isinstance(F, dict): return nemoa.log('error',
-                'could not create relation graph: invalid filter relation!')
+        for sub in range(numSub):
+            for node in Gsub[sub].nodes():
+                mNode = model.network.node(node)
+                G.node[node]['label'] = mNode['label']
+                G.node[node]['type'] = mNode['params']['type']
+                G.node[node]['complex'] = sub
+                G.node[node]['color'] = {
+                    'i': 'lightgreen',
+                    'o': 'lightblue'
+                }[mNode['params']['type']]
 
-            F = model.getUnitRelationMatrix(
-                units = units,
-                relation = self.settings['filter'],
-                statistics = self.settings['statistics'])
-
-            # get sigma and mu
-            mu, sigma = model.getUnitRelationMatrixMuSigma(
-                matrix = F,
-                relation = settings['filter'])
-
-            # set boolean filter mask using threshold
-            M = np.abs(F - mu) > settings['threshold'] * sigma
-
-            # ignore self relation
-            for i in range(numUnits): M[i, i] = False
-
-            # info
-            numFilter = np.sum(M)
-            if numFilter == 0:
-                nemoa.log('warning', "no relation passed filter")
-                return False
-
-            nemoa.log("%i relations passed filter (%.1f%%)" % \
-                (numFilter, float(numFilter) / float(numRelations - numUnits) * 100))
-
-        #xLen = max([len(u) for u in units])
-        #yLen = len(units)
+        # create plot
+        return self._plotGraph(graph = G, **self.settings)
 
         ## calculate sizes
         #zoom = 1.0
@@ -349,8 +381,6 @@ class relation(nemoa.plot.base.plot):
         # default settings
         #settings = {
             #'units': 'visible',
-            #'edge_zoom': 1.0,
-            #'dpi': 300,
             #'title': None
         #}
 
@@ -371,76 +401,24 @@ class relation(nemoa.plot.base.plot):
         # GET WEIGHTS
         #
 
-        nemoa.log("calculate edge weights: " + settings['relation'])
 
-        # use filter results if relation and filter are the same
-        if settings['relation'] == settings['filter']:
-            R = F
-        else:
-            R = model.getUnitRelationMatrix(
-                units = settings['units'],
-                relation = settings['relation'],
-                statistics = settings['statistics'])
+        ## normalize weights
+        #if np.max(W) == 0: return nemoa.log('error', 'no weights > 0 found')
+        #else: W = W / np.max(W)
 
-        # get weights from relations and filter by mask
-        W = np.abs(R) * M
-
-        # normalize weights
-        if np.max(W) == 0: return nemoa.log('error', 'no weights > 0 found')
-        else: W = W / np.max(W)
 
         #
         # GET SIGN OF RELATIONS
         #
 
-        if settings['sign'] == settings['relation']: S = np.sign(R) * M
-        elif settings['sign'] == settings['filter']: S = np.sign(F) * M
-        else: S = model.getUnitRelationMatrix(
-            units = settings['units'],
-            relation = settings['sign'],
-            statistics = settings['statistics'])
 
-        #
-        # CREATE GRAPH AND FIND DISCONNECTED SUBGRAPHS
-        #
 
-        # create graph
-        G = networkx.MultiDiGraph()
-
-        # add edges and attributes
-        for i, n1 in enumerate(visible):
-            for j, n2 in enumerate(visible):
-                if n2 == n1:
-                    continue
-                if not W[i, j]:
-                    continue
-                if S[i, j] > 0:
-                    color = 'green'
-                else:
-                    color = 'red'
-
-                G.add_edge(
-                    n1, n2,
-                    weight = float(W[i, j]),
-                    sign = S[i, j],
-                    color = color)
-
-        # find disconnected subgraphs
-        Gsub = networkx.connected_component_subgraphs(G.to_undirected())
-        numSub = len(Gsub)
-        if numSub > 1:
-            nemoa.log("   %i disconnected complexes found" % (numSub))
-
-        for sub in range(numSub):
-            for node in Gsub[sub].nodes():
-                mNode = model.network.node(node)
-                G.node[node]['label'] = mNode['label']
-                G.node[node]['type'] = mNode['params']['type']
-                G.node[node]['complex'] = sub
-                G.node[node]['color'] = {
-                    'e': 'lightgreen',
-                    's': 'lightblue'
-                }[mNode['params']['type']]
+        #if settings['sign'] == settings['relation']: S = np.sign(R) * M
+        #elif settings['sign'] == settings['filter']: S = np.sign(F) * M
+        #else: S = model.getUnitRelationMatrix(
+        #    units = settings['units'],
+        #    relation = settings['sign'],
+        #   statistics = settings['statistics'])
 
         #
         # CREATE PLOT
@@ -479,8 +457,7 @@ class relation(nemoa.plot.base.plot):
             'green': (0.0, 0.5, 0.0, 1.0),
             'blue': (0.0, 0.0, 0.7, 1.0),
             'lightgreen': (0.600, 0.800, 0.196, 0.7),
-            'lightblue': (0.439, 0.502, 0.565, 0.7),
-        }
+            'lightblue': (0.439, 0.502, 0.565, 0.7) }
 
         # calculate sizes of nodes, fonts and lines depending to Graph size
         maxNodeSize = 800.0
@@ -489,8 +466,8 @@ class relation(nemoa.plot.base.plot):
         arrSize  = 2.5
         nodeNum  = float(len(graph))
         nodeSize = maxNodeSize / nodeNum
-        nodeRad  = np.sqrt(nodeSize) / 1500.0
-        fontSize = maxFontSize * np.sqrt(nodeSize / maxNodeSize)
+        nodeRad  = numpy.sqrt(nodeSize) / 1500.0
+        fontSize = maxFontSize * numpy.sqrt(nodeSize / maxNodeSize)
         lineSize = maxLineSize / nodeNum
 
         # draw nodes
@@ -498,7 +475,7 @@ class relation(nemoa.plot.base.plot):
             label = attr['label']
 
             # calculate sizes of fontsize depending to length of labels
-            nodeFontSize = fontSize / np.sqrt(len(label)) * 0.9
+            nodeFontSize = fontSize / numpy.sqrt(len(label)) * 0.9
 
             # set backcolor (depending on type) and facecolor
             backcolor = colors[attr['color']]
@@ -548,14 +525,14 @@ class relation(nemoa.plot.base.plot):
             n1  = graph.node[u]['patch']
             n2  = graph.node[v]['patch']
             rad = 0.1 # radius of arrow
-            linewidth = float(lineSize) * attr['weight'] * params['edge_zoom'] * 5.0
+            linewidth = float(lineSize) * attr['weight'] * params['edgeZoom'] * 5.0
             linecolor = list(colors[attr['color']])
     ##        linecolor[3] = 2.0 ** attr['weight'] / 2.0
     ##        linecolor = tuple(linecolor)
 
             if (u, v) in seen:
                 rad = seen.get((u, v))
-                rad = (rad + np.sign(rad) * 0.2) * -1
+                rad = (rad + numpy.sign(rad) * 0.2) * -1
 
             arrow = matplotlib.patches.FancyArrowPatch(
                 posA = n1.center,
