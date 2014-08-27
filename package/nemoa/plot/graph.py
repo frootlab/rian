@@ -33,7 +33,7 @@ class structure(nemoa.plot.base.plot):
 
             # get and check node caption relation
             method = self.settings['nodeCaption']
-            fPath = ('system', 'units', method)
+            fPath  = ('system', 'units', method)
             fAbout = model.about(*(fPath + ('name', )))
 
             if hasattr(fAbout, 'title'):
@@ -225,7 +225,7 @@ class relation(nemoa.plot.base.plot):
         'transform': '',
         'sign': 'correlation',
         'filter': None,
-        'threshold': 1.0,
+        'threshold': 2.0,
         'measure': 'error',
         'nodeCaption': 'accuracy',
         'layout': 'fruchterman_reingold',
@@ -261,18 +261,8 @@ class relation(nemoa.plot.base.plot):
             or self.settings['filter'] == self.settings['relation']:
             # create filter mask by using threshold for 'sigma'
             F = {key: key[0].split(':')[1] != key[1].split(':')[1]
-                and numpy.abs(R[key] - R['mean']) > self.settings['threshold'] * R['std']
+                and numpy.abs(R[key] - R['mean']) > self.settings['threshold'] * R['cstd']
                 for key in R.keys() if isinstance(key, tuple)}
-            print F
-        #if self.settings['filter'] == None:
-            ## per default create filter mask by filtering 'identity' relations
-            #F = {key: key[0].split(':')[1] != key[1].split(':')[1]
-                #for key in R.keys() if isinstance(key, tuple)}
-        #elif self.settings['filter'] == self.settings['relation']:
-            ## create filter mask by using threshold for 'sigma'
-            #F = {key: key[0].split(':')[1] != key[1].split(':')[1]
-                #and numpy.abs(R[key] - R['mean']) > self.settings['threshold'] * R['std']
-                #for key in R.keys() if isinstance(key, tuple)}
         else:
             FR = model.eval('system', 'relations', self.settings['filter'],
                 preprocessing = self.settings['preprocessing'],
@@ -280,7 +270,7 @@ class relation(nemoa.plot.base.plot):
                 statistics = self.settings['statistics'])
             # create filter mask by using threshold for 'sigma'
             F = {key: key[0].split(':')[1] != key[1].split(':')[1]
-                and numpy.abs(FR[key] - FR['mean']) > settings['threshold'] * FR['std']
+                and numpy.abs(FR[key] - FR['mean']) > settings['threshold'] * FR['cstd']
                 for key in R.keys() if isinstance(key, tuple)}
             # info
             numPass = sum([int(F[key]) for key in F.keys()])
@@ -348,8 +338,8 @@ class relation(nemoa.plot.base.plot):
         for edge in edges:
             if not F[edge]: continue
             color = {1: 'green', 0: 'black', -1: 'red'}[S[edge]]
-            G.add_edge(*edge, weight = W[edge], sign = S[edge],
-                color = color)
+            G.add_edge(*edge, color = color,
+                weight = W[edge], sign = S[edge])
 
         # find disconnected subgraphs
         Gsub = networkx.connected_component_subgraphs(G.to_undirected())
@@ -403,7 +393,7 @@ class relation(nemoa.plot.base.plot):
 
 
         ## normalize weights
-        #if np.max(W) == 0: return nemoa.log('error', 'no weights > 0 found')
+        #if numpy.max(W) == 0: return nemoa.log('error', 'no weights > 0 found')
         #else: W = W / np.max(W)
 
 
@@ -432,6 +422,9 @@ class relation(nemoa.plot.base.plot):
         self.settings['relation'])[0].title()
 
     def _plotGraph(self, graph, file = None, **params):
+        if not len(graph): return nemoa.log('error',
+            'could not plot graph: no relation passed filter!')
+
         ax = plt.subplot(1, 1, 1)
 
         # calculate positions
@@ -465,7 +458,7 @@ class relation(nemoa.plot.base.plot):
         maxLineSize = 1.0
         arrSize  = 2.5
         nodeNum  = float(len(graph))
-        nodeSize = maxNodeSize / nodeNum
+        nodeSize = max(maxNodeSize, 1500.0 / nodeNum)
         nodeRad  = numpy.sqrt(nodeSize) / 1500.0
         fontSize = maxFontSize * numpy.sqrt(nodeSize / maxNodeSize)
         lineSize = maxLineSize / nodeNum
@@ -507,17 +500,14 @@ class relation(nemoa.plot.base.plot):
             ax.add_patch(c)
             graph.node[node]['patch'] = c
 
-    ##    # scale edges
-    ##    maxWeight = 0.0
-    ##    minWeight = 1.0
-    ##    for (u, v, attr) in graph.edges(data = True):
-    ##        if attr['weight'] > maxWeight:
-    ##            maxWeight = attr['weight']
-    ##        if attr['weight'] < minWeight:
-    ##            minWeight = attr['weight']
-    ##
-    ##    print maxWeight
-    ##    print minWeight
+    #    # scale edges
+    #    maxWeight = 0.0
+    #    minWeight = 1.0
+    #    for (u, v, attr) in graph.edges(data = True):
+    #        if attr['weight'] > maxWeight:
+    #            maxWeight = attr['weight']
+    #        if attr['weight'] < minWeight:
+    #            minWeight = attr['weight']
 
         # draw edges using 'fancy arrows'
         seen = {}

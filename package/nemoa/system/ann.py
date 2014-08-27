@@ -730,7 +730,9 @@ class ann(nemoa.system.base.system):
         if not hasattr(self, method): return nemoa.log('error',
             "could not evaluate units: unknown method '%s'" % (method))
 
-        # prepare arguments for evaluation functions
+        # prepare data for evaluation functions
+        if not isinstance(data, tuple): return nemoa.log('error',
+            'could not evaluate units: invalid data format given')
         evalArgs = []
         argsType = methods[func]['args']
         if   argsType == 'none':   pass
@@ -752,6 +754,7 @@ class ann(nemoa.system.base.system):
         # create unit dictionary
         labels = self.getUnits(group = evalKwargs['mapping'][-1])[0]
         retFmt = methods[func]['return']
+
         if retFmt == 'vector': return {unit: values[:, id] \
             for id, unit in enumerate(labels)}
         elif retFmt == 'scalar': return {unit: values[id] \
@@ -1304,21 +1307,21 @@ class ann(nemoa.system.base.system):
                     A = numpy.array([retVal[key] for key in retVal.keys()
                         if not key[0].split(':')[1] == key[1].split(':')[1]])
                     retVal['mean'] = numpy.mean(A)
-                    retVal['std'] = numpy.std(A)
+                    retVal['std']  = numpy.std(A)
+                    # force symmetric distribution with mean at 0
+                    # by adding additive inverse values
+                    B = numpy.concatenate((A, -A))
+                    retVal['cstd'] = numpy.std(B) - numpy.mean(A)
             else: return nemoa.log('warning', 'could not perform evaluation')
 
             return retVal
 
-
-
-                    ## parse relation
-                    #reType = re.search('\Acorrelation|knockout', relation.lower())
-                    #if not reType:
-                    #    nemoa.log('warning', "unknown unit relation '" + relation + "'!")
-                    #    return None
-                    #type = reType.group()
-
-
+        ## parse relation
+        #reType = re.search('\Acorrelation|knockout', relation.lower())
+        #if not reType:
+        #    nemoa.log('warning', "unknown unit relation '" + relation + "'!")
+        #    return None
+        #type = reType.group()
 
         #if type == 'knockout':
             #Amax = numpy.max(A)
@@ -1353,6 +1356,18 @@ class ann(nemoa.system.base.system):
             'name': 'interaction',
             'description': 'linear slope of induced values from inputs to outputs',
             'method': 'evalRelInteraction',
+            'show': 'heatmap',
+            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
+        'maximum': {
+            'name': 'maximum of slope',
+            'description': 'linear slope of induced values from inputs to outputs',
+            'method': 'evalRelMaxSlope',
+            'show': 'heatmap',
+            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
+        'mean': {
+            'name': 'mean slope',
+            'description': 'linear slope of induced values from inputs to outputs',
+            'method': 'evalRelMeanSlope',
             'show': 'heatmap',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'impact': {
@@ -1450,21 +1465,22 @@ class ann(nemoa.system.base.system):
         R = numpy.zeros((len(inLabels), len(outLabels)))
 
         # calculate interaction
-        meanData = data[0].mean(axis = 0).reshape((1, len(inLabels)))
+        meanIn  = data[0].mean(axis = 0).reshape((1, len(inLabels)))
+        meanOut = data[1].mean(axis = 0).reshape((1, len(outLabels)))
         for inId, inUnit in enumerate(inLabels):
-            posData = meanData.copy()
-            posData[0, inId] += 0.5
-            negData = meanData.copy()
-            negData[0, inId] -= 0.5
+            posIn = meanIn.copy()
+            posIn[:, inId] += 0.5
+            negIn = meanIn.copy()
+            negIn[:, inId] -= 0.5
             for outId, outUnit in enumerate(outLabels):
-                R[inId, outId] = self.evalUnits(posData, func = 'expect',
+                R[inId, outId] = (self.evalUnits((posIn, meanOut), func = 'expect',
                     mapping = mapping)[outUnit] \
-                    - self.evalUnits(negData, func = 'expect',
-                    mapping = mapping)[outUnit]
+                    - self.evalUnits((negIn, meanOut), func = 'expect',
+                    mapping = mapping)[outUnit])
 
         return R
 
-    def evalRelDeviation(self, data, mapping = None, **kwargs):
+    def evalRelMaxSlope(self, data, mapping = None, **kwargs):
         """Return deviation matrix as numpy array.
 
         Keyword Arguments:
@@ -1481,21 +1497,27 @@ class ann(nemoa.system.base.system):
         inLabels = self.getUnits(group = mapping[0])[0]
         outLabels = self.getUnits(group = mapping[-1])[0]
 
-        # prepare interaction matrix
+        # prepare deviation matrix
         R = numpy.zeros((len(inLabels), len(outLabels)))
 
-        # calculate interaction
-        meanData = data[0].mean(axis = 0).reshape((1, len(inLabels)))
+        # calculate deviation of ...
         for inId, inUnit in enumerate(inLabels):
-            posData = meanData.copy()
-            posData[0, inId] += 0.5
-            negData = meanData.copy()
-            negData[0, inId] -= 0.5
+            posData = data[0].copy()
+            posData[:, inId] += 0.00005
+            negData = data[0].copy()
+            negData[:, inId] -= 0.00005
             for outId, outUnit in enumerate(outLabels):
-                R[inId, outId] = self.evalUnits(posData, func = 'expect',
+                sloap = self.evalUnits((posData, data[1]), func = 'expect',
                     mapping = mapping)[outUnit] \
-                    - self.evalUnits(negData, func = 'expect',
+                    - self.evalUnits((negData, data[1]), func = 'expect',
                     mapping = mapping)[outUnit]
+                maxSl = numpy.amax(sloap)
+                minSl = numpy.amin(sloap)
+                meanSl = numpy.mean(sloap)
+                if maxSl >= -minSl: extSl = maxSl
+                else: extSl = minSl
+                #extSl = maxSl if ((-1.0 * minSl) <= maxSl) else minSl
+                R[inId, outId] = extSl * 10000.0
 
         return R
 
