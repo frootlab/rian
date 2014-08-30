@@ -1306,6 +1306,8 @@ class ann(nemoa.system.base.system):
                 if evalStat:
                     A = numpy.array([retVal[key] for key in retVal.keys()
                         if not key[0].split(':')[1] == key[1].split(':')[1]])
+                    retVal['max']  = numpy.amax(A)
+                    retVal['min']  = numpy.amin(A)
                     retVal['mean'] = numpy.mean(A)
                     retVal['std']  = numpy.std(A)
                     # force symmetric distribution with mean at 0
@@ -1358,24 +1360,24 @@ class ann(nemoa.system.base.system):
             'method': 'evalRelInteraction',
             'show': 'heatmap',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        'maximum': {
-            'name': 'maximum of slope',
-            'description': 'linear slope of induced values from inputs to outputs',
-            'method': 'evalRelMaxSlope',
+        'induction': {
+            'name': 'induced curve lenght',
+            'description': 'segmential curve lenght of induced values from inputs to outputs',
+            'method': 'evalRelInduction',
             'show': 'heatmap',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        'mean': {
-            'name': 'mean slope',
-            'description': 'linear slope of induced values from inputs to outputs',
-            'method': 'evalRelMeanSlope',
-            'show': 'heatmap',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        'impact': {
-            'name': 'impact',
-            'description': 'deviation of induced values from inputs to outputs',
-            'method': 'evalRelImpact',
-            'show': 'heatmap',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'}
+        #'mean': {
+            #'name': 'mean slope',
+            #'description': 'linear slope of induced values from inputs to outputs',
+            #'method': 'evalRelMeanSlope',
+            #'show': 'heatmap',
+            #'args': 'all', 'return': 'scalar', 'format': '%.3f'},
+        #'impact': {
+            #'name': 'impact',
+            #'description': 'deviation of induced values from inputs to outputs',
+            #'method': 'evalRelImpact',
+            #'show': 'heatmap',
+            #'args': 'all', 'return': 'scalar', 'format': '%.3f'}
         }
 
     def evalRelCorrelation(self, data, mapping = None, **kwargs):
@@ -1461,27 +1463,75 @@ class ann(nemoa.system.base.system):
         inLabels = self.getUnits(group = mapping[0])[0]
         outLabels = self.getUnits(group = mapping[-1])[0]
 
-        # prepare interaction matrix
-        R = numpy.zeros((len(inLabels), len(outLabels)))
-
-        # calculate interaction
         meanIn  = data[0].mean(axis = 0).reshape((1, len(inLabels)))
         meanOut = data[1].mean(axis = 0).reshape((1, len(outLabels)))
-        for inId, inUnit in enumerate(inLabels):
-            posIn = meanIn.copy()
-            posIn[:, inId] += 0.5
-            negIn = meanIn.copy()
-            negIn[:, inId] -= 0.5
-            for outId, outUnit in enumerate(outLabels):
-                R[inId, outId] = (self.evalUnits((posIn, meanOut), func = 'expect',
-                    mapping = mapping)[outUnit] \
-                    - self.evalUnits((negIn, meanOut), func = 'expect',
-                    mapping = mapping)[outUnit])
+
+        # try different interval lengths
+        for iSize in range(1, 10):
+
+            # prepare interaction matrix
+            M = numpy.zeros((len(inLabels), len(outLabels)))
+
+            # calculate interaction
+            for inId, inUnit in enumerate(inLabels):
+                posIn = meanIn.copy()
+                posIn[:, inId] += 0.5 * float(iSize)
+                negIn = meanIn.copy()
+                negIn[:, inId] -= 0.5 * float(iSize)
+                for outId, outUnit in enumerate(outLabels):
+                    M[inId, outId] = (self.evalUnits((posIn, meanOut), func = 'expect',
+                        mapping = mapping)[outUnit] \
+                        - self.evalUnits((negIn, meanOut), func = 'expect',
+                        mapping = mapping)[outUnit]) / float(iSize)
+
+            if iSize == 1: R = M
+            else: R += M
+
+            #if iSize == 1 or numpy.std(M) > numpy.std(R): R = M
 
         return R
 
-    def evalRelMaxSlope(self, data, mapping = None, **kwargs):
-        """Return deviation matrix as numpy array.
+    #def evalRelInduction(self, data, mapping = None, **kwargs):
+        #"""Return induced curve length as numpy array.
+
+        #Keyword Arguments:
+            #data -- 2-tuple with numpy arrays: input data and output data
+            #mapping -- tuple of strings containing the mapping
+                #from input layer (first argument of tuple)
+                #to output layer (last argument of tuple)
+
+        #Description:
+            #Measure unit impact to other units,
+            #respective to given data """
+
+        #if not mapping: mapping = self.getMapping()
+        #inLabels = self.getUnits(group = mapping[0])[0]
+        #outLabels = self.getUnits(group = mapping[-1])[0]
+
+        ## try different interval lengths
+        #for iSize in range(1, 10):
+
+            ## calculate induction matrix for interval lenght i
+            #M = numpy.zeros((len(inLabels), len(outLabels)))
+            #for inId, inUnit in enumerate(inLabels):
+                #posData = data[0].copy()
+                #posData[:, inId] += 0.5 * float(iSize)
+                #negData = data[0].copy()
+                #negData[:, inId] -= 0.5 * float(iSize)
+                #for outId, outUnit in enumerate(outLabels):
+                    #posExp = self.evalUnits((posData, data[1]),
+                        #func = 'expect', mapping = mapping)[outUnit]
+                    #negExp = self.evalUnits((negData, data[1]),
+                        #func = 'expect', mapping = mapping)[outUnit]
+                    #M[inId, outId] = numpy.mean(
+                        #numpy.abs(posExp - negExp)) / float(iSize)
+
+            #if iSize == 1 or numpy.std(M) > numpy.std(R): R = M
+
+        #return R
+
+    def evalRelInduction(self, data, mapping = None, **kwargs):
+        """Return induced curve length as numpy array.
 
         Keyword Arguments:
             data -- 2-tuple with numpy arrays: input data and output data
@@ -1497,27 +1547,22 @@ class ann(nemoa.system.base.system):
         inLabels = self.getUnits(group = mapping[0])[0]
         outLabels = self.getUnits(group = mapping[-1])[0]
 
-        # prepare deviation matrix
+        # calculate induction matrix
         R = numpy.zeros((len(inLabels), len(outLabels)))
-
-        # calculate deviation of ...
         for inId, inUnit in enumerate(inLabels):
-            posData = data[0].copy()
-            posData[:, inId] += 0.00005
-            negData = data[0].copy()
-            negData[:, inId] -= 0.00005
             for outId, outUnit in enumerate(outLabels):
-                sloap = self.evalUnits((posData, data[1]), func = 'expect',
-                    mapping = mapping)[outUnit] \
-                    - self.evalUnits((negData, data[1]), func = 'expect',
-                    mapping = mapping)[outUnit]
-                maxSl = numpy.amax(sloap)
-                minSl = numpy.amin(sloap)
-                meanSl = numpy.mean(sloap)
-                if maxSl >= -minSl: extSl = maxSl
-                else: extSl = minSl
-                #extSl = maxSl if ((-1.0 * minSl) <= maxSl) else minSl
-                R[inId, outId] = extSl * 10000.0
+                radMeas = 0.0
+                for iCount in range(10):
+                    modData  = data[0].copy()
+                    modInter = 1.0 / numpy.sqrt(numpy.var(modData[:, inId]))
+                    modShift = (float(iCount) - 5.0) * modInter
+                    modData[:, inId] += modShift
+                    modExp = self.evalUnits((modData, data[1]),
+                        func = 'expect', mapping = mapping)[outUnit]
+                    if iCount: radMeas += numpy.sum((modExp - prevExp) ** 2)
+                    prevExp = modExp
+
+                R[inId, outId] = radMeas
 
         return R
 
@@ -1840,7 +1885,7 @@ class ann(nemoa.system.base.system):
 
             bias = self.params['bias']
 
-            return self.sigmoid(bias + numpy.dot(data, weights))
+            return nemoa.common.func.sigmoid(bias + numpy.dot(data, weights))
 
         def expectFromGLayer(self, data, source, weights):
             """Return expected values of a sigmoid output layer
@@ -1849,7 +1894,7 @@ class ann(nemoa.system.base.system):
             bias = self.params['bias']
             lvar = numpy.exp(source['lvar'])
 
-            return self.sigmoid(bias + numpy.dot(data / lvar, weights))
+            return nemoa.common.func.sigmoid(bias + numpy.dot(data / lvar, weights))
 
         def getParamUpdates(self, data, model, weights):
             """Return parameter updates of a sigmoidal output layer
@@ -1870,7 +1915,7 @@ class ann(nemoa.system.base.system):
             bias = self.params['bias']
 
             return numpy.dot(delta_out, W_out) * \
-                self.Dlogistic((bias + numpy.dot(data_in, W_in)))
+                nemoa.common.func.Dsigmoid((bias + numpy.dot(data_in, W_in)))
 
         @staticmethod
         def grad(x):
@@ -1906,45 +1951,43 @@ class ann(nemoa.system.base.system):
             return {'label': unit, 'id': id, 'class': cl,
                 'visible': visible, 'bias': bias}
 
-        # common activation functions
+        #@staticmethod
+        #def sigmoid(x):
+            #"""Standard logistic function."""
 
-        @staticmethod
-        def sigmoid(x):
-            """Standard logistic function."""
+            #return 1.0 / (1.0 + numpy.exp(-x))
 
-            return 1.0 / (1.0 + numpy.exp(-x))
+        #@staticmethod
+        #def logistic(x):
+            #"""Standard logistic function."""
 
-        @staticmethod
-        def logistic(x):
-            """Standard logistic function."""
+            #return 1.0 / (1.0 + numpy.exp(-x))
 
-            return 1.0 / (1.0 + numpy.exp(-x))
+        #@staticmethod
+        #def Dlogistic(x):
+            #"""Derivation of standard logistic function."""
 
-        @staticmethod
-        def Dlogistic(x):
-            """Derivation of standard logistic function."""
+            #return ((1.0 / (1.0 + numpy.exp(-x)))
+                #* (1.0 - 1.0 / (1.0 + numpy.exp(-x))))
 
-            return ((1.0 / (1.0 + numpy.exp(-x)))
-                * (1.0 - 1.0 / (1.0 + numpy.exp(-x))))
+        #@staticmethod
+        #def tanh(x):
+            #"""Standard hyperbolic tangens function."""
 
-        @staticmethod
-        def tanh(x):
-            """Standard hyperbolic tangens function."""
+            #return numpy.tanh(x)
 
-            return numpy.tanh(x)
+        #@staticmethod
+        #def Dtanh(x):
+            #"""Derivation of standard hyperbolic tangens function."""
 
-        @staticmethod
-        def Dtanh(x):
-            """Derivation of standard hyperbolic tangens function."""
+            #return 1.0 - tanh(x) ** 2
 
-            return 1.0 - tanh(x) ** 2
+        #@staticmethod
+        #def tanhEff(x):
+            #"""Hyperbolic tangens function, proposed in paper:
+            #'Efficient BackProp' by LeCun, Bottou, Orr, Müller"""
 
-        @staticmethod
-        def tanhEff(x):
-            """Hyperbolic tangens function, proposed in paper:
-            'Efficient BackProp' by LeCun, Bottou, Orr, Müller"""
-
-            return 1.7159 * numpy.tanh(0.6666 * x)
+            #return 1.7159 * numpy.tanh(0.6666 * x)
 
     ####################################################################
     # Gaussian Unit Layer                                              #

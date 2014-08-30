@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import nemoa, nemoa.plot.base, numpy, networkx, matplotlib
-import matplotlib.pyplot as plt
+import matplotlib.pyplot
 import matplotlib.ticker as ticker
 from matplotlib.patches import FancyArrowPatch, Circle
 
@@ -16,6 +16,7 @@ class structure(nemoa.plot.base.plot):
             'dpi': 300,
             'showTitle': True,
             'title': None,
+            'backgroundColor': 'none',
             'graphCaption': True,
             'nodeCaption': 'accuracy',
             'nodeSort': 'weight',
@@ -28,6 +29,13 @@ class structure(nemoa.plot.base.plot):
 
     def _create(self, model):
 
+        # create figure and axis objects
+        fig = matplotlib.pyplot.figure()
+        fig.patch.set_facecolor(self.settings['backgroundColor'])
+        ax  = fig.add_subplot(111)
+        ax.axis('off')
+        ax.autoscale()
+
         # use captions
         if self.settings['nodeCaption']:
 
@@ -39,10 +47,10 @@ class structure(nemoa.plot.base.plot):
             if hasattr(fAbout, 'title'):
                 fName = model.about(*(fPath + ('name', ))).title()
                 fFormat = model.about(*(fPath + ('format', )))
-                nodeCaption = model.eval(*fPath)
+                nCaption = model.eval(*fPath)
                 caption  = 'Average ' + fName + ': $\mathrm{%.1f' \
-                    % (100 * float(sum([nodeCaption[u] \
-                    for u in nodeCaption.keys()])) / len(nodeCaption)) + '\%}$'
+                    % (100 * float(sum([nCaption[u] \
+                    for u in nCaption.keys()])) / len(nCaption)) + '\%}$'
             else:
                 self.settings['nodeCaption'] = None
                 caption = None
@@ -53,7 +61,7 @@ class structure(nemoa.plot.base.plot):
         yLen = len(units)
 
         # calculate sizes
-        zoom = 1.0
+        zoom  = 1.0
         scale = min(250.0 / xLen, 150.0 / yLen, 30.0)
         graphNodeSize = scale ** 2
         graphFontSize = 0.4 * scale
@@ -86,9 +94,6 @@ class structure(nemoa.plot.base.plot):
                 pos[unit] = (x, y)
                 posCap[unit] = (x, c)
 
-        # create figure object
-        fig = plt.figure()
-
         # graph
         G = model.network.graph
 
@@ -99,9 +104,8 @@ class structure(nemoa.plot.base.plot):
                 type = attr['params']['type']
                 typeid = attr['params']['type_id']
                 isVisible = attr['params']['visible']
-                if not isVisible: label = \
-                    nemoa.common.strToUnitStr('n%d' % (uid + 1))
-                else: label = nemoa.common.strToUnitStr(attr['label'])
+                labelStr = attr['label'] if isVisible else 'n%d' % (uid + 1)
+                label = nemoa.common.strToUnitStr(labelStr)
 
                 color = {
                     True: {
@@ -133,10 +137,10 @@ class structure(nemoa.plot.base.plot):
 
                 # draw node caption
                 if self.settings['nodeCaption'] and isVisible:
-                    if not unit in nodeCaption: continue
+                    if not unit in nCaption: continue
                     networkx.draw_networkx_labels(
                         G, posCap, font_size = 0.75 * graphFontSize,
-                        labels = {unit: ' $' + '%d' % (100 * nodeCaption[unit]) + '\%$'},
+                        labels = {unit: ' $' + '%d' % (100 * nCaption[unit]) + '\%$'},
                         font_weight = 'normal')
 
         # draw labeled edges
@@ -151,7 +155,7 @@ class structure(nemoa.plot.base.plot):
 
             # boost edge contrast
             if self.settings['edgeContrastBoost'] > 0.0:
-                weight = self._snake(weight,
+                weight = nemoa.common.func.boost(weight,
                     factor = self.settings['edgeContrastBoost'])
 
             # check if weight satisfies threshold
@@ -197,18 +201,13 @@ class structure(nemoa.plot.base.plot):
                         label_text = r'$\mathbf{Network:}\,\mathrm{%s}$' % (model.network.graph)
                     elif edges == 'adjacency':
                         label_text = r'$\mathbf{Network:}\,\mathrm{%s}$' % (model.network.graph)
-                    plt.figtext(.5, .11, label_text, fontsize = 9, ha = 'center')
+                    matplotlib.pyplot.figtext(.5, .11, label_text, fontsize = 9, ha = 'center')
                 else:
-                    plt.figtext(.5, .11, caption, fontsize = 9, ha = 'center')
+                    matplotlib.pyplot.figtext(.5, .11, caption, fontsize = 9, ha = 'center')
 
-        plt.axis('off')
         return True
 
-    @staticmethod
-    def _snake(x, factor = 1.0):
-        return numpy.abs(x) * (1.0 / (1.0 + numpy.exp(-10.0 * factor
-            * (x + 0.5))) + 1.0 / (1.0 + numpy.exp(-10.0 * factor
-            * (x - 0.5))) - 1.0)
+
 
 class relation(nemoa.plot.base.plot):
 
@@ -217,6 +216,7 @@ class relation(nemoa.plot.base.plot):
         'output': 'file',
         'fileformat': 'pdf',
         'dpi': 300,
+        'backgroundColor': 'none',
         'graphCaption': True,
         'units': (None, None),
         'preprocessing': None,
@@ -228,23 +228,25 @@ class relation(nemoa.plot.base.plot):
         'threshold': 2.0,
         'measure': 'error',
         'nodeCaption': 'accuracy',
-        'layout': 'fruchterman_reingold',
+        'layout': 'spring',
         'edgeZoom': 1.0 }
 
     def _create(self, model, **params):
-        params = self.settings['params'] if 'params' in self.settings \
-            else {}
+
+        # get params
+        params = self.settings['params'] \
+            if 'params' in self.settings else {}
 
         # get default units and mapping
         mapping = model.system.getMapping()
-        inUnits = model.units(group = mapping[0])[0]
-        outUnits = model.units(group = mapping[-1])[0]
+        iUnits  = model.units(group = mapping[0])[0]
+        oUnits  = model.units(group = mapping[-1])[0]
 
         # update unit information
         if not isinstance(self.settings['units'], tuple) \
             or not isinstance(self.settings['units'][0], list) \
             or not isinstance(self.settings['units'][1], list):
-            self.settings['units'] = (inUnits, outUnits)
+            self.settings['units'] = (iUnits, oUnits)
 
         # calculate relation for weights
         nemoa.log('calculate edge weights: ' + self.settings['relation'])
@@ -261,7 +263,8 @@ class relation(nemoa.plot.base.plot):
             or self.settings['filter'] == self.settings['relation']:
             # create filter mask by using threshold for 'sigma'
             F = {key: key[0].split(':')[1] != key[1].split(':')[1]
-                and numpy.abs(R[key] - R['mean']) > self.settings['threshold'] * R['cstd']
+                and R[key] - R['mean'] > self.settings['threshold'] * R['cstd']
+                or  R[key] + R['mean'] < -self.settings['threshold'] * R['cstd']
                 for key in R.keys() if isinstance(key, tuple)}
         else:
             FR = model.eval('system', 'relations', self.settings['filter'],
@@ -270,7 +273,8 @@ class relation(nemoa.plot.base.plot):
                 statistics = self.settings['statistics'])
             # create filter mask by using threshold for 'sigma'
             F = {key: key[0].split(':')[1] != key[1].split(':')[1]
-                and numpy.abs(FR[key] - FR['mean']) > settings['threshold'] * FR['cstd']
+                and FR[key] - FR['mean'] > settings['threshold'] * FR['cstd']
+                or  FR[key] + FR['mean'] < -self.settings['threshold'] * FR['cstd']
                 for key in R.keys() if isinstance(key, tuple)}
             # info
             numPass = sum([int(F[key]) for key in F.keys()])
@@ -283,9 +287,11 @@ class relation(nemoa.plot.base.plot):
             'could not create relation graph: invalid filter relation!')
 
         # calculate weights from weight relation and filter mask
-        W = {key: numpy.abs(R[key]) * F[key] for key in F.keys()}
+        Wmax = max(abs(R['max']), abs(R['min']))
+        W = {key: nemoa.common.func.boost(abs(R[key]) / Wmax)
+            for key in F.keys()}
 
-        # calculate relation for signs and signs
+        # calculate relation for colors
         if self.settings['sign'] == None \
             or self.settings['sign'] == self.settings['relation']:
             S = {key: 2.0 * (1.0 * (R[key] > 0.0) - 0.5) * int(F[key])
@@ -309,37 +315,43 @@ class relation(nemoa.plot.base.plot):
             fAbout = model.about(*fPath)
 
             if isinstance(fAbout, dict) and 'name' in fAbout.keys():
-                fName = model.about(*(fPath + ('name', ))).title()
-                fFormat = model.about(*(fPath + ('format', )))
-                nodeCaption = model.eval(*fPath)
+                fName    = model.about(*(fPath + ('name', ))).title()
+                fFormat  = model.about(*(fPath + ('format', )))
+                nCaption = model.eval(*fPath)
                 caption  = 'Average ' + fName + ': $\mathrm{%.1f' \
-                    % (100.0 * float(sum([nodeCaption[u] \
-                    for u in nodeCaption.keys()])) / len(nodeCaption)) + '\%}$'
+                    % (100.0 * float(sum([nCaption[u] \
+                    for u in nCaption.keys()])) / len(nCaption)) + '\%}$'
             else:
-                nodeCaption = None
+                nCaption = None
                 caption = None
 
         # get title of model
-        if self.settings['graphCaption']: self.settings['title'] = model.name()
+        #if self.settings['graphCaption']: self.settings['title'] = model.name()
+        if self.settings['graphCaption']: self.settings['title'] = \
+            nemoa.common.strSplitParams(self.settings['relation'])[0].title()
 
         #
         # CREATE GRAPH AND FIND DISCONNECTED SUBGRAPHS
         #
 
-        units = self.settings['units']
-        inUnits  = units[0]
-        outUnits = units[1]
+        # get input and output units
+        units  = self.settings['units']
+        iUnits = units[0]
+        oUnits = units[1]
 
-        # create graph and add edges and attributes
-        G = networkx.MultiDiGraph()
+        # create list of edges
         edges = []
-        for inUnit in inUnits:
-            for outUnit in outUnits: edges.append((inUnit, outUnit))
+        for i in iUnits:
+            for o in oUnits: edges.append((i, o))
+
+        # create graph
+        G = networkx.MultiDiGraph()
+
+        # add edges and attributes to graph
         for edge in edges:
             if not F[edge]: continue
             color = {1: 'green', 0: 'black', -1: 'red'}[S[edge]]
-            G.add_edge(*edge, color = color,
-                weight = W[edge], sign = S[edge])
+            G.add_edge(*edge, color = color, weight = W[edge])
 
         # find disconnected subgraphs
         Gsub = networkx.connected_component_subgraphs(G.to_undirected())
@@ -349,10 +361,10 @@ class relation(nemoa.plot.base.plot):
         for sub in range(numSub):
             for node in Gsub[sub].nodes():
                 mNode = model.network.node(node)
-                G.node[node]['label'] = mNode['label']
-                G.node[node]['type'] = mNode['params']['type']
+                G.node[node]['label']   = nemoa.common.strToUnitStr(mNode['label'])
+                G.node[node]['type']    = mNode['params']['type']
                 G.node[node]['complex'] = sub
-                G.node[node]['color'] = {
+                G.node[node]['color']   = {
                     'i': 'lightgreen',
                     'o': 'lightblue'
                 }[mNode['params']['type']]
@@ -360,80 +372,28 @@ class relation(nemoa.plot.base.plot):
         # create plot
         return self._plotGraph(graph = G, **self.settings)
 
-        ## calculate sizes
-        #zoom = 1.0
-        #scale = min(250.0 / xLen, 150.0 / yLen, 30.0)
-        #graphNodeSize = scale ** 2
-        #graphFontSize = 0.4 * scale
-        #graphCaptionFactor = 0.5 + 0.003 * scale
-        #graphLineWidth = 0.3
-
-        # default settings
-        #settings = {
-            #'units': 'visible',
-            #'title': None
-        #}
-
-        ## overwrite default settings with parameters
-        #for key, value in params.items():
-            #if key in settings: settings[key] = value
-
-        ## set default settings for filter and sign
-        #if not settings['sign']: settings['sign'] = settings['relation']
-        #if not settings['filter']: settings['filter'] = settings['relation']
-
-        # get lists of visible and hidden units
-        #visible, hidden = model.system.getUnits()
-        #if settings['units'] == 'visible': settings['units'] = visible
-        #elif settings['units'] == 'hidden': settings['units'] = hidden
-
-        #
-        # GET WEIGHTS
-        #
-
-
-        ## normalize weights
-        #if numpy.max(W) == 0: return nemoa.log('error', 'no weights > 0 found')
-        #else: W = W / np.max(W)
-
-
-        #
-        # GET SIGN OF RELATIONS
-        #
-
-
-
-        #if settings['sign'] == settings['relation']: S = np.sign(R) * M
-        #elif settings['sign'] == settings['filter']: S = np.sign(F) * M
-        #else: S = model.getUnitRelationMatrix(
-        #    units = settings['units'],
-        #    relation = settings['sign'],
-        #   statistics = settings['statistics'])
-
-        #
-        # CREATE PLOT
-        #
-
-        self._plotGraph(graph = G, **settings)
-
-        return True
-
-    def _getTitle(self, model): return nemoa.common.strSplitParams(
-        self.settings['relation'])[0].title()
-
     def _plotGraph(self, graph, file = None, **params):
+
         if not len(graph): return nemoa.log('error',
             'could not plot graph: no relation passed filter!')
 
-        ax = plt.subplot(1, 1, 1)
+        # create figure object
+        fig = matplotlib.pyplot.figure()
+        fig.patch.set_facecolor(self.settings['backgroundColor'])
+        ax  = fig.add_subplot(111)
+        ax.axis('off')
+        #ax.autoscale(enable = False)
+        matplotlib.pyplot.axes().set_aspect('equal', 'box')
 
         # calculate positions
         if params['layout'] == 'random':
             pos = networkx.random_layout(graph)
-        elif params['layout'] == 'spring':
-            pos = networkx.spring_layout(graph)
         elif params['layout'] == 'circular':
             pos = networkx.circular_layout(graph)
+        elif params['layout'] == 'shell':
+            pos = networkx.shell_layout(graph)
+        elif params['layout'] == 'spring':
+            pos = networkx.spring_layout(graph)
         elif params['layout'] == 'fruchterman_reingold':
             pos = networkx.fruchterman_reingold_layout(graph)
         elif params['layout'] == 'spectral':
@@ -446,29 +406,33 @@ class relation(nemoa.plot.base.plot):
         colors = {
             'black': (0.0, 0.0, 0.0, 1.0),
             'white': (1.0, 1.0, 1.0, 1.0),
-            'red': (1.0, 0.0, 0.0, 1.0),
+            'red':   (1.0, 0.0, 0.0, 1.0),
             'green': (0.0, 0.5, 0.0, 1.0),
-            'blue': (0.0, 0.0, 0.7, 1.0),
+            'blue':  (0.0, 0.0, 0.7, 1.0),
             'lightgreen': (0.600, 0.800, 0.196, 0.7),
-            'lightblue': (0.439, 0.502, 0.565, 0.7) }
+            'lightblue':  (0.439, 0.502, 0.565, 0.7) }
 
-        # calculate sizes of nodes, fonts and lines depending to Graph size
-        maxNodeSize = 800.0
-        maxFontSize = 18.0
-        maxLineSize = 1.0
-        arrSize  = 2.5
-        nodeNum  = float(len(graph))
-        nodeSize = max(maxNodeSize, 1500.0 / nodeNum)
-        nodeRad  = numpy.sqrt(nodeSize) / 1500.0
-        fontSize = maxFontSize * numpy.sqrt(nodeSize / maxNodeSize)
-        lineSize = maxLineSize / nodeNum
+        # calculate sizes of nodes, fonts and lines depending on graph size
+        nSizeMax = 800.0                            # maximum node size
+        nCount   = float(len(graph))                # number of nodes
+        nSize    = max(nSizeMax, 1500.0 / nCount)   # node size
+        nRadius  = numpy.sqrt(nSize) / 480.0        # node radius
+        fSizeMax = 18.0                             # maximum font size
+        fSize    = fSizeMax * numpy.sqrt(nSize / nSizeMax)
+        eSizeMax = 2.0                              # maximum edge size
+        eSize    = eSizeMax / nCount                # edge size
+        eArrSize = 10.0                             # edge arrow size
 
         # draw nodes
         for node, attr in graph.nodes(data = True):
             label = attr['label']
 
-            # calculate sizes of fontsize depending to length of labels
-            nodeFontSize = fontSize / numpy.sqrt(len(label)) * 0.9
+            # calculate node fontsize depending on label
+            clLabel = label.replace('{', '').replace('}', '')
+            if '_' in clLabel: lenLabel = len('_'.split(clLabel)[0]) \
+                + 0.5 * len('_'.split(clLabel)[0])
+            else: lenLabel = len(clLabel)
+            nodeFontSize = fSize / numpy.sqrt(lenLabel) * 0.9
 
             # set backcolor (depending on type) and facecolor
             backcolor = colors[attr['color']]
@@ -477,8 +441,8 @@ class relation(nemoa.plot.base.plot):
             # draw node
             networkx.draw_networkx_nodes(
                 graph, pos,
-                node_size  = nodeSize,
-                linewidths = lineSize,
+                node_size  = nSize,
+                linewidths = eSize,
                 nodelist   = [node],
                 node_shape = 'o',
                 node_color = backcolor)
@@ -486,61 +450,55 @@ class relation(nemoa.plot.base.plot):
             # draw label
             networkx.draw_networkx_labels(
                 graph, pos,
-                font_size = nodeFontSize,
-                labels = {node: label},
-                font_color = facecolor,
+                font_size   = nodeFontSize,
+                labels      = {node: label},
+                font_color  = facecolor,
                 font_weight = 'normal')
 
             # patch node for edges
             c = Circle(
                 pos[node],
-                radius = nodeRad,
-                alpha = 0.0)
+                radius = nRadius,
+                alpha  = 0.0)
 
             ax.add_patch(c)
             graph.node[node]['patch'] = c
 
-    #    # scale edges
-    #    maxWeight = 0.0
-    #    minWeight = 1.0
-    #    for (u, v, attr) in graph.edges(data = True):
-    #        if attr['weight'] > maxWeight:
-    #            maxWeight = attr['weight']
-    #        if attr['weight'] < minWeight:
-    #            minWeight = attr['weight']
+        # get weights maximum an minimum
+        #maxWeight = 0.0
+        #minWeight = 1.0
+        #for (u, v, attr) in graph.edges(data = True):
+        #    if attr['weight'] > maxWeight: maxWeight = attr['weight']
+        #    if attr['weight'] < minWeight: minWeight = attr['weight']
 
         # draw edges using 'fancy arrows'
         seen = {}
         for (u, v, attr) in graph.edges(data = True):
             n1  = graph.node[u]['patch']
             n2  = graph.node[v]['patch']
-            rad = 0.1 # radius of arrow
-            linewidth = float(lineSize) * attr['weight'] * params['edgeZoom'] * 5.0
-            linecolor = list(colors[attr['color']])
+            rad = 0.15
+            linewidth = eSize * attr['weight'] * params['edgeZoom'] * 5.0
+            linecolor = list(colors[attr['color']]) #2DO: create gradient colors
     ##        linecolor[3] = 2.0 ** attr['weight'] / 2.0
     ##        linecolor = tuple(linecolor)
 
             if (u, v) in seen:
                 rad = seen.get((u, v))
-                rad = (rad + numpy.sign(rad) * 0.2) * -1
+                rad = (rad + float(numpy.sign(rad)) * 0.2) * -1.0
 
             arrow = matplotlib.patches.FancyArrowPatch(
-                posA = n1.center,
-                posB = n2.center,
+                posA   = n1.center,
+                posB   = n2.center,
                 patchA = n1,
                 patchB = n2,
                 arrowstyle = '-|>',
                 connectionstyle = 'arc3,rad=%s' % rad,
-                mutation_scale = arrSize,
+                mutation_scale  = eArrSize,
                 linewidth = linewidth,
                 color = linecolor
             )
 
             seen[(u, v)] = rad
             ax.add_patch(arrow)
-
-        ax.autoscale()
-        ax.axis('off')
-        plt.axis('equal')
 
         return True

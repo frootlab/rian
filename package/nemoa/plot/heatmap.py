@@ -21,6 +21,11 @@ class relation(nemoa.plot.base.plot):
         'statistics': 10000 }
 
     def _create(self, model):
+
+        # create figure object
+        fig = matplotlib.pyplot.figure()
+        ax  = fig.add_subplot(111)
+
         params = self.settings['params'] if 'params' in self.settings \
             else {}
 
@@ -30,7 +35,6 @@ class relation(nemoa.plot.base.plot):
             mapping = model.system.getMapping()
             self.settings['units'] = (model.units(group = mapping[0])[0],
                 model.units(group = mapping[-1])[0])
-
 
         #2Do allow subsets of units
         # calculate and test relation matrix
@@ -44,8 +48,6 @@ class relation(nemoa.plot.base.plot):
             'could not plot heatmap: relation matrix is not valid!')
 
         # create A4 figure object figsize = (8.27, 11.69)
-        fig = matplotlib.pyplot.figure()
-        ax = fig.add_subplot(111)
         ax.grid(True)
         cax = ax.imshow(R,
             cmap = matplotlib.cm.hot_r,
@@ -54,7 +56,7 @@ class relation(nemoa.plot.base.plot):
 
         # create labels for axis
         maxFontSize = 12.0
-        
+
         xLabelIDs = self.settings['units'][1]
         xLabels = [nemoa.common.strToUnitStr(label) \
             for label in model.network.getNodeLabels(xLabelIDs)]
