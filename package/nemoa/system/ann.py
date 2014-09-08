@@ -412,7 +412,7 @@ class ann(nemoa.system.base.system):
 
     # Generic Parameter Functions
 
-    def _optimizeGetValues(self, inputData):
+    def _optGetValues(self, inputData):
         """Forward pass (compute estimated values, from given input). """
 
         layers = self.getMapping()
@@ -426,7 +426,7 @@ class ann(nemoa.system.base.system):
 
         return out
 
-    def _optimizeGetDeltas(self, outputData, out):
+    def _optGetDeltas(self, outputData, out):
         """Return weight delta from backpropagation of error. """
 
         layers = self.getMapping()
@@ -445,7 +445,7 @@ class ann(nemoa.system.base.system):
 
         return delta
 
-    def _optimizeUpdateParams(self, updates):
+    def _optUpdateParams(self, updates):
         """Update parameters from dictionary."""
 
         layers = self.getMapping()
@@ -460,7 +460,7 @@ class ann(nemoa.system.base.system):
 
     # Backpropagation of Error (BPROP) specific Functions
 
-    def _optimizeBPROP(self, dataset, schedule, inspector):
+    def _optBPROP(self, dataset, schedule, inspector):
         """Optimize parameters using backpropagation."""
 
         cnf = self._config['optimize']
@@ -474,11 +474,11 @@ class ann(nemoa.system.base.system):
                 data = dataset.getData(size = cnf['minibatchSize'],
                     cols = (layers[0], layers[-1]))
             # Forward pass (Compute value estimations from given input)
-            out = self._optimizeGetValues(data[0])
+            out = self._optGetValues(data[0])
             # Backward pass (Compute deltas from backpropagation of error)
-            delta = self._optimizeGetDeltas(data[1], out)
+            delta = self._optGetDeltas(data[1], out)
             # Compute parameter updates
-            updates = self._optimizeGetUpdatesBPROP(out, delta)
+            updates = self._optGetUpdatesBPROP(out, delta)
             # Update parameters
             self._optimizeUpdateParams(updates)
             # Trigger inspector (getch, calc inspect function etc)
@@ -488,7 +488,7 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _optimizeGetUpdatesBPROP(self, out, delta, rate = 0.1):
+    def _optGetUpdatesBPROP(self, out, delta, rate = 0.1):
         """Compute parameter update directions from weight deltas."""
 
         def getUpdate(grad, rate): return {
@@ -510,7 +510,7 @@ class ann(nemoa.system.base.system):
 
     # Resilient Backpropagation (RPROP) specific Functions
 
-    def _optimizeRPROP(self, dataset, schedule, inspector):
+    def _optRPROP(self, dataset, schedule, inspector):
         """Optimize parameters using resiliant backpropagation."""
 
         cnf = self._config['optimize']
@@ -524,13 +524,13 @@ class ann(nemoa.system.base.system):
                 data = dataset.getData(size = cnf['minibatchSize'],
                     cols = (layers[0], layers[-1]))
             # Forward pass (Compute value estimations from given input)
-            out = self._optimizeGetValues(data[0])
+            out = self._optGetValues(data[0])
             # Backward pass (Compute deltas from backpropagation of error)
-            delta = self._optimizeGetDeltas(data[1], out)
+            delta = self._optGetDeltas(data[1], out)
             # Compute updates
-            updates = self._optimizeGetUpdatesRPROP(out, delta, inspector)
+            updates = self._optGetUpdatesRPROP(out, delta, inspector)
             # Update parameters
-            self._optimizeUpdateParams(updates)
+            self._optUpdateParams(updates)
             # Trigger inspector (getch, calc inspect function etc)
             event = inspector.trigger()
             if event:
@@ -538,7 +538,7 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _optimizeGetUpdatesRPROP(self, out, delta, inspector):
+    def _optGetUpdatesRPROP(self, out, delta, inspector):
 
         def getDict(dict, val): return {key: val * numpy.ones(
             shape = dict[key].shape) for key in dict.keys()}
@@ -1318,28 +1318,6 @@ class ann(nemoa.system.base.system):
 
             return retVal
 
-        ## parse relation
-        #reType = re.search('\Acorrelation|knockout', relation.lower())
-        #if not reType:
-        #    nemoa.log('warning', "unknown unit relation '" + relation + "'!")
-        #    return None
-        #type = reType.group()
-
-        #if type == 'knockout':
-            #Amax = numpy.max(A)
-            #Aabs = numpy.abs(A)
-            #Alist = []
-            #for i in range(Aabs.size):
-                #if Aabs[i] > Amax:
-                    #continue
-                #Alist.append(Aabs[i])
-            #A = numpy.array(Alist)
-
-            #mu = numpy.mean(A)
-            #sigma = numpy.std(A)
-
-        #return mu, sigma
-
     @staticmethod
     def _getRelationEvalMethods(): return {
         'correlation': {
@@ -1354,30 +1332,24 @@ class ann(nemoa.system.base.system):
             'method': 'evalRelKnockout',
             'show': 'heatmap',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
+        'capacity': {
+            'name': 'capacity',
+            'description': 'capacity',
+            'method': 'evalRelCapacity',
+            'show': 'heatmap',
+            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
+        'induction': {
+            'name': 'induced curve lenght',
+            'description': 'segmential curve length of induced values from inputs to outputs',
+            'method': 'evalRelInduction',
+            'show': 'heatmap',
+            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'interaction': {
             'name': 'interaction',
             'description': 'linear slope of induced values from inputs to outputs',
             'method': 'evalRelInteraction',
             'show': 'heatmap',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        'induction': {
-            'name': 'induced curve lenght',
-            'description': 'segmential curve lenght of induced values from inputs to outputs',
-            'method': 'evalRelInduction',
-            'show': 'heatmap',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        #'mean': {
-            #'name': 'mean slope',
-            #'description': 'linear slope of induced values from inputs to outputs',
-            #'method': 'evalRelMeanSlope',
-            #'show': 'heatmap',
-            #'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        #'impact': {
-            #'name': 'impact',
-            #'description': 'deviation of induced values from inputs to outputs',
-            #'method': 'evalRelImpact',
-            #'show': 'heatmap',
-            #'args': 'all', 'return': 'scalar', 'format': '%.3f'}
         }
 
     def evalRelCorrelation(self, data, mapping = None, **kwargs):
@@ -1459,35 +1431,80 @@ class ann(nemoa.system.base.system):
             Measure unit interaction to other units,
             respective to given data """
 
+        points   = 100
+        interval = 4.0
+
         if not mapping: mapping = self.getMapping()
         inLabels = self.getUnits(group = mapping[0])[0]
         outLabels = self.getUnits(group = mapping[-1])[0]
 
-        meanIn  = data[0].mean(axis = 0).reshape((1, len(inLabels)))
+        # calculate induction matrix
+        meanIn = data[0].mean(axis = 0).reshape((1, len(inLabels)))
         meanOut = data[1].mean(axis = 0).reshape((1, len(outLabels)))
 
-        # try different interval lengths
-        for iSize in range(1, 10):
+        R = numpy.zeros((len(inLabels), len(outLabels)))
+        for inId, inUnit in enumerate(inLabels):
+            for outId, outUnit in enumerate(outLabels):
 
-            # prepare interaction matrix
-            M = numpy.zeros((len(inLabels), len(outLabels)))
+                # calculate curve
+                modInter = interval * numpy.std(data[0][:, inId])
+                for iCount in range(points):
+                    modData  = meanIn.copy()
+                    modShift = (float(iCount) / float(points) - 0.5) * modInter
+                    modData[:, inId] = meanIn[:, inId] + modShift
+                    modExpect = self.evalUnits((modData, data[1]),
+                        func = 'expect', mapping = mapping)[outUnit]
+                    if iCount: curve += numpy.sqrt((modExpect - prevExp) ** 2
+                        + (modInter / float(points - 1)) ** 2)
+                    else: curve = 0.0
+                    prevExp = modExpect.copy()
 
-            # calculate interaction
-            for inId, inUnit in enumerate(inLabels):
-                posIn = meanIn.copy()
-                posIn[:, inId] += 0.5 * float(iSize)
-                negIn = meanIn.copy()
-                negIn[:, inId] -= 0.5 * float(iSize)
-                for outId, outUnit in enumerate(outLabels):
-                    M[inId, outId] = (self.evalUnits((posIn, meanOut), func = 'expect',
-                        mapping = mapping)[outUnit] \
-                        - self.evalUnits((negIn, meanOut), func = 'expect',
-                        mapping = mapping)[outUnit]) / float(iSize)
+                R[inId, outId] = (curve / modInter - 1.0) * interval
 
-            if iSize == 1: R = M
-            else: R += M
+        return R
 
-            #if iSize == 1 or numpy.std(M) > numpy.std(R): R = M
+    def evalRelInduction(self, data, mapping = None, **kwargs):
+        """Return induced curve length as numpy array.
+
+        Keyword Arguments:
+            data -- 2-tuple with numpy arrays: input data and output data
+            mapping -- tuple of strings containing the mapping
+                from input layer (first argument of tuple)
+                to output layer (last argument of tuple)
+
+        Description:
+            Measure unit impact to other units,
+            respective to given data """
+
+        points   = 10
+        interval = 4.0
+
+        if not mapping: mapping = self.getMapping()
+        iLabels = self.getUnits(group = mapping[0])[0]
+        oLabels = self.getUnits(group = mapping[-1])[0]
+
+        # calculate induction matrix
+        meanIn = data[0].mean(axis = 0).reshape((1, len(iLabels)))
+        R = numpy.zeros((len(iLabels), len(oLabels)))
+        for inId, inUnit in enumerate(iLabels):
+            for outId, outUnit in enumerate(oLabels):
+
+                # calculate curve
+                modInter = interval * numpy.std(data[0][:, inId])
+                for iCount in range(points):
+                    modData  = data[0].copy()
+                    modShift = (float(iCount) / float(points) - 0.5) * modInter
+                    modData[:, inId] = modShift + meanIn[:, inId]
+                    modExpect = self.evalUnits((modData, data[1]),
+                        func = 'expect', mapping = mapping)[outUnit]
+                    if iCount: curve += numpy.sum(numpy.abs(
+                        numpy.sqrt((modExpect - prevExp) ** 2
+                        + (modInter / float(points - 1)) ** 2)))
+                    else: curve = 0.0
+                    prevExp = modExpect.copy()
+
+                R[inId, outId] = (curve / data[0].shape[0]
+                    / modInter - 1.0) * interval
 
         return R
 
@@ -1504,33 +1521,47 @@ class ann(nemoa.system.base.system):
             #Measure unit impact to other units,
             #respective to given data """
 
+        #points   = 10
+        #interval = 10.0
+
         #if not mapping: mapping = self.getMapping()
-        #inLabels = self.getUnits(group = mapping[0])[0]
-        #outLabels = self.getUnits(group = mapping[-1])[0]
+        #iLabels = self.getUnits(group = mapping[0])[0]
+        #oLabels = self.getUnits(group = mapping[-1])[0]
 
-        ## try different interval lengths
-        #for iSize in range(1, 10):
+        ## calculate induction matrix
+        #meanIn = data[0].mean(axis = 0).reshape((1, len(iLabels)))
+        #R = numpy.zeros((len(iLabels), len(oLabels)))
+        #for inId, inUnit in enumerate(iLabels):
+            #for outId, outUnit in enumerate(oLabels):
 
-            ## calculate induction matrix for interval lenght i
-            #M = numpy.zeros((len(inLabels), len(outLabels)))
-            #for inId, inUnit in enumerate(inLabels):
-                #posData = data[0].copy()
-                #posData[:, inId] += 0.5 * float(iSize)
-                #negData = data[0].copy()
-                #negData[:, inId] -= 0.5 * float(iSize)
-                #for outId, outUnit in enumerate(outLabels):
-                    #posExp = self.evalUnits((posData, data[1]),
+                ## calculate curve
+                #modInter = interval * numpy.std(data[0][:, inId])
+
+                #for iCount in range(points):
+                    #modData  = data[0].copy()
+                    #modShift = (float(iCount) / float(points) - 0.5) * modInter
+                    #modData[:, inId] = modShift + 0.5 * (meanIn[:, inId] + data[0][:, inId])
+                    #modExpect = self.evalUnits((modData, data[1]),
                         #func = 'expect', mapping = mapping)[outUnit]
-                    #negExp = self.evalUnits((negData, data[1]),
-                        #func = 'expect', mapping = mapping)[outUnit]
-                    #M[inId, outId] = numpy.mean(
-                        #numpy.abs(posExp - negExp)) / float(iSize)
+                    #if iCount: C[:, iCount - 1] = numpy.sqrt(
+                        #(modExpect - prevExp) ** 2
+                        #+ (modInter / float(points - 1)) ** 2)
+                    #else: C = numpy.zeros((data[0].shape[0], points - 1))
+                    #prevExp = modExpect.copy()
+                #R[inId, outId] = (numpy.mean(C.sum(axis = 1))
+                    #/ modInter - 1.0)
 
-            #if iSize == 1 or numpy.std(M) > numpy.std(R): R = M
+                ##R[inId, outId] = numpy.amax(numpy.abs(C))
+                ##Cmin = numpy.amin(C)
+                ##R[inId, outId] = numpy.sum(C)
+                ##R[inId, outId] = Cmin if numpy.sum(C) < 0 else Cmax
+                ##R[inId, outId] = (curve / data[0].shape[0]
+                ##    / modInter - 1.0) * interval
+
 
         #return R
 
-    def evalRelInduction(self, data, mapping = None, **kwargs):
+    def evalRelCapacity(self, data, mapping = None, **kwargs):
         """Return induced curve length as numpy array.
 
         Keyword Arguments:
@@ -1543,26 +1574,68 @@ class ann(nemoa.system.base.system):
             Measure unit impact to other units,
             respective to given data """
 
+        if mapping == None: mapping = self.getMapping()
+
+
+        # get weights
+        print self.units
+        quit
+
+#        if len(mapping) == 2: return self.units[mapping[1]].expect(
+#            inData, self.units[mapping[0]].params)
+#        outData = numpy.copy(inData)
+#        for id in range(len(mapping) - 1):
+#            outData = self.units[mapping[id + 1]].expect(
+#                outData, self.units[mapping[id]].params)
+
+        return False
+
+        #2DO!
+        #
+        #
+        #
+        #
+        #
+        #
+        # intergrate over network!
+        #
+        #
+        #
+        #
+        #
+        #
+
+
+        points   = 10
+        interval = 4.0
+
         if not mapping: mapping = self.getMapping()
-        inLabels = self.getUnits(group = mapping[0])[0]
-        outLabels = self.getUnits(group = mapping[-1])[0]
+        iLabels = self.getUnits(group = mapping[0])[0]
+        oLabels = self.getUnits(group = mapping[-1])[0]
 
         # calculate induction matrix
-        R = numpy.zeros((len(inLabels), len(outLabels)))
-        for inId, inUnit in enumerate(inLabels):
-            for outId, outUnit in enumerate(outLabels):
-                radMeas = 0.0
-                for iCount in range(10):
-                    modData  = data[0].copy()
-                    modInter = 1.0 / numpy.sqrt(numpy.var(modData[:, inId]))
-                    modShift = (float(iCount) - 5.0) * modInter
-                    modData[:, inId] += modShift
-                    modExp = self.evalUnits((modData, data[1]),
-                        func = 'expect', mapping = mapping)[outUnit]
-                    if iCount: radMeas += numpy.sum((modExp - prevExp) ** 2)
-                    prevExp = modExp
+        meanIn = data[0].mean(axis = 0).reshape((1, len(iLabels)))
+        R = numpy.zeros((len(iLabels), len(oLabels)))
+        for inId, inUnit in enumerate(iLabels):
+            for outId, outUnit in enumerate(oLabels):
 
-                R[inId, outId] = radMeas
+                # calculate curve
+                modInter = interval * numpy.std(data[0][:, inId])
+                for iCount in range(points):
+                    modData  = data[0].copy()
+                    modShift = (float(iCount) / float(points) - 0.5) * modInter
+                    modData[:, inId] = modShift + meanIn[:, inId]
+                    modExpect = self.evalUnits((modData, data[1]),
+                        func = 'expect', mapping = mapping)[outUnit]
+                    if iCount: curve += numpy.sum(numpy.abs(
+                        numpy.sqrt((modExpect - prevExp) ** 2
+                        + (modInter / float(points - 1)) ** 2)))
+                    else: curve = 0.0
+                    prevExp = modExpect.copy()
+
+                R[inId, outId] = (curve / data[0].shape[0]
+                    / modInter - 1.0) * interval
+
 
         return R
 
@@ -1640,63 +1713,6 @@ class ann(nemoa.system.base.system):
 
             return { 'W': -numpy.dot(data.T, delta) / data.size }
 
-        # lets calculate with link params
-
-        #@staticmethod
-        #def one(dict):
-
-            #return {key: numpy.ones(shape = dict[key].shape) \
-                #for key in dict.keys()}
-
-        #@staticmethod
-        #def zero(dict):
-
-            #return {key: numpy.zeros(shape = dict[key].shape) \
-                #for key in dict.keys()}
-
-        #@staticmethod
-        #def sign(dict, remap = None):
-
-            #if remap == None: return {key: numpy.sign(dict[key]) \
-                #for key in dict.keys()}
-
-            #return {key:
-                #(remap[0] * (numpy.sign(dict[key]) < 0.0)
-                #+ remap[1] * (numpy.sign(dict[key]) == 0.0)
-                #+ remap[2] * (numpy.sign(dict[key]) > 0.0)) \
-                #for key in dict.keys()}
-
-        #@staticmethod
-        #def minmax(dict, min = None, max = None):
-
-            #if min == None: return {key: numpy.minimum(dict[key], max)
-                #for key in dict.keys()}
-            #if max == None: return {key: numpy.maximum(dict[key], min)
-                #for key in dict.keys()}
-
-            #return {key: numpy.maximum(numpy.minimum(dict[key], max), min)
-                #for key in dict.keys()}
-
-        #@staticmethod
-        #def sum(left, right):
-
-            #if isinstance(left, float) or isinstance(left, int):
-                #return {key: left + right[key] for key in left.keys()}
-            #if isinstance(right, float) or isinstance(right, int):
-                #return {key: left[key] + right for key in left.keys()}
-
-            #return {key: left[key] + right[key] for key in left.keys()}
-
-        #@staticmethod
-        #def multiply(left, right):
-
-            #if isinstance(left, float) or isinstance(left, int):
-                #return {key: left * right[key] for key in left.keys()}
-            #if isinstance(right, float) or isinstance(right, int):
-                #return {key: left[key] * right for key in left.keys()}
-
-            #return {key: left[key] * right[key] for key in left.keys()}
-
     ####################################################################
     # Gaussian to Sigmoidal Link Layer                                 #
     ####################################################################
@@ -1719,108 +1735,39 @@ class ann(nemoa.system.base.system):
         def expect(self, data, source):
 
             if source['class'] == 'sigmoid': return \
-                self.expectFromSLayer(data, source, self.getWeights(source))
+                self.expectFromSLayer(data, source, self.weights(source))
             elif source['class'] == 'gauss': return \
-                self.expectFromGLayer(data, source, self.getWeights(source))
+                self.expectFromGLayer(data, source, self.weights(source))
 
             return False
 
         def getUpdates(self, data, model, source):
 
-            return self.getParamUpdates(data, model, self.getWeights(source))
+            return self.getParamUpdates(data, model, self.weights(source))
 
         def getDelta(self, inData, outDelta, source, target):
 
             return self.deltaFromBPROP(inData, outDelta,
-                self.getWeights(source), self.getWeights(target))
+                self.weights(source), self.weights(target))
 
         def getSamplesFromInput(self, data, source):
 
             if source['class'] == 'sigmoid': return self.getSamples(
-                self.expectFromSLayer(data, source, self.getWeights(source)))
+                self.expectFromSLayer(data, source, self.weights(source)))
             elif source['class'] == 'gauss': return self.getSamples(
-                self.expectFromGLayer(data, source, self.getWeights(source)))
+                self.expectFromGLayer(data, source, self.weights(source)))
 
             return False
 
-        # 2DO
-        # get weights from self.links[(a,b)].getWeights()
+        def weights(self, source):
 
-        def getWeights(self, source):
-
-
-
-        # 2DO
-                #if self._config['optimize']['useAdjacency']:
-            #if target['name'] in self._links[source['name']]['target']:
-                #return self._links[source['name']]['target'][target['name']]['W'] \
-                    #* self._links[source['name']]['target'][target['name']]['A']
-            #elif source['name'] in self._links[target['name']]['target']:
-                #return (self._links[target['name']]['target'][source['name']]['W'] \
-                    #* self._links[source['name']]['target'][target['name']]['A']).T
-            if 'source' in self.source \
-                and source['name'] == self.source['source']:
+            if 'source' in self.source and source['name'] == self.source['source']:
                 return self.source['W']
-            elif 'target' in self.target \
-                and source['name'] == self.target['target']:
+            elif 'target' in self.target and source['name'] == self.target['target']:
                 return self.target['W'].T
-
-            return nemoa.log('error', """Could not get links:
+            else: return nemoa.log('error', """Could not get links:
                 Layers '%s' and '%s' are not connected!
                 """ % (source['name'], self.params['name']))
-
-        # lets calculate with unit params
-
-        #@staticmethod
-        #def one(dict):
-
-            #return {key: numpy.ones(shape = dict[key].shape) for key in dict.keys()}
-
-        #@staticmethod
-        #def zero(dict):
-
-            #return {key: numpy.zeros(shape = dict[key].shape) for key in dict.keys()}
-
-        #@staticmethod
-        #def sign(dict, remap = None):
-
-            #if remap == None: return {key: numpy.sign(dict[key]) \
-                #for key in dict.keys()}
-
-            #return {key: (remap[0] * (numpy.sign(dict[key]) < 0.0)
-                #+ remap[1] * (numpy.sign(dict[key]) == 0.0)
-                #+ remap[2] * (numpy.sign(dict[key]) > 0.0)) for key in dict.keys()}
-
-        #@staticmethod
-        #def minmax(dict, min = None, max = None):
-
-            #if min == None: return {key: numpy.minimum(dict[key], max)
-                #for key in dict.keys()}
-            #if max == None: return {key: numpy.maximum(dict[key], min)
-                #for key in dict.keys()}
-
-            #return {key: numpy.maximum(numpy.minimum(dict[key], max), min)
-                #for key in dict.keys()}
-
-        #@staticmethod
-        #def sum(left, right):
-
-            #if isinstance(left, float) or isinstance(left, int):
-                #return {key: left + right[key] for key in left.keys()}
-            #if isinstance(right, float) or isinstance(right, int):
-                #return {key: left[key] + right for key in left.keys()}
-
-            #return {key: left[key] + right[key] for key in left.keys()}
-
-        #@staticmethod
-        #def multiply(left, right):
-
-            #if isinstance(left, float) or isinstance(left, int):
-                #return {key: left * right[key] for key in left.keys()}
-            #if isinstance(right, float) or isinstance(right, int):
-                #return {key: left[key] * right for key in left.keys()}
-
-            #return {key: left[key] * right[key] for key in left.keys()}
 
     ####################################################################
     # Sigmoidal Unit Layer                                             #
@@ -1950,44 +1897,6 @@ class ann(nemoa.system.base.system):
 
             return {'label': unit, 'id': id, 'class': cl,
                 'visible': visible, 'bias': bias}
-
-        #@staticmethod
-        #def sigmoid(x):
-            #"""Standard logistic function."""
-
-            #return 1.0 / (1.0 + numpy.exp(-x))
-
-        #@staticmethod
-        #def logistic(x):
-            #"""Standard logistic function."""
-
-            #return 1.0 / (1.0 + numpy.exp(-x))
-
-        #@staticmethod
-        #def Dlogistic(x):
-            #"""Derivation of standard logistic function."""
-
-            #return ((1.0 / (1.0 + numpy.exp(-x)))
-                #* (1.0 - 1.0 / (1.0 + numpy.exp(-x))))
-
-        #@staticmethod
-        #def tanh(x):
-            #"""Standard hyperbolic tangens function."""
-
-            #return numpy.tanh(x)
-
-        #@staticmethod
-        #def Dtanh(x):
-            #"""Derivation of standard hyperbolic tangens function."""
-
-            #return 1.0 - tanh(x) ** 2
-
-        #@staticmethod
-        #def tanhEff(x):
-            #"""Hyperbolic tangens function, proposed in paper:
-            #'Efficient BackProp' by LeCun, Bottou, Orr, Müller"""
-
-            #return 1.7159 * numpy.tanh(0.6666 * x)
 
     ####################################################################
     # Gaussian Unit Layer                                              #

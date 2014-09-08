@@ -12,7 +12,7 @@ class system:
 
     def __init__(self, *args, **kwargs):
         """Initialize system configuration and system parameter configuration."""
-    
+
         # set configuration and update units and links
         self.setConfig(kwargs['config'] if 'config' in kwargs else {})
 
@@ -58,7 +58,7 @@ class system:
             for key in ['params', 'init', 'optimize']:
                 if not key in self._config:
                     self._config[key] = self._default(key)
-        
+
         # overwrite / merge local with given configuration
         nemoa.common.dictMerge(config, self._config)
 
@@ -237,9 +237,9 @@ class system:
             'weight': weight,
             'interaction': norm * weight}
 
-    def getLinkParams(self, links = [], *args, **kwargs):
-        """Return parameters of links."""
-        return self._getLinkParams(links)
+    #def getLinkParams(self, links = [], *args, **kwargs):
+        #"""Return parameters of links."""
+        #return self._getLinkParams(links)
 
     def _get(self, sec = None):
         """Return all system settings (config, params) as dictionary."""
@@ -296,11 +296,11 @@ class system:
         """Optimize system parameters using data and given schedule."""
 
         # check if optimization schedule exists for current system
-        # and merge default, existing and given schedule 
+        # and merge default, existing and given schedule
         if not 'params' in schedule:
             config = self._default('optimize')
             nemoa.common.dictMerge(self._config['optimize'], config)
-            self._config['optimize'] = config    
+            self._config['optimize'] = config
         elif not self.getType() in schedule['params']: return nemoa.log(
             'error', """could not optimize model:
             optimization schedule '%s' does not include system '%s'
@@ -322,14 +322,14 @@ class system:
         # initialize inspector
         inspector = nemoa.system.base.inspector(self)
         if 'inspect' in config and not config['inspect'] == False:
-            inspector.setTestData(self._getTestData(dataset)) 
+            inspector.setTestData(self._getTestData(dataset))
 
         # optimize system parameters
         algorithm = config['algorithm'].title()
         nemoa.log('note', "optimize '%s' (%s) using algorithm '%s'" % \
             (self.name(), self.getType(), algorithm))
         nemoa.setLog(indent = '+1')
-        retVal = self._optimizeParams(dataset, schedule, inspector)
+        retVal = self._optParams(dataset, schedule, inspector)
         nemoa.setLog(indent = '-1')
 
         return retVal
@@ -567,7 +567,7 @@ class system:
             parameter units has invalid format!""")
 
         return units
-    
+
     #def getUnitRelation(self, dataset, relation = 'correlation()',
         #stat = 10000, units = None, format = 'array', **kwargs):
 
@@ -737,7 +737,7 @@ class inspector:
         self.__estimate = system._config['optimize']['estimateTime'] \
             if 'estimateTime' in system._config['optimize'] \
             else True
-        
+
     def setTestData(self, data):
         """Set numpy array with destdata."""
         self.__data = data

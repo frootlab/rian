@@ -5,7 +5,7 @@ from .common.log import *
 import nemoa.common.type as type
 import nemoa.workspace.config, nemoa.plot, nemoa.annotation
 
-__version = ('0.4.84', 'noGPU-20140830')
+__version = ('0.4.85', 'noGPU-20140908')
 initLogger()
 
 def new(**kwargs):

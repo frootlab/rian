@@ -72,22 +72,27 @@ class dbn(nemoa.system.ann.ann):
     def _getLinksFromNetwork(self, network):
         return None
 
-    def _optimizeParams(self, dataset, schedule, inspector):
+    def _optParams(self, dataset, schedule, inspector):
         """Optimize system parameters."""
 
-        cfg = self._config['optimize']
+        # get configuration dictionary for optimization
+        config = self._config['optimize']
 
-        # forward pretraining of neuronal network using
+        # optionally 'pretraining' of model
+        # perform forward optimization of ann using
         # restricted boltzmann machines as subsystems
-        if cfg['preTraining']: self._optimizePreTraining(dataset, schedule, inspector)
+        if config['preTraining']: self._optPreTraining(
+            dataset, schedule, inspector)
 
-        # backward finetuning of neuronal network
+        # optionally 'finetuning' of model
+        # perform backward optimization of ann
         # using backpropagation of error
-        if cfg['fineTuning']: self._optimizeFineTuning(dataset, schedule, inspector)
+        if config['fineTuning']: self._optFineTuning(
+            dataset, schedule, inspector)
 
         return True
 
-    def _optimizePreTraining(self, dataset, schedule, inspector):
+    def _optPreTraining(self, dataset, schedule, inspector):
         """Pretraining model using restricted boltzmann machines."""
 
         nemoa.log('note', 'pretraining model')
@@ -250,7 +255,7 @@ class dbn(nemoa.system.ann.ann):
         nemoa.setLog(indent = '-2')
         return True
 
-    def _optimizeFineTuning(self, dataset, schedule, inspector):
+    def _optFineTuning(self, dataset, schedule, inspector):
         """Finetuning model using backpropagation of error."""
 
         nemoa.log('note', 'finetuning model')
@@ -262,8 +267,8 @@ class dbn(nemoa.system.ann.ann):
 
         algorithm = self._config['optimize']['algorithm'].lower()
 
-        if   algorithm == 'bprop': self._optimizeBPROP(dataset, schedule, inspector)
-        elif algorithm == 'rprop': self._optimizeRPROP(dataset, schedule, inspector)
+        if   algorithm == 'bprop': self._optBPROP(dataset, schedule, inspector)
+        elif algorithm == 'rprop': self._optRPROP(dataset, schedule, inspector)
         else: nemoa.log('error', "unknown gradient '%s'!" % (algorithm))
 
         nemoa.setLog(indent = '-1')

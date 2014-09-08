@@ -116,7 +116,7 @@ class rbm(nemoa.system.ann.ann):
             and self._setHiddenUnitParams(params)
             and self._setLinkParams(params))
 
-    def _optimizeParams(self, dataset, schedule, inspector):
+    def _optParams(self, dataset, schedule, inspector):
         """Optimize system parameters."""
 
         cfg = self._config['optimize']
@@ -209,7 +209,7 @@ class rbm(nemoa.system.ann.ann):
 
         lenght = cfg['updateVrcdLenght']
         A = numpy.array([numpy.arange(0, lenght), numpy.ones(lenght)])
-        
+
         # initialise update rate
         cfg['updateRate'] = cfg['updateVrcdInitRate']
 
@@ -267,7 +267,7 @@ class rbm(nemoa.system.ann.ann):
 
         lenght = cfg['updateVrcdLenght']
         A = numpy.array([numpy.arange(0, lenght), numpy.ones(lenght)])
-        
+
         # initialise update rate
         cfg['updateRate'] = cfg['updateVrcdInitRate']
 
@@ -322,7 +322,7 @@ class rbm(nemoa.system.ann.ann):
 
         lenght = cfg['updateVrcdLenght']
         A = numpy.array([numpy.arange(0, lenght), numpy.ones(lenght)])
-        
+
         # initialise update rate
         cfg['updateRate'] = cfg['updateVrcdInitRate']
 
@@ -374,7 +374,7 @@ class rbm(nemoa.system.ann.ann):
 
     def getCdkSamples(self, data):
         """Return mean value of reconstructed data using k-step contrastive divergency sampling (CD-k).
-        
+
         Options:
             k: number of full Gibbs sampling steps
             m: number if iterations to calculate mean values """
@@ -489,7 +489,7 @@ class rbm(nemoa.system.ann.ann):
         p = cfg['sparsityExpect'] # target expectation value for units
         q = numpy.mean(hData, axis = 0) # expectation value (over samples)
         r = cfg['sparsityRate'] # update rate
-        
+
         #units = (self.getUnits()[0], self.getUnits()[0])
         #data  = (vData, vData)
 
@@ -548,7 +548,7 @@ class rbm(nemoa.system.ann.ann):
 
 #    def _getUnitEvalError(self, data, block = [], k = 1, **kwargs):
 #        """Return euclidean reconstruction error of units.
-#        
+#
 #        error := ||data - model||"""
 #        return self.getUnitError(data, data,
 #            ('visible', 'hidden', 'visible'), block), None
@@ -619,34 +619,34 @@ class rbm(nemoa.system.ann.ann):
         # reset link update
         return True
 
-    def _getLinkParams(self, links = []):
-        """Return link parameters."""
-        if not links:
-            links = self._getLinksFromConfig()
+    #def _getLinkParams(self, links = []):
+        #"""Return link parameters."""
+        #if not links:
+            #links = self._getLinksFromConfig()
 
-        # create dict with link params
-        vList = self.units['visible'].params['label']
-        hList = self.units['hidden'].params['label']
-        linkParams = {}
-        for link in links:
-            if link[0] in vList and link[1] in hList:
-                i = vList.index(link[0])
-                j = hList.index(link[1])
-                linkParams[link] = {
-                    'A': self._params['links'][(0, 1)]['A'][i, j],
-                    'W': self._params['links'][(0, 1)]['W'][i, j] }
-            elif link[1] in vList and link[0] in hList:
-                i = hList.index(link[0])
-                j = vList.index(link[1])
-                linkParams[link] = {
-                    'A': self._params['links'][(0, 1)]['A'][i, j],
-                    'W': self._params['links'][(0, 1)]['W'][i, j] }
-            else:
-                nemoa.log('warning', """
-                    could not get parameters for link (%s → %s):
-                    link could not be found!""" % (link[0], link[1]))
-                continue
-        return linkParams
+        ## create dict with link params
+        #vList = self.units['visible'].params['label']
+        #hList = self.units['hidden'].params['label']
+        #linkParams = {}
+        #for link in links:
+            #if link[0] in vList and link[1] in hList:
+                #i = vList.index(link[0])
+                #j = hList.index(link[1])
+                #linkParams[link] = {
+                    #'A': self._params['links'][(0, 1)]['A'][i, j],
+                    #'W': self._params['links'][(0, 1)]['W'][i, j] }
+            #elif link[1] in vList and link[0] in hList:
+                #i = hList.index(link[0])
+                #j = vList.index(link[1])
+                #linkParams[link] = {
+                    #'A': self._params['links'][(0, 1)]['A'][i, j],
+                    #'W': self._params['links'][(0, 1)]['W'][i, j] }
+            #else:
+                #nemoa.log('warning', """
+                    #could not get parameters for link (%s → %s):
+                    #link could not be found!""" % (link[0], link[1]))
+                #continue
+        #return linkParams
 
     def _setLinkParams(self, params):
         """Set link parameters and update link matrices using dictionary."""
@@ -772,7 +772,7 @@ class grbm(rbm):
             'updateFactorVbias': 0.1, # factor for visible unit bias updates (related to update rate)
             'updateFactorVlvar': 0.01, # factor for visible unit logarithmic variance updates (related to update rate)
             'minibatchSize': 500, # number of samples used to calculate updates
-            'minibatchInterval': 1, # number of updates the same minibatch is used 
+            'minibatchInterval': 1, # number of updates the same minibatch is used
             'corruptionType': 'none', # do not use corruption
             'corruptionFactor': 0.0, # no corruption of data
             'sparsityRate': 0.0, # sparsity update update

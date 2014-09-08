@@ -655,14 +655,31 @@ class model:
         # return empty plot instance if no configuration information was given
         if not name and not config: return nemoa.plot.new()
 
-        # get plot configuration
+        # get plot configuration from plot name
         if isinstance(name, str):
+            cfg = None
+
+            # search for given configuration
             for plotName in [name,
                 '%s.%s' % (self.system.getType(), name),
                 'base.' + name]:
                 cfg = nemoa.workspace.get('plot', \
                    name = plotName, params = params)
                 if isinstance(cfg, dict): break
+
+            # search in relations
+            if not isinstance(cfg, dict):
+                if name in self.about('system', 'relations').keys():
+                    relation = self.about('system', 'relations')[name]
+                    cfg = {
+                        'package': relation['show'],
+                        'class': 'relation',
+                        'params': {'relation': name},
+                        'description': relation['description'],
+                        'name': relation['name'],
+                        'id': 0}
+
+            # could not find configuration
             if not isinstance(cfg, dict): return nemoa.log('error',
             "could not create plot instance: unsupported plot '%s'" % (name))
         elif isinstance(config, dict): cfg = config
