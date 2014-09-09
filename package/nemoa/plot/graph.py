@@ -194,20 +194,19 @@ class structure(nemoa.plot.base.plot):
         # draw caption
         if self.settings['graphCaption']:
             if self.settings['nodeCaption']:
-
-                # draw caption
                 if caption == None:
-                    if edges == 'weight':
-                        label_text = r'$\mathbf{Network:}\,\mathrm{%s}$' % (model.network.graph)
-                    elif edges == 'adjacency':
-                        label_text = r'$\mathbf{Network:}\,\mathrm{%s}$' % (model.network.graph)
-                    matplotlib.pyplot.figtext(.5, .11, label_text, fontsize = 9, ha = 'center')
-                else:
-                    matplotlib.pyplot.figtext(.5, .11, caption, fontsize = 9, ha = 'center')
+                    if edges == 'weight': label_text = \
+                        r'$\mathbf{Network:}\,\mathrm{%s}$' % \
+                        (model.network.graph)
+                    elif edges == 'adjacency': label_text = \
+                        r'$\mathbf{Network:}\,\mathrm{%s}$' % \
+                        (model.network.graph)
+                    matplotlib.pyplot.figtext(.5, .11,
+                        label_text, fontsize = 9, ha = 'center')
+                else: matplotlib.pyplot.figtext(.5, .11,
+                    caption, fontsize = 9, ha = 'center')
 
         return True
-
-
 
 class relation(nemoa.plot.base.plot):
 

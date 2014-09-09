@@ -216,10 +216,6 @@ class system:
         """Remove links from system using list with 2-tuples containing unit labels."""
         return self._removeLinks(links)
 
-    #def removeLinksByThreshold(self, method = None, threshold = None, *args, **kwargs):
-        #"""Remove links from system using a threshold for link parameters."""
-        #return self._removeLinksByThreshold(method, threshold)
-
     def getLink(self, link):
         srcUnit = link[0]
         tgtUnit = link[1]

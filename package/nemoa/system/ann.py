@@ -1338,16 +1338,22 @@ class ann(nemoa.system.base.system):
             'method': 'evalRelCapacity',
             'show': 'heatmap',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
+        'fastinduction': {
+            'name': 'induced curve',
+            'description': 'segmential curve length of induced values from inputs to outputs',
+            'method': 'evalRelFastInduction',
+            'show': 'heatmap',
+            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'induction': {
-            'name': 'induced curve lenght',
+            'name': 'induced curve',
             'description': 'segmential curve length of induced values from inputs to outputs',
             'method': 'evalRelInduction',
             'show': 'heatmap',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        'interaction': {
-            'name': 'interaction',
+        'deviation': {
+            'name': 'deviation',
             'description': 'linear slope of induced values from inputs to outputs',
-            'method': 'evalRelInteraction',
+            'method': 'evalRelCenterSlope',
             'show': 'heatmap',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         }
@@ -1378,6 +1384,29 @@ class ann(nemoa.system.base.system):
                 R[i, j] = M[k, l]
 
         return R
+
+    def evalRelCapacity(self, data, mapping = None, **kwargs):
+        """Return network capacity as numpy array.
+
+        Keyword Arguments:
+            data -- 2-tuple with numpy arrays: input data and output data
+            mapping -- tuple of strings containing the mapping
+                from input layer (first argument of tuple)
+                to output layer (last argument of tuple)
+
+        Description:
+            Measure network capacity between units """
+
+        if mapping == None: mapping = self.getMapping()
+
+        # get weights
+        for i in range(1, len(mapping))[::-1]:
+            l = self.units[mapping[i-1]].links({'name': mapping[i]})
+            W = l['W']
+            if i == len(mapping) - 1: R = W.copy()
+            else: R = numpy.dot(R.copy(), W)
+
+        return R.T
 
     def evalRelKnockout(self, data, mapping = None, **kwargs):
         """Return knockout matrix as numpy array.
@@ -1418,8 +1447,8 @@ class ann(nemoa.system.base.system):
 
         return R
 
-    def evalRelInteraction(self, data, mapping = None, **kwargs):
-        """Return interaction matrix as numpy array.
+    def evalRelDeviation(self, data, mapping = None, **kwargs):
+        """Return mean deviation matrix as numpy array.
 
         Keyword Arguments:
             data -- 2-tuple with numpy arrays: input data and output data
@@ -1431,40 +1460,34 @@ class ann(nemoa.system.base.system):
             Measure unit interaction to other units,
             respective to given data """
 
-        points   = 100
-        interval = 4.0
+        interval = 0.0000001
 
         if not mapping: mapping = self.getMapping()
         inLabels = self.getUnits(group = mapping[0])[0]
         outLabels = self.getUnits(group = mapping[-1])[0]
 
         # calculate induction matrix
-        meanIn = data[0].mean(axis = 0).reshape((1, len(inLabels)))
+        meanIn  = data[0].mean(axis = 0).reshape((1, len(inLabels)))
         meanOut = data[1].mean(axis = 0).reshape((1, len(outLabels)))
 
         R = numpy.zeros((len(inLabels), len(outLabels)))
         for inId, inUnit in enumerate(inLabels):
+            posData = meanIn.copy()
+            posData[:, inId] += 0.5 * interval
+            posExp = self.evalUnits((posData, meanOut),
+                func = 'expect', mapping = mapping)
+            negData = meanIn.copy()
+            negData[:, inId] -= 0.5 * interval
+            negExp = self.evalUnits((negData, meanOut),
+                func = 'expect', mapping = mapping)
+
             for outId, outUnit in enumerate(outLabels):
+                R[inId, outId] = posExp[outUnit] - negExp[outUnit]
 
-                # calculate curve
-                modInter = interval * numpy.std(data[0][:, inId])
-                for iCount in range(points):
-                    modData  = meanIn.copy()
-                    modShift = (float(iCount) / float(points) - 0.5) * modInter
-                    modData[:, inId] = meanIn[:, inId] + modShift
-                    modExpect = self.evalUnits((modData, data[1]),
-                        func = 'expect', mapping = mapping)[outUnit]
-                    if iCount: curve += numpy.sqrt((modExpect - prevExp) ** 2
-                        + (modInter / float(points - 1)) ** 2)
-                    else: curve = 0.0
-                    prevExp = modExpect.copy()
-
-                R[inId, outId] = (curve / modInter - 1.0) * interval
-
-        return R
+        return R / interval
 
     def evalRelInduction(self, data, mapping = None, **kwargs):
-        """Return induced curve length as numpy array.
+        """Return influence as numpy array.
 
         Keyword Arguments:
             data -- 2-tuple with numpy arrays: input data and output data
@@ -1476,92 +1499,55 @@ class ann(nemoa.system.base.system):
             Measure unit impact to other units,
             respective to given data """
 
-        points   = 10
-        interval = 4.0
+        points  = 10
+        amplify = 2.0
+        gauge   = 0.05
 
         if not mapping: mapping = self.getMapping()
-        iLabels = self.getUnits(group = mapping[0])[0]
-        oLabels = self.getUnits(group = mapping[-1])[0]
+        iUnits = self.getUnits(group = mapping[0])[0]
+        oUnits = self.getUnits(group = mapping[-1])[0]
+        R = numpy.zeros((len(iUnits), len(oUnits)))
 
-        # calculate induction matrix
-        meanIn = data[0].mean(axis = 0).reshape((1, len(iLabels)))
-        R = numpy.zeros((len(iLabels), len(oLabels)))
-        for inId, inUnit in enumerate(iLabels):
-            for outId, outUnit in enumerate(oLabels):
+        # get indices of representatives
+        rIds = [int((i + 0.5) * int(float(data[0].shape[0])
+            / points)) for i in range(points)]
 
-                # calculate curve
-                modInter = interval * numpy.std(data[0][:, inId])
-                for iCount in range(points):
-                    modData  = data[0].copy()
-                    modShift = (float(iCount) / float(points) - 0.5) * modInter
-                    modData[:, inId] = modShift + meanIn[:, inId]
-                    modExpect = self.evalUnits((modData, data[1]),
-                        func = 'expect', mapping = mapping)[outUnit]
-                    if iCount: curve += numpy.sum(numpy.abs(
-                        numpy.sqrt((modExpect - prevExp) ** 2
-                        + (modInter / float(points - 1)) ** 2)))
-                    else: curve = 0.0
-                    prevExp = modExpect.copy()
+        for iId, iUnit in enumerate(iUnits):
+            iCurve = numpy.take(numpy.sort(data[0][:, iId]), rIds)
+            iCurve = amplify * iCurve
 
-                R[inId, outId] = (curve / data[0].shape[0]
-                    / modInter - 1.0) * interval
+            # create output matrix for each output
+            C = {oUnit: numpy.zeros((data[0].shape[0], points)) \
+                for oUnit in oUnits}
+            for pId in range(points):
+                iData  = data[0].copy()
+                iData[:, iId] = iCurve[pId]
+                oExpect = self.evalUnits((iData, data[1]),
+                    func = 'expect', mapping = mapping)
+                for oUnit in oUnits: C[oUnit][:, pId] = oExpect[oUnit]
+
+            # calculate mean of standard deviations of outputs
+            for oId, oUnit in enumerate(oUnits):
+
+                # calculate sign by correlating input and output
+                corr = numpy.zeros(data[0].shape[0])
+                for i in range(data[0].shape[0]):
+                    corr[i] = numpy.correlate(C[oUnit][i, :], iCurve)
+                sign = numpy.sign(corr.mean())
+
+                # calculate norm by mean over maximum 5% of data
+                bound = int((1.0 - gauge) * data[0].shape[0])
+                subset = numpy.sort(C[oUnit].std(axis = 1))[bound:]
+                norm = subset.mean() / data[1][:, oId].std()
+
+                # calculate influence
+                R[iId, oId] = sign * norm
 
         return R
 
-    #def evalRelInduction(self, data, mapping = None, **kwargs):
-        #"""Return induced curve length as numpy array.
-
-        #Keyword Arguments:
-            #data -- 2-tuple with numpy arrays: input data and output data
-            #mapping -- tuple of strings containing the mapping
-                #from input layer (first argument of tuple)
-                #to output layer (last argument of tuple)
-
-        #Description:
-            #Measure unit impact to other units,
-            #respective to given data """
-
-        #points   = 10
-        #interval = 10.0
-
-        #if not mapping: mapping = self.getMapping()
-        #iLabels = self.getUnits(group = mapping[0])[0]
-        #oLabels = self.getUnits(group = mapping[-1])[0]
-
-        ## calculate induction matrix
-        #meanIn = data[0].mean(axis = 0).reshape((1, len(iLabels)))
-        #R = numpy.zeros((len(iLabels), len(oLabels)))
-        #for inId, inUnit in enumerate(iLabels):
-            #for outId, outUnit in enumerate(oLabels):
-
-                ## calculate curve
-                #modInter = interval * numpy.std(data[0][:, inId])
-
-                #for iCount in range(points):
-                    #modData  = data[0].copy()
-                    #modShift = (float(iCount) / float(points) - 0.5) * modInter
-                    #modData[:, inId] = modShift + 0.5 * (meanIn[:, inId] + data[0][:, inId])
-                    #modExpect = self.evalUnits((modData, data[1]),
-                        #func = 'expect', mapping = mapping)[outUnit]
-                    #if iCount: C[:, iCount - 1] = numpy.sqrt(
-                        #(modExpect - prevExp) ** 2
-                        #+ (modInter / float(points - 1)) ** 2)
-                    #else: C = numpy.zeros((data[0].shape[0], points - 1))
-                    #prevExp = modExpect.copy()
-                #R[inId, outId] = (numpy.mean(C.sum(axis = 1))
-                    #/ modInter - 1.0)
-
-                ##R[inId, outId] = numpy.amax(numpy.abs(C))
-                ##Cmin = numpy.amin(C)
-                ##R[inId, outId] = numpy.sum(C)
-                ##R[inId, outId] = Cmin if numpy.sum(C) < 0 else Cmax
-                ##R[inId, outId] = (curve / data[0].shape[0]
-                ##    / modInter - 1.0) * interval
-
-
-        #return R
-
-    def evalRelCapacity(self, data, mapping = None, **kwargs):
+    # INFO: deprecated!
+    # 2DO: make a fast version of induction
+    def evalRelFastInduction(self, data, mapping = None, **kwargs):
         """Return induced curve length as numpy array.
 
         Keyword Arguments:
@@ -1574,39 +1560,7 @@ class ann(nemoa.system.base.system):
             Measure unit impact to other units,
             respective to given data """
 
-        if mapping == None: mapping = self.getMapping()
-
-
-        # get weights
-        print self.units
-        quit
-
-#        if len(mapping) == 2: return self.units[mapping[1]].expect(
-#            inData, self.units[mapping[0]].params)
-#        outData = numpy.copy(inData)
-#        for id in range(len(mapping) - 1):
-#            outData = self.units[mapping[id + 1]].expect(
-#                outData, self.units[mapping[id]].params)
-
-        return False
-
-        #2DO!
-        #
-        #
-        #
-        #
-        #
-        #
-        # intergrate over network!
-        #
-        #
-        #
-        #
-        #
-        #
-
-
-        points   = 10
+        points   = 2
         interval = 4.0
 
         if not mapping: mapping = self.getMapping()
@@ -1621,21 +1575,17 @@ class ann(nemoa.system.base.system):
 
                 # calculate curve
                 modInter = interval * numpy.std(data[0][:, inId])
+
                 for iCount in range(points):
                     modData  = data[0].copy()
-                    modShift = (float(iCount) / float(points) - 0.5) * modInter
-                    modData[:, inId] = modShift + meanIn[:, inId]
+                    modShift = (float(iCount) / float(points - 1) - 0.5) * modInter
+                    modData[:, inId] += modShift
                     modExpect = self.evalUnits((modData, data[1]),
                         func = 'expect', mapping = mapping)[outUnit]
-                    if iCount: curve += numpy.sum(numpy.abs(
-                        numpy.sqrt((modExpect - prevExp) ** 2
-                        + (modInter / float(points - 1)) ** 2)))
-                    else: curve = 0.0
+                    if iCount: C[:, iCount - 1] = modExpect - prevExp
+                    else: C = numpy.zeros((data[0].shape[0], points - 1))
                     prevExp = modExpect.copy()
-
-                R[inId, outId] = (curve / data[0].shape[0]
-                    / modInter - 1.0) * interval
-
+                R[inId, outId] = C.sum() / float(C.size) / interval
 
         return R
 
@@ -1765,6 +1715,26 @@ class ann(nemoa.system.base.system):
                 return self.source['W']
             elif 'target' in self.target and source['name'] == self.target['target']:
                 return self.target['W'].T
+            else: return nemoa.log('error', """Could not get links:
+                Layers '%s' and '%s' are not connected!
+                """ % (source['name'], self.params['name']))
+
+        def links(self, source):
+
+            if 'source' in self.source and source['name'] == self.source['source']:
+                return self.source
+            elif 'target' in self.target and source['name'] == self.target['target']:
+                return {'W': self.target['W'].T, 'A': self.target['A'].T}
+            else: return nemoa.log('error', """Could not get links:
+                Layers '%s' and '%s' are not connected!
+                """ % (source['name'], self.params['name']))
+
+        def adjacency(self, source):
+
+            if 'source' in self.source and source['name'] == self.source['source']:
+                return self.source['A']
+            elif 'target' in self.target and source['name'] == self.target['target']:
+                return self.target['A'].T
             else: return nemoa.log('error', """Could not get links:
                 Layers '%s' and '%s' are not connected!
                 """ % (source['name'], self.params['name']))
