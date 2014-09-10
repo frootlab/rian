@@ -23,7 +23,7 @@ class dataset:
         """Return configuration as dictionary."""
         return self.cfg.copy()
 
-    def isEmpty(self):
+    def _isEmpty(self):
         """Return true if dataset is empty."""
         return not 'name' in self.cfg or not self.cfg['name']
 
@@ -53,7 +53,7 @@ class dataset:
             nemoa.setLog(indent = '-1')
             return True
 
-        # create table with one record for every single dataset files 
+        # create table with one record for every single dataset files
         if not 'table' in self.cfg:
             conf = self.cfg.copy()
             self.cfg['table'] = {}
@@ -121,7 +121,7 @@ class dataset:
 
             # notify if any dataset columns could not be converted
             if convColLabelsLost:
-                nemoa.log('warning', 
+                nemoa.log('warning',
                     "%i of %i dataset columns could not be converted! (logfile)"
                         % (len(convColLabelsLost), len(convColLabels)))
                 nemoa.log("logfile", ", ".join([convColLabels[i] \
@@ -360,7 +360,7 @@ class dataset:
                 parameter 'system' is invalid!""")
             nemoa.log('transform data using system \'%s\'' % (system.name()))
             nemoa.setLog(indent = '+1')
-            
+
             if mapping == None: mapping = system.getMapping()
 
             sourceColumns = system.getUnits(group = mapping[0])[0]
@@ -584,7 +584,7 @@ class dataset:
             cols -- name of column group
                 default: value '*' does not filter columns
             format"""
-        
+
         # check columns
         if cols == '*': cols = self.getColLabels()
         elif not len(cols) == len(set(cols)): return nemoa.log('error',
@@ -592,7 +592,7 @@ class dataset:
         elif [c for c in cols if c not in self.getColLabels()]: \
             return nemoa.log('error',
             'could not retrieve data: unknown columns!')
-    
+
         # check format
         if isinstance(output, str): fmtTuple = (output, )
         elif isinstance(output, tuple): fmtTuple = output
@@ -920,14 +920,14 @@ class dataset:
         ## calculate differences in correlation
         #corrDiff = numpy.zeros(shape = (numRows, len(biclusters)))
         #for cID, (cRowIDs, cColIDs) in enumerate(biclusters):
-            
+
             ## calculate mean correlation within bicluster
             #cCorr = self.getMeanCorr(data[cRowIDs, :][:, cColIDs])
-            
+
             ## calculate mean correlation by appending single rows
             #for rowID in range(numRows):
                 #corrDiff[rowID, cID] = cCorr - self.getMeanCorr(data[cRowIDs + [rowID], :][:, cColIDs])
-        
+
         ## calculate distances of samples and clusters
         #distance = corrDiff
         ##dist = numpy.nan_to_num(corrDiff / (numpy.max(numpy.max(corrDiff, axis = 0), 0.000001)))
@@ -1049,7 +1049,7 @@ class dataset:
 
     def about(self, *args):
         """Return generic information about various parts of the dataset.
-        
+
         Arguments:
             *args -- tuple of strings, containing a breadcrump trail to
                 a specific information about the dataset

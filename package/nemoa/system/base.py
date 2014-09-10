@@ -112,7 +112,7 @@ class system:
             return True
         return self._checkDataset(dataset)
 
-    def isEmpty(self):
+    def _isEmpty(self):
         """Return true if system is a dummy."""
         return False
 
@@ -564,61 +564,6 @@ class system:
 
         return units
 
-    #def getUnitRelation(self, dataset, relation = 'correlation()',
-        #stat = 10000, units = None, format = 'array', **kwargs):
-
-        ## get mapping, data and units
-        #mapping = self.getMapping()
-        #data    = dataset.getData(cols = (mapping[0], mapping[-1])) # 2Do: use stat
-        #units   = self._assertUnitTuple(units)
-
-        ## get method and method specific parameters
-        #relName, relKwargs = nemoa.common.strSplitParams(relation)
-        #params = nemoa.common.dictMerge(relKwargs, kwargs)
-
-        ## get relation as numpy array
-        #print params
-        #M = self.evalRelation(data, relation = relName, units = units, **params)
-        #quit()
-        #if method == 'correlation': M = self.evalRelCorrelation(\
-            #units = units, data = data, **params)
-        #elif method == 'interaction': M = self.evalRelInteraction(\
-            #units = units, data = data, mapping = mapping, **params)
-        #elif method == 'knockout': M = self.evalRelKnockout(\
-            #units = units, data = data, mapping = mapping, **params)
-        #else: return nemoa.log('error',
-            #"could not evaluate unit relations: unknown relation '%s'" % (method))
-
-        ## transform matrix
-        #if 'transform' in params:
-            #if 'C' in params['transform']:
-                #C = self.getUnitCorrelationMatrix(units = units, data = data)
-            #try:
-                #T = eval(params['transform'])
-                #M = T
-            #except: return nemoa.log('error',
-                #'could not transform unit relation matrix: invalid syntax!')
-
-        ## create formated output
-        #if format == 'array': return M
-        #if format == 'dict': return nemoa.common.dictFromArray(M, units)
-
-    #def getUnitImpact(self, units, data = None, mapping = None,
-        #modify = 'knockout', func = 'values', **kwargs):
-        #"""Return unit interaction matrix as numpy array."""
-
-        ## create empty array
-        #M = numpy.empty(shape = (len(units[0]), len(units[1])))
-        #meanData = data[0].mean(axis = 0).reshape((1, len(units[0])))
-        #for i, inUnit in enumerate(units[0]):
-            #cData = meanData.copy()
-            #cData[0, i] = data[0][0, i]
-            #for o, outUnit in enumerate(units[1]):
-                #M[i, o] = self.evalUnits(cData, func = 'expect',
-                    #mapping = mapping)[outUnit]
-
-        #return M
-
     ####################################################################
     # Data Transformation                                              #
     ####################################################################
@@ -692,7 +637,7 @@ class empty(system):
             'description': 'dummy system',
             'name': 'empty' }
 
-    def isEmpty(self, *args, **kwargs): return True
+    def _isEmpty(self, *args, **kwargs): return True
     def configure(self, *args, **kwargs): return True
     def setConfig(self, *args, **kwargs): return True
     def setNetwork(self, *args, **kwargs): return True

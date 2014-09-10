@@ -1322,39 +1322,39 @@ class ann(nemoa.system.base.system):
     def _getRelationEvalMethods(): return {
         'correlation': {
             'name': 'correlation',
-            'description': 'data correlation between inputs and outputs',
-            'method': 'evalRelCorrelation',
-            'show': 'heatmap',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        'knockout': {
-            'name': 'knockout',
-            'description': 'knockout effect from inputs to outputs',
-            'method': 'evalRelKnockout',
-            'show': 'heatmap',
+            'description': """
+                undirected data based relation describing
+                the 'linearity' between variables (units) """,
+            'directed': False, 'signed': True, 'normal': True,
+            'method': 'evalRelCorrelation', 'show': 'heatmap',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'capacity': {
-            'name': 'capacity',
-            'description': 'capacity',
-            'method': 'evalRelCapacity',
-            'show': 'heatmap',
+            'name': 'network capacity',
+            'description': """
+                directed graph based relation describing
+                the 'network capacity' between units (variables). """,
+            'directed': True, 'signed': True, 'normal': False,
+            'method': 'evalRelCapacity', 'show': 'heatmap',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        'fastinduction': {
-            'name': 'induced curve',
-            'description': 'segmential curve length of induced values from inputs to outputs',
-            'method': 'evalRelFastInduction',
-            'show': 'heatmap',
+        'knockout': {
+            'name': 'knockout effect',
+            'description': """
+                directed data manipulation based relation describing
+                the increase of the data reconstruction error of a given
+                output unit, when setting the values of a given input
+                unit to its mean value. """,
+            'directed': True, 'signed': True, 'normal': False,
+            'method': 'evalRelKnockout', 'show': 'heatmap',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'induction': {
-            'name': 'induced curve',
-            'description': 'segmential curve length of induced values from inputs to outputs',
-            'method': 'evalRelInduction',
-            'show': 'heatmap',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        'deviation': {
-            'name': 'deviation',
-            'description': 'linear slope of induced values from inputs to outputs',
-            'method': 'evalRelCenterSlope',
-            'show': 'heatmap',
+            'name': 'induced deviation',
+            'description': """
+                directed data manipulation based relation describing
+                the induced deviation of reconstructed values of a given
+                output unit, when manipulating the values of a given
+                input unit. """,
+            'directed': True, 'signed': True, 'normal': True,
+            'method': 'evalRelInduction', 'show': 'heatmap',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         }
 
@@ -1395,14 +1395,13 @@ class ann(nemoa.system.base.system):
                 to output layer (last argument of tuple)
 
         Description:
-            Measure network capacity between units """
+            Measure network capacity between input and output units. """
 
         if mapping == None: mapping = self.getMapping()
 
-        # get weights
+        # calculate product of weight matrices
         for i in range(1, len(mapping))[::-1]:
-            l = self.units[mapping[i-1]].links({'name': mapping[i]})
-            W = l['W']
+            W = self.units[mapping[i-1]].links({'name': mapping[i]})['W']
             if i == len(mapping) - 1: R = W.copy()
             else: R = numpy.dot(R.copy(), W)
 
@@ -1447,47 +1446,8 @@ class ann(nemoa.system.base.system):
 
         return R
 
-    def evalRelDeviation(self, data, mapping = None, **kwargs):
-        """Return mean deviation matrix as numpy array.
-
-        Keyword Arguments:
-            data -- 2-tuple with numpy arrays: input data and output data
-            mapping -- tuple of strings containing the mapping
-                from input layer (first argument of tuple)
-                to output layer (last argument of tuple)
-
-        Description:
-            Measure unit interaction to other units,
-            respective to given data """
-
-        interval = 0.0000001
-
-        if not mapping: mapping = self.getMapping()
-        inLabels = self.getUnits(group = mapping[0])[0]
-        outLabels = self.getUnits(group = mapping[-1])[0]
-
-        # calculate induction matrix
-        meanIn  = data[0].mean(axis = 0).reshape((1, len(inLabels)))
-        meanOut = data[1].mean(axis = 0).reshape((1, len(outLabels)))
-
-        R = numpy.zeros((len(inLabels), len(outLabels)))
-        for inId, inUnit in enumerate(inLabels):
-            posData = meanIn.copy()
-            posData[:, inId] += 0.5 * interval
-            posExp = self.evalUnits((posData, meanOut),
-                func = 'expect', mapping = mapping)
-            negData = meanIn.copy()
-            negData[:, inId] -= 0.5 * interval
-            negExp = self.evalUnits((negData, meanOut),
-                func = 'expect', mapping = mapping)
-
-            for outId, outUnit in enumerate(outLabels):
-                R[inId, outId] = posExp[outUnit] - negExp[outUnit]
-
-        return R / interval
-
     def evalRelInduction(self, data, mapping = None, **kwargs):
-        """Return influence as numpy array.
+        """Return induced deviation as numpy array.
 
         Keyword Arguments:
             data -- 2-tuple with numpy arrays: input data and output data
@@ -1547,47 +1507,86 @@ class ann(nemoa.system.base.system):
 
     # INFO: deprecated!
     # 2DO: make a fast version of induction
-    def evalRelFastInduction(self, data, mapping = None, **kwargs):
-        """Return induced curve length as numpy array.
+    #def evalRelFastInduction(self, data, mapping = None, **kwargs):
+        #"""Return induced curve length as numpy array.
 
-        Keyword Arguments:
-            data -- 2-tuple with numpy arrays: input data and output data
-            mapping -- tuple of strings containing the mapping
-                from input layer (first argument of tuple)
-                to output layer (last argument of tuple)
+        #Keyword Arguments:
+            #data -- 2-tuple with numpy arrays: input data and output data
+            #mapping -- tuple of strings containing the mapping
+                #from input layer (first argument of tuple)
+                #to output layer (last argument of tuple)
 
-        Description:
-            Measure unit impact to other units,
-            respective to given data """
+        #Description:
+            #Measure unit impact to other units,
+            #respective to given data """
 
-        points   = 2
-        interval = 4.0
+        #points   = 2
+        #interval = 4.0
 
-        if not mapping: mapping = self.getMapping()
-        iLabels = self.getUnits(group = mapping[0])[0]
-        oLabels = self.getUnits(group = mapping[-1])[0]
+        #if not mapping: mapping = self.getMapping()
+        #iLabels = self.getUnits(group = mapping[0])[0]
+        #oLabels = self.getUnits(group = mapping[-1])[0]
 
-        # calculate induction matrix
-        meanIn = data[0].mean(axis = 0).reshape((1, len(iLabels)))
-        R = numpy.zeros((len(iLabels), len(oLabels)))
-        for inId, inUnit in enumerate(iLabels):
-            for outId, outUnit in enumerate(oLabels):
+        ## calculate induction matrix
+        #meanIn = data[0].mean(axis = 0).reshape((1, len(iLabels)))
+        #R = numpy.zeros((len(iLabels), len(oLabels)))
+        #for inId, inUnit in enumerate(iLabels):
+            #for outId, outUnit in enumerate(oLabels):
 
-                # calculate curve
-                modInter = interval * numpy.std(data[0][:, inId])
+                ## calculate curve
+                #modInter = interval * numpy.std(data[0][:, inId])
 
-                for iCount in range(points):
-                    modData  = data[0].copy()
-                    modShift = (float(iCount) / float(points - 1) - 0.5) * modInter
-                    modData[:, inId] += modShift
-                    modExpect = self.evalUnits((modData, data[1]),
-                        func = 'expect', mapping = mapping)[outUnit]
-                    if iCount: C[:, iCount - 1] = modExpect - prevExp
-                    else: C = numpy.zeros((data[0].shape[0], points - 1))
-                    prevExp = modExpect.copy()
-                R[inId, outId] = C.sum() / float(C.size) / interval
+                #for iCount in range(points):
+                    #modData  = data[0].copy()
+                    #modShift = (float(iCount) / float(points - 1) - 0.5) * modInter
+                    #modData[:, inId] += modShift
+                    #modExpect = self.evalUnits((modData, data[1]),
+                        #func = 'expect', mapping = mapping)[outUnit]
+                    #if iCount: C[:, iCount - 1] = modExpect - prevExp
+                    #else: C = numpy.zeros((data[0].shape[0], points - 1))
+                    #prevExp = modExpect.copy()
+                #R[inId, outId] = C.sum() / float(C.size) / interval
 
-        return R
+        #return R
+
+    #def evalRelDeviation(self, data, mapping = None, **kwargs):
+        #"""Return mean deviation matrix as numpy array.
+
+        #Keyword Arguments:
+            #data -- 2-tuple with numpy arrays: input data and output data
+            #mapping -- tuple of strings containing the mapping
+                #from input layer (first argument of tuple)
+                #to output layer (last argument of tuple)
+
+        #Description:
+            #Measure unit interaction to other units,
+            #respective to given data """
+
+        #interval = 0.0000001
+
+        #if not mapping: mapping = self.getMapping()
+        #inLabels = self.getUnits(group = mapping[0])[0]
+        #outLabels = self.getUnits(group = mapping[-1])[0]
+
+        ## calculate induction matrix
+        #meanIn  = data[0].mean(axis = 0).reshape((1, len(inLabels)))
+        #meanOut = data[1].mean(axis = 0).reshape((1, len(outLabels)))
+
+        #R = numpy.zeros((len(inLabels), len(outLabels)))
+        #for inId, inUnit in enumerate(inLabels):
+            #posData = meanIn.copy()
+            #posData[:, inId] += 0.5 * interval
+            #posExp = self.evalUnits((posData, meanOut),
+                #func = 'expect', mapping = mapping)
+            #negData = meanIn.copy()
+            #negData[:, inId] -= 0.5 * interval
+            #negExp = self.evalUnits((negData, meanOut),
+                #func = 'expect', mapping = mapping)
+
+            #for outId, outUnit in enumerate(outLabels):
+                #R[inId, outId] = posExp[outUnit] - negExp[outUnit]
+
+        #return R / interval
 
     ####################################################################
     # Unit groups                                                      #

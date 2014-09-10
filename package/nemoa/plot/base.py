@@ -18,8 +18,8 @@ class plot:
         self.cfg = {}
         if config == None: return None
 
-        self.cfg['name'] = config['name']
-        self.cfg['id'] = config['id']
+        self.cfg['name']  = config['name']
+        self.cfg['id']    = config['id']
         self.cfg['input'] = 'model'
 
         # append / overwrite settings with default settings
@@ -55,19 +55,38 @@ class plot:
         # close previous figures
         matplotlib.pyplot.close("all")
 
-        # create plot (in memory)
-        self._create(model)
+        # update configuration, depending on object type
+        if self.settings['path'] == ('system', 'relations'):
 
-        # draw title
-        if 'title' in self.settings \
-            and isinstance(self.settings['title'], str):
-            title = self.settings['title']
-        else: title = self._getTitle(model)
-        matplotlib.pyplot.title(title, fontsize = 11.0)
+            # assert units
+            mapping = model.system.getMapping()
+            iUnits  = model.units(group = mapping[0])[0]
+            oUnits  = model.units(group = mapping[-1])[0]
+            if not isinstance(self.settings['units'], tuple) \
+                or not isinstance(self.settings['units'][0], list) \
+                or not isinstance(self.settings['units'][1], list):
+                self.settings['units'] = (iUnits, oUnits)
 
-        # output
-        if file: matplotlib.pyplot.savefig(file, dpi = self.settings['dpi'])
-        else: matplotlib.pyplot.show()
+            # get information about relation
+            relation = model.about('system', 'relations',
+                nemoa.common.strSplitParams(self.settings['relation'])[0])
+            if self.settings['graphCaption']: self.settings['title'] = \
+                relation['name'].title()
+
+        # create plot
+        if self._create(model):
+
+            # draw title
+            if 'title' in self.settings \
+                and isinstance(self.settings['title'], str):
+                title = self.settings['title']
+            else: title = self._getTitle(model)
+            matplotlib.pyplot.title(title, fontsize = 11.0)
+
+            # output
+            if file: matplotlib.pyplot.savefig(file,
+                dpi = self.settings['dpi'])
+            else: matplotlib.pyplot.show()
 
         # clear figures and release memory
         matplotlib.pyplot.clf()

@@ -34,7 +34,7 @@ class model:
         self.network = network
         self.system  = system
 
-        if not self.isEmpty() and self.__checkModel(): self.updateConfig()
+        if not self._isEmpty() and self.__checkModel(): self.updateConfig()
 
     def __setConfig(self, config):
         """Set configuration from dictionary."""
@@ -142,8 +142,7 @@ class model:
 
         # check if model is empty and can not be initialized
         if (self.dataset == None or self.system == None) \
-            and self.isEmpty():
-            return self
+            and self._isEmpty(): return self
 
         # check if model is configured
         if not self.__isConfigured():
@@ -162,8 +161,7 @@ class model:
             nemoa.log('error', """could not initialize model parameters:
                 system is not yet configured!""")
             return False
-        elif self.system.isEmpty():
-            return False
+        elif self.system._isEmpty(): return False
 
         # initialize system parameters
         self.system.initParams(self.dataset)
@@ -180,7 +178,7 @@ class model:
         nemoa.setLog(indent = '+1')
 
         # check if model is empty
-        if self.isEmpty():
+        if self._isEmpty():
             nemoa.log('warning', "empty models can not be optimized!")
             nemoa.setLog(indent = '-1')
             return self
@@ -261,8 +259,7 @@ class model:
             return False
 
         # check if dataset is empty
-        if self.dataset.isEmpty():
-            return True
+        if self.dataset._isEmpty(): return True
 
         # prepare params
         if not network and not self.network:
@@ -306,7 +303,7 @@ class model:
             return False
 
         # check if network instance is empty
-        if self.network.isEmpty(): return True
+        if self.network._isEmpty(): return True
 
         # check if dataset instance is available
         if self.dataset == None and dataset == None:
@@ -368,7 +365,6 @@ class model:
             # get data for system evaluation
             if 'data' in kwargs.keys():
                 # get data from keyword argument
-
                 data = kwargs['data']
                 del kwargs['data']
             else:
@@ -393,54 +389,12 @@ class model:
             return self.system.eval(data, *args[1:], **kwargs)
 
         # evaluation of dataset
-        if args[0] == 'dataset':
-            return self.dataset.eval(*args[1:], **kwargs)
+        if args[0] == 'dataset': return self.dataset.eval(*args[1:], **kwargs)
 
         # evaluation of network
-        if args[0] == 'network':
-            return self.network.eval(*args[1:], **kwargs)
+        if args[0] == 'network': return self.network.eval(*args[1:], **kwargs)
 
         return nemoa.log('warning', 'could not evaluate model')
-
-    def error(self, dataset = None, **kwargs):
-        """Return data reconstruction error of model."""
-
-        data = self.getData(dataset = dataset)
-        error = self.system.evalError(data, **kwargs)
-
-        return error
-
-    def accuracy(self, dataset = None, **kwargs):
-        """Return data reconstruction accuracy of model."""
-
-        data = self.getData(dataset = dataset)
-        accuracy = self.system.evalAccuracy(data, **kwargs)
-
-        return accuracy
-
-    def precision(self, dataset = None, **kwargs):
-        """Return data reconstruction precision of model."""
-
-        data = self.getData(dataset = dataset)
-        precision = self.system.evalPrecision(data, **kwargs)
-
-        return precision
-
-    def correlation(self, dataset = None, **kwargs):
-        """Return data reconstruction correlation of model."""
-
-        data = self.getData(dataset = dataset)
-        correlation = self.system.evalCorrelation(data, **kwargs)
-
-        return correlation
-
-    def energy(self, dataset = None, **kwargs):
-        """Return data reconstruction energy of model."""
-
-        data = self.getData(dataset = dataset)
-        energy = self.system.evalEnergy(data, **kwargs)
-
-        return energy
 
     ####################################################################
     # Evaluation of unit relations                                     #
@@ -604,11 +558,23 @@ class model:
         kwargs['output'] = 'show'
         return self.plot(*args, **kwargs)
 
-    def plot(self, plot = None, output = 'file', file = None, **kwargs):
+    def plot(self, *args, **kwargs):
         """Create plot of model."""
 
         nemoa.log('create plot of model')
         nemoa.setLog(indent = '+1')
+
+        # check args and kwargs
+        if 'output' in kwargs:
+            output = kwargs['output']
+            del(kwargs['output'])
+        else: output = 'file'
+        if 'file' in kwargs:
+            file = kwargs['file']
+            del(kwargs['file'])
+        else: file = None
+        if len(args): plot = args[0]
+        else: plot = None
 
         # check if model is configured
         if not self.__isConfigured():
@@ -626,7 +592,7 @@ class model:
             plotName, plotParams = nemoa.common.strSplitParams(plot)
             mergeDict = plotParams
             for param in kwargs.keys(): plotParams[param] = kwargs[param]
-            objPlot = self.__getPlot(name = plotName, params = plotParams)
+            objPlot = self.__getPlot(*args, params = plotParams)
             if not objPlot:
                 nemoa.log('warning', "could not create plot: unknown configuration '%s'" % (plotName))
                 nemoa.setLog(indent = '-1')
@@ -649,35 +615,77 @@ class model:
         nemoa.setLog(indent = '-2')
         return retVal
 
-    def __getPlot(self, name = None, params = None, config = None, **options):
+    def __getPlot(self, *args, **kwargs):
         """Return new plot instance"""
 
-        # return empty plot instance if no configuration information was given
-        if not name and not config: return nemoa.plot.new()
+        # return empty plot instance if no configuration was given
+        if not args and not 'config' in kwargs: return nemoa.plot.new()
+
+        if args:
+            name = args[0]
+            args = args[1:]
+        else: name = None
+        if 'params' in kwargs:
+            params = kwargs['params']
+            del(kwargs['params'])
+        else: params = None
+        if 'config' in kwargs:
+            config = kwargs['config']
+            del(kwargs['config'])
+        else: config = None
+        options = kwargs
 
         # get plot configuration from plot name
         if isinstance(name, str):
             cfg = None
 
             # search for given configuration
-            for plotName in [name,
+            for plot in [name,
                 '%s.%s' % (self.system.getType(), name),
                 'base.' + name]:
                 cfg = nemoa.workspace.get('plot', \
-                   name = plotName, params = params)
+                   name = plot, params = params)
                 if isinstance(cfg, dict): break
 
-            # search in relations
+            # search in model / system relations
             if not isinstance(cfg, dict):
-                if name in self.about('system', 'relations').keys():
+                if name == 'data':
+                    if args: relClass = args[0]
+                    else: relClass = 'histogram'
+                    cfg = nemoa.common.dictMerge(params, {
+                        'package': 'data',
+                        'class': relClass,
+                        'params': {},
+                        'description': 'distribution',
+                        'name': 'distribution',
+                        'id': 0})
+                elif name == 'system':
+                    if len(args) and args[0] == 'relations':
+                        if args[1] in self.about('system', 'relations').keys():
+                            relation = self.about('system', 'relations')[args[1]]
+                            if len(args) > 2: relClass = args[2]
+                            else: relClass = relation['show']
+                            cfg = nemoa.common.dictMerge(params, {
+                                'package': 'relation',
+                                'class': relClass,
+                                'params': {'relation': name},
+                                'description': relation['description'],
+                                'name': relation['name'],
+                                'id': 0})
+                elif name in self.about('system', 'relations').keys():
                     relation = self.about('system', 'relations')[name]
-                    cfg = {
-                        'package': relation['show'],
-                        'class': 'relation',
+                    if args: relClass = args[0]
+                    else: relClass = relation['show']
+                    cfg = nemoa.common.dictMerge(params, {
+                        'package': 'relation',
+                        'class': relClass,
                         'params': {'relation': name},
                         'description': relation['description'],
                         'name': relation['name'],
-                        'id': 0}
+                        'id': 0})
+
+            ## search in relations
+            #if not isinstance(cfg, dict):
 
             # could not find configuration
             if not isinstance(cfg, dict): return nemoa.log('error',
@@ -704,7 +712,7 @@ class model:
         self.__config['name'] = name
         return self
 
-    def isEmpty(self):
+    def _isEmpty(self):
         """Return true if model is empty."""
         return not 'name' in self.__config or not self.__config['name']
 

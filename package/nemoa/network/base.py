@@ -119,7 +119,7 @@ class network:
         """Configure network to dataset and system."""
 
         # check if network instance is empty
-        if self.isEmpty():
+        if self._isEmpty():
             nemoa.log('configuration is not needed: network is \'empty\'')
             return True
 
@@ -127,7 +127,7 @@ class network:
         if not nemoa.type.isDataset(dataset):
             nemoa.log('error', 'could not configure network: no valid dataset instance given!')
             return False
- 
+
          # check if system instance is available
         if not nemoa.type.isSystem(system):
             nemoa.log('error', 'could not configure network: no valid system instance given!')
@@ -167,7 +167,7 @@ class network:
         nemoa.setLog(indent = '-1')
         return True
 
-    def isEmpty(self):
+    def _isEmpty(self):
         """Return true if network type is 'empty'."""
         return self.cfg['type'] == 'empty'
 
@@ -260,17 +260,17 @@ class network:
             layerB = self.cfg['layer'][i + 1]
             edge_type = layerA + '-' + layerB
             type_id = i
-            
+
             for (nodeA, nodeB) in self.cfg['edges'][edge_type]:
                 src_node_id = layerA + ':' + nodeA
                 tgt_node_id = layerB + ':' + nodeB
-                
+
                 self.graph.add_edge(
                     src_node_id, tgt_node_id,
                     weight = 0,
                     sort_id = sort_id,
                     params = {'type': edge_type, 'type_id': type_id})
-                    
+
                 sort_id += 1
 
         return True
@@ -278,7 +278,7 @@ class network:
     #
     # accessing nodes
     #
-    
+
     # get network information of single node
     def node(self, node):
         return self.graph.node[node]
@@ -311,37 +311,37 @@ class network:
 
         return filtered_list
 
-    # 
+    #
     def node_labels(self, **params):
         list = []
         for node in self.nodes(**params):
             list.append(self.graph.node[node]['label'])
-        
+
         return list
-    
+
     def getNodeLabels(self, list):
         labels = []
         for node in list:#
             if not node in self.graph.node:
                 return None
-            
+
             labels.append(self.graph.node[node]['label'])
-            
+
         return labels
-    
+
     def getNodeGroups(self, type = None):
-        
-        # get groups of specific node type 
+
+        # get groups of specific node type
         if type:
             if not type in self.cfg:
                 nemoa.log('warning', "unknown node type '" + str(type) + "'!")
                 return None
-            
+
             groups = {}
             for group in self.cfg[type]:
                 groups[group] = self.node_labels(type = group)
             return groups
-        
+
         # get all groups
         allGroups = {}
         for type in ['visible', 'hidden']:
@@ -381,7 +381,7 @@ class network:
 
     def edge(self, edge):
         return self.graph.edge[edge]
-    
+
     def edges(self, **params):
 
         # filter search criteria and order entries
@@ -389,7 +389,7 @@ class network:
 
         for src, tgt, attr in self.graph.edges(data = True):
             if not params == {}:
-                
+
                 passed = True
                 for key in params:
                     if not key in attr['params'] \
@@ -398,16 +398,16 @@ class network:
                         break
                 if not passed:
                     continue
-                
+
             # force order (visible, hidden)
             src_type = src.split(':')[0]
             tgt_type = tgt.split(':')[0]
-            
+
             if src_type in self.cfg['visible'] and tgt_type in self.cfg['hidden']:
                 sorted_list[attr['sort_id']] = (src, tgt)
             elif src_type in self.cfg['hidden'] and tgt_type in self.cfg['visible']:
                 sorted_list[attr['sort_id']] = (tgt, src)
-                
+
         # filter empty nodes
         filtered_list = []
         for edge in sorted_list:
@@ -415,7 +415,7 @@ class network:
                 filtered_list.append(edge)
 
         return filtered_list
-    
+
     def edge_labels(self, **kwargs):
         list = []
         for src, tgt in self.edges(**kwargs):
@@ -423,11 +423,11 @@ class network:
             tgt_label = self.graph.node[tgt]['label']
             list.append((src_label, tgt_label))
         return list
-    
+
     #
     # get / set
     #
-    
+
     def _get(self, sec = None):
         dict = {
             'cfg': copy.deepcopy(self.cfg),
@@ -440,7 +440,7 @@ class network:
             return dict[sec]
 
         return None
-    
+
     def _set(self, **dict):
         if 'cfg' in dict:
             self.cfg = copy.deepcopy(dict['cfg'])
@@ -452,14 +452,14 @@ class network:
     def save_graph(self, file = None, format = 'gml'):
         if file == None:
             nemoa.log('critical', "no save path was given")
-            
+
         # create path if not available
         if not os.path.exists(os.path.dirname(file)):
             os.makedirs(os.path.dirname(file))
 
         # everythink seems to be fine
         # nemoa.log("saving graph to %s" % (file))
-        
+
         if format == 'gml':
             G = self.graph.copy()
             networkx.write_gml(G, file)
@@ -470,7 +470,7 @@ class network:
 
     def about(self, *args):
         """Return generic information about various parts of the network.
-        
+
         Arguments:
             *args -- tuple of strings, containing a breadcrump trail to
                 a specific information about the dataset
