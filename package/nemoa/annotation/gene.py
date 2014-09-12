@@ -125,14 +125,13 @@ class gene:
             try:
                 self.robjects.r('x <- org.Hs.eg%s' % (outputFormat.upper()))
             except:
-                nemoa.log('critical', "output format '%s' is not supported by 'org.Hs.eg.db'" % (outputFormat))
-                quit()
-            
+                return nemoa.log('critical', "output format '%s' is not supported by 'org.Hs.eg.db'" % (outputFormat))
+
             nemoa.log("sending command to R: mapped_genes <- mappedkeys(x)", quiet = quiet)
             self.robjects.r('mapped_genes <- mappedkeys(x)')
             nemoa.log("sending command to R: listmap <- as.list(x[mapped_genes])", quiet = quiet)
             self.robjects.r('listmap <- as.list(x[mapped_genes])')
-            
+
             # prepare search list
             searchList = list
 

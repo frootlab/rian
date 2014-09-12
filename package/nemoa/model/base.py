@@ -623,7 +623,6 @@ class model:
 
         if args:
             name = args[0]
-            args = args[1:]
         else: name = None
         if 'params' in kwargs:
             params = kwargs['params']
@@ -636,60 +635,69 @@ class model:
         options = kwargs
 
         # get plot configuration from plot name
-        if isinstance(name, str):
+        if isinstance(args[0], str):
             cfg = None
 
             # search for given configuration
-            for plot in [name,
-                '%s.%s' % (self.system.getType(), name),
-                'base.' + name]:
+            for plot in [args[0],
+                '%s.%s' % (self.system.getType(), args[0]),
+                'base.' + args[0]]:
                 cfg = nemoa.workspace.get('plot', \
                    name = plot, params = params)
                 if isinstance(cfg, dict): break
 
             # search in model / system relations
             if not isinstance(cfg, dict):
-                if name == 'data':
-                    if args: relClass = args[0]
+                if args[0] == 'dataset':
+                    if len(args) > 1: relClass = args[1]
                     else: relClass = 'histogram'
                     cfg = nemoa.common.dictMerge(params, {
-                        'package': 'data',
+                        'package': 'dataset',
                         'class': relClass,
                         'params': {},
                         'description': 'distribution',
                         'name': 'distribution',
                         'id': 0})
-                elif name == 'system':
-                    if len(args) and args[0] == 'relations':
-                        if args[1] in self.about('system', 'relations').keys():
-                            relation = self.about('system', 'relations')[args[1]]
-                            if len(args) > 2: relClass = args[2]
+                elif args[0] == 'network':
+                    cfg = nemoa.common.dictMerge(params, {
+                        'package': 'network',
+                        'class': 'graph',
+                        'params': {},
+                        'description': '',
+                        'name': 'structure',
+                        'id': 0})
+                elif args[0] == 'system':
+                    if len(args) == 1:
+                        pass #2Do!
+                    elif args[1] == 'relations':
+                        if len(args) == 2:
+                            pass
+                        elif args[2] in self.about('system', 'relations').keys():
+                            relation = self.about('system', 'relations')[args[2]]
+                            if len(args) > 3: relClass = args[3]
                             else: relClass = relation['show']
                             cfg = nemoa.common.dictMerge(params, {
                                 'package': 'relation',
                                 'class': relClass,
-                                'params': {'relation': name},
+                                'params': {'relation': args[0]},
                                 'description': relation['description'],
                                 'name': relation['name'],
                                 'id': 0})
-                elif name in self.about('system', 'relations').keys():
-                    relation = self.about('system', 'relations')[name]
-                    if args: relClass = args[0]
+                elif args[0] in self.about('system', 'relations').keys():
+                    relation = self.about('system', 'relations')[args[0]]
+                    if len(args) > 1: relClass = args[1]
                     else: relClass = relation['show']
                     cfg = nemoa.common.dictMerge(params, {
                         'package': 'relation',
                         'class': relClass,
-                        'params': {'relation': name},
+                        'params': {'relation': args[0]},
                         'description': relation['description'],
                         'name': relation['name'],
                         'id': 0})
 
-            ## search in relations
-            #if not isinstance(cfg, dict):
-
             # could not find configuration
             if not isinstance(cfg, dict): return nemoa.log('error',
-            "could not create plot instance: unsupported plot '%s'" % (name))
+                "could not create plot instance: unsupported plot '%s'" % (args[0]))
         elif isinstance(config, dict): cfg = config
 
         # overwrite config with given params

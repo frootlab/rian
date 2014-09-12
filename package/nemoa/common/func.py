@@ -3,10 +3,12 @@
 
 import numpy
 
-def boost(x, factor = 1.0):
-    """Return boost function."""
-    return numpy.abs(x) * (sigmoid(factor * -10.0 * (x + 0.5))
-        + sigmoid(factor * -10.0 * (x - 0.5)) - 1.0)
+def intensify(x, factor = 10.0, bound = 1.0):
+    """Return intensify function."""
+    return numpy.abs(x) * (sigmoid(factor * (x + 0.5 * bound))
+        + sigmoid(factor * (x - 0.5 * bound)) - 1.0) \
+        / numpy.abs(sigmoid(1.5 * factor * bound)
+        + sigmoid(0.5 * factor * bound) - 1.0)
 
 def sigmoid(x):
     """Return standard sigmoid function."""

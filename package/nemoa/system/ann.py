@@ -188,7 +188,7 @@ class ann(nemoa.system.base.system):
             for layer in network.layers()]
         for group in units:
             group['visible'] = network.node(group['label'][0])['params']['visible']
-            group['id'] = network.node(group['label'][0])['params']['type_id']
+            group['id'] = network.node(group['label'][0])['params']['layerId']
 
         return units
 
@@ -480,7 +480,7 @@ class ann(nemoa.system.base.system):
             # Compute parameter updates
             updates = self._optGetUpdatesBPROP(out, delta)
             # Update parameters
-            self._optimizeUpdateParams(updates)
+            self._optUpdateParams(updates)
             # Trigger inspector (getch, calc inspect function etc)
             event = inspector.trigger()
             if event:

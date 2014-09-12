@@ -230,8 +230,8 @@ class system:
         norm    = float(numpy.sum(linkGrp['A'])) / numpy.sum(numpy.abs(linkGrp['W']))
         return {
             'adjacency': linkGrp['A'][srcID, tgtID],
-            'weight': weight,
-            'interaction': norm * weight}
+            'weight':    weight,
+            'normal':    norm * weight}
 
     #def getLinkParams(self, links = [], *args, **kwargs):
         #"""Return parameters of links."""

@@ -501,6 +501,7 @@ class rbm(nemoa.system.ann.ann):
 
         r = max(cfg['updateRate'], r)
 
+        #2do!
         #print 'distribution accuracy', 1.0 - 2.0 * numpy.mean(numpy.abs(q - p))
 
         dBias = - r * (q - p)
