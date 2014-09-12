@@ -96,7 +96,7 @@ class config:
         """Return list of user workspaces."""
         projects = []
         prjDirs = self.__basepath['user'] + '*'
-        
+
         for prjDir in glob.iglob(self.getPath(prjDirs)):
             if not os.path.isdir(prjDir):
                 continue
@@ -140,7 +140,7 @@ class config:
         # get current project
         curProject = self.__project
 
-        # 
+        #
         for project in self.__listCommonProjects():
 
             # set common project, update paths and import workspaces
@@ -169,7 +169,7 @@ class config:
                 project folder could not be found in '%s'!
                 """ % (project, self.__basepath['user']))
             return False
-        
+
         # set project
         self.__project = project
 
@@ -282,7 +282,7 @@ class config:
             return False
 
         # logger info
-        
+
 
         # import and register objects without testing
         importer = scriptFileImporter(self)
@@ -395,12 +395,12 @@ class config:
 
         # get config from source file
         if 'source' in conf:
-            if not 'file' in conf['source']: return nemoa.log('warning', 
+            if not 'file' in conf['source']: return nemoa.log('warning',
                 "skipping network '" + name + "': "
                 "missing source information! (parameter: 'source:file')")
 
             file = conf['source']['file']
-            if not self.getPath(file, check = True): return nemoa.log('warning', 
+            if not self.getPath(file, check = True): return nemoa.log('warning',
                 "skipping network '%s': file '%s' not found!" % (name, file))
 
             objConf['config']['source']['file'] = self.getPath(file)
@@ -412,7 +412,7 @@ class config:
 
             # get network config
             networkCfg = self.__registerNetwork(file, format)
-            if not networkCfg: return nemoa.log('warning', 
+            if not networkCfg: return nemoa.log('warning',
                 "skipping network '%s'" % (name))
             for key in networkCfg: objConf['config'][key] = networkCfg[key]
 
@@ -426,19 +426,19 @@ class config:
         conf = objConf['config']
 
         # check source
-        if not 'source' in conf: return nemoa.log('warning', 
+        if not 'source' in conf: return nemoa.log('warning',
             "skipping dataset '" + name + "': "
             "missing source information! (parameter 'source')")
 
         if not 'file' in conf['source'] \
-            and not 'datasets' in conf['source']: return nemoa.log('warning', 
+            and not 'datasets' in conf['source']: return nemoa.log('warning',
             "skipping dataset '" + name + "': "
             "missing source information! (parameter: 'source:file' or 'source:datasets')")
 
         # update for source type: file
         if 'file' in conf['source']:
             file = conf['source']['file']
-            if not self.getPath(file, check = True): return nemoa.log('warning', 
+            if not self.getPath(file, check = True): return nemoa.log('warning',
                 "skipping dataset '%s': file '%s' not found!" % (name, file))
 
             # update path for file and set type to 'file'
@@ -448,7 +448,7 @@ class config:
             # add missing source information
             if not 'file_format' in conf['source']:
                 conf['source']['file_format'] = nemoa.common.getFileExt(file)
-            
+
             # only update in the first call of checkDatasetConf
             if update: conf['cache_path'] = self.__path['cache']
 
@@ -518,9 +518,9 @@ class config:
         name = objConf['name']
         conf = objConf['config']
 
-        if not 'package' in conf: return nemoa.log('warning', 
+        if not 'package' in conf: return nemoa.log('warning',
             "skipping system '" + name + "': missing parameter 'package'!")
-        if not 'class' in conf: return nemoa.log('warning', 
+        if not 'class' in conf: return nemoa.log('warning',
             "skipping system '" + name + "': missing parameter 'class'!")
 
         conf['description'] = conf['description'].replace('\n', '') \
@@ -528,13 +528,13 @@ class config:
 
         # check if system exists
         try: exec "import nemoa.system." + conf['package']
-        except: return nemoa.log('warning', 
+        except: return nemoa.log('warning',
             "skipping system '%s': package 'system.%s' could not be found!" % (name, conf['package']))
         return objConf
 
     def __checkScheduleConf(self, objConf):
         """Check and update schedule configuration"""
-        
+
         type = objConf['class']
         name = objConf['name']
         conf = objConf['config']
@@ -572,7 +572,7 @@ class config:
                     del conf[key]
 
             if not conf['stage'] and (not 'params' in conf or not conf['params']):
-                nemoa.log('warning', 
+                nemoa.log('warning',
                     "skipping schedule '" + name + "': "
                     "missing optimization parameters! ('params' or 'stage [NAME]')!")
                 return None"""
@@ -583,7 +583,7 @@ class config:
         """link object configuration to object dictionary."""
         if not isinstance(objConf, dict):
             return False
-        
+
         type = objConf['class']
         name = objConf['name']
         config = objConf['config']
@@ -619,8 +619,8 @@ class config:
             return False
 
         # delete configuration from tree
-        
-        
+
+
         # delete entry in index
         self.__index.pop(id)
         return True
@@ -629,21 +629,19 @@ class config:
         """List known object configurations."""
 
         if type == 'model':
+            fileExt = 'nmm'
+            searchPath = '%s*.%s' % (self.__path['models'], fileExt)
             models = []
-            for model in glob.iglob(self.__path['models'] + '*.mp'):
-                if os.path.isdir(model):
-                    continue
-
-                models.append(os.path.basename(model)[:-3])
-
+            for model in glob.iglob(searchPath):
+                if os.path.isdir(model): continue
+                name = os.path.basename(model)[:-(len(fileExt) + 1)]
+                models.append(name)
             return sorted(models, key = str.lower)
 
         objList = []
         for id in self.__index:
-            if type and type != self.__index[id]['type']:
-                continue
-            if namespace and namespace != self.__index[id]['project']:
-                continue
+            if type and type != self.__index[id]['type']: continue
+            if namespace and namespace != self.__index[id]['project']: continue
             objList.append((id, self.__index[id]['type'], self.__index[id]['name']))
         return sorted(objList, key = lambda col: col[2])
 
@@ -691,7 +689,7 @@ class config:
             if cfg == None: return nemoa.log('warning', """
                 could not get configuration:
                 no %s with id %i could be found """ % (type, id))
-        
+
         # could not identify configuration
         else: return nemoa.log('warning',
             "could not get configuration: 'id' or 'name' of object is needed!")
@@ -706,10 +704,8 @@ class config:
             return cfg
         subMerge = cfg
         for key in merge:
-            if not isinstance(subMerge, dict):
-                return cfg
-            if not key in subMerge.keys():
-                subMerge[key] = {}
+            if not isinstance(subMerge, dict): return cfg
+            if not key in subMerge.keys(): subMerge[key] = {}
             subMerge = subMerge[key]
         for key in params.keys():
             subMerge[key] = params[key]
@@ -783,8 +779,7 @@ class config:
         while True:
             i += 1 # start with 2
             new = '%s (%i)' % (key, i)
-            if not new in dict:
-                break
+            if not new in dict: break
 
         return new
 
@@ -953,7 +948,7 @@ class networkConfigFileImporter:
 
         # validate 'network' section
         if not 'network' in netcfg.sections():
-            nemoa.log('warning', 
+            nemoa.log('warning',
                 "file '" + file + "' does not contain section 'network'!")
             return None
 
@@ -1006,7 +1001,7 @@ class networkConfigFileImporter:
 
         # 'layers': ordered list of network layers
         if not 'layers' in netcfg.options('network'):
-            nemoa.log('warning', 
+            nemoa.log('warning',
                 "file '" + file + "' does not contain parameter 'layers'!")
             return None
         else:
@@ -1022,13 +1017,13 @@ class networkConfigFileImporter:
         for layer in config['layer']:
             layerSec = 'layer ' + layer
             if not layerSec in netcfg.sections():
-                nemoa.log('warning', 
+                nemoa.log('warning',
                     "file '" + file + "' does not contain information about layer '" + layer + "'!")
                 return None
 
             # get 'type' of layer ('visible', 'hidden')
             if not 'type' in netcfg.options(layerSec):
-                nemoa.log('warning', 
+                nemoa.log('warning',
                     "type of layer '" + layer + "' has to be specified ('visible', 'hidden')!")
                 return None
             if netcfg.get(layerSec, 'type').lower() in ['visible']:
@@ -1036,7 +1031,7 @@ class networkConfigFileImporter:
             elif netcfg.get(layerSec, 'type').lower() in ['hidden']:
                 config['hidden'].append(layer)
             else:
-                nemoa.log('warning', 
+                nemoa.log('warning',
                     "unknown type of layer '" + layer + "'!")
                 return None
 
@@ -1052,11 +1047,11 @@ class networkConfigFileImporter:
                     nemoa.log('error', """
                         listfile '%s' does not exists!""" % (listFile))
                     return None
-                with open(listFile, 'r') as listFile: 
+                with open(listFile, 'r') as listFile:
                     fileLines = listFile.readlines()
                 nodeList = [node.strip() for node in fileLines]
             else:
-                nemoa.log('warning', 
+                nemoa.log('warning',
                     "layer '" + layer + "' does not contain node information!")
                 return None
 
@@ -1070,11 +1065,11 @@ class networkConfigFileImporter:
 
         # check network layers
         if config['visible'] == []:
-            nemoa.log('warning', 
+            nemoa.log('warning',
                 "network file '" + config['file'] + "' does not contain visible layers!")
             return None
         if config['hidden'] == []:
-            nemoa.log('warning', 
+            nemoa.log('warning',
                 "network file '" + config['file'] + "' does not contain hidden layers!")
             return None
 
@@ -1086,7 +1081,7 @@ class networkConfigFileImporter:
             edgeType = layerA + '-' + layerB
             config['edges'][edgeType] = []
             edgeSec = 'binding ' + edgeType
-            
+
             # create full binfing between two layers if not specified
             if not edgeSec in netcfg.sections():
                 for nodeA in config['nodes'][layerA]:
@@ -1114,7 +1109,7 @@ class networkConfigFileImporter:
             layerB = config['layer'][i + 1]
 
             edgeType = layerA + '-' + layerB
-            if config['edges'][edgeType] == []: return nemoa.log('warning', 
+            if config['edges'][edgeType] == []: return nemoa.log('warning',
                 "layer '%s' and layer '%s' are not connected!" % (layerA, layerB))
 
         return network

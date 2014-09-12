@@ -22,10 +22,11 @@ class workspace:
     def list(self, type = None, namespace = None):
         """Return a list of known objects."""
         list = nemoa.workspace.list(type = type, namespace = self.name())
-        if not type: listOfNames = ["%s (%s)" % (item[2], item[1]) for item in list]
-        elif type in ['model']: listOfNames = list
-        else: listOfNames = [item[2] for item in list]
-        return listOfNames
+        if not type: names = \
+            ['%s (%s)' % (item[2], item[1]) for item in list]
+        elif type in ['model']: names = list
+        else: names = [item[2] for item in list]
+        return names
 
     def execute(self, name = None, **kwargs):
         """Execute nemoa script."""

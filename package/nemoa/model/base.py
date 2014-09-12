@@ -539,7 +539,8 @@ class model:
 
         # get filename
         if file == None:
-            fileName = '%s.mp' % (self.name())
+            fileExt  = 'nmm'
+            fileName = '%s.%s' % (self.name(), fileExt)
             filePath = nemoa.workspace.path('models')
             file = filePath + fileName
         file = nemoa.common.getEmptyFile(file)
@@ -548,7 +549,8 @@ class model:
         nemoa.common.dictToFile(self._get(), file)
 
         # create console message
-        nemoa.log("save model as: '%s'" % (os.path.basename(file)[:-3]))
+        nemoa.log("save model as: '%s'" %
+            (os.path.basename(file)[:-(len(fileExt) + 1)]))
 
         nemoa.setLog(indent = '-1')
         return file
