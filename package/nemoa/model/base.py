@@ -679,7 +679,7 @@ class model:
                             if len(args) > 3: relClass = args[3]
                             else: relClass = relation['show']
                             cfg = nemoa.common.dictMerge(params, {
-                                'package': 'relation',
+                                'package': 'system',
                                 'class': relClass,
                                 'params': {'relation': args[0]},
                                 'description': relation['description'],
@@ -690,7 +690,7 @@ class model:
                     if len(args) > 1: relClass = args[1]
                     else: relClass = relation['show']
                     cfg = nemoa.common.dictMerge(params, {
-                        'package': 'relation',
+                        'package': 'system',
                         'class': relClass,
                         'params': {'relation': args[0]},
                         'description': relation['description'],
