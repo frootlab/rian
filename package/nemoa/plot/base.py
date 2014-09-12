@@ -10,9 +10,9 @@ class plot:
     defaults = None
 
     def __init__(self, config = None):
-        self.setConfig(config)
+        self._setConfig(config)
 
-    def setConfig(self, config):
+    def _setConfig(self, config):
         """Initialize plot configuration with dictionary."""
 
         self.cfg = {}
@@ -24,7 +24,7 @@ class plot:
 
         # append / overwrite settings with default settings
         self.settings = self._default()
-        for key, value in self.getDefaults().items():
+        for key, value in self._settings().items():
             self.settings[key] = value
 
         # set configured settings
@@ -42,10 +42,10 @@ class plot:
         'fileformat': 'pdf',
         'dpi': 300,
         'output': 'file',
-        'show_figure_caption': True }
-
-    def getDefaults(self):
-        return {}
+        'showTitle': True,
+        'title': None,
+        'backgroundColor': 'none',
+    }
 
     def create(self, model, file = None):
 
@@ -56,7 +56,13 @@ class plot:
         matplotlib.pyplot.close("all")
 
         # update configuration, depending on object type
-        if self.settings['path'] == ('system', 'relations'):
+        if self.settings['path'][0] == 'dataset':
+            if self.settings['showTitle']: self.settings['title'] = \
+                model.dataset.name().title()
+        elif list(self.settings['path'])[0] == 'network':
+            if self.settings['showTitle']: self.settings['title'] = \
+                model.dataset.name().title()
+        elif list(self.settings['path'])[0] == 'system':
 
             # assert units
             mapping = model.system.getMapping()
@@ -70,18 +76,19 @@ class plot:
             # get information about relation
             relation = model.about('system', 'relations',
                 nemoa.common.strSplitParams(self.settings['relation'])[0])
-            if self.settings['graphCaption']: self.settings['title'] = \
+            if self.settings['showTitle']: self.settings['title'] = \
                 relation['name'].title()
 
         # create plot
         if self._create(model):
 
-            # draw title
-            if 'title' in self.settings \
-                and isinstance(self.settings['title'], str):
-                title = self.settings['title']
-            else: title = self._getTitle(model)
-            matplotlib.pyplot.title(title, fontsize = 11.0)
+            # (optional) draw title
+            if self.settings['showTitle']:
+                if 'title' in self.settings \
+                    and isinstance(self.settings['title'], str):
+                    title = self.settings['title']
+                else: title = self._getTitle(model)
+                matplotlib.pyplot.title(title, fontsize = 11.0)
 
             # output
             if file: matplotlib.pyplot.savefig(file,

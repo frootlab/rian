@@ -5,18 +5,14 @@ import nemoa.plot.base, matplotlib, matplotlib.pyplot
 
 class scatterplot(nemoa.plot.base.plot):
 
-    def getSettings(self):
-        return {
-            'output': 'file',
-            'fileformat': 'pdf',
-            'dpi': 600,
-            'show_figure_caption': True,
-            'bins': 120,
-            'facecolor': 'lightgrey',
-            'edgecolor': 'black',
-            'histtype': 'bar',
-            'linewidth': 0.5
-        }
+    def _settings(self): return {
+        'path': tuple(),
+        'bins': 120,
+        'facecolor': 'lightgrey',
+        'edgecolor': 'black',
+        'histtype': 'bar',
+        'linewidth': 0.5
+    }
 
     def create(self, model, file = None):
 
@@ -36,13 +32,11 @@ class scatterplot(nemoa.plot.base.plot):
             edgecolor = self.settings['edgecolor'])
 
         # draw figure title / caption
-        if self.settings['show_figure_caption']:
+        if self.settings['showTitle']:
 
             # draw title
-            if 'title' in self.settings:
-                title = self.settings['title']
-            else:
-                title = self.getTitle(model)
+            if 'title' in self.settings: title = self.settings['title']
+            else: title = self.getTitle(model)
 
             matplotlib.pyplot.title(title, fontsize = 11)
 
@@ -99,15 +93,6 @@ class scatterplot(nemoa.plot.base.plot):
     def getTitle(self, model):
         return "Data distribution of '" + model.dataset.cfg['name'] + "'"
 
-class dataHistogram(histogram):
-
-    def getDefaults(self):
-        return {'statistics': 10000}
-    def getData(self, model):
-        return model.dataset.getData(self.settings['statistics']).flatten()
-    def getTitle(self, model):
-        return "Data distribution of '" + model.dataset.cfg['name'] + "'"
-
 #class sampleRelation(histogram):
 
     #def getDefaults(self):
@@ -158,7 +143,7 @@ class dataHistogram(histogram):
             #statistics = self.settings['statistics']).flatten()
 
         #return data
-    
+
     #def getTitle(self, model):
         #return "Distribution of unit " + self.settings['relation']
-    
+

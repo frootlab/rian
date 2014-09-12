@@ -8,12 +8,8 @@ import matplotlib, matplotlib.pyplot
 class graph(nemoa.plot.base.plot):
 
     @staticmethod
-    def _default(): return {
-        'output': 'file',
-        'fileformat': 'pdf',
+    def _settings(): return {
         'path': ('system', 'relations'),
-        'dpi': 300,
-        'backgroundColor': 'none',
         'graphCaption': True,
         'units': (None, None),
         'relation': 'correlation',
@@ -26,7 +22,8 @@ class graph(nemoa.plot.base.plot):
         'filter': None,
         'cutoff': 0.5,
         'nodeCaption': 'accuracy',
-        'layout': 'spring'}
+        'layout': 'spring',
+    }
 
     def _create(self, model):
 
@@ -143,13 +140,8 @@ class graph(nemoa.plot.base.plot):
 class heatmap(nemoa.plot.base.plot):
 
     @staticmethod
-    def _default(): return {
-        'output': 'file',
-        'fileformat': 'pdf',
+    def _settings(): return {
         'path': ('system', 'relations'),
-        'dpi': 300,
-        'backgroundColor': 'none',
-        'graphCaption': True,
         'units': (None, None),
         'relation': 'correlation',
         'preprocessing': None,
@@ -177,12 +169,8 @@ class heatmap(nemoa.plot.base.plot):
 class histogram(nemoa.plot.base.plot):
 
     @staticmethod
-    def _default(): return {
-        'output': 'file',
-        'fileformat': 'pdf',
+    def _settings(): return {
         'path': ('system', 'relations'),
-        'dpi': 300,
-        'backgroundColor': 'none',
         'graphCaption': True,
         'units': (None, None),
         'relation': 'correlation',

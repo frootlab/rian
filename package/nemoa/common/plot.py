@@ -7,6 +7,19 @@ from matplotlib.patches import FancyArrowPatch, Circle
 
 # create A4 figure object figsize = (8.27, 11.69)
 
+def _color(color):
+    return {
+        'black':      (0.000, 0.000, 0.000, 1.000),
+        'white':      (1.000, 1.000, 1.000, 1.000),
+        'red':        (1.000, 0.000, 0.000, 1.000),
+        'green':      (0.000, 0.500, 0.000, 1.000),
+        'blue':       (0.000, 0.000, 0.700, 1.000),
+        'lightgrey':  (0.800, 0.800, 0.800, 1.000),
+        'lightgreen': (0.600, 0.800, 0.196, 1.000),
+        'lightblue':  (0.439, 0.502, 0.565, 1.000),
+        'cornflower': (0.270, 0.510, 0.700, 1.000),
+    }[color]
+
 def heatmap(array, **kwargs):
 
     # create figure object
@@ -94,16 +107,6 @@ def graph(graph, **kwargs):
         # warning unknown layout -> using spring
         pos = networkx.spring_layout(graph)
 
-    # colors
-    colors = {
-        'black': (0.0, 0.0, 0.0, 1.0),
-        'white': (1.0, 1.0, 1.0, 1.0),
-        'red':   (1.0, 0.0, 0.0, 1.0),
-        'green': (0.0, 0.5, 0.0, 1.0),
-        'blue':  (0.0, 0.0, 0.7, 1.0),
-        'lightgreen': (0.600, 0.800, 0.196, 0.7),
-        'lightblue': (0.439, 0.502, 0.565, 0.7) }
-
     # calculate sizes of nodes, fonts and lines depending on graph size
     nCount = float(len(graph))
     nSize = max(nodeSizeMax, nodeSizeScale * nodeSizeMax / nCount)
@@ -125,8 +128,8 @@ def graph(graph, **kwargs):
         nodeFontSize = nodeFontSizeMax / numpy.sqrt(lenLabel)
 
         # set backcolor (depending on type) and facecolor
-        backcolor = colors[attr['color']]
-        facecolor = colors['black']
+        backcolor = _color(attr['color'])
+        facecolor = _color('black')
 
         # draw node and node label
         networkx.draw_networkx_nodes(graph, pos,
@@ -153,7 +156,7 @@ def graph(graph, **kwargs):
         n2  = graph.node[v]['patch']
         rad = edgeRadius
         linewidth = edgeLineWidth * attr['weight']
-        linecolor = list(colors[attr['color']])
+        linecolor = list(_color(attr['color']))
 
         if (u, v) in seen:
             rad = seen.get((u, v))
@@ -208,10 +211,11 @@ def layerGraph(G, **kwargs):
     # calculate sizes
     nLen  = max([len(layer) for layer in nodes])
     lLen  = len(nodes)
-    scale = min(250.0 / nLen, 150.0 / lLen, 30.0)
-    graphNodeSize  = 0.9 * scale ** 2
-    graphFontSize  = 0.4 * scale
-    graphLineWidth = 0.3
+    scale = min(240.0 / nLen, 150.0 / lLen, 35.0)
+    graphNodeSize   = 0.9 * scale ** 2
+    graphFontSize   = 0.4 * scale
+    graphCaptionPos = -0.0025 * scale
+    graphLineWidth  = 0.3
 
     # calculate node positions for layer graph layout
     pos = {}
@@ -223,7 +227,7 @@ def layerGraph(G, **kwargs):
             pos[node] = {'down': (nPos, lPos),
                 'up': (nPos, 1.0 - lPos), 'left': (lPos, nPos),
                 'right': (1.0 - lPos, nPos)}[kwargs['graphDirection']]
-            posCap[node] = (pos[node][0], pos[node][1] - 0.0025 * scale)
+            posCap[node] = (pos[node][0], pos[node][1] + graphCaptionPos)
 
     # create figure and axis objects
     fig = matplotlib.pyplot.figure()
@@ -244,17 +248,12 @@ def layerGraph(G, **kwargs):
             label = nemoa.common.strToUnitStr(labelStr)
 
             color = {
-                True: {
-                    'bg':   (0.27, 0.51, 0.70, 1.0),
-                    'font': (0.0, 0.0, 0.0, 1.0) },
-                False: {
-                    'bg':   (0.8, 0.8, 0.8, 1.0),
-                    'font': (0.0, 0.0, 0.0, 1.0) }
+                True: {'bg': _color('cornflower'), 'font': _color('black') },
+                False: {'bg': _color('lightgrey'), 'font': _color('black') }
             }[isVisible]
 
             # draw node
-            networkx.draw_networkx_nodes(
-                G, pos,
+            networkx.draw_networkx_nodes(G, pos,
                 node_size  = graphNodeSize,
                 linewidths = graphLineWidth,
                 nodelist   = [node],
@@ -279,7 +278,7 @@ def layerGraph(G, **kwargs):
                     labels = {node: G.node[node]['caption']},
                     font_weight = 'normal')
 
-    # draw labeled edges
+    # draw edges
     for (v, h) in G.edges():
 
         # get weight
@@ -302,18 +301,17 @@ def layerGraph(G, **kwargs):
             arrows     = False,
             alpha      = 1.0)
 
-        # draw edge labels
-        if not kwargs['edgeCaption']: continue
-        size = graphFontSize / 1.5
-        label = ' $' + ('%.2g' % (numpy.abs(weight))) + '$'
-        networkx.draw_networkx_edge_labels(G, pos,
-            edge_labels = {(v, h): label},
-            font_color  = color,
-            clip_on     = False,
-            font_size   = size,
-            font_weight = 'normal')
+        # (optional) draw edge labels
+        if kwargs['edgeCaption']:
+            if 'caption' in G.edge[v][h]:
+                networkx.draw_networkx_edge_labels(G, pos,
+                    edge_labels = {(v, h): G.edge[v][h]['caption']},
+                    font_color  = color,
+                    clip_on     = False,
+                    font_size   = graphFontSize / 1.5,
+                    font_weight = 'normal')
 
-    # draw caption
+    # draw graph caption
     if kwargs['graphCaption'] and 'caption' in G.graph:
         matplotlib.pyplot.figtext(.5, .11,
             G.graph['caption'], fontsize = 9, ha = 'center')

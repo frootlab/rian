@@ -34,7 +34,6 @@ class mpAnalyse:
         default = {
             'fileformat': 'pdf',
             'dpi': 600,
-            'show_figure_caption': False,
             'output': 'file'
         }
 

@@ -7,14 +7,8 @@ import numpy, networkx
 class graph(nemoa.plot.base.plot):
 
     @staticmethod
-    def _default(): return {
-        'output':     'file',
-        'fileformat': 'pdf',
-        'path': ('system'),
-        'dpi': 300,
-        'showTitle': True,
-        'title': None,
-        'backgroundColor': 'none',
+    def _settings(): return {
+        'path': ('network', ),
         'graphCaption': True,
         'graphDirection': 'right',
         'nodeCaption': 'accuracy',
@@ -76,5 +70,11 @@ class graph(nemoa.plot.base.plot):
             if signSum < 0:
                 for (n1, n2) in graph.edges():
                     graph.edge[n1][n2]['weight'] *= -1.0
+
+        # (optional) create edge captions
+        if self.settings['edgeCaption']:
+            for (v, h) in graph.edges():
+                graph.edge[v][h]['caption'] = \
+                    ' $' + ('%.2g' % (graph.edge[v][h]['weight'])) + '$'
 
         return nemoa.common.plot.layerGraph(graph, **self.settings)

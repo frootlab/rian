@@ -6,13 +6,8 @@ import nemoa, nemoa.plot.base, numpy
 class histogram(nemoa.plot.base.plot):
 
     @staticmethod
-    def _default(): return {
-        'output': 'file',
-        'fileformat': 'pdf',
-        'path': ('dataset'),
-        'dpi': 300,
-        'backgroundColor': 'none',
-        'graphCaption': True,
+    def _settings(): return {
+        'path': ('dataset', ),
         'units': (None, None),
         'transform': None,
         'statistics': 10000,
@@ -24,10 +19,6 @@ class histogram(nemoa.plot.base.plot):
         'linewidth': 0.5 }
 
     def _create(self, model):
-
-        # set title of plot
-        if self.settings['graphCaption']: self.settings['title'] = \
-            'Distribution'
 
         # create data (numpy 1-d array)
         data = numpy.hstack(model.getData(
