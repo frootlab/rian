@@ -20,13 +20,15 @@ class graph(nemoa.plot.base.plot):
         'nodeCaption': 'accuracy',
         'nodeSort': True,
         'edgeWeight': 'normal',
+        'edgeSignNormalize': True,
         'edgeIntensify': 10.0,
         'edgeThreshold': 0.25,
         'edgeCaption': False,
-        'edgeScale': 1.0 }
+        'edgeScale': 1.5 }
 
     def _create(self, model):
 
+        # copy graph from system structure of model
         graph = model.network.graph.copy()
 
         # (optional) create node captions
@@ -49,6 +51,7 @@ class graph(nemoa.plot.base.plot):
                     + '\%}$'
                 graph.graph['caption'] = caption
 
+        # update edge weights
         for (n1, n2) in graph.edges():
             graph.edge[n1][n2]['weight'] = \
                 graph.edge[n1][n2]['params'][self.settings['edgeWeight']]
@@ -65,5 +68,13 @@ class graph(nemoa.plot.base.plot):
                 if not numpy.abs(graph.edge[n1][n2]['weight']) \
                     > self.settings['edgeThreshold']:
                     graph.remove_edge(n1, n2)
+
+        # (optional) normalize edge signs
+        if self.settings['edgeSignNormalize']:
+            signSum = sum([numpy.sign(graph.edge[n1][n2]['weight'])
+                for (n1, n2) in graph.edges()])
+            if signSum < 0:
+                for (n1, n2) in graph.edges():
+                    graph.edge[n1][n2]['weight'] *= -1.0
 
         return nemoa.common.plot.layerGraph(graph, **self.settings)

@@ -32,7 +32,7 @@ class workspace:
         scriptName = name if '.' in name else '%s.%s' % (self.name(), name)
         config = nemoa.workspace.getConfig(
             type = 'script', config = scriptName, **kwargs)
-        
+
         if not config and not '.' in name:
             scriptName = 'base.' + name
             config = nemoa.workspace.getConfig(
@@ -141,7 +141,7 @@ class workspace:
         # create dataset instance (if not given)
         if not nemoa.type.isDataset(dataset): dataset = \
             self.__getInstance(type = 'dataset', config = dataset)
-        if not nemoa.type.isDataset(dataset): 
+        if not nemoa.type.isDataset(dataset):
             nemoa.log('error',
                 'could not create model instance: dataset is invalid!')
             nemoa.setLog(indent = '-1')
@@ -151,7 +151,7 @@ class workspace:
         if network == None: network = {'type': 'auto'}
         if not nemoa.type.isNetwork(network): network = \
             self.__getInstance(type = 'network', config = network)
-        if not nemoa.type.isNetwork(network): 
+        if not nemoa.type.isNetwork(network):
             nemoa.log('error',
                 'could not create model instance: network is invalid!')
             nemoa.setLog(indent = '-1')
@@ -187,8 +187,8 @@ class workspace:
         # check file
         if not os.path.exists(file):
             if os.path.exists(
-                nemoa.workspace.path('models') + file + '.mp'):
-                file = nemoa.workspace.path('models') + file + '.mp'
+                nemoa.workspace.path('models') + file + '.nmm'):
+                file = nemoa.workspace.path('models') + file + '.nmm'
             else: return nemoa.log('error', """
                 could not load model '%s':
                 file does not exist.""" % file)
@@ -205,7 +205,7 @@ class workspace:
             system  = modelDict['system']['config'])
 
         if nemoa.type.isModel(model): model._set(modelDict)
-        else: return None 
+        else: return None
 
         nemoa.setLog(indent = '-1')
         return model
