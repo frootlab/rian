@@ -122,7 +122,6 @@ class rbm(nemoa.system.ann.ann):
         """Optimize system parameters."""
 
         cfg = self._config['optimize']
-        algorithm = cfg['algorithm'].lower()
 
         if cfg['modVmraEnable']: nemoa.log('note', """
             using variance maximizing rate adaption
@@ -138,42 +137,12 @@ class rbm(nemoa.system.ann.ann):
             noise model '%s (%.2f)'""" % (
             cfg['modCorruptionType'], cfg['modCorruptionFactor']))
 
-        if algorithm == 'cd':
-            return self.optimizeCd(dataset, schedule, inspector)
-        elif algorithm == 'cdk':
-            return self.optimizeCdk(dataset, schedule, inspector)
-        elif algorithm == 'vrcd':
-            return self.optimizeVrcd(dataset, schedule, inspector)
-        elif algorithm == 'vrcdk':
-            return self.optimizeVrcdk(dataset, schedule, inspector)
+        if cfg['algorithm'].lower() == 'cd': return \
+            self._optCD(dataset, schedule, inspector)
         return nemoa.log('error', """could not optimize model:
             unknown optimization algorithm '%s'""" % (algorithm))
 
-    def optimizeCdk(self, dataset, schedule, inspector):
-        """Optimize system parameters."""
-
-        cfg  = self._config['optimize']
-        k = cfg['updateCdkSteps']
-        m = cfg['updateCdkIterations']
-
-        # for each update step (epoch)
-        for epoch in xrange(cfg['updates']):
-
-            # get data (sample from minibatches)
-            if epoch % cfg['minibatchInterval'] == 0: data = \
-                self._optGetData(dataset)
-            # get system estimations (model)
-            dTuple = self.getCdkSamples(data)
-            # Update system params
-            self._updateParams(*dTuple)
-            # Trigger inspector (getch, calc inspect function etc)
-            event = inspector.trigger()
-            if event:
-                if event == 'abort': break
-
-        return True
-
-    def optimizeCd(self, dataset, schedule, inspector):
+    def _optCD(self, dataset, schedule, inspector):
         """Optimize system parameters."""
 
         cfg  = self._config['optimize']
@@ -185,9 +154,14 @@ class rbm(nemoa.system.ann.ann):
             if epoch % cfg['minibatchInterval'] == 0: data = \
                 self._optGetData(dataset)
             # get system estimations (model)
-            dTuple = self.getCdSamples(data)
+            dTuple = self._optCDGetSamples(data)
+            # adapt update rate
+            if cfg['modVmraEnable']:
+                if epoch % cfg['modVmraInterval'] == 0 \
+                    and epoch > cfg['modVmraWait']:
+                    self._optVmraUpdate(inspector)
             # Update system params
-            self._updateParams(*dTuple)
+            self._optCDUpdate(*dTuple)
             # Trigger inspector (getch, calc inspect function etc)
             event = inspector.trigger()
             if event:
@@ -217,153 +191,100 @@ class rbm(nemoa.system.ann.ann):
         inspector.writeToStore(wVar = wVar)
         return True
 
-    def optimizeVrcd(self, dataset, schedule, inspector):
-        """Optimize parameters using variance resiliant constrastive divergency."""
+    #def optimizeVrcd(self, dataset, schedule, inspector):
+        #"""Optimize parameters using variance resiliant constrastive divergency."""
 
-        cfg  = self._config['optimize']
+        #cfg  = self._config['optimize']
 
-        # for each update step (epoch)
-        for epoch in xrange(cfg['updates']):
+        ## for each update step (epoch)
+        #for epoch in xrange(cfg['updates']):
 
-            # get data (sample from minibatches)
-            if epoch % cfg['minibatchInterval'] == 0: data = \
-                self._optGetData(dataset)
-            # get system estimations (model)
-            dTuple = self.getCdSamples(data)
-            # adapt update rate
-            if cfg['modVmraEnable']:
-                if epoch % cfg['modVmraInterval'] == 0 \
-                    and epoch > cfg['modVmraWait']:
-                    self._optVmraUpdate(inspector)
+            ## get data (sample from minibatches)
+            #if epoch % cfg['minibatchInterval'] == 0: data = \
+                #self._optGetData(dataset)
+            ## get system estimations (model)
+            #dTuple = self.getCdSamples(data)
+            ## adapt update rate
+            #if cfg['modVmraEnable']:
+                #if epoch % cfg['modVmraInterval'] == 0 \
+                    #and epoch > cfg['modVmraWait']:
+                    #self._optVmraUpdate(inspector)
 
-            # Update system params
-            self._updateParams(*dTuple)
-            # Trigger inspector (getch, calc inspect function etc)
-            event = inspector.trigger()
-            if event:
-                if event == 'abort': break
+            ## Update system params
+            #self._optCDUpdate(*dTuple)
+            ## Trigger inspector (getch, calc inspect function etc)
+            #event = inspector.trigger()
+            #if event:
+                #if event == 'abort': break
 
-        return True
+        #return True
 
-    def optimizeVrcdk(self, dataset, schedule, inspector):
-        """Optimize parameters using variance resiliant constrastive divergency."""
+    #def optimizeVrcdk(self, dataset, schedule, inspector):
+        #"""Optimize parameters using variance resiliant constrastive divergency."""
 
-        cfg  = self._config['optimize']
+        #cfg  = self._config['optimize']
 
-        k = cfg['updateCdkSteps']
-        m = cfg['updateCdkIterations']
+        #k = cfg['updateCdkSteps']
+        #m = cfg['updateCdkIterations']
 
-        # initialise store with weight variance
-        wVar = numpy.array([numpy.var(
-            self._params['links'][(0, 1)]['W'])])
-        inspector.writeToStore(wVar = wVar)
+        ## initialise store with weight variance
+        #wVar = numpy.array([numpy.var(
+            #self._params['links'][(0, 1)]['W'])])
+        #inspector.writeToStore(wVar = wVar)
 
-        lenght = cfg['modVmraLength']
-        A = numpy.array([numpy.arange(0, lenght), numpy.ones(lenght)])
+        #lenght = cfg['modVmraLength']
+        #A = numpy.array([numpy.arange(0, lenght), numpy.ones(lenght)])
 
-        # initialise update rate
-        cfg['updateRate'] = cfg['modVmraInit']
+        ## initialise update rate
+        #cfg['updateRate'] = cfg['modVmraInit']
 
-        # for each update step (epoch)
-        for epoch in xrange(cfg['updates']):
+        ## for each update step (epoch)
+        #for epoch in xrange(cfg['updates']):
 
-            # get data (sample from minibatches)
-            if epoch % cfg['minibatchInterval'] == 0: data = \
-                self._optGetData(dataset)
+            ## get data (sample from minibatches)
+            #if epoch % cfg['minibatchInterval'] == 0: data = \
+                #self._optGetData(dataset)
 
-            # get system estimations (model)
-            dTuple = self.getCdkSamples(data)
+            ## get system estimations (model)
+            #dTuple = self._optCDGetSamples(data)
 
-            # adapt update rate
-            if epoch % cfg['modVmraInterval'] == 0 \
-                and epoch > cfg['modVmraWait'] - lenght:
-                wVar = numpy.append([numpy.var(
-                    self._params['links'][(0, 1)]['W'])],
-                    inspector.readFromStore()['wVar'])
-                if wVar.shape[0] > lenght:
-                    wVar = wVar[:lenght]
-                    grad = numpy.linalg.lstsq(A.T, wVar)[0][0]
-                    delw = cfg['modVmraFactor'] * numpy.abs(grad)
-                    cfg['updateRate'] = numpy.max(delw, cfg['modVmraMinRate'])
+            ## adapt update rate
+            #if epoch % cfg['modVmraInterval'] == 0 \
+                #and epoch > cfg['modVmraWait'] - lenght:
+                #wVar = numpy.append([numpy.var(
+                    #self._params['links'][(0, 1)]['W'])],
+                    #inspector.readFromStore()['wVar'])
+                #if wVar.shape[0] > lenght:
+                    #wVar = wVar[:lenght]
+                    #grad = numpy.linalg.lstsq(A.T, wVar)[0][0]
+                    #delw = cfg['modVmraFactor'] * numpy.abs(grad)
+                    #cfg['updateRate'] = numpy.max(delw, cfg['modVmraMinRate'])
 
-                inspector.writeToStore(wVar = wVar)
+                #inspector.writeToStore(wVar = wVar)
 
-            # Update system params
-            self._updateParams(*dTuple)
+            ## Update system params
+            #self._optCDUpdate(*dTuple)
 
-            # Trigger inspector (getch, calc inspect function etc)
-            event = inspector.trigger()
-            if event:
-                if event == 'abort': break
+            ## Trigger inspector (getch, calc inspect function etc)
+            #event = inspector.trigger()
+            #if event:
+                #if event == 'abort': break
 
-        return True
-
-    def optimizeRcdk(self, dataset, schedule, inspector):
-        """Optimize parameters using resiliant k step constrastive divergency."""
-
-        cfg  = self._config['optimize']
-
-        k = cfg['updateCdkSteps']
-        m = cfg['updateCdkIterations']
-
-        # initialise store with weight variance
-        W = self._params['links'][(0, 1)]['W']
-        wVar = numpy.array([numpy.var(W)])
-        inspector.writeToStore(wVar = wVar)
-
-        lenght = cfg['modVmraLength']
-        A = numpy.array([numpy.arange(0, lenght), numpy.ones(lenght)])
-
-        # initialise update rate
-        cfg['updateRate'] = cfg['modVmraInit']
-
-        # for each update step (epoch)
-        for epoch in xrange(cfg['updates']):
-
-            # get data (sample from minibatches)
-            if epoch % cfg['minibatchInterval'] == 0: data = \
-                self._optGetData(dataset)
-
-            # get system estimations (model)
-            dTuple = self.getCdkSamples(data)
-
-            # adapt update rate
-            if epoch % cfg['modVmraInterval'] == 0 \
-                and epoch > cfg['modVmraWait'] - lenght:
-                wVar = numpy.append([numpy.var(
-                    self._params['links'][(0, 1)]['W'])],
-                    inspector.readFromStore()['wVar'])
-                if wVar.shape[0] > lenght:
-                    wVar = wVar[:lenght]
-                    grad = numpy.linalg.lstsq(A.T, wVar)[0][0]
-                    delw = cfg['modVmraFactor'] * numpy.abs(grad)
-                    cfg['updateRate'] = numpy.max(delw, cfg['modVmraMinRate'])
-
-                inspector.writeToStore(wVar = wVar)
-
-            # Update system params
-            self._updateParams(*dTuple)
-
-            # Trigger inspector (getch, calc inspect function etc)
-            event = inspector.trigger()
-            if event:
-                if event == 'abort': break
-
-        return True
+        #return True
 
     ####################################################################
     # Contrastive Divergency                                           #
     ####################################################################
 
-    def getCdSamples(self, data):
-        """Return reconstructed data using 1-step contrastive divergency sampling (CD-1)."""
-        hData  = self.evalUnitExpect(data, ('visible', 'hidden'))
-        vModel = self.evalUnitSamples(hData, ('hidden', 'visible'),
-            expectLast = True)
-        hModel = self.evalUnitExpect(vModel, ('visible', 'hidden'))
-        return data, hData, vModel, hModel
+    #def getCdSamples(self, data):
+        #"""Return reconstructed data using 1-step contrastive divergency sampling (CD-1)."""
+        #hData  = self.evalUnitExpect(data, ('visible', 'hidden'))
+        #vModel = self.evalUnitSamples(hData, ('hidden', 'visible'),
+            #expectLast = True)
+        #hModel = self.evalUnitExpect(vModel, ('visible', 'hidden'))
+        #return data, hData, vModel, hModel
 
-    def getCdkSamples(self, data):
+    def _optCDGetSamples(self, data):
         """Return mean value of reconstructed data using k-step contrastive divergency sampling (CD-k).
 
         Options:
@@ -375,7 +296,13 @@ class rbm(nemoa.system.ann.ann):
         k = cfg['updateCdkSteps']
         m = cfg['updateCdkIterations']
 
-        hData  = self.getUnitExpect(data, ('visible', 'hidden'))
+        hData  = self.evalUnitExpect(data, ('visible', 'hidden'))
+        if k == 1 and m == 1:
+            vModel = self.evalUnitSamples(hData, ('hidden', 'visible'),
+                expectLast = True)
+            hModel = self.evalUnitExpect(vModel, ('visible', 'hidden'))
+            return data, hData, vModel, hModel
+
         vModel = numpy.zeros(shape = data.shape)
         hModel = numpy.zeros(shape = hData.shape)
         for i in range(m):
@@ -400,7 +327,7 @@ class rbm(nemoa.system.ann.ann):
 
         return data, hData, vModel, hModel
 
-    def _updateParams(self, *dTuple):
+    def _optCDUpdate(self, *dTuple):
         """Update system parameters using reconstructed and sampling data."""
 
         cfg = self._config['optimize']
