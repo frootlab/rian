@@ -55,8 +55,9 @@ class rbm(nemoa.system.ann.ann):
             'modKlpExpect': 0.5,
             'selectivityFactor': 0.0,
             'selectivitySize': 0.5,
-            'corruptionType': None,
-            'corruptionFactor': 0.5,
+            'modCorruptionEnable': True,
+            'modCorruptionType': 'mask',
+            'modCorruptionFactor': 0.5,
             'useAdjacency': False,
             'inspect': True,
             'inspectFunction': 'accuracy',
@@ -129,11 +130,10 @@ class rbm(nemoa.system.ann.ann):
         if cfg['selectivityFactor'] > 0.0: nemoa.log('note', """
             using l2-norm penalty term for selective coding
             with expectation value %.2f""" % (cfg['selectivitySize']))
-        if isinstance(cfg['corruptionType'], str) \
-            and not cfg['corruptionType'].lower() == 'none': nemoa.log(
+        if cfg['modCorruptionEnable']: nemoa.log(
             'note', """using data corruption for denoising with
             noise model '%s (%.2f)'""" % (
-            cfg['corruptionType'], cfg['corruptionFactor']))
+            cfg['modCorruptionType'], cfg['modCorruptionFactor']))
 
         if algorithm == 'cd':
             return self.optimizeCd(dataset, schedule, inspector)
@@ -150,8 +150,6 @@ class rbm(nemoa.system.ann.ann):
         """Optimize system parameters."""
 
         cfg  = self._config['optimize']
-        corr = (cfg['corruptionType'], cfg['corruptionFactor'])
-        size = cfg['minibatchSize']
         k = cfg['updateCdkSteps']
         m = cfg['updateCdkIterations']
 
@@ -160,7 +158,7 @@ class rbm(nemoa.system.ann.ann):
 
             # get data (sample from minibatches)
             if epoch % cfg['minibatchInterval'] == 0: data = \
-                dataset.getData(size = size, corruption = corr)
+                self._optGetData(dataset)
             # get system estimations (model)
             dTuple = self.getCdkSamples(data)
             # Update system params
@@ -176,15 +174,13 @@ class rbm(nemoa.system.ann.ann):
         """Optimize system parameters."""
 
         cfg  = self._config['optimize']
-        corr = (cfg['corruptionType'], cfg['corruptionFactor'])
-        size = cfg['minibatchSize']
 
         # for each update step (epoch)
         for epoch in xrange(cfg['updates']):
 
             # get data (sample from minibatches)
             if epoch % cfg['minibatchInterval'] == 0: data = \
-                dataset.getData(size = size, corruption = corr)
+                self._optGetData(dataset)
             # get system estimations (model)
             dTuple = self.getCdSamples(data)
             # Update system params
@@ -200,8 +196,6 @@ class rbm(nemoa.system.ann.ann):
         """Optimize parameters using variance resiliant constrastive divergency."""
 
         cfg  = self._config['optimize']
-        corr = (cfg['corruptionType'], cfg['corruptionFactor'])
-        size = cfg['minibatchSize']
 
         # initialise store with weight variance
         wVar = numpy.array([numpy.var(
@@ -219,7 +213,7 @@ class rbm(nemoa.system.ann.ann):
 
             # get data (sample from minibatches)
             if epoch % cfg['minibatchInterval'] == 0: data = \
-                dataset.getData(size = size, corruption = corr)
+                self._optGetData(dataset)
 
             # get system estimations (model)
             dTuple = self.getCdSamples(data)
@@ -255,8 +249,6 @@ class rbm(nemoa.system.ann.ann):
         """Optimize parameters using variance resiliant constrastive divergency."""
 
         cfg  = self._config['optimize']
-        corr = (cfg['corruptionType'], cfg['corruptionFactor'])
-        size = cfg['minibatchSize']
 
         k = cfg['updateCdkSteps']
         m = cfg['updateCdkIterations']
@@ -277,7 +269,7 @@ class rbm(nemoa.system.ann.ann):
 
             # get data (sample from minibatches)
             if epoch % cfg['minibatchInterval'] == 0: data = \
-                dataset.getData(size = size, corruption = corr)
+                self._optGetData(dataset)
 
             # get system estimations (model)
             dTuple = self.getCdkSamples(data)
@@ -310,8 +302,6 @@ class rbm(nemoa.system.ann.ann):
         """Optimize parameters using resiliant k step constrastive divergency."""
 
         cfg  = self._config['optimize']
-        corr = (cfg['corruptionType'], cfg['corruptionFactor'])
-        size = cfg['minibatchSize']
 
         k = cfg['updateCdkSteps']
         m = cfg['updateCdkIterations']
@@ -332,7 +322,7 @@ class rbm(nemoa.system.ann.ann):
 
             # get data (sample from minibatches)
             if epoch % cfg['minibatchInterval'] == 0: data = \
-                dataset.getData(size = size, corruption = corr)
+                self._optGetData(dataset)
 
             # get system estimations (model)
             dTuple = self.getCdkSamples(data)
@@ -777,8 +767,9 @@ class grbm(rbm):
             'updateFactorVlvar': 0.01, # factor for visible unit logarithmic variance updates (related to update rate)
             'minibatchSize': 500, # number of samples used to calculate updates
             'minibatchInterval': 1, # number of updates the same minibatch is used
-            'corruptionType': 'none', # do not use corruption
-            'corruptionFactor': 0.0, # no corruption of data
+            'modCorruptionEnable': False,
+            'modCorruptionType': 'none', # do not use corruption
+            'modCorruptionFactor': 0.0, # no corruption of data
             'modKlpEnable': True,
             'modKlpRate': 0.0, # sparsity update update
             'modKlpExpect': 0.5, # aimed value for l2-norm penalty

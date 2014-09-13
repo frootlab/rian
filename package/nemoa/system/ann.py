@@ -415,12 +415,10 @@ class ann(nemoa.system.base.system):
     def _optGetData(self, dataset, **kwargs):
 
         config = self._config['optimize']
-        if config['modCorruptionEnable']:
-            pass
-        return dataset.getData(
-            size = config['minibatchSize'],
-            #corruption = corruption,
-            **kwargs)
+        kwargs['size'] = config['minibatchSize']
+        if config['modCorruptionEnable']: kwargs['corruption'] = \
+            (config['modCorruptionType'], config['modCorruptionFactor'])
+        return dataset.getData(**kwargs)
 
     def _optGetValues(self, inputData):
         """Forward pass (compute estimated values, from given input). """
