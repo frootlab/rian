@@ -53,8 +53,7 @@ def getEmptySubdir(basepath, subdir = None):
 
     # search for unused subfolder, starting with 1
     i = 1
-    while os.path.exists('%s%s/' % (pre, i)):
-        i += 1
+    while os.path.exists('%s%s/' % (pre, i)): i += 1
 
     # create new subdirectory
     new = '%s%s/' % (pre, i)

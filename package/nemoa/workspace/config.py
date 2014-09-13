@@ -989,13 +989,13 @@ class networkConfigFileImporter:
 
         # depending on network type, use different arguments to describe the network
         if network['config']['type'] in ['layer', 'multilayer', 'auto']: # 2do restrict to multilayer
-            return self.__getMultiLayerNetwork(file, netcfg, network)
+            return self.__getLayerNetwork(file, netcfg, network)
 
         nemoa.log('warning',
             "file '" + file + "' contains unknown network type '" + network['config']['type'] + "'!")
         return None
 
-    def __getMultiLayerNetwork(self, file, netcfg, network):
+    def __getLayerNetwork(self, file, netcfg, network):
 
         config = network['config']
 
@@ -1065,13 +1065,12 @@ class networkConfigFileImporter:
 
         # check network layers
         if config['visible'] == []:
-            nemoa.log('warning',
-                "network file '" + config['file'] + "' does not contain visible layers!")
+            return nemoa.log('error',
+                "layer network '" + file + "' does not contain visible layers!")
             return None
-        if config['hidden'] == []:
-            nemoa.log('warning',
-                "network file '" + config['file'] + "' does not contain hidden layers!")
-            return None
+        if config['hidden'] == []: #2Do: allow single layer networks
+            return nemoa.log('error',
+                "layer network '" + file + "' does not contain hidden layers!")
 
         # parse '[binding *]' sections and add edges to network dict
         for i in range(len(config['layer']) - 1):

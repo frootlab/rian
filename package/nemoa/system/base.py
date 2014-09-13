@@ -675,8 +675,8 @@ class inspector:
         self.__inspect = system._config['optimize']['inspect'] \
             if 'inspect' in system._config['optimize'] \
             else True
-        self.__estimate = system._config['optimize']['estimateTime'] \
-            if 'estimateTime' in system._config['optimize'] \
+        self.__estimate = system._config['optimize']['inspectEstimateTime'] \
+            if 'inspectEstimateTime' in system._config['optimize'] \
             else True
 
     def setTestData(self, data):
@@ -728,7 +728,7 @@ class inspector:
                     of %i updates ...""" % (cfg['updates']))
                 self.__state['estimateStarted'] = True
             if (epochTime - self.__state['startTime']) \
-                > cfg['estimateTimeWait']:
+                > cfg['inspectEstimateTimeWait']:
                 estim = ((epochTime - self.__state['startTime']) \
                     / (self.__state['epoch'] + 1)
                     * cfg['updates'] * cfg['iterations'])

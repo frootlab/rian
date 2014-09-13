@@ -660,22 +660,22 @@ class ann(nemoa.system.base.system):
     @staticmethod
     def _getSystemEvalMethods(): return {
         'energy': {
-            'name': 'energy',
+            'name': 'total energy',
             'description': 'sum of unit and link energies',
             'method': 'evalSystemEnergy',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'error': {
-            'name': 'error',
-            'description': 'mean error of reconstructed values',
+            'name': 'total error',
+            'description': 'sum of errors of reconstructed values',
             'method': 'evalSystemError',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'accuracy': {
-            'name': 'accuracy',
+            'name': 'average accuracy',
             'description': 'mean accuracy of reconstructed values',
             'method': 'evalSystemAccuracy',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'precision': {
-            'name': 'precision',
+            'name': 'average precision',
             'description': 'mean precision of reconstructed values',
             'method': 'evalSystemPrecision',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'}

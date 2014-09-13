@@ -60,8 +60,8 @@ class rbm(nemoa.system.ann.ann):
             'inspect': True,
             'inspectFunction': 'accuracy',
             'inspectTimeInterval': 10.0 ,
-            'estimateTime': True,
-            'estimateTimeWait': 20.0 }}[key]
+            'inspectEstimateTime': True,
+            'inspectEstimateTimeWait': 20.0 }}[key]
 
     # DATA
 
@@ -784,8 +784,8 @@ class grbm(rbm):
             'inspect': True, # inspect optimization process
             'inspectFunction': 'accuracy', # inspection function
             'inspectTimeInterval': 20.0, # time interval for calculation the inspection function
-            'estimateTime': True, # initally estimate time for whole optimization process
-            'estimateTimeWait': 20.0 # time intervall used for time estimation
+            'inspectEstimateTime': True, # initally estimate time for whole optimization process
+            'inspectEstimateTimeWait': 20.0 # time intervall used for time estimation
         }}[key]
 
     # GRBM data
