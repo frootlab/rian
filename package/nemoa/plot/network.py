@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa, nemoa.plot.base
-import numpy, networkx
+import nemoa, nemoa.plot.base, numpy, networkx
 
 class graph(nemoa.plot.base.plot):
 
@@ -39,13 +38,6 @@ class graph(nemoa.plot.base.plot):
                 name = model.about('system', self.settings['graphCaption'])['name'].title()
                 graph.graph['caption'] = \
                     name + ': $%i' % (round(100.0 * caption)) + '\%$'
-
-                #caption = 'Average %s: ' % (fName) + ' $' \
-                    #+ (('\mathrm{%.1f' % (round(1000.0
-                    #* float(sum([nCaption[u] for u in \
-                    #nCaption.keys()])) / float(len(nCaption))) \
-                    #/ 10.0) + '\%') + '}') + '$'
-                #graph.graph['caption'] = caption
 
         # update edge weights
         for (u, v) in graph.edges():

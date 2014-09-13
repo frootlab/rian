@@ -48,18 +48,15 @@ class config:
         # [folders]
         if 'folders' in cfg.sections():
             for key in ['user', 'cache', 'common']:
-                if not key in cfg.options('folders'):
-                    continue
+                if not key in cfg.options('folders'): continue
                 val  = cfg.get('folders', key)
                 path = self.getPath(val)
-                if path:
-                    self.__basepath[key] = path
+                if path: self.__basepath[key] = path
 
         # [files]
         if 'files' in cfg.sections():
             for key in ['logfile']:
-                if not key in cfg.options('files'):
-                    continue
+                if not key in cfg.options('files'): continue
                 val  = cfg.get('files', key)
                 self.__path[key] = self.getPath(val)
 
@@ -98,8 +95,7 @@ class config:
         prjDirs = self.__basepath['user'] + '*'
 
         for prjDir in glob.iglob(self.getPath(prjDirs)):
-            if not os.path.isdir(prjDir):
-                continue
+            if not os.path.isdir(prjDir): continue
 
             projects.append(os.path.basename(prjDir))
 
@@ -110,8 +106,7 @@ class config:
         projects = []
         prjDirs = self.__basepath['common'] + '*'
         for prjDir in glob.iglob(self.getPath(prjDirs)):
-            if not os.path.isdir(prjDir):
-                continue
+            if not os.path.isdir(prjDir): continue
 
             projects.append(os.path.basename(prjDir))
 
@@ -239,8 +234,7 @@ class config:
         importer = configFileImporter(self)
         objConfList = importer.load(configFile)
 
-        for objConf in objConfList:
-            self.__addObjToStore(objConf)
+        for objConf in objConfList: self.__addObjToStore(objConf)
 
         self.__check(objConfList)
 
@@ -258,31 +252,24 @@ class config:
         nemoa.setLog(indent = '+1')
 
         # are files given?
-        if files == None:
-            files = self.__path['scripts'] + '*.py'
+        if files == None: files = self.__path['scripts'] + '*.py'
 
         # import definition files
         for file in glob.iglob(self.getPath(files)):
             self.__registerScript(file)
 
         nemoa.setLog(indent = '-1')
-
         return True
 
     def __registerScript(self, file):
         """Import script file from current project."""
 
         # search definition file
-        if os.path.isfile(file):
-            scriptFile = file
+        if os.path.isfile(file): scriptFile = file
         elif os.path.isfile(self.__path['scripts'] + file):
             scriptFile = self.__path['scripts'] + file
-        else:
-            nemoa.log('warning', "script file '%s' does not exist!" % (file))
-            return False
-
-        # logger info
-
+        else: return nemoa.log('warning',
+            "script file '%s' does not exist!" % (file))
 
         # import and register objects without testing
         importer = scriptFileImporter(self)
@@ -302,8 +289,7 @@ class config:
         nemoa.setLog(indent = '+1')
 
         # are files given?
-        if files == None:
-            files = self.__path['networks'] + '*.ini'
+        if files == None: files = self.__path['networks'] + '*.ini'
 
         # import definition files
         for file in glob.iglob(self.getPath(files)):
@@ -316,14 +302,11 @@ class config:
     def __registerNetwork(self, file, format = None):
 
         # search definition file
-        if os.path.isfile(file):
-            networkFile = file
+        if os.path.isfile(file): networkFile = file
         elif os.path.isfile(self.__path['networks'] + file):
             networkFile = self.__path['networks'] + file
-        else:
-            nemoa.log('warning',
-                "network file '%s' does not exist!" % (file))
-            return False
+        else: return nemoa.log('warning',
+            "network file '%s' does not exist!" % (file))
 
         # format
         if not format:
@@ -342,8 +325,7 @@ class config:
         and delete invalid objects."""
         for objConf in objConfList:
             objConf = self.__checkObjConf(objConf)
-            if not objConf:
-                self.__delObjConf(objConf)
+            if not objConf: self.__delObjConf(objConf)
         return True
 
     def __checkObjConf(self, objConf):
@@ -387,10 +369,8 @@ class config:
                     layerType = 'visible'
 
                 conf['layer'].append(layerName)
-                if layerType == 'visible':
-                    conf['visible'].append(layerName)
-                else:
-                    conf['hidden'].append(layerName)
+                if layerType == 'visible': conf['visible'].append(layerName)
+                else: conf['hidden'].append(layerName)
             del conf['layers']
 
         # get config from source file
@@ -581,8 +561,7 @@ class config:
 
     def __addObjToStore(self, objConf):
         """link object configuration to object dictionary."""
-        if not isinstance(objConf, dict):
-            return False
+        if not isinstance(objConf, dict): return False
 
         type = objConf['class']
         name = objConf['name']
@@ -593,9 +572,8 @@ class config:
         key = None
         objID = 0
 
-        if not type in self.__store.keys():
-            nemoa.log('error', 'could not register object \'%s\': not supported object type \'%s\'!' % (name, type))
-            return False
+        if not type in self.__store.keys(): return nemoa.log('error',
+            'could not register object \'%s\': not supported object type \'%s\'!' % (name, type))
 
         key = self.__getNewKey(self.__store[type], name)
         objID = self.__getObjIDByName(type, key)
@@ -611,15 +589,9 @@ class config:
 
     def __delObjConf(self, objConf):
         """Unlink object configuration from object dictionary."""
-        if not objConf:
-            return False
+        if not objConf: return False
         id = self.__getObjIDByName(objConf['class'], objConf['name'])
-        if not id in self.__index.keys():
-            nemoa.log('warning', '2do')
-            return False
-
-        # delete configuration from tree
-
+        if not id in self.__index.keys(): return nemoa.log('warning', '2do')
 
         # delete entry in index
         self.__index.pop(id)
@@ -700,8 +672,7 @@ class config:
         # defined by a list of keys and a dictionary
         if params == None \
             or not isinstance(params, dict)\
-            or not nemoa.common.isList(merge):
-            return cfg
+            or not nemoa.common.isList(merge): return cfg
         subMerge = cfg
         for key in merge:
             if not isinstance(subMerge, dict): return cfg
@@ -718,13 +689,10 @@ class config:
 
         # clean up input string
         path = str.strip()
-
         # expand unix home directory
         path = os.path.expanduser(path)
-
         # expand nemoa environment variables
         path = self.__expandPath(path)
-
         # expand unix environment variables
         path = os.path.expandvars(path)
 
@@ -820,11 +788,11 @@ class configFileImporter:
         cfg.read(file)
 
         # parse sections and create list with objects
+
         objects = []
         for section in cfg.sections():
             objCfg = self.__readSection(cfg, section)
-            if objCfg:
-                objects.append(objCfg)
+            if objCfg: objects.append(objCfg)
 
         return objects
 
@@ -834,8 +802,7 @@ class configFileImporter:
         # use regular expression to match sections
         reSection = re.compile('\A' + '|'.join(self.sections.keys()))
         reMatch = reSection.match(section)
-        if not reMatch:
-            return None
+        if not reMatch: return None
 
         type = reMatch.group()
         name = self.project + '.' + section[len(type):].strip()
@@ -845,43 +812,35 @@ class configFileImporter:
 
             # add generic options
             for key, frmt in self.generic.items():
-                if key in cfg.options(section):
-                    config[key] = self.__convert(cfg.get(section, key), frmt)
-                else:
-                    config[key] = self.__convert('', frmt)
+                if key in cfg.options(section): config[key] = \
+                    self.__convert(cfg.get(section, key), frmt)
+                else: config[key] = self.__convert('', frmt)
 
             # add special options (use regular expressions)
             for (regExKey, frmt) in self.sections[type].items():
                 reKey = re.compile(regExKey)
                 for key in cfg.options(section):
-                    if not reKey.match(key):
-                        continue
+                    if not reKey.match(key): continue
                     config[key] = self.__convert(cfg.get(section, key), frmt)
 
-        else:
-            return None
+        else: return None
 
         # get name from section name
-        if config['name'] == '':
-            config['name'] = name
-        else:
-            name = config['name']
+        if config['name'] == '': config['name'] = name
+        else: name = config['name']
 
         objCfg = {
-            'class':   type,
-            'name':    name,
+            'class': type,
+            'name': name,
             'project': self.project,
-            'config':  config}
+            'config': config}
 
         return objCfg
 
     def __convert(self, str, type):
-        if type == 'str':
-            return str.strip().replace('\n', '')
-        if type == 'list':
-            return nemoa.common.strToList(str)
-        if type == 'dict':
-            return nemoa.common.strToDict(str)
+        if type == 'str': return str.strip().replace('\n', '')
+        if type == 'list': return nemoa.common.strToList(str)
+        if type == 'dict': return nemoa.common.strToDict(str)
         return str
 
 #
@@ -898,13 +857,12 @@ class scriptFileImporter:
         path = file
 
         return {
-            'class':   'script',
-            'name':    name,
+            'class': 'script',
+            'name': name,
             'project': self.project,
-            'config':  {
+            'config': {
                 'name': name,
-                'path': path
-            }}
+                'path': path }}
 
 #
 # import network files
@@ -980,7 +938,7 @@ class networkConfigFileImporter:
         else:
             network['config']['description'] = ''
 
-        #2do: put in network dependent sections sections
+        #2do: network dependent sections
         # 'labelformat': annotation of nodes, default: 'generic:string'
         if 'labelformat' in netcfg.options('network'):
             network['config']['label_format'] = netcfg.get('network', 'nodes').strip()
@@ -1000,12 +958,9 @@ class networkConfigFileImporter:
         config = network['config']
 
         # 'layers': ordered list of network layers
-        if not 'layers' in netcfg.options('network'):
-            nemoa.log('warning',
-                "file '" + file + "' does not contain parameter 'layers'!")
-            return None
-        else:
-            config['layer'] = nemoa.common.strToList(netcfg.get('network', 'layers'))
+        if not 'layers' in netcfg.options('network'): return nemoa.log('warning',
+            "file '" + file + "' does not contain parameter 'layers'!")
+        else: config['layer'] = nemoa.common.strToList(netcfg.get('network', 'layers'))
 
         # init network dictionary
         config['visible'] = []
@@ -1016,61 +971,47 @@ class networkConfigFileImporter:
         # parse '[layer *]' sections and add nodes and layer types to network dict
         for layer in config['layer']:
             layerSec = 'layer ' + layer
-            if not layerSec in netcfg.sections():
-                nemoa.log('warning',
-                    "file '" + file + "' does not contain information about layer '" + layer + "'!")
-                return None
+            if not layerSec in netcfg.sections(): return nemoa.log('warning',
+                "file '" + file + "' does not contain information about layer '" + layer + "'!")
 
             # get 'type' of layer ('visible', 'hidden')
-            if not 'type' in netcfg.options(layerSec):
-                nemoa.log('warning',
-                    "type of layer '" + layer + "' has to be specified ('visible', 'hidden')!")
-                return None
+            if not 'type' in netcfg.options(layerSec): return nemoa.log(
+                'warning', "type of layer '" + layer + "' has to be specified ('visible', 'hidden')!")
             if netcfg.get(layerSec, 'type').lower() in ['visible']:
                 config['visible'].append(layer)
             elif netcfg.get(layerSec, 'type').lower() in ['hidden']:
                 config['hidden'].append(layer)
-            else:
-                nemoa.log('warning',
-                    "unknown type of layer '" + layer + "'!")
-                return None
+            else: return nemoa.log('warning',
+                "unknown type of layer '" + layer + "'!")
 
             # get 'nodes' of layer
-            if 'nodes' in netcfg.options(layerSec):
-                nodeList = nemoa.common.strToList(netcfg.get(layerSec, 'nodes'))
-            elif 'size' in netcfg.options(layerSec):
-                nodeList = ['n' + str(i) for i in \
-                    range(1, int(netcfg.get(layerSec, 'size')) + 1)]
+            if 'nodes' in netcfg.options(layerSec): nodeList = \
+                nemoa.common.strToList(netcfg.get(layerSec, 'nodes'))
+            elif 'size' in netcfg.options(layerSec): nodeList = \
+                ['n' + str(i) for i in range(1, int(netcfg.get(layerSec, 'size')) + 1)]
             elif 'file' in netcfg.options(layerSec):
                 listFile = nemoa.workspace.getPath(netcfg.get(layerSec, 'file'))
-                if not os.path.exists(listFile):
-                    nemoa.log('error', """
-                        listfile '%s' does not exists!""" % (listFile))
-                    return None
+                if not os.path.exists(listFile): return nemoa.log('error',
+                    "listfile '%s' does not exists!" % (listFile))
                 with open(listFile, 'r') as listFile:
                     fileLines = listFile.readlines()
                 nodeList = [node.strip() for node in fileLines]
-            else:
-                nemoa.log('warning',
-                    "layer '" + layer + "' does not contain node information!")
-                return None
+            else: return nemoa.log('warning',
+                "layer '" + layer + "' does not contain node information!")
 
             config['nodes'][layer] = []
             for node in nodeList:
                 node = node.strip()
-                if node == '':
-                    continue
+                if node == '': continue
                 if not node in config['nodes'][layer]:
                     config['nodes'][layer].append(node)
 
         # check network layers
-        if config['visible'] == []:
-            return nemoa.log('error',
-                "layer network '" + file + "' does not contain visible layers!")
-            return None
-        if config['hidden'] == []: #2Do: allow single layer networks
-            return nemoa.log('error',
-                "layer network '" + file + "' does not contain hidden layers!")
+        if config['visible'] == []: return nemoa.log('error',
+            "layer network '" + file + "' does not contain visible layers!")
+        #2Do: allow single layer networks (no hidden layer)
+        if config['hidden'] == []: return nemoa.log('error',
+            "layer network '" + file + "' does not contain hidden layers!")
 
         # parse '[binding *]' sections and add edges to network dict
         for i in range(len(config['layer']) - 1):
@@ -1092,8 +1033,7 @@ class networkConfigFileImporter:
             for nodeA in netcfg.options(edgeSec):
                 nodeA = nodeA.strip()
                 if nodeA == '' or \
-                    not nodeA in config['nodes'][layerA]:
-                    continue
+                    not nodeA in config['nodes'][layerA]: continue
                 for nodeB in nemoa.common.strToList(netcfg.get(edgeSec, nodeA)):
                     nodeB = nodeB.strip()
                     if nodeB == '' \

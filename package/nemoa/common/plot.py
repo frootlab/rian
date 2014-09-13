@@ -7,19 +7,6 @@ from matplotlib.patches import FancyArrowPatch, Circle
 
 # create A4 figure object figsize = (8.27, 11.69)
 
-def _color(color):
-    return {
-        'black':      (0.000, 0.000, 0.000, 1.000),
-        'white':      (1.000, 1.000, 1.000, 1.000),
-        'red':        (1.000, 0.000, 0.000, 1.000),
-        'green':      (0.000, 0.500, 0.000, 1.000),
-        'blue':       (0.000, 0.000, 0.700, 1.000),
-        'lightgrey':  (0.800, 0.800, 0.800, 1.000),
-        'lightgreen': (0.600, 0.800, 0.196, 1.000),
-        'lightblue':  (0.439, 0.502, 0.565, 1.000),
-        'cornflower': (0.270, 0.510, 0.700, 1.000),
-    }[color]
-
 def heatmap(array, **kwargs):
 
     # create figure object
@@ -317,3 +304,16 @@ def layerGraph(G, **kwargs):
             G.graph['caption'], fontsize = 9, ha = 'center')
 
     return True
+
+def _color(color):
+    return {
+        'black':      (0.000, 0.000, 0.000, 1.000),
+        'white':      (1.000, 1.000, 1.000, 1.000),
+        'red':        (1.000, 0.000, 0.000, 1.000),
+        'green':      (0.000, 0.500, 0.000, 1.000),
+        'blue':       (0.000, 0.000, 0.700, 1.000),
+        'lightgrey':  (0.800, 0.800, 0.800, 1.000),
+        'lightgreen': (0.600, 0.800, 0.196, 1.000),
+        'lightblue':  (0.439, 0.502, 0.565, 1.000),
+        'cornflower': (0.270, 0.510, 0.700, 1.000),
+    }[color]

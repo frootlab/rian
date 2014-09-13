@@ -292,32 +292,25 @@ class model:
         """
 
         # link network instance
-        if nemoa.type.isNetwork(network):
-            self.network = network
+        if nemoa.type.isNetwork(network): self.network = network
 
         # check if network instance is valid
-        if not nemoa.type.isNetwork(self.network):
-            nemoa.log('error', """
-                could not configure network:
-                no network instance available!""")
-            return False
+        if not nemoa.type.isNetwork(self.network): return nemoa.log(
+            'error', """could not configure network:
+            no network instance available!""")
 
         # check if network instance is empty
         if self.network._isEmpty(): return True
 
         # check if dataset instance is available
-        if self.dataset == None and dataset == None:
-            nemoa.log('error', """
-                could not configure network:
-                no dataset instance available!""")
-            return False
+        if self.dataset == None and dataset == None: return nemoa.log(
+            'error', """could not configure network:
+            no dataset instance available!""")
 
          # check if system instance is available
-        if self.system == None and system == None:
-            nemoa.log('error', """
-                could not configure network:
-                no system was given!""")
-            return False
+        if self.system == None and system == None: return nemoa.log(
+            'error', """could not configure network:
+            no system was given!""")
 
         # configure network
         return self.network.configure(
@@ -399,90 +392,6 @@ class model:
     ####################################################################
     # Evaluation of unit relations                                     #
     ####################################################################
-
-
-
-    ##
-    ## MODEL PARAMETER HANDLING
-    ##
-
-    #def findRelatedSampleGroups(self, **params):
-        #nemoa.log("find related sample groups in dataset:")
-
-        #partition = self.dataset.createRowPartition(**params)
-        #return self.dataset.getRowPartition(partition)
-
-    #def createBranches(self, modify, method, **params):
-        #nemoa.log('create model branches:')
-
-        #if modify == 'dataset':
-            #if method == 'filter':
-                #filters = params['filter']
-
-                ## get params from main branch
-                #mainParams = self.system._get()
-
-                ## create branches for filters
-                #for filter in filters:
-
-                    #branch = self.dataset.cfg['name'] + '.' + filter
-
-                    ## copy params from main branch
-                    #self.__config['branches'][branch] = mainParams.copy()
-
-                    ## modify params
-                    #self.__config['branches'][branch]['config']['params']['samplefilter'] = filter
-
-                    ## set modified params
-                    #self.system._set(**self.__config['branches'][branch])
-
-                    ## reinit system
-                    #self.system.initParams(self.dataset)
-
-                    ## save system params in branch
-                    #self.__config['branches'][branch] = self.system._get()
-
-                    #nemoa.log("add model branch: '" + branch + "'")
-
-                ## reset system params to main branch
-                #self.system._set(**mainParams)
-
-                #return True
-
-        #return False
-
-#    def _getLinkEval(self, data= None, statistics = 10000, **kwargs):
-#        """Return dictionary with links and evaluation values."""
-#        if data == None: data = self.dataset.getData(statistics)
-#        return self.system.getLinkEval(data, **kwargs)
-
-    #
-    # MODEL EVALUATION
-    #
-
-    # 2Do
-    # use system.eval()
-
-    #def eval(self, func = 'expect', data = None, block = [],
-        #k = 1, m = 1, statistics = 10000):
-
-        ## set default values to params if not set
-        #if data == None: data = self.dataset.getData(statistics)
-
-        #vEval, hEval = self.system.evalUnits(data, func = func, block = block, k = k, m = m)
-        #mEval = numpy.mean(vEval)
-
-        #units = {}
-        #for i, v in enumerate(self.system.params['v']['label']):
-            #units[v] = vEval[i]
-        #for j, h in enumerate(self.system.params['h']['label']):
-            #units[h] = hEval[j]
-#
-#        return mEval, units
-
-    #
-    # get / set all model parameters as dictionary
-    #
 
     def _get(self, sec = None):
         dict = {
@@ -623,9 +532,6 @@ class model:
         # return empty plot instance if no configuration was given
         if not args and not 'config' in kwargs: return nemoa.plot.new()
 
-        if args:
-            name = args[0]
-        else: name = None
         if 'params' in kwargs:
             params = kwargs['params']
             del(kwargs['params'])
@@ -780,4 +686,5 @@ class model:
         if args[0] == 'dataset': return self.dataset.about(*args[1:])
         if args[0] == 'network': return self.network.about(*args[1:])
         if args[0] == 'system': return self.system.about(*args[1:])
+
         return None

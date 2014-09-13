@@ -50,9 +50,9 @@ class rbm(nemoa.system.ann.ann):
             'updateFactorWeights': 1.0,
             'updateFactorHbias': 0.1,
             'updateFactorVbias': 0.1,
-            'modKlpEnable': True,
-            'modKlpRate': 0.0,
-            'modKlpExpect': 0.5,
+            'modKlEnable': True,
+            'modKlRate': 0.0,
+            'modKlExpect': 0.5,
             'selectivityFactor': 0.0,
             'selectivitySize': 0.5,
             'modCorruptionEnable': True,
@@ -126,9 +126,9 @@ class rbm(nemoa.system.ann.ann):
         if cfg['modVmraEnable']: nemoa.log('note', """
             using variance maximizing rate adaption
             with length %i""" % (cfg['modVmraLength']))
-        if cfg['modKlpEnable']: nemoa.log('note', """
+        if cfg['modKlEnable']: nemoa.log('note', """
             using l1-norm penalty term for sparse coding
-            with expectation value %.2f""" % (cfg['modKlpExpect']))
+            with expectation value %.2f""" % (cfg['modKlExpect']))
         #if cfg['selectivityFactor'] > 0.0: nemoa.log('note', """
         #    using l2-norm penalty term for selective coding
         #    with expectation value %.2f""" % (cfg['selectivitySize']))
@@ -138,11 +138,13 @@ class rbm(nemoa.system.ann.ann):
             cfg['modCorruptionType'], cfg['modCorruptionFactor']))
 
         if cfg['algorithm'].lower() == 'cd': return \
-            self._optCD(dataset, schedule, inspector)
+            self._optCd(dataset, schedule, inspector)
         return nemoa.log('error', """could not optimize model:
             unknown optimization algorithm '%s'""" % (algorithm))
 
-    def _optCD(self, dataset, schedule, inspector):
+    # Contrastive Divergency
+
+    def _optCd(self, dataset, schedule, inspector):
         """Optimize system parameters."""
 
         cfg  = self._config['optimize']
@@ -154,14 +156,14 @@ class rbm(nemoa.system.ann.ann):
             if epoch % cfg['minibatchInterval'] == 0: data = \
                 self._optGetData(dataset)
             # get system estimations (model)
-            dTuple = self._optCDGetSamples(data)
+            dTuple = self._optCdGetSamples(data)
             # adapt update rate
             if cfg['modVmraEnable']:
                 if epoch % cfg['modVmraInterval'] == 0 \
                     and epoch > cfg['modVmraWait']:
                     self._optVmraUpdate(inspector)
             # Update system params
-            self._optCDUpdate(*dTuple)
+            self._optCdUpdate(*dTuple)
             # Trigger inspector (getch, calc inspect function etc)
             event = inspector.trigger()
             if event:
@@ -191,100 +193,7 @@ class rbm(nemoa.system.ann.ann):
         inspector.writeToStore(wVar = wVar)
         return True
 
-    #def optimizeVrcd(self, dataset, schedule, inspector):
-        #"""Optimize parameters using variance resiliant constrastive divergency."""
-
-        #cfg  = self._config['optimize']
-
-        ## for each update step (epoch)
-        #for epoch in xrange(cfg['updates']):
-
-            ## get data (sample from minibatches)
-            #if epoch % cfg['minibatchInterval'] == 0: data = \
-                #self._optGetData(dataset)
-            ## get system estimations (model)
-            #dTuple = self.getCdSamples(data)
-            ## adapt update rate
-            #if cfg['modVmraEnable']:
-                #if epoch % cfg['modVmraInterval'] == 0 \
-                    #and epoch > cfg['modVmraWait']:
-                    #self._optVmraUpdate(inspector)
-
-            ## Update system params
-            #self._optCDUpdate(*dTuple)
-            ## Trigger inspector (getch, calc inspect function etc)
-            #event = inspector.trigger()
-            #if event:
-                #if event == 'abort': break
-
-        #return True
-
-    #def optimizeVrcdk(self, dataset, schedule, inspector):
-        #"""Optimize parameters using variance resiliant constrastive divergency."""
-
-        #cfg  = self._config['optimize']
-
-        #k = cfg['updateCdkSteps']
-        #m = cfg['updateCdkIterations']
-
-        ## initialise store with weight variance
-        #wVar = numpy.array([numpy.var(
-            #self._params['links'][(0, 1)]['W'])])
-        #inspector.writeToStore(wVar = wVar)
-
-        #lenght = cfg['modVmraLength']
-        #A = numpy.array([numpy.arange(0, lenght), numpy.ones(lenght)])
-
-        ## initialise update rate
-        #cfg['updateRate'] = cfg['modVmraInit']
-
-        ## for each update step (epoch)
-        #for epoch in xrange(cfg['updates']):
-
-            ## get data (sample from minibatches)
-            #if epoch % cfg['minibatchInterval'] == 0: data = \
-                #self._optGetData(dataset)
-
-            ## get system estimations (model)
-            #dTuple = self._optCDGetSamples(data)
-
-            ## adapt update rate
-            #if epoch % cfg['modVmraInterval'] == 0 \
-                #and epoch > cfg['modVmraWait'] - lenght:
-                #wVar = numpy.append([numpy.var(
-                    #self._params['links'][(0, 1)]['W'])],
-                    #inspector.readFromStore()['wVar'])
-                #if wVar.shape[0] > lenght:
-                    #wVar = wVar[:lenght]
-                    #grad = numpy.linalg.lstsq(A.T, wVar)[0][0]
-                    #delw = cfg['modVmraFactor'] * numpy.abs(grad)
-                    #cfg['updateRate'] = numpy.max(delw, cfg['modVmraMinRate'])
-
-                #inspector.writeToStore(wVar = wVar)
-
-            ## Update system params
-            #self._optCDUpdate(*dTuple)
-
-            ## Trigger inspector (getch, calc inspect function etc)
-            #event = inspector.trigger()
-            #if event:
-                #if event == 'abort': break
-
-        #return True
-
-    ####################################################################
-    # Contrastive Divergency                                           #
-    ####################################################################
-
-    #def getCdSamples(self, data):
-        #"""Return reconstructed data using 1-step contrastive divergency sampling (CD-1)."""
-        #hData  = self.evalUnitExpect(data, ('visible', 'hidden'))
-        #vModel = self.evalUnitSamples(hData, ('hidden', 'visible'),
-            #expectLast = True)
-        #hModel = self.evalUnitExpect(vModel, ('visible', 'hidden'))
-        #return data, hData, vModel, hModel
-
-    def _optCDGetSamples(self, data):
+    def _optCdGetSamples(self, data):
         """Return mean value of reconstructed data using k-step contrastive divergency sampling (CD-k).
 
         Options:
@@ -327,16 +236,16 @@ class rbm(nemoa.system.ann.ann):
 
         return data, hData, vModel, hModel
 
-    def _optCDUpdate(self, *dTuple):
+    def _optCdUpdate(self, *dTuple):
         """Update system parameters using reconstructed and sampling data."""
 
         cfg = self._config['optimize']
         ignore = cfg['ignoreUnits']
 
         # calculate updates (without affecting the calculations)
-        if not 'visible' in ignore: deltaV = self._getUpdateCdVisible(*dTuple)
-        if not 'hidden' in ignore: deltaH = self._getUpdateCdHidden(*dTuple)
-        if not 'links' in ignore: deltaL = self._getUpdateCdLinks(*dTuple)
+        if not 'visible' in ignore: deltaV = self._optCdDeltaV(*dTuple)
+        if not 'hidden' in ignore: deltaH = self._optCdDeltaH(*dTuple)
+        if not 'links' in ignore: deltaL = self._optCdDeltaL(*dTuple)
 
         # update parameters
         if not 'visible' in ignore: self.units['visible'].update(deltaV)
@@ -344,18 +253,18 @@ class rbm(nemoa.system.ann.ann):
         if not 'links' in ignore: self._updateLinks(**deltaL)
 
         # (optional) sparsity update
-        if cfg['modKlpEnable']:
+        if cfg['modKlEnable']:
             if not 'hidden' in ignore: self.units['hidden'].update(
-                self._getUpdateKlpHidden(*dTuple))
+                self._optKlDeltaH(*dTuple))
 
         # (optional) selectivity update
         if cfg['selectivityFactor'] > 0.0:
             if not 'hidden' in ignore: self.units['hidden'].update(
-                self._getUpdateKlpHidden(*dTuple))
+                self._optKlDeltaH(*dTuple))
 
         return True
 
-    def _getUpdateCdVisible(self, vData, hData, vModel, hModel, **kwargs):
+    def _optCdDeltaV(self, vData, hData, vModel, hModel, **kwargs):
         """Return cd gradient based updates for visible units.
 
         Description:
@@ -369,7 +278,7 @@ class rbm(nemoa.system.ann.ann):
 
         return { 'bias': r * diff }
 
-    def _getUpdateCdHidden(self, vData, hData, vModel, hModel, **kwargs):
+    def _optCdDeltaH(self, vData, hData, vModel, hModel, **kwargs):
         """Return cd gradient based updates for hidden units.
 
         Description:
@@ -383,7 +292,7 @@ class rbm(nemoa.system.ann.ann):
 
         return { 'bias': r * diff }
 
-    def _getUpdateCdLinks(self, vData, hData, vModel, hModel, **kwargs):
+    def _optCdDeltaL(self, vData, hData, vModel, hModel, **kwargs):
         """Return cd gradient based updates for links.
 
         Description:
@@ -397,7 +306,7 @@ class rbm(nemoa.system.ann.ann):
 
         return { 'W': r * (D - M) }
 
-    def _getUpdateKlpHidden(self, vData, hData, vModel, hModel):
+    def _optKlDeltaH(self, vData, hData, vModel, hModel):
         """Return sparsity updates for hidden units.
 
         Description:
@@ -406,9 +315,9 @@ class rbm(nemoa.system.ann.ann):
 
         cfg = self._config['optimize']
 
-        p = cfg['modKlpExpect'] # target expectation value for units
+        p = cfg['modKlExpect'] # target expectation value for units
         q = numpy.mean(hData, axis = 0) # expectation value (over samples)
-        r = cfg['modKlpRate'] # update rate
+        r = cfg['modKlRate'] # update rate
 
         #units = (self.getUnits()[0], self.getUnits()[0])
         #data  = (vData, vData)
@@ -461,18 +370,6 @@ class rbm(nemoa.system.ann.ann):
     def _getUnitsFromDataset(self, dataset):
         """Return tuple with lists of unit labels ([visible], [hidden]) using dataset for visible."""
         return (dataset.getColLabels(), self.units['hidden'].params['label'])
-
-#    def _getUnitEvalEnergy(self, data, **kwargs):
-#        """Return local energy of units."""
-#        return (self.getUnitEnergy(data, ('visible',)),
-#            self.getUnitEnergy(data, ('visible', 'hidden')))
-
-#    def _getUnitEvalError(self, data, block = [], k = 1, **kwargs):
-#        """Return euclidean reconstruction error of units.
-#
-#        error := ||data - model||"""
-#        return self.getUnitError(data, data,
-#            ('visible', 'hidden', 'visible'), block), None
 
     def _unlinkUnit(self, unit):
         """Delete unit links in adjacency matrix."""
@@ -537,37 +434,7 @@ class rbm(nemoa.system.ann.ann):
         self._params['links'][(0, 1)]['source'] = 'visible'
         self._params['links'][(0, 1)]['target'] = 'hidden'
 
-        # reset link update
         return True
-
-    #def _getLinkParams(self, links = []):
-        #"""Return link parameters."""
-        #if not links:
-            #links = self._getLinksFromConfig()
-
-        ## create dict with link params
-        #vList = self.units['visible'].params['label']
-        #hList = self.units['hidden'].params['label']
-        #linkParams = {}
-        #for link in links:
-            #if link[0] in vList and link[1] in hList:
-                #i = vList.index(link[0])
-                #j = hList.index(link[1])
-                #linkParams[link] = {
-                    #'A': self._params['links'][(0, 1)]['A'][i, j],
-                    #'W': self._params['links'][(0, 1)]['W'][i, j] }
-            #elif link[1] in vList and link[0] in hList:
-                #i = hList.index(link[0])
-                #j = vList.index(link[1])
-                #linkParams[link] = {
-                    #'A': self._params['links'][(0, 1)]['A'][i, j],
-                    #'W': self._params['links'][(0, 1)]['W'][i, j] }
-            #else:
-                #nemoa.log('warning', """
-                    #could not get parameters for link (%s → %s):
-                    #link could not be found!""" % (link[0], link[1]))
-                #continue
-        #return linkParams
 
     def _setLinkParams(self, params):
         """Set link parameters and update link matrices using dictionary."""
@@ -608,43 +475,7 @@ class rbm(nemoa.system.ann.ann):
                     """ % (link[0], link[1]))
                 continue
 
-        # set modified list of current links
         return self._setLinks(curLinks)
-
-    #def _getLinkEval(self, data, func = 'energy', info = False, **kwargs):
-        #"""Return link evaluation values."""
-        #evalFuncs = {
-            #'energy': ['local energy', 'Energy'],
-            #'adjacency': ['link adjacency', 'Adjacency'],
-            #'weight': ['link weight', 'Weight'] }
-        #if info:
-            #if not func in evalFuncs:
-                #return False
-            #return {
-                #'name': evalFuncs[func][0]}
-        #if not func in evalFuncs:
-            #nemoa.log('warning', """
-                #could not evaluate units:
-                #unknown link evaluation function '%s'
-                #""" % (func))
-            #return False
-
-        #linkEval = eval('self._getLinkEval' + evalFuncs[func][1] \
-            #+ '(data, **kwargs)')
-        #evalDict = {}
-        #if isinstance(linkEval, numpy.ndarray):
-            #for i, v in enumerate(self.units['visible'].params['label']):
-                #for j, h in enumerate(self.units['hidden'].params['label']):
-                    #evalDict[(v,h)] = linkEval[i, j]
-        #return evalDict
-
-    #def _getLinkEvalWeight(self, data, **kwargs):
-        #"""Return link weights of all links as numpy array."""
-        #return self._params['links'][(0, 1)]['W']
-
-    #def _getLinkEvalAdjacency(self, data, **kwargs):
-        #"""Return link adjacency of all links as numpy array."""
-        #return self._params['links'][(0, 1)]['A']
 
     def _updateLinks(self, **updates):
         """Set updates for links."""
@@ -697,9 +528,9 @@ class grbm(rbm):
             'modCorruptionEnable': False,
             'modCorruptionType': 'none', # do not use corruption
             'modCorruptionFactor': 0.0, # no corruption of data
-            'modKlpEnable': True,
-            'modKlpRate': 0.0, # sparsity update update
-            'modKlpExpect': 0.5, # aimed value for l2-norm penalty
+            'modKlEnable': True,
+            'modKlRate': 0.0, # sparsity update update
+            'modKlExpect': 0.5, # aimed value for l2-norm penalty
             'selectivityFactor': 0.0, # no selectivity update
             'selectivitySize': 0.5, # aimed value for l2-norm penalty
             'useAdjacency': False, # do not use selective weight updates
@@ -710,15 +541,11 @@ class grbm(rbm):
             'inspectEstimateTimeWait': 20.0 # time intervall used for time estimation
         }}[key]
 
-    # GRBM data
-
     def _checkDataset(self, dataset):
         """Check if dataset contains gauss normalized values."""
         return self._isDatasetGaussNormalized(dataset)
 
-    # GRBM visible units
-
-    def _getUpdateCdVisible(self, vData, hData, vModel, hModel, **kwargs):
+    def _optCdDeltaV(self, vData, hData, vModel, hModel, **kwargs):
         """Return cd gradient based updates for visible units.
 
         Description:
@@ -744,7 +571,7 @@ class grbm(rbm):
             'bias': r1 * diff / var,
             'lvar': r2 * (d - m) / var }
 
-    def _getUpdateCdLinks(self, vData, hData, vModel, hModel, **kwargs):
+    def _optCdDeltaL(self, vData, hData, vModel, hModel, **kwargs):
         """Return cd gradient based updates for links.
 
         Description:

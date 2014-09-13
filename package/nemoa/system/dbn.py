@@ -97,14 +97,14 @@ class dbn(nemoa.system.ann.ann):
         nemoa.log('note', 'pretraining model')
         nemoa.setLog(indent = '+1')
 
-        ################################################################
-        # Configure subsystems for pretraining                         #
-        ################################################################
+        # Configure subsystems for pretraining
 
         nemoa.log('configure subsystems')
         nemoa.setLog(indent = '+1')
         if not 'units' in self._params:
-            nemoa.log('error', 'could not configure subsystems: no layers have been defined')
+            nemoa.log('error', """
+                could not configure subsystems:
+                no layers have been defined!""")
             nemoa.setLog(indent = '-1')
             return False
 
@@ -170,9 +170,7 @@ class dbn(nemoa.system.ann.ann):
         self._config['check']['subSystems'] = True
         nemoa.setLog(indent = '-1')
 
-        ################################################################
-        # Optimize subsystems                                          #
-        ################################################################
+        # Optimize subsystems
 
         # create copy of dataset values (before transformation)
         datasetCopy = dataset._get()
@@ -203,9 +201,7 @@ class dbn(nemoa.system.ann.ann):
         # reset data to initial state (before transformation)
         dataset._set(**datasetCopy)
 
-        ################################################################
-        # Copy and enrolle parameters of subsystems to dbn             #
-        ################################################################
+        # Copy and enrolle parameters of subsystems to dbn
 
         nemoa.log('initialize system with subsystem parameters')
         nemoa.setLog(indent = '+1')
@@ -243,9 +239,7 @@ class dbn(nemoa.system.ann.ann):
                     links[(id, id + 1)]['init'][attrib].T
             del links[(id, id + 1)]['init']
 
-        ################################################################
-        # Remove input units from output layer, and vice versa         #
-        ################################################################
+        # Remove input units from output layer, and vice versa
 
         nemoa.log('cleanup unit and linkage parameter arrays')
         self._removeUnits(self.getMapping()[0], outputs)
@@ -260,14 +254,14 @@ class dbn(nemoa.system.ann.ann):
         nemoa.log('note', 'finetuning model')
         nemoa.setLog(indent = '+1')
 
-        ################################################################
-        # Optimize system parameters                                   #
-        ################################################################
+        # Optimize system parameters
 
         algorithm = self._config['optimize']['algorithm'].lower()
 
-        if   algorithm == 'bprop': self._optBPROP(dataset, schedule, inspector)
-        elif algorithm == 'rprop': self._optRPROP(dataset, schedule, inspector)
+        if   algorithm == 'bprop': self._optBPROP(
+            dataset, schedule, inspector)
+        elif algorithm == 'rprop': self._optRPROP(
+            dataset, schedule, inspector)
         else: nemoa.log('error', "unknown gradient '%s'!" % (algorithm))
 
         nemoa.setLog(indent = '-1')
