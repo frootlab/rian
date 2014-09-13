@@ -412,6 +412,16 @@ class ann(nemoa.system.base.system):
 
     # Generic Parameter Functions
 
+    def _optGetData(self, dataset, **kwargs):
+
+        config = self._config['optimize']
+        if config['modCorruptionEnable']:
+            pass
+        return dataset.getData(
+            size = config['minibatchSize'],
+            #corruption = corruption,
+            **kwargs)
+
     def _optGetValues(self, inputData):
         """Forward pass (compute estimated values, from given input). """
 
@@ -471,8 +481,9 @@ class ann(nemoa.system.base.system):
 
             # Get data (sample from minibatches)
             if epoch % cnf['minibatchInterval'] == 0:
-                data = dataset.getData(size = cnf['minibatchSize'],
-                    cols = (layers[0], layers[-1]))
+                #data = dataset.getData(size = cnf['minibatchSize'],
+                #    cols = (layers[0], layers[-1]))
+                data = self._optGetData(dataset, cols = (layers[0], layers[-1]))
             # Forward pass (Compute value estimations from given input)
             out = self._optGetValues(data[0])
             # Backward pass (Compute deltas from backpropagation of error)

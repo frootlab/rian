@@ -50,8 +50,9 @@ class rbm(nemoa.system.ann.ann):
             'updateFactorWeights': 1.0,
             'updateFactorHbias': 0.1,
             'updateFactorVbias': 0.1,
-            'sparsityRate': 0.0,
-            'sparsityExpect': 0.5,
+            'modKlpEnable': True,
+            'modKlpRate': 0.0,
+            'modKlpExpect': 0.5,
             'selectivityFactor': 0.0,
             'selectivitySize': 0.5,
             'corruptionType': None,
@@ -122,9 +123,9 @@ class rbm(nemoa.system.ann.ann):
         cfg = self._config['optimize']
         algorithm = cfg['algorithm'].lower()
 
-        if cfg['sparsityRate'] > 0.0: nemoa.log('note', """
+        if cfg['modKlpEnable']: nemoa.log('note', """
             using l1-norm penalty term for sparse coding
-            with expectation value %.2f""" % (cfg['sparsityExpect']))
+            with expectation value %.2f""" % (cfg['modKlpExpect']))
         if cfg['selectivityFactor'] > 0.0: nemoa.log('note', """
             using l2-norm penalty term for selective coding
             with expectation value %.2f""" % (cfg['selectivitySize']))
@@ -425,13 +426,15 @@ class rbm(nemoa.system.ann.ann):
         if not 'hidden' in ignore: self.units['hidden'].update(deltaH)
         if not 'links' in ignore: self._updateLinks(**deltaL)
 
-        # calculate sparsity, and selectivity updates
-        if cfg['sparsityRate'] > 0.0:
+        # (optional) sparsity update
+        if cfg['modKlpEnable']:
             if not 'hidden' in ignore: self.units['hidden'].update(
-                self._getUpdateKlHidden(*dTuple))
+                self._getUpdateKlpHidden(*dTuple))
+
+        # (optional) selectivity update
         if cfg['selectivityFactor'] > 0.0:
             if not 'hidden' in ignore: self.units['hidden'].update(
-                self._getUpdateKlHidden(*dTuple))
+                self._getUpdateKlpHidden(*dTuple))
 
         return True
 
@@ -477,7 +480,7 @@ class rbm(nemoa.system.ann.ann):
 
         return { 'W': r * (D - M) }
 
-    def _getUpdateKlHidden(self, vData, hData, vModel, hModel):
+    def _getUpdateKlpHidden(self, vData, hData, vModel, hModel):
         """Return sparsity updates for hidden units.
 
         Description:
@@ -486,9 +489,9 @@ class rbm(nemoa.system.ann.ann):
 
         cfg = self._config['optimize']
 
-        p = cfg['sparsityExpect'] # target expectation value for units
+        p = cfg['modKlpExpect'] # target expectation value for units
         q = numpy.mean(hData, axis = 0) # expectation value (over samples)
-        r = cfg['sparsityRate'] # update rate
+        r = cfg['modKlpRate'] # update rate
 
         #units = (self.getUnits()[0], self.getUnits()[0])
         #data  = (vData, vData)
@@ -776,8 +779,9 @@ class grbm(rbm):
             'minibatchInterval': 1, # number of updates the same minibatch is used
             'corruptionType': 'none', # do not use corruption
             'corruptionFactor': 0.0, # no corruption of data
-            'sparsityRate': 0.0, # sparsity update update
-            'sparsityExpect': 0.5, # aimed value for l2-norm penalty
+            'modKlpEnable': True,
+            'modKlpRate': 0.0, # sparsity update update
+            'modKlpExpect': 0.5, # aimed value for l2-norm penalty
             'selectivityFactor': 0.0, # no selectivity update
             'selectivitySize': 0.5, # aimed value for l2-norm penalty
             'useAdjacency': False, # do not use selective weight updates
