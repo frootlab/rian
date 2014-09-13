@@ -124,12 +124,15 @@ class rbm(nemoa.system.ann.ann):
         cfg = self._config['optimize']
         algorithm = cfg['algorithm'].lower()
 
+        if cfg['modVmraEnable']: nemoa.log('note', """
+            using variance maximizing rate adaption
+            with length %i""" % (cfg['modVmraLength']))
         if cfg['modKlpEnable']: nemoa.log('note', """
             using l1-norm penalty term for sparse coding
             with expectation value %.2f""" % (cfg['modKlpExpect']))
-        if cfg['selectivityFactor'] > 0.0: nemoa.log('note', """
-            using l2-norm penalty term for selective coding
-            with expectation value %.2f""" % (cfg['selectivitySize']))
+        #if cfg['selectivityFactor'] > 0.0: nemoa.log('note', """
+        #    using l2-norm penalty term for selective coding
+        #    with expectation value %.2f""" % (cfg['selectivitySize']))
         if cfg['modCorruptionEnable']: nemoa.log(
             'note', """using data corruption for denoising with
             noise model '%s (%.2f)'""" % (
@@ -192,21 +195,32 @@ class rbm(nemoa.system.ann.ann):
 
         return True
 
+    def _optVmraUpdate(self, inspector):
+        store = inspector.readFromStore()
+        var = numpy.var(self._params['links'][(0, 1)]['W'])
+        if not 'wVar' in store: wVar = numpy.array([var])
+        else: wVar = numpy.append([var], store['wVar'])
+
+        cfg = self._config['optimize']
+        length = cfg['modVmraLength']
+        if wVar.shape[0] > length:
+
+            wVar = wVar[:length]
+            A = numpy.array([numpy.arange(0, length),
+                numpy.ones(length)])
+            grad = - numpy.linalg.lstsq(A.T, wVar)[0][0]
+            delw = cfg['modVmraFactor'] * grad
+
+            cfg['updateRate'] = min(max(delw,
+                cfg['modVmraMinRate']), cfg['modVmraMaxRate'])
+
+        inspector.writeToStore(wVar = wVar)
+        return True
+
     def optimizeVrcd(self, dataset, schedule, inspector):
         """Optimize parameters using variance resiliant constrastive divergency."""
 
         cfg  = self._config['optimize']
-
-        # initialise store with weight variance
-        wVar = numpy.array([numpy.var(
-            self._params['links'][(0, 1)]['W'])])
-        inspector.writeToStore(wVar = wVar)
-
-        lenght = cfg['updateVrcdLenght']
-        A = numpy.array([numpy.arange(0, lenght), numpy.ones(lenght)])
-
-        # initialise update rate
-        cfg['updateRate'] = cfg['updateVrcdInitRate']
 
         # for each update step (epoch)
         for epoch in xrange(cfg['updates']):
@@ -214,30 +228,16 @@ class rbm(nemoa.system.ann.ann):
             # get data (sample from minibatches)
             if epoch % cfg['minibatchInterval'] == 0: data = \
                 self._optGetData(dataset)
-
             # get system estimations (model)
             dTuple = self.getCdSamples(data)
-
             # adapt update rate
-            if epoch % cfg['updateVrcdInterval'] == 0 \
-                and epoch > cfg['updateVrcdWait']:
-                wVar = numpy.append([numpy.var(
-                    self._params['links'][(0, 1)]['W'])],
-                    inspector.readFromStore()['wVar'])
-                if wVar.shape[0] > lenght:
-                    wVar = wVar[:lenght]
-                    grad = - numpy.linalg.lstsq(A.T, wVar)[0][0]
-                    delw = cfg['updateVrcdFactor'] * grad
-                    rMin = cfg['updateVrcdMin']
-                    rMax = cfg['updateVrcdMax']
-
-                    cfg['updateRate'] = min(max(delw, rMin), rMax)
-
-                inspector.writeToStore(wVar = wVar)
+            if cfg['modVmraEnable']:
+                if epoch % cfg['modVmraInterval'] == 0 \
+                    and epoch > cfg['modVmraWait']:
+                    self._optVmraUpdate(inspector)
 
             # Update system params
             self._updateParams(*dTuple)
-
             # Trigger inspector (getch, calc inspect function etc)
             event = inspector.trigger()
             if event:
@@ -258,11 +258,11 @@ class rbm(nemoa.system.ann.ann):
             self._params['links'][(0, 1)]['W'])])
         inspector.writeToStore(wVar = wVar)
 
-        lenght = cfg['updateVrcdLenght']
+        lenght = cfg['modVmraLength']
         A = numpy.array([numpy.arange(0, lenght), numpy.ones(lenght)])
 
         # initialise update rate
-        cfg['updateRate'] = cfg['updateVrcdInitRate']
+        cfg['updateRate'] = cfg['modVmraInit']
 
         # for each update step (epoch)
         for epoch in xrange(cfg['updates']):
@@ -275,16 +275,16 @@ class rbm(nemoa.system.ann.ann):
             dTuple = self.getCdkSamples(data)
 
             # adapt update rate
-            if epoch % cfg['updateVrcdInterval'] == 0 \
-                and epoch > cfg['updateVrcdWait'] - lenght:
+            if epoch % cfg['modVmraInterval'] == 0 \
+                and epoch > cfg['modVmraWait'] - lenght:
                 wVar = numpy.append([numpy.var(
                     self._params['links'][(0, 1)]['W'])],
                     inspector.readFromStore()['wVar'])
                 if wVar.shape[0] > lenght:
                     wVar = wVar[:lenght]
                     grad = numpy.linalg.lstsq(A.T, wVar)[0][0]
-                    delw = cfg['updateVrcdFactor'] * numpy.abs(grad)
-                    cfg['updateRate'] = numpy.max(delw, cfg['updateVrcdMin'])
+                    delw = cfg['modVmraFactor'] * numpy.abs(grad)
+                    cfg['updateRate'] = numpy.max(delw, cfg['modVmraMinRate'])
 
                 inspector.writeToStore(wVar = wVar)
 
@@ -311,11 +311,11 @@ class rbm(nemoa.system.ann.ann):
         wVar = numpy.array([numpy.var(W)])
         inspector.writeToStore(wVar = wVar)
 
-        lenght = cfg['updateVrcdLenght']
+        lenght = cfg['modVmraLength']
         A = numpy.array([numpy.arange(0, lenght), numpy.ones(lenght)])
 
         # initialise update rate
-        cfg['updateRate'] = cfg['updateVrcdInitRate']
+        cfg['updateRate'] = cfg['modVmraInit']
 
         # for each update step (epoch)
         for epoch in xrange(cfg['updates']):
@@ -328,16 +328,16 @@ class rbm(nemoa.system.ann.ann):
             dTuple = self.getCdkSamples(data)
 
             # adapt update rate
-            if epoch % cfg['updateVrcdInterval'] == 0 \
-                and epoch > cfg['updateVrcdWait'] - lenght:
+            if epoch % cfg['modVmraInterval'] == 0 \
+                and epoch > cfg['modVmraWait'] - lenght:
                 wVar = numpy.append([numpy.var(
                     self._params['links'][(0, 1)]['W'])],
                     inspector.readFromStore()['wVar'])
                 if wVar.shape[0] > lenght:
                     wVar = wVar[:lenght]
                     grad = numpy.linalg.lstsq(A.T, wVar)[0][0]
-                    delw = cfg['updateVrcdFactor'] * numpy.abs(grad)
-                    cfg['updateRate'] = numpy.max(delw, cfg['updateVrcdMin'])
+                    delw = cfg['modVmraFactor'] * numpy.abs(grad)
+                    cfg['updateRate'] = numpy.max(delw, cfg['modVmraMinRate'])
 
                 inspector.writeToStore(wVar = wVar)
 
