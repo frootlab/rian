@@ -574,7 +574,7 @@ class model:
                         'id': 0})
                 elif args[0] == 'system':
                     if len(args) == 1:
-                        pass #2Do!
+                        pass # 2DO!
                     elif args[1] == 'relations':
                         if len(args) == 2:
                             pass

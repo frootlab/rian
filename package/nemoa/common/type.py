@@ -30,8 +30,3 @@ def isPlot(object):
     """Return true if the object is a plot instance."""
     return hasattr(object, '__module__') \
         and object.__module__.split('.')[1] == 'plot'
-
-def isReport(object):
-    """Return true if the object is a report instance."""
-    return hasattr(object, '__module__') \
-        and object.__module__.split('.')[1] == 'report'

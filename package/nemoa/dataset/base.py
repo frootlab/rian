@@ -650,7 +650,7 @@ class dataset:
         return groups
 
     def setColFilter(self, group, columns):
-        # 2Do: check columns!
+        # 2DO: check columns!
         self.cfg['colFilter'][group] = columns
         return True
 

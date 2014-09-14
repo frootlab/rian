@@ -3,9 +3,9 @@
 
 from .common.log import *
 import nemoa.common.type as type
-import nemoa.workspace.config, nemoa.plot, nemoa.annotation
+import nemoa.workspace, nemoa.plot, nemoa.annotation
 
-__version = ('0.4.89', 'noGPU-20140914')
+__version = ('0.4.90', 'noGPU-20140914')
 initLogger()
 
 def new(**kwargs):
@@ -26,4 +26,5 @@ def version():
 
 def workspaces():
     """Return list of workspaces."""
-    return nemoa.workspace.config.config().workspaces()
+    config = nemoa.workspace.config(importShared = False)
+    return config.list('workspace')

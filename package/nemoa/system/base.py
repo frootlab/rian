@@ -315,17 +315,17 @@ class system:
         if (not 'checkDataset' in config or config['checkDataset'] == True) \
             and not self._checkDataset(dataset): return False
 
-        # initialize inspector
-        inspector = nemoa.system.base.inspector(self)
+        # initialize tracker
+        tracker = nemoa.system.base.tracker(self)
         if 'inspect' in config and not config['inspect'] == False:
-            inspector.setTestData(self._getTestData(dataset))
+            tracker.setTestData(self._getTestData(dataset))
 
         # optimize system parameters
         algorithm = config['algorithm'].title()
         nemoa.log('note', "optimize '%s' (%s) using algorithm '%s'" % \
             (self.name(), self.getType(), algorithm))
         nemoa.setLog(indent = '+1')
-        retVal = self._optParams(dataset, schedule, inspector)
+        retVal = self._optParams(dataset, schedule, tracker)
         nemoa.setLog(indent = '-1')
 
         return retVal
@@ -648,7 +648,7 @@ class empty(system):
     def setLinks(self, *args, **kwargs): return True
     def initParams(self, *args, **kwargs): return True
 
-class inspector:
+class tracker:
 
     __inspect = True
     __estimate = True
@@ -662,13 +662,13 @@ class inspector:
         self.__configure(system)
 
     def __configure(self, system):
-        """Configure inspector to given nemoa.system instance."""
+        """Configure tracker to given nemoa.system instance."""
         if not nemoa.type.isSystem(system): return nemoa.log('warning',
-            'could not configure inspector: system is not valid!')
+            'could not configure tracker: system is not valid!')
         if not hasattr(system, '_config'): return nemoa.log('warning',
-            'could not configure inspector: system contains no configuration!')
+            'could not configure tracker: system contains no configuration!')
         if not 'optimize' in system._config: return nemoa.log('warning',
-            'could not configure inspector: system contains no configuration for optimization!')
+            'could not configure tracker: system contains no configuration for optimization!')
 
         # link system
         self.__system = system
@@ -688,7 +688,7 @@ class inspector:
         self.__state = {}
         self.__store = []
 
-    def writeToStore(self, id = -1, append = False, **kwargs):
+    def write(self, id = -1, append = False, **kwargs):
         if len(self.__store) == (abs(id) - 1) or append == True:
             self.__store.append(kwargs)
             return True
@@ -697,7 +697,7 @@ class inspector:
         self.__store[id] = kwargs
         return True
 
-    def readFromStore(self, id = -1):
+    def read(self, id = -1):
         return self.__store[id] if len(self.__store) >= abs(id) else {}
 
     def difference(self):

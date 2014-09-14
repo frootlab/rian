@@ -468,7 +468,7 @@ class ann(nemoa.system.base.system):
 
     # Backpropagation of Error (BPROP) specific Functions
 
-    def _optBPROP(self, dataset, schedule, inspector):
+    def _optBPROP(self, dataset, schedule, tracker):
         """Optimize parameters using backpropagation."""
 
         cnf = self._config['optimize']
@@ -490,8 +490,8 @@ class ann(nemoa.system.base.system):
             updates = self._optGetUpdatesBPROP(out, delta)
             # Update parameters
             self._optUpdateParams(updates)
-            # Trigger inspector (getch, calc inspect function etc)
-            event = inspector.trigger()
+            # Trigger tracker (getch, calc inspect function etc)
+            event = tracker.trigger()
             if event:
                 if event == 'abort': break
 
@@ -519,7 +519,7 @@ class ann(nemoa.system.base.system):
 
     # Resilient Backpropagation (RPROP) specific Functions
 
-    def _optRPROP(self, dataset, schedule, inspector):
+    def _optRPROP(self, dataset, schedule, tracker):
         """Optimize parameters using resiliant backpropagation."""
 
         cnf = self._config['optimize']
@@ -537,17 +537,17 @@ class ann(nemoa.system.base.system):
             # Backward pass (Compute deltas from backpropagation of error)
             delta = self._optGetDeltas(data[1], out)
             # Compute updates
-            updates = self._optGetUpdatesRPROP(out, delta, inspector)
+            updates = self._optGetUpdatesRPROP(out, delta, tracker)
             # Update parameters
             self._optUpdateParams(updates)
-            # Trigger inspector (getch, calc inspect function etc)
-            event = inspector.trigger()
+            # Trigger tracker (getch, calc inspect function etc)
+            event = tracker.trigger()
             if event:
                 if event == 'abort': break
 
         return True
 
-    def _optGetUpdatesRPROP(self, out, delta, inspector):
+    def _optGetUpdatesRPROP(self, out, delta, tracker):
 
         def getDict(dict, val): return {key: val * numpy.ones(
             shape = dict[key].shape) for key in dict.keys()}
@@ -581,7 +581,7 @@ class ann(nemoa.system.base.system):
                 self.LinkLayer.getUpdatesFromDelta(out[src], delta[src, tgt])
 
         # Get previous gradients and updates
-        prev = inspector.readFromStore()
+        prev = tracker.read()
         if not prev:
             prev = {
                 'gradient': grad,
@@ -615,7 +615,7 @@ class ann(nemoa.system.base.system):
                 accel, minFactor, maxFactor)
 
         # Save updates to store
-        inspector.writeToStore(gradient = grad, update = update)
+        tracker.write(gradient = grad, update = update)
 
         return update
 
@@ -1514,89 +1514,6 @@ class ann(nemoa.system.base.system):
 
         return R
 
-    # INFO: deprecated!
-    # 2DO: make a fast version of induction
-    #def evalRelFastInduction(self, data, mapping = None, **kwargs):
-        #"""Return induced curve length as numpy array.
-
-        #Keyword Arguments:
-            #data -- 2-tuple with numpy arrays: input data and output data
-            #mapping -- tuple of strings containing the mapping
-                #from input layer (first argument of tuple)
-                #to output layer (last argument of tuple)
-
-        #Description:
-            #Measure unit impact to other units,
-            #respective to given data """
-
-        #points   = 2
-        #interval = 4.0
-
-        #if not mapping: mapping = self.getMapping()
-        #iLabels = self.getUnits(group = mapping[0])[0]
-        #oLabels = self.getUnits(group = mapping[-1])[0]
-
-        ## calculate induction matrix
-        #meanIn = data[0].mean(axis = 0).reshape((1, len(iLabels)))
-        #R = numpy.zeros((len(iLabels), len(oLabels)))
-        #for inId, inUnit in enumerate(iLabels):
-            #for outId, outUnit in enumerate(oLabels):
-
-                ## calculate curve
-                #modInter = interval * numpy.std(data[0][:, inId])
-
-                #for iCount in range(points):
-                    #modData  = data[0].copy()
-                    #modShift = (float(iCount) / float(points - 1) - 0.5) * modInter
-                    #modData[:, inId] += modShift
-                    #modExpect = self.evalUnits((modData, data[1]),
-                        #func = 'expect', mapping = mapping)[outUnit]
-                    #if iCount: C[:, iCount - 1] = modExpect - prevExp
-                    #else: C = numpy.zeros((data[0].shape[0], points - 1))
-                    #prevExp = modExpect.copy()
-                #R[inId, outId] = C.sum() / float(C.size) / interval
-
-        #return R
-
-    #def evalRelDeviation(self, data, mapping = None, **kwargs):
-        #"""Return mean deviation matrix as numpy array.
-
-        #Keyword Arguments:
-            #data -- 2-tuple with numpy arrays: input data and output data
-            #mapping -- tuple of strings containing the mapping
-                #from input layer (first argument of tuple)
-                #to output layer (last argument of tuple)
-
-        #Description:
-            #Measure unit interaction to other units,
-            #respective to given data """
-
-        #interval = 0.0000001
-
-        #if not mapping: mapping = self.getMapping()
-        #inLabels = self.getUnits(group = mapping[0])[0]
-        #outLabels = self.getUnits(group = mapping[-1])[0]
-
-        ## calculate induction matrix
-        #meanIn  = data[0].mean(axis = 0).reshape((1, len(inLabels)))
-        #meanOut = data[1].mean(axis = 0).reshape((1, len(outLabels)))
-
-        #R = numpy.zeros((len(inLabels), len(outLabels)))
-        #for inId, inUnit in enumerate(inLabels):
-            #posData = meanIn.copy()
-            #posData[:, inId] += 0.5 * interval
-            #posExp = self.evalUnits((posData, meanOut),
-                #func = 'expect', mapping = mapping)
-            #negData = meanIn.copy()
-            #negData[:, inId] -= 0.5 * interval
-            #negExp = self.evalUnits((negData, meanOut),
-                #func = 'expect', mapping = mapping)
-
-            #for outId, outUnit in enumerate(outLabels):
-                #R[inId, outId] = posExp[outUnit] - negExp[outUnit]
-
-        #return R / interval
-
     ####################################################################
     # Unit groups                                                      #
     ####################################################################
@@ -1634,7 +1551,7 @@ class ann(nemoa.system.base.system):
 
         def __init__(self): pass
 
-        # 2Do
+        # 2DO
         # create classes for links
 
         @staticmethod

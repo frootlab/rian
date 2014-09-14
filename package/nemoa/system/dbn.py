@@ -71,7 +71,7 @@ class dbn(nemoa.system.ann.ann):
     def _getLinksFromNetwork(self, network):
         return None
 
-    def _optParams(self, dataset, schedule, inspector):
+    def _optParams(self, dataset, schedule, tracker):
         """Optimize system parameters."""
 
         # get configuration dictionary for optimization
@@ -81,17 +81,17 @@ class dbn(nemoa.system.ann.ann):
         # perform forward optimization of ann using
         # restricted boltzmann machines as subsystems
         if config['preTraining']: self._optPreTraining(
-            dataset, schedule, inspector)
+            dataset, schedule, tracker)
 
         # optionally 'finetuning' of model
         # perform backward optimization of ann
         # using backpropagation of error
         if config['fineTuning']: self._optFineTuning(
-            dataset, schedule, inspector)
+            dataset, schedule, tracker)
 
         return True
 
-    def _optPreTraining(self, dataset, schedule, inspector):
+    def _optPreTraining(self, dataset, schedule, tracker):
         """Pretraining model using restricted boltzmann machines."""
 
         nemoa.log('note', 'pretraining model')
@@ -119,7 +119,7 @@ class dbn(nemoa.system.ann.ann):
             sysType = 'visible' if inUnits['visible'] else 'hidden'
             sysUserConf = self._config['params'][sysType + 'System']
             if sysUserConf:
-                # 2Do: nmConfig??
+                # 2DO: nmConfig??
                 sysConfig = nmConfig.get(type = 'system', name = sysUserConf)
                 if sysConfig == None:
                     nemoa.log('error', """could not configure system:
@@ -248,7 +248,7 @@ class dbn(nemoa.system.ann.ann):
         nemoa.setLog(indent = '-2')
         return True
 
-    def _optFineTuning(self, dataset, schedule, inspector):
+    def _optFineTuning(self, dataset, schedule, tracker):
         """Finetuning model using backpropagation of error."""
 
         nemoa.log('note', 'finetuning model')
@@ -259,9 +259,9 @@ class dbn(nemoa.system.ann.ann):
         algorithm = self._config['optimize']['algorithm'].lower()
 
         if   algorithm == 'bprop': self._optBPROP(
-            dataset, schedule, inspector)
+            dataset, schedule, tracker)
         elif algorithm == 'rprop': self._optRPROP(
-            dataset, schedule, inspector)
+            dataset, schedule, tracker)
         else: nemoa.log('error', "unknown gradient '%s'!" % (algorithm))
 
         nemoa.setLog(indent = '-1')

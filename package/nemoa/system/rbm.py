@@ -118,7 +118,7 @@ class rbm(nemoa.system.ann.ann):
             and self._setHiddenUnitParams(params)
             and self._setLinkParams(params))
 
-    def _optParams(self, dataset, schedule, inspector):
+    def _optParams(self, dataset, schedule, tracker):
         """Optimize system parameters."""
 
         cfg = self._config['optimize']
@@ -138,13 +138,13 @@ class rbm(nemoa.system.ann.ann):
             cfg['modCorruptionType'], cfg['modCorruptionFactor']))
 
         if cfg['algorithm'].lower() == 'cd': return \
-            self._optCd(dataset, schedule, inspector)
+            self._optCd(dataset, schedule, tracker)
         return nemoa.log('error', """could not optimize model:
             unknown optimization algorithm '%s'""" % (algorithm))
 
     # Contrastive Divergency
 
-    def _optCd(self, dataset, schedule, inspector):
+    def _optCd(self, dataset, schedule, tracker):
         """Optimize system parameters."""
 
         cfg  = self._config['optimize']
@@ -161,18 +161,18 @@ class rbm(nemoa.system.ann.ann):
             if cfg['modVmraEnable']:
                 if epoch % cfg['modVmraInterval'] == 0 \
                     and epoch > cfg['modVmraWait']:
-                    self._optVmraUpdate(inspector)
+                    self._optVmraUpdate(tracker)
             # Update system params
             self._optCdUpdate(*dTuple)
-            # Trigger inspector (getch, calc inspect function etc)
-            event = inspector.trigger()
+            # Trigger tracker (getch, calc inspect function etc)
+            event = tracker.trigger()
             if event:
                 if event == 'abort': break
 
         return True
 
-    def _optVmraUpdate(self, inspector):
-        store = inspector.readFromStore()
+    def _optVmraUpdate(self, tracker):
+        store = tracker.read()
         var = numpy.var(self._params['links'][(0, 1)]['W'])
         if not 'wVar' in store: wVar = numpy.array([var])
         else: wVar = numpy.append([var], store['wVar'])
@@ -190,7 +190,7 @@ class rbm(nemoa.system.ann.ann):
             cfg['updateRate'] = min(max(delw,
                 cfg['modVmraMinRate']), cfg['modVmraMaxRate'])
 
-        inspector.writeToStore(wVar = wVar)
+        tracker.write(wVar = wVar)
         return True
 
     def _optCdGetSamples(self, data):

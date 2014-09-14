@@ -4,7 +4,6 @@
 import nemoa
 
 import nemoa.plot as plot
-import nemoa.report as report
 
 class mpAnalyse:
 
@@ -52,9 +51,5 @@ class mpAnalyse:
                 file = self.path + obj_model.cfg['name'] + '/' + plotid + '.' + params['fileformat']
                 nemoa.log(" * plot '" + plotid + "'")
                 plot.mpPlot(obj_model, plot = type, file = file, **params)
-
-        if 'reports' in self.cfg:
-            for reportid in self.cfg['reports']:
-                print 'report:', reportid
 
         return True
