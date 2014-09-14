@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-########################################################################
-# This python module contains a deep beliefe network implemnentation   #
-# aimed for multilayer data modeling and data dimensionality reduction #
-########################################################################
+"""Deep Belief Network (DBN).
+
+Description:
+    This python module contains a deep beliefe network implemnentation
+    aimed for multilayer data modeling and data dimensionality reduction"""
+
+__author__ = 'Patrick Michl (patrick.michl@gmail.com)'
 
 import nemoa.system.ann, numpy
 

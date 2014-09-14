@@ -1,17 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-########################################################################
-# This python module contains a generic class for layered artificial   #
-# neural networks aimed to provide common attributes, methods and      #
-# optimization strategies like backpropagation and subclasses like     #
-# different types of units to special subtypes of artificial neural    #
-# networks like restricted boltzmann machines or deep beliefe networks #
-########################################################################
+"""Artificial Neuronal Network (ANN).
 
-import nemoa.system.base, numpy
+Description:
+    This python module contains a generic class for layered artificial
+    neural networks aimed to provide common attributes, methods and
+    optimization strategies like backpropagation and subclasses like
+    different types of units to special subtypes of artificial neural
+    networks like restricted boltzmann machines or deep beliefe networks"""
 
-class ann(nemoa.system.base.system):
+__author__ = 'Patrick Michl (patrick.michl@gmail.com)'
+
+import nemoa, numpy
+
+class ann(nemoa.system.base):
     """Artificial Neuronal Network (ANN).
 
     References:

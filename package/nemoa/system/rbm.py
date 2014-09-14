@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-########################################################################
-# This python module contains various classes of restricted            #
-# boltzmann machines aimed for data modeling and per layer pretraining #
-# of multilayer feedforward artificial neural networks                 #
-########################################################################
+"""Restricted Boltzmann Machine (RBM).
+
+Description:
+    This python module contains various classes of restricted
+    boltzmann machines aimed for data modeling and per layer pretraining
+    of multilayer feedforward artificial neural networks"""
+
+__author__ = 'Patrick Michl (patrick.michl@gmail.com)'
 
 import nemoa.system.ann, numpy
 
@@ -64,10 +67,6 @@ class rbm(nemoa.system.ann.ann):
             'inspectTimeInterval': 10.0 ,
             'inspectEstimateTime': True,
             'inspectEstimateTimeWait': 20.0 }}[key]
-
-    # DATA
-
-    # DATA EVALUATION
 
     def getMapping(self):
         v = self._params['units'][0]['name']
