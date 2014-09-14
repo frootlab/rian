@@ -10,7 +10,7 @@ __shared = {}
 def init():
     """Create and link new configuration instance."""
     __shared['config'] = nemoa.workspace.config.config()
-    __shared['config'].loadCommon()
+    __shared['config'].importShared()
     return True
 
 # create workspace instance
@@ -45,9 +45,9 @@ def getPath(*args, **kwargs):
     if not 'config' in __shared: init()
     return __shared['config'].getPath(*args, **kwargs)
 
-def loadProject(*args, **kwargs):
+def load(*args, **kwargs):
     if not 'config' in __shared: init()
-    return __shared['config'].loadProject(*args, **kwargs)
+    return __shared['config'].load(*args, **kwargs)
 
 def getConfig(type = None, config = None, merge = ['params'], **kwargs):
     """Return object configuration as dictionary."""

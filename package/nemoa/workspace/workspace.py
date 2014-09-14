@@ -9,11 +9,11 @@ class workspace:
     def __init__(self, project = None):
         """Initialize shared configuration."""
         nemoa.workspace.init()
-        if not project == None: nemoa.workspace.loadProject(project)
+        if not project == None: nemoa.workspace.load(project)
 
     def load(self, workspace):
         """Import configuration from workspace and update paths and logfile."""
-        return nemoa.workspace.loadProject(workspace)
+        return nemoa.workspace.load(workspace)
 
     def name(self, *args, **kwargs):
         """Return name of workspace."""

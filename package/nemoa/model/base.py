@@ -424,12 +424,11 @@ class model:
         self.network._set(**config['network'])
         self.dataset._set(**config['dataset'])
 
-        ## prepare
+        # prepare
         if not 'update' in config['system']['config']:
             config['system']['config']['update'] = {'A': False}
 
-        ## 2do system._set(...) shall create system
-        ## and do something like self.configure ...
+        # 2do system._set(...) shall create system and do something like self.configure ...
 
         # create system
         self.system = nemoa.system.new(
@@ -471,7 +470,6 @@ class model:
 
     def plot(self, *args, **kwargs):
         """Create plot of model."""
-
         nemoa.log('create plot of model')
         nemoa.setLog(indent = '+1')
 

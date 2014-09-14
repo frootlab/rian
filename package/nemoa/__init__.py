@@ -26,4 +26,4 @@ def version():
 
 def workspaces():
     """Return list of workspaces."""
-    return nemoa.workspace.config.config().listWorkspaces()
+    return nemoa.workspace.config.config().workspaces()

@@ -435,14 +435,14 @@ class system:
         data = dataset.getData(size)
 
         mean = data.mean()
-        if numpy.abs(mean) >= maxMean: return nemoa.log('error', """
-            The dataset does not contain gauss normalized data:
-            The mean value is %.3f!""" % (mean))
+        if numpy.abs(mean) >= maxMean: return nemoa.log('error',
+            """Dataset does not contain gauss normalized data:
+            mean value is %.3f!""" % (mean))
 
         sdev = data.std()
-        if sdev >= maxSdev: return nemoa.log('error', """
-            The dataset does not contain gauss normalized data:
-            The standard deviation is %.3f!""" % (sdev))
+        if sdev >= maxSdev: return nemoa.log('error',
+            """Dataset does not contain gauss normalized data:
+            standard deviation is %.3f!""" % (sdev))
 
         return True
 
