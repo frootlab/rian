@@ -3,7 +3,7 @@
 
 from .common.log import *
 import nemoa.common.type as type
-import nemoa.workspace, nemoa.plot, nemoa.annotation
+import nemoa.workspace, nemoa.plot, nemoa.dataset.annotation
 
 __version = ('0.4.91', 'noGPU-20140914')
 initLogger()

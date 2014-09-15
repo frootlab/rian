@@ -81,7 +81,7 @@ class base:
             netLblFmt = network.cfg['label_format']
             for id, group in netGroupsOrder:
                 convNetGroups[group], convNetGroupsLost[group] = \
-                    nemoa.annotation.convert(netGroups[group], input = netLblFmt)
+                    nemoa.dataset.annotation.convert(netGroups[group], input = netLblFmt)
                 convNetNodes += convNetGroups[group]
                 convNetNodesLost += convNetGroupsLost[group]
 
@@ -114,7 +114,7 @@ class base:
 
             # convert column labes
             convColLabels, convColLabelsLost = \
-                nemoa.annotation.convert(origColLabels, input = format)
+                nemoa.dataset.annotation.convert(origColLabels, input = format)
 
             # notify if any dataset columns could not be converted
             if convColLabelsLost:
