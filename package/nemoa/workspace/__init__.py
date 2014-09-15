@@ -228,8 +228,8 @@ class config:
         self.__baseconf = 'nemoa.ini' # base configuration file
 
         # init tree structure for configuration storage
-        self.__store = {'analyse': {}, 'dataset': {}, 'network': {},
-            'plot': {}, 'schedule': {}, 'script': {}, 'system': {} }
+        self.__store = {'dataset': {}, 'network': {}, 'system': {},
+            'plot': {}, 'schedule': {}, 'script': {}}
 
         self.__index = {}
         self.__path = {}            # reset current path dict
@@ -475,21 +475,16 @@ class config:
 
     def __checkObjConf(self, objConf):
         """Check and update object configuration."""
-        if not 'class' in objConf or not objConf['class']: return None
-        if not 'name' in objConf: return None
+        if not 'class'  in objConf or not objConf['class']: return None
+        if not 'name'   in objConf: return None
         if not 'config' in objConf: return None
 
-        if objConf['class'] == 'network': return self.__checkNetwork(objConf)
-        if objConf['class'] == 'dataset': return self.__checkDataset(objConf)
-        if objConf['class'] == 'system': return self.__checkSystem(objConf)
+        if objConf['class'] == 'network':  return self.__checkNetwork(objConf)
+        if objConf['class'] == 'dataset':  return self.__checkDataset(objConf)
+        if objConf['class'] == 'system':   return self.__checkSystem(objConf)
         if objConf['class'] == 'schedule': return self.__checkSchedule(objConf)
+        if objConf['class'] == 'plot':     return objConf
 
-        # analse: get from source
-        if objConf['class'] == 'analyse':
-            if not 'plots' in conf: objConf['config']['plots'] = []
-            return objConf
-        # plot: get from source
-        if objConf['class'] == 'plot': return objConf
         return None
 
     def __checkNetwork(self, objConf):
@@ -904,15 +899,12 @@ class configFileImporter:
             'dataset': {'preprocessing': 'dict', 'source': 'dict', 'params': 'dict'},
             'system': {'package': 'str', 'class': 'str', 'params': 'dict'},
             'schedule': {'stage [0-9a-zA-Z]*': 'dict', 'system [0-9a-zA-Z]*': 'dict', 'params': 'dict'},
-            'plot': {'package': 'str', 'class': 'str', 'params': 'dict'},
-            'analyse': {'plots': 'list', 'params': 'dict'} }
+            'plot': {'package': 'str', 'class': 'str', 'params': 'dict'} }
 
         self.__path = config.path()
         self.project = config.project()
 
-    #
     # object definition / configuration files
-    #
 
     def load(self, file):
 
@@ -922,7 +914,6 @@ class configFileImporter:
         cfg.read(file)
 
         # parse sections and create list with objects
-
         objects = []
         for section in cfg.sections():
             objCfg = self.__readSection(cfg, section)
