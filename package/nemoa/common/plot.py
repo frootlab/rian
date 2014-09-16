@@ -11,6 +11,18 @@ import matplotlib
 import matplotlib.pyplot
 from matplotlib.patches import FancyArrowPatch, Circle
 
+COLOR = {
+    'black':      (0.000, 0.000, 0.000, 1.000),
+    'white':      (1.000, 1.000, 1.000, 1.000),
+    'red':        (1.000, 0.000, 0.000, 1.000),
+    'green':      (0.000, 0.500, 0.000, 1.000),
+    'blue':       (0.000, 0.000, 0.700, 1.000),
+    'lightgrey':  (0.800, 0.800, 0.800, 1.000),
+    'lightgreen': (0.600, 0.800, 0.196, 1.000),
+    'lightblue':  (0.439, 0.502, 0.565, 1.000),
+    'cornflower': (0.270, 0.510, 0.700, 1.000),
+}
+
 # create A4 figure object figsize = (8.27, 11.69)
 
 def heatmap(array, **kwargs):
@@ -121,8 +133,8 @@ def graph(graph, **kwargs):
         nodeFontSize = nodeFontSizeMax / numpy.sqrt(lenLabel)
 
         # set backcolor (depending on type) and facecolor
-        backcolor = _color(attr['color'])
-        facecolor = _color('black')
+        backcolor = COLOR[attr['color']]
+        facecolor = COLOR['black']
 
         # draw node and node label
         networkx.draw_networkx_nodes(graph, pos,
@@ -149,7 +161,7 @@ def graph(graph, **kwargs):
         n2  = graph.node[v]['patch']
         rad = edgeRadius
         linewidth = edgeLineWidth * attr['weight']
-        linecolor = list(_color(attr['color']))
+        linecolor = list(COLOR[attr['color']])
 
         if (u, v) in seen:
             rad = seen.get((u, v))
@@ -241,8 +253,8 @@ def layerGraph(G, **kwargs):
             label = nemoa.common.strToUnitStr(labelStr)
 
             color = {
-                True: {'bg': _color('cornflower'), 'font': _color('black') },
-                False: {'bg': _color('lightgrey'), 'font': _color('black') }
+                True: {'bg': COLOR['cornflower'], 'font': COLOR['black'] },
+                False: {'bg': COLOR['lightgrey'], 'font': COLOR['black'] }
             }[isVisible]
 
             # draw node
@@ -310,16 +322,3 @@ def layerGraph(G, **kwargs):
             G.graph['caption'], fontsize = 9, ha = 'center')
 
     return True
-
-def _color(color):
-    return {
-        'black':      (0.000, 0.000, 0.000, 1.000),
-        'white':      (1.000, 1.000, 1.000, 1.000),
-        'red':        (1.000, 0.000, 0.000, 1.000),
-        'green':      (0.000, 0.500, 0.000, 1.000),
-        'blue':       (0.000, 0.000, 0.700, 1.000),
-        'lightgrey':  (0.800, 0.800, 0.800, 1.000),
-        'lightgreen': (0.600, 0.800, 0.196, 1.000),
-        'lightblue':  (0.439, 0.502, 0.565, 1.000),
-        'cornflower': (0.270, 0.510, 0.700, 1.000),
-    }[color]
