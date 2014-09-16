@@ -1,13 +1,13 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """Deep Belief Network (DBN).
 
 Deep beliefe network implementation aimed for multilayer data modeling
-and data dimensionality reduction"""
+and data dimensionality reduction
+"""
 
-__author__ = 'Patrick Michl'
-__email__ = 'patrick.michl@gmail.com'
+__author__  = 'Patrick Michl'
+__email__   = 'patrick.michl@gmail.com'
+__license__ = 'GPLv3'
 
 import nemoa.system.ann
 import numpy
@@ -15,16 +15,16 @@ import numpy
 class dbn(nemoa.system.ann.ann):
     """Deep Belief Network (DBN).
 
-    Description:
-        Deep Belief Networks are Symmetric Atrificial Neural Networks
-        which are optimized in to steps: 1. Pretraining, using
-        Restricted Boltzmann Machines as per Layer Builing Blocks
-        2. Finetuning, using Backpropagation of Error. DBNs are commonly
-        used for data classification and compression / decompression.
+    Deep Belief Networks are Symmetric Atrificial Neural Networks
+    which are optimized in to steps: 1. Pretraining, using
+    Restricted Boltzmann Machines as per Layer Builing Blocks
+    2. Finetuning, using Backpropagation of Error. DBNs are commonly
+    used for data classification and compression / decompression.
 
     Reference:
         "Reducing the dimensionality of data with neural networks",
-        G. E. Hinton, R. R. Salakhutdinov, Science, 2006 """
+        G. E. Hinton, R. R. Salakhutdinov, Science, 2006
+    """
 
     @staticmethod
     def _default(key): return {

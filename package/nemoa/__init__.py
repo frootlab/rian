@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """nemoa data analysis and visualization.
 
@@ -10,19 +9,22 @@ restrictions of the underlying data structure.
 """
 
 __version__ = '0.4.93'
-__status__ = 'Development'
-__author__ = 'Patrick Michl'
-__email__ = 'patrick.michl@gmail.com'
+__status__  = 'Development'
+__author__  = 'Patrick Michl'
+__email__   = 'patrick.michl@gmail.com'
 __credits__ = ['Rainer König']
-__copyright__ = 'Copyright 2012-2014, Patrick Michl'
 __license__ = 'GPLv3'
+__copyright__ = 'Copyright 2012-2014, Patrick Michl'
 __maintainer__ = 'Patrick Michl'
 
 from nemoa.common.log import *
 import nemoa.common.type as type
 import nemoa.workspace
 import nemoa.plot
-import nemoa.dataset.annotation
+import nemoa.dataset
+import nemoa.system
+import nemoa.network
+import nemoa.model
 
 initLogger()
 

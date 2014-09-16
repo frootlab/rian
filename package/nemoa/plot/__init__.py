@@ -1,21 +1,18 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__author__ = 'Patrick Michl'
-__email__ = 'patrick.michl@gmail.com'
+__author__  = 'Patrick Michl'
+__email__   = 'patrick.michl@gmail.com'
+__license__ = 'GPLv3'
 
 import importlib
+import nemoa.plot.base
 
 def new(*args, **kwargs):
     """Return new nemoa.plot.[package].[class] instance."""
-    config = kwargs['config'] if 'config' in kwargs \
-        else {'package': 'base', 'class': 'empty'}
-    if not 'package' in config: return None
+    if not 'config' in kwargs: return False
+    config = kwargs['config']
+    if not 'package' in config: return False
     module = importlib.import_module('nemoa.plot.' + config['package'])
     if hasattr(module, config['class']): return \
         getattr(module, config['class'])(*args, **kwargs)
-    return None
-
-def empty():
-    """Return new nemoa.plot.base.empty instance."""
-    return new()
+    return False

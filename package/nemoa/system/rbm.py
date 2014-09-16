@@ -1,15 +1,14 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-"""Restricted Boltzmann Machine (RBM).
+"""Restricted Boltzmann Machine class networks.
 
 Various classes of restricted boltzmann machines aimed for data modeling
 and per layer pretraining of multilayer feedforward artificial neural
 networks
 """
 
-__author__ = 'Patrick Michl'
-__email__ = 'patrick.michl@gmail.com'
+__author__  = 'Patrick Michl'
+__email__   = 'patrick.michl@gmail.com'
+__license__ = 'GPLv3'
 
 import nemoa.system.ann
 import numpy
@@ -17,15 +16,17 @@ import numpy
 class rbm(nemoa.system.ann.ann):
     """Restricted Boltzmann Machine (RBM).
 
-    Restricted Boltzmann Machines are energy based undirected
-    artificial neuronal networks with two layers 'visible' and 'hidden'.
-    The visible layer contains binary distributed sigmoidal units
-    to model data. The hidden layer contains binary distributed
-    sigmoidal units to model relations in the data.
+    Restricted Boltzmann Machines (1) are energy based undirected
+    artificial neuronal networks with two layers with visible and
+    hidden units. The visible layer contains binary distributed
+    sigmoidal units to model data. The hidden layer contains binary
+    distributed sigmoidal units to model relations in the data.
 
     Reference:
-        "A Practical Guide to Training Restricted Boltzmann Machines",
-        Geoffrey E. Hinton, University of Toronto, 2010"""
+        (1) "A Practical Guide to Training Restricted Boltzmann
+            Machines", Geoffrey E. Hinton, University of Toronto, 2010
+
+    """
 
     @staticmethod
     def _default(key): return {

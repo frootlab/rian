@@ -1,8 +1,8 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__author__ = 'Patrick Michl'
-__email__ = 'patrick.michl@gmail.com'
+__author__  = 'Patrick Michl'
+__email__   = 'patrick.michl@gmail.com'
+__license__ = 'GPLv3'
 
 import nemoa
 import copy
@@ -1001,7 +1001,7 @@ class __config:
         def load(self, file):
             """Return network configuration as dictionary.
 
-            Keyword Arguments:
+            Args:
                 file -- ini file containing network configuration"""
 
             netcfg = ConfigParser.ConfigParser()

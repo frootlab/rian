@@ -1,6 +1,4 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """Artificial Neuronal Network (ANN).
 
 Generic class for layered artificial neural networks aimed to provide
@@ -10,31 +8,30 @@ subtypes of artificial neural networks like restricted boltzmann
 machines or deep beliefe networks.
 """
 
-__author__ = 'Patrick Michl'
-__email__ = 'patrick.michl@gmail.com'
+__author__  = 'Patrick Michl'
+__email__   = 'patrick.michl@gmail.com'
+__license__ = 'GPLv3'
 
 import nemoa
 import numpy
 
-class ann(nemoa.system.__base):
+class ann(nemoa.system.base.system):
     """Artificial Neuronal Network (ANN).
 
     References:
         "Learning representations by back-propagating errors",
-        Rumelhart, D. E., Hinton, G. E., and Williams, R. J. (1986)"""
-
-    ####################################################################
-    # (Artificial Neuronal Network) System Configuration               #
-    ####################################################################
+        Rumelhart, D. E., Hinton, G. E., and Williams, R. J. (1986)
+    """
 
     def _configure(self, config = {},
         network = None, dataset = None, update = False):
         """Configure ANN to network and dataset.
 
-        Keyword Arguments:
-            config -- dictionary containing system configuration
-            network -- nemoa network instance
-            dataset -- nemoa dataset instance """
+        Args:
+            config: dictionary containing system configuration
+            network: nemoa network instance
+            dataset: nemoa dataset instance
+        """
 
         if not 'check' in self._config: self._config['check'] = {
             'config': False, 'network': False, 'dataset': False}
@@ -101,18 +98,12 @@ class ann(nemoa.system.__base):
         return self._checkUnitParams(params) \
             and self._checkLinkParams(params)
 
-    ####################################################################
-    # (Artificial Neuronal Network) Unit Configuration                 #
-    ####################################################################
-
     def _initUnits(self, dataset = None):
         """Initialize unit parameteres.
 
-        Keyword Arguments:
-            dataset -- nemoa dataset instance OR None
-
-        Description:
-            Initialize all unit parameters."""
+        Args:
+            dataset: nemoa dataset instance OR None
+        """
 
         if not (dataset == None) and not \
             nemoa.type.isDataset(dataset): return nemoa.log(
@@ -228,10 +219,6 @@ class ann(nemoa.system.__base):
 
         return True
 
-    ####################################################################
-    # (Artificial Neuronal Network) Link Configuration                 #
-    ####################################################################
-
     def _setLinks(self, links):
 
         # update link parameters
@@ -250,14 +237,13 @@ class ann(nemoa.system.__base):
     def _initLinks(self, dataset = None):
         """Initialize link parameteres (weights).
 
-        Keyword Arguments:
-            dataset -- nemoa dataset instance OR None
+        If dataset is None, initialize weights matrices with zeros
+        and all adjacency matrices with ones. if dataset is nemoa
+        network instance, initialize weights with random values.
 
-        Description:
-            If dataset is None, initialize weights matrices with zeros
-            and all adjacency matrices with ones.
-            if dataset is nemoa network instance,
-            initialize weights with random values, that fit ...."""
+        Args:
+            dataset: nemoa dataset instance OR None
+        """
 
         if not(dataset == None) and \
             not nemoa.type.isDataset(dataset): return nemoa.log(
@@ -387,20 +373,16 @@ class ann(nemoa.system.__base):
 
         return True
 
-    ####################################################################
-    # (Artificial Neuronal Network) Parameter Optimization             #
-    ####################################################################
-
     # Parameter Initialization
 
     def _initParams(self, dataset = None):
         """Initialize system parameters.
 
-        Keyword Arguments:
-            dataset -- nemoa dataset instance
+        Initialize all unit and link parameters to dataset.
 
-        Description:
-            Initialize all unit and link parameters to dataset. """
+        Args:
+            dataset -- nemoa dataset instance
+        """
 
         if not nemoa.type.isDataset(dataset): return nemoa.log(
             'error', """could not initilize system:
@@ -615,22 +597,20 @@ class ann(nemoa.system.__base):
 
         return update
 
-    ####################################################################
-    # Evaluation                                                       #
-    ####################################################################
 
-    ####################################################################
-    # (Artificial Neuronal Network) System Evaluation                  #
-    ####################################################################
 
     def evalSystem(self, data, func = 'accuracy', **kwargs):
-        """Return evaluation value for system respective to data.
+        """Evaluation of system.
 
-        Keyword Arguments:
-            data -- 2-tuple with numpy arrays: input data and output data
-            func -- string containing system evaluation function
+        Args:
+            data: 2-tuple with numpy arrays: input data and output data
+            func: string containing system evaluation function
                 For a full list of available system evaluation functions
-                see: system.about('eval') """
+                see: system.about('eval')
+
+        Returns:
+            Evaluation value for system respective to data.
+        """
 
         # get evaluation function
         methods = self._getSystemEvalMethods()
@@ -721,9 +701,9 @@ class ann(nemoa.system.__base):
     def evalUnits(self, data, func = 'accuracy', units = None, **kwargs):
         """Return dictionary with unit evaluation values.
 
-        Keyword Arguments:
-            data -- 2-tuple with numpy arrays: input data and output data
-            func -- string containing unit evaluation function
+        Args:
+            data: 2-tuple with numpy arrays: input data and output data
+            func: string containing unit evaluation function
                 For a full list of available system evaluation functions
                 see: system.about('units') """
 
@@ -839,12 +819,13 @@ class ann(nemoa.system.__base):
     def evalUnitExpect(self, data, mapping = None, block = None):
         """Return (most) expected values of a layer.
 
-        Keyword Arguments:
-            data -- numpy array containing data corresponding
+        Args:
+            data: numpy array containing data corresponding
                 to the input layer (first argument of mapping)
-            mapping -- tuple of strings containing the mapping
+            mapping: tuple of strings containing the mapping
                 from input layer (first argument of tuple)
-                to output layer (last argument of tuple) """
+                to output layer (last argument of tuple)
+        """
 
         if mapping == None: mapping = self.getMapping()
         if block == None: inData = data
@@ -863,7 +844,7 @@ class ann(nemoa.system.__base):
     def evalUnitValues(self, data, mapping = None, block = None, expectLast = False):
         """Return unit values calculated from mappings.
 
-        Keyword Arguments:
+        Args:
             mapping -- tuple of strings containing the mapping
                 from input layer (first argument of tuple)
                 to output layer (last argument of tuple)
@@ -898,7 +879,7 @@ class ann(nemoa.system.__base):
     def evalUnitSamples(self, data, mapping = None, block = None, expectLast = False):
         """Return sampled unit values calculated from mapping.
 
-        Keyword Arguments:
+        Args:
             mapping -- tuple of strings containing the mapping
                 from input layer (first argument of tuple)
                 to output layer (last argument of tuple)
@@ -931,7 +912,7 @@ class ann(nemoa.system.__base):
     def evalUnitResiduals(self, data, mapping = None, block = None):
         """Return reconstruction residuals of units.
 
-        Keyword Arguments:
+        Args:
             data -- 2-tuple with numpy arrays containing input and
                 output data coresponding to the first and the last layer
                 in the mapping
@@ -962,7 +943,7 @@ class ann(nemoa.system.__base):
     def evalUnitEnergy(self, data, mapping = None):
         """Return unit energies of a layer.
 
-        Keyword Arguments:
+        Args:
             data -- input data
             mapping -- tuple of strings containing the mapping
                 from input layer (first argument of tuple)
@@ -978,7 +959,7 @@ class ann(nemoa.system.__base):
     def evalUnitMean(self, data, mapping = None, block = None, **kwargs):
         """Return mean of reconstructed unit values.
 
-        Keyword Arguments:
+        Args:
             data -- input data
             mapping -- tuple of strings containing the mapping
                 from input layer (first argument of tuple)
@@ -998,7 +979,7 @@ class ann(nemoa.system.__base):
     def evalUnitVariance(self, data, mapping = None, block = None, **kwargs):
         """Return variance of reconstructed unit values.
 
-        Keyword Arguments:
+        Args:
             data -- input data
             mapping -- tuple of strings containing the mapping
                 from input layer (first argument of tuple)
@@ -1018,7 +999,7 @@ class ann(nemoa.system.__base):
     def evalUnitError(self, data, norm = 'ME', **kwargs):
         """Return reconstruction error of units (depending on norm)
 
-        Keyword Arguments:
+        Args:
             data -- see evalUnitResiduals
             mapping -- see evalUnitResiduals
             block -- see evalUnitResiduals
@@ -1033,7 +1014,7 @@ class ann(nemoa.system.__base):
     def evalUnitAccuracy(self, data, norm = 'MSE', **kwargs):
         """Return unit reconstruction accuracy.
 
-        Keyword Arguments:
+        Args:
             data -- see evalUnitResiduals
             mapping -- see evalUnitResiduals
             block -- see evalUnitResiduals
@@ -1052,7 +1033,7 @@ class ann(nemoa.system.__base):
     def evalUnitPrecision(self, data, norm = 'SD', **kwargs):
         """Return unit reconstruction precision.
 
-        Keyword Arguments:
+        Args:
             data -- see evalUnitResiduals
             mapping -- see evalUnitResiduals
             block -- see evalUnitResiduals
@@ -1072,7 +1053,7 @@ class ann(nemoa.system.__base):
     def evalUnitCorrelation(self, data, mapping = None, block = None, **kwargs):
         """Return reconstruction correlation of units.
 
-        Keyword Arguments:
+        Args:
             data -- input data
             mapping -- tuple of strings containing the mapping
                 from input layer (first argument of tuple)
@@ -1148,7 +1129,7 @@ class ann(nemoa.system.__base):
     def evalLinks(self, data, func = 'energy', **kwargs):
         """Evaluate system links respective to data.
 
-        Keyword Arguments:
+        Args:
             data -- 2-tuple with numpy arrays: input data and output data
             func -- string containing link evaluation function
                 For a full list of available link evaluation functions
@@ -1204,8 +1185,8 @@ class ann(nemoa.system.__base):
     def evalLinkEnergy(self, data, mapping = None, **kwargs):
         """Return link energies of a layer.
 
-        Keyword Arguments:
-            mapping -- tuple of strings containing the mapping
+        Args:
+            mapping: tuple of strings containing the mapping
                 from input layer (first argument of tuple)
                 to output layer (last argument of tuple) """
 
@@ -1226,14 +1207,10 @@ class ann(nemoa.system.__base):
 
         return self.LinkLayer.energy(dIn, dOut, src, tgt, links)
 
-    ####################################################################
-    # (Artificial Neuronal Network) Relations between Units            #
-    ####################################################################
-
     def evalRelations(self, data, func = 'correlation', relations = None, **kwargs):
         """Return dictionary with unit relation values.
 
-        Keyword Arguments:
+        Args:
             data -- 2-tuple with numpy arrays: input data and output data
             func -- string containing unit relation function
                 For a full list of available unit relation functions
@@ -1366,7 +1343,7 @@ class ann(nemoa.system.__base):
     def evalRelCorrelation(self, data, mapping = None, **kwargs):
         """Return correlation matrix as numpy array.
 
-        Keyword Arguments:
+        Args:
             data -- 2-tuple with numpy arrays: input data and output data
             mapping -- tuple of strings containing the mapping
                 from input layer (first argument of tuple)
@@ -1393,7 +1370,7 @@ class ann(nemoa.system.__base):
     def evalRelCapacity(self, data, mapping = None, **kwargs):
         """Return network capacity as numpy array.
 
-        Keyword Arguments:
+        Args:
             data -- 2-tuple with numpy arrays: input data and output data
             mapping -- tuple of strings containing the mapping
                 from input layer (first argument of tuple)
@@ -1415,7 +1392,7 @@ class ann(nemoa.system.__base):
     def evalRelKnockout(self, data, mapping = None, **kwargs):
         """Return knockout matrix as numpy array.
 
-        Keyword Arguments:
+        Args:
             data -- 2-tuple with numpy arrays: input data and output data
             mapping -- tuple of strings containing the mapping
                 from input layer (first argument of tuple)
@@ -1454,7 +1431,7 @@ class ann(nemoa.system.__base):
     def evalRelInduction(self, data, mapping = None, **kwargs):
         """Return induced deviation as numpy array.
 
-        Keyword Arguments:
+        Args:
             data -- 2-tuple with numpy arrays: input data and output data
             mapping -- tuple of strings containing the mapping
                 from input layer (first argument of tuple)
@@ -1517,7 +1494,7 @@ class ann(nemoa.system.__base):
     def getMapping(self, src = None, tgt = None):
         """Return tuple with names of unit groups from source to target.
 
-        Keyword Arguments:
+        Args:
             src -- name of source unit group
             tgt -- name of target unit group """
 

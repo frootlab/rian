@@ -1,7 +1,11 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os, nemoa
+__author__  = 'Patrick Michl'
+__email__   = 'patrick.michl@gmail.com'
+__license__ = 'GPLv3'
+
+import nemoa
+import os
 
 def getEmptyFile(file):
     """Return file path for new file."""
