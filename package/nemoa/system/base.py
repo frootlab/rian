@@ -456,15 +456,15 @@ class system:
 
     def eval(self, data, *args, **kwargs):
         if len(args) == 0:
-            return self.evalSystem(data, **kwargs)
+            return self._evalSystem(data, **kwargs)
         if args[0] == 'units':
-            return self.evalUnits(data, *args[1:], **kwargs)
+            return self._evalUnits(data, *args[1:], **kwargs)
         if args[0] == 'links':
-            return self.evalLinks(data, *args[1:], **kwargs)
+            return self._evalLinks(data, *args[1:], **kwargs)
         if args[0] == 'relations':
-            return self.evalRelations(data, *args[1:], **kwargs)
+            return self._evalRelations(data, *args[1:], **kwargs)
         if args[0] in self._getSystemEvalMethods().keys():
-            return self.evalSystem(data, *args, **kwargs)
+            return self._evalSystem(data, *args, **kwargs)
         return nemoa.log('warning',
             "could not evaluate system: unknown method '%s'" % (args[0]))
 
@@ -584,9 +584,9 @@ class system:
         """
 
         if mapping == None: mapping = self.getMapping()
-        if transform == 'expect': return self.evalUnitExpect(data, mapping)
-        if transform == 'value':  return self.evalUnitValues(data, mapping)
-        if transform == 'sample': return self.evalUnitSamples(data, mapping)
+        if transform == 'expect': return self._evalUnitExpect(data, mapping)
+        if transform == 'value':  return self._evalUnitValues(data, mapping)
+        if transform == 'sample': return self._evalUnitSamples(data, mapping)
         return nemoa.log('error', """could not map data:
             unknown mapping algorithm '%s'""" % (transform))
 

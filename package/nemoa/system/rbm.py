@@ -206,11 +206,11 @@ class rbm(nemoa.system.ann.ann):
         k = cfg['updateCdkSteps']
         m = cfg['updateCdkIterations']
 
-        hData  = self.evalUnitExpect(data, ('visible', 'hidden'))
+        hData  = self._evalUnitExpect(data, ('visible', 'hidden'))
         if k == 1 and m == 1:
-            vModel = self.evalUnitSamples(hData, ('hidden', 'visible'),
+            vModel = self._evalUnitSamples(hData, ('hidden', 'visible'),
                 expectLast = True)
-            hModel = self.evalUnitExpect(vModel, ('visible', 'hidden'))
+            hModel = self._evalUnitExpect(vModel, ('visible', 'hidden'))
             return data, hData, vModel, hModel
 
         vModel = numpy.zeros(shape = data.shape)
@@ -220,17 +220,17 @@ class rbm(nemoa.system.ann.ann):
 
                 # calculate hSample from hExpect
                 # in first sampling step init hSample with h_data
-                if j == 0: hSample = self.evalUnitSamples(hData, ('hidden', ))
-                else: hSample = self.evalUnitSamples(hExpect, ('hidden', ))
+                if j == 0: hSample = self._evalUnitSamples(hData, ('hidden', ))
+                else: hSample = self._evalUnitSamples(hExpect, ('hidden', ))
 
                 # calculate vExpect from hSample
-                vExpect = self.evalUnitExpect(hSample, ('hidden', 'visible'))
+                vExpect = self._evalUnitExpect(hSample, ('hidden', 'visible'))
 
                 # calculate hExpect from vSample
                 # in last sampling step use vExpect
                 # instead of vSample to reduce noise
-                if j + 1 == k: hExpect = self.evalUnitExpect(vExpect, ('visible', 'hidden'))
-                else: hExpect = self.evalUnitSamples(vExpect, ('visible', 'hidden'), expectLast = True)
+                if j + 1 == k: hExpect = self._evalUnitExpect(vExpect, ('visible', 'hidden'))
+                else: hExpect = self._evalUnitSamples(vExpect, ('visible', 'hidden'), expectLast = True)
 
             vModel += vExpect / m
             hModel += hExpect / m
