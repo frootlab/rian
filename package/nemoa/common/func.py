@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
+
 import numpy
 
 def intensify(x, factor = 10.0, bound = 1.0):

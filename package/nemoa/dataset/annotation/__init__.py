@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa, numpy
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
+
+import nemoa
+import numpy
 
 def convert(list, input, output = None, filter = False, quiet = True):
 

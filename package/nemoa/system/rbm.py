@@ -3,24 +3,25 @@
 
 """Restricted Boltzmann Machine (RBM).
 
-Description:
-    This python module contains various classes of restricted
-    boltzmann machines aimed for data modeling and per layer pretraining
-    of multilayer feedforward artificial neural networks"""
+Various classes of restricted boltzmann machines aimed for data modeling
+and per layer pretraining of multilayer feedforward artificial neural
+networks
+"""
 
-__author__ = 'Patrick Michl (patrick.michl@gmail.com)'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 
-import nemoa.system.ann, numpy
+import nemoa.system.ann
+import numpy
 
 class rbm(nemoa.system.ann.ann):
     """Restricted Boltzmann Machine (RBM).
 
-    Description:
-        Restricted Boltzmann Machines are energy based undirected
-        artificial neuronal networks with two layers: 'visible' and 'hidden'.
-        The visible layer contains binary distributed sigmoidal units
-        to model data. The hidden layer contains binary distributed
-        sigmoidal units to model relations in the data.
+    Restricted Boltzmann Machines are energy based undirected
+    artificial neuronal networks with two layers 'visible' and 'hidden'.
+    The visible layer contains binary distributed sigmoidal units
+    to model data. The hidden layer contains binary distributed
+    sigmoidal units to model relations in the data.
 
     Reference:
         "A Practical Guide to Training Restricted Boltzmann Machines",

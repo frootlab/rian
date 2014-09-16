@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
+
 import importlib
 
 def new(*args, **kwargs):

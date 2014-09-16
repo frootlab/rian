@@ -1,8 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa, numpy, networkx
-import matplotlib, matplotlib.pyplot
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
+
+import nemoa
+import numpy
+import networkx
+import matplotlib
+import matplotlib.pyplot
 from matplotlib.patches import FancyArrowPatch, Circle
 
 # create A4 figure object figsize = (8.27, 11.69)

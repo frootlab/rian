@@ -1,9 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa, nemoa.plot.base
-import numpy, networkx
-import matplotlib, matplotlib.pyplot
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
+
+import nemoa
+import nemoa.plot.base
+import numpy
+import networkx
+import matplotlib
+import matplotlib.pyplot
 
 class graph(nemoa.plot.base.plot):
 

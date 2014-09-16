@@ -1,7 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import re, nemoa, csv, numpy
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
+
+import re
+import nemoa
+import csv
+import numpy
 
 def csvGetColLabels(file, delim = None, type = None):
     """Return list with column labels (first row) from csv file."""

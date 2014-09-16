@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa, nemoa.plot.base, numpy
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
+
+import nemoa
+import nemoa.plot.base
+import numpy
 
 class histogram(nemoa.plot.base.plot):
 

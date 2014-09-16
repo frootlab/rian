@@ -3,13 +3,14 @@
 
 """Deep Belief Network (DBN).
 
-Description:
-    This python module contains a deep beliefe network implemnentation
-    aimed for multilayer data modeling and data dimensionality reduction"""
+Deep beliefe network implementation aimed for multilayer data modeling
+and data dimensionality reduction"""
 
-__author__ = 'Patrick Michl (patrick.michl@gmail.com)'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 
-import nemoa.system.ann, numpy
+import nemoa.system.ann
+import numpy
 
 class dbn(nemoa.system.ann.ann):
     """Deep Belief Network (DBN).

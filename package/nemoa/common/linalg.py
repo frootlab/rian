@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import numpy, numpy.linalg
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
+
+import numpy
+import numpy.linalg
 
 def pcaRedimData(data, dims = 2):
     mean = numpy.mean(data, axis = 0)

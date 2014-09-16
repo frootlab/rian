@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import binascii, pyparsing
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
+
+import binascii
+import pyparsing
 
 def strToHash(str):
     """Return crc32 hash-valkue of given string."""

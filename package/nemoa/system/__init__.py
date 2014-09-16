@@ -1,7 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa, copy, numpy, time, importlib, nemoa.system.tracker
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
+
+import nemoa
+import copy
+import numpy
+import time
+import importlib
+import nemoa.system.tracker
 
 class __base:
 

@@ -1,8 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa, copy #, nemoa.workspace.base
-import os, importlib, imp, re, ConfigParser, glob
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
+
+import nemoa
+import copy
+import os
+import importlib
+import imp
+import re
+import ConfigParser
+import glob
 
 __shared = {}
 
@@ -220,7 +229,7 @@ class __base:
             configure = False, initialize = False)._set(model._get())
 
 class __config:
-    def __init__(self, importShared = True):
+    def __init__(self, update = True):
         self.__baseconf = 'nemoa.ini' # base configuration file
 
         # init tree structure for configuration storage
@@ -234,7 +243,7 @@ class __config:
         self.__workspacePath = None # reset current workspace path
         self.__updateBasepath()     # update paths for shared and user
 
-        if importShared: self.__importShared() # import shared resources
+        if update: self.__importShared() # import shared resources
 
     def __updateBasepath(self):
         if not os.path.exists(self.__baseconf): return False

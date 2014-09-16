@@ -1,7 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os, logging, inspect, traceback
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
+
+import os
+import logging
+import inspect
+import traceback
+
 __shared = {'indent': 0, 'mode': 'exec'}
 
 def initLogger(logfile = None):

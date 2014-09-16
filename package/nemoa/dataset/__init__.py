@@ -1,7 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa, numpy, copy, os, re, scipy.cluster.vq, csv
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
+
+import nemoa
+import numpy
+import copy
+import os
+import re
+import scipy.cluster.vq
+import csv
 
 class __base:
 

@@ -1,7 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import nemoa, nemoa.plot.base, numpy, networkx
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
+
+import nemoa
+import nemoa.plot.base
+import numpy
+import networkx
 
 class graph(nemoa.plot.base.plot):
 

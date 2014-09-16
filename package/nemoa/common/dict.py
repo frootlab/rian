@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import cPickle, gzip, pprint
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
+
+import cPickle
+import gzip
+import pprint
 
 def dictMerge(d1, d2):
     """Return merged dictionary (merge d1 over d2)."""

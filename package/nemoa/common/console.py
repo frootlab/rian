@@ -1,7 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os, sys, termios, fcntl
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
+
+import os
+import sys
+import termios
+import fcntl
 
 def getch():
     """Return single character from stdin, or None."""
@@ -16,7 +22,7 @@ def getch():
 
     c = None
 
-    try:                    
+    try:
         try: c = sys.stdin.read(1)
         except IOError: pass
     finally:

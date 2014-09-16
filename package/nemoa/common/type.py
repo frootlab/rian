@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
+
 def isInstanceType(object, type):
     """Return true if the object is a instance of given class."""
     return hasattr(object, '__module__') \
