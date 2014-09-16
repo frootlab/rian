@@ -468,10 +468,6 @@ class system:
         return nemoa.log('warning',
             "could not evaluate system: unknown method '%s'" % (args[0]))
 
-    ####################################################################
-    # Evaluate                                                         #
-    ####################################################################
-
     @staticmethod
     def getDataSum(data, norm = 'S'):
         """Return sum of data.
@@ -570,10 +566,6 @@ class system:
             parameter units has invalid format!""")
 
         return units
-
-    ####################################################################
-    # Data Transformation                                              #
-    ####################################################################
 
     def mapData(self, data, mapping = None, transform = 'expect'):
         """Return system representation of data.
