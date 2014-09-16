@@ -3,7 +3,7 @@
 
 import nemoa, networkx, copy
 
-class base:
+class __base:
 
     def __init__(self, config = {}, **kwargs):
         self.cfg = None
@@ -57,10 +57,8 @@ class base:
 
         self.cfg['visible'] = []
         self.cfg['label_format'] = 'generic:string'
-        if not 'nodes' in self.cfg:
-            self.cfg['nodes'] = {}
-        if not 'layer' in self.cfg:
-            self.cfg['layer'] = []
+        if not 'nodes' in self.cfg: self.cfg['nodes'] = {}
+        if not 'layer' in self.cfg: self.cfg['layer'] = []
         groups = dataset.getColGroups()
         for group in groups:
             if not group in self.cfg['visible']:
@@ -74,10 +72,8 @@ class base:
 
         self.cfg['hidden'] = []
         self.cfg['label_format'] = 'generic:string'
-        if not 'nodes' in self.cfg:
-            self.cfg['nodes'] = {}
-        if not 'layer' in self.cfg:
-            self.cfg['layer'] = []
+        if not 'nodes' in self.cfg: self.cfg['nodes'] = {}
+        if not 'layer' in self.cfg: self.cfg['layer'] = []
         (visible, hidden) = system.getUnits()
         for unit in hidden:
             (group, label) = unit.split(':')
@@ -108,21 +104,20 @@ class base:
         """Configure network to dataset and system."""
 
         # check if network instance is empty
-        if self._isEmpty():
-            nemoa.log('configuration is not needed: network is \'empty\'')
-            return True
+        if self._isEmpty(): return nemoa.log(
+            "configuration is not needed: network is 'empty'.")
 
         # check if dataset instance is available
-        if not nemoa.type.isDataset(dataset):
-            nemoa.log('error', 'could not configure network: no valid dataset instance given!')
-            return False
+        if not nemoa.type.isDataset(dataset): return nemoa.log(
+            'error', """could not configure network:
+            no valid dataset instance given:""")
 
          # check if system instance is available
-        if not nemoa.type.isSystem(system):
-            nemoa.log('error', 'could not configure network: no valid system instance given!')
-            return False
+        if not nemoa.type.isSystem(system): return nemoa.log(
+            'error', """could not configure network:
+            no valid system instance given.""")
 
-        nemoa.log('configure network: \'%s\'' % (self.name()))
+        nemoa.log("configure network: '%s'" % (self.name()))
         nemoa.setLog(indent = '+1')
 
         # type: 'auto is used for networks
@@ -151,7 +146,8 @@ class base:
         for group in groups:
             if not group in self.cfg['nodes'] \
                 or not (groups[group] == self.cfg['nodes'][group]):
-                self.__createLayerGraph(nodelist = {'type': group, 'list': groups[group]})
+                self.__createLayerGraph(
+                    nodelist = {'type': group, 'list': groups[group]})
 
         nemoa.setLog(indent = '-1')
         return True
@@ -166,11 +162,9 @@ class base:
 
         # get differences between nodelist and self.cfg['nodes']
         if nodelist['type'] in self.cfg['layer']:
-
             # count number of nodes to add to nodes
             addNodes = sum([1 for node in nodelist['list']
                 if not node in self.cfg['nodes'][nodelist['type']]])
-
             # count number of nodes to delete from graph
             addNodes = sum([1 for node in self.cfg['nodes'][nodelist['type']]
                 if not node in nodelist['list']])
@@ -213,10 +207,10 @@ class base:
             visible = layer in self.cfg['visible']
             if nodelist['type'] in self.cfg['layer']:
                 if layer == nodelist['type']:
-                    if addNodes: nemoa.log(
-                        'adding %i nodes to layer: \'%s\'' % (addNodes, layer))
-                    if delNodes: nemoa.log(
-                        'deleting %i nodes from layer: \'%s\'' % (delNodes, layer))
+                    if addNodes: nemoa.log("""adding %i nodes
+                        to layer '%s'""" % (addNodes, layer))
+                    if delNodes: nemoa.log("""deleting %i nodes
+                        from layer '%s'""" % (delNodes, layer))
             else:
                 if visible: nemoa.log('adding visible layer: \'' + layer + \
                     '\' (' + str(len(self.cfg['nodes'][layer])) + ' nodes)')
@@ -259,41 +253,29 @@ class base:
 
         return True
 
-    #
     # accessing nodes
-    #
 
-    # get network information of single node
     def node(self, node):
+        """Return network information of single node."""
         return self.graph.node[node]
 
-    # get list of nodes with specific attributes
-    # example nodes(type = 'visible')
-    def nodes(self, **params):
+    def nodes(self, **kwargs):
+        """get list of nodes with specific attributes
+        example nodes(type = 'visible')"""
 
         # filter search criteria and order entries
-        sorted_list = [None] * self.graph.number_of_nodes()
-
+        sortedList = [None] * self.graph.number_of_nodes()
         for node, attr in self.graph.nodes(data = True):
-            if not params == {}:
+            if not kwargs == {}:
                 passed = True
-                for key in params:
+                for key in kwargs:
                     if not key in attr['params'] \
-                        or not params[key] == attr['params'][key]:
+                        or not kwargs[key] == attr['params'][key]:
                         passed = False
                         break
-                if not passed:
-                    continue
-
-            sorted_list[attr['order']] = node
-
-        # filter empty nodes
-        filtered_list = []
-        for node in sorted_list:
-            if node:
-                filtered_list.append(node)
-
-        return filtered_list
+                if not passed: continue
+            sortedList[attr['order']] = node
+        return [node for node in sortedList if node] # filter empty nodes
 
     def node_labels(self, **params):
         return [self.graph.node[node]['label'] \
@@ -301,26 +283,19 @@ class base:
 
     def getNodeLabels(self, list):
         labels = []
-        for node in list:#
-            if not node in self.graph.node:
-                return None
-
+        for node in list:
+            if not node in self.graph.node: return None
             labels.append(self.graph.node[node]['label'])
-
         return labels
 
     def getNodeGroups(self, type = None):
 
         # get groups of specific node type
         if type:
-            if not type in self.cfg:
-                nemoa.log('warning', "unknown node type '" + str(type) + "'!")
-                return None
-
-            groups = {}
-            for group in self.cfg[type]:
-                groups[group] = self.node_labels(type = group)
-            return groups
+            if not type in self.cfg: return nemoa.log('warning',
+                "unknown node type '%s'." % (str(type)))
+            return {group: self.node_labels(type = group)
+                for group in self.cfg[type]}
 
         # get all groups
         allGroups = {}
@@ -331,15 +306,12 @@ class base:
             allGroups[type] = groups
         return allGroups
 
-    #
     # accessing layers
-    #
 
     def layer(self, layer):
         """Return dictionary containing information about a layer."""
         nodes = self.nodes(type = layer)
-        if not nodes:
-            return None
+        if not nodes: return None
         fistNode = self.node(nodes[0])['params']
         return {
             'id': fistNode['layerId'],
@@ -355,9 +327,7 @@ class base:
         layerList = [layerDict[layer]['label'] for layer in range(0, len(layerDict))]
         return layerList
 
-    #
     # accessing edges
-    #
 
     def edge(self, edge):
         return self.graph.edge[edge]
@@ -398,34 +368,24 @@ class base:
         return [(self.graph.node[src]['label'],
             self.graph.node[tgt]['label']) for src, tgt in self.edges(**kwargs)]
 
-    #
     # get / set
-    #
 
     def _get(self, sec = None):
         dict = {
             'cfg': copy.deepcopy(self.cfg),
-            'graph': copy.deepcopy(self.graph)
-        }
+            'graph': copy.deepcopy(self.graph) }
 
-        if not sec:
-            return dict
-        if sec in dict:
-            return dict[sec]
-
+        if not sec: return dict
+        if sec in dict: return dict[sec]
         return None
 
     def _set(self, **dict):
-        if 'cfg' in dict:
-            self.cfg = copy.deepcopy(dict['cfg'])
-        if 'graph' in dict:
-            self.graph = copy.deepcopy(dict['graph'])
-
+        if 'cfg' in dict: self.cfg = copy.deepcopy(dict['cfg'])
+        if 'graph' in dict: self.graph = copy.deepcopy(dict['graph'])
         return True
 
     def save_graph(self, file = None, format = 'gml'):
-        if file == None:
-            nemoa.log('critical', "no save path was given")
+        if file == None: nemoa.log('error', "no save path was given")
 
         # create path if not available
         if not os.path.exists(os.path.dirname(file)):
@@ -438,10 +398,7 @@ class base:
             G = self.graph.copy()
             networkx.write_gml(G, file)
 
-    ####################################################################
-    # Metadata of Network                                              #
-    ####################################################################
-
+    # Metadata of Network
     def about(self, *args):
         """Return generic information about various parts of the network.
 
@@ -466,16 +423,5 @@ class base:
         return self.cfg['name'] if 'name' in self.cfg else ''
 
 def new(*args, **kwargs):
-    """Return new nemoa.network.[package].[class] instance."""
-    return base(*args, **kwargs)
-    #config = kwargs['config'] if 'config' in kwargs \
-        #else {'package': 'base', 'class': 'empty'}
-    #import importlib
-    #module = importlib.import_module('nemoa.network.' + config['package'])
-    #if hasattr(module, config['class']): return \
-        #getattr(module, config['class'])(*args, **kwargs)
-    #return None
-
-def empty():
-    """Return new nemoa.network.base.empty instance."""
-    return base()
+    """Return new network instance."""
+    return __base(*args, **kwargs)

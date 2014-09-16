@@ -8,13 +8,13 @@ Description:
     neural networks aimed to provide common attributes, methods and
     optimization strategies like backpropagation and subclasses like
     different types of units to special subtypes of artificial neural
-    networks like restricted boltzmann machines or deep beliefe networks"""
+    networks like restricted boltzmann machines or deep beliefe networks."""
 
 __author__ = 'Patrick Michl (patrick.michl@gmail.com)'
 
 import nemoa, numpy
 
-class ann(nemoa.system.base):
+class ann(nemoa.system.__base):
     """Artificial Neuronal Network (ANN).
 
     References:
@@ -51,10 +51,10 @@ class ann(nemoa.system.base):
         return True
 
     def _setNetwork(self, network, update = False, *args, **kwargs):
-        """Update units and links to network instance. """
+        """Update units and links to network instance."""
 
-        nemoa.log("""get system units and links from network '%s'
-            """ % (network.name()))
+        nemoa.log("""get system units and links
+            from network '%s'.""" % (network.name()))
         nemoa.setLog(indent = '+1')
 
         if not nemoa.type.isNetwork(network):
@@ -74,20 +74,21 @@ class ann(nemoa.system.base):
         return True
 
     def _setDataset(self, dataset, *args, **kwargs):
-        """check if dataset columns match with visible units. """
+        """check if dataset columns match with visible units."""
 
         # check dataset instance
-        if not nemoa.type.isDataset(dataset): return nemoa.log('error',
-            'could not configure system: dataset instance is not valid!')
+        if not nemoa.type.isDataset(dataset): return nemoa.log(
+            'error', """could not configure system:
+            dataset instance is not valid.""")
 
         # compare visible units labels with dataset columns
         mapping = self.getMapping()
         unitsInGroups = self.getUnits(visible = True)
         units = []
         for group in unitsInGroups: units += group
-        if dataset.getColLabels() != units: return nemoa.log('error',
-            'could not configure system: visible units differ from dataset columns!')
-
+        if dataset.getColLabels() != units: return nemoa.log(
+            'error', """could not configure system:
+            visible units differ from dataset columns.""")
         self._config['check']['dataset'] = True
 
         return True
@@ -109,12 +110,12 @@ class ann(nemoa.system.base):
             dataset -- nemoa dataset instance OR None
 
         Description:
-            Initialize all unit parameters. """
+            Initialize all unit parameters."""
 
-        if not (dataset == None) and not nemoa.type.isDataset(dataset):
-            return nemoa.log('error', """
-                could not initilize unit parameters:
-                invalid dataset argument given!""")
+        if not (dataset == None) and not \
+            nemoa.type.isDataset(dataset): return nemoa.log(
+            'error', """could not initilize unit parameters:
+            invalid dataset argument given!""")
 
         for layerName in self.units.keys():
             if dataset == None \
@@ -126,7 +127,6 @@ class ann(nemoa.system.base):
                 cols = layerName \
                     if layerName in dataset.getColGroups() else '*'
                 data = dataset.getData(100000, rows = rows, cols = cols)
-
             self.units[layerName].initialize(data)
 
         return True
@@ -154,8 +154,7 @@ class ann(nemoa.system.base):
             name = self._params['units'][id]['name']
             if unitClass == 'sigmoid': self.units[name] = self.UnitLayerSigmoid()
             elif unitClass == 'gauss': self.units[name] = self.UnitLayerGauss()
-            else: return nemoa.log('error', """
-                could not create system:
+            else: return nemoa.log('error', """could not create system:
                 unit class '%s' is not supported!""" % (unitClass))
             self.units[name].params = self._params['units'][id]
 
@@ -169,25 +168,20 @@ class ann(nemoa.system.base):
             or not isinstance(params['units'], list): return False
         for id in range(len(params['units'])):
             layer = params['units'][id]
-            if not isinstance(layer, dict):
-                return False
+            if not isinstance(layer, dict): return False
             for attr in ['name', 'visible', 'class', 'label']:
-                if not attr in layer.keys():
-                    return False
+                if not attr in layer.keys(): return False
             if layer['class'] == 'gauss' \
-                and not self.UnitLayerGauss.check(layer):
-                return False
+                and not self.UnitLayerGauss.check(layer): return False
             elif params['units'][id]['class'] == 'sigmoid' \
-                and not self.UnitLayerSigmoid.check(layer):
-                return False
+                and not self.UnitLayerSigmoid.check(layer): return False
 
         return True
 
     def _getUnitsFromNetwork(self, network):
-        """Return tuple with lists of unit labels from network. """
+        """Return tuple with lists of unit labels from network."""
 
-        units = [{'name': layer, 'label':
-            network.nodes(type = layer)}
+        units = [{'name': layer, 'label': network.nodes(type = layer)}
             for layer in network.layers()]
         for group in units:
             group['visible'] = network.node(group['label'][0])['params']['visible']
@@ -196,11 +190,10 @@ class ann(nemoa.system.base):
         return units
 
     def _getUnitInformation(self, unit, layer = None):
-        """Return dict information for a given unit. """
+        """Return dict information for a given unit."""
 
         if not layer: layer = self.getGroupOfUnit(unit)
         if not layer in self.units: return {}
-
         return self.units[layer].get(unit)
 
     def _removeUnits(self, layer = None, label = []):
@@ -265,8 +258,8 @@ class ann(nemoa.system.base):
             initialize weights with random values, that fit ...."""
 
         if not(dataset == None) and \
-            not nemoa.type.isDataset(dataset): return nemoa.log('error', """
-            could not initilize link parameters:
+            not nemoa.type.isDataset(dataset): return nemoa.log(
+            'error', """could not initilize link parameters:
             invalid dataset argument given!""")
 
         for links in self._params['links']:
@@ -407,9 +400,9 @@ class ann(nemoa.system.base):
         Description:
             Initialize all unit and link parameters to dataset. """
 
-        if not nemoa.type.isDataset(dataset): return nemoa.log('error',
-            'could not initilize system: invalid dataset instance given!')
-
+        if not nemoa.type.isDataset(dataset): return nemoa.log(
+            'error', """could not initilize system:
+            invalid dataset instance given-""")
         return self._initUnits(dataset) and self._initLinks(dataset)
 
 
@@ -429,10 +422,8 @@ class ann(nemoa.system.base):
         layers = self.getMapping()
         out = {}
         for id, layer in enumerate(layers):
-            if id == 0:
-                out[layer] = inputData
-                continue
-            out[layer] = self.evalUnitExpect(
+            if id == 0: out[layer] = inputData
+            else: out[layer] = self.evalUnitExpect(
                 out[layers[id - 1]], layers[id - 1:id + 1])
 
         return out

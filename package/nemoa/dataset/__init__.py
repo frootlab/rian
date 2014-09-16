@@ -3,7 +3,7 @@
 
 import nemoa, numpy, copy, os, re, scipy.cluster.vq, csv
 
-class base:
+class __base:
 
     def __init__(self, config = {}, **kwargs):
         """Set configuration of dataset from dictionary."""
@@ -39,7 +39,7 @@ class base:
             (self.name(), network.name()))
         nemoa.setLog(indent = '+1')
 
-        # load data from cachefile (if caching is used and cachefile exists)
+        # load data from cachefile (if caching and cachefile exists)
         cacheFile = self.searchCacheFile(network) if useCache else None
         if cacheFile and self.load(cacheFile):
             nemoa.log('load cachefile: \'%s\'' % (cacheFile))
@@ -57,9 +57,7 @@ class base:
             self.cfg['table'][self.cfg['name']] = conf
             self.cfg['table'][self.cfg['name']]['fraction'] = 1.0
 
-        ################################################################
-        # Annotation                                                   #
-        ################################################################
+        # Annotation
 
         # get nodes from network and convert to common format
         if network.cfg['type'] == 'auto': netGroups = {'v': None}
@@ -68,8 +66,8 @@ class base:
             netGroups = network.getNodeGroups(type = 'visible')
 
             netGroupsOrder = []
-            for layer in netGroups:
-                netGroupsOrder.append((network.layer(layer)['id'], layer))
+            for layer in netGroups: netGroupsOrder.append(
+                (network.layer(layer)['id'], layer))
             netGroupsOrder = sorted(netGroupsOrder)
 
             # convert network node labels to common format
@@ -81,15 +79,17 @@ class base:
             netLblFmt = network.cfg['label_format']
             for id, group in netGroupsOrder:
                 convNetGroups[group], convNetGroupsLost[group] = \
-                    nemoa.dataset.annotation.convert(netGroups[group], input = netLblFmt)
+                    nemoa.dataset.annotation.convert(netGroups[group],
+                    input = netLblFmt)
                 convNetNodes += convNetGroups[group]
                 convNetNodesLost += convNetGroupsLost[group]
 
             # notify if any network node labels could not be converted
             if convNetNodesLost:
-                nemoa.log('%s of %s network nodes could not be converted! (see logfile)'
+                nemoa.log("""%s of %s network nodes could not
+                    be converted! (see logfile)"""
                     % (len(convNetNodesLost), len(convNetNodes)))
-                ## 2DO get original node labels for log file
+                # 2DO: get original node labels for log file
                 nemoa.log('logfile', nemoa.common.strToList(convNetNodesLost))
 
         # get columns from dataset files and convert to common format
@@ -101,9 +101,8 @@ class base:
             srcCnf = self.cfg['table'][src]
 
             # get column labels from csv-file
-            if 'csvtype' in srcCnf['source']:
-                csvType = srcCnf['source']['csvtype'].strip().lower()
-            else: csvType = None
+            csvType = srcCnf['source']['csvtype'].strip().lower() \
+                if 'csvtype' in srcCnf['source'] else None
             origColLabels = nemoa.common.csvGetColLabels(
                 srcCnf['source']['file'], type = csvType)
             if not origColLabels: continue
@@ -114,19 +113,20 @@ class base:
 
             # convert column labes
             convColLabels, convColLabelsLost = \
-                nemoa.dataset.annotation.convert(origColLabels, input = format)
+                nemoa.dataset.annotation.convert(
+                origColLabels, input = format)
 
             # notify if any dataset columns could not be converted
             if convColLabelsLost:
-                nemoa.log('warning',
-                    "%i of %i dataset columns could not be converted! (logfile)"
-                        % (len(convColLabelsLost), len(convColLabels)))
-                nemoa.log("logfile", ", ".join([convColLabels[i] \
+                nemoa.log('warning', """%i of %i dataset columns
+                    could not be converted! (see logfile)""" %
+                    (len(convColLabelsLost), len(convColLabels)))
+                nemoa.log('logfile', ", ".join([convColLabels[i] \
                     for i in convColLabelsLost]))
 
             if not network.cfg['type'] == 'auto':
 
-                # search converted network nodes in converted column labels
+                # search converted nodes in converted columns
                 numLost = 0
                 numAll = 0
                 lostNodes = {}
@@ -140,17 +140,17 @@ class base:
 
                     # get original labels
                     lostNodes[group] = [netGroups[group][
-                        convNetGroups[group].index(val)] for val in lostNodesConv]
+                        convNetGroups[group].index(val)]
+                        for val in lostNodesConv]
 
                 # notify if any network nodes could not be found
                 if numLost:
-                    nemoa.log('warning', """
-                        %i of %i network nodes could not be found in
-                        dataset source! (logfile)""" % (numLost, numAll))
-                    for group in lostNodes:
-                        nemoa.log("logfile", """
-                            missing nodes (group %s): """ % (group)
-                            + ", ".join(lostNodes[group]))
+                    nemoa.log('warning', """%i of %i network nodes
+                        could not be found in dataset source!
+                        (see logfile)""" % (numLost, numAll))
+                    for group in lostNodes: nemoa.log('logfile',
+                        'missing nodes (group %s): ' % (group)
+                        + ', '.join(lostNodes[group]))
 
             # prepare dictionary for column source ids
             colLabels[src] = {
@@ -181,19 +181,17 @@ class base:
             found = 0
 
             for id, col in enumerate(convNetGroups[group]):
-                if not col in interColLabels:
-                    continue
+                if not col in interColLabels: continue
                 found += 1
 
                 # add column (use network label and group)
                 self.cfg['columns'] += ((group, netGroups[group][id]), )
                 for src in colLabels: colLabels[src]['usecols'] \
                     += (colLabels[src]['conv'].index(col), )
+
             if not found:
-                nemoa.log('error', """
-                    no node from network group '%s'
-                    could be found in dataset source!
-                    """ % (group))
+                nemoa.log('error', """no node from network group '%s'
+                    could be found in dataset source!""" % (group))
                 nemoa.setLog(indent = '-1')
                 return False
 
@@ -201,9 +199,7 @@ class base:
         for src in colLabels: self.cfg['table'][src]['source']['usecols'] \
             = colLabels[src]['usecols']
 
-        ################################################################
-        # Column & Row Filters                                         #
-        ################################################################
+        # Column & Row Filters
 
         # add column filters and partitions from network node groups
         self.cfg['colFilter'] = {'*': ['*:*']}
@@ -219,9 +215,7 @@ class base:
             self.cfg['rowFilter'][source] = [source + ':*']
             self.cfg['rowPartitions']['source'].append(source)
 
-        ################################################################
-        # Import data from CSV-files into numpy arrays                 #
-        ################################################################
+        # Import data from CSV-files into numpy arrays
 
         # import data from sources
         nemoa.log('import data from sources')
@@ -240,15 +234,13 @@ class base:
             self.save(cacheFile)
 
         # preprocess data
-        if 'preprocessing' in self.cfg.keys():
-            self.preprocessData(**self.cfg['preprocessing'])
+        if 'preprocessing' in self.cfg.keys(): self.preprocessData(
+            **self.cfg['preprocessing'])
 
         nemoa.setLog(indent = '-1')
         return True
 
-    ####################################################################
-    # Data preprocessing                                               #
-    ####################################################################
+    # Data preprocessing
 
     def preprocessData(self, **kwargs):
         """Data preprocessing.
@@ -382,10 +374,10 @@ class base:
                 for colID, colName in enumerate(newRecArray.dtype.names[1:]):
 
                     # update source data columns
-                    newRecArray[colName] = (transArray[:, colID]).astype(float)
+                    newRecArray[colName] = (transArray[:, colID]
+                        ).astype(float)
 
-                # set record array
-                self.data[src]['array'] = newRecArray
+                self.data[src]['array'] = newRecArray # set record array
 
             self.setColLabels(targetColumns)
             nemoa.setLog(indent = '-1')
@@ -399,7 +391,8 @@ class base:
                 for colName in self.data[src]['array'].dtype.names[1:]:
                     # update source data columns
                     self.data[src]['array'][colName] = \
-                        (self.data[src]['array'][colName] > 0.0).astype(float)
+                        (self.data[src]['array'][colName] > 0.0
+                        ).astype(float)
             return True
 
         # gauss to weight in [0, 1] data transformation
@@ -411,7 +404,8 @@ class base:
                     # update source data columns
                     self.data[src]['array'][colName] = \
                         (2.0 / (1.0 + numpy.exp(-1.0 * \
-                        self.data[src]['array'][colName] ** 2))).astype(float)
+                        self.data[src]['array'][colName] ** 2))
+                        ).astype(float)
             return True
 
         # gauss to distance data transformation
@@ -421,14 +415,14 @@ class base:
             for src in self.data:
                 # update source per column (recarray)
                 for colName in self.data[src]['array'].dtype.names[1:]:
-                    # update source data columns
                     self.data[src]['array'][colName] = \
                         (1.0 - (2.0 / (1.0 + numpy.exp(-1.0 * \
-                        self.data[src]['array'][colName] ** 2)))).astype(float)
+                        self.data[src]['array'][colName] ** 2)))
+                        ).astype(float)
             return True
 
-        return nemoa.log('error'
-            "could not transform data: unknown algorithm '%s'!" % (algorithm))
+        return nemoa.log('error', """could not transform data:
+            unknown algorithm '%s'!""" % (algorithm))
 
     def getValue(self, row = None, col = None):
         """Return single value from dataset."""
@@ -493,14 +487,15 @@ class base:
             data = data[:size]
 
         # Format data
-        if isinstance(cols, str): fmtData = self.getFormatedData(data,
-            cols = self.getColLabels(cols), output = output)
-        elif isinstance(cols, list): fmtData = self.getFormatedData(data,
-            cols = cols, output = output)
-        elif isinstance(cols, tuple): fmtData = tuple([self.getFormatedData(data,
-            cols = self.getColLabels(grp), output = output) for grp in cols])
-        else: return nemoa.log('error',
-            'could not get data: invalid argument for columns!')
+        if isinstance(cols, str): fmtData = self.getFormatedData(
+            data, cols = self.getColLabels(cols), output = output)
+        elif isinstance(cols, list): fmtData = self.getFormatedData(
+            data, cols = cols, output = output)
+        elif isinstance(cols, tuple): fmtData = tuple(
+            [self.getFormatedData(data, cols = self.getColLabels(grp),
+            output = output) for grp in cols])
+        else: return nemoa.log('error', """could not get data:
+            invalid argument for columns!""")
 
         # Corrupt data (optionally)
         return self.getCorruptedData(fmtData, \
@@ -520,8 +515,8 @@ class base:
         if not isinstance(source, str) \
             or not source in self.data \
             or not isinstance(self.data[source]['array'], numpy.ndarray): \
-            return nemoa.log('error',
-            "could not retrieve data: invalid source: '%s'!" % (source))
+            return nemoa.log('error', """could not retrieve data:
+            invalid source: '%s'!""" % (source))
 
         # Check row Filter
         if not rows in self.cfg['rowFilter']: return nemoa.log('error',
@@ -958,13 +953,10 @@ class base:
         nemoa.log("import data from csv file: " + file)
 
         try:
-            #data = numpy.genfromtxt(file, skiprows = 1, delimiter = delim,
-                #usecols = cols, dtype = dtype)
             data = numpy.loadtxt(file, skiprows = 1, delimiter = delim,
                 usecols = cols, dtype = dtype)
         except:
-            nemoa.log('error', 'could not import data from file!')
-            return None
+            return nemoa.log('error', 'could not import data from file!')
 
         return data
 
@@ -991,8 +983,7 @@ class base:
             cols, data = self.getData(output = ('cols', 'recarray'))
             retVal = nemoa.common.csvSaveData(file, data,
                 cols = [''] + cols, **kwargs)
-        else: retVal = nemoa.log('error', """
-            could not export dataset:
+        else: retVal = nemoa.log('error', """could not export dataset:
             unsupported file type '%s'""" % (type))
 
         nemoa.setLog(indent = '-1')
@@ -1013,10 +1004,8 @@ class base:
         file = self.getCacheFile(network)
         if not os.path.isfile(file):
             basedir = os.path.dirname(file)
-            if not os.path.exists(basedir):
-                os.makedirs(basedir)
-            with open(file, 'a'):
-                os.utime(file, None)
+            if not os.path.exists(basedir): os.makedirs(basedir)
+            with open(file, 'a'): os.utime(file, None)
         return file
 
     def load(self, file):
@@ -1040,9 +1029,7 @@ class base:
         if 'cfg' in dict: self.cfg = copy.deepcopy(dict['cfg'])
         return True
 
-    ####################################################################
-    # Metadata of Dataset                                              #
-    ####################################################################
+    # Metadata of Dataset
 
     def about(self, *args):
         """Return generic information about various parts of the dataset.
@@ -1064,13 +1051,9 @@ class base:
         return None
 
     def name(self):
-        """Return name of dataset."""
+        """Return string containing name of dataset."""
         return self.cfg['name'] if 'name' in self.cfg else ''
 
 def new(*args, **kwargs):
     """Return new dataset instance."""
-    return base(*args, **kwargs)
-
-def empty():
-    """Return new empty dataset instance."""
-    return base(*args, **kwargs)
+    return __base(*args, **kwargs)

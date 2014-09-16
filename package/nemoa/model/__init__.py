@@ -3,7 +3,7 @@
 
 import nemoa, numpy, copy, time, os
 
-class base:
+class __base:
 
     dataset = None
     network = None
@@ -688,8 +688,4 @@ class base:
 
 def new(*args, **kwargs):
     """Return new model instance."""
-    return base(*args, **kwargs)
-
-def empty(*args, **kwargs):
-    """Return empty model instance."""
-    return base(*args, **kwargs)
+    return __base(*args, **kwargs)
