@@ -597,8 +597,6 @@ class ann(nemoa.system.base.system):
 
         return update
 
-
-
     def evalSystem(self, data, func = 'accuracy', **kwargs):
         """Evaluation of system.
 
