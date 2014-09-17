@@ -628,6 +628,9 @@ class tracker:
         self._store[id] = kwargs
         return True
 
+    def epoch(self):
+        return self._state['epoch']
+
     def read(self, id = -1):
         return self._store[id] if len(self._store) >= abs(id) else {}
 

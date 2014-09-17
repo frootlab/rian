@@ -1633,7 +1633,8 @@ class ann(nemoa.system.base.system):
         def update(self, updates):
             """Update parameter of sigmoid units. """
 
-            self.params['bias'] += updates['bias']
+            if 'bias'in updates:
+                self.params['bias'] += updates['bias']
 
             return True
 
@@ -1762,8 +1763,10 @@ class ann(nemoa.system.base.system):
         def update(self, updates):
             """Update gaussian units. """
 
-            self.params['bias'] += updates['bias']
-            self.params['lvar'] += updates['lvar']
+            if 'bias' in updates:
+                self.params['bias'] += updates['bias']
+            if 'lvar' in updates:
+                self.params['lvar'] += updates['lvar']
 
             return True
 
