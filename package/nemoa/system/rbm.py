@@ -55,6 +55,7 @@ class rbm(nemoa.system.ann.ann):
             'updateFactorWeights': 1.0,
             'updateFactorHbias': 0.1,
             'updateFactorVbias': 0.1,
+            'modSaEnable': True,
             'modKlEnable': True,
             'modKlRate': 0.0,
             'modKlExpect': 0.5,
@@ -157,7 +158,7 @@ class rbm(nemoa.system.ann.ann):
             if epoch % cfg['minibatchInterval'] == 0: data = \
                 self._optGetData(dataset)
             # get system estimations (model)
-            dTuple = self._optCdGetSamples(data)
+            dTuple = self._optCdSampling(data)
             # adapt update rate
             if cfg['modVmraEnable']:
                 if epoch % cfg['modVmraInterval'] == 0 \
@@ -194,12 +195,21 @@ class rbm(nemoa.system.ann.ann):
         tracker.write(wVar = wVar)
         return True
 
-    def _optCdGetSamples(self, data):
-        """Return mean value of reconstructed data using k-step contrastive divergency sampling (CD-k).
+    def _optCdSampling(self, data):
+        """Contrastive divergency sampling.
 
-        Options:
-            k: number of full Gibbs sampling steps
-            m: number if iterations to calculate mean values """
+        Args:
+            (k steps, m iterations)
+
+        Returns:
+            4-tuple (vData, hData, vModel, hModel) containing numpy
+            arrays with:
+                vData: input data of visible units
+                hData: expected values of hidden units for vData
+                vModel: sampled values of visible units after k smapling
+                    steps and over m iterations.
+                hModel: expected values of hidden units for vModel
+        """
 
         cfg = self._config['optimize']
 
@@ -320,18 +330,9 @@ class rbm(nemoa.system.ann.ann):
         q = numpy.mean(hData, axis = 0) # expectation value (over samples)
         r = cfg['modKlRate'] # update rate
 
-        #units = (self.getUnits()[0], self.getUnits()[0])
-        #data  = (vData, vData)
-
-        #p = 0.1 + numpy.array(numpy.zeros(q.shape[0])).reshape(q.shape)
-        #p = 0.5 * numpy.array(range(q.shape[0])).reshape(q.shape) / float(q.shape[0] - 1)
-        #p = 0.5 * numpy.array([0.0, 1.0, 1.0]).reshape(q.shape)
-        #p[0] = 0.5
-        #p[1] = 0.5
-
         r = max(cfg['updateRate'], r)
 
-        #2do!
+        #2Do
         #print 'distribution accuracy', 1.0 - 2.0 * numpy.mean(numpy.abs(q - p))
 
         dBias = - r * (q - p)
@@ -372,6 +373,7 @@ class rbm(nemoa.system.ann.ann):
         """Return tuple with lists of unit labels ([visible], [hidden]) using dataset for visible."""
         return (dataset.getColLabels(), self.units['hidden'].params['label'])
 
+    #2Do: generalize to ann
     def _unlinkUnit(self, unit):
         """Delete unit links in adjacency matrix."""
         if unit in self.units['visible'].params['label']:
@@ -422,7 +424,7 @@ class rbm(nemoa.system.ann.ann):
         hList = self.units['hidden'].params['label']
         A = numpy.empty([len(vList), len(hList)], dtype = bool)
 
-        # 2DO!! This is very slow: we could try "for link in links" etc.
+        #2Do: This is very slow: we could try "for link in links" etc.
         for i, v in enumerate(vList):
             for j, h in enumerate(hList):
                 A[i, j] = ((v, h) in links or (h, v) in links)
@@ -470,10 +472,8 @@ class rbm(nemoa.system.ann.ann):
                 del curLinks[curLinks.index((link[1], link[0]))]
                 found = True
             if not found:
-                nemoa.log('warning', """
-                    could not delete link (%s → %s):
-                    link could not be found!
-                    """ % (link[0], link[1]))
+                nemoa.log('warning', """could not delete link (%s → %s):
+                    link could not be found!""" % (link[0], link[1]))
                 continue
 
         return self._setLinks(curLinks)
@@ -486,17 +486,17 @@ class rbm(nemoa.system.ann.ann):
 class grbm(rbm):
     """Gaussian Restricted Boltzmann Machine (GRBM).
 
-    Description:
-        Gaussian Restricted Boltzmann Machines are energy based
-        undirected artificial neuronal networks with two layers: visible
-        and hidden. The visible layer contains gauss distributed
-        gaussian units to model data. The hidden layer contains binary
-        distributed sigmoidal units to model relations in the data.
+    Gaussian Restricted Boltzmann Machines are energy based
+    undirected artificial neuronal networks with two layers: visible
+    and hidden. The visible layer contains gauss distributed
+    gaussian units to model data. The hidden layer contains binary
+    distributed sigmoidal units to model relations in the data.
 
     Reference:
         "Improved Learning of Gaussian-Bernoulli Restricted Boltzmann
         Machines", KyungHyun Cho, Alexander Ilin and Tapani Raiko,
-        ICANN 2011 """
+        ICANN 2011
+    """
 
     @staticmethod
     def _default(key): return {
@@ -529,8 +529,9 @@ class grbm(rbm):
             'modCorruptionEnable': False,
             'modCorruptionType': 'none', # do not use corruption
             'modCorruptionFactor': 0.0, # no corruption of data
+            'modSaEnable': True,
             'modKlEnable': True,
-            'modKlRate': 0.0, # sparsity update update
+            'modKlRate': 0.0, # sparsity update
             'modKlExpect': 0.5, # aimed value for l2-norm penalty
             'selectivityFactor': 0.0, # no selectivity update
             'selectivitySize': 0.5, # aimed value for l2-norm penalty
@@ -549,10 +550,10 @@ class grbm(rbm):
     def _optCdDeltaV(self, vData, hData, vModel, hModel, **kwargs):
         """Return cd gradient based updates for visible units.
 
-        Description:
-            Constrastive divergency gradient of visible unit parameters
-            using an modified energy function for faster convergence.
-            See reference for modified Energy function."""
+        Constrastive divergency gradient of visible unit parameters
+        using an modified energy function for faster convergence.
+        See reference for modified Energy function.
+        """
 
         cfg = self._config['optimize']
 

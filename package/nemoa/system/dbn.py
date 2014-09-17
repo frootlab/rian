@@ -2,7 +2,7 @@
 """Deep Belief Network (DBN).
 
 Deep beliefe network implementation aimed for multilayer data modeling
-and data dimensionality reduction
+and data dimensionality reduction.
 """
 
 __author__  = 'Patrick Michl'
@@ -13,13 +13,14 @@ import nemoa.system.ann
 import numpy
 
 class dbn(nemoa.system.ann.ann):
-    """Deep Belief Network (DBN).
+    """Deep Belief Network.
 
-    Deep Belief Networks are Symmetric Atrificial Neural Networks
-    which are optimized in to steps: 1. Pretraining, using
+    Deep Belief Networks (DBN )are Symmetric Artificial Neural Networks
+    which are optimized in to steps: First the 'pretraining' step, using
     Restricted Boltzmann Machines as per Layer Builing Blocks
-    2. Finetuning, using Backpropagation of Error. DBNs are commonly
-    used for data classification and compression / decompression.
+    and second the 'finetuning' step, using Backpropagation of Error.
+    DBNs are commonly used for data classification and nonlinear
+    dimensionality reduction (1).
 
     Reference:
         "Reducing the dimensionality of data with neural networks",
@@ -67,8 +68,6 @@ class dbn(nemoa.system.ann.ann):
     def _checkNetwork(self, network):
         return self._isNetworkDBNCompatible(network)
 
-    # UNITS
-
     def _getUnitsFromConfig(self):
         return None
 
@@ -106,8 +105,8 @@ class dbn(nemoa.system.ann.ann):
         nemoa.log('configure subsystems')
         nemoa.setLog(indent = '+1')
         if not 'units' in self._params:
-            nemoa.log('error', """
-                could not configure subsystems:
+            nemoa.log('error',
+                """could not configure subsystems:
                 no layers have been defined!""")
             nemoa.setLog(indent = '-1')
             return False
@@ -123,11 +122,11 @@ class dbn(nemoa.system.ann.ann):
             sysType = 'visible' if inUnits['visible'] else 'hidden'
             sysUserConf = self._config['params'][sysType + 'System']
             if sysUserConf:
-                # 2DO: nmConfig??
+                #2Do: nmConfig??
                 sysConfig = nmConfig.get(type = 'system', name = sysUserConf)
                 if sysConfig == None:
                     nemoa.log('error', """could not configure system:
-                        unknown system configuration \'%s\'
+                        unknown system configuration '%s'
                     """ % (sysUserConf))
                     nemoa.setLog(indent = '-1')
                     return False
@@ -262,7 +261,7 @@ class dbn(nemoa.system.ann.ann):
 
         algorithm = self._config['optimize']['algorithm'].lower()
 
-        if   algorithm == 'bprop': self._optBPROP(
+        if algorithm == 'bprop': self._optBPROP(
             dataset, schedule, tracker)
         elif algorithm == 'rprop': self._optRPROP(
             dataset, schedule, tracker)

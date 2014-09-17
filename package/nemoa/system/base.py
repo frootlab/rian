@@ -12,10 +12,10 @@ import copy
 class system:
 
     def __init__(self, *args, **kwargs):
-        """Initialize system configuration and system parameter configuration."""
+        """Configure system and system parameters."""
 
         # set configuration and update units and links
-        self.setConfig(kwargs['config'] if 'config' in kwargs else {})
+        self._setConfig(kwargs['config'] if 'config' in kwargs else {})
 
     def configure(self, dataset = None, network = None, *args, **kwargs):
         """Configure system and subsystems to network and dataset."""
@@ -24,15 +24,13 @@ class system:
             return True
         nemoa.log("configure system '%s'" % (self.name()))
         nemoa.setLog(indent = '+1')
-        if not self.checkNetwork(network):
-            nemoa.log('error', """
-                system could not be configured:
+        if not self._checkNetwork(network):
+            nemoa.log('error', """system could not be configured:
                 network is not valid!""")
             nemoa.setLog(indent = '-1')
             return False
-        if not self.checkDataset(dataset):
-            nemoa.log('error', """
-                system could not be configured:
+        if not self._checkDataset(dataset):
+            nemoa.log('error', """system could not be configured:
                 dataset is not valid!""")
             nemoa.setLog(indent = '-1')
             return False
@@ -51,7 +49,7 @@ class system:
         """Return system configuration as dictionary."""
         return self._config.copy()
 
-    def setConfig(self, config):
+    def _setConfig(self, config):
         """Set configuration."""
         # create local configuration dictionary
         if not hasattr(self, '_config'):
@@ -93,39 +91,34 @@ class system:
             G[u][v]['weight'] = params['weight']
         return True
 
-    def checkNetwork(self, network, *args, **kwargs):
-        """Check if network is valid for system."""
-        if not nemoa.type.isNetwork(network): return False
-        if not (hasattr(self.__class__, '_checkNetwork') \
-            and callable(getattr(self.__class__, '_checkNetwork'))):
-            return True
-        return self._checkNetwork(network)
-
     def setDataset(self, *args, **kwargs):
         """Update units and links to dataset instance."""
         return self._setDataset(*args, **kwargs)
 
-    def checkDataset(self, dataset, *args, **kwargs):
+    def _checkNetwork(self, network, *args, **kwargs):
+        """Check if network is valid for system."""
+        if not nemoa.type.isNetwork(network): return False
+        return True
+
+    #2do: there is more to check
+    def _checkDataset(self, dataset, *args, **kwargs):
         """Check if network is valid for system."""
         if not nemoa.type.isDataset(dataset): return False
-        if not (hasattr(self.__class__, '_checkDataset') \
-            and callable(getattr(self.__class__, '_checkDataset'))):
-            return True
-        return self._checkDataset(dataset)
+        return True
 
     def _isEmpty(self):
         """Return true if system is a dummy."""
         return False
 
-    ####################################################################
-    # Units                                                            #
-    ####################################################################
-
     def getUnits(self, **kwargs):
-        """Return tuple with lists of units that match a given property.
+        """.
+
+        Returns:
+            Tuple with lists of units that match a given property
 
         Examples:
-            return visible units: getUnits(visible = True)"""
+            return visible units: getUnits(visible = True)
+        """
 
         filter = []
         for key in kwargs.keys():
@@ -134,6 +127,7 @@ class system:
                 kwargs['name'] = kwargs['group']
             if key in self._params['units'][0].keys():
                 filter.append((key, kwargs[key]))
+
         groups = ()
         for group in self._params['units']:
             valid = True
@@ -142,6 +136,7 @@ class system:
                     valid = False
                     break
             if valid: groups += (group['label'], )
+
         return groups
 
     def setUnits(self, units = None, initialize = True):
@@ -163,23 +158,24 @@ class system:
         """Remove unit."""
         return self._removeUnit(type, label)
 
-    ####################################################################
-    # Unit groups                                                      #
-    ####################################################################
-
     def getGroups(self, **kwargs):
-        """Return tuple with groups that match a given property.
+        """.
+
+        Returns:
+            Tuple with groups of units that match a given property
 
         Examples:
             return visible groups:
                 getGroups(visible = True)
             search for group 'MyGroup':
-                getGroups(name = 'MyGroup')"""
+                getGroups(name = 'MyGroup')
+        """
 
         filter = []
         for key in kwargs.keys():
             if key in self._params['units'][0].keys():
                 filter.append((key, kwargs[key]))
+
         groups = ()
         for group in self._params['units']:
             valid = True
@@ -188,6 +184,7 @@ class system:
                     valid = False
                     break
             if valid: groups += (group['name'], )
+
         return groups
 
     def getGroupOfUnit(self, unit):
@@ -196,10 +193,6 @@ class system:
             if unit in self._params['units'][id]['label']:
                 return self._params['units'][id]['name']
         return None
-
-    ####################################################################
-    # Links                                                            #
-    ####################################################################
 
     def setLinks(self, links = None, initialize = True):
         """Set links using list with 2-tuples containing unit labels."""
@@ -228,45 +221,38 @@ class system:
         srcID   = self.units[srcGrp].params['label'].index(srcUnit)
         tgtID   = self.units[tgtGrp].params['label'].index(tgtUnit)
         weight  = linkGrp['W'][srcID, tgtID]
-        norm    = float(numpy.sum(linkGrp['A'])) / numpy.sum(numpy.abs(linkGrp['W']))
+        norm    = float(numpy.sum(linkGrp['A'])) / numpy.sum(
+            numpy.abs(linkGrp['W']))
         return {
             'adjacency': linkGrp['A'][srcID, tgtID],
             'weight':    weight,
             'normal':    norm * weight}
 
-    #def getLinkParams(self, links = [], *args, **kwargs):
-        #"""Return parameters of links."""
-        #return self._getLinkParams(links)
-
-    def _get(self, sec = None):
-        """Return all system settings (config, params) as dictionary."""
+    def _get(self, section = None):
+        """Return system settings as dictionary."""
         dict = {
             'config': copy.deepcopy(self._config),
             'params': copy.deepcopy(self._params) }
-        if not sec: return dict
-        if sec in dict: return dict[sec]
+        if not section: return dict
+        if section in dict: return dict[section]
         return False
 
-    def _set(self, **dict):
-        """Set system settings (config, params) from dictionary."""
-        ## 2do!: if another package or class -> Error!
-
-        if 'config' in dict: self._config = copy.deepcopy(dict['config'])
-        if 'params' in dict: self._params = copy.deepcopy(dict['params'])
+    def _set(self, **kwargs):
+        """Set system settings from dictionary."""
+        if 'config' in kwargs:
+            self._config = copy.deepcopy(kwargs['config'])
+        if 'params' in kwargs:
+            self._params = copy.deepcopy(kwargs['params'])
         return self._updateUnitsAndLinks()
-
-    ####################################################################
-    # System parameter modification                                    #
-    ####################################################################
 
     def initParams(self, dataset = None):
         """Initialize system parameters.
 
-        Args:
-            dataset -- nemoa dataset instance
+        Initialize all system parameters to dataset.
 
-        Description:
-            Initialize all system parameters to dataset."""
+        Args:
+            dataset: nemoa dataset instance
+        """
         if not nemoa.type.isDataset(dataset): return nemoa.log('error',
             """could not initilize system parameters:
             invalid dataset instance given!""")
@@ -308,12 +294,9 @@ class system:
             nemoa.common.dictMerge(schedule['params'][self.getType()], config)
             self._config['optimize'] = config
 
-        ################################################################
-        # System independent optimization settings                     #
-        ################################################################
-
         # check dataset
-        if (not 'checkDataset' in config or config['checkDataset'] == True) \
+        if (not 'checkDataset' in config
+            or config['checkDataset'] == True) \
             and not self._checkDataset(dataset): return False
 
         # initialize tracker
@@ -331,22 +314,21 @@ class system:
 
         return retVal
 
-    ####################################################################
-    # Common network tests                                             #
-    ####################################################################
-
     def _isNetworkMLPCompatible(self, network = None):
-        """Check if a network is compatible to multilayer perceptrons.
+        """Test if a network is compatible to multilayer perceptrons.
 
         Args:
-            network -- nemoa network instance
+            network: nemoa network instance
 
-        Description:
-            Return True if the following conditions are satisfied:
+        Returns:
+            Boolean value which is True if the following conditions are
+            satisfied:
             (1) The network contains at least three layers
             (2) All layers of the network are not empty
             (3) The first and last layer of the network are visible,
-                all middle layers of the network are hidden"""
+                all middle layers of the network are hidden
+        """
+
         if not nemoa.type.isNetwork(network): return nemoa.log('error',
             'could not test network: invalid network instance given!')
         if len(network.layers()) < 3: return nemoa.log('error',
@@ -362,17 +344,20 @@ class system:
         return True
 
     def _isNetworkDBNCompatible(self, network = None):
-        """Check if a network is compatible to deep beliefe networks.
+        """Test if a network is compatible to deep beliefe networks.
 
         Args:
-            network -- nemoa network instance
+            network: nemoa network instance
 
-        Description:
-            Return True if the following conditions are satisfied:
-            (1) The network is MPL compatible
+        Returns:
+            Boolean value which is True if the following conditions are
+            satisfied:
+            (1) The network is MPL compatible:
+                see function _isNetworkMPLCompatible
             (2) The network contains an odd number of layers
             (3) The hidden layers are symmetric to the central layer
-                related to their number of nodes"""
+                related to their number of nodes
+        """
         if not nemoa.type.isNetwork(network): return nemoa.log('error',
             'could not test network: invalid network instance given!')
         if not self._isNetworkMLPCompatible(network): return False
@@ -389,10 +374,6 @@ class system:
                 number of hidden nodes, related to their central layer!""")
         return True
 
-    ####################################################################
-    # Common dataset tests                                             #
-    ####################################################################
-
     def _isDatasetBinary(self, dataset = None):
         """Test if a dataset contains only binary data.
 
@@ -401,7 +382,8 @@ class system:
 
         Returns:
             Boolean value which is True if a given dataset contains only
-            binary values."""
+            binary values.
+        """
 
         if not nemoa.type.isDataset(dataset): return nemoa.log('error',
             'could not test dataset: invalid dataset instance given!')
@@ -414,29 +396,29 @@ class system:
 
         return True
 
-    def _isDatasetGaussNormalized(self, dataset = None):
+    def _isDatasetGaussNormalized(self, dataset = None,
+        size = 100000, maxMean = 0.05, maxSdev = 1.05):
         """Test if a dataset contains gauss normalized data.
 
         Args:
             dataset: nemoa dataset instance
+            size: number of samples to create statistics
+            maxMean: allowed maximum for absolute mean value
+            maxSdev: allowed maximum for standard deviation
 
         Returns:
             Boolean value which is True if the following conditions are
             satisfied:
-            (1) The absolute mean value of a given number of random samples
-                of the dataset is below a given maximum (default 0.05)
-            (2) The standard deviation of a given number of random samples
-                of the dataset is below a given maximum (default 1.05)
+            (1) The absolute mean value of a given number of random
+                samples of the dataset is below maxMean
+            (2) The standard deviation of a given number of random
+                samples of the dataset is below maxSdev
         """
 
         if not nemoa.type.isDataset(dataset): return nemoa.log('error',
             'could not test dataset: invalid dataset instance given!')
 
-        size    = 100000 # number of samples
-        maxMean = 0.05   # allowed maximum for absolute mean value
-        maxSdev = 1.05   # allowed maximum for standard deviation
-
-        data = dataset.getData(size)
+        data = dataset.getData(size) # get numpy array with data
 
         mean = data.mean()
         if numpy.abs(mean) >= maxMean: return nemoa.log('error',
@@ -450,10 +432,6 @@ class system:
 
         return True
 
-    ####################################################################
-    # System Evaluation                                                #
-    ####################################################################
-
     def eval(self, data, *args, **kwargs):
         if len(args) == 0:
             return self._evalSystem(data, **kwargs)
@@ -463,13 +441,13 @@ class system:
             return self._evalLinks(data, *args[1:], **kwargs)
         if args[0] == 'relations':
             return self._evalRelations(data, *args[1:], **kwargs)
-        if args[0] in self._getSystemEvalMethods().keys():
+        if args[0] in self._aboutSystem().keys():
             return self._evalSystem(data, *args, **kwargs)
         return nemoa.log('warning',
             "could not evaluate system: unknown method '%s'" % (args[0]))
 
     @staticmethod
-    def getDataSum(data, norm = 'S'):
+    def _getDataSum(data, norm = 'S'):
         """Return sum of data.
 
         Args:
@@ -479,7 +457,6 @@ class system:
                 'SE', 'L1': Sum of Errors / L1 Norm
                 'SSE': Sum of Squared Errors
                 'RSSE': Root Sum of Squared Errors
-                default: 'S'
         """
 
         norm = norm.upper()
@@ -496,7 +473,7 @@ class system:
         return nemoa.log('error', "unknown data sum norm '%s'" % (norm))
 
     @staticmethod
-    def getDataMean(data, norm = 'M'):
+    def _getDataMean(data, norm = 'M'):
         """Return mean of data.
 
         Args:
@@ -506,7 +483,6 @@ class system:
                 'ME': Mean of Errors
                 'MSE': Mean of Squared Errors
                 'RMSE', 'L2': Root Mean of Squared Errors / L2 Norm
-                default: 'M'
         """
 
         norm = norm.upper()
@@ -523,7 +499,7 @@ class system:
         return nemoa.log('error', "unknown data mean norm '%s'" % (norm))
 
     @staticmethod
-    def getDataDeviation(data, norm = 'SD'):
+    def _getDataDeviation(data, norm = 'SD'):
         """Return deviation of data.
 
         Args:
@@ -532,7 +508,6 @@ class system:
                 'SD': Standard Deviation of Values
                 'SDE': Standard Deviation of Errors
                 'SDSE': Standard Deviation of Squared Errors
-                default: 'SD'
         """
 
         norm = norm.upper()
@@ -545,27 +520,6 @@ class system:
         if norm in ['SDSE']: return numpy.std(data ** 2, axis = 0)
 
         return nemoa.log('error', "unknown data deviation norm '%s'" % (deviation))
-
-    def _assertUnitTuple(self, units = None):
-        """Return tuple with lists of valid input and output units."""
-
-        mapping = self.getMapping()
-        if units == None: return (self.getUnits(group = mapping[0])[0], \
-            self.getUnits(group = mapping[-1])[0])
-        if isinstance(units[0], str):
-            units[0] = self.getUnits(group = units[0])[0]
-        elif isinstance(units[0], list): pass
-        if isinstance(units[1], str):
-            units[1] = self.getUnits(group = units[1])[0]
-        elif isinstance(units[1], list): pass
-
-        elif isinstance(units[0], list) and isinstance(units[1], list):
-            #2do: test if units are valid
-            pass
-        else: return nemoa.log('error', """could not evaluate unit relations:
-            parameter units has invalid format!""")
-
-        return units
 
     def mapData(self, data, mapping = None, transform = 'expect'):
         """Return system representation of data.
@@ -581,10 +535,6 @@ class system:
         if transform == 'sample': return self._evalUnitSamples(data, mapping)
         return nemoa.log('error', """could not map data:
             unknown mapping algorithm '%s'""" % (transform))
-
-    ####################################################################
-    # Metadata of System                                               #
-    ####################################################################
 
     def about(self, *args):
         """Return generic information about various parts of the system.
@@ -607,8 +557,8 @@ class system:
             'type': self.getType(),
             'units': self._getUnitEvalMethods(),
             'links': self._getLinkEvalMethods(),
-            'relations': self._getRelationEvalMethods()
-        }, self._getSystemEvalMethods())
+            'relations': self._aboutRelations()
+        }, self._aboutSystem())
 
         retDict = about
         path = ['system']

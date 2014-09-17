@@ -25,27 +25,26 @@ class model:
             system: nemoa system instance
         """
 
-        # initialize private scope class attributes
-        self.__config = {}
+        name = kwargs['name'] if 'name' in kwargs else None
+        self._config = {'name': name} # initialize class attributes
 
-        # update model name
-        self.setName(kwargs['name'] if 'name' in kwargs else None)
         nemoa.log('linking dataset, network and system instances to model')
-
         self.dataset = dataset
         self.network = network
         self.system  = system
 
-        if not self._isEmpty() and self.__checkModel(): self.updateConfig()
+        if self._isEmpty(): return
+        if not self._checkModel(): return
+        self.updateConfig()
 
-    def __setConfig(self, config):
+    def _setConfig(self, config):
         """Set configuration from dictionary."""
-        self.__config = config.copy()
+        self._config = config.copy()
         return True
 
-    def __getConfig(self):
+    def _getConfig(self):
         """Return configuration as dictionary."""
-        return self.__config.copy()
+        return self._config.copy()
 
     def exportOutputData(self, *args, **kwargs):
         """Export data to file."""
@@ -67,7 +66,7 @@ class model:
                 """ % (key))
         return {key: dict[key].copy() for key in keys}
 
-    def __checkModel(self, allowNone = False):
+    def _checkModel(self, allowNone = False):
         if (allowNone and self.dataset == None) \
             or not nemoa.type.isDataset(self.dataset): return False
         if (allowNone and self.network == None) \
@@ -80,10 +79,10 @@ class model:
         """Update model configuration."""
 
         # set version of model
-        self.__config['version'] = nemoa.version
+        self._config['version'] = nemoa.version
 
         # set name of model
-        if not 'name' in self.__config or not self.__config['name']:
+        if not 'name' in self._config or not self._config['name']:
             if not self.network.name():
                 self.setName('%s-%s' % (
                     self.dataset.name(), self.system.name()))
@@ -97,28 +96,28 @@ class model:
         """Configure model."""
         nemoa.log('configure model \'%s\'' % (self.name()))
         nemoa.setLog(indent = '+1')
-        if not 'check' in self.__config:
-            self.__config['check'] = {'dataset': False,
+        if not 'check' in self._config:
+            self._config['check'] = {'dataset': False,
                 'network': False, 'System': False}
-        self.__config['check']['dataset'] = \
+        self._config['check']['dataset'] = \
             self.dataset.configure(network = self.network)
-        if not self.__config['check']['dataset']:
+        if not self._config['check']['dataset']:
             nemoa.log('error', """could not configure model: dataset
                 could not be configured!""")
             nemoa.setLog(indent = '-1')
             return False
-        self.__config['check']['network'] = \
+        self._config['check']['network'] = \
             self.network.configure(dataset = self.dataset,
                 system = self.system)
-        if not self.__config['check']['network']:
+        if not self._config['check']['network']:
             nemoa.log('error', """could not configure model: network
                 could not be configured!""")
             nemoa.setLog(indent = '-1')
             return False
-        self.__config['check']['system'] = \
+        self._config['check']['system'] = \
             self.system.configure(network = self.network,
                 dataset = self.dataset)
-        if not self.__config['check']['system']:
+        if not self._config['check']['system']:
             nemoa.log('error', """could not configure model: system
                 could not be configured!""")
             nemoa.setLog(indent = '-1')
@@ -126,28 +125,24 @@ class model:
         nemoa.setLog(indent = '-1')
         return True
 
-    def __isConfigured(self):
+    def _isConfigured(self):
         """Return True if model is allready configured."""
-        return 'check' in self.__config \
-            and self.__config['check']['dataset'] \
-            and self.__config['check']['network'] \
-            and self.__config['check']['system']
-
-    ####################################################################
-    # Model parameter modification methods                             #
-    ####################################################################
+        return 'check' in self._config \
+            and self._config['check']['dataset'] \
+            and self._config['check']['network'] \
+            and self._config['check']['system']
 
     def initialize(self):
         """Initialize model parameters and return self."""
 
-        #2DO: just check if system is configured
+        #2Do: just check if system is configured
 
         # check if model is empty and can not be initialized
         if (self.dataset == None or self.system == None) \
             and self._isEmpty(): return self
 
         # check if model is configured
-        if not self.__isConfigured():
+        if not self._isConfigured():
             nemoa.log('error', """could not initialize model parameters:
                 model is not yet configured!""")
             return False
@@ -186,7 +181,7 @@ class model:
             return self
 
         # check if model is configured
-        if not self.__isConfigured():
+        if not self._isConfigured():
             nemoa.log('error',
                 'could not optimize model: model is not yet configured!')
             nemoa.setLog(indent = '-1')
@@ -211,7 +206,7 @@ class model:
         nemoa.log("starting optimization schedule: '%s'" % (schedule['name']))
         nemoa.setLog(indent = '+1')
 
-        # 2DO: find better solution for multistage optimization
+        #2Do: find better solution for multistage optimization
         if 'stage' in schedule and len(schedule['stage']) > 0:
             for stage, params in enumerate(config['stage']):
                 self.system.optimizeParams(self.dataset, **params)
@@ -227,25 +222,21 @@ class model:
         nemoa.setLog(indent = '-1')
         return self
 
-    ####################################################################
-    # Model interface to dataset instance                              #
-    ####################################################################
-
-    def __setDataset(self, dataset):
+    def _setDataset(self, dataset):
         """Set dataset."""
         self.dataset = dataset
         return True
 
-    def __getDataset(self):
+    def _getDataset(self):
         """Return link to dataset instance."""
         return self.dataset
 
-    def __confDataset(self, dataset = None, network = None, **kwargs):
+    def _confDataset(self, dataset = None, network = None, **kwargs):
         """Configure model.dataset to given dataset and network.
 
         Args:
-            dataset -- dataset instance
-            network -- network instance
+            dataset: dataset instance
+            network: network instance
         """
         dataset = self.dataset
         network = self.network
@@ -272,25 +263,21 @@ class model:
         return self.dataset.configure(network = network \
             if not network == None else self.network)
 
-    ####################################################################
-    # Model interface to network instance                              #
-    ####################################################################
-
-    def __setNetwork(self, network):
+    def _setNetwork(self, network):
         """Set network."""
         self.network = network
         return True
 
-    def __getNetwork(self):
+    def _getNetwork(self):
         """Return link to network instance."""
         return self.network
 
-    def __confNetwork(self, dataset = None, network = None, system = None, **kwargs):
+    def _confNetwork(self, dataset = None, network = None, system = None, **kwargs):
         """Configure model.network to given network, dataset and system.
 
         Args:
-            dataset -- dataset instance
-            network -- network instance
+            dataset: dataset instance
+            network: network instance
         """
 
         # link network instance
@@ -319,22 +306,14 @@ class model:
             dataset = dataset if not dataset == None else self.dataset,
             system = system if not system == None else self.system)
 
-    ####################################################################
-    # Model interface to system instance                               #
-    ####################################################################
-
-    def __setSystem(self, system):
+    def _setSystem(self, system):
         """Set system."""
         self.system = system
         return True
 
-    def __getSystem(self):
+    def _getSystem(self):
         """Return link to system instance."""
         return self.system
-
-    ####################################################################
-    # Model interface to dataset instance                              #
-    ####################################################################
 
     def getData(self, dataset = None, layer = None, transform = 'expect', **kwargs):
         """Return data from dataset."""
@@ -346,10 +325,6 @@ class model:
         mapping = self.system.getMapping(tgt = layer)
         data = dataset.getData(cols = self.system.getMapping()[0], **kwargs)
         return self.system.mapData(data, mapping = mapping, transform = transform)
-
-    ####################################################################
-    # Model Evaluation                                                 #
-    ####################################################################
 
     def eval(self, *args, **kwargs):
         """Return model evaluation."""
@@ -391,13 +366,9 @@ class model:
 
         return nemoa.log('warning', 'could not evaluate model')
 
-    ####################################################################
-    # Evaluation of unit relations                                     #
-    ####################################################################
-
     def _get(self, sec = None):
         dict = {
-            'config': copy.deepcopy(self.__config),
+            'config': copy.deepcopy(self._config),
             'network': self.network._get() if hasattr(self.network, '_get') else None,
             'dataset': self.dataset._get() if hasattr(self.dataset, '_get') else None,
             'system': self.system._get() if hasattr(self.system, '_get') else None
@@ -422,7 +393,7 @@ class model:
         if not nemoa.type.isSystem(self.system): return nemoa.log('error',
             'could not configure system: model does not contain system instance!')
 
-        self.__config = config['config'].copy()
+        self._config = config['config'].copy()
         self.network._set(**config['network'])
         self.dataset._set(**config['dataset'])
 
@@ -488,7 +459,7 @@ class model:
         else: plot = None
 
         # check if model is configured
-        if not self.__isConfigured():
+        if not self._isConfigured():
             nemoa.log('error', """could not create plot of model:
                 model is not yet configured!""")
             nemoa.setLog(indent = '-1')
@@ -503,13 +474,13 @@ class model:
             plotName, plotParams = nemoa.common.strSplitParams(plot)
             mergeDict = plotParams
             for param in kwargs.keys(): plotParams[param] = kwargs[param]
-            objPlot = self.__getPlot(*args, params = plotParams)
+            objPlot = self._getPlot(*args, params = plotParams)
             if not objPlot:
                 nemoa.log('warning', "could not create plot: unknown configuration '%s'" % (plotName))
                 nemoa.setLog(indent = '-1')
                 return None
-        elif isinstance(plot, dict): objPlot = self.__getPlot(config = plot)
-        else: objPlot = self.__getPlot()
+        elif isinstance(plot, dict): objPlot = self._getPlot(config = plot)
+        else: objPlot = self._getPlot()
         if not objPlot: return None
 
         # prepare filename
@@ -526,7 +497,7 @@ class model:
         nemoa.setLog(indent = '-2')
         return retVal
 
-    def __getPlot(self, *args, **kwargs):
+    def _getPlot(self, *args, **kwargs):
         """Return new plot instance"""
 
         # return empty plot instance if no configuration was given
@@ -576,7 +547,7 @@ class model:
                         'id': 0})
                 elif args[0] == 'system':
                     if len(args) == 1:
-                        pass # 2DO!
+                        pass #2Do
                     elif args[1] == 'relations':
                         if len(args) == 2:
                             pass
@@ -614,23 +585,19 @@ class model:
 
         return nemoa.plot.new(config = cfg)
 
-    ####################################################################
-    # Generic / static model information                               #
-    ####################################################################
-
     def name(self):
         """Return name of model."""
-        return self.__config['name'] if 'name' in self.__config else ''
+        return self._config['name'] if 'name' in self._config else ''
 
     def setName(self, name):
         """Set name of model."""
-        if not isinstance(self.__config, dict): return False
-        self.__config['name'] = name
+        if not isinstance(self._config, dict): return False
+        self._config['name'] = name
         return self
 
     def _isEmpty(self):
         """Return true if model is empty."""
-        return not 'name' in self.__config or not self.__config['name']
+        return not 'name' in self._config or not self._config['name']
 
     def groups(self, **kwargs):
         """Return list with unit groups."""

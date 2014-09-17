@@ -34,14 +34,10 @@ class graph(nemoa.plot.base.plot):
 
         # get units and edges
         units = self.settings['units']
-        edges = []
-        for i in units[0]:
-            for o in [u for u in units[1] if not u == i]:
-                edges.append((i, o))
+        edges = [(i, o) for i in units[0] for o in units[1]
+            if not o == i]
 
-        ################################################################
-        # calculate relations for edge attributes                      #
-        ################################################################
+        # calculate relations for edge attributes
 
         # calculate edge weights from 'weight' relation
         W = model.eval('system', 'relations', self.settings['relation'],
@@ -86,25 +82,6 @@ class graph(nemoa.plot.base.plot):
         if not isinstance(SR, dict): return nemoa.log('error',
             'could not create relation graph: invalid sign relation!')
         S = {edge: 2.0 * (float(SR[edge] > 0.0) - 0.5) for edge in edges}
-
-        ################################################################
-        # calculate unit attributes                                    #
-        ################################################################
-
-        ## calculate values for node captions
-        #if self.settings['nodeCaption']:
-
-            ## get and check node caption relation
-            #method = self.settings['nodeCaption']
-            #fPath  = ('system', 'units', method)
-            #fAbout = model.about(*fPath)
-
-            #if isinstance(fAbout, dict) and 'name' in fAbout.keys():
-                #fName    = model.about(*(fPath + ('name', ))).title()
-                #fFormat  = model.about(*(fPath + ('format', )))
-                #nCaption = model.eval(*fPath)
-            #else:
-                #nCaption = None
 
         # create graph and set name
         graph = networkx.MultiDiGraph(name = relInfo['name'])

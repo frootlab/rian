@@ -98,7 +98,7 @@ class dataset:
                 nemoa.log("""%s of %s network nodes could not
                     be converted! (see logfile)"""
                     % (len(convNetNodesLost), len(convNetNodes)))
-                # 2DO: get original node labels for log file
+                #2Do: get original node labels for log file
                 nemoa.log('logfile', nemoa.common.strToList(convNetNodesLost))
 
         # get columns from dataset files and convert to common format
@@ -573,7 +573,7 @@ class dataset:
             size = data.shape, n = 1, p = 1 - factor)
         elif type == 'gauss': return data + numpy.random.normal(
             size = data.shape, loc = 0.0, scale = factor)
-        #2do!: implement salt and pepper noise
+        #2Do: implement salt and pepper noise
         #elif type == 'salt': return
         else: return nemoa.log('error',
             "unkown data corruption type '%s'!" % (type))
@@ -651,7 +651,7 @@ class dataset:
         return groups
 
     def setColFilter(self, group, columns):
-        # 2DO: check columns!
+        #2Do: check columns!
         self.cfg['colFilter'][group] = columns
         return True
 

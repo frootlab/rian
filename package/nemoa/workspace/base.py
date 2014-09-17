@@ -746,7 +746,7 @@ class config:
                 models.append(name)
             return sorted(models, key = str.lower)
 
-        if type == 'workspace': # 2DO: Something wents wrong if list is executed from inside
+        if type == 'workspace': #2Do: Something wents wrong if list is executed from inside
             return sorted(self._listUserWorkspaces())
 
         objList = []
@@ -1055,7 +1055,7 @@ class config:
                 network['config']['description'] = netcfg.get('network', 'type').strip()
             else: network['config']['description'] = ''
 
-            #2do: network dependent sections
+            #2Do: network dependent sections
             # 'labelformat': annotation of nodes, default: 'generic:string'
             if 'labelformat' in netcfg.options('network'):
                 network['config']['label_format'] = netcfg.get('network', 'nodes').strip()
@@ -1131,7 +1131,7 @@ class config:
             # check network layers
             if config['visible'] == []: return nemoa.log('error',
                 "layer network '" + file + "' does not contain visible layers!")
-            # 2DO: allow single layer networks (no hidden layer)
+            #2Do: allow single layer networks (no hidden layer)
             if config['hidden'] == []: return nemoa.log('error',
                 "layer network '" + file + "' does not contain hidden layers!")
 
