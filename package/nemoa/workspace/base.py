@@ -14,6 +14,7 @@ import ConfigParser
 import glob
 
 class workspace:
+    """Nemoa workspace."""
 
     def __init__(self, project = None):
         """Initialize shared configuration."""
@@ -228,33 +229,33 @@ class workspace:
 
 class config:
     def __init__(self, update = True):
-        self.__baseconf = 'nemoa.ini' # base configuration file
+        self._baseconf = 'nemoa.ini' # base configuration file
 
         # init tree structure for configuration storage
-        self.__store = {'dataset': {}, 'network': {}, 'system': {},
+        self._store = {'dataset': {}, 'network': {}, 'system': {},
             'plot': {}, 'schedule': {}, 'script': {}}
 
-        self.__index = {}
-        self.__path = {}            # reset current path dict
-        self.__basepath = None      # reset paths for shared and user
-        self.__workspace = None     # reset current workspace
-        self.__workspacePath = None # reset current workspace path
+        self._index = {}
+        self._path = {}            # reset current path dict
+        self._basepath = None      # reset paths for shared and user
+        self._workspace = None     # reset current workspace
+        self._workspacePath = None # reset current workspace path
         self._updateBasepath()     # update paths for shared and user
 
         if update: self._importShared() # import shared resources
 
     def _updateBasepath(self):
-        if not os.path.exists(self.__baseconf): return False
+        if not os.path.exists(self._baseconf): return False
 
         # default basepaths
-        self.__basepath = {
+        self._basepath = {
             'user': '~/nemoa/',
             'common': '/etc/nemoa/common/' }
 
         # get basepath configuration
         cfg = ConfigParser.ConfigParser()
         cfg.optionxform = str
-        cfg.read(self.__baseconf)
+        cfg.read(self._baseconf)
 
         # [folders]
         if 'folders' in cfg.sections():
@@ -262,20 +263,20 @@ class config:
                 if not key in cfg.options('folders'): continue
                 val  = cfg.get('folders', key)
                 path = self._expandPath(val)
-                if path: self.__basepath[key] = path
+                if path: self._basepath[key] = path
 
         # [files]
         if 'files' in cfg.sections():
             for key in ['logfile']:
                 if not key in cfg.options('files'): continue
                 val  = cfg.get('files', key)
-                self.__path[key] = self._expandPath(val)
+                self._path[key] = self._expandPath(val)
 
         return True
 
     def _updatePaths(self, base = 'user'):
 
-        self.__workspacePath = {
+        self._workspacePath = {
             'workspace': '%project%/',
             'datasets': '%project%/data/',
             'models': '%project%/models/',
@@ -288,33 +289,33 @@ class config:
 
         if base in ['user', 'common']:
             allowWrite = {'user': True, 'common': False}[base]
-            for key in self.__workspacePath:
-                self.__path[key] = self._expandPath('%' + base + '%/'
-                    + self.__workspacePath[key], create = allowWrite)
+            for key in self._workspacePath:
+                self._path[key] = self._expandPath('%' + base + '%/'
+                    + self._workspacePath[key], create = allowWrite)
 
     def _listUserWorkspaces(self):
         """Return list of private workspaces."""
-        userDir = self._expandPath(self.__basepath['user'])
+        userDir = self._expandPath(self._basepath['user'])
         return [os.path.basename(w) for w in glob.iglob(userDir + '*')
             if os.path.isdir(w)]
 
     def _listSharedWorkspaces(self):
         """Return list of shared resources."""
-        shared = self._expandPath(self.__basepath['common'])
+        shared = self._expandPath(self._basepath['common'])
         return [os.path.basename(w) for w in glob.iglob(shared + '*')
             if os.path.isdir(w)]
 
     def project(self):
         """Return name of current workspace."""
-        return self.__workspace
+        return self._workspace
 
     def path(self, key = None):
         """Return path."""
-        if isinstance(key, str) and key in self.__path.keys():
-            if isinstance(self.__path[key], dict):
-                return self.__path[key].copy()
-            return self.__path[key]
-        return self.__path.copy()
+        if isinstance(key, str) and key in self._path.keys():
+            if isinstance(self._path[key], dict):
+                return self._path[key].copy()
+            return self._path[key]
+        return self._path.copy()
 
     def _importShared(self):
         """Import shared resources."""
@@ -322,18 +323,18 @@ class config:
         nemoa.setLog(indent = '+1')
 
         # get current workspace
-        curWorkspace = self.__workspace
+        curWorkspace = self._workspace
 
         # import shared resources and update paths
         for workspace in self._listSharedWorkspaces():
-            self.__workspace = workspace
+            self._workspace = workspace
             self._updatePaths(base = 'common')
             self._scanConfigFiles()
             self._scanScripts()
             self._scanNetworks()
 
         # reset to current workspace
-        self.__workspace = curWorkspace
+        self._workspace = curWorkspace
 
         nemoa.setLog(indent = '-1')
         return True
@@ -347,12 +348,12 @@ class config:
         if not workspace in self._listUserWorkspaces(): return nemoa.log(
             'warning', """could not open workspace '%s':
             workspace folder could not be found in '%s'!
-            """ % (workspace, self.__basepath['user']))
+            """ % (workspace, self._basepath['user']))
 
-        self.__workspace = workspace # set workspace
+        self._workspace = workspace # set workspace
         self._updatePaths(base = 'user') # update paths
         self._updateCachePaths() # update path of cache
-        nemoa.initLogger(logfile = self.__path['logfile']) # update logger
+        nemoa.initLogger(logfile = self._path['logfile']) # update logger
         self._scanConfigFiles() # import configuration files
         self._scanScripts() # scan for scriptfiles
         self._scanNetworks() # scan for network configurations
@@ -362,8 +363,8 @@ class config:
 
     def _updateCachePaths(self):
         """Update dataset cache paths to current workspace."""
-        for key in self.__store['dataset']:
-            self.__store['dataset'][key]['cache_path'] = self.__path['cache']
+        for key in self._store['dataset']:
+            self._store['dataset'][key]['cache_path'] = self._path['cache']
         return True
 
     def _scanConfigFiles(self, files = None):
@@ -372,7 +373,7 @@ class config:
         nemoa.setLog(indent = '+1')
 
         # assert configuration files path
-        if files == None: files = self.__path['workspace'] + '*.ini'
+        if files == None: files = self._path['workspace'] + '*.ini'
         # import configuration files
         for file in glob.iglob(self._expandPath(files)):
             self._importConfigFile(file)
@@ -384,8 +385,8 @@ class config:
         """Import configuration file."""
         # search definition file
         if os.path.isfile(file): configFile = file
-        elif os.path.isfile(self.__basepath['workspace'] + file):
-            configFile = self.__basepath['workspace'] + file
+        elif os.path.isfile(self._basepath['workspace'] + file):
+            configFile = self._basepath['workspace'] + file
         else: return nemoa.log('warning',
             "configuration file '%s' does not exist!" % (file))
 
@@ -394,7 +395,7 @@ class config:
         nemoa.setLog(indent = '+1')
 
         # import and register objects without testing
-        importer = self.configFileImporter(self)
+        importer = self._ImportConfig(self)
         objConfList = importer.load(configFile)
 
         for objConf in objConfList: self._addObjToStore(objConf)
@@ -409,7 +410,7 @@ class config:
         nemoa.setLog(indent = '+1')
 
         # assert script files path
-        if files == None: files = self.__path['scripts'] + '*.py'
+        if files == None: files = self._path['scripts'] + '*.py'
         # import scripts files
         for file in glob.iglob(self._expandPath(files)):
             self._registerScript(file)
@@ -420,13 +421,13 @@ class config:
     def _registerScript(self, file):
         """Register script file (current workspace)."""
         if os.path.isfile(file): scriptFile = file
-        elif os.path.isfile(self.__path['scripts'] + file):
-            scriptFile = self.__path['scripts'] + file
+        elif os.path.isfile(self._path['scripts'] + file):
+            scriptFile = self._path['scripts'] + file
         else: return nemoa.log('warning',
             "script file '%s' does not exist!" % (file))
 
         # import and register scripts (without testing)
-        importer = self.scriptFileImporter(self)
+        importer = self._ImportScript(self)
         script = importer.load(scriptFile)
         self._addObjToStore(script)
         return True
@@ -437,7 +438,7 @@ class config:
         nemoa.setLog(indent = '+1')
 
         # assert network files path
-        if files == None: files = self.__path['networks'] + '*.ini'
+        if files == None: files = self._path['networks'] + '*.ini'
         # import network files
         for file in glob.iglob(self._expandPath(files)):
             self._registerNetwork(file)
@@ -448,8 +449,8 @@ class config:
     def _registerNetwork(self, file, format = None):
         """Register network (current workspace)."""
         if os.path.isfile(file): networkFile = file
-        elif os.path.isfile(self.__path['networks'] + file):
-            networkFile = self.__path['networks'] + file
+        elif os.path.isfile(self._path['networks'] + file):
+            networkFile = self._path['networks'] + file
         else: return nemoa.log('warning',
             "network file '%s' does not exist!" % (file))
 
@@ -461,7 +462,7 @@ class config:
 
         # get network configuration from file
         if format == 'ini':
-            importer = self.networkConfigFileImporter(self)
+            importer = self._ImportNetworkIni(self)
             return self._addObjToStore(importer.load(networkFile))
 
         return nemoa.log('error',
@@ -571,7 +572,7 @@ class config:
                 conf['source']['file_format'] = nemoa.common.getFileExt(file)
 
             # only update in the first call of checkDatasetConf
-            if update: conf['cache_path'] = self.__path['cache']
+            if update: conf['cache_path'] = self._path['cache']
 
             return objConf
 
@@ -626,7 +627,7 @@ class config:
 
             objConf['config']['type'] = 'compound'
 
-        if update: objConf['config']['cache_path'] = self.__path['cache']
+        if update: objConf['config']['cache_path'] = self._path['cache']
 
         return objConf
 
@@ -706,19 +707,19 @@ class config:
         key = None
         objID = 0
 
-        if not type in self.__store.keys(): return nemoa.log('error',
+        if not type in self._store.keys(): return nemoa.log('error',
             """could not register object '%s':
             unsupported object type '%s'!""" % (name, type))
 
-        key = self._getNewKey(self.__store[type], name)
+        key = self._getNewKey(self._store[type], name)
         objID = self._getObjIDByName(type, key)
 
         # add configuration to object tree
-        self.__store[type][key] = config
-        self.__store[type][key]['id'] = objID
+        self._store[type][key] = config
+        self._store[type][key]['id'] = objID
 
         # add entry to index
-        self.__index[objID] = {
+        self._index[objID] = {
             'type': type, 'name': key, 'project': objConf['project']}
 
         return objID
@@ -727,10 +728,10 @@ class config:
         """Unlink object configuration from object dictionary."""
         if not objConf: return False
         id = self._getObjIDByName(objConf['class'], objConf['name'])
-        if not id in self.__index.keys(): return nemoa.log('warning', '2do')
+        if not id in self._index.keys(): return nemoa.log('warning', '2do')
 
         # delete entry in index
-        self.__index.pop(id)
+        self._index.pop(id)
         return True
 
     def list(self, type = None, namespace = None):
@@ -738,7 +739,7 @@ class config:
 
         if type == 'model':
             fileExt = 'nmm'
-            searchPath = '%s*.%s' % (self.__path['models'], fileExt)
+            searchPath = '%s*.%s' % (self._path['models'], fileExt)
             models = []
             for model in glob.iglob(searchPath):
                 if os.path.isdir(model): continue
@@ -750,15 +751,15 @@ class config:
             return sorted(self._listUserWorkspaces())
 
         objList = []
-        for id in self.__index:
-            if type and type != self.__index[id]['type']: continue
-            if namespace and namespace != self.__index[id]['project']: continue
-            objList.append((id, self.__index[id]['type'], self.__index[id]['name']))
+        for id in self._index:
+            if type and type != self._index[id]['type']: continue
+            if namespace and namespace != self._index[id]['project']: continue
+            objList.append((id, self._index[id]['type'], self._index[id]['name']))
         return sorted(objList, key = lambda col: col[2])
 
     def _isObjKnown(self, type, name):
         """Return True if object is registered."""
-        return self._getObjIDByName(type, name) in self.__index
+        return self._getObjIDByName(type, name) in self._index
 
     def _getObjIDByName(self, type, name):
         """Return id of object as integer
@@ -767,20 +768,20 @@ class config:
 
     def _getObjByID(self, id):
         """Return object from store by id."""
-        if not id in self.__index:
+        if not id in self._index:
             nemoa.log('warning', '2DO')
             return None
 
-        oClass = self.__index[id]['type']
-        oName  = self.__index[id]['name']
-        oPrj   = self.__index[id]['project']
-        oConf  = self.__store[oClass][oName].copy()
+        oClass = self._index[id]['type']
+        oName  = self._index[id]['name']
+        oPrj   = self._index[id]['project']
+        oConf  = self._store[oClass][oName].copy()
 
         return {'class': oClass, 'name': oName, 'project': oPrj, 'config':  oConf}
 
     def get(self, type = None, name = None, merge = ['params'], params = None, id = None):
         """Return configuration as dictionary for given object."""
-        if not type in self.__store.keys(): return nemoa.log('warning',
+        if not type in self._store.keys(): return nemoa.log('warning',
             """could not get configuration:
             object class '%s' is not known.""" % type)
 
@@ -788,14 +789,14 @@ class config:
 
         # get configuration from type and name
         if name:
-            if not name in self.__store[type].keys(): return False
-            cfg = self.__store[type][name].copy()
+            if not name in self._store[type].keys(): return False
+            cfg = self._store[type][name].copy()
 
         # get configuration from type and id
         elif id:
-            for name in self.__store[type].keys():
-                if not self.__store[type][name]['id'] == id: continue
-                cfg = self.__store[type][name]
+            for name in self._store[type].keys():
+                if not self._store[type][name]['id'] == id: continue
+                cfg = self._store[type][name]
             if cfg == None: return nemoa.log('warning',
                 """could not get configuration:
                 no %s with id %i could be found """ % (type, id))
@@ -844,23 +845,23 @@ class config:
     def _expandPathEnv(self, path = ''):
         """Expand nemoa environment variables in string"""
 
-        replace = { 'project': self.__workspace }
+        replace = { 'project': self._workspace }
 
         update = True
         while update:
             update = False
 
-            # expand path vars (keys of self.__path)
-            for var in self.__path.keys():
+            # expand path vars (keys of self._path)
+            for var in self._path.keys():
                 if '%' + var + '%' in path:
-                    path   = path.replace('%' + var + '%', self.__path[var])
+                    path   = path.replace('%' + var + '%', self._path[var])
                     path   = path.replace('//', '/')
                     update = True
 
-            # expand basepath variables (keys of self.__basepath)
-            for var in self.__basepath.keys():
+            # expand basepath variables (keys of self._basepath)
+            for var in self._basepath.keys():
                 if '%' + var + '%' in path:
-                    path   = path.replace('%' + var + '%', self.__basepath[var])
+                    path   = path.replace('%' + var + '%', self._basepath[var])
                     path   = path.replace('//', '/')
                     update = True
 
@@ -886,7 +887,7 @@ class config:
         return new
 
     # import config file
-    class configFileImporter:
+    class _ImportConfig:
         generic  = None
         sections = None
         project  = None
@@ -903,7 +904,7 @@ class config:
                 'schedule': {'stage [0-9a-zA-Z]*': 'dict', 'system [0-9a-zA-Z]*': 'dict', 'params': 'dict'},
                 'plot': {'package': 'str', 'class': 'str', 'params': 'dict'} }
 
-            self.__path = config.path()
+            self._path = config.path()
             self.project = config.project()
 
         # object definition / configuration files
@@ -918,12 +919,12 @@ class config:
             # parse sections and create list with objects
             objects = []
             for section in cfg.sections():
-                objCfg = self.__readSection(cfg, section)
+                objCfg = self._readSection(cfg, section)
                 if objCfg: objects.append(objCfg)
 
             return objects
 
-        def __readSection(self, cfg, section):
+        def _readSection(self, cfg, section):
             """Parse sections."""
 
             # use regular expression to match sections
@@ -940,15 +941,15 @@ class config:
                 # add generic options
                 for key, frmt in self.generic.items():
                     if key in cfg.options(section): config[key] = \
-                        self.__convert(cfg.get(section, key), frmt)
-                    else: config[key] = self.__convert('', frmt)
+                        self._convert(cfg.get(section, key), frmt)
+                    else: config[key] = self._convert('', frmt)
 
                 # add special options (use regular expressions)
                 for (regExKey, frmt) in self.sections[type].items():
                     reKey = re.compile(regExKey)
                     for key in cfg.options(section):
                         if not reKey.match(key): continue
-                        config[key] = self.__convert(cfg.get(section, key), frmt)
+                        config[key] = self._convert(cfg.get(section, key), frmt)
 
             else: return None
 
@@ -964,14 +965,14 @@ class config:
 
             return objCfg
 
-        def __convert(self, str, type):
+        def _convert(self, str, type):
             if type == 'str': return str.strip().replace('\n', '')
             if type == 'list': return nemoa.common.strToList(str)
             if type == 'dict': return nemoa.common.strToDict(str)
             return str
 
     # import script files
-    class scriptFileImporter:
+    class _ImportScript:
 
         def __init__(self, config):
             self.project = config.project()
@@ -989,7 +990,7 @@ class config:
                     'path': path }}
 
     # import network files
-    class networkConfigFileImporter:
+    class _ImportNetworkIni:
 
         project  = None
 
