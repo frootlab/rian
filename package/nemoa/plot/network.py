@@ -52,7 +52,7 @@ class graph(nemoa.plot.base.plot):
             # (optional) intensify weights
             if self.settings['edgeIntensify'] > 0.0:
                 graph.edge[u][v]['weight'] = \
-                    nemoa.common.func.intensify(graph.edge[u][v]['weight'],
+                    nemoa.common.intensify(graph.edge[u][v]['weight'],
                         factor = self.settings['edgeIntensify'],
                         bound = 1.0) # 2do: set bound to mean value
 

@@ -1673,7 +1673,7 @@ class ann(nemoa.system.base.system):
 
             bias = self.params['bias']
 
-            return nemoa.common.func.sigmoid(bias + numpy.dot(data, weights))
+            return nemoa.common.sigmoid(bias + numpy.dot(data, weights))
 
         def expectFromGLayer(self, data, source, weights):
             """Return expected values of a sigmoid output layer
@@ -1682,7 +1682,7 @@ class ann(nemoa.system.base.system):
             bias = self.params['bias']
             lvar = numpy.exp(source['lvar'])
 
-            return nemoa.common.func.sigmoid(bias + numpy.dot(data / lvar, weights))
+            return nemoa.common.sigmoid(bias + numpy.dot(data / lvar, weights))
 
         def getParamUpdates(self, data, model, weights):
             """Return parameter updates of a sigmoidal output layer
@@ -1703,7 +1703,7 @@ class ann(nemoa.system.base.system):
             bias = self.params['bias']
 
             return numpy.dot(delta_out, W_out) * \
-                nemoa.common.func.Dsigmoid((bias + numpy.dot(data_in, W_in)))
+                nemoa.common.Dsigmoid((bias + numpy.dot(data_in, W_in)))
 
         @staticmethod
         def grad(x):

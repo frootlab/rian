@@ -811,8 +811,8 @@ class config:
         # optionaly merge sub dictionaries
         # defined by a list of keys and a dictionary
         if params == None \
-            or not isinstance(params, dict)\
-            or not nemoa.common.isList(merge): return cfg
+            or not isinstance(params, dict) \
+            or not isinstance(merge, list): return cfg
         subMerge = cfg
         for key in merge:
             if not isinstance(subMerge, dict): return cfg
@@ -827,10 +827,10 @@ class config:
     def _expandPath(self, str, check = False, create = False):
         """Return string containing expanded path."""
 
-        path = str.strip()                # clean up input string
-        path = os.path.expanduser(path)   # expand unix home directory
+        path = str.strip()               # clean up input string
+        path = os.path.expanduser(path)  # expand unix home directory
         path = self._expandPathEnv(path) # expand nemoa env vars
-        path = os.path.expandvars(path)   # expand unix env vars
+        path = os.path.expandvars(path)  # expand unix env vars
 
         # (optional) create directory
         if create and not os.path.exists(os.path.dirname(path)):

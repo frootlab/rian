@@ -56,6 +56,8 @@ class rbm(nemoa.system.ann.ann):
             'updateFactorHbias': 0.1,
             'updateFactorVbias': 0.1,
             'modSaEnable': True,
+            'modSaInitTemperature': 1.0,
+            'modSaAnnealingFactor': 1.0,
             'modKlEnable': True,
             'modKlRate': 0.0,
             'modKlExpect': 0.5,
@@ -529,8 +531,10 @@ class grbm(rbm):
             'modCorruptionEnable': False,
             'modCorruptionType': 'none', # do not use corruption
             'modCorruptionFactor': 0.0, # no corruption of data
-            'modSaEnable': True,
-            'modKlEnable': True,
+            'modSaEnable': True, # use simulated annealing
+            'modSaInitTemperature': 1.0,
+            'modSaAnnealingFactor': 1.0,
+            'modKlEnable': True, # use Kullback-Leibler penalty
             'modKlRate': 0.0, # sparsity update
             'modKlExpect': 0.5, # aimed value for l2-norm penalty
             'selectivityFactor': 0.0, # no selectivity update

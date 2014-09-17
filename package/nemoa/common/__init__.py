@@ -6,9 +6,8 @@ __license__ = 'GPLv3'
 
 from nemoa.common.console import *
 from nemoa.common.csvfile import *
-from nemoa.common.dict import *
 from nemoa.common.file import *
-from nemoa.common.func import *
-from nemoa.common.list import *
-from nemoa.common.plot import *
 from nemoa.common.string import *
+from nemoa.common.dict import *
+from nemoa.common.func import *
+from nemoa.common.plot import *

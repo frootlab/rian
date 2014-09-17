@@ -4,10 +4,10 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import re
-import nemoa
 import csv
+import nemoa
 import numpy
+import re
 
 def csvGetColLabels(file, delim = None, type = None):
     """Return list with column labels (first row) from csv file."""
@@ -44,32 +44,6 @@ def csvGetDelimiter(file, delimiters = [',', ';', '\t', ' ']):
     if found: return dialect.delimiter
     return nemoa.log('warning', """could not import csv file '%s':
         could not determine delimiter!""" % (file))
-
-#def csvGetData(name, conf):
-    ##conf    = self.cfg['table'][name]['source']
-    #file    = conf['file']
-    #delim   = conf['delimiter'] if 'delimiter' in conf else csvGetDelimiter(file)
-    #cols    = conf['usecols']
-    #names   = tuple(self.getColLabels())
-    #formats = tuple(['<f8' for x in names])
-    #if not 'rows' in conf or conf['rows']:
-        #cols = (0,) + cols
-        #names = ('label',) + names
-        #formats = ('<U12',) + formats
-    #dtype = {'names': names, 'formats': formats}
-
-    #nemoa.log("import data from csv file: " + file)
-
-    #try:
-        ##data = numpy.genfromtxt(file, skiprows = 1, delimiter = delim,
-            ##usecols = cols, dtype = dtype)
-        #data = numpy.loadtxt(file, skiprows = 1, delimiter = delim,
-            #usecols = cols, dtype = dtype)
-    #except:
-        #nemoa.log('error', 'could not import data from file!')
-        #return None
-
-    #return data
 
 def csvSaveData(file, data, cols = None, delimiter = '\t', comments = ''):
     header = delimiter.join(cols) if isinstance(cols, list) else None
