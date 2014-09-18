@@ -8,7 +8,7 @@ implement given requirements and also respect local and global
 restrictions of the underlying data structure.
 """
 
-__version__ = '0.4.96'
+__version__ = '0.4.97'
 __status__  = 'Development'
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'

@@ -1743,7 +1743,8 @@ class ann(nemoa.system.base.system):
     class _GaussUnits(_UnitLayerBaseClass):
         """Layer of Gaussian Units.
 
-        Units with linear activation function and gaussian sampling."""
+        Artificial neural network units with linear activation function
+        and gaussian sampling."""
 
         def initialize(self, data = None, vSigma = 0.4):
             """Initialize parameters of gauss distributed units. """
@@ -1761,7 +1762,7 @@ class ann(nemoa.system.base.system):
             return True
 
         def update(self, updates):
-            """Update gaussian units. """
+            """Update gaussian units parameters."""
 
             if 'bias' in updates:
                 self.params['bias'] += updates['bias']
@@ -1778,26 +1779,27 @@ class ann(nemoa.system.base.system):
             var = numpy.exp(self.params['lvar'])
             bias = self.params['bias']
 
-            updBias = \
-                numpy.mean(data[1] - model[1], axis = 0).reshape(shape) / var
-            updData = \
-                numpy.mean(0.5 * (data[1] - bias) ** 2 - data[1]
+            updBias = numpy.mean(
+                data[1] - model[1], axis = 0).reshape(shape) / var
+            updLVarData = numpy.mean(
+                0.5 * (data[1] - bias) ** 2 - data[1]
                 * numpy.dot(data[0], weights), axis = 0)
-            updModel = \
-                numpy.mean(0.5 * (model[1] - bias) ** 2 - model[1]
+            updLVarModel = numpy.mean(
+                0.5 * (model[1] - bias) ** 2 - model[1]
                 * numpy.dot(model[0], weights), axis = 0)
-            updLVar = (updData - updModel).reshape(shape) / var
+            updLVar = (updLVarData - updLVarModel).reshape(shape) / var
 
             return { 'bias': updBias, 'lvar': updLVar }
 
         def getUpdatesFromDelta(self, delta):
-            # HINT: no update of lvar
+            #2Do: calculate update for lvar
 
             shape = (1, len(self.params['label']))
+            bias  = - numpy.mean(delta, axis = 0).reshape(shape)
+            #lvar  = - numpy.zeros(shape = shape)
 
-            return {
-                'bias': - numpy.mean(delta, axis = 0).reshape(shape),
-                'lvar': - numpy.zeros(shape = shape)}
+            return { 'bias': bias }
+                #'lvar': lvar}
 
         def overwrite(self, params):
             """Merge parameters of gaussian units. """
@@ -1827,7 +1829,7 @@ class ann(nemoa.system.base.system):
 
         @staticmethod
         def grad(x):
-            """Return gradient of activation function. """
+            """Return gradient of activation function."""
 
             return 1.0
 
@@ -1856,7 +1858,6 @@ class ann(nemoa.system.base.system):
             calculated from expected values. """
 
             sigma = numpy.sqrt(numpy.exp(self.params['lvar']))
-
             return numpy.random.normal(data, sigma)
 
         def get(self, unit):

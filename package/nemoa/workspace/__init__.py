@@ -8,11 +8,11 @@ import nemoa.workspace.base
 import importlib
 import copy
 
-__shared = {}
+_shared = {}
 
 def init():
     """Create and link new configuration instance."""
-    __shared['config'] = nemoa.workspace.base.config()
+    _shared['config'] = nemoa.workspace.base.config()
     return True
 
 def new():
@@ -24,24 +24,24 @@ def open(*args, **kwargs):
     return nemoa.workspace.base.workspace(*args, **kwargs)
 
 def get(*args, **kwargs):
-    if not 'config' in __shared: init()
-    return __shared['config'].get(*args, **kwargs)
+    if not 'config' in _shared: init()
+    return _shared['config'].get(*args, **kwargs)
 
 def list(*args, **kwargs):
-    if not 'config' in __shared: init()
-    return __shared['config'].list(*args, **kwargs)
+    if not 'config' in _shared: init()
+    return _shared['config'].list(*args, **kwargs)
 
 def path(*args, **kwargs):
-    if not 'config' in __shared: init()
-    return __shared['config'].path(*args, **kwargs)
+    if not 'config' in _shared: init()
+    return _shared['config'].path(*args, **kwargs)
 
 def project(*args, **kwargs):
-    if not 'config' in __shared: init()
-    return __shared['config'].project(*args, **kwargs)
+    if not 'config' in _shared: init()
+    return _shared['config'].project(*args, **kwargs)
 
 def load(*args, **kwargs):
-    if not 'config' in __shared: init()
-    return __shared['config'].load(*args, **kwargs)
+    if not 'config' in _shared: init()
+    return _shared['config'].load(*args, **kwargs)
 
 def getConfig(type = None, config = None, merge = ['params'], **kwargs):
     """Return object configuration as dictionary."""
@@ -62,7 +62,7 @@ def getConfig(type = None, config = None, merge = ['params'], **kwargs):
     # get config
     if not name: name = project() + '.default'
     for cfgName in search:
-        cfg = __shared['config'].get(
+        cfg = _shared['config'].get(
             type = type, name = cfgName, merge = merge, params = params)
         if isinstance(cfg, dict): return cfg
 

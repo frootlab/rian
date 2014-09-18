@@ -370,11 +370,28 @@ class rbm(nemoa.system.ann.ann):
 
     def _optSaDeltaL(self, tracker):
         cfg = self._config['optimize']
-        #cfg['modSaInitTemperature'], cfg['modSaAnnealingFactor']
 
-        #dBias = numpy.zeros([1, hData.shape[1]])
+        shape = self._params['links'][(0, 1)]['W'].shape
 
-        return {}
+        rate = cfg['updateRate'] * cfg['updateFactorWeights']
+        temperature = self._optSaTemperature(tracker)
+
+        if temperature < cfg['modSaMinTemperature']: return {}
+
+        sigma = rate * temperature
+        W = numpy.random.normal(0.0, sigma, shape)
+
+        return { 'W': W }
+
+    def _optSaTemperature(self, tracker):
+        cfg = self._config['optimize']
+
+        init      = float(cfg['modSaInitTemperature'])
+        annealing = float(cfg['modSaAnnealingFactor'])
+        epoch     = float(tracker.epoch())
+        updates   = float(cfg['updates'])
+
+        return init * (1.0 - epoch / updates) ** annealing
 
     def _getUnitsFromConfig(self):
         """Return tuple with unit information created from config."""
@@ -514,6 +531,8 @@ class rbm(nemoa.system.ann.ann):
         """Set updates for links."""
         if 'W' in updates:
             self._params['links'][(0, 1)]['W'] += updates['W']
+        if 'A' in updates:
+            self._params['links'][(0, 1)]['A'] = updates['A']
         return True
 
 class grbm(rbm):
