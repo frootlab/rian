@@ -60,10 +60,10 @@ class dbn(nemoa.system.ann.ann):
             'hidden': None,
             'useAdjacency': False,
             'inspect': True,
-            'inspectFunction': 'accuracy',
-            'inspectTimeInterval': 10.0 ,
-            'inspectEstimateTime': True,
-            'inspectEstimateTimeWait': 15.0 }}[key]
+            'trackerFunction': 'accuracy',
+            'trackerTimeInterval': 10.0 ,
+            'trackerEstimateTime': True,
+            'trackerEstimateTimeWait': 15.0 }}[key]
 
     def _checkNetwork(self, network):
         return self._isNetworkDBNCompatible(network)

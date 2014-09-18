@@ -67,10 +67,10 @@ class rbm(nemoa.system.ann.ann):
             'modCorruptionFactor': 0.5,
             'useAdjacency': False,
             'inspect': True,
-            'inspectFunction': 'accuracy',
-            'inspectTimeInterval': 10.0 ,
-            'inspectEstimateTime': True,
-            'inspectEstimateTimeWait': 20.0 }}[key]
+            'trackerFunction': 'accuracy',
+            'trackerTimeInterval': 10.0 ,
+            'trackerEstimateTime': True,
+            'trackerEstimateTimeWait': 20.0 }}[key]
 
     def getMapping(self):
         v = self._params['units'][0]['name']
@@ -591,10 +591,10 @@ class grbm(rbm):
             'selectivitySize': 0.5, # aimed value for l2-norm penalty
             'useAdjacency': False, # do not use selective weight updates
             'inspect': True, # inspect optimization process
-            'inspectFunction': 'accuracy', # inspection function
-            'inspectTimeInterval': 20.0, # time interval for calculation the inspection function
-            'inspectEstimateTime': True, # initally estimate time for whole optimization process
-            'inspectEstimateTimeWait': 20.0 # time intervall used for time estimation
+            'trackerFunction': 'accuracy', # inspection function
+            'trackerTimeInterval': 20.0, # time interval for calculation the inspection function
+            'trackerEstimateTime': True, # initally estimate time for whole optimization process
+            'trackerEstimateTimeWait': 20.0 # time intervall used for time estimation
         }}[key]
 
     def _checkDataset(self, dataset):

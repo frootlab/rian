@@ -606,8 +606,8 @@ class tracker:
         self._inspect = system._config['optimize']['inspect'] \
             if 'inspect' in system._config['optimize'] \
             else True
-        self._estimate = system._config['optimize']['inspectEstimateTime'] \
-            if 'inspectEstimateTime' in system._config['optimize'] \
+        self._estimate = system._config['optimize']['trackerEstimateTime'] \
+            if 'trackerEstimateTime' in system._config['optimize'] \
             else True
 
     def setTestData(self, data):
@@ -657,7 +657,7 @@ class tracker:
                     of %i updates.""" % (cfg['updates']))
                 self._state['estimateStarted'] = True
             if (epochTime - self._state['startTime']) \
-                > cfg['inspectEstimateTimeWait']:
+                > cfg['trackerEstimateTimeWait']:
                 estim = ((epochTime - self._state['startTime']) \
                     / (self._state['epoch'] + 1)
                     * cfg['updates'] * cfg['iterations'])
@@ -717,18 +717,18 @@ class tracker:
             return False
 
         if self._state['epoch'] == cfg['updates']:
-            func  = cfg['inspectFunction']
+            func  = cfg['trackerFunction']
             prop  = self._system.about(func)
             value = self._system.eval(data = self._data, func = func)
             out   = 'final: %s = ' + prop['format']
             return nemoa.log('note', out % (prop['name'], value))
 
         if ((epochTime - self._state['inspectTime']) \
-            > cfg['inspectTimeInterval']) \
+            > cfg['trackerTimeInterval']) \
             and not (self._estimate \
             and self._state['estimateStarted'] \
             and not self._state['estimateEnded']):
-            func  = cfg['inspectFunction']
+            func  = cfg['trackerFunction']
             prop  = self._system.about(func)
             value = self._system.eval(data = self._data, func = func)
             progr = float(self._state['epoch']) / float(cfg['updates']) * 100.0
