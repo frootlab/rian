@@ -358,6 +358,7 @@ class system:
             (3) The hidden layers are symmetric to the central layer
                 related to their number of nodes
         """
+
         if not nemoa.type.isNetwork(network): return nemoa.log('error',
             'could not test network: invalid network instance given!')
         if not self._isNetworkMLPCompatible(network): return False
@@ -435,16 +436,25 @@ class system:
     def eval(self, data, *args, **kwargs):
         if len(args) == 0:
             return self._evalSystem(data, **kwargs)
+
+        # System unit evaluation
         if args[0] == 'units':
             return self._evalUnits(data, *args[1:], **kwargs)
+
+        # System link evaluation
         if args[0] == 'links':
             return self._evalLinks(data, *args[1:], **kwargs)
+
+        # System relation evaluation
         if args[0] == 'relations':
             return self._evalRelations(data, *args[1:], **kwargs)
+
+        # System evaluation
         if args[0] in self._aboutSystem().keys():
             return self._evalSystem(data, *args, **kwargs)
+
         return nemoa.log('warning',
-            "could not evaluate system: unknown method '%s'" % (args[0]))
+            "unsupported system evaluation '%s'" % (args[0]))
 
     @staticmethod
     def _getDataSum(data, norm = 'S'):
@@ -454,7 +464,7 @@ class system:
             data: numpy array containing data
             norm: data mean norm
                 'S': Sum of Values
-                'SE', 'L1': Sum of Errors / L1 Norm
+                'SE': Sum of Errors / L1 Norm
                 'SSE': Sum of Squared Errors
                 'RSSE': Root Sum of Squared Errors
         """
@@ -462,15 +472,23 @@ class system:
         norm = norm.upper()
 
         # Sum of Values (S)
-        if norm in ['S']: return numpy.sum(data, axis = 0)
-        # Sum of Errors (SE) / L1-Norm (L1)
-        if norm in ['SE', 'L1']: return numpy.sum(numpy.abs(data), axis = 0)
-        # Sum of Squared Errors (SSE)
-        if norm in ['SSE']: return numpy.sum(data ** 2, axis = 0)
-        # Root Sum of Squared Errors (RSSE)
-        if norm in ['RSSE']: return numpy.sqrt(numpy.sum(data ** 2, axis = 0))
+        if norm == 'S':
+            return numpy.sum(data, axis = 0)
 
-        return nemoa.log('error', "unknown data sum norm '%s'" % (norm))
+        # Sum of Errors (SE) / L1-Norm (L1)
+        if norm == 'SE':
+            return numpy.sum(numpy.abs(data), axis = 0)
+
+        # Sum of Squared Errors (SSE)
+        if norm == 'SSE':
+            return numpy.sum(data ** 2, axis = 0)
+
+        # Root Sum of Squared Errors (RSSE)
+        if norm == 'RSSE':
+            return numpy.sqrt(numpy.sum(data ** 2, axis = 0))
+
+        return nemoa.log('error',
+            "unsupported data sum norm '%s'" % (norm))
 
     @staticmethod
     def _getDataMean(data, norm = 'M'):
@@ -482,21 +500,29 @@ class system:
                 'M': Arithmetic Mean of Values
                 'ME': Mean of Errors
                 'MSE': Mean of Squared Errors
-                'RMSE', 'L2': Root Mean of Squared Errors / L2 Norm
+                'RMSE': Root Mean of Squared Errors / L2 Norm
         """
 
         norm = norm.upper()
 
         # Mean of Values (M)
-        if norm in ['M']: return numpy.mean(data, axis = 0)
-        # Mean of Errors (ME)
-        if norm in ['ME']: return numpy.mean(numpy.abs(data), axis = 0)
-        # Mean of Squared Errors (MSE)
-        if norm in ['MSE']: return numpy.mean(data ** 2, axis = 0)
-        # Root Mean of Squared Errors (RMSE) / L2-Norm (L2)
-        if norm in ['RMSE', 'L2']: return numpy.sqrt(numpy.mean(data ** 2, axis = 0))
+        if norm == 'M':
+            return numpy.mean(data, axis = 0)
 
-        return nemoa.log('error', "unknown data mean norm '%s'" % (norm))
+        # Mean of Errors (ME)
+        if norm == 'ME':
+            return numpy.mean(numpy.abs(data), axis = 0)
+
+        # Mean of Squared Errors (MSE)
+        if norm == 'MSE':
+            return numpy.mean(data ** 2, axis = 0)
+
+        # Root Mean of Squared Errors (RMSE) / L2-Norm
+        if norm == 'RMSE':
+            return numpy.sqrt(numpy.mean(data ** 2, axis = 0))
+
+        return nemoa.log('error',
+            "unsupported data mean norm '%s'" % (norm))
 
     @staticmethod
     def _getDataDeviation(data, norm = 'SD'):
@@ -513,13 +539,19 @@ class system:
         norm = norm.upper()
 
         # Standard Deviation of Data (SD)
-        if norm in ['SD']: return numpy.std(data, axis = 0)
-        # Standard Deviation of Errors (SDE)
-        if norm in ['SDE']: return numpy.std(numpy.abs(data), axis = 0)
-        # Standard Deviation of Squared Errors (SDSE)
-        if norm in ['SDSE']: return numpy.std(data ** 2, axis = 0)
+        if norm == 'SD':
+            return numpy.std(data, axis = 0)
 
-        return nemoa.log('error', "unknown data deviation norm '%s'" % (deviation))
+        # Standard Deviation of Errors (SDE)
+        if norm == 'SDE':
+            return numpy.std(numpy.abs(data), axis = 0)
+
+        # Standard Deviation of Squared Errors (SDSE)
+        if norm == 'SDSE':
+            return numpy.std(data ** 2, axis = 0)
+
+        return nemoa.log('error',
+            "unsupported data deviation norm '%s'" % (deviation))
 
     def mapData(self, data, mapping = None, transform = 'expect'):
         """Return system representation of data.
@@ -529,10 +561,14 @@ class system:
             transform: mapping algorithm
         """
 
-        if mapping == None: mapping = self.getMapping()
-        if transform == 'expect': return self._evalUnitExpect(data, mapping)
-        if transform == 'value':  return self._evalUnitValues(data, mapping)
-        if transform == 'sample': return self._evalUnitSamples(data, mapping)
+        if mapping == None:
+            mapping = self.getMapping()
+        if transform == 'expect':
+            return self._evalUnitExpect(data, mapping)
+        if transform == 'value':
+            return self._evalUnitValues(data, mapping)
+        if transform == 'sample':
+            return self._evalUnitSamples(data, mapping)
         return nemoa.log('error', """could not map data:
             unknown mapping algorithm '%s'""" % (transform))
 
@@ -545,7 +581,7 @@ class system:
 
         Examples:
             about('units', 'error')
-                Returns information about the "error" measurement
+                Returns information about the 'error' measurement
                 function of the systems units.
         """
 
@@ -573,7 +609,7 @@ class system:
 
     def name(self):
         """Return name of system."""
-        return self._config['name'] #if 'name' in self._config else ''
+        return self._config['name']
 
     def getType(self):
         """Return sytem type."""
@@ -641,31 +677,35 @@ class tracker:
         return self._state['inspection'][-1, 1] - \
             self._state['inspection'][-2, 1]
 
+    def _estimateTime(self):
+        if self._state['estimateEnded']: return True
+        cfg = self._system._config['optimize']
+        if not self._state['estimateStarted']:
+            nemoa.log("""estimating time for calculation
+                of %i updates.""" % (cfg['updates']))
+            self._state['estimateStarted'] = True
+        epochTime = time.time()
+        if (epochTime - self._state['startTime']) \
+            > cfg['trackerEstimateTimeWait']:
+            estim = ((epochTime - self._state['startTime']) \
+                / (self._state['epoch'] + 1)
+                * cfg['updates'] * cfg['iterations'])
+            estimStr = time.strftime('%H:%M',
+                time.localtime(epochTime + estim))
+            nemoa.log('note', 'estimation: %ds (finishing time: %s)'
+                % (estim, estimStr))
+            self._state['estimateEnded'] = True
+        return True
+
     def trigger(self):
         """Update epoch and time and calculate """
 
         cfg = self._system._config['optimize']
-        epochTime = time.time()
         if self._state == {}: self._initState()
         self._state['epoch'] += 1
-        self._triggerKeyEvent() # check keyboard input
 
-        # estimate time needed to finish current optimization schedule
-        if self._estimate and not self._state['estimateEnded']:
-            if not self._state['estimateStarted']:
-                nemoa.log("""estimating time for calculation
-                    of %i updates.""" % (cfg['updates']))
-                self._state['estimateStarted'] = True
-            if (epochTime - self._state['startTime']) \
-                > cfg['trackerEstimateTimeWait']:
-                estim = ((epochTime - self._state['startTime']) \
-                    / (self._state['epoch'] + 1)
-                    * cfg['updates'] * cfg['iterations'])
-                estimStr = time.strftime('%H:%M',
-                    time.localtime(time.time() + estim))
-                nemoa.log('note', 'estimation: %ds (finishing time: %s)'
-                    % (estim, estimStr))
-                self._state['estimateEnded'] = True
+        self._triggerKeyEvent() # check keyboard input
+        if self._estimate: self._estimateTime() # estimate time
 
         # evaluate model (in a given time interval)
         if self._inspect: self._triggerEval()
@@ -676,7 +716,6 @@ class tracker:
     def _initState(self):
 
         epochTime = time.time()
-
         nemoa.log('note', "press 'q' if you want to abort the optimization")
         self._state = {
             'startTime': epochTime,
@@ -710,9 +749,8 @@ class tracker:
         epochTime = time.time()
 
         if self._data == None:
-            nemoa.log('warning', """
-                monitoring the process of optimization is not possible:
-                testdata is needed!""")
+            nemoa.log('warning', """monitoring the process of
+                optimization is not possible: testdata is needed!""")
             self._inspect = False
             return False
 
