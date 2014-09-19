@@ -559,7 +559,7 @@ class ann(nemoa.system.base.system):
                 self._LinkLayer.getUpdatesFromDelta(out[src], delta[src, tgt])
 
         # Get previous gradients and updates
-        prev = tracker.read()
+        prev = tracker.read('rprop')
         if not prev:
             prev = {
                 'gradient': grad,
@@ -593,7 +593,7 @@ class ann(nemoa.system.base.system):
                 accel, minFactor, maxFactor)
 
         # Save updates to store
-        tracker.write(gradient = grad, update = update)
+        tracker.write('rprop', gradient = grad, update = update)
 
         return update
 
@@ -1203,11 +1203,15 @@ class ann(nemoa.system.base.system):
 
         sID = self.getMapping().index(mapping[-2])
         tID = self.getMapping().index(mapping[-1])
-        links = self._params['links'][(sID, tID)]
         src = self.units[mapping[-2]].params
         tgt = self.units[mapping[-1]].params
 
-        return self._LinkLayer.energy(dIn, dOut, src, tgt, links)
+        if (sID, tID) in self._params['links']:
+            links = self._params['links'][(sID, tID)]
+            return self._LinkLayer.energy(dIn, dOut, src, tgt, links)
+        elif (tID, sID) in self._params['links']:
+            links = self._params['links'][(tID, sID)]
+            return self._LinkLayer.energy(dOut, dIn, tgt, src, links)
 
     def _evalRelations(self, data, func = 'correlation',
         relations = None, evalStat = True, **kwargs):

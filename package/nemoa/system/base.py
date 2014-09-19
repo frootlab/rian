@@ -623,7 +623,7 @@ class tracker:
     _config = None
     _system = None
     _state = {}
-    _store = []
+    _store = {}
 
     def __init__(self, system = None):
         self._configure(system)
@@ -655,20 +655,26 @@ class tracker:
         self._state = {}
         self._store = []
 
-    def write(self, id = -1, append = False, **kwargs):
-        if len(self._store) == (abs(id) - 1) or append == True:
-            self._store.append(kwargs)
-            return True
-        if len(self._store) < id: return nemoa.log('error',
-            'could not write to store, wrong index!')
-        self._store[id] = kwargs
-        return True
-
     def epoch(self):
         return self._state['epoch']
 
-    def read(self, id = -1):
-        return self._store[id] if len(self._store) >= abs(id) else {}
+    def read(self, key, id = -1):
+        if not key in self._store.keys():
+            self._store[key] = []
+        elif len(self._store[key]) >= abs(id):
+            return self._store[key][id]
+        return {}
+
+    def write(self, key, id = -1, append = False, **kwargs):
+        if not key in self._store.keys():
+            self._store[key] = []
+        if len(self._store[key]) == (abs(id) - 1) or append == True:
+            self._store[key].append(kwargs)
+            return True
+        if len(self._store[key]) < id: return nemoa.log('error',
+            'could not write to store, wrong index!')
+        self._store[key][id] = kwargs
+        return True
 
     def difference(self):
         if not 'inspection' in self._state: return 0.0
@@ -705,12 +711,11 @@ class tracker:
         self._state['epoch'] += 1
 
         self._triggerKeyEvent() # check keyboard input
+        self._trackFunction()
         if self._estimate: self._estimateTime() # estimate time
+        if self._inspect: self._triggerEvaluate() # evaluate system
 
-        # evaluate model (in a given time interval)
-        if self._inspect: self._triggerEval()
         if self._state['abort']: return 'abort'
-
         return True
 
     def _initState(self):
@@ -742,7 +747,18 @@ class tracker:
 
         return True
 
-    def _triggerEval(self):
+    def _trackFunction(self):
+        cfg = self._system._config['optimize']
+
+        if self._data == None:
+            nemoa.log('warning', """monitoring the process of
+                optimization is not possible: testdata is needed!""")
+            self._inspect = False
+            return False
+
+        return True
+
+    def _triggerEvaluate(self):
         """Evaluate Model."""
 
         cfg = self._system._config['optimize']
@@ -755,18 +771,18 @@ class tracker:
             return False
 
         if self._state['epoch'] == cfg['updates']:
-            func  = cfg['trackerFunction']
+            func  = cfg['trackerEvaluationFunction']
             prop  = self._system.about(func)
             value = self._system.eval(data = self._data, func = func)
             out   = 'final: %s = ' + prop['format']
             return nemoa.log('note', out % (prop['name'], value))
 
         if ((epochTime - self._state['inspectTime']) \
-            > cfg['trackerTimeInterval']) \
+            > cfg['trackerEvaluationTimeInterval']) \
             and not (self._estimate \
             and self._state['estimateStarted'] \
             and not self._state['estimateEnded']):
-            func  = cfg['trackerFunction']
+            func  = cfg['trackerEvaluationFunction']
             prop  = self._system.about(func)
             value = self._system.eval(data = self._data, func = func)
             progr = float(self._state['epoch']) / float(cfg['updates']) * 100.0

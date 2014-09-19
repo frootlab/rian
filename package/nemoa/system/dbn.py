@@ -60,8 +60,8 @@ class dbn(nemoa.system.ann.ann):
             'hidden': None,
             'useAdjacency': False,
             'inspect': True,
-            'trackerFunction': 'accuracy',
-            'trackerTimeInterval': 10.0 ,
+            'trackerObjectiveFunction': 'accuracy',
+            'trackerEvaluationTimeInterval': 10.0 ,
             'trackerEstimateTime': True,
             'trackerEstimateTimeWait': 15.0 }}[key]
 

@@ -67,8 +67,8 @@ class rbm(nemoa.system.ann.ann):
             'modCorruptionFactor': 0.5,
             'useAdjacency': False,
             'inspect': True,
-            'trackerFunction': 'accuracy',
-            'trackerTimeInterval': 10.0 ,
+            'trackerObjectiveFunction': 'accuracy',
+            'trackerEvaluationTimeInterval': 10.0 ,
             'trackerEstimateTime': True,
             'trackerEstimateTimeWait': 20.0 }}[key]
 
@@ -164,7 +164,7 @@ class rbm(nemoa.system.ann.ann):
         return True
 
     def _optVmraUpdate(self, tracker):
-        store = tracker.read()
+        store = tracker.read('vmra')
         var = numpy.var(self._params['links'][(0, 1)]['W'])
         if not 'wVar' in store: wVar = numpy.array([var])
         else: wVar = numpy.append([var], store['wVar'])
@@ -182,7 +182,7 @@ class rbm(nemoa.system.ann.ann):
             cfg['updateRate'] = min(max(delw,
                 cfg['modVmraMinRate']), cfg['modVmraMaxRate'])
 
-        tracker.write(wVar = wVar)
+        tracker.write('vmra', wVar = wVar)
         return True
 
     def _optCdSampling(self, data):
@@ -591,8 +591,8 @@ class grbm(rbm):
             'selectivitySize': 0.5, # aimed value for l2-norm penalty
             'useAdjacency': False, # do not use selective weight updates
             'inspect': True, # inspect optimization process
-            'trackerFunction': 'accuracy', # inspection function
-            'trackerTimeInterval': 20.0, # time interval for calculation the inspection function
+            'trackerObjectiveFunction': 'accuracy', # inspection function
+            'trackerEvaluationTimeInterval': 20.0, # time interval for calculation the inspection function
             'trackerEstimateTime': True, # initally estimate time for whole optimization process
             'trackerEstimateTimeWait': 20.0 # time intervall used for time estimation
         }}[key]
