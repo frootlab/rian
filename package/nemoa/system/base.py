@@ -713,7 +713,7 @@ class tracker:
         self._triggerKeyEvent() # check keyboard input
         self._trackFunction()
         if self._estimate: self._estimateTime() # estimate time
-        if self._inspect: self._triggerEvaluate() # evaluate system
+        if self._inspect: self._evaluate() # evaluate system
 
         if self._state['abort']: return 'abort'
         return True
@@ -756,9 +756,12 @@ class tracker:
             self._inspect = False
             return False
 
+        interval = cfg['trackerObjectiveFunctionUpdateInterval']
+        func = cfg['trackerObjectiveFunction']
+
         return True
 
-    def _triggerEvaluate(self):
+    def _evaluate(self):
         """Evaluate Model."""
 
         cfg = self._system._config['optimize']

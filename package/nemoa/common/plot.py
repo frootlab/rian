@@ -229,8 +229,10 @@ def layerGraph(G, **kwargs):
         for nId, node in enumerate(layer):
             nPos = (nId + 0.5) / len(layer)
             lPos = 1.0 - lId / (len(nodes) - 1.0)
-            pos[node] = {'down': (nPos, lPos),
-                'up': (nPos, 1.0 - lPos), 'left': (lPos, nPos),
+            pos[node] = {
+                'down': (nPos, lPos),
+                'up': (nPos, 1.0 - lPos),
+                'left': (lPos, nPos),
                 'right': (1.0 - lPos, nPos)}[kwargs['graphDirection']]
             posCap[node] = (pos[node][0], pos[node][1] + graphCaptionPos)
 
@@ -253,8 +255,12 @@ def layerGraph(G, **kwargs):
             label = nemoa.common.strToUnitStr(labelStr)
 
             color = {
-                True: {'bg': COLOR['cornflower'], 'font': COLOR['black'] },
-                False: {'bg': COLOR['lightgrey'], 'font': COLOR['black'] }
+                True: {
+                    'bg': COLOR['cornflower'],
+                    'font': COLOR['black'] },
+                False: {
+                    'bg': COLOR['lightgrey'],
+                    'font': COLOR['black'] }
             }[isVisible]
 
             # draw node
