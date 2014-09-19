@@ -555,8 +555,8 @@ class system:
             'description': self.__doc__,
             'class': self._config['class'],
             'type': self.getType(),
-            'units': self._getUnitEvalMethods(),
-            'links': self._getLinkEvalMethods(),
+            'units': self._aboutUnits(),
+            'links': self._aboutLinks(),
             'relations': self._aboutRelations()
         }, self._aboutSystem())
 

@@ -644,24 +644,28 @@ class ann(nemoa.system.base.system):
     def _aboutSystem(): return {
         'energy': {
             'name': 'total energy',
-            'description': 'sum of unit and link energies',
+            'description': 'sum of local unit and link energies',
             'method': '_evalSystemEnergy',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
+            'args': 'all', 'return': 'scalar', 'format': '%.3f',
+            'optimum': 'min'},
         'error': {
             'name': 'total error',
             'description': 'sum of errors of reconstructed values',
             'method': '_evalSystemError',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
+            'args': 'all', 'return': 'scalar', 'format': '%.3f',
+            'optimum': 'min'},
         'accuracy': {
             'name': 'average accuracy',
             'description': 'mean accuracy of reconstructed values',
             'method': '_evalSystemAccuracy',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
+            'args': 'all', 'return': 'scalar', 'format': '%.3f',
+            'optimum': 'max'},
         'precision': {
             'name': 'average precision',
             'description': 'mean precision of reconstructed values',
             'method': '_evalSystemPrecision',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'}
+            'args': 'all', 'return': 'scalar', 'format': '%.3f',
+            'optimum': 'max'}
         }
 
     def _evalSystemError(self, *args, **kwargs):
@@ -683,12 +687,14 @@ class ann(nemoa.system.base.system):
         energy = 0.0
 
         # sum energy of units and links
-        for i in range(1, len(mapping) + 1): energy += \
-            numpy.sum(self._evalUnitEnergy(data[0],
-            mapping = tuple(mapping[:i])))
-        for i in range(1, len(mapping)): energy += \
-            numpy.sum(self._evalLinkEnergy(data[0],
-            mapping = tuple(mapping[:i+1])))
+        for i in range(1, len(mapping) + 1):
+            energy += numpy.sum(
+                self._evalUnitEnergy(data[0],
+                mapping = tuple(mapping[:i])))
+        for i in range(1, len(mapping)):
+            energy += numpy.sum(
+                self._evalLinkEnergy(data[0],
+                mapping = tuple(mapping[:i+1])))
 
         return energy
 
@@ -699,10 +705,11 @@ class ann(nemoa.system.base.system):
             data: 2-tuple with numpy arrays: input data and output data
             func: string containing unit evaluation function
                 For a full list of available system evaluation functions
-                see: system.about('units') """
+                see: system.about('units')
+        """
 
         # get unit evaluation function
-        methods = self._getUnitEvalMethods()
+        methods = self._aboutUnits()
         if not func in methods.keys(): return nemoa.log('error',
             "could not evaluate units: unknown method '%s'" % (func))
         method = methods[func]['method']
@@ -741,7 +748,7 @@ class ann(nemoa.system.base.system):
         return nemoa.log('warning', 'could not perform evaluation')
 
     @staticmethod
-    def _getUnitEvalMethods(): return {
+    def _aboutUnits(): return {
         'energy': {
             'name': 'energy',
             'description': 'energy of units',
@@ -814,11 +821,13 @@ class ann(nemoa.system.base.system):
         """Return (most) expected values of a layer.
 
         Args:
-            data: numpy array containing data corresponding
-                to the input layer (first argument of mapping)
-            mapping: tuple of strings containing the mapping
-                from input layer (first argument of tuple)
-                to output layer (last argument of tuple)
+            data: numpy array containing source data coresponding to
+                the first layer in the mapping
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+            block: list of strings containing labels of source units
+                that are blocked by setting the values to their means
         """
 
         if mapping == None: mapping = self.getMapping()
@@ -835,15 +844,21 @@ class ann(nemoa.system.base.system):
 
         return outData
 
-    def _evalUnitValues(self, data, mapping = None, block = None, expectLast = False):
+    def _evalUnitValues(self, data, mapping = None, block = None,
+        expectLast = False):
         """Return unit values calculated from mappings.
 
         Args:
-            mapping -- tuple of strings containing the mapping
-                from input layer (first argument of tuple)
-                to output layer (last argument of tuple)
-            expectLast -- return expectation values of the units
-                for the last step instead of maximum likelihood values """
+            data: numpy array containing source data coresponding to
+                the first layer in the mapping
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+            block: list of strings containing labels of source units
+                that are blocked by setting the values to their means
+            expectLast: return expectation values of the units
+                for the last step instead of maximum likelihood values
+        """
 
         if mapping == None: mapping = self.getMapping()
         if block == None: inData = data
@@ -870,13 +885,18 @@ class ann(nemoa.system.base.system):
                     self.units[mapping[id]].params))
             return data
 
-    def _evalUnitSamples(self, data, mapping = None, block = None, expectLast = False):
+    def _evalUnitSamples(self, data, mapping = None, block = None,
+        expectLast = False):
         """Return sampled unit values calculated from mapping.
 
         Args:
-            mapping: tuple of strings containing the mapping
-                from input layer (first argument of tuple)
-                to output layer (last argument of tuple)
+            data: numpy array containing source data coresponding to
+                the first layer in the mapping
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+            block: list of strings containing labels of source units
+                that are blocked by setting the values to their means
             expectLast: return expectation values of the units
                 for the last step instead of sampled values
         """
@@ -887,16 +907,20 @@ class ann(nemoa.system.base.system):
             inData = numpy.copy(data)
             for i in block: inData[:,i] = numpy.mean(inData[:,i])
         if expectLast:
-            if len(mapping) == 1: return data
-            elif len(mapping) == 2: return self.units[mapping[1]].expect(
-                self.units[mapping[0]].getSamples(data),
-                self.units[mapping[0]].params)
+            if len(mapping) == 1:
+                return data
+            elif len(mapping) == 2:
+                return self.units[mapping[1]].expect(
+                    self.units[mapping[0]].getSamples(data),
+                    self.units[mapping[0]].params)
             return self.units[mapping[-1]].expect(
                 self._evalUnitSamples(data, mapping[0:-1]),
                 self.units[mapping[-2]].params)
         else:
-            if len(mapping) == 1: return self.units[mapping[0]].getSamples(data)
-            elif len(mapping) == 2: return self.units[mapping[1]].getSamplesFromInput(
+            if len(mapping) == 1:
+                return self.units[mapping[0]].getSamples(data)
+            elif len(mapping) == 2:
+                return self.units[mapping[1]].getSamplesFromInput(
                     data, self.units[mapping[0]].params)
             data = numpy.copy(data)
             for id in range(len(mapping) - 1):
@@ -908,14 +932,13 @@ class ann(nemoa.system.base.system):
         """Return reconstruction residuals of units.
 
         Args:
-            data: 2-tuple with numpy arrays containing input and
-                output data coresponding to the first and the last layer
-                in the mapping
-            mapping: tuple of strings containing the mapping
-                from input layer (first argument of tuple)
-                to output layer (last argument of tuple)
-            block: list of strings containing labels of units in the input
-                layer that are blocked by setting the values to their means
+            data: numpy array containing source data coresponding to
+                the first layer in the mapping
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+            block: list of strings containing labels of source units
+                that are blocked by setting the values to their means
         """
 
         dIn, dOut = data
@@ -940,10 +963,11 @@ class ann(nemoa.system.base.system):
         """Return unit energies of a layer.
 
         Args:
-            data: input data
-            mapping: tuple of strings containing the mapping
-                from input layer (first argument of tuple)
-                to output layer (last argument of tuple)
+            data: numpy array containing source data coresponding to
+                the first layer in the mapping
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
         """
 
         # set mapping: inLayer to outLayer (if not set)
@@ -957,12 +981,13 @@ class ann(nemoa.system.base.system):
         """Return mean of reconstructed unit values.
 
         Args:
-            data: input data
-            mapping: tuple of strings containing the mapping
-                from input layer (first argument of tuple)
-                to output layer (last argument of tuple)
-            block: list of string containing labels of units in the input
-                layer that are blocked by setting the values to their means
+            data: numpy array containing source data coresponding to
+                the first layer in the mapping
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+            block: list of strings containing labels of source units
+                that are blocked by setting the values to their means
         """
 
         if mapping == None: mapping = self.getMapping()
@@ -978,12 +1003,13 @@ class ann(nemoa.system.base.system):
         """Return variance of reconstructed unit values.
 
         Args:
-            data: input data
-            mapping: tuple of strings containing the mapping
-                from input layer (first argument of tuple)
-                to output layer (last argument of tuple)
-            block: list of string containing labels of units in the input
-                layer that are blocked by setting the values to their means
+            data: numpy array containing source data coresponding to
+                the first layer in the mapping
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+            block: list of strings containing labels of source units
+                that are blocked by setting the values to their means
         """
 
         if mapping == None: mapping = self.getMapping()
@@ -999,9 +1025,14 @@ class ann(nemoa.system.base.system):
         """Return reconstruction error of units (depending on norm)
 
         Args:
-            data: see _evalUnitResiduals
-            mapping: see _evalUnitResiduals
-            block: see _evalUnitResiduals
+            data: 2-tuple of numpy arrays containing source and
+                target data coresponding to the first and the last layer
+                in the mapping
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+            block: list of strings containing labels of source units
+                that are blocked by setting the values to their means
             norm: used norm to calculate data reconstuction error from
                 residuals. see _getDataMean for a list of provided norms
         """
@@ -1015,9 +1046,14 @@ class ann(nemoa.system.base.system):
         """Return unit reconstruction accuracy.
 
         Args:
-            data -- see _evalUnitResiduals
-            mapping -- see _evalUnitResiduals
-            block -- see _evalUnitResiduals
+            data: 2-tuple of numpy arrays containing source and
+                target data coresponding to the first and the last layer
+                in the mapping
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+            block: list of strings containing labels of source units
+                that are blocked by setting the values to their means
             norm -- used norm to calculate accuracy
                 see getDataNorm for a list of provided norms
 
@@ -1035,9 +1071,14 @@ class ann(nemoa.system.base.system):
         """Return unit reconstruction precision.
 
         Args:
-            data: see _evalUnitResiduals
-            mapping: see _evalUnitResiduals
-            block: see _evalUnitResiduals
+            data: 2-tuple of numpy arrays containing source and
+                target data coresponding to the first and the last layer
+                in the mapping
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+            block: list of strings containing labels of source units
+                that are blocked by setting the values to their means
             norm: used norm to calculate precision
                 see _getDataDeviation for a list of provided norms
 
@@ -1055,10 +1096,12 @@ class ann(nemoa.system.base.system):
         """Correlation reconstructed unit values.
 
         Args:
-            data: input data
-            mapping: tuple of strings containing the mapping
-                from input layer (first argument of tuple)
-                to output layer (last argument of tuple)
+            data: 2-tuple of numpy arrays containing source and
+                target data coresponding to the first and the last layer
+                in the mapping
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
             block: list of string containing labels of units in the
                 input layer that are blocked by setting the values to
                 their means
@@ -1082,14 +1125,19 @@ class ann(nemoa.system.base.system):
         """Evaluate system links respective to data.
 
         Args:
-            data: 2-tuple with numpy arrays: input data and output data
-            func: string containing link evaluation function
+            data: 2-tuple of numpy arrays containing source and
+                target data coresponding to the first and the last layer
+                in the mapping
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+            func: string containing name of link evaluation function
                 For a full list of available link evaluation functions
                 see: system.about('links')
         """
 
         # get link evaluation function
-        methods = self._getLinkEvalMethods()
+        methods = self._aboutLinks()
         if not func in methods.keys(): return nemoa.log('error',
             "could not evaluate links: unknown method '%s'" % (func))
         method = methods[func]['method']
@@ -1126,7 +1174,7 @@ class ann(nemoa.system.base.system):
         return nemoa.log('warning', 'could not perform evaluation')
 
     @staticmethod
-    def _getLinkEvalMethods(): return {
+    def _aboutLinks(): return {
         'energy': {
             'name': 'energy',
             'description': 'local energy of links',
@@ -1140,8 +1188,9 @@ class ann(nemoa.system.base.system):
 
         Args:
             mapping: tuple of strings containing the mapping
-                from input layer (first argument of tuple)
-                to output layer (last argument of tuple) """
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+        """
 
         if len(mapping) == 1:
             return nemoa.log('error', 'bad implementation of ann._evalLinkEnergy')
@@ -1310,7 +1359,7 @@ class ann(nemoa.system.base.system):
         }
 
     def _evalRelationCorrelation(self, data, mapping = None, **kwargs):
-        """Return correlation matrix as numpy array.
+        """Data correlation between source and target units.
 
         Args:
             data: 2-tuple with numpy arrays: input data and output data
