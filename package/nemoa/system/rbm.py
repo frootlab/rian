@@ -68,7 +68,7 @@ class rbm(nemoa.system.ann.ann):
             'useAdjacency': False,
             'inspect': True,
             'trackerObjectiveFunction': 'accuracy',
-            'trackerEvaluationTimeInterval': 10.0 ,
+            'trackerEvalTimeInterval': 10.0 ,
             'trackerEstimateTime': True,
             'trackerEstimateTimeWait': 20.0 }}[key]
 
@@ -251,8 +251,8 @@ class rbm(nemoa.system.ann.ann):
 
         # (optional) Variance maximizing rate adaption
         if config['modVmraEnable']:
-            if tracker.epoch() % config['modVmraInterval'] == 0 \
-                and tracker.epoch() > config['modVmraWait']:
+            if tracker.get('epoch') % config['modVmraInterval'] == 0 \
+                and tracker.get('epoch') > config['modVmraWait']:
                 self._optVmraUpdate(tracker)
 
         # get system estimations (model)
@@ -384,11 +384,12 @@ class rbm(nemoa.system.ann.ann):
         return { 'W': W }
 
     def _optSaTemperature(self, tracker):
+        """Calculate temperature for simulated annealing."""
         cfg = self._config['optimize']
 
         init      = float(cfg['modSaInitTemperature'])
         annealing = float(cfg['modSaAnnealingFactor'])
-        epoch     = float(tracker.epoch())
+        epoch     = float(tracker.get('epoch'))
         updates   = float(cfg['updates'])
 
         return init * (1.0 - epoch / updates) ** annealing
@@ -592,7 +593,7 @@ class grbm(rbm):
             'useAdjacency': False, # do not use selective weight updates
             'inspect': True, # inspect optimization process
             'trackerObjectiveFunction': 'accuracy', # inspection function
-            'trackerEvaluationTimeInterval': 20.0, # time interval for calculation the inspection function
+            'trackerEvalTimeInterval': 20.0, # time interval for calculation the inspection function
             'trackerEstimateTime': True, # initally estimate time for whole optimization process
             'trackerEstimateTimeWait': 20.0 # time intervall used for time estimation
         }}[key]
