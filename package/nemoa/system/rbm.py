@@ -67,7 +67,7 @@ class rbm(nemoa.system.ann.ann):
             'modCorruptionFactor': 0.5,
             'useAdjacency': False,
             'inspect': True,
-            'trackerObjectiveFunction': 'accuracy',
+            'trackerObjFunction': 'accuracy',
             'trackerEvalTimeInterval': 10.0 ,
             'trackerEstimateTime': True,
             'trackerEstimateTimeWait': 20.0 }}[key]
@@ -140,24 +140,16 @@ class rbm(nemoa.system.ann.ann):
         return nemoa.log('error', """could not optimize model:
             unknown optimization algorithm '%s'""" % (algorithm))
 
-    # Contrastive Divergency
-
     def _optCd(self, dataset, schedule, tracker):
-        """Optimize system parameters."""
+        """Optimize system parameters with Contrastive Divergency."""
 
         cfg  = self._config['optimize']
 
-        # for each update step (epoch)
-        for epoch in xrange(cfg['updates']):
-
-            # Trigger tracker (getch, calc tracking function etc)
-            event = tracker.trigger()
-            if event:
-                if event == 'abort': break
+        while tracker.update():
 
             # get data (sample from minibatches)
-            if epoch % cfg['minibatchInterval'] == 0: data = \
-                self._optGetData(dataset)
+            if tracker.get('epoch') % cfg['minibatchInterval'] == 0:
+                data = self._optGetData(dataset)
 
             self._optCdUpdate(data, tracker) # Update system parameters
 
@@ -592,7 +584,7 @@ class grbm(rbm):
             'selectivitySize': 0.5, # aimed value for l2-norm penalty
             'useAdjacency': False, # do not use selective weight updates
             'inspect': True, # inspect optimization process
-            'trackerObjectiveFunction': 'accuracy', # inspection function
+            'trackerObjFunction': 'accuracy', # inspection function
             'trackerEvalTimeInterval': 20.0, # time interval for calculation the inspection function
             'trackerEstimateTime': True, # initally estimate time for whole optimization process
             'trackerEstimateTimeWait': 20.0 # time intervall used for time estimation

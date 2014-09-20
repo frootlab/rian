@@ -469,9 +469,7 @@ class ann(nemoa.system.base.system):
             # Update parameters
             self._optUpdateParams(updates)
             # Trigger tracker (getch, calc inspect function etc)
-            event = tracker.trigger()
-            if event:
-                if event == 'abort': break
+            if not tracker.update(): break
 
         return True
 
@@ -519,9 +517,7 @@ class ann(nemoa.system.base.system):
             # Update parameters
             self._optUpdateParams(updates)
             # Trigger tracker (getch, calc inspect function etc)
-            event = tracker.trigger()
-            if event:
-                if event == 'abort': break
+            if not tracker.update(): break
 
         return True
 
