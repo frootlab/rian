@@ -692,13 +692,6 @@ class tracker:
         self._store[key][id] = kwargs
         return True
 
-    #def _getEvalDelta(self):
-        #if not 'evalValues' in self._state: return 0.0
-        #if self._state['evalValues'] == None: return 0.0
-        #if self._state['evalValues'].shape[0] < 2: return 0.0
-        #return self._state['evalValues'][-1, 1] - \
-            #self._state['evalValues'][-2, 1]
-
     def _updateEstimateTime(self):
         if not self._state['estimateTime']: return True
 
@@ -782,8 +775,11 @@ class tracker:
             if self._state['continue'] \
                 and float(self._state['epoch']) / float(cfg['updates']) \
                 < cfg['trackerObjInitWait']: return True
+            if self._state['objOptValue'] == None:
+                self._state['objOptValue'] = value
+                self._state['optimum'] = \
+                    {'params': self._system._get('params')}
             typeOfOptimum = self._system.about(func)['optimum']
-            currentValue = self._state['objOptValue']
             if typeOfOptimum == 'min' and value < currentValue:
                 newOptimum = True
             elif typeOfOptimum == 'max' and value > currentValue:
