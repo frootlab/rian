@@ -444,22 +444,18 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    # Backpropagation of Error (BPROP) specific Functions
-
     def _optBPROP(self, dataset, schedule, tracker):
-        """Optimize parameters using backpropagation."""
+        """Optimize parameters using backpropagation of error."""
 
         cnf = self._config['optimize']
-        layers = self.getMapping()
+        mapping = self.getMapping()
 
         # update parameters
-        for epoch in xrange(cnf['updates']):
+        while tracker.update():
 
             # Get data (sample from minibatches)
-            if epoch % cnf['minibatchInterval'] == 0:
-                #data = dataset.getData(size = cnf['minibatchSize'],
-                #    cols = (layers[0], layers[-1]))
-                data = self._optGetData(dataset, cols = (layers[0], layers[-1]))
+            if tracker.get('epoch') % cnf['minibatchInterval'] == 0:
+                data = self._optGetData(dataset, cols = (mapping[0], mapping[-1]))
             # Forward pass (Compute value estimations from given input)
             out = self._optGetValues(data[0])
             # Backward pass (Compute deltas from backpropagation of error)
@@ -468,8 +464,6 @@ class ann(nemoa.system.base.system):
             updates = self._optGetUpdatesBPROP(out, delta)
             # Update parameters
             self._optUpdateParams(updates)
-            # Trigger tracker (getch, calc inspect function etc)
-            if not tracker.update(): break
 
         return True
 
@@ -499,15 +493,14 @@ class ann(nemoa.system.base.system):
         """Optimize parameters using resiliant backpropagation."""
 
         cnf = self._config['optimize']
-        layers = self.getMapping()
+        mapping = self.getMapping()
 
         # update parameters
-        for epoch in xrange(cnf['updates']):
+        while tracker.update():
 
             # Get data (sample from minibatches)
             if epoch % cnf['minibatchInterval'] == 0:
-                data = dataset.getData(size = cnf['minibatchSize'],
-                    cols = (layers[0], layers[-1]))
+                data = self._optGetData(dataset, cols = (mapping[0], mapping[-1]))
             # Forward pass (Compute value estimations from given input)
             out = self._optGetValues(data[0])
             # Backward pass (Compute deltas from backpropagation of error)
@@ -516,8 +509,6 @@ class ann(nemoa.system.base.system):
             updates = self._optGetUpdatesRPROP(out, delta, tracker)
             # Update parameters
             self._optUpdateParams(updates)
-            # Trigger tracker (getch, calc inspect function etc)
-            if not tracker.update(): break
 
         return True
 

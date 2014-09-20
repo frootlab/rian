@@ -780,6 +780,7 @@ class tracker:
                 self._state['optimum'] = \
                     {'params': self._system._get('params')}
             typeOfOptimum = self._system.about(func)['optimum']
+            currentValue = self._state['objOptValue']
             if typeOfOptimum == 'min' and value < currentValue:
                 newOptimum = True
             elif typeOfOptimum == 'max' and value > currentValue:
