@@ -796,9 +796,7 @@ class tracker:
 
             # set system parameters to optimum on last update
             if not self._state['continue']:
-                if self._state['optimum']:
-                    self._system._set(self._state['optimum'])
-                return True
+                return self._system._set(**self._state['optimum'])
 
         return True
 

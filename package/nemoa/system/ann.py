@@ -643,7 +643,7 @@ class ann(nemoa.system.base.system):
             'description': 'sum of local unit and link energies',
             'method': '_evalSystemEnergy',
             'args': 'all', 'return': 'scalar', 'format': '%.3f',
-            'optimum': 'min'},
+            'optimum': 'max'},
         'error': {
             'name': 'total error',
             'description': 'sum of errors of reconstructed values',
