@@ -43,7 +43,6 @@ class rbm(nemoa.system.ann.ann):
         'optimize': {
             'checkDataset': False,
             'ignoreUnits': [],
-            'iterations': 1,
             'minibatchSize': 100,
             'minibatchInterval': 10,
             'updates': 100000,
@@ -57,6 +56,7 @@ class rbm(nemoa.system.ann.ann):
             'modSaEnable': True,
             'modSaInitTemperature': 1.0,
             'modSaAnnealingFactor': 1.0,
+            'modSaAnnealingCycles': 1,
             'modKlEnable': True,
             'modKlRate': 0.0,
             'modKlExpect': 0.5,
@@ -66,8 +66,7 @@ class rbm(nemoa.system.ann.ann):
             'modCorruptionType': 'mask',
             'modCorruptionFactor': 0.5,
             'useAdjacency': False,
-            'inspect': True,
-            'trackerObjFunction': 'accuracy',
+            'trackerObjFunction': 'error',
             'trackerEvalTimeInterval': 10.0 ,
             'trackerEstimateTime': True,
             'trackerEstimateTimeWait': 20.0 }}[key]
@@ -362,29 +361,35 @@ class rbm(nemoa.system.ann.ann):
 
     def _optSaDeltaL(self, tracker):
         cfg = self._config['optimize']
+        params = tracker.read('sa')
+        if params:
+            initRate = params['initRate']
+        else:
+            initRate = cfg['updateRate']
+            tracker.write('sa', initRate = initRate)
 
         shape = self._params['links'][(0, 1)]['W'].shape
-
-        rate = cfg['updateRate'] * cfg['updateFactorWeights']
+        r = initRate ** 2 / cfg['updateRate'] * cfg['updateFactorWeights']
         temperature = self._optSaTemperature(tracker)
-
-        if temperature < cfg['modSaMinTemperature']: return {}
-
-        sigma = rate * temperature
+        if temperature == 0.0: return {}
+        sigma = r * temperature
         W = numpy.random.normal(0.0, sigma, shape)
 
         return { 'W': W }
 
     def _optSaTemperature(self, tracker):
         """Calculate temperature for simulated annealing."""
-        cfg = self._config['optimize']
+        config = self._config['optimize']
 
-        init      = float(cfg['modSaInitTemperature'])
-        annealing = float(cfg['modSaAnnealingFactor'])
-        epoch     = float(tracker.get('epoch'))
-        updates   = float(cfg['updates'])
+        init      = float(config['modSaInitTemperature'])
+        annealing = float(config['modSaAnnealingFactor'])
+        cycles    = float(config['modSaAnnealingCycles'])
+        updates   = int(float(config['updates']) / cycles)
+        epoch     = float(tracker.get('epoch') % updates)
+        heat      = init * (1.0 - epoch / float(updates)) ** annealing
 
-        return init * (1.0 - epoch / updates) ** annealing
+        if heat < config['modSaMinTemperature']: return 0.0
+        return heat
 
     def _getUnitsFromConfig(self):
         """Return tuple with unit information created from config."""
@@ -559,7 +564,6 @@ class grbm(rbm):
         'optimize': {
             'checkDataset': True, # check if data is gauss normalized
             'ignoreUnits': [], # do not ignore units on update (needed for stacked updates)
-            'iterations': 1, # number of repeating the whole update process
             'updates': 100000, # number of update steps / epochs
             'algorithm': 'cd', # algorithm used for updates
             'updateCdkSteps': 1, # number of gibbs steps in cdk sampling
@@ -577,14 +581,14 @@ class grbm(rbm):
             'modSaEnable': True, # use simulated annealing
             'modSaInitTemperature': 1.0,
             'modSaAnnealingFactor': 1.0,
+            'modSaAnnealingCycles': 1,
             'modKlEnable': True, # use Kullback-Leibler penalty
             'modKlRate': 0.0, # sparsity update
             'modKlExpect': 0.5, # aimed value for l2-norm penalty
             'selectivityFactor': 0.0, # no selectivity update
             'selectivitySize': 0.5, # aimed value for l2-norm penalty
             'useAdjacency': False, # do not use selective weight updates
-            'inspect': True, # inspect optimization process
-            'trackerObjFunction': 'accuracy', # inspection function
+            'trackerObjFunction': 'error', # objective function
             'trackerEvalTimeInterval': 20.0, # time interval for calculation the inspection function
             'trackerEstimateTime': True, # initally estimate time for whole optimization process
             'trackerEstimateTimeWait': 20.0 # time intervall used for time estimation

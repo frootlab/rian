@@ -642,7 +642,7 @@ class tracker:
 
         # init state
         now = time.time()
-        nemoa.log('note', "press 'q' if you want to abort the optimization")
+
         self._state = {
             'epoch': 0,
             'optimum': {},
@@ -651,6 +651,8 @@ class tracker:
             'objInitWait': self._config['trackerObjInitWait'],
             'objValues': None,
             'objOptValue': None,
+            'keyEvents': True,
+            'keyEventsStarted': False,
             'evalEnable': self._config['trackerEvalEnable'],
             'evalPrevTime': now,
             'evalValues': None,
@@ -706,7 +708,7 @@ class tracker:
         runtime = now - self._state['estimateStartTime']
         if runtime > self._config['trackerEstimateTimeWait']:
             estim = (runtime / (self._state['epoch'] + 1)
-                * self._config['updates'] * self._config['iterations'])
+                * self._config['updates'])
             estimStr = time.strftime('%H:%M',
                 time.localtime(now + estim))
             nemoa.log('note', 'estimation: %ds (finishing time: %s)'
@@ -717,11 +719,9 @@ class tracker:
         return True
 
     def update(self):
-        """Update epoch and check termination criterion."""
-
+        """Update epoch and check termination criterions."""
         self._updateEpoch()
-        self._updateKeyEvent() # check keyboard input
-
+        if self._state['keyEvents']: self._updateKeyEvent()
         if self._state['estimateTime']: self._updateEstimateTime()
         if self._state['objEnable']: self._updateObjective()
         if self._state['evalEnable']: self._updateEvaluation()
@@ -735,6 +735,10 @@ class tracker:
 
     def _updateKeyEvent(self):
         """Check Keyboard."""
+        if not self._state['keyEventsStarted']:
+            nemoa.log('note', """press 'q' if you want to abort
+                the optimization""")
+            self._state['keyEventsStarted'] = True
 
         c = nemoa.common.getch()
         if isinstance(c, str):

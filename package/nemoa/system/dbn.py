@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Deep Belief Network (DBN).
+"""Deep Belief Network.
 
-Deep beliefe network implementation aimed for multilayer data modeling
+Deep beliefe network implementation for multilayer data modeling.
 and data dimensionality reduction.
 """
 
@@ -15,16 +15,18 @@ import numpy
 class dbn(nemoa.system.ann.ann):
     """Deep Belief Network.
 
-    Deep Belief Networks (DBN )are Symmetric Artificial Neural Networks
-    which are optimized in to steps: First the 'pretraining' step, using
-    Restricted Boltzmann Machines as per Layer Builing Blocks
-    and second the 'finetuning' step, using Backpropagation of Error.
-    DBNs are commonly used for data classification and nonlinear
-    dimensionality reduction (1).
+    Deep Belief Networks (DBN) are topological symmetric feed forward
+    Artificial Neural Networks with two step optimization. The first
+    step, known as 'pretraining' uses Restricted Boltzmann Machines as
+    layer wise builing blocks to preoptimize local unit interactions.
+    The second step, the 'finetuning' step, uses Backpropagation of
+    Error to optimize the reconstruction of output data. DBNs are
+    typically used for data classification and nonlinear dimensionality
+    reduction (1).
 
     Reference:
-        "Reducing the dimensionality of data with neural networks",
-        G. E. Hinton, R. R. Salakhutdinov, Science, 2006
+        (1) "Reducing the dimensionality of data with neural networks",
+            G. E. Hinton, R. R. Salakhutdinov, Science, 2006
     """
 
     @staticmethod
@@ -38,8 +40,8 @@ class dbn(nemoa.system.ann.ann):
             'visibleSystemModule': 'rbm',
             'visibleSystemClass': 'grbm',
             'hiddenSystem': None,
-            'hiddenSystemClass': 'rbm',
-            'hiddenSystemModule': 'rbm' },
+            'hiddenSystemModule': 'rbm',
+            'hiddenSystemClass': 'rbm' },
         'init': {
             'checkDataset': False,
             'ignoreUnits': [],
@@ -49,7 +51,6 @@ class dbn(nemoa.system.ann.ann):
             'fineTuning': True,
             'checkDataset': False,
             'ignoreUnits': [],
-            'iterations': 1,
             'algorithm': 'bprop',
             'modCorruptionEnable': False,
             'minibatchSize': 100,
@@ -59,7 +60,7 @@ class dbn(nemoa.system.ann.ann):
             'visible': None,
             'hidden': None,
             'useAdjacency': False,
-            'trackerObjFunction': 'accuracy',
+            'trackerObjFunction': 'error',
             'trackerEvalTimeInterval': 10.0 ,
             'trackerEstimateTime': True,
             'trackerEstimateTimeWait': 15.0 }}[key]
