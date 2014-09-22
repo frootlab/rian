@@ -776,13 +776,16 @@ class tracker:
 
         # (optional) check for new optimum
         if cfg['trackerObjFunctionKeepOptimum']:
-            if self._state['continue'] \
-                and float(self._state['epoch']) / float(cfg['updates']) \
-                < cfg['trackerObjInitWait']: return True
+            # init optimum with first value
             if self._state['objOptValue'] == None:
                 self._state['objOptValue'] = value
                 self._state['optimum'] = \
                     {'params': self._system._get('params')}
+                return True
+            # allways check last optimum
+            if self._state['continue'] \
+                and float(self._state['epoch']) / float(cfg['updates']) \
+                < cfg['trackerObjInitWait']: return True
             typeOfOptimum = self._system.about(func)['optimum']
             currentValue = self._state['objOptValue']
             if typeOfOptimum == 'min' and value < currentValue:
