@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 """Artificial Neuronal Network (ANN).
 
-Generic class for layered artificial neural networks aimed to provide
-common attributes, methods and optimization strategies like
-backpropagation and subclasses like different types of units to special
-subtypes of artificial neural networks like restricted boltzmann
-machines or deep beliefe networks.
+Generic class of layered feed forward networks aimed to provide common
+attributes, methods, optimization algorithms like back-propagation of
+errors (1) and unit classes to other systems by inheritence. For
+multilayer network topologies DBNs usually show better performance than
+plain ANNs.
+
+References:
+    "Learning representations by back-propagating errors",
+    Rumelhart, D. E., Hinton, G. E., and Williams, R. J. (1986)
 """
 
 __author__  = 'Patrick Michl'
@@ -17,6 +21,12 @@ import numpy
 
 class ann(nemoa.system.base.system):
     """Artificial Neuronal Network (ANN).
+
+    Generic class of layered feed forward networks aimed to provide
+    common attributes, methods, optimization algorithms like
+    back-propagation of errors (1) and unit classes to other systems by
+    inheritence. For multilayer network topologies DBNs usually show
+    better performance than plain ANNs.
 
     References:
         "Learning representations by back-propagating errors",
@@ -373,8 +383,6 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    # Parameter Initialization
-
     def _initParams(self, dataset = None):
         """Initialize system parameters.
 
@@ -389,9 +397,6 @@ class ann(nemoa.system.base.system):
             invalid dataset instance given-""")
         return self._initUnits(dataset) and self._initLinks(dataset)
 
-
-    # Generic Parameter Functions
-
     def _optGetData(self, dataset, **kwargs):
 
         config = self._config['optimize']
@@ -400,15 +405,15 @@ class ann(nemoa.system.base.system):
             (config['modCorruptionType'], config['modCorruptionFactor'])
         return dataset.getData(**kwargs)
 
-    def _optGetValues(self, inputData):
+    def _optGetValues(self, data):
         """Forward pass (compute estimated values, from given input). """
 
-        layers = self.getMapping()
+        mapping = self.getMapping()
         out = {}
-        for id, layer in enumerate(layers):
-            if id == 0: out[layer] = inputData
+        for lid, layer in enumerate(mapping):
+            if lid == 0: out[layer] = data
             else: out[layer] = self._evalUnitExpect(
-                out[layers[id - 1]], layers[id - 1:id + 1])
+                out[mapping[lid - 1]], mapping[lid - 1:lid + 1])
 
         return out
 
@@ -731,12 +736,12 @@ class ann(nemoa.system.base.system):
             eKwargs['mapping'] = self.getMapping()
 
         # evaluate units
-        try: values = getattr(self, method)(*evalArgs, **evalKwargs)
+        try: values = getattr(self, method)(*eArgs, **eKwargs)
         except: return nemoa.log('error', 'could not evaluate units')
 
         # create dictionary of target units
-        labels = self.getUnits(group = evalKwargs['mapping'][-1])[0]
-        retFmt = methods[func]['return']
+        labels = self.getUnits(group = eKwargs['mapping'][-1])[0]
+        retFmt = funcs[func]['return']
         if retFmt == 'vector': return {unit: values[:, uid] \
             for uid, unit in enumerate(labels)}
         elif retFmt == 'scalar': return {unit: values[uid] \
@@ -846,7 +851,7 @@ class ann(nemoa.system.base.system):
 
     def _evalUnitValues(self, data, mapping = None, block = None,
         expectLast = False):
-        """Unit values of target units.
+        """Unit maximum likelihood values of target units.
 
         Args:
             data: numpy array containing source data corresponding to
@@ -858,7 +863,7 @@ class ann(nemoa.system.base.system):
                 that are 'blocked' by setting their values to the means
                 of their values.
             expectLast: return expectation values of the units
-                for the last step instead of maximum likelihood values
+                for the last step instead of maximum likelihood values.
 
         Returns:
             Numpy array of shape (data, targets).
@@ -958,21 +963,21 @@ class ann(nemoa.system.base.system):
             Numpy array of shape (data, targets).
         """
 
-        dIn, dOut = data
+        dSrc, dTgt = data
 
         # set mapping: inLayer to outLayer (if not set)
         if mapping == None: mapping = self.getMapping()
 
         # set unit values to mean (optional)
         if isinstance(block, list):
-            dIn = numpy.copy(dIn)
-            for i in block: dIn[:, i] = numpy.mean(dIn[:, i])
+            dSrc = numpy.copy(dSrc)
+            for i in block: dSrc[:, i] = numpy.mean(dSrc[:, i])
 
         # calculate estimated output values
-        mOut = self._evalUnitExpect(dIn, mapping)
+        mOut = self._evalUnitExpect(dSrc, mapping)
 
         # calculate residuals
-        return dOut - mOut
+        return dTgt - mOut
 
     def _evalUnitEnergy(self, data, mapping = None):
         """Unit energies of target units.
@@ -1218,11 +1223,11 @@ class ann(nemoa.system.base.system):
         if len(mapping) == 1:
             return nemoa.log('error', 'bad implementation of ann._evalLinkEnergy')
         elif len(mapping) == 2:
-            dIn  = data
-            dOut = self._evalUnitValues(dIn, mapping)
+            dSrc  = data
+            dTgt = self._evalUnitValues(dSrc, mapping)
         else:
-            dIn  = self._evalUnitExpect(data, mapping[0:-1])
-            dOut = self._evalUnitValues(dIn, mapping[-2:])
+            dSrc  = self._evalUnitExpect(data, mapping[0:-1])
+            dTgt = self._evalUnitValues(dSrc, mapping[-2:])
 
         sID = self.getMapping().index(mapping[-2])
         tID = self.getMapping().index(mapping[-1])
@@ -1231,10 +1236,10 @@ class ann(nemoa.system.base.system):
 
         if (sID, tID) in self._params['links']:
             links = self._params['links'][(sID, tID)]
-            return self._LinkLayer.energy(dIn, dOut, src, tgt, links)
+            return self._LinkLayer.energy(dSrc, dTgt, src, tgt, links)
         elif (tID, sID) in self._params['links']:
             links = self._params['links'][(tID, sID)]
-            return self._LinkLayer.energy(dOut, dIn, tgt, src, links)
+            return self._LinkLayer.energy(dTgt, dSrc, tgt, src, links)
 
     def _evalRelations(self, data, func = 'correlation',
         relations = None, evalStat = True, **kwargs):
@@ -1588,24 +1593,24 @@ class ann(nemoa.system.base.system):
         #2Do: create classes for links
 
         @staticmethod
-        def energy(dIn, dOut, src, tgt, links):
+        def energy(dSrc, dTgt, src, tgt, links):
             """Return link energy as numpy array."""
             W = links['W']
             A = links['A']
-            dSize = dIn.shape[0]
+            dSize = dSrc.shape[0]
             classes = {'gauss': 0, 'sigmoid': 1}
             srcType = classes[src['class']]
             tgtType = classes[tgt['class']]
             lType = (srcType, tgtType)
 
             if lType == (0, 0): return \
-                -(A * W * numpy.dot((dIn / numpy.exp(src['lvar'])).T, dOut) / dSize)
+                -(A * W * numpy.dot((dSrc / numpy.exp(src['lvar'])).T, dTgt) / dSize)
             if lType == (0, 1): return \
-                -(A * W * numpy.dot((dIn / numpy.exp(src['lvar'])).T, dOut) / dSize)
+                -(A * W * numpy.dot((dSrc / numpy.exp(src['lvar'])).T, dTgt) / dSize)
             if lType == (1, 0): return \
-                -(A * W * numpy.dot(dIn.T, dOut) / dSize)
+                -(A * W * numpy.dot(dSrc.T, dTgt) / dSize)
             if lType == (1, 1): return \
-                -(A * W * numpy.dot(dIn.T, dOut) / dSize)
+                -(A * W * numpy.dot(dSrc.T, dTgt) / dSize)
 
         @staticmethod
         def getUpdates(data, model):

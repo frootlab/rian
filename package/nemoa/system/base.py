@@ -313,67 +313,6 @@ class system:
 
         return retVal
 
-    def _isNetworkMLPCompatible(self, network = None):
-        """Test if a network is compatible to multilayer perceptrons.
-
-        Args:
-            network: nemoa network instance
-
-        Returns:
-            Boolean value which is True if the following conditions are
-            satisfied:
-            (1) The network contains at least three layers
-            (2) All layers of the network are not empty
-            (3) The first and last layer of the network are visible,
-                all middle layers of the network are hidden
-        """
-
-        if not nemoa.type.isNetwork(network): return nemoa.log('error',
-            'could not test network: invalid network instance given!')
-        if len(network.layers()) < 3: return nemoa.log('error',
-            'Multilayer networks need at least three layers!')
-        for layer in network.layers():
-            if not len(network.layer(layer)['nodes']) > 0: return nemoa.log(
-                'error', 'Feedforward networks do not allow empty layers!')
-            if not network.layer(layer)['visible'] \
-                == (layer in [network.layers()[0], network.layers()[-1]]):
-                return nemoa.log('error', """The first and the last layer
-                    of a multilayer feedforward network have to be visible,
-                    middle layers have to be hidden!""")
-        return True
-
-    def _isNetworkDBNCompatible(self, network = None):
-        """Test if a network is compatible to deep beliefe networks.
-
-        Args:
-            network: nemoa network instance
-
-        Returns:
-            Boolean value which is True if the following conditions are
-            satisfied:
-            (1) The network is MPL compatible:
-                see function _isNetworkMPLCompatible
-            (2) The network contains an odd number of layers
-            (3) The hidden layers are symmetric to the central layer
-                related to their number of nodes
-        """
-
-        if not nemoa.type.isNetwork(network): return nemoa.log('error',
-            'could not test network: invalid network instance given!')
-        if not self._isNetworkMLPCompatible(network): return False
-        if not len(network.layers()) % 2 == 1: return nemoa.log('error',
-            'DBN / Autoencoder networks expect an odd number of layers!')
-
-        layers = network.layers()
-        size = len(layers)
-        for id in range(1, (size - 1) / 2):
-            symmetric = len(network.layer(layers[id])['nodes']) \
-                == len(network.layer(layers[-id-1])['nodes'])
-            if not symmetric: return nemoa.log('error',
-                """DBN / Autoencoder networks expect a symmetric
-                number of hidden nodes, related to their central layer!""")
-        return True
-
     def _isDatasetBinary(self, dataset = None):
         """Test if a dataset contains only binary data.
 

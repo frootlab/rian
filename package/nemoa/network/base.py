@@ -403,12 +403,114 @@ class network:
             G = self.graph.copy()
             networkx.write_gml(G, file)
 
-    # Metadata of Network
-    def about(self, *args):
-        """Return generic information about various parts of the network.
+    def _isLFFCompatible(self):
+        """Test compatibility to layered feed forward networks.
 
-        Arguments:
-            *args -- tuple of strings, containing a breadcrump trail to
+        Returns:
+            Boolean value which is True if the following conditions are
+            satisfied:
+            (1) All layers of the network are not empty
+            (2) The first and last layer of the network are visible,
+                the layers between them are hidden
+        """
+
+        # test if network contains empty layers
+        for layer in self.layers():
+            if not len(self.layer(layer)['nodes']) > 0: return nemoa.log(
+                'error', 'Feedforward networks do not allow empty layers!')
+
+        # test if and only if the first and the last layer are visible
+        for layer in self.layers():
+            if not self.layer(layer)['visible'] \
+                == (layer in [self.layers()[0], self.layers()[-1]]):
+                return nemoa.log('error', """The first and the last layer
+                    of a Feedforward network have to be visible,
+                    middle layers have to be hidden!""")
+
+        return True
+
+    def _isMLFFCompatible(self):
+        """Test compatibility to multilayer feedforward networks.
+
+        Returns:
+            Boolean value which is True if the following conditions are
+            satisfied:
+            (1) The network is compatible to layered feedforward
+                networks: see _isFeedforwardCompatible
+            (2) The network contains at least three layers
+        """
+
+        # test if network is compatible to layered feedforward networks
+        if not self._isLFFCompatible(): return False
+
+        # test if network contains at least three layers
+        if len(self.layers()) < 3: return nemoa.log('error',
+            'Multilayer networks need at least three layers!')
+
+        return True
+
+    def _isDBNCompatible(self):
+        """Test compatibility to deep beliefe networks.
+
+        Returns:
+            Boolean value which is True if the following conditions are
+            satisfied:
+            (1) The network is compatible to multilayer feedforward
+                networks: see function _isMLFFCompatible
+            (2) The network contains an odd number of layers
+            (3) The hidden layers are symmetric to the central middle
+                layer related to their number of nodes
+        """
+
+        # test if network is MLFF compatible
+        if not self._isMLFFCompatible(): return False
+
+        # test if the network contains odd number of layers
+        if not len(self.layers()) % 2 == 1: return nemoa.log('error',
+            'DBNs expect an odd number of layers!')
+
+        # test if the hidden layers are symmetric
+        layers = self.layers()
+        size = len(layers)
+        for lid in range(1, (size - 1) / 2):
+            symmetric = len(self.layer(layers[lid])['nodes']) \
+                == len(self.layer(layers[-lid-1])['nodes'])
+            if not symmetric: return nemoa.log('error',
+                """DBNs expect a symmetric number of hidden
+                nodes, related to their central middle layer!""")
+
+        return True
+
+    def _isAutoencoderCompatible(self):
+        """Test compatibility to autoencoder networks.
+
+        Returns:
+            Boolean value which is True if the following conditions are
+            satisfied:
+            (1) The network is DBN compatible:
+                see function _isDBNCompatible
+            (2) The visible input and output layers contain identical
+                node labels
+        """
+
+        # test if network is DBN compatible
+        if not self._isDBNCompatible(): return False
+
+        # test if input and output layers contain identical nodes
+        layers = self.layers()
+        inputLayer = self.layer(layers[0])['nodes']
+        outputLayer = self.layer(layers[0])['nodes']
+        if not sorted(inputLayer) == sorted(outputLayer):
+            return nemoa.log('error', """Autoencoders expect
+                identical input and output nodes""")
+
+        return True
+
+    def about(self, *args):
+        """Generic information about various parts of the network.
+
+        Args:
+            args: tuple of strings, containing a breadcrump trail to
                 a specific information about the dataset
 
         Examples:
@@ -424,5 +526,5 @@ class network:
         return None
 
     def name(self):
-        """Return name of network (as string)."""
+        """Name of network (as string)."""
         return self.cfg['name'] if 'name' in self.cfg else ''

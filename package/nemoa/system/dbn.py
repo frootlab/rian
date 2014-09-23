@@ -66,7 +66,7 @@ class dbn(nemoa.system.ann.ann):
             'trackerEstimateTimeWait': 15.0 }}[key]
 
     def _checkNetwork(self, network):
-        return self._isNetworkDBNCompatible(network)
+        return network._isDBNCompatible()
 
     def _getUnitsFromConfig(self):
         return None
