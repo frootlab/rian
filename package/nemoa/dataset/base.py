@@ -33,6 +33,58 @@ class dataset:
         """Return true if dataset is empty."""
         return not 'name' in self.cfg or not self.cfg['name']
 
+    def _isBinary(self):
+        """Test if dataset contains only binary data.
+
+        Args:
+            dataset: nemoa dataset instance
+
+        Returns:
+            Boolean value which is True if a given dataset contains only
+            binary values.
+        """
+
+        data = self.getData()
+        binary = ((data == data.astype(bool)).sum() == data.size)
+
+        if not binary: return nemoa.log('error',
+            'The dataset does not contain binary data!')
+
+        return True
+
+    def _isGaussNormalized(self, size = 100000,
+        maxMean = 0.05, maxSdev = 1.05):
+        """Test if dataset contains gauss normalized data.
+
+        Args:
+            dataset: nemoa dataset instance
+            size: number of samples to create statistics
+            maxMean: allowed maximum for absolute mean value
+            maxSdev: allowed maximum for standard deviation
+
+        Returns:
+            Boolean value which is True if the following conditions are
+            satisfied:
+            (1) The absolute mean value of a given number of random
+                samples of the dataset is below maxMean
+            (2) The standard deviation of a given number of random
+                samples of the dataset is below maxSdev
+        """
+
+        data = self.getData(size) # get numpy array with data
+
+        mean = data.mean()
+        if numpy.abs(mean) >= maxMean: return nemoa.log('error',
+            """Dataset does not contain gauss normalized data:
+            mean value is %.3f!""" % (mean))
+
+        sdev = data.std()
+        if sdev >= maxSdev: return nemoa.log('error',
+            """Dataset does not contain gauss normalized data:
+            standard deviation is %.3f!""" % (sdev))
+
+        return True
+
     def isConfigured(self):
         """Return true if dataset is configured."""
         return len(self.data.keys()) > 0

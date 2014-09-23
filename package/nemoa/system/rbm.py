@@ -83,9 +83,11 @@ class rbm(nemoa.system.ann.ann):
 
     def _checkDataset(self, dataset):
         """Check if dataset contains binary values."""
-        if not self._isDatasetBinary(dataset):
-            return nemoa.log('error', """dataset '%s' is not valid:
-                RBMs need binary data!""" % (dataset.name()))
+        if not nemoa.type.isDataset(dataset): return nemoa.log('error',
+            'could not test dataset: invalid dataset instance given!')
+        if not dataset._isBinary(): return nemoa.log('error',
+            "dataset '%s' is not valid: RBMs expect binary data."
+            % (dataset.name()))
         return True
 
     @staticmethod
@@ -596,7 +598,12 @@ class grbm(rbm):
 
     def _checkDataset(self, dataset):
         """Check if dataset contains gauss normalized values."""
-        return self._isDatasetGaussNormalized(dataset)
+        if not nemoa.type.isDataset(dataset): return nemoa.log('error',
+            'could not test dataset: invalid dataset instance given!')
+        if not dataset._isGaussNormalized(): return nemoa.log('error',
+            """dataset '%s' is not valid: GRBMs expect
+            standard normal distributed data.""" % (dataset.name()))
+        return True
 
     def _optCdDeltaV(self, vData, hData, vModel, hModel, **kwargs):
         """Return cd gradient based updates for visible units.
