@@ -313,64 +313,6 @@ class system:
 
         return retVal
 
-    def _isDatasetBinary(self, dataset = None):
-        """Test if a dataset contains only binary data.
-
-        Args:
-            dataset: nemoa dataset instance
-
-        Returns:
-            Boolean value which is True if a given dataset contains only
-            binary values.
-        """
-
-        if not nemoa.type.isDataset(dataset): return nemoa.log('error',
-            'could not test dataset: invalid dataset instance given!')
-
-        data = dataset.getData()
-        binary = ((data == data.astype(bool)).sum() == data.size)
-
-        if not binary: return nemoa.log('error',
-            'The dataset does not contain binary data!')
-
-        return True
-
-    def _isDatasetGaussNormalized(self, dataset = None,
-        size = 100000, maxMean = 0.05, maxSdev = 1.05):
-        """Test if a dataset contains gauss normalized data.
-
-        Args:
-            dataset: nemoa dataset instance
-            size: number of samples to create statistics
-            maxMean: allowed maximum for absolute mean value
-            maxSdev: allowed maximum for standard deviation
-
-        Returns:
-            Boolean value which is True if the following conditions are
-            satisfied:
-            (1) The absolute mean value of a given number of random
-                samples of the dataset is below maxMean
-            (2) The standard deviation of a given number of random
-                samples of the dataset is below maxSdev
-        """
-
-        if not nemoa.type.isDataset(dataset): return nemoa.log('error',
-            'could not test dataset: invalid dataset instance given!')
-
-        data = dataset.getData(size) # get numpy array with data
-
-        mean = data.mean()
-        if numpy.abs(mean) >= maxMean: return nemoa.log('error',
-            """Dataset does not contain gauss normalized data:
-            mean value is %.3f!""" % (mean))
-
-        sdev = data.std()
-        if sdev >= maxSdev: return nemoa.log('error',
-            """Dataset does not contain gauss normalized data:
-            standard deviation is %.3f!""" % (sdev))
-
-        return True
-
     def eval(self, data, *args, **kwargs):
         if len(args) == 0:
             return self._evalSystem(data, **kwargs)
