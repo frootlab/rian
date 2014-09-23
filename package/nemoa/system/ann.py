@@ -625,8 +625,9 @@ class ann(nemoa.system.base.system):
             evalKwargs['mapping'] = self.getMapping()
 
         # evaluate system
-        try: return getattr(self, method)(*evalArgs, **evalKwargs)
-        except: return nemoa.log('error', 'could not evaluate system')
+        return getattr(self, method)(*evalArgs, **evalKwargs)
+        #try: return getattr(self, method)(*evalArgs, **evalKwargs)
+        #except: return nemoa.log('error', 'could not evaluate system')
 
     @staticmethod
     def _aboutSystem(): return {
@@ -990,7 +991,7 @@ class ann(nemoa.system.base.system):
                 to target unit layer (last argument of tuple)
 
         Returns:
-            Numpy array of shape (targets).
+            Numpy array of shape (data, targets).
         """
 
         # set mapping: inLayer to outLayer (if not set)
@@ -1590,27 +1591,41 @@ class ann(nemoa.system.base.system):
 
         def __init__(self): pass
 
-        #2Do: create classes for links
-
+        # TODO: create classes for links
         @staticmethod
-        def energy(dSrc, dTgt, src, tgt, links):
+        def energy(dSrc, dTgt, src, tgt, links, calc = 'mean'):
             """Return link energy as numpy array."""
             W = links['W']
             A = links['A']
-            dSize = dSrc.shape[0]
-            classes = {'gauss': 0, 'sigmoid': 1}
-            srcType = classes[src['class']]
-            tgtType = classes[tgt['class']]
-            lType = (srcType, tgtType)
 
-            if lType == (0, 0): return \
-                -(A * W * numpy.dot((dSrc / numpy.exp(src['lvar'])).T, dTgt) / dSize)
-            if lType == (0, 1): return \
-                -(A * W * numpy.dot((dSrc / numpy.exp(src['lvar'])).T, dTgt) / dSize)
-            if lType == (1, 0): return \
-                -(A * W * numpy.dot(dSrc.T, dTgt) / dSize)
-            if lType == (1, 1): return \
-                -(A * W * numpy.dot(dSrc.T, dTgt) / dSize)
+            E = numpy.zeros((dSrc.shape[0], W.shape[0], W.shape[1]))
+            for i in xrange(E.shape[0]):
+                if src['class'] == 'gauss':
+                    dSrcArr = (dSrc[i,:].reshape(1, dSrc[i,:].size) \
+                        / numpy.sqrt(numpy.exp(src['lvar']))).T
+                elif src['class'] == 'sigmoid':
+                    dSrcArr = dSrc[i,:].reshape(dSrc[i,:].size, 1)
+                dTgtArr = dTgt[i,:].reshape(1, dTgt[i,:].size)
+                E[i,:,:] =  -A * W * numpy.dot(dSrcArr, dTgtArr)
+
+            return E
+
+            #if linkClass == ('gauss', 'gauss'):
+                #dSize = float(dSrc.shape[0])
+                #srcVar = numpy.exp(src['lvar'])
+                #return -(A * W * numpy.dot((dSrc / srcVar).T, dTgt) / dSize)
+            #if linkClass == ('gauss', 'sigmoid'):
+                #dSize = float(dSrc.shape[0])
+                #return -(A * W * numpy.dot(dSrc.T, dTgt) / dSize)
+            #if linkClass == ('sigmoid', 'gauss'):
+                #dSize = float(dSrc.shape[0])
+                #srcVar = numpy.exp(src['lvar'])
+                #return -(A * W * numpy.dot((dSrc / srcVar).T, dTgt) / dSize)
+            #if linkClass == ('sigmoid', 'sigmoid'):
+                #dSize = float(dSrc.shape[0])
+                #return -(A * W * numpy.dot(dSrc.T, dTgt) / dSize)
+
+            #return False
 
         @staticmethod
         def getUpdates(data, model):
@@ -1747,7 +1762,7 @@ class ann(nemoa.system.base.system):
 
             bias = self.params['bias']
 
-            return - numpy.mean(data * bias, axis = 0)
+            return - data * bias
 
         def expectFromSLayer(self, data, source, weights):
             """Return expected values of a sigmoid output layer
@@ -1873,14 +1888,12 @@ class ann(nemoa.system.base.system):
             return { 'bias': updBias, 'lvar': updLVar }
 
         def getUpdatesFromDelta(self, delta):
-            #2Do: calculate update for lvar
+            # TODO: calculate update for lvar
 
             shape = (1, len(self.params['label']))
-            bias  = - numpy.mean(delta, axis = 0).reshape(shape)
-            #lvar  = - numpy.zeros(shape = shape)
+            bias = - numpy.mean(delta, axis = 0).reshape(shape)
 
             return { 'bias': bias }
-                #'lvar': lvar}
 
         def overwrite(self, params):
             """Merge parameters of gaussian units. """
@@ -1919,13 +1932,21 @@ class ann(nemoa.system.base.system):
 
             return 'bias' in layer and 'lvar' in layer
 
+        #def energy(self, data):
+
+            #bias = self.params['bias']
+            #var = numpy.exp(self.params['lvar'])
+            #energy = 0.5 * numpy.mean((data - bias) ** 2, axis = 0) / var
+
+            #return energy.reshape(bias.size)
+
         def energy(self, data):
 
             bias = self.params['bias']
-            lvar = numpy.exp(self.params['lvar'])
-            energy = - 0.5 * numpy.mean((data - bias) ** 2, axis = 0) / lvar
+            var = numpy.exp(self.params['lvar'])
+            energy = 0.5 * (data - bias) ** 2 / var
 
-            return energy.reshape(bias.size)
+            return energy
 
         @staticmethod
         def getValues(data):

@@ -354,7 +354,7 @@ class network:
                 if not passed: continue
 
             # force order (visible, hidden)
-            #2Do: why force order??
+            # TODO: why force order??
             # better force order from input to ouput
             srcLayer = src.split(':')[0]
             tgtLayer = tgt.split(':')[0]

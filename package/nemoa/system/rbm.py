@@ -427,7 +427,7 @@ class rbm(nemoa.system.ann.ann):
         """Return tuple with lists of unit labels ([visible], [hidden]) using dataset for visible."""
         return (dataset.getColLabels(), self.units['hidden'].params['label'])
 
-    #2Do: generalize to ann
+    # TODO: generalize to ann
     def _unlinkUnit(self, unit):
         """Delete unit links in adjacency matrix."""
         if unit in self.units['visible'].params['label']:
@@ -462,6 +462,22 @@ class rbm(nemoa.system.ann.ann):
         """Return links from network instance."""
         return network.edges()
 
+    def _evalSystemEnergy(self, data, *args, **kwargs):
+        """Sum of local link and unit energies."""
+
+        # calculate energies of visible units
+        vUnitEnergy = self._evalUnitEnergy(
+            data[0], mapping = ('visible', )).sum(axis = 1)
+        # calculate energies of hidden units
+        hUnitEnergy = self._evalUnitEnergy(
+            data[0], mapping = ('visible', 'hidden')).sum(axis = 1)
+        # calculate energies of links
+        linkEnergy = self._evalLinkEnergy(
+            data[0], mapping = ('visible', 'hidden')).sum(axis = (1,2))
+        # calculate energy of samples
+        sampleEnergy = vUnitEnergy + hUnitEnergy + linkEnergy
+        return -numpy.exp(-sampleEnergy).sum()
+
     def _setLinks(self, links = []):
         """Set links and create link adjacency matrix."""
         if not self._checkUnitParams(self._params):
@@ -473,7 +489,7 @@ class rbm(nemoa.system.ann.ann):
         hList = self.units['hidden'].params['label']
         A = numpy.empty([len(vList), len(hList)], dtype = bool)
 
-        #2Do: This is very slow: we could try "for link in links" etc.
+        # TODO: This is very slow: we could try "for link in links" etc.
         for i, v in enumerate(vList):
             for j, h in enumerate(hList):
                 A[i, j] = ((v, h) in links or (h, v) in links)

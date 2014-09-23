@@ -122,7 +122,7 @@ class dbn(nemoa.system.ann.ann):
             sysType = 'visible' if inUnits['visible'] else 'hidden'
             sysUserConf = self._config['params'][sysType + 'System']
             if sysUserConf:
-                #2Do: nmConfig??
+                # TODO: nmConfig??
                 sysConfig = nmConfig.get(type = 'system', name = sysUserConf)
                 if sysConfig == None:
                     nemoa.log('error', """could not configure system:

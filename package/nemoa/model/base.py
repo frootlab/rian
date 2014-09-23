@@ -135,7 +135,7 @@ class model:
     def initialize(self):
         """Initialize model parameters and return self."""
 
-        #2Do: just check if system is configured
+        # TODO: just check if system is configured
 
         # check if model is empty and can not be initialized
         if (self.dataset == None or self.system == None) \
@@ -206,7 +206,7 @@ class model:
         nemoa.log("starting optimization schedule: '%s'" % (schedule['name']))
         nemoa.setLog(indent = '+1')
 
-        #2Do: find better solution for multistage optimization
+        # TODO: find better solution for multistage optimization
         if 'stage' in schedule and len(schedule['stage']) > 0:
             for stage, params in enumerate(config['stage']):
                 self.system.optimizeParams(self.dataset, **params)
