@@ -588,13 +588,13 @@ class ann(nemoa.system.base.system):
         """Evaluation of system.
 
         Args:
-            data: 2-tuple with numpy arrays: input data and output data
-            func: string containing system evaluation function
-                For a full list of available system evaluation functions
-                see: system.about('eval')
+            data: 2-tuple of numpy arrays: source data and target data
+            func: string containing the name of a supported system
+                evaluation function. For a full list of available
+                functions use: model.about('system', 'eval')
 
         Returns:
-            Evaluation value for system respective to data.
+            Scalar system evaluation value (respective to given data).
         """
 
         # get evaluation function
@@ -605,7 +605,7 @@ class ann(nemoa.system.base.system):
         if not hasattr(self, method): return nemoa.log('error',
             "could not evaluate units: unknown method '%s'" % (method))
 
-        # prepare arguments for evaluation function
+        # prepare (non keyword) arguments for evaluation function
         evalArgs = []
         argsType = methods[func]['args']
         if   argsType == 'none':   pass
@@ -619,13 +619,9 @@ class ann(nemoa.system.base.system):
             or evalKwargs['mapping'] == None:
             evalKwargs['mapping'] = self.getMapping()
 
-        # evaluate
-        values = getattr(self, method)(*evalArgs, **evalKwargs)
-
-        # create output
-        retFmt = methods[func]['return']
-        if retFmt == 'scalar': return values
-        return nemoa.log('warning', 'could not perform evaluation')
+        # evaluate system
+        try: return getattr(self, method)(*evalArgs, **evalKwargs)
+        except: return nemoa.log('error', 'could not evaluate system')
 
     @staticmethod
     def _aboutSystem(): return {
@@ -633,51 +629,53 @@ class ann(nemoa.system.base.system):
             'name': 'total energy',
             'description': 'sum of local unit and link energies',
             'method': '_evalSystemEnergy',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f',
+            'args': 'all', 'format': '%.3f',
             'optimum': 'max'},
         'error': {
-            'name': 'total error',
-            'description': 'sum of errors of reconstructed values',
+            'name': 'average reconstruction error',
+            'description': 'mean error of reconstructed values',
             'method': '_evalSystemError',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f',
+            'args': 'all', 'format': '%.3f',
             'optimum': 'min'},
         'accuracy': {
             'name': 'average accuracy',
             'description': 'mean accuracy of reconstructed values',
             'method': '_evalSystemAccuracy',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f',
+            'args': 'all', 'format': '%.3f',
             'optimum': 'max'},
         'precision': {
             'name': 'average precision',
             'description': 'mean precision of reconstructed values',
             'method': '_evalSystemPrecision',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f',
+            'args': 'all', 'format': '%.3f',
             'optimum': 'max'}
         }
 
     def _evalSystemError(self, *args, **kwargs):
-        """Return sum of data reconstruction errors of output units. """
-        return numpy.sum(self._evalUnitError(*args, **kwargs))
+        """Mean data reconstruction error of output units."""
+        return numpy.mean(self._evalUnitError(*args, **kwargs))
 
     def _evalSystemAccuracy(self, *args, **kwargs):
-        """Return mean data reconstruction accuracy of output units. """
+        """Mean data reconstruction accuracy of output units."""
         return numpy.mean(self._evalUnitAccuracy(*args, **kwargs))
 
     def _evalSystemPrecision(self, *args, **kwargs):
-        """Return mean data reconstruction precision of output units. """
+        """Mean data reconstruction precision of output units."""
         return numpy.mean(self._evalUnitPrecision(*args, **kwargs))
 
     def _evalSystemEnergy(self, data, *args, **kwargs):
-        """Return system energy. """
+        """Sum of local link and unit energies."""
 
         mapping = list(self.getMapping())
         energy = 0.0
 
-        # sum energy of units and links
+        # sum local unit energies
         for i in range(1, len(mapping) + 1):
             energy += numpy.sum(
                 self._evalUnitEnergy(data[0],
                 mapping = tuple(mapping[:i])))
+
+        # sum local link energies
         for i in range(1, len(mapping)):
             energy += numpy.sum(
                 self._evalLinkEnergy(data[0],
@@ -686,53 +684,64 @@ class ann(nemoa.system.base.system):
         return energy
 
     def _evalUnits(self, data, func = 'accuracy', units = None, **kwargs):
-        """Return dictionary with unit evaluation values.
+        """Evaluation of target units.
 
         Args:
-            data: 2-tuple with numpy arrays: input data and output data
-            func: string containing unit evaluation function
+            data: 2-tuple with numpy arrays: source and target data
+            func: string containing name of unit evaluation function
                 For a full list of available system evaluation functions
-                see: system.about('units')
+                see: model.about('system', 'units')
+            units: list of target unit names (within the same layer). If
+                not given, all output units are selected.
+
+        Returns:
+            Dictionary with unit evaluation values for target units. The
+            keys of the dictionary are given by the names of the target
+            units, the values depend on the used evaluation function and
+            are ether scalar (float) or vectorially (flat numpy array).
         """
 
-        # get unit evaluation function
-        methods = self._aboutUnits()
-        if not func in methods.keys(): return nemoa.log('error',
-            "could not evaluate units: unknown method '%s'" % (func))
-        method = methods[func]['method']
+        # check if data is valid
+        if not isinstance(data, tuple): return nemoa.log('error',
+            'could not evaluate units: invalid data format')
+
+        # look for name of unit evaluation function in dictionary
+        funcs = self._aboutUnits()
+        if not func in funcs.keys(): return nemoa.log('error',
+            "could not evaluate units: unknown function '%s'" % (func))
+
+        # get name of class method used for unit evaluation
+        method = funcs[func]['method']
         if not hasattr(self, method): return nemoa.log('error',
             "could not evaluate units: unknown method '%s'" % (method))
 
-        # prepare data for evaluation functions
-        if not isinstance(data, tuple): return nemoa.log('error',
-            'could not evaluate units: invalid data format given')
-        evalArgs = []
-        argsType = methods[func]['args']
-        if   argsType == 'none':   pass
-        elif argsType == 'input':  evalArgs.append(data[0])
-        elif argsType == 'output': evalArgs.append(data[1])
-        elif argsType == 'all':    evalArgs.append(data)
+        # prepare (non keyword) arguments for evaluation
+        funcArgs = funcs[func]['args']
+        if funcArgs == 'none': eArgs = []
+        elif funcArgs == 'input': eArgs = [data[0]]
+        elif funcArgs == 'output': eArgs = [data[1]]
+        elif funcArgs == 'all': eArgs = [data]
 
-        # prepare keyword arguments for evaluation functions
-        evalKwargs = kwargs.copy()
-        if not 'mapping' in evalKwargs.keys() \
-            or evalKwargs['mapping'] == None:
-            evalKwargs['mapping'] = self.getMapping()
+        # prepare keyword arguments for evaluation
+        eKwargs = kwargs.copy()
         if isinstance(units, str):
-            evalKwargs['mapping'] = self.getMapping(tgt = units)
+            eKwargs['mapping'] = self.getMapping(tgt = units)
+        elif not 'mapping' in eKwargs.keys() \
+            or eKwargs['mapping'] == None:
+            eKwargs['mapping'] = self.getMapping()
 
-        # evaluate
-        values = getattr(self, method)(*evalArgs, **evalKwargs)
+        # evaluate units
+        try: values = getattr(self, method)(*evalArgs, **evalKwargs)
+        except: return nemoa.log('error', 'could not evaluate units')
 
-        # create unit dictionary
+        # create dictionary of target units
         labels = self.getUnits(group = evalKwargs['mapping'][-1])[0]
         retFmt = methods[func]['return']
-
-        if retFmt == 'vector': return {unit: values[:, id] \
-            for id, unit in enumerate(labels)}
-        elif retFmt == 'scalar': return {unit: values[id] \
-            for id, unit in enumerate(labels)}
-        return nemoa.log('warning', 'could not perform evaluation')
+        if retFmt == 'vector': return {unit: values[:, uid] \
+            for uid, unit in enumerate(labels)}
+        elif retFmt == 'scalar': return {unit: values[uid] \
+            for uid, unit in enumerate(labels)}
+        return nemoa.log('error', 'could not evaluate units')
 
     @staticmethod
     def _aboutUnits(): return {
@@ -780,7 +789,7 @@ class ann(nemoa.system.base.system):
             'args': 'all', 'return': 'vector', 'format': '%.3f'},
         'error': {
             'name': 'error',
-            'description': 'error of reconstructed values',
+            'description': 'mean error of reconstructed values',
             'method': '_evalUnitError',
             'show': 'diagram',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
@@ -805,16 +814,20 @@ class ann(nemoa.system.base.system):
         }
 
     def _evalUnitExpect(self, data, mapping = None, block = None):
-        """Return (most) expected values of a layer.
+        """Expectation values of target units.
 
         Args:
-            data: numpy array containing source data coresponding to
-                the first layer in the mapping
+            data: numpy array containing source data corresponding to
+                the source unit layer (first argument of the mapping)
             mapping: n-tuple of strings containing the mapping
                 from source unit layer (first argument of tuple)
                 to target unit layer (last argument of tuple)
             block: list of strings containing labels of source units
-                that are blocked by setting the values to their means
+                that are 'blocked' by setting their values to the means
+                of their values.
+
+        Returns:
+            Numpy array of shape (data, targets).
         """
 
         if mapping == None: mapping = self.getMapping()
@@ -833,18 +846,22 @@ class ann(nemoa.system.base.system):
 
     def _evalUnitValues(self, data, mapping = None, block = None,
         expectLast = False):
-        """Return unit values calculated from mappings.
+        """Unit values of target units.
 
         Args:
-            data: numpy array containing source data coresponding to
-                the first layer in the mapping
+            data: numpy array containing source data corresponding to
+                the source unit layer (first argument of the mapping)
             mapping: n-tuple of strings containing the mapping
                 from source unit layer (first argument of tuple)
                 to target unit layer (last argument of tuple)
             block: list of strings containing labels of source units
-                that are blocked by setting the values to their means
+                that are 'blocked' by setting their values to the means
+                of their values.
             expectLast: return expectation values of the units
                 for the last step instead of maximum likelihood values
+
+        Returns:
+            Numpy array of shape (data, targets).
         """
 
         if mapping == None: mapping = self.getMapping()
@@ -853,18 +870,22 @@ class ann(nemoa.system.base.system):
             inData = numpy.copy(data)
             for i in block: inData[:,i] = numpy.mean(inData[:,i])
         if expectLast:
-            if len(mapping) == 1: return inData
-            elif len(mapping) == 2: return self.units[mapping[1]].expect(
-                self.units[mapping[0]].getSamples(inData),
-                self.units[mapping[0]].params)
+            if len(mapping) == 1:
+                return inData
+            elif len(mapping) == 2:
+                return self.units[mapping[1]].expect(
+                    self.units[mapping[0]].getSamples(inData),
+                    self.units[mapping[0]].params)
             return self.units[mapping[-1]].expect(
                 self._evalUnitValues(data, mapping[0:-1]),
                 self.units[mapping[-2]].params)
         else:
-            if len(mapping) == 1: return self.units[mapping[0]].getValues(inData)
-            elif len(mapping) == 2: return self.units[mapping[1]].getValues(
-                self.units[mapping[1]].expect(inData,
-                self.units[mapping[0]].params))
+            if len(mapping) == 1:
+                return self.units[mapping[0]].getValues(inData)
+            elif len(mapping) == 2:
+                return self.units[mapping[1]].getValues(
+                    self.units[mapping[1]].expect(inData,
+                    self.units[mapping[0]].params))
             data = numpy.copy(inData)
             for id in range(len(mapping) - 1):
                 data = self.units[mapping[id + 1]].getValues(
@@ -874,18 +895,22 @@ class ann(nemoa.system.base.system):
 
     def _evalUnitSamples(self, data, mapping = None, block = None,
         expectLast = False):
-        """Return sampled unit values calculated from mapping.
+        """Sampled unit values of target units.
 
         Args:
-            data: numpy array containing source data coresponding to
-                the first layer in the mapping
+            data: numpy array containing source data corresponding to
+                the source unit layer (first argument of the mapping)
             mapping: n-tuple of strings containing the mapping
                 from source unit layer (first argument of tuple)
                 to target unit layer (last argument of tuple)
             block: list of strings containing labels of source units
-                that are blocked by setting the values to their means
+                that are 'blocked' by setting their values to the means
+                of their values.
             expectLast: return expectation values of the units
                 for the last step instead of sampled values
+
+        Returns:
+            Numpy array of shape (data, targets).
         """
 
         if mapping == None: mapping = self.getMapping()
@@ -916,16 +941,21 @@ class ann(nemoa.system.base.system):
             return data
 
     def _evalUnitResiduals(self, data, mapping = None, block = None):
-        """Return reconstruction residuals of units.
+        """Reconstruction residuals of target units.
 
         Args:
-            data: numpy array containing source data coresponding to
-                the first layer in the mapping
+            data: 2-tuple of numpy arrays containing source and target
+                data corresponding to the first and the last argument
+                of the mapping
             mapping: n-tuple of strings containing the mapping
                 from source unit layer (first argument of tuple)
                 to target unit layer (last argument of tuple)
             block: list of strings containing labels of source units
-                that are blocked by setting the values to their means
+                that are 'blocked' by setting their values to the means
+                of their values.
+
+        Returns:
+            Numpy array of shape (data, targets).
         """
 
         dIn, dOut = data
@@ -942,19 +972,20 @@ class ann(nemoa.system.base.system):
         mOut = self._evalUnitExpect(dIn, mapping)
 
         # calculate residuals
-        res = dOut - mOut
-
-        return res
+        return dOut - mOut
 
     def _evalUnitEnergy(self, data, mapping = None):
-        """Return unit energies of a layer.
+        """Unit energies of target units.
 
         Args:
-            data: numpy array containing source data coresponding to
-                the first layer in the mapping
+            data: numpy array containing source data corresponding to
+                the source unit layer (first argument of the mapping)
             mapping: n-tuple of strings containing the mapping
                 from source unit layer (first argument of tuple)
                 to target unit layer (last argument of tuple)
+
+        Returns:
+            Numpy array of shape (targets).
         """
 
         # set mapping: inLayer to outLayer (if not set)
@@ -964,21 +995,26 @@ class ann(nemoa.system.base.system):
 
         return self.units[mapping[-1]].energy(data)
 
-    def _evalUnitMean(self, data, mapping = None, block = None, **kwargs):
-        """Return mean of reconstructed unit values.
+    def _evalUnitMean(self, data, mapping = None, block = None):
+        """Mean values of reconstructed target units.
 
         Args:
-            data: numpy array containing source data coresponding to
-                the first layer in the mapping
+            data: numpy array containing source data corresponding to
+                the source unit layer (first argument of the mapping)
             mapping: n-tuple of strings containing the mapping
                 from source unit layer (first argument of tuple)
                 to target unit layer (last argument of tuple)
             block: list of strings containing labels of source units
-                that are blocked by setting the values to their means
+                that are 'blocked' by setting their values to the means
+                of their values.
+
+        Returns:
+            Numpy array of shape (targets).
         """
 
         if mapping == None: mapping = self.getMapping()
-        if block == None: modelOut = self._evalUnitExpect(data[0], mapping)
+        if block == None:
+            modelOut = self._evalUnitExpect(data[0], mapping)
         else:
             dataInCopy = numpy.copy(data)
             for i in block: dataInCopy[:,i] = numpy.mean(dataInCopy[:,i])
@@ -990,7 +1026,7 @@ class ann(nemoa.system.base.system):
         """Return variance of reconstructed unit values.
 
         Args:
-            data: numpy array containing source data coresponding to
+            data: numpy array containing source data corresponding to
                 the first layer in the mapping
             mapping: n-tuple of strings containing the mapping
                 from source unit layer (first argument of tuple)
@@ -1013,7 +1049,7 @@ class ann(nemoa.system.base.system):
 
         Args:
             data: 2-tuple of numpy arrays containing source and
-                target data coresponding to the first and the last layer
+                target data corresponding to the first and the last layer
                 in the mapping
             mapping: n-tuple of strings containing the mapping
                 from source unit layer (first argument of tuple)
@@ -1034,7 +1070,7 @@ class ann(nemoa.system.base.system):
 
         Args:
             data: 2-tuple of numpy arrays containing source and
-                target data coresponding to the first and the last layer
+                target data corresponding to the first and the last layer
                 in the mapping
             mapping: n-tuple of strings containing the mapping
                 from source unit layer (first argument of tuple)
@@ -1059,7 +1095,7 @@ class ann(nemoa.system.base.system):
 
         Args:
             data: 2-tuple of numpy arrays containing source and
-                target data coresponding to the first and the last layer
+                target data corresponding to the first and the last layer
                 in the mapping
             mapping: n-tuple of strings containing the mapping
                 from source unit layer (first argument of tuple)
@@ -1084,7 +1120,7 @@ class ann(nemoa.system.base.system):
 
         Args:
             data: 2-tuple of numpy arrays containing source and
-                target data coresponding to the first and the last layer
+                target data corresponding to the first and the last layer
                 in the mapping
             mapping: n-tuple of strings containing the mapping
                 from source unit layer (first argument of tuple)
@@ -1112,9 +1148,9 @@ class ann(nemoa.system.base.system):
         """Evaluate system links respective to data.
 
         Args:
-            data: 2-tuple of numpy arrays containing source and
-                target data coresponding to the first and the last layer
-                in the mapping
+            data: 2-tuple of numpy arrays containing source and target
+                data corresponding to the first and the last argument
+                of the mapping
             mapping: n-tuple of strings containing the mapping
                 from source unit layer (first argument of tuple)
                 to target unit layer (last argument of tuple)
