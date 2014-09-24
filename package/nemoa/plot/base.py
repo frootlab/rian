@@ -14,9 +14,9 @@ class plot:
     defaults = None
 
     def __init__(self, config = None):
-        self._setConfig(config)
+        self._set_config(config)
 
-    def _setConfig(self, config):
+    def _set_config(self, config):
         """Initialize plot configuration with dictionary."""
 
         self.cfg = {}

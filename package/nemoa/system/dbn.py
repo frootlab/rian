@@ -27,6 +27,7 @@ class dbn(nemoa.system.ann.ann):
     Reference:
         (1) "Reducing the dimensionality of data with neural networks",
             G. E. Hinton, R. R. Salakhutdinov, Science, 2006
+
     """
 
     @staticmethod
@@ -66,7 +67,7 @@ class dbn(nemoa.system.ann.ann):
             'tracker_estimate_timeWait': 15. }}[key]
 
     def _check_network(self, network):
-        return network._isDBNCompatible()
+        return network._is_compatible_dbn()
 
     def _get_units_from_config(self):
         return None

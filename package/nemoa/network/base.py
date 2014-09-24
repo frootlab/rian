@@ -13,9 +13,9 @@ class network:
     def __init__(self, config = {}, **kwargs):
         self.cfg = None
         self.graph = None
-        self._setConfig(config)
+        self._set_config(config)
 
-    def _setConfig(self, config):
+    def _set_config(self, config):
         """Configure network to given dictionary."""
 
         # create valid config config
@@ -32,14 +32,14 @@ class network:
         # type 'autolayer' is used for networks
         # wich are created by layers and sizes
         if self.cfg['type'] == 'autolayer':
-            self._getNodesFromLayers()
-            self._getEdgesFromNodesAndLayers()
-            return self._createLayerGraph()
+            self._get_nodes_from_layers()
+            self._get_edges_from_layers()
+            return self._create_layergraph()
 
         # type 'layer' is used for networks
         # wich are manualy defined, using a file
         if self.cfg['type'].lower() in ['layer', 'multilayer']: return \
-            self._createLayerGraph()
+            self._create_layergraph()
 
         return False
 
@@ -47,7 +47,7 @@ class network:
         """Return configuration as dictionary."""
         return self.cfg.copy()
 
-    def _getNodesFromLayers(self):
+    def _get_nodes_from_layers(self):
         """Create nodes from layers."""
         self.cfg['nodes'] = {}
         self.cfg['label_format'] = 'generic:string'
@@ -57,7 +57,7 @@ class network:
                 [layer + str(i) for i in range(1, nodeNumber + 1)]
         return True
 
-    def _getVisibleNodesFromDataset(self, dataset):
+    def _get_visible_nodes_from_dataset(self, dataset):
         """Create nodes from dataset."""
 
         self.cfg['visible'] = []
@@ -72,7 +72,7 @@ class network:
             self.cfg['nodes'][group] = groups[group]
         return True
 
-    def _getHiddenNodesFromSystem(self, system):
+    def _get_hidden_nodes_from_system(self, system):
         """Create nodes from system."""
 
         self.cfg['hidden'] = []
@@ -91,7 +91,7 @@ class network:
             self.cfg['nodes'][group].append(label)
         return True
 
-    def _getEdgesFromNodesAndLayers(self):
+    def _get_edges_from_layers(self):
         self.cfg['edges'] = {}
         for l in range(0, len(self.cfg['layer']) - 1):
             layerFrom = self.cfg['layer'][l]
@@ -129,19 +129,19 @@ class network:
         # wich are created by datasets (visible units)
         # and systems (hidden units)
         if self.cfg['type'] == 'auto':
-            self._getVisibleNodesFromDataset(dataset)
-            self._getHiddenNodesFromSystem(system)
-            self._getEdgesFromNodesAndLayers()
-            self._createLayerGraph()
+            self._get_visible_nodes_from_dataset(dataset)
+            self._get_hidden_nodes_from_system(system)
+            self._get_edges_from_layers()
+            self._create_layergraph()
             nemoa.setLog(indent = '-1')
             return True
 
         # type: 'autolayer' is used for networks
         # wich are created by layers and sizes
         if self.cfg['type'] == 'autolayer':
-            self._getNodesFromLayers()
-            self._getEdgesFromNodesAndLayers()
-            self._createLayerGraph()
+            self._get_nodes_from_layers()
+            self._get_edges_from_layers()
+            self._create_layergraph()
             nemoa.setLog(indent = '-1')
             return True
 
@@ -151,7 +151,7 @@ class network:
         for group in groups:
             if not group in self.cfg['nodes'] \
                 or not (groups[group] == self.cfg['nodes'][group]):
-                self._createLayerGraph(
+                self._create_layergraph(
                     nodelist = {'type': group, 'list': groups[group]})
 
         nemoa.setLog(indent = '-1')
@@ -161,7 +161,7 @@ class network:
         """Return true if network type is 'empty'."""
         return self.cfg['type'] == 'empty'
 
-    def _createLayerGraph(self, nodelist = None, edgelist = None):
+    def _create_layergraph(self, nodelist = None, edgelist = None):
         if not nodelist: nodelist = {'type': None, 'list': []}
         if not edgelist: edgelist = {'type': (None, None), 'list': []}
 
@@ -258,8 +258,6 @@ class network:
 
         return True
 
-    # accessing nodes
-
     def node(self, node):
         """Return network information of single node."""
         return self.graph.node[node]
@@ -282,7 +280,7 @@ class network:
             sortedList[attr['order']] = node
         return [node for node in sortedList if node] # filter empty nodes
 
-    def node_labels(self, **params):
+    def _node_labels(self, **params):
         return [self.graph.node[node]['label'] \
             for node in self.nodes(**params)]
 
@@ -299,7 +297,7 @@ class network:
         if type:
             if not type in self.cfg: return nemoa.log('warning',
                 "unknown node type '%s'." % (str(type)))
-            return {group: self.node_labels(type = group)
+            return {group: self._node_labels(type = group)
                 for group in self.cfg[type]}
 
         # get all groups
@@ -307,11 +305,9 @@ class network:
         for type in ['visible', 'hidden']:
             groups = {}
             for group in self.cfg[type]:
-                groups[group] = self.node_labels(type = group)
+                groups[group] = self._node_labels(type = group)
             allGroups[type] = groups
         return allGroups
-
-    # accessing layers
 
     def layer(self, layer):
         """Return dictionary containing information about a layer."""
@@ -331,8 +327,6 @@ class network:
             for node in self.nodes()}
         layerList = [layerDict[layer]['label'] for layer in range(0, len(layerDict))]
         return layerList
-
-    # accessing edges
 
     def edge(self, edge):
         return self.graph.edge[edge]
@@ -373,8 +367,6 @@ class network:
         return [(self.graph.node[src]['label'],
             self.graph.node[tgt]['label']) for src, tgt in self.edges(**kwargs)]
 
-    # get / set
-
     def _get(self, sec = None):
         dict = {
             'cfg': copy.deepcopy(self.cfg),
@@ -389,21 +381,18 @@ class network:
         if 'graph' in dict: self.graph = copy.deepcopy(dict['graph'])
         return True
 
-    def save_graph(self, file = None, format = 'gml'):
+    def _export_graph(self, file = None, format = 'gml'):
         if file == None: nemoa.log('error', "no save path was given")
 
         # create path if not available
         if not os.path.exists(os.path.dirname(file)):
             os.makedirs(os.path.dirname(file))
 
-        # everythink seems to be fine
-        # nemoa.log("saving graph to %s" % (file))
-
         if format == 'gml':
             G = self.graph.copy()
             networkx.write_gml(G, file)
 
-    def _isLFFCompatible(self):
+    def _is_compatible_lff(self):
         """Test compatibility to layered feed forward networks.
 
         Returns:
@@ -429,7 +418,7 @@ class network:
 
         return True
 
-    def _isMLFFCompatible(self):
+    def _is_compatible_mlff(self):
         """Test compatibility to multilayer feedforward networks.
 
         Returns:
@@ -441,7 +430,7 @@ class network:
         """
 
         # test if network is compatible to layered feedforward networks
-        if not self._isLFFCompatible(): return False
+        if not self._is_compatible_lff(): return False
 
         # test if network contains at least three layers
         if len(self.layers()) < 3: return nemoa.log('error',
@@ -449,21 +438,21 @@ class network:
 
         return True
 
-    def _isDBNCompatible(self):
+    def _is_compatible_dbn(self):
         """Test compatibility to deep beliefe networks.
 
         Returns:
             Boolean value which is True if the following conditions are
             satisfied:
             (1) The network is compatible to multilayer feedforward
-                networks: see function _isMLFFCompatible
+                networks: see function _is_compatible_mlff
             (2) The network contains an odd number of layers
             (3) The hidden layers are symmetric to the central middle
                 layer related to their number of nodes
         """
 
         # test if network is MLFF compatible
-        if not self._isMLFFCompatible(): return False
+        if not self._is_compatible_mlff(): return False
 
         # test if the network contains odd number of layers
         if not len(self.layers()) % 2 == 1: return nemoa.log('error',
@@ -481,20 +470,20 @@ class network:
 
         return True
 
-    def _isAutoencoderCompatible(self):
+    def _is_compatible_autoencoder(self):
         """Test compatibility to autoencoder networks.
 
         Returns:
             Boolean value which is True if the following conditions are
             satisfied:
             (1) The network is DBN compatible:
-                see function _isDBNCompatible
+                see function _is_compatible_dbn
             (2) The visible input and output layers contain identical
                 node labels
         """
 
         # test if network is DBN compatible
-        if not self._isDBNCompatible(): return False
+        if not self._is_compatible_dbn(): return False
 
         # test if input and output layers contain identical nodes
         layers = self.layers()

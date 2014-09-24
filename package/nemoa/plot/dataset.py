@@ -25,7 +25,7 @@ class histogram(nemoa.plot.base.plot):
     def _create(self, model):
 
         # create data (numpy 1-d array)
-        data = numpy.hstack(model.getData(
+        data = numpy.hstack(model.data(
             layer = self.settings['layer'],
             transform = self.settings['transform'])).flatten()
 

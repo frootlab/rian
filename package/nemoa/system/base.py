@@ -15,7 +15,7 @@ class system:
         """Configure system and system parameters."""
 
         # set configuration and update units and links
-        self._setConfig(kwargs['config'] if 'config' in kwargs else {})
+        self._set_config(kwargs['config'] if 'config' in kwargs else {})
 
     def configure(self, dataset = None, network = None, *args, **kwargs):
         """Configure system and subsystems to network and dataset."""
@@ -49,7 +49,7 @@ class system:
         """Return system configuration as dictionary."""
         return self._config.copy()
 
-    def _setConfig(self, config):
+    def _set_config(self, config):
         """Set configuration."""
         # create local configuration dictionary
         if not hasattr(self, '_config'):

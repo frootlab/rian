@@ -8,7 +8,7 @@ structural assumptions like noise models or sparsity.
 
 """
 
-__version__ = '0.4.107'
+__version__ = '0.4.108'
 __status__  = 'Development'
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'

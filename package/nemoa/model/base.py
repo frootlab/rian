@@ -11,6 +11,14 @@ import time
 import os
 
 class model:
+    """nemoa model class.
+
+    Attributes:
+        dataset: nemoa dataset instance
+        network: nemoa network instance
+        system: nemoa system instance
+
+    """
 
     dataset = None
     network = None
@@ -34,19 +42,19 @@ class model:
         self.system  = system
 
         if self._is_empty(): return
-        if not self._checkModel(): return
+        if not self._check_model(): return
         self.updateConfig()
 
-    def _setConfig(self, config):
+    def _set_config(self, config):
         """Set configuration from dictionary."""
         self._config = config.copy()
         return True
 
-    def _getConfig(self):
+    def _get_config(self):
         """Return configuration as dictionary."""
         return self._config.copy()
 
-    def exportOutputData(self, *args, **kwargs):
+    def _export_data(self, *args, **kwargs):
         """Export data to file."""
         # copy dataset
         dataSettings = self.dataset._get()
@@ -55,7 +63,7 @@ class model:
         self.dataset._set(dataSettings)
         return True
 
-    def importConfigFromDict(self, dict):
+    def _import_config_from_dict(self, dict):
         """Import numpy configuration from dictionary."""
         # copy dataset, network and system configuration
         keys = ['config', 'dataset', 'network', 'system']
@@ -66,7 +74,7 @@ class model:
                 """ % (key))
         return {key: dict[key].copy() for key in keys}
 
-    def _checkModel(self, allowNone = False):
+    def _check_model(self, allowNone = False):
         if (allowNone and self.dataset == None) \
             or not nemoa.type.isDataset(self.dataset): return False
         if (allowNone and self.network == None) \
@@ -85,10 +93,12 @@ class model:
         if not 'name' in self._config or not self._config['name']:
             if not self.network.name():
                 self.setName('%s-%s' % (
-                    self.dataset.name(), self.system.name()))
+                    self.dataset.name(),
+                    self.system.name()))
             else:
                 self.setName('%s-%s-%s' % (
-                    self.dataset.name(), self.network.name(),
+                    self.dataset.name(),
+                    self.network.name(),
                     self.system.name()))
         return True
 
@@ -227,11 +237,11 @@ class model:
         self.dataset = dataset
         return True
 
-    def _getDataset(self):
+    def _get_dataset(self):
         """Return link to dataset instance."""
         return self.dataset
 
-    def _confDataset(self, dataset = None, network = None, **kwargs):
+    def _configure_dataset(self, dataset = None, network = None, **kwargs):
         """Configure model.dataset to given dataset and network.
 
         Args:
@@ -268,11 +278,11 @@ class model:
         self.network = network
         return True
 
-    def _getNetwork(self):
+    def _get_network(self):
         """Return link to network instance."""
         return self.network
 
-    def _confNetwork(self, dataset = None, network = None, system = None, **kwargs):
+    def _configure_network(self, dataset = None, network = None, system = None, **kwargs):
         """Configure model.network to given network, dataset and system.
 
         Args:
@@ -306,16 +316,17 @@ class model:
             dataset = dataset if not dataset == None else self.dataset,
             system = system if not system == None else self.system)
 
-    def _setSystem(self, system):
+    def _set_system(self, system):
         """Set system."""
         self.system = system
         return True
 
-    def _getSystem(self):
+    def _get_system(self):
         """Return link to system instance."""
         return self.system
 
-    def getData(self, dataset = None, layer = None, transform = 'expect', **kwargs):
+    # TODO: deprecated! Only used in dataset histogram plot
+    def data(self, dataset = None, layer = None, transform = 'expect', **kwargs):
         """Return data from dataset."""
         if not nemoa.type.isDataset(dataset): dataset = self.dataset
         if not isinstance(layer, str):
@@ -383,7 +394,7 @@ class model:
         return true if no error occured"""
 
         # get config from dict
-        config = self.importConfigFromDict(dict)
+        config = self._import_config_from_dict(dict)
 
         # check self
         if not nemoa.type.isDataset(self.dataset): return nemoa.log('error',
@@ -474,13 +485,13 @@ class model:
             plotName, plotParams = nemoa.common.strSplitParams(plot)
             mergeDict = plotParams
             for param in kwargs.keys(): plotParams[param] = kwargs[param]
-            objPlot = self._getPlot(*args, params = plotParams)
+            objPlot = self._get_plot(*args, params = plotParams)
             if not objPlot:
                 nemoa.log('warning', "could not create plot: unknown configuration '%s'" % (plotName))
                 nemoa.setLog(indent = '-1')
                 return None
-        elif isinstance(plot, dict): objPlot = self._getPlot(config = plot)
-        else: objPlot = self._getPlot()
+        elif isinstance(plot, dict): objPlot = self._get_plot(config = plot)
+        else: objPlot = self._get_plot()
         if not objPlot: return None
 
         # prepare filename
@@ -497,7 +508,7 @@ class model:
         nemoa.setLog(indent = '-2')
         return retVal
 
-    def _getPlot(self, *args, **kwargs):
+    def _get_plot(self, *args, **kwargs):
         """Return new plot instance"""
 
         # return empty plot instance if no configuration was given
