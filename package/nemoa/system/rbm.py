@@ -50,26 +50,24 @@ class rbm(nemoa.system.ann.ann):
             'updateCdkSteps': 1,
             'updateCdkIterations': 1,
             'updateRate': 0.1,
-            'updateFactorWeights': 1.0,
+            'updateFactorWeights': 1.,
             'updateFactorHbias': 0.1,
             'updateFactorVbias': 0.1,
             'modSaEnable': True,
-            'modSaInitTemperature': 1.0,
-            'modSaAnnealingFactor': 1.0,
+            'modSaInitTemperature': 1.,
+            'modSaAnnealingFactor': 1.,
             'modSaAnnealingCycles': 1,
             'modKlEnable': True,
-            'modKlRate': 0.0,
+            'modKlRate': 0.,
             'modKlExpect': 0.5,
-            'selectivityFactor': 0.0,
-            'selectivitySize': 0.5,
             'modCorruptionEnable': True,
             'modCorruptionType': 'mask',
             'modCorruptionFactor': 0.5,
             'useAdjacency': False,
             'trackerObjFunction': 'error',
-            'trackerEvalTimeInterval': 10.0 ,
+            'trackerEvalTimeInterval': 10. ,
             'trackerEstimateTime': True,
-            'trackerEstimateTimeWait': 20.0 }}[key]
+            'trackerEstimateTimeWait': 20. }}[key]
 
     def getMapping(self):
         v = self._params['units'][0]['name']
@@ -463,20 +461,31 @@ class rbm(nemoa.system.ann.ann):
         return network.edges()
 
     def _evalSystemEnergy(self, data, *args, **kwargs):
-        """Sum of local link and unit energies."""
+        """Pseudo energy function.
+
+        Calculates the logarithm of the sum of exponential negative
+        sample energies (plus one). This allows
+
+
+        """
+
+        # mapping
+        mapV = ('visible', )
+        mapH = ('visible', 'hidden')
 
         # calculate energies of visible units
-        vUnitEnergy = self._evalUnitEnergy(
-            data[0], mapping = ('visible', )).sum(axis = 1)
+        eVisible = self._evalUnitEnergy(
+            data[0], mapping = mapV).sum(axis = 1)
         # calculate energies of hidden units
-        hUnitEnergy = self._evalUnitEnergy(
-            data[0], mapping = ('visible', 'hidden')).sum(axis = 1)
+        eHidden = self._evalUnitEnergy(
+            data[0], mapping = mapH).sum(axis = 1)
         # calculate energies of links
-        linkEnergy = self._evalLinkEnergy(
-            data[0], mapping = ('visible', 'hidden')).sum(axis = (1,2))
-        # calculate energy of samples
-        sampleEnergy = vUnitEnergy + hUnitEnergy + linkEnergy
-        return -numpy.exp(-sampleEnergy).sum()
+        eLinks = self._evalLinkEnergy(
+            data[0], mapping = mapH).sum(axis = (1, 2))
+        # calculate energies of samples
+        energy = eVisible + eHidden + eLinks
+
+        return -numpy.log(1. + numpy.exp(-energy).sum())
 
     def _setLinks(self, links = []):
         """Set links and create link adjacency matrix."""
@@ -587,7 +596,7 @@ class grbm(rbm):
             'updateCdkSteps': 1, # number of gibbs steps in cdk sampling
             'updateCdkIterations': 1, # number of iterations in cdk sampling
             'updateRate': 0.001, # update rate (depends in algorithm)
-            'updateFactorWeights': 1.0, # factor for weight updates (related to update rate)
+            'updateFactorWeights': 1., # factor for weight updates (related to update rate)
             'updateFactorHbias': 0.1, # factor for hidden unit bias updates (related to update rate)
             'updateFactorVbias': 0.1, # factor for visible unit bias updates (related to update rate)
             'updateFactorVlvar': 0.01, # factor for visible unit logarithmic variance updates (related to update rate)
@@ -595,21 +604,19 @@ class grbm(rbm):
             'minibatchInterval': 1, # number of updates the same minibatch is used
             'modCorruptionEnable': False,
             'modCorruptionType': 'none', # do not use corruption
-            'modCorruptionFactor': 0.0, # no corruption of data
+            'modCorruptionFactor': 0., # no corruption of data
             'modSaEnable': True, # use simulated annealing
-            'modSaInitTemperature': 1.0,
-            'modSaAnnealingFactor': 1.0,
+            'modSaInitTemperature': 1.,
+            'modSaAnnealingFactor': 1.,
             'modSaAnnealingCycles': 1,
             'modKlEnable': True, # use Kullback-Leibler penalty
-            'modKlRate': 0.0, # sparsity update
+            'modKlRate': 0., # sparsity update
             'modKlExpect': 0.5, # aimed value for l2-norm penalty
-            'selectivityFactor': 0.0, # no selectivity update
-            'selectivitySize': 0.5, # aimed value for l2-norm penalty
             'useAdjacency': False, # do not use selective weight updates
             'trackerObjFunction': 'error', # objective function
-            'trackerEvalTimeInterval': 20.0, # time interval for calculation the inspection function
+            'trackerEvalTimeInterval': 20., # time interval for calculation the inspection function
             'trackerEstimateTime': True, # initally estimate time for whole optimization process
-            'trackerEstimateTimeWait': 20.0 # time intervall used for time estimation
+            'trackerEstimateTimeWait': 20. # time intervall used for time estimation
         }}[key]
 
     def _checkDataset(self, dataset):

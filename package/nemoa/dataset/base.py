@@ -85,7 +85,7 @@ class dataset:
 
         return True
 
-    def isConfigured(self):
+    def _isConfigured(self):
         """Return true if dataset is configured."""
         return len(self.data.keys()) > 0
 
@@ -101,7 +101,7 @@ class dataset:
         nemoa.setLog(indent = '+1')
 
         # load data from cachefile (if caching and cachefile exists)
-        cacheFile = self.searchCacheFile(network) if useCache else None
+        cacheFile = self._searchCacheFile(network) if useCache else None
         if cacheFile and self.load(cacheFile):
             nemoa.log('load cachefile: \'%s\'' % (cacheFile))
 
@@ -116,7 +116,7 @@ class dataset:
             conf = self.cfg.copy()
             self.cfg['table'] = {}
             self.cfg['table'][self.cfg['name']] = conf
-            self.cfg['table'][self.cfg['name']]['fraction'] = 1.0
+            self.cfg['table'][self.cfg['name']]['fraction'] = 1.
 
         # Annotation
 
@@ -285,12 +285,12 @@ class dataset:
         for src in self.cfg['table']:
             self.data[src] = {
                 'fraction': self.cfg['table'][src]['fraction'],
-                'array': self.csvGetData(src) }
+                'array': self._csvGetData(src) }
         nemoa.setLog(indent = '-1')
 
         # save cachefile
         if useCache:
-            cacheFile = self.createCacheFile(network)
+            cacheFile = self._createCacheFile(network)
             nemoa.log('save cachefile: \'%s\'' % (cacheFile))
             self.save(cacheFile)
 
@@ -301,33 +301,35 @@ class dataset:
         nemoa.setLog(indent = '-1')
         return True
 
-    # Data preprocessing
-
     def preprocessData(self, **kwargs):
         """Data preprocessing.
 
-        Args:
-            stratify -- see algorithm in stratifyData
-            normalize -- see algorithm in normalizeData
-            transform -- see algorithm in transformData
+        Process stratification, normalization and transformation.
 
-        Description:
-            Process stratification, normalization and transformation."""
+        Args:
+            stratify: see method self._stratifyData()
+            normalize: see method self._normalizeData()
+            transform: see method self.transformData()
+
+        """
 
         nemoa.log('preprocessing data')
         nemoa.setLog(indent = '+1')
-        if 'stratify'  in kwargs.keys(): self.stratifyData(kwargs['stratify'])
-        if 'normalize' in kwargs.keys(): self.normalizeData(kwargs['normalize'])
-        if 'transform' in kwargs.keys(): self.transformData(kwargs['transform'])
+        if 'stratify'  in kwargs.keys():
+            self._stratifyData(kwargs['stratify'])
+        if 'normalize' in kwargs.keys():
+            self._normalizeData(kwargs['normalize'])
+        if 'transform' in kwargs.keys():
+            self.transformData(kwargs['transform'])
         nemoa.setLog(indent = '-1')
 
         return True
 
-    def stratifyData(self, algorithm = 'auto'):
+    def _stratifyData(self, algorithm = 'auto'):
         """Stratify data.
 
-        Keyword arguments:
-            algorithm -- name of algorithm used for stratification
+        Args:
+            algorithm: name of algorithm used for stratification
                 'none':
                     probabilities of sources are
                     number of all samples / number of samples in source
@@ -336,8 +338,10 @@ class dataset:
                     as defined in the configuration
                 'equal':
                     probabilities of sources are
-                    1 / number of sources"""
-        nemoa.log('stratify data using \'%s\'' % (algorithm))
+                    1 / number of sources
+
+        """
+        nemoa.log("stratify data using '%s'" % (algorithm))
 
         if algorithm.lower() in ['none']:
             allSize = 0
@@ -347,29 +351,29 @@ class dataset:
             return True
         if algorithm.lower() in ['auto']: return True
         if algorithm.lower() in ['equal']:
-            frac = 1.0 / float(len(self.data))
+            frac = 1. / float(len(self.data))
             for src in self.data: self.data[src]['fraction'] = frac
             return True
         return False
 
-    def normalizeData(self, algorithm = 'gauss'):
+    def _normalizeData(self, algorithm = 'gauss'):
         """Normalize stratified data
 
-        Keyword arguments:
-            algorithm -- name of algorithm used for data normalization
-                'gauss', 'z-trans':
-                    Gaussian normalization (aka z-transformation)"""
+        Args:
+            algorithm: name of algorithm used for data normalization
+                'gauss': Gaussian normalization
 
+        """
         nemoa.log('normalize data using \'%s\'' % (algorithm))
 
-        if algorithm.lower() in ['gauss', 'z-trans']:
+        if algorithm.lower() == 'gauss':
 
             # get data for calculation of mean and variance
             # for single source datasets take all data
             # for multi source datasets take a big bunch of stratified data
             if len(self.data.keys()) > 1: data = \
                 self.getData(size = 1000000, output = 'recarray')
-            else: data = self.getSingleSourceData(source = self.data.keys()[0])
+            else: data = self._getSingleSourceData(source = self.data.keys()[0])
 
             # iterative update sources
             # get mean and standard deviation per column (recarray)
@@ -388,7 +392,7 @@ class dataset:
         """Transform dataset.
 
         Args:
-            algorithm -- name of algorithm used for data transformation
+            algorithm: name of algorithm used for data transformation
                 'system':
                     Transform data using nemoa system instance
                 'gaussToBinary':
@@ -397,9 +401,9 @@ class dataset:
                     Transform Gauss distributed values to weights in [0, 1]
                 'gaussToDistance': ??
                     Transform Gauss distributed values to distances in [0, 1]
-            system -- nemoa system instance (nemoa object root class 'system')
+            system: nemoa system instance (nemoa object root class 'system')
                 used for model based transformation of data
-            mapping -- ..."""
+            mapping: ..."""
 
         if not isinstance(algorithm, str): return False
 
@@ -416,7 +420,7 @@ class dataset:
             sourceColumns = system.getUnits(group = mapping[0])[0]
             targetColumns = system.getUnits(group = mapping[-1])[0]
 
-            self.setColLabels(sourceColumns)
+            self._setColLabels(sourceColumns)
             for src in self.data:
                 data = self.data[src]['array']
                 dataArray = data[sourceColumns].view('<f8').reshape(
@@ -440,7 +444,7 @@ class dataset:
 
                 self.data[src]['array'] = newRecArray # set record array
 
-            self.setColLabels(targetColumns)
+            self._setColLabels(targetColumns)
             nemoa.setLog(indent = '-1')
             return True
 
@@ -452,7 +456,7 @@ class dataset:
                 for colName in self.data[src]['array'].dtype.names[1:]:
                     # update source data columns
                     self.data[src]['array'][colName] = \
-                        (self.data[src]['array'][colName] > 0.0
+                        (self.data[src]['array'][colName] > 0.
                         ).astype(float)
             return True
 
@@ -464,7 +468,7 @@ class dataset:
                 for colName in self.data[src]['array'].dtype.names[1:]:
                     # update source data columns
                     self.data[src]['array'][colName] = \
-                        (2.0 / (1.0 + numpy.exp(-1.0 * \
+                        (2. / (1. + numpy.exp(-1. * \
                         self.data[src]['array'][colName] ** 2))
                         ).astype(float)
             return True
@@ -477,7 +481,7 @@ class dataset:
                 # update source per column (recarray)
                 for colName in self.data[src]['array'].dtype.names[1:]:
                     self.data[src]['array'][colName] = \
-                        (1.0 - (2.0 / (1.0 + numpy.exp(-1.0 * \
+                        (1. - (2. / (1. + numpy.exp(-1.0 * \
                         self.data[src]['array'][colName] ** 2)))
                         ).astype(float)
             return True
@@ -491,17 +495,17 @@ class dataset:
         return retVal[1][retVal[0].index(row)]
 
     def getData(self, size = 0, rows = '*', cols = '*',
-        corruption = (None, 0.0), output = 'array'):
+        corruption = (None, 0.), output = 'array'):
         """Return a given number of stratified samples.
 
         Args:
-            size -- Size of data (Number of samples)
+            size: Size of data (Number of samples)
                 default: value 0 returns all samples unstratified
-            rows -- string describing row filter (row groups)
+            rows: string describing row filter (row groups)
                 default: value '*' selects all rows
-            cols -- string describing column filter (column group)
+            cols: string describing column filter (column group)
                 default: value '*' selects all columns
-            corruption -- 2-tuple describing artificial data corruption
+            corruption: 2-tuple describing artificial data corruption
                 first entry of tuple: type of corruption / noise model
                     'none': no corruption
                     'mask': Masking Noise
@@ -513,19 +517,21 @@ class dataset:
                         with equal possibility
                     default: Value None equals to 'no'
                 second entry of tuple: corruption factor
-                    float in interval [0.0, 1.0] describing the strengt
+                    float in interval [0, 1] describing the strengt
                     of the corruption. The influence of the parameter
                     depends on the corruption type
                     default: Value 0.5
-            fmt -- tuple of strings describing data output. Supported strings:
-                'array': numpy array just containing data
-                'recarray': numpy record array
-                'cols': list with column names
-                'rows': list with row names
-                default: 'array'"""
+            fmt: tuple of strings describing data output. Supported strings:
+                'array': numpy array with data
+                'recarray': numpy record array with data
+                'cols': list of column names
+                'rows': list of row names
+                default: 'array'
+
+        """
 
         # Check Configuration and Keyword Arguments
-        if not self.isConfigured(): return nemoa.log('error',
+        if not self._isConfigured(): return nemoa.log('error',
             'could not get data: dataset is not yet configured!')
         if not isinstance(size, int) or size < 0: return nemoa.log(
             'error', 'could not get data: invalid argument size!')
@@ -533,44 +539,46 @@ class dataset:
         # Stratify and filter data
         srcStack = ()
         for source in self.data.keys():
-            if size > 0: srcData = self.getSingleSourceData(source,
+            if size > 0: srcData = self._getSingleSourceData(source,
                 size = size + 1, rows = rows)
-            else: srcData = self.getSingleSourceData(source, rows = rows)
+            else: srcData = self._getSingleSourceData(source, rows = rows)
             if srcData == False or srcData.size == 0: continue
             srcStack += (srcData, )
         if not srcStack: return nemoa.log('error',
             'could not get data: no valid data sources found!')
         data = numpy.concatenate(srcStack)
 
-        # Shuffle data and correct size (optionally)
+        # (optionally) Shuffle data and correct size
         if size:
             numpy.random.shuffle(data)
             data = data[:size]
 
         # Format data
-        if isinstance(cols, str): fmtData = self.getFormatedData(
+        if isinstance(cols, str): fmtData = self._getFormatedData(
             data, cols = self.getColLabels(cols), output = output)
-        elif isinstance(cols, list): fmtData = self.getFormatedData(
+        elif isinstance(cols, list): fmtData = self._getFormatedData(
             data, cols = cols, output = output)
         elif isinstance(cols, tuple): fmtData = tuple(
-            [self.getFormatedData(data, cols = self.getColLabels(grp),
+            [self._getFormatedData(data, cols = self.getColLabels(grp),
             output = output) for grp in cols])
         else: return nemoa.log('error', """could not get data:
             invalid argument for columns!""")
 
         # Corrupt data (optionally)
-        return self.getCorruptedData(fmtData, \
+        return self._getCorruptedData(fmtData, \
             type = corruption[0], factor = corruption[1])
 
-    def getSingleSourceData(self, source, size = 0, rows = '*'):
+    def _getSingleSourceData(self, source, size = 0, rows = '*'):
         """Return numpy recarray with data from a single source.
 
         Args:
-            source -- name of data source to get data from
-            size -- number of random choosen samples to return
+            source: name of data source to get data from
+            size: number of random choosen samples to return
                 default: value 0 returns all samples of given source
-            rows -- string describing a row filter using wildcards
-                default: value '*' selects all rows"""
+            rows: string describing a row filter using wildcards
+                default: value '*' selects all rows
+
+        """
 
         # Check source
         if not isinstance(source, str) \
@@ -604,11 +612,11 @@ class dataset:
             size = round(srcFrac * size))
         return numpy.take(srcArray, rowSelect)
 
-    def getCorruptedData(self, data, type = None, factor = 0.5):
+    def _getCorruptedData(self, data, type = None, factor = 0.5):
         """Return numpy array with (partly) corrupted data.
 
         Args:
-            type -- string describing algorithm for corruption
+            type: string describing algorithm for corruption
                 'mask': Masking Noise
                     A fraction of every sample is forced to zero
                 'gauss': Gaussian Noise
@@ -616,27 +624,31 @@ class dataset:
                 'salt': Salt-and-pepper noise
                     A fraction of every sample is forced to min or max
                     with equal possibility
-            factor -- float describing the strengt of the corruption
+            factor: float describing the strengt of the corruption
                 The influence of the parameter depends on the
-                type of the corruption"""
+                type of the corruption
+
+        """
 
         if type in [None, 'none']: return data
         elif type == 'mask': return data * numpy.random.binomial(
             size = data.shape, n = 1, p = 1 - factor)
         elif type == 'gauss': return data + numpy.random.normal(
-            size = data.shape, loc = 0.0, scale = factor)
+            size = data.shape, loc = 0., scale = factor)
         # TODO: implement salt and pepper noise
         #elif type == 'salt': return
         else: return nemoa.log('error',
             "unkown data corruption type '%s'!" % (type))
 
-    def getFormatedData(self, data, cols = '*', output = 'array'):
+    def _getFormatedData(self, data, cols = '*', output = 'array'):
         """Return data in given format.
 
         Args:
-            cols -- name of column group
+            cols: name of column group
                 default: value '*' does not filter columns
-            format"""
+            output: ...
+
+        """
 
         # check columns
         if cols == '*': cols = self.getColLabels()
@@ -683,7 +695,7 @@ class dataset:
                 labels.append('%s:%s' % (col[0], col[1]))
         return labels
 
-    def setColLabels(self, labels):
+    def _setColLabels(self, labels):
         """Set column labels from list of strings."""
         self.cfg['columns'] = tuple([col.split(':') for col in labels])
         return True
@@ -997,7 +1009,8 @@ class dataset:
 
         #return numpy.mean(cCorr)
 
-    def csvGetData(self, name):
+    # TODO: move to nemoa.common
+    def _csvGetData(self, name):
         conf    = self.cfg['table'][name]['source']
         file    = conf['file']
         delim   = conf['delimiter'] if 'delimiter' in conf \
@@ -1020,10 +1033,6 @@ class dataset:
             return nemoa.log('error', 'could not import data from file!')
 
         return data
-
-    #
-    # object configuration handling
-    #
 
     def save(self, file):
         """Export dataset to numpy zip compressed file."""
@@ -1050,19 +1059,19 @@ class dataset:
         nemoa.setLog(indent = '-1')
         return retVal
 
-    def getCacheFile(self, network):
+    def _getCacheFile(self, network):
         """Return cache file path."""
         return '%sdata-%s-%s.npz' % (
             self.cfg['cache_path'], network.cfg['id'], self.cfg['id'])
 
-    def searchCacheFile(self, network):
+    def _searchCacheFile(self, network):
         """Return cache file path if existent."""
-        file = self.getCacheFile(network)
+        file = self._getCacheFile(network)
         return file if os.path.isfile(file) else None
 
-    def createCacheFile(self, network):
+    def _createCacheFile(self, network):
         """Return empty cache file if existent."""
-        file = self.getCacheFile(network)
+        file = self._getCacheFile(network)
         if not os.path.isfile(file):
             basedir = os.path.dirname(file)
             if not os.path.exists(basedir): os.makedirs(basedir)
@@ -1090,17 +1099,17 @@ class dataset:
         if 'cfg' in dict: self.cfg = copy.deepcopy(dict['cfg'])
         return True
 
-    # Metadata of Dataset
-
     def about(self, *args):
         """Return generic information about various parts of the dataset.
 
         Arguments:
-            *args -- tuple of strings, containing a breadcrump trail to
+            *args: tuple of strings, containing a breadcrump trail to
                 a specific information about the dataset
 
         Examples:
-            about()"""
+            about()
+
+        """
 
         if not args: return {
             'name': self.name(),

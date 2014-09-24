@@ -12,15 +12,15 @@ import matplotlib.pyplot
 from matplotlib.patches import FancyArrowPatch, Circle
 
 COLOR = {
-    'black':      (0.000, 0.000, 0.000, 1.000),
-    'white':      (1.000, 1.000, 1.000, 1.000),
-    'red':        (1.000, 0.000, 0.000, 1.000),
-    'green':      (0.000, 0.500, 0.000, 1.000),
-    'blue':       (0.000, 0.000, 0.700, 1.000),
-    'lightgrey':  (0.800, 0.800, 0.800, 1.000),
-    'lightgreen': (0.600, 0.800, 0.196, 1.000),
-    'lightblue':  (0.439, 0.502, 0.565, 1.000),
-    'cornflower': (0.270, 0.510, 0.700, 1.000),
+    'black':      (0.   , 0.   , 0.   , 1.),
+    'white':      (1.   , 1.   , 1.   , 1.),
+    'red':        (1.   , 0.   , 0.   , 1.),
+    'green':      (0.   , 0.5  , 0.   , 1.),
+    'blue':       (0.   , 0.0  , 0.7  , 1.),
+    'lightgrey':  (0.8  , 0.8  , 0.8  , 1.),
+    'lightgreen': (0.6  , 0.8  , 0.196, 1.),
+    'lightblue':  (0.439, 0.502, 0.565, 1.),
+    'cornflower': (0.27 , 0.51 , 0.7  , 1.),
 }
 
 # create A4 figure object figsize = (8.27, 11.69)
@@ -40,13 +40,13 @@ def heatmap(array, **kwargs):
         extent = (0, array.shape[1], 0, array.shape[0]))
 
     # create labels for axis
-    maxFontSize = 12.0
+    maxFontSize = 12.
     yLabels = [nemoa.common.strToUnitStr(label.split(':')[1]) \
         for label in kwargs['units'][0]]
     xLabels = [nemoa.common.strToUnitStr(label.split(':')[1]) \
         for label in kwargs['units'][1]]
     fontsize = min(maxFontSize, \
-        400.0 / float(max(len(xLabels), len(yLabels))))
+        400. / float(max(len(xLabels), len(yLabels))))
     matplotlib.pyplot.xticks(
         numpy.arange(len(xLabels)) + 0.5,
         tuple(xLabels), fontsize = fontsize, rotation = 65)
@@ -81,12 +81,12 @@ def histogram(array, **kwargs):
 
 def graph(graph, **kwargs):
 
-    nodeSizeMax      = 800.0  # maximum node size
-    nodeSizeScale    = 1.85   # node size scale factor
-    fontSizeMax      = 18.0   # maximum font size
-    edgeLineWidthMax = 10.0   # maximum edge line with
-    edgeArrScale     = 8.0    # edge arrow size scale factor
-    edgeRadius       = 0.15   # edge radius for fancy edges
+    nodeSizeMax      = 800.  # maximum node size
+    nodeSizeScale    = 1.85  # node size scale factor
+    fontSizeMax      = 18.   # maximum font size
+    edgeLineWidthMax = 10.   # maximum edge line with
+    edgeArrScale     = 8.    # edge arrow size scale factor
+    edgeRadius       = 0.15  # edge radius for fancy edges
 
     # create figure object
     fig = matplotlib.pyplot.figure()
@@ -115,10 +115,10 @@ def graph(graph, **kwargs):
     # calculate sizes of nodes, fonts and lines depending on graph size
     nCount = float(len(graph))
     nSize = max(nodeSizeMax, nodeSizeScale * nodeSizeMax / nCount)
-    nRadius = numpy.sqrt(nSize) / 480.0
+    nRadius = numpy.sqrt(nSize) / 480.
     fSize = fontSizeMax * numpy.sqrt(nSize / nodeSizeMax)
     nodeFontSizeMax = fSize * 0.9
-    lineWidth = 2.0 / nCount
+    lineWidth = 2. / nCount
     edgeLineWidth = edgeLineWidthMax / nCount
 
     # draw nodes
@@ -150,7 +150,7 @@ def graph(graph, **kwargs):
             font_weight = 'normal')
 
         # patch node for edges
-        c = Circle(pos[node], radius = nRadius, alpha  = 0.0)
+        c = Circle(pos[node], radius = nRadius, alpha  = 0.)
         ax.add_patch(c)
         graph.node[node]['patch'] = c
 
@@ -165,7 +165,7 @@ def graph(graph, **kwargs):
 
         if (u, v) in seen:
             rad = seen.get((u, v))
-            rad = (rad + float(numpy.sign(rad)) * 0.2) * -1.0
+            rad = -(rad + float(numpy.sign(rad)) * 0.2)
 
         arrow = matplotlib.patches.FancyArrowPatch(
             posA            = n1.center,
@@ -201,13 +201,13 @@ def layerGraph(G, **kwargs):
             if layer == 0: continue
             sort = []
             for tgtId, tgtNode in enumerate(tgtNodes):
-                sortOrder = 0.0
+                sortOrder = 0.
                 for srcId, srcNode in enumerate(nodes[layer - 1]):
                     if (srcNode, tgtNode) in G.edges():
                         weight = G.edge[srcNode][tgtNode]['weight']
                     elif (tgtNode, srcNode) in G.edges():
                         weight = G.edge[tgtNode][srcNode]['weight']
-                    else: weight = 0.0
+                    else: weight = 0.
                     sortOrder += float(srcId) * numpy.abs(weight)
                 sort.append((sortOrder, tgtNode))
             nodes[layer] = [srcNode[1] for srcNode in \
@@ -216,7 +216,7 @@ def layerGraph(G, **kwargs):
     # calculate sizes
     nLen  = max([len(layer) for layer in nodes])
     lLen  = len(nodes)
-    scale = min(240.0 / nLen, 150.0 / lLen, 35.0)
+    scale = min(240. / nLen, 150. / lLen, 35.)
     graphNodeSize   = 0.9 * scale ** 2
     graphFontSize   = 0.4 * scale
     graphCaptionPos = -0.0025 * scale
@@ -228,12 +228,12 @@ def layerGraph(G, **kwargs):
     for lId, layer in enumerate(nodes):
         for nId, node in enumerate(layer):
             nPos = (nId + 0.5) / len(layer)
-            lPos = 1.0 - lId / (len(nodes) - 1.0)
+            lPos = 1. - lId / (len(nodes) - 1.)
             pos[node] = {
                 'down': (nPos, lPos),
-                'up': (nPos, 1.0 - lPos),
+                'up': (nPos, 1. - lPos),
                 'left': (lPos, nPos),
-                'right': (1.0 - lPos, nPos)}[kwargs['graphDirection']]
+                'right': (1. - lPos, nPos)}[kwargs['graphDirection']]
             posCap[node] = (pos[node][0], pos[node][1] + graphCaptionPos)
 
     # create figure and axis objects
@@ -273,7 +273,7 @@ def layerGraph(G, **kwargs):
 
             # draw node label
             nodeFontSize = \
-                2.0 * graphFontSize / numpy.sqrt(max(len(node) - 1, 1))
+                2. * graphFontSize / numpy.sqrt(max(len(node) - 1, 1))
             networkx.draw_networkx_labels(
                 G, pos,
                 font_size = nodeFontSize,
@@ -300,7 +300,7 @@ def layerGraph(G, **kwargs):
             color = 'black'
             edgeLineWidth = graphLineWidth * kwargs['edgeScale']
         else:
-            color = 'green' if weight > 0.0 else 'red'
+            color = 'green' if weight > 0. else 'red'
             edgeLineWidth = \
                 weight * graphLineWidth * kwargs['edgeScale']
 
@@ -310,7 +310,7 @@ def layerGraph(G, **kwargs):
             edgelist   = [(v, h)],
             edge_color = color,
             arrows     = False,
-            alpha      = 1.0)
+            alpha      = 1.)
 
         # (optional) draw edge labels
         if kwargs['edgeCaption']:

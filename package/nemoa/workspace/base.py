@@ -540,7 +540,7 @@ class config:
 
         return objConf
 
-    def _checkDataset(self, objConf, frac = 1.0, update = True):
+    def _checkDataset(self, objConf, frac = 1., update = True):
         """Check and update dataset configuration."""
 
         type = objConf['class']

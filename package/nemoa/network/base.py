@@ -250,7 +250,7 @@ class network:
 
                 self.graph.add_edge(
                     src_node_id, tgt_node_id,
-                    weight = 0.0,
+                    weight = 0.,
                     order  = order,
                     params = {'type': edgeLayer, 'layerId': type_id})
 

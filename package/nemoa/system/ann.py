@@ -49,7 +49,7 @@ class ann(nemoa.system.base.system):
         if not network == None: self._setNetwork(network, update)
         if not dataset == None: self._setDataset(dataset)
 
-        return self.isConfigured()
+        return self._isConfigured()
 
     def _updateUnitsAndLinks(self, *args, **kwargs):
 
@@ -230,17 +230,20 @@ class ann(nemoa.system.base.system):
         return True
 
     def _setLinks(self, links):
+        """create link adjacency matrices from units."""
 
-        # update link parameters
         self._params['links'] = {}
-        for layerID in range(len(self._params['units']) - 1):
-            source = self._params['units'][layerID]['name']
-            target = self._params['units'][layerID + 1]['name']
-            x = len(self.units[source].params['label'])
-            y = len(self.units[target].params['label'])
-            self._params['links'][(layerID, layerID + 1)] = {
-                'source': source, 'target': target,
-                'A': numpy.ones([x, y], dtype = bool)}
+        for lid in range(len(self._params['units']) - 1):
+            src = self._params['units'][lid]['name']
+            srcSize = len(self.units[src].params['label'])
+            tgt = self._params['units'][lid + 1]['name']
+            tgtSize = len(self.units[tgt].params['label'])
+
+            self._params['links'][(lid, lid + 1)] = {
+                'source': src,
+                'target': tgt,
+                'A': numpy.ones((srcSize, tgtSize)).astype(float)
+            }
 
         return True
 
@@ -267,7 +270,7 @@ class ann(nemoa.system.base.system):
             x = len(self.units[source].params['label'])
             y = len(self.units[target].params['label'])
             alpha = self._config['init']['wSigma'] \
-                if 'wSigma' in self._config['init'] else 1.0
+                if 'wSigma' in self._config['init'] else 1.
             sigma = numpy.ones([x, 1], dtype = float) * alpha / x
 
             if dataset == None: random = \
@@ -534,10 +537,10 @@ class ann(nemoa.system.base.system):
             return update
 
         # RProp parameters
-        accel     = (0.5, 1.0, 1.2)
+        accel     = (0.5, 1., 1.2)
         initRate  = 0.001
         minFactor = 0.000001
-        maxFactor = 50.0
+        maxFactor = 50.
 
         layers = self.getMapping()
 
@@ -636,7 +639,7 @@ class ann(nemoa.system.base.system):
             'description': 'sum of local unit and link energies',
             'method': '_evalSystemEnergy',
             'args': 'all', 'format': '%.3f',
-            'optimum': 'max'},
+            'optimum': 'min'},
         'error': {
             'name': 'average reconstruction error',
             'description': 'mean error of reconstructed values',
@@ -673,7 +676,7 @@ class ann(nemoa.system.base.system):
         """Sum of local link and unit energies."""
 
         mapping = list(self.getMapping())
-        energy = 0.0
+        energy = 0.
 
         # sum local unit energies
         for i in range(1, len(mapping) + 1):
@@ -1094,7 +1097,7 @@ class ann(nemoa.system.base.system):
         normres = self._getDataMean(res, norm = norm)
         normdat = self._getDataMean(data[1], norm = norm)
 
-        return 1.0 - normres / normdat
+        return 1. - normres / normdat
 
     def _evalUnitPrecision(self, data, norm = 'SD', **kwargs):
         """Return unit reconstruction precision.
@@ -1119,7 +1122,7 @@ class ann(nemoa.system.base.system):
         devres = self._getDataDeviation(res, norm = norm)
         devdat = self._getDataDeviation(data[1], norm = norm)
 
-        return 1.0 - devres / devdat
+        return 1. - devres / devdat
 
     def _evalUnitCorrelation(self, data, mapping = None, block = None, **kwargs):
         """Correlation reconstructed unit values.
@@ -1209,7 +1212,7 @@ class ann(nemoa.system.base.system):
             'description': 'local energy of links',
             'method': '_evalLinkEnergy',
             'show': 'graph',
-            'args': 'input', 'return': 'scalar', 'format': '%.3f'}
+            'args': 'input', 'return': 'vector', 'format': '%.3f'}
         }
 
     def _evalLinkEnergy(self, data, mapping = None, **kwargs):
@@ -1491,7 +1494,7 @@ class ann(nemoa.system.base.system):
         return R
 
     def _evalRelationInduction(self, data, mapping = None,
-        points = 10, amplify = 2.0, gauge = 0.05, **kwargs):
+        points = 10, amplify = 2., gauge = 0.05, **kwargs):
         """Induced deviation from source to target units.
 
         For each sample and for each source the induced deviation on
@@ -1549,7 +1552,7 @@ class ann(nemoa.system.base.system):
                 sign = numpy.sign(corr.mean())
 
                 # calculate norm by mean over maximum 5% of data
-                bound = int((1.0 - gauge) * data[0].shape[0])
+                bound = int((1. - gauge) * data[0].shape[0])
                 subset = numpy.sort(C[oUnit].std(axis = 1))[bound:]
                 norm = subset.mean() / data[1][:, oId].std()
 
@@ -1595,37 +1598,15 @@ class ann(nemoa.system.base.system):
         @staticmethod
         def energy(dSrc, dTgt, src, tgt, links, calc = 'mean'):
             """Return link energy as numpy array."""
-            W = links['W']
-            A = links['A']
 
-            E = numpy.zeros((dSrc.shape[0], W.shape[0], W.shape[1]))
-            for i in xrange(E.shape[0]):
-                if src['class'] == 'gauss':
-                    dSrcArr = (dSrc[i,:].reshape(1, dSrc[i,:].size) \
-                        / numpy.sqrt(numpy.exp(src['lvar']))).T
-                elif src['class'] == 'sigmoid':
-                    dSrcArr = dSrc[i,:].reshape(dSrc[i,:].size, 1)
-                dTgtArr = dTgt[i,:].reshape(1, dTgt[i,:].size)
-                E[i,:,:] =  -A * W * numpy.dot(dSrcArr, dTgtArr)
+            if src['class'] == 'gauss':
+                M = - links['A'].astype(float) * links['W'] \
+                    / numpy.sqrt(numpy.exp(src['lvar'])).T
+            elif src['class'] == 'sigmoid':
+                M = - links['A'].astype(float) * links['W']
+            else: return nemoa.log('error', 'unsupported unit class')
 
-            return E
-
-            #if linkClass == ('gauss', 'gauss'):
-                #dSize = float(dSrc.shape[0])
-                #srcVar = numpy.exp(src['lvar'])
-                #return -(A * W * numpy.dot((dSrc / srcVar).T, dTgt) / dSize)
-            #if linkClass == ('gauss', 'sigmoid'):
-                #dSize = float(dSrc.shape[0])
-                #return -(A * W * numpy.dot(dSrc.T, dTgt) / dSize)
-            #if linkClass == ('sigmoid', 'gauss'):
-                #dSize = float(dSrc.shape[0])
-                #srcVar = numpy.exp(src['lvar'])
-                #return -(A * W * numpy.dot((dSrc / srcVar).T, dTgt) / dSize)
-            #if linkClass == ('sigmoid', 'sigmoid'):
-                #dSize = float(dSrc.shape[0])
-                #return -(A * W * numpy.dot(dSrc.T, dTgt) / dSize)
-
-            #return False
+            return numpy.einsum('ij,ik,jk->ijk', dSrc, dTgt, M)
 
         @staticmethod
         def getUpdates(data, model):
@@ -1808,8 +1789,8 @@ class ann(nemoa.system.base.system):
 
             numpy.seterr(over = 'ignore')
 
-            return ((1.0 / (1.0 + numpy.exp(-x)))
-                * (1.0 - 1.0 / (1.0 + numpy.exp(-x))))
+            return ((1. / (1. + numpy.exp(-x)))
+                * (1. - 1. / (1. + numpy.exp(-x))))
 
         @staticmethod
         def getValues(data):
@@ -1925,7 +1906,7 @@ class ann(nemoa.system.base.system):
         def grad(x):
             """Return gradient of activation function."""
 
-            return 1.0
+            return 1.
 
         @staticmethod
         def check(layer):

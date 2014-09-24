@@ -20,7 +20,7 @@ class graph(nemoa.plot.base.plot):
         'edgeCaption': None,
         'edgeWeight': 'normal',
         'edgeSignNormalize': True,
-        'edgeIntensify': 10.0,
+        'edgeIntensify': 10.,
         'edgeThreshold': 0.25,
         'edgeScale': 1.5 }
 
@@ -34,7 +34,7 @@ class graph(nemoa.plot.base.plot):
             caption = model.eval('system', 'units', self.settings['nodeCaption'])
             if caption:
                 for node in caption.keys(): graph.node[node]['caption'] = \
-                    ' $%i' % (round(100.0 * caption[node])) + '\%$'
+                    ' $%i' % (round(100. * caption[node])) + '\%$'
 
         # (optional) calculate graph caption
         if self.settings['graphCaption']:
@@ -42,7 +42,7 @@ class graph(nemoa.plot.base.plot):
             if caption:
                 name = model.about('system', self.settings['graphCaption'])['name'].title()
                 graph.graph['caption'] = \
-                    name + ': $%i' % (round(100.0 * caption)) + '\%$'
+                    name + ': $%i' % (round(100. * caption)) + '\%$'
 
         # update edge weights
         for (u, v) in graph.edges():
@@ -50,14 +50,14 @@ class graph(nemoa.plot.base.plot):
                 graph.edge[u][v]['params'][self.settings['edgeWeight']]
 
             # (optional) intensify weights
-            if self.settings['edgeIntensify'] > 0.0:
+            if self.settings['edgeIntensify'] > 0.:
                 graph.edge[u][v]['weight'] = \
                     nemoa.common.intensify(graph.edge[u][v]['weight'],
                         factor = self.settings['edgeIntensify'],
-                        bound = 1.0) # 2do: set bound to mean value
+                        bound = 1.) # 2do: set bound to mean value
 
             # (optional) threshold weights
-            if self.settings['edgeThreshold'] > 0.0:
+            if self.settings['edgeThreshold'] > 0.:
                 if not numpy.abs(graph.edge[u][v]['weight']) \
                     > self.settings['edgeThreshold']:
                     graph.remove_edge(u, v)

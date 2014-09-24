@@ -69,7 +69,7 @@ class system:
         self._config['check']['config'] = True
         return True
 
-    def isConfigured(self):
+    def _isConfigured(self):
         """Return configuration state of system."""
         return self._config['check']['config'] \
             and self._config['check']['network'] \
@@ -701,7 +701,7 @@ class tracker:
             func  = cfg['trackerEvalFunction']
             prop  = self._system.about(func)
             value = self._system.eval(data = self._data, func = func)
-            out   = 'final: %s = ' + prop['format']
+            out   = 'found optimum with: %s = ' + prop['format']
             self._state['evalEnable'] = False
             return nemoa.log('note', out % (prop['name'], value))
 
