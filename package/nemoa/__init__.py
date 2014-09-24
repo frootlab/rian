@@ -2,10 +2,10 @@
 """nemoa data analysis and visualization.
 
 Nemoa is a python package for designing and building complex systems of
-stacked artificial neural networks. The key goal of this project is to
-provide an intuitive framework for designing data transformations which
-implement given requirements and also respect local and global
-restrictions of the underlying data structure.
+stacked artificial neural networks. This allows the creation,
+transformation and analysis of datasets by using or introducing general
+structural assumptions like noise models or sparsity.
+
 """
 
 __version__ = '0.4.107'
