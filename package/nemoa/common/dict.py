@@ -36,7 +36,7 @@ def dictToArray(dict, axes):
     arr = numpy.zeros(shape = (len(axes[0]), len(axes[1])))
     for i, x in enumerate(axes[0]):
         for j, y in emumerate(axes[1]): arr[i, j] = dict[(x, y)] \
-            if (x, y) in dict else 0.0
+            if (x, y) in dict else 0.
     return arr
 
 def printDict(dict):

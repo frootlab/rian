@@ -711,7 +711,7 @@ class tracker:
             prop  = self._system.about(func)
             value = self._system.eval(data = self._data, func = func)
             progr = float(self._state['epoch']) \
-                / float(cfg['updates']) * 100.0
+                / float(cfg['updates']) * 100.
 
             # update time of last evaluation
             self._state['evalPrevTime'] = now

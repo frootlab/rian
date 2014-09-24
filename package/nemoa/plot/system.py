@@ -81,7 +81,7 @@ class graph(nemoa.plot.base.plot):
             statistics    = self.settings['statistics'])
         if not isinstance(SR, dict): return nemoa.log('error',
             'could not create relation graph: invalid sign relation!')
-        S = {edge: 2.0 * (float(SR[edge] > 0.0) - 0.5) for edge in edges}
+        S = {edge: 2. * (float(SR[edge] > 0.) - 0.5) for edge in edges}
 
         # create graph and set name
         graph = networkx.MultiDiGraph(name = relInfo['name'])

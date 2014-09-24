@@ -6,12 +6,12 @@ __license__ = 'GPLv3'
 
 import numpy
 
-def intensify(x, factor = 10.0, bound = 1.0):
+def intensify(x, factor = 10., bound = 1.):
     """Return intensify function."""
     return numpy.abs(x) * (sigmoid(factor * (x + 0.5 * bound))
-        + sigmoid(factor * (x - 0.5 * bound)) - 1.0) \
+        + sigmoid(factor * (x - 0.5 * bound)) - 1.) \
         / numpy.abs(sigmoid(1.5 * factor * bound)
-        + sigmoid(0.5 * factor * bound) - 1.0)
+        + sigmoid(0.5 * factor * bound) - 1.)
 
 def sigmoid(x):
     """Return standard sigmoid function."""
@@ -23,12 +23,12 @@ def Dsigmoid(x):
 
 def logistic(x):
     """Return standard logistic function."""
-    return 1.0 / (1.0 + numpy.exp(-x))
+    return 1. / (1. + numpy.exp(-x))
 
 def Dlogistic(x):
     """Return derivation of standard logistic function."""
-    return ((1.0 / (1.0 + numpy.exp(-x)))
-        * (1.0 - 1.0 / (1.0 + numpy.exp(-x))))
+    return ((1. / (1. + numpy.exp(-x)))
+        * (1. - 1. / (1. + numpy.exp(-x))))
 
 def tanh(x):
     """Return standard hyperbolic tangens function."""
@@ -36,7 +36,7 @@ def tanh(x):
 
 def Dtanh(x):
     """Return derivation of standard hyperbolic tangens function."""
-    return 1.0 - numpy.tanh(x) ** 2
+    return 1. - numpy.tanh(x) ** 2
 
 def tanhEff(x):
     """Return hyperbolic tangens function, proposed in paper:

@@ -481,7 +481,7 @@ class dataset:
                 # update source per column (recarray)
                 for colName in self.data[src]['array'].dtype.names[1:]:
                     self.data[src]['array'][colName] = \
-                        (1. - (2. / (1. + numpy.exp(-1.0 * \
+                        (1. - (2. / (1. + numpy.exp(-1. * \
                         self.data[src]['array'][colName] ** 2)))
                         ).astype(float)
             return True

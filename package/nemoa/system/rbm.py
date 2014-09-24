@@ -371,9 +371,9 @@ class rbm(nemoa.system.ann.ann):
         shape = self._params['links'][(0, 1)]['W'].shape
         r = initRate ** 2 / cfg['updateRate'] * cfg['updateFactorWeights']
         temperature = self._optSaTemperature(tracker)
-        if temperature == 0.0: return {}
+        if temperature == 0.: return {}
         sigma = r * temperature
-        W = numpy.random.normal(0.0, sigma, shape)
+        W = numpy.random.normal(0., sigma, shape)
 
         return { 'W': W }
 
@@ -386,9 +386,9 @@ class rbm(nemoa.system.ann.ann):
         cycles    = float(config['modSaAnnealingCycles'])
         updates   = int(float(config['updates']) / cycles)
         epoch     = float(tracker.get('epoch') % updates)
-        heat      = init * (1.0 - epoch / float(updates)) ** annealing
+        heat      = init * (1. - epoch / float(updates)) ** annealing
 
-        if heat < config['modSaMinTemperature']: return 0.0
+        if heat < config['modSaMinTemperature']: return 0.
         return heat
 
     def _getUnitsFromConfig(self):

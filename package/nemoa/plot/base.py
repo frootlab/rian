@@ -92,7 +92,7 @@ class plot:
                     and isinstance(self.settings['title'], str):
                     title = self.settings['title']
                 else: title = self._getTitle(model)
-                matplotlib.pyplot.title(title, fontsize = 11.0)
+                matplotlib.pyplot.title(title, fontsize = 11.)
 
             # output
             if file: matplotlib.pyplot.savefig(file,
