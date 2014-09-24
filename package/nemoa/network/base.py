@@ -109,7 +109,7 @@ class network:
         """Configure network to dataset and system."""
 
         # check if network instance is empty
-        if self._isEmpty(): return nemoa.log(
+        if self._is_empty(): return nemoa.log(
             "configuration is not needed: network is 'empty'.")
 
         # check if dataset instance is available
@@ -157,7 +157,7 @@ class network:
         nemoa.setLog(indent = '-1')
         return True
 
-    def _isEmpty(self):
+    def _is_empty(self):
         """Return true if network type is 'empty'."""
         return self.cfg['type'] == 'empty'
 

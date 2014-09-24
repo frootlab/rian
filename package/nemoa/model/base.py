@@ -33,7 +33,7 @@ class model:
         self.network = network
         self.system  = system
 
-        if self._isEmpty(): return
+        if self._is_empty(): return
         if not self._checkModel(): return
         self.updateConfig()
 
@@ -125,7 +125,7 @@ class model:
         nemoa.setLog(indent = '-1')
         return True
 
-    def _isConfigured(self):
+    def _is_configured(self):
         """Return True if model is allready configured."""
         return 'check' in self._config \
             and self._config['check']['dataset'] \
@@ -139,10 +139,10 @@ class model:
 
         # check if model is empty and can not be initialized
         if (self.dataset == None or self.system == None) \
-            and self._isEmpty(): return self
+            and self._is_empty(): return self
 
         # check if model is configured
-        if not self._isConfigured():
+        if not self._is_configured():
             nemoa.log('error', """could not initialize model parameters:
                 model is not yet configured!""")
             return False
@@ -158,10 +158,10 @@ class model:
             nemoa.log('error', """could not initialize model parameters:
                 system is not yet configured!""")
             return False
-        elif self.system._isEmpty(): return False
+        elif self.system._is_empty(): return False
 
         # initialize system parameters
-        self.system.initParams(self.dataset)
+        self.system.initialize(self.dataset)
 
         # update network
         self.system.updateNetwork(self.network)
@@ -175,13 +175,13 @@ class model:
         nemoa.setLog(indent = '+1')
 
         # check if model is empty
-        if self._isEmpty():
+        if self._is_empty():
             nemoa.log('warning', "empty models can not be optimized!")
             nemoa.setLog(indent = '-1')
             return self
 
         # check if model is configured
-        if not self._isConfigured():
+        if not self._is_configured():
             nemoa.log('error',
                 'could not optimize model: model is not yet configured!')
             nemoa.setLog(indent = '-1')
@@ -209,9 +209,9 @@ class model:
         # TODO: find better solution for multistage optimization
         if 'stage' in schedule and len(schedule['stage']) > 0:
             for stage, params in enumerate(config['stage']):
-                self.system.optimizeParams(self.dataset, **params)
+                self.system.optimize(self.dataset, **params)
         elif 'params' in schedule:
-            self.system.optimizeParams(
+            self.system.optimize(
                 dataset = self.dataset, schedule = schedule)
 
         nemoa.setLog(indent = '-1')
@@ -222,7 +222,7 @@ class model:
         nemoa.setLog(indent = '-1')
         return self
 
-    def _setDataset(self, dataset):
+    def _set_dataset(self, dataset):
         """Set dataset."""
         self.dataset = dataset
         return True
@@ -252,7 +252,7 @@ class model:
             return False
 
         # check if dataset is empty
-        if self.dataset._isEmpty(): return True
+        if self.dataset._is_empty(): return True
 
         # prepare params
         if not network and not self.network:
@@ -263,7 +263,7 @@ class model:
         return self.dataset.configure(network = network \
             if not network == None else self.network)
 
-    def _setNetwork(self, network):
+    def _set_network(self, network):
         """Set network."""
         self.network = network
         return True
@@ -289,7 +289,7 @@ class model:
             no network instance available!""")
 
         # check if network instance is empty
-        if self.network._isEmpty(): return True
+        if self.network._is_empty(): return True
 
         # check if dataset instance is available
         if self.dataset == None and dataset == None: return nemoa.log(
@@ -319,11 +319,11 @@ class model:
         """Return data from dataset."""
         if not nemoa.type.isDataset(dataset): dataset = self.dataset
         if not isinstance(layer, str):
-            i = self.system.getMapping()[0]
-            o = self.system.getMapping()[-1]
+            i = self.system.mapping()[0]
+            o = self.system.mapping()[-1]
             return dataset.getData(cols = (i, o), **kwargs)
-        mapping = self.system.getMapping(tgt = layer)
-        data = dataset.getData(cols = self.system.getMapping()[0], **kwargs)
+        mapping = self.system.mapping(tgt = layer)
+        data = dataset.getData(cols = self.system.mapping()[0], **kwargs)
         return self.system.mapData(data, mapping = mapping, transform = transform)
 
     def eval(self, *args, **kwargs):
@@ -459,7 +459,7 @@ class model:
         else: plot = None
 
         # check if model is configured
-        if not self._isConfigured():
+        if not self._is_configured():
             nemoa.log('error', """could not create plot of model:
                 model is not yet configured!""")
             nemoa.setLog(indent = '-1')
@@ -595,7 +595,7 @@ class model:
         self._config['name'] = name
         return self
 
-    def _isEmpty(self):
+    def _is_empty(self):
         """Return true if model is empty."""
         return not 'name' in self._config or not self._config['name']
 

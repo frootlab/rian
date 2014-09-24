@@ -47,34 +47,34 @@ class dbn(nemoa.system.ann.ann):
             'ignoreUnits': [],
             'wSigma': 0.5 },
         'optimize': {
-            'preTraining': True,
-            'fineTuning': True,
+            'pretraining': True,
+            'finetuning': True,
             'checkDataset': False,
             'ignoreUnits': [],
             'algorithm': 'bprop',
-            'modCorruptionEnable': False,
-            'minibatchSize': 100,
-            'minibatchInterval': 10,
+            'mod_corruption_enable': False,
+            'minibatch_size': 100,
+            'minibatch_update_interval': 10,
             'updates': 10000,
             'schedule': None,
             'visible': None,
             'hidden': None,
             'useAdjacency': False,
-            'trackerObjFunction': 'error',
-            'trackerEvalTimeInterval': 10. ,
-            'trackerEstimateTime': True,
-            'trackerEstimateTimeWait': 15. }}[key]
+            'tracker_obj_function': 'error',
+            'tracker_eval_time_interval': 10. ,
+            'tracker_estimate_time': True,
+            'tracker_estimate_timeWait': 15. }}[key]
 
-    def _checkNetwork(self, network):
+    def _check_network(self, network):
         return network._isDBNCompatible()
 
-    def _getUnitsFromConfig(self):
+    def _get_units_from_config(self):
         return None
 
-    def _getLinksFromNetwork(self, network):
+    def _get_links_from_network(self, network):
         return None
 
-    def _optParams(self, dataset, schedule, tracker):
+    def _optimize_params(self, dataset, schedule, tracker):
         """Optimize system parameters."""
 
         # get configuration dictionary for optimization
@@ -83,18 +83,18 @@ class dbn(nemoa.system.ann.ann):
         # optionally 'pretraining' of model
         # perform forward optimization of ann using
         # restricted boltzmann machines as subsystems
-        if config['preTraining']: self._optPreTraining(
+        if config['pretraining']: self._optimize_pretraining(
             dataset, schedule, tracker)
 
         # optionally 'finetuning' of model
         # perform backward optimization of ann
         # using backpropagation of error
-        if config['fineTuning']: self._optFineTuning(
+        if config['finetuning']: self._optimize_finetuning(
             dataset, schedule, tracker)
 
         return True
 
-    def _optPreTraining(self, dataset, schedule, tracker):
+    def _optimize_pretraining(self, dataset, schedule, tracker):
         """Pretraining model using restricted boltzmann machines."""
 
         nemoa.log('note', 'pretraining model')
@@ -196,10 +196,10 @@ class dbn(nemoa.system.ann.ann):
             dataset.setColFilter('visible', system.getUnits(group = 'visible'))
 
             # initialize (free) system parameters
-            system.initParams(dataset)
+            system.initialize(dataset)
 
             # optimize (free) system parameter
-            system.optimizeParams(dataset, schedule)
+            system.optimize(dataset, schedule)
 
         # reset data to initial state (before transformation)
         dataset._set(**datasetCopy)
@@ -210,7 +210,7 @@ class dbn(nemoa.system.ann.ann):
         nemoa.setLog(indent = '+1')
 
         # keep original inputs and outputs
-        mapping = self.getMapping()
+        mapping = self.mapping()
         inputs = self.units[mapping[0]].params['label']
         outputs = self.units[mapping[-1]].params['label']
 
@@ -245,13 +245,13 @@ class dbn(nemoa.system.ann.ann):
         # Remove input units from output layer, and vice versa
 
         nemoa.log('cleanup unit and linkage parameter arrays')
-        self._removeUnits(self.getMapping()[0], outputs)
-        self._removeUnits(self.getMapping()[-1], inputs)
+        self._remove_units(self.mapping()[0], outputs)
+        self._remove_units(self.mapping()[-1], inputs)
 
         nemoa.setLog(indent = '-2')
         return True
 
-    def _optFineTuning(self, dataset, schedule, tracker):
+    def _optimize_finetuning(self, dataset, schedule, tracker):
         """Finetuning model using backpropagation of error."""
 
         nemoa.log('note', 'finetuning model')
@@ -261,9 +261,9 @@ class dbn(nemoa.system.ann.ann):
 
         algorithm = self._config['optimize']['algorithm'].lower()
 
-        if algorithm == 'bprop': self._optBPROP(
+        if algorithm == 'bprop': self._optimize_bprop(
             dataset, schedule, tracker)
-        elif algorithm == 'rprop': self._optRPROP(
+        elif algorithm == 'rprop': self._optimize_rprop(
             dataset, schedule, tracker)
         else: nemoa.log('error', "unknown gradient '%s'!" % (algorithm))
 

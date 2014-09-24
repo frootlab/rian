@@ -29,7 +29,7 @@ class dataset:
         """Return configuration as dictionary."""
         return self.cfg.copy()
 
-    def _isEmpty(self):
+    def _is_empty(self):
         """Return true if dataset is empty."""
         return not 'name' in self.cfg or not self.cfg['name']
 
@@ -85,7 +85,7 @@ class dataset:
 
         return True
 
-    def _isConfigured(self):
+    def _is_configured(self):
         """Return true if dataset is configured."""
         return len(self.data.keys()) > 0
 
@@ -415,7 +415,7 @@ class dataset:
             nemoa.log('transform data using system \'%s\'' % (system.name()))
             nemoa.setLog(indent = '+1')
 
-            if mapping == None: mapping = system.getMapping()
+            if mapping == None: mapping = system.mapping()
 
             sourceColumns = system.getUnits(group = mapping[0])[0]
             targetColumns = system.getUnits(group = mapping[-1])[0]
@@ -531,7 +531,7 @@ class dataset:
         """
 
         # Check Configuration and Keyword Arguments
-        if not self._isConfigured(): return nemoa.log('error',
+        if not self._is_configured(): return nemoa.log('error',
             'could not get data: dataset is not yet configured!')
         if not isinstance(size, int) or size < 0: return nemoa.log(
             'error', 'could not get data: invalid argument size!')

@@ -69,7 +69,7 @@ class plot:
         elif list(self.settings['path'])[0] == 'system':
 
             # assert units
-            mapping = model.system.getMapping()
+            mapping = model.system.mapping()
             iUnits  = model.units(group = mapping[0])[0]
             oUnits  = model.units(group = mapping[-1])[0]
             if not isinstance(self.settings['units'], tuple) \

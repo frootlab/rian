@@ -8,8 +8,9 @@ multilayer network topologies DBNs usually show better performance than
 plain ANNs.
 
 References:
-    "Learning representations by back-propagating errors",
-    Rumelhart, D. E., Hinton, G. E., and Williams, R. J. (1986)
+    (1) "Learning representations by back-propagating errors",
+        Rumelhart, D. E., Hinton, G. E., and Williams, R. J. (1986)
+
 """
 
 __author__  = 'Patrick Michl'
@@ -29,8 +30,9 @@ class ann(nemoa.system.base.system):
     better performance than plain ANNs.
 
     References:
-        "Learning representations by back-propagating errors",
-        Rumelhart, D. E., Hinton, G. E., and Williams, R. J. (1986)
+        (1) "Learning representations by back-propagating errors",
+            Rumelhart, D. E., Hinton, G. E., and Williams, R. J. (1986)
+
     """
 
     def _configure(self, config = {},
@@ -46,12 +48,12 @@ class ann(nemoa.system.base.system):
         if not 'check' in self._config: self._config['check'] = {
             'config': False, 'network': False, 'dataset': False}
         self._setConfig(config)
-        if not network == None: self._setNetwork(network, update)
-        if not dataset == None: self._setDataset(dataset)
+        if not network == None: self._set_network(network, update)
+        if not dataset == None: self._set_dataset(dataset)
 
-        return self._isConfigured()
+        return self._is_configured()
 
-    def _updateUnitsAndLinks(self, *args, **kwargs):
+    def _update_units_and_links(self, *args, **kwargs):
 
         nemoa.log('update system units and links')
         self.setUnits(self._params['units'], initialize = False)
@@ -59,7 +61,7 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _setNetwork(self, network, update = False, *args, **kwargs):
+    def _set_network(self, network, update = False, *args, **kwargs):
         """Update units and links to network instance."""
 
         nemoa.log("""get system units and links
@@ -72,9 +74,9 @@ class ann(nemoa.system.base.system):
             nemoa.setLog(indent = '-1')
             return False
 
-        self.setUnits(self._getUnitsFromNetwork(network),
+        self.setUnits(self._get_units_from_network(network),
             initialize = (update == False))
-        self.setLinks(self._getLinksFromNetwork(network),
+        self.setLinks(self._get_links_from_network(network),
             initialize = (update == False))
 
         self._config['check']['network'] = True
@@ -82,7 +84,7 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _setDataset(self, dataset, *args, **kwargs):
+    def _set_dataset(self, dataset, *args, **kwargs):
         """check if dataset columns match with visible units."""
 
         # check dataset instance
@@ -91,7 +93,7 @@ class ann(nemoa.system.base.system):
             dataset instance is not valid.""")
 
         # compare visible units labels with dataset columns
-        mapping = self.getMapping()
+        mapping = self.mapping()
         unitsInGroups = self.getUnits(visible = True)
         units = []
         for group in unitsInGroups: units += group
@@ -102,13 +104,13 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _checkParams(self, params):
+    def _check_params(self, params):
         """Check if system parameter dictionary is valid. """
 
-        return self._checkUnitParams(params) \
-            and self._checkLinkParams(params)
+        return self._check_unit_params(params) \
+            and self._check_link_params(params)
 
-    def _initUnits(self, dataset = None):
+    def _init_units(self, dataset = None):
         """Initialize unit parameteres.
 
         Args:
@@ -134,7 +136,7 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _setUnits(self, units):
+    def _set_units(self, units):
         """Create instances for units."""
 
         if not isinstance(units, list): return False
@@ -163,7 +165,7 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _checkUnitParams(self, params):
+    def _check_unit_params(self, params):
         """Check if system parameter dictionary is valid respective to units. """
 
         if not isinstance(params, dict) \
@@ -181,7 +183,7 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _getUnitsFromNetwork(self, network):
+    def _get_units_from_network(self, network):
         """Return tuple with lists of unit labels from network."""
 
         units = [{'name': layer, 'label': network.nodes(type = layer)}
@@ -192,14 +194,7 @@ class ann(nemoa.system.base.system):
 
         return units
 
-    def _getUnitInformation(self, unit, layer = None):
-        """Return dict information for a given unit."""
-
-        if not layer: layer = self.getGroupOfUnit(unit)
-        if not layer in self.units: return {}
-        return self.units[layer].get(unit)
-
-    def _removeUnits(self, layer = None, label = []):
+    def _remove_units(self, layer = None, label = []):
         """Remove units from parameter space. """
 
         if not layer == None and not layer in self.units.keys():
@@ -225,11 +220,11 @@ class ann(nemoa.system.base.system):
             self._SigmoidUnits.remove(layer, select)
 
         # delete units from link parameter arrays
-        self._removeUnitsLinks(layer, select)
+        self._remove_units_links(layer, select)
 
         return True
 
-    def _setLinks(self, links):
+    def _set_links(self, links):
         """create link adjacency matrices from units."""
 
         self._params['links'] = {}
@@ -247,7 +242,7 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _initLinks(self, dataset = None):
+    def _init_links(self, dataset = None):
         """Initialize link parameteres (weights).
 
         If dataset is None, initialize weights matrices with zeros
@@ -295,7 +290,7 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _checkLinkParams(self, params):
+    def _check_link_params(self, params):
         """Check if system parameter dictionary is valid respective to links."""
 
         if not isinstance(params, dict) \
@@ -308,7 +303,7 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _indexLinks(self):
+    def _index_links(self):
 
         self._links = {units: {'source': {}, 'target': {}}
             for units in self.units.keys()}
@@ -326,7 +321,7 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _getWeightsFromLayers(self, source, target):
+    def _get_weights_from_layers(self, source, target):
         """Return ..."""
 
         if self._config['optimize']['useAdjacency']:
@@ -346,7 +341,7 @@ class ann(nemoa.system.base.system):
             Layer '%s' and layer '%s' are not connected.
             """ % (source['name'], target['name']))
 
-    def _getLinksFromConfig(self):
+    def _get_links_from_config(self):
         """Return links from adjacency matrix. """
 
         groups = self.getGroups()
@@ -368,7 +363,7 @@ class ann(nemoa.system.base.system):
 
         return links
 
-    def _removeUnitsLinks(self, layer, select):
+    def _remove_units_links(self, layer, select):
         """Remove links to a given list of units."""
 
         links = self._links[layer['name']]
@@ -386,44 +381,45 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _initParams(self, dataset = None):
+    def _init_params(self, dataset = None):
         """Initialize system parameters.
 
         Initialize all unit and link parameters to dataset.
 
         Args:
-            dataset -- nemoa dataset instance
+            dataset: nemoa dataset instance
+
         """
 
         if not nemoa.type.isDataset(dataset): return nemoa.log(
             'error', """could not initilize system:
             invalid dataset instance given-""")
-        return self._initUnits(dataset) and self._initLinks(dataset)
+        return self._init_units(dataset) and self._init_links(dataset)
 
-    def _optGetData(self, dataset, **kwargs):
+    def _optimize_get_data(self, dataset, **kwargs):
 
         config = self._config['optimize']
-        kwargs['size'] = config['minibatchSize']
-        if config['modCorruptionEnable']: kwargs['corruption'] = \
-            (config['modCorruptionType'], config['modCorruptionFactor'])
+        kwargs['size'] = config['minibatch_size']
+        if config['mod_corruption_enable']: kwargs['corruption'] = \
+            (config['mod_corruption_type'], config['mod_corruption_factor'])
         return dataset.getData(**kwargs)
 
-    def _optGetValues(self, data):
+    def _optimize_get_values(self, data):
         """Forward pass (compute estimated values, from given input). """
 
-        mapping = self.getMapping()
+        mapping = self.mapping()
         out = {}
         for lid, layer in enumerate(mapping):
             if lid == 0: out[layer] = data
-            else: out[layer] = self._evalUnitExpect(
+            else: out[layer] = self._eval_unit_expect(
                 out[mapping[lid - 1]], mapping[lid - 1:lid + 1])
 
         return out
 
-    def _optGetDeltas(self, outputData, out):
+    def _optimize_get_deltas(self, outputData, out):
         """Return weight delta from backpropagation of error. """
 
-        layers = self.getMapping()
+        layers = self.mapping()
         delta = {}
         for id in range(len(layers) - 1)[::-1]:
             src = layers[id]
@@ -439,10 +435,10 @@ class ann(nemoa.system.base.system):
 
         return delta
 
-    def _optUpdateParams(self, updates):
+    def _optimize_update_params(self, updates):
         """Update parameters from dictionary."""
 
-        layers = self.getMapping()
+        layers = self.mapping()
         for id, layer in enumerate(layers[:-1]):
             src = layer
             tgt = layers[id + 1]
@@ -452,36 +448,36 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _optBPROP(self, dataset, schedule, tracker):
+    def _optimize_bprop(self, dataset, schedule, tracker):
         """Optimize parameters using backpropagation of error."""
 
         cnf = self._config['optimize']
-        mapping = self.getMapping()
+        mapping = self.mapping()
 
         # update parameters
         while tracker.update():
 
             # Get data (sample from minibatches)
-            if tracker.get('epoch') % cnf['minibatchInterval'] == 0:
-                data = self._optGetData(dataset, cols = (mapping[0], mapping[-1]))
+            if tracker.get('epoch') % cnf['minibatch_update_interval'] == 0:
+                data = self._optimize_get_data(dataset, cols = (mapping[0], mapping[-1]))
             # Forward pass (Compute value estimations from given input)
-            out = self._optGetValues(data[0])
+            out = self._optimize_get_values(data[0])
             # Backward pass (Compute deltas from backpropagation of error)
-            delta = self._optGetDeltas(data[1], out)
+            delta = self._optimize_get_deltas(data[1], out)
             # Compute parameter updates
-            updates = self._optGetUpdatesBPROP(out, delta)
+            updates = self._optimize_bprop_get_updates(out, delta)
             # Update parameters
-            self._optUpdateParams(updates)
+            self._optimize_update_params(updates)
 
         return True
 
-    def _optGetUpdatesBPROP(self, out, delta, rate = 0.1):
+    def _optimize_bprop_get_updates(self, out, delta, rate = 0.1):
         """Compute parameter update directions from weight deltas."""
 
         def getUpdate(grad, rate): return {
             key: rate * grad[key] for key in grad.keys()}
 
-        layers = self.getMapping()
+        layers = self.mapping()
         links = {}
         units = {}
         for id, src in enumerate(layers[:-1]):
@@ -497,30 +493,30 @@ class ann(nemoa.system.base.system):
 
     # Resilient Backpropagation (RPROP) specific Functions
 
-    def _optRPROP(self, dataset, schedule, tracker):
+    def _optimize_rprop(self, dataset, schedule, tracker):
         """Optimize parameters using resiliant backpropagation."""
 
         cnf = self._config['optimize']
-        mapping = self.getMapping()
+        mapping = self.mapping()
 
         # update parameters
         while tracker.update():
 
             # Get data (sample from minibatches)
-            if epoch % cnf['minibatchInterval'] == 0:
-                data = self._optGetData(dataset, cols = (mapping[0], mapping[-1]))
+            if epoch % cnf['minibatch_update_interval'] == 0:
+                data = self._optimize_get_data(dataset, cols = (mapping[0], mapping[-1]))
             # Forward pass (Compute value estimations from given input)
-            out = self._optGetValues(data[0])
+            out = self._optimize_get_values(data[0])
             # Backward pass (Compute deltas from backpropagation of error)
-            delta = self._optGetDeltas(data[1], out)
+            delta = self._optimize_get_deltas(data[1], out)
             # Compute updates
-            updates = self._optGetUpdatesRPROP(out, delta, tracker)
+            updates = self._optimize_rprop_get_updates(out, delta, tracker)
             # Update parameters
-            self._optUpdateParams(updates)
+            self._optimize_update_params(updates)
 
         return True
 
-    def _optGetUpdatesRPROP(self, out, delta, tracker):
+    def _optimize_rprop_get_updates(self, out, delta, tracker):
 
         def getDict(dict, val): return {key: val * numpy.ones(
             shape = dict[key].shape) for key in dict.keys()}
@@ -542,7 +538,7 @@ class ann(nemoa.system.base.system):
         minFactor = 0.000001
         maxFactor = 50.
 
-        layers = self.getMapping()
+        layers = self.mapping()
 
         # Compute gradient from delta rule
         grad = {'units': {}, 'links': {}}
@@ -592,7 +588,7 @@ class ann(nemoa.system.base.system):
 
         return update
 
-    def _evalSystem(self, data, func = 'accuracy', **kwargs):
+    def _eval_system(self, data, func = 'accuracy', **kwargs):
         """Evaluation of system.
 
         Args:
@@ -606,7 +602,7 @@ class ann(nemoa.system.base.system):
         """
 
         # get evaluation function
-        methods = self._aboutSystem()
+        methods = self._about_system()
         if not func in methods.keys(): return nemoa.log('error',
             "could not evaluate system: unknown method '%s'" % (func))
         method = methods[func]['method']
@@ -625,7 +621,7 @@ class ann(nemoa.system.base.system):
         evalKwargs = kwargs.copy()
         if not 'mapping' in evalKwargs.keys() \
             or evalKwargs['mapping'] == None:
-            evalKwargs['mapping'] = self.getMapping()
+            evalKwargs['mapping'] = self.mapping()
 
         # evaluate system
         return getattr(self, method)(*evalArgs, **evalKwargs)
@@ -633,66 +629,66 @@ class ann(nemoa.system.base.system):
         #except: return nemoa.log('error', 'could not evaluate system')
 
     @staticmethod
-    def _aboutSystem(): return {
+    def _about_system(): return {
         'energy': {
-            'name': 'total energy',
+            'name': 'energy',
             'description': 'sum of local unit and link energies',
-            'method': '_evalSystemEnergy',
+            'method': '_eval_system_energy',
             'args': 'all', 'format': '%.3f',
             'optimum': 'min'},
         'error': {
             'name': 'average reconstruction error',
             'description': 'mean error of reconstructed values',
-            'method': '_evalSystemError',
+            'method': '_eval_system_error',
             'args': 'all', 'format': '%.3f',
             'optimum': 'min'},
         'accuracy': {
             'name': 'average accuracy',
             'description': 'mean accuracy of reconstructed values',
-            'method': '_evalSystemAccuracy',
+            'method': '_eval_system_accuracy',
             'args': 'all', 'format': '%.3f',
             'optimum': 'max'},
         'precision': {
             'name': 'average precision',
             'description': 'mean precision of reconstructed values',
-            'method': '_evalSystemPrecision',
+            'method': '_eval_system_precision',
             'args': 'all', 'format': '%.3f',
             'optimum': 'max'}
         }
 
-    def _evalSystemError(self, *args, **kwargs):
+    def _eval_system_error(self, *args, **kwargs):
         """Mean data reconstruction error of output units."""
-        return numpy.mean(self._evalUnitError(*args, **kwargs))
+        return numpy.mean(self._eval_unit_error(*args, **kwargs))
 
-    def _evalSystemAccuracy(self, *args, **kwargs):
+    def _eval_system_accuracy(self, *args, **kwargs):
         """Mean data reconstruction accuracy of output units."""
-        return numpy.mean(self._evalUnitAccuracy(*args, **kwargs))
+        return numpy.mean(self._eval_Unit_accuracy(*args, **kwargs))
 
-    def _evalSystemPrecision(self, *args, **kwargs):
+    def _eval_system_precision(self, *args, **kwargs):
         """Mean data reconstruction precision of output units."""
-        return numpy.mean(self._evalUnitPrecision(*args, **kwargs))
+        return numpy.mean(self._eval_unit_precision(*args, **kwargs))
 
-    def _evalSystemEnergy(self, data, *args, **kwargs):
+    def _eval_system_energy(self, data, *args, **kwargs):
         """Sum of local link and unit energies."""
 
-        mapping = list(self.getMapping())
+        mapping = list(self.mapping())
         energy = 0.
 
         # sum local unit energies
         for i in range(1, len(mapping) + 1):
             energy += numpy.sum(
-                self._evalUnitEnergy(data[0],
+                self._eval_unit_energy(data[0],
                 mapping = tuple(mapping[:i])))
 
         # sum local link energies
         for i in range(1, len(mapping)):
             energy += numpy.sum(
-                self._evalLinkEnergy(data[0],
+                self._eval_link_energy(data[0],
                 mapping = tuple(mapping[:i+1])))
 
         return energy
 
-    def _evalUnits(self, data, func = 'accuracy', units = None, **kwargs):
+    def _eval_units(self, data, func = 'accuracy', units = None, **kwargs):
         """Evaluation of target units.
 
         Args:
@@ -715,7 +711,7 @@ class ann(nemoa.system.base.system):
             'could not evaluate units: invalid data format')
 
         # look for name of unit evaluation function in dictionary
-        funcs = self._aboutUnits()
+        funcs = self._about_units()
         if not func in funcs.keys(): return nemoa.log('error',
             "could not evaluate units: unknown function '%s'" % (func))
 
@@ -734,10 +730,10 @@ class ann(nemoa.system.base.system):
         # prepare keyword arguments for evaluation
         eKwargs = kwargs.copy()
         if isinstance(units, str):
-            eKwargs['mapping'] = self.getMapping(tgt = units)
+            eKwargs['mapping'] = self.mapping(tgt = units)
         elif not 'mapping' in eKwargs.keys() \
             or eKwargs['mapping'] == None:
-            eKwargs['mapping'] = self.getMapping()
+            eKwargs['mapping'] = self.mapping()
 
         # evaluate units
         try: values = getattr(self, method)(*eArgs, **eKwargs)
@@ -753,76 +749,76 @@ class ann(nemoa.system.base.system):
         return nemoa.log('error', 'could not evaluate units')
 
     @staticmethod
-    def _aboutUnits(): return {
+    def _about_units(): return {
         'energy': {
             'name': 'energy',
             'description': 'energy of units',
-            'method': '_evalUnitEnergy',
+            'method': '_eval_unit_energy',
             'show': 'diagram',
             'args': 'input', 'return': 'scalar', 'format': '%.3f'},
         'expect': {
             'name': 'expect',
             'description': 'reconstructed values',
-            'method': '_evalUnitExpect',
+            'method': '_eval_unit_expect',
             'show': 'histogram',
             'args': 'input', 'return': 'vector', 'format': '%.3f'},
         'values': {
             'name': 'values',
             'description': 'reconstructed values',
-            'method': '_evalUnitValues',
+            'method': '_eval_unit_values',
             'show': 'histogram',
             'args': 'input', 'return': 'vector', 'format': '%.3f'},
         'samples': {
             'name': 'samples',
             'description': 'reconstructed samples',
-            'method': '_evalUnitSamples',
+            'method': '_eval_unit_samples',
             'show': 'histogram',
             'args': 'input', 'return': 'vector', 'format': '%.3f'},
         'mean': {
             'name': 'mean values',
             'description': 'mean of reconstructed values',
-            'method': '_evalUnitMean',
+            'method': '_eval_unit_mean',
             'show': 'diagram',
             'args': 'input', 'return': 'scalar', 'format': '%.3f'},
         'variance': {
             'name': 'variance',
             'description': 'variance of reconstructed values',
-            'method': '_evalUnitVariance',
+            'method': '_eval_unit_variance',
             'show': 'diagram',
             'args': 'input', 'return': 'scalar', 'format': '%.3f'},
         'residuals': {
             'name': 'residuals',
             'description': 'residuals of reconstructed values',
-            'method': '_evalUnitResiduals',
+            'method': '_eval_unit_residuals',
             'show': 'histogram',
             'args': 'all', 'return': 'vector', 'format': '%.3f'},
         'error': {
             'name': 'error',
             'description': 'mean error of reconstructed values',
-            'method': '_evalUnitError',
+            'method': '_eval_unit_error',
             'show': 'diagram',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'accuracy': {
             'name': 'accuracy',
             'description': 'accuracy of reconstructed values',
-            'method': '_evalUnitAccuracy',
+            'method': '_eval_Unit_accuracy',
             'show': 'diagram',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'precision': {
             'name': 'precision',
             'description': 'precision of reconstructed values',
-            'method': '_evalUnitPrecision',
+            'method': '_eval_unit_precision',
             'show': 'diagram',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'correlation': {
             'name': 'correlation',
             'description': 'correlation of reconstructed to real values',
-            'method': '_evalUnitCorrelation',
+            'method': '_eval_unit_correlation',
             'show': 'diagram',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'}
         }
 
-    def _evalUnitExpect(self, data, mapping = None, block = None):
+    def _eval_unit_expect(self, data, mapping = None, block = None):
         """Expectation values of target units.
 
         Args:
@@ -839,7 +835,7 @@ class ann(nemoa.system.base.system):
             Numpy array of shape (data, targets).
         """
 
-        if mapping == None: mapping = self.getMapping()
+        if mapping == None: mapping = self.mapping()
         if block == None: inData = data
         else:
             inData = numpy.copy(data)
@@ -853,7 +849,7 @@ class ann(nemoa.system.base.system):
 
         return outData
 
-    def _evalUnitValues(self, data, mapping = None, block = None,
+    def _eval_unit_values(self, data, mapping = None, block = None,
         expectLast = False):
         """Unit maximum likelihood values of target units.
 
@@ -873,7 +869,7 @@ class ann(nemoa.system.base.system):
             Numpy array of shape (data, targets).
         """
 
-        if mapping == None: mapping = self.getMapping()
+        if mapping == None: mapping = self.mapping()
         if block == None: inData = data
         else:
             inData = numpy.copy(data)
@@ -886,7 +882,7 @@ class ann(nemoa.system.base.system):
                     self.units[mapping[0]].getSamples(inData),
                     self.units[mapping[0]].params)
             return self.units[mapping[-1]].expect(
-                self._evalUnitValues(data, mapping[0:-1]),
+                self._eval_unit_values(data, mapping[0:-1]),
                 self.units[mapping[-2]].params)
         else:
             if len(mapping) == 1:
@@ -902,7 +898,7 @@ class ann(nemoa.system.base.system):
                     self.units[mapping[id]].params))
             return data
 
-    def _evalUnitSamples(self, data, mapping = None, block = None,
+    def _eval_unit_samples(self, data, mapping = None, block = None,
         expectLast = False):
         """Sampled unit values of target units.
 
@@ -922,7 +918,7 @@ class ann(nemoa.system.base.system):
             Numpy array of shape (data, targets).
         """
 
-        if mapping == None: mapping = self.getMapping()
+        if mapping == None: mapping = self.mapping()
         if block == None: inData = data
         else:
             inData = numpy.copy(data)
@@ -935,7 +931,7 @@ class ann(nemoa.system.base.system):
                     self.units[mapping[0]].getSamples(data),
                     self.units[mapping[0]].params)
             return self.units[mapping[-1]].expect(
-                self._evalUnitSamples(data, mapping[0:-1]),
+                self._eval_unit_samples(data, mapping[0:-1]),
                 self.units[mapping[-2]].params)
         else:
             if len(mapping) == 1:
@@ -949,7 +945,7 @@ class ann(nemoa.system.base.system):
                     data, self.units[mapping[id]].params)
             return data
 
-    def _evalUnitResiduals(self, data, mapping = None, block = None):
+    def _eval_unit_residuals(self, data, mapping = None, block = None):
         """Reconstruction residuals of target units.
 
         Args:
@@ -970,7 +966,7 @@ class ann(nemoa.system.base.system):
         dSrc, dTgt = data
 
         # set mapping: inLayer to outLayer (if not set)
-        if mapping == None: mapping = self.getMapping()
+        if mapping == None: mapping = self.mapping()
 
         # set unit values to mean (optional)
         if isinstance(block, list):
@@ -978,12 +974,12 @@ class ann(nemoa.system.base.system):
             for i in block: dSrc[:, i] = numpy.mean(dSrc[:, i])
 
         # calculate estimated output values
-        mOut = self._evalUnitExpect(dSrc, mapping)
+        mOut = self._eval_unit_expect(dSrc, mapping)
 
         # calculate residuals
         return dTgt - mOut
 
-    def _evalUnitEnergy(self, data, mapping = None):
+    def _eval_unit_energy(self, data, mapping = None):
         """Unit energies of target units.
 
         Args:
@@ -998,13 +994,13 @@ class ann(nemoa.system.base.system):
         """
 
         # set mapping: inLayer to outLayer (if not set)
-        if mapping == None: mapping = self.getMapping()
+        if mapping == None: mapping = self.mapping()
 
-        data = self._evalUnitExpect(data, mapping)
+        data = self._eval_unit_expect(data, mapping)
 
         return self.units[mapping[-1]].energy(data)
 
-    def _evalUnitMean(self, data, mapping = None, block = None):
+    def _eval_unit_mean(self, data, mapping = None, block = None):
         """Mean values of reconstructed target units.
 
         Args:
@@ -1021,17 +1017,17 @@ class ann(nemoa.system.base.system):
             Numpy array of shape (targets).
         """
 
-        if mapping == None: mapping = self.getMapping()
+        if mapping == None: mapping = self.mapping()
         if block == None:
-            modelOut = self._evalUnitExpect(data[0], mapping)
+            modelOut = self._eval_unit_expect(data[0], mapping)
         else:
             dataInCopy = numpy.copy(data)
             for i in block: dataInCopy[:,i] = numpy.mean(dataInCopy[:,i])
-            modelOut = self._evalUnitExpect(dataInCopy, mapping)
+            modelOut = self._eval_unit_expect(dataInCopy, mapping)
 
         return modelOut.mean(axis = 0)
 
-    def _evalUnitVariance(self, data, mapping = None, block = None, **kwargs):
+    def _eval_unit_variance(self, data, mapping = None, block = None, **kwargs):
         """Return variance of reconstructed unit values.
 
         Args:
@@ -1044,16 +1040,16 @@ class ann(nemoa.system.base.system):
                 that are blocked by setting the values to their means
         """
 
-        if mapping == None: mapping = self.getMapping()
-        if block == None: modelOut = self._evalUnitExpect(data, mapping)
+        if mapping == None: mapping = self.mapping()
+        if block == None: modelOut = self._eval_unit_expect(data, mapping)
         else:
             dataInCopy = numpy.copy(data)
             for i in block: dataInCopy[:,i] = numpy.mean(dataInCopy[:,i])
-            modelOut = self._evalUnitExpect(dataInCopy, mapping)
+            modelOut = self._eval_unit_expect(dataInCopy, mapping)
 
         return modelOut.var(axis = 0)
 
-    def _evalUnitError(self, data, norm = 'ME', **kwargs):
+    def _eval_unit_error(self, data, norm = 'ME', **kwargs):
         """Return reconstruction error of units (depending on norm)
 
         Args:
@@ -1066,15 +1062,15 @@ class ann(nemoa.system.base.system):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate data reconstuction error from
-                residuals. see _getDataMean for a list of provided norms
+                residuals. see _get_data_mean for a list of provided norms
         """
 
-        res = self._evalUnitResiduals(data, **kwargs)
-        error = self._getDataMean(res, norm = norm)
+        res = self._eval_unit_residuals(data, **kwargs)
+        error = self._get_data_mean(res, norm = norm)
 
         return error
 
-    def _evalUnitAccuracy(self, data, norm = 'MSE', **kwargs):
+    def _eval_Unit_accuracy(self, data, norm = 'MSE', **kwargs):
         """Return unit reconstruction accuracy.
 
         Args:
@@ -1093,13 +1089,13 @@ class ann(nemoa.system.base.system):
             accuracy := 1 - norm(residuals) / norm(data).
         """
 
-        res = self._evalUnitResiduals(data, **kwargs)
-        normres = self._getDataMean(res, norm = norm)
-        normdat = self._getDataMean(data[1], norm = norm)
+        res = self._eval_unit_residuals(data, **kwargs)
+        normres = self._get_data_mean(res, norm = norm)
+        normdat = self._get_data_mean(data[1], norm = norm)
 
         return 1. - normres / normdat
 
-    def _evalUnitPrecision(self, data, norm = 'SD', **kwargs):
+    def _eval_unit_precision(self, data, norm = 'SD', **kwargs):
         """Return unit reconstruction precision.
 
         Args:
@@ -1112,19 +1108,19 @@ class ann(nemoa.system.base.system):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate precision
-                see _getDataDeviation for a list of provided norms
+                see _get_data_deviation for a list of provided norms
 
         Description:
             precision := 1 - dev(residuals) / dev(data).
         """
 
-        res = self._evalUnitResiduals(data, **kwargs)
-        devres = self._getDataDeviation(res, norm = norm)
-        devdat = self._getDataDeviation(data[1], norm = norm)
+        res = self._eval_unit_residuals(data, **kwargs)
+        devres = self._get_data_deviation(res, norm = norm)
+        devdat = self._get_data_deviation(data[1], norm = norm)
 
         return 1. - devres / devdat
 
-    def _evalUnitCorrelation(self, data, mapping = None, block = None, **kwargs):
+    def _eval_unit_correlation(self, data, mapping = None, block = None, **kwargs):
         """Correlation reconstructed unit values.
 
         Args:
@@ -1142,18 +1138,18 @@ class ann(nemoa.system.base.system):
             Numpy array with reconstructed correlation of units.
         """
 
-        if mapping == None: mapping = self.getMapping()
-        if block == None: modelOut = self._evalUnitExpect(data, mapping)
+        if mapping == None: mapping = self.mapping()
+        if block == None: modelOut = self._eval_unit_expect(data, mapping)
         else:
             dataInCopy = numpy.copy(data)
             for i in block: dataInCopy[:,i] = numpy.mean(dataInCopy[:,i])
-            modelOut = self._evalUnitExpect(dataInCopy, mapping)
+            modelOut = self._eval_unit_expect(dataInCopy, mapping)
 
         M = numpy.corrcoef(numpy.hstack(data).T)
 
         return True
 
-    def _evalLinks(self, data, func = 'energy', **kwargs):
+    def _eval_links(self, data, func = 'energy', **kwargs):
         """Evaluate system links respective to data.
 
         Args:
@@ -1169,7 +1165,7 @@ class ann(nemoa.system.base.system):
         """
 
         # get link evaluation function
-        methods = self._aboutLinks()
+        methods = self._about_links()
         if not func in methods.keys(): return nemoa.log('error',
             "could not evaluate links: unknown method '%s'" % (func))
         method = methods[func]['method']
@@ -1188,7 +1184,7 @@ class ann(nemoa.system.base.system):
         evalKwargs = kwargs.copy()
         if not 'mapping' in evalKwargs.keys() \
             or evalKwargs['mapping'] == None:
-            evalKwargs['mapping'] = self.getMapping()
+            evalKwargs['mapping'] = self.mapping()
 
         # evaluate
         values = getattr(self, method)(*evalArgs, **evalKwargs)
@@ -1206,16 +1202,16 @@ class ann(nemoa.system.base.system):
         return nemoa.log('warning', 'could not perform evaluation')
 
     @staticmethod
-    def _aboutLinks(): return {
+    def _about_links(): return {
         'energy': {
             'name': 'energy',
             'description': 'local energy of links',
-            'method': '_evalLinkEnergy',
+            'method': '_eval_link_energy',
             'show': 'graph',
             'args': 'input', 'return': 'vector', 'format': '%.3f'}
         }
 
-    def _evalLinkEnergy(self, data, mapping = None, **kwargs):
+    def _eval_link_energy(self, data, mapping = None, **kwargs):
         """Return link energies of a layer.
 
         Args:
@@ -1225,16 +1221,16 @@ class ann(nemoa.system.base.system):
         """
 
         if len(mapping) == 1:
-            return nemoa.log('error', 'bad implementation of ann._evalLinkEnergy')
+            return nemoa.log('error', 'bad implementation of ann._eval_link_energy')
         elif len(mapping) == 2:
             dSrc  = data
-            dTgt = self._evalUnitValues(dSrc, mapping)
+            dTgt = self._eval_unit_values(dSrc, mapping)
         else:
-            dSrc  = self._evalUnitExpect(data, mapping[0:-1])
-            dTgt = self._evalUnitValues(dSrc, mapping[-2:])
+            dSrc  = self._eval_unit_expect(data, mapping[0:-1])
+            dTgt = self._eval_unit_values(dSrc, mapping[-2:])
 
-        sID = self.getMapping().index(mapping[-2])
-        tID = self.getMapping().index(mapping[-1])
+        sID = self.mapping().index(mapping[-2])
+        tID = self.mapping().index(mapping[-1])
         src = self.units[mapping[-2]].params
         tgt = self.units[mapping[-1]].params
 
@@ -1245,7 +1241,7 @@ class ann(nemoa.system.base.system):
             links = self._params['links'][(tID, sID)]
             return self._LinkLayer.energy(dTgt, dSrc, tgt, src, links)
 
-    def _evalRelations(self, data, func = 'correlation',
+    def _eval_relation(self, data, func = 'correlation',
         relations = None, evalStat = True, **kwargs):
         """Evaluate relations between source and target units.
 
@@ -1278,7 +1274,7 @@ class ann(nemoa.system.base.system):
         """
 
         # get evaluation function
-        methods = self._aboutRelations()
+        methods = self._about_relations()
         if not func in methods.keys(): return nemoa.log('error',
             "could not evaluate relations: unknown method '%s'" % (func))
         method = methods[func]['method']
@@ -1310,7 +1306,7 @@ class ann(nemoa.system.base.system):
         evalKwargs = kwargs.copy()
         if not 'mapping' in evalKwargs.keys() \
             or evalKwargs['mapping'] == None:
-            evalKwargs['mapping'] = self.getMapping()
+            evalKwargs['mapping'] = self.mapping()
 
         # evaluate relations and get information about relation values
         values = getattr(self, method)(*evalArgs, **evalKwargs)
@@ -1323,7 +1319,7 @@ class ann(nemoa.system.base.system):
             if transform:
                 M = values
                 if 'C' in transform:
-                    C = self._evalRelationCorrelation(data)
+                    C = self._eval_relation_correlation(data)
                 try:
                     T = eval(transform)
                     values = T
@@ -1355,14 +1351,14 @@ class ann(nemoa.system.base.system):
             return retVal
 
     @staticmethod
-    def _aboutRelations(): return {
+    def _about_relations(): return {
         'correlation': {
             'name': 'correlation',
             'description': """
                 undirected data based relation describing
                 the 'linearity' between variables (units) """,
             'directed': False, 'signed': True, 'normal': True,
-            'method': '_evalRelationCorrelation', 'show': 'heatmap',
+            'method': '_eval_relation_correlation', 'show': 'heatmap',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'capacity': {
             'name': 'network capacity',
@@ -1370,7 +1366,7 @@ class ann(nemoa.system.base.system):
                 directed graph based relation describing
                 the 'network capacity' between units (variables). """,
             'directed': True, 'signed': True, 'normal': False,
-            'method': '_evalRelationCapacity', 'show': 'heatmap',
+            'method': '_eval_relation_capacity', 'show': 'heatmap',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'knockout': {
             'name': 'knockout effect',
@@ -1380,7 +1376,7 @@ class ann(nemoa.system.base.system):
                 output unit, when setting the values of a given input
                 unit to its mean value. """,
             'directed': True, 'signed': True, 'normal': False,
-            'method': '_evalRelationKnockout', 'show': 'heatmap',
+            'method': '_eval_relation_knockout', 'show': 'heatmap',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'induction': {
             'name': 'induced deviation',
@@ -1390,11 +1386,11 @@ class ann(nemoa.system.base.system):
                 output unit, when manipulating the values of a given
                 input unit. """,
             'directed': True, 'signed': True, 'normal': True,
-            'method': '_evalRelationInduction', 'show': 'heatmap',
+            'method': '_eval_relation_induction', 'show': 'heatmap',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         }
 
-    def _evalRelationCorrelation(self, data, mapping = None, **kwargs):
+    def _eval_relation_correlation(self, data, mapping = None, **kwargs):
         """Data correlation between source and target units.
 
         Args:
@@ -1408,7 +1404,7 @@ class ann(nemoa.system.base.system):
             correlation between source and target units.
         """
 
-        if not mapping: mapping = self.getMapping()
+        if not mapping: mapping = self.mapping()
         inLabels = self.getUnits(group = mapping[0])[0]
         outLabels = self.getUnits(group = mapping[-1])[0]
 
@@ -1426,12 +1422,12 @@ class ann(nemoa.system.base.system):
 
         return R
 
-    def _evalRelationCapacity(self, data, mapping = None, **kwargs):
+    def _eval_relation_capacity(self, data, mapping = None, **kwargs):
         """Network Capacity from source to target units.
 
         Args:
-            data -- 2-tuple with numpy arrays: input data and output data
-            mapping -- tuple of strings containing the mapping
+            data: 2-tuple with numpy arrays: input data and output data
+            mapping: tuple of strings containing the mapping
                 from input layer (first argument of tuple)
                 to output layer (last argument of tuple)
 
@@ -1440,7 +1436,7 @@ class ann(nemoa.system.base.system):
             network capacity from source to target units.
         """
 
-        if mapping == None: mapping = self.getMapping()
+        if mapping == None: mapping = self.mapping()
 
         # calculate product of weight matrices
         for i in range(1, len(mapping))[::-1]:
@@ -1450,7 +1446,7 @@ class ann(nemoa.system.base.system):
 
         return R.T
 
-    def _evalRelationKnockout(self, data, mapping = None, **kwargs):
+    def _eval_relation_knockout(self, data, mapping = None, **kwargs):
         """Knockout effect from source to target units.
 
         Knockout single source units and measure effects on target units
@@ -1467,7 +1463,7 @@ class ann(nemoa.system.base.system):
             knockout effects from source to target units.
         """
 
-        if not mapping: mapping = self.getMapping()
+        if not mapping: mapping = self.mapping()
         inLabels = self.getUnits(group = mapping[0])[0]
         outLabels = self.getUnits(group = mapping[-1])[0]
 
@@ -1478,13 +1474,13 @@ class ann(nemoa.system.base.system):
         if not 'measure' in kwargs: measure = 'error'
         else: measure = kwargs['measure']
         methodName = self.about('units', measure, 'name')
-        default = self._evalUnits(data, func = measure, mapping = mapping)
+        default = self._eval_units(data, func = measure, mapping = mapping)
 
         # calculate unit values with knockout
         for inId, inUnit in enumerate(inLabels):
 
             # modify unit and calculate unit values
-            knockout = self._evalUnits(data, func = measure,
+            knockout = self._eval_units(data, func = measure,
                 mapping = mapping, block = [inId])
 
             # store difference in knockout matrix
@@ -1493,7 +1489,7 @@ class ann(nemoa.system.base.system):
 
         return R
 
-    def _evalRelationInduction(self, data, mapping = None,
+    def _eval_relation_induction(self, data, mapping = None,
         points = 10, amplify = 2., gauge = 0.05, **kwargs):
         """Induced deviation from source to target units.
 
@@ -1519,7 +1515,7 @@ class ann(nemoa.system.base.system):
             induced deviation from source to target units.
         """
 
-        if not mapping: mapping = self.getMapping()
+        if not mapping: mapping = self.mapping()
         iUnits = self.getUnits(group = mapping[0])[0]
         oUnits = self.getUnits(group = mapping[-1])[0]
         R = numpy.zeros((len(iUnits), len(oUnits)))
@@ -1538,7 +1534,7 @@ class ann(nemoa.system.base.system):
             for pId in range(points):
                 iData  = data[0].copy()
                 iData[:, iId] = iCurve[pId]
-                oExpect = self._evalUnits((iData, data[1]),
+                oExpect = self._eval_units((iData, data[1]),
                     func = 'expect', mapping = mapping)
                 for oUnit in oUnits: C[oUnit][:, pId] = oExpect[oUnit]
 
@@ -1561,7 +1557,7 @@ class ann(nemoa.system.base.system):
 
         return R
 
-    def getMapping(self, src = None, tgt = None):
+    def mapping(self, src = None, tgt = None):
         """Mapping of units from source to target.
 
         Args:
@@ -1581,12 +1577,13 @@ class ann(nemoa.system.base.system):
         return mapping[sid:tid + 1] if sid <= tid \
             else mapping[tid:sid + 1][::-1]
 
-    def _getTestData(self, dataset):
+    def _get_test_data(self, dataset):
         """Return tuple with default test data."""
 
         return dataset.getData(
-            cols = (self.getMapping()[0], self.getMapping()[-1]))
+            cols = (self.mapping()[0], self.mapping()[-1]))
 
+    # TODO: create classes for links
     class _LinkLayer():
         """Class to unify common ann link attributes."""
 
@@ -1594,16 +1591,15 @@ class ann(nemoa.system.base.system):
 
         def __init__(self): pass
 
-        # TODO: create classes for links
         @staticmethod
         def energy(dSrc, dTgt, src, tgt, links, calc = 'mean'):
             """Return link energy as numpy array."""
 
             if src['class'] == 'gauss':
-                M = - links['A'].astype(float) * links['W'] \
+                M = - links['A'] * links['W'] \
                     / numpy.sqrt(numpy.exp(src['lvar'])).T
             elif src['class'] == 'sigmoid':
-                M = - links['A'].astype(float) * links['W']
+                M = - links['A'] * links['W']
             else: return nemoa.log('error', 'unsupported unit class')
 
             return numpy.einsum('ij,ik,jk->ijk', dSrc, dTgt, M)
@@ -1620,7 +1616,7 @@ class ann(nemoa.system.base.system):
         @staticmethod
         def getUpdatesFromDelta(data, delta):
 
-            return { 'W': -numpy.dot(data.T, delta) / data.size }
+            return { 'W': -numpy.dot(data.T, delta) / float(data.size) }
 
     class _UnitLayerBaseClass():
         """Base Class for Unit Layer.

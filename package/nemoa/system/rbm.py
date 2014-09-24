@@ -20,11 +20,12 @@ class rbm(nemoa.system.ann.ann):
     artificial neuronal networks with two layers with visible and
     hidden units. The visible layer contains binary distributed
     sigmoidal units to model data. The hidden layer contains binary
-    distributed sigmoidal units to model relations in the data.
+    distributed sigmoidal units to model data relations.
 
     Reference:
         (1) "A Practical Guide to Training Restricted Boltzmann
             Machines", Geoffrey E. Hinton, University of Toronto, 2010
+
     """
 
     @staticmethod
@@ -43,43 +44,43 @@ class rbm(nemoa.system.ann.ann):
         'optimize': {
             'checkDataset': False,
             'ignoreUnits': [],
-            'minibatchSize': 100,
-            'minibatchInterval': 10,
+            'minibatch_size': 100,
+            'minibatch_update_interval': 10,
             'updates': 100000,
             'algorithm': 'vrcd',
-            'updateCdkSteps': 1,
-            'updateCdkIterations': 1,
-            'updateRate': 0.1,
-            'updateFactorWeights': 1.,
-            'updateFactorHbias': 0.1,
-            'updateFactorVbias': 0.1,
-            'modSaEnable': True,
-            'modSaInitTemperature': 1.,
-            'modSaAnnealingFactor': 1.,
-            'modSaAnnealingCycles': 1,
-            'modKlEnable': True,
-            'modKlRate': 0.,
-            'modKlExpect': 0.5,
-            'modCorruptionEnable': True,
-            'modCorruptionType': 'mask',
-            'modCorruptionFactor': 0.5,
+            'update_cd_sampling_steps': 1,
+            'update_cd_sampling_iterations': 1,
+            'update_rate': 0.1,
+            'update_factor_weights': 1.,
+            'update_factor_hbias': 0.1,
+            'update_factor_vbias': 0.1,
+            'mod_sa_enable': True,
+            'mod_sa_init_temperature': 1.,
+            'mod_sa_annealing_factor': 1.,
+            'mod_sa_annealing_cycles': 1,
+            'mod_kl_enable': True,
+            'mod_kl_rate': 0.,
+            'mod_kl_expect': 0.5,
+            'mod_corruption_enable': True,
+            'mod_corruption_type': 'mask',
+            'mod_corruption_factor': 0.5,
             'useAdjacency': False,
-            'trackerObjFunction': 'error',
-            'trackerEvalTimeInterval': 10. ,
-            'trackerEstimateTime': True,
-            'trackerEstimateTimeWait': 20. }}[key]
+            'tracker_obj_function': 'error',
+            'tracker_eval_time_interval': 10. ,
+            'tracker_estimate_time': True,
+            'tracker_estimate_timeWait': 20. }}[key]
 
-    def getMapping(self):
+    def mapping(self):
         v = self._params['units'][0]['name']
         h = self._params['units'][1]['name']
         return (v, h, v)
 
-    def _getTestData(self, dataset):
+    def _get_test_data(self, dataset):
         """Return tuple with default test data."""
         data = dataset.getData()
         return (data, data)
 
-    def _checkDataset(self, dataset):
+    def _check_dataset(self, dataset):
         """Check if dataset contains binary values."""
         if not nemoa.type.isDataset(dataset): return nemoa.log('error',
             'could not test dataset: invalid dataset instance given!')
@@ -89,7 +90,7 @@ class rbm(nemoa.system.ann.ann):
         return True
 
     @staticmethod
-    def _getUnitsFromNetwork(network):
+    def _get_units_from_network(network):
         """Return tuple with lists of unit labels from network."""
         return [{
             'label': network.nodes(visible = True),
@@ -101,45 +102,45 @@ class rbm(nemoa.system.ann.ann):
             'name': 'hidden'
         }]
 
-    def _setUpdateRates(self, **config):
+    def _set_update_rates(self, **config):
         """Initialize updates for system parameters."""
         if not 'optimize' in self._config: self._config['optimize'] = {}
         return (self._setVisibleUnitUpdateRates(**config)
             and self._setHiddenUnitUpdateRates(**config)
             and self._setLinkUpdateRates(**config))
 
-    def _setParams(self, params):
+    def _set_params(self, params):
         """Set system parameters from dictionary."""
-        return (self._setVisibleUnitParams(params)
-            and self._setHiddenUnitParams(params)
-            and self._setLinkParams(params))
+        return (self._set_visible_unit_params(params)
+            and self._set_hidden_unit_params(params)
+            and self._set_link_params(params))
 
-    def _optParams(self, dataset, schedule, tracker):
+    def _optimize_params(self, dataset, schedule, tracker):
         """Optimize system parameters."""
 
         cfg = self._config['optimize']
 
-        if cfg['modCorruptionEnable']: nemoa.log(
+        if cfg['mod_corruption_enable']: nemoa.log(
             'note', """using data corruption for denoising with
             noise model '%s (%.2f)'""" % (
-            cfg['modCorruptionType'], cfg['modCorruptionFactor']))
-        if cfg['modKlEnable']: nemoa.log('note',
+            cfg['mod_corruption_type'], cfg['mod_corruption_factor']))
+        if cfg['mod_kl_enable']: nemoa.log('note',
             """using Kullback-Leibler penalty for sparse coding
-            with expectation value %.2f""" % (cfg['modKlExpect']))
-        if cfg['modVmraEnable']: nemoa.log('note',
+            with expectation value %.2f""" % (cfg['mod_kl_expect']))
+        if cfg['mod_vmra_enable']: nemoa.log('note',
             """using variance maximizing rate adaption
-            with length %i""" % (cfg['modVmraLength']))
-        if cfg['modSaEnable']: nemoa.log('note',
+            with length %i""" % (cfg['mod_vmra_length']))
+        if cfg['mod_sa_enable']: nemoa.log('note',
             """using simulated annealing  with initial temperature %.2f
-            and annealing factor %.2f""" % (cfg['modSaInitTemperature'],
-            cfg['modSaAnnealingFactor']))
+            and annealing factor %.2f""" % (cfg['mod_sa_init_temperature'],
+            cfg['mod_sa_annealing_factor']))
 
         if cfg['algorithm'].lower() == 'cd': return \
-            self._optCd(dataset, schedule, tracker)
+            self._optimize_cd(dataset, schedule, tracker)
         return nemoa.log('error', """could not optimize model:
             unknown optimization algorithm '%s'""" % (algorithm))
 
-    def _optCd(self, dataset, schedule, tracker):
+    def _optimize_cd(self, dataset, schedule, tracker):
         """Optimize system parameters with Contrastive Divergency."""
 
         cfg  = self._config['optimize']
@@ -147,36 +148,36 @@ class rbm(nemoa.system.ann.ann):
         while tracker.update():
 
             # get data (sample from minibatches)
-            if tracker.get('epoch') % cfg['minibatchInterval'] == 0:
-                data = self._optGetData(dataset)
+            if tracker.get('epoch') % cfg['minibatch_update_interval'] == 0:
+                data = self._optimize_get_data(dataset)
 
-            self._optCdUpdate(data, tracker) # Update system parameters
+            self._optimize_cd_update(data, tracker) # Update system parameters
 
         return True
 
-    def _optVmraUpdate(self, tracker):
+    def _optimize_vmra_update_rate(self, tracker):
         store = tracker.read('vmra')
         var = numpy.var(self._params['links'][(0, 1)]['W'])
         if not 'wVar' in store: wVar = numpy.array([var])
         else: wVar = numpy.append([var], store['wVar'])
 
         cfg = self._config['optimize']
-        length = cfg['modVmraLength']
+        length = cfg['mod_vmra_length']
         if wVar.shape[0] > length:
 
             wVar = wVar[:length]
             A = numpy.array([numpy.arange(0, length),
                 numpy.ones(length)])
             grad = - numpy.linalg.lstsq(A.T, wVar)[0][0]
-            delw = cfg['modVmraFactor'] * grad
+            delw = cfg['mod_vmra_factor'] * grad
 
-            cfg['updateRate'] = min(max(delw,
-                cfg['modVmraMinRate']), cfg['modVmraMaxRate'])
+            cfg['update_rate'] = min(max(delw,
+                cfg['mod_vmra_min_rate']), cfg['mod_vmra_max_rate'])
 
         tracker.write('vmra', wVar = wVar)
         return True
 
-    def _optCdSampling(self, data):
+    def _optimize_cd_sampling(self, data):
         """Contrastive divergency sampling.
 
         Args:
@@ -195,14 +196,14 @@ class rbm(nemoa.system.ann.ann):
 
         cfg = self._config['optimize']
 
-        k = cfg['updateCdkSteps']
-        m = cfg['updateCdkIterations']
+        k = cfg['update_cd_sampling_steps']
+        m = cfg['update_cd_sampling_iterations']
 
-        hData = self._evalUnitExpect(data, ('visible', 'hidden'))
+        hData = self._eval_unit_expect(data, ('visible', 'hidden'))
         if k == 1 and m == 1:
-            vModel = self._evalUnitSamples(hData, ('hidden', 'visible'),
+            vModel = self._eval_unit_samples(hData, ('hidden', 'visible'),
                 expectLast = True)
-            hModel = self._evalUnitExpect(vModel, ('visible', 'hidden'))
+            hModel = self._eval_unit_expect(vModel, ('visible', 'hidden'))
             return data, hData, vModel, hModel
 
         vModel = numpy.zeros(shape = data.shape)
@@ -212,21 +213,21 @@ class rbm(nemoa.system.ann.ann):
 
                 # calculate hSample from hExpect
                 # in first sampling step init hSample with h_data
-                if j == 0: hSample = self._evalUnitSamples(
+                if j == 0: hSample = self._eval_unit_samples(
                     hData, ('hidden', ))
-                else: hSample = self._evalUnitSamples(hExpect, (
+                else: hSample = self._eval_unit_samples(hExpect, (
                     'hidden', ))
 
                 # calculate vExpect from hSample
-                vExpect = self._evalUnitExpect(hSample, ('hidden',
+                vExpect = self._eval_unit_expect(hSample, ('hidden',
                     'visible'))
 
                 # calculate hExpect from vSample
                 # in last sampling step use vExpect
                 # instead of vSample to reduce noise
-                if j + 1 == k: hExpect = self._evalUnitExpect(vExpect,
+                if j + 1 == k: hExpect = self._eval_unit_expect(vExpect,
                     ('visible', 'hidden'))
-                else: hExpect = self._evalUnitSamples(vExpect,
+                else: hExpect = self._eval_unit_samples(vExpect,
                     ('visible', 'hidden'), expectLast = True)
 
             vModel += vExpect / m
@@ -234,49 +235,49 @@ class rbm(nemoa.system.ann.ann):
 
         return data, hData, vModel, hModel
 
-    def _optCdUpdate(self, data, tracker):
+    def _optimize_cd_update(self, data, tracker):
         """Update system parameters."""
 
         config = self._config['optimize']
         ignore = config['ignoreUnits']
 
         # (optional) Variance maximizing rate adaption
-        if config['modVmraEnable']:
-            if tracker.get('epoch') % config['modVmraInterval'] == 0 \
-                and tracker.get('epoch') > config['modVmraWait']:
-                self._optVmraUpdate(tracker)
+        if config['mod_vmra_enable']:
+            if tracker.get('epoch') % config['mod_vmra_update_interval'] == 0 \
+                and tracker.get('epoch') > config['mod_vmra_init_wait']:
+                self._optimize_vmra_update_rate(tracker)
 
         # get system estimations (model)
-        dTuple = self._optCdSampling(data)
+        dTuple = self._optimize_cd_sampling(data)
 
         # Calculate contrastive divergency updates
         # (without affecting the calculations)
-        if not 'visible' in ignore: deltaV = self._optCdDeltaV(*dTuple)
-        if not 'hidden' in ignore: deltaH = self._optCdDeltaH(*dTuple)
-        if not 'links' in ignore: deltaL = self._optCdDeltaL(*dTuple)
+        if not 'visible' in ignore: deltaV = self._optimize_cd_delta_visible(*dTuple)
+        if not 'hidden' in ignore: deltaH = self._optimize_cd_delta_hidden(*dTuple)
+        if not 'links' in ignore: deltaL = self._optimize_cd_delta_links(*dTuple)
 
         # Contrastive Divergency update
         if not 'visible' in ignore: self.units['visible'].update(deltaV)
         if not 'hidden' in ignore: self.units['hidden'].update(deltaH)
-        if not 'links' in ignore: self._updateLinks(**deltaL)
+        if not 'links' in ignore: self._update_links(**deltaL)
 
         # (optional) Kullback-Leibler penalty update for sparsity
-        if config['modKlEnable']:
+        if config['mod_kl_enable']:
             if not 'hidden' in ignore: self.units['hidden'].update(
-                self._optKlDeltaH(*dTuple))
+                self._optimize_kl_delta_hidden(*dTuple))
 
         # (optional) Simulated Annealing update to avoid underfitting
-        if config['modSaEnable']:
+        if config['mod_sa_enable']:
             if not 'visible' in ignore: self.units['visible'].update(
-                self._optSaDeltaV(tracker))
+                self._optimize_sa_delta_visible(tracker))
             if not 'hidden' in ignore: self.units['hidden'].update(
-                self._optSaDeltaH(tracker))
-            if not 'links' in ignore: self._updateLinks(
-                **self._optSaDeltaL(tracker))
+                self._optimize_sa_delta_hidden(tracker))
+            if not 'links' in ignore: self._update_links(
+                **self._optimize_sa_delta_links(tracker))
 
         return True
 
-    def _optCdDeltaV(self, vData, hData, vModel, hModel, **kwargs):
+    def _optimize_cd_delta_visible(self, vData, hData, vModel, hModel, **kwargs):
         """Constrastive divergency gradients of visible units.
 
         Returns:
@@ -286,13 +287,13 @@ class rbm(nemoa.system.ann.ann):
 
         cfg = self._config['optimize']
 
-        r = cfg['updateRate'] * cfg['updateFactorVbias'] # update rate
+        r = cfg['update_rate'] * cfg['update_factor_vbias'] # update rate
         v = len(self.units['visible'].params['label'])
         diff = numpy.mean(vData - vModel, axis = 0).reshape((1, v))
 
         return { 'bias': r * diff }
 
-    def _optCdDeltaH(self, vData, hData, vModel, hModel, **kwargs):
+    def _optimize_cd_delta_hidden(self, vData, hData, vModel, hModel, **kwargs):
         """Constrastive divergency gradients of hidden units.
 
         Returns:
@@ -303,12 +304,12 @@ class rbm(nemoa.system.ann.ann):
         cfg = self._config['optimize']
 
         h = len(self.units['hidden'].params['label'])
-        r = cfg['updateRate'] * cfg['updateFactorHbias'] # update rate
+        r = cfg['update_rate'] * cfg['update_factor_hbias'] # update rate
         diff = numpy.mean(hData - hModel, axis = 0).reshape((1, h))
 
         return { 'bias': r * diff }
 
-    def _optCdDeltaL(self, vData, hData, vModel, hModel, **kwargs):
+    def _optimize_cd_delta_links(self, vData, hData, vModel, hModel, **kwargs):
         """Constrastive divergency gradients of links.
 
         Returns:
@@ -320,11 +321,11 @@ class rbm(nemoa.system.ann.ann):
 
         D = numpy.dot(vData.T, hData) / float(vData.size)
         M = numpy.dot(vModel.T, hModel) / float(vData.size)
-        r = cfg['updateRate'] * cfg['updateFactorWeights'] # update rate
+        r = cfg['update_rate'] * cfg['update_factor_weights'] # update rate
 
         return { 'W': r * (D - M) }
 
-    def _optKlDeltaH(self, vData, hData, vModel, hModel):
+    def _optimize_kl_delta_hidden(self, vData, hData, vModel, hModel):
         """Kullback-Leibler penalty gradients of hidden units.
 
         Returns:
@@ -335,63 +336,63 @@ class rbm(nemoa.system.ann.ann):
 
         cfg = self._config['optimize']
 
-        p = cfg['modKlExpect'] # target expectation value
+        p = cfg['mod_kl_expect'] # target expectation value
         q = numpy.mean(hData, axis = 0) # expectation value over samples
-        r = max(cfg['updateRate'], cfg['modKlRate']) # update rate
+        r = max(cfg['update_rate'], cfg['mod_kl_rate']) # update rate
 
         return { 'bias': r * (p - q) }
 
-    def _optSaDeltaH(self, tracker):
+    def _optimize_sa_delta_hidden(self, tracker):
         cfg = self._config['optimize']
-        #cfg['modSaInitTemperature'], cfg['modSaAnnealingFactor']
+        #cfg['mod_sa_init_temperature'], cfg['mod_sa_annealing_factor']
 
         #dBias = numpy.zeros([1, hData.shape[1]])
 
         #return { 'bias': dBias }
         return {}
 
-    def _optSaDeltaV(self, tracker):
+    def _optimize_sa_delta_visible(self, tracker):
         cfg = self._config['optimize']
-        #cfg['modSaInitTemperature'], cfg['modSaAnnealingFactor']
+        #cfg['mod_sa_init_temperature'], cfg['mod_sa_annealing_factor']
 
         #dBias = numpy.zeros([1, vData.shape[1]])
 
         #return { 'bias': dBias }
         return {}
 
-    def _optSaDeltaL(self, tracker):
+    def _optimize_sa_delta_links(self, tracker):
         cfg = self._config['optimize']
         params = tracker.read('sa')
         if params:
             initRate = params['initRate']
         else:
-            initRate = cfg['updateRate']
+            initRate = cfg['update_rate']
             tracker.write('sa', initRate = initRate)
 
         shape = self._params['links'][(0, 1)]['W'].shape
-        r = initRate ** 2 / cfg['updateRate'] * cfg['updateFactorWeights']
-        temperature = self._optSaTemperature(tracker)
+        r = initRate ** 2 / cfg['update_rate'] * cfg['update_factor_weights']
+        temperature = self._optimize_sa_temperature(tracker)
         if temperature == 0.: return {}
         sigma = r * temperature
         W = numpy.random.normal(0., sigma, shape)
 
         return { 'W': W }
 
-    def _optSaTemperature(self, tracker):
+    def _optimize_sa_temperature(self, tracker):
         """Calculate temperature for simulated annealing."""
         config = self._config['optimize']
 
-        init      = float(config['modSaInitTemperature'])
-        annealing = float(config['modSaAnnealingFactor'])
-        cycles    = float(config['modSaAnnealingCycles'])
+        init      = float(config['mod_sa_init_temperature'])
+        annealing = float(config['mod_sa_annealing_factor'])
+        cycles    = float(config['mod_sa_annealing_cycles'])
         updates   = int(float(config['updates']) / cycles)
         epoch     = float(tracker.get('epoch') % updates)
         heat      = init * (1. - epoch / float(updates)) ** annealing
 
-        if heat < config['modSaMinTemperature']: return 0.
+        if heat < config['mod_sa_min_temperature']: return 0.
         return heat
 
-    def _getUnitsFromConfig(self):
+    def _get_units_from_config(self):
         """Return tuple with unit information created from config."""
 
         if isinstance(self._config['params']['visible'], int):
@@ -421,12 +422,12 @@ class rbm(nemoa.system.ann.ann):
             'visible': False, 'label': hLabel
         }]
 
-    def _getUnitsFromDataset(self, dataset):
+    def _get_units_from_dataset(self, dataset):
         """Return tuple with lists of unit labels ([visible], [hidden]) using dataset for visible."""
         return (dataset.getColLabels(), self.units['hidden'].params['label'])
 
     # TODO: generalize to ann
-    def _unlinkUnit(self, unit):
+    def _unlink_unit(self, unit):
         """Delete unit links in adjacency matrix."""
         if unit in self.units['visible'].params['label']:
             i = self.units['visible'].params['label'].index(unit)
@@ -438,15 +439,15 @@ class rbm(nemoa.system.ann.ann):
             return True
         return False
 
-    def _setVisibleUnitParams(self, params):
+    def _set_visible_unit_params(self, params):
         """Set parameters of visible units using dictionary."""
         return self.units['visible'].overwrite(params['units'][0])
 
-    def _setHiddenUnitParams(self, params):
+    def _set_hidden_unit_params(self, params):
         """Set parameters of hidden units using dictionary."""
         return self.units['hidden'].overwrite(params['units'][1])
 
-    def _getLinksFromConfig(self):
+    def _get_links_from_config(self):
         """Return links from adjacency matrix."""
         links = []
         for i, v in enumerate(self.units['visible'].params['label']):
@@ -456,40 +457,45 @@ class rbm(nemoa.system.ann.ann):
                     links.append((v, h))
         return links
 
-    def _getLinksFromNetwork(self, network):
+    def _get_links_from_network(self, network):
         """Return links from network instance."""
         return network.edges()
 
-    def _evalSystemEnergy(self, data, *args, **kwargs):
+    def _eval_system_energy(self, data, *args, **kwargs):
         """Pseudo energy function.
 
         Calculates the logarithm of the sum of exponential negative
-        sample energies (plus one). This allows
-
+        sample energies (plus one).
 
         """
 
-        # mapping
-        mapV = ('visible', )
-        mapH = ('visible', 'hidden')
+        # mapping tuples for visible and hidden units
+        map_visible = ('visible', )
+        map_hidden = ('visible', 'hidden')
 
         # calculate energies of visible units
-        eVisible = self._evalUnitEnergy(
-            data[0], mapping = mapV).sum(axis = 1)
-        # calculate energies of hidden units
-        eHidden = self._evalUnitEnergy(
-            data[0], mapping = mapH).sum(axis = 1)
-        # calculate energies of links
-        eLinks = self._evalLinkEnergy(
-            data[0], mapping = mapH).sum(axis = (1, 2))
-        # calculate energies of samples
-        energy = eVisible + eHidden + eLinks
+        energy_visible = self._eval_unit_energy(
+            data[0], mapping = map_visible).sum(axis = 1)
 
-        return -numpy.log(1. + numpy.exp(-energy).sum())
+        # calculate hidden unit energies of all samples
+        energy_hidden = self._eval_unit_energy(
+            data[0], mapping = map_hidden).sum(axis = 1)
 
-    def _setLinks(self, links = []):
+        # calculate link energies of all samples
+        energy_links = self._eval_link_energy(
+            data[0], mapping = map_hidden).sum(axis = (1, 2))
+
+        # calculate energies of all samples
+        energy_vector = energy_visible + energy_hidden + energy_links
+
+        # calculate (pseudo) energy of system
+        energy = -numpy.log(1. + numpy.exp(-energy_vector).sum())
+
+        return energy
+
+    def _set_links(self, links = []):
         """Set links and create link adjacency matrix."""
-        if not self._checkUnitParams(self._params):
+        if not self._check_unit_params(self._params):
             return nemoa.log('error', """could not set links:
                 units have not yet been set yet!""")
 
@@ -513,7 +519,7 @@ class rbm(nemoa.system.ann.ann):
 
         return True
 
-    def _setLinkParams(self, params):
+    def _set_link_params(self, params):
         """Set link parameters and update link matrices using dictionary."""
         for i, v in enumerate(self.units['visible'].params['label']):
             if not v in params['units'][0]['label']:
@@ -527,16 +533,16 @@ class rbm(nemoa.system.ann.ann):
                 self._params['links'][(0, 1)]['W'][i, j] = params['W'][k, l]
         return True
 
-    def _removeLinks(self, links = []):
+    def _remove_links(self, links = []):
         """Remove links from adjacency matrix using list of links."""
-        if not self._checkParams(self._params): # check params
+        if not self._check_params(self._params): # check params
             nemoa.log('error', """
                 could not remove links:
                 units have not been set yet!""")
             return False
 
         # search links and update list of current links
-        curLinks = self._getLinksFromConfig() # get current links
+        curLinks = self._get_links_from_config() # get current links
         for link in links:
             found = False
             if (link[0], link[1]) in curLinks:
@@ -550,9 +556,9 @@ class rbm(nemoa.system.ann.ann):
                     link could not be found!""" % (link[0], link[1]))
                 continue
 
-        return self._setLinks(curLinks)
+        return self._set_links(curLinks)
 
-    def _updateLinks(self, **updates):
+    def _update_links(self, **updates):
         """Set updates for links."""
         if 'W' in updates:
             self._params['links'][(0, 1)]['W'] += updates['W']
@@ -593,33 +599,33 @@ class grbm(rbm):
             'ignoreUnits': [], # do not ignore units on update (needed for stacked updates)
             'updates': 100000, # number of update steps / epochs
             'algorithm': 'cd', # algorithm used for updates
-            'updateCdkSteps': 1, # number of gibbs steps in cdk sampling
-            'updateCdkIterations': 1, # number of iterations in cdk sampling
-            'updateRate': 0.001, # update rate (depends in algorithm)
-            'updateFactorWeights': 1., # factor for weight updates (related to update rate)
-            'updateFactorHbias': 0.1, # factor for hidden unit bias updates (related to update rate)
-            'updateFactorVbias': 0.1, # factor for visible unit bias updates (related to update rate)
-            'updateFactorVlvar': 0.01, # factor for visible unit logarithmic variance updates (related to update rate)
-            'minibatchSize': 500, # number of samples used to calculate updates
-            'minibatchInterval': 1, # number of updates the same minibatch is used
-            'modCorruptionEnable': False,
-            'modCorruptionType': 'none', # do not use corruption
-            'modCorruptionFactor': 0., # no corruption of data
-            'modSaEnable': True, # use simulated annealing
-            'modSaInitTemperature': 1.,
-            'modSaAnnealingFactor': 1.,
-            'modSaAnnealingCycles': 1,
-            'modKlEnable': True, # use Kullback-Leibler penalty
-            'modKlRate': 0., # sparsity update
-            'modKlExpect': 0.5, # aimed value for l2-norm penalty
+            'update_cd_sampling_steps': 1, # number of gibbs steps in cdk sampling
+            'update_cd_sampling_iterations': 1, # number of iterations in cdk sampling
+            'update_rate': 0.001, # update rate (depends in algorithm)
+            'update_factor_weights': 1., # factor for weight updates (related to update rate)
+            'update_factor_hbias': 0.1, # factor for hidden unit bias updates (related to update rate)
+            'update_factor_vbias': 0.1, # factor for visible unit bias updates (related to update rate)
+            'update_factor_vlvar': 0.01, # factor for visible unit logarithmic variance updates (related to update rate)
+            'minibatch_size': 500, # number of samples used to calculate updates
+            'minibatch_update_interval': 1, # number of updates the same minibatch is used
+            'mod_corruption_enable': False,
+            'mod_corruption_type': 'none', # do not use corruption
+            'mod_corruption_factor': 0., # no corruption of data
+            'mod_sa_enable': True, # use simulated annealing
+            'mod_sa_init_temperature': 1.,
+            'mod_sa_annealing_factor': 1.,
+            'mod_sa_annealing_cycles': 1,
+            'mod_kl_enable': True, # use Kullback-Leibler penalty
+            'mod_kl_rate': 0., # sparsity update
+            'mod_kl_expect': 0.5, # aimed value for l2-norm penalty
             'useAdjacency': False, # do not use selective weight updates
-            'trackerObjFunction': 'error', # objective function
-            'trackerEvalTimeInterval': 20., # time interval for calculation the inspection function
-            'trackerEstimateTime': True, # initally estimate time for whole optimization process
-            'trackerEstimateTimeWait': 20. # time intervall used for time estimation
+            'tracker_obj_function': 'error', # objective function
+            'tracker_eval_time_interval': 20., # time interval for calculation the inspection function
+            'tracker_estimate_time': True, # initally estimate time for whole optimization process
+            'tracker_estimate_timeWait': 20. # time intervall used for time estimation
         }}[key]
 
-    def _checkDataset(self, dataset):
+    def _check_dataset(self, dataset):
         """Check if dataset contains gauss normalized values."""
         if not nemoa.type.isDataset(dataset): return nemoa.log('error',
             'could not test dataset: invalid dataset instance given!')
@@ -628,7 +634,8 @@ class grbm(rbm):
             standard normal distributed data.""" % (dataset.name()))
         return True
 
-    def _optCdDeltaV(self, vData, hData, vModel, hModel, **kwargs):
+    def _optimize_cd_delta_visible(self, vData, hData, vModel, hModel,
+        **kwargs):
         """Return cd gradient based updates for visible units.
 
         Constrastive divergency gradient of visible unit parameters
@@ -642,8 +649,8 @@ class grbm(rbm):
         W = self._params['links'][(0, 1)]['W']
         var = numpy.exp(self.units['visible'].params['lvar'])
         b = self.units['visible'].params['bias']
-        r1 = cfg['updateRate'] * cfg['updateFactorVbias']
-        r2 = cfg['updateRate'] * cfg['updateFactorVlvar']
+        r1 = cfg['update_rate'] * cfg['update_factor_vbias']
+        r2 = cfg['update_rate'] * cfg['update_factor_vlvar']
         d = numpy.mean(0.5 * (vData - b) ** 2 \
             - vData * numpy.dot(hData, W.T), axis = 0).reshape((1, v))
         m = numpy.mean(0.5 * (vModel - b) ** 2 \
@@ -654,7 +661,7 @@ class grbm(rbm):
             'bias': r1 * diff / var,
             'lvar': r2 * (d - m) / var }
 
-    def _optCdDeltaL(self, vData, hData, vModel, hModel, **kwargs):
+    def _optimize_cd_delta_links(self, vData, hData, vModel, hModel, **kwargs):
         """Return cd gradient based updates for links.
 
         Description:
@@ -664,13 +671,13 @@ class grbm(rbm):
 
         cfg = self._config['optimize']
         var = numpy.exp(self.units['visible'].params['lvar']).T # variance of visible units
-        r = cfg['updateRate'] * cfg['updateFactorWeights'] # update rate
+        r = cfg['update_rate'] * cfg['update_factor_weights'] # update rate
         D = numpy.dot(vData.T, hData) / float(vData.size)
         M = numpy.dot(vModel.T, hModel) / float(vData.size)
 
         return { 'W': r * (D - M) / var }
 
-    def _getVisibleUnitParams(self, label):
+    def _get_visible_unit_params(self, label):
         """Return system parameters of one specific visible unit."""
         id = self.units['visible'].params['label'].index(label)
         return {
@@ -678,6 +685,6 @@ class grbm(rbm):
             'sdev': numpy.sqrt(numpy.exp(
                 self.units['visible'].params['lvar'][0, id])) }
 
-    def _setVisibleUnitParams(self, params):
+    def _set_visible_unit_params(self, params):
         """Set parameters of visible units using dictionary."""
         return self.units['visible'].overwrite(params['units'][0])
