@@ -58,15 +58,15 @@ class workspace:
 
     def dataset(self, config = None, **kwargs):
         """Return new dataset instance."""
-        return self._getInstance('dataset', config, **kwargs)
+        return self._get_instance('dataset', config, **kwargs)
 
     def network(self, config = None, **kwargs):
         """Return new network instance."""
-        return self._getInstance('network', config, **kwargs)
+        return self._get_instance('network', config, **kwargs)
 
     def system(self, config = None, **kwargs):
         """Return new system instance."""
-        return self._getInstance('system', config, **kwargs)
+        return self._get_instance('system', config, **kwargs)
 
     def model(self, name = None, **kwargs):
         """Return model instance."""
@@ -76,7 +76,7 @@ class workspace:
             if not name in self.list(type = 'model'): return \
                 nemoa.log('error', """could not import model:
                 a model with name '%s' does not exists!""" % (name))
-            return self._importModelFromFile(name)
+            return self._import_model(name)
 
         # check keyword arguments
         if not ('network' in kwargs and 'dataset' in kwargs \
@@ -85,9 +85,9 @@ class workspace:
                 dataset, network and system parameters needed!""")
 
         # try to create new model
-        return self._createNewModel(name, **kwargs)
+        return self._create_new_model(name, **kwargs)
 
-    def _getInstance(self, type = None, config = None, empty = False, **kwargs):
+    def _get_instance(self, type = None, config = None, empty = False, **kwargs):
         """Return new instance of given object type and configuration."""
         nemoa.log('create%s %s instance' % (' empty' if empty else '', type))
         nemoa.setLog(indent = '+1')
@@ -119,13 +119,13 @@ class workspace:
         nemoa.setLog(indent = '-1')
         return instance
 
-    def _createNewModel(self, name, config = None,
+    def _create_new_model(self, name, config = None,
         dataset = None, network = None, system = None,
         configure = True, initialize = True):
         nemoa.log('create new model')
         nemoa.setLog(indent = '+1')
 
-        model = self._getModelInstance(name = name, config  = config,
+        model = self._get_model_instance(name = name, config  = config,
             dataset = dataset, network = network, system  = system)
 
         if not nemoa.type.isModel(model):
@@ -139,7 +139,7 @@ class workspace:
         nemoa.setLog(indent = '-1')
         return model
 
-    def _getModelInstance(self, name = None, config = None,
+    def _get_model_instance(self, name = None, config = None,
         dataset = None, network = None, system = None):
         """Return new model instance."""
 
@@ -148,7 +148,7 @@ class workspace:
 
         # create dataset instance (if not given)
         if not nemoa.type.isDataset(dataset): dataset = \
-            self._getInstance(type = 'dataset', config = dataset)
+            self._get_instance(type = 'dataset', config = dataset)
         if not nemoa.type.isDataset(dataset):
             nemoa.log('error',
                 'could not create model instance: dataset is invalid!')
@@ -158,7 +158,7 @@ class workspace:
         # create network instance (if not given)
         if network == None: network = {'type': 'auto'}
         if not nemoa.type.isNetwork(network): network = \
-            self._getInstance(type = 'network', config = network)
+            self._get_instance(type = 'network', config = network)
         if not nemoa.type.isNetwork(network):
             nemoa.log('error',
                 'could not create model instance: network is invalid!')
@@ -167,7 +167,7 @@ class workspace:
 
         # create system instance (if not given)
         if not nemoa.type.isSystem(system): system = \
-            self._getInstance(type = 'system', config = system)
+            self._get_instance(type = 'system', config = system)
         if not nemoa.type.isSystem(system):
             nemoa.log('error',
                 'could not create model instance: system is invalid!')
@@ -179,14 +179,14 @@ class workspace:
             [dataset.name(), network.name(), system.name()])
 
         # create model instance
-        model = self._getInstance(
+        model = self._get_instance(
             type = 'model', config = config, name = name,
             dataset = dataset, network = network, system = system)
 
         nemoa.setLog(indent = '-1')
         return model
 
-    def _importModelFromFile(self, file):
+    def _import_model(self, file):
         """Return new model instance and set configuration and parameters from file."""
 
         nemoa.log('import model from file')
@@ -205,7 +205,7 @@ class workspace:
         nemoa.log("load model: '%s'" % file)
         modelDict = nemoa.common.dictFromFile(file)
 
-        model = self._getModelInstance(
+        model = self._get_model_instance(
             name    = modelDict['config']['name'],
             config  = modelDict['config'],
             dataset = modelDict['dataset']['cfg'],
@@ -353,7 +353,7 @@ class config:
         self._workspace = workspace # set workspace
         self._update_paths(base = 'user') # update paths
         self._update_cache_paths() # update path of cache
-        nemoa.initLogger(logfile = self._path['logfile']) # update logger
+        nemoa.init_logger(logfile = self._path['logfile']) # update logger
         self._scan_config_files() # import configuration files
         self._scan_scripts() # scan for scriptfiles
         self._scan_networks() # scan for network configurations

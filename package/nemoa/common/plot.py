@@ -183,7 +183,7 @@ def graph(graph, **kwargs):
 
     return True
 
-def layerGraph(G, **kwargs):
+def layergraph(G, **kwargs):
 
     # create node stack (list with lists of nodes)
     layers = G.graph['params']['layer']

@@ -4,11 +4,11 @@
 Nemoa is a python package for designing and building complex systems of
 stacked artificial neural networks. This allows the creation,
 transformation and analysis of datasets by using or introducing general
-structural assumptions like noise models or sparsity.
+structural assumptions like noise models, sparsity or complexity.
 
 """
 
-__version__ = '0.4.108'
+__version__ = '0.4.109'
 __status__  = 'Development'
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
@@ -26,7 +26,7 @@ import nemoa.system
 import nemoa.network
 import nemoa.model
 
-initLogger()
+init_logger()
 
 def new(**kwargs):
     """Return new workspace instance."""

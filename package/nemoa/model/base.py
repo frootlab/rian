@@ -43,7 +43,7 @@ class model:
 
         if self._is_empty(): return
         if not self._check_model(): return
-        self.updateConfig()
+        self._update_config()
 
     def _set_config(self, config):
         """Set configuration from dictionary."""
@@ -83,7 +83,7 @@ class model:
             or not nemoa.type.isSystem(self.system): return False
         return True
 
-    def updateConfig(self):
+    def _update_config(self):
         """Update model configuration."""
 
         # set version of model

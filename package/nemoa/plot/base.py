@@ -91,7 +91,7 @@ class plot:
                 if 'title' in self.settings \
                     and isinstance(self.settings['title'], str):
                     title = self.settings['title']
-                else: title = self._getTitle(model)
+                else: title = self._get_title(model)
                 matplotlib.pyplot.title(title, fontsize = 11.)
 
             # output
@@ -104,5 +104,5 @@ class plot:
 
         return True
 
-    def _getTitle(self, model):
+    def _get_title(self, model):
         return model.name()

@@ -76,4 +76,4 @@ class graph(nemoa.plot.base.plot):
                 graph.edge[u][v]['caption'] = \
                     ' $' + ('%.2g' % (graph.edge[u][v]['weight'])) + '$'
 
-        return nemoa.common.plot.layerGraph(graph, **self.settings)
+        return nemoa.common.plot.layergraph(graph, **self.settings)
