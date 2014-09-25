@@ -59,7 +59,7 @@ class system:
                     self._config[key] = self._default(key)
 
         # overwrite / merge local with given configuration
-        nemoa.common.dictMerge(config, self._config)
+        nemoa.common.dict_merge(config, self._config)
 
         # create / update local unit and link dictionaries
         if not hasattr(self, '_params'): self._params = {}
@@ -78,18 +78,6 @@ class system:
     def setNetwork(self, *args, **kwargs):
         """Update units and links to network instance."""
         return self._set_network(*args, **kwargs)
-
-    def updateNetwork(self, network):
-        """update params in network."""
-        if not nemoa.type.isNetwork(network): return False
-        G = network.graph
-        for u, v, d in G.edges(data = True):
-            params = self._getLink((u, v))
-            if not params: params = self._getLink((v, u))
-            if not params: continue
-            nemoa.common.dictMerge(params, G[u][v]['params'])
-            G[u][v]['weight'] = params['weight']
-        return True
 
     def setDataset(self, *args, **kwargs):
         """Update units and links to dataset instance."""
@@ -279,7 +267,7 @@ class system:
         # and merge default, existing and given schedule
         if not 'params' in schedule:
             config = self._default('optimize')
-            nemoa.common.dictMerge(self._config['optimize'], config)
+            nemoa.common.dict_merge(self._config['optimize'], config)
             self._config['optimize'] = config
         elif not self.getType() in schedule['params']: return nemoa.log(
             'error', """could not optimize model:
@@ -287,8 +275,8 @@ class system:
             """ % (schedule['name'], self.getType()))
         else:
             config = self._default('optimize')
-            nemoa.common.dictMerge(self._config['optimize'], config)
-            nemoa.common.dictMerge(schedule['params'][self.getType()], config)
+            nemoa.common.dict_merge(self._config['optimize'], config)
+            nemoa.common.dict_merge(schedule['params'][self.getType()], config)
             self._config['optimize'] = config
 
         # check dataset
@@ -441,11 +429,11 @@ class system:
         if mapping == None:
             mapping = self.mapping()
         if transform == 'expect':
-            return self._eval_unit_expect(data, mapping)
+            return self._eval_units_expect(data, mapping)
         if transform == 'value':
-            return self._eval_unit_values(data, mapping)
+            return self._eval_units_values(data, mapping)
         if transform == 'sample':
-            return self._eval_unit_samples(data, mapping)
+            return self._eval_units_samples(data, mapping)
         return nemoa.log('error', """could not map data:
             unknown mapping algorithm '%s'""" % (transform))
 
@@ -467,7 +455,7 @@ class system:
         """
 
         # create information dictionary
-        about = nemoa.common.dictMerge({
+        about = nemoa.common.dict_merge({
             'name': self.name(),
             'description': self.__doc__,
             'class': self._config['class'],

@@ -517,3 +517,20 @@ class network:
     def name(self):
         """Name of network (as string)."""
         return self.cfg['name'] if 'name' in self.cfg else ''
+
+    def update(self, **kwargs):
+        if 'system' in kwargs:
+            system = kwargs['system']
+            if not nemoa.type.isSystem(system):
+                return nemoa.log('error',
+                    'could not update network: system is invalid.')
+
+            for u, v, d in self.graph.edges(data = True):
+                params = system._getLink((u, v))
+                if not params: params = system._getLink((v, u))
+                if not params: continue
+                nemoa.common.dict_merge(
+                    params, self.graph[u][v]['params'])
+                self.graph[u][v]['weight'] = params['weight']
+
+            return True

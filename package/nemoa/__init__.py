@@ -8,11 +8,11 @@ structural assumptions like noise models, sparsity or complexity.
 
 """
 
-__version__ = '0.4.110'
+__version__ = '0.4.111'
 __status__  = 'Development'
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
-__credits__ = ['Rainer König']
+__credits__ = ['Rainer Koenig', 'Rebecca Krauss']
 __license__ = 'GPLv3'
 __copyright__ = 'Copyright 2013-2014, Patrick Michl'
 __maintainer__ = 'Patrick Michl'
@@ -46,4 +46,4 @@ def welcome():
 
 def workspaces():
     """Return list of workspaces."""
-    return nemoa.workspace.__config(update = False).list('workspace')
+    return nemoa.workspace.list('workspace')

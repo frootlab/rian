@@ -153,28 +153,27 @@ class model:
 
         # check if model is configured
         if not self._is_configured():
-            nemoa.log('error', """could not initialize model parameters:
-                model is not yet configured!""")
-            return False
+            return nemoa.log('error', """could not initialize model:
+                model is not yet configured.""")
 
         # check dataset
         if not nemoa.type.isDataset(self.dataset):
-            nemoa.log('error', """could not initialize model parameters:
-                dataset is not yet configured!""")
-            return False
+            return nemoa.log('error', """could not initialize model:
+                dataset is not yet configured.""")
 
         # check system
         if not nemoa.type.isSystem(self.system):
-            nemoa.log('error', """could not initialize model parameters:
-                system is not yet configured!""")
-            return False
-        elif self.system._is_empty(): return False
+            return nemoa.log('error', """could not initialize model:
+                system is not yet configured.""")
 
-        # initialize system parameters
+        # check if system is empty
+        if self.system._is_empty(): return False
+
+        # initialize system parameters with dataset
         self.system.initialize(self.dataset)
 
-        # update network
-        self.system.updateNetwork(self.network)
+        # update network with initial system parameters
+        self.network.update(system = self.system)
 
         return self
 
@@ -226,10 +225,9 @@ class model:
 
         nemoa.log('set', indent = '-1')
 
-        # update network
-        self.system.updateNetwork(self.network)
-
+        self.network.update(system = self.system) # update network
         nemoa.log('set', indent = '-1')
+
         return self
 
     def _set_dataset(self, dataset):
@@ -438,7 +436,7 @@ class model:
         file = nemoa.common.getEmptyFile(file)
 
         # save model parameters and configuration to file
-        nemoa.common.dictToFile(self._get(), file)
+        nemoa.common.dict_to_file(self._get(), file)
 
         # create console message
         nemoa.log("save model as: '%s'" %
@@ -541,7 +539,7 @@ class model:
                 if args[0] == 'dataset':
                     if len(args) > 1: relClass = args[1]
                     else: relClass = 'histogram'
-                    cfg = nemoa.common.dictMerge(params, {
+                    cfg = nemoa.common.dict_merge(params, {
                         'package': 'dataset',
                         'class': relClass,
                         'params': {},
@@ -549,7 +547,7 @@ class model:
                         'name': 'distribution',
                         'id': 0})
                 elif args[0] == 'network':
-                    cfg = nemoa.common.dictMerge(params, {
+                    cfg = nemoa.common.dict_merge(params, {
                         'package': 'network',
                         'class': 'graph',
                         'params': {},
@@ -566,7 +564,7 @@ class model:
                             relation = self.about('system', 'relations')[args[2]]
                             if len(args) > 3: relClass = args[3]
                             else: relClass = relation['show']
-                            cfg = nemoa.common.dictMerge(params, {
+                            cfg = nemoa.common.dict_merge(params, {
                                 'package': 'system',
                                 'class': relClass,
                                 'params': {'relation': args[0]},
@@ -577,7 +575,7 @@ class model:
                     relation = self.about('system', 'relations')[args[0]]
                     if len(args) > 1: relClass = args[1]
                     else: relClass = relation['show']
-                    cfg = nemoa.common.dictMerge(params, {
+                    cfg = nemoa.common.dict_merge(params, {
                         'package': 'system',
                         'class': relClass,
                         'params': {'relation': args[0]},

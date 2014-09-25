@@ -203,7 +203,7 @@ class workspace:
 
         # load model parameters and configuration from file
         nemoa.log("load model: '%s'" % file)
-        modelDict = nemoa.common.dictFromFile(file)
+        modelDict = nemoa.common.dict_from_file(file)
 
         model = self._get_model_instance(
             name    = modelDict['config']['name'],
@@ -306,6 +306,10 @@ class config:
             if os.path.isdir(w)]
 
     def project(self):
+        """Return name of current workspace."""
+        return self._workspace
+
+    def name(self):
         """Return name of current workspace."""
         return self._workspace
 

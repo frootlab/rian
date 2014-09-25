@@ -199,11 +199,11 @@ class rbm(nemoa.system.ann.ann):
         k = cfg['update_cd_sampling_steps']
         m = cfg['update_cd_sampling_iterations']
 
-        hData = self._eval_unit_expect(data, ('visible', 'hidden'))
+        hData = self._eval_units_expect(data, ('visible', 'hidden'))
         if k == 1 and m == 1:
-            vModel = self._eval_unit_samples(hData, ('hidden', 'visible'),
+            vModel = self._eval_units_samples(hData, ('hidden', 'visible'),
                 expectLast = True)
-            hModel = self._eval_unit_expect(vModel, ('visible', 'hidden'))
+            hModel = self._eval_units_expect(vModel, ('visible', 'hidden'))
             return data, hData, vModel, hModel
 
         vModel = numpy.zeros(shape = data.shape)
@@ -213,21 +213,21 @@ class rbm(nemoa.system.ann.ann):
 
                 # calculate hSample from hExpect
                 # in first sampling step init hSample with h_data
-                if j == 0: hSample = self._eval_unit_samples(
+                if j == 0: hSample = self._eval_units_samples(
                     hData, ('hidden', ))
-                else: hSample = self._eval_unit_samples(hExpect, (
+                else: hSample = self._eval_units_samples(hExpect, (
                     'hidden', ))
 
                 # calculate vExpect from hSample
-                vExpect = self._eval_unit_expect(hSample, ('hidden',
+                vExpect = self._eval_units_expect(hSample, ('hidden',
                     'visible'))
 
                 # calculate hExpect from vSample
                 # in last sampling step use vExpect
                 # instead of vSample to reduce noise
-                if j + 1 == k: hExpect = self._eval_unit_expect(vExpect,
+                if j + 1 == k: hExpect = self._eval_units_expect(vExpect,
                     ('visible', 'hidden'))
-                else: hExpect = self._eval_unit_samples(vExpect,
+                else: hExpect = self._eval_units_samples(vExpect,
                     ('visible', 'hidden'), expectLast = True)
 
             vModel += vExpect / m
@@ -474,15 +474,15 @@ class rbm(nemoa.system.ann.ann):
         map_hidden = ('visible', 'hidden')
 
         # calculate energies of visible units
-        energy_visible = self._eval_unit_energy(
+        energy_visible = self._eval_units_energy(
             data[0], mapping = map_visible).sum(axis = 1)
 
         # calculate hidden unit energies of all samples
-        energy_hidden = self._eval_unit_energy(
+        energy_hidden = self._eval_units_energy(
             data[0], mapping = map_hidden).sum(axis = 1)
 
         # calculate link energies of all samples
-        energy_links = self._eval_link_energy(
+        energy_links = self._eval_links_energy(
             data[0], mapping = map_hidden).sum(axis = (1, 2))
 
         # calculate energies of all samples

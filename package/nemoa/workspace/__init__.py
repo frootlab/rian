@@ -47,11 +47,12 @@ def getConfig(type = None, config = None, merge = ['params'], **kwargs):
     """Return object configuration as dictionary."""
     if config == None: return {}
     if isinstance(config, dict): return copy.deepcopy(config)
-    elif not isinstance(config, str) or not isinstance(type, str): return False
+    elif not isinstance(config, str) \
+        or not isinstance(type, str): return False
 
     name, params = nemoa.common.strSplitParams(config)
     if 'params' in kwargs and isinstance(kwargs['params'], dict):
-        params = nemoa.common.dictMerge(kwargs['params'], params)
+        params = nemoa.common.dict_merge(kwargs['params'], params)
 
     search = [name, '%s.%s' % (project(), name),
         name + '.default', 'base.' + name]

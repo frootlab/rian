@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys, getopt, os
+import sys
+import getopt
+import os
 from subprocess import call
 
 sys.path.append('./package')
@@ -9,76 +11,74 @@ import nemoa
 
 def main(argv):
 
-    project = ''
-    script  = ''
-    kwargs  = ''
+    workspace = ''
+    script = ''
+    kwargs = ''
     ipython = False
 
     # get arguments
-    try: opts, args = getopt.getopt(argv, "hvip:s:a:",
-        ["project=", "script=", "arguments="])
+    try: opts, args = getopt.getopt(argv, "hvilw:s:a:",
+        ["workspace=", "script=", "arguments="])
     except getopt.GetoptError: usage(); sys.exit(2)
 
-    if len(opts) == 0:
-        interactive()
-        sys.exit()
-    
+    if len(opts) == 0: usage(); sys.exit()
+
     # parse arguments
     for opt, arg in opts:
-        if opt == '-h': usage(); sys.exit()
-        elif opt == '-v': version(); sys.exit()
-        elif opt == '-i': ipython = True
-        elif opt in ("-p", "--project"):   project = arg
-        elif opt in ("-s", "--script"):    script = arg
-        elif opt in ("-a", "--arguments"): kwargs = arg
+        if opt in ['-h', '--help']: usage(); sys.exit()
+        elif opt in ['-v', '--version']: version(); sys.exit()
+        elif opt in ['-i', '--interactive']: interactive(); sys.exit()
+        elif opt in ['-l', '--list']: print_workspaces(); sys.exit()
+        elif opt in ['-w', '--workspace']: workspace = arg
+        elif opt in ['-s', '--script']: script = arg
+        elif opt in ['-a', '--arguments']: kwargs = arg
 
     # do something
-    if not project:
-        if ipython:
-            interactive()
-            sys.exit()
-        usage(); projects(); sys.exit()
+    if not workspace: usage(); print_workspaces(); sys.exit()
+    if not script: usage(); print_scripts(workspace); sys.exit()
+    execute(workspace, script, kwargs)
 
-    if not script: usage(); scripts(project); sys.exit()
-    execute(project, script, kwargs)
-
-def projects():
+def print_workspaces():
     """Print list of workspaces to standard output."""
-    print 'Projects: ' + ','.join(['%s' % (p) for p in nemoa.workspaces()])
+    nemoa.log('set', mode = 'silent')
+    workspaces = nemoa.workspaces()
+    print 'Workspaces:\n'
+    for workspace in workspaces: print '    %s' % (workspace)
+    print
 
-def scripts(project):
+def print_scripts(workspace):
     """Print list of scripts to standard output."""
-    logParams = nemoa.getLog()
-    nemoa.setLog(mode = 'silent')
-    workspace = nemoa.open(project)
-    nemoa.setLog(mode = logParams['mode'])
-    scripts = workspace.list(type = 'script', namespace = workspace.project())
-    print 'Scripts in project %s:\n' % (project)
+    nemoa.log('set', mode = 'silent')
+    workspace = nemoa.open(workspace)
+    name = workspace.name()
+    scripts = workspace.list(type = 'script', namespace = name)
+    print 'Scripts in workspace %s:\n' % (name)
     for script in scripts: print '    %s' % (script)
-    print ''
+    print
 
-def execute(project, script, kwargs):
+def execute(workspace, script, kwargs):
     nemoa.welcome()
-    workspace = nemoa.open(project)
-    workspace.execute(name = script, arguments = kwargs)
+    nemoa.open(workspace).execute(name = script, arguments = kwargs)
 
 def interactive():
     try:
         call(['ipython', 'nemoa.interactive.py', '-i'])
     except:
-        nemoa.log('error', """
-            could not start interactive nemoa shell:
-            you have to install ipython!""")
+        nemoa.log('error',
+            """could not start interactive nemoa shell:
+            you have to install ipython.""")
 
 def version(): print nemoa.version()
 
 def usage():
     """Print script usage to standard output."""
-    print """Usage: %s [-p <project> [-s <script> [-a <arguments>]]] [-h] [-v]
-    
+    print """Usage: %s [-w <workspace> [-s <script> [-a <arguments>]]] [-h] [-v]
+
     -h --help                 Print this
-    -p --project              User Namespace / Project
-    -s --script               Basename of script to execute
+    -i --interactive          Start nemoa in iPython interactive shell
+    -l --list                 List workspaces
+    -w --workspace            List scripts in workspace
+    -s --script               Open workspace and execute script
     -a --arguments            Arguments passed to script
     -v --version              Print version
     """ % (os.path.basename(__file__))
