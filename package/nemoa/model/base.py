@@ -105,7 +105,7 @@ class model:
     def configure(self):
         """Configure model."""
         nemoa.log('configure model \'%s\'' % (self.name()))
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
         if not 'check' in self._config:
             self._config['check'] = {'dataset': False,
                 'network': False, 'System': False}
@@ -114,7 +114,7 @@ class model:
         if not self._config['check']['dataset']:
             nemoa.log('error', """could not configure model: dataset
                 could not be configured!""")
-            nemoa.setLog(indent = '-1')
+            nemoa.log('set', indent = '-1')
             return False
         self._config['check']['network'] = \
             self.network.configure(dataset = self.dataset,
@@ -122,7 +122,7 @@ class model:
         if not self._config['check']['network']:
             nemoa.log('error', """could not configure model: network
                 could not be configured!""")
-            nemoa.setLog(indent = '-1')
+            nemoa.log('set', indent = '-1')
             return False
         self._config['check']['system'] = \
             self.system.configure(network = self.network,
@@ -130,9 +130,9 @@ class model:
         if not self._config['check']['system']:
             nemoa.log('error', """could not configure model: system
                 could not be configured!""")
-            nemoa.setLog(indent = '-1')
+            nemoa.log('set', indent = '-1')
             return False
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
         return True
 
     def _is_configured(self):
@@ -182,19 +182,19 @@ class model:
         """Optimize system parameters."""
 
         nemoa.log('optimize model')
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         # check if model is empty
         if self._is_empty():
             nemoa.log('warning', "empty models can not be optimized!")
-            nemoa.setLog(indent = '-1')
+            nemoa.log('set', indent = '-1')
             return self
 
         # check if model is configured
         if not self._is_configured():
             nemoa.log('error',
                 'could not optimize model: model is not yet configured!')
-            nemoa.setLog(indent = '-1')
+            nemoa.log('set', indent = '-1')
             return False
 
         # get optimization schedule
@@ -209,12 +209,12 @@ class model:
             nemoa.log('error', """
                 could not optimize system parameters:
                 optimization schedule is not valid!""")
-            nemoa.setLog(indent = '-1')
+            nemoa.log('set', indent = '-1')
             return self
 
         # optimization of system parameters
         nemoa.log("starting optimization schedule: '%s'" % (schedule['name']))
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         # TODO: find better solution for multistage optimization
         if 'stage' in schedule and len(schedule['stage']) > 0:
@@ -224,12 +224,12 @@ class model:
             self.system.optimize(
                 dataset = self.dataset, schedule = schedule)
 
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
 
         # update network
         self.system.updateNetwork(self.network)
 
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
         return self
 
     def _set_dataset(self, dataset):
@@ -427,7 +427,7 @@ class model:
         """Save model settings to file and return filepath."""
 
         nemoa.log('save model to file')
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         # get filename
         if file == None:
@@ -444,7 +444,7 @@ class model:
         nemoa.log("save model as: '%s'" %
             (os.path.basename(file)[:-(len(fileExt) + 1)]))
 
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
         return file
 
     def show(self, *args, **kwargs):
@@ -455,7 +455,7 @@ class model:
     def plot(self, *args, **kwargs):
         """Create plot of model."""
         nemoa.log('create plot of model')
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         # check args and kwargs
         if 'output' in kwargs:
@@ -473,12 +473,12 @@ class model:
         if not self._is_configured():
             nemoa.log('error', """could not create plot of model:
                 model is not yet configured!""")
-            nemoa.setLog(indent = '-1')
+            nemoa.log('set', indent = '-1')
             return False
 
         # get plot instance
         nemoa.log('create plot instance')
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         if plot == None: plot = self.system.getType() + '.default'
         if isinstance(plot, str):
@@ -488,7 +488,7 @@ class model:
             objPlot = self._get_plot(*args, params = plotParams)
             if not objPlot:
                 nemoa.log('warning', "could not create plot: unknown configuration '%s'" % (plotName))
-                nemoa.setLog(indent = '-1')
+                nemoa.log('set', indent = '-1')
                 return None
         elif isinstance(plot, dict): objPlot = self._get_plot(config = plot)
         else: objPlot = self._get_plot()
@@ -505,7 +505,7 @@ class model:
         retVal = objPlot.create(self, file = file)
         if not file == None: nemoa.log('save plot: ' + file)
 
-        nemoa.setLog(indent = '-2')
+        nemoa.log('set', indent = '-2')
         return retVal
 
     def _get_plot(self, *args, **kwargs):

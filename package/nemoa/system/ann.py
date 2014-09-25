@@ -66,12 +66,12 @@ class ann(nemoa.system.base.system):
 
         nemoa.log("""get system units and links
             from network '%s'.""" % (network.name()))
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         if not nemoa.type.isNetwork(network):
             nemoa.log('error', """could not configure system:
                 network instance is not valid!""")
-            nemoa.setLog(indent = '-1')
+            nemoa.log('set', indent = '-1')
             return False
 
         self.setUnits(self._get_units_from_network(network),
@@ -80,7 +80,7 @@ class ann(nemoa.system.base.system):
             initialize = (update == False))
 
         self._config['check']['network'] = True
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
 
         return True
 

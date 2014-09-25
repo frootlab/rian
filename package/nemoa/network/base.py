@@ -123,7 +123,7 @@ class network:
             no valid system instance given.""")
 
         nemoa.log("configure network: '%s'" % (self.name()))
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         # type: 'auto is used for networks
         # wich are created by datasets (visible units)
@@ -133,7 +133,7 @@ class network:
             self._get_hidden_nodes_from_system(system)
             self._get_edges_from_layers()
             self._create_layergraph()
-            nemoa.setLog(indent = '-1')
+            nemoa.log('set', indent = '-1')
             return True
 
         # type: 'autolayer' is used for networks
@@ -142,7 +142,7 @@ class network:
             self._get_nodes_from_layers()
             self._get_edges_from_layers()
             self._create_layergraph()
-            nemoa.setLog(indent = '-1')
+            nemoa.log('set', indent = '-1')
             return True
 
         # configure network to dataset
@@ -154,7 +154,7 @@ class network:
                 self._create_layergraph(
                     nodelist = {'type': group, 'list': groups[group]})
 
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
         return True
 
     def _is_empty(self):

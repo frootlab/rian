@@ -98,7 +98,7 @@ class dataset:
 
         nemoa.log("configure dataset '%s' to network '%s'" % \
             (self.name(), network.name()))
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         # load data from cachefile (if caching and cachefile exists)
         cacheFile = self._searchCacheFile(network) if useCache else None
@@ -108,7 +108,7 @@ class dataset:
             # preprocess data
             if 'preprocessing' in self.cfg.keys():
                 self.preprocessData(**self.cfg['preprocessing'])
-            nemoa.setLog(indent = '-1')
+            nemoa.log('set', indent = '-1')
             return True
 
         # create table with one record for every single dataset files
@@ -156,7 +156,7 @@ class dataset:
         # get columns from dataset files and convert to common format
         colLabels = {}
         nemoa.log('configure data sources')
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
         for src in self.cfg['table']:
             nemoa.log("configure '%s'" % (src))
             srcCnf = self.cfg['table'][src]
@@ -219,7 +219,7 @@ class dataset:
                 'usecols': (),
                 'notusecols': convColLabelsLost }
 
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
 
         # intersect converted dataset column labels
         interColLabels = colLabels[colLabels.keys()[0]]['conv']
@@ -253,7 +253,7 @@ class dataset:
             if not found:
                 nemoa.log('error', """no node from network group '%s'
                     could be found in dataset source!""" % (group))
-                nemoa.setLog(indent = '-1')
+                nemoa.log('set', indent = '-1')
                 return False
 
         # update source file config
@@ -280,13 +280,13 @@ class dataset:
 
         # import data from sources
         nemoa.log('import data from sources')
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
         self.data = {}
         for src in self.cfg['table']:
             self.data[src] = {
                 'fraction': self.cfg['table'][src]['fraction'],
                 'array': self._csvGetData(src) }
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
 
         # save cachefile
         if useCache:
@@ -298,7 +298,7 @@ class dataset:
         if 'preprocessing' in self.cfg.keys(): self.preprocessData(
             **self.cfg['preprocessing'])
 
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
         return True
 
     def preprocessData(self, **kwargs):
@@ -314,14 +314,14 @@ class dataset:
         """
 
         nemoa.log('preprocessing data')
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
         if 'stratify'  in kwargs.keys():
             self._stratifyData(kwargs['stratify'])
         if 'normalize' in kwargs.keys():
             self._normalizeData(kwargs['normalize'])
         if 'transform' in kwargs.keys():
             self.transformData(kwargs['transform'])
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
 
         return True
 
@@ -413,7 +413,7 @@ class dataset:
                 """could not transform data using system:
                 parameter 'system' is invalid!""")
             nemoa.log('transform data using system \'%s\'' % (system.name()))
-            nemoa.setLog(indent = '+1')
+            nemoa.log('set', indent = '+1')
 
             if mapping == None: mapping = system.mapping()
 
@@ -445,7 +445,7 @@ class dataset:
                 self.data[src]['array'] = newRecArray # set record array
 
             self._setColLabels(targetColumns)
-            nemoa.setLog(indent = '-1')
+            nemoa.log('set', indent = '-1')
             return True
 
         # gauss to binary data transformation
@@ -1045,7 +1045,7 @@ class dataset:
         type = nemoa.common.getFileExt(file).lower()
 
         nemoa.log('export data to file')
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         nemoa.log('exporting data to file: \'%s\'' % (file))
         if type in ['gz', 'data']: retVal = self.save(file)
@@ -1056,7 +1056,7 @@ class dataset:
         else: retVal = nemoa.log('error', """could not export dataset:
             unsupported file type '%s'""" % (type))
 
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
         return retVal
 
     def _getCacheFile(self, network):

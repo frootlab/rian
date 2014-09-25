@@ -99,17 +99,17 @@ class dbn(nemoa.system.ann.ann):
         """Pretraining model using restricted boltzmann machines."""
 
         nemoa.log('note', 'pretraining model')
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         # Configure subsystems for pretraining
 
         nemoa.log('configure subsystems')
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
         if not 'units' in self._params:
             nemoa.log('error',
                 """could not configure subsystems:
                 no layers have been defined!""")
-            nemoa.setLog(indent = '-1')
+            nemoa.log('set', indent = '-1')
             return False
 
         # create and configure subsystems
@@ -129,7 +129,7 @@ class dbn(nemoa.system.ann.ann):
                     nemoa.log('error', """could not configure system:
                         unknown system configuration '%s'
                     """ % (sysUserConf))
-                    nemoa.setLog(indent = '-1')
+                    nemoa.log('set', indent = '-1')
                     return False
             else: sysConfig = {
                 'package': self._config['params'][sysType + 'SystemModule'],
@@ -172,7 +172,7 @@ class dbn(nemoa.system.ann.ann):
                 system._config['optimize']['ignoreUnits'] = ['visible']
 
         self._config['check']['subSystems'] = True
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
 
         # Optimize subsystems
 
@@ -208,7 +208,7 @@ class dbn(nemoa.system.ann.ann):
         # Copy and enrolle parameters of subsystems to dbn
 
         nemoa.log('initialize system with subsystem parameters')
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         # keep original inputs and outputs
         mapping = self.mapping()
@@ -249,14 +249,14 @@ class dbn(nemoa.system.ann.ann):
         self._remove_units(self.mapping()[0], outputs)
         self._remove_units(self.mapping()[-1], inputs)
 
-        nemoa.setLog(indent = '-2')
+        nemoa.log('set', indent = '-2')
         return True
 
     def _optimize_finetuning(self, dataset, schedule, tracker):
         """Finetuning model using backpropagation of error."""
 
         nemoa.log('note', 'finetuning model')
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         # Optimize system parameters
 
@@ -268,5 +268,5 @@ class dbn(nemoa.system.ann.ann):
             dataset, schedule, tracker)
         else: nemoa.log('error', "unknown gradient '%s'!" % (algorithm))
 
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
         return True

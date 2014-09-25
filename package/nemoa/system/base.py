@@ -23,20 +23,20 @@ class system:
             or not callable(getattr(self.__class__, '_configure')):
             return True
         nemoa.log("configure system '%s'" % (self.name()))
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
         if not self._check_network(network):
             nemoa.log('error', """system could not be configured:
                 network is not valid!""")
-            nemoa.setLog(indent = '-1')
+            nemoa.log('set', indent = '-1')
             return False
         if not self._check_dataset(dataset):
             nemoa.log('error', """system could not be configured:
                 dataset is not valid!""")
-            nemoa.setLog(indent = '-1')
+            nemoa.log('set', indent = '-1')
             return False
         retVal = self._configure(dataset = dataset, network = network,
             *args, **kwargs)
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
         return retVal
 
     def setName(self, name):
@@ -304,9 +304,9 @@ class system:
         algorithm = config['algorithm'].title()
         nemoa.log('note', "optimize '%s' (%s) using algorithm '%s'" % \
             (self.name(), self.getType(), algorithm))
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
         retVal = self._optimize_params(dataset, schedule, tracker)
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
 
         return retVal
 

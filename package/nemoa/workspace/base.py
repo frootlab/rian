@@ -90,7 +90,7 @@ class workspace:
     def _get_instance(self, type = None, config = None, empty = False, **kwargs):
         """Return new instance of given object type and configuration."""
         nemoa.log('create%s %s instance' % (' empty' if empty else '', type))
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         # import module
         module = importlib.import_module('nemoa.' + str(type))
@@ -101,7 +101,7 @@ class workspace:
         if not isinstance(config, dict):
             nemoa.log('error', """could not create %s instance:
                 unknown configuration!""" % (type))
-            nemoa.setLog(indent = '-1')
+            nemoa.log('set', indent = '-1')
             return None
 
         # create and initialize new instance of given class
@@ -112,31 +112,31 @@ class workspace:
         if not nemoa.type.isInstanceType(instance, type):
             nemoa.log('error', """could not create %s instance:
                 invalid configuration!""" % (type))
-            nemoa.setLog(indent = '-1')
+            nemoa.log('set', indent = '-1')
             return None
 
         nemoa.log('name of %s is: \'%s\'' % (type, instance.name()))
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
         return instance
 
     def _create_new_model(self, name, config = None,
         dataset = None, network = None, system = None,
         configure = True, initialize = True):
         nemoa.log('create new model')
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         model = self._get_model_instance(name = name, config  = config,
             dataset = dataset, network = network, system  = system)
 
         if not nemoa.type.isModel(model):
             nemoa.log('error', 'could not create new model!')
-            nemoa.setLog(indent = '-1')
+            nemoa.log('set', indent = '-1')
             return False
 
         if configure: model.configure() # configure model
         if initialize: model.initialize() # initialize model parameters
 
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
         return model
 
     def _get_model_instance(self, name = None, config = None,
@@ -144,7 +144,7 @@ class workspace:
         """Return new model instance."""
 
         nemoa.log('create model instance')
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         # create dataset instance (if not given)
         if not nemoa.type.isDataset(dataset): dataset = \
@@ -152,7 +152,7 @@ class workspace:
         if not nemoa.type.isDataset(dataset):
             nemoa.log('error',
                 'could not create model instance: dataset is invalid!')
-            nemoa.setLog(indent = '-1')
+            nemoa.log('set', indent = '-1')
             return None
 
         # create network instance (if not given)
@@ -162,7 +162,7 @@ class workspace:
         if not nemoa.type.isNetwork(network):
             nemoa.log('error',
                 'could not create model instance: network is invalid!')
-            nemoa.setLog(indent = '-1')
+            nemoa.log('set', indent = '-1')
             return None
 
         # create system instance (if not given)
@@ -171,7 +171,7 @@ class workspace:
         if not nemoa.type.isSystem(system):
             nemoa.log('error',
                 'could not create model instance: system is invalid!')
-            nemoa.setLog(indent = '-1')
+            nemoa.log('set', indent = '-1')
             return None
 
         # create name string (if not given)
@@ -183,14 +183,14 @@ class workspace:
             type = 'model', config = config, name = name,
             dataset = dataset, network = network, system = system)
 
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
         return model
 
     def _import_model(self, file):
         """Return new model instance and set configuration and parameters from file."""
 
         nemoa.log('import model from file')
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         # check file
         if not os.path.exists(file):
@@ -215,7 +215,7 @@ class workspace:
         if nemoa.type.isModel(model): model._set(modelDict)
         else: return None
 
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
         return model
 
     def copy(self, model):
@@ -320,7 +320,7 @@ class config:
     def _import_shared(self):
         """Import shared resources."""
         nemoa.log('import shared resources')
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         # get current workspace
         curWorkspace = self._workspace
@@ -336,13 +336,13 @@ class config:
         # reset to current workspace
         self._workspace = curWorkspace
 
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
         return True
 
     def load(self, workspace):
         """Import configuration files from workspace."""
         nemoa.log('import private resources')
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         # check if workspace exists
         if not workspace in self._list_user_workspaces(): return nemoa.log(
@@ -353,12 +353,12 @@ class config:
         self._workspace = workspace # set workspace
         self._update_paths(base = 'user') # update paths
         self._update_cache_paths() # update path of cache
-        nemoa.init_logger(logfile = self._path['logfile']) # update logger
+        nemoa.log('init', logfile = self._path['logfile']) # update logger
         self._scan_config_files() # import configuration files
         self._scan_scripts() # scan for scriptfiles
         self._scan_networks() # scan for network configurations
 
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
         return True
 
     def _update_cache_paths(self):
@@ -370,7 +370,7 @@ class config:
     def _scan_config_files(self, files = None):
         """Import configuration files from current workspace."""
         nemoa.log('scanning for configuration files')
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         # assert configuration files path
         if files == None: files = self._path['workspace'] + '*.ini'
@@ -378,7 +378,7 @@ class config:
         for file in glob.iglob(self._expand_path(files)):
             self._import_config_file(file)
 
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
         return True
 
     def _import_config_file(self, file):
@@ -392,7 +392,7 @@ class config:
 
         # logger info
         nemoa.log("parsing configuration file: '" + configFile + "'")
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         # import and register objects without testing
         importer = self._ImportConfig(self)
@@ -401,13 +401,13 @@ class config:
         for objConf in objConfList: self._add_obj_to_store(objConf)
         self._check(objConfList)
 
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
         return True
 
     def _scan_scripts(self, files = None):
         """Scan for scripts files (current project)."""
         nemoa.log('scanning for script files')
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         # assert script files path
         if files == None: files = self._path['scripts'] + '*.py'
@@ -415,7 +415,7 @@ class config:
         for file in glob.iglob(self._expand_path(files)):
             self._register_script(file)
 
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
         return True
 
     def _register_script(self, file):
@@ -435,7 +435,7 @@ class config:
     def _scan_networks(self, files = None):
         """Scan for network configuration files (current workspace)."""
         nemoa.log('scanning for networks')
-        nemoa.setLog(indent = '+1')
+        nemoa.log('set', indent = '+1')
 
         # assert network files path
         if files == None: files = self._path['networks'] + '*.ini'
@@ -443,7 +443,7 @@ class config:
         for file in glob.iglob(self._expand_path(files)):
             self._register_network(file)
 
-        nemoa.setLog(indent = '-1')
+        nemoa.log('set', indent = '-1')
         return True
 
     def _register_network(self, file, format = None):

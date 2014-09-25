@@ -8,7 +8,7 @@ structural assumptions like noise models, sparsity or complexity.
 
 """
 
-__version__ = '0.4.109'
+__version__ = '0.4.110'
 __status__  = 'Development'
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
@@ -26,7 +26,7 @@ import nemoa.system
 import nemoa.network
 import nemoa.model
 
-init_logger()
+log('init')
 
 def new(**kwargs):
     """Return new workspace instance."""
