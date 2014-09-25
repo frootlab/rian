@@ -31,16 +31,20 @@ class graph(nemoa.plot.base.plot):
 
         # (optional) calculate node captions
         if self.settings['nodeCaption']:
-            caption = model.eval('system', 'units', self.settings['nodeCaption'])
+            caption = model.eval('system', 'units',
+                self.settings['nodeCaption'])
             if caption:
-                for node in caption.keys(): graph.node[node]['caption'] = \
-                    ' $%i' % (round(100. * caption[node])) + '\%$'
+                for node in caption.keys():
+                    graph.node[node]['caption'] = \
+                        ' $%i' % (round(100. * caption[node])) + '\%$'
 
         # (optional) calculate graph caption
         if self.settings['graphCaption']:
-            caption = model.eval('system', self.settings['graphCaption'])
+            caption = model.eval('system',
+                self.settings['graphCaption'])
             if caption:
-                name = model.about('system', self.settings['graphCaption'])['name'].title()
+                name = model.about('system',
+                    self.settings['graphCaption'])['name'].title()
                 graph.graph['caption'] = \
                     name + ': $%i' % (round(100. * caption)) + '\%$'
 

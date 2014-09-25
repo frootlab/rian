@@ -39,13 +39,13 @@ class system:
         nemoa.log('set', indent = '-1')
         return retVal
 
-    def setName(self, name):
+    def _set_name(self, name):
         """Set name of system."""
         if not isinstance(name, str): return False
         self._config['name'] = name
         return True
 
-    def getConfig(self):
+    def _get_config(self):
         """Return system configuration as dictionary."""
         return self._config.copy()
 
@@ -63,7 +63,7 @@ class system:
 
         # create / update local unit and link dictionaries
         if not hasattr(self, '_params'): self._params = {}
-        self.setUnits(self._get_units_from_config())
+        self._set_units(self._get_units_from_config())
         self.setLinks(self._get_links_from_config())
 
         self._config['check']['config'] = True
@@ -75,20 +75,11 @@ class system:
             and self._config['check']['network'] \
             and self._config['check']['dataset']
 
-    def setNetwork(self, *args, **kwargs):
-        """Update units and links to network instance."""
-        return self._set_network(*args, **kwargs)
-
-    def setDataset(self, *args, **kwargs):
-        """Update units and links to dataset instance."""
-        return self._set_dataset(*args, **kwargs)
-
     def _check_network(self, network, *args, **kwargs):
         """Check if network is valid for system."""
         if not nemoa.type.isNetwork(network): return False
         return True
 
-    #2do: there is more to check
     def _check_dataset(self, dataset, *args, **kwargs):
         """Check if network is valid for system."""
         if not nemoa.type.isDataset(dataset): return False
@@ -128,20 +119,13 @@ class system:
 
         return groups
 
-    def setUnits(self, units = None, initialize = True):
-        """Set units and update system parameters."""
-        if not 'units' in self._params: self._params['units'] = []
-        if not hasattr(self, 'units'): self.units = {}
-        if initialize: return self._set_units(units) and self._init_units()
-        return self._set_units(units)
+    #def unlinkUnit(self, unit):
+        #"""Unlink unit (if present)."""
+        #return self._unlink_unit(unit)
 
-    def unlinkUnit(self, unit):
-        """Unlink unit (if present)."""
-        return self._unlink_unit(unit)
-
-    def removeUnits(self, type, label):
-        """Remove unit."""
-        return self._removeUnit(type, label)
+    #def removeUnits(self, type, label):
+        #"""Remove unit."""
+        #return self._removeUnit(type, label)
 
     def getGroups(self, **kwargs):
         """.
@@ -172,7 +156,7 @@ class system:
 
         return groups
 
-    def getGroupOfUnit(self, unit):
+    def _get_group_of_unit(self, unit):
         """Return name of unit group of given unit."""
         for id in range(len(self._params['units'])):
             if unit in self._params['units'][id]['label']:
@@ -191,15 +175,15 @@ class system:
         """Return list with 2-tuples containing unit labels."""
         return self._get_links_from_config()
 
-    def removeLinks(self, links = [], *args, **kwargs):
-        """Remove links from system using list with 2-tuples containing unit labels."""
-        return self._remove_links(links)
+    #def removeLinks(self, links = [], *args, **kwargs):
+        #"""Remove links from system using list with 2-tuples containing unit labels."""
+        #return self._remove_links(links)
 
     def _getLink(self, link):
         srcUnit = link[0]
         tgtUnit = link[1]
-        srcGrp  = self.getGroupOfUnit(srcUnit)
-        tgtGrp  = self.getGroupOfUnit(tgtUnit)
+        srcGrp  = self._get_group_of_unit(srcUnit)
+        tgtGrp  = self._get_group_of_unit(tgtUnit)
         if not srcGrp in self._links \
             or not tgtGrp in self._links[srcGrp]['target']: return None
         linkGrp = self._links[srcGrp]['target'][tgtGrp]
@@ -243,22 +227,22 @@ class system:
             invalid dataset instance given!""")
         return self._init_params(dataset)
 
-    def getParams(self, *args, **kwargs):
-        """Return dictinary with all system parameters."""
-        return copy.deepcopy(self._params)
+    #def getParams(self, *args, **kwargs):
+        #"""Return dictinary with all system parameters."""
+        #return copy.deepcopy(self._params)
 
-    def setParams(self, params, update = True):
-        """Set system parameters using from dictionary."""
-        if not self._check_params(params): return nemoa.log('error',
-            """could not set system parameters:
-            invalid 'params' dictionary given!""")
-        if update: self._set_params(params)
-        else: self._params = copy.deepcopy(params)
-        return True
+    #def setParams(self, params, update = True):
+        #"""Set system parameters using from dictionary."""
+        #if not self._check_params(params): return nemoa.log('error',
+            #"""could not set system parameters:
+            #invalid 'params' dictionary given!""")
+        #if update: self._set_params(params)
+        #else: self._params = copy.deepcopy(params)
+        #return True
 
-    def resetParams(self, dataset):
-        """Reset system parameters using dataset instance."""
-        return self.initialize(dataset)
+    #def resetParams(self, dataset):
+        #"""Reset system parameters using dataset instance."""
+        #return self.initialize(dataset)
 
     def optimize(self, dataset, schedule):
         """Optimize system parameters using data and given schedule."""
@@ -286,7 +270,7 @@ class system:
 
         # initialize tracker
         tracker = nemoa.system.base.tracker(self)
-        tracker.setTestData(self._get_test_data(dataset))
+        tracker.set(data = self._get_test_data(dataset))
 
         # optimize system parameters
         algorithm = config['algorithm'].title()
@@ -487,7 +471,6 @@ class system:
 
 class tracker:
 
-    _data   = None # data used for objective tracking and evaluation
     _system = None # linked nemoa system instance
     _config = None # linked nemoa system optimization configuration
     _state  = {}   # dictionary for tracking variables
@@ -495,6 +478,10 @@ class tracker:
 
     def __init__(self, system):
         """Configure tracker to given nemoa system instance."""
+
+        _state = {}
+        _store = {}
+
         if not nemoa.type.isSystem(system): return nemoa.log('warning',
             'could not configure tracker: system is not valid!')
         if not hasattr(system, '_config'): return nemoa.log('warning',
@@ -511,6 +498,7 @@ class tracker:
 
         self._state = {
             'epoch': 0,
+            'data': None,
             'optimum': {},
             'continue': True,
             'objEnable': self._config['tracker_obj_tracking_enable'],
@@ -527,18 +515,17 @@ class tracker:
             'estimateStartTime': now
         }
 
-    def setTestData(self, data):
-        """Set numpy array with destdata."""
-        self._data = data
-
     def get(self, key):
         if not key in self._state.keys(): return False
         return self._state[key]
 
-    def set(self, key, val):
-        if not key in self._state.keys(): return False
-        self._state[key] = val
-        return True
+    def set(self, **kwargs):
+        found = True
+        for key in kwargs.keys():
+            if key in self._state.keys():
+                self._state[key] = kwargs[key]
+            else: found = False
+        return found
 
     def read(self, key, id = -1):
         if not key in self._store.keys():
@@ -615,7 +602,7 @@ class tracker:
     def _update_objective_function(self):
         """Calculate objective function of system."""
 
-        if self._data == None:
+        if self._state['data'] == None:
             nemoa.log('warning', """tracking the objective function
                 is not possible: testdata is needed!""")
             self._state['objEnable'] = False
@@ -628,7 +615,7 @@ class tracker:
 
         # calculate objective function value
         func  = cfg['tracker_obj_function']
-        value = self._system.eval(data = self._data, func = func)
+        value = self._system.eval(data = self._state['data'], func = func)
         progr = float(self._state['epoch']) / float(cfg['updates'])
 
         # add objective function value to array
@@ -676,7 +663,7 @@ class tracker:
         cfg = self._config
         now = time.time()
 
-        if self._data == None:
+        if self._state['data'] == None:
             nemoa.log('warning', """tracking the evaluation function
                 is not possible: testdata is needed!""")
             self._state['evalEnable'] = False
@@ -685,7 +672,7 @@ class tracker:
         if not self._state['continue']:
             func  = cfg['tracker_eval_function']
             prop  = self._system.about(func)
-            value = self._system.eval(data = self._data, func = func)
+            value = self._system.eval(data = self._state['data'], func = func)
             out   = 'found optimum with: %s = ' + prop['format']
             self._state['evalEnable'] = False
             return nemoa.log('note', out % (prop['name'], value))
@@ -694,7 +681,7 @@ class tracker:
             > cfg['tracker_eval_time_interval']):
             func  = cfg['tracker_eval_function']
             prop  = self._system.about(func)
-            value = self._system.eval(data = self._data, func = func)
+            value = self._system.eval(data = self._state['data'], func = func)
             progr = float(self._state['epoch']) \
                 / float(cfg['updates']) * 100.
 

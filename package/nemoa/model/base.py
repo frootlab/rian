@@ -92,11 +92,11 @@ class model:
         # set name of model
         if not 'name' in self._config or not self._config['name']:
             if not self.network.name():
-                self.setName('%s-%s' % (
+                self._set_name('%s-%s' % (
                     self.dataset.name(),
                     self.system.name()))
             else:
-                self.setName('%s-%s-%s' % (
+                self._set_name('%s-%s-%s' % (
                     self.dataset.name(),
                     self.network.name(),
                     self.system.name()))
@@ -200,7 +200,7 @@ class model:
         if schedule == None: schedule = self.system.getType() + '.default'
         elif not '.' in schedule: schedule = \
             self.system.getType() + '.' + schedule
-        schedule = nemoa.workspace.getConfig(
+        schedule = nemoa.workspace._get_config(
             type = 'schedule', config = schedule,
             merge = ['params', self.system.getType()],
             **kwargs)
@@ -598,7 +598,7 @@ class model:
         """Return name of model."""
         return self._config['name'] if 'name' in self._config else ''
 
-    def setName(self, name):
+    def _set_name(self, name):
         """Set name of model."""
         if not isinstance(self._config, dict): return False
         self._config['name'] = name

@@ -25,7 +25,7 @@ class dataset:
         self.cfg = config.copy()
         return True
 
-    def getConfig(self):
+    def _get_config(self):
         """Return configuration as dictionary."""
         return self.cfg.copy()
 

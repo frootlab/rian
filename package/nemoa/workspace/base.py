@@ -22,16 +22,17 @@ class workspace:
         if not project == None: nemoa.workspace.load(project)
 
     def load(self, workspace):
-        """Import configuration from workspace and update paths and logfile."""
+        """Import workspace and update paths and logfile."""
         return nemoa.workspace.load(workspace)
 
-    def name(self, *args, **kwargs):
+    def name(self):
         """Return name of workspace."""
-        return nemoa.workspace.project(*args, **kwargs)
+        return nemoa.workspace.name()
 
     def list(self, type = None, namespace = None):
         """Return a list of known objects."""
-        list = nemoa.workspace.list(type = type, namespace = self.name())
+        list = nemoa.workspace.list(type = type,
+            namespace = self.name())
         if not type: names = \
             ['%s (%s)' % (item[2], item[1]) for item in list]
         elif type in ['model']: names = list
@@ -40,18 +41,19 @@ class workspace:
 
     def execute(self, name = None, **kwargs):
         """Execute nemoa script."""
-        scriptName = name if '.' in name else '%s.%s' % (self.name(), name)
-        config = nemoa.workspace.getConfig(
+        scriptName = name \
+            if '.' in name else '%s.%s' % (self.name(), name)
+        config = nemoa.workspace._get_config(
             type = 'script', config = scriptName, **kwargs)
 
         if not config and not '.' in name:
             scriptName = 'base.' + name
-            config = nemoa.workspace.getConfig(
+            config = nemoa.workspace._get_config(
                 type = 'script', config = scriptName, **kwargs)
         if not config: return False
-        if not os.path.isfile(config['path']): return nemoa.log('error', """
-            could not run script '%s': file '%s' not found!
-            """ % (scriptName, config['path']))
+        if not os.path.isfile(config['path']):
+            return nemoa.log('error', """could not run script '%s':
+            file '%s' not found!""" % (scriptName, config['path']))
 
         script = imp.load_source('script', config['path'])
         return script.main(self, **config['params'])
@@ -87,16 +89,18 @@ class workspace:
         # try to create new model
         return self._create_new_model(name, **kwargs)
 
-    def _get_instance(self, type = None, config = None, empty = False, **kwargs):
-        """Return new instance of given object type and configuration."""
-        nemoa.log('create%s %s instance' % (' empty' if empty else '', type))
+    def _get_instance(self, type = None, config = None,
+        empty = False, **kwargs):
+        """Create new instance of given object type."""
+        nemoa.log('create%s %s instance'
+            % (' empty' if empty else '', type))
         nemoa.log('set', indent = '+1')
 
         # import module
         module = importlib.import_module('nemoa.' + str(type))
 
         # get objects configuration as dictionary
-        config = nemoa.workspace.getConfig(type = type,
+        config = nemoa.workspace._get_config(type = type,
             config = config, **kwargs)
         if not isinstance(config, dict):
             nemoa.log('error', """could not create %s instance:
@@ -187,7 +191,21 @@ class workspace:
         return model
 
     def _import_model(self, file):
-        """Return new model instance and set configuration and parameters from file."""
+        """Import model from file.
+
+        Opens gzip compressed model configuration and parameters. The
+        configuration is first used to configure and init a new dataset,
+        network and system instance and finally a new model instance.
+        After this the parameters of the model are overwritten by the
+        parameters from the file.
+
+        Args:
+            file: Path to nemoa model file (with fileextension .nmm)
+
+        Returns:
+            Nemoa model instance
+
+        """
 
         nemoa.log('import model from file')
         nemoa.log('set', indent = '+1')
@@ -201,19 +219,21 @@ class workspace:
                 """could not load model '%s':
                 file does not exist.""" % file)
 
-        # load model parameters and configuration from file
+        # load model configuration and parameters from file
         nemoa.log("load model: '%s'" % file)
         modelDict = nemoa.common.dict_from_file(file)
 
+        # create new dataset, network, system and model instances
         model = self._get_model_instance(
             name    = modelDict['config']['name'],
             config  = modelDict['config'],
             dataset = modelDict['dataset']['cfg'],
             network = modelDict['network']['cfg'],
             system  = modelDict['system']['config'])
+        if not nemoa.type.isModel(model): return None
 
-        if nemoa.type.isModel(model): model._set(modelDict)
-        else: return None
+        # copy configuration and parameters to model instance
+        model._set(modelDict)
 
         nemoa.log('set', indent = '-1')
         return model
@@ -221,36 +241,38 @@ class workspace:
     def copy(self, model):
         """Return copy of model instance"""
         return self.model(
-            config = model.getConfig(),
-            dataset = model.dataset.getConfig(),
-            network = model.network.getConfig(),
-            system = model.system.getConfig(),
+            config = model._get_config(),
+            dataset = model.dataset._get_config(),
+            network = model.network._get_config(),
+            system = model.system._get_config(),
             configure = False, initialize = False)._set(model._get())
 
 class config:
-    def __init__(self, update = True):
-        self._baseconf = 'nemoa.ini' # base configuration file
+    """nemoa workspace module internal configuration object."""
 
+    _baseconf = 'nemoa.ini' # base configuration file
+    _basepath = None        # paths for shared ressources and workspaces
+    _path = None            # paths for logfile, cachefile, etc.
+    _workspace = None       # current workspace
+    _workspace_path = None  # paths for datasets, networks, models, etc.
+    _store = None           # information storage for known objects
+    _index = None           # index for storage
+
+    def __init__(self, shared = True):
+
+        self._path = {}
+        self._basepath = { # default basepaths
+            'user': '~/.nemoa/', 'common': '/etc/nemoa/common/' }
+        self._update_basepath() # update paths for shared and user
         # init tree structure for configuration storage
         self._store = {'dataset': {}, 'network': {}, 'system': {},
             'plot': {}, 'schedule': {}, 'script': {}}
-
         self._index = {}
-        self._path = {}            # reset current path dict
-        self._basepath = None      # reset paths for shared and user
-        self._workspace = None     # reset current workspace
-        self._workspacePath = None # reset current workspace path
-        self._update_basepath()     # update paths for shared and user
 
-        if update: self._import_shared() # import shared resources
+        if shared: self._import_shared() # import shared resources
 
     def _update_basepath(self):
         if not os.path.exists(self._baseconf): return False
-
-        # default basepaths
-        self._basepath = {
-            'user': '~/nemoa/',
-            'common': '/etc/nemoa/common/' }
 
         # get basepath configuration
         cfg = ConfigParser.ConfigParser()
@@ -261,7 +283,7 @@ class config:
         if 'folders' in cfg.sections():
             for key in ['user', 'cache', 'common']:
                 if not key in cfg.options('folders'): continue
-                val  = cfg.get('folders', key)
+                val = cfg.get('folders', key)
                 path = self._expand_path(val)
                 if path: self._basepath[key] = path
 
@@ -276,7 +298,7 @@ class config:
 
     def _update_paths(self, base = 'user'):
 
-        self._workspacePath = {
+        self._workspace_path = {
             'workspace': '%project%/',
             'datasets': '%project%/data/',
             'models': '%project%/models/',
@@ -289,9 +311,9 @@ class config:
 
         if base in ['user', 'common']:
             allowWrite = {'user': True, 'common': False}[base]
-            for key in self._workspacePath:
+            for key in self._workspace_path:
                 self._path[key] = self._expand_path('%' + base + '%/'
-                    + self._workspacePath[key], create = allowWrite)
+                    + self._workspace_path[key], create = allowWrite)
 
     def _list_user_workspaces(self):
         """Return list of private workspaces."""
@@ -305,7 +327,7 @@ class config:
         return [os.path.basename(w) for w in glob.iglob(shared + '*')
             if os.path.isdir(w)]
 
-    def project(self):
+    def workspace(self):
         """Return name of current workspace."""
         return self._workspace
 
@@ -751,7 +773,8 @@ class config:
                 models.append(name)
             return sorted(models, key = str.lower)
 
-        if type == 'workspace': # TODO: Something wents wrong if list is executed from inside
+        # TODO: Something wents wrong if list is executed from inside
+        if type == 'workspace':
             return sorted(self._list_user_workspaces())
 
         objList = []
@@ -785,9 +808,9 @@ class config:
 
     def get(self, type = None, name = None, merge = ['params'], params = None, id = None):
         """Return configuration as dictionary for given object."""
-        if not type in self._store.keys(): return nemoa.log('warning',
-            """could not get configuration:
-            object class '%s' is not known.""" % type)
+        if not type in self._store.keys():
+            return nemoa.log('warning', """could not get configuration:
+                object class '%s' is not known.""" % type)
 
         cfg = None
 
@@ -909,7 +932,7 @@ class config:
                 'plot': {'package': 'str', 'class': 'str', 'params': 'dict'} }
 
             self._path = config.path()
-            self.project = config.project()
+            self.project = config.workspace()
 
         # object definition / configuration files
 
@@ -979,7 +1002,7 @@ class config:
     class _ImportScript:
 
         def __init__(self, config):
-            self.project = config.project()
+            self.project = config.workspace()
 
         def load(self, file):
             name = self.project + '.' + os.path.splitext(os.path.basename(file))[0]
@@ -999,7 +1022,7 @@ class config:
         project  = None
 
         def __init__(self, config):
-            self.project = config.project()
+            self.project = config.workspace()
 
         def load(self, file):
             """Return network configuration as dictionary.

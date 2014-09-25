@@ -43,7 +43,7 @@ class network:
 
         return False
 
-    def getConfig(self):
+    def _get_config(self):
         """Return configuration as dictionary."""
         return self.cfg.copy()
 

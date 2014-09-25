@@ -56,7 +56,7 @@ class ann(nemoa.system.base.system):
     def _update_units_and_links(self, *args, **kwargs):
 
         nemoa.log('update system units and links')
-        self.setUnits(self._params['units'], initialize = False)
+        self._set_units(self._params['units'], initialize = False)
         self.setLinks(self._params['links'], initialize = False)
 
         return True
@@ -74,7 +74,7 @@ class ann(nemoa.system.base.system):
             nemoa.log('set', indent = '-1')
             return False
 
-        self.setUnits(self._get_units_from_network(network),
+        self._set_units(self._get_units_from_network(network),
             initialize = (update == False))
         self.setLinks(self._get_links_from_network(network),
             initialize = (update == False))
@@ -136,8 +136,11 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _set_units(self, units):
+    def _set_units(self, units = None, initialize = True):
         """Create instances for units."""
+
+        if not 'units' in self._params: self._params['units'] = []
+        if not hasattr(self, 'units'): self.units = {}
 
         if not isinstance(units, list): return False
         if len(units) < 2: return False
@@ -163,6 +166,7 @@ class ann(nemoa.system.base.system):
                 unit class '%s' is not supported!""" % (unitClass))
             self.units[name].params = self._params['units'][id]
 
+        if initialize: return self._init_units()
         return True
 
     def _check_unit_params(self, params):

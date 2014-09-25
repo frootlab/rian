@@ -234,7 +234,8 @@ def layergraph(G, **kwargs):
                 'up': (nPos, 1. - lPos),
                 'left': (lPos, nPos),
                 'right': (1. - lPos, nPos)}[kwargs['graphDirection']]
-            posCap[node] = (pos[node][0], pos[node][1] + graphCaptionPos)
+            posCap[node] = (pos[node][0],
+                pos[node][1] + graphCaptionPos)
 
     # create figure and axis objects
     fig = matplotlib.pyplot.figure()
