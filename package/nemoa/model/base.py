@@ -230,7 +230,7 @@ class model:
 
         return self
 
-    def _set_dataset(self, dataset):
+    def _configure_set_dataset(self, dataset):
         """Set dataset."""
         self.dataset = dataset
         return True
@@ -271,7 +271,7 @@ class model:
         return self.dataset.configure(network = network \
             if not network == None else self.network)
 
-    def _set_network(self, network):
+    def _configure_set_network(self, network):
         """Set network."""
         self.network = network
         return True

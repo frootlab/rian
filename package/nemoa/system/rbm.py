@@ -493,32 +493,6 @@ class rbm(nemoa.system.ann.ann):
 
         return energy
 
-    def _set_links(self, links = []):
-        """Set links and create link adjacency matrix."""
-        if not self._check_unit_params(self._params):
-            return nemoa.log('error', """could not set links:
-                units have not yet been set yet!""")
-
-        # create adjacency matrix from links
-        vList = self.units['visible'].params['label']
-        hList = self.units['hidden'].params['label']
-        A = numpy.empty([len(vList), len(hList)], dtype = bool)
-
-        # TODO: This is very slow: we could try "for link in links" etc.
-        for i, v in enumerate(vList):
-            for j, h in enumerate(hList):
-                A[i, j] = ((v, h) in links or (h, v) in links)
-
-        # update link adjacency matrix
-        if not 'links' in self._params: self._params['links'] = {}
-        if not (0, 1) in self._params['links']:
-            self._params['links'][(0, 1)] = {}
-        self._params['links'][(0, 1)]['A'] = A
-        self._params['links'][(0, 1)]['source'] = 'visible'
-        self._params['links'][(0, 1)]['target'] = 'hidden'
-
-        return True
-
     def _set_link_params(self, params):
         """Set link parameters and update link matrices using dictionary."""
         for i, v in enumerate(self.units['visible'].params['label']):
@@ -535,7 +509,7 @@ class rbm(nemoa.system.ann.ann):
 
     def _remove_links(self, links = []):
         """Remove links from adjacency matrix using list of links."""
-        if not self._check_params(self._params): # check params
+        if not self._configure_test(self._params): # check params
             nemoa.log('error', """
                 could not remove links:
                 units have not been set yet!""")
@@ -556,7 +530,7 @@ class rbm(nemoa.system.ann.ann):
                     link could not be found!""" % (link[0], link[1]))
                 continue
 
-        return self._set_links(curLinks)
+        return self._configure_set_links(curLinks)
 
     def _update_links(self, **updates):
         """Set updates for links."""

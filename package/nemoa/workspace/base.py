@@ -16,10 +16,10 @@ import glob
 class workspace:
     """Nemoa workspace."""
 
-    def __init__(self, project = None):
+    def __init__(self, workspace = None):
         """Initialize shared configuration."""
-        nemoa.workspace.init()
-        if not project == None: nemoa.workspace.load(project)
+        nemoa.workspace._init()
+        if workspace: self.load(workspace)
 
     def load(self, workspace):
         """Import workspace and update paths and logfile."""

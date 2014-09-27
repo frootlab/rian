@@ -48,20 +48,20 @@ class ann(nemoa.system.base.system):
         if not 'check' in self._config: self._config['check'] = {
             'config': False, 'network': False, 'dataset': False}
         self._set_config(config)
-        if not network == None: self._set_network(network, update)
-        if not dataset == None: self._set_dataset(dataset)
+        if not network == None: self._configure_set_network(network, update)
+        if not dataset == None: self._configure_set_dataset(dataset)
 
         return self._is_configured()
 
-    def _update_units_and_links(self, *args, **kwargs):
+    def _configure_update_units_and_links(self, *args, **kwargs):
 
         nemoa.log('update system units and links')
-        self._set_units(self._params['units'], initialize = False)
+        self._configure_set_units(self._params['units'], initialize = False)
         self.setLinks(self._params['links'], initialize = False)
 
         return True
 
-    def _set_network(self, network, update = False, *args, **kwargs):
+    def _configure_set_network(self, network, update = False, *args, **kwargs):
         """Update units and links to network instance."""
 
         nemoa.log("""get system units and links
@@ -74,7 +74,7 @@ class ann(nemoa.system.base.system):
             nemoa.log('set', indent = '-1')
             return False
 
-        self._set_units(self._get_units_from_network(network),
+        self._configure_set_units(self._get_units_from_network(network),
             initialize = (update == False))
         self.setLinks(self._get_links_from_network(network),
             initialize = (update == False))
@@ -84,7 +84,7 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _set_dataset(self, dataset, *args, **kwargs):
+    def _configure_set_dataset(self, dataset, *args, **kwargs):
         """check if dataset columns match with visible units."""
 
         # check dataset instance
@@ -104,11 +104,11 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _check_params(self, params):
+    def _configure_test(self, params):
         """Check if system parameter dictionary is valid. """
 
-        return self._check_unit_params(params) \
-            and self._check_link_params(params)
+        return self._configure_test_units(params) \
+            and self._configure_test_links(params)
 
     def _init_units(self, dataset = None):
         """Initialize unit parameteres.
@@ -136,7 +136,7 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _set_units(self, units = None, initialize = True):
+    def _configure_set_units(self, units = None, initialize = True):
         """Create instances for units."""
 
         if not 'units' in self._params: self._params['units'] = []
@@ -169,7 +169,7 @@ class ann(nemoa.system.base.system):
         if initialize: return self._init_units()
         return True
 
-    def _check_unit_params(self, params):
+    def _configure_test_units(self, params):
         """Check if system parameter dictionary is valid respective to units. """
 
         if not isinstance(params, dict) \
@@ -228,21 +228,63 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _set_links(self, links):
-        """create link adjacency matrices from units."""
+    def _configure_set_links(self, links = None):
+        """Create link configuration from units."""
 
-        self._params['links'] = {}
+        if not self._configure_test_units(self._params):
+            return nemoa.log('error', """could not configure links:
+                units have not been configured.""")
+
+        if not 'links' in self._params: self._params['links'] = {}
+        if not hasattr(self, 'links'): self.links = {}
+
+        # initialize adjacency matrices with default values
         for lid in range(len(self._params['units']) - 1):
-            src = self._params['units'][lid]['name']
-            srcSize = len(self.units[src].params['label'])
-            tgt = self._params['units'][lid + 1]['name']
-            tgtSize = len(self.units[tgt].params['label'])
+            src_name = self._params['units'][lid]['name']
+            src_list = self.units[src_name].params['label']
+            tgt_name = self._params['units'][lid + 1]['name']
+            tgt_list = self.units[tgt_name].params['label']
+            lnk_name = (lid, lid + 1)
 
-            self._params['links'][(lid, lid + 1)] = {
-                'source': src,
-                'target': tgt,
-                'A': numpy.ones((srcSize, tgtSize)).astype(float)
+            if links:
+                lnk_adja = numpy.zeros((len(src_list), len(tgt_list)))
+            else:
+                lnk_adja = numpy.ones((len(src_list), len(tgt_list)))
+
+            self._params['links'][lnk_name] = {
+                'source': src_name,
+                'target': tgt_name,
+                'A': lnk_adja.astype(float)
             }
+
+        # set adjacency to one if links are given explicitly
+        if links:
+            layers = [layer['name'] for layer in self._params['units']]
+
+            for link in links:
+                src, tgt = link
+
+                # get layer id and unit id of link source
+                src_name, scr_unit = src.split(':')
+                if not src_name in layers: continue
+                src_lid = layers.index(src_name)
+                src_list = self.units[src_name].params['label']
+                if not scr_unit in src_list: continue
+                scr_uid = src_list.index(scr_unit)
+
+                # get layer id and unit id of link target
+                tgt_name, tgt_unit = tgt.split(':')
+                if not tgt_name in layers: continue
+                tgt_lid = layers.index(tgt_name)
+                tgt_list = self.units[tgt_name].params['label']
+                if not tgt_unit in tgt_list: continue
+                tgt_uid = tgt_list.index(tgt_unit)
+
+                # set link adjacency to 1
+                lnk_name = (src_lid, tgt_lid)
+                if not lnk_name in self._params['links']: continue
+                lnk_dict = self._params['links'][lnk_name]
+                lnk_dict['A'][scr_uid, tgt_uid] = 1.0
 
         return True
 
@@ -294,7 +336,7 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _check_link_params(self, params):
+    def _configure_test_links(self, params):
         """Check if system parameter dictionary is valid respective to links."""
 
         if not isinstance(params, dict) \
@@ -307,7 +349,7 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _index_links(self):
+    def _configure_index_links(self):
 
         self._links = {units: {'source': {}, 'target': {}}
             for units in self.units.keys()}

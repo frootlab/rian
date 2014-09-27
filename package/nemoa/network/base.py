@@ -526,8 +526,8 @@ class network:
                     'could not update network: system is invalid.')
 
             for u, v, d in self.graph.edges(data = True):
-                params = system._getLink((u, v))
-                if not params: params = system._getLink((v, u))
+                params = system._get_link((u, v))
+                if not params: params = system._get_link((v, u))
                 if not params: continue
                 nemoa.common.dict_merge(
                     params, self.graph[u][v]['params'])

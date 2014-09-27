@@ -63,7 +63,7 @@ class system:
 
         # create / update local unit and link dictionaries
         if not hasattr(self, '_params'): self._params = {}
-        self._set_units(self._get_units_from_config())
+        self._configure_set_units(self._get_units_from_config())
         self.setLinks(self._get_links_from_config())
 
         self._config['check']['config'] = True
@@ -165,21 +165,16 @@ class system:
 
     def setLinks(self, links = None, initialize = True):
         """Set links using list with 2-tuples containing unit labels."""
-        if not 'links' in self._params: self._params['links'] = {}
-        if not hasattr(self, 'links'): self.links = {}
-        if initialize: return self._set_links(links) \
-            and self._index_links() and self._init_links()
-        return self._index_links()
+
+        if initialize: return self._configure_set_links(links) \
+            and self._configure_index_links() and self._init_links()
+        return self._configure_index_links()
 
     def getLinks(self, *args, **kwargs):
         """Return list with 2-tuples containing unit labels."""
         return self._get_links_from_config()
 
-    #def removeLinks(self, links = [], *args, **kwargs):
-        #"""Remove links from system using list with 2-tuples containing unit labels."""
-        #return self._remove_links(links)
-
-    def _getLink(self, link):
+    def _get_link(self, link):
         srcUnit = link[0]
         tgtUnit = link[1]
         srcGrp  = self._get_group_of_unit(srcUnit)
@@ -212,7 +207,7 @@ class system:
             self._config = copy.deepcopy(kwargs['config'])
         if 'params' in kwargs:
             self._params = copy.deepcopy(kwargs['params'])
-        return self._update_units_and_links()
+        return self._configure_update_units_and_links()
 
     def initialize(self, dataset = None):
         """Initialize system parameters.
@@ -233,7 +228,7 @@ class system:
 
     #def setParams(self, params, update = True):
         #"""Set system parameters using from dictionary."""
-        #if not self._check_params(params): return nemoa.log('error',
+        #if not self._configure_test(params): return nemoa.log('error',
             #"""could not set system parameters:
             #invalid 'params' dictionary given!""")
         #if update: self._set_params(params)
