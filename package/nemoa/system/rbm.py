@@ -259,7 +259,7 @@ class rbm(nemoa.system.ann.ann):
         # Contrastive Divergency update
         if not 'visible' in ignore: self.units['visible'].update(deltaV)
         if not 'hidden' in ignore: self.units['hidden'].update(deltaH)
-        if not 'links' in ignore: self._update_links(**deltaL)
+        if not 'links' in ignore: self._optimize_update_links(**deltaL)
 
         # (optional) Kullback-Leibler penalty update for sparsity
         if config['mod_kl_enable']:
@@ -272,7 +272,7 @@ class rbm(nemoa.system.ann.ann):
                 self._optimize_sa_delta_visible(tracker))
             if not 'hidden' in ignore: self.units['hidden'].update(
                 self._optimize_sa_delta_hidden(tracker))
-            if not 'links' in ignore: self._update_links(
+            if not 'links' in ignore: self._optimize_update_links(
                 **self._optimize_sa_delta_links(tracker))
 
         return True
@@ -426,18 +426,18 @@ class rbm(nemoa.system.ann.ann):
         """Return tuple with lists of unit labels ([visible], [hidden]) using dataset for visible."""
         return (dataset.getColLabels(), self.units['hidden'].params['label'])
 
-    # TODO: generalize to ann
-    def _unlink_unit(self, unit):
-        """Delete unit links in adjacency matrix."""
-        if unit in self.units['visible'].params['label']:
-            i = self.units['visible'].params['label'].index(unit)
-            self._params['links'][(0, 1)]['A'][i,:] = False
-            return True
-        if unit in self.units['hidden'].params['label']:
-            i = self.units['hidden'].params['label'].index(unit)
-            self._params['links'][(0, 1)]['A'][:,i] = False
-            return True
-        return False
+    ## TODO: generalize to ann
+    #def _unlink_unit(self, unit):
+        #"""Delete unit links in adjacency matrix."""
+        #if unit in self.units['visible'].params['label']:
+            #i = self.units['visible'].params['label'].index(unit)
+            #self._params['links'][(0, 1)]['A'][i,:] = False
+            #return True
+        #if unit in self.units['hidden'].params['label']:
+            #i = self.units['hidden'].params['label'].index(unit)
+            #self._params['links'][(0, 1)]['A'][:,i] = False
+            #return True
+        #return False
 
     def _set_visible_unit_params(self, params):
         """Set parameters of visible units using dictionary."""
@@ -456,10 +456,6 @@ class rbm(nemoa.system.ann.ann):
                     or self._params['links'][(0, 1)]['A'][i, j]:
                     links.append((v, h))
         return links
-
-    def _get_links_from_network(self, network):
-        """Return links from network instance."""
-        return network.edges()
 
     def _eval_system_energy(self, data, *args, **kwargs):
         """Pseudo energy function.
@@ -507,32 +503,32 @@ class rbm(nemoa.system.ann.ann):
                 self._params['links'][(0, 1)]['W'][i, j] = params['W'][k, l]
         return True
 
-    def _remove_links(self, links = []):
-        """Remove links from adjacency matrix using list of links."""
-        if not self._configure_test(self._params): # check params
-            nemoa.log('error', """
-                could not remove links:
-                units have not been set yet!""")
-            return False
+    #def _remove_links(self, links = []):
+        #"""Remove links from adjacency matrix using list of links."""
+        #if not self._configure_test(self._params): # check params
+            #nemoa.log('error', """
+                #could not remove links:
+                #units have not been set yet!""")
+            #return False
 
-        # search links and update list of current links
-        curLinks = self._get_links_from_config() # get current links
-        for link in links:
-            found = False
-            if (link[0], link[1]) in curLinks:
-                del curLinks[curLinks.index((link[0], link[1]))]
-                found = True
-            if (link[1], link[0]) in curLinks:
-                del curLinks[curLinks.index((link[1], link[0]))]
-                found = True
-            if not found:
-                nemoa.log('warning', """could not delete link (%s → %s):
-                    link could not be found!""" % (link[0], link[1]))
-                continue
+        ## search links and update list of current links
+        #curLinks = self._get_links_from_config() # get current links
+        #for link in links:
+            #found = False
+            #if (link[0], link[1]) in curLinks:
+                #del curLinks[curLinks.index((link[0], link[1]))]
+                #found = True
+            #if (link[1], link[0]) in curLinks:
+                #del curLinks[curLinks.index((link[1], link[0]))]
+                #found = True
+            #if not found:
+                #nemoa.log('warning', """could not delete link (%s → %s):
+                    #link could not be found!""" % (link[0], link[1]))
+                #continue
 
-        return self._configure_set_links(curLinks)
+        #return self._configure_set_links(curLinks)
 
-    def _update_links(self, **updates):
+    def _optimize_update_links(self, **updates):
         """Set updates for links."""
         if 'W' in updates:
             self._params['links'][(0, 1)]['W'] += updates['W']
@@ -543,16 +539,17 @@ class rbm(nemoa.system.ann.ann):
 class grbm(rbm):
     """Gaussian Restricted Boltzmann Machine (GRBM).
 
-    Gaussian Restricted Boltzmann Machines are energy based
+    Gaussian Restricted Boltzmann Machines (1) are energy based
     undirected artificial neuronal networks with two layers: visible
     and hidden. The visible layer contains gauss distributed
     gaussian units to model data. The hidden layer contains binary
     distributed sigmoidal units to model relations in the data.
 
     Reference:
-        "Improved Learning of Gaussian-Bernoulli Restricted Boltzmann
-        Machines", KyungHyun Cho, Alexander Ilin and Tapani Raiko,
-        ICANN 2011
+        (1) "Improved Learning of Gaussian-Bernoulli Restricted
+            Boltzmann Machines", KyungHyun Cho, Alexander Ilin and
+            Tapani Raiko, ICANN 2011
+
     """
 
     @staticmethod
@@ -635,13 +632,15 @@ class grbm(rbm):
             'bias': r1 * diff / var,
             'lvar': r2 * (d - m) / var }
 
-    def _optimize_cd_delta_links(self, vData, hData, vModel, hModel, **kwargs):
+    def _optimize_cd_delta_links(self, vData, hData, vModel, hModel,
+        **kwargs):
         """Return cd gradient based updates for links.
 
-        Description:
-            constrastive divergency gradient of link parameters
-            using an modified energy function for faster convergence.
-            See reference for modified Energy function."""
+        Constrastive divergency gradient of link parameters
+        using an modified energy function for faster convergence.
+        See reference for modified Energy function.
+
+        """
 
         cfg = self._config['optimize']
         var = numpy.exp(self.units['visible'].params['lvar']).T # variance of visible units

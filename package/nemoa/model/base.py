@@ -24,16 +24,17 @@ class model:
     network = None
     system  = None
 
-    def __init__(self, config = {}, dataset = None, network = None, system = None, **kwargs):
+    def __init__(self, config = {}, dataset = None, network = None,
+        system = None, name = None):
         """Initialize model and configure dataset, network and system.
 
         Args:
             dataset: nemoa dataset instance
             network: nemoa network instance
             system: nemoa system instance
+
         """
 
-        name = kwargs['name'] if 'name' in kwargs else None
         self._config = {'name': name} # initialize class attributes
 
         nemoa.log('linking dataset, network and system instances to model')
@@ -68,8 +69,8 @@ class model:
         # copy dataset, network and system configuration
         keys = ['config', 'dataset', 'network', 'system']
         for key in keys:
-            if not key in dict: return nemoa.log('error', """
-                could not import configuration:
+            if not key in dict: return nemoa.log('error',
+                """could not import configuration:
                 given dictionary does not contain '%s' information!
                 """ % (key))
         return {key: dict[key].copy() for key in keys}
@@ -230,21 +231,13 @@ class model:
 
         return self
 
-    def _configure_set_dataset(self, dataset):
-        """Set dataset."""
-        self.dataset = dataset
-        return True
-
-    def _get_dataset(self):
-        """Return link to dataset instance."""
-        return self.dataset
-
-    def _configure_dataset(self, dataset = None, network = None, **kwargs):
+    def _configure_dataset(self, dataset = None, network = None):
         """Configure model.dataset to given dataset and network.
 
         Args:
             dataset: dataset instance
             network: network instance
+
         """
         dataset = self.dataset
         network = self.network
@@ -270,15 +263,6 @@ class model:
 
         return self.dataset.configure(network = network \
             if not network == None else self.network)
-
-    def _configure_set_network(self, network):
-        """Set network."""
-        self.network = network
-        return True
-
-    def _get_network(self):
-        """Return link to network instance."""
-        return self.network
 
     def _configure_network(self, dataset = None, network = None, system = None, **kwargs):
         """Configure model.network to given network, dataset and system.
@@ -323,17 +307,17 @@ class model:
         """Return link to system instance."""
         return self.system
 
-    # TODO: deprecated! Only used in dataset histogram plot
-    def data(self, dataset = None, layer = None, transform = 'expect', **kwargs):
-        """Return data from dataset."""
-        if not nemoa.type.isDataset(dataset): dataset = self.dataset
-        if not isinstance(layer, str):
-            i = self.system.mapping()[0]
-            o = self.system.mapping()[-1]
-            return dataset.getData(cols = (i, o), **kwargs)
-        mapping = self.system.mapping(tgt = layer)
-        data = dataset.getData(cols = self.system.mapping()[0], **kwargs)
-        return self.system.mapData(data, mapping = mapping, transform = transform)
+    ## TODO: deprecated! Only used in dataset histogram plot
+    #def data(self, dataset = None, layer = None, transform = 'expect', **kwargs):
+        #"""Return data from dataset."""
+        #if not nemoa.type.isDataset(dataset): dataset = self.dataset
+        #if not isinstance(layer, str):
+            #i = self.system.mapping()[0]
+            #o = self.system.mapping()[-1]
+            #return dataset.getData(cols = (i, o), **kwargs)
+        #mapping = self.system.mapping(tgt = layer)
+        #data = dataset.getData(cols = self.system.mapping()[0], **kwargs)
+        #return self.system.mapData(data, mapping = mapping, transform = transform)
 
     def eval(self, *args, **kwargs):
         """Return model evaluation."""
@@ -537,13 +521,11 @@ class model:
             # search in model / system relations
             if not isinstance(cfg, dict):
                 if args[0] == 'dataset':
-                    if len(args) > 1: relClass = args[1]
-                    else: relClass = 'histogram'
                     cfg = nemoa.common.dict_merge(params, {
                         'package': 'dataset',
-                        'class': relClass,
+                        'class': 'histogram',
                         'params': {},
-                        'description': 'distribution',
+                        'description': 'data distribution',
                         'name': 'distribution',
                         'id': 0})
                 elif args[0] == 'network':

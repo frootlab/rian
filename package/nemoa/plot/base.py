@@ -60,12 +60,12 @@ class plot:
         matplotlib.pyplot.close("all")
 
         # update configuration, depending on object type
-        if self.settings['path'][0] == 'dataset':
-            if self.settings['showTitle']: self.settings['title'] = \
-                model.dataset.name().title()
+        if list(self.settings['path'])[0] == 'dataset':
+            if self.settings['showTitle']:
+                self.settings['title'] = model.dataset.name().title()
         elif list(self.settings['path'])[0] == 'network':
-            if self.settings['showTitle']: self.settings['title'] = \
-                model.dataset.name().title()
+            if self.settings['showTitle']:
+                self.settings['title'] = model.dataset.name().title()
         elif list(self.settings['path'])[0] == 'system':
 
             # assert units
@@ -95,8 +95,9 @@ class plot:
                 matplotlib.pyplot.title(title, fontsize = 11.)
 
             # output
-            if file: matplotlib.pyplot.savefig(file,
-                dpi = self.settings['dpi'])
+            if file:
+                matplotlib.pyplot.savefig(
+                    file, dpi = self.settings['dpi'])
             else: matplotlib.pyplot.show()
 
         # clear figures and release memory

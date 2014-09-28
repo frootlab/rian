@@ -238,14 +238,32 @@ class workspace:
         nemoa.log('set', indent = '-1')
         return model
 
-    def copy(self, model):
+    # TODO: move to model base class as model.copy
+    def _copy_model(self, model):
         """Return copy of model instance"""
-        return self.model(
-            config = model._get_config(),
-            dataset = model.dataset._get_config(),
-            network = model.network._get_config(),
-            system = model.system._get_config(),
-            configure = False, initialize = False)._set(model._get())
+
+        # get configuration and parameters from original model
+        model_config = model._get_config()
+        dataset_config = model.dataset._get_config()
+        network_config = model.network._get_config()
+        system_config = model.system._get_config()
+        model_config_and_params = model._get()
+
+        # create new model with configurations from original model
+        # this ensures objects of same type as in the original model
+        model_copy = self.model(
+            configure = False,
+            initialize = False,
+            config = model_config,
+            dataset = dataset_config,
+            network = network_config,
+            system = system_config)
+
+        # finally copy configuration and parameters from the original
+        # model to the copy
+        model_copy._set(model_config_and_params)
+
+        return model_copy
 
 class config:
     """nemoa workspace module internal configuration object."""

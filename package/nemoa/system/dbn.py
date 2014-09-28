@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Deep Belief Network.
+"""Deep Belief Network (DBN).
 
-Deep beliefe network implementation for multilayer data modeling.
-and data dimensionality reduction.
+Deep Beliefe Network implementation for multilayer data modeling,
+nonlinear data dimensionality reduction and nonlinear data analysis.
 """
 
 __author__  = 'Patrick Michl'
@@ -13,9 +13,9 @@ import nemoa.system.ann
 import numpy
 
 class dbn(nemoa.system.ann.ann):
-    """Deep Belief Network.
+    """Deep Belief Network (DBN).
 
-    Deep Belief Networks (DBN) are topological symmetric feed forward
+    'Deep Belief Networks' are topological symmetric feed forward
     Artificial Neural Networks with two step optimization. The first
     step, known as 'pretraining' uses Restricted Boltzmann Machines as
     layer wise builing blocks to preoptimize local unit interactions.
@@ -124,22 +124,27 @@ class dbn(nemoa.system.ann.ann):
             sysUserConf = self._config['params'][sysType + 'System']
             if sysUserConf:
                 # TODO: nmConfig??
-                sysConfig = nmConfig.get(type = 'system', name = sysUserConf)
+                sysConfig = nmConfig.get(type = 'system',
+                    name = sysUserConf)
                 if sysConfig == None:
                     nemoa.log('error', """could not configure system:
-                        unknown system configuration '%s'
-                    """ % (sysUserConf))
+                        unknown system configuration '%s'""" \
+                        % (sysUserConf))
                     nemoa.log('set', indent = '-1')
                     return False
             else: sysConfig = {
-                'package': self._config['params'][sysType + 'SystemModule'],
-                 'class': self._config['params'][sysType + 'SystemClass'] }
+                'package': \
+                    self._config['params'][sysType + 'SystemModule'],
+                'class': \
+                    self._config['params'][sysType + 'SystemClass'] }
 
             # create subsystem configuration
-            sysConfig['name'] = '%s ↔ %s' % (inUnits['name'], outUnits['name'])
+            sysConfig['name'] = '%s ↔ %s' \
+                % (inUnits['name'], outUnits['name'])
             if not 'params' in sysConfig: sysConfig['params'] = {}
             if inUnits['visible']: sysConfig['params']['visible'] = \
-                self._params['units'][0]['label'] + self._params['units'][-1]['label']
+                self._params['units'][0]['label'] \
+                + self._params['units'][-1]['label']
             else: sysConfig['params']['visible'] = inUnits['label']
             sysConfig['params']['hidden'] = outUnits['label']
 
@@ -190,11 +195,13 @@ class dbn(nemoa.system.ann.ann):
                 visible = prevSys._params['units'][0]['name']
                 hidden  = prevSys._params['units'][1]['name']
                 mapping = (visible, hidden)
-                dataset.transformData(algorithm = 'system', system = prevSys,
-                    mapping = mapping, transform = 'expect')
+                dataset.transformData(algorithm = 'system',
+                    system = prevSys, mapping = mapping,
+                    transform = 'expect')
 
             # add dataset column filter 'visible'
-            dataset.setColFilter('visible', system.getUnits(group = 'visible'))
+            dataset.setColFilter('visible',
+                system.getUnits(group = 'visible'))
 
             # initialize (free) system parameters
             system.initialize(dataset)
@@ -216,7 +223,8 @@ class dbn(nemoa.system.ann.ann):
         outputs = self.units[mapping[-1]].params['label']
 
         # expand unit parameters to all layers
-        nemoa.log('import unit and link parameters from subsystems (enrolling)')
+        nemoa.log("""import unit and link parameters
+            from subsystems (enrolling)""")
         units = self._params['units']
         links = self._params['links']
         for id in range((len(units) - 1)  / 2):
@@ -239,7 +247,8 @@ class dbn(nemoa.system.ann.ann):
                     continue
                 links[(id, id + 1)][attrib] = \
                     links[(id, id + 1)]['init'][attrib]
-                links[(len(units) - id - 2, len(units) - id - 1)][attrib] = \
+                links[(len(units) - id - 2,
+                    len(units) - id - 1)][attrib] = \
                     links[(id, id + 1)]['init'][attrib].T
             del links[(id, id + 1)]['init']
 

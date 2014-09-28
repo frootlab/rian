@@ -45,11 +45,17 @@ class ann(nemoa.system.base.system):
             dataset: nemoa dataset instance
         """
 
-        if not 'check' in self._config: self._config['check'] = {
-            'config': False, 'network': False, 'dataset': False}
+        if not 'check' in self._config:
+            self._config['check'] = {
+                'config': False,
+                'network': False,
+                'dataset': False}
         self._set_config(config)
-        if not network == None: self._configure_set_network(network, update)
-        if not dataset == None: self._configure_set_dataset(dataset)
+
+        if not network == None:
+            self._configure_set_network(network, update)
+        if not dataset == None:
+            self._configure_set_dataset(dataset)
 
         return self._is_configured()
 
@@ -61,7 +67,7 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _configure_set_network(self, network, update = False, *args, **kwargs):
+    def _configure_set_network(self, network, update = False):
         """Update units and links to network instance."""
 
         nemoa.log("""get system units and links
@@ -74,25 +80,30 @@ class ann(nemoa.system.base.system):
             nemoa.log('set', indent = '-1')
             return False
 
-        self._configure_set_units(self._get_units_from_network(network),
-            initialize = (update == False))
-        self.setLinks(self._get_links_from_network(network),
-            initialize = (update == False))
+        initialize = (update == False)
+
+        self._configure_set_units(
+            self._get_units_from_network(network),
+            initialize = initialize)
+
+        self.setLinks(
+            self._get_links_from_network(network),
+            initialize = initialize)
 
         self._config['check']['network'] = True
         nemoa.log('set', indent = '-1')
 
         return True
 
-    def _configure_set_dataset(self, dataset, *args, **kwargs):
+    def _configure_set_dataset(self, dataset):
         """check if dataset columns match with visible units."""
 
-        # check dataset instance
+        # test if argument dataset is nemoa dataset instance
         if not nemoa.type.isDataset(dataset): return nemoa.log(
             'error', """could not configure system:
             dataset instance is not valid.""")
 
-        # compare visible units labels with dataset columns
+        # compare visible unit labels with dataset columns
         mapping = self.mapping()
         unitsInGroups = self.getUnits(visible = True)
         units = []
@@ -187,14 +198,22 @@ class ann(nemoa.system.base.system):
 
         return True
 
+    def _get_links_from_network(self, network):
+        """Return links from network instance."""
+        return network.edges()
+
     def _get_units_from_network(self, network):
         """Return tuple with lists of unit labels from network."""
 
-        units = [{'name': layer, 'label': network.nodes(type = layer)}
-            for layer in network.layers()]
-        for group in units:
-            group['visible'] = network.node(group['label'][0])['params']['visible']
-            group['id'] = network.node(group['label'][0])['params']['layerId']
+        units = []
+        for layer in network.layers():
+            label = network.nodes(type = layer)
+            params = network.node(label[0])['params']
+            units.append({
+                'name': layer,
+                'label': network.nodes(type = layer),
+                'visible': params['visible'],
+                'id': params['layerId']})
 
         return units
 
@@ -224,7 +243,18 @@ class ann(nemoa.system.base.system):
             self._SigmoidUnits.remove(layer, select)
 
         # delete units from link parameter arrays
-        self._remove_units_links(layer, select)
+        links = self._links[layer['name']]
+
+        for src in links['source'].keys():
+            links['source'][src]['A'] = \
+                links['source'][src]['A'][:, select]
+            links['source'][src]['W'] = \
+                links['source'][src]['W'][:, select]
+        for tgt in links['target'].keys():
+            links['target'][tgt]['A'] = \
+                links['target'][tgt]['A'][select, :]
+            links['target'][tgt]['W'] = \
+                links['target'][tgt]['W'][select, :]
 
         return True
 
@@ -408,24 +438,6 @@ class ann(nemoa.system.base.system):
             links += (lg, )
 
         return links
-
-    def _remove_units_links(self, layer, select):
-        """Remove links to a given list of units."""
-
-        links = self._links[layer['name']]
-
-        for src in links['source'].keys():
-            links['source'][src]['A'] = \
-                links['source'][src]['A'][:, select]
-            links['source'][src]['W'] = \
-                links['source'][src]['W'][:, select]
-        for tgt in links['target'].keys():
-            links['target'][tgt]['A'] = \
-                links['target'][tgt]['A'][select, :]
-            links['target'][tgt]['W'] = \
-                links['target'][tgt]['W'][select, :]
-
-        return True
 
     def _init_params(self, dataset = None):
         """Initialize system parameters.

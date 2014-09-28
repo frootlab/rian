@@ -37,50 +37,56 @@ class graph(nemoa.plot.base.plot):
         edges = [(i, o) for i in units[0] for o in units[1]
             if not o == i]
 
-        # calculate relations for edge attributes
-
         # calculate edge weights from 'weight' relation
         W = model.eval('system', 'relations', self.settings['relation'],
             preprocessing = self.settings['preprocessing'],
             measure = self.settings['measure'],
             statistics = self.settings['statistics'],
             transform = self.settings['transform'])
-        if not isinstance(W, dict): return nemoa.log('error', """
-            could not create relation graph:
-            invalid weight relation '%s'!""" % (self.settings['relation']))
+        if not isinstance(W, dict):
+            return nemoa.log('error',
+                """could not create relation graph: invalid weight
+                relation '%s'!""" % (self.settings['relation']))
         relInfo = model.about('system', 'relations',
             nemoa.common.strSplitParams(self.settings['relation'])[0])
 
         # calculate edge filter from 'filter' relation
         # default: use the same relation, as used for weights
-        # get filter relation
         if not self.settings['filter'] or self.settings['filter'] == \
             self.settings['relation']: F = W
-        else: F = model.eval('system', 'relations', self.settings['filter'],
+        else: F = model.eval('system', 'relations',
+            self.settings['filter'],
             preprocessing = self.settings['preprocessing'],
             measure = self.settings['measure'],
             statistics = self.settings['statistics'])
-        if not isinstance(F, dict): return nemoa.log('error', """
-            could not create relation graph:
-            invalid filter relation '%s'!""" % (self.settings['filter']))
+        if not isinstance(F, dict):
+            return nemoa.log('error',
+                """could not create relation graph: invalid filter
+                relation '%s'!""" % (self.settings['filter']))
         # create filter mask from filter relation (parameter: 'cutoff')
         # and update list of edges
         bound = self.settings['cutoff'] * F['std']
         edges = [edge for edge in edges if not -bound < F[edge] < bound]
-        if len(edges) == 0: return nemoa.log('warning', """
-            could not create relation graph:
-            no relation passed filter (threshold = %.2f)!""" % (bound))
+        if len(edges) == 0:
+            return nemoa.log('warning',
+                """could not create relation graph: no relation passed
+                filter (threshold = %.2f)!""" % (bound))
 
         # calculate edge signs from 'sign' relation
         # default: use the same relation, as used for weights
         if self.settings['sign'] == None \
-            or self.settings['sign'] == self.settings['relation']: SR = W
-        else: SR = model.eval('system', 'relations', self.settings['sign'],
-            preprocessing = self.settings['preprocessing'],
-            measure       = self.settings['measure'],
-            statistics    = self.settings['statistics'])
-        if not isinstance(SR, dict): return nemoa.log('error',
-            'could not create relation graph: invalid sign relation!')
+            or self.settings['sign'] == self.settings['relation']:
+            SR = W
+        else:
+            SR = model.eval('system', 'relations',
+                self.settings['sign'],
+                preprocessing = self.settings['preprocessing'],
+                measure = self.settings['measure'],
+                statistics = self.settings['statistics'])
+        if not isinstance(SR, dict):
+            return nemoa.log('error',
+                """could not create relation graph:
+                invalid sign relation!""")
         S = {edge: 2. * (float(SR[edge] > 0.) - 0.5) for edge in edges}
 
         # create graph and set name
@@ -91,8 +97,8 @@ class graph(nemoa.plot.base.plot):
             normalize = not relInfo['normal']
         elif self.settings['normalizeWeights'] in [True, False]:
             normalize = self.settings['normalizeWeights']
-        else: return nemoa.log('error', """
-            could not create relation graph:
+        else: return nemoa.log('error',
+            """could not create relation graph:
             invalid value for parameter 'normalizeWeights'!""")
         for edge in edges: graph.add_edge(*edge,
             weight = abs(W[edge] / W['std'] if normalize else W[edge]),
@@ -135,7 +141,7 @@ class heatmap(nemoa.plot.base.plot):
 
     def _create(self, model):
 
-        # calculate and test relation matrix
+        # calculate relation
         R = model.eval('system', 'relations', self.settings['relation'],
             preprocessing = self.settings['preprocessing'],
             measure = self.settings['measure'],

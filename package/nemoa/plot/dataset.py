@@ -13,9 +13,6 @@ class histogram(nemoa.plot.base.plot):
     def _settings(): return {
         'path': ('dataset', ),
         'units': (None, None),
-        'transform': None,
-        'statistics': 10000,
-        'layer': None,
         'bins': 120,
         'facecolor': 'lightgrey',
         'edgecolor': 'black',
@@ -25,9 +22,7 @@ class histogram(nemoa.plot.base.plot):
     def _create(self, model):
 
         # create data (numpy 1-d array)
-        data = numpy.hstack(model.data(
-            layer = self.settings['layer'],
-            transform = self.settings['transform'])).flatten()
+        data = model.dataset.getData().flatten()
 
         # create plot
         return nemoa.common.plot.histogram(data, **self.settings)
