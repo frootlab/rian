@@ -388,7 +388,8 @@ class dataset:
 
         return False
 
-    def transformData(self, algorithm = 'system', system = None, mapping = None, **kwargs):
+    def transformData(self, algorithm = 'system', system = None,
+        mapping = None, **kwargs):
         """Transform dataset.
 
         Args:
@@ -396,23 +397,27 @@ class dataset:
                 'system':
                     Transform data using nemoa system instance
                 'gaussToBinary':
-                    Transform Gauss distributed values to binary values in {0, 1}
+                    Transform Gauss distributed values to binary values
+                    in {0, 1}
                 'gaussToWeight':
-                    Transform Gauss distributed values to weights in [0, 1]
+                    Transform Gauss distributed values to weights
+                    in [0, 1]
                 'gaussToDistance': ??
-                    Transform Gauss distributed values to distances in [0, 1]
-            system: nemoa system instance (nemoa object root class 'system')
-                used for model based transformation of data
+                    Transform Gauss distributed values to distances
+                    in [0, 1]
+            system: nemoa system instance (nemoa object root class
+                'system') used for model based transformation of data
             mapping: ..."""
 
         if not isinstance(algorithm, str): return False
 
         # system based data transformation
         if algorithm.lower() == 'system':
-            if not nemoa.type.isSystem(system): return nemoa.log('error',
-                """could not transform data using system:
-                parameter 'system' is invalid!""")
-            nemoa.log('transform data using system \'%s\'' % (system.name()))
+            if not nemoa.type.isSystem(system):
+                return nemoa.log('error', """could not transform data
+                    using system: invalid system.""")
+            nemoa.log("transform data using system '%s'"
+                % (system.name()))
             nemoa.log('set', indent = '+1')
 
             if mapping == None: mapping = system.mapping()
@@ -421,11 +426,14 @@ class dataset:
             targetColumns = system.getUnits(group = mapping[-1])[0]
 
             self._setColLabels(sourceColumns)
+
             for src in self.data:
                 data = self.data[src]['array']
+
                 dataArray = data[sourceColumns].view('<f8').reshape(
                     data.size, len(sourceColumns))
-                transArray = system.mapData(dataArray, mapping = mapping, **kwargs)
+                transArray = system.mapData(
+                    dataArray, mapping = mapping, **kwargs)
 
                 # create empty record array
                 numRows = self.data[src]['array']['label'].size
@@ -831,7 +839,7 @@ class dataset:
         #clusters = self.getClusters(algorithm = 'k-means', data = distance, k = groups)
         #cIDs = numpy.asarray(clusters)
         #partition = []
-        #for cID in range(groups):
+        #for cID in xrange(groups):
             #partition.append(numpy.where(cIDs == cID)[0].tolist())
 
         ## get labels
@@ -895,8 +903,8 @@ class dataset:
         #startTime = time.time()
 
         #biclusters = []
-        #for i in range(numCols - 1):
-            #for j in range(i + 1, numCols):
+        #for i in xrange(numCols - 1):
+            #for j in xrange(i + 1, numCols):
 
                 #npRowIDs = numpy.arange(numRows)
 
@@ -908,7 +916,7 @@ class dataset:
                     #(not size and len(rowIDs) > minsize and corr < threshold):
                     #rowCorr = numpy.zeros(len(rowIDs))
 
-                    #for id in range(len(rowIDs)):
+                    #for id in xrange(len(rowIDs)):
                         #mask = rowIDs[:id] + rowIDs[id:][1:]
                         #rowCorr[id] = numpy.corrcoef(data[mask, i], data[mask, j])[0, 1]
 
@@ -926,7 +934,7 @@ class dataset:
 
                 # expand remaining rows over columns
                 #colIDs = [i, j]
-                #for id in [id for id in range(numCols) if id not in colIDs]:
+                #for id in [id for id in xrange(numCols) if id not in colIDs]:
                     #if numpy.corrcoef(data[rowIDs, i], data[rowIDs, id])[0, 1] < threshold:
                         #continue
                     #if numpy.corrcoef(data[rowIDs, j], data[rowIDs, id])[0, 1] < threshold:
@@ -990,7 +998,7 @@ class dataset:
             #cCorr = self.getMeanCorr(data[cRowIDs, :][:, cColIDs])
 
             ## calculate mean correlation by appending single rows
-            #for rowID in range(numRows):
+            #for rowID in xrange(numRows):
                 #corrDiff[rowID, cID] = cCorr - self.getMeanCorr(data[cRowIDs + [rowID], :][:, cColIDs])
 
         ## calculate distances of samples and clusters
@@ -1003,8 +1011,8 @@ class dataset:
         #if not axis:
             #array = array.T
         #cCorr = numpy.asarray([])
-        #for i in range(array.shape[1] - 1):
-            #for j in range(i + 1, array.shape[1]):
+        #for i in xrange(array.shape[1] - 1):
+            #for j in xrange(i + 1, array.shape[1]):
                 #cCorr = numpy.append(cCorr, numpy.corrcoef(array[:, i], array[:, j])[0, 1])
 
         #return numpy.mean(cCorr)

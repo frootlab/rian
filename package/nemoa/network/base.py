@@ -10,16 +10,17 @@ import copy
 
 class network:
 
-    def __init__(self, config = {}, **kwargs):
-        self.cfg = None
-        self.graph = None
+    cfg = None
+    graph = None
+
+    def __init__(self, config = {}):
         self._set_config(config)
 
     def _set_config(self, config):
         """Configure network to given dictionary."""
 
         # create valid config config
-        self.cfg = config.copy() if isinstance(config, dict) else {}
+        self.cfg = config.copy()
 
         # 2do -> move functionality to network configuration file!
         # type 'auto' is used for networks
@@ -36,10 +37,10 @@ class network:
             self._get_edges_from_layers()
             return self._create_layergraph()
 
-        # type 'layer' is used for networks
-        # wich are manualy defined, using a file
-        if self.cfg['type'].lower() in ['layer', 'multilayer']: return \
-            self._create_layergraph()
+        # type 'layer' is used for layered networks
+        # wich are manualy defined, by using a dictionary
+        if self.cfg['type'].lower() in ['layer', 'multilayer']:
+            return self._create_layergraph()
 
         return False
 
@@ -54,7 +55,7 @@ class network:
         for layer in self.cfg['layer']:
             nodeNumber = self.cfg['params'][layer + '.size']
             self.cfg['nodes'][layer] = \
-                [layer + str(i) for i in range(1, nodeNumber + 1)]
+                [layer + str(i) for i in xrange(1, nodeNumber + 1)]
         return True
 
     def _get_visible_nodes_from_dataset(self, dataset):
@@ -93,7 +94,7 @@ class network:
 
     def _get_edges_from_layers(self):
         self.cfg['edges'] = {}
-        for l in range(0, len(self.cfg['layer']) - 1):
+        for l in xrange(0, len(self.cfg['layer']) - 1):
             layerFrom = self.cfg['layer'][l]
             layerTo = self.cfg['layer'][l + 1]
             edgeLayer = layerFrom + '-' + layerTo
@@ -184,7 +185,7 @@ class network:
                 self.cfg['edges'][edgeLayer] = edgelist['list']
 
         # filter edges to valid nodes
-        for i in range(len(self.cfg['layer']) - 1):
+        for i in xrange(len(self.cfg['layer']) - 1):
             layerA = self.cfg['layer'][i]
             layerB = self.cfg['layer'][i + 1]
             edgeLayer = layerA + '-' + layerB
@@ -222,12 +223,16 @@ class network:
                 else: nemoa.log('adding hidden layer: \'' + layer + \
                     '\' (' + str(len(self.cfg['nodes'][layer])) + ' nodes)')
             for layerNodeId, node in enumerate(self.cfg['nodes'][layer]):
-                id = layer + ':' + node
+                if 'add_layer_to_node_labels' in self.cfg \
+                    and self.cfg['add_layer_to_node_labels'] == False:
+                    id = node
+                else:
+                    id = layer + ':' + node
                 if id in self.graph.nodes(): continue
 
                 self.graph.add_node(id,
-                    label  = node,
-                    order  = order,
+                    label = node,
+                    order = order,
                     params = {
                         'type': layer,
                         'layerId': layerId,
@@ -238,15 +243,20 @@ class network:
 
         # add edges to graph
         order = 0
-        for i in range(len(self.cfg['layer']) - 1):
+        for i in xrange(len(self.cfg['layer']) - 1):
             layerA = self.cfg['layer'][i]
             layerB = self.cfg['layer'][i + 1]
             edgeLayer = layerA + '-' + layerB
             type_id = i
 
             for (nodeA, nodeB) in self.cfg['edges'][edgeLayer]:
-                src_node_id = layerA + ':' + nodeA
-                tgt_node_id = layerB + ':' + nodeB
+                if 'add_layer_to_node_labels' in self.cfg \
+                    and self.cfg['add_layer_to_node_labels'] == False:
+                    src_node_id = nodeA
+                    tgt_node_id = nodeB
+                else:
+                    src_node_id = layerA + ':' + nodeA
+                    tgt_node_id = layerB + ':' + nodeB
 
                 self.graph.add_edge(
                     src_node_id, tgt_node_id,
@@ -325,7 +335,7 @@ class network:
         layerDict = {self.node(node)['params']['layerId']: \
             {'label': self.node(node)['params']['type']} \
             for node in self.nodes()}
-        layerList = [layerDict[layer]['label'] for layer in range(0, len(layerDict))]
+        layerList = [layerDict[layer]['label'] for layer in xrange(0, len(layerDict))]
         return layerList
 
     def edge(self, edge):
@@ -434,7 +444,8 @@ class network:
 
         # test if network contains at least three layers
         if len(self.layers()) < 3: return nemoa.log('error',
-            'Multilayer networks need at least three layers!')
+            """incompatible network: multilayer networks need at least
+            one hidden layer.""")
 
         return True
 
@@ -461,7 +472,7 @@ class network:
         # test if the hidden layers are symmetric
         layers = self.layers()
         size = len(layers)
-        for lid in range(1, (size - 1) / 2):
+        for lid in xrange(1, (size - 1) / 2):
             symmetric = len(self.layer(layers[lid])['nodes']) \
                 == len(self.layer(layers[-lid-1])['nodes'])
             if not symmetric: return nemoa.log('error',

@@ -35,6 +35,39 @@ class ann(nemoa.system.base.system):
 
     """
 
+    _default = {
+        'params': {
+            'visible': 'auto',
+            'hidden': 'auto',
+            'visibleClass': 'gauss',
+            'hiddenClass': 'sigmoid',
+            'visibleSystem': None,
+            'visibleSystemModule': 'rbm',
+            'visibleSystemClass': 'grbm',
+            'hiddenSystem': None,
+            'hiddenSystemModule': 'rbm',
+            'hiddenSystemClass': 'rbm' },
+        'init': {
+            'checkDataset': False,
+            'ignoreUnits': [],
+            'wSigma': 0.5 },
+        'optimize': {
+            'checkDataset': False,
+            'ignoreUnits': [],
+            'algorithm': 'bprop',
+            'mod_corruption_enable': False,
+            'minibatch_size': 100,
+            'minibatch_update_interval': 10,
+            'updates': 10000,
+            'schedule': None,
+            'visible': None,
+            'hidden': None,
+            'useAdjacency': False,
+            'tracker_obj_function': 'error',
+            'tracker_eval_time_interval': 10. ,
+            'tracker_estimate_time': True,
+            'tracker_estimate_timeWait': 15. }}
+
     def _configure(self, config = {},
         network = None, dataset = None, update = False):
         """Configure ANN to network and dataset.
@@ -43,6 +76,7 @@ class ann(nemoa.system.base.system):
             config: dictionary containing system configuration
             network: nemoa network instance
             dataset: nemoa dataset instance
+
         """
 
         if not 'check' in self._config:
@@ -160,7 +194,7 @@ class ann(nemoa.system.base.system):
         # get unit classes from system config
         visibleUnitsClass = self._config['params']['visibleClass']
         hiddenUnitsClass = self._config['params']['hiddenClass']
-        for id in range(len(self._params['units'])):
+        for id in xrange(len(self._params['units'])):
             if self._params['units'][id]['visible'] == True:
                 self._params['units'][id]['class'] = visibleUnitsClass
             else: self._params['units'][id]['class'] = hiddenUnitsClass
@@ -168,7 +202,7 @@ class ann(nemoa.system.base.system):
         # create instances of unit classes
         # and link units params to local params dict
         self.units = {}
-        for id in range(len(self._params['units'])):
+        for id in xrange(len(self._params['units'])):
             unitClass = self._params['units'][id]['class']
             name = self._params['units'][id]['name']
             if unitClass == 'sigmoid': self.units[name] = self._SigmoidUnits()
@@ -186,7 +220,7 @@ class ann(nemoa.system.base.system):
         if not isinstance(params, dict) \
             or not 'units' in params.keys() \
             or not isinstance(params['units'], list): return False
-        for id in range(len(params['units'])):
+        for id in xrange(len(params['units'])):
             layer = params['units'][id]
             if not isinstance(layer, dict): return False
             for attr in ['name', 'visible', 'class', 'label']:
@@ -269,7 +303,7 @@ class ann(nemoa.system.base.system):
         if not hasattr(self, 'links'): self.links = {}
 
         # initialize adjacency matrices with default values
-        for lid in range(len(self._params['units']) - 1):
+        for lid in xrange(len(self._params['units']) - 1):
             src_name = self._params['units'][lid]['name']
             src_list = self.units[src_name].params['label']
             tgt_name = self._params['units'][lid + 1]['name']
@@ -295,7 +329,8 @@ class ann(nemoa.system.base.system):
                 src, tgt = link
 
                 # get layer id and unit id of link source
-                src_name, scr_unit = src.split(':')
+                src_name = src.split(':')[0]
+                scr_unit = src[len(src_name) + 1:]
                 if not src_name in layers: continue
                 src_lid = layers.index(src_name)
                 src_list = self.units[src_name].params['label']
@@ -303,7 +338,8 @@ class ann(nemoa.system.base.system):
                 scr_uid = src_list.index(scr_unit)
 
                 # get layer id and unit id of link target
-                tgt_name, tgt_unit = tgt.split(':')
+                tgt_name = src.split(':')[0]
+                tgt_unit = src[len(tgt_name) + 1:]
                 if not tgt_name in layers: continue
                 tgt_lid = layers.index(tgt_name)
                 tgt_list = self.units[tgt_name].params['label']
@@ -424,7 +460,7 @@ class ann(nemoa.system.base.system):
         if not groups: return False
 
         links = ()
-        for g in range(len(groups) - 1):
+        for g in xrange(len(groups) - 1):
             s = groups[g]
             t = groups[g + 1]
 
@@ -517,7 +553,8 @@ class ann(nemoa.system.base.system):
 
             # Get data (sample from minibatches)
             if tracker.get('epoch') % cnf['minibatch_update_interval'] == 0:
-                data = self._optimize_get_data(dataset, cols = (mapping[0], mapping[-1]))
+                data = self._optimize_get_data(dataset,
+                    cols = (mapping[0], mapping[-1]))
             # Forward pass (Compute value estimations from given input)
             out = self._optimize_get_values(data[0])
             # Backward pass (Compute deltas from backpropagation of error)
@@ -549,10 +586,12 @@ class ann(nemoa.system.base.system):
 
         return {'units': units, 'links': links}
 
-    # Resilient Backpropagation (RPROP) specific Functions
-
     def _optimize_rprop(self, dataset, schedule, tracker):
-        """Optimize parameters using resiliant backpropagation."""
+        """Optimize parameters using resiliant backpropagation (RPROP).
+
+        resiliant backpropagation ...
+
+        """
 
         cnf = self._config['optimize']
         mapping = self.mapping()
@@ -562,13 +601,15 @@ class ann(nemoa.system.base.system):
 
             # Get data (sample from minibatches)
             if epoch % cnf['minibatch_update_interval'] == 0:
-                data = self._optimize_get_data(dataset, cols = (mapping[0], mapping[-1]))
+                data = self._optimize_get_data(dataset,
+                    cols = (mapping[0], mapping[-1]))
             # Forward pass (Compute value estimations from given input)
             out = self._optimize_get_values(data[0])
-            # Backward pass (Compute deltas from backpropagation of error)
+            # Backward pass (Compute deltas from BPROP)
             delta = self._optimize_get_deltas(data[1], out)
             # Compute updates
-            updates = self._optimize_rprop_get_updates(out, delta, tracker)
+            updates = self._optimize_rprop_get_updates(out, delta,
+                tracker)
             # Update parameters
             self._optimize_update_params(updates)
 
@@ -733,13 +774,13 @@ class ann(nemoa.system.base.system):
         energy = 0.
 
         # sum local unit energies
-        for i in range(1, len(mapping) + 1):
+        for i in xrange(1, len(mapping) + 1):
             energy += numpy.sum(
                 self._eval_units_energy(data[0],
                 mapping = tuple(mapping[:i])))
 
         # sum local link energies
-        for i in range(1, len(mapping)):
+        for i in xrange(1, len(mapping)):
             energy += numpy.sum(
                 self._eval_links_energy(data[0],
                 mapping = tuple(mapping[:i+1])))
@@ -901,7 +942,7 @@ class ann(nemoa.system.base.system):
         if len(mapping) == 2: return self.units[mapping[1]].expect(
             inData, self.units[mapping[0]].params)
         outData = numpy.copy(inData)
-        for id in range(len(mapping) - 1):
+        for id in xrange(len(mapping) - 1):
             outData = self.units[mapping[id + 1]].expect(
                 outData, self.units[mapping[id]].params)
 
@@ -950,7 +991,7 @@ class ann(nemoa.system.base.system):
                     self.units[mapping[1]].expect(inData,
                     self.units[mapping[0]].params))
             data = numpy.copy(inData)
-            for id in range(len(mapping) - 1):
+            for id in xrange(len(mapping) - 1):
                 data = self.units[mapping[id + 1]].getValues(
                     self.units[mapping[id + 1]].expect(data,
                     self.units[mapping[id]].params))
@@ -998,7 +1039,7 @@ class ann(nemoa.system.base.system):
                 return self.units[mapping[1]].getSamplesFromInput(
                     data, self.units[mapping[0]].params)
             data = numpy.copy(data)
-            for id in range(len(mapping) - 1):
+            for id in xrange(len(mapping) - 1):
                 data = self.units[mapping[id + 1]].getSamplesFromInput(
                     data, self.units[mapping[id]].params)
             return data
@@ -1580,7 +1621,7 @@ class ann(nemoa.system.base.system):
 
         # get indices of representatives
         rIds = [int((i + 0.5) * int(float(data[0].shape[0])
-            / points)) for i in range(points)]
+            / points)) for i in xrange(points)]
 
         for iId, iUnit in enumerate(iUnits):
             iCurve = numpy.take(numpy.sort(data[0][:, iId]), rIds)
@@ -1589,7 +1630,7 @@ class ann(nemoa.system.base.system):
             # create output matrix for each output
             C = {oUnit: numpy.zeros((data[0].shape[0], points)) \
                 for oUnit in oUnits}
-            for pId in range(points):
+            for pId in xrange(points):
                 iData  = data[0].copy()
                 iData[:, iId] = iCurve[pId]
                 oExpect = self._eval_units((iData, data[1]),
@@ -1601,7 +1642,7 @@ class ann(nemoa.system.base.system):
 
                 # calculate sign by correlating input and output
                 corr = numpy.zeros(data[0].shape[0])
-                for i in range(data[0].shape[0]):
+                for i in xrange(data[0].shape[0]):
                     corr[i] = numpy.correlate(C[oUnit][i, :], iCurve)
                 sign = numpy.sign(corr.mean())
 
@@ -1624,6 +1665,7 @@ class ann(nemoa.system.base.system):
 
         Returns:
             tuple with names of unit layers from source to target.
+
         """
 
         mapping = tuple([g['name'] for g in self._params['units']])

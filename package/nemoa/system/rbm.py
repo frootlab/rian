@@ -28,8 +28,7 @@ class rbm(nemoa.system.ann.ann):
 
     """
 
-    @staticmethod
-    def _default(key): return {
+    _default = {
         'params': {
             'samples': '*',
             'subnet': '*',
@@ -68,7 +67,7 @@ class rbm(nemoa.system.ann.ann):
             'tracker_obj_function': 'error',
             'tracker_eval_time_interval': 10. ,
             'tracker_estimate_time': True,
-            'tracker_estimate_timeWait': 20. }}[key]
+            'tracker_estimate_timeWait': 20. }}
 
     def mapping(self):
         v = self._params['units'][0]['name']
@@ -89,18 +88,18 @@ class rbm(nemoa.system.ann.ann):
             % (dataset.name()))
         return True
 
-    @staticmethod
-    def _get_units_from_network(network):
-        """Return tuple with lists of unit labels from network."""
-        return [{
-            'label': network.nodes(visible = True),
-            'visible': True,
-            'name': 'visible'
-        }, {
-            'label': network.nodes(visible = False),
-            'visible': False,
-            'name': 'hidden'
-        }]
+    #@staticmethod
+    #def _get_units_from_network(network):
+        #"""Return tuple with lists of unit labels from network."""
+        #return [{
+            #'label': network.nodes(visible = True),
+            #'visible': True,
+            #'name': 'visible'
+        #}, {
+            #'label': network.nodes(visible = False),
+            #'visible': False,
+            #'name': 'hidden'
+        #}]
 
     def _set_update_rates(self, **config):
         """Initialize updates for system parameters."""
@@ -208,8 +207,8 @@ class rbm(nemoa.system.ann.ann):
 
         vModel = numpy.zeros(shape = data.shape)
         hModel = numpy.zeros(shape = hData.shape)
-        for i in range(m):
-            for j in range(k):
+        for i in xrange(m):
+            for j in xrange(k):
 
                 # calculate hSample from hExpect
                 # in first sampling step init hSample with h_data
@@ -392,39 +391,39 @@ class rbm(nemoa.system.ann.ann):
         if heat < config['mod_sa_min_temperature']: return 0.
         return heat
 
-    def _get_units_from_config(self):
-        """Return tuple with unit information created from config."""
+    #def _get_units_from_config(self):
+        #"""Return tuple with unit information created from config."""
 
-        if isinstance(self._config['params']['visible'], int):
-            vLabel = ['v:v%i' % (num) for num \
-                in range(1, self._config['params']['visible'] + 1)]
-        elif isinstance(self._config['params']['visible'], list):
-            for node in self._config['params']['visible']:
-                if not isinstance(node, str):
-                    return None
-            vLabel = self._config['params']['visible']
-        else: vLabel = []
-        if isinstance(self._config['params']['hidden'], int):
-            hLabel = ['h:h%i' % (num) for num \
-                in range(1, self._config['params']['hidden'] + 1)]
-        elif isinstance(self._config['params']['hidden'], list):
-            for node in self._config['params']['hidden']:
-                if not isinstance(node, str):
-                    return None
-            hLabel = self._config['params']['hidden']
-        else: hLabel = []
+        #if isinstance(self._config['params']['visible'], int):
+            #vLabel = ['v:v%i' % (num) for num \
+                #in xrange(1, self._config['params']['visible'] + 1)]
+        #elif isinstance(self._config['params']['visible'], list):
+            #for node in self._config['params']['visible']:
+                #if not isinstance(node, str):
+                    #return None
+            #vLabel = self._config['params']['visible']
+        #else: vLabel = []
+        #if isinstance(self._config['params']['hidden'], int):
+            #hLabel = ['h:h%i' % (num) for num \
+                #in xrange(1, self._config['params']['hidden'] + 1)]
+        #elif isinstance(self._config['params']['hidden'], list):
+            #for node in self._config['params']['hidden']:
+                #if not isinstance(node, str):
+                    #return None
+            #hLabel = self._config['params']['hidden']
+        #else: hLabel = []
 
-        return [{
-            'id': 0, 'name': 'visible',
-            'visible': True, 'label': vLabel,
-        }, {
-            'id': 1, 'name': 'hidden',
-            'visible': False, 'label': hLabel
-        }]
+        #return [{
+            #'id': 0, 'name': 'visible',
+            #'visible': True, 'label': vLabel,
+        #}, {
+            #'id': 1, 'name': 'hidden',
+            #'visible': False, 'label': hLabel
+        #}]
 
-    def _get_units_from_dataset(self, dataset):
-        """Return tuple with lists of unit labels ([visible], [hidden]) using dataset for visible."""
-        return (dataset.getColLabels(), self.units['hidden'].params['label'])
+    #def _get_units_from_dataset(self, dataset):
+        #"""Return tuple with lists of unit labels ([visible], [hidden]) using dataset for visible."""
+        #return (dataset.getColLabels(), self.units['hidden'].params['label'])
 
     ## TODO: generalize to ann
     #def _unlink_unit(self, unit):
@@ -552,8 +551,7 @@ class grbm(rbm):
 
     """
 
-    @staticmethod
-    def _default(key): return {
+    _default = {
         'params': {
             'samples': '*',
             'subnet': '*',
@@ -594,7 +592,7 @@ class grbm(rbm):
             'tracker_eval_time_interval': 20., # time interval for calculation the inspection function
             'tracker_estimate_time': True, # initally estimate time for whole optimization process
             'tracker_estimate_timeWait': 20. # time intervall used for time estimation
-        }}[key]
+        }}
 
     def _check_dataset(self, dataset):
         """Check if dataset contains gauss normalized values."""

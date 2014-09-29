@@ -111,7 +111,7 @@ class graph(nemoa.plot.base.plot):
             '%i complexes found' % (len(graphs)))
 
         # update node attributes
-        for i in range(len(graphs)):
+        for i in xrange(len(graphs)):
             for n in graphs[i].nodes():
                 node  = model.network.node(n)
                 label = nemoa.common.strToUnitStr(node['label'])

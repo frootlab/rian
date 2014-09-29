@@ -231,81 +231,72 @@ class model:
 
         return self
 
-    def _configure_dataset(self, dataset = None, network = None):
-        """Configure model.dataset to given dataset and network.
+    #def _configure_dataset(self, dataset = None, network = None):
+        #"""Configure model.dataset to given dataset and network.
 
-        Args:
-            dataset: dataset instance
-            network: network instance
+        #Args:
+            #dataset: dataset instance
+            #network: network instance
 
-        """
-        dataset = self.dataset
-        network = self.network
+        #"""
+        #dataset = self.dataset
+        #network = self.network
 
-        # link dataset instance
-        if nemoa.type.isDataset(dataset):
-            self.dataset = dataset
+        ## link dataset instance
+        #if nemoa.type.isDataset(dataset):
+            #self.dataset = dataset
 
-        # check if dataset instance is valid
-        if not nemoa.type.isDataset(self.dataset):
-            nemoa.log('error',
-            'could not configure dataset: no dataset instance available!')
-            return False
+        ## check if dataset instance is valid
+        #if not nemoa.type.isDataset(self.dataset):
+            #nemoa.log('error',
+            #'could not configure dataset: no dataset instance available!')
+            #return False
 
-        # check if dataset is empty
-        if self.dataset._is_empty(): return True
+        ## check if dataset is empty
+        #if self.dataset._is_empty(): return True
 
-        # prepare params
-        if not network and not self.network:
-            nemoa.log('error',
-            'could not configure dataset: no network instance available!')
-            return False
+        ## prepare params
+        #if not network and not self.network:
+            #nemoa.log('error',
+            #'could not configure dataset: no network instance available!')
+            #return False
 
-        return self.dataset.configure(network = network \
-            if not network == None else self.network)
+        #return self.dataset.configure(network = network \
+            #if not network == None else self.network)
 
-    def _configure_network(self, dataset = None, network = None, system = None, **kwargs):
-        """Configure model.network to given network, dataset and system.
+    #def _configure_network(self, dataset = None, network = None, system = None, **kwargs):
+        #"""Configure model.network to given network, dataset and system.
 
-        Args:
-            dataset: dataset instance
-            network: network instance
-        """
+        #Args:
+            #dataset: dataset instance
+            #network: network instance
+        #"""
 
-        # link network instance
-        if nemoa.type.isNetwork(network): self.network = network
+        ## link network instance
+        #if nemoa.type.isNetwork(network): self.network = network
 
-        # check if network instance is valid
-        if not nemoa.type.isNetwork(self.network): return nemoa.log(
-            'error', """could not configure network:
-            no network instance available!""")
+        ## check if network instance is valid
+        #if not nemoa.type.isNetwork(self.network): return nemoa.log(
+            #'error', """could not configure network:
+            #no network instance available!""")
 
-        # check if network instance is empty
-        if self.network._is_empty(): return True
+        ## check if network instance is empty
+        #if self.network._is_empty(): return True
 
-        # check if dataset instance is available
-        if self.dataset == None and dataset == None: return nemoa.log(
-            'error', """could not configure network:
-            no dataset instance available!""")
+        ## check if dataset instance is available
+        #if self.dataset == None and dataset == None: return nemoa.log(
+            #'error', """could not configure network:
+            #no dataset instance available!""")
 
-         # check if system instance is available
-        if self.system == None and system == None: return nemoa.log(
-            'error', """could not configure network:
-            no system was given!""")
+         ## check if system instance is available
+        #if self.system == None and system == None: return nemoa.log(
+            #'error', """could not configure network:
+            #no system was given!""")
 
-        # configure network
-        return self.network.configure(
-            dataset = dataset if not dataset == None else self.dataset,
-            system = system if not system == None else self.system)
-
-    def _set_system(self, system):
-        """Set system."""
-        self.system = system
-        return True
-
-    def _get_system(self):
-        """Return link to system instance."""
-        return self.system
+        ## configure network
+        #return self.network.configure(
+            #dataset = dataset if not dataset == None else self.dataset,
+            #system = system if not system == None else self.system)
 
     ## TODO: deprecated! Only used in dataset histogram plot
     #def data(self, dataset = None, layer = None, transform = 'expect', **kwargs):

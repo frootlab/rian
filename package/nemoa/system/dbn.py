@@ -30,8 +30,7 @@ class dbn(nemoa.system.ann.ann):
 
     """
 
-    @staticmethod
-    def _default(key): return {
+    _default = {
         'params': {
             'visible': 'auto',
             'hidden': 'auto',
@@ -64,13 +63,13 @@ class dbn(nemoa.system.ann.ann):
             'tracker_obj_function': 'error',
             'tracker_eval_time_interval': 10. ,
             'tracker_estimate_time': True,
-            'tracker_estimate_timeWait': 15. }}[key]
+            'tracker_estimate_timeWait': 15. }}
 
     def _check_network(self, network):
         return network._is_compatible_dbn()
 
-    def _get_units_from_config(self):
-        return None
+    #def _get_units_from_config(self):
+        #return None
 
     def _get_links_from_network(self, network):
         return None
@@ -101,58 +100,71 @@ class dbn(nemoa.system.ann.ann):
         nemoa.log('note', 'pretraining model')
         nemoa.log('set', indent = '+1')
 
-        # Configure subsystems for pretraining
-
+        # configure subsystems for pretraining
         nemoa.log('configure subsystems')
         nemoa.log('set', indent = '+1')
         if not 'units' in self._params:
-            nemoa.log('error',
-                """could not configure subsystems:
+            nemoa.log('error', """could not configure subsystems:
                 no layers have been defined!""")
             nemoa.log('set', indent = '-1')
             return False
 
         # create and configure subsystems
         subSystems = []
-        for layerID in range((len(self._params['units']) - 1)  / 2):
+        for layerID in xrange((len(self._params['units']) - 1)  / 2):
             inUnits = self._params['units'][layerID]
             outUnits = self._params['units'][layerID + 1]
             links = self._params['links'][(layerID, layerID + 1)]
 
-            # get subsystem configuration
+            # create configuration for network of subsystem
+            if not inUnits['visible']:
+                visible_units = inUnits['label']
+            else:
+                visible_units = self._params['units'][0]['label'] \
+                    + self._params['units'][-1]['label']
+            hidden_units = outUnits['label']
+            network_nodes = {
+                'visible': visible_units,
+                'hidden': hidden_units}
+            network_edges = {'visible-hidden': []}
+            for v in visible_units:
+                for h in hidden_units:
+                    network_edges['visible-hidden'].append((v, h))
+            network_config = {
+                'package': 'base',
+                'class': 'network',
+                'name': '%s ↔ %s' \
+                    % (inUnits['name'], outUnits['name']),
+                'type': 'layer',
+                'layer': ['visible', 'hidden'],
+                'nodes': network_nodes,
+                'edges': network_edges,
+                'add_layer_to_node_labels': False,
+                'visible': ['visible'],
+                'hidden': ['hidden'],
+                'label_format': 'generic:string' }
+
+            # create network of subsystem
+            network = nemoa.network.new(config = network_config)
+
+            # create subsystem configuration
             sysType = 'visible' if inUnits['visible'] else 'hidden'
-            sysUserConf = self._config['params'][sysType + 'System']
-            if sysUserConf:
-                # TODO: nmConfig??
-                sysConfig = nmConfig.get(type = 'system',
-                    name = sysUserConf)
-                if sysConfig == None:
-                    nemoa.log('error', """could not configure system:
-                        unknown system configuration '%s'""" \
-                        % (sysUserConf))
-                    nemoa.log('set', indent = '-1')
-                    return False
-            else: sysConfig = {
+            system_config = {
                 'package': \
                     self._config['params'][sysType + 'SystemModule'],
                 'class': \
-                    self._config['params'][sysType + 'SystemClass'] }
+                    self._config['params'][sysType + 'SystemClass'],
+                'name': '%s ↔ %s' \
+                    % (inUnits['name'], outUnits['name'])}
 
-            # create subsystem configuration
-            sysConfig['name'] = '%s ↔ %s' \
-                % (inUnits['name'], outUnits['name'])
-            if not 'params' in sysConfig: sysConfig['params'] = {}
-            if inUnits['visible']: sysConfig['params']['visible'] = \
-                self._params['units'][0]['label'] \
-                + self._params['units'][-1]['label']
-            else: sysConfig['params']['visible'] = inUnits['label']
-            sysConfig['params']['hidden'] = outUnits['label']
+            # create subsystem instance
+            system = nemoa.system.new(config = system_config)
 
-            # create instance of subsystem from configuration
-            system = nemoa.system.new(config = sysConfig)
+            # configure system to network
+            system.configure(network = network)
+
             unitCount = sum([len(group) for group in system.getUnits()])
             linkCount = len(system.getLinks())
-
             nemoa.log("adding subsystem: '%s' (%s units, %s links)" %\
                 (system.name(), unitCount, linkCount))
 
@@ -162,7 +174,7 @@ class dbn(nemoa.system.ann.ann):
             # link linksparameters of subsystem
             links['init'] = system._params['links'][(0, 1)]
 
-            # link layerparameters of subsystem
+            # link layer parameters of subsystem
             if layerID == 0:
                 inUnits['init'] = system.units['visible'].params
                 outUnits['init'] = system.units['hidden'].params
@@ -185,16 +197,17 @@ class dbn(nemoa.system.ann.ann):
         datasetCopy = dataset._get()
 
         # optimize subsystems
-        for sysID in range(len(subSystems)):
+        for sysID in xrange(len(subSystems)):
+
             # link subsystem
             system = subSystems[sysID]
 
             # transform dataset with previous system / fix lower stack
             if sysID > 0:
                 prevSys = subSystems[sysID - 1]
-                visible = prevSys._params['units'][0]['name']
-                hidden  = prevSys._params['units'][1]['name']
-                mapping = (visible, hidden)
+                visible_layer = prevSys._params['units'][0]['name']
+                hidden_layer = prevSys._params['units'][1]['name']
+                mapping = (visible_layer, hidden_layer)
                 dataset.transformData(algorithm = 'system',
                     system = prevSys, mapping = mapping,
                     transform = 'expect')
@@ -212,8 +225,7 @@ class dbn(nemoa.system.ann.ann):
         # reset data to initial state (before transformation)
         dataset._set(**datasetCopy)
 
-        # Copy and enrolle parameters of subsystems to dbn
-
+        # copy and enrolle parameters of subsystems to dbn
         nemoa.log('initialize system with subsystem parameters')
         nemoa.log('set', indent = '+1')
 
@@ -227,7 +239,8 @@ class dbn(nemoa.system.ann.ann):
             from subsystems (enrolling)""")
         units = self._params['units']
         links = self._params['links']
-        for id in range((len(units) - 1)  / 2):
+
+        for id in xrange((len(units) - 1)  / 2):
 
             # copy unit parameters
             for attrib in units[id]['init'].keys():
@@ -252,7 +265,7 @@ class dbn(nemoa.system.ann.ann):
                     links[(id, id + 1)]['init'][attrib].T
             del links[(id, id + 1)]['init']
 
-        # Remove input units from output layer, and vice versa
+        # remove input units from output layer, and vice versa
 
         nemoa.log('cleanup unit and linkage parameter arrays')
         self._remove_units(self.mapping()[0], outputs)

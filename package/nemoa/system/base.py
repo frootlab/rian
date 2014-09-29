@@ -17,8 +17,8 @@ class system:
         # set configuration and update units and links
         self._set_config(kwargs['config'] if 'config' in kwargs else {})
 
-    def configure(self, dataset = None, network = None, *args, **kwargs):
-        """Configure system and subsystems to network and dataset."""
+    def configure(self, network = None, dataset = None, *args, **kwargs):
+        """Configure system to network and dataset."""
         if not hasattr(self.__class__, '_configure') \
             or not callable(getattr(self.__class__, '_configure')):
             return True
@@ -27,11 +27,6 @@ class system:
         if not self._check_network(network):
             nemoa.log('error', """system could not be configured:
                 network is not valid!""")
-            nemoa.log('set', indent = '-1')
-            return False
-        if not self._check_dataset(dataset):
-            nemoa.log('error', """system could not be configured:
-                dataset is not valid!""")
             nemoa.log('set', indent = '-1')
             return False
         retVal = self._configure(dataset = dataset, network = network,
@@ -51,20 +46,24 @@ class system:
 
     def _set_config(self, config):
         """Set configuration."""
-        # create local configuration dictionary
-        if not hasattr(self, '_config'):
-            self._config = {'check': {}}
-            for key in ['params', 'init', 'optimize']:
-                if not key in self._config:
-                    self._config[key] = self._default(key)
 
-        # overwrite / merge local with given configuration
+        # create / update configuration dictionary
+        if not hasattr(self, '_config'):
+            self._config = self._default.copy()
+            self._config['check'] = {
+                'config': False,
+                'network': False,
+                'dataset': False
+            }
         nemoa.common.dict_merge(config, self._config)
 
-        # create / update local unit and link dictionaries
-        if not hasattr(self, '_params'): self._params = {}
-        self._configure_set_units(self._get_units_from_config())
-        self.setLinks(self._get_links_from_config())
+        # create / update parameter dictionaries (for units and links)
+        if not hasattr(self, '_params'):
+            self._params = {'units': {}, 'links': {}}
+        #units = self._get_units_from_config()
+        #if units: self._configure_set_units(units)
+        #links = self._get_links_from_config()
+        #if links: self.setLinks(links)
 
         self._config['check']['config'] = True
         return True
@@ -158,7 +157,7 @@ class system:
 
     def _get_group_of_unit(self, unit):
         """Return name of unit group of given unit."""
-        for id in range(len(self._params['units'])):
+        for id in xrange(len(self._params['units'])):
             if unit in self._params['units'][id]['label']:
                 return self._params['units'][id]['name']
         return None
@@ -166,8 +165,9 @@ class system:
     def setLinks(self, links = None, initialize = True):
         """Set links using list with 2-tuples containing unit labels."""
 
-        if initialize: return self._configure_set_links(links) \
-            and self._configure_index_links() and self._init_links()
+        if initialize:
+            return self._configure_set_links(links) \
+                and self._configure_index_links() and self._init_links()
         return self._configure_index_links()
 
     def getLinks(self, *args, **kwargs):
@@ -245,7 +245,7 @@ class system:
         # check if optimization schedule exists for current system
         # and merge default, existing and given schedule
         if not 'params' in schedule:
-            config = self._default('optimize')
+            config = self._default['optimize'].copy()
             nemoa.common.dict_merge(self._config['optimize'], config)
             self._config['optimize'] = config
         elif not self.getType() in schedule['params']: return nemoa.log(
@@ -253,7 +253,7 @@ class system:
             optimization schedule '%s' does not include system '%s'
             """ % (schedule['name'], self.getType()))
         else:
-            config = self._default('optimize')
+            config = self._default['optimize'].copy()
             nemoa.common.dict_merge(self._config['optimize'], config)
             nemoa.common.dict_merge(schedule['params'][self.getType()], config)
             self._config['optimize'] = config

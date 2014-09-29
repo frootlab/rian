@@ -53,7 +53,7 @@ def strToDict(string, delim = ','):
 
 def strToUnitStr(string):
     """Return TeX style unit String used for plots."""
-    text = string.rstrip(''.join([str(x) for x in range(0, 10)]))
+    text = string.rstrip(''.join([str(x) for x in xrange(0, 10)]))
     return '$%s_{%d}$' % (text, int(string.lstrip(text)))
 
 def strDocTrim(string):
