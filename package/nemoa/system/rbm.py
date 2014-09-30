@@ -88,19 +88,6 @@ class rbm(nemoa.system.ann.ann):
             % (dataset.name()))
         return True
 
-    #@staticmethod
-    #def _get_units_from_network(network):
-        #"""Return tuple with lists of unit labels from network."""
-        #return [{
-            #'label': network.nodes(visible = True),
-            #'visible': True,
-            #'name': 'visible'
-        #}, {
-            #'label': network.nodes(visible = False),
-            #'visible': False,
-            #'name': 'hidden'
-        #}]
-
     def _set_update_rates(self, **config):
         """Initialize updates for system parameters."""
         if not 'optimize' in self._config: self._config['optimize'] = {}

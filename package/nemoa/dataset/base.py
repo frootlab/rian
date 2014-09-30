@@ -53,33 +53,39 @@ class dataset:
         return True
 
     def _isGaussNormalized(self, size = 100000,
-        maxMean = 0.05, maxSdev = 1.05):
+        max_mean = 0.05, max_sdev = 1.05):
         """Test if dataset contains gauss normalized data.
 
         Args:
-            dataset: nemoa dataset instance
-            size: number of samples to create statistics
-            maxMean: allowed maximum for absolute mean value
-            maxSdev: allowed maximum for standard deviation
+            dataset (object): nemoa dataset instance
+            size (int, optional): number of samples used to calculate
+                mean of absolute values and standard deviation
+            max_mean (float, optional): allowed maximum for mean of
+                absolute values
+            max_sdev (float, optional): allowed maximum for standard
+                deviation
 
         Returns:
             Boolean value which is True if the following conditions are
             satisfied:
-            (1) The absolute mean value of a given number of random
-                samples of the dataset is below maxMean
+            (1) The mean of the absolute values of a given number of
+                random samples of the dataset is below max_mean
             (2) The standard deviation of a given number of random
-                samples of the dataset is below maxSdev
+                samples of the dataset is below max_sdev
+
         """
 
         data = self.getData(size) # get numpy array with data
 
+        # test mean of absolute values
         mean = data.mean()
-        if numpy.abs(mean) >= maxMean: return nemoa.log('error',
+        if numpy.abs(mean) >= max_mean: return nemoa.log('error',
             """Dataset does not contain gauss normalized data:
-            mean value is %.3f!""" % (mean))
+            mean of absolute values is %.3f!""" % (mean))
 
+        # test standard deviation
         sdev = data.std()
-        if sdev >= maxSdev: return nemoa.log('error',
+        if sdev >= max_sdev: return nemoa.log('error',
             """Dataset does not contain gauss normalized data:
             standard deviation is %.3f!""" % (sdev))
 
@@ -92,9 +98,11 @@ class dataset:
     def configure(self, network, useCache = False, **kwargs):
         """Configure dataset to a given network object
 
-        Keyword arguments:
-            network -- nemoa network object
-            useCache -- shall data be cached"""
+        Arguments:
+            network: nemoa network object
+            useCache: shall data be cached
+
+        """
 
         nemoa.log("configure dataset '%s' to network '%s'" % \
             (self.name(), network.name()))
@@ -295,8 +303,8 @@ class dataset:
             self.save(cacheFile)
 
         # preprocess data
-        if 'preprocessing' in self.cfg.keys(): self.preprocessData(
-            **self.cfg['preprocessing'])
+        if 'preprocessing' in self.cfg.keys():
+            self.preprocessData(**self.cfg['preprocessing'])
 
         nemoa.log('set', indent = '-1')
         return True
@@ -341,6 +349,7 @@ class dataset:
                     1 / number of sources
 
         """
+
         nemoa.log("stratify data using '%s'" % (algorithm))
 
         if algorithm.lower() in ['none']:
@@ -371,9 +380,11 @@ class dataset:
             # get data for calculation of mean and variance
             # for single source datasets take all data
             # for multi source datasets take a big bunch of stratified data
-            if len(self.data.keys()) > 1: data = \
-                self.getData(size = 1000000, output = 'recarray')
-            else: data = self._getSingleSourceData(source = self.data.keys()[0])
+            if len(self.data.keys()) > 1:
+                data = self.getData(size = 1000000, output = 'recarray')
+            else:
+                data = self._getSingleSourceData(
+                    source = self.data.keys()[0])
 
             # iterative update sources
             # get mean and standard deviation per column (recarray)
@@ -385,7 +396,6 @@ class dataset:
                         (self.data[src]['array'][col] - data[col].mean()) \
                         / data[col].std()
             return True
-
         return False
 
     def transformData(self, algorithm = 'system', system = None,
@@ -447,8 +457,8 @@ class dataset:
                 for colID, colName in enumerate(newRecArray.dtype.names[1:]):
 
                     # update source data columns
-                    newRecArray[colName] = (transArray[:, colID]
-                        ).astype(float)
+                    newRecArray[colName] = \
+                        (transArray[:, colID]).astype(float)
 
                 self.data[src]['array'] = newRecArray # set record array
 
@@ -538,13 +548,13 @@ class dataset:
 
         """
 
-        # Check Configuration and Keyword Arguments
+        # check Configuration and Keyword Arguments
         if not self._is_configured(): return nemoa.log('error',
             'could not get data: dataset is not yet configured!')
         if not isinstance(size, int) or size < 0: return nemoa.log(
             'error', 'could not get data: invalid argument size!')
 
-        # Stratify and filter data
+        # stratify and filter data
         srcStack = ()
         for source in self.data.keys():
             if size > 0: srcData = self._getSingleSourceData(source,
@@ -561,7 +571,7 @@ class dataset:
             numpy.random.shuffle(data)
             data = data[:size]
 
-        # Format data
+        # format data
         if isinstance(cols, str): fmtData = self._getFormatedData(
             data, cols = self.getColLabels(cols), output = output)
         elif isinstance(cols, list): fmtData = self._getFormatedData(
@@ -595,11 +605,11 @@ class dataset:
             return nemoa.log('error', """could not retrieve data:
             invalid source: '%s'!""" % (source))
 
-        # Check row Filter
+        # check row Filter
         if not rows in self.cfg['rowFilter']: return nemoa.log('error',
             "could not retrieve data: invalid row filter: '%s'!" % (rows))
 
-        # Apply row filter
+        # apply row filter
         if rows == '*' or source + ':*' in self.cfg['rowFilter'][rows]:
             srcArray = self.data[source]['array']
         else:
@@ -613,7 +623,7 @@ class dataset:
             if rowSelect.size == 0: return rowSelect
             srcArray = numpy.take(self.data[source]['array'], rowSelect)
 
-        # Stratify and return data as numpy record array
+        # stratify and return data as numpy record array
         if size == 0 or size == None: return srcArray
         srcFrac = self.data[source]['fraction']
         rowSelect = numpy.random.randint(srcArray.size,
@@ -686,8 +696,7 @@ class dataset:
         if isinstance(output, str): return retTuple[0]
         return retTuple
 
-    # Column Labels and Column Groups
-
+    # column Labels and Column Groups
     def getColLabels(self, group = '*'):
         """Return list of strings containing column groups and labels."""
         if group == '*': return ['%s:%s' % (col[0], col[1])
@@ -708,13 +717,6 @@ class dataset:
         self.cfg['columns'] = tuple([col.split(':') for col in labels])
         return True
 
-    #def getRowLabels(self):
-        #labelStack = ()
-        #for source in self.data:
-            #labelStack += (self.data[source]['array']['label'],)
-        #labels = numpy.concatenate(labelStack).tolist()
-        #return labels
-
     def getColGroups(self):
         groups = {}
         for group, label in self.cfg['columns']:
@@ -726,13 +728,6 @@ class dataset:
         # TODO: check columns!
         self.cfg['colFilter'][group] = columns
         return True
-
-    #def getRowGroups(self):
-        #pass
-
-    #
-    # FILTERS
-    #
 
     #def addRowFilter(self, name, filter):
         ## create unique name for filter
@@ -772,10 +767,6 @@ class dataset:
 
     #def getColFilters(self):
         #return self.cfg['colFilter']
-
-    #
-    # PARTITIONS
-    #
 
     #def addRowPartition(self, name, partition):
         #if name in self.cfg['rowPartitions']:
@@ -852,10 +843,6 @@ class dataset:
 
         #return labeledPartition
 
-    #
-    # CLUSTERING
-    #
-
     #def getClusters(self, algorithm = 'k-means', **params):
         #if algorithm == 'k-means':
             #return self.getKMeansClusters(**params)
@@ -865,10 +852,6 @@ class dataset:
 
     #def getKMeansClusters(self, data, k = 3):
         #return scipy.cluster.vq.vq(data, scipy.cluster.vq.kmeans(data, k)[0])[0]
-
-    #
-    # BICLUSTERING
-    #
 
     #def getBiclusters(self, algorithm = 'bcca', **params):
         #if algorithm == 'bcca':
@@ -955,10 +938,6 @@ class dataset:
                 #% (len(biclusters), threshold, minsize - 1))
 
         #return biclusters
-
-    #
-    # BICLUSTER DISTANCES
-    #
 
     #def getBiclusterDistance(self, biclusters, **params):
         #if 'distance' in params:
@@ -1110,7 +1089,7 @@ class dataset:
     def about(self, *args):
         """Return generic information about various parts of the dataset.
 
-        Arguments:
+        Args:
             *args: tuple of strings, containing a breadcrump trail to
                 a specific information about the dataset
 

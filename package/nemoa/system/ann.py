@@ -9,7 +9,7 @@ plain ANNs.
 
 References:
     (1) "Learning representations by back-propagating errors",
-        Rumelhart, D. E., Hinton, G. E., and Williams, R. J. (1986)
+        Rumelhart, D. E., Hinton, G. E., Williams, R. J. (1986)
 
 """
 
@@ -576,6 +576,26 @@ class ann(nemoa.system.base.system):
                 updates['links'][(src, tgt)]['W']
             self.units[tgt].update(updates['units'][tgt])
 
+        return True
+
+    def _optimize_params(self, dataset, schedule, tracker):
+        """Optimize system parameters."""
+
+        nemoa.log('note', 'optimizing model')
+        nemoa.log('set', indent = '+1')
+
+        # Optimize system parameters
+        algorithm = self._config['optimize']['algorithm'].lower()
+
+        if algorithm == 'bprop':
+            self._optimize_bprop(dataset, schedule, tracker)
+        elif algorithm == 'rprop':
+            self._optimize_rprop(dataset, schedule, tracker)
+        else:
+            nemoa.log('error', """could not optimize model:
+                unknown algorithm '%s'!""" % (algorithm))
+
+        nemoa.log('set', indent = '-1')
         return True
 
     def _optimize_bprop(self, dataset, schedule, tracker):
@@ -1890,9 +1910,10 @@ class ann(nemoa.system.base.system):
             calculated from a gaussian input layer. """
 
             bias = self.params['bias']
-            lvar = numpy.exp(source['lvar'])
+            sdev = numpy.sqrt(numpy.exp(source['lvar']))
 
-            return nemoa.common.sigmoid(bias + numpy.dot(data / lvar, weights))
+            return nemoa.common.sigmoid(
+                bias + numpy.dot(data / sdev, weights))
 
         def getParamUpdates(self, data, model, weights):
             """Return parameter updates of a sigmoidal output layer
@@ -2034,6 +2055,15 @@ class ann(nemoa.system.base.system):
 
             return self.params['bias'] + numpy.dot(data, weights)
 
+        def expectFromGLayer(self, data, source, weights):
+            """Return expected values of a gaussian output layer
+            calculated from a gaussian input layer. """
+
+            bias = self.params['bias']
+            sdev = numpy.sqrt(numpy.exp(source['lvar']))
+
+            return bias + numpy.dot(data / sdev, weights)
+
         @staticmethod
         def grad(x):
             """Return gradient of activation function."""
@@ -2044,14 +2074,6 @@ class ann(nemoa.system.base.system):
         def check(layer):
 
             return 'bias' in layer and 'lvar' in layer
-
-        #def energy(self, data):
-
-            #bias = self.params['bias']
-            #var = numpy.exp(self.params['lvar'])
-            #energy = 0.5 * numpy.mean((data - bias) ** 2, axis = 0) / var
-
-            #return energy.reshape(bias.size)
 
         def energy(self, data):
 

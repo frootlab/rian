@@ -16,8 +16,8 @@ import numpy
 class dbn(nemoa.system.ann.ann):
     """Deep Belief Network (DBN).
 
-    'Deep Belief Networks' (DBN) are layered feed forward Artificial
-    Neural Networks with hidden layers, a symmetric graph structure and
+    'Deep Belief Networks' are layered feed forward Artificial Neural
+    Networks with hidden layers, a symmetric graph structure and
     optimization in two steps. The first step, known as 'pretraining',
     utilizes Restricted Boltzmann Machines as builing blocks to
     initialize the optimization parameters. This allows the introduction
