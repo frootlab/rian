@@ -60,10 +60,6 @@ class system:
         # create / update parameter dictionaries (for units and links)
         if not hasattr(self, '_params'):
             self._params = {'units': {}, 'links': {}}
-        #units = self._get_units_from_config()
-        #if units: self._configure_set_units(units)
-        #links = self._get_links_from_config()
-        #if links: self.setLinks(links)
 
         self._config['check']['config'] = True
         return True
@@ -118,14 +114,6 @@ class system:
 
         return groups
 
-    #def unlinkUnit(self, unit):
-        #"""Unlink unit (if present)."""
-        #return self._unlink_unit(unit)
-
-    #def removeUnits(self, type, label):
-        #"""Remove unit."""
-        #return self._removeUnit(type, label)
-
     def getGroups(self, **kwargs):
         """.
 
@@ -162,15 +150,7 @@ class system:
                 return self._params['units'][id]['name']
         return None
 
-    def setLinks(self, links = None, initialize = True):
-        """Set links using list with 2-tuples containing unit labels."""
-
-        if initialize:
-            return self._configure_set_links(links) \
-                and self._configure_index_links() and self._init_links()
-        return self._configure_index_links()
-
-    def getLinks(self, *args, **kwargs):
+    def links(self, *args, **kwargs):
         """Return list with 2-tuples containing unit labels."""
         return self._get_links_from_config()
 
@@ -198,28 +178,13 @@ class system:
 
         Args:
             dataset: nemoa dataset instance
+
         """
+
         if not nemoa.type.isDataset(dataset): return nemoa.log('error',
             """could not initilize system parameters:
             invalid dataset instance given!""")
         return self._init_params(dataset)
-
-    #def getParams(self, *args, **kwargs):
-        #"""Return dictinary with all system parameters."""
-        #return copy.deepcopy(self._params)
-
-    #def setParams(self, params, update = True):
-        #"""Set system parameters using from dictionary."""
-        #if not self._configure_test(params): return nemoa.log('error',
-            #"""could not set system parameters:
-            #invalid 'params' dictionary given!""")
-        #if update: self._set_params(params)
-        #else: self._params = copy.deepcopy(params)
-        #return True
-
-    #def resetParams(self, dataset):
-        #"""Reset system parameters using dataset instance."""
-        #return self.initialize(dataset)
 
     def optimize(self, dataset, schedule):
         """Optimize system parameters using data and given schedule."""

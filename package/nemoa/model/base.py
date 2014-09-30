@@ -590,7 +590,7 @@ class model:
         return self.system.getUnits(**kwargs)
 
     def links(self, **kwargs):
-        return self.system.getLinks(**kwargs)
+        return self.system.links(**kwargs)
 
     def unit(self, unit):
         """Return information about one unit.

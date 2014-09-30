@@ -96,8 +96,10 @@ class ann(nemoa.system.base.system):
     def _configure_update_units_and_links(self, *args, **kwargs):
 
         nemoa.log('update system units and links')
-        self._configure_set_units(self._params['units'], initialize = False)
-        self.setLinks(self._params['links'], initialize = False)
+        self._configure_set_units(
+            self._params['units'], initialize = False)
+        self._configure_set_links(
+            self._params['links'], initialize = False)
 
         return True
 
@@ -120,7 +122,7 @@ class ann(nemoa.system.base.system):
             self._get_units_from_network(network),
             initialize = initialize)
 
-        self.setLinks(
+        self._configure_set_links(
             self._get_links_from_network(network),
             initialize = initialize)
 
@@ -292,7 +294,7 @@ class ann(nemoa.system.base.system):
 
         return True
 
-    def _configure_set_links(self, links = None):
+    def _configure_set_links(self, links = None, initialize = True):
         """Create link configuration from units."""
 
         if not self._configure_test_units(self._params):
@@ -300,7 +302,7 @@ class ann(nemoa.system.base.system):
                 units have not been configured.""")
 
         if not 'links' in self._params: self._params['links'] = {}
-        if not hasattr(self, 'links'): self.links = {}
+        if not initialize: return self._configure_index_links()
 
         # initialize adjacency matrices with default values
         for lid in xrange(len(self._params['units']) - 1):
@@ -352,7 +354,7 @@ class ann(nemoa.system.base.system):
                 lnk_dict = self._params['links'][lnk_name]
                 lnk_dict['A'][scr_uid, tgt_uid] = 1.0
 
-        return True
+        return self._configure_index_links() and self._init_links()
 
     def _init_links(self, dataset = None):
         """Initialize link parameteres (weights).
