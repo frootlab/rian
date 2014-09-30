@@ -3,6 +3,7 @@
 
 Deep Beliefe Network implementation for multilayer data modeling,
 nonlinear data dimensionality reduction and nonlinear data analysis.
+
 """
 
 __author__  = 'Patrick Michl'
@@ -15,16 +16,22 @@ import numpy
 class dbn(nemoa.system.ann.ann):
     """Deep Belief Network (DBN).
 
-    'Deep Belief Networks' are topological symmetric feed forward
-    Artificial Neural Networks with two step optimization. The first
-    step, known as 'pretraining' uses Restricted Boltzmann Machines as
-    layer wise builing blocks to preoptimize local unit interactions.
-    The second step, the 'finetuning' step, uses Backpropagation of
-    Error to optimize the reconstruction of output data. DBNs are
-    typically used for data classification and nonlinear dimensionality
-    reduction (1).
+    'Deep Belief Networks' (DBN) are layered feed forward Artificial
+    Neural Networks with hidden layers, a symmetric graph structure and
+    optimization in two steps. The first step, known as 'pretraining',
+    utilizes Restricted Boltzmann Machines as builing blocks to
+    initialize the optimization parameters. This allows the introduction
+    of energy based weak constraints on direct unit interactions and
+    improves the ability to overcome bad local optima. The second step,
+    known as 'finetuning', uses a gradient descent by Backpropagation of
+    Error to optimize the reconstruction of output data.
 
-    Reference:
+    DBNs are typically used for data classification tasks and nonlinear
+    dimensionality reduction (1). By using data manipulation tests, DBNs
+    can also be utilized to find and analyse nonlinear dependency
+    sructures in data.
+
+    References:
         (1) "Reducing the dimensionality of data with neural networks",
             G. E. Hinton, R. R. Salakhutdinov, Science, 2006
 
@@ -67,12 +74,6 @@ class dbn(nemoa.system.ann.ann):
 
     def _check_network(self, network):
         return network._is_compatible_dbn()
-
-    #def _get_units_from_config(self):
-        #return None
-
-    def _get_links_from_network(self, network):
-        return None
 
     def _optimize_params(self, dataset, schedule, tracker):
         """Optimize system parameters."""
@@ -266,7 +267,6 @@ class dbn(nemoa.system.ann.ann):
             del links[(id, id + 1)]['init']
 
         # remove input units from output layer, and vice versa
-
         nemoa.log('cleanup unit and linkage parameter arrays')
         self._remove_units(self.mapping()[0], outputs)
         self._remove_units(self.mapping()[-1], inputs)

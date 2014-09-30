@@ -174,24 +174,6 @@ class system:
         """Return list with 2-tuples containing unit labels."""
         return self._get_links_from_config()
 
-    def _get_link(self, link):
-        srcUnit = link[0]
-        tgtUnit = link[1]
-        srcGrp  = self._get_group_of_unit(srcUnit)
-        tgtGrp  = self._get_group_of_unit(tgtUnit)
-        if not srcGrp in self._links \
-            or not tgtGrp in self._links[srcGrp]['target']: return None
-        linkGrp = self._links[srcGrp]['target'][tgtGrp]
-        srcID   = self.units[srcGrp].params['label'].index(srcUnit)
-        tgtID   = self.units[tgtGrp].params['label'].index(tgtUnit)
-        weight  = linkGrp['W'][srcID, tgtID]
-        norm    = float(numpy.sum(linkGrp['A'])) / numpy.sum(
-            numpy.abs(linkGrp['W']))
-        return {
-            'adjacency': linkGrp['A'][srcID, tgtID],
-            'weight':    weight,
-            'normal':    norm * weight}
-
     def _get(self, section = None):
         """Return system settings as dictionary."""
         dict = {

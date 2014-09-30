@@ -453,6 +453,42 @@ class ann(nemoa.system.base.system):
             Layer '%s' and layer '%s' are not connected.
             """ % (source['name'], target['name']))
 
+    def _get_link(self, link):
+
+        src_unit = link[0]
+        src_layer = self._get_group_of_unit(src_unit)
+        if not src_layer in self._links:
+            return None
+
+        tgt_unit = link[1]
+        tgt_layer = self._get_group_of_unit(tgt_unit)
+        if not tgt_layer in self._links[src_layer]['target']:
+            return None
+
+        # get weight and adjacency matrices of link layer
+        link_layer = self._links[src_layer]['target'][tgt_layer]
+        W = link_layer['W']
+        A = link_layer['A']
+
+        # get weight and adjacency of link
+        src_id = self.units[src_layer].params['label'].index(src_unit)
+        tgt_id = self.units[tgt_layer].params['label'].index(tgt_unit)
+        link_weight = W[src_id, tgt_id]
+        link_adjacency = A[src_id, tgt_id]
+
+        # calculate normalized weight of link (normalized to link layer)
+        if link_weight == 0.0:
+            link_norm_weight = 0.0
+        else:
+            W_sum = numpy.sum(numpy.abs(A * W))
+            A_sum = numpy.sum(A)
+            link_norm_weight = link_weight * A_sum / W_sum
+
+        return {
+            'adjacency': link_adjacency,
+            'weight': link_weight,
+            'normal': link_norm_weight}
+
     def _get_links_from_config(self):
         """Return links from adjacency matrix. """
 
