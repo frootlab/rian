@@ -127,10 +127,10 @@ class dbn(nemoa.system.ann.ann):
             network_nodes = {
                 'visible': visible_units,
                 'hidden': hidden_units}
-            network_edges = {'visible-hidden': []}
+            network_edges = {('visible', 'hidden'): []}
             for v in visible_units:
                 for h in hidden_units:
-                    network_edges['visible-hidden'].append((v, h))
+                    network_edges[('visible', 'hidden')].append((v, h))
             network_config = {
                 'package': 'base',
                 'class': 'network',

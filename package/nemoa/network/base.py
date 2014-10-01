@@ -97,11 +97,11 @@ class network:
         for l in xrange(0, len(self.cfg['layer']) - 1):
             layerFrom = self.cfg['layer'][l]
             layerTo = self.cfg['layer'][l + 1]
-            edgeLayer = layerFrom + '-' + layerTo
-            if not edgeLayer in self.cfg['edges']:
+            edge_layer = (layerFrom, layerTo)
+            if not edge_layer in self.cfg['edges']:
                 nodesFrom = self.cfg['nodes'][layerFrom]
                 nodesTo = self.cfg['nodes'][layerTo]
-                self.cfg['edges'][edgeLayer] = [(nodeFrom, nodeTo)
+                self.cfg['edges'][edge_layer] = [(nodeFrom, nodeTo)
                     for nodeFrom in nodesFrom
                     for nodeTo in nodesTo]
         return True
@@ -181,20 +181,21 @@ class network:
             indexA = self.cfg['layer'].index(edgelist['type'][0])
             indexB = self.cfg['layer'].index(edgelist['type'][1])
             if indexB - indexA == 1:
-                edgeLayer = edgelist['type'][0] + '-' + edgelist['type'][1]
-                self.cfg['edges'][edgeLayer] = edgelist['list']
+                edge_layer = (edgelist['type'][0], edgelist['type'][1])
+                self.cfg['edges'][edge_layer] = edgelist['list']
 
         # filter edges to valid nodes
         for i in xrange(len(self.cfg['layer']) - 1):
             layerA = self.cfg['layer'][i]
             layerB = self.cfg['layer'][i + 1]
-            edgeLayer = layerA + '-' + layerB
+            edge_layer = (layerA, layerB)
             filtered = []
-            for nodeA, nodeB in self.cfg['edges'][edgeLayer]:
+
+            for nodeA, nodeB in self.cfg['edges'][edge_layer]:
                 if not nodeA in self.cfg['nodes'][layerA]: continue
                 if not nodeB in self.cfg['nodes'][layerB]: continue
                 filtered.append((nodeA, nodeB))
-            self.cfg['edges'][edgeLayer] = filtered
+            self.cfg['edges'][edge_layer] = filtered
 
         # reset and create new NetworkX graph Instance
         if self.graph == None: self.graph = networkx.Graph()
@@ -246,10 +247,10 @@ class network:
         for i in xrange(len(self.cfg['layer']) - 1):
             layerA = self.cfg['layer'][i]
             layerB = self.cfg['layer'][i + 1]
-            edgeLayer = layerA + '-' + layerB
+            edge_layer = (layerA, layerB)
             type_id = i
 
-            for (nodeA, nodeB) in self.cfg['edges'][edgeLayer]:
+            for (nodeA, nodeB) in self.cfg['edges'][edge_layer]:
                 if 'add_layer_to_node_labels' in self.cfg \
                     and self.cfg['add_layer_to_node_labels'] == False:
                     src_node_id = nodeA
@@ -262,7 +263,7 @@ class network:
                     src_node_id, tgt_node_id,
                     weight = 0.,
                     order  = order,
-                    params = {'type': edgeLayer, 'layerId': type_id})
+                    params = {'type': edge_layer, 'layerId': type_id})
 
                 order += 1
 

@@ -484,6 +484,7 @@ class ann(nemoa.system.base.system):
         else:
             W_sum = numpy.sum(numpy.abs(A * W))
             A_sum = numpy.sum(A)
+            # TODO: Problem with multilayer plain anns
             link_norm_weight = link_weight * A_sum / W_sum
 
         return {

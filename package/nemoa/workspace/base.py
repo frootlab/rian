@@ -1138,9 +1138,9 @@ class config:
 
             # init network dictionary
             config['visible'] = []
-            config['hidden']  = []
-            config['nodes']   = {}
-            config['edges']   = {}
+            config['hidden'] = []
+            config['nodes'] = {}
+            config['edges'] = {}
 
             # parse '[layer *]' sections and add nodes
             # and layer types to network dict
@@ -1151,15 +1151,16 @@ class config:
                         contain information about layer '%s'."""
                         % (file, layer))
 
+                # TODO: type in ('gauss', 'sigmoid', 'linear')
                 # get type of layer ('type')
                 # layer type can be ether 'visible' or 'hidden'
                 if not 'type' in netcfg.options(layerSec):
                     return nemoa.log('warning', """type of layer '%s'
                         has to be specified ('visible', 'hidden')!"""
                         % (layer))
-                if netcfg.get(layerSec, 'type').lower() in ['visible']:
+                if netcfg.get(layerSec, 'type').lower() == 'visible':
                     config['visible'].append(layer)
-                elif netcfg.get(layerSec, 'type').lower() in ['hidden']:
+                elif netcfg.get(layerSec, 'type').lower() == 'hidden':
                     config['hidden'].append(layer)
                 else: return nemoa.log('warning',
                     "unknown type of layer '" + layer + "'!")
@@ -1197,17 +1198,19 @@ class config:
                         config['nodes'][layer].append(node)
 
             # check network layers
-            if config['visible'] == []: return nemoa.log('error',
-                "layer network '" + file + "' does not contain visible layers!")
+            if config['visible'] == []:
+                return nemoa.log('error', """could not parse network:
+                    file '%s' does not contain visible layers!"""
+                    % (file))
 
             # parse '[binding *]' sections and add edges to network dict
             for i in xrange(len(config['layer']) - 1):
                 layerA = config['layer'][i]
                 layerB = config['layer'][i + 1]
 
-                edgeType = layerA + '-' + layerB
+                edgeType = (layerA, layerB)
                 config['edges'][edgeType] = []
-                edgeSec = 'binding ' + edgeType
+                edgeSec = 'binding %s-%s' % (layerA, layerB)
 
                 # create full binfing between two layers if not specified
                 if not edgeSec in netcfg.sections():
@@ -1221,7 +1224,8 @@ class config:
                     nodeA = nodeA.strip()
                     if nodeA == '' or \
                         not nodeA in config['nodes'][layerA]: continue
-                    for nodeB in nemoa.common.strToList(netcfg.get(edgeSec, nodeA)):
+                    for nodeB in nemoa.common.strToList(
+                        netcfg.get(edgeSec, nodeA)):
                         nodeB = nodeB.strip()
                         if nodeB == '' \
                             or not nodeB in config['nodes'][layerB] \
@@ -1234,8 +1238,10 @@ class config:
                 layerA = config['layer'][i]
                 layerB = config['layer'][i + 1]
 
-                edgeType = layerA + '-' + layerB
-                if config['edges'][edgeType] == []: return nemoa.log('warning',
-                    "layer '%s' and layer '%s' are not connected!" % (layerA, layerB))
+                edgeType = (layerA, layerB)
+                if config['edges'][edgeType] == []:
+                    return nemoa.log('warning', """layer '%s' and
+                        layer '%s' are not connected!"""
+                        % (layerA, layerB))
 
             return network
