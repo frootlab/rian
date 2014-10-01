@@ -209,7 +209,7 @@ class dbn(nemoa.system.ann.ann):
                 visible_layer = prevSys._params['units'][0]['name']
                 hidden_layer = prevSys._params['units'][1]['name']
                 mapping = (visible_layer, hidden_layer)
-                dataset.transformData(algorithm = 'system',
+                dataset._transform(algorithm = 'system',
                     system = prevSys, mapping = mapping,
                     transform = 'expect')
 

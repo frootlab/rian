@@ -41,9 +41,9 @@ def heatmap(array, **kwargs):
 
     # create labels for axis
     maxFontSize = 12.
-    yLabels = [nemoa.common.strToUnitStr(label.split(':')[1]) \
+    yLabels = [nemoa.common.str_format_unit_label(label.split(':')[1]) \
         for label in kwargs['units'][0]]
-    xLabels = [nemoa.common.strToUnitStr(label.split(':')[1]) \
+    xLabels = [nemoa.common.str_format_unit_label(label.split(':')[1]) \
         for label in kwargs['units'][1]]
     fontsize = min(maxFontSize, \
         400. / float(max(len(xLabels), len(yLabels))))
@@ -253,7 +253,7 @@ def layergraph(G, **kwargs):
             isVisible = attr['params']['visible']
             labelStr = attr['label'] if isVisible \
                 else 'n%d' % (layer.index(node) + 1)
-            label = nemoa.common.strToUnitStr(labelStr)
+            label = nemoa.common.str_format_unit_label(labelStr)
 
             color = {
                 True: {

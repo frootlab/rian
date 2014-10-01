@@ -51,7 +51,7 @@ def _get_config(type = None, config = None,
     elif not isinstance(config, str) \
         or not isinstance(type, str): return False
 
-    config_name, params = nemoa.common.strSplitParams(config)
+    config_name, params = nemoa.common.str_split_params(config)
     if 'params' in kwargs and isinstance(kwargs['params'], dict):
         params = nemoa.common.dict_merge(kwargs['params'], params)
 
@@ -63,9 +63,9 @@ def _get_config(type = None, config = None,
 
     # get config
     if not config_name: config_name = name() + '.default'
-    for cfgName in search:
+    for cfg_name in search:
         cfg = _shared['config'].get(
-            type = type, name = cfgName, merge = merge, params = params)
+            type = type, name = cfg_name, merge = merge, params = params)
         if isinstance(cfg, dict): return cfg
 
     return nemoa.log('error', """could not get configuration:

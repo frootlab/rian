@@ -113,7 +113,7 @@ class workspace:
             else module.new(config = config, **kwargs)
 
         # check instance class
-        if not nemoa.type.isInstanceType(instance, type):
+        if not nemoa.type.is_instance_of_type(instance, type):
             nemoa.log('error', """could not create %s instance:
                 invalid configuration!""" % (type))
             nemoa.log('set', indent = '-1')
@@ -574,7 +574,7 @@ class config:
             obj_conf['config']['source']['file'] = self._expand_path(file)
 
             if not 'file_format' in conf['source']:
-                obj_conf['config']['source']['file_format'] = nemoa.common.getFileExt(file)
+                obj_conf['config']['source']['file_format'] = nemoa.common.get_file_ext(file)
 
             format = obj_conf['config']['source']['file_format']
 
@@ -615,7 +615,7 @@ class config:
 
             # add missing source information
             if not 'file_format' in conf['source']:
-                conf['source']['file_format'] = nemoa.common.getFileExt(file)
+                conf['source']['file_format'] = nemoa.common.get_file_ext(file)
 
             # only update in the first call of checkDatasetConf
             if update: conf['cache_path'] = self._path['cache']
@@ -1029,7 +1029,7 @@ class config:
         def _convert(self, str, type):
             if type == 'str': return str.strip().replace('\n', '')
             if type == 'list': return nemoa.common.str_to_list(str)
-            if type == 'dict': return nemoa.common.strToDict(str)
+            if type == 'dict': return nemoa.common.str_to_dict(str)
             return str
 
     # import script files
@@ -1160,8 +1160,8 @@ class config:
             # parse '[layer *]' sections and add nodes
             # and layer types to network dict
             for layer in config['layer']:
-                layerSec = 'layer ' + layer
-                if not layerSec in netcfg.sections():
+                layer_section = 'layer ' + layer
+                if not layer_section in netcfg.sections():
                     return nemoa.log('warning', """file '%s' does not
                         contain information about layer '%s'."""
                         % (file, layer))
@@ -1169,20 +1169,22 @@ class config:
                 # TODO: type in ('gauss', 'sigmoid', 'linear')
                 # get type of layer ('type')
                 # layer type can be ether 'visible' or 'hidden'
-                if not 'type' in netcfg.options(layerSec):
+                if not 'type' in netcfg.options(layer_section):
                     return nemoa.log('warning', """type of layer '%s'
                         has to be specified ('visible', 'hidden')!"""
                         % (layer))
-                if netcfg.get(layerSec, 'type').lower() == 'visible':
+                layer_type = netcfg.get(layer_section, 'type').lower()
+                if layer_type == 'visible':
                     config['visible'].append(layer)
-                elif netcfg.get(layerSec, 'type').lower() == 'hidden':
+                elif layer_type == 'hidden':
                     config['hidden'].append(layer)
-                else: return nemoa.log('warning',
-                    "unknown type of layer '" + layer + "'!")
+                else:
+                    return nemoa.log('warning',
+                        "unknown type of layer '" + layer + "'!")
 
                 # get nodes of layer from given list file ('file')
-                if 'file' in netcfg.options(layerSec):
-                    file_str = netcfg.get(layerSec, 'file')
+                if 'file' in netcfg.options(layer_section):
+                    file_str = netcfg.get(layer_section, 'file')
                     list_file = nemoa.workspace._expand_path(file_str)
                     if not os.path.exists(list_file):
                         return nemoa.log('error', """listfile '%s'
@@ -1191,12 +1193,12 @@ class config:
                         fileLines = list_file.readlines()
                     node_list = [node.strip() for node in fileLines]
                 # get nodes of layer from given list ('nodes')
-                elif 'nodes' in netcfg.options(layerSec):
-                    node_str = netcfg.get(layerSec, 'nodes')
+                elif 'nodes' in netcfg.options(layer_section):
+                    node_str = netcfg.get(layer_section, 'nodes')
                     node_list = nemoa.common.str_to_list(node_str)
                 # get nodes of layer from given layer size ('size')
-                elif 'size' in netcfg.options(layerSec):
-                    layer_size = int(netcfg.get(layerSec, 'size'))
+                elif 'size' in netcfg.options(layer_section):
+                    layer_size = int(netcfg.get(layer_section, 'size'))
                     node_list = []
                     for n in xrange(1, layer_size + 1):
                         node_list.append('n%s' % (n))
@@ -1225,28 +1227,34 @@ class config:
 
                 edge_layer = (src_layer, tgt_layer)
                 config['edges'][edge_layer] = []
-                edgeSec = 'binding %s-%s' % (src_layer, tgt_layer)
+                edge_section = 'binding %s-%s' % (src_layer, tgt_layer)
 
                 # create full binfing between two layers if not specified
-                if not edgeSec in netcfg.sections():
-                    for nodeA in config['nodes'][src_layer]:
-                        for nodeB in config['nodes'][tgt_layer]:
-                            config['edges'][edge_layer].append((nodeA, nodeB))
+                if not edge_section in netcfg.sections():
+                    for src_node in config['nodes'][src_layer]:
+                        for tgt_node in config['nodes'][tgt_layer]:
+                            edge = (src_node, tgt_node)
+                            config['edges'][edge_layer].append(edge)
                     continue
 
                 # get edges from '[binding *]' section
-                for nodeA in netcfg.options(edgeSec):
-                    nodeA = nodeA.strip()
-                    if nodeA == '' or \
-                        not nodeA in config['nodes'][src_layer]: continue
-                    for nodeB in nemoa.common.str_to_list(
-                        netcfg.get(edgeSec, nodeA)):
-                        nodeB = nodeB.strip()
-                        if nodeB == '' \
-                            or not nodeB in config['nodes'][tgt_layer] \
-                            or (nodeA, nodeB) in config['edges'][edge_layer]:
+                for src_node in netcfg.options(edge_section):
+                    src_node = src_node.strip()
+                    if src_node == '':
+                        continue
+                    if not src_node in config['nodes'][src_layer]:
+                        continue
+                    for tgt_node in nemoa.common.str_to_list(
+                        netcfg.get(edge_section, src_node)):
+                        tgt_node = tgt_node.strip()
+                        if tgt_node == '':
                             continue
-                        config['edges'][edge_layer].append((nodeA, nodeB))
+                        if not tgt_node in config['nodes'][tgt_layer]:
+                            continue
+                        edge = (src_node, tgt_node)
+                        if edge in config['edges'][edge_layer]:
+                            continue
+                        config['edges'][edge_layer].append(edge)
 
             # check network binding
             for i in xrange(len(config['layer']) - 1):

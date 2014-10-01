@@ -9,11 +9,11 @@ import nemoa
 import numpy
 import re
 
-def csvGetColLabels(file, delim = None, type = None):
+def csv_get_col_labels(file, delim = None, type = None):
     """Return list with column labels (first row) from csv file."""
 
     # get delimiter
-    if not delim: delim = csvGetDelimiter(file)
+    if not delim: delim = csv_get_delimiter(file)
     if not delim: return nemoa.log('error',
         'could not get column labels: unknown delimiter!')
 
@@ -28,7 +28,7 @@ def csvGetColLabels(file, delim = None, type = None):
         for label in ['label'] + r.findall(firstline)]
     return []
 
-def csvGetDelimiter(file, delimiters = [',', ';', '\t', ' ']):
+def csv_get_delimiter(file, delimiters = [',', ';', '\t', ' ']):
     """Return estimated delimiter of csv file."""
 
     found = False
@@ -45,7 +45,7 @@ def csvGetDelimiter(file, delimiters = [',', ';', '\t', ' ']):
     return nemoa.log('warning', """could not import csv file '%s':
         could not determine delimiter!""" % (file))
 
-def csvSaveData(file, data, cols = None, delimiter = '\t', comments = ''):
+def csv_save_data(file, data, cols = None, delimiter = '\t', comments = ''):
     header = delimiter.join(cols) if isinstance(cols, list) else None
     fmt = delimiter.join(['%s'] + ['%10.10f'] * (len(data[0]) - 1))
     return numpy.savetxt(file, data, fmt = fmt, delimiter = delimiter,

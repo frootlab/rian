@@ -14,13 +14,15 @@ import csv
 
 class dataset:
 
-    def __init__(self, config = {}, **kwargs):
+    cfg = None
+    data = None
+
+    def __init__(self, config = {}):
         """Set configuration of dataset from dictionary."""
-        self.cfg = None
-        self.setConfig(config)
+        self._set_config(config)
         self.data = {}
 
-    def setConfig(self, config):
+    def _set_config(self, config):
         """Set configuration of dataset from dictionary."""
         self.cfg = config.copy()
         return True
@@ -33,7 +35,7 @@ class dataset:
         """Return true if dataset is empty."""
         return not 'name' in self.cfg or not self.cfg['name']
 
-    def _isBinary(self):
+    def _is_binary_(self):
         """Test if dataset contains only binary data.
 
         Args:
@@ -52,7 +54,7 @@ class dataset:
 
         return True
 
-    def _isGaussNormalized(self, size = 100000,
+    def _is_gauss_normalized(self, size = 100000,
         max_mean = 0.05, max_sdev = 1.05):
         """Test if dataset contains gauss normalized data.
 
@@ -109,7 +111,7 @@ class dataset:
         nemoa.log('set', indent = '+1')
 
         # load data from cachefile (if caching and cachefile exists)
-        cacheFile = self._searchCacheFile(network) if useCache else None
+        cacheFile = self._search_cache_file(network) if useCache else None
         if cacheFile and self.load(cacheFile):
             nemoa.log('load cachefile: \'%s\'' % (cacheFile))
 
@@ -129,10 +131,11 @@ class dataset:
         # Annotation
 
         # get nodes from network and convert to common format
-        if network.cfg['type'] == 'auto': netGroups = {'v': None}
+        if network._config['type'] == 'auto': netGroups = {'v': None}
         else:
             # get grouped network node labels and label format
-            netGroups = network.getNodeGroups(type = 'visible')
+            netGroups = network.nodes(type = 'visible',
+                group_by_layer = True)
 
             netGroupsOrder = []
             for layer in netGroups: netGroupsOrder.append(
@@ -145,7 +148,7 @@ class dataset:
             convNetGroupsLost = {}
             convNetNodes = []
             convNetNodesLost = []
-            netLblFmt = network.cfg['label_format']
+            netLblFmt = network._config['label_format']
             for id, group in netGroupsOrder:
                 convNetGroups[group], convNetGroupsLost[group] = \
                     nemoa.dataset.annotation.convert(netGroups[group],
@@ -172,7 +175,7 @@ class dataset:
             # get column labels from csv-file
             csvType = srcCnf['source']['csvtype'].strip().lower() \
                 if 'csvtype' in srcCnf['source'] else None
-            origColLabels = nemoa.common.csvGetColLabels(
+            origColLabels = nemoa.common.csv_get_col_labels(
                 srcCnf['source']['file'], type = csvType)
             if not origColLabels: continue
 
@@ -193,7 +196,7 @@ class dataset:
                 nemoa.log('logfile', ", ".join([convColLabels[i] \
                     for i in convColLabelsLost]))
 
-            if not network.cfg['type'] == 'auto':
+            if not network._config['type'] == 'auto':
 
                 # search converted nodes in converted columns
                 numLost = 0
@@ -239,7 +242,7 @@ class dataset:
 
         # if network type is 'auto', set network visible nodes
         # to intersected data from database files (without label column)
-        if network.cfg['type'] == 'auto':
+        if network._config['type'] == 'auto':
             netGroups['v'] = [label for label in interColLabels \
                 if not label == 'label']
             convNetGroups = netGroups
@@ -293,12 +296,12 @@ class dataset:
         for src in self.cfg['table']:
             self.data[src] = {
                 'fraction': self.cfg['table'][src]['fraction'],
-                'array': self._csvGetData(src) }
+                'array': self._csv_get_data(src) }
         nemoa.log('set', indent = '-1')
 
         # save cachefile
         if useCache:
-            cacheFile = self._createCacheFile(network)
+            cacheFile = self._create_cache_file(network)
             nemoa.log('save cachefile: \'%s\'' % (cacheFile))
             self.save(cacheFile)
 
@@ -315,25 +318,25 @@ class dataset:
         Process stratification, normalization and transformation.
 
         Args:
-            stratify: see method self._stratifyData()
-            normalize: see method self._normalizeData()
-            transform: see method self.transformData()
+            stratify: see method self._stratify()
+            normalize: see method self._normalize()
+            transform: see method self._transform()
 
         """
 
         nemoa.log('preprocessing data')
         nemoa.log('set', indent = '+1')
         if 'stratify'  in kwargs.keys():
-            self._stratifyData(kwargs['stratify'])
+            self._stratify(kwargs['stratify'])
         if 'normalize' in kwargs.keys():
-            self._normalizeData(kwargs['normalize'])
+            self._normalize(kwargs['normalize'])
         if 'transform' in kwargs.keys():
-            self.transformData(kwargs['transform'])
+            self._transform(kwargs['transform'])
         nemoa.log('set', indent = '-1')
 
         return True
 
-    def _stratifyData(self, algorithm = 'auto'):
+    def _stratify(self, algorithm = 'auto'):
         """Stratify data.
 
         Args:
@@ -365,7 +368,7 @@ class dataset:
             return True
         return False
 
-    def _normalizeData(self, algorithm = 'gauss'):
+    def _normalize(self, algorithm = 'gauss'):
         """Normalize stratified data
 
         Args:
@@ -383,7 +386,7 @@ class dataset:
             if len(self.data.keys()) > 1:
                 data = self.getData(size = 1000000, output = 'recarray')
             else:
-                data = self._getSingleSourceData(
+                data = self._get_data_from_source(
                     source = self.data.keys()[0])
 
             # iterative update sources
@@ -398,12 +401,13 @@ class dataset:
             return True
         return False
 
-    def transformData(self, algorithm = 'system', system = None,
+    def _transform(self, algorithm = 'system', system = None,
         mapping = None, **kwargs):
         """Transform dataset.
 
         Args:
-            algorithm: name of algorithm used for data transformation
+            algorithm (str): name of algorithm used for data
+                transformation
                 'system':
                     Transform data using nemoa system instance
                 'gaussToBinary':
@@ -417,7 +421,9 @@ class dataset:
                     in [0, 1]
             system: nemoa system instance (nemoa object root class
                 'system') used for model based transformation of data
-            mapping: ..."""
+            mapping: ...
+
+        """
 
         if not isinstance(algorithm, str): return False
 
@@ -435,14 +441,14 @@ class dataset:
             sourceColumns = system.getUnits(group = mapping[0])[0]
             targetColumns = system.getUnits(group = mapping[-1])[0]
 
-            self._setColLabels(sourceColumns)
+            self._set_col_labels(sourceColumns)
 
             for src in self.data:
                 data = self.data[src]['array']
 
                 dataArray = data[sourceColumns].view('<f8').reshape(
                     data.size, len(sourceColumns))
-                transArray = system.mapData(
+                transArray = system.map_data(
                     dataArray, mapping = mapping, **kwargs)
 
                 # create empty record array
@@ -462,7 +468,7 @@ class dataset:
 
                 self.data[src]['array'] = newRecArray # set record array
 
-            self._setColLabels(targetColumns)
+            self._set_col_labels(targetColumns)
             nemoa.log('set', indent = '-1')
             return True
 
@@ -557,9 +563,9 @@ class dataset:
         # stratify and filter data
         srcStack = ()
         for source in self.data.keys():
-            if size > 0: srcData = self._getSingleSourceData(source,
+            if size > 0: srcData = self._get_data_from_source(source,
                 size = size + 1, rows = rows)
-            else: srcData = self._getSingleSourceData(source, rows = rows)
+            else: srcData = self._get_data_from_source(source, rows = rows)
             if srcData == False or srcData.size == 0: continue
             srcStack += (srcData, )
         if not srcStack: return nemoa.log('error',
@@ -572,21 +578,21 @@ class dataset:
             data = data[:size]
 
         # format data
-        if isinstance(cols, str): fmtData = self._getFormatedData(
+        if isinstance(cols, str): fmtData = self._format_data(
             data, cols = self.getColLabels(cols), output = output)
-        elif isinstance(cols, list): fmtData = self._getFormatedData(
+        elif isinstance(cols, list): fmtData = self._format_data(
             data, cols = cols, output = output)
         elif isinstance(cols, tuple): fmtData = tuple(
-            [self._getFormatedData(data, cols = self.getColLabels(grp),
+            [self._format_data(data, cols = self.getColLabels(grp),
             output = output) for grp in cols])
         else: return nemoa.log('error', """could not get data:
             invalid argument for columns!""")
 
         # Corrupt data (optionally)
-        return self._getCorruptedData(fmtData, \
+        return self._corrupt_data(fmtData, \
             type = corruption[0], factor = corruption[1])
 
-    def _getSingleSourceData(self, source, size = 0, rows = '*'):
+    def _get_data_from_source(self, source, size = 0, rows = '*'):
         """Return numpy recarray with data from a single source.
 
         Args:
@@ -630,11 +636,12 @@ class dataset:
             size = round(srcFrac * size))
         return numpy.take(srcArray, rowSelect)
 
-    def _getCorruptedData(self, data, type = None, factor = 0.5):
-        """Return numpy array with (partly) corrupted data.
+    def _corrupt_data(self, data, type = None, factor = 0.5):
+        """Corrupt given data.
 
         Args:
-            type: string describing algorithm for corruption
+            data: numpy array containing data
+            type (str): algorithm for corruption
                 'mask': Masking Noise
                     A fraction of every sample is forced to zero
                 'gauss': Gaussian Noise
@@ -642,15 +649,19 @@ class dataset:
                 'salt': Salt-and-pepper noise
                     A fraction of every sample is forced to min or max
                     with equal possibility
-            factor: float describing the strengt of the corruption
+            factor (float, optional): strengt of the corruption
                 The influence of the parameter depends on the
                 type of the corruption
+
+        Returns:
+            Numpy array with (partly) corrupted data. The shape is
+            identical to the shape of the given data.
 
         """
 
         if type in [None, 'none']: return data
         elif type == 'mask': return data * numpy.random.binomial(
-            size = data.shape, n = 1, p = 1 - factor)
+            size = data.shape, n = 1, p = 1. - factor)
         elif type == 'gauss': return data + numpy.random.normal(
             size = data.shape, loc = 0., scale = factor)
         # TODO: implement salt and pepper noise
@@ -658,7 +669,7 @@ class dataset:
         else: return nemoa.log('error',
             "unkown data corruption type '%s'!" % (type))
 
-    def _getFormatedData(self, data, cols = '*', output = 'array'):
+    def _format_data(self, data, cols = '*', output = 'array'):
         """Return data in given format.
 
         Args:
@@ -712,7 +723,7 @@ class dataset:
                 labels.append('%s:%s' % (col[0], col[1]))
         return labels
 
-    def _setColLabels(self, labels):
+    def _set_col_labels(self, labels):
         """Set column labels from list of strings."""
         self.cfg['columns'] = tuple([col.split(':') for col in labels])
         return True
@@ -997,13 +1008,13 @@ class dataset:
         #return numpy.mean(cCorr)
 
     # TODO: move to nemoa.common
-    def _csvGetData(self, name):
-        conf    = self.cfg['table'][name]['source']
-        file    = conf['file']
-        delim   = conf['delimiter'] if 'delimiter' in conf \
-            else nemoa.common.csvGetDelimiter(file)
-        cols    = conf['usecols']
-        names   = tuple(self.getColLabels())
+    def _csv_get_data(self, name):
+        conf = self.cfg['table'][name]['source']
+        file = conf['file']
+        delim = conf['delimiter'] if 'delimiter' in conf \
+            else nemoa.common.csv_get_delimiter(file)
+        cols = conf['usecols']
+        names = tuple(self.getColLabels())
         formats = tuple(['<f8' for x in names])
         if not 'rows' in conf or conf['rows']:
             cols = (0,) + cols
@@ -1028,8 +1039,8 @@ class dataset:
     def export(self, file, **kwargs):
         """Export data to file."""
 
-        file = nemoa.common.getEmptyFile(file)
-        type = nemoa.common.getFileExt(file).lower()
+        file = nemoa.common.get_empty_file(file)
+        type = nemoa.common.get_file_ext(file).lower()
 
         nemoa.log('export data to file')
         nemoa.log('set', indent = '+1')
@@ -1038,7 +1049,7 @@ class dataset:
         if type in ['gz', 'data']: retVal = self.save(file)
         elif type in ['csv', 'tsv', 'tab', 'txt']:
             cols, data = self.getData(output = ('cols', 'recarray'))
-            retVal = nemoa.common.csvSaveData(file, data,
+            retVal = nemoa.common.csv_save_data(file, data,
                 cols = [''] + cols, **kwargs)
         else: retVal = nemoa.log('error', """could not export dataset:
             unsupported file type '%s'""" % (type))
@@ -1046,19 +1057,19 @@ class dataset:
         nemoa.log('set', indent = '-1')
         return retVal
 
-    def _getCacheFile(self, network):
+    def _get_cache_file(self, network):
         """Return cache file path."""
         return '%sdata-%s-%s.npz' % (
-            self.cfg['cache_path'], network.cfg['id'], self.cfg['id'])
+            self.cfg['cache_path'], network._config['id'], self.cfg['id'])
 
-    def _searchCacheFile(self, network):
+    def _search_cache_file(self, network):
         """Return cache file path if existent."""
-        file = self._getCacheFile(network)
+        file = self._get_cache_file(network)
         return file if os.path.isfile(file) else None
 
-    def _createCacheFile(self, network):
+    def _create_cache_file(self, network):
         """Return empty cache file if existent."""
-        file = self._getCacheFile(network)
+        file = self._get_cache_file(network)
         if not os.path.isfile(file):
             basedir = os.path.dirname(file)
             if not os.path.exists(basedir): os.makedirs(basedir)

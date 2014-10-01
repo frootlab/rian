@@ -195,14 +195,14 @@ class system:
             config = self._default['optimize'].copy()
             nemoa.common.dict_merge(self._config['optimize'], config)
             self._config['optimize'] = config
-        elif not self.getType() in schedule['params']: return nemoa.log(
+        elif not self.get_type() in schedule['params']: return nemoa.log(
             'error', """could not optimize model:
             optimization schedule '%s' does not include system '%s'
-            """ % (schedule['name'], self.getType()))
+            """ % (schedule['name'], self.get_type()))
         else:
             config = self._default['optimize'].copy()
             nemoa.common.dict_merge(self._config['optimize'], config)
-            nemoa.common.dict_merge(schedule['params'][self.getType()], config)
+            nemoa.common.dict_merge(schedule['params'][self.get_type()], config)
             self._config['optimize'] = config
 
         # check dataset
@@ -217,7 +217,7 @@ class system:
         # optimize system parameters
         algorithm = config['algorithm'].title()
         nemoa.log('note', "optimize '%s' (%s) using algorithm '%s'" % \
-            (self.name(), self.getType(), algorithm))
+            (self.name(), self.get_type(), algorithm))
         nemoa.log('set', indent = '+1')
         retVal = self._optimize_params(dataset, schedule, tracker)
         nemoa.log('set', indent = '-1')
@@ -344,12 +344,13 @@ class system:
         return nemoa.log('error',
             "unsupported data deviation norm '%s'" % (deviation))
 
-    def mapData(self, data, mapping = None, transform = 'expect'):
+    def map_data(self, data, mapping = None, transform = 'expect'):
         """Return system representation of data.
 
         Args:
             mapping: tuple of strings describing the mapping function
             transform: mapping algorithm
+
         """
 
         if mapping == None:
@@ -378,6 +379,7 @@ class system:
         Returns:
             Dictionary containing generic information about various
             parts of the system.
+
         """
 
         # create information dictionary
@@ -385,7 +387,7 @@ class system:
             'name': self.name(),
             'description': self.__doc__,
             'class': self._config['class'],
-            'type': self.getType(),
+            'type': self.get_type(),
             'units': self._about_units(),
             'links': self._about_links(),
             'relations': self._about_relations()
@@ -406,7 +408,7 @@ class system:
         """Return name of system."""
         return self._config['name']
 
-    def getType(self):
+    def get_type(self):
         """Return sytem type."""
         return '%s.%s' % (self._config['package'],
             self._config['class'])
@@ -415,8 +417,8 @@ class tracker:
 
     _system = None # linked nemoa system instance
     _config = None # linked nemoa system optimization configuration
-    _state  = {}   # dictionary for tracking variables
-    _store  = {}   # dictionary for storage of optimization parameters
+    _state = {}    # dictionary for tracking variables
+    _store = {}    # dictionary for storage of optimization parameters
 
     def __init__(self, system):
         """Configure tracker to given nemoa system instance."""
@@ -443,18 +445,18 @@ class tracker:
             'data': None,
             'optimum': {},
             'continue': True,
-            'objEnable': self._config['tracker_obj_tracking_enable'],
-            'objInitWait': self._config['tracker_obj_init_wait'],
-            'objValues': None,
-            'objOptValue': None,
-            'keyEvents': True,
-            'keyEventsStarted': False,
-            'evalEnable': self._config['tracker_eval_enable'],
-            'evalPrevTime': now,
-            'evalValues': None,
-            'estimateTime': self._config['tracker_estimate_time'],
-            'estimateStarted': False,
-            'estimateStartTime': now
+            'obj_enable': self._config['tracker_obj_tracking_enable'],
+            'obj_init_wait': self._config['tracker_obj_init_wait'],
+            'obj_values': None,
+            'obj_opt_value': None,
+            'key_events': True,
+            'key_events_started': False,
+            'eval_enable': self._config['tracker_eval_enable'],
+            'eval_prev_time': now,
+            'eval_values': None,
+            'estim_enable': self._config['tracker_estimate_time'],
+            'estim_started': False,
+            'estim_start_time': now
         }
 
     def get(self, key):
@@ -488,17 +490,17 @@ class tracker:
         return True
 
     def _update_time_estimation(self):
-        if not self._state['estimateTime']: return True
+        if not self._state['estim_enable']: return True
 
-        if not self._state['estimateStarted']:
+        if not self._state['estim_started']:
             nemoa.log("""estimating time for calculation
                 of %i updates.""" % (self._config['updates']))
-            self._state['estimateStarted'] = True
-            self._state['estimateStartTime'] = time.time()
+            self._state['estim_started'] = True
+            self._state['estim_start_time'] = time.time()
             return True
 
         now = time.time()
-        runtime = now - self._state['estimateStartTime']
+        runtime = now - self._state['estim_start_time']
         if runtime > self._config['tracker_estimate_timeWait']:
             estim = (runtime / (self._state['epoch'] + 1)
                 * self._config['updates'])
@@ -506,7 +508,7 @@ class tracker:
                 time.localtime(now + estim))
             nemoa.log('note', 'estimation: %ds (finishing time: %s)'
                 % (estim, estimStr))
-            self._state['estimateTime'] = False
+            self._state['estim_enable'] = False
             return True
 
         return True
@@ -514,10 +516,10 @@ class tracker:
     def update(self):
         """Update epoch and check termination criterions."""
         self._update_epoch()
-        if self._state['keyEvents']: self._update_keypress()
-        if self._state['estimateTime']: self._update_time_estimation()
-        if self._state['objEnable']: self._update_objective_function()
-        if self._state['evalEnable']: self._update_evaluation()
+        if self._state['key_events']: self._update_keypress()
+        if self._state['estim_enable']: self._update_time_estimation()
+        if self._state['obj_enable']: self._update_objective_function()
+        if self._state['eval_enable']: self._update_evaluation()
         return self._state['continue']
 
     def _update_epoch(self):
@@ -528,10 +530,10 @@ class tracker:
 
     def _update_keypress(self):
         """Check Keyboard."""
-        if not self._state['keyEventsStarted']:
+        if not self._state['key_events_started']:
             nemoa.log('note', """press 'q' if you want to abort
                 the optimization""")
-            self._state['keyEventsStarted'] = True
+            self._state['key_events_started'] = True
 
         c = nemoa.common.getch()
         if isinstance(c, str):
@@ -547,7 +549,7 @@ class tracker:
         if self._state['data'] == None:
             nemoa.log('warning', """tracking the objective function
                 is not possible: testdata is needed!""")
-            self._state['objEnable'] = False
+            self._state['obj_enable'] = False
             return False
 
         cfg = self._config
@@ -556,40 +558,44 @@ class tracker:
             and not (self._state['epoch'] % interval == 0): return True
 
         # calculate objective function value
-        func  = cfg['tracker_obj_function']
-        value = self._system.eval(data = self._state['data'], func = func)
+        func = cfg['tracker_obj_function']
+        value = self._system.eval(
+            data = self._state['data'], func = func)
         progr = float(self._state['epoch']) / float(cfg['updates'])
 
         # add objective function value to array
-        if self._state['objValues'] == None:
-            self._state['objValues'] = numpy.array([[progr, value]])
-        else: self._state['objValues'] = \
-            numpy.vstack((self._state['objValues'], \
+        if self._state['obj_values'] == None:
+            self._state['obj_values'] = numpy.array([[progr, value]])
+        else: self._state['obj_values'] = \
+            numpy.vstack((self._state['obj_values'], \
             numpy.array([[progr, value]])))
 
         # (optional) check for new optimum
         if cfg['tracker_obj_keep_optimum']:
             # init optimum with first value
-            if self._state['objOptValue'] == None:
-                self._state['objOptValue'] = value
+            if self._state['obj_opt_value'] == None:
+                self._state['obj_opt_value'] = value
                 self._state['optimum'] = \
                     {'params': self._system._get('params')}
                 return True
             # allways check last optimum
             if self._state['continue'] \
                 and float(self._state['epoch']) / float(cfg['updates']) \
-                < cfg['tracker_obj_init_wait']: return True
+                < cfg['tracker_obj_init_wait']:
+                return True
+
             type_of_optimum = self._system.about(func)['optimum']
-            current_optimum = self._state['objOptValue']
+            current_optimum = self._state['obj_opt_value']
 
             if type_of_optimum == 'min' and value < current_optimum:
                 new_optimum = True
             elif type_of_optimum == 'max' and value > current_optimum:
                 new_optimum = True
-            else: new_optimum = False
+            else:
+                new_optimum = False
 
             if new_optimum:
-                self._state['objOptValue'] = value
+                self._state['obj_opt_value'] = value
                 self._state['optimum'] = \
                     {'params': self._system._get('params')}
 
@@ -608,34 +614,38 @@ class tracker:
         if self._state['data'] == None:
             nemoa.log('warning', """tracking the evaluation function
                 is not possible: testdata is needed!""")
-            self._state['evalEnable'] = False
+            self._state['eval_enable'] = False
             return False
 
         if not self._state['continue']:
-            func  = cfg['tracker_eval_function']
-            prop  = self._system.about(func)
-            value = self._system.eval(data = self._state['data'], func = func)
-            out   = 'found optimum with: %s = ' + prop['format']
-            self._state['evalEnable'] = False
+            func = cfg['tracker_eval_function']
+            prop = self._system.about(func)
+            value = self._system.eval(
+                data = self._state['data'], func = func)
+            out = 'found optimum with: %s = ' + prop['format']
+            self._state['eval_enable'] = False
             return nemoa.log('note', out % (prop['name'], value))
 
-        if ((now - self._state['evalPrevTime']) \
+        if ((now - self._state['eval_prev_time']) \
             > cfg['tracker_eval_time_interval']):
-            func  = cfg['tracker_eval_function']
-            prop  = self._system.about(func)
-            value = self._system.eval(data = self._state['data'], func = func)
+            func = cfg['tracker_eval_function']
+            prop = self._system.about(func)
+            value = self._system.eval(
+                data = self._state['data'], func = func)
             progr = float(self._state['epoch']) \
                 / float(cfg['updates']) * 100.
 
             # update time of last evaluation
-            self._state['evalPrevTime'] = now
+            self._state['eval_prev_time'] = now
 
             # add evaluation to array
-            if self._state['evalValues'] == None:
-                self._state['evalValues'] = numpy.array([[progr, value]])
-            else: self._state['evalValues'] = \
-                numpy.vstack((self._state['evalValues'], \
-                numpy.array([[progr, value]])))
+            if self._state['eval_values'] == None:
+                self._state['eval_values'] = \
+                    numpy.array([[progr, value]])
+            else:
+                self._state['eval_values'] = \
+                    numpy.vstack((self._state['eval_values'], \
+                    numpy.array([[progr, value]])))
 
             out = 'finished %.1f%%: %s = ' + prop['format']
             return nemoa.log('note', out % (progr, prop['name'], value))

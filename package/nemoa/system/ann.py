@@ -1674,30 +1674,30 @@ class ann(nemoa.system.base.system):
         """
 
         if not mapping: mapping = self.mapping()
-        iUnits = self.getUnits(group = mapping[0])[0]
-        oUnits = self.getUnits(group = mapping[-1])[0]
-        R = numpy.zeros((len(iUnits), len(oUnits)))
+        input_units = self.getUnits(group = mapping[0])[0]
+        output_units = self.getUnits(group = mapping[-1])[0]
+        R = numpy.zeros((len(input_units), len(output_units)))
 
         # get indices of representatives
         rIds = [int((i + 0.5) * int(float(data[0].shape[0])
             / points)) for i in xrange(points)]
 
-        for iId, iUnit in enumerate(iUnits):
+        for iId, iUnit in enumerate(input_units):
             iCurve = numpy.take(numpy.sort(data[0][:, iId]), rIds)
             iCurve = amplify * iCurve
 
             # create output matrix for each output
             C = {oUnit: numpy.zeros((data[0].shape[0], points)) \
-                for oUnit in oUnits}
+                for oUnit in output_units}
             for pId in xrange(points):
                 iData  = data[0].copy()
                 iData[:, iId] = iCurve[pId]
                 oExpect = self._eval_units((iData, data[1]),
                     func = 'expect', mapping = mapping)
-                for oUnit in oUnits: C[oUnit][:, pId] = oExpect[oUnit]
+                for oUnit in output_units: C[oUnit][:, pId] = oExpect[oUnit]
 
             # calculate mean of standard deviations of outputs
-            for oId, oUnit in enumerate(oUnits):
+            for oId, oUnit in enumerate(output_units):
 
                 # calculate sign by correlating input and output
                 corr = numpy.zeros(data[0].shape[0])
@@ -1792,9 +1792,9 @@ class ann(nemoa.system.base.system):
         def expect(self, data, source):
 
             if source['class'] == 'sigmoid': return \
-                self.expectFromSLayer(data, source, self.weights(source))
+                self.expect_from_sigmoid_layer(data, source, self.weights(source))
             elif source['class'] == 'gauss': return \
-                self.expectFromGLayer(data, source, self.weights(source))
+                self.expect_from_gauss_layer(data, source, self.weights(source))
 
             return False
 
@@ -1810,9 +1810,9 @@ class ann(nemoa.system.base.system):
         def getSamplesFromInput(self, data, source):
 
             if source['class'] == 'sigmoid': return self.getSamples(
-                self.expectFromSLayer(data, source, self.weights(source)))
+                self.expect_from_sigmoid_layer(data, source, self.weights(source)))
             elif source['class'] == 'gauss': return self.getSamples(
-                self.expectFromGLayer(data, source, self.weights(source)))
+                self.expect_from_gauss_layer(data, source, self.weights(source)))
 
             return False
 
@@ -1900,7 +1900,7 @@ class ann(nemoa.system.base.system):
 
             return - data * bias
 
-        def expectFromSLayer(self, data, source, weights):
+        def expect_from_sigmoid_layer(self, data, source, weights):
             """Return expected values of a sigmoid output layer
             calculated from a sigmoid input layer. """
 
@@ -1908,7 +1908,7 @@ class ann(nemoa.system.base.system):
 
             return nemoa.common.sigmoid(bias + numpy.dot(data, weights))
 
-        def expectFromGLayer(self, data, source, weights):
+        def expect_from_gauss_layer(self, data, source, weights):
             """Return expected values of a sigmoid output layer
             calculated from a gaussian input layer. """
 
@@ -1937,7 +1937,7 @@ class ann(nemoa.system.base.system):
             bias = self.params['bias']
 
             return numpy.dot(delta_out, W_out) * \
-                nemoa.common.Dsigmoid((bias + numpy.dot(data_in, W_in)))
+                nemoa.common.diff_sigmoid((bias + numpy.dot(data_in, W_in)))
 
         @staticmethod
         def grad(x):
@@ -2052,13 +2052,13 @@ class ann(nemoa.system.base.system):
 
             return True
 
-        def expectFromSLayer(self, data, source, weights):
+        def expect_from_sigmoid_layer(self, data, source, weights):
             """Return expected values of a gaussian output layer
             calculated from a sigmoid input layer. """
 
             return self.params['bias'] + numpy.dot(data, weights)
 
-        def expectFromGLayer(self, data, source, weights):
+        def expect_from_gauss_layer(self, data, source, weights):
             """Return expected values of a gaussian output layer
             calculated from a gaussian input layer. """
 

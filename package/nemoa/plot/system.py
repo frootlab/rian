@@ -22,7 +22,7 @@ class graph(nemoa.plot.base.plot):
         'measure': 'error',
         'statistics': 10000,
         'transform': '',
-        'normalizeWeights': 'auto',
+        'normalize_weights': 'auto',
         'sign': None,
         'filter': None,
         'cutoff': 0.5,
@@ -47,8 +47,8 @@ class graph(nemoa.plot.base.plot):
             return nemoa.log('error',
                 """could not create relation graph: invalid weight
                 relation '%s'!""" % (self.settings['relation']))
-        relInfo = model.about('system', 'relations',
-            nemoa.common.strSplitParams(self.settings['relation'])[0])
+        rel_about = model.about('system', 'relations',
+            nemoa.common.str_split_params(self.settings['relation'])[0])
 
         # calculate edge filter from 'filter' relation
         # default: use the same relation, as used for weights
@@ -90,16 +90,16 @@ class graph(nemoa.plot.base.plot):
         S = {edge: 2. * (float(SR[edge] > 0.) - 0.5) for edge in edges}
 
         # create graph and set name
-        graph = networkx.MultiDiGraph(name = relInfo['name'])
+        graph = networkx.MultiDiGraph(name = rel_about['name'])
 
         # add edges and edge attributes to graph
-        if self.settings['normalizeWeights'] in [None, 'auto']:
-            normalize = not relInfo['normal']
-        elif self.settings['normalizeWeights'] in [True, False]:
-            normalize = self.settings['normalizeWeights']
+        if self.settings['normalize_weights'] in [None, 'auto']:
+            normalize = not rel_about['normal']
+        elif self.settings['normalize_weights'] in [True, False]:
+            normalize = self.settings['normalize_weights']
         else: return nemoa.log('error',
             """could not create relation graph:
-            invalid value for parameter 'normalizeWeights'!""")
+            invalid value for parameter 'normalize_weights'!""")
         for edge in edges: graph.add_edge(*edge,
             weight = abs(W[edge] / W['std'] if normalize else W[edge]),
             color = {1: 'green', 0: 'black', -1: 'red'}[S[edge]])
@@ -113,14 +113,14 @@ class graph(nemoa.plot.base.plot):
         # update node attributes
         for i in xrange(len(graphs)):
             for n in graphs[i].nodes():
-                node  = model.network.node(n)
-                label = nemoa.common.strToUnitStr(node['label'])
-                ntype = node['params']['type']
+                node = model.network.node(n)
+                label = nemoa.common.str_format_unit_label(node['label'])
+                node_type = node['params']['type']
                 graph.node[n]['label'] = label
-                graph.node[n]['type'] = ntype
+                graph.node[n]['type'] = node_type
                 graph.node[n]['complex'] = i
                 graph.node[n]['color'] = {
-                    'i': 'lightgreen', 'o': 'lightblue'}[ntype]
+                    'i': 'lightgreen', 'o': 'lightblue'}[node_type]
 
         # create plot
         return nemoa.common.plot.graph(graph, **self.settings)

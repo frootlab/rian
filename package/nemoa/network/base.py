@@ -10,8 +10,8 @@ import copy
 
 class network:
 
-    cfg = None
-    graph = None
+    _config = None
+    _graph = None
 
     def __init__(self, config = {}):
         self._set_config(config)
@@ -20,88 +20,88 @@ class network:
         """Configure network to given dictionary."""
 
         # create valid config config
-        self.cfg = config.copy()
+        self._config = config.copy()
 
         # 2do -> move functionality to network configuration file!
         # type 'auto' is used for networks
         # wich include all dataset columns as visible units
-        if self.cfg['type'] == 'auto':
-            self.cfg = {'type': 'auto', 'name': '', 'id': 0}
+        if self._config['type'] == 'auto':
+            self._config = {'type': 'auto', 'name': '', 'id': 0}
             return True
 
         # 2do -> move functionality to network configuration file!
         # type 'autolayer' is used for networks
         # wich are created by layers and sizes
-        if self.cfg['type'] == 'autolayer':
+        if self._config['type'] == 'autolayer':
             self._get_nodes_from_layers()
             self._get_edges_from_layers()
             return self._create_layergraph()
 
         # type 'layer' is used for layered networks
         # wich are manualy defined, by using a dictionary
-        if self.cfg['type'].lower() in ['layer', 'multilayer']:
+        if self._config['type'].lower() in ['layer', 'multilayer']:
             return self._create_layergraph()
 
         return False
 
     def _get_config(self):
         """Return configuration as dictionary."""
-        return self.cfg.copy()
+        return self._config.copy()
 
     def _get_nodes_from_layers(self):
         """Create nodes from layers."""
-        self.cfg['nodes'] = {}
-        self.cfg['label_format'] = 'generic:string'
-        for layer in self.cfg['layer']:
-            nodeNumber = self.cfg['params'][layer + '.size']
-            self.cfg['nodes'][layer] = \
+        self._config['nodes'] = {}
+        self._config['label_format'] = 'generic:string'
+        for layer in self._config['layer']:
+            nodeNumber = self._config['params'][layer + '.size']
+            self._config['nodes'][layer] = \
                 [layer + str(i) for i in xrange(1, nodeNumber + 1)]
         return True
 
     def _get_visible_nodes_from_dataset(self, dataset):
         """Create nodes from dataset."""
 
-        self.cfg['visible'] = []
-        self.cfg['label_format'] = 'generic:string'
-        if not 'nodes' in self.cfg: self.cfg['nodes'] = {}
-        if not 'layer' in self.cfg: self.cfg['layer'] = []
+        self._config['visible'] = []
+        self._config['label_format'] = 'generic:string'
+        if not 'nodes' in self._config: self._config['nodes'] = {}
+        if not 'layer' in self._config: self._config['layer'] = []
         groups = dataset.getColGroups()
         for group in groups:
-            if not group in self.cfg['visible']:
-                self.cfg['visible'].append(group)
-            self.cfg['layer'].append(group)
-            self.cfg['nodes'][group] = groups[group]
+            if not group in self._config['visible']:
+                self._config['visible'].append(group)
+            self._config['layer'].append(group)
+            self._config['nodes'][group] = groups[group]
         return True
 
     def _get_hidden_nodes_from_system(self, system):
         """Create nodes from system."""
 
-        self.cfg['hidden'] = []
-        self.cfg['label_format'] = 'generic:string'
-        if not 'nodes' in self.cfg: self.cfg['nodes'] = {}
-        if not 'layer' in self.cfg: self.cfg['layer'] = []
+        self._config['hidden'] = []
+        self._config['label_format'] = 'generic:string'
+        if not 'nodes' in self._config: self._config['nodes'] = {}
+        if not 'layer' in self._config: self._config['layer'] = []
         (visible, hidden) = system.getUnits()
         for unit in hidden:
             (group, label) = unit.split(':')
-            if not group in self.cfg['layer']:
-                self.cfg['layer'].append(group)
-            if not group in self.cfg['hidden']:
-                self.cfg['hidden'].append(group)
-            if not group in self.cfg['nodes']:
-                self.cfg['nodes'][group] = []
-            self.cfg['nodes'][group].append(label)
+            if not group in self._config['layer']:
+                self._config['layer'].append(group)
+            if not group in self._config['hidden']:
+                self._config['hidden'].append(group)
+            if not group in self._config['nodes']:
+                self._config['nodes'][group] = []
+            self._config['nodes'][group].append(label)
         return True
 
     def _get_edges_from_layers(self):
-        self.cfg['edges'] = {}
-        for l in xrange(0, len(self.cfg['layer']) - 1):
-            layerFrom = self.cfg['layer'][l]
-            layerTo = self.cfg['layer'][l + 1]
+        self._config['edges'] = {}
+        for l in xrange(0, len(self._config['layer']) - 1):
+            layerFrom = self._config['layer'][l]
+            layerTo = self._config['layer'][l + 1]
             edge_layer = (layerFrom, layerTo)
-            if not edge_layer in self.cfg['edges']:
-                nodesFrom = self.cfg['nodes'][layerFrom]
-                nodesTo = self.cfg['nodes'][layerTo]
-                self.cfg['edges'][edge_layer] = [(nodeFrom, nodeTo)
+            if not edge_layer in self._config['edges']:
+                nodesFrom = self._config['nodes'][layerFrom]
+                nodesTo = self._config['nodes'][layerTo]
+                self._config['edges'][edge_layer] = [(nodeFrom, nodeTo)
                     for nodeFrom in nodesFrom
                     for nodeTo in nodesTo]
         return True
@@ -129,7 +129,7 @@ class network:
         # type: 'auto is used for networks
         # wich are created by datasets (visible units)
         # and systems (hidden units)
-        if self.cfg['type'] == 'auto':
+        if self._config['type'] == 'auto':
             self._get_visible_nodes_from_dataset(dataset)
             self._get_hidden_nodes_from_system(system)
             self._get_edges_from_layers()
@@ -139,7 +139,7 @@ class network:
 
         # type: 'autolayer' is used for networks
         # wich are created by layers and sizes
-        if self.cfg['type'] == 'autolayer':
+        if self._config['type'] == 'autolayer':
             self._get_nodes_from_layers()
             self._get_edges_from_layers()
             self._create_layergraph()
@@ -150,8 +150,8 @@ class network:
         groups = dataset.getColGroups()
         changes = []
         for group in groups:
-            if not group in self.cfg['nodes'] \
-                or not (groups[group] == self.cfg['nodes'][group]):
+            if not group in self._config['nodes'] \
+                or not (groups[group] == self._config['nodes'][group]):
                 self._create_layergraph(
                     nodelist = {'type': group, 'list': groups[group]})
 
@@ -160,59 +160,59 @@ class network:
 
     def _is_empty(self):
         """Return true if network type is 'empty'."""
-        return self.cfg['type'] == 'empty'
+        return self._config['type'] == 'empty'
 
     def _create_layergraph(self, nodelist = None, edgelist = None):
         if not nodelist: nodelist = {'type': None, 'list': []}
         if not edgelist: edgelist = {'type': (None, None), 'list': []}
 
-        # get differences between nodelist and self.cfg['nodes']
-        if nodelist['type'] in self.cfg['layer']:
+        # get differences between nodelist and self._config['nodes']
+        if nodelist['type'] in self._config['layer']:
             # count number of nodes to add to nodes
             addNodes = sum([1 for node in nodelist['list']
-                if not node in self.cfg['nodes'][nodelist['type']]])
+                if not node in self._config['nodes'][nodelist['type']]])
             # count number of nodes to delete from graph
-            addNodes = sum([1 for node in self.cfg['nodes'][nodelist['type']]
+            addNodes = sum([1 for node in self._config['nodes'][nodelist['type']]
                 if not node in nodelist['list']])
 
         # update edge list from keyword arguments
-        if edgelist['type'][0] in self.cfg['layer'] \
-            and edgelist['type'][1] in self.cfg['layer']:
-            indexA = self.cfg['layer'].index(edgelist['type'][0])
-            indexB = self.cfg['layer'].index(edgelist['type'][1])
+        if edgelist['type'][0] in self._config['layer'] \
+            and edgelist['type'][1] in self._config['layer']:
+            indexA = self._config['layer'].index(edgelist['type'][0])
+            indexB = self._config['layer'].index(edgelist['type'][1])
             if indexB - indexA == 1:
                 edge_layer = (edgelist['type'][0], edgelist['type'][1])
-                self.cfg['edges'][edge_layer] = edgelist['list']
+                self._config['edges'][edge_layer] = edgelist['list']
 
         # filter edges to valid nodes
-        for i in xrange(len(self.cfg['layer']) - 1):
-            src_layer = self.cfg['layer'][i]
-            tgt_layer = self.cfg['layer'][i + 1]
+        for i in xrange(len(self._config['layer']) - 1):
+            src_layer = self._config['layer'][i]
+            tgt_layer = self._config['layer'][i + 1]
             edge_layer = (src_layer, tgt_layer)
             filtered = []
 
-            for nodeA, nodeB in self.cfg['edges'][edge_layer]:
-                if not nodeA in self.cfg['nodes'][src_layer]: continue
-                if not nodeB in self.cfg['nodes'][tgt_layer]: continue
-                filtered.append((nodeA, nodeB))
-            self.cfg['edges'][edge_layer] = filtered
+            for src_node, tgt_node in self._config['edges'][edge_layer]:
+                if not src_node in self._config['nodes'][src_layer]: continue
+                if not tgt_node in self._config['nodes'][tgt_layer]: continue
+                filtered.append((src_node, tgt_node))
+            self._config['edges'][edge_layer] = filtered
 
         # reset and create new NetworkX graph Instance
-        if self.graph == None: self.graph = networkx.Graph()
-        else: self.graph.clear()
+        if self._graph == None: self._graph = networkx.Graph()
+        else: self._graph.clear()
 
         # set graph attributes
-        self.graph.graph =  {
-            'name': self.cfg['name'],
+        self._graph.graph =  {
+            'name': self._config['name'],
             'type': 'layer',
-            'params': { 'layer': self.cfg['layer'] }
+            'params': { 'layer': self._config['layer'] }
         }
 
         # add nodes to graph
         order = 0
-        for layerId, layer in enumerate(self.cfg['layer']):
-            visible = layer in self.cfg['visible']
-            if nodelist['type'] in self.cfg['layer']:
+        for layerId, layer in enumerate(self._config['layer']):
+            visible = layer in self._config['visible']
+            if nodelist['type'] in self._config['layer']:
                 if layer == nodelist['type']:
                     if addNodes: nemoa.log("""adding %i nodes
                         to layer '%s'""" % (addNodes, layer))
@@ -220,18 +220,18 @@ class network:
                         from layer '%s'""" % (delNodes, layer))
             else:
                 if visible: nemoa.log('adding visible layer: \'' + layer + \
-                    '\' (' + str(len(self.cfg['nodes'][layer])) + ' nodes)')
+                    '\' (' + str(len(self._config['nodes'][layer])) + ' nodes)')
                 else: nemoa.log('adding hidden layer: \'' + layer + \
-                    '\' (' + str(len(self.cfg['nodes'][layer])) + ' nodes)')
-            for layerNodeId, node in enumerate(self.cfg['nodes'][layer]):
-                if 'add_layer_to_node_labels' in self.cfg \
-                    and self.cfg['add_layer_to_node_labels'] == False:
+                    '\' (' + str(len(self._config['nodes'][layer])) + ' nodes)')
+            for layerNodeId, node in enumerate(self._config['nodes'][layer]):
+                if 'add_layer_to_node_labels' in self._config \
+                    and self._config['add_layer_to_node_labels'] == False:
                     id = node
                 else:
                     id = layer + ':' + node
-                if id in self.graph.nodes(): continue
+                if id in self._graph.nodes(): continue
 
-                self.graph.add_node(id,
+                self._graph.add_node(id,
                     label = node,
                     order = order,
                     params = {
@@ -244,22 +244,22 @@ class network:
 
         # add edges to graph
         order = 0
-        for i in xrange(len(self.cfg['layer']) - 1):
-            src_layer = self.cfg['layer'][i]
-            tgt_layer = self.cfg['layer'][i + 1]
+        for i in xrange(len(self._config['layer']) - 1):
+            src_layer = self._config['layer'][i]
+            tgt_layer = self._config['layer'][i + 1]
             edge_layer = (src_layer, tgt_layer)
             type_id = i
 
-            for (nodeA, nodeB) in self.cfg['edges'][edge_layer]:
-                if 'add_layer_to_node_labels' in self.cfg \
-                    and self.cfg['add_layer_to_node_labels'] == False:
-                    src_node_id = nodeA
-                    tgt_node_id = nodeB
+            for (src_node, tgt_node) in self._config['edges'][edge_layer]:
+                if 'add_layer_to_node_labels' in self._config \
+                    and self._config['add_layer_to_node_labels'] == False:
+                    src_node_id = src_node
+                    tgt_node_id = tgt_node
                 else:
-                    src_node_id = src_layer + ':' + nodeA
-                    tgt_node_id = tgt_layer + ':' + nodeB
+                    src_node_id = src_layer + ':' + src_node
+                    tgt_node_id = tgt_layer + ':' + tgt_node
 
-                self.graph.add_edge(
+                self._graph.add_edge(
                     src_node_id, tgt_node_id,
                     weight = 0.,
                     order  = order,
@@ -271,15 +271,17 @@ class network:
 
     def node(self, node):
         """Return network information of single node."""
-        return self.graph.node[node]
+        return self._graph.node[node]
 
-    def nodes(self, **kwargs):
+    def nodes(self, group_by_layer = False, **kwargs):
         """get list of nodes with specific attributes
         example nodes(type = 'visible')"""
 
+        if group_by_layer: return self._nodes_group_by_layer(**kwargs)
+
         # filter search criteria and order entries
-        sortedList = [None] * self.graph.number_of_nodes()
-        for node, attr in self.graph.nodes(data = True):
+        sortedList = [None] * self._graph.number_of_nodes()
+        for node, attr in self._graph.nodes(data = True):
             if not kwargs == {}:
                 passed = True
                 for key in kwargs:
@@ -291,31 +293,24 @@ class network:
             sortedList[attr['order']] = node
         return [node for node in sortedList if node] # filter empty nodes
 
-    def _node_labels(self, **params):
-        return [self.graph.node[node]['label'] \
-            for node in self.nodes(**params)]
+    def _node_labels(self, **kwargs):
+        return [self._graph.node[node]['label'] \
+            for node in self.nodes(**kwargs)]
 
-    def getNodeLabels(self, list):
-        labels = []
-        for node in list:
-            if not node in self.graph.node: return None
-            labels.append(self.graph.node[node]['label'])
-        return labels
+    def _nodes_group_by_layer(self, type = None):
 
-    def getNodeGroups(self, type = None):
-
-        # get groups of specific node type
+        # get layers of specific node type
         if type:
-            if not type in self.cfg: return nemoa.log('warning',
+            if not type in self._config: return nemoa.log('warning',
                 "unknown node type '%s'." % (str(type)))
             return {group: self._node_labels(type = group)
-                for group in self.cfg[type]}
+                for group in self._config[type]}
 
         # get all groups
         allGroups = {}
         for type in ['visible', 'hidden']:
             groups = {}
-            for group in self.cfg[type]:
+            for group in self._config[type]:
                 groups[group] = self._node_labels(type = group)
             allGroups[type] = groups
         return allGroups
@@ -324,11 +319,11 @@ class network:
         """Return dictionary containing information about a layer."""
         nodes = self.nodes(type = layer)
         if not nodes: return None
-        fistNode = self.node(nodes[0])['params']
+        first_node = self.node(nodes[0])['params']
         return {
-            'id': fistNode['layer_id'],
-            'label': fistNode['type'],
-            'visible': fistNode['visible'],
+            'id': first_node['layer_id'],
+            'label': first_node['type'],
+            'visible': first_node['visible'],
             'nodes': nodes}
 
     def layers(self, **kwargs):
@@ -340,14 +335,14 @@ class network:
         return layerList
 
     def edge(self, edge):
-        return self.graph.edge[edge]
+        return self._graph.edge[edge]
 
     def edges(self, **params):
 
         # filter search criteria and order entries
-        sorted_list = [None] * self.graph.number_of_edges()
+        sorted_list = [None] * self._graph.number_of_edges()
 
-        for src, tgt, attr in self.graph.edges(data = True):
+        for src, tgt, attr in self._graph.edges(data = True):
             if not params == {}:
 
                 passed = True
@@ -364,32 +359,28 @@ class network:
             srcLayer = src.split(':')[0]
             tgtLayer = tgt.split(':')[0]
 
-            if srcLayer in self.cfg['visible'] \
-                and tgtLayer in self.cfg['hidden']:
+            if srcLayer in self._config['visible'] \
+                and tgtLayer in self._config['hidden']:
                 sorted_list[attr['order']] = (src, tgt)
-            elif srcLayer in self.cfg['hidden'] \
-                and tgtLayer in self.cfg['visible']:
+            elif srcLayer in self._config['hidden'] \
+                and tgtLayer in self._config['visible']:
                 sorted_list[attr['order']] = (tgt, src)
 
         # filter empty nodes
         return [edge for edge in sorted_list if edge]
 
-    def edgeLabels(self, **kwargs):
-        return [(self.graph.node[src]['label'],
-            self.graph.node[tgt]['label']) for src, tgt in self.edges(**kwargs)]
-
     def _get(self, sec = None):
         dict = {
-            'cfg': copy.deepcopy(self.cfg),
-            'graph': copy.deepcopy(self.graph) }
+            'cfg': copy.deepcopy(self._config),
+            'graph': copy.deepcopy(self._graph) }
 
         if not sec: return dict
         if sec in dict: return dict[sec]
         return None
 
     def _set(self, **dict):
-        if 'cfg' in dict: self.cfg = copy.deepcopy(dict['cfg'])
-        if 'graph' in dict: self.graph = copy.deepcopy(dict['graph'])
+        if 'cfg' in dict: self._config = copy.deepcopy(dict['cfg'])
+        if 'graph' in dict: self._graph = copy.deepcopy(dict['graph'])
         return True
 
     def _export_graph(self, file = None, format = 'gml'):
@@ -400,7 +391,7 @@ class network:
             os.makedirs(os.path.dirname(file))
 
         if format == 'gml':
-            G = self.graph.copy()
+            G = self._graph.copy()
             networkx.write_gml(G, file)
 
     def _is_compatible_lff(self):
@@ -528,7 +519,7 @@ class network:
 
     def name(self):
         """Name of network (as string)."""
-        return self.cfg['name'] if 'name' in self.cfg else ''
+        return self._config['name'] if 'name' in self._config else ''
 
     def update(self, **kwargs):
         if 'system' in kwargs:
@@ -537,12 +528,12 @@ class network:
                 return nemoa.log('error',
                     'could not update network: system is invalid.')
 
-            for u, v, d in self.graph.edges(data = True):
+            for u, v, d in self._graph.edges(data = True):
                 params = system._get_link((u, v))
                 if not params: params = system._get_link((v, u))
                 if not params: continue
                 nemoa.common.dict_merge(
-                    params, self.graph[u][v]['params'])
-                self.graph[u][v]['weight'] = params['weight']
+                    params, self._graph[u][v]['params'])
+                self._graph[u][v]['weight'] = params['weight']
 
             return True

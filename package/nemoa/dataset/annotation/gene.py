@@ -10,7 +10,7 @@ import sys
 class gene:
 
     robjects = None
-    default  = 'entrezid'
+    default = 'entrezid'
 
     def __init__(self):
 
@@ -50,8 +50,7 @@ class gene:
                     nemoa.log('error', "an error occured!")
 
     def convert_list(self, list, input_format, outputFormat, filter = False, quiet = True):
-        """
-        Return list with converted gene labels using R/bioconductor
+        """Return list with converted gene labels using R/bioconductor
         """
 
         if self.robjects == None:

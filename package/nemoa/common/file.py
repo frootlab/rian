@@ -7,9 +7,9 @@ __license__ = 'GPLv3'
 import nemoa
 import os
 
-def getEmptyFile(file):
+def get_empty_file(file):
     """Return file path for new file."""
-    fDir = getFilePath(file)
+    fDir = get_file_path(file)
 
     # create directory if not available
     if not os.path.exists(fDir):
@@ -17,7 +17,7 @@ def getEmptyFile(file):
         os.makedirs(fDir)
 
     # search unused filename
-    fName = getFileName(file)
+    fName = get_file_name(file)
     fBaseName, fExt = os.path.splitext(fName)
     fBase = '%s/%s' % (fDir, fBaseName)
     file = fBase + fExt
@@ -28,17 +28,17 @@ def getEmptyFile(file):
 
     return file
 
-def getFileName(file):
+def get_file_name(file):
     """Return file name from given file path as string."""
     return os.path.basename(file)
 
-def getFileExt(file):
+def get_file_ext(file):
     """Return file extension from given file path as string."""
     fileName = os.path.basename(file)
     fileExt  = os.path.splitext(fileName)[1].lstrip('.')
     return fileExt
 
-def getFilePath(file):
+def get_file_path(file):
     """Return normalized filepath from given file path as string."""
     filePath = os.path.expanduser(file)
     filePath = os.path.expandvars(filePath)
@@ -46,7 +46,7 @@ def getFilePath(file):
     filePath = os.path.normpath(filePath)
     return os.path.dirname(filePath)
 
-def getEmptySubdir(basepath, subdir = None):
+def get_empty_subdir(basepath, subdir = None):
 
     # create path if not available
     if not os.path.exists(basepath): os.makedirs(basepath)
@@ -65,7 +65,7 @@ def getEmptySubdir(basepath, subdir = None):
 
     return os.path.abspath(new) + '/'
 
-def getSubdirFromHash(basepath, str):
+def get_subdir_from_hash(basepath, str):
 
     # create path if not available
     if not os.path.exists(basepath): os.makedirs(basepath)

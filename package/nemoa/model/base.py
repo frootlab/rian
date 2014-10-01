@@ -37,10 +37,11 @@ class model:
 
         self._config = {'name': name} # initialize class attributes
 
-        nemoa.log('linking dataset, network and system instances to model')
+        nemoa.log("""linking dataset, network and system instances
+            to model""")
         self.dataset = dataset
         self.network = network
-        self.system  = system
+        self.system = system
 
         if self._is_empty(): return
         if not self._check_model(): return
@@ -58,10 +59,10 @@ class model:
     def _export_data(self, *args, **kwargs):
         """Export data to file."""
         # copy dataset
-        dataSettings = self.dataset._get()
-        self.dataset.transformData(system = self.system)
+        settings = self.dataset._get()
+        self.dataset._transform(system = self.system)
         self.dataset.export(*args, **kwargs)
-        self.dataset._set(dataSettings)
+        self.dataset._set(settings)
         return True
 
     def _import_config_from_dict(self, dict):
@@ -75,12 +76,12 @@ class model:
                 """ % (key))
         return {key: dict[key].copy() for key in keys}
 
-    def _check_model(self, allowNone = False):
-        if (allowNone and self.dataset == None) \
+    def _check_model(self, allow_none = False):
+        if (allow_none and self.dataset == None) \
             or not nemoa.type.is_dataset(self.dataset): return False
-        if (allowNone and self.network == None) \
+        if (allow_none and self.network == None) \
             or not nemoa.type.is_network(self.network): return False
-        if (allowNone and self.system == None) \
+        if (allow_none and self.system == None) \
             or not nemoa.type.is_system(self.system): return False
         return True
 
@@ -126,7 +127,8 @@ class model:
             nemoa.log('set', indent = '-1')
             return False
         self._config['check']['system'] = \
-            self.system.configure(network = self.network,
+            self.system.configure(
+                network = self.network,
                 dataset = self.dataset)
         if not self._config['check']['system']:
             nemoa.log('error', """could not configure model: system
@@ -198,12 +200,12 @@ class model:
             return False
 
         # get optimization schedule
-        if schedule == None: schedule = self.system.getType() + '.default'
+        if schedule == None: schedule = self.system.get_type() + '.default'
         elif not '.' in schedule: schedule = \
-            self.system.getType() + '.' + schedule
+            self.system.get_type() + '.' + schedule
         schedule = nemoa.workspace._get_config(
             type = 'schedule', config = schedule,
-            merge = ['params', self.system.getType()],
+            merge = ['params', self.system.get_type()],
             **kwargs)
         if not schedule:
             nemoa.log('error', """
@@ -308,7 +310,7 @@ class model:
             #return dataset.getData(cols = (i, o), **kwargs)
         #mapping = self.system.mapping(tgt = layer)
         #data = dataset.getData(cols = self.system.mapping()[0], **kwargs)
-        #return self.system.mapData(data, mapping = mapping, transform = transform)
+        #return self.system.map_data(data, mapping = mapping, transform = transform)
 
     def eval(self, *args, **kwargs):
         """Return model evaluation."""
@@ -408,7 +410,7 @@ class model:
             fileName = '%s.%s' % (self.name(), fileExt)
             filePath = nemoa.workspace.path('models')
             file = filePath + fileName
-        file = nemoa.common.getEmptyFile(file)
+        file = nemoa.common.get_empty_file(file)
 
         # save model parameters and configuration to file
         nemoa.common.dict_to_file(self._get(), file)
@@ -453,9 +455,9 @@ class model:
         nemoa.log('create plot instance')
         nemoa.log('set', indent = '+1')
 
-        if plot == None: plot = self.system.getType() + '.default'
+        if plot == None: plot = self.system.get_type() + '.default'
         if isinstance(plot, str):
-            plotName, plotParams = nemoa.common.strSplitParams(plot)
+            plotName, plotParams = nemoa.common.str_split_params(plot)
             mergeDict = plotParams
             for param in kwargs.keys(): plotParams[param] = kwargs[param]
             objPlot = self._get_plot(*args, params = plotParams)
@@ -470,7 +472,7 @@ class model:
         # prepare filename
         if output == 'display': file = None
         elif output == 'file' and not file:
-            file = nemoa.common.getEmptyFile(nemoa.workspace.path('plots') + \
+            file = nemoa.common.get_empty_file(nemoa.workspace.path('plots') + \
                 self.name() + '/' + objPlot.cfg['name'] + \
                 '.' + objPlot.settings['fileformat'])
 
@@ -503,7 +505,7 @@ class model:
 
             # search for given configuration
             for plot in [args[0],
-                '%s.%s' % (self.system.getType(), args[0]),
+                '%s.%s' % (self.system.get_type(), args[0]),
                 'base.' + args[0]]:
                 cfg = nemoa.workspace.get('plot', \
                    name = plot, params = params)
@@ -533,32 +535,35 @@ class model:
                     elif args[1] == 'relations':
                         if len(args) == 2:
                             pass
-                        elif args[2] in self.about('system', 'relations').keys():
-                            relation = self.about('system', 'relations')[args[2]]
-                            if len(args) > 3: relClass = args[3]
-                            else: relClass = relation['show']
+                        elif args[2] in self.about('system',
+                            'relations').keys():
+                            relation = self.about('system',
+                                'relations')[args[2]]
+                            if len(args) > 3: rel_class = args[3]
+                            else: rel_class = relation['show']
                             cfg = nemoa.common.dict_merge(params, {
                                 'package': 'system',
-                                'class': relClass,
+                                'class': rel_class,
                                 'params': {'relation': args[0]},
                                 'description': relation['description'],
                                 'name': relation['name'],
                                 'id': 0})
                 elif args[0] in self.about('system', 'relations').keys():
                     relation = self.about('system', 'relations')[args[0]]
-                    if len(args) > 1: relClass = args[1]
-                    else: relClass = relation['show']
+                    if len(args) > 1: rel_class = args[1]
+                    else: rel_class = relation['show']
                     cfg = nemoa.common.dict_merge(params, {
                         'package': 'system',
-                        'class': relClass,
+                        'class': rel_class,
                         'params': {'relation': args[0]},
                         'description': relation['description'],
                         'name': relation['name'],
                         'id': 0})
 
             # could not find configuration
-            if not isinstance(cfg, dict): return nemoa.log('error',
-                "could not create plot instance: unsupported plot '%s'" % (args[0]))
+            if not isinstance(cfg, dict):
+                return nemoa.log('error', """could not create plot:
+                    unsupported plot '%s'""" % (args[0]))
         elif isinstance(config, dict): cfg = config
 
         # overwrite config with given params
@@ -595,24 +600,27 @@ class model:
     def unit(self, unit):
         """Return information about one unit.
 
-        Keyword Argument:
-            unit -- name of unit
+        Args:
+            unit: name of unit
+
         """
         return self.network.node(unit)
 
     def link(self, link):
         """Return information about one link
 
-        Keyword Argument:
-            link -- name of link
+        Args:
+            link: name of link
+
         """
-        return self.network.graph[link[0]][link[1]]
+
+        return self.network._graph[link[0]][link[1]]
 
     def about(self, *args):
         """Return generic information about various parts of the model.
 
-        Arguments:
-            *args -- tuple of strings, containing a breadcrump trail to
+        Arg:
+            *args: tuple of strings, containing a breadcrump trail to
                 a specific information about the model
 
         Examples:
@@ -621,13 +629,15 @@ class model:
             about('system', 'units', 'error', 'description')
                 Returns information about the "error" measurement
                 function of the systems units.
+
         """
+
         if not args: return {
-            'name':        self.name(),
+            'name': self.name(),
             'description': '',
-            'dataset':     self.dataset.about(*args[1:]),
-            'network':     self.network.about(*args[1:]),
-            'system':      self.system.about(*args[1:])
+            'dataset': self.dataset.about(*args[1:]),
+            'network': self.network.about(*args[1:]),
+            'system': self.system.about(*args[1:])
         }
 
         if args[0] == 'name': return self.name()
