@@ -65,7 +65,7 @@ class network:
         self._config['label_format'] = 'generic:string'
         if not 'nodes' in self._config: self._config['nodes'] = {}
         if not 'layer' in self._config: self._config['layer'] = []
-        groups = dataset.getColGroups()
+        groups = dataset._get_col_groups()
         for group in groups:
             if not group in self._config['visible']:
                 self._config['visible'].append(group)
@@ -147,7 +147,7 @@ class network:
             return True
 
         # configure network to dataset
-        groups = dataset.getColGroups()
+        groups = dataset._get_col_groups()
         changes = []
         for group in groups:
             if not group in self._config['nodes'] \

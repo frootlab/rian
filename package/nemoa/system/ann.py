@@ -144,7 +144,7 @@ class ann(nemoa.system.base.system):
         unitsInGroups = self.getUnits(visible = True)
         units = []
         for group in unitsInGroups: units += group
-        if dataset.getColLabels() != units: return nemoa.log(
+        if dataset._get_col_labels() != units: return nemoa.log(
             'error', """could not configure system:
             visible units differ from dataset columns.""")
         self._config['check']['dataset'] = True
@@ -177,8 +177,8 @@ class ann(nemoa.system.base.system):
                 rows = self._config['params']['samples'] \
                     if 'samples' in self._config['params'] else '*'
                 cols = layerName \
-                    if layerName in dataset.getColGroups() else '*'
-                data = dataset.getData(100000, rows = rows, cols = cols)
+                    if layerName in dataset._get_col_groups() else '*'
+                data = dataset.data(100000, rows = rows, cols = cols)
             self.units[layerName].initialize(data)
 
         return True
@@ -384,17 +384,17 @@ class ann(nemoa.system.base.system):
 
             if dataset == None: random = \
                 numpy.random.normal(numpy.zeros((x, y)), sigma)
-            elif source in dataset.getColGroups():
+            elif source in dataset._get_col_groups():
                 rows = self._config['params']['samples'] \
                     if 'samples' in self._config['params'] else '*'
-                data = dataset.getData(100000, rows = rows, cols = source)
+                data = dataset.data(100000, rows = rows, cols = source)
                 random = numpy.random.normal(numpy.zeros((x, y)),
                     sigma * numpy.std(data, axis = 0).reshape(1, x).T)
-            elif dataset.getColLabels('*') \
+            elif dataset._get_col_labels('*') \
                 == self.units[source].params['label']:
                 rows = self._config['params']['samples'] \
                     if 'samples' in self._config['params'] else '*'
-                data = dataset.getData(100000, rows = rows, cols = '*')
+                data = dataset.data(100000, rows = rows, cols = '*')
                 random = numpy.random.normal(numpy.zeros((x, y)),
                     sigma * numpy.std(data, axis = 0).reshape(1, x).T)
             else: random = \
@@ -535,7 +535,7 @@ class ann(nemoa.system.base.system):
         kwargs['size'] = config['minibatch_size']
         if config['mod_corruption_enable']: kwargs['corruption'] = \
             (config['mod_corruption_type'], config['mod_corruption_factor'])
-        return dataset.getData(**kwargs)
+        return dataset.data(**kwargs)
 
     def _optimize_get_values(self, data):
         """Forward pass (compute estimated values, from given input). """
@@ -1739,7 +1739,7 @@ class ann(nemoa.system.base.system):
     def _get_test_data(self, dataset):
         """Return tuple with default test data."""
 
-        return dataset.getData(
+        return dataset.data(
             cols = (self.mapping()[0], self.mapping()[-1]))
 
     # TODO: create classes for links

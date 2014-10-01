@@ -214,7 +214,7 @@ class dbn(nemoa.system.ann.ann):
                     transform = 'expect')
 
             # add dataset column filter 'visible'
-            dataset.setColFilter('visible',
+            dataset._set_col_filter('visible',
                 system.getUnits(group = 'visible'))
 
             # initialize (free) system parameters

@@ -76,14 +76,14 @@ class rbm(nemoa.system.ann.ann):
 
     def _get_test_data(self, dataset):
         """Return tuple with default test data."""
-        data = dataset.getData()
+        data = dataset.data()
         return (data, data)
 
     def _check_dataset(self, dataset):
         """Check if dataset contains binary values."""
         if not nemoa.type.is_dataset(dataset): return nemoa.log('error',
             'could not test dataset: invalid dataset instance given!')
-        if not dataset._is_binary_(): return nemoa.log('error',
+        if not dataset._is_binary(): return nemoa.log('error',
             "dataset '%s' is not valid: RBMs expect binary data."
             % (dataset.name()))
         return True
@@ -410,7 +410,7 @@ class rbm(nemoa.system.ann.ann):
 
     #def _get_units_from_dataset(self, dataset):
         #"""Return tuple with lists of unit labels ([visible], [hidden]) using dataset for visible."""
-        #return (dataset.getColLabels(), self.units['hidden'].params['label'])
+        #return (dataset._get_col_labels(), self.units['hidden'].params['label'])
 
     ## TODO: generalize to ann
     #def _unlink_unit(self, unit):

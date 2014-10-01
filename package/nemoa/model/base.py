@@ -307,9 +307,9 @@ class model:
         #if not isinstance(layer, str):
             #i = self.system.mapping()[0]
             #o = self.system.mapping()[-1]
-            #return dataset.getData(cols = (i, o), **kwargs)
+            #return dataset.data(cols = (i, o), **kwargs)
         #mapping = self.system.mapping(tgt = layer)
-        #data = dataset.getData(cols = self.system.mapping()[0], **kwargs)
+        #data = dataset.data(cols = self.system.mapping()[0], **kwargs)
         #return self.system.map_data(data, mapping = mapping, transform = transform)
 
     def eval(self, *args, **kwargs):
@@ -333,12 +333,12 @@ class model:
                 if not isinstance(preprocessing, dict): preprocessing = {}
                 if preprocessing:
                     datasetCopy = self.dataset._get()
-                    self.dataset.preprocessData(preprocessing)
+                    self.dataset.preprocess(preprocessing)
                 if 'statistics' in kwargs.keys():
                     statistics = kwargs['statistics']
                     del kwargs['statistics']
                 else: statistics = 0
-                data = self.dataset.getData(
+                data = self.dataset.data(
                     size = statistics, cols = self.groups(visible = True))
                 if preprocessing: self.dataset._set(datasetCopy)
 
