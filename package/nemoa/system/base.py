@@ -72,12 +72,12 @@ class system:
 
     def _check_network(self, network, *args, **kwargs):
         """Check if network is valid for system."""
-        if not nemoa.type.isNetwork(network): return False
+        if not nemoa.type.is_network(network): return False
         return True
 
     def _check_dataset(self, dataset, *args, **kwargs):
         """Check if network is valid for system."""
-        if not nemoa.type.isDataset(dataset): return False
+        if not nemoa.type.is_dataset(dataset): return False
         return True
 
     def _is_empty(self):
@@ -181,7 +181,7 @@ class system:
 
         """
 
-        if not nemoa.type.isDataset(dataset): return nemoa.log('error',
+        if not nemoa.type.is_dataset(dataset): return nemoa.log('error',
             """could not initilize system parameters:
             invalid dataset instance given!""")
         return self._init_params(dataset)
@@ -424,7 +424,7 @@ class tracker:
         _state = {}
         _store = {}
 
-        if not nemoa.type.isSystem(system): return nemoa.log('warning',
+        if not nemoa.type.is_system(system): return nemoa.log('warning',
             'could not configure tracker: system is not valid!')
         if not hasattr(system, '_config'): return nemoa.log('warning',
             'could not configure tracker: system contains no configuration!')

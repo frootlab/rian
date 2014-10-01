@@ -12,15 +12,15 @@ import matplotlib.pyplot
 from matplotlib.patches import FancyArrowPatch, Circle
 
 COLOR = {
-    'black':      (0.   , 0.   , 0.   , 1.),
-    'white':      (1.   , 1.   , 1.   , 1.),
-    'red':        (1.   , 0.   , 0.   , 1.),
-    'green':      (0.   , 0.5  , 0.   , 1.),
-    'blue':       (0.   , 0.0  , 0.7  , 1.),
-    'lightgrey':  (0.8  , 0.8  , 0.8  , 1.),
-    'lightgreen': (0.6  , 0.8  , 0.196, 1.),
-    'lightblue':  (0.439, 0.502, 0.565, 1.),
-    'cornflower': (0.27 , 0.51 , 0.7  , 1.),
+    'black': (0., 0., 0., 1.),
+    'white': (1., 1., 1., 1.),
+    'red': (1., 0., 0., 1.),
+    'green': (0., 0.5, 0., 1.),
+    'blue': (0., 0.0  , 0.7, 1.),
+    'lightgrey': (0.8, 0.8, 0.8, 1.),
+    'lightgreen': (0.6, 0.8, 0.196, 1.),
+    'lightblue': (0.439, 0.502, 0.565, 1.),
+    'cornflower': (0.27, 0.51, 0.7, 1.),
 }
 
 # create A4 figure object figsize = (8.27, 11.69)
@@ -29,7 +29,7 @@ def heatmap(array, **kwargs):
 
     # create figure object
     fig = matplotlib.pyplot.figure()
-    fig.patch.set_facecolor(kwargs['backgroundColor'])
+    fig.patch.set_facecolor(kwargs['bg_color'])
     ax = fig.add_subplot(111)
     ax.grid(True)
 
@@ -64,7 +64,7 @@ def histogram(array, **kwargs):
 
     # create figure object
     fig = matplotlib.pyplot.figure()
-    fig.patch.set_facecolor(kwargs['backgroundColor'])
+    fig.patch.set_facecolor(kwargs['bg_color'])
     ax = fig.add_subplot(111)
     ax.grid(True)
 
@@ -90,7 +90,7 @@ def graph(graph, **kwargs):
 
     # create figure object
     fig = matplotlib.pyplot.figure()
-    fig.patch.set_facecolor(kwargs['backgroundColor'])
+    fig.patch.set_facecolor(kwargs['bg_color'])
     ax = fig.add_subplot(111)
     ax.axis('off')
     matplotlib.pyplot.axes().set_aspect('equal', 'box')
@@ -191,12 +191,12 @@ def layergraph(G, **kwargs):
     for node in G.nodes(): count[G.node[node]['params']['type']] += 1
     nodes = [range(count[layer]) for layer in layers]
     for node in G.nodes():
-        layerId = G.node[node]['params']['layerId']
+        layerId = G.node[node]['params']['layer_id']
         layerNodeId = G.node[node]['params']['layerNodeId']
         nodes[layerId][layerNodeId] = node
 
     # (optional) sort nodes
-    if kwargs['nodeSort']:
+    if kwargs['node_sort']:
         for layer, tgtNodes in enumerate(nodes):
             if layer == 0: continue
             sort = []
@@ -233,13 +233,13 @@ def layergraph(G, **kwargs):
                 'down': (nPos, lPos),
                 'up': (nPos, 1. - lPos),
                 'left': (lPos, nPos),
-                'right': (1. - lPos, nPos)}[kwargs['graphDirection']]
+                'right': (1. - lPos, nPos)}[kwargs['graph_direction']]
             posCap[node] = (pos[node][0],
                 pos[node][1] + graphCaptionPos)
 
     # create figure and axis objects
     fig = matplotlib.pyplot.figure()
-    fig.patch.set_facecolor(kwargs['backgroundColor'])
+    fig.patch.set_facecolor(kwargs['bg_color'])
     ax = fig.add_subplot(111)
     ax.axis('off')
     ax.autoscale()
@@ -249,7 +249,7 @@ def layergraph(G, **kwargs):
         for node in layer:
             attr = G.node[node]
             type = attr['params']['type']
-            typeid = attr['params']['layerId']
+            typeid = attr['params']['layer_id']
             isVisible = attr['params']['visible']
             labelStr = attr['label'] if isVisible \
                 else 'n%d' % (layer.index(node) + 1)
@@ -283,7 +283,7 @@ def layergraph(G, **kwargs):
                 font_color = color['font'])
 
             # draw node caption
-            if kwargs['nodeCaption'] and isVisible:
+            if kwargs['node_caption'] and isVisible:
                 if not 'caption' in G.node[node]: continue
                 networkx.draw_networkx_labels(G, posCap,
                     font_size = 0.75 * graphFontSize,
@@ -297,13 +297,13 @@ def layergraph(G, **kwargs):
         weight = G.edge[v][h]['weight']
 
         # get edge color and line width (from weight)
-        if kwargs['edgeWeight'] == 'adjacency':
+        if kwargs['edge_weight'] == 'adjacency':
             color = 'black'
-            edgeLineWidth = graphLineWidth * kwargs['edgeScale']
+            edgeLineWidth = graphLineWidth * kwargs['edge_scale']
         else:
             color = 'green' if weight > 0. else 'red'
             edgeLineWidth = \
-                weight * graphLineWidth * kwargs['edgeScale']
+                weight * graphLineWidth * kwargs['edge_scale']
 
         # draw edges
         networkx.draw_networkx_edges(G, pos,
@@ -314,7 +314,7 @@ def layergraph(G, **kwargs):
             alpha      = 1.)
 
         # (optional) draw edge labels
-        if kwargs['edgeCaption']:
+        if kwargs['edge_caption']:
             if 'caption' in G.edge[v][h]:
                 networkx.draw_networkx_edge_labels(G, pos,
                     edge_labels = {(v, h): G.edge[v][h]['caption']},
@@ -324,7 +324,7 @@ def layergraph(G, **kwargs):
                     font_weight = 'normal')
 
     # draw graph caption
-    if kwargs['graphCaption'] and 'caption' in G.graph:
+    if kwargs['graph_caption'] and 'caption' in G.graph:
         matplotlib.pyplot.figtext(.5, .11,
             G.graph['caption'], fontsize = 9, ha = 'center')
 

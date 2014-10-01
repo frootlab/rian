@@ -13,16 +13,16 @@ class graph(nemoa.plot.base.plot):
     @staticmethod
     def _settings(): return {
         'path': ('network', ),
-        'graphCaption': 'accuracy',
-        'graphDirection': 'right',
-        'nodeCaption': 'accuracy',
-        'nodeSort': True,
-        'edgeCaption': None,
-        'edgeWeight': 'normal',
-        'edgeSignNormalize': True,
-        'edgeIntensify': 10.,
-        'edgeThreshold': 0.25,
-        'edgeScale': 1.5 }
+        'graph_caption': 'accuracy',
+        'graph_direction': 'right',
+        'node_caption': 'accuracy',
+        'node_sort': True,
+        'edge_caption': None,
+        'edge_weight': 'normal',
+        'edge_sign_normalize': True,
+        'edge_contrast': 10.,
+        'edge_threshold': 0.25,
+        'edge_scale': 1.5 }
 
     def _create(self, model):
 
@@ -30,52 +30,52 @@ class graph(nemoa.plot.base.plot):
         graph = model.network.graph.copy()
 
         # (optional) calculate node captions
-        if self.settings['nodeCaption']:
+        if self.settings['node_caption']:
             caption = model.eval('system', 'units',
-                self.settings['nodeCaption'])
+                self.settings['node_caption'])
             if caption:
                 for node in caption.keys():
                     graph.node[node]['caption'] = \
                         ' $%i' % (round(100. * caption[node])) + '\%$'
 
         # (optional) calculate graph caption
-        if self.settings['graphCaption']:
+        if self.settings['graph_caption']:
             caption = model.eval('system',
-                self.settings['graphCaption'])
+                self.settings['graph_caption'])
             if caption:
                 name = model.about('system',
-                    self.settings['graphCaption'])['name'].title()
+                    self.settings['graph_caption'])['name'].title()
                 graph.graph['caption'] = \
                     name + ': $%i' % (round(100. * caption)) + '\%$'
 
         # update edge weights
         for (u, v) in graph.edges():
             graph.edge[u][v]['weight'] = \
-                graph.edge[u][v]['params'][self.settings['edgeWeight']]
+                graph.edge[u][v]['params'][self.settings['edge_weight']]
 
             # (optional) intensify weights
-            if self.settings['edgeIntensify'] > 0.:
+            if self.settings['edge_contrast'] > 0.:
                 graph.edge[u][v]['weight'] = \
                     nemoa.common.intensify(graph.edge[u][v]['weight'],
-                        factor = self.settings['edgeIntensify'],
-                        bound = 1.) # 2do: set bound to mean value
+                        factor = self.settings['edge_contrast'],
+                        bound = 1.) # TODO: set bound to mean value
 
             # (optional) threshold weights
-            if self.settings['edgeThreshold'] > 0.:
+            if self.settings['edge_threshold'] > 0.:
                 if not numpy.abs(graph.edge[u][v]['weight']) \
-                    > self.settings['edgeThreshold']:
+                    > self.settings['edge_threshold']:
                     graph.remove_edge(u, v)
 
         # (optional) normalize edge signs
-        if self.settings['edgeSignNormalize']:
+        if self.settings['edge_sign_normalize']:
             signSum = sum([numpy.sign(graph.edge[u][v]['weight'])
                 for (u, v) in graph.edges()])
-            if signSum < 0:
+            if signSum < 0: # TODO: check number of layer: only at odd number
                 for (u, v) in graph.edges():
                     graph.edge[u][v]['weight'] *= -1
 
         # (optional) create edge captions
-        if self.settings['edgeCaption']:
+        if self.settings['edge_caption']:
             for (u, v) in graph.edges():
                 graph.edge[u][v]['caption'] = \
                     ' $' + ('%.2g' % (graph.edge[u][v]['weight'])) + '$'

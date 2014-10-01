@@ -77,11 +77,11 @@ class model:
 
     def _check_model(self, allowNone = False):
         if (allowNone and self.dataset == None) \
-            or not nemoa.type.isDataset(self.dataset): return False
+            or not nemoa.type.is_dataset(self.dataset): return False
         if (allowNone and self.network == None) \
-            or not nemoa.type.isNetwork(self.network): return False
+            or not nemoa.type.is_network(self.network): return False
         if (allowNone and self.system == None) \
-            or not nemoa.type.isSystem(self.system): return False
+            or not nemoa.type.is_system(self.system): return False
         return True
 
     def _update_config(self):
@@ -158,12 +158,12 @@ class model:
                 model is not yet configured.""")
 
         # check dataset
-        if not nemoa.type.isDataset(self.dataset):
+        if not nemoa.type.is_dataset(self.dataset):
             return nemoa.log('error', """could not initialize model:
                 dataset is not yet configured.""")
 
         # check system
-        if not nemoa.type.isSystem(self.system):
+        if not nemoa.type.is_system(self.system):
             return nemoa.log('error', """could not initialize model:
                 system is not yet configured.""")
 
@@ -243,11 +243,11 @@ class model:
         #network = self.network
 
         ## link dataset instance
-        #if nemoa.type.isDataset(dataset):
+        #if nemoa.type.is_dataset(dataset):
             #self.dataset = dataset
 
         ## check if dataset instance is valid
-        #if not nemoa.type.isDataset(self.dataset):
+        #if not nemoa.type.is_dataset(self.dataset):
             #nemoa.log('error',
             #'could not configure dataset: no dataset instance available!')
             #return False
@@ -273,10 +273,10 @@ class model:
         #"""
 
         ## link network instance
-        #if nemoa.type.isNetwork(network): self.network = network
+        #if nemoa.type.is_network(network): self.network = network
 
         ## check if network instance is valid
-        #if not nemoa.type.isNetwork(self.network): return nemoa.log(
+        #if not nemoa.type.is_network(self.network): return nemoa.log(
             #'error', """could not configure network:
             #no network instance available!""")
 
@@ -301,7 +301,7 @@ class model:
     ## TODO: deprecated! Only used in dataset histogram plot
     #def data(self, dataset = None, layer = None, transform = 'expect', **kwargs):
         #"""Return data from dataset."""
-        #if not nemoa.type.isDataset(dataset): dataset = self.dataset
+        #if not nemoa.type.is_dataset(dataset): dataset = self.dataset
         #if not isinstance(layer, str):
             #i = self.system.mapping()[0]
             #o = self.system.mapping()[-1]
@@ -370,11 +370,11 @@ class model:
         config = self._import_config_from_dict(dict)
 
         # check self
-        if not nemoa.type.isDataset(self.dataset): return nemoa.log('error',
+        if not nemoa.type.is_dataset(self.dataset): return nemoa.log('error',
             'could not configure dataset: model does not contain dataset instance!')
-        if not nemoa.type.isNetwork(self.network): return nemoa.log('error',
+        if not nemoa.type.is_network(self.network): return nemoa.log('error',
             'could not configure network: model does not contain network instance!')
-        if not nemoa.type.isSystem(self.system): return nemoa.log('error',
+        if not nemoa.type.is_system(self.system): return nemoa.log('error',
             'could not configure system: model does not contain system instance!')
 
         self._config = config['config'].copy()

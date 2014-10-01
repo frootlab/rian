@@ -48,7 +48,7 @@ class plot:
         'output': 'file',
         'showTitle': True,
         'title': None,
-        'backgroundColor': 'none',
+        'bg_color': 'none',
     }
 
     def create(self, model, file = None):

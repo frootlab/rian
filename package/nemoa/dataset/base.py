@@ -159,7 +159,7 @@ class dataset:
                     be converted! (see logfile)"""
                     % (len(convNetNodesLost), len(convNetNodes)))
                 # TODO: get original node labels for log file
-                nemoa.log('logfile', nemoa.common.strToList(convNetNodesLost))
+                nemoa.log('logfile', nemoa.common.str_to_list(convNetNodesLost))
 
         # get columns from dataset files and convert to common format
         colLabels = {}
@@ -423,7 +423,7 @@ class dataset:
 
         # system based data transformation
         if algorithm.lower() == 'system':
-            if not nemoa.type.isSystem(system):
+            if not nemoa.type.is_system(system):
                 return nemoa.log('error', """could not transform data
                     using system: invalid system.""")
             nemoa.log("transform data using system '%s'"

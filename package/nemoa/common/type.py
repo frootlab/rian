@@ -9,22 +9,22 @@ def isInstanceType(object, type):
     return hasattr(object, '__module__') \
         and object.__module__.split('.')[1] == type
 
-def isDataset(object):
+def is_dataset(object):
     """Return true if the object is a dataset instance."""
     return hasattr(object, '__module__') \
         and object.__module__.split('.')[1] == 'dataset'
 
-def isNetwork(object):
+def is_network(object):
     """Return true if the object is a network instance."""
     return hasattr(object, '__module__') \
         and object.__module__.split('.')[1] == 'network'
 
-def isSystem(object):
+def is_system(object):
     """Return true if the object is a system instance."""
     return hasattr(object, '__module__') \
         and object.__module__.split('.')[1] == 'system'
 
-def isModel(object):
+def is_model(object):
     """Return true if the object is a model instance."""
     return hasattr(object, '__module__') \
         and object.__module__.split('.')[1] == 'model'

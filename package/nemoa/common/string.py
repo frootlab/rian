@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import binascii
 import pyparsing
 
-def strToHash(str):
+def str_to_hash(str):
     """Return crc32 hash-valkue of given string."""
     return abs(binascii.crc32(str))
 
@@ -18,7 +18,7 @@ def strSplitParams(str):
     funcParams = strToDict(str.lstrip(funcName).strip()[1:-1])
     return funcName, funcParams
 
-def strToList(str, delim = ','):
+def str_to_list(str, delim = ','):
     """Return list from given string."""
     return [item.strip() for item in str.split(delim)]
 

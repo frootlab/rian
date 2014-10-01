@@ -41,19 +41,19 @@ class workspace:
 
     def execute(self, name = None, **kwargs):
         """Execute nemoa script."""
-        scriptName = name \
+        script_name = name \
             if '.' in name else '%s.%s' % (self.name(), name)
         config = nemoa.workspace._get_config(
-            type = 'script', config = scriptName, **kwargs)
+            type = 'script', config = script_name, **kwargs)
 
         if not config and not '.' in name:
-            scriptName = 'base.' + name
+            script_name = 'base.' + name
             config = nemoa.workspace._get_config(
-                type = 'script', config = scriptName, **kwargs)
+                type = 'script', config = script_name, **kwargs)
         if not config: return False
         if not os.path.isfile(config['path']):
             return nemoa.log('error', """could not run script '%s':
-            file '%s' not found!""" % (scriptName, config['path']))
+            file '%s' not found!""" % (script_name, config['path']))
 
         script = imp.load_source('script', config['path'])
         return script.main(self, **config['params'])
@@ -129,10 +129,11 @@ class workspace:
         nemoa.log('create new model')
         nemoa.log('set', indent = '+1')
 
-        model = self._get_model_instance(name = name, config  = config,
+        model = self._get_model_instance(
+            name = name, config = config,
             dataset = dataset, network = network, system  = system)
 
-        if not nemoa.type.isModel(model):
+        if not nemoa.type.is_model(model):
             nemoa.log('error', 'could not create new model!')
             nemoa.log('set', indent = '-1')
             return False
@@ -151,9 +152,9 @@ class workspace:
         nemoa.log('set', indent = '+1')
 
         # create dataset instance (if not given)
-        if not nemoa.type.isDataset(dataset): dataset = \
+        if not nemoa.type.is_dataset(dataset): dataset = \
             self._get_instance(type = 'dataset', config = dataset)
-        if not nemoa.type.isDataset(dataset):
+        if not nemoa.type.is_dataset(dataset):
             nemoa.log('error',
                 'could not create model instance: dataset is invalid!')
             nemoa.log('set', indent = '-1')
@@ -161,18 +162,18 @@ class workspace:
 
         # create network instance (if not given)
         if network == None: network = {'type': 'auto'}
-        if not nemoa.type.isNetwork(network): network = \
+        if not nemoa.type.is_network(network): network = \
             self._get_instance(type = 'network', config = network)
-        if not nemoa.type.isNetwork(network):
+        if not nemoa.type.is_network(network):
             nemoa.log('error',
                 'could not create model instance: network is invalid!')
             nemoa.log('set', indent = '-1')
             return None
 
         # create system instance (if not given)
-        if not nemoa.type.isSystem(system): system = \
+        if not nemoa.type.is_system(system): system = \
             self._get_instance(type = 'system', config = system)
-        if not nemoa.type.isSystem(system):
+        if not nemoa.type.is_system(system):
             nemoa.log('error',
                 'could not create model instance: system is invalid!')
             nemoa.log('set', indent = '-1')
@@ -221,19 +222,19 @@ class workspace:
 
         # load model configuration and parameters from file
         nemoa.log("load model: '%s'" % file)
-        modelDict = nemoa.common.dict_from_file(file)
+        model_dict = nemoa.common.dict_from_file(file)
 
         # create new dataset, network, system and model instances
         model = self._get_model_instance(
-            name    = modelDict['config']['name'],
-            config  = modelDict['config'],
-            dataset = modelDict['dataset']['cfg'],
-            network = modelDict['network']['cfg'],
-            system  = modelDict['system']['config'])
-        if not nemoa.type.isModel(model): return None
+            name = model_dict['config']['name'],
+            config = model_dict['config'],
+            dataset = model_dict['dataset']['cfg'],
+            network = model_dict['network']['cfg'],
+            system = model_dict['system']['config'])
+        if not nemoa.type.is_model(model): return None
 
         # copy configuration and parameters to model instance
-        model._set(modelDict)
+        model._set(model_dict)
 
         nemoa.log('set', indent = '-1')
         return model
@@ -367,7 +368,7 @@ class config:
         nemoa.log('set', indent = '+1')
 
         # get current workspace
-        curWorkspace = self._workspace
+        cur_workspace = self._workspace
 
         # import shared resources and update paths
         for workspace in self._list_shared_workspaces():
@@ -378,7 +379,7 @@ class config:
             self._scan_networks()
 
         # reset to current workspace
-        self._workspace = curWorkspace
+        self._workspace = cur_workspace
 
         nemoa.log('set', indent = '-1')
         return True
@@ -389,10 +390,10 @@ class config:
         nemoa.log('set', indent = '+1')
 
         # check if workspace exists
-        if not workspace in self._list_user_workspaces(): return nemoa.log(
-            'warning', """could not open workspace '%s':
-            workspace folder could not be found in '%s'!
-            """ % (workspace, self._basepath['user']))
+        if not workspace in self._list_user_workspaces():
+            return nemoa.log('warning', """could not open workspace
+                '%s': folder could not be found in '%s'!"""
+                % (workspace, self._basepath['user']))
 
         self._workspace = workspace # set workspace
         self._update_paths(base = 'user') # update paths
@@ -408,7 +409,8 @@ class config:
     def _update_cache_paths(self):
         """Update dataset cache paths to current workspace."""
         for key in self._store['dataset']:
-            self._store['dataset'][key]['cache_path'] = self._path['cache']
+            self._store['dataset'][key]['cache_path'] \
+                = self._path['cache']
         return True
 
     def _scan_config_files(self, files = None):
@@ -440,10 +442,10 @@ class config:
 
         # import and register objects without testing
         importer = self._ImportConfig(self)
-        objConfList = importer.load(configFile)
+        obj_conf_list = importer.load(configFile)
 
-        for objConf in objConfList: self._add_obj_to_store(objConf)
-        self._check(objConfList)
+        for obj_conf in obj_conf_list: self._add_obj_to_store(obj_conf)
+        self._check(obj_conf_list)
 
         nemoa.log('set', indent = '-1')
         return True
@@ -514,32 +516,32 @@ class config:
             network file format '%s' is currently not supported!
             """ % (file, format))
 
-    def _check(self, objConfList):
+    def _check(self, obj_conf_list):
         """Check and update object configurations."""
-        for objConf in objConfList:
-            objConf = self._check_obj_conf(objConf)
-            if not objConf: self._del_obj_conf(objConf)
+        for obj_conf in obj_conf_list:
+            obj_conf = self._check_obj_conf(obj_conf)
+            if not obj_conf: self._del_obj_conf(obj_conf)
         return True
 
-    def _check_obj_conf(self, objConf):
+    def _check_obj_conf(self, obj_conf):
         """Check and update object configuration."""
-        if not 'class'  in objConf or not objConf['class']: return None
-        if not 'name'   in objConf: return None
-        if not 'config' in objConf: return None
+        if not 'class'  in obj_conf or not obj_conf['class']: return None
+        if not 'name'   in obj_conf: return None
+        if not 'config' in obj_conf: return None
 
-        if objConf['class'] == 'network':  return self._check_network(objConf)
-        if objConf['class'] == 'dataset':  return self._check_dataset(objConf)
-        if objConf['class'] == 'system':   return self._check_system(objConf)
-        if objConf['class'] == 'schedule': return self._check_schedule(objConf)
-        if objConf['class'] == 'plot':     return objConf
+        if obj_conf['class'] == 'network':  return self._check_network(obj_conf)
+        if obj_conf['class'] == 'dataset':  return self._check_dataset(obj_conf)
+        if obj_conf['class'] == 'system':   return self._check_system(obj_conf)
+        if obj_conf['class'] == 'schedule': return self._check_schedule(obj_conf)
+        if obj_conf['class'] == 'plot':     return obj_conf
 
         return None
 
-    def _check_network(self, objConf):
+    def _check_network(self, obj_conf):
         """Check and update network configuration."""
-        type = objConf['class']
-        name = objConf['name']
-        conf = objConf['config']
+        type = obj_conf['class']
+        name = obj_conf['name']
+        conf = obj_conf['config']
 
         # create 'layer', 'visible' and 'hidden' from 'layers'
         if 'layers' in conf:
@@ -569,27 +571,27 @@ class config:
             if not self._expand_path(file, check = True): return nemoa.log('warning',
                 "skipping network '%s': file '%s' not found!" % (name, file))
 
-            objConf['config']['source']['file'] = self._expand_path(file)
+            obj_conf['config']['source']['file'] = self._expand_path(file)
 
             if not 'file_format' in conf['source']:
-                objConf['config']['source']['file_format'] = nemoa.common.getFileExt(file)
+                obj_conf['config']['source']['file_format'] = nemoa.common.getFileExt(file)
 
-            format = objConf['config']['source']['file_format']
+            format = obj_conf['config']['source']['file_format']
 
             # get network config
             networkCfg = self._register_network(file, format)
             if not networkCfg: return nemoa.log('warning',
                 "skipping network '%s'" % (name))
-            for key in networkCfg: objConf['config'][key] = networkCfg[key]
+            for key in networkCfg: obj_conf['config'][key] = networkCfg[key]
 
-        return objConf
+        return obj_conf
 
-    def _check_dataset(self, objConf, frac = 1., update = True):
+    def _check_dataset(self, obj_conf, frac = 1., update = True):
         """Check and update dataset configuration."""
 
-        type = objConf['class']
-        name = objConf['name']
-        conf = objConf['config']
+        type = obj_conf['class']
+        name = obj_conf['name']
+        conf = obj_conf['config']
 
         # check source
         if not 'source' in conf: return nemoa.log('warning',
@@ -618,7 +620,7 @@ class config:
             # only update in the first call of checkDatasetConf
             if update: conf['cache_path'] = self._path['cache']
 
-            return objConf
+            return obj_conf
 
         # update for source type: datasets
         if 'datasets' in conf['source']:
@@ -626,14 +628,14 @@ class config:
             # add source table to config (on first call)
             if update: conf['table'] = {}
 
-            srcList = nemoa.common.strToList(conf['source']['datasets'], ',')
+            srcList = nemoa.common.str_to_list(conf['source']['datasets'], ',')
             for srcName in srcList:
 
                 # search for dataset object in register by name
                 if self._is_obj_known('dataset', srcName):
                    srcID = self._get_obj_id_by_name('dataset', srcName)
-                elif self._is_obj_known('dataset', "%s.%s" % (objConf['project'], srcName)):
-                   srcName = "%s.%s" % (objConf['project'], srcName)
+                elif self._is_obj_known('dataset', "%s.%s" % (obj_conf['project'], srcName)):
+                   srcName = "%s.%s" % (obj_conf['project'], srcName)
                    srcID = self._get_obj_id_by_name('dataset', srcName)
                 else: return nemoa.log('warning',
                     "skipping dataset '" + name + "': "
@@ -660,26 +662,26 @@ class config:
                     for child in srcObjConf['source']['config']['table'].keys():
                         childCnf = srcObjConf['config']['config']['table'][child]
 
-                        if child in objConf['config']['table']:
-                            objConf['config']['table'][child]['fraction'] = \
-                                objConf['config']['table'][child]['fraction'] + \
+                        if child in obj_conf['config']['table']:
+                            obj_conf['config']['table'][child]['fraction'] = \
+                                obj_conf['config']['table'][child]['fraction'] + \
                                     childCnf['fraction'] * frac / len(srcList)
                         else:
-                            objConf['config']['table'][child] = childCnf
-                            objConf['config']['table'][child]['fraction'] = \
+                            obj_conf['config']['table'][child] = childCnf
+                            obj_conf['config']['table'][child]['fraction'] = \
                                 childCnf['fraction'] * frac / len(srcList)
 
-            objConf['config']['type'] = 'compound'
+            obj_conf['config']['type'] = 'compound'
 
-        if update: objConf['config']['cache_path'] = self._path['cache']
+        if update: obj_conf['config']['cache_path'] = self._path['cache']
 
-        return objConf
+        return obj_conf
 
-    def _check_system(self, objConf):
+    def _check_system(self, obj_conf):
         """Check and update system configuration"""
-        type = objConf['class']
-        name = objConf['name']
-        conf = objConf['config']
+        type = obj_conf['class']
+        name = obj_conf['name']
+        conf = obj_conf['config']
 
         if not 'package' in conf: return nemoa.log('warning',
             "skipping system '" + name + "': missing parameter 'package'!")
@@ -693,14 +695,14 @@ class config:
         try: exec "import nemoa.system." + conf['package']
         except: return nemoa.log('warning',
             "skipping system '%s': package 'system.%s' could not be found!" % (name, conf['package']))
-        return objConf
+        return obj_conf
 
-    def _check_schedule(self, objConf):
+    def _check_schedule(self, obj_conf):
         """Check and update schedule configuration"""
 
-        type = objConf['class']
-        name = objConf['name']
-        conf = objConf['config']
+        type = obj_conf['class']
+        name = obj_conf['name']
+        conf = obj_conf['config']
 
         # create 'system'
         if not 'params' in conf or not conf['params']:
@@ -712,7 +714,7 @@ class config:
                 if reSystem.match(key):
                     name = key[7:].strip()
                     if not '.' in name:
-                        name = objConf['project'] + '.' + name
+                        name = obj_conf['project'] + '.' + name
                     conf['params'][name] = conf[key]
                     del conf[key]
 
@@ -736,15 +738,15 @@ class config:
                     #"missing optimization parameters! ('params' or 'stage [NAME]')!")
                 #return None
 
-        return objConf
+        return obj_conf
 
-    def _add_obj_to_store(self, objConf):
+    def _add_obj_to_store(self, obj_conf):
         """link object configuration to object dictionary."""
-        if not isinstance(objConf, dict): return False
+        if not isinstance(obj_conf, dict): return False
 
-        type = objConf['class']
-        name = objConf['name']
-        config = objConf['config']
+        type = obj_conf['class']
+        name = obj_conf['name']
+        config = obj_conf['config']
 
         nemoa.log('adding %s: %s' % (type, name))
 
@@ -764,14 +766,14 @@ class config:
 
         # add entry to index
         self._index[objID] = {
-            'type': type, 'name': key, 'project': objConf['project']}
+            'type': type, 'name': key, 'project': obj_conf['project']}
 
         return objID
 
-    def _del_obj_conf(self, objConf):
+    def _del_obj_conf(self, obj_conf):
         """Unlink object configuration from object dictionary."""
-        if not objConf: return False
-        id = self._get_obj_id_by_name(objConf['class'], objConf['name'])
+        if not obj_conf: return False
+        id = self._get_obj_id_by_name(obj_conf['class'], obj_conf['name'])
         if not id in self._index.keys(): return nemoa.log('warning', '2do')
 
         # delete entry in index
@@ -783,9 +785,9 @@ class config:
 
         if type == 'model':
             fileExt = 'nmm'
-            searchPath = '%s*.%s' % (self._path['models'], fileExt)
+            search_path = '%s*.%s' % (self._path['models'], fileExt)
             models = []
-            for model in glob.iglob(searchPath):
+            for model in glob.iglob(search_path):
                 if os.path.isdir(model): continue
                 name = os.path.basename(model)[:-(len(fileExt) + 1)]
                 models.append(name)
@@ -795,12 +797,14 @@ class config:
         if type == 'workspace':
             return sorted(self._list_user_workspaces())
 
-        objList = []
+        obj_list = []
         for id in self._index:
             if type and type != self._index[id]['type']: continue
-            if namespace and namespace != self._index[id]['project']: continue
-            objList.append((id, self._index[id]['type'], self._index[id]['name']))
-        return sorted(objList, key = lambda col: col[2])
+            if namespace and namespace != self._index[id]['project']:
+                continue
+            obj_list.append((id, self._index[id]['type'],
+                self._index[id]['name']))
+        return sorted(obj_list, key = lambda col: col[2])
 
     def _is_obj_known(self, type, name):
         """Return True if object is registered."""
@@ -809,7 +813,7 @@ class config:
     def _get_obj_id_by_name(self, type, name):
         """Return id of object as integer
         calculated as hash from type and name"""
-        return nemoa.common.strToHash(str(type) + chr(10) + str(name))
+        return nemoa.common.str_to_hash(str(type) + chr(10) + str(name))
 
     def _get_obj_by_id(self, id):
         """Return object from store by id."""
@@ -817,14 +821,16 @@ class config:
             nemoa.log('warning', '2DO')
             return None
 
-        oClass = self._index[id]['type']
-        oName  = self._index[id]['name']
-        oPrj   = self._index[id]['project']
-        oConf  = self._store[oClass][oName].copy()
+        obj_class = self._index[id]['type']
+        obj_name = self._index[id]['name']
+        obj_workspace = self._index[id]['project']
+        obj_conf = self._store[obj_class][obj_name].copy()
 
-        return {'class': oClass, 'name': oName, 'project': oPrj, 'config':  oConf}
+        return {'class': obj_class, 'name': obj_name,
+            'project': obj_workspace, 'config':  obj_conf}
 
-    def get(self, type = None, name = None, merge = ['params'], params = None, id = None):
+    def get(self, type = None, name = None, merge = ['params'],
+        params = None, id = None):
         """Return configuration as dictionary for given object."""
         if not type in self._store.keys():
             return nemoa.log('warning', """could not get configuration:
@@ -842,14 +848,15 @@ class config:
             for name in self._store[type].keys():
                 if not self._store[type][name]['id'] == id: continue
                 cfg = self._store[type][name]
-            if cfg == None: return nemoa.log('warning',
-                """could not get configuration:
-                no %s with id %i could be found """ % (type, id))
+            if cfg == None:
+                return nemoa.log('warning', """could not get
+                    configuration: no %s with id %i could be found."""
+                    % (type, id))
 
         # could not identify configuration
-        else: return nemoa.log('warning',
-            """could not get configuration:
-            'id' or 'name' of object is needed!""")
+        else:
+            return nemoa.log('warning', """could not get configuration:
+                'id' or 'name' of object is needed!""")
 
         if not cfg: return None
 
@@ -858,13 +865,13 @@ class config:
         if params == None \
             or not isinstance(params, dict) \
             or not isinstance(merge, list): return cfg
-        subMerge = cfg
+        sub_merge = cfg
         for key in merge:
-            if not isinstance(subMerge, dict): return cfg
-            if not key in subMerge.keys(): subMerge[key] = {}
-            subMerge = subMerge[key]
+            if not isinstance(sub_merge, dict): return cfg
+            if not key in sub_merge.keys(): sub_merge[key] = {}
+            sub_merge = sub_merge[key]
         for key in params.keys():
-            subMerge[key] = params[key]
+            sub_merge[key] = params[key]
             cfg['id'] += self._get_obj_id_by_name(
                 '%s.%s' % ('.'.join(merge), + key), params[key])
 
@@ -883,8 +890,9 @@ class config:
             os.makedirs(os.path.dirname(path))
 
         # (optional) check path
-        if check and not os.path.exists(path): return nemoa.log(
-            'warning', "directory '%s' does not exist!" % (path))
+        if check and not os.path.exists(path):
+            return nemoa.log('warning',
+                "directory '%s' does not exist!" % (path))
 
         return path
 
@@ -900,22 +908,24 @@ class config:
             # expand path vars (keys of self._path)
             for var in self._path.keys():
                 if '%' + var + '%' in path:
-                    path   = path.replace('%' + var + '%', self._path[var])
-                    path   = path.replace('//', '/')
+                    path = path.replace('%' + var + '%',
+                        self._path[var])
+                    path = path.replace('//', '/')
                     update = True
 
             # expand basepath variables (keys of self._basepath)
             for var in self._basepath.keys():
                 if '%' + var + '%' in path:
-                    path   = path.replace('%' + var + '%', self._basepath[var])
-                    path   = path.replace('//', '/')
+                    path = path.replace('%' + var + '%',
+                        self._basepath[var])
+                    path = path.replace('//', '/')
                     update = True
 
             # expand other variables (keys of replace)
             for var in replace:
                 if '%' + var + '%' in path:
-                    path   = path.replace('%' + var + '%', replace[var])
-                    path   = path.replace('//', '/')
+                    path = path.replace('%' + var + '%', replace[var])
+                    path = path.replace('//', '/')
                     update = True
 
         return path
@@ -934,9 +944,9 @@ class config:
 
     # import config file
     class _ImportConfig:
-        generic  = None
+        generic = None
         sections = None
-        project  = None
+        project = None
 
         def __init__(self, config):
             self.generic = {
@@ -944,18 +954,23 @@ class config:
                 'description': 'str' }
 
             self.sections = {
-                'network': {'type': 'str', 'layers': 'list', 'labels': 'list', 'source': 'dict', 'params': 'dict'},
-                'dataset': {'preprocessing': 'dict', 'source': 'dict', 'params': 'dict'},
-                'system': {'package': 'str', 'class': 'str', 'params': 'dict'},
-                'schedule': {'stage [0-9a-zA-Z]*': 'dict', 'system [0-9a-zA-Z]*': 'dict', 'params': 'dict'},
-                'plot': {'package': 'str', 'class': 'str', 'params': 'dict'} }
+                'network': {'type': 'str', 'layers': 'list',
+                    'labels': 'list', 'source': 'dict',
+                    'params': 'dict'},
+                'dataset': {'preprocessing': 'dict', 'source': 'dict',
+                    'params': 'dict'},
+                'system': {'package': 'str', 'class': 'str',
+                    'params': 'dict'},
+                'schedule': {'stage [0-9a-zA-Z]*': 'dict',
+                    'system [0-9a-zA-Z]*': 'dict', 'params': 'dict'},
+                'plot': {'package': 'str', 'class': 'str',
+                    'params': 'dict'} }
 
             self._path = config.path()
             self.project = config.workspace()
 
-        # object definition / configuration files
-
         def load(self, file):
+            """load object definition / configuration file."""
 
             # init parser
             cfg = ConfigParser.ConfigParser()
@@ -965,8 +980,8 @@ class config:
             # parse sections and create list with objects
             objects = []
             for section in cfg.sections():
-                objCfg = self._read_section(cfg, section)
-                if objCfg: objects.append(objCfg)
+                obj_conf = self._read_section(cfg, section)
+                if obj_conf: objects.append(obj_conf)
 
             return objects
 
@@ -1003,17 +1018,17 @@ class config:
             if config['name'] == '': config['name'] = name
             else: name = config['name']
 
-            objCfg = {
+            obj_conf = {
                 'class': type,
                 'name': name,
                 'project': self.project,
                 'config': config}
 
-            return objCfg
+            return obj_conf
 
         def _convert(self, str, type):
             if type == 'str': return str.strip().replace('\n', '')
-            if type == 'list': return nemoa.common.strToList(str)
+            if type == 'list': return nemoa.common.str_to_list(str)
             if type == 'dict': return nemoa.common.strToDict(str)
             return str
 
@@ -1133,7 +1148,7 @@ class config:
             if not 'layers' in netcfg.options('network'):
                 return nemoa.log('warning', """file '%s' does not
                     contain parameter 'layers'.""" % (file))
-            else: config['layer'] = nemoa.common.strToList(
+            else: config['layer'] = nemoa.common.str_to_list(
                 netcfg.get('network', 'layers'))
 
             # init network dictionary
@@ -1168,30 +1183,30 @@ class config:
                 # get nodes of layer from given list file ('file')
                 if 'file' in netcfg.options(layerSec):
                     file_str = netcfg.get(layerSec, 'file')
-                    listFile = nemoa.workspace._expand_path(file_str)
-                    if not os.path.exists(listFile):
+                    list_file = nemoa.workspace._expand_path(file_str)
+                    if not os.path.exists(list_file):
                         return nemoa.log('error', """listfile '%s'
-                            does not exists!""" % (listFile))
-                    with open(listFile, 'r') as listFile:
-                        fileLines = listFile.readlines()
-                    nodeList = [node.strip() for node in fileLines]
+                            does not exists!""" % (list_file))
+                    with open(list_file, 'r') as list_file:
+                        fileLines = list_file.readlines()
+                    node_list = [node.strip() for node in fileLines]
                 # get nodes of layer from given list ('nodes')
                 elif 'nodes' in netcfg.options(layerSec):
                     node_str = netcfg.get(layerSec, 'nodes')
-                    nodeList = nemoa.common.strToList(node_str)
+                    node_list = nemoa.common.str_to_list(node_str)
                 # get nodes of layer from given layer size ('size')
                 elif 'size' in netcfg.options(layerSec):
                     layer_size = int(netcfg.get(layerSec, 'size'))
-                    nodeList = []
+                    node_list = []
                     for n in xrange(1, layer_size + 1):
-                        nodeList.append('n%s' % (n))
+                        node_list.append('n%s' % (n))
                 else:
                     return nemoa.log('warning',
                         """layer '%s' does not contain
                         node information!""" % (layer))
 
                 config['nodes'][layer] = []
-                for node in nodeList:
+                for node in node_list:
                     node = node.strip()
                     if node == '': continue
                     if not node in config['nodes'][layer]:
@@ -1205,43 +1220,43 @@ class config:
 
             # parse '[binding *]' sections and add edges to network dict
             for i in xrange(len(config['layer']) - 1):
-                layerA = config['layer'][i]
-                layerB = config['layer'][i + 1]
+                src_layer = config['layer'][i]
+                tgt_layer = config['layer'][i + 1]
 
-                edgeType = (layerA, layerB)
-                config['edges'][edgeType] = []
-                edgeSec = 'binding %s-%s' % (layerA, layerB)
+                edge_layer = (src_layer, tgt_layer)
+                config['edges'][edge_layer] = []
+                edgeSec = 'binding %s-%s' % (src_layer, tgt_layer)
 
                 # create full binfing between two layers if not specified
                 if not edgeSec in netcfg.sections():
-                    for nodeA in config['nodes'][layerA]:
-                        for nodeB in config['nodes'][layerB]:
-                            config['edges'][edgeType].append((nodeA, nodeB))
+                    for nodeA in config['nodes'][src_layer]:
+                        for nodeB in config['nodes'][tgt_layer]:
+                            config['edges'][edge_layer].append((nodeA, nodeB))
                     continue
 
                 # get edges from '[binding *]' section
                 for nodeA in netcfg.options(edgeSec):
                     nodeA = nodeA.strip()
                     if nodeA == '' or \
-                        not nodeA in config['nodes'][layerA]: continue
-                    for nodeB in nemoa.common.strToList(
+                        not nodeA in config['nodes'][src_layer]: continue
+                    for nodeB in nemoa.common.str_to_list(
                         netcfg.get(edgeSec, nodeA)):
                         nodeB = nodeB.strip()
                         if nodeB == '' \
-                            or not nodeB in config['nodes'][layerB] \
-                            or (nodeA, nodeB) in config['edges'][edgeType]:
+                            or not nodeB in config['nodes'][tgt_layer] \
+                            or (nodeA, nodeB) in config['edges'][edge_layer]:
                             continue
-                        config['edges'][edgeType].append((nodeA, nodeB))
+                        config['edges'][edge_layer].append((nodeA, nodeB))
 
             # check network binding
             for i in xrange(len(config['layer']) - 1):
-                layerA = config['layer'][i]
-                layerB = config['layer'][i + 1]
+                src_layer = config['layer'][i]
+                tgt_layer = config['layer'][i + 1]
 
-                edgeType = (layerA, layerB)
-                if config['edges'][edgeType] == []:
+                edge_layer = (src_layer, tgt_layer)
+                if config['edges'][edge_layer] == []:
                     return nemoa.log('warning', """layer '%s' and
                         layer '%s' are not connected!"""
-                        % (layerA, layerB))
+                        % (src_layer, tgt_layer))
 
             return network

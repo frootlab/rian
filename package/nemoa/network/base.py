@@ -114,12 +114,12 @@ class network:
             "configuration is not needed: network is 'empty'.")
 
         # check if dataset instance is available
-        if not nemoa.type.isDataset(dataset): return nemoa.log(
+        if not nemoa.type.is_dataset(dataset): return nemoa.log(
             'error', """could not configure network:
             no valid dataset instance given:""")
 
          # check if system instance is available
-        if not nemoa.type.isSystem(system): return nemoa.log(
+        if not nemoa.type.is_system(system): return nemoa.log(
             'error', """could not configure network:
             no valid system instance given.""")
 
@@ -186,14 +186,14 @@ class network:
 
         # filter edges to valid nodes
         for i in xrange(len(self.cfg['layer']) - 1):
-            layerA = self.cfg['layer'][i]
-            layerB = self.cfg['layer'][i + 1]
-            edge_layer = (layerA, layerB)
+            src_layer = self.cfg['layer'][i]
+            tgt_layer = self.cfg['layer'][i + 1]
+            edge_layer = (src_layer, tgt_layer)
             filtered = []
 
             for nodeA, nodeB in self.cfg['edges'][edge_layer]:
-                if not nodeA in self.cfg['nodes'][layerA]: continue
-                if not nodeB in self.cfg['nodes'][layerB]: continue
+                if not nodeA in self.cfg['nodes'][src_layer]: continue
+                if not nodeB in self.cfg['nodes'][tgt_layer]: continue
                 filtered.append((nodeA, nodeB))
             self.cfg['edges'][edge_layer] = filtered
 
@@ -236,7 +236,7 @@ class network:
                     order = order,
                     params = {
                         'type': layer,
-                        'layerId': layerId,
+                        'layer_id': layerId,
                         'layerNodeId': layerNodeId,
                         'visible': visible } )
 
@@ -245,9 +245,9 @@ class network:
         # add edges to graph
         order = 0
         for i in xrange(len(self.cfg['layer']) - 1):
-            layerA = self.cfg['layer'][i]
-            layerB = self.cfg['layer'][i + 1]
-            edge_layer = (layerA, layerB)
+            src_layer = self.cfg['layer'][i]
+            tgt_layer = self.cfg['layer'][i + 1]
+            edge_layer = (src_layer, tgt_layer)
             type_id = i
 
             for (nodeA, nodeB) in self.cfg['edges'][edge_layer]:
@@ -256,14 +256,14 @@ class network:
                     src_node_id = nodeA
                     tgt_node_id = nodeB
                 else:
-                    src_node_id = layerA + ':' + nodeA
-                    tgt_node_id = layerB + ':' + nodeB
+                    src_node_id = src_layer + ':' + nodeA
+                    tgt_node_id = tgt_layer + ':' + nodeB
 
                 self.graph.add_edge(
                     src_node_id, tgt_node_id,
                     weight = 0.,
                     order  = order,
-                    params = {'type': edge_layer, 'layerId': type_id})
+                    params = {'type': edge_layer, 'layer_id': type_id})
 
                 order += 1
 
@@ -326,14 +326,14 @@ class network:
         if not nodes: return None
         fistNode = self.node(nodes[0])['params']
         return {
-            'id': fistNode['layerId'],
+            'id': fistNode['layer_id'],
             'label': fistNode['type'],
             'visible': fistNode['visible'],
             'nodes': nodes}
 
     def layers(self, **kwargs):
         """Return ordered list of layers by label."""
-        layerDict = {self.node(node)['params']['layerId']: \
+        layerDict = {self.node(node)['params']['layer_id']: \
             {'label': self.node(node)['params']['type']} \
             for node in self.nodes()}
         layerList = [layerDict[layer]['label'] for layer in xrange(0, len(layerDict))]
@@ -533,7 +533,7 @@ class network:
     def update(self, **kwargs):
         if 'system' in kwargs:
             system = kwargs['system']
-            if not nemoa.type.isSystem(system):
+            if not nemoa.type.is_system(system):
                 return nemoa.log('error',
                     'could not update network: system is invalid.')
 

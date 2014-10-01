@@ -15,7 +15,7 @@ class graph(nemoa.plot.base.plot):
     @staticmethod
     def _settings(): return {
         'path': ('system', 'relations'),
-        'graphCaption': True,
+        'graph_caption': True,
         'units': (None, None),
         'relation': 'correlation',
         'preprocessing': None,
@@ -26,7 +26,7 @@ class graph(nemoa.plot.base.plot):
         'sign': None,
         'filter': None,
         'cutoff': 0.5,
-        'nodeCaption': 'accuracy',
+        'node_caption': 'accuracy',
         'layout': 'spring',
     }
 
@@ -159,7 +159,7 @@ class histogram(nemoa.plot.base.plot):
     @staticmethod
     def _settings(): return {
         'path': ('system', 'relations'),
-        'graphCaption': True,
+        'graph_caption': True,
         'units': (None, None),
         'relation': 'correlation',
         'preprocessing': None,

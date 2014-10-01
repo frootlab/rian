@@ -71,6 +71,6 @@ def getSubdirFromHash(basepath, str):
     if not os.path.exists(basepath): os.makedirs(basepath)
 
     # create new subfolder
-    subDir = '%s%s/' % (basepath, strToHash(str))
+    subDir = '%s%s/' % (basepath, str_to_hash(str))
     if not os.path.exists(subDir): os.makedirs(subDir)
     return os.path.abspath(subDir) + '/'

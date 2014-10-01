@@ -110,7 +110,7 @@ class ann(nemoa.system.base.system):
             from network '%s'.""" % (network.name()))
         nemoa.log('set', indent = '+1')
 
-        if not nemoa.type.isNetwork(network):
+        if not nemoa.type.is_network(network):
             nemoa.log('error', """could not configure system:
                 network instance is not valid!""")
             nemoa.log('set', indent = '-1')
@@ -135,7 +135,7 @@ class ann(nemoa.system.base.system):
         """check if dataset columns match with visible units."""
 
         # test if argument dataset is nemoa dataset instance
-        if not nemoa.type.isDataset(dataset): return nemoa.log(
+        if not nemoa.type.is_dataset(dataset): return nemoa.log(
             'error', """could not configure system:
             dataset instance is not valid.""")
 
@@ -165,7 +165,7 @@ class ann(nemoa.system.base.system):
         """
 
         if not (dataset == None) and not \
-            nemoa.type.isDataset(dataset): return nemoa.log(
+            nemoa.type.is_dataset(dataset): return nemoa.log(
             'error', """could not initilize unit parameters:
             invalid dataset argument given!""")
 
@@ -249,7 +249,7 @@ class ann(nemoa.system.base.system):
                 'name': layer,
                 'label': network.nodes(type = layer),
                 'visible': params['visible'],
-                'id': params['layerId']})
+                'id': params['layer_id']})
 
         return units
 
@@ -368,7 +368,7 @@ class ann(nemoa.system.base.system):
         """
 
         if not(dataset == None) and \
-            not nemoa.type.isDataset(dataset): return nemoa.log(
+            not nemoa.type.is_dataset(dataset): return nemoa.log(
             'error', """could not initilize link parameters:
             invalid dataset argument given!""")
 
@@ -524,7 +524,7 @@ class ann(nemoa.system.base.system):
 
         """
 
-        if not nemoa.type.isDataset(dataset): return nemoa.log(
+        if not nemoa.type.is_dataset(dataset): return nemoa.log(
             'error', """could not initilize system:
             invalid dataset instance given-""")
         return self._init_units(dataset) and self._init_links(dataset)
