@@ -7,5 +7,5 @@ __license__ = 'GPLv3'
 import nemoa.network.base
 
 def new(*args, **kwargs):
-    """Return new network instance."""
+    """return new network instance."""
     return nemoa.network.base.network(*args, **kwargs)

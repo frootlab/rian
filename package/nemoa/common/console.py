@@ -10,7 +10,7 @@ import termios
 import fcntl
 
 def getch():
-    """Return single character from stdin, or None."""
+    """return single character from stdin, or None."""
 
     fd = sys.stdin.fileno()
     oldterm = termios.tcgetattr(fd)

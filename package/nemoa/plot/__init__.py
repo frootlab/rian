@@ -8,7 +8,7 @@ import importlib
 import nemoa.plot.base
 
 def new(*args, **kwargs):
-    """Return new nemoa.plot.[package].[class] instance."""
+    """return new nemoa.plot.[package].[class] instance."""
     if not 'config' in kwargs: return False
     config = kwargs['config']
     if not 'package' in config: return False

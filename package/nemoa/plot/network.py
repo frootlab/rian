@@ -68,9 +68,9 @@ class graph(nemoa.plot.base.plot):
 
         # (optional) normalize edge signs
         if self.settings['edge_sign_normalize']:
-            signSum = sum([numpy.sign(graph.edge[u][v]['weight'])
+            sign_sum = sum([numpy.sign(graph.edge[u][v]['weight'])
                 for (u, v) in graph.edges()])
-            if signSum < 0: # TODO: check number of layer: only at odd number
+            if sign_sum < 0: # TODO: check number of layer: only at odd number
                 for (u, v) in graph.edges():
                     graph.edge[u][v]['weight'] *= -1
 

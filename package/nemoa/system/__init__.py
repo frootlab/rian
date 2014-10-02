@@ -8,7 +8,7 @@ import nemoa.system.base
 import importlib
 
 def new(*args, **kwargs):
-    """Return new nemoa.system.[package].[class] instance."""
+    """return new nemoa.system.[package].[class] instance."""
     if not 'config' in kwargs: return None
     config = kwargs['config']
     module = importlib.import_module('nemoa.system.' + config['package'])

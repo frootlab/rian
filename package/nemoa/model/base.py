@@ -22,7 +22,7 @@ class model:
 
     dataset = None
     network = None
-    system  = None
+    system = None
 
     def __init__(self, config = {}, dataset = None, network = None,
         system = None, name = None):
@@ -53,7 +53,7 @@ class model:
         return True
 
     def _get_config(self):
-        """Return configuration as dictionary."""
+        """return configuration as dictionary."""
         return self._config.copy()
 
     def _export_data(self, *args, **kwargs):
@@ -104,9 +104,9 @@ class model:
                     self.system.name()))
         return True
 
-    def configure(self):
+    def _configure(self):
         """Configure model."""
-        nemoa.log('configure model \'%s\'' % (self.name()))
+        nemoa.log("configure model '%s'" % (self.name()))
         nemoa.log('set', indent = '+1')
         if not 'check' in self._config:
             self._config['check'] = {'dataset': False,
@@ -139,13 +139,13 @@ class model:
         return True
 
     def _is_configured(self):
-        """Return True if model is allready configured."""
+        """return True if model is allready configured."""
         return 'check' in self._config \
             and self._config['check']['dataset'] \
             and self._config['check']['network'] \
             and self._config['check']['system']
 
-    def initialize(self):
+    def _initialize(self):
         """Initialize model parameters and return self."""
 
         # TODO: just check if system is configured
@@ -200,22 +200,23 @@ class model:
             return False
 
         # get optimization schedule
-        if schedule == None: schedule = self.system.get_type() + '.default'
-        elif not '.' in schedule: schedule = \
-            self.system.get_type() + '.' + schedule
+        if schedule == None:
+            schedule = self.system.get_type() + '.default'
+        elif not '.' in schedule:
+            schedule = self.system.get_type() + '.' + schedule
         schedule = nemoa.workspace._get_config(
             type = 'schedule', config = schedule,
             merge = ['params', self.system.get_type()],
             **kwargs)
         if not schedule:
-            nemoa.log('error', """
-                could not optimize system parameters:
+            nemoa.log('error', """could not optimize system parameters:
                 optimization schedule is not valid!""")
             nemoa.log('set', indent = '-1')
             return self
 
         # optimization of system parameters
-        nemoa.log("starting optimization schedule: '%s'" % (schedule['name']))
+        nemoa.log("starting optimization schedule: '%s'"
+            % (schedule['name']))
         nemoa.log('set', indent = '+1')
 
         # TODO: find better solution for multistage optimization
@@ -233,91 +234,26 @@ class model:
 
         return self
 
-    #def _configure_dataset(self, dataset = None, network = None):
-        #"""Configure model.dataset to given dataset and network.
-
-        #Args:
-            #dataset: dataset instance
-            #network: network instance
-
-        #"""
-        #dataset = self.dataset
-        #network = self.network
-
-        ## link dataset instance
-        #if nemoa.type.is_dataset(dataset):
-            #self.dataset = dataset
-
-        ## check if dataset instance is valid
-        #if not nemoa.type.is_dataset(self.dataset):
-            #nemoa.log('error',
-            #'could not configure dataset: no dataset instance available!')
-            #return False
-
-        ## check if dataset is empty
-        #if self.dataset._is_empty(): return True
-
-        ## prepare params
-        #if not network and not self.network:
-            #nemoa.log('error',
-            #'could not configure dataset: no network instance available!')
-            #return False
-
-        #return self.dataset.configure(network = network \
-            #if not network == None else self.network)
-
-    #def _configure_network(self, dataset = None, network = None, system = None, **kwargs):
-        #"""Configure model.network to given network, dataset and system.
-
-        #Args:
-            #dataset: dataset instance
-            #network: network instance
-        #"""
-
-        ## link network instance
-        #if nemoa.type.is_network(network): self.network = network
-
-        ## check if network instance is valid
-        #if not nemoa.type.is_network(self.network): return nemoa.log(
-            #'error', """could not configure network:
-            #no network instance available!""")
-
-        ## check if network instance is empty
-        #if self.network._is_empty(): return True
-
-        ## check if dataset instance is available
-        #if self.dataset == None and dataset == None: return nemoa.log(
-            #'error', """could not configure network:
-            #no dataset instance available!""")
-
-         ## check if system instance is available
-        #if self.system == None and system == None: return nemoa.log(
-            #'error', """could not configure network:
-            #no system was given!""")
-
-        ## configure network
-        #return self.network.configure(
-            #dataset = dataset if not dataset == None else self.dataset,
-            #system = system if not system == None else self.system)
-
-    ## TODO: deprecated! Only used in dataset histogram plot
-    #def data(self, dataset = None, layer = None, transform = 'expect', **kwargs):
-        #"""Return data from dataset."""
-        #if not nemoa.type.is_dataset(dataset): dataset = self.dataset
-        #if not isinstance(layer, str):
-            #i = self.system.mapping()[0]
-            #o = self.system.mapping()[-1]
-            #return dataset.data(cols = (i, o), **kwargs)
-        #mapping = self.system.mapping(tgt = layer)
-        #data = dataset.data(cols = self.system.mapping()[0], **kwargs)
-        #return self.system.map_data(data, mapping = mapping, transform = transform)
-
     def eval(self, *args, **kwargs):
-        """Return model evaluation."""
+        """return model evaluation."""
+
+        if len(args) == 0:
+            header = 'system'
+            trailer = args
+        else:
+            header = args[0]
+            trailer = args[1:]
+
+        # evaluation of dataset
+        if header == 'dataset':
+            return self.dataset.eval(*trailer, **kwargs)
+
+        # evaluation of network
+        if header == 'network':
+            return self.network.eval(*trailer, **kwargs)
 
         # evaluation of system
-        if len(args) == 0: args = ('system', )
-        if args[0] == 'system':
+        if header == 'system':
             # get data for system evaluation
             if 'data' in kwargs.keys():
                 # get data from keyword argument
@@ -330,25 +266,21 @@ class model:
                     preprocessing = kwargs['preprocessing']
                     del kwargs['preprocessing']
                 else: preprocessing = {}
-                if not isinstance(preprocessing, dict): preprocessing = {}
+                if not isinstance(preprocessing, dict):
+                    preprocessing = {}
                 if preprocessing:
-                    datasetCopy = self.dataset._get()
+                    dataset_copy = self.dataset._get()
                     self.dataset.preprocess(preprocessing)
                 if 'statistics' in kwargs.keys():
                     statistics = kwargs['statistics']
                     del kwargs['statistics']
                 else: statistics = 0
+                cols = self.system.layers(visible = True)
                 data = self.dataset.data(
-                    size = statistics, cols = self.groups(visible = True))
-                if preprocessing: self.dataset._set(datasetCopy)
+                    size = statistics, cols = cols)
+                if preprocessing: self.dataset._set(dataset_copy)
 
-            return self.system.eval(data, *args[1:], **kwargs)
-
-        # evaluation of dataset
-        if args[0] == 'dataset': return self.dataset.eval(*args[1:], **kwargs)
-
-        # evaluation of network
-        if args[0] == 'network': return self.network.eval(*args[1:], **kwargs)
+            return self.system.eval(data, *trailer, **kwargs)
 
         return nemoa.log('warning', 'could not evaluate model')
 
@@ -484,7 +416,7 @@ class model:
         return retVal
 
     def _get_plot(self, *args, **kwargs):
-        """Return new plot instance"""
+        """return new plot instance"""
 
         # return empty plot instance if no configuration was given
         if not args and not 'config' in kwargs: return nemoa.plot.new()
@@ -573,7 +505,7 @@ class model:
         return nemoa.plot.new(config = cfg)
 
     def name(self):
-        """Return name of model."""
+        """return name of model."""
         return self._config['name'] if 'name' in self._config else ''
 
     def _set_name(self, name):
@@ -583,52 +515,20 @@ class model:
         return self
 
     def _is_empty(self):
-        """Return true if model is empty."""
+        """return true if model is empty."""
         return not 'name' in self._config or not self._config['name']
 
-    def groups(self, **kwargs):
-        """Return list with unit groups."""
-        return self.system.getGroups(**kwargs)
-
-    def units(self, **kwargs):
-        """Return tuple with lists of units."""
-        return self.system.getUnits(**kwargs)
-
-    def links(self, **kwargs):
-        return self.system.links(**kwargs)
-
-    def unit(self, unit):
-        """Return information about one unit.
-
-        Args:
-            unit: name of unit
-
-        """
-        return self.network.node(unit)
-
-    def link(self, link):
-        """Return information about one link
-
-        Args:
-            link: name of link
-
-        """
-
-        return self.network._graph[link[0]][link[1]]
-
     def about(self, *args):
-        """Return generic information about various parts of the model.
+        """return generic information about various parts of the model.
 
         Arg:
             *args: tuple of strings, containing a breadcrump trail to
                 a specific information about the model
 
         Examples:
-            about('dataset', 'preprocessing', 'transformation')
-
-            about('system', 'units', 'error', 'description')
-                Returns information about the "error" measurement
-                function of the systems units.
+            Get a description of the "error" measurement function of the
+            systems units:
+                model.about('system', 'units', 'error', 'description')
 
         """
 

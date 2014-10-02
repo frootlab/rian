@@ -6,10 +6,11 @@ __license__ = 'GPLv3'
 
 import nemoa
 import numpy
+import importlib
 
-def convert(list, input, output = None, filter = False, quiet = True):
+def convert(list, input, output = None, filter = False):
 
-    genericClasses = ['number', 'string', 'float']
+    generic_types = ['number', 'string', 'float']
 
     if isinstance(list, (numpy.ndarray)):
         list = list.tolist()
@@ -17,45 +18,45 @@ def convert(list, input, output = None, filter = False, quiet = True):
     else: inputDtype = 'list'
 
     # 'input'
-    if input in genericClasses:
-        inputClass  = 'generic'
-        inputFormat = input
+    if input in generic_types:
+        input_class  = 'generic'
+        input_format = input
     elif ':' in input:
-        inputClass  = input.lower().split(':')[0].strip()
-        inputFormat = input.lower().split(':')[1].strip()
+        input_class  = input.lower().split(':')[0].strip()
+        input_format = input.lower().split(':')[1].strip()
     else: return nemoa.log('warning',
         'could not convert list: unknown input format "' + input + '"!')
 
     # 'output'
-    if output in genericClasses:
-        outputClass  = 'generic'
-        outputFormat = output
+    if output in generic_types:
+        output_class  = 'generic'
+        output_format = output
     elif output == None:
-        outputClass  = inputClass
-        outputFormat = None
+        output_class  = input_class
+        output_format = None
     elif ':' in input:
-        outputClass  = output.lower().split(':')[0].strip()
-        outputFormat = output.lower().split(':')[1].strip()
+        output_class  = output.lower().split(':')[0].strip()
+        output_format = output.lower().split(':')[1].strip()
     else: return nemoa.log('warning',
         'could not convert list: unknown output format "' + output + '"!')
 
     # 'input' vs 'output'
-    if inputClass != outputClass: return nemoa.log('warning',
-        '"' + inputClass + '" can not be converted to "' + outputClass + '"')
+    if input_class != output_class:
+        return nemoa.log('warning', "'%s' can not be converted to '%s'"
+            % (input_class, output_class))
 
     # trivial cases
-    if inputClass == 'generic' or inputFormat == outputFormat:
+    if input_class == 'generic' or input_format == output_format:
         if inputDtype == 'nparray':
             return numpy.asarray(list), numpy.asarray([])
         else: return list, []
 
     # import annotation module
-    modName = inputClass.lower()
-    import importlib
-    module = importlib.import_module('nemoa.dataset.annotation.' + modName)
-    converter = getattr(module, modName)()
-    outList, outLost = converter.convert_list(
-        list, inputFormat, outputFormat, filter, quiet = quiet)
+    module_name = input_class.lower()
+    module = importlib.import_module('nemoa.dataset.annotation.' + module_name)
+    converter = getattr(module, module_name)()
+    output_list, output_lost = converter.convert_list(
+        list, input_format, output_format, filter)
     if inputDtype == 'nparray':
-        return numpy.asarray(outList), numpy.asarray(outLost)
-    return outList, outLost
+        return numpy.asarray(output_list), numpy.asarray(output_lost)
+    return output_list, output_lost

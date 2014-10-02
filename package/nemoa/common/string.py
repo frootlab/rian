@@ -8,22 +8,22 @@ import binascii
 import pyparsing
 
 def str_to_hash(str):
-    """Return crc32 hash-valkue of given string."""
+    """return crc32 hash-valkue of given string."""
     return abs(binascii.crc32(str))
 
 def str_split_params(str):
-    """Return tuple with function name and function parameters."""
+    """return tuple with function name and function parameters."""
     if not '(' in str: return str, {}
     funcName = str.split('(')[0]
     funcParams = str_to_dict(str.lstrip(funcName).strip()[1:-1])
     return funcName, funcParams
 
 def str_to_list(str, delim = ','):
-    """Return list from given string."""
+    """return list from given string."""
     return [item.strip() for item in str.split(delim)]
 
 def str_to_dict(string, delim = ','):
-    """Return dictionary from given string in ini format."""
+    """return dictionary from given string in ini format."""
     if string.strip() == '': return {}
     ppNum  = pyparsing.Word(pyparsing.nums + '.')
     ppStr  = pyparsing.quotedString
@@ -52,7 +52,7 @@ def str_to_dict(string, delim = ','):
     return dict
 
 def str_format_unit_label(string):
-    """Return TeX style unit String used for plots."""
+    """return TeX style unit String used for plots."""
     text = string.rstrip(''.join([str(x) for x in xrange(0, 10)]))
     return '$%s_{%d}$' % (text, int(string.lstrip(text)))
 

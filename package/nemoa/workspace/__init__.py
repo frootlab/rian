@@ -16,11 +16,11 @@ def _init():
     return True
 
 def new():
-    """Return new workspace instance."""
+    """return new workspace instance."""
     return nemoa.workspace.base.workspace()
 
 def open(*args, **kwargs):
-    """Return new workspace instance and open project."""
+    """return new workspace instance and open project."""
     return nemoa.workspace.base.workspace(*args, **kwargs)
 
 def get(*args, **kwargs):
@@ -45,7 +45,7 @@ def load(*args, **kwargs):
 
 def _get_config(type = None, config = None,
     merge = ['params'], **kwargs):
-    """Return object configuration as dictionary."""
+    """return object configuration as dictionary."""
     if config == None: return {}
     if isinstance(config, dict): return copy.deepcopy(config)
     elif not isinstance(config, str) \

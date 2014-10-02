@@ -75,7 +75,7 @@ class rbm(nemoa.system.ann.ann):
         return (v, h, v)
 
     def _get_test_data(self, dataset):
-        """Return tuple with default test data."""
+        """return tuple with default test data."""
         data = dataset.data()
         return (data, data)
 
@@ -243,20 +243,20 @@ class rbm(nemoa.system.ann.ann):
         if not 'links' in ignore: deltaL = self._optimize_cd_delta_links(*dTuple)
 
         # Contrastive Divergency update
-        if not 'visible' in ignore: self.units['visible'].update(deltaV)
-        if not 'hidden' in ignore: self.units['hidden'].update(deltaH)
+        if not 'visible' in ignore: self._units['visible'].update(deltaV)
+        if not 'hidden' in ignore: self._units['hidden'].update(deltaH)
         if not 'links' in ignore: self._optimize_update_links(**deltaL)
 
         # (optional) Kullback-Leibler penalty update for sparsity
         if config['mod_kl_enable']:
-            if not 'hidden' in ignore: self.units['hidden'].update(
+            if not 'hidden' in ignore: self._units['hidden'].update(
                 self._optimize_kl_delta_hidden(*dTuple))
 
         # (optional) Simulated Annealing update to avoid underfitting
         if config['mod_sa_enable']:
-            if not 'visible' in ignore: self.units['visible'].update(
+            if not 'visible' in ignore: self._units['visible'].update(
                 self._optimize_sa_delta_visible(tracker))
-            if not 'hidden' in ignore: self.units['hidden'].update(
+            if not 'hidden' in ignore: self._units['hidden'].update(
                 self._optimize_sa_delta_hidden(tracker))
             if not 'links' in ignore: self._optimize_update_links(
                 **self._optimize_sa_delta_links(tracker))
@@ -274,7 +274,7 @@ class rbm(nemoa.system.ann.ann):
         cfg = self._config['optimize']
 
         r = cfg['update_rate'] * cfg['update_factor_vbias'] # update rate
-        v = len(self.units['visible'].params['label'])
+        v = len(self._units['visible'].params['label'])
         diff = numpy.mean(vData - vModel, axis = 0).reshape((1, v))
 
         return { 'bias': r * diff }
@@ -289,7 +289,7 @@ class rbm(nemoa.system.ann.ann):
 
         cfg = self._config['optimize']
 
-        h = len(self.units['hidden'].params['label'])
+        h = len(self._units['hidden'].params['label'])
         r = cfg['update_rate'] * cfg['update_factor_hbias'] # update rate
         diff = numpy.mean(hData - hModel, axis = 0).reshape((1, h))
 
@@ -379,7 +379,7 @@ class rbm(nemoa.system.ann.ann):
         return heat
 
     #def _get_units_from_config(self):
-        #"""Return tuple with unit information created from config."""
+        #"""return tuple with unit information created from config."""
 
         #if isinstance(self._config['params']['visible'], int):
             #vLabel = ['v:v%i' % (num) for num \
@@ -409,35 +409,35 @@ class rbm(nemoa.system.ann.ann):
         #}]
 
     #def _get_units_from_dataset(self, dataset):
-        #"""Return tuple with lists of unit labels ([visible], [hidden]) using dataset for visible."""
-        #return (dataset._get_col_labels(), self.units['hidden'].params['label'])
+        #"""return tuple with lists of unit labels ([visible], [hidden]) using dataset for visible."""
+        #return (dataset._get_col_labels(), self._units['hidden'].params['label'])
 
     ## TODO: generalize to ann
     #def _unlink_unit(self, unit):
         #"""Delete unit links in adjacency matrix."""
-        #if unit in self.units['visible'].params['label']:
-            #i = self.units['visible'].params['label'].index(unit)
+        #if unit in self._units['visible'].params['label']:
+            #i = self._units['visible'].params['label'].index(unit)
             #self._params['links'][(0, 1)]['A'][i,:] = False
             #return True
-        #if unit in self.units['hidden'].params['label']:
-            #i = self.units['hidden'].params['label'].index(unit)
+        #if unit in self._units['hidden'].params['label']:
+            #i = self._units['hidden'].params['label'].index(unit)
             #self._params['links'][(0, 1)]['A'][:,i] = False
             #return True
         #return False
 
     def _set_visible_unit_params(self, params):
         """Set parameters of visible units using dictionary."""
-        return self.units['visible']._overwrite(params['units'][0])
+        return self._units['visible']._overwrite(params['units'][0])
 
     def _set_hidden_unit_params(self, params):
         """Set parameters of hidden units using dictionary."""
-        return self.units['hidden']._overwrite(params['units'][1])
+        return self._units['hidden']._overwrite(params['units'][1])
 
     def _get_links_from_config(self):
-        """Return links from adjacency matrix."""
+        """return links from adjacency matrix."""
         links = []
-        for i, v in enumerate(self.units['visible'].params['label']):
-            for j, h in enumerate(self.units['hidden'].params['label']):
+        for i, v in enumerate(self._units['visible'].params['label']):
+            for j, h in enumerate(self._units['hidden'].params['label']):
                 if not 'A' in self._params \
                     or self._params['links'][(0, 1)]['A'][i, j]:
                     links.append((v, h))
@@ -477,11 +477,11 @@ class rbm(nemoa.system.ann.ann):
 
     def _set_link_params(self, params):
         """Set link parameters and update link matrices using dictionary."""
-        for i, v in enumerate(self.units['visible'].params['label']):
+        for i, v in enumerate(self._units['visible'].params['label']):
             if not v in params['units'][0]['label']:
                 continue
             k = params['units'][0]['label'].index(v)
-            for j, h in enumerate(self.units['hidden'].params['label']):
+            for j, h in enumerate(self._units['hidden'].params['label']):
                 if not h in params['units'][1]['label']:
                     continue
                 l = params['units'][1]['label'].index(h)
@@ -592,7 +592,7 @@ class grbm(rbm):
 
     def _optimize_cd_delta_visible(self, vData, hData, vModel, hModel,
         **kwargs):
-        """Return cd gradient based updates for visible units.
+        """return cd gradient based updates for visible units.
 
         Constrastive divergency gradient of visible unit parameters
         using an modified energy function for faster convergence.
@@ -601,10 +601,10 @@ class grbm(rbm):
 
         cfg = self._config['optimize']
 
-        v = len(self.units['visible'].params['label'])
+        v = len(self._units['visible'].params['label'])
         W = self._params['links'][(0, 1)]['W']
-        var = numpy.exp(self.units['visible'].params['lvar'])
-        b = self.units['visible'].params['bias']
+        var = numpy.exp(self._units['visible'].params['lvar'])
+        b = self._units['visible'].params['bias']
         r1 = cfg['update_rate'] * cfg['update_factor_vbias']
         r2 = cfg['update_rate'] * cfg['update_factor_vlvar']
         d = numpy.mean(0.5 * (vData - b) ** 2 \
@@ -619,7 +619,7 @@ class grbm(rbm):
 
     def _optimize_cd_delta_links(self, vData, hData, vModel, hModel,
         **kwargs):
-        """Return cd gradient based updates for links.
+        """return cd gradient based updates for links.
 
         Constrastive divergency gradient of link parameters
         using an modified energy function for faster convergence.
@@ -628,7 +628,7 @@ class grbm(rbm):
         """
 
         cfg = self._config['optimize']
-        var = numpy.exp(self.units['visible'].params['lvar']).T # variance of visible units
+        var = numpy.exp(self._units['visible'].params['lvar']).T # variance of visible units
         r = cfg['update_rate'] * cfg['update_factor_weights'] # update rate
         D = numpy.dot(vData.T, hData) / float(vData.size)
         M = numpy.dot(vModel.T, hModel) / float(vData.size)
@@ -636,13 +636,13 @@ class grbm(rbm):
         return { 'W': r * (D - M) / var }
 
     def _get_visible_unit_params(self, label):
-        """Return system parameters of one specific visible unit."""
-        id = self.units['visible'].params['label'].index(label)
+        """return system parameters of one specific visible unit."""
+        id = self._units['visible'].params['label'].index(label)
         return {
-            'bias': self.units['visible'].params['bias'][0, id],
+            'bias': self._units['visible'].params['bias'][0, id],
             'sdev': numpy.sqrt(numpy.exp(
-                self.units['visible'].params['lvar'][0, id])) }
+                self._units['visible'].params['lvar'][0, id])) }
 
     def _set_visible_unit_params(self, params):
         """Set parameters of visible units using dictionary."""
-        return self.units['visible']._overwrite(params['units'][0])
+        return self._units['visible']._overwrite(params['units'][0])

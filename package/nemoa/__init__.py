@@ -9,7 +9,7 @@ complexity.
 
 """
 
-__version__ = '0.4.117'
+__version__ = '0.4.118'
 __status__  = 'Development'
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
@@ -30,7 +30,7 @@ import nemoa.model
 log('init')
 
 def new(**kwargs):
-    """Return new workspace instance."""
+    """return new workspace instance."""
     return nemoa.workspace.new(**kwargs)
 
 def open(workspace, **kwargs):
@@ -38,7 +38,7 @@ def open(workspace, **kwargs):
     return nemoa.workspace.open(workspace, **kwargs)
 
 def version():
-    """Return version as string."""
+    """return version as string."""
     return __version__
 
 def welcome():
@@ -46,5 +46,5 @@ def welcome():
     return log('header', 'nemoa ' + __version__)
 
 def workspaces():
-    """Return list of workspaces."""
+    """return list of workspaces."""
     return nemoa.workspace.list('workspace')

@@ -10,7 +10,7 @@ import numpy
 import re
 
 def csv_get_col_labels(file, delim = None, type = None):
-    """Return list with column labels (first row) from csv file."""
+    """return list with column labels (first row) from csv file."""
 
     # get delimiter
     if not delim: delim = csv_get_delimiter(file)
@@ -29,7 +29,7 @@ def csv_get_col_labels(file, delim = None, type = None):
     return []
 
 def csv_get_delimiter(file, delimiters = [',', ';', '\t', ' ']):
-    """Return estimated delimiter of csv file."""
+    """return estimated delimiter of csv file."""
 
     found = False
     lines = 10
@@ -42,10 +42,11 @@ def csv_get_delimiter(file, delimiters = [',', ';', '\t', ' ']):
             except:
                 lines += 10
     if found: return dialect.delimiter
-    return nemoa.log('warning', """could not import csv file '%s':
-        could not determine delimiter!""" % (file))
+    return nemoa.log('warning',
+        "could not determine delimiter of .csv file '%s'!" % (file))
 
-def csv_save_data(file, data, cols = None, delimiter = '\t', comments = ''):
+def csv_save_data(file, data, cols = None, delimiter = '\t',
+    comments = ''):
     header = delimiter.join(cols) if isinstance(cols, list) else None
     fmt = delimiter.join(['%s'] + ['%10.10f'] * (len(data[0]) - 1))
     return numpy.savetxt(file, data, fmt = fmt, delimiter = delimiter,

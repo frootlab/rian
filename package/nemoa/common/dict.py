@@ -8,7 +8,7 @@ import cPickle
 import gzip
 
 def dict_merge(d1, d2):
-    """Return merged dictionary (merge d1 over d2)."""
+    """return merged dictionary (merge d1 over d2)."""
     for k1,v1 in d1.iteritems():
         if not k1 in d2: d2[k1] = v1 # create in d2 if not existent
         elif isinstance(v1, dict): dict_merge(v1, d2[k1])
@@ -21,17 +21,17 @@ def dict_to_file(d, file):
         file = gzip.open(file, "wb"), protocol = 2)
 
 def dict_from_file(file):
-    """Return dictionary from gzip compressed file."""
+    """return dictionary from gzip compressed file."""
     return cPickle.load(gzip.open(file, 'rb'))
 
 def dict_from_array(array, axes):
-    """Return dictionary from 2-dimensional numpy array."""
+    """return dictionary from 2-dimensional numpy array."""
     return {(x, y): array[i, j] \
         for i, x in enumerate(axes[0]) \
         for j, y in enumerate(axes[1])}
 
 def dict_to_array(d, axes):
-    """Return 2-dimensional numpy array from dictionary."""
+    """return 2-dimensional numpy array from dictionary."""
     arr = numpy.zeros(shape = (len(axes[0]), len(axes[1])))
     for i, x in enumerate(axes[0]):
         for j, y in emumerate(axes[1]):

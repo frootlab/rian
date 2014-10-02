@@ -49,16 +49,16 @@ class gene:
                     sys.stdout = stdout
                     nemoa.log('error', "an error occured!")
 
-    def convert_list(self, list, input_format, outputFormat, filter = False, quiet = True):
-        """Return list with converted gene labels using R/bioconductor
-        """
+    def convert_list(self, list, input_format, output_format,
+        filter = False, quiet = True):
+        """return list with converted gene labels using R/bioconductor"""
 
         if self.robjects == None:
             nemoa.log('error', "annotation: you have to install python package 'rpy2'")
             return [], list
-        if outputFormat == None or outputFormat == 'default':
-            outputFormat = self.default
-        if input_format == outputFormat:
+        if output_format == None or output_format == 'default':
+            output_format = self.default
+        if input_format == output_format:
             return list, []
 
         # make local copy of list
@@ -90,14 +90,14 @@ class gene:
                 self._install([package_name], quiet = quiet)
 
             # get listvector
-            nemoa.log("sending command to R: x <- %s%s" % (input_format, outputFormat.upper()), quiet = quiet)
+            nemoa.log("sending command to R: x <- %s%s" % (input_format, output_format.upper()), quiet = quiet)
             try:
                 sys.stdout = NullDevice()
-                self.robjects.r('x <- %s%s' % (input_format, outputFormat.upper()))
+                self.robjects.r('x <- %s%s' % (input_format, output_format.upper()))
                 sys.stdout = original_stdout
             except:
                 sys.stdout = original_stdout
-                nemoa.log('error', "output format '%s' is not supported by '%s.db'" % (outputFormat, input_format))
+                nemoa.log('error', "output format '%s' is not supported by '%s.db'" % (output_format, input_format))
                 return [], list
 
             nemoa.log("sending command to R: mapped_genes <- mappedkeys(x)", quiet = quiet)
@@ -125,11 +125,11 @@ class gene:
                 return [], list
 
             # get listvector
-            nemoa.log("sending command to R: x <- org.Hs.eg%s" % (outputFormat.upper()), quiet = quiet)
+            nemoa.log("sending command to R: x <- org.Hs.eg%s" % (output_format.upper()), quiet = quiet)
             try:
-                self.robjects.r('x <- org.Hs.eg%s' % (outputFormat.upper()))
+                self.robjects.r('x <- org.Hs.eg%s' % (output_format.upper()))
             except:
-                return nemoa.log('critical', "output format '%s' is not supported by 'org.Hs.eg.db'" % (outputFormat))
+                return nemoa.log('critical', "output format '%s' is not supported by 'org.Hs.eg.db'" % (output_format))
 
             nemoa.log("sending command to R: mapped_genes <- mappedkeys(x)", quiet = quiet)
             self.robjects.r('mapped_genes <- mappedkeys(x)')
@@ -139,7 +139,7 @@ class gene:
             # prepare search list
             searchList = list
 
-        elif outputFormat == 'entrezid':
+        elif output_format == 'entrezid':
             # load bioconductor annotation package
             nemoa.log("sending command to R: library('org.Hs.eg.db')", quiet = quiet)
             try:
@@ -169,7 +169,7 @@ class gene:
 
         else:
             nemoa.log('error', "conversion from '%s' to '%s' is not supported" % \
-                (input_format, outputFormat))
+                (input_format, output_format))
             return [], list
 
         # search listvector

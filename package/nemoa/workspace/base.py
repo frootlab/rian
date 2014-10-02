@@ -17,20 +17,20 @@ class workspace:
     """Nemoa workspace."""
 
     def __init__(self, workspace = None):
-        """Initialize shared configuration."""
+        """initialize shared configuration."""
         nemoa.workspace._init()
         if workspace: self.load(workspace)
 
     def load(self, workspace):
-        """Import workspace and update paths and logfile."""
+        """import workspace and update paths and logfile."""
         return nemoa.workspace.load(workspace)
 
     def name(self):
-        """Return name of workspace."""
+        """return name of workspace."""
         return nemoa.workspace.name()
 
     def list(self, type = None, namespace = None):
-        """Return a list of known objects."""
+        """return a list of known objects."""
         list = nemoa.workspace.list(type = type,
             namespace = self.name())
         if not type: names = \
@@ -40,7 +40,7 @@ class workspace:
         return names
 
     def execute(self, name = None, **kwargs):
-        """Execute nemoa script."""
+        """execute nemoa script."""
         script_name = name \
             if '.' in name else '%s.%s' % (self.name(), name)
         config = nemoa.workspace._get_config(
@@ -59,19 +59,19 @@ class workspace:
         return script.main(self, **config['params'])
 
     def dataset(self, config = None, **kwargs):
-        """Return new dataset instance."""
+        """return new dataset instance."""
         return self._get_instance('dataset', config, **kwargs)
 
     def network(self, config = None, **kwargs):
-        """Return new network instance."""
+        """return new network instance."""
         return self._get_instance('network', config, **kwargs)
 
     def system(self, config = None, **kwargs):
-        """Return new system instance."""
+        """return new system instance."""
         return self._get_instance('system', config, **kwargs)
 
     def model(self, name = None, **kwargs):
-        """Return model instance."""
+        """return model instance."""
 
         # try to import model from file
         if isinstance(name, str) and not kwargs:
@@ -138,15 +138,15 @@ class workspace:
             nemoa.log('set', indent = '-1')
             return False
 
-        if configure: model.configure() # configure model
-        if initialize: model.initialize() # initialize model parameters
+        if configure: model._configure() # configure model
+        if initialize: model._initialize() # initialize model parameters
 
         nemoa.log('set', indent = '-1')
         return model
 
     def _get_model_instance(self, name = None, config = None,
         dataset = None, network = None, system = None):
-        """Return new model instance."""
+        """return new model instance."""
 
         nemoa.log('create model instance')
         nemoa.log('set', indent = '+1')
@@ -241,7 +241,7 @@ class workspace:
 
     # TODO: move to model base class as model.copy
     def _copy_model(self, model):
-        """Return copy of model instance"""
+        """return copy of model instance"""
 
         # get configuration and parameters from original model
         model_config = model._get_config()
@@ -335,27 +335,27 @@ class config:
                     + self._workspace_path[key], create = allowWrite)
 
     def _list_user_workspaces(self):
-        """Return list of private workspaces."""
+        """return list of private workspaces."""
         userDir = self._expand_path(self._basepath['user'])
         return [os.path.basename(w) for w in glob.iglob(userDir + '*')
             if os.path.isdir(w)]
 
     def _list_shared_workspaces(self):
-        """Return list of shared resources."""
+        """return list of shared resources."""
         shared = self._expand_path(self._basepath['common'])
         return [os.path.basename(w) for w in glob.iglob(shared + '*')
             if os.path.isdir(w)]
 
     def workspace(self):
-        """Return name of current workspace."""
+        """return name of current workspace."""
         return self._workspace
 
     def name(self):
-        """Return name of current workspace."""
+        """return name of current workspace."""
         return self._workspace
 
     def path(self, key = None):
-        """Return path."""
+        """return path."""
         if isinstance(key, str) and key in self._path.keys():
             if isinstance(self._path[key], dict):
                 return self._path[key].copy()
@@ -807,16 +807,16 @@ class config:
         return sorted(obj_list, key = lambda col: col[2])
 
     def _is_obj_known(self, type, name):
-        """Return True if object is registered."""
+        """return True if object is registered."""
         return self._get_obj_id_by_name(type, name) in self._index
 
     def _get_obj_id_by_name(self, type, name):
-        """Return id of object as integer
+        """return id of object as integer
         calculated as hash from type and name"""
         return nemoa.common.str_to_hash(str(type) + chr(10) + str(name))
 
     def _get_obj_by_id(self, id):
-        """Return object from store by id."""
+        """return object from store by id."""
         if not id in self._index:
             nemoa.log('warning', '2DO')
             return None
@@ -831,7 +831,7 @@ class config:
 
     def get(self, type = None, name = None, merge = ['params'],
         params = None, id = None):
-        """Return configuration as dictionary for given object."""
+        """return configuration as dictionary for given object."""
         if not type in self._store.keys():
             return nemoa.log('warning', """could not get configuration:
                 object class '%s' is not known.""" % type)
@@ -878,12 +878,12 @@ class config:
         return cfg
 
     def _expand_path(self, str, check = False, create = False):
-        """Return string containing expanded path."""
+        """return string containing expanded path."""
 
-        path = str.strip()               # clean up input string
-        path = os.path.expanduser(path)  # expand unix home directory
+        path = str.strip()                 # clean up input string
+        path = os.path.expanduser(path)    # expand unix home directory
         path = self._expand_path_env(path) # expand nemoa env vars
-        path = os.path.expandvars(path)  # expand unix env vars
+        path = os.path.expandvars(path)    # expand unix env vars
 
         # (optional) create directory
         if create and not os.path.exists(os.path.dirname(path)):
@@ -897,7 +897,7 @@ class config:
         return path
 
     def _expand_path_env(self, path = ''):
-        """Expand nemoa environment variables in string"""
+        """expand nemoa environment variables in string."""
 
         replace = { 'project': self._workspace }
 
@@ -930,7 +930,8 @@ class config:
 
         return path
 
-    def _get_new_key(self, dict, key):
+    @staticmethod
+    def _get_new_key(dict, key):
 
         if not key in dict: return key
 
@@ -942,8 +943,9 @@ class config:
 
         return new
 
-    # import config file
     class _ImportConfig:
+        """import configuration file."""
+
         generic = None
         sections = None
         project = None
@@ -1032,8 +1034,8 @@ class config:
             if type == 'dict': return nemoa.common.str_to_dict(str)
             return str
 
-    # import script files
     class _ImportScript:
+        """import script files."""
 
         def __init__(self, config):
             self.project = config.workspace()
@@ -1050,20 +1052,20 @@ class config:
                     'name': name,
                     'path': path }}
 
-    # import network files
     class _ImportNetworkIni:
+        """import network configuration from ini files."""
 
-        workspace  = None
+        workspace = None
 
         def __init__(self, config):
             self.workspace = config.workspace()
 
         def load(self, file):
-            """Return network configuration as dictionary.
+            """return network configuration as dictionary.
 
             Args:
                 file: .ini configuration file used to generate nemoa
-                    network compatible network configuration dictionary.
+                    network compatible configuration dictionary.
 
             """
 
@@ -1088,9 +1090,10 @@ class config:
                         'file_format': 'ini' }}}
 
             # validate 'network' section
-            if not 'network' in netcfg.sections(): return nemoa.log(
-                'warning', """could not import network configuration:
-                file '%s' does not contain section 'network'!""" % (file))
+            if not 'network' in netcfg.sections():
+                return nemoa.log('warning', """could not import network
+                    configuration: file '%s' does not contain section
+                    'network'!""" % (file))
 
             # name of network ('name')
             if 'name' in netcfg.options('network'):

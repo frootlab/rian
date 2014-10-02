@@ -8,7 +8,7 @@ import nemoa
 import os
 
 def get_empty_file(file):
-    """Return file path for new file."""
+    """return file path for new file."""
     fDir = get_file_path(file)
 
     # create directory if not available
@@ -29,17 +29,17 @@ def get_empty_file(file):
     return file
 
 def get_file_name(file):
-    """Return file name from given file path as string."""
+    """return file name from given file path as string."""
     return os.path.basename(file)
 
 def get_file_ext(file):
-    """Return file extension from given file path as string."""
+    """return file extension from given file path as string."""
     fileName = os.path.basename(file)
     fileExt  = os.path.splitext(fileName)[1].lstrip('.')
     return fileExt
 
 def get_file_path(file):
-    """Return normalized filepath from given file path as string."""
+    """return normalized filepath from given file path as string."""
     filePath = os.path.expanduser(file)
     filePath = os.path.expandvars(filePath)
     filePath = os.path.abspath(filePath)

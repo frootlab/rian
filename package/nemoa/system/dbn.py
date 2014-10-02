@@ -164,7 +164,7 @@ class dbn(nemoa.system.ann.ann):
             # configure system to network
             system.configure(network = network)
 
-            unitCount = sum([len(group) for group in system.getUnits()])
+            unitCount = sum([len(group) for group in system.units()])
             linkCount = len(system.links())
             nemoa.log("adding subsystem: '%s' (%s units, %s links)" %\
                 (system.name(), unitCount, linkCount))
@@ -177,8 +177,8 @@ class dbn(nemoa.system.ann.ann):
 
             # link layer parameters of subsystem
             if layerID == 0:
-                inUnits['init'] = system.units['visible'].params
-                outUnits['init'] = system.units['hidden'].params
+                inUnits['init'] = system._units['visible'].params
+                outUnits['init'] = system._units['hidden'].params
                 system._config['init']['ignoreUnits'] = []
                 system._config['optimize']['ignoreUnits'] = []
             else:
@@ -195,7 +195,7 @@ class dbn(nemoa.system.ann.ann):
         # Optimize subsystems
 
         # create copy of dataset values (before transformation)
-        datasetCopy = dataset._get()
+        dataset_copy = dataset._get()
 
         # optimize subsystems
         for sysID in xrange(len(subSystems)):
@@ -215,7 +215,7 @@ class dbn(nemoa.system.ann.ann):
 
             # add dataset column filter 'visible'
             dataset._set_col_filter('visible',
-                system.getUnits(group = 'visible'))
+                system.units(group = 'visible'))
 
             # initialize (free) system parameters
             system.initialize(dataset)
@@ -224,7 +224,7 @@ class dbn(nemoa.system.ann.ann):
             system.optimize(dataset, schedule)
 
         # reset data to initial state (before transformation)
-        dataset._set(**datasetCopy)
+        dataset._set(**dataset_copy)
 
         # copy and enrolle parameters of subsystems to dbn
         nemoa.log('initialize system with subsystem parameters')
@@ -232,8 +232,8 @@ class dbn(nemoa.system.ann.ann):
 
         # keep original inputs and outputs
         mapping = self.mapping()
-        inputs = self.units[mapping[0]].params['label']
-        outputs = self.units[mapping[-1]].params['label']
+        inputs = self._units[mapping[0]].params['label']
+        outputs = self._units[mapping[-1]].params['label']
 
         # expand unit parameters to all layers
         nemoa.log("""import unit and link parameters

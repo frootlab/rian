@@ -8,5 +8,5 @@ import nemoa.dataset.annotation
 import nemoa.dataset.base
 
 def new(*args, **kwargs):
-    """Return new dataset instance."""
+    """return new dataset instance."""
     return nemoa.dataset.base.dataset(*args, **kwargs)

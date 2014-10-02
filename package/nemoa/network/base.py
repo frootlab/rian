@@ -45,7 +45,7 @@ class network:
         return False
 
     def _get_config(self):
-        """Return configuration as dictionary."""
+        """return configuration as dictionary."""
         return self._config.copy()
 
     def _get_nodes_from_layers(self):
@@ -80,7 +80,7 @@ class network:
         self._config['label_format'] = 'generic:string'
         if not 'nodes' in self._config: self._config['nodes'] = {}
         if not 'layer' in self._config: self._config['layer'] = []
-        (visible, hidden) = system.getUnits()
+        (visible, hidden) = system.units()
         for unit in hidden:
             (group, label) = unit.split(':')
             if not group in self._config['layer']:
@@ -159,7 +159,7 @@ class network:
         return True
 
     def _is_empty(self):
-        """Return true if network type is 'empty'."""
+        """return true if network type is 'empty'."""
         return self._config['type'] == 'empty'
 
     def _create_layergraph(self, nodelist = None, edgelist = None):
@@ -270,7 +270,7 @@ class network:
         return True
 
     def node(self, node):
-        """Return network information of single node."""
+        """return network information of single node."""
         return self._graph.node[node]
 
     def nodes(self, group_by_layer = False, **kwargs):
@@ -316,7 +316,7 @@ class network:
         return allGroups
 
     def layer(self, layer):
-        """Return dictionary containing information about a layer."""
+        """return dictionary containing information about a layer."""
         nodes = self.nodes(type = layer)
         if not nodes: return None
         first_node = self.node(nodes[0])['params']
@@ -327,7 +327,7 @@ class network:
             'nodes': nodes}
 
     def layers(self, **kwargs):
-        """Return ordered list of layers by label."""
+        """return ordered list of layers by label."""
         layerDict = {self.node(node)['params']['layer_id']: \
             {'label': self.node(node)['params']['type']} \
             for node in self.nodes()}
@@ -337,34 +337,28 @@ class network:
     def edge(self, edge):
         return self._graph.edge[edge]
 
-    def edges(self, **params):
+    def edges(self, **kwargs):
 
         # filter search criteria and order entries
         sorted_list = [None] * self._graph.number_of_edges()
 
         for src, tgt, attr in self._graph.edges(data = True):
-            if not params == {}:
+            if not kwargs == {}:
 
                 passed = True
-                for key in params:
+                for key in kwargs:
                     if not key in attr['params'] \
-                        or not params[key] == attr['params'][key]:
+                        or not kwargs[key] == attr['params'][key]:
                         passed = False
                         break
                 if not passed: continue
 
-            # force order (visible, hidden)
-            # TODO: why force order??
-            # better force order from input to ouput
-            srcLayer = src.split(':')[0]
-            tgtLayer = tgt.split(':')[0]
+            src_layer = src.split(':')[0]
+            tgt_layer = tgt.split(':')[0]
+            layers = self.layers()
 
-            if srcLayer in self._config['visible'] \
-                and tgtLayer in self._config['hidden']:
+            if src_layer in layers and tgt_layer in layers:
                 sorted_list[attr['order']] = (src, tgt)
-            elif srcLayer in self._config['hidden'] \
-                and tgtLayer in self._config['visible']:
-                sorted_list[attr['order']] = (tgt, src)
 
         # filter empty nodes
         return [edge for edge in sorted_list if edge]
