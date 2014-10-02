@@ -7,8 +7,6 @@ __license__ = 'GPLv3'
 import nemoa
 import networkx
 import numpy
-import matplotlib
-import matplotlib.pyplot
 
 class graph(nemoa.plot.base.plot):
 

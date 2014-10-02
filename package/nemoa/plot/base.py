@@ -46,7 +46,7 @@ class plot:
         'fileformat': 'pdf',
         'dpi': 300,
         'output': 'file',
-        'showTitle': True,
+        'show_title': True,
         'title': None,
         'bg_color': 'none',
     }
@@ -57,14 +57,14 @@ class plot:
         matplotlib.rc('font', family = 'serif')
 
         # close previous figures
-        matplotlib.pyplot.close("all")
+        matplotlib.pyplot.close('all')
 
         # update configuration, depending on object type
         if list(self.settings['path'])[0] == 'dataset':
-            if self.settings['showTitle']:
+            if self.settings['show_title']:
                 self.settings['title'] = model.dataset.name().title()
         elif list(self.settings['path'])[0] == 'network':
-            if self.settings['showTitle']:
+            if self.settings['show_title']:
                 self.settings['title'] = model.dataset.name().title()
         elif list(self.settings['path'])[0] == 'system':
 
@@ -78,7 +78,7 @@ class plot:
                 self.settings['units'] = (input_units, output_units)
 
             # get information about relation
-            if self.settings['showTitle']:
+            if self.settings['show_title']:
                 rel_id = nemoa.common.str_split_params(
                     self.settings['relation'])[0]
                 rel_dict = model.about('system', 'relations', rel_id)
@@ -89,7 +89,7 @@ class plot:
         if self._create(model):
 
             # (optional) draw title
-            if self.settings['showTitle']:
+            if self.settings['show_title']:
                 if 'title' in self.settings \
                     and isinstance(self.settings['title'], str):
                     title = self.settings['title']

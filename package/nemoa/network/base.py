@@ -210,7 +210,7 @@ class network:
 
         # add nodes to graph
         order = 0
-        for layerId, layer in enumerate(self._config['layer']):
+        for layer_id, layer in enumerate(self._config['layer']):
             visible = layer in self._config['visible']
             if nodelist['type'] in self._config['layer']:
                 if layer == nodelist['type']:
@@ -223,7 +223,7 @@ class network:
                     '\' (' + str(len(self._config['nodes'][layer])) + ' nodes)')
                 else: nemoa.log('adding hidden layer: \'' + layer + \
                     '\' (' + str(len(self._config['nodes'][layer])) + ' nodes)')
-            for layerNodeId, node in enumerate(self._config['nodes'][layer]):
+            for layer_node_id, node in enumerate(self._config['nodes'][layer]):
                 if 'add_layer_to_node_labels' in self._config \
                     and self._config['add_layer_to_node_labels'] == False:
                     id = node
@@ -236,8 +236,8 @@ class network:
                     order = order,
                     params = {
                         'type': layer,
-                        'layer_id': layerId,
-                        'layerNodeId': layerNodeId,
+                        'layer_id': layer_id,
+                        'layer_node_id': layer_node_id,
                         'visible': visible } )
 
                 order += 1
@@ -262,7 +262,7 @@ class network:
                 self._graph.add_edge(
                     src_node_id, tgt_node_id,
                     weight = 0.,
-                    order  = order,
+                    order = order,
                     params = {'type': edge_layer, 'layer_id': type_id})
 
                 order += 1

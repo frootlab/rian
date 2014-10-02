@@ -23,8 +23,6 @@ COLOR = {
     'cornflower': (0.27, 0.51, 0.7, 1.),
 }
 
-# create A4 figure object figsize = (8.27, 11.69)
-
 def heatmap(array, **kwargs):
 
     # create figure object
@@ -40,19 +38,19 @@ def heatmap(array, **kwargs):
         extent = (0, array.shape[1], 0, array.shape[0]))
 
     # create labels for axis
-    maxFontSize = 12.
-    yLabels = [nemoa.common.str_format_unit_label(label.split(':')[1]) \
+    max_font_size = 12.
+    y_labels = [nemoa.common.str_format_unit_label(label.split(':')[1]) \
         for label in kwargs['units'][0]]
-    xLabels = [nemoa.common.str_format_unit_label(label.split(':')[1]) \
+    x_labels = [nemoa.common.str_format_unit_label(label.split(':')[1]) \
         for label in kwargs['units'][1]]
-    fontsize = min(maxFontSize, \
-        400. / float(max(len(xLabels), len(yLabels))))
+    fontsize = min(max_font_size, \
+        400. / float(max(len(x_labels), len(y_labels))))
     matplotlib.pyplot.xticks(
-        numpy.arange(len(xLabels)) + 0.5,
-        tuple(xLabels), fontsize = fontsize, rotation = 65)
+        numpy.arange(len(x_labels)) + 0.5,
+        tuple(x_labels), fontsize = fontsize, rotation = 65)
     matplotlib.pyplot.yticks(
-        len(yLabels) - numpy.arange(len(yLabels)) - 0.5,
-        tuple(yLabels), fontsize = fontsize)
+        len(y_labels) - numpy.arange(len(y_labels)) - 0.5,
+        tuple(y_labels), fontsize = fontsize)
 
     # create colorbar
     cbar = fig.colorbar(cax)
@@ -70,10 +68,10 @@ def histogram(array, **kwargs):
 
     # create histogram
     cax = ax.hist(array,
-        normed    = False,
-        bins      = kwargs['bins'],
+        normed = False,
+        bins = kwargs['bins'],
         facecolor = kwargs['facecolor'],
-        histtype  = kwargs['histtype'],
+        histtype = kwargs['histtype'],
         linewidth = kwargs['linewidth'],
         edgecolor = kwargs['edgecolor'])
 
@@ -81,12 +79,12 @@ def histogram(array, **kwargs):
 
 def graph(graph, **kwargs):
 
-    nodeSizeMax      = 800.  # maximum node size
-    nodeSizeScale    = 1.85  # node size scale factor
-    fontSizeMax      = 18.   # maximum font size
-    edgeLineWidthMax = 10.   # maximum edge line with
-    edgeArrScale     = 8.    # edge arrow size scale factor
-    edgeRadius       = 0.15  # edge radius for fancy edges
+    node_size_max = 800.      # maximum node size
+    node_size_scale = 1.85    # node size scale factor
+    font_size_max = 18.       # maximum font size
+    edge_line_width_max = 10. # maximum edge line with
+    edge_arr_scale = 8.       # edge arrow size scale factor
+    edge_radius = 0.15        # edge radius for fancy edges
 
     # create figure object
     fig = matplotlib.pyplot.figure()
@@ -109,58 +107,59 @@ def graph(graph, **kwargs):
     elif kwargs['layout'] == 'spectral':
         pos = networkx.spectral_layout(graph)
     else:
-        # warning unknown layout -> using spring
         pos = networkx.spring_layout(graph)
 
     # calculate sizes of nodes, fonts and lines depending on graph size
-    nCount = float(len(graph))
-    nSize = max(nodeSizeMax, nodeSizeScale * nodeSizeMax / nCount)
-    nRadius = numpy.sqrt(nSize) / 480.
-    fSize = fontSizeMax * numpy.sqrt(nSize / nodeSizeMax)
-    nodeFontSizeMax = fSize * 0.9
-    lineWidth = 2. / nCount
-    edgeLineWidth = edgeLineWidthMax / nCount
+    n_count = float(len(graph))
+    n_size = max(node_size_max, node_size_scale * node_size_max / n_count)
+    n_radius = numpy.sqrt(n_size) / 480.
+    f_size = font_size_max * numpy.sqrt(n_size / node_size_max)
+    node_font_size_max = f_size * 0.9
+    line_width = 2. / n_count
+    edge_line_width = edge_line_width_max / n_count
 
     # draw nodes
     for node, attr in graph.nodes(data = True):
         label = attr['label']
 
         # calculate node fontsize depending on label
-        clLabel = label.replace('{', '').replace('}', '')
-        if '_' in clLabel: lenLabel = len('_'.split(clLabel)[0]) \
-            + 0.5 * len('_'.split(clLabel)[0])
-        else: lenLabel = len(clLabel)
-        nodeFontSize = nodeFontSizeMax / numpy.sqrt(lenLabel)
+        cl_label = label.replace('{', '').replace('}', '')
+        if '_' in cl_label: len_label = len('_'.split(cl_label)[0]) \
+            + 0.5 * len('_'.split(cl_label)[0])
+        else: len_label = len(cl_label)
+        node_font_size = node_font_size_max / numpy.sqrt(len_label)
 
         # set backcolor (depending on type) and facecolor
         backcolor = COLOR[attr['color']]
         facecolor = COLOR['black']
 
-        # draw node and node label
+        # draw node
         networkx.draw_networkx_nodes(graph, pos,
-            node_size   = nSize,
-            linewidths  = lineWidth,
-            nodelist    = [node],
-            node_shape  = 'o',
-            node_color  = backcolor)
+            node_size = n_size,
+            linewidths = line_width,
+            nodelist = [node],
+            node_shape = 'o',
+            node_color = backcolor)
+
+        # draw node label
         networkx.draw_networkx_labels(graph, pos,
-            font_size   = nodeFontSize,
-            labels      = {node: label},
-            font_color  = facecolor,
+            font_size = node_font_size,
+            labels = {node: label},
+            font_color = facecolor,
             font_weight = 'normal')
 
         # patch node for edges
-        c = Circle(pos[node], radius = nRadius, alpha  = 0.)
+        c = Circle(pos[node], radius = n_radius, alpha  = 0.)
         ax.add_patch(c)
         graph.node[node]['patch'] = c
 
-    # draw edges using 'fancy arrows'
+    # draw edges
     seen = {}
     for (u, v, attr) in graph.edges(data = True):
-        n1  = graph.node[u]['patch']
-        n2  = graph.node[v]['patch']
-        rad = edgeRadius
-        linewidth = edgeLineWidth * attr['weight']
+        n1 = graph.node[u]['patch']
+        n2 = graph.node[v]['patch']
+        rad = edge_radius
+        linewidth = edge_line_width * attr['weight']
         linecolor = list(COLOR[attr['color']])
 
         if (u, v) in seen:
@@ -168,15 +167,15 @@ def graph(graph, **kwargs):
             rad = -(rad + float(numpy.sign(rad)) * 0.2)
 
         arrow = matplotlib.patches.FancyArrowPatch(
-            posA            = n1.center,
-            posB            = n2.center,
-            patchA          = n1,
-            patchB          = n2,
-            arrowstyle      = '-|>',
+            posA = n1.center,
+            posB = n2.center,
+            patchA = n1,
+            patchB = n2,
+            arrowstyle = '-|>',
             connectionstyle = 'arc3,rad=%s' % rad,
-            mutation_scale  = edgeArrScale,
-            linewidth       = linewidth,
-            color           = linecolor)
+            mutation_scale = edge_arr_scale,
+            linewidth = linewidth,
+            color = linecolor)
 
         seen[(u, v)] = rad
         ax.add_patch(arrow)
@@ -191,51 +190,51 @@ def layergraph(G, **kwargs):
     for node in G.nodes(): count[G.node[node]['params']['type']] += 1
     nodes = [range(count[layer]) for layer in layers]
     for node in G.nodes():
-        layerId = G.node[node]['params']['layer_id']
-        layerNodeId = G.node[node]['params']['layerNodeId']
-        nodes[layerId][layerNodeId] = node
+        layer_id = G.node[node]['params']['layer_id']
+        layer_node_id = G.node[node]['params']['layer_node_id']
+        nodes[layer_id][layer_node_id] = node
 
     # (optional) sort nodes
     if kwargs['node_sort']:
-        for layer, tgtNodes in enumerate(nodes):
+        for layer, tgt_nodes in enumerate(nodes):
             if layer == 0: continue
             sort = []
-            for tgtId, tgtNode in enumerate(tgtNodes):
-                sortOrder = 0.
-                for srcId, srcNode in enumerate(nodes[layer - 1]):
-                    if (srcNode, tgtNode) in G.edges():
-                        weight = G.edge[srcNode][tgtNode]['weight']
-                    elif (tgtNode, srcNode) in G.edges():
-                        weight = G.edge[tgtNode][srcNode]['weight']
+            for tgt_id, tgt_node in enumerate(tgt_nodes):
+                sort_order = 0.
+                for src_id, src_node in enumerate(nodes[layer - 1]):
+                    if (src_node, tgt_node) in G.edges():
+                        weight = G.edge[src_node][tgt_node]['weight']
+                    elif (tgt_node, src_node) in G.edges():
+                        weight = G.edge[tgt_node][src_node]['weight']
                     else: weight = 0.
-                    sortOrder += float(srcId) * numpy.abs(weight)
-                sort.append((sortOrder, tgtNode))
-            nodes[layer] = [srcNode[1] for srcNode in \
+                    sort_order += float(src_id) * numpy.abs(weight)
+                sort.append((sort_order, tgt_node))
+            nodes[layer] = [src_node[1] for src_node in \
                 sorted(sort, key = lambda x: x[0])]
 
     # calculate sizes
-    nLen  = max([len(layer) for layer in nodes])
-    lLen  = len(nodes)
-    scale = min(240. / nLen, 150. / lLen, 35.)
-    graphNodeSize   = 0.9 * scale ** 2
-    graphFontSize   = 0.4 * scale
-    graphCaptionPos = -0.0025 * scale
-    graphLineWidth  = 0.3
+    n_len = max([len(layer) for layer in nodes])
+    l_len = len(nodes)
+    scale = min(240. / n_len, 150. / l_len, 35.)
+    graph_node_size = 0.9 * scale ** 2
+    graph_font_size = 0.4 * scale
+    graph_caption_pos = -0.0025 * scale
+    graph_line_width = 0.3
 
     # calculate node positions for layer graph layout
     pos = {}
-    posCap = {}
-    for lId, layer in enumerate(nodes):
-        for nId, node in enumerate(layer):
-            nPos = (nId + 0.5) / len(layer)
-            lPos = 1. - lId / (len(nodes) - 1.)
+    pos_cap = {}
+    for l_id, layer in enumerate(nodes):
+        for n_id, node in enumerate(layer):
+            n_pos = (n_id + 0.5) / len(layer)
+            l_pos = 1. - l_id / (len(nodes) - 1.)
             pos[node] = {
-                'down': (nPos, lPos),
-                'up': (nPos, 1. - lPos),
-                'left': (lPos, nPos),
-                'right': (1. - lPos, nPos)}[kwargs['graph_direction']]
-            posCap[node] = (pos[node][0],
-                pos[node][1] + graphCaptionPos)
+                'down': (n_pos, l_pos),
+                'up': (n_pos, 1. - l_pos),
+                'left': (l_pos, n_pos),
+                'right': (1. - l_pos, n_pos)}[kwargs['graph_direction']]
+            pos_cap[node] = (pos[node][0],
+                pos[node][1] + graph_caption_pos)
 
     # create figure and axis objects
     fig = matplotlib.pyplot.figure()
@@ -250,10 +249,10 @@ def layergraph(G, **kwargs):
             attr = G.node[node]
             type = attr['params']['type']
             typeid = attr['params']['layer_id']
-            isVisible = attr['params']['visible']
-            labelStr = attr['label'] if isVisible \
+            is_visible = attr['params']['visible']
+            label_str = attr['label'] if is_visible \
                 else 'n%d' % (layer.index(node) + 1)
-            label = nemoa.common.str_format_unit_label(labelStr)
+            label = nemoa.common.str_format_unit_label(label_str)
 
             color = {
                 True: {
@@ -262,31 +261,31 @@ def layergraph(G, **kwargs):
                 False: {
                     'bg': COLOR['lightgrey'],
                     'font': COLOR['black'] }
-            }[isVisible]
+            }[is_visible]
 
             # draw node
             networkx.draw_networkx_nodes(G, pos,
-                node_size  = graphNodeSize,
-                linewidths = graphLineWidth,
-                nodelist   = [node],
+                node_size = graph_node_size,
+                linewidths = graph_line_width,
+                nodelist = [node],
                 node_shape = 'o',
                 node_color = color['bg'])
 
             # draw node label
-            nodeFontSize = \
-                2. * graphFontSize / numpy.sqrt(max(len(node) - 1, 1))
+            node_font_size = \
+                2. * graph_font_size / numpy.sqrt(max(len(node) - 1, 1))
             networkx.draw_networkx_labels(
                 G, pos,
-                font_size = nodeFontSize,
+                font_size = node_font_size,
                 labels = {node: label},
                 font_weight = 'normal',
                 font_color = color['font'])
 
             # draw node caption
-            if kwargs['node_caption'] and isVisible:
+            if kwargs['node_caption'] and is_visible:
                 if not 'caption' in G.node[node]: continue
-                networkx.draw_networkx_labels(G, posCap,
-                    font_size = 0.75 * graphFontSize,
+                networkx.draw_networkx_labels(G, pos_cap,
+                    font_size = 0.75 * graph_font_size,
                     labels = {node: G.node[node]['caption']},
                     font_weight = 'normal')
 
@@ -299,28 +298,28 @@ def layergraph(G, **kwargs):
         # get edge color and line width (from weight)
         if kwargs['edge_weight'] == 'adjacency':
             color = 'black'
-            edgeLineWidth = graphLineWidth * kwargs['edge_scale']
+            edge_line_width = graph_line_width * kwargs['edge_scale']
         else:
             color = 'green' if weight > 0. else 'red'
-            edgeLineWidth = \
-                weight * graphLineWidth * kwargs['edge_scale']
+            edge_line_width = \
+                weight * graph_line_width * kwargs['edge_scale']
 
         # draw edges
         networkx.draw_networkx_edges(G, pos,
-            width      = edgeLineWidth,
-            edgelist   = [(v, h)],
+            width = edge_line_width,
+            edgelist = [(v, h)],
             edge_color = color,
-            arrows     = False,
-            alpha      = 1.)
+            arrows = False,
+            alpha = 1.)
 
         # (optional) draw edge labels
         if kwargs['edge_caption']:
             if 'caption' in G.edge[v][h]:
                 networkx.draw_networkx_edge_labels(G, pos,
                     edge_labels = {(v, h): G.edge[v][h]['caption']},
-                    font_color  = color,
-                    clip_on     = False,
-                    font_size   = graphFontSize / 1.5,
+                    font_color = color,
+                    clip_on = False,
+                    font_size = graph_font_size / 1.5,
                     font_weight = 'normal')
 
     # draw graph caption
