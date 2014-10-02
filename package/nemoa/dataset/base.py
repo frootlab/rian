@@ -47,15 +47,32 @@ class dataset:
 
         return True
 
-    def _is_gauss_normalized(self, size = 100000,
+    def _eval_normalization(self, algorithm = 'gauss', **kwargs):
+        """Test dataset for normalization.
+
+        Args:
+            algorithm: name of distribution to test for normalization
+                'gauss': normalization of gauss distribution
+
+        """
+
+        nemoa.log("""test dataset for normalization assuming
+            distribution '%s'""" % (algorithm))
+
+        if algorithm.lower() == 'gauss':
+            return self._eval_normalization_gauss(**kwargs)
+
+        return False
+
+    def _eval_normalization_gauss(self, size = 100000,
         max_diff_mean = 0.05, max_diff_sdev = 0.05):
         """Test if dataset contains gauss normalized data.
 
         Args:
             size (int, optional): number of samples used to calculate
                 mean of absolute values and standard deviation
-            max_diff_mean (float, optional): allowed dmaximum difference to
-                zero for mean value
+            max_diff_mean (float, optional): allowed maximum difference
+                to zero for mean value
             max_diff_sdev (float, optional): allowed maximum difference
                 to one for standard deviation
 
@@ -94,12 +111,12 @@ class dataset:
         """Return true if dataset is configured."""
         return len(self._data.keys()) > 0
 
-    def configure(self, network, use_cache = False, **kwargs):
-        """Configure dataset to a given network object
+    def configure(self, network, cache_enable = False, **kwargs):
+        """Configure dataset to a given network.
 
         Args:
-            network (object): nemoa network object
-            use_cache (bool, optional): shall data be cached
+            network (object): nemoa network instance
+            cache_enable (bool, optional): shall data be cached
 
         """
 
@@ -107,18 +124,24 @@ class dataset:
             (self.name(), network.name()))
         nemoa.log('set', indent = '+1')
 
-        # load data from cachefile (if caching and cachefile exists)
-        cacheFile = self._search_cache_file(network) if use_cache else None
-        if cacheFile and self.load(cacheFile):
-            nemoa.log('load cachefile: \'%s\'' % (cacheFile))
+        # load data from cachefile if caching is activated
+        if cache_enable:
+            cache_file = self._search_cache_file(network)
 
-            # preprocess data
-            if 'preprocessing' in self._config.keys():
-                self.preprocess(**self._config['preprocessing'])
-            nemoa.log('set', indent = '-1')
-            return True
+            # if cachefile exists, load data from cachefile
+            # else create new cache file
+            if self.load(cache_file):
+                nemoa.log("loading data from cachefile: '%s'" \
+                    % (cache_file))
+                # preprocess data
+                if 'preprocessing' in self._config.keys():
+                    self.preprocess(**self._config['preprocessing'])
+                nemoa.log('set', indent = '-1')
+                return True
+            else:
+                cache_file = self._create_cache_file(network)
 
-        # create table with one record for every single dataset files
+        # create table with one record for every single dataset file
         if not 'table' in self._config:
             conf = self._config.copy()
             self._config['table'] = {}
@@ -128,39 +151,42 @@ class dataset:
         # Annotation
 
         # get nodes from network and convert to common format
-        if network._config['type'] == 'auto': netGroups = {'v': None}
+        if network._config['type'] == 'auto':
+            net_layers = {'v': None}
         else:
-            # get grouped network node labels and label format
-            netGroups = network.nodes(type = 'visible',
+            # get network node labels, grouped by layers
+            net_layers = network.nodes(type = 'visible',
                 group_by_layer = True)
 
-            netGroupsOrder = []
-            for layer in netGroups: netGroupsOrder.append(
-                (network.layer(layer)['id'], layer))
-            netGroupsOrder = sorted(netGroupsOrder)
+            # sort network layers
+            net_layers_sorted = []
+            for layer in net_layers:
+                layer_id = network.layer(layer)['id']
+                net_layers_sorted.append((layer_id, layer))
+            net_layers_sorted = sorted(net_layers_sorted)
 
             # convert network node labels to common format
             nemoa.log('search network nodes in dataset sources')
-            convNetGroups = {}
-            convNetGroupsLost = {}
-            convNetNodes = []
-            convNetNodesLost = []
-            netLblFmt = network._config['label_format']
-            for id, group in netGroupsOrder:
-                convNetGroups[group], convNetGroupsLost[group] = \
-                    nemoa.dataset.annotation.convert(netGroups[group],
-                    input = netLblFmt)
-                convNetNodes += convNetGroups[group]
-                convNetNodesLost += convNetGroupsLost[group]
+            conv_net_layers = {}
+            conv_net_layers_lost = {}
+            conv_net_nodes = []
+            conv_net_nodes_lost = []
+            net_label_format = network._config['label_format']
+            for id, group in net_layers_sorted:
+                conv_net_layers[group], conv_net_layers_lost[group] = \
+                    nemoa.dataset.annotation.convert(net_layers[group],
+                    input = net_label_format)
+                conv_net_nodes += conv_net_layers[group]
+                conv_net_nodes_lost += conv_net_layers_lost[group]
 
             # notify if any network node labels could not be converted
-            if convNetNodesLost:
+            if conv_net_nodes_lost:
                 nemoa.log("""%s of %s network nodes could not
                     be converted! (see logfile)"""
-                    % (len(convNetNodesLost), len(convNetNodes)))
+                    % (len(conv_net_nodes_lost), len(conv_net_nodes)))
                 # TODO: get original node labels for log file
                 nemoa.log('logfile', nemoa.common.str_to_list(
-                    convNetNodesLost))
+                    conv_net_nodes_lost))
 
         # get columns from dataset files and convert to common format
         colLabels = {}
@@ -200,17 +226,17 @@ class dataset:
                 numLost = 0
                 numAll = 0
                 lostNodes = {}
-                for id, group in netGroupsOrder:
+                for id, group in net_layers_sorted:
                     lostNodesConv = \
-                        [val for val in convNetGroups[group] \
+                        [val for val in conv_net_layers[group] \
                         if val not in convColLabels]
-                    numAll += len(convNetGroups[group])
+                    numAll += len(conv_net_layers[group])
                     if not lostNodesConv: continue
                     numLost += len(lostNodesConv)
 
                     # get original labels
-                    lostNodes[group] = [netGroups[group][
-                        convNetGroups[group].index(val)]
+                    lostNodes[group] = [net_layers[group][
+                        conv_net_layers[group].index(val)]
                         for val in lostNodesConv]
 
                 # notify if any network nodes could not be found
@@ -241,21 +267,21 @@ class dataset:
         # if network type is 'auto', set network visible nodes
         # to intersected data from database files (without label column)
         if network._config['type'] == 'auto':
-            netGroups['v'] = [label for label in interColLabels \
+            net_layers['v'] = [label for label in interColLabels \
                 if not label == 'label']
-            convNetGroups = netGroups
+            conv_net_layers = net_layers
 
         # search network nodes in dataset columns
         self._config['columns'] = ()
-        for groupid, group in netGroupsOrder:
+        for groupid, group in net_layers_sorted:
             found = 0
 
-            for id, col in enumerate(convNetGroups[group]):
+            for id, col in enumerate(conv_net_layers[group]):
                 if not col in interColLabels: continue
                 found += 1
 
                 # add column (use network label and group)
-                self._config['columns'] += ((group, netGroups[group][id]), )
+                self._config['columns'] += ((group, net_layers[group][id]), )
                 for src in colLabels: colLabels[src]['usecols'] \
                     += (colLabels[src]['conv'].index(col), )
 
@@ -266,26 +292,27 @@ class dataset:
                 return False
 
         # update source file config
-        for src in colLabels: self._config['table'][src]['source']['usecols'] \
-            = colLabels[src]['usecols']
+        for src in colLabels:
+            self._config['table'][src]['source']['usecols'] \
+                = colLabels[src]['usecols']
 
         # Column & Row Filters
 
-        # add column filters and partitions from network node groups
-        self._config['colFilter'] = {'*': ['*:*']}
-        self._config['colPartitions'] = {'groups': []}
-        for group in netGroups:
-            self._config['colFilter'][group] = [group + ':*']
-            self._config['colPartitions']['groups'].append(group)
+        # add column filters and partitions from network node layers
+        self._config['col_filter'] = {'*': ['*:*']}
+        self._config['col_partitions'] = {'groups': []}
+        for group in net_layers:
+            self._config['col_filter'][group] = [group + ':*']
+            self._config['col_partitions']['groups'].append(group)
 
         # add row filters and partitions from sources
-        self._config['rowFilter'] = {'*': ['*:*']}
-        self._config['rowPartitions'] = {'source': []}
+        self._config['row_filter'] = {'*': ['*:*']}
+        self._config['row_partitions'] = {'source': []}
         for source in self._config['table']:
-            self._config['rowFilter'][source] = [source + ':*']
-            self._config['rowPartitions']['source'].append(source)
+            self._config['row_filter'][source] = [source + ':*']
+            self._config['row_partitions']['source'].append(source)
 
-        # Import data from CSV-files into numpy arrays
+        # import data from .csv-files into numpy arrays
 
         # import data from sources
         nemoa.log('import data from sources')
@@ -298,10 +325,9 @@ class dataset:
         nemoa.log('set', indent = '-1')
 
         # save cachefile
-        if use_cache:
-            cacheFile = self._create_cache_file(network)
-            nemoa.log('save cachefile: \'%s\'' % (cacheFile))
-            self.save(cacheFile)
+        if cache_enable:
+            nemoa.log("save cachefile: '%s'" % (cache_file))
+            self.save(cache_file)
 
         # preprocess data
         if 'preprocessing' in self._config.keys():
@@ -371,38 +397,46 @@ class dataset:
             return True
         return False
 
-    def _normalize(self, algorithm = 'gauss'):
-        """Normalize stratified data
+    def _normalize(self, algorithm = 'gauss', **kwargs):
+        """Normalize data
 
         Args:
-            algorithm: name of algorithm used for data normalization
-                'gauss': Gaussian normalization
+            algorithm: name of distribution to normalize
+                'gauss': normalization of gauss distribution
 
         """
-        nemoa.log('normalize data using \'%s\'' % (algorithm))
+
+        nemoa.log("normalize data using '%s'" % (algorithm))
 
         if algorithm.lower() == 'gauss':
+            return self._normalize_gauss(**kwargs)
 
-            # get data for calculation of mean and variance
-            # for single source datasets take all data
-            # for multi source datasets take a big bunch of stratified data
-            if len(self._data.keys()) > 1:
-                data = self.data(size = 1000000, output = 'recarray')
-            else:
-                data = self._get_data_from_source(
-                    source = self._data.keys()[0])
-
-            # iterative update sources
-            # get mean and standard deviation per column (recarray)
-            # and update the values
-            for src in self._data:
-                if self._data[src]['array'] == None: continue
-                for col in self._data[src]['array'].dtype.names[1:]:
-                    self._data[src]['array'][col] = \
-                        (self._data[src]['array'][col] - data[col].mean()) \
-                        / data[col].std()
-            return True
         return False
+
+    def _normalize_gauss(self, size = 100000):
+        """Gauss normalization of dataset."""
+
+        # get data for calculation of mean and standard deviation
+        # for single source datasets take all data
+        # for multi source datasets take a big bunch of stratified data
+        if len(self._data.keys()) == 1:
+            source = self._data.keys()[0]
+            data = self._get_data_from_source(source = source)
+        else:
+            data = self.data(size = size, output = 'recarray')
+
+        # iterative normalize sources
+        for source in self._data.keys():
+            source_array = self._data[source]['array']
+            if source_array == None:
+                continue
+            # iterative normalize columns (recarray)
+            for col in source_array.dtype.names[1:]:
+                mean = data[col].mean()
+                sdev = data[col].std()
+                self._data[source]['array'][col] = \
+                    (source_array[col] - mean) / sdev
+        return True
 
     def _transform(self, algorithm = 'system', system = None,
         mapping = None, **kwargs):
@@ -615,14 +649,14 @@ class dataset:
             invalid source: '%s'!""" % (source))
 
         # check row Filter
-        if not rows in self._config['rowFilter']: return nemoa.log('error',
+        if not rows in self._config['row_filter']: return nemoa.log('error',
             "could not retrieve data: invalid row filter: '%s'!" % (rows))
 
         # apply row filter
-        if rows == '*' or source + ':*' in self._config['rowFilter'][rows]:
+        if rows == '*' or source + ':*' in self._config['row_filter'][rows]:
             srcArray = self._data[source]['array']
         else:
-            rowFilter = self._config['rowFilter'][rows]
+            rowFilter = self._config['row_filter'][rows]
             rowFilterFiltered = [
                 row.split(':')[1] for row in rowFilter
                         if row.split(':')[0] in [source, '*']]
@@ -715,8 +749,8 @@ class dataset:
         """Return list of strings containing column groups and labels."""
         if group == '*': return ['%s:%s' % (col[0], col[1])
             for col in self._config['columns']]
-        if not group in self._config['colFilter']: return []
-        colFilter = self._config['colFilter'][group]
+        if not group in self._config['col_filter']: return []
+        colFilter = self._config['col_filter'][group]
         labels = []
         for col in self._config['columns']:
             if ('*:*') in colFilter \
@@ -740,56 +774,56 @@ class dataset:
 
     def _set_col_filter(self, group, columns):
         # TODO: check columns!
-        self._config['colFilter'][group] = columns
+        self._config['col_filter'][group] = columns
         return True
 
     #def addRowFilter(self, name, filter):
         ## create unique name for filter
         #filterName = name
         #i = 1
-        #while filterName in self._config['rowFilter']:
+        #while filterName in self._config['row_filter']:
             #i += 1
             #filterName = '%s.%i' % (name, i)
 
         ## TODO: check filter
-        #self._config['rowFilter'][filterName] = filter
+        #self._config['row_filter'][filterName] = filter
         #return filterName
 
     #def delRowFilter(self, name):
-        #if name in self._config['rowFilter']:
-            #del self._config['rowFilter'][name]
+        #if name in self._config['row_filter']:
+            #del self._config['row_filter'][name]
             #return True
         #return False
 
     #def getRowFilter(self, name):
-        #if not name in self._config['rowFilter']:
+        #if not name in self._config['row_filter']:
             #nemoa.log('warning', "unknown row filter '" + name + "'!")
             #return []
-        #return self._config['rowFilter'][name]
+        #return self._config['row_filter'][name]
 
     #def getRowFilterList(self):
-        #return self._config['rowFilter'].keys()
+        #return self._config['row_filter'].keys()
 
     #def addColFilter(self):
         #pass
 
     #def delColFilter(self, name):
-        #if name in self._config['colFilter']:
-            #del self._config['colFilter'][name]
+        #if name in self._config['col_filter']:
+            #del self._config['col_filter'][name]
             #return True
         #return False
 
     #def getColFilters(self):
-        #return self._config['colFilter']
+        #return self._config['col_filter']
 
     #def addRowPartition(self, name, partition):
-        #if name in self._config['rowPartitions']:
+        #if name in self._config['row_partitions']:
             #nemoa.log('warning', "row partition '" + name + "' allready exists!")
 
         ## create unique name for partition
         #partitionName = name
         #i = 1
-        #while partitionName in self._config['rowPartitions']:
+        #while partitionName in self._config['row_partitions']:
             #i += 1
             #partitionName = '%s.%i' % (name, i)
 
@@ -798,20 +832,20 @@ class dataset:
             #filterNames.append(
                 #self.addRowFilter('%s.%i' % (name, id + 1), filter))
 
-        #self._config['rowPartitions'][partitionName] = filterNames
+        #self._config['row_partitions'][partitionName] = filterNames
         #return partitionName
 
     #def delRowPartition(self, name):
         #pass
 
     #def getRowPartition(self, name):
-        #if not name in self._config['rowPartitions']:
+        #if not name in self._config['row_partitions']:
             #nemoa.log('warning', "unknown row partition '" + name + "'!")
             #return []
-        #return self._config['rowPartitions'][name]
+        #return self._config['row_partitions'][name]
 
     #def getRowPartitionList(self):
-        #return self._config['rowPartitions'].keys()
+        #return self._config['row_partitions'].keys()
 
     #def createRowPartition(self, algorithm = 'bcca', **params):
         #if algorithm == 'bcca':

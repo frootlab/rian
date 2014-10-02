@@ -427,11 +427,11 @@ class rbm(nemoa.system.ann.ann):
 
     def _set_visible_unit_params(self, params):
         """Set parameters of visible units using dictionary."""
-        return self.units['visible'].overwrite(params['units'][0])
+        return self.units['visible']._overwrite(params['units'][0])
 
     def _set_hidden_unit_params(self, params):
         """Set parameters of hidden units using dictionary."""
-        return self.units['hidden'].overwrite(params['units'][1])
+        return self.units['hidden']._overwrite(params['units'][1])
 
     def _get_links_from_config(self):
         """Return links from adjacency matrix."""
@@ -585,7 +585,7 @@ class grbm(rbm):
         """Check if dataset contains gauss normalized values."""
         if not nemoa.type.is_dataset(dataset): return nemoa.log('error',
             'could not test dataset: invalid dataset instance given!')
-        if not dataset._is_gauss_normalized(): return nemoa.log('error',
+        if not dataset._eval_normalization_gauss(): return nemoa.log('error',
             """dataset '%s' is not valid: GRBMs expect
             standard normal distributed data.""" % (dataset.name()))
         return True
@@ -645,4 +645,4 @@ class grbm(rbm):
 
     def _set_visible_unit_params(self, params):
         """Set parameters of visible units using dictionary."""
-        return self.units['visible'].overwrite(params['units'][0])
+        return self.units['visible']._overwrite(params['units'][0])

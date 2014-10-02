@@ -637,10 +637,10 @@ class ann(nemoa.system.base.system):
         for id, src in enumerate(layers[:-1]):
             tgt = layers[id + 1]
             units[tgt] = getUpdate(
-                self.units[tgt].getUpdatesFromDelta(
+                self.units[tgt].get_updates_from_delta(
                 delta[src, tgt]), rate)
             links[(src, tgt)] = getUpdate(
-                self._LinkLayer.getUpdatesFromDelta(out[src],
+                self._LinkLayer.get_updates_from_delta(out[src],
                 delta[src, tgt]), rate)
 
         return {'units': units, 'links': links}
@@ -703,9 +703,9 @@ class ann(nemoa.system.base.system):
         for id, src in enumerate(layers[:-1]):
             tgt = layers[id + 1]
             grad['units'][tgt] = \
-                self.units[tgt].getUpdatesFromDelta(delta[src, tgt])
+                self.units[tgt].get_updates_from_delta(delta[src, tgt])
             grad['links'][(src, tgt)] = \
-                self._LinkLayer.getUpdatesFromDelta(out[src], delta[src, tgt])
+                self._LinkLayer.get_updates_from_delta(out[src], delta[src, tgt])
 
         # Get previous gradients and updates
         prev = tracker.read('rprop')
@@ -1037,21 +1037,21 @@ class ann(nemoa.system.base.system):
                 return inData
             elif len(mapping) == 2:
                 return self.units[mapping[1]].expect(
-                    self.units[mapping[0]].getSamples(inData),
+                    self.units[mapping[0]].get_samples(inData),
                     self.units[mapping[0]].params)
             return self.units[mapping[-1]].expect(
                 self._eval_units_values(data, mapping[0:-1]),
                 self.units[mapping[-2]].params)
         else:
             if len(mapping) == 1:
-                return self.units[mapping[0]].getValues(inData)
+                return self.units[mapping[0]].get_values(inData)
             elif len(mapping) == 2:
-                return self.units[mapping[1]].getValues(
+                return self.units[mapping[1]].get_values(
                     self.units[mapping[1]].expect(inData,
                     self.units[mapping[0]].params))
             data = numpy.copy(inData)
             for id in xrange(len(mapping) - 1):
-                data = self.units[mapping[id + 1]].getValues(
+                data = self.units[mapping[id + 1]].get_values(
                     self.units[mapping[id + 1]].expect(data,
                     self.units[mapping[id]].params))
             return data
@@ -1086,20 +1086,20 @@ class ann(nemoa.system.base.system):
                 return data
             elif len(mapping) == 2:
                 return self.units[mapping[1]].expect(
-                    self.units[mapping[0]].getSamples(data),
+                    self.units[mapping[0]].get_samples(data),
                     self.units[mapping[0]].params)
             return self.units[mapping[-1]].expect(
                 self._eval_units_samples(data, mapping[0:-1]),
                 self.units[mapping[-2]].params)
         else:
             if len(mapping) == 1:
-                return self.units[mapping[0]].getSamples(data)
+                return self.units[mapping[0]].get_samples(data)
             elif len(mapping) == 2:
-                return self.units[mapping[1]].getSamplesFromInput(
+                return self.units[mapping[1]].get_samples_from_input(
                     data, self.units[mapping[0]].params)
             data = numpy.copy(data)
             for id in xrange(len(mapping) - 1):
-                data = self.units[mapping[id + 1]].getSamplesFromInput(
+                data = self.units[mapping[id + 1]].get_samples_from_input(
                     data, self.units[mapping[id]].params)
             return data
 
@@ -1560,6 +1560,7 @@ class ann(nemoa.system.base.system):
         Returns:
             Numpy array of shape (source, target) containing pairwise
             correlation between source and target units.
+
         """
 
         if not mapping: mapping = self.mapping()
@@ -1592,6 +1593,7 @@ class ann(nemoa.system.base.system):
         Returns:
             Numpy array of shape (source, target) containing pairwise
             network capacity from source to target units.
+
         """
 
         if mapping == None: mapping = self.mapping()
@@ -1619,6 +1621,7 @@ class ann(nemoa.system.base.system):
         Returns:
             Numpy array of shape (source, target) containing pairwise
             knockout effects from source to target units.
+
         """
 
         if not mapping: mapping = self.mapping()
@@ -1764,7 +1767,7 @@ class ann(nemoa.system.base.system):
             return numpy.einsum('ij,ik,jk->ijk', dSrc, dTgt, M)
 
         @staticmethod
-        def getUpdates(data, model):
+        def get_updates(data, model):
             """Return weight updates of a link layer."""
 
             D = numpy.dot(data[0].T, data[1]) / float(data[1].size)
@@ -1773,7 +1776,7 @@ class ann(nemoa.system.base.system):
             return { 'W': D - M }
 
         @staticmethod
-        def getUpdatesFromDelta(data, delta):
+        def get_updates_from_delta(data, delta):
 
             return { 'W': -numpy.dot(data.T, delta) / float(data.size) }
 
@@ -1798,20 +1801,20 @@ class ann(nemoa.system.base.system):
 
             return False
 
-        def getUpdates(self, data, model, source):
+        def get_updates(self, data, model, source):
 
-            return self.getParamUpdates(data, model, self.weights(source))
+            return self.get_param_updates(data, model, self.weights(source))
 
-        def getDelta(self, inData, outDelta, source, target):
+        def get_delta(self, inData, outDelta, source, target):
 
             return self.deltaFromBPROP(inData, outDelta,
                 self.weights(source), self.weights(target))
 
-        def getSamplesFromInput(self, data, source):
+        def get_samples_from_input(self, data, source):
 
-            if source['class'] == 'sigmoid': return self.getSamples(
+            if source['class'] == 'sigmoid': return self.get_samples(
                 self.expect_from_sigmoid_layer(data, source, self.weights(source)))
-            elif source['class'] == 'gauss': return self.getSamples(
+            elif source['class'] == 'gauss': return self.get_samples(
                 self.expect_from_gauss_layer(data, source, self.weights(source)))
 
             return False
@@ -1870,7 +1873,7 @@ class ann(nemoa.system.base.system):
 
             return True
 
-        def overwrite(self, params):
+        def _overwrite(self, params):
             """Merge parameters of sigmoid units."""
 
             for i, u in enumerate(params['label']):
@@ -1918,7 +1921,7 @@ class ann(nemoa.system.base.system):
             return nemoa.common.sigmoid(
                 bias + numpy.dot(data / sdev, weights))
 
-        def getParamUpdates(self, data, model, weights):
+        def get_param_updates(self, data, model, weights):
             """Return parameter updates of a sigmoidal output layer
             calculated from real data and modeled data. """
 
@@ -1926,7 +1929,7 @@ class ann(nemoa.system.base.system):
 
             return {'bias': numpy.mean(data[1] - model[1], axis = 0).reshape((1, size))}
 
-        def getUpdatesFromDelta(self, delta):
+        def get_updates_from_delta(self, delta):
 
             size = len(self.params['label'])
 
@@ -1949,14 +1952,14 @@ class ann(nemoa.system.base.system):
                 * (1. - 1. / (1. + numpy.exp(-x))))
 
         @staticmethod
-        def getValues(data):
+        def get_values(data):
             """Return median of bernoulli distributed layer
             calculated from expected values. """
 
             return (data > 0.5).astype(float)
 
         @staticmethod
-        def getSamples(data):
+        def get_samples(data):
             """Return sample of bernoulli distributed layer
             calculated from expected value. """
 
@@ -2004,7 +2007,7 @@ class ann(nemoa.system.base.system):
 
             return True
 
-        def getParamUpdates(self, data, model, weights):
+        def get_param_updates(self, data, model, weights):
             """Return parameter updates of a gaussian output layer
             calculated from real data and modeled data. """
 
@@ -2024,7 +2027,7 @@ class ann(nemoa.system.base.system):
 
             return { 'bias': updBias, 'lvar': updLVar }
 
-        def getUpdatesFromDelta(self, delta):
+        def get_updates_from_delta(self, delta):
             # TODO: calculate update for lvar
 
             shape = (1, len(self.params['label']))
@@ -2032,7 +2035,7 @@ class ann(nemoa.system.base.system):
 
             return { 'bias': bias }
 
-        def overwrite(self, params):
+        def _overwrite(self, params):
             """Merge parameters of gaussian units. """
 
             for i, u in enumerate(params['label']):
@@ -2087,13 +2090,13 @@ class ann(nemoa.system.base.system):
             return energy
 
         @staticmethod
-        def getValues(data):
+        def get_values(data):
             """Return median of gauss distributed layer
             calculated from expected values."""
 
             return data
 
-        def getSamples(self, data):
+        def get_samples(self, data):
             """Return sample of gauss distributed layer
             calculated from expected values. """
 
