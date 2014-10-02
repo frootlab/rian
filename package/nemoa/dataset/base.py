@@ -48,40 +48,45 @@ class dataset:
         return True
 
     def _is_gauss_normalized(self, size = 100000,
-        max_mean = 0.05, max_sdev = 1.05):
+        max_diff_mean = 0.05, max_diff_sdev = 0.05):
         """Test if dataset contains gauss normalized data.
 
         Args:
             size (int, optional): number of samples used to calculate
                 mean of absolute values and standard deviation
-            max_mean (float, optional): allowed maximum for mean of
-                absolute values
-            max_sdev (float, optional): allowed maximum for standard
-                deviation
+            max_diff_mean (float, optional): allowed dmaximum difference to
+                zero for mean value
+            max_diff_sdev (float, optional): allowed maximum difference
+                to one for standard deviation
 
         Returns:
             Boolean value which is True if the following conditions are
             satisfied:
-            (1) The mean of the absolute values of a given number of
-                random samples of the dataset is below max_mean
-            (2) The standard deviation of a given number of random
-                samples of the dataset is below max_sdev
+            (1) The mean value over a given number of random samples
+                has a distance to zero which is lower than max_diff_mean
+            (2) The standard deviation over a given number of random
+                samples has a distance to one zero which is lower than
+                max_diff_sdev
 
         """
 
         data = self.data(size) # get numpy array with data
 
-        # test mean of absolute values
+        # test mean value
         mean = data.mean()
-        if numpy.abs(mean) >= max_mean: return nemoa.log('error',
-            """Dataset does not contain gauss normalized data:
-            mean of absolute values is %.3f!""" % (mean))
+        diff_mean = numpy.abs(0. - mean)
+        if diff_mean > max_diff_mean:
+            return nemoa.log('error',
+                """dataset does not contain gauss normalized data:
+                mean value is %.3f!""" % (mean))
 
         # test standard deviation
         sdev = data.std()
-        if sdev >= max_sdev: return nemoa.log('error',
-            """Dataset does not contain gauss normalized data:
-            standard deviation is %.3f!""" % (sdev))
+        diff_sdev = numpy.abs(1. - sdev)
+        if diff_sdev > max_diff_sdev:
+            return nemoa.log('error',
+                """dataset does not contain gauss normalized data:
+                standard deviation is %.3f!""" % (sdev))
 
         return True
 
