@@ -22,7 +22,7 @@ class system:
         if not hasattr(self.__class__, '_configure') \
             or not callable(getattr(self.__class__, '_configure')):
             return True
-        nemoa.log("configure system '%s'" % (self.name()))
+        nemoa.log("configure system '%s'" % (self._config['name']))
         nemoa.log('set', indent = '+1')
         if not self._check_network(network):
             nemoa.log('error', """system could not be configured:
@@ -232,7 +232,7 @@ class system:
         # optimize system parameters
         algorithm = config['algorithm'].title()
         nemoa.log('note', "optimize '%s' (%s) using algorithm '%s'" % \
-            (self.name(), self.get('type'), algorithm))
+            (self._config['name'], self.get('type'), algorithm))
         nemoa.log('set', indent = '+1')
         retVal = self._optimize_params(dataset, schedule, tracker)
         nemoa.log('set', indent = '-1')
@@ -381,7 +381,7 @@ class system:
 
         # create information dictionary
         about = nemoa.common.dict_merge({
-            'name': self.name(),
+            'name': self._config['name'],
             'description': self.__doc__,
             'class': self._config['class'],
             'type': self.get('type'),
@@ -400,10 +400,6 @@ class system:
             retDict = retDict[arg]
         if not isinstance(retDict, dict): return retDict
         return {key: retDict[key] for key in retDict.keys()}
-
-    def name(self):
-        """Return name of system."""
-        return self._config['name']
 
 class tracker:
 

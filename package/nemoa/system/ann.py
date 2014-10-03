@@ -144,9 +144,9 @@ class ann(nemoa.system.base.system):
         unitsInGroups = self._get_units(visible = True)
         units = []
         for group in unitsInGroups: units += group
-        if dataset._get_col_labels() != units: return nemoa.log(
-            'error', """could not configure system:
-            visible units differ from dataset columns.""")
+        if not dataset.get('columns') == units:
+            return nemoa.log('error', """could not configure system:
+                visible units differ from dataset columns.""")
         self._config['check']['dataset'] = True
 
         return True
@@ -177,7 +177,7 @@ class ann(nemoa.system.base.system):
                 rows = self._config['params']['samples'] \
                     if 'samples' in self._config['params'] else '*'
                 cols = layer_name \
-                    if layer_name in dataset._get_col_groups() else '*'
+                    if layer_name in dataset.get('groups') else '*'
                 data = dataset.data(100000, rows = rows, cols = cols)
             self._units[layer_name].initialize(data)
 
@@ -382,13 +382,13 @@ class ann(nemoa.system.base.system):
 
             if dataset == None: random = \
                 numpy.random.normal(numpy.zeros((x, y)), sigma)
-            elif source in dataset._get_col_groups():
+            elif source in dataset.get('groups'):
                 rows = self._config['params']['samples'] \
                     if 'samples' in self._config['params'] else '*'
                 data = dataset.data(100000, rows = rows, cols = source)
                 random = numpy.random.normal(numpy.zeros((x, y)),
                     sigma * numpy.std(data, axis = 0).reshape(1, x).T)
-            elif dataset._get_col_labels('*') \
+            elif dataset.get('columns') \
                 == self._units[source].params['label']:
                 rows = self._config['params']['samples'] \
                     if 'samples' in self._config['params'] else '*'

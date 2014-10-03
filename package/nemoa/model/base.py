@@ -95,18 +95,18 @@ class model:
         if not 'name' in self._config or not self._config['name']:
             if not self.network.get('name'):
                 self._set_name('%s-%s' % (
-                    self.dataset.name(),
-                    self.system.name()))
+                    self.dataset.get('name'),
+                    self.system.get('name')))
             else:
                 self._set_name('%s-%s-%s' % (
-                    self.dataset.name(),
+                    self.dataset.get('name'),
                     self.network.get('name'),
-                    self.system.name()))
+                    self.system.get('name')))
         return True
 
     def _configure(self):
         """Configure model."""
-        nemoa.log("configure model '%s'" % (self.name()))
+        nemoa.log("configure model '%s'" % (self._config['name']))
         nemoa.log('set', indent = '+1')
         if not 'check' in self._config:
             self._config['check'] = {'dataset': False,
@@ -340,7 +340,7 @@ class model:
         # get filename
         if file == None:
             fileExt  = 'nmm'
-            fileName = '%s.%s' % (self.name(), fileExt)
+            fileName = '%s.%s' % (self._config['name'], fileExt)
             filePath = nemoa.workspace.path('models')
             file = filePath + fileName
         file = nemoa.common.get_empty_file(file)
@@ -406,7 +406,7 @@ class model:
         if output == 'display': file = None
         elif output == 'file' and not file:
             file = nemoa.common.get_empty_file(nemoa.workspace.path('plots') + \
-                self.name() + '/' + objPlot.cfg['name'] + \
+                self._config['name'] + '/' + objPlot.cfg['name'] + \
                 '.' + objPlot.settings['fileformat'])
 
         # create plot
@@ -519,6 +519,14 @@ class model:
         """Return true if model is empty."""
         return not 'name' in self._config or not self._config['name']
 
+    def get(self, key, *args, **kwargs):
+        if key == 'name': return self._config['name']
+        if key == 'about': return self.__doc__
+        if key == 'network': return self.network.get(*args, **kwargs)
+        if key == 'dataset': return self.dataset.get(*args, **kwargs)
+        if key == 'system': return self.system.get(*args, **kwargs)
+        return nemoa.log('warning', "unknown key '%s'" % (key))
+
     def about(self, *args):
         """Return generic information about various parts of the model.
 
@@ -534,17 +542,17 @@ class model:
         """
 
         if not args: return {
-            'name': self.name(),
+            'name': self._config['name'],
             'description': '',
             'dataset': self.dataset.about(*args[1:]),
             'network': self.network.about(*args[1:]),
             'system': self.system.about(*args[1:])
         }
 
-        if args[0] == 'name': return self.name()
+        if args[0] == 'name': return self._config['name']
         if args[0] == 'description': return ''
-        if args[0] == 'dataset': return self.dataset.about(*args[1:])
-        if args[0] == 'network': return self.network.about(*args[1:])
+        if args[0] == 'dataset': return self.dataset.get(*args[1:])
+        if args[0] == 'network': return self.network.get(*args[1:])
         if args[0] == 'system': return self.system.about(*args[1:])
 
         return None

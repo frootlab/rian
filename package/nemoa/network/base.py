@@ -61,7 +61,7 @@ class Network:
         self._config['label_format'] = 'generic:string'
         if not 'nodes' in self._config: self._config['nodes'] = {}
         if not 'layer' in self._config: self._config['layer'] = []
-        groups = dataset._get_col_groups()
+        groups = dataset.get('groups')
         for group in groups:
             if not group in self._config['visible']:
                 self._config['visible'].append(group)
@@ -143,7 +143,7 @@ class Network:
             return True
 
         # configure network to dataset
-        groups = dataset._get_col_groups()
+        groups = dataset.get('groups')
         changes = []
         for group in groups:
             if not group in self._config['nodes'] \
@@ -494,45 +494,34 @@ class Network:
 
         return True
 
-    def name(self):
-        """Name of network."""
+    #def about(self, *args):
+        #"""Generic information about various parts of the network.
 
-    def about(self, *args):
-        """Generic information about various parts of the network.
+        #Args:
+            #args: tuple of strings, containing a breadcrump trail to
+                #a specific information about the dataset
 
-        Args:
-            args: tuple of strings, containing a breadcrump trail to
-                a specific information about the dataset
+        #Examples:
+            #about()"""
 
-        Examples:
-            about()"""
+        #if not args: return {
+            #'name': self._config['name'],
+            #'description': self.__doc__
+        #}
 
-        if not args: return {
-            'name': self._config['name'],
-            'description': self.__doc__
-        }
-
-        if args[0] == 'name': return self._config['name']
-        if args[0] == 'description': return self.__doc__
-        return None
+        #if args[0] == 'name': return self._config['name']
+        #if args[0] == 'description': return self.__doc__
+        #return None
 
     def get(self, key, *args, **kwargs):
-        if key == 'name':
-            return self._config['name']
-        if key == 'about':
-            return self.__doc__
-        if key == 'edge':
-            return self._get_edge(*args, **kwargs)
-        if key == 'edges':
-            return self._get_edges(*args, **kwargs)
-        if key == 'node':
-            return self._get_node(*args, **kwargs)
-        if key == 'nodes':
-            return self._get_nodes(*args, **kwargs)
-        if key == 'layer':
-            return self._get_layer(*args, **kwargs)
-        if key == 'layers':
-            return self._get_layers(*args, **kwargs)
+        if key == 'name': return self._config['name']
+        if key == 'about': return self.__doc__
+        if key == 'edge': return self._get_edge(*args, **kwargs)
+        if key == 'edges': return self._get_edges(*args, **kwargs)
+        if key == 'node': return self._get_node(*args, **kwargs)
+        if key == 'nodes': return self._get_nodes(*args, **kwargs)
+        if key == 'layer': return self._get_layer(*args, **kwargs)
+        if key == 'layers': return self._get_layers(*args, **kwargs)
         return None
 
     def _update(self, **kwargs):

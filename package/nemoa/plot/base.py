@@ -108,4 +108,4 @@ class plot:
         return True
 
     def _get_title(self, model):
-        return model.name()
+        return model.get('name')

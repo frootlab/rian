@@ -470,7 +470,7 @@ class dataset:
                 return nemoa.log('error', """could not transform data
                     using system: invalid system.""")
             nemoa.log("transform data using system '%s'"
-                % (system.name()))
+                % (system.get('name')))
             nemoa.log('set', indent = '+1')
 
             if mapping == None: mapping = system.mapping()
@@ -626,12 +626,12 @@ class dataset:
             'could not get data: no valid data sources found!')
         data = numpy.concatenate(srcStack)
 
-        # (optionally) Shuffle data and correct size
+        # (optional) Shuffle data and correct size
         if size:
             numpy.random.shuffle(data)
             data = data[:size]
 
-        # format data
+        # Format data
         if isinstance(cols, str): fmtData = self._format(
             data, cols = self._get_col_labels(cols), output = output)
         elif isinstance(cols, list): fmtData = self._format(
@@ -642,7 +642,7 @@ class dataset:
         else: return nemoa.log('error', """could not get data:
             invalid argument for columns!""")
 
-        # Corrupt data (optionally)
+        # Corrupt data (optional)
         return self._corrupt(fmtData, \
             type = corruption[0], factor = corruption[1])
 
@@ -762,7 +762,6 @@ class dataset:
         if isinstance(output, str): return ret_tuple[0]
         return ret_tuple
 
-    # column Labels and Column Groups
     def _get_col_labels(self, group = '*'):
         """Return list of strings containing column groups and labels."""
         if group == '*': return ['%s:%s' % (col[0], col[1])
@@ -1151,6 +1150,13 @@ class dataset:
         if 'data' in dict: self._data = copy.deepcopy(dict['data'])
         if 'cfg' in dict: self._config = copy.deepcopy(dict['cfg'])
         return True
+
+    def get(self, key, *args, **kwargs):
+        if key == 'name': return self._config['name']
+        if key == 'about': return self.__doc__
+        if key == 'columns': return self._get_col_labels(*args, **kwargs)
+        if key == 'groups': return self._get_col_groups(*args, **kwargs)
+        return None
 
     def about(self, *args):
         """Return generic information about various parts of the dataset.

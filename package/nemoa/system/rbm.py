@@ -279,35 +279,39 @@ class rbm(nemoa.system.ann.ann):
 
         return { 'bias': r * diff }
 
-    def _optimize_cd_delta_hidden(self, vData, hData, vModel, hModel, **kwargs):
+    def _optimize_cd_delta_hidden(self, vData, hData, vModel, hModel,
+        **kwargs):
         """Constrastive divergency gradients of hidden units.
 
         Returns:
             Dictionary with numpy arrays containing hidden unit
             parameter gradients, calculated by contrastive divergency.
+
         """
 
         cfg = self._config['optimize']
 
         h = len(self._units['hidden'].params['label'])
-        r = cfg['update_rate'] * cfg['update_factor_hbias'] # update rate
+        r = cfg['update_rate'] * cfg['update_factor_hbias']
         diff = numpy.mean(hData - hModel, axis = 0).reshape((1, h))
 
         return { 'bias': r * diff }
 
-    def _optimize_cd_delta_links(self, vData, hData, vModel, hModel, **kwargs):
+    def _optimize_cd_delta_links(self, vData, hData, vModel, hModel,
+        **kwargs):
         """Constrastive divergency gradients of links.
 
         Returns:
             Dictionary with numpy arrays containing link parameter
             gradients, calculated by contrastive divergency.
+
         """
 
         cfg = self._config['optimize']
 
         D = numpy.dot(vData.T, hData) / float(vData.size)
         M = numpy.dot(vModel.T, hModel) / float(vData.size)
-        r = cfg['update_rate'] * cfg['update_factor_weights'] # update rate
+        r = cfg['update_rate'] * cfg['update_factor_weights']
 
         return { 'W': r * (D - M) }
 
@@ -318,6 +322,7 @@ class rbm(nemoa.system.ann.ann):
             Dictionary with numpy arrays containing hidden unit
             parameter gradients, calculated by Kullback-Leibler penalty,
             which uses l1-norm cross entropy.
+
         """
 
         cfg = self._config['optimize']
@@ -410,7 +415,7 @@ class rbm(nemoa.system.ann.ann):
 
     #def _get_units_from_dataset(self, dataset):
         #"""Return tuple with lists of unit labels ([visible], [hidden]) using dataset for visible."""
-        #return (dataset._get_col_labels(), self._units['hidden'].params['label'])
+        #return (dataset.get('columns'), self._units['hidden'].params['label'])
 
     ## TODO: generalize to ann
     #def _unlink_unit(self, unit):

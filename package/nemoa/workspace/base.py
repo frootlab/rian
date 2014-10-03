@@ -119,7 +119,7 @@ class workspace:
             nemoa.log('set', indent = '-1')
             return None
 
-        nemoa.log('name of %s is: \'%s\'' % (type, instance.name()))
+        nemoa.log("name of %s is: '%s'" % (type, instance.get('name')))
         nemoa.log('set', indent = '-1')
         return instance
 
@@ -182,7 +182,7 @@ class workspace:
         # create name string (if not given)
         if name == None:
             name = '-'.join([str(dataset.name()),
-                str(network.get('name')), str(system.name())])
+                str(network.get('name')), str(system.get('name'))])
 
         # create model instance
         model = self._get_instance(
