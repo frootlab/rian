@@ -53,7 +53,7 @@ class model:
         return True
 
     def _get_config(self):
-        """return configuration as dictionary."""
+        """Return configuration as dictionary."""
         return self._config.copy()
 
     def _export_data(self, *args, **kwargs):
@@ -139,7 +139,7 @@ class model:
         return True
 
     def _is_configured(self):
-        """return True if model is allready configured."""
+        """Return True if model is allready configured."""
         return 'check' in self._config \
             and self._config['check']['dataset'] \
             and self._config['check']['network'] \
@@ -235,7 +235,7 @@ class model:
         return self
 
     def eval(self, *args, **kwargs):
-        """return model evaluation."""
+        """Return model evaluation."""
 
         if len(args) == 0:
             header = 'system'
@@ -416,7 +416,7 @@ class model:
         return retVal
 
     def _get_plot(self, *args, **kwargs):
-        """return new plot instance"""
+        """Return new plot instance"""
 
         # return empty plot instance if no configuration was given
         if not args and not 'config' in kwargs: return nemoa.plot.new()
@@ -505,7 +505,7 @@ class model:
         return nemoa.plot.new(config = cfg)
 
     def name(self):
-        """return name of model."""
+        """Return name of model."""
         return self._config['name'] if 'name' in self._config else ''
 
     def _set_name(self, name):
@@ -515,11 +515,11 @@ class model:
         return self
 
     def _is_empty(self):
-        """return true if model is empty."""
+        """Return true if model is empty."""
         return not 'name' in self._config or not self._config['name']
 
     def about(self, *args):
-        """return generic information about various parts of the model.
+        """Return generic information about various parts of the model.
 
         Arg:
             *args: tuple of strings, containing a breadcrump trail to

@@ -41,7 +41,7 @@ class system:
         return True
 
     def _get_config(self):
-        """return system configuration as dictionary."""
+        """Return system configuration as dictionary."""
         return self._config.copy()
 
     def _set_config(self, config):
@@ -65,7 +65,7 @@ class system:
         return True
 
     def _is_configured(self):
-        """return configuration state of system."""
+        """Return configuration state of system."""
         return self._config['check']['config'] \
             and self._config['check']['network'] \
             and self._config['check']['dataset']
@@ -81,7 +81,7 @@ class system:
         return True
 
     def _is_empty(self):
-        """return true if system is a dummy."""
+        """Return true if system is a dummy."""
         return False
 
     def units(self, **kwargs):
@@ -146,18 +146,18 @@ class system:
         return groups
 
     def _get_group_of_unit(self, unit):
-        """return name of unit group of given unit."""
+        """Return name of unit group of given unit."""
         for id in xrange(len(self._params['units'])):
             if unit in self._params['units'][id]['label']:
                 return self._params['units'][id]['name']
         return None
 
     def links(self, *args, **kwargs):
-        """return list with 2-tuples containing unit labels."""
+        """Return list with 2-tuples containing unit labels."""
         return self._get_links_from_config()
 
     def _get(self, section = None):
-        """return system settings as dictionary."""
+        """Return system settings as dictionary."""
         dict = {
             'config': copy.deepcopy(self._config),
             'params': copy.deepcopy(self._params) }
@@ -251,7 +251,7 @@ class system:
 
     @staticmethod
     def _get_data_sum(data, norm = 'S'):
-        """return sum of data.
+        """Return sum of data.
 
         Args:
             data: numpy array containing data
@@ -285,7 +285,7 @@ class system:
 
     @staticmethod
     def _get_data_mean(data, norm = 'M'):
-        """return mean of data.
+        """Return mean of data.
 
         Args:
             data: numpy array containing data
@@ -319,7 +319,7 @@ class system:
 
     @staticmethod
     def _get_data_deviation(data, norm = 'SD'):
-        """return deviation of data.
+        """Return deviation of data.
 
         Args:
             data: numpy array containing data
@@ -347,7 +347,7 @@ class system:
             "unsupported data deviation norm '%s'" % (deviation))
 
     def map_data(self, data, mapping = None, transform = 'expect'):
-        """return system representation of data.
+        """Return system representation of data.
 
         Args:
             mapping: tuple of strings describing the mapping function
@@ -407,11 +407,11 @@ class system:
         return {key: retDict[key] for key in retDict.keys()}
 
     def name(self):
-        """return name of system."""
+        """Return name of system."""
         return self._config['name']
 
     def get_type(self):
-        """return sytem type."""
+        """Return sytem type."""
         return '%s.%s' % (self._config['package'],
             self._config['class'])
 

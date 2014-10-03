@@ -235,7 +235,7 @@ class ann(nemoa.system.base.system):
         return True
 
     def _get_units_from_network(self, network):
-        """return tuple with lists of unit labels from network."""
+        """Return tuple with lists of unit labels from network."""
 
         units = []
         for layer in network.layers():
@@ -434,7 +434,7 @@ class ann(nemoa.system.base.system):
         return True
 
     def _get_weights_from_layers(self, source, target):
-        """return ..."""
+        """Return ..."""
 
         if self._config['optimize']['useAdjacency']:
             if target['name'] in self._links[source['name']]['target']:
@@ -491,7 +491,7 @@ class ann(nemoa.system.base.system):
             'normal': link_norm_weight}
 
     def _get_links_from_config(self):
-        """return links from adjacency matrix. """
+        """Return links from adjacency matrix. """
 
         layers = self.layers()
         if not layers: return False
@@ -552,7 +552,7 @@ class ann(nemoa.system.base.system):
         return out
 
     def _optimize_get_deltas(self, outputData, out):
-        """return weight delta from backpropagation of error. """
+        """Return weight delta from backpropagation of error. """
 
         layers = self.mapping()
         delta = {}
@@ -1188,7 +1188,7 @@ class ann(nemoa.system.base.system):
         return modelOut.mean(axis = 0)
 
     def _eval_units_variance(self, data, mapping = None, block = None, **kwargs):
-        """return variance of reconstructed unit values.
+        """Return variance of reconstructed unit values.
 
         Args:
             data: numpy array containing source data corresponding to
@@ -1210,7 +1210,7 @@ class ann(nemoa.system.base.system):
         return modelOut.var(axis = 0)
 
     def _eval_units_error(self, data, norm = 'ME', **kwargs):
-        """return reconstruction error of units (depending on norm)
+        """Return reconstruction error of units (depending on norm)
 
         Args:
             data: 2-tuple of numpy arrays containing source and
@@ -1231,7 +1231,7 @@ class ann(nemoa.system.base.system):
         return error
 
     def _eval_units_accuracy(self, data, norm = 'MSE', **kwargs):
-        """return unit reconstruction accuracy.
+        """Return unit reconstruction accuracy.
 
         Args:
             data: 2-tuple of numpy arrays containing source and
@@ -1256,7 +1256,7 @@ class ann(nemoa.system.base.system):
         return 1. - normres / normdat
 
     def _eval_units_precision(self, data, norm = 'SD', **kwargs):
-        """return unit reconstruction precision.
+        """Return unit reconstruction precision.
 
         Args:
             data: 2-tuple of numpy arrays containing source and
@@ -1372,7 +1372,7 @@ class ann(nemoa.system.base.system):
         }
 
     def _eval_links_energy(self, data, mapping = None, **kwargs):
-        """return link energies of a layer.
+        """Return link energies of a layer.
 
         Args:
             mapping: tuple of strings containing the mapping
@@ -1742,7 +1742,7 @@ class ann(nemoa.system.base.system):
             else mapping[tid:sid + 1][::-1]
 
     def _get_test_data(self, dataset):
-        """return tuple with default test data."""
+        """Return tuple with default test data."""
 
         return dataset.data(
             cols = (self.mapping()[0], self.mapping()[-1]))
@@ -1757,7 +1757,7 @@ class ann(nemoa.system.base.system):
 
         @staticmethod
         def energy(dSrc, dTgt, src, tgt, links, calc = 'mean'):
-            """return link energy as numpy array."""
+            """Return link energy as numpy array."""
 
             if src['class'] == 'gauss':
                 M = - links['A'] * links['W'] \
@@ -1770,7 +1770,7 @@ class ann(nemoa.system.base.system):
 
         @staticmethod
         def get_updates(data, model):
-            """return weight updates of a link layer."""
+            """Return weight updates of a link layer."""
 
             D = numpy.dot(data[0].T, data[1]) / float(data[1].size)
             M = numpy.dot(model[0].T, model[1]) / float(data[1].size)
@@ -1899,14 +1899,14 @@ class ann(nemoa.system.base.system):
             return 'bias' in layer
 
         def energy(self, data):
-            """return system energy of sigmoidal units as numpy array. """
+            """Return system energy of sigmoidal units as numpy array. """
 
             bias = self.params['bias']
 
             return - data * bias
 
         def expect_from_sigmoid_layer(self, data, source, weights):
-            """return expected values of a sigmoid output layer
+            """Return expected values of a sigmoid output layer
             calculated from a sigmoid input layer. """
 
             bias = self.params['bias']
@@ -1914,7 +1914,7 @@ class ann(nemoa.system.base.system):
             return nemoa.common.sigmoid(bias + numpy.dot(data, weights))
 
         def expect_from_gauss_layer(self, data, source, weights):
-            """return expected values of a sigmoid output layer
+            """Return expected values of a sigmoid output layer
             calculated from a gaussian input layer. """
 
             bias = self.params['bias']
@@ -1924,7 +1924,7 @@ class ann(nemoa.system.base.system):
                 bias + numpy.dot(data / sdev, weights))
 
         def get_param_updates(self, data, model, weights):
-            """return parameter updates of a sigmoidal output layer
+            """Return parameter updates of a sigmoidal output layer
             calculated from real data and modeled data. """
 
             size = len(self.params['label'])
@@ -1946,7 +1946,7 @@ class ann(nemoa.system.base.system):
 
         @staticmethod
         def grad(x):
-            """return gradiant of standard logistic function. """
+            """Return gradiant of standard logistic function. """
 
             numpy.seterr(over = 'ignore')
 
@@ -1955,14 +1955,14 @@ class ann(nemoa.system.base.system):
 
         @staticmethod
         def get_values(data):
-            """return median of bernoulli distributed layer
+            """Return median of bernoulli distributed layer
             calculated from expected values. """
 
             return (data > 0.5).astype(float)
 
         @staticmethod
         def get_samples(data):
-            """return sample of bernoulli distributed layer
+            """Return sample of bernoulli distributed layer
             calculated from expected value. """
 
             return (data > numpy.random.rand(
@@ -2010,7 +2010,7 @@ class ann(nemoa.system.base.system):
             return True
 
         def get_param_updates(self, data, model, weights):
-            """return parameter updates of a gaussian output layer
+            """Return parameter updates of a gaussian output layer
             calculated from real data and modeled data. """
 
             shape = (1, len(self.params['label']))
@@ -2058,13 +2058,13 @@ class ann(nemoa.system.base.system):
             return True
 
         def expect_from_sigmoid_layer(self, data, source, weights):
-            """return expected values of a gaussian output layer
+            """Return expected values of a gaussian output layer
             calculated from a sigmoid input layer. """
 
             return self.params['bias'] + numpy.dot(data, weights)
 
         def expect_from_gauss_layer(self, data, source, weights):
-            """return expected values of a gaussian output layer
+            """Return expected values of a gaussian output layer
             calculated from a gaussian input layer. """
 
             bias = self.params['bias']
@@ -2074,7 +2074,7 @@ class ann(nemoa.system.base.system):
 
         @staticmethod
         def grad(x):
-            """return gradient of activation function."""
+            """Return gradient of activation function."""
 
             return 1.
 
@@ -2093,13 +2093,13 @@ class ann(nemoa.system.base.system):
 
         @staticmethod
         def get_values(data):
-            """return median of gauss distributed layer
+            """Return median of gauss distributed layer
             calculated from expected values."""
 
             return data
 
         def get_samples(self, data):
-            """return sample of gauss distributed layer
+            """Return sample of gauss distributed layer
             calculated from expected values. """
 
             sigma = numpy.sqrt(numpy.exp(self.params['lvar']))

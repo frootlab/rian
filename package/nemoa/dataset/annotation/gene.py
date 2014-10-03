@@ -51,7 +51,7 @@ class gene:
 
     def convert_list(self, list, input_format, output_format,
         filter = False, quiet = True):
-        """return list with converted gene labels using R/bioconductor"""
+        """Return list with converted gene labels using R/bioconductor"""
 
         if self.robjects == None:
             nemoa.log('error', "annotation: you have to install python package 'rpy2'")

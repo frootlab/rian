@@ -7,5 +7,5 @@ __license__ = 'GPLv3'
 import nemoa.model.base
 
 def new(*args, **kwargs):
-    """return new model instance."""
+    """Return new model instance."""
     return nemoa.model.base.model(*args, **kwargs)

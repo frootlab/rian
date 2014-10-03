@@ -75,7 +75,7 @@ class rbm(nemoa.system.ann.ann):
         return (v, h, v)
 
     def _get_test_data(self, dataset):
-        """return tuple with default test data."""
+        """Return tuple with default test data."""
         data = dataset.data()
         return (data, data)
 
@@ -379,7 +379,7 @@ class rbm(nemoa.system.ann.ann):
         return heat
 
     #def _get_units_from_config(self):
-        #"""return tuple with unit information created from config."""
+        #"""Return tuple with unit information created from config."""
 
         #if isinstance(self._config['params']['visible'], int):
             #vLabel = ['v:v%i' % (num) for num \
@@ -409,7 +409,7 @@ class rbm(nemoa.system.ann.ann):
         #}]
 
     #def _get_units_from_dataset(self, dataset):
-        #"""return tuple with lists of unit labels ([visible], [hidden]) using dataset for visible."""
+        #"""Return tuple with lists of unit labels ([visible], [hidden]) using dataset for visible."""
         #return (dataset._get_col_labels(), self._units['hidden'].params['label'])
 
     ## TODO: generalize to ann
@@ -434,7 +434,7 @@ class rbm(nemoa.system.ann.ann):
         return self._units['hidden']._overwrite(params['units'][1])
 
     def _get_links_from_config(self):
-        """return links from adjacency matrix."""
+        """Return links from adjacency matrix."""
         links = []
         for i, v in enumerate(self._units['visible'].params['label']):
             for j, h in enumerate(self._units['hidden'].params['label']):
@@ -592,7 +592,7 @@ class grbm(rbm):
 
     def _optimize_cd_delta_visible(self, vData, hData, vModel, hModel,
         **kwargs):
-        """return cd gradient based updates for visible units.
+        """Return cd gradient based updates for visible units.
 
         Constrastive divergency gradient of visible unit parameters
         using an modified energy function for faster convergence.
@@ -619,7 +619,7 @@ class grbm(rbm):
 
     def _optimize_cd_delta_links(self, vData, hData, vModel, hModel,
         **kwargs):
-        """return cd gradient based updates for links.
+        """Return cd gradient based updates for links.
 
         Constrastive divergency gradient of link parameters
         using an modified energy function for faster convergence.
@@ -636,7 +636,7 @@ class grbm(rbm):
         return { 'W': r * (D - M) / var }
 
     def _get_visible_unit_params(self, label):
-        """return system parameters of one specific visible unit."""
+        """Return system parameters of one specific visible unit."""
         id = self._units['visible'].params['label'].index(label)
         return {
             'bias': self._units['visible'].params['bias'][0, id],

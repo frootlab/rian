@@ -38,7 +38,7 @@ class plot:
         return True
 
     def name(self):
-        """return name of plot. """
+        """Return name of plot. """
         return self.cfg['name']
 
     @staticmethod

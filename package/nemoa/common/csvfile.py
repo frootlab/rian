@@ -10,7 +10,7 @@ import numpy
 import re
 
 def csv_get_col_labels(file, delim = None, type = None):
-    """return list with column labels (first row) from csv file."""
+    """Return list with column labels (first row) from csv file."""
 
     # get delimiter
     if not delim: delim = csv_get_delimiter(file)
@@ -29,7 +29,7 @@ def csv_get_col_labels(file, delim = None, type = None):
     return []
 
 def csv_get_delimiter(file, delimiters = [',', ';', '\t', ' ']):
-    """return estimated delimiter of csv file."""
+    """Return estimated delimiter of csv file."""
 
     found = False
     lines = 10

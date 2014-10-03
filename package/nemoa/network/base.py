@@ -22,14 +22,14 @@ class network:
         # create valid config config
         self._config = config.copy()
 
-        # 2do -> move functionality to network configuration file!
+        # TODO: move functionality to network configuration file!
         # type 'auto' is used for networks
         # wich include all dataset columns as visible units
         if self._config['type'] == 'auto':
             self._config = {'type': 'auto', 'name': '', 'id': 0}
             return True
 
-        # 2do -> move functionality to network configuration file!
+        # TODO: move functionality to network configuration file!
         # type 'autolayer' is used for networks
         # wich are created by layers and sizes
         if self._config['type'] == 'autolayer':
@@ -45,7 +45,7 @@ class network:
         return False
 
     def _get_config(self):
-        """return configuration as dictionary."""
+        """Return configuration as dictionary."""
         return self._config.copy()
 
     def _get_nodes_from_layers(self):
@@ -159,7 +159,7 @@ class network:
         return True
 
     def _is_empty(self):
-        """return true if network type is 'empty'."""
+        """Return true if network type is 'empty'."""
         return self._config['type'] == 'empty'
 
     def _create_layergraph(self, nodelist = None, edgelist = None):
@@ -270,7 +270,7 @@ class network:
         return True
 
     def node(self, node):
-        """return network information of single node."""
+        """Return network information of single node."""
         return self._graph.node[node]
 
     def nodes(self, group_by_layer = False, **kwargs):
@@ -316,7 +316,7 @@ class network:
         return allGroups
 
     def layer(self, layer):
-        """return dictionary containing information about a layer."""
+        """Return dictionary containing information about a layer."""
         nodes = self.nodes(type = layer)
         if not nodes: return None
         first_node = self.node(nodes[0])['params']
@@ -327,7 +327,7 @@ class network:
             'nodes': nodes}
 
     def layers(self, **kwargs):
-        """return ordered list of layers by label."""
+        """Return ordered list of layers by label."""
         layerDict = {self.node(node)['params']['layer_id']: \
             {'label': self.node(node)['params']['type']} \
             for node in self.nodes()}

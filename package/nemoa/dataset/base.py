@@ -23,11 +23,11 @@ class dataset:
         self._data = {}
 
     def _get_config(self):
-        """return configuration as dictionary."""
+        """Return configuration as dictionary."""
         return self._config.copy()
 
     def _is_empty(self):
-        """return true if dataset is empty."""
+        """Return true if dataset is empty."""
         return not 'name' in self._config or not self._config['name']
 
     def _is_binary(self):
@@ -108,7 +108,7 @@ class dataset:
         return True
 
     def _is_configured(self):
-        """return true if dataset is configured."""
+        """Return true if dataset is configured."""
         return len(self._data.keys()) > 0
 
     def configure(self, network, cache_enable = False, **kwargs):
@@ -551,13 +551,13 @@ class dataset:
             unknown algorithm '%s'!""" % (algorithm))
 
     #def value(self, row = None, col = None):
-        #"""return single value from dataset."""
+        #"""Return single value from dataset."""
         #retVal = self.data(cols = ([col]), output = 'list,array')
         #return retVal[1][retVal[0].index(row)]
 
     def data(self, size = 0, rows = '*', cols = '*',
         corruption = (None, 0.), output = 'array'):
-        """return a given number of stratified samples.
+        """Return a given number of stratified samples.
 
         Args:
             size: Size of data (Number of samples)
@@ -630,7 +630,7 @@ class dataset:
             type = corruption[0], factor = corruption[1])
 
     def _get_data_from_source(self, source, size = 0, rows = '*'):
-        """return numpy recarray with data from a single source.
+        """Return numpy recarray with data from a single source.
 
         Args:
             source: name of data source to get data from
@@ -707,7 +707,7 @@ class dataset:
             "unkown data corruption type '%s'!" % (type))
 
     def _format(self, data, cols = '*', output = 'array'):
-        """return data in given format.
+        """Return data in given format.
 
         Args:
             cols: name of column group
@@ -746,7 +746,7 @@ class dataset:
 
     # column Labels and Column Groups
     def _get_col_labels(self, group = '*'):
-        """return list of strings containing column groups and labels."""
+        """Return list of strings containing column groups and labels."""
         if group == '*': return ['%s:%s' % (col[0], col[1])
             for col in self._config['columns']]
         if not group in self._config['col_filter']: return []
@@ -1095,17 +1095,17 @@ class dataset:
         return retVal
 
     def _get_cache_file(self, network):
-        """return cache file path."""
+        """Return cache file path."""
         return '%sdata-%s-%s.npz' % (
             self._config['cache_path'], network._config['id'], self._config['id'])
 
     def _search_cache_file(self, network):
-        """return cache file path if existent."""
+        """Return cache file path if existent."""
         file = self._get_cache_file(network)
         return file if os.path.isfile(file) else None
 
     def _create_cache_file(self, network):
-        """return empty cache file if existent."""
+        """Return empty cache file if existent."""
         file = self._get_cache_file(network)
         if not os.path.isfile(file):
             basedir = os.path.dirname(file)
@@ -1135,7 +1135,7 @@ class dataset:
         return True
 
     def about(self, *args):
-        """return generic information about various parts of the dataset.
+        """Return generic information about various parts of the dataset.
 
         Args:
             *args: tuple of strings, containing a breadcrump trail to
@@ -1156,6 +1156,6 @@ class dataset:
         return None
 
     def name(self):
-        """return string containing name of dataset."""
+        """Return string containing name of dataset."""
         return self._config['name'] if 'name' in self._config else ''
 
