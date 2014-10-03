@@ -22,10 +22,6 @@ class dataset:
         self._config = config.copy()
         self._data = {}
 
-    def _get_config(self):
-        """Return configuration as dictionary."""
-        return self._config.copy()
-
     def _is_empty(self):
         """Return true if dataset is empty."""
         return not 'name' in self._config or not self._config['name']
@@ -121,7 +117,7 @@ class dataset:
         """
 
         nemoa.log("configure dataset '%s' to network '%s'" % \
-            (self.name(), network.get('name')))
+            (self._config['name'], network.get('name')))
         nemoa.log('set', indent = '+1')
 
         # load data from cachefile if caching is activated
@@ -1136,27 +1132,51 @@ class dataset:
         self._data = npzfile['data'].item()
         return True
 
-    def _get(self, sec = None):
+    def _get_backup(self, sec = None):
         dict = {
             'data': copy.deepcopy(self._data),
-            'cfg':  copy.deepcopy(self._config)
+            'config': copy.deepcopy(self._config)
         }
 
         if not sec: return dict
         if sec in dict: return dict[sec]
         return None
 
-    def _set(self, **dict):
-        if 'data' in dict: self._data = copy.deepcopy(dict['data'])
-        if 'cfg' in dict: self._config = copy.deepcopy(dict['cfg'])
-        return True
+    def get(self, key = None, *args, **kwargs):
 
-    def get(self, key, *args, **kwargs):
         if key == 'name': return self._config['name']
         if key == 'about': return self.__doc__
+        if key == 'backup': return self._get_backup(*args, **kwargs)
         if key == 'columns': return self._get_col_labels(*args, **kwargs)
         if key == 'groups': return self._get_col_groups(*args, **kwargs)
-        return None
+
+        if not key == None: nemoa.log('warning',
+            "unknown key '%s'" % (key))
+        return sorted(['name', 'about', 'backup',
+            'columns', 'groups'])
+
+    def set(self, key = None, *args, **kwargs):
+
+        if key == 'name': return self._set_name(*args, **kwargs)
+        if key == 'backup': return self._set_backup(*args, **kwargs)
+
+        if not key == None: nemoa.log('warning',
+            "unknown key '%s'" % (key))
+        return sorted(['name', 'backup'])
+
+    def _set_name(self, name):
+        """Set name of dataset."""
+
+        if not isinstance(self._config, dict): return False
+        self._config['name'] = name
+        return True
+
+    def _set_backup(self, **kwargs):
+        if 'data' in kwargs:
+            self._data = copy.deepcopy(kwargs['data'])
+        if 'config' in kwargs:
+            self._config = copy.deepcopy(kwargs['config'])
+        return True
 
     def about(self, *args):
         """Return generic information about various parts of the dataset.
@@ -1178,8 +1198,4 @@ class dataset:
         if args[0] == 'name': return self.name()
         if args[0] == 'description': return self.__doc__
         return None
-
-    def name(self):
-        """Return string containing name of dataset."""
-        return self._config['name'] if 'name' in self._config else ''
 

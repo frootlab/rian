@@ -16,10 +16,14 @@ import glob
 class workspace:
     """Nemoa workspace."""
 
+    _workspace = None
+
     def __init__(self, workspace = None):
         """initialize shared configuration."""
         nemoa.workspace._init()
-        if workspace: self.load(workspace)
+        if workspace:
+            self._workspace = workspace
+            self.load(workspace)
 
     def load(self, workspace):
         """import workspace and update paths and logfile."""
@@ -27,7 +31,7 @@ class workspace:
 
     def name(self):
         """Return name of workspace."""
-        return nemoa.workspace.name()
+        return self._workspace
 
     def list(self, type = None, namespace = None):
         """Return a list of known objects."""
@@ -42,7 +46,7 @@ class workspace:
     def execute(self, name = None, **kwargs):
         """execute nemoa script."""
         script_name = name \
-            if '.' in name else '%s.%s' % (self.name(), name)
+            if '.' in name else '%s.%s' % (self._workspace, name)
         config = nemoa.workspace._get_config(
             type = 'script', config = script_name, **kwargs)
 
@@ -181,8 +185,10 @@ class workspace:
 
         # create name string (if not given)
         if name == None:
-            name = '-'.join([str(dataset.name()),
-                str(network.get('name')), str(system.get('name'))])
+            name = '-'.join([
+                str(dataset.get('name')),
+                str(network.get('name')),
+                str(system.get('name'))])
 
         # create model instance
         model = self._get_instance(
@@ -229,13 +235,13 @@ class workspace:
         model = self._get_model_instance(
             name = model_dict['config']['name'],
             config = model_dict['config'],
-            dataset = model_dict['dataset']['cfg'],
-            network = model_dict['network']['cfg'],
+            dataset = model_dict['dataset']['config'],
+            network = model_dict['network']['config'],
             system = model_dict['system']['config'])
         if not nemoa.type.is_model(model): return None
 
         # copy configuration and parameters to model instance
-        model._set(model_dict)
+        model.set('backup', model_dict)
 
         nemoa.log('set', indent = '-1')
         return model
@@ -244,12 +250,12 @@ class workspace:
     def _copy_model(self, model):
         """Return copy of model instance"""
 
-        # get configuration and parameters from original model
-        model_config = model._get_config()
-        dataset_config = model.dataset._get_config()
-        network_config = model.network._get_config()
-        system_config = model.system._get_config()
-        model_config_and_params = model._get()
+        # create backup from original model
+        model_backup = model.get('backup')
+        model_config = model_backup['config']
+        dataset_config = model_backup['dataset']['config']
+        network_config = model_backup['network']['config']
+        system_config = model_backup['system']['config']
 
         # create new model with configurations from original model
         # this ensures objects of same type as in the original model
@@ -262,8 +268,8 @@ class workspace:
             system = system_config)
 
         # finally copy configuration and parameters from the original
-        # model to the copy
-        model_copy._set(model_config_and_params)
+        # model to the model copy
+        model_copy.set('backup', model_backup)
 
         return model_copy
 
@@ -345,8 +351,8 @@ class config:
 
     def _list_user_workspaces(self):
         """Return list of private workspaces."""
-        userDir = self._expand_path(self._basepath['user'])
-        return [os.path.basename(w) for w in glob.iglob(userDir + '*')
+        user_dir = self._expand_path(self._basepath['user'])
+        return [os.path.basename(w) for w in glob.iglob(user_dir + '*')
             if os.path.isdir(w)]
 
     def _list_shared_workspaces(self):

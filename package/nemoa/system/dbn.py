@@ -196,7 +196,7 @@ class dbn(nemoa.system.ann.ann):
         # Optimize subsystems
 
         # create copy of dataset values (before transformation)
-        dataset_copy = dataset._get()
+        dataset_copy = dataset.get('backup')
 
         # optimize subsystems
         for sysID in xrange(len(subSystems)):
@@ -227,7 +227,7 @@ class dbn(nemoa.system.ann.ann):
             system.optimize(dataset, schedule)
 
         # reset data to initial state (before transformation)
-        dataset._set(**dataset_copy)
+        dataset.set('backup', **dataset_copy)
 
         # copy and enrolle parameters of subsystems to dbn
         nemoa.log('initialize system with subsystem parameters')

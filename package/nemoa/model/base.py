@@ -52,17 +52,13 @@ class model:
         self._config = config.copy()
         return True
 
-    def _get_config(self):
-        """Return configuration as dictionary."""
-        return self._config.copy()
-
     def _export_data(self, *args, **kwargs):
         """Export data to file."""
         # copy dataset
-        settings = self.dataset._get()
+        settings = self.dataset.get('backup')
         self.dataset._transform(system = self.system)
         self.dataset.export(*args, **kwargs)
-        self.dataset._set(settings)
+        self.dataset.set('backup', settings)
         return True
 
     def _import_config_from_dict(self, dict):
@@ -234,8 +230,8 @@ class model:
 
         return self
 
-    def eval(self, *args, **kwargs):
-        """Return model evaluation."""
+    def evaluate(self, *args, **kwargs):
+        """Evaluate model."""
 
         if len(args) == 0:
             header = 'system'
@@ -244,15 +240,15 @@ class model:
             header = args[0]
             trailer = args[1:]
 
-        # evaluation of dataset
+        # Evaluate dataset
         if header == 'dataset':
-            return self.dataset.eval(*trailer, **kwargs)
+            return self.dataset.evaluate(*trailer, **kwargs)
 
-        # evaluation of network
+        # Evaluate network
         if header == 'network':
-            return self.network.eval(*trailer, **kwargs)
+            return self.network.evaluate(*trailer, **kwargs)
 
-        # evaluation of system
+        # Evaluate system
         if header == 'system':
             # get data for system evaluation
             if 'data' in kwargs.keys():
@@ -269,7 +265,7 @@ class model:
                 if not isinstance(preprocessing, dict):
                     preprocessing = {}
                 if preprocessing:
-                    dataset_copy = self.dataset._get()
+                    dataset_backup = self.dataset.get('backup')
                     self.dataset.preprocess(preprocessing)
                 if 'statistics' in kwargs.keys():
                     statistics = kwargs['statistics']
@@ -278,56 +274,61 @@ class model:
                 cols = self.system.get('layers', visible = True)
                 data = self.dataset.data(
                     size = statistics, cols = tuple(cols))
-                if preprocessing: self.dataset._set(dataset_copy)
+                if preprocessing:
+                    self.dataset.set('backup', dataset_backup)
 
-            return self.system.eval(data, *trailer, **kwargs)
+            return self.system.evaluate(data, *trailer, **kwargs)
 
         return nemoa.log('warning', 'could not evaluate model')
 
-    def _get(self, sec = None):
+    def _get_backup(self, sec = None):
         dict = {
             'config': copy.deepcopy(self._config),
-            'network': self.network._get() if hasattr(self.network, '_get') else None,
-            'dataset': self.dataset._get() if hasattr(self.dataset, '_get') else None,
-            'system': self.system._get() if hasattr(self.system, '_get') else None
+            'network': self.network.get('backup'),
+            'dataset': self.dataset.get('backup'),
+            'system': self.system.get('backup')
         }
 
         if not sec: return dict
         if sec in dict: return dict[sec]
         return None
 
-    def _set(self, dict):
+    def _set_backup(self, dict):
         """Set configuration, parameters and data of model from given dictionary
         return true if no error occured"""
 
         # get config from dict
-        config = self._import_config_from_dict(dict)
+        model_backup = self._import_config_from_dict(dict)
 
         # check self
-        if not nemoa.type.is_dataset(self.dataset): return nemoa.log('error',
-            'could not configure dataset: model does not contain dataset instance!')
-        if not nemoa.type.is_network(self.network): return nemoa.log('error',
-            'could not configure network: model does not contain network instance!')
-        if not nemoa.type.is_system(self.system): return nemoa.log('error',
-            'could not configure system: model does not contain system instance!')
+        if not nemoa.type.is_dataset(self.dataset):
+            return nemoa.log('error', """could not configure dataset:
+                model does not contain dataset instance.""")
+        if not nemoa.type.is_network(self.network):
+            return nemoa.log('error', """could not configure network:
+                model does not contain network instance.""")
+        if not nemoa.type.is_system(self.system):
+            return nemoa.log('error', """could not configure system:
+                model does not contain system instance.""")
 
-        self._config = config['config'].copy()
-        self.network._set(**config['network'])
-        self.dataset._set(**config['dataset'])
+        self._config = model_backup['config'].copy()
+        self.network.set('backup', **model_backup['network'])
+        self.dataset.set('backup', **model_backup['dataset'])
 
         # prepare
-        if not 'update' in config['system']['config']:
-            config['system']['config']['update'] = {'A': False}
+        # TODO: system.set('backup', ...) should do this
+        if not 'update' in model_backup['system']['config']:
+            model_backup['system']['config']['update'] = {'A': False}
 
-        # TODO: system._set(...) shall create system and do something
-        # like self.configure ...
+        # TODO: system.set('backup', ...) shall create system and do
+        # something like self.configure ...
 
         # create system
         self.system = nemoa.system.new(
-            config  = config['system']['config'].copy(),
+            config = model_backup['system']['config'].copy(),
             network = self.network,
             dataset = self.dataset )
-        self.system._set(**config['system'])
+        self.system.set('backup', **model_backup['system'])
 
         return self
 
@@ -346,7 +347,7 @@ class model:
         file = nemoa.common.get_empty_file(file)
 
         # save model parameters and configuration to file
-        nemoa.common.dict_to_file(self._get(), file)
+        nemoa.common.dict_to_file(self._get_backup(), file)
 
         # create console message
         nemoa.log("save model as: '%s'" %
@@ -505,27 +506,40 @@ class model:
 
         return nemoa.plot.new(config = cfg)
 
-    def name(self):
-        """Return name of model."""
-        return self._config['name'] if 'name' in self._config else ''
-
-    def _set_name(self, name):
-        """Set name of model."""
-        if not isinstance(self._config, dict): return False
-        self._config['name'] = name
-        return self
 
     def _is_empty(self):
         """Return true if model is empty."""
         return not 'name' in self._config or not self._config['name']
 
-    def get(self, key, *args, **kwargs):
+    def get(self, key = None, *args, **kwargs):
+
         if key == 'name': return self._config['name']
         if key == 'about': return self.__doc__
+        if key == 'backup': return self._get_backup(*args, **kwargs)
         if key == 'network': return self.network.get(*args, **kwargs)
         if key == 'dataset': return self.dataset.get(*args, **kwargs)
         if key == 'system': return self.system.get(*args, **kwargs)
-        return nemoa.log('warning', "unknown key '%s'" % (key))
+
+        if not key == None: nemoa.log('warning',
+            "unknown key '%s'" % (key))
+        return sorted(['name', 'about', 'backup',
+            'network', 'dataset', 'system'])
+
+    def set(self, key = None, *args, **kwargs):
+
+        if key == 'name': return self._set_name(*args, **kwargs)
+        if key == 'backup': return self._set_backup(*args, **kwargs)
+
+        if not key == None: nemoa.log('warning',
+            "unknown key '%s'" % (key))
+        return sorted(['name', 'backup'])
+
+    def _set_name(self, name):
+        """Set name of model."""
+
+        if not isinstance(self._config, dict): return False
+        self._config['name'] = name
+        return True
 
     def about(self, *args):
         """Return generic information about various parts of the model.

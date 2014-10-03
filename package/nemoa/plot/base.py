@@ -62,10 +62,10 @@ class plot:
         # update configuration, depending on object type
         if list(self.settings['path'])[0] == 'dataset':
             if self.settings['show_title']:
-                self.settings['title'] = model.dataset.name().title()
+                self.settings['title'] = model.dataset.get('name').title()
         elif list(self.settings['path'])[0] == 'network':
             if self.settings['show_title']:
-                self.settings['title'] = model.dataset.name().title()
+                self.settings['title'] = model.dataset.get('name').title()
         elif list(self.settings['path'])[0] == 'system':
 
             # assert units

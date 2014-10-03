@@ -31,7 +31,7 @@ class graph(nemoa.plot.base.plot):
 
         # (optional) calculate node captions
         if self.settings['node_caption']:
-            caption = model.eval('system', 'units',
+            caption = model.evaluate('system', 'units',
                 self.settings['node_caption'])
             if caption:
                 for node in caption.keys():
@@ -40,7 +40,7 @@ class graph(nemoa.plot.base.plot):
 
         # (optional) calculate graph caption
         if self.settings['graph_caption']:
-            caption = model.eval('system',
+            caption = model.evaluate('system',
                 self.settings['graph_caption'])
             if caption:
                 name = model.about('system',

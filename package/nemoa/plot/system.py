@@ -36,7 +36,7 @@ class graph(nemoa.plot.base.plot):
             if not o == i]
 
         # calculate edge weights from 'weight' relation
-        W = model.eval('system', 'relations', self.settings['relation'],
+        W = model.evaluate('system', 'relations', self.settings['relation'],
             preprocessing = self.settings['preprocessing'],
             measure = self.settings['measure'],
             statistics = self.settings['statistics'],
@@ -52,7 +52,7 @@ class graph(nemoa.plot.base.plot):
         # default: use the same relation, as used for weights
         if not self.settings['filter'] or self.settings['filter'] == \
             self.settings['relation']: F = W
-        else: F = model.eval('system', 'relations',
+        else: F = model.evaluate('system', 'relations',
             self.settings['filter'],
             preprocessing = self.settings['preprocessing'],
             measure = self.settings['measure'],
@@ -76,7 +76,7 @@ class graph(nemoa.plot.base.plot):
             or self.settings['sign'] == self.settings['relation']:
             SR = W
         else:
-            SR = model.eval('system', 'relations',
+            SR = model.evaluate('system', 'relations',
                 self.settings['sign'],
                 preprocessing = self.settings['preprocessing'],
                 measure = self.settings['measure'],
@@ -140,7 +140,7 @@ class heatmap(nemoa.plot.base.plot):
     def _create(self, model):
 
         # calculate relation
-        R = model.eval('system', 'relations', self.settings['relation'],
+        R = model.evaluate('system', 'relations', self.settings['relation'],
             preprocessing = self.settings['preprocessing'],
             measure = self.settings['measure'],
             statistics = self.settings['statistics'],
@@ -181,7 +181,7 @@ class histogram(nemoa.plot.base.plot):
                 edges.append((i, o))
 
         # calculate relation
-        R = model.eval('system', 'relations', self.settings['relation'],
+        R = model.evaluate('system', 'relations', self.settings['relation'],
             preprocessing = self.settings['preprocessing'],
             measure = self.settings['measure'],
             statistics = self.settings['statistics'],

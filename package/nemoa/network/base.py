@@ -40,10 +40,6 @@ class Network:
         if self._config['type'].lower() == 'layer':
             self._create_layergraph()
 
-    def _get_config(self):
-        """Return configuration as dictionary."""
-        return self._config.copy()
-
     def _get_nodes_from_layers(self):
         """Create nodes from layers."""
         self._config['nodes'] = {}
@@ -365,18 +361,20 @@ class Network:
         # filter empty nodes
         return [edge for edge in sorted_list if edge]
 
-    def _get(self, sec = None):
+    def _get_backup(self, sec = None):
         dict = {
-            'cfg': copy.deepcopy(self._config),
+            'config': copy.deepcopy(self._config),
             'graph': copy.deepcopy(self._graph) }
 
         if not sec: return dict
         if sec in dict: return dict[sec]
         return None
 
-    def _set(self, **dict):
-        if 'cfg' in dict: self._config = copy.deepcopy(dict['cfg'])
-        if 'graph' in dict: self._graph = copy.deepcopy(dict['graph'])
+    def _set_backup(self, **kwargs):
+        if 'config' in kwargs:
+            self._config = copy.deepcopy(kwargs['config'])
+        if 'graph' in kwargs:
+            self._graph = copy.deepcopy(kwargs['graph'])
         return True
 
     def _export_graph(self, file = None, format = 'gml'):
@@ -513,16 +511,38 @@ class Network:
         #if args[0] == 'description': return self.__doc__
         #return None
 
-    def get(self, key, *args, **kwargs):
+    def get(self, key = None, *args, **kwargs):
+
         if key == 'name': return self._config['name']
         if key == 'about': return self.__doc__
+        if key == 'backup': return self._get_backup(*args, **kwargs)
         if key == 'edge': return self._get_edge(*args, **kwargs)
         if key == 'edges': return self._get_edges(*args, **kwargs)
         if key == 'node': return self._get_node(*args, **kwargs)
         if key == 'nodes': return self._get_nodes(*args, **kwargs)
         if key == 'layer': return self._get_layer(*args, **kwargs)
         if key == 'layers': return self._get_layers(*args, **kwargs)
-        return None
+
+        if not key == None: nemoa.log('warning',
+            "unknown key '%s'" % (key))
+        return sorted(['name', 'about', 'backup',
+            'edge', 'edges', 'node', 'nodes', 'layer', 'layers'])
+
+    def set(self, key = None, *args, **kwargs):
+
+        if key == 'name': return self._set_name(*args, **kwargs)
+        if key == 'backup': return self._set_backup(*args, **kwargs)
+
+        if not key == None: nemoa.log('warning',
+            "unknown key '%s'" % (key))
+        return sorted(['name', 'backup'])
+
+    def _set_name(self, name):
+        """Set name of network."""
+
+        if not isinstance(self._config, dict): return False
+        self._config['name'] = name
+        return True
 
     def _update(self, **kwargs):
         if 'system' in kwargs:

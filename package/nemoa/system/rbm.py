@@ -85,7 +85,7 @@ class rbm(nemoa.system.ann.ann):
             'could not test dataset: invalid dataset instance given!')
         if not dataset._is_binary(): return nemoa.log('error',
             "dataset '%s' is not valid: RBMs expect binary data."
-            % (dataset.name()))
+            % (dataset.get('name')))
         return True
 
     def _set_update_rates(self, **config):
@@ -592,7 +592,7 @@ class grbm(rbm):
             'could not test dataset: invalid dataset instance given!')
         if not dataset._eval_normalization_gauss(): return nemoa.log('error',
             """dataset '%s' is not valid: GRBMs expect
-            standard normal distributed data.""" % (dataset.name()))
+            standard normal distributed data.""" % (dataset.get('name')))
         return True
 
     def _optimize_cd_delta_visible(self, vData, hData, vModel, hModel,

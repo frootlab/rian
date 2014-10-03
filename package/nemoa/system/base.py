@@ -9,7 +9,7 @@ import numpy
 import time
 import copy
 
-class system:
+class System:
 
     def __init__(self, *args, **kwargs):
         """Configure system and system parameters."""
@@ -33,16 +33,6 @@ class system:
             *args, **kwargs)
         nemoa.log('set', indent = '-1')
         return retVal
-
-    def _set_name(self, name):
-        """Set name of system."""
-        if not isinstance(name, str): return False
-        self._config['name'] = name
-        return True
-
-    def _get_config(self):
-        """Return system configuration as dictionary."""
-        return self._config.copy()
 
     def _set_config(self, config):
         """Set configuration."""
@@ -153,22 +143,26 @@ class system:
                 return self._params['units'][id]['name']
         return None
 
-    def get(self, key, *args, **kwargs):
+    def get(self, key = None, *args, **kwargs):
+
         if key == 'name': return self._config['name']
         if key == 'about': return self.__doc__
+        if key == 'backup': return self._get_backup(*args, **kwargs)
         if key == 'type': return self._get_type(*args, **kwargs)
         if key == 'layers': return self._get_layers(*args, **kwargs)
         if key == 'units': return self._get_units(*args, **kwargs)
         if key == 'links': return self._get_links(*args, **kwargs)
 
-
-        return None
+        if not key == None: nemoa.log('warning',
+            "unknown key '%s'" % (key))
+        return sorted(['name', 'about', 'backup',
+            'type', 'layers', 'units', 'links'])
 
     def _get_type(self):
         return '%s.%s' % (self._config['package'],
             self._config['class'])
 
-    def _get(self, section = None):
+    def _get_backup(self, section = None):
         """Return system settings as dictionary."""
         dict = {
             'config': copy.deepcopy(self._config),
@@ -177,7 +171,23 @@ class system:
         if section in dict: return dict[section]
         return False
 
-    def _set(self, **kwargs):
+    def set(self, key = None, *args, **kwargs):
+
+        if key == 'name': return self._set_name(*args, **kwargs)
+        if key == 'backup': return self._set_backup(*args, **kwargs)
+
+        if not key == None: nemoa.log('warning',
+            "unknown key '%s'" % (key))
+        return sorted(['name', 'backup'])
+
+    def _set_name(self, name):
+        """Set name of system."""
+
+        if not isinstance(self._config, dict): return False
+        self._config['name'] = name
+        return True
+
+    def _set_backup(self, **kwargs):
         """Set system settings from dictionary."""
         if 'config' in kwargs:
             self._config = copy.deepcopy(kwargs['config'])
@@ -239,25 +249,25 @@ class system:
 
         return retVal
 
-    def eval(self, data, *args, **kwargs):
+    def evaluate(self, data, *args, **kwargs):
 
         # Default system evaluation
         if len(args) == 0:
             return self._eval_system(data, **kwargs)
 
-        # System unit evaluation
+        # Evaluate system units
         if args[0] == 'units':
             return self._eval_units(data, *args[1:], **kwargs)
 
-        # System link evaluation
+        # Evaluate system links
         if args[0] == 'links':
             return self._eval_links(data, *args[1:], **kwargs)
 
-        # System relation evaluation
+        # Evaluate system relations
         if args[0] == 'relations':
             return self._eval_relation(data, *args[1:], **kwargs)
 
-        # System evaluation
+        # Evaluate system
         if args[0] in self._about_system().keys():
             return self._eval_system(data, *args, **kwargs)
 
@@ -547,7 +557,7 @@ class tracker:
 
         # calculate objective function value
         func = cfg['tracker_obj_function']
-        value = self._system.eval(
+        value = self._system.evaluate(
             data = self._state['data'], func = func)
         progr = float(self._state['epoch']) / float(cfg['updates'])
 
@@ -564,7 +574,7 @@ class tracker:
             if self._state['obj_opt_value'] == None:
                 self._state['obj_opt_value'] = value
                 self._state['optimum'] = \
-                    {'params': self._system._get('params')}
+                    {'params': self._system.get('backup', 'params')}
                 return True
             # allways check last optimum
             if self._state['continue'] \
@@ -585,11 +595,11 @@ class tracker:
             if new_optimum:
                 self._state['obj_opt_value'] = value
                 self._state['optimum'] = \
-                    {'params': self._system._get('params')}
+                    {'params': self._system.get('backup', 'params')}
 
             # set system parameters to optimum on last update
             if not self._state['continue']:
-                return self._system._set(**self._state['optimum'])
+                return self._system.set('backup', **self._state['optimum'])
 
         return True
 
@@ -608,7 +618,7 @@ class tracker:
         if not self._state['continue']:
             func = cfg['tracker_eval_function']
             prop = self._system.about(func)
-            value = self._system.eval(
+            value = self._system.evaluate(
                 data = self._state['data'], func = func)
             out = 'found optimum with: %s = ' + prop['format']
             self._state['eval_enable'] = False
@@ -618,7 +628,7 @@ class tracker:
             > cfg['tracker_eval_time_interval']):
             func = cfg['tracker_eval_function']
             prop = self._system.about(func)
-            value = self._system.eval(
+            value = self._system.evaluate(
                 data = self._state['data'], func = func)
             progr = float(self._state['epoch']) \
                 / float(cfg['updates']) * 100.
