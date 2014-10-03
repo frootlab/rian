@@ -13,7 +13,7 @@ __license__ = 'GPLv3'
 import nemoa.system.ann
 import numpy
 
-class dbn(nemoa.system.ann.ann):
+class DBN(nemoa.system.ann.ANN):
     """Deep Belief Network (DBN).
 
     'Deep Belief Networks' are layered feed forward Artificial Neural
@@ -45,10 +45,10 @@ class dbn(nemoa.system.ann.ann):
             'hiddenClass': 'sigmoid',
             'visibleSystem': None,
             'visibleSystemModule': 'rbm',
-            'visibleSystemClass': 'grbm',
+            'visibleSystemClass': 'GRBM',
             'hiddenSystem': None,
             'hiddenSystemModule': 'rbm',
-            'hiddenSystemClass': 'rbm' },
+            'hiddenSystemClass': 'RBM' },
         'init': {
             'checkDataset': False,
             'ignoreUnits': [],
@@ -111,19 +111,19 @@ class dbn(nemoa.system.ann.ann):
             return False
 
         # create and configure subsystems
-        subSystems = []
-        for layerID in xrange((len(self._params['units']) - 1)  / 2):
-            inUnits = self._params['units'][layerID]
-            outUnits = self._params['units'][layerID + 1]
-            links = self._params['links'][(layerID, layerID + 1)]
+        sub_systems = []
+        for layer_id in xrange((len(self._params['units']) - 1)  / 2):
+            in_units = self._params['units'][layer_id]
+            out_units = self._params['units'][layer_id + 1]
+            links = self._params['links'][(layer_id, layer_id + 1)]
 
             # create configuration for network of subsystem
-            if not inUnits['visible']:
-                visible_units = inUnits['label']
+            if not in_units['visible']:
+                visible_units = in_units['label']
             else:
                 visible_units = self._params['units'][0]['label'] \
                     + self._params['units'][-1]['label']
-            hidden_units = outUnits['label']
+            hidden_units = out_units['label']
             network_nodes = {
                 'visible': visible_units,
                 'hidden': hidden_units}
@@ -135,7 +135,7 @@ class dbn(nemoa.system.ann.ann):
                 'package': 'base',
                 'class': 'network',
                 'name': '%s ↔ %s' \
-                    % (inUnits['name'], outUnits['name']),
+                    % (in_units['name'], out_units['name']),
                 'type': 'layer',
                 'layer': ['visible', 'hidden'],
                 'nodes': network_nodes,
@@ -149,14 +149,14 @@ class dbn(nemoa.system.ann.ann):
             network = nemoa.network.new(config = network_config)
 
             # create subsystem configuration
-            sysType = 'visible' if inUnits['visible'] else 'hidden'
+            sys_type = 'visible' if in_units['visible'] else 'hidden'
             system_config = {
                 'package': \
-                    self._config['params'][sysType + 'SystemModule'],
+                    self._config['params'][sys_type + 'SystemModule'],
                 'class': \
-                    self._config['params'][sysType + 'SystemClass'],
+                    self._config['params'][sys_type + 'SystemClass'],
                 'name': '%s ↔ %s' \
-                    % (inUnits['name'], outUnits['name'])}
+                    % (in_units['name'], out_units['name'])}
 
             # create subsystem instance
             system = nemoa.system.new(config = system_config)
@@ -171,26 +171,26 @@ class dbn(nemoa.system.ann.ann):
                 (system.get('name'), unitCount, linkCount))
 
             # link subsystem
-            subSystems.append(system)
+            sub_systems.append(system)
 
             # link linksparameters of subsystem
             links['init'] = system._params['links'][(0, 1)]
 
             # link layer parameters of subsystem
-            if layerID == 0:
-                inUnits['init'] = system._units['visible'].params
-                outUnits['init'] = system._units['hidden'].params
+            if layer_id == 0:
+                in_units['init'] = system._units['visible'].params
+                out_units['init'] = system._units['hidden'].params
                 system._config['init']['ignoreUnits'] = []
                 system._config['optimize']['ignoreUnits'] = []
             else:
                 # do not link params from upper layer!
                 # upper layer should be linked with previous subsystem
                 # (higher abstraction layer)
-                outUnits['init'] = system._params['units'][1]
+                out_units['init'] = system._params['units'][1]
                 system._config['init']['ignoreUnits'] = ['visible']
                 system._config['optimize']['ignoreUnits'] = ['visible']
 
-        self._config['check']['subSystems'] = True
+        self._config['check']['sub_systems'] = True
         nemoa.log('set', indent = '-1')
 
         # Optimize subsystems
@@ -199,14 +199,14 @@ class dbn(nemoa.system.ann.ann):
         dataset_copy = dataset.get('backup')
 
         # optimize subsystems
-        for sysID in xrange(len(subSystems)):
+        for sys_id in xrange(len(sub_systems)):
 
             # link subsystem
-            system = subSystems[sysID]
+            system = sub_systems[sys_id]
 
             # transform dataset with previous system / fix lower stack
-            if sysID > 0:
-                prev_sys = subSystems[sysID - 1]
+            if sys_id > 0:
+                prev_sys = sub_systems[sys_id - 1]
 
                 visible_layer = prev_sys._params['units'][0]['name']
                 hidden_layer = prev_sys._params['units'][1]['name']

@@ -13,7 +13,7 @@ __license__ = 'GPLv3'
 import nemoa.system.ann
 import numpy
 
-class rbm(nemoa.system.ann.ann):
+class RBM(nemoa.system.ann.ANN):
     """Restricted Boltzmann Machine (RBM).
 
     Restricted Boltzmann Machines (1) are energy based undirected
@@ -527,7 +527,7 @@ class rbm(nemoa.system.ann.ann):
             self._params['links'][(0, 1)]['A'] = updates['A']
         return True
 
-class grbm(rbm):
+class GRBM(RBM):
     """Gaussian Restricted Boltzmann Machine (GRBM).
 
     Gaussian Restricted Boltzmann Machines (1) are energy based

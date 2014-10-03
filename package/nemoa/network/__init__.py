@@ -13,4 +13,5 @@ def new(*args, **kwargs):
 
 def open(*args, **kwargs):
     obj_config = nemoa.network.importer.open(*args, **kwargs)
-    return new(config = obj_config['config'])
+    if obj_config: return new(config = obj_config['config'])
+    return None
