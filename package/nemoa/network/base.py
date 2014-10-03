@@ -33,12 +33,12 @@ class Network:
         if self._config['type'] == 'autolayer':
             self._get_nodes_from_layers()
             self._get_edges_from_layers()
-            self._create_layergraph()
+            self._configure_layergraph()
 
         # type 'layer' is used for layered networks
         # wich are manualy defined, by using a dictionary
         if self._config['type'].lower() == 'layer':
-            self._create_layergraph()
+            self._configure_layergraph()
 
     def _get_nodes_from_layers(self):
         """Create nodes from layers."""
@@ -125,7 +125,7 @@ class Network:
             self._get_visible_nodes_from_dataset(dataset)
             self._get_hidden_nodes_from_system(system)
             self._get_edges_from_layers()
-            self._create_layergraph()
+            self._configure_layergraph()
             nemoa.log('set', indent = '-1')
             return True
 
@@ -134,7 +134,7 @@ class Network:
         if self._config['type'] == 'autolayer':
             self._get_nodes_from_layers()
             self._get_edges_from_layers()
-            self._create_layergraph()
+            self._configure_layergraph()
             nemoa.log('set', indent = '-1')
             return True
 
@@ -144,7 +144,7 @@ class Network:
         for group in groups:
             if not group in self._config['nodes'] \
                 or not (groups[group] == self._config['nodes'][group]):
-                self._create_layergraph(
+                self._configure_layergraph(
                     nodelist = {'type': group, 'list': groups[group]})
 
         nemoa.log('set', indent = '-1')
@@ -154,7 +154,7 @@ class Network:
         """Return true if network type is 'empty'."""
         return self._config['type'] == 'empty'
 
-    def _create_layergraph(self, nodelist = None, edgelist = None):
+    def _configure_layergraph(self, nodelist = None, edgelist = None):
         if not nodelist: nodelist = {'type': None, 'list': []}
         if not edgelist: edgelist = {'type': (None, None), 'list': []}
 
@@ -269,7 +269,8 @@ class Network:
         """get list of nodes with specific attributes
         example nodes(type = 'visible')"""
 
-        if group_by_layer: return self._nodes_group_by_layer(**kwargs)
+        if group_by_layer:
+            return self._get_nodes_group_by_layer(**kwargs)
 
         # filter search criteria and order entries
         sortedList = [None] * self._graph.number_of_nodes()
@@ -285,17 +286,17 @@ class Network:
             sortedList[attr['order']] = node
         return [node for node in sortedList if node] # filter empty nodes
 
-    def _node_labels(self, **kwargs):
+    def _get_node_labels(self, **kwargs):
         return [self._graph.node[node]['label'] \
             for node in self._get_nodes(**kwargs)]
 
-    def _nodes_group_by_layer(self, type = None):
+    def _get_nodes_group_by_layer(self, type = None):
 
         # get layers of specific node type
         if type:
             if not type in self._config: return nemoa.log('warning',
                 "unknown node type '%s'." % (str(type)))
-            return {group: self._node_labels(type = group)
+            return {group: self._get_node_labels(type = group)
                 for group in self._config[type]}
 
         # get all groups
@@ -303,7 +304,7 @@ class Network:
         for type in ['visible', 'hidden']:
             groups = {}
             for group in self._config[type]:
-                groups[group] = self._node_labels(type = group)
+                groups[group] = self._get_node_labels(type = group)
             allGroups[type] = groups
         return allGroups
 

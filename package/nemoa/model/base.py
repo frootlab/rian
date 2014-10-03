@@ -144,7 +144,7 @@ class model:
     def _initialize(self):
         """Initialize model parameters and return self."""
 
-        # TODO: just check if system is configured
+        # TODO: check if system is configured
 
         # check if model is empty and can not be initialized
         if (self.dataset == None or self.system == None) \
@@ -190,8 +190,8 @@ class model:
 
         # check if model is configured
         if not self._is_configured():
-            nemoa.log('error',
-                'could not optimize model: model is not yet configured!')
+            nemoa.log('error', """could not optimize model:
+                model is not yet configured.""")
             nemoa.log('set', indent = '-1')
             return False
 
