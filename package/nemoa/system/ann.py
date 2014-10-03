@@ -169,17 +169,17 @@ class ann(nemoa.system.base.system):
             'error', """could not initilize unit parameters:
             invalid dataset argument given!""")
 
-        for layerName in self._units.keys():
+        for layer_name in self._units.keys():
             if dataset == None \
-                or self._units[layerName].params['visible'] == False:
+                or self._units[layer_name].params['visible'] == False:
                 data = None
             else:
                 rows = self._config['params']['samples'] \
                     if 'samples' in self._config['params'] else '*'
-                cols = layerName \
-                    if layerName in dataset._get_col_groups() else '*'
+                cols = layer_name \
+                    if layer_name in dataset._get_col_groups() else '*'
                 data = dataset.data(100000, rows = rows, cols = cols)
-            self._units[layerName].initialize(data)
+            self._units[layer_name].initialize(data)
 
         return True
 

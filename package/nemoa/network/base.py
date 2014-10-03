@@ -8,7 +8,7 @@ import nemoa
 import networkx
 import copy
 
-class network:
+class Network:
 
     _config = None
     _graph = None
@@ -331,7 +331,8 @@ class network:
         layerDict = {self.node(node)['params']['layer_id']: \
             {'label': self.node(node)['params']['type']} \
             for node in self.nodes()}
-        layerList = [layerDict[layer]['label'] for layer in xrange(0, len(layerDict))]
+        layerList = [layerDict[layer]['label'] \
+            for layer in xrange(0, len(layerDict))]
         return layerList
 
     def edge(self, edge):
@@ -358,7 +359,12 @@ class network:
             layers = self.layers()
 
             if src_layer in layers and tgt_layer in layers:
-                sorted_list[attr['order']] = (src, tgt)
+                src_layer_id = layers.index(src_layer)
+                tgt_layer_id = layers.index(tgt_layer)
+                if src_layer_id < tgt_layer_id:
+                    sorted_list[attr['order']] = (src, tgt)
+                elif src_layer_id > tgt_layer_id:
+                    sorted_list[attr['order']] = (tgt, src)
 
         # filter empty nodes
         return [edge for edge in sorted_list if edge]
