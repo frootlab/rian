@@ -74,10 +74,10 @@ class RBM(nemoa.system.ann.ANN):
         h = self._params['units'][1]['name']
         return (v, h, v)
 
-    def _get_test_data(self, dataset):
-        """Return tuple with default test data."""
-        data = dataset.data()
-        return (data, data)
+    #def _get_test_data(self, dataset):
+        #"""Return tuple with default test data."""
+        #data = dataset.data()
+        #return (data, data)
 
     def _check_dataset(self, dataset):
         """Check if dataset contains binary values."""

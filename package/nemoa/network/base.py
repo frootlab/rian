@@ -523,10 +523,9 @@ class Network:
         if key == 'layer': return self._get_layer(*args, **kwargs)
         if key == 'layers': return self._get_layers(*args, **kwargs)
 
-        if not key == None: nemoa.log('warning',
+        if not key == None: return nemoa.log('warning',
             "unknown key '%s'" % (key))
-        return sorted(['name', 'about', 'backup',
-            'edge', 'edges', 'node', 'nodes', 'layer', 'layers'])
+        return None
 
     def set(self, key = None, *args, **kwargs):
 
@@ -535,7 +534,7 @@ class Network:
 
         if not key == None: nemoa.log('warning',
             "unknown key '%s'" % (key))
-        return sorted(['name', 'backup'])
+        return None
 
     def _set_name(self, name):
         """Set name of network."""

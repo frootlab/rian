@@ -9,4 +9,4 @@ import nemoa.dataset.base
 
 def new(*args, **kwargs):
     """Return new dataset instance."""
-    return nemoa.dataset.base.dataset(*args, **kwargs)
+    return nemoa.dataset.base.Dataset(*args, **kwargs)

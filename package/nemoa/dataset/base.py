@@ -4,15 +4,15 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+import copy
+import csv
 import nemoa
 import numpy
-import copy
 import os
 import re
 import scipy.cluster.vq
-import csv
 
-class dataset:
+class Dataset:
 
     _config = None
     _data = None
@@ -629,11 +629,11 @@ class dataset:
 
         # Format data
         if isinstance(cols, str): fmtData = self._format(
-            data, cols = self._get_col_labels(cols), output = output)
+            data, cols = self._get_columns(cols), output = output)
         elif isinstance(cols, list): fmtData = self._format(
             data, cols = cols, output = output)
         elif isinstance(cols, tuple): fmtData = tuple(
-            [self._format(data, cols = self._get_col_labels(grp),
+            [self._format(data, cols = self._get_columns(grp),
             output = output) for grp in cols])
         else: return nemoa.log('error', """could not get data:
             invalid argument for columns!""")
@@ -730,11 +730,11 @@ class dataset:
         """
 
         # check columns
-        if cols == '*': cols = self._get_col_labels()
+        if cols == '*': cols = self._get_columns()
         elif not len(cols) == len(set(cols)):
             return nemoa.log('error', """could not retrieve data:
                 columns are not unique!""")
-        elif [c for c in cols if c not in self._get_col_labels()]:
+        elif [c for c in cols if c not in self._get_columns()]:
             return nemoa.log('error', """could not retrieve data:
                 unknown columns!""")
 
@@ -758,24 +758,10 @@ class dataset:
         if isinstance(output, str): return ret_tuple[0]
         return ret_tuple
 
-    def _get_col_labels(self, group = '*'):
-        """Return list of strings containing column groups and labels."""
-        if group == '*': return ['%s:%s' % (col[0], col[1])
-            for col in self._config['columns']]
-        if not group in self._config['col_filter']: return []
-        colFilter = self._config['col_filter'][group]
-        labels = []
-        for col in self._config['columns']:
-            if ('*:*') in colFilter \
-                or ('%s:*' % (col[0])) in colFilter \
-                or ('*:%s' % (col[1])) in colFilter \
-                or ('%s:%s' % (col[0], col[1])) in colFilter:
-                labels.append('%s:%s' % (col[0], col[1]))
-        return labels
-
     def _set_col_labels(self, labels):
         """Set column labels from list of strings."""
-        self._config['columns'] = tuple([col.split(':') for col in labels])
+        self._config['columns'] = \
+            tuple([col.split(':') for col in labels])
         return True
 
     def _get_col_groups(self):
@@ -785,9 +771,24 @@ class dataset:
             groups[group].append(label)
         return groups
 
-    def _set_col_filter(self, group, columns):
-        # TODO: check columns!
-        self._config['col_filter'][group] = columns
+    def _get_col_filter(self):
+        return self._config['col_filter'].keys()
+
+    def _set_col_filter(self, **kwargs):
+        columns = self._get_columns()
+
+        for group in kwargs.keys():
+            group_columns = kwargs[group]
+
+            valid = True
+            for column in group_columns:
+                if not column in columns:
+                    valid = False
+                    break
+
+            if not valid: continue
+            self._config['col_filter'][group] = columns
+
         return True
 
     #def addRowFilter(self, name, filter):
@@ -1064,7 +1065,7 @@ class dataset:
         delim = conf['delimiter'] if 'delimiter' in conf \
             else nemoa.common.csv_get_delimiter(file)
         cols = conf['usecols']
-        names = tuple(self._get_col_labels())
+        names = tuple(self._get_columns())
         formats = tuple(['<f8' for x in names])
         if not 'rows' in conf or conf['rows']:
             cols = (0,) + cols
@@ -1147,22 +1148,38 @@ class dataset:
         if key == 'name': return self._config['name']
         if key == 'about': return self.__doc__
         if key == 'backup': return self._get_backup(*args, **kwargs)
-        if key == 'columns': return self._get_col_labels(*args, **kwargs)
+        if key == 'columns': return self._get_columns(*args, **kwargs)
         if key == 'groups': return self._get_col_groups(*args, **kwargs)
+        if key == 'filter': return self._get_col_filter(*args, **kwargs)
 
-        if not key == None: nemoa.log('warning',
+        if not key == None: return nemoa.log('warning',
             "unknown key '%s'" % (key))
-        return sorted(['name', 'about', 'backup',
-            'columns', 'groups'])
+        return None
+
+    def _get_columns(self, group = '*'):
+        """Return list of strings containing column groups and labels."""
+        if group == '*': return ['%s:%s' % (col[0], col[1])
+            for col in self._config['columns']]
+        if not group in self._config['col_filter']: return []
+        col_filter = self._config['col_filter'][group]
+        labels = []
+        for col in self._config['columns']:
+            if ('*:*') in col_filter \
+                or ('%s:*' % (col[0])) in col_filter \
+                or ('*:%s' % (col[1])) in col_filter \
+                or ('%s:%s' % (col[0], col[1])) in col_filter:
+                labels.append('%s:%s' % (col[0], col[1]))
+        return labels
 
     def set(self, key = None, *args, **kwargs):
 
         if key == 'name': return self._set_name(*args, **kwargs)
         if key == 'backup': return self._set_backup(*args, **kwargs)
+        if key == 'filter': return self._set_col_filter(*args, **kwargs)
 
-        if not key == None: nemoa.log('warning',
+        if not key == None: return nemoa.log('warning',
             "unknown key '%s'" % (key))
-        return sorted(['name', 'backup'])
+        return None
 
     def _set_name(self, name):
         """Set name of dataset."""

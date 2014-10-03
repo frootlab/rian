@@ -520,19 +520,18 @@ class model:
         if key == 'dataset': return self.dataset.get(*args, **kwargs)
         if key == 'system': return self.system.get(*args, **kwargs)
 
-        if not key == None: nemoa.log('warning',
+        if not key == None: return nemoa.log('warning',
             "unknown key '%s'" % (key))
-        return sorted(['name', 'about', 'backup',
-            'network', 'dataset', 'system'])
+        return None
 
     def set(self, key = None, *args, **kwargs):
 
         if key == 'name': return self._set_name(*args, **kwargs)
         if key == 'backup': return self._set_backup(*args, **kwargs)
 
-        if not key == None: nemoa.log('warning',
+        if not key == None: return nemoa.log('warning',
             "unknown key '%s'" % (key))
-        return sorted(['name', 'backup'])
+        return None
 
     def _set_name(self, name):
         """Set name of model."""

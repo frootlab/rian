@@ -164,19 +164,19 @@ class DBN(nemoa.system.ann.ANN):
             # configure system to network
             system.configure(network = network)
 
-            unitCount = sum([len(group) \
+            unit_count = sum([len(group) \
                 for group in system.get('units')])
-            linkCount = len(system.get('links'))
+            link_count = len(system.get('links'))
             nemoa.log("adding subsystem: '%s' (%s units, %s links)" %\
-                (system.get('name'), unitCount, linkCount))
+                (system.get('name'), unit_count, link_count))
 
             # link subsystem
             sub_systems.append(system)
 
-            # link linksparameters of subsystem
+            # link parameters of links of subsystem
             links['init'] = system._params['links'][(0, 1)]
 
-            # link layer parameters of subsystem
+            # link parameters of layer of subsystem
             if layer_id == 0:
                 in_units['init'] = system._units['visible'].params
                 out_units['init'] = system._units['hidden'].params
@@ -216,9 +216,9 @@ class DBN(nemoa.system.ann.ANN):
                     system = prev_sys, mapping = mapping,
                     func = 'expect')
 
-            # add dataset column filter 'visible'
-            dataset._set_col_filter('visible',
-                system.get('units', group = 'visible'))
+            # add / update dataset group 'visible'
+            visible_columns = system.get('units', group = 'visible')[0]
+            dataset.set('filter', visible = visible_columns)
 
             # initialize (free) system parameters
             system._initialize(dataset)

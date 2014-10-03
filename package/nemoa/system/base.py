@@ -153,10 +153,9 @@ class System:
         if key == 'units': return self._get_units(*args, **kwargs)
         if key == 'links': return self._get_links(*args, **kwargs)
 
-        if not key == None: nemoa.log('warning',
+        if not key == None: return nemoa.log('warning',
             "unknown key '%s'" % (key))
-        return sorted(['name', 'about', 'backup',
-            'type', 'layers', 'units', 'links'])
+        return None
 
     def _get_type(self):
         return '%s.%s' % (self._config['package'],
@@ -176,9 +175,9 @@ class System:
         if key == 'name': return self._set_name(*args, **kwargs)
         if key == 'backup': return self._set_backup(*args, **kwargs)
 
-        if not key == None: nemoa.log('warning',
+        if not key == None: return nemoa.log('warning',
             "unknown key '%s'" % (key))
-        return sorted(['name', 'backup'])
+        return None
 
     def _set_name(self, name):
         """Set name of system."""
@@ -236,7 +235,7 @@ class System:
             and not self._check_dataset(dataset): return False
 
         # initialize tracker
-        tracker = nemoa.system.base.tracker(self)
+        tracker = nemoa.system.base.Tracker(self)
         tracker.set(data = self._get_test_data(dataset))
 
         # optimize system parameters
@@ -411,7 +410,7 @@ class System:
         if not isinstance(retDict, dict): return retDict
         return {key: retDict[key] for key in retDict.keys()}
 
-class tracker:
+class Tracker:
 
     _system = None # linked nemoa system instance
     _config = None # linked nemoa system optimization configuration
