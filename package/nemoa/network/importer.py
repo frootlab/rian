@@ -8,7 +8,7 @@ import ConfigParser
 import nemoa
 import os
 
-def open(path, file_format = None):
+def open(path, file_format = None, workspace = None, **kwargs):
     """Import network configuration from file."""
 
     if not os.path.isfile(path):
@@ -23,7 +23,8 @@ def open(path, file_format = None):
 
     # get network configuration from file
     if file_format == 'ini':
-        import_class = nemoa.network.importer.Ini()
+        import_class = nemoa.network.importer.Ini(
+            workspace = workspace, **kwargs)
     else:
         return nemoa.log('error', """could not import network '%s':
             file format '%s' is currently not supported.""" %
@@ -32,14 +33,14 @@ def open(path, file_format = None):
     return import_class.load(path)
 
 class Ini:
-    """import network configuration from ini files."""
+    """Import network configuration from ini files."""
 
-    workspace = None
+    _workspace = None
 
-    def __init__(self):
-        self.workspace = nemoa.workspace.name()
+    def __init__(self, workspace = None):
+        self._workspace = workspace
 
-    def load(self, file):
+    def load(self, path):
         """Return network configuration as dictionary.
 
         Args:
@@ -50,39 +51,39 @@ class Ini:
 
         netcfg = ConfigParser.ConfigParser()
         netcfg.optionxform = str
-        netcfg.read(file)
+        netcfg.read(path)
 
-        name = os.path.splitext(os.path.basename(file))[0]
-        if nemoa.workspace.name():
-            fullname = '.'.join([nemoa.workspace.name(), name])
+        name = os.path.splitext(os.path.basename(path))[0]
+        if isinstance(self._workspace, str) and self._workspace:
+            fullname = '.'.join([self._workspace, name])
         else:
             fullname = name
 
         network = {
             'class': 'network',
             'name': fullname,
-            'workspace': self.workspace,
+            'workspace': self._workspace,
             'config': {
                 'package': 'base',
                 'class': 'network',
                 'type': None,
                 'name': name,
                 'source': {
-                    'file': file,
+                    'file': path,
                     'file_format': 'ini' }}}
 
         # validate 'network' section
         if not 'network' in netcfg.sections():
             return nemoa.log('warning', """could not import network
                 configuration: file '%s' does not contain section
-                'network'!""" % (file))
+                'network'!""" % (path))
 
         # name of network ('name')
         if 'name' in netcfg.options('network'):
             network_name = netcfg.get('network', 'name').strip()
             network['config']['name'] = network_name
             network['name'] = \
-                '.'.join([self.workspace, network_name])
+                '.'.join([self._workspace, network_name])
 
         # short description of the network ('description')
         if 'description' in netcfg.options('network'):
@@ -118,21 +119,21 @@ class Ini:
         # depending on type, use different class methods to parse
         # and interpret type specific parameters and sections
         if network['config']['type'] in ['layer', 'auto']:
-            return self._parse_layer_network(file, netcfg, network)
+            return self._parse_layer_network(path, netcfg, network)
 
         return nemoa.log('warning',
             """could not import network configuration:
             file '%s' contains unsupported network type '%s'.""" %
-            (file, network['config']['type']))
+            (path, network['config']['type']))
 
-    def _parse_layer_network(self, file, netcfg, network):
+    def _parse_layer_network(self, path, netcfg, network):
 
         config = network['config']
 
         # 'layers': ordered list of network layers
         if not 'layers' in netcfg.options('network'):
             return nemoa.log('warning', """file '%s' does not
-                contain parameter 'layers'.""" % (file))
+                contain parameter 'layers'.""" % (path))
         else: config['layer'] = nemoa.common.str_to_list(
             netcfg.get('network', 'layers'))
 
@@ -149,7 +150,7 @@ class Ini:
             if not layer_section in netcfg.sections():
                 return nemoa.log('warning', """file '%s' does not
                     contain information about layer '%s'."""
-                    % (file, layer))
+                    % (path, layer))
 
             # TODO: type in ('gauss', 'sigmoid', 'linear')
             # get type of layer ('type')
@@ -203,7 +204,7 @@ class Ini:
         if config['visible'] == []:
             return nemoa.log('error', """could not parse network:
                 file '%s' does not contain visible layers!"""
-                % (file))
+                % (path))
 
         # parse '[binding *]' sections and add edges to network dict
         for i in xrange(len(config['layer']) - 1):

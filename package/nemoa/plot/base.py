@@ -70,8 +70,8 @@ class plot:
 
             # assert units
             mapping = model.system.mapping()
-            input_units = model.system.units(group = mapping[0])[0]
-            output_units = model.system.units(group = mapping[-1])[0]
+            input_units = model.system.get('units', group = mapping[0])[0]
+            output_units = model.system.get('units', group = mapping[-1])[0]
             if not isinstance(self.settings['units'], tuple) \
                 or not isinstance(self.settings['units'][0], list) \
                 or not isinstance(self.settings['units'][1], list):

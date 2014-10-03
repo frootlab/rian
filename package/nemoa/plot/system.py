@@ -111,7 +111,7 @@ class graph(nemoa.plot.base.plot):
         # update node attributes
         for i in xrange(len(graphs)):
             for n in graphs[i].nodes():
-                node = model.network.node(n)
+                node = model.network.get('node', n)
                 label = nemoa.common.str_format_unit_label(node['label'])
                 node_type = node['params']['type']
                 graph.node[n]['label'] = label

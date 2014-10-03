@@ -93,14 +93,14 @@ class model:
 
         # set name of model
         if not 'name' in self._config or not self._config['name']:
-            if not self.network.name():
+            if not self.network.get('name'):
                 self._set_name('%s-%s' % (
                     self.dataset.name(),
                     self.system.name()))
             else:
                 self._set_name('%s-%s-%s' % (
                     self.dataset.name(),
-                    self.network.name(),
+                    self.network.get('name'),
                     self.system.name()))
         return True
 
@@ -119,7 +119,7 @@ class model:
             nemoa.log('set', indent = '-1')
             return False
         self._config['check']['network'] = \
-            self.network.configure(dataset = self.dataset,
+            self.network._configure(dataset = self.dataset,
                 system = self.system)
         if not self._config['check']['network']:
             nemoa.log('error', """could not configure model: network
@@ -173,10 +173,10 @@ class model:
         if self.system._is_empty(): return False
 
         # initialize system parameters with dataset
-        self.system.initialize(self.dataset)
+        self.system._initialize(self.dataset)
 
         # update network with initial system parameters
-        self.network.update(system = self.system)
+        self.network._update(system = self.system)
 
         return self
 
@@ -201,12 +201,12 @@ class model:
 
         # get optimization schedule
         if schedule == None:
-            schedule = self.system.get_type() + '.default'
+            schedule = self.system.get('type') + '.default'
         elif not '.' in schedule:
-            schedule = self.system.get_type() + '.' + schedule
+            schedule = self.system.get('type') + '.' + schedule
         schedule = nemoa.workspace._get_config(
             type = 'schedule', config = schedule,
-            merge = ['params', self.system.get_type()],
+            merge = ['params', self.system.get('type')],
             **kwargs)
         if not schedule:
             nemoa.log('error', """could not optimize system parameters:
@@ -229,7 +229,7 @@ class model:
 
         nemoa.log('set', indent = '-1')
 
-        self.network.update(system = self.system) # update network
+        self.network._update(system = self.system)
         nemoa.log('set', indent = '-1')
 
         return self
@@ -275,9 +275,9 @@ class model:
                     statistics = kwargs['statistics']
                     del kwargs['statistics']
                 else: statistics = 0
-                cols = self.system.layers(visible = True)
+                cols = self.system.get('layers', visible = True)
                 data = self.dataset.data(
-                    size = statistics, cols = cols)
+                    size = statistics, cols = tuple(cols))
                 if preprocessing: self.dataset._set(dataset_copy)
 
             return self.system.eval(data, *trailer, **kwargs)
@@ -319,7 +319,8 @@ class model:
         if not 'update' in config['system']['config']:
             config['system']['config']['update'] = {'A': False}
 
-        # 2do system._set(...) shall create system and do something like self.configure ...
+        # TODO: system._set(...) shall create system and do something
+        # like self.configure ...
 
         # create system
         self.system = nemoa.system.new(
@@ -387,7 +388,7 @@ class model:
         nemoa.log('create plot instance')
         nemoa.log('set', indent = '+1')
 
-        if plot == None: plot = self.system.get_type() + '.default'
+        if plot == None: plot = self.system.get('type') + '.default'
         if isinstance(plot, str):
             plotName, plotParams = nemoa.common.str_split_params(plot)
             mergeDict = plotParams
@@ -437,7 +438,7 @@ class model:
 
             # search for given configuration
             for plot in [args[0],
-                '%s.%s' % (self.system.get_type(), args[0]),
+                '%s.%s' % (self.system.get('type'), args[0]),
                 'base.' + args[0]]:
                 cfg = nemoa.workspace.get('plot', \
                    name = plot, params = params)

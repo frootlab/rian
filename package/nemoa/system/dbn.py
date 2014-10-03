@@ -164,8 +164,9 @@ class dbn(nemoa.system.ann.ann):
             # configure system to network
             system.configure(network = network)
 
-            unitCount = sum([len(group) for group in system.units()])
-            linkCount = len(system.links())
+            unitCount = sum([len(group) \
+                for group in system.get('units')])
+            linkCount = len(system.get('links'))
             nemoa.log("adding subsystem: '%s' (%s units, %s links)" %\
                 (system.name(), unitCount, linkCount))
 
@@ -205,20 +206,22 @@ class dbn(nemoa.system.ann.ann):
 
             # transform dataset with previous system / fix lower stack
             if sysID > 0:
-                prevSys = subSystems[sysID - 1]
-                visible_layer = prevSys._params['units'][0]['name']
-                hidden_layer = prevSys._params['units'][1]['name']
+                prev_sys = subSystems[sysID - 1]
+
+                visible_layer = prev_sys._params['units'][0]['name']
+                hidden_layer = prev_sys._params['units'][1]['name']
                 mapping = (visible_layer, hidden_layer)
+
                 dataset._transform(algorithm = 'system',
-                    system = prevSys, mapping = mapping,
-                    transform = 'expect')
+                    system = prev_sys, mapping = mapping,
+                    func = 'expect')
 
             # add dataset column filter 'visible'
             dataset._set_col_filter('visible',
-                system.units(group = 'visible'))
+                system.get('units', group = 'visible'))
 
             # initialize (free) system parameters
-            system.initialize(dataset)
+            system._initialize(dataset)
 
             # optimize (free) system parameter
             system.optimize(dataset, schedule)

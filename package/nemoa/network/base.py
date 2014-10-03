@@ -14,20 +14,18 @@ class Network:
     _graph = None
 
     def __init__(self, config = {}):
-        self._set_config(config)
-
-    def _set_config(self, config):
         """Configure network to given dictionary."""
 
-        # create valid config config
+        # create copy of config
         self._config = config.copy()
+        if not 'name' in self._config: self._config['name'] = None
 
         # TODO: move functionality to network configuration file!
         # type 'auto' is used for networks
         # wich include all dataset columns as visible units
         if self._config['type'] == 'auto':
             self._config = {'type': 'auto', 'name': '', 'id': 0}
-            return True
+            return
 
         # TODO: move functionality to network configuration file!
         # type 'autolayer' is used for networks
@@ -35,14 +33,12 @@ class Network:
         if self._config['type'] == 'autolayer':
             self._get_nodes_from_layers()
             self._get_edges_from_layers()
-            return self._create_layergraph()
+            self._create_layergraph()
 
         # type 'layer' is used for layered networks
         # wich are manualy defined, by using a dictionary
-        if self._config['type'].lower() in ['layer', 'multilayer']:
-            return self._create_layergraph()
-
-        return False
+        if self._config['type'].lower() == 'layer':
+            self._create_layergraph()
 
     def _get_config(self):
         """Return configuration as dictionary."""
@@ -80,7 +76,7 @@ class Network:
         self._config['label_format'] = 'generic:string'
         if not 'nodes' in self._config: self._config['nodes'] = {}
         if not 'layer' in self._config: self._config['layer'] = []
-        (visible, hidden) = system.units()
+        (visible, hidden) = system.get('units')
         for unit in hidden:
             (group, label) = unit.split(':')
             if not group in self._config['layer']:
@@ -106,7 +102,7 @@ class Network:
                     for nodeTo in nodesTo]
         return True
 
-    def configure(self, dataset, system):
+    def _configure(self, dataset, system):
         """Configure network to dataset and system."""
 
         # check if network instance is empty
@@ -123,7 +119,7 @@ class Network:
             'error', """could not configure network:
             no valid system instance given.""")
 
-        nemoa.log("configure network: '%s'" % (self.name()))
+        nemoa.log("configure network: '%s'" % (self._config['name']))
         nemoa.log('set', indent = '+1')
 
         # type: 'auto is used for networks
@@ -269,11 +265,11 @@ class Network:
 
         return True
 
-    def node(self, node):
+    def _get_node(self, node):
         """Return network information of single node."""
         return self._graph.node[node]
 
-    def nodes(self, group_by_layer = False, **kwargs):
+    def _get_nodes(self, group_by_layer = False, **kwargs):
         """get list of nodes with specific attributes
         example nodes(type = 'visible')"""
 
@@ -295,7 +291,7 @@ class Network:
 
     def _node_labels(self, **kwargs):
         return [self._graph.node[node]['label'] \
-            for node in self.nodes(**kwargs)]
+            for node in self._get_nodes(**kwargs)]
 
     def _nodes_group_by_layer(self, type = None):
 
@@ -315,30 +311,30 @@ class Network:
             allGroups[type] = groups
         return allGroups
 
-    def layer(self, layer):
+    def _get_layer(self, layer):
         """Return dictionary containing information about a layer."""
-        nodes = self.nodes(type = layer)
+        nodes = self._get_nodes(type = layer)
         if not nodes: return None
-        first_node = self.node(nodes[0])['params']
+        first_node = self._get_node(nodes[0])['params']
         return {
             'id': first_node['layer_id'],
             'label': first_node['type'],
             'visible': first_node['visible'],
             'nodes': nodes}
 
-    def layers(self, **kwargs):
+    def _get_layers(self, **kwargs):
         """Return ordered list of layers by label."""
-        layerDict = {self.node(node)['params']['layer_id']: \
-            {'label': self.node(node)['params']['type']} \
-            for node in self.nodes()}
-        layerList = [layerDict[layer]['label'] \
-            for layer in xrange(0, len(layerDict))]
-        return layerList
+        layer_dict = {self._get_node(node)['params']['layer_id']: \
+            {'label': self._get_node(node)['params']['type']} \
+            for node in self._get_nodes()}
+        layer_list = [layer_dict[layer]['label'] \
+            for layer in xrange(0, len(layer_dict))]
+        return layer_list
 
-    def edge(self, edge):
+    def _get_edge(self, edge):
         return self._graph.edge[edge]
 
-    def edges(self, **kwargs):
+    def _get_edges(self, **kwargs):
 
         # filter search criteria and order entries
         sorted_list = [None] * self._graph.number_of_edges()
@@ -356,7 +352,7 @@ class Network:
 
             src_layer = src.split(':')[0]
             tgt_layer = tgt.split(':')[0]
-            layers = self.layers()
+            layers = self._get_layers()
 
             if src_layer in layers and tgt_layer in layers:
                 src_layer_id = layers.index(src_layer)
@@ -406,14 +402,14 @@ class Network:
         """
 
         # test if network contains empty layers
-        for layer in self.layers():
-            if not len(self.layer(layer)['nodes']) > 0: return nemoa.log(
+        for layer in self._get_layers():
+            if not len(self._get_layer(layer)['nodes']) > 0: return nemoa.log(
                 'error', 'Feedforward networks do not allow empty layers!')
 
         # test if and only if the first and the last layer are visible
-        for layer in self.layers():
-            if not self.layer(layer)['visible'] \
-                == (layer in [self.layers()[0], self.layers()[-1]]):
+        for layer in self._get_layers():
+            if not self._get_layer(layer)['visible'] \
+                == (layer in [self._get_layers()[0], self._get_layers()[-1]]):
                 return nemoa.log('error', """The first and the last layer
                     of a Feedforward network have to be visible,
                     middle layers have to be hidden!""")
@@ -435,7 +431,7 @@ class Network:
         if not self._is_compatible_lff(): return False
 
         # test if network contains at least three layers
-        if len(self.layers()) < 3: return nemoa.log('error',
+        if len(self._get_layers()) < 3: return nemoa.log('error',
             """incompatible network: multilayer networks need at least
             one hidden layer.""")
 
@@ -458,15 +454,15 @@ class Network:
         if not self._is_compatible_mlff(): return False
 
         # test if the network contains odd number of layers
-        if not len(self.layers()) % 2 == 1: return nemoa.log('error',
+        if not len(self._get_layers()) % 2 == 1: return nemoa.log('error',
             'DBNs expect an odd number of layers!')
 
         # test if the hidden layers are symmetric
-        layers = self.layers()
+        layers = self._get_layers()
         size = len(layers)
         for lid in xrange(1, (size - 1) / 2):
-            symmetric = len(self.layer(layers[lid])['nodes']) \
-                == len(self.layer(layers[-lid-1])['nodes'])
+            symmetric = len(self._get_layer(layers[lid])['nodes']) \
+                == len(self._get_layer(layers[-lid-1])['nodes'])
             if not symmetric: return nemoa.log('error',
                 """DBNs expect a symmetric number of hidden
                 nodes, related to their central middle layer!""")
@@ -489,14 +485,17 @@ class Network:
         if not self._is_compatible_dbn(): return False
 
         # test if input and output layers contain identical nodes
-        layers = self.layers()
-        inputLayer = self.layer(layers[0])['nodes']
-        outputLayer = self.layer(layers[0])['nodes']
+        layers = self._get_layers()
+        inputLayer = self._get_layer(layers[0])['nodes']
+        outputLayer = self._get_layer(layers[0])['nodes']
         if not sorted(inputLayer) == sorted(outputLayer):
             return nemoa.log('error', """Autoencoders expect
                 identical input and output nodes""")
 
         return True
+
+    def name(self):
+        """Name of network."""
 
     def about(self, *args):
         """Generic information about various parts of the network.
@@ -509,19 +508,34 @@ class Network:
             about()"""
 
         if not args: return {
-            'name': self.name(),
+            'name': self._config['name'],
             'description': self.__doc__
         }
 
-        if args[0] == 'name': return self.name()
+        if args[0] == 'name': return self._config['name']
         if args[0] == 'description': return self.__doc__
         return None
 
-    def name(self):
-        """Name of network (as string)."""
-        return self._config['name'] if 'name' in self._config else ''
+    def get(self, key, *args, **kwargs):
+        if key == 'name':
+            return self._config['name']
+        if key == 'about':
+            return self.__doc__
+        if key == 'edge':
+            return self._get_edge(*args, **kwargs)
+        if key == 'edges':
+            return self._get_edges(*args, **kwargs)
+        if key == 'node':
+            return self._get_node(*args, **kwargs)
+        if key == 'nodes':
+            return self._get_nodes(*args, **kwargs)
+        if key == 'layer':
+            return self._get_layer(*args, **kwargs)
+        if key == 'layers':
+            return self._get_layers(*args, **kwargs)
+        return None
 
-    def update(self, **kwargs):
+    def _update(self, **kwargs):
         if 'system' in kwargs:
             system = kwargs['system']
             if not nemoa.type.is_system(system):

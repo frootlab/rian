@@ -180,8 +180,9 @@ class workspace:
             return None
 
         # create name string (if not given)
-        if name == None: name = '-'.join(
-            [dataset.name(), network.name(), system.name()])
+        if name == None:
+            name = '-'.join([str(dataset.name()),
+                str(network.get('name')), str(system.name())])
 
         # create model instance
         model = self._get_instance(
@@ -491,16 +492,19 @@ class config:
         return True
 
     def _scan_networks(self, files = None):
-        """Scan for network configuration files (current workspace)."""
+        """Scan for network configuration files in current workspace."""
+
         nemoa.log('scanning for networks')
         nemoa.log('set', indent = '+1')
 
         # assert network files path
         if files == None: files = self._path['networks'] + '*.ini'
+
         # import network files
         for network_file in glob.iglob(self._expand_path(files)):
-            config = nemoa.network.importer.open(network_file)
-            self._add_obj_to_store(config)
+            obj_config = nemoa.network.importer.open(
+                network_file, workspace = self._workspace)
+            self._add_obj_to_store(obj_config)
 
         nemoa.log('set', indent = '-1')
         return True
@@ -523,7 +527,7 @@ class config:
         if obj_conf['class'] == 'dataset':
             return self._update_dataset_config(obj_conf)
         if obj_conf['class'] == 'system':
-            return nemoa.system._update_system_config(obj_conf)
+            return self._update_system_config(obj_conf)
         if obj_conf['class'] == 'schedule':
             return self._update_schedule_config(obj_conf)
         if obj_conf['class'] == 'plot':
@@ -588,7 +592,8 @@ class config:
 
             # get network config
             network_cfg = nemoa.network.importer.open(network_file,
-                file_format)
+                file_format = file_format, workspace = self._workspace)
+
             if not network_cfg:
                 return nemoa.log('error', """skipping network '%s':
                     could not import file '%s'."""
@@ -703,6 +708,48 @@ class config:
 
         return obj_conf
 
+    def _update_system_config(self, obj_conf):
+        """Update system configuration"""
+
+        config = obj_conf['config']
+
+        # system module
+        if not 'package' in config:
+            return nemoa.log('warning', """skipping system '%s':
+                missing parameter 'package'.""" % (name))
+        try:
+            module_name = 'nemoa.system.%s' % (config['package'])
+            system_module = importlib.import_module(module_name)
+        except:
+            return nemoa.log('warning', """skipping system '%s':
+                python module 'nemoa.system.%s' could not be imported.
+                (parameter 'package').""" % (name, config['package']))
+
+        # system class
+        if not 'class' in config:
+            return nemoa.log('warning', """skipping system '%s':
+                missing parameter 'class'.""" % (name))
+        if not hasattr(system_module, config['class']):
+            return nemoa.log('warning', """skipping system '%s':
+                python module 'nemoa.system.%s' does not contain class
+                '%s'. (parameter 'class')."""
+                % (name, config['class'], config['package']))
+        else:
+            system_class = getattr(system_module, config['class'])
+
+        # update system description
+        if not 'description' in config:
+            obj_conf['config']['description'] = system_class.__doc__
+        else:
+            obj_conf['config']['description'] = \
+                nemoa.common.str_doc_trim(config['description'])
+
+        # cleanup
+        del system_class
+        del system_module
+
+        return obj_conf
+
     def _update_schedule_config(self, obj_conf):
         """Check and update schedule configuration"""
 
@@ -724,7 +771,7 @@ class config:
                     conf['params'][name] = conf[key]
                     del conf[key]
 
-        # 2do: allow stages for optimization schedule
+        # TODO: allow stages for optimization schedule
 
         ## create 'stage'
         #if not 'stage' in conf or not conf['stage']:
@@ -780,7 +827,8 @@ class config:
         """Unlink object configuration from object dictionary."""
         if not obj_conf: return False
         id = self._get_obj_id_by_name(obj_conf['class'], obj_conf['name'])
-        if not id in self._index.keys(): return nemoa.log('warning', '2do')
+        # TODO: create useful warning
+        if not id in self._index.keys(): return nemoa.log('warning', '')
 
         # delete entry in index
         self._index.pop(id)

@@ -107,7 +107,7 @@ class ann(nemoa.system.base.system):
         """Update units and links to network instance."""
 
         nemoa.log("""get system units and links
-            from network '%s'.""" % (network.name()))
+            from network '%s'.""" % (network.get('name')))
         nemoa.log('set', indent = '+1')
 
         if not nemoa.type.is_network(network):
@@ -123,7 +123,7 @@ class ann(nemoa.system.base.system):
             initialize = initialize)
 
         self._configure_set_links(
-            network.edges(),
+            network.get('edges'),
             initialize = initialize)
 
         self._config['check']['network'] = True
@@ -141,7 +141,7 @@ class ann(nemoa.system.base.system):
 
         # compare visible unit labels with dataset columns
         mapping = self.mapping()
-        unitsInGroups = self.units(visible = True)
+        unitsInGroups = self._get_units(visible = True)
         units = []
         for group in unitsInGroups: units += group
         if dataset._get_col_labels() != units: return nemoa.log(
@@ -238,12 +238,12 @@ class ann(nemoa.system.base.system):
         """Return tuple with lists of unit labels from network."""
 
         units = []
-        for layer in network.layers():
-            label = network.nodes(type = layer)
-            params = network.node(label[0])['params']
+        for layer in network.get('layers'):
+            label = network.get('nodes', type = layer)
+            params = network.get('node', label[0])['params']
             units.append({
                 'name': layer,
-                'label': network.nodes(type = layer),
+                'label': network.get('nodes', type = layer),
                 'visible': params['visible'],
                 'id': params['layer_id']})
 
@@ -490,10 +490,10 @@ class ann(nemoa.system.base.system):
             'weight': link_weight,
             'normal': link_norm_weight}
 
-    def _get_links_from_config(self):
+    def _get_links(self):
         """Return links from adjacency matrix. """
 
-        layers = self.layers()
+        layers = self._get_layers()
         if not layers: return False
 
         links = ()
@@ -864,6 +864,7 @@ class ann(nemoa.system.base.system):
             keys of the dictionary are given by the names of the target
             units, the values depend on the used evaluation function and
             are ether scalar (float) or vectorially (flat numpy array).
+
         """
 
         # check if data is valid
@@ -881,11 +882,11 @@ class ann(nemoa.system.base.system):
             "could not evaluate units: unknown method '%s'" % (method))
 
         # prepare (non keyword) arguments for evaluation
-        funcArgs = funcs[func]['args']
-        if funcArgs == 'none': eArgs = []
-        elif funcArgs == 'input': eArgs = [data[0]]
-        elif funcArgs == 'output': eArgs = [data[1]]
-        elif funcArgs == 'all': eArgs = [data]
+        func_args = funcs[func]['args']
+        if func_args == 'none': eArgs = []
+        elif func_args == 'input': eArgs = [data[0]]
+        elif func_args == 'output': eArgs = [data[1]]
+        elif func_args == 'all': eArgs = [data]
 
         # prepare keyword arguments for evaluation
         eKwargs = kwargs.copy()
@@ -900,7 +901,7 @@ class ann(nemoa.system.base.system):
         except: return nemoa.log('error', 'could not evaluate units')
 
         # create dictionary of target units
-        labels = self.units(group = eKwargs['mapping'][-1])[0]
+        labels = self._get_units(group = eKwargs['mapping'][-1])[0]
         retFmt = funcs[func]['return']
         if retFmt == 'vector': return {unit: values[:, uid] \
             for uid, unit in enumerate(labels)}
@@ -1350,8 +1351,8 @@ class ann(nemoa.system.base.system):
         values = getattr(self, method)(*evalArgs, **evalKwargs)
 
         # create link dictionary
-        inLabels = self.units(group = evalKwargs['mapping'][-2])[0]
-        outLabels = self.units(group = evalKwargs['mapping'][-1])[0]
+        inLabels = self._get_units(group = evalKwargs['mapping'][-2])[0]
+        outLabels = self._get_units(group = evalKwargs['mapping'][-1])[0]
         outFmt = methods[func]['return']
         if outFmt == 'scalar':
             relDict = {}
@@ -1489,8 +1490,8 @@ class ann(nemoa.system.base.system):
             # create formated return values
             if retFmt == 'array': retVal = values
             elif retFmt == 'dict':
-                inUnits = self.units(group = evalKwargs['mapping'][0])[0]
-                outUnits = self.units(group = evalKwargs['mapping'][-1])[0]
+                inUnits = self._get_units(group = evalKwargs['mapping'][0])[0]
+                outUnits = self._get_units(group = evalKwargs['mapping'][-1])[0]
                 retVal = nemoa.common.dict_from_array(values, (inUnits, outUnits))
 
                 # optionally evaluate statistical values over all relations
@@ -1566,8 +1567,8 @@ class ann(nemoa.system.base.system):
         """
 
         if not mapping: mapping = self.mapping()
-        inLabels = self.units(group = mapping[0])[0]
-        outLabels = self.units(group = mapping[-1])[0]
+        inLabels = self._get_units(group = mapping[0])[0]
+        outLabels = self._get_units(group = mapping[-1])[0]
 
         # calculate symmetric correlation matrix
         M = numpy.corrcoef(numpy.hstack(data).T)
@@ -1627,8 +1628,8 @@ class ann(nemoa.system.base.system):
         """
 
         if not mapping: mapping = self.mapping()
-        inLabels = self.units(group = mapping[0])[0]
-        outLabels = self.units(group = mapping[-1])[0]
+        inLabels = self._get_units(group = mapping[0])[0]
+        outLabels = self._get_units(group = mapping[-1])[0]
 
         # prepare knockout matrix
         R = numpy.zeros((len(inLabels), len(outLabels)))
@@ -1679,8 +1680,8 @@ class ann(nemoa.system.base.system):
         """
 
         if not mapping: mapping = self.mapping()
-        input_units = self.units(group = mapping[0])[0]
-        output_units = self.units(group = mapping[-1])[0]
+        input_units = self._get_units(group = mapping[0])[0]
+        output_units = self._get_units(group = mapping[-1])[0]
         R = numpy.zeros((len(input_units), len(output_units)))
 
         # get indices of representatives
@@ -1856,6 +1857,7 @@ class ann(nemoa.system.base.system):
 
         Layer of units with sigmoidal activation function and bernoulli
         distributed sampling.
+
         """
 
         def initialize(self, data = None):
@@ -1982,7 +1984,9 @@ class ann(nemoa.system.base.system):
         """Layer of Gaussian Units.
 
         Artificial neural network units with linear activation function
-        and gaussian sampling."""
+        and gaussian sampling.
+
+        """
 
         def initialize(self, data = None, vSigma = 0.4):
             """Initialize parameters of gauss distributed units. """

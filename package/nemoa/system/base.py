@@ -84,7 +84,7 @@ class system:
         """Return true if system is a dummy."""
         return False
 
-    def units(self, **kwargs):
+    def _get_units(self, **kwargs):
         """.
 
         Returns:
@@ -92,7 +92,7 @@ class system:
 
         Examples:
             return visible units:
-                model.system.units(visible = True)
+                model.system.get('units', visible = True)
 
         """
 
@@ -115,7 +115,7 @@ class system:
 
         return groups
 
-    def layers(self, **kwargs):
+    def _get_layers(self, **kwargs):
         """.
 
         Returns:
@@ -123,9 +123,10 @@ class system:
 
         Examples:
             return visible layers:
-                model.system.layers(visible = True)
+                model.system.get('layers', visible = True)
+
             search for layer 'MyLayer':
-                model.system.layers(name = 'MyLayer')
+                model.system.get('layers', name = 'MyLayer')
 
         """
 
@@ -134,16 +135,16 @@ class system:
             if key in self._params['units'][0].keys():
                 filter.append((key, kwargs[key]))
 
-        groups = ()
-        for group in self._params['units']:
+        layers = []
+        for layer in self._params['units']:
             valid = True
             for key, val in filter:
-                if not group[key] == val:
+                if not layer[key] == val:
                     valid = False
                     break
-            if valid: groups += (group['name'], )
+            if valid: layers.append(layer['name'])
 
-        return groups
+        return layers
 
     def _get_group_of_unit(self, unit):
         """Return name of unit group of given unit."""
@@ -152,9 +153,20 @@ class system:
                 return self._params['units'][id]['name']
         return None
 
-    def links(self, *args, **kwargs):
-        """Return list with 2-tuples containing unit labels."""
-        return self._get_links_from_config()
+    def get(self, key, *args, **kwargs):
+        if key == 'name': return self._config['name']
+        if key == 'about': return self.__doc__
+        if key == 'type': return self._get_type(*args, **kwargs)
+        if key == 'layers': return self._get_layers(*args, **kwargs)
+        if key == 'units': return self._get_units(*args, **kwargs)
+        if key == 'links': return self._get_links(*args, **kwargs)
+
+
+        return None
+
+    def _get_type(self):
+        return '%s.%s' % (self._config['package'],
+            self._config['class'])
 
     def _get(self, section = None):
         """Return system settings as dictionary."""
@@ -173,7 +185,7 @@ class system:
             self._params = copy.deepcopy(kwargs['params'])
         return self._configure_update_units_and_links()
 
-    def initialize(self, dataset = None):
+    def _initialize(self, dataset = None):
         """Initialize system parameters.
 
         Initialize all system parameters to dataset.
@@ -197,14 +209,15 @@ class system:
             config = self._default['optimize'].copy()
             nemoa.common.dict_merge(self._config['optimize'], config)
             self._config['optimize'] = config
-        elif not self.get_type() in schedule['params']: return nemoa.log(
-            'error', """could not optimize model:
-            optimization schedule '%s' does not include system '%s'
-            """ % (schedule['name'], self.get_type()))
+        elif not self.get('type') in schedule['params']:
+            return nemoa.log('error', """could not optimize model:
+                optimization schedule '%s' does not include system '%s'
+                """ % (schedule['name'], self.get('type')))
         else:
             config = self._default['optimize'].copy()
             nemoa.common.dict_merge(self._config['optimize'], config)
-            nemoa.common.dict_merge(schedule['params'][self.get_type()], config)
+            nemoa.common.dict_merge(
+                schedule['params'][self.get('type')], config)
             self._config['optimize'] = config
 
         # check dataset
@@ -219,7 +232,7 @@ class system:
         # optimize system parameters
         algorithm = config['algorithm'].title()
         nemoa.log('note', "optimize '%s' (%s) using algorithm '%s'" % \
-            (self.name(), self.get_type(), algorithm))
+            (self.name(), self.get('type'), algorithm))
         nemoa.log('set', indent = '+1')
         retVal = self._optimize_params(dataset, schedule, tracker)
         nemoa.log('set', indent = '-1')
@@ -227,6 +240,8 @@ class system:
         return retVal
 
     def eval(self, data, *args, **kwargs):
+
+        # Default system evaluation
         if len(args) == 0:
             return self._eval_system(data, **kwargs)
 
@@ -346,26 +361,6 @@ class system:
         return nemoa.log('error',
             "unsupported data deviation norm '%s'" % (deviation))
 
-    def map_data(self, data, mapping = None, transform = 'expect'):
-        """Return system representation of data.
-
-        Args:
-            mapping: tuple of strings describing the mapping function
-            transform: mapping algorithm
-
-        """
-
-        if mapping == None:
-            mapping = self.mapping()
-        if transform == 'expect':
-            return self._eval_units_expect(data, mapping)
-        if transform == 'value':
-            return self._eval_units_values(data, mapping)
-        if transform == 'sample':
-            return self._eval_units_samples(data, mapping)
-        return nemoa.log('error', """could not map data:
-            unknown mapping algorithm '%s'""" % (transform))
-
     def about(self, *args):
         """Metainformation of the system.
 
@@ -389,7 +384,7 @@ class system:
             'name': self.name(),
             'description': self.__doc__,
             'class': self._config['class'],
-            'type': self.get_type(),
+            'type': self.get('type'),
             'units': self._about_units(),
             'links': self._about_links(),
             'relations': self._about_relations()
@@ -409,11 +404,6 @@ class system:
     def name(self):
         """Return name of system."""
         return self._config['name']
-
-    def get_type(self):
-        """Return sytem type."""
-        return '%s.%s' % (self._config['package'],
-            self._config['class'])
 
 class tracker:
 

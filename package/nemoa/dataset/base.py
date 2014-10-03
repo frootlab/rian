@@ -121,7 +121,7 @@ class dataset:
         """
 
         nemoa.log("configure dataset '%s' to network '%s'" % \
-            (self.name(), network.name()))
+            (self.name(), network.get('name')))
         nemoa.log('set', indent = '+1')
 
         # load data from cachefile if caching is activated
@@ -155,13 +155,13 @@ class dataset:
             net_layers = {'v': None}
         else:
             # get network node labels, grouped by layers
-            net_layers = network.nodes(type = 'visible',
+            net_layers = network.get('nodes', type = 'visible',
                 group_by_layer = True)
 
             # sort network layers
             net_layers_sorted = []
             for layer in net_layers:
-                layer_id = network.layer(layer)['id']
+                layer_id = network.get('layer', layer)['id']
                 net_layers_sorted.append((layer_id, layer))
             net_layers_sorted = sorted(net_layers_sorted)
 
@@ -475,37 +475,54 @@ class dataset:
 
             if mapping == None: mapping = system.mapping()
 
-            sourceColumns = system.units(group = mapping[0])[0]
-            targetColumns = system.units(group = mapping[-1])[0]
+            source_columns = system.get('units', group = mapping[0])[0]
+            target_columns = system.get('units', group = mapping[-1])[0]
 
-            self._set_col_labels(sourceColumns)
+            self._set_col_labels(source_columns)
 
             for src in self._data:
-                data = self._data[src]['array']
 
-                dataArray = data[sourceColumns].view('<f8').reshape(
-                    data.size, len(sourceColumns))
-                transArray = system.map_data(
-                    dataArray, mapping = mapping, **kwargs)
+                # get data, mapping and transformation function
+                data = self._data[src]['array']
+                data_array = data[source_columns].view('<f8').reshape(
+                    data.size, len(source_columns))
+                if mapping == None: mapping = system.mapping()
+                if not 'func' in kwargs: func = 'expect'
+                else: func = kwargs['func']
+
+                # transform data
+                if func == 'expect':
+                    trans_array = system._eval_units_expect(
+                        data_array, mapping)
+                elif func == 'value':
+                    trans_array = system._eval_units_values(
+                        data_array, mapping)
+                elif func == 'sample':
+                    trans_array = system._eval_units_samples(
+                        data_array, mapping)
 
                 # create empty record array
-                numRows = self._data[src]['array']['label'].size
-                colNames = ('label',) + tuple(targetColumns)
-                colFormats = ('<U12',) + tuple(['<f8' for x in targetColumns])
-                newRecArray = numpy.recarray((numRows,),
-                    dtype = zip(colNames, colFormats))
+                num_rows = self._data[src]['array']['label'].size
+                col_names = ('label',) + tuple(target_columns)
+                col_formats = ('<U12',) + tuple(['<f8' \
+                    for x in target_columns])
+                new_rec_array = numpy.recarray((num_rows,),
+                    dtype = zip(col_names, col_formats))
 
                 # set values in record array
-                newRecArray['label'] = self._data[src]['array']['label']
-                for colID, colName in enumerate(newRecArray.dtype.names[1:]):
+                new_rec_array['label'] = \
+                    self._data[src]['array']['label']
+                for colID, colName in \
+                    enumerate(new_rec_array.dtype.names[1:]):
 
                     # update source data columns
-                    newRecArray[colName] = \
-                        (transArray[:, colID]).astype(float)
+                    new_rec_array[colName] = \
+                        (trans_array[:, colID]).astype(float)
 
-                self._data[src]['array'] = newRecArray # set record array
+                # set record array
+                self._data[src]['array'] = new_rec_array
 
-            self._set_col_labels(targetColumns)
+            self._set_col_labels(target_columns)
             nemoa.log('set', indent = '-1')
             return True
 
@@ -718,31 +735,32 @@ class dataset:
 
         # check columns
         if cols == '*': cols = self._get_col_labels()
-        elif not len(cols) == len(set(cols)): return nemoa.log('error',
-            'could not retrieve data: columns are not unique!')
-        elif [c for c in cols if c not in self._get_col_labels()]: \
-            return nemoa.log('error',
-            'could not retrieve data: unknown columns!')
+        elif not len(cols) == len(set(cols)):
+            return nemoa.log('error', """could not retrieve data:
+                columns are not unique!""")
+        elif [c for c in cols if c not in self._get_col_labels()]:
+            return nemoa.log('error', """could not retrieve data:
+                unknown columns!""")
 
         # check format
-        if isinstance(output, str): fmtTuple = (output, )
-        elif isinstance(output, tuple): fmtTuple = output
+        if isinstance(output, str): fmt_tuple = (output, )
+        elif isinstance(output, tuple): fmt_tuple = output
         else: return nemoa.log('error',
             "could not retrieve data: invalid 'format' argument!")
 
         # format data
-        retTuple = ()
-        for fmtStr in fmtTuple:
-            if fmtStr == 'array': retTuple += (
+        ret_tuple = ()
+        for fmt_str in fmt_tuple:
+            if fmt_str == 'array': ret_tuple += (
                 data[cols].view('<f8').reshape(data.size, len(cols)), )
-            elif fmtStr == 'recarray': retTuple += (
+            elif fmt_str == 'recarray': ret_tuple += (
                 data[['label'] + cols], )
-            elif fmtStr == 'cols': retTuple += (
+            elif fmt_str == 'cols': ret_tuple += (
                 [col.split(':')[1] for col in cols], )
-            elif fmtStr in ['rows', 'list']: retTuple += (
+            elif fmt_str in ['rows', 'list']: ret_tuple += (
                 data['label'].tolist(), )
-        if isinstance(output, str): return retTuple[0]
-        return retTuple
+        if isinstance(output, str): return ret_tuple[0]
+        return ret_tuple
 
     # column Labels and Column Groups
     def _get_col_labels(self, group = '*'):
@@ -858,7 +876,7 @@ class dataset:
 
     #def getBccaPartition(self, **params):
         #rowLabels, data = self.data(output = 'list,array')
-        #numRows, numCols = data.shape
+        #num_rows, numCols = data.shape
 
         ## check parameters
         #if 'groups' in params:
@@ -910,7 +928,7 @@ class dataset:
 
     #def getBccaBiclusters(self, **params):
         #data = self.data(output = 'array')
-        #numRows, numCols = data.shape
+        #num_rows, numCols = data.shape
 
         ## check params
         #if not 'threshold' in params:
@@ -937,7 +955,7 @@ class dataset:
         #for i in xrange(numCols - 1):
             #for j in xrange(i + 1, numCols):
 
-                #npRowIDs = numpy.arange(numRows)
+                #npRowIDs = numpy.arange(num_rows)
 
                 ## drop rows until corr(i, j) > sigma or too few rows are left
                 #rowIDs = npRowIDs.tolist()
@@ -1003,10 +1021,10 @@ class dataset:
 
     #def getBiclusterHammingDistance(self, biclusters):
         #data = self.data(output = 'array')
-        #numRows, numCols = data.shape
+        #num_rows, numCols = data.shape
 
         ## create distance matrix using binary metric
-        #distance = numpy.ones(shape = (numRows, len(biclusters)))
+        #distance = numpy.ones(shape = (num_rows, len(biclusters)))
         #for cID, (cRowIDs, cColIDs) in enumerate(biclusters):
             #distance[cRowIDs, cID] = 0
 
@@ -1015,17 +1033,17 @@ class dataset:
     #def getBiclusterCorrelationDistance(self, biclusters):
         ### EXPERIMENTAL!!
         #data = self.data(output = 'array')
-        #numRows, numCols = data.shape
+        #num_rows, numCols = data.shape
 
         ## calculate differences in correlation
-        #corrDiff = numpy.zeros(shape = (numRows, len(biclusters)))
+        #corrDiff = numpy.zeros(shape = (num_rows, len(biclusters)))
         #for cID, (cRowIDs, cColIDs) in enumerate(biclusters):
 
             ## calculate mean correlation within bicluster
             #cCorr = self.getMeanCorr(data[cRowIDs, :][:, cColIDs])
 
             ## calculate mean correlation by appending single rows
-            #for rowID in xrange(numRows):
+            #for rowID in xrange(num_rows):
                 #corrDiff[rowID, cID] = cCorr - self.getMeanCorr(data[cRowIDs + [rowID], :][:, cColIDs])
 
         ## calculate distances of samples and clusters

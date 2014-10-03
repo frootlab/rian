@@ -433,7 +433,7 @@ class rbm(nemoa.system.ann.ann):
         """Set parameters of hidden units using dictionary."""
         return self._units['hidden']._overwrite(params['units'][1])
 
-    def _get_links_from_config(self):
+    def _get_links(self):
         """Return links from adjacency matrix."""
         links = []
         for i, v in enumerate(self._units['visible'].params['label']):
@@ -498,7 +498,7 @@ class rbm(nemoa.system.ann.ann):
             #return False
 
         ## search links and update list of current links
-        #curLinks = self._get_links_from_config() # get current links
+        #curLinks = self._get_links() # get current links
         #for link in links:
             #found = False
             #if (link[0], link[1]) in curLinks:
