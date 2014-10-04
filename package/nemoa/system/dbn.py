@@ -140,7 +140,7 @@ class DBN(nemoa.system.ann.ANN):
                 'layer': ['visible', 'hidden'],
                 'nodes': network_nodes,
                 'edges': network_edges,
-                'add_layer_to_node_labels': False,
+                'encapsulate_nodes': False,
                 'visible': ['visible'],
                 'hidden': ['hidden'],
                 'label_format': 'generic:string' }

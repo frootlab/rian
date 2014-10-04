@@ -155,109 +155,133 @@ class Network:
         return self._config['type'] == 'empty'
 
     def _configure_layergraph(self, nodelist = None, edgelist = None):
-        if not nodelist: nodelist = {'type': None, 'list': []}
-        if not edgelist: edgelist = {'type': (None, None), 'list': []}
+        """Configure and create layered NetworkX graph."""
 
-        # get differences between nodelist and self._config['nodes']
+        if not nodelist:
+            nodelist = {'type': None, 'list': []}
+        if not edgelist:
+            edgelist = {'type': (None, None), 'list': []}
+
+        # find new nodes to add and old nodes to delete
         if nodelist['type'] in self._config['layer']:
-            # count number of nodes to add to nodes
-            addNodes = sum([1 for node in nodelist['list']
-                if not node in self._config['nodes'][nodelist['type']]])
-            # count number of nodes to delete from graph
-            addNodes = sum([1 for node in self._config['nodes'][nodelist['type']]
-                if not node in nodelist['list']])
 
-        # update edge list from keyword arguments
-        if edgelist['type'][0] in self._config['layer'] \
-            and edgelist['type'][1] in self._config['layer']:
-            indexA = self._config['layer'].index(edgelist['type'][0])
-            indexB = self._config['layer'].index(edgelist['type'][1])
-            if indexB - indexA == 1:
-                edge_layer = (edgelist['type'][0], edgelist['type'][1])
+            # count number of new nodes to add to graph
+            add_nodes = 0
+            for node in nodelist['list']:
+                if not node in self._config['nodes'][nodelist['type']]:
+                    add_nodes += 1
+
+            # count number of nodes to delete from graph
+            del_nodes = 0
+            for node in self._config['nodes'][nodelist['type']]:
+                if not node in nodelist['list']:
+                    del_nodes += 1
+
+        # add edges from edgelist
+        layers = self._config['layer']
+        src_layer_name = edgelist['type'][0]
+        tgt_layer_name = edgelist['type'][1]
+        if src_layer_name in layers and tgt_layer_name in layers:
+            src_layer_id = layers.index(src_layer_name)
+            tgt_layer_id = layers.index(tgt_layer_name)
+            if tgt_layer_id - src_layer_id == 1:
+                edge_layer = (src_layer_name, tgt_layer_name)
                 self._config['edges'][edge_layer] = edgelist['list']
 
         # filter edges to valid nodes
-        for i in xrange(len(self._config['layer']) - 1):
-            src_layer = self._config['layer'][i]
-            tgt_layer = self._config['layer'][i + 1]
+        nodes = self._config['nodes']
+        edges = self._config['edges']
+        for i in xrange(len(layers) - 1):
+            src_layer = layers[i]
+            tgt_layer = layers[i + 1]
             edge_layer = (src_layer, tgt_layer)
-            filtered = []
+            edges_filtered = []
+            for src_node, tgt_node in edges[edge_layer]:
+                if not src_node in nodes[src_layer]: continue
+                if not tgt_node in nodes[tgt_layer]: continue
+                edges_filtered.append((src_node, tgt_node))
+            edges[edge_layer] = edges_filtered
 
-            for src_node, tgt_node in self._config['edges'][edge_layer]:
-                if not src_node in self._config['nodes'][src_layer]: continue
-                if not tgt_node in self._config['nodes'][tgt_layer]: continue
-                filtered.append((src_node, tgt_node))
-            self._config['edges'][edge_layer] = filtered
-
-        # reset and create new NetworkX graph Instance
-        if self._graph == None: self._graph = networkx.Graph()
-        else: self._graph.clear()
+        # clear or create new instance of networkx directed graph
+        if self._graph == None:
+            #self._graph = networkx.Graph()
+            self._graph = networkx.DiGraph()
+        else:
+            self._graph.clear()
 
         # set graph attributes
-        self._graph.graph =  {
+        self._graph.graph = {
             'name': self._config['name'],
             'type': 'layer',
-            'params': { 'layer': self._config['layer'] }
-        }
+            'params': {
+                'layer': layers }}
 
         # add nodes to graph
-        order = 0
-        for layer_id, layer in enumerate(self._config['layer']):
-            visible = layer in self._config['visible']
-            if nodelist['type'] in self._config['layer']:
+        node_order = 0
+        for layer_id, layer in enumerate(layers):
+            isvisible = layer in self._config['visible']
+            if nodelist['type'] in layers:
                 if layer == nodelist['type']:
-                    if addNodes: nemoa.log("""adding %i nodes
-                        to layer '%s'""" % (addNodes, layer))
-                    if delNodes: nemoa.log("""deleting %i nodes
-                        from layer '%s'""" % (delNodes, layer))
+                    if add_nodes: nemoa.log("""adding %i nodes
+                        to layer '%s'""" % (add_nodes, layer))
+                    if del_nodes: nemoa.log("""deleting %i nodes
+                        from layer '%s'""" % (del_nodes, layer))
             else:
-                if visible: nemoa.log('adding visible layer: \'' + layer + \
-                    '\' (' + str(len(self._config['nodes'][layer])) + ' nodes)')
-                else: nemoa.log('adding hidden layer: \'' + layer + \
-                    '\' (' + str(len(self._config['nodes'][layer])) + ' nodes)')
-            for layer_node_id, node in enumerate(self._config['nodes'][layer]):
-                if 'add_layer_to_node_labels' in self._config \
-                    and self._config['add_layer_to_node_labels'] == False:
-                    id = node
+                if isvisible:
+                    nemoa.log("adding visible layer '%s' (%s nodes)"
+                        % (layer, len(nodes[layer])))
                 else:
-                    id = layer + ':' + node
-                if id in self._graph.nodes(): continue
+                    nemoa.log("adding hidden layer '%s' (%s nodes)"
+                        % (layer, len(nodes[layer])))
 
-                self._graph.add_node(id,
+            for layer_node_id, node in enumerate(nodes[layer]):
+                if 'encapsulate_nodes' in self._config \
+                    and self._config['encapsulate_nodes'] == False:
+                    node_name = node
+                else:
+                    node_name = layer + ':' + node
+
+                # if node is allready known, do not add node
+                if node_name in self._graph.nodes(): continue
+
+                self._graph.add_node(
+                    node_name,
                     label = node,
-                    order = order,
+                    order = node_order,
                     params = {
                         'type': layer,
                         'layer_id': layer_id,
                         'layer_node_id': layer_node_id,
-                        'visible': visible } )
+                        'visible': isvisible } )
 
-                order += 1
+                node_order += 1
 
         # add edges to graph
-        order = 0
-        for i in xrange(len(self._config['layer']) - 1):
-            src_layer = self._config['layer'][i]
-            tgt_layer = self._config['layer'][i + 1]
+        edge_order = 0
+        for layer_id in xrange(len(layers) - 1):
+            src_layer = layers[layer_id]
+            tgt_layer = layers[layer_id + 1]
             edge_layer = (src_layer, tgt_layer)
-            type_id = i
 
-            for (src_node, tgt_node) in self._config['edges'][edge_layer]:
-                if 'add_layer_to_node_labels' in self._config \
-                    and self._config['add_layer_to_node_labels'] == False:
-                    src_node_id = src_node
-                    tgt_node_id = tgt_node
+            for (src_node, tgt_node) in edges[edge_layer]:
+                if not 'encapsulate_nodes' in self._config \
+                    or self._config['encapsulate_nodes'] == True:
+                    src_node_name = src_layer + ':' + src_node
+                    tgt_node_name = tgt_layer + ':' + tgt_node
                 else:
-                    src_node_id = src_layer + ':' + src_node
-                    tgt_node_id = tgt_layer + ':' + tgt_node
+                    src_node_name = src_node
+                    tgt_node_name = tgt_node
 
                 self._graph.add_edge(
-                    src_node_id, tgt_node_id,
+                    src_node_name, tgt_node_name,
+                    order = edge_order,
+                    direction = (src_node_name, tgt_node_name),
                     weight = 0.,
-                    order = order,
-                    params = {'type': edge_layer, 'layer_id': type_id})
+                    params = {
+                        'type': edge_layer,
+                        'layer_id': layer_id })
 
-                order += 1
+                edge_order += 1
 
         return True
 
@@ -300,13 +324,13 @@ class Network:
                 for group in self._config[type]}
 
         # get all groups
-        allGroups = {}
+        all_groups = {}
         for type in ['visible', 'hidden']:
             groups = {}
             for group in self._config[type]:
                 groups[group] = self._get_node_labels(type = group)
-            allGroups[type] = groups
-        return allGroups
+            all_groups[type] = groups
+        return all_groups
 
     def _get_layer(self, layer):
         """Return dictionary containing information about a layer."""
@@ -352,12 +376,13 @@ class Network:
             layers = self._get_layers()
 
             if src_layer in layers and tgt_layer in layers:
-                src_layer_id = layers.index(src_layer)
-                tgt_layer_id = layers.index(tgt_layer)
-                if src_layer_id < tgt_layer_id:
-                    sorted_list[attr['order']] = (src, tgt)
-                elif src_layer_id > tgt_layer_id:
-                    sorted_list[attr['order']] = (tgt, src)
+                sorted_list[attr['order']] = (src, tgt)
+                #src_layer_id = layers.index(src_layer)
+                #tgt_layer_id = layers.index(tgt_layer)
+                #if src_layer_id < tgt_layer_id:
+                #    sorted_list[attr['order']] = (src, tgt)
+                #elif src_layer_id > tgt_layer_id:
+                #    sorted_list[attr['order']] = (tgt, src)
 
         # filter empty nodes
         return [edge for edge in sorted_list if edge]
@@ -398,19 +423,22 @@ class Network:
             (1) All layers of the network are not empty
             (2) The first and last layer of the network are visible,
                 the layers between them are hidden
+
         """
 
         # test if network contains empty layers
         for layer in self._get_layers():
-            if not len(self._get_layer(layer)['nodes']) > 0: return nemoa.log(
-                'error', 'Feedforward networks do not allow empty layers!')
+            if not len(self._get_layer(layer)['nodes']) > 0:
+                return nemoa.log('error', """Feedforward networks do
+                    not allow empty layers.""")
 
         # test if and only if the first and the last layer are visible
         for layer in self._get_layers():
             if not self._get_layer(layer)['visible'] \
-                == (layer in [self._get_layers()[0], self._get_layers()[-1]]):
-                return nemoa.log('error', """The first and the last layer
-                    of a Feedforward network have to be visible,
+                == (layer in [self._get_layers()[0],
+                self._get_layers()[-1]]):
+                return nemoa.log('error', """The first and the last
+                    layer of a Feedforward network have to be visible,
                     middle layers have to be hidden!""")
 
         return True
@@ -424,6 +452,7 @@ class Network:
             (1) The network is compatible to layered feedforward
                 networks: see _isFeedforwardCompatible
             (2) The network contains at least three layers
+
         """
 
         # test if network is compatible to layered feedforward networks
@@ -447,6 +476,7 @@ class Network:
             (2) The network contains an odd number of layers
             (3) The hidden layers are symmetric to the central middle
                 layer related to their number of nodes
+
         """
 
         # test if network is MLFF compatible
@@ -478,6 +508,7 @@ class Network:
                 see function _is_compatible_dbn
             (2) The visible input and output layers contain identical
                 node labels
+
         """
 
         # test if network is DBN compatible
@@ -492,25 +523,6 @@ class Network:
                 identical input and output nodes""")
 
         return True
-
-    #def about(self, *args):
-        #"""Generic information about various parts of the network.
-
-        #Args:
-            #args: tuple of strings, containing a breadcrump trail to
-                #a specific information about the dataset
-
-        #Examples:
-            #about()"""
-
-        #if not args: return {
-            #'name': self._config['name'],
-            #'description': self.__doc__
-        #}
-
-        #if args[0] == 'name': return self._config['name']
-        #if args[0] == 'description': return self.__doc__
-        #return None
 
     def get(self, key = None, *args, **kwargs):
 
@@ -548,8 +560,8 @@ class Network:
         if 'system' in kwargs:
             system = kwargs['system']
             if not nemoa.type.is_system(system):
-                return nemoa.log('error',
-                    'could not update network: system is invalid.')
+                return nemoa.log('error', """could not update network:
+                    system is invalid.""")
 
             for u, v, d in self._graph.edges(data = True):
                 params = system._get_link((u, v))
