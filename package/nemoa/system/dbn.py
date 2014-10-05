@@ -165,7 +165,7 @@ class DBN(nemoa.system.ann.ANN):
             system.configure(network = network)
 
             unit_count = sum([len(group) \
-                for group in system.get('units', group_by = 'layers')])
+                for group in system.get('units', grouping = 'layers')])
             link_count = len(system.get('links'))
             nemoa.log("adding subsystem: '%s' (%s units, %s links)" %\
                 (system.get('name'), unit_count, link_count))

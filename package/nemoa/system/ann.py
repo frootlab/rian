@@ -454,12 +454,12 @@ class ANN(nemoa.system.base.System):
     def _get_link(self, link):
 
         src_unit = link[0]
-        src_layer = self._get_group_of_unit(src_unit)
+        src_layer = self._get_layer_of_unit(src_unit)
         if not src_layer in self._links:
             return None
 
         tgt_unit = link[1]
-        tgt_layer = self._get_group_of_unit(tgt_unit)
+        tgt_layer = self._get_layer_of_unit(tgt_unit)
         if not tgt_layer in self._links[src_layer]['target']:
             return None
 

@@ -250,7 +250,8 @@ class Network:
                     label = node,
                     order = node_order,
                     params = {
-                        'type': layer,
+                        'type': layer, # TODO: remove parameter: use layer
+                        'layer': layer,
                         'layer_id': layer_id,
                         'layer_node_id': layer_node_id,
                         'visible': isvisible } )
@@ -290,14 +291,15 @@ class Network:
         """Return network information of single node."""
         return self._graph.node[node]
 
-    def _get_nodes(self, group_by_layer = False, **kwargs):
-        """get list of nodes with specific attributes
-        example nodes(type = 'visible')"""
+    def _get_nodes(self, grouping = None, **kwargs):
+        """get list of nodes with specific attributes.
 
-        if group_by_layer:
-            return self._get_nodes_group_by_layer(**kwargs)
+        Examples:
+            nodes(type = 'visible')
 
-        # filter search criteria and order entries
+        """
+
+        # filter nodes by attributes and order entries
         nodes_sort_list = [None] * self._graph.number_of_nodes()
         for node, attr in self._graph.nodes(data = True):
             if not kwargs == {}:
@@ -310,30 +312,30 @@ class Network:
                 if not passed: continue
             nodes_sort_list[attr['order']] = node
         nodes = [node for node in nodes_sort_list if node]
+        if grouping == None: return nodes
 
-        return nodes
+        # get grouping values
+        grouping_values = []
+        for node in nodes:
+            node_params = self._graph.node[node]['params']
+            if not grouping in node_params:
+                return nemoa.log('error', """could not get nodes:
+                    unknown parameter '%s'.""" % (grouping))
+            grouping_value = node_params[grouping]
+            if not grouping_value in grouping_values:
+                grouping_values.append(grouping_value)
 
-    def _get_node_labels(self, **kwargs):
-        return [self._graph.node[node]['label'] \
-            for node in self._get_nodes(**kwargs)]
+        # create list of groups
+        grouped_nodes = []
+        for grouping_value in grouping_values:
+            group = []
+            for node in nodes:
+                if self._graph.node[node]['params'][grouping] \
+                    == grouping_value:
+                    group.append(node)
+            grouped_nodes.append(group)
 
-    def _get_nodes_group_by_layer(self, type = None):
-
-        # get layers of specific node type
-        if type:
-            if not type in self._config: return nemoa.log('warning',
-                "unknown node type '%s'." % (str(type)))
-            return {group: self._get_node_labels(type = group)
-                for group in self._config[type]}
-
-        # get all groups
-        all_groups = {}
-        for type in ['visible', 'hidden']:
-            groups = {}
-            for group in self._config[type]:
-                groups[group] = self._get_node_labels(type = group)
-            all_groups[type] = groups
-        return all_groups
+        return grouped_nodes
 
     def _get_layer(self, layer):
         """Return dictionary containing information about a layer."""

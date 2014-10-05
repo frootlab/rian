@@ -112,7 +112,7 @@ class Dataset:
 
         Args:
             network (object): nemoa network instance
-            cache_enable (bool, optional): shall data be cached
+            cache_enable (bool, optional): enable caching
 
         """
 
@@ -151,16 +151,6 @@ class Dataset:
             net_layers = {'v': None}
         else:
             # get network node labels, grouped by layers
-            net_layers = network.get('nodes', type = 'visible',
-                group_by_layer = True)
-
-            ## sort network layers
-            #net_layers_sorted = []
-            #for layer in net_layers:
-                #layer_id = network.get('layer', layer)['id']
-                #net_layers_sorted.append((layer_id, layer))
-            #net_layers_sorted = sorted(net_layers_sorted)
-
             net_visible_layers = network.get('layers', visible = True)
 
             # convert network node labels to common format
@@ -171,9 +161,15 @@ class Dataset:
             conv_net_nodes_lost = []
             net_label_format = network._config['label_format']
             for group in net_visible_layers:
+                net_layer_node_names = network.get('nodes',
+                    type = group)
+                net_layer_node_labels = []
+                for node in net_layer_node_names:
+                    net_layer_node_labels.append(
+                        network.get('node', node)['label'])
                 conv_net_layers[group], conv_net_layers_lost[group] = \
-                    nemoa.dataset.annotation.convert(net_layers[group],
-                    input = net_label_format)
+                    nemoa.dataset.annotation.convert(
+                    net_layer_node_labels, input = net_label_format)
                 conv_net_nodes += conv_net_layers[group]
                 conv_net_nodes_lost += conv_net_layers_lost[group]
 
@@ -192,23 +188,23 @@ class Dataset:
         nemoa.log('set', indent = '+1')
         for src in self._config['table']:
             nemoa.log("configure '%s'" % (src))
-            srcCnf = self._config['table'][src]
+            src_cnf = self._config['table'][src]
 
             # get column labels from csv-file
-            csvType = srcCnf['source']['csvtype'].strip().lower() \
-                if 'csvtype' in srcCnf['source'] else None
-            origColLabels = nemoa.common.csv_get_col_labels(
-                srcCnf['source']['file'], type = csvType)
-            if not origColLabels: continue
+            csv_type = src_cnf['source']['csvtype'].strip().lower() \
+                if 'csvtype' in src_cnf['source'] else None
+            orig_col_labels = nemoa.common.csv_get_col_labels(
+                src_cnf['source']['file'], type = csv_type)
+            if not orig_col_labels: continue
 
             # set annotation format
-            format = srcCnf['source']['columns'] \
-                if 'columns' in srcCnf['source'] else 'generic:string'
+            format = src_cnf['source']['columns'] \
+                if 'columns' in src_cnf['source'] else 'generic:string'
 
             # convert column labes
             columns_conv, columns_conv_lost = \
                 nemoa.dataset.annotation.convert(
-                origColLabels, input = format)
+                orig_col_labels, input = format)
 
             # notify if any dataset columns could not be converted
             if columns_conv_lost:
@@ -265,16 +261,17 @@ class Dataset:
         inter_col_labels = col_labels[col_labels.keys()[0]]['conv']
         for src in col_labels:
             list = col_labels[src]['conv']
-            blackList = [list[i] for i in col_labels[src]['notusecols']]
+            black_list = [list[i] for i in col_labels[src]['notusecols']]
             inter_col_labels = [val for val in inter_col_labels \
-                if val in list and not val in blackList]
+                if val in list and not val in black_list]
 
         # if network type is 'auto', set network visible nodes
         # to intersected data from database files (without label column)
         if network._config['type'] == 'auto':
             net_layers['v'] = [label for label in inter_col_labels \
                 if not label == 'label']
-            conv_net_layers = net_layers
+            conv_net_layers = {'v': [label for label in \
+                inter_col_labels if not label == 'label']}
 
         # search network nodes in dataset columns
         self._config['columns'] = ()
@@ -286,10 +283,17 @@ class Dataset:
                 found += 1
 
                 # add column (use network label and group)
-                self._config['columns'] += \
-                    ((group, net_layers[group][id]), )
-                for src in col_labels: col_labels[src]['usecols'] \
-                    += (col_labels[src]['conv'].index(col), )
+                if network._config['type'] == 'auto':
+                    self._config['columns'] += \
+                        ((group, net_layers[group][id]), )
+                else:
+                    node_name = network.get('nodes', type = group)[id]
+                    node_label = network.get('node', node_name)['label']
+                    self._config['columns'] += ((group, node_label), )
+
+                for src in col_labels:
+                    col_labels[src]['usecols'] \
+                        += (col_labels[src]['conv'].index(col), )
 
             if not found:
                 nemoa.log('error', """no node from network group '%s'

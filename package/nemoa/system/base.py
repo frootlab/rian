@@ -74,16 +74,48 @@ class System:
         """Return true if system is a dummy."""
         return False
 
-    def _get_units(self, group_by = None, **kwargs):
+    def _get_unit(self, unit):
+        """
+
+        """
+
+        # search unique layer of unit
+        layer_ids = []
+        for i in xrange(len(self._params['units'])):
+            if unit in self._params['units'][i]['label']:
+                layer_ids.append(i)
+        if len(layer_ids) == 0: return nemoa.log('error',
+            "could not find unit '%s'." % (unit))
+        if len(layer_ids) > 1: return nemoa.log('error',
+            "unit name '%s' is not unique." % (unit))
+        layer_id = layer_ids[0]
+
+        # get parameters of unit
+        layer_params = self._params['units'][layer_id]
+        layer_units = layer_params['label']
+        layer_size = len(layer_units)
+        unit_id = layer_units.index(unit)
+        unit_params = {}
+        for param in layer_params.keys():
+            unit_param_array = \
+                numpy.array(layer_params[param]).flatten()
+            if unit_param_array.size == 1:
+                unit_params[param] = unit_param_array[0]
+            elif unit_param_array.size == layer_size:
+                unit_params[param] = unit_param_array[unit_id]
+
+        return unit_params
+
+    def _get_units(self, grouping = None, **kwargs):
         """Get units of system.
 
         Args:
-            group_by: grouping of units. Possible values:
+            grouping: grouping of units. Possible values:
                 None: no grouping
                 'layers': group by layers
 
         Returns:
-            Depending on Argument 'group_by':
+            Depending on Argument 'grouping':
                 None: List of strings containing labels of units, that
                     match a given property.
                 'layers': List of lists, representing layers and
@@ -91,14 +123,15 @@ class System:
                     match a given property.
 
         Examples:
-            Get list of all units grouped bay layers:
-                model.system.get('units', group_by = 'layers')
+            Get list of all units grouped by layers:
+                model.system.get('units', grouping = 'layer')
 
-            Get list of visible units in system:
+            Get list of visible units:
                 model.system.get('units', visible = True)
 
         """
 
+        # filter units by attributes and order entries
         filter_dict = {}
         for key in kwargs.keys():
             if key == 'group':
@@ -106,21 +139,56 @@ class System:
                 kwargs['name'] = kwargs['group']
             if key in self._params['units'][0].keys():
                 filter_dict[key] = kwargs[key]
-
         units = []
-        for layer in self._params['units']:
+        units_params = {}
+        for layer_id, layer in enumerate(self._params['units']):
             valid = True
             for key in filter_dict.keys():
                 if not layer[key] == filter_dict[key]:
                     valid = False
                     break
             if not valid: continue
-            if group_by in [None, 'none']:
+            if grouping == None:
                 units += layer['label']
-            if group_by == 'layers':
+            elif grouping == 'layers':
                 units.append(layer['label'])
+            else:
+                units += layer['label']
+                layer_size = len(layer['label'])
+                for unit_id, unit in enumerate(layer['label']):
+                    unit_params = {}
+                    for param in layer.keys():
+                        unit_param_array = \
+                            numpy.array(layer[param]).flatten()
+                        if unit_param_array.size == 1:
+                            unit_params[param] = unit_param_array[0]
+                        elif unit_param_array.size == layer_size:
+                            unit_params[param] = \
+                                unit_param_array[unit_id]
+                    units_params[unit] = unit_params
+        if grouping == None: return units
+        if grouping == 'layers': return units
 
-        return units
+        # get grouping values
+        grouping_values = []
+        for unit in units:
+            if not grouping in units_params[unit].keys():
+                return nemoa.log('error', """could not get units:
+                    unknown parameter '%s'.""" % (grouping))
+            grouping_value = units_params[unit][grouping]
+            if not grouping_value in grouping_values:
+                grouping_values.append(grouping_value)
+
+        # create list of groups
+        grouped_units = []
+        for grouping_value in grouping_values:
+            group = []
+            for unit in units:
+                if units_params[unit][grouping] == grouping_value:
+                    group.append(unit)
+            grouped_units.append(group)
+
+        return grouped_units
 
     def _get_layers(self, **kwargs):
         """Get unit layers of system.
@@ -154,7 +222,7 @@ class System:
 
         return layers
 
-    def _get_group_of_unit(self, unit):
+    def _get_layer_of_unit(self, unit):
         """Return name of unit group of given unit."""
         for id in xrange(len(self._params['units'])):
             if unit in self._params['units'][id]['label']:
@@ -169,6 +237,7 @@ class System:
         if key == 'type': return self._get_type(*args, **kwargs)
         if key == 'layers': return self._get_layers(*args, **kwargs)
         if key == 'units': return self._get_units(*args, **kwargs)
+        if key == 'unit': return self._get_unit(*args, **kwargs)
         if key == 'links': return self._get_links(*args, **kwargs)
 
         if not key == None: return nemoa.log('warning',
