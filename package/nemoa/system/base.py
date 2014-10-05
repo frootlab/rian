@@ -222,17 +222,23 @@ class System:
 
         return layers
 
+    def _get_layer(self, layer):
+        if not layer in self._units.keys():
+            return nemoa.log('error', """could not get layer:
+                layers '%s' is unkown.""" % (layer))
+        return self._units[layer].params
+
     def _get_link(self, link):
-
-        src_unit = link[0]
-        src_layer = self._get_layer_of_unit(src_unit)
-        if not src_layer in self._links:
-            return None
-
-        tgt_unit = link[1]
-        tgt_layer = self._get_layer_of_unit(tgt_unit)
-        if not tgt_layer in self._links[src_layer]['target']:
-            return None
+        if not isinstance(link, tuple):
+            return nemoa.log('error', """could not get link:
+                link '%s' is unkown.""" % (edge))
+        src_unit, tgt_unit = link
+        src_layer = self._get_unit(src_unit)['name']
+        tgt_layer = self._get_unit(tgt_unit)['name']
+        if not src_layer in self._links \
+            or not tgt_layer in self._links[src_layer]['target']:
+            return nemoa.log('error', """could not get link:
+                link ('%s', '%s') is unkown.""" % (src_unit, tgt_unit))
 
         # get weight and adjacency matrices of link layer
         link_layer = self._links[src_layer]['target'][tgt_layer]
@@ -298,6 +304,8 @@ class System:
         if key == 'about': return self.__doc__
         if key == 'backup': return self._get_backup(*args, **kwargs)
         if key == 'type': return self._get_type(*args, **kwargs)
+
+        if key == 'layer': return self._get_layer(*args, **kwargs)
         if key == 'layers': return self._get_layers(*args, **kwargs)
         if key == 'unit': return self._get_unit(*args, **kwargs)
         if key == 'units': return self._get_units(*args, **kwargs)
