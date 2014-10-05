@@ -106,29 +106,30 @@ class System:
         return groups
 
     def _get_layers(self, **kwargs):
-        """.
+        """Get unit layers of system.
 
         Returns:
-            Tuple with groups of units that match a given property
+            List of strings containing labels of unit layers that match
+            a given property. The order is from input to output.
 
         Examples:
-            return visible layers:
+            return visible unit layers:
                 model.system.get('layers', visible = True)
 
-            search for layer 'MyLayer':
-                model.system.get('layers', name = 'MyLayer')
+            search for unit layer 'test':
+                model.system.get('layers', type = 'test')
 
         """
 
-        filter = []
+        filter_list = []
         for key in kwargs.keys():
             if key in self._params['units'][0].keys():
-                filter.append((key, kwargs[key]))
+                filter_list.append((key, kwargs[key]))
 
         layers = []
         for layer in self._params['units']:
             valid = True
-            for key, val in filter:
+            for key, val in filter_list:
                 if not layer[key] == val:
                     valid = False
                     break

@@ -297,7 +297,7 @@ class Network:
             return self._get_nodes_group_by_layer(**kwargs)
 
         # filter search criteria and order entries
-        sortedList = [None] * self._graph.number_of_nodes()
+        nodes_sort_list = [None] * self._graph.number_of_nodes()
         for node, attr in self._graph.nodes(data = True):
             if not kwargs == {}:
                 passed = True
@@ -307,8 +307,10 @@ class Network:
                         passed = False
                         break
                 if not passed: continue
-            sortedList[attr['order']] = node
-        return [node for node in sortedList if node] # filter empty nodes
+            nodes_sort_list[attr['order']] = node
+        nodes = [node for node in nodes_sort_list if node]
+
+        return nodes
 
     def _get_node_labels(self, **kwargs):
         return [self._graph.node[node]['label'] \
@@ -343,13 +345,45 @@ class Network:
             'visible': first_node['visible'],
             'nodes': nodes}
 
-    def _get_layers(self):
-        """Return ordered list of layers."""
+    def _get_layers(self, **kwargs):
+        """Get node layers of network.
+
+        Returns:
+            List of strings containing labels of node layers that match
+            a given property. The order is from input to output.
+
+        Examples:
+            return visible node layers:
+                model.network.get('layers', visible = True)
+
+            search for node layer 'test':
+                model.network.get('layers', type = 'test')
+
+        """
+
+        graph = self._graph
+
+        # get ordered list of nodes
+        nodes_sort_list = [None] * graph.number_of_nodes()
+        for node, attr in graph.nodes(data = True):
+            if not kwargs == {}:
+                passed = True
+                for key in kwargs:
+                    if not key in attr['params'] \
+                        or not kwargs[key] == attr['params'][key]:
+                        passed = False
+                        break
+                if not passed: continue
+            nodes_sort_list[attr['order']] = node
+        nodes = [node for node in nodes_sort_list if node]
+
+        # get ordered list of layers
         layers = []
-        for node in self._get_nodes():
-            layer = self._get_node(node)['params']['type']
-            if not layer in layers:
-                layers.append(layer)
+        for node in nodes:
+            layer = graph.node[node]['params']['type']
+            if layer in layers: continue
+            layers.append(layer)
+
         return layers
 
     def _get_edge(self, edge):
@@ -377,12 +411,6 @@ class Network:
 
             if src_layer in layers and tgt_layer in layers:
                 sorted_list[attr['order']] = (src, tgt)
-                #src_layer_id = layers.index(src_layer)
-                #tgt_layer_id = layers.index(tgt_layer)
-                #if src_layer_id < tgt_layer_id:
-                #    sorted_list[attr['order']] = (src, tgt)
-                #elif src_layer_id > tgt_layer_id:
-                #    sorted_list[attr['order']] = (tgt, src)
 
         # filter empty nodes
         return [edge for edge in sorted_list if edge]
