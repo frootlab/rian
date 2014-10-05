@@ -343,14 +343,14 @@ class Network:
             'visible': first_node['visible'],
             'nodes': nodes}
 
-    def _get_layers(self, **kwargs):
-        """Return ordered list of layers by label."""
-        layer_dict = {self._get_node(node)['params']['layer_id']: \
-            {'label': self._get_node(node)['params']['type']} \
-            for node in self._get_nodes()}
-        layer_list = [layer_dict[layer]['label'] \
-            for layer in xrange(0, len(layer_dict))]
-        return layer_list
+    def _get_layers(self):
+        """Return ordered list of layers."""
+        layers = []
+        for node in self._get_nodes():
+            layer = self._get_node(node)['params']['type']
+            if not layer in layers:
+                layers.append(layer)
+        return layers
 
     def _get_edge(self, edge):
         return self._graph.edge[edge]
