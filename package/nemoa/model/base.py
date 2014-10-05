@@ -411,11 +411,11 @@ class model:
                 '.' + objPlot.settings['fileformat'])
 
         # create plot
-        retVal = objPlot.create(self, file = file)
+        ret_val = objPlot.create(self, file = file)
         if not file == None: nemoa.log('save plot: ' + file)
 
         nemoa.log('set', indent = '-2')
-        return retVal
+        return ret_val
 
     def _get_plot(self, *args, **kwargs):
         """Return new plot instance"""

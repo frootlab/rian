@@ -70,12 +70,12 @@ class plot:
 
             # assert units
             mapping = model.system.mapping()
-            input_units = model.system.get('units', group = mapping[0])[0]
-            output_units = model.system.get('units', group = mapping[-1])[0]
+            in_units = model.system.get('units', group = mapping[0])
+            out_units = model.system.get('units', group = mapping[-1])
             if not isinstance(self.settings['units'], tuple) \
                 or not isinstance(self.settings['units'][0], list) \
                 or not isinstance(self.settings['units'][1], list):
-                self.settings['units'] = (input_units, output_units)
+                self.settings['units'] = (in_units, out_units)
 
             # get information about relation
             if self.settings['show_title']:

@@ -72,7 +72,8 @@ class Network:
         self._config['label_format'] = 'generic:string'
         if not 'nodes' in self._config: self._config['nodes'] = {}
         if not 'layer' in self._config: self._config['layer'] = []
-        (visible, hidden) = system.get('units')
+        visible = system.get('units', group = 'visible')
+        hidden = system.get('units', group = 'hidden')
         for unit in hidden:
             (group, label) = unit.split(':')
             if not group in self._config['layer']:

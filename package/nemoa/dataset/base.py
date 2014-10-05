@@ -154,12 +154,14 @@ class Dataset:
             net_layers = network.get('nodes', type = 'visible',
                 group_by_layer = True)
 
-            # sort network layers
-            net_layers_sorted = []
-            for layer in net_layers:
-                layer_id = network.get('layer', layer)['id']
-                net_layers_sorted.append((layer_id, layer))
-            net_layers_sorted = sorted(net_layers_sorted)
+            ## sort network layers
+            #net_layers_sorted = []
+            #for layer in net_layers:
+                #layer_id = network.get('layer', layer)['id']
+                #net_layers_sorted.append((layer_id, layer))
+            #net_layers_sorted = sorted(net_layers_sorted)
+
+            net_visible_layers = network.get('layers', visible = True)
 
             # convert network node labels to common format
             nemoa.log('search network nodes in dataset sources')
@@ -168,7 +170,7 @@ class Dataset:
             conv_net_nodes = []
             conv_net_nodes_lost = []
             net_label_format = network._config['label_format']
-            for id, group in net_layers_sorted:
+            for group in net_visible_layers:
                 conv_net_layers[group], conv_net_layers_lost[group] = \
                     nemoa.dataset.annotation.convert(net_layers[group],
                     input = net_label_format)
@@ -185,7 +187,7 @@ class Dataset:
                     conv_net_nodes_lost))
 
         # get columns from dataset files and convert to common format
-        colLabels = {}
+        col_labels = {}
         nemoa.log('configure data sources')
         nemoa.log('set', indent = '+1')
         for src in self._config['table']:
@@ -204,82 +206,90 @@ class Dataset:
                 if 'columns' in srcCnf['source'] else 'generic:string'
 
             # convert column labes
-            convColLabels, convColLabelsLost = \
+            columns_conv, columns_conv_lost = \
                 nemoa.dataset.annotation.convert(
                 origColLabels, input = format)
 
             # notify if any dataset columns could not be converted
-            if convColLabelsLost:
+            if columns_conv_lost:
                 nemoa.log('warning', """%i of %i dataset columns
                     could not be converted! (see logfile)""" %
-                    (len(convColLabelsLost), len(convColLabels)))
-                nemoa.log('logfile', ", ".join([convColLabels[i] \
-                    for i in convColLabelsLost]))
+                    (len(columns_conv_lost), len(columns_conv)))
+                nemoa.log('logfile', ", ".join([columns_conv[i] \
+                    for i in columns_conv_lost]))
 
             if not network._config['type'] == 'auto':
 
                 # search converted nodes in converted columns
-                numLost = 0
-                numAll = 0
-                lostNodes = {}
-                for id, group in net_layers_sorted:
-                    lostNodesConv = \
+                num_lost = 0
+                num_all = 0
+                nodes_lost = {}
+                for group in net_visible_layers:
+                    nodes_conv_lost = \
                         [val for val in conv_net_layers[group] \
-                        if val not in convColLabels]
-                    numAll += len(conv_net_layers[group])
-                    if not lostNodesConv: continue
-                    numLost += len(lostNodesConv)
+                        if val not in columns_conv]
+                    num_all += len(conv_net_layers[group])
 
-                    # get original labels
-                    lostNodes[group] = [net_layers[group][
-                        conv_net_layers[group].index(val)]
-                        for val in lostNodesConv]
+                    if not nodes_conv_lost: continue
+                    num_lost += len(nodes_conv_lost)
+
+                    # get lost nodes
+                    nodes_lost[group] = []
+                    for val in nodes_conv_lost:
+                        node_lost_id = conv_net_layers[group].index(val)
+                        node_lost = network.get('nodes',
+                            type = group)[node_lost_id]
+                        node_label = network.get('node',
+                            node_lost)['label']
+                        nodes_lost[group].append(node_label)
 
                 # notify if any network nodes could not be found
-                if numLost:
+                if num_lost:
                     nemoa.log('warning', """%i of %i network nodes
                         could not be found in dataset source!
-                        (see logfile)""" % (numLost, numAll))
-                    for group in lostNodes: nemoa.log('logfile',
-                        'missing nodes (group %s): ' % (group)
-                        + ', '.join(lostNodes[group]))
+                        (see logfile)""" % (num_lost, num_all))
+                    for group in nodes_lost:
+                        nemoa.log('logfile',
+                            'missing nodes (group %s): ' % (group)
+                            + ', '.join(nodes_lost[group]))
 
             # prepare dictionary for column source ids
-            colLabels[src] = {
-                'conv': convColLabels,
+            col_labels[src] = {
+                'conv': columns_conv,
                 'usecols': (),
-                'notusecols': convColLabelsLost }
+                'notusecols': columns_conv_lost }
 
         nemoa.log('set', indent = '-1')
 
         # intersect converted dataset column labels
-        interColLabels = colLabels[colLabels.keys()[0]]['conv']
-        for src in colLabels:
-            list = colLabels[src]['conv']
-            blackList = [list[i] for i in colLabels[src]['notusecols']]
-            interColLabels = [val for val in interColLabels \
+        inter_col_labels = col_labels[col_labels.keys()[0]]['conv']
+        for src in col_labels:
+            list = col_labels[src]['conv']
+            blackList = [list[i] for i in col_labels[src]['notusecols']]
+            inter_col_labels = [val for val in inter_col_labels \
                 if val in list and not val in blackList]
 
         # if network type is 'auto', set network visible nodes
         # to intersected data from database files (without label column)
         if network._config['type'] == 'auto':
-            net_layers['v'] = [label for label in interColLabels \
+            net_layers['v'] = [label for label in inter_col_labels \
                 if not label == 'label']
             conv_net_layers = net_layers
 
         # search network nodes in dataset columns
         self._config['columns'] = ()
-        for groupid, group in net_layers_sorted:
+        for group in net_visible_layers:
             found = 0
 
             for id, col in enumerate(conv_net_layers[group]):
-                if not col in interColLabels: continue
+                if not col in inter_col_labels: continue
                 found += 1
 
                 # add column (use network label and group)
-                self._config['columns'] += ((group, net_layers[group][id]), )
-                for src in colLabels: colLabels[src]['usecols'] \
-                    += (colLabels[src]['conv'].index(col), )
+                self._config['columns'] += \
+                    ((group, net_layers[group][id]), )
+                for src in col_labels: col_labels[src]['usecols'] \
+                    += (col_labels[src]['conv'].index(col), )
 
             if not found:
                 nemoa.log('error', """no node from network group '%s'
@@ -288,16 +298,16 @@ class Dataset:
                 return False
 
         # update source file config
-        for src in colLabels:
+        for src in col_labels:
             self._config['table'][src]['source']['usecols'] \
-                = colLabels[src]['usecols']
+                = col_labels[src]['usecols']
 
         # Column & Row Filters
 
         # add column filters and partitions from network node layers
         self._config['col_filter'] = {'*': ['*:*']}
         self._config['col_partitions'] = {'groups': []}
-        for group in net_layers:
+        for group in net_visible_layers:
             self._config['col_filter'][group] = [group + ':*']
             self._config['col_partitions']['groups'].append(group)
 
@@ -471,8 +481,8 @@ class Dataset:
 
             if mapping == None: mapping = system.mapping()
 
-            source_columns = system.get('units', group = mapping[0])[0]
-            target_columns = system.get('units', group = mapping[-1])[0]
+            source_columns = system.get('units', group = mapping[0])
+            target_columns = system.get('units', group = mapping[-1])
 
             self._set_col_labels(source_columns)
 
@@ -565,8 +575,8 @@ class Dataset:
 
     #def value(self, row = None, col = None):
         #"""Return single value from dataset."""
-        #retVal = self.data(cols = ([col]), output = 'list,array')
-        #return retVal[1][retVal[0].index(row)]
+        #ret_val = self.data(cols = ([col]), output = 'list,array')
+        #return ret_val[1][ret_val[0].index(row)]
 
     def data(self, size = 0, rows = '*', cols = '*',
         corruption = (None, 0.), output = 'array'):
@@ -1097,16 +1107,16 @@ class Dataset:
         nemoa.log('set', indent = '+1')
 
         nemoa.log('exporting data to file: \'%s\'' % (file))
-        if type in ['gz', 'data']: retVal = self.save(file)
+        if type in ['gz', 'data']: ret_val = self.save(file)
         elif type in ['csv', 'tsv', 'tab', 'txt']:
             cols, data = self.data(output = ('cols', 'recarray'))
-            retVal = nemoa.common.csv_save_data(file, data,
+            ret_val = nemoa.common.csv_save_data(file, data,
                 cols = [''] + cols, **kwargs)
-        else: retVal = nemoa.log('error', """could not export dataset:
+        else: ret_val = nemoa.log('error', """could not export dataset:
             unsupported file type '%s'""" % (type))
 
         nemoa.log('set', indent = '-1')
-        return retVal
+        return ret_val
 
     def _get_cache_file(self, network):
         """Return cache file path."""

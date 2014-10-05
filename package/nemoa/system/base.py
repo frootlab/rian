@@ -29,10 +29,10 @@ class System:
                 network is not valid!""")
             nemoa.log('set', indent = '-1')
             return False
-        retVal = self._configure(dataset = dataset, network = network,
+        ret_val = self._configure(dataset = dataset, network = network,
             *args, **kwargs)
         nemoa.log('set', indent = '-1')
-        return retVal
+        return ret_val
 
     def _set_config(self, config):
         """Set configuration."""
@@ -74,36 +74,53 @@ class System:
         """Return true if system is a dummy."""
         return False
 
-    def _get_units(self, **kwargs):
-        """.
+    def _get_units(self, group_by = None, **kwargs):
+        """Get units of system.
+
+        Args:
+            group_by: grouping of units. Possible values:
+                None: no grouping
+                'layers': group by layers
 
         Returns:
-            Tuple with lists of units that match a given property
+            Depending on Argument 'group_by':
+                None: List of strings containing labels of units, that
+                    match a given property.
+                'layers': List of lists, representing layers and
+                    containing labels labels of units, that
+                    match a given property.
 
         Examples:
-            return visible units:
+            Get list of all units grouped bay layers:
+                model.system.get('units', group_by = 'layers')
+
+            Get list of visible units in system:
                 model.system.get('units', visible = True)
 
         """
 
-        filter = []
+        filter_dict = {}
         for key in kwargs.keys():
             if key == 'group':
                 key = 'name'
                 kwargs['name'] = kwargs['group']
             if key in self._params['units'][0].keys():
-                filter.append((key, kwargs[key]))
+                filter_dict[key] = kwargs[key]
 
-        groups = ()
-        for group in self._params['units']:
+        units = []
+        for layer in self._params['units']:
             valid = True
-            for key, val in filter:
-                if not group[key] == val:
+            for key in filter_dict.keys():
+                if not layer[key] == filter_dict[key]:
                     valid = False
                     break
-            if valid: groups += (group['label'], )
+            if not valid: continue
+            if group_by in [None, 'none']:
+                units += layer['label']
+            if group_by == 'layers':
+                units.append(layer['label'])
 
-        return groups
+        return units
 
     def _get_layers(self, **kwargs):
         """Get unit layers of system.
@@ -244,10 +261,10 @@ class System:
         nemoa.log('note', "optimize '%s' (%s) using algorithm '%s'" % \
             (self._config['name'], self.get('type'), algorithm))
         nemoa.log('set', indent = '+1')
-        retVal = self._optimize_params(dataset, schedule, tracker)
+        ret_val = self._optimize_params(dataset, schedule, tracker)
         nemoa.log('set', indent = '-1')
 
-        return retVal
+        return ret_val
 
     def evaluate(self, data, *args, **kwargs):
 

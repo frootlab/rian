@@ -141,9 +141,7 @@ class ANN(nemoa.system.base.System):
 
         # compare visible unit labels with dataset columns
         mapping = self.mapping()
-        unitsInGroups = self._get_units(visible = True)
-        units = []
-        for group in unitsInGroups: units += group
+        units = self._get_units(visible = True)
         if not dataset.get('columns') == units:
             return nemoa.log('error', """could not configure system:
                 visible units differ from dataset columns.""")
@@ -778,14 +776,14 @@ class ANN(nemoa.system.base.System):
         elif argsType == 'all':    evalArgs.append(data)
 
         # prepare keyword arguments for evaluation function
-        evalKwargs = kwargs.copy()
-        if not 'mapping' in evalKwargs.keys() \
-            or evalKwargs['mapping'] == None:
-            evalKwargs['mapping'] = self.mapping()
+        eval_kwargs = kwargs.copy()
+        if not 'mapping' in eval_kwargs.keys() \
+            or eval_kwargs['mapping'] == None:
+            eval_kwargs['mapping'] = self.mapping()
 
         # evaluate system
-        return getattr(self, method)(*evalArgs, **evalKwargs)
-        #try: return getattr(self, method)(*evalArgs, **evalKwargs)
+        return getattr(self, method)(*evalArgs, **eval_kwargs)
+        #try: return getattr(self, method)(*evalArgs, **eval_kwargs)
         #except: return nemoa.log('error', 'could not evaluate system')
 
     @staticmethod
@@ -889,23 +887,23 @@ class ANN(nemoa.system.base.System):
         elif func_args == 'all': eArgs = [data]
 
         # prepare keyword arguments for evaluation
-        eKwargs = kwargs.copy()
+        e_kwargs = kwargs.copy()
         if isinstance(units, str):
-            eKwargs['mapping'] = self.mapping(tgt = units)
-        elif not 'mapping' in eKwargs.keys() \
-            or eKwargs['mapping'] == None:
-            eKwargs['mapping'] = self.mapping()
+            e_kwargs['mapping'] = self.mapping(tgt = units)
+        elif not 'mapping' in e_kwargs.keys() \
+            or e_kwargs['mapping'] == None:
+            e_kwargs['mapping'] = self.mapping()
 
         # evaluate units
-        try: values = getattr(self, method)(*eArgs, **eKwargs)
+        try: values = getattr(self, method)(*eArgs, **e_kwargs)
         except: return nemoa.log('error', 'could not evaluate units')
 
         # create dictionary of target units
-        labels = self._get_units(group = eKwargs['mapping'][-1])[0]
-        retFmt = funcs[func]['return']
-        if retFmt == 'vector': return {unit: values[:, uid] \
+        labels = self._get_units(group = e_kwargs['mapping'][-1])
+        ret_fmt = funcs[func]['return']
+        if ret_fmt == 'vector': return {unit: values[:, uid] \
             for uid, unit in enumerate(labels)}
-        elif retFmt == 'scalar': return {unit: values[uid] \
+        elif ret_fmt == 'scalar': return {unit: values[uid] \
             for uid, unit in enumerate(labels)}
         return nemoa.log('error', 'could not evaluate units')
 
@@ -1342,24 +1340,25 @@ class ANN(nemoa.system.base.System):
         elif argsType == 'all':    evalArgs.append(data)
 
         # prepare keyword arguments for evaluation functions
-        evalKwargs = kwargs.copy()
-        if not 'mapping' in evalKwargs.keys() \
-            or evalKwargs['mapping'] == None:
-            evalKwargs['mapping'] = self.mapping()
+        eval_kwargs = kwargs.copy()
+        if not 'mapping' in eval_kwargs.keys() \
+            or eval_kwargs['mapping'] == None:
+            eval_kwargs['mapping'] = self.mapping()
 
         # evaluate
-        values = getattr(self, method)(*evalArgs, **evalKwargs)
+        values = getattr(self, method)(*evalArgs, **eval_kwargs)
 
         # create link dictionary
-        inLabels = self._get_units(group = evalKwargs['mapping'][-2])[0]
-        outLabels = self._get_units(group = evalKwargs['mapping'][-1])[0]
-        outFmt = methods[func]['return']
-        if outFmt == 'scalar':
-            relDict = {}
-            for inId, inUnit in enumerate(inLabels):
-                for outId, outUnit in enumerate(outLabels):
-                    relDict[(inUnit, outUnit)] = values[inId, outId]
-            return relDict
+        in_labels = self._get_units(group = eval_kwargs['mapping'][-2])
+        out_labels = self._get_units(group = eval_kwargs['mapping'][-1])
+        out_fmt = methods[func]['return']
+        if out_fmt == 'scalar':
+            rel_dict = {}
+            for in_id, in_unit in enumerate(in_labels):
+                for out_id, out_unit in enumerate(out_labels):
+                    rel_dict[(in_unit, out_unit)] = \
+                        values[in_id, out_id]
+            return rel_dict
         return nemoa.log('warning', 'could not perform evaluation')
 
     @staticmethod
@@ -1458,19 +1457,19 @@ class ANN(nemoa.system.base.System):
         else: transform = ''
         if not isinstance(transform, str): transform = ''
         if 'format' in kwargs.keys():
-            retFmt = kwargs['format']
+            ret_fmt = kwargs['format']
             del kwargs['format']
-        else: retFmt = 'dict'
-        if not isinstance(retFmt, str): retFmt = 'dict'
+        else: ret_fmt = 'dict'
+        if not isinstance(ret_fmt, str): ret_fmt = 'dict'
 
         # prepare keyword arguments for evaluation function
-        evalKwargs = kwargs.copy()
-        if not 'mapping' in evalKwargs.keys() \
-            or evalKwargs['mapping'] == None:
-            evalKwargs['mapping'] = self.mapping()
+        eval_kwargs = kwargs.copy()
+        if not 'mapping' in eval_kwargs.keys() \
+            or eval_kwargs['mapping'] == None:
+            eval_kwargs['mapping'] = self.mapping()
 
         # evaluate relations and get information about relation values
-        values = getattr(self, method)(*evalArgs, **evalKwargs)
+        values = getattr(self, method)(*evalArgs, **eval_kwargs)
         valuesFmt = methods[func]['return']
 
         # create formated return values as matrix or dict
@@ -1488,28 +1487,31 @@ class ANN(nemoa.system.base.System):
                     'could not transform relations: invalid syntax!')
 
             # create formated return values
-            if retFmt == 'array': retVal = values
-            elif retFmt == 'dict':
-                inUnits = self._get_units(group = evalKwargs['mapping'][0])[0]
-                outUnits = self._get_units(group = evalKwargs['mapping'][-1])[0]
-                retVal = nemoa.common.dict_from_array(values, (inUnits, outUnits))
+            if ret_fmt == 'array': ret_val = values
+            elif ret_fmt == 'dict':
+                in_units = self._get_units(
+                    group = eval_kwargs['mapping'][0])
+                out_units = self._get_units(
+                    group = eval_kwargs['mapping'][-1])
+                ret_val = nemoa.common.dict_from_array(
+                    values, (in_units, out_units))
 
                 # optionally evaluate statistical values over all relations
                 if evalStat:
-                    A = numpy.array([retVal[key] for key in retVal.keys()
+                    A = numpy.array([ret_val[key] for key in ret_val.keys()
                         if not key[0].split(':')[1] == key[1].split(':')[1]])
-                    retVal['max']  = numpy.amax(A)
-                    retVal['min']  = numpy.amin(A)
-                    retVal['mean'] = numpy.mean(A)
-                    retVal['std']  = numpy.std(A)
+                    ret_val['max'] = numpy.amax(A)
+                    ret_val['min'] = numpy.amin(A)
+                    ret_val['mean'] = numpy.mean(A)
+                    ret_val['std'] = numpy.std(A)
                     # force symmetric distribution with mean at 0
                     # by adding additive inverse values
                     B = numpy.concatenate((A, -A))
-                    retVal['cstd'] = numpy.std(B) - numpy.mean(A)
+                    ret_val['cstd'] = numpy.std(B) - numpy.mean(A)
             else: return nemoa.log('warning',
                 'could not perform evaluation')
 
-            return retVal
+            return ret_val
 
     @staticmethod
     def _about_relations(): return {
@@ -1567,19 +1569,19 @@ class ANN(nemoa.system.base.System):
         """
 
         if not mapping: mapping = self.mapping()
-        inLabels = self._get_units(group = mapping[0])[0]
-        outLabels = self._get_units(group = mapping[-1])[0]
+        in_labels = self._get_units(group = mapping[0])
+        out_labels = self._get_units(group = mapping[-1])
 
         # calculate symmetric correlation matrix
         M = numpy.corrcoef(numpy.hstack(data).T)
-        uList = inLabels + outLabels
+        u_list = in_labels + out_labels
 
         # create asymmetric output matrix
-        R = numpy.zeros(shape = (len(inLabels), len(outLabels)))
-        for i, u1 in enumerate(inLabels):
-            k = uList.index(u1)
-            for j, u2 in enumerate(outLabels):
-                l = uList.index(u2)
+        R = numpy.zeros(shape = (len(in_labels), len(out_labels)))
+        for i, u1 in enumerate(in_labels):
+            k = u_list.index(u1)
+            for j, u2 in enumerate(out_labels):
+                l = u_list.index(u2)
                 R[i, j] = M[k, l]
 
         return R
@@ -1628,28 +1630,30 @@ class ANN(nemoa.system.base.System):
         """
 
         if not mapping: mapping = self.mapping()
-        inLabels = self._get_units(group = mapping[0])[0]
-        outLabels = self._get_units(group = mapping[-1])[0]
+        in_labels = self._get_units(group = mapping[0])
+        out_labels = self._get_units(group = mapping[-1])
 
         # prepare knockout matrix
-        R = numpy.zeros((len(inLabels), len(outLabels)))
+        R = numpy.zeros((len(in_labels), len(out_labels)))
 
         # calculate unit values without knockout
         if not 'measure' in kwargs: measure = 'error'
         else: measure = kwargs['measure']
-        methodName = self.about('units', measure, 'name')
-        default = self._eval_units(data, func = measure, mapping = mapping)
+        method_name = self.about('units', measure, 'name')
+        default = self._eval_units(data,
+            func = measure, mapping = mapping)
 
         # calculate unit values with knockout
-        for inId, inUnit in enumerate(inLabels):
+        for in_id, in_unit in enumerate(in_labels):
 
             # modify unit and calculate unit values
             knockout = self._eval_units(data, func = measure,
-                mapping = mapping, block = [inId])
+                mapping = mapping, block = [in_id])
 
             # store difference in knockout matrix
-            for outId, outUnit in enumerate(outLabels):
-                R[inId, outId] = knockout[outUnit] - default[outUnit]
+            for out_id, out_unit in enumerate(out_labels):
+                R[in_id, out_id] = \
+                    knockout[out_unit] - default[out_unit]
 
         return R
 
@@ -1680,8 +1684,8 @@ class ANN(nemoa.system.base.System):
         """
 
         if not mapping: mapping = self.mapping()
-        input_units = self._get_units(group = mapping[0])[0]
-        output_units = self._get_units(group = mapping[-1])[0]
+        input_units = self._get_units(group = mapping[0])
+        output_units = self._get_units(group = mapping[-1])
         R = numpy.zeros((len(input_units), len(output_units)))
 
         # get indices of representatives
