@@ -187,7 +187,8 @@ def layergraph(G, **kwargs):
     # create node stack (list with lists of nodes)
     layers = G.graph['params']['layer']
     count = {layer: 0 for layer in layers}
-    for node in G.nodes(): count[G.node[node]['params']['type']] += 1
+    for node in G.nodes():
+        count[G.node[node]['params']['type']] += 1
     nodes = [range(count[layer]) for layer in layers]
     for node in G.nodes():
         layer_id = G.node[node]['params']['layer_id']

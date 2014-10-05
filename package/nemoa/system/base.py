@@ -222,6 +222,69 @@ class System:
 
         return layers
 
+    def _get_link(self, link):
+
+        src_unit = link[0]
+        src_layer = self._get_layer_of_unit(src_unit)
+        if not src_layer in self._links:
+            return None
+
+        tgt_unit = link[1]
+        tgt_layer = self._get_layer_of_unit(tgt_unit)
+        if not tgt_layer in self._links[src_layer]['target']:
+            return None
+
+        # get weight and adjacency matrices of link layer
+        link_layer = self._links[src_layer]['target'][tgt_layer]
+        W = link_layer['W']
+        A = link_layer['A']
+
+        # get weight and adjacency of link
+        src_id = self._units[src_layer].params['label'].index(src_unit)
+        tgt_id = self._units[tgt_layer].params['label'].index(tgt_unit)
+        link_weight = W[src_id, tgt_id]
+        link_adjacency = A[src_id, tgt_id]
+
+        # calculate normalized weight of link (normalized to link layer)
+        if link_weight == 0.0:
+            link_norm_weight = 0.0
+        else:
+            W_sum = numpy.sum(numpy.abs(A * W))
+            A_sum = numpy.sum(A)
+            # TODO: Problem with multilayer plain anns
+            link_norm_weight = link_weight * A_sum / W_sum
+
+        return {
+            'adjacency': link_adjacency,
+            'weight': link_weight,
+            'normal': link_norm_weight}
+
+    def _get_links(self):
+        """Return links from adjacency matrix. """
+
+        layers = self._get_layers()
+        if not layers: return False
+
+        links = ()
+        for lid in xrange(len(layers) - 1):
+            src = layers[lid]
+            src_units = self._units[src].params['label']
+            tgt = layers[lid + 1]
+            tgt_units = self._units[tgt].params['label']
+
+            lg = []
+            for src_unit_id, src_unit in enumerate(src_units):
+                for tgt_unit_id, tgt_unit in enumerate(tgt_units):
+                    link_layer = self._params['links'][(lid, lid + 1)]
+
+                    if not 'A' in link_layer \
+                        or link_layer['A'][src_unit_id, tgt_unit_id]:
+                        lg.append((src_unit, tgt_unit))
+
+            links += (lg, )
+
+        return links
+
     def _get_layer_of_unit(self, unit):
         """Return name of unit group of given unit."""
         for id in xrange(len(self._params['units'])):
@@ -236,8 +299,9 @@ class System:
         if key == 'backup': return self._get_backup(*args, **kwargs)
         if key == 'type': return self._get_type(*args, **kwargs)
         if key == 'layers': return self._get_layers(*args, **kwargs)
-        if key == 'units': return self._get_units(*args, **kwargs)
         if key == 'unit': return self._get_unit(*args, **kwargs)
+        if key == 'units': return self._get_units(*args, **kwargs)
+        if key == 'link': return self._get_link(*args, **kwargs)
         if key == 'links': return self._get_links(*args, **kwargs)
 
         if not key == None: return nemoa.log('warning',
@@ -371,6 +435,7 @@ class System:
                 'SE': Sum of Errors / L1 Norm
                 'SSE': Sum of Squared Errors
                 'RSSE': Root Sum of Squared Errors
+
         """
 
         norm = norm.upper()
@@ -405,6 +470,7 @@ class System:
                 'ME': Mean of Errors
                 'MSE': Mean of Squared Errors
                 'RMSE': Root Mean of Squared Errors / L2 Norm
+
         """
 
         norm = norm.upper()
@@ -438,6 +504,7 @@ class System:
                 'SD': Standard Deviation of Values
                 'SDE': Standard Deviation of Errors
                 'SDSE': Standard Deviation of Squared Errors
+
         """
 
         norm = norm.upper()

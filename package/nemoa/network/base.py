@@ -390,7 +390,15 @@ class Network:
         return layers
 
     def _get_edge(self, edge):
-        return self._graph.edge[edge]
+        if not isinstance(edge, tuple):
+            return nemoa.log('error', """could not get edge:
+                edge '%s' is unkown.""" % (edge))
+        src_node, tgt_node = edge
+        if not src_node in self._graph.edge \
+            or not tgt_node in self._graph.edge[src_node]:
+            return nemoa.log('error', """could not get edge:
+                edge ('%s', '%s') is unkown.""" % (src_node, tgt_node))
+        return self._graph.edge[src_node][tgt_node]
 
     def _get_edges(self, **kwargs):
 
