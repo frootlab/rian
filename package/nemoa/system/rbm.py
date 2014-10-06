@@ -34,8 +34,8 @@ class RBM(nemoa.system.ann.ANN):
             'subnet': '*',
             'visible': 'auto',
             'hidden': 'auto',
-            'visibleClass': 'sigmoid',
-            'hiddenClass': 'sigmoid' },
+            'visible_class': 'sigmoid',
+            'hidden_class': 'sigmoid' },
         'init': {
             'checkDataset': False,
             'ignoreUnits': [],
@@ -70,14 +70,9 @@ class RBM(nemoa.system.ann.ANN):
             'tracker_estimate_timeWait': 20. }}
 
     def mapping(self):
-        v = self._params['units'][0]['name']
-        h = self._params['units'][1]['name']
+        v = self._params['units'][0]['layer']
+        h = self._params['units'][1]['layer']
         return (v, h, v)
-
-    #def _get_test_data(self, dataset):
-        #"""Return tuple with default test data."""
-        #data = dataset.data()
-        #return (data, data)
 
     def _check_dataset(self, dataset):
         """Check if dataset contains binary values."""
@@ -549,8 +544,8 @@ class GRBM(RBM):
             'subnet': '*',
             'visible': 'sigmoid',
             'hidden': 'sigmoid',
-            'visibleClass': 'gauss',
-            'hiddenClass': 'sigmoid' },
+            'visible_class': 'gauss',
+            'hidden_class': 'sigmoid' },
         'init': {
             'checkDataset': True,
             'ignoreUnits': [],

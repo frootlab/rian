@@ -146,7 +146,7 @@ class Network:
             if not group in self._config['nodes'] \
                 or not (groups[group] == self._config['nodes'][group]):
                 self._configure_layergraph(
-                    nodelist = {'type': group, 'list': groups[group]})
+                    nodelist = {'layer': group, 'list': groups[group]})
 
         nemoa.log('set', indent = '-1')
         return True
@@ -159,29 +159,29 @@ class Network:
         """Configure and create layered NetworkX graph."""
 
         if not nodelist:
-            nodelist = {'type': None, 'list': []}
+            nodelist = {'layer': None, 'list': []}
         if not edgelist:
-            edgelist = {'type': (None, None), 'list': []}
+            edgelist = {'layer': (None, None), 'list': []}
 
         # find new nodes to add and old nodes to delete
-        if nodelist['type'] in self._config['layer']:
+        if nodelist['layer'] in self._config['layer']:
 
             # count number of new nodes to add to graph
             add_nodes = 0
             for node in nodelist['list']:
-                if not node in self._config['nodes'][nodelist['type']]:
+                if not node in self._config['nodes'][nodelist['layer']]:
                     add_nodes += 1
 
             # count number of nodes to delete from graph
             del_nodes = 0
-            for node in self._config['nodes'][nodelist['type']]:
+            for node in self._config['nodes'][nodelist['layer']]:
                 if not node in nodelist['list']:
                     del_nodes += 1
 
         # add edges from edgelist
         layers = self._config['layer']
-        src_layer_name = edgelist['type'][0]
-        tgt_layer_name = edgelist['type'][1]
+        src_layer_name = edgelist['layer'][0]
+        tgt_layer_name = edgelist['layer'][1]
         if src_layer_name in layers and tgt_layer_name in layers:
             src_layer_id = layers.index(src_layer_name)
             tgt_layer_id = layers.index(tgt_layer_name)
@@ -221,8 +221,8 @@ class Network:
         node_order = 0
         for layer_id, layer in enumerate(layers):
             isvisible = layer in self._config['visible']
-            if nodelist['type'] in layers:
-                if layer == nodelist['type']:
+            if nodelist['layer'] in layers:
+                if layer == nodelist['layer']:
                     if add_nodes: nemoa.log("""adding %i nodes
                         to layer '%s'""" % (add_nodes, layer))
                     if del_nodes: nemoa.log("""deleting %i nodes
@@ -250,7 +250,6 @@ class Network:
                     label = node,
                     order = node_order,
                     params = {
-                        'type': layer, # TODO: remove parameter: use layer
                         'layer': layer,
                         'layer_id': layer_id,
                         'layer_node_id': layer_node_id,
@@ -280,7 +279,7 @@ class Network:
                     direction = (src_node_name, tgt_node_name),
                     weight = 0.,
                     params = {
-                        'type': edge_layer,
+                        'layer': edge_layer,
                         'layer_id': layer_id })
 
                 edge_order += 1
@@ -339,12 +338,12 @@ class Network:
 
     def _get_layer(self, layer):
         """Return dictionary containing information about a layer."""
-        nodes = self._get_nodes(type = layer)
+        nodes = self._get_nodes(layer = layer)
         if not nodes: return None
         first_node = self._get_node(nodes[0])['params']
         return {
             'id': first_node['layer_id'],
-            'label': first_node['type'],
+            'label': first_node['layer'],
             'visible': first_node['visible'],
             'nodes': nodes}
 
@@ -383,7 +382,7 @@ class Network:
         # get ordered list of layers
         layers = []
         for node in nodes:
-            layer = graph.node[node]['params']['type']
+            layer = graph.node[node]['params']['layer']
             if layer in layers: continue
             layers.append(layer)
 

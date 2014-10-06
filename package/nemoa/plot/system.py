@@ -113,7 +113,7 @@ class graph(nemoa.plot.base.plot):
             for n in graphs[i].nodes():
                 node = model.network.get('node', n)
                 label = nemoa.common.str_format_unit_label(node['label'])
-                node_type = node['params']['type']
+                node_type = node['params']['layer']
                 graph.node[n]['label'] = label
                 graph.node[n]['type'] = node_type
                 graph.node[n]['complex'] = i

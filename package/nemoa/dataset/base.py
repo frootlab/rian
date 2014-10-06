@@ -151,7 +151,7 @@ class Dataset:
             net_layers = {'v': None}
         else:
             # get network node labels, grouped by layers
-            net_visible_layers = network.get('layers', visible = True)
+            network_layers = network.get('layers', visible = True)
 
             # convert network node labels to common format
             nemoa.log('search network nodes in dataset sources')
@@ -160,18 +160,18 @@ class Dataset:
             conv_net_nodes = []
             conv_net_nodes_lost = []
             net_label_format = network._config['label_format']
-            for group in net_visible_layers:
-                net_layer_node_names = network.get('nodes',
-                    type = group)
+            for layer in network_layers:
+                net_layer_node_names = \
+                    network.get('nodes', layer = layer)
                 net_layer_node_labels = []
                 for node in net_layer_node_names:
                     net_layer_node_labels.append(
                         network.get('node', node)['label'])
-                conv_net_layers[group], conv_net_layers_lost[group] = \
+                conv_net_layers[layer], conv_net_layers_lost[layer] = \
                     nemoa.dataset.annotation.convert(
                     net_layer_node_labels, input = net_label_format)
-                conv_net_nodes += conv_net_layers[group]
-                conv_net_nodes_lost += conv_net_layers_lost[group]
+                conv_net_nodes += conv_net_layers[layer]
+                conv_net_nodes_lost += conv_net_layers_lost[layer]
 
             # notify if any network node labels could not be converted
             if conv_net_nodes_lost:
@@ -220,7 +220,7 @@ class Dataset:
                 num_lost = 0
                 num_all = 0
                 nodes_lost = {}
-                for group in net_visible_layers:
+                for group in network_layers:
                     nodes_conv_lost = \
                         [val for val in conv_net_layers[group] \
                         if val not in columns_conv]
@@ -275,7 +275,7 @@ class Dataset:
 
         # search network nodes in dataset columns
         self._config['columns'] = ()
-        for group in net_visible_layers:
+        for group in network_layers:
             found = 0
 
             for id, col in enumerate(conv_net_layers[group]):
@@ -287,7 +287,7 @@ class Dataset:
                     self._config['columns'] += \
                         ((group, net_layers[group][id]), )
                 else:
-                    node_name = network.get('nodes', type = group)[id]
+                    node_name = network.get('nodes', layer = group)[id]
                     node_label = network.get('node', node_name)['label']
                     self._config['columns'] += ((group, node_label), )
 
@@ -296,7 +296,7 @@ class Dataset:
                         += (col_labels[src]['conv'].index(col), )
 
             if not found:
-                nemoa.log('error', """no node from network group '%s'
+                nemoa.log('error', """no node from network layer '%s'
                     could be found in dataset source!""" % (group))
                 nemoa.log('set', indent = '-1')
                 return False
@@ -311,9 +311,9 @@ class Dataset:
         # add column filters and partitions from network node layers
         self._config['col_filter'] = {'*': ['*:*']}
         self._config['col_partitions'] = {'groups': []}
-        for group in net_visible_layers:
-            self._config['col_filter'][group] = [group + ':*']
-            self._config['col_partitions']['groups'].append(group)
+        for layer in network_layers:
+            self._config['col_filter'][layer] = [layer + ':*']
+            self._config['col_partitions']['groups'].append(layer)
 
         # add row filters and partitions from sources
         self._config['row_filter'] = {'*': ['*:*']}

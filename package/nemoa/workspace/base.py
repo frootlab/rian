@@ -718,6 +718,7 @@ class config:
         """Update system configuration"""
 
         config = obj_conf['config']
+        name = obj_conf['name']
 
         # system module
         if not 'package' in config:
@@ -728,8 +729,8 @@ class config:
             system_module = importlib.import_module(module_name)
         except:
             return nemoa.log('warning', """skipping system '%s':
-                python module 'nemoa.system.%s' could not be imported.
-                (parameter 'package').""" % (name, config['package']))
+                module 'nemoa.system.%s' could not be imported."""
+                % (name, config['package']))
 
         # system class
         if not 'class' in config:

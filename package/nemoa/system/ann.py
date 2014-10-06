@@ -39,8 +39,8 @@ class ANN(nemoa.system.base.System):
         'params': {
             'visible': 'auto',
             'hidden': 'auto',
-            'visibleClass': 'gauss',
-            'hiddenClass': 'sigmoid',
+            'visible_class': 'gauss',
+            'hidden_class': 'sigmoid',
             'visibleSystem': None,
             'visibleSystemModule': 'rbm',
             'visibleSystemClass': 'grbm',
@@ -192,24 +192,31 @@ class ANN(nemoa.system.base.System):
         self._params['units'] = units
 
         # get unit classes from system config
-        visibleUnitsClass = self._config['params']['visibleClass']
-        hiddenUnitsClass = self._config['params']['hiddenClass']
-        for id in xrange(len(self._params['units'])):
-            if self._params['units'][id]['visible'] == True:
-                self._params['units'][id]['class'] = visibleUnitsClass
-            else: self._params['units'][id]['class'] = hiddenUnitsClass
+        visible_unit_class = self._config['params']['visible_class']
+        hidden_unit_class = self._config['params']['hidden_class']
+        for layer_id in xrange(len(self._params['units'])):
+            if self._params['units'][layer_id]['visible'] == True:
+                self._params['units'][layer_id]['class'] = \
+                    visible_unit_class
+            else:
+                self._params['units'][layer_id]['class'] = \
+                    hidden_unit_class
 
         # create instances of unit classes
         # and link units params to local params dict
         self._units = {}
-        for id in xrange(len(self._params['units'])):
-            unitClass = self._params['units'][id]['class']
-            name = self._params['units'][id]['name']
-            if unitClass == 'sigmoid': self._units[name] = self._SigmoidUnits()
-            elif unitClass == 'gauss': self._units[name] = self._GaussUnits()
-            else: return nemoa.log('error', """could not create system:
-                unit class '%s' is not supported!""" % (unitClass))
-            self._units[name].params = self._params['units'][id]
+        for layer_id in xrange(len(self._params['units'])):
+            layer_class = self._params['units'][layer_id]['class']
+            layer = self._params['units'][layer_id]['layer']
+            if layer_class == 'sigmoid':
+                self._units[layer] = self._SigmoidUnits()
+            elif layer_class == 'gauss':
+                self._units[layer] = self._GaussUnits()
+            else:
+                return nemoa.log('error', """could not create system:
+                    unit class '%s' is not supported!"""
+                    % (layer_class))
+            self._units[layer].params = self._params['units'][layer_id]
 
         if initialize: return self._init_units()
         return True
@@ -220,14 +227,14 @@ class ANN(nemoa.system.base.System):
         if not isinstance(params, dict) \
             or not 'units' in params.keys() \
             or not isinstance(params['units'], list): return False
-        for id in xrange(len(params['units'])):
-            layer = params['units'][id]
+        for layer_id in xrange(len(params['units'])):
+            layer = params['units'][layer_id]
             if not isinstance(layer, dict): return False
-            for attr in ['name', 'visible', 'class', 'label']:
+            for attr in ['layer', 'visible', 'class', 'label']:
                 if not attr in layer.keys(): return False
             if layer['class'] == 'gauss' \
                 and not self._GaussUnits.check(layer): return False
-            elif params['units'][id]['class'] == 'sigmoid' \
+            elif params['units'][layer_id]['class'] == 'sigmoid' \
                 and not self._SigmoidUnits.check(layer): return False
 
         return True
@@ -237,11 +244,11 @@ class ANN(nemoa.system.base.System):
 
         units = []
         for layer in network.get('layers'):
-            label = network.get('nodes', type = layer)
+            label = network.get('nodes', layer = layer)
             params = network.get('node', label[0])['params']
             units.append({
-                'name': layer,
-                'label': network.get('nodes', type = layer),
+                'layer': layer,
+                'label': label,
                 'visible': params['visible'],
                 'id': params['layer_id']})
 
@@ -252,7 +259,7 @@ class ANN(nemoa.system.base.System):
 
         if not layer == None and not layer in self._units.keys():
             return nemoa.log('error', """could not remove units:
-                unknown layer '%'""" % (layer))
+                unknown layer '%s'""" % (layer))
 
         # search for labeled units in given layer
         layer = self._units[layer].params
@@ -273,7 +280,7 @@ class ANN(nemoa.system.base.System):
             self._SigmoidUnits.remove(layer, select)
 
         # delete units from link parameter arrays
-        links = self._links[layer['name']]
+        links = self._links[layer['layer']]
 
         for src in links['source'].keys():
             links['source'][src]['A'] = \
@@ -300,9 +307,9 @@ class ANN(nemoa.system.base.System):
 
         # initialize adjacency matrices with default values
         for lid in xrange(len(self._params['units']) - 1):
-            src_name = self._params['units'][lid]['name']
+            src_name = self._params['units'][lid]['layer']
             src_list = self._units[src_name].params['label']
-            tgt_name = self._params['units'][lid + 1]['name']
+            tgt_name = self._params['units'][lid + 1]['layer']
             tgt_list = self._units[tgt_name].params['label']
             lnk_name = (lid, lid + 1)
 
@@ -319,7 +326,7 @@ class ANN(nemoa.system.base.System):
 
         # set adjacency to one if links are given explicitly
         if links:
-            layers = [layer['name'] for layer in self._params['units']]
+            layers = [layer['layer'] for layer in self._params['units']]
 
             for link in links:
                 src, tgt = link
@@ -1674,7 +1681,7 @@ class ANN(nemoa.system.base.System):
 
         """
 
-        mapping = tuple([g['name'] for g in self._params['units']])
+        mapping = tuple([l['layer'] for l in self._params['units']])
         sid = mapping.index(src) \
             if isinstance(src, str) and src in mapping else 0
         tid = mapping.index(tgt) \
@@ -1765,33 +1772,39 @@ class ANN(nemoa.system.base.System):
 
         def weights(self, source):
 
-            if 'source' in self.source and source['name'] == self.source['source']:
+            if 'source' in self.source \
+                and source['layer'] == self.source['source']:
                 return self.source['W']
-            elif 'target' in self.target and source['name'] == self.target['target']:
+            elif 'target' in self.target \
+                and source['layer'] == self.target['target']:
                 return self.target['W'].T
-            else: return nemoa.log('error', """Could not get links:
-                Layers '%s' and '%s' are not connected!
-                """ % (source['name'], self.params['name']))
+            else: return nemoa.log('error', """could not get links:
+                layers '%s' and '%s' are not connected!"""
+                % (source['layer'], self.params['layer']))
 
         def links(self, source):
 
-            if 'source' in self.source and source['name'] == self.source['source']:
+            if 'source' in self.source \
+                and source['layer'] == self.source['source']:
                 return self.source
-            elif 'target' in self.target and source['name'] == self.target['target']:
+            elif 'target' in self.target \
+                and source['layer'] == self.target['target']:
                 return {'W': self.target['W'].T, 'A': self.target['A'].T}
-            else: return nemoa.log('error', """Could not get links:
-                Layers '%s' and '%s' are not connected!
-                """ % (source['name'], self.params['name']))
+            else: return nemoa.log('error', """could not get links:
+                layers '%s' and '%s' are not connected!"""
+                % (source['name'], self.params['name']))
 
         def adjacency(self, source):
 
-            if 'source' in self.source and source['name'] == self.source['source']:
+            if 'source' in self.source \
+                and source['layer'] == self.source['source']:
                 return self.source['A']
-            elif 'target' in self.target and source['name'] == self.target['target']:
+            elif 'target' in self.target \
+                and source['layer'] == self.target['target']:
                 return self.target['A'].T
-            else: return nemoa.log('error', """Could not get links:
-                Layers '%s' and '%s' are not connected!
-                """ % (source['name'], self.params['name']))
+            else: return nemoa.log('error', """could not get links:
+                layers '%s' and '%s' are not connected!"""
+                % (source['layer'], self.params['layer']))
 
     class _SigmoidUnits(_UnitLayerBaseClass):
         """Sigmoidal Unit Layer.

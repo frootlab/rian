@@ -133,10 +133,11 @@ class System:
 
         # filter units by attributes and order entries
         filter_dict = {}
+        # TODO: makes no sense
         for key in kwargs.keys():
             if key == 'group':
-                key = 'name'
-                kwargs['name'] = kwargs['group']
+                key = 'layer'
+                kwargs['layer'] = kwargs['group']
             if key in self._params['units'][0].keys():
                 filter_dict[key] = kwargs[key]
         units = []
@@ -218,7 +219,7 @@ class System:
                 if not layer[key] == val:
                     valid = False
                     break
-            if valid: layers.append(layer['name'])
+            if valid: layers.append(layer['layer'])
 
         return layers
 
@@ -233,8 +234,8 @@ class System:
             return nemoa.log('error', """could not get link:
                 link '%s' is unkown.""" % (edge))
         src_unit, tgt_unit = link
-        src_layer = self._get_unit(src_unit)['name']
-        tgt_layer = self._get_unit(tgt_unit)['name']
+        src_layer = self._get_unit(src_unit)['layer']
+        tgt_layer = self._get_unit(tgt_unit)['layer']
         if not src_layer in self._links \
             or not tgt_layer in self._links[src_layer]['target']:
             return nemoa.log('error', """could not get link:
@@ -663,10 +664,10 @@ class Tracker:
         if runtime > self._config['tracker_estimate_timeWait']:
             estim = (runtime / (self._state['epoch'] + 1)
                 * self._config['updates'])
-            estimStr = time.strftime('%H:%M',
+            estim_str = time.strftime('%H:%M',
                 time.localtime(now + estim))
             nemoa.log('note', 'estimation: %ds (finishing time: %s)'
-                % (estim, estimStr))
+                % (estim, estim_str))
             self._state['estim_enable'] = False
             return True
 

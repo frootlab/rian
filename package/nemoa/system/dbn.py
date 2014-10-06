@@ -41,8 +41,8 @@ class DBN(nemoa.system.ann.ANN):
         'params': {
             'visible': 'auto',
             'hidden': 'auto',
-            'visibleClass': 'gauss',
-            'hiddenClass': 'sigmoid',
+            'visible_class': 'gauss',
+            'hidden_class': 'sigmoid',
             'visibleSystem': None,
             'visibleSystemModule': 'rbm',
             'visibleSystemClass': 'GRBM',
@@ -135,7 +135,7 @@ class DBN(nemoa.system.ann.ANN):
                 'package': 'base',
                 'class': 'network',
                 'name': '%s ↔ %s' \
-                    % (in_units['name'], out_units['name']),
+                    % (in_units['layer'], out_units['layer']),
                 'type': 'layer',
                 'layer': ['visible', 'hidden'],
                 'nodes': network_nodes,
@@ -156,7 +156,7 @@ class DBN(nemoa.system.ann.ANN):
                 'class': \
                     self._config['params'][sys_type + 'SystemClass'],
                 'name': '%s ↔ %s' \
-                    % (in_units['name'], out_units['name'])}
+                    % (in_units['layer'], out_units['layer'])}
 
             # create subsystem instance
             system = nemoa.system.new(config = system_config)
@@ -208,8 +208,8 @@ class DBN(nemoa.system.ann.ANN):
             if sys_id > 0:
                 prev_sys = sub_systems[sys_id - 1]
 
-                visible_layer = prev_sys._params['units'][0]['name']
-                hidden_layer = prev_sys._params['units'][1]['name']
+                visible_layer = prev_sys._params['units'][0]['layer']
+                hidden_layer = prev_sys._params['units'][1]['layer']
                 mapping = (visible_layer, hidden_layer)
 
                 dataset._transform(algorithm = 'system',
@@ -249,7 +249,7 @@ class DBN(nemoa.system.ann.ANN):
             # copy unit parameters
             for attrib in units[id]['init'].keys():
                 # keep name and visibility of layers
-                if attrib in ['name', 'visible', 'id']:
+                if attrib in ['layer', 'visible', 'id']:
                     continue
                 # keep labels of hidden layers
                 if attrib == 'label' and not units[id]['visible']:

@@ -107,6 +107,7 @@ class Ini:
         if 'type' in netcfg.options('network'):
             network['config']['type'] = \
                 netcfg.get('network', 'type').strip().lower()
+        # TODO: do not allow auto networks
         else: network['config']['type'] = 'auto'
 
         # TODO: make network type specific sections
