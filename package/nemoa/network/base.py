@@ -291,7 +291,7 @@ class Network:
         return self._graph.node[node]
 
     def _get_nodes(self, grouping = None, **kwargs):
-        """get list of nodes with specific attributes.
+        """get filtered, sorted and grouped list of nodes.
 
         Examples:
             nodes(type = 'visible')
@@ -313,7 +313,7 @@ class Network:
         nodes = [node for node in nodes_sort_list if node]
         if grouping == None: return nodes
 
-        # get grouping values
+        # group nodes
         grouping_values = []
         for node in nodes:
             node_params = self._graph.node[node]['params']
@@ -323,8 +323,6 @@ class Network:
             grouping_value = node_params[grouping]
             if not grouping_value in grouping_values:
                 grouping_values.append(grouping_value)
-
-        # create list of groups
         grouped_nodes = []
         for grouping_value in grouping_values:
             group = []
@@ -399,14 +397,12 @@ class Network:
                 edge ('%s', '%s') is unkown.""" % (src_node, tgt_node))
         return self._graph.edge[src_node][tgt_node]
 
-    def _get_edges(self, **kwargs):
+    def _get_edges(self, grouping = None, **kwargs):
 
-        # filter search criteria and order entries
-        sorted_list = [None] * self._graph.number_of_edges()
-
+        # filter edges by attributes and order entries
+        edge_sort_list = [None] * self._graph.number_of_edges()
         for src, tgt, attr in self._graph.edges(data = True):
             if not kwargs == {}:
-
                 passed = True
                 for key in kwargs:
                     if not key in attr['params'] \
@@ -414,16 +410,33 @@ class Network:
                         passed = False
                         break
                 if not passed: continue
+            edge_sort_list[attr['order']] = (src, tgt)
+        edges = [edge for edge in edge_sort_list if edge]
+        if grouping == None: return edges
 
-            src_layer = src.split(':')[0]
-            tgt_layer = tgt.split(':')[0]
-            layers = self._get_layers()
+        # group edges
+        grouping_values = []
+        for edge in edges:
+            src, tgt = edge
+            edge_params = self._graph.edge[src][tgt]['params']
+            print edge_params
+            if not grouping in edge_params:
+                return nemoa.log('error', """could not get edges:
+                    unknown parameter '%s'.""" % (grouping))
+            grouping_value = edge_params[grouping]
+            if not grouping_value in grouping_values:
+                grouping_values.append(grouping_value)
+        grouped_edges = []
+        for grouping_value in grouping_values:
+            group = []
+            for edge in edges:
+                src, tgt = edge
+                if self._graph.edge[src][tgt]['params'][grouping] \
+                    == grouping_value:
+                    group.append(edge)
+            grouped_edges.append(group)
 
-            if src_layer in layers and tgt_layer in layers:
-                sorted_list[attr['order']] = (src, tgt)
-
-        # filter empty nodes
-        return [edge for edge in sorted_list if edge]
+        return grouped_edges
 
     def _get_backup(self, sec = None):
         dict = {
