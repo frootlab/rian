@@ -79,7 +79,7 @@ class System:
 
         """
 
-        # search unique layer of unit
+        # get layer of unit
         layer_ids = []
         for i in xrange(len(self._params['units'])):
             if unit in self._params['units'][i]['id']:
@@ -97,6 +97,7 @@ class System:
         layer_unit_id = layer_units.index(unit)
         unit_params = { 'layer_sub_id': layer_unit_id }
         for param in layer_params.keys():
+            # TODO: flatten() maybe not needed
             layer_param_array = \
                 numpy.array(layer_params[param]).flatten()
             if layer_param_array.size == 1:
@@ -113,7 +114,7 @@ class System:
             grouping: grouping parameter of units. If grouping is not
                 None, the returned units are grouped by the different
                 values of the grouping parameter. Grouping is only
-                possible if every unit has the parameter.
+                possible if every unit contains the parameter.
             **kwargs: filter parameters of units. If kwargs are given,
                 only units that match the filter parameters are
                 returned.
@@ -132,46 +133,22 @@ class System:
 
         """
 
-        # filter units by attributes and order entries
-        #filter_dict = {}
-        ## TODO: makes no sense
-        #for key in kwargs.keys():
-            #if key == 'group':
-                #key = 'layer'
-                #kwargs['layer'] = kwargs['group']
-            #if key in self._params['units'][0].keys():
-                #filter_dict[key] = kwargs[key]
+        # get filtered list of units
         units = []
-        units_params = {}
-        for layer_id, layer in enumerate(self._params['units']):
+        for layer in self._params['units']:
             valid = True
             for key in kwargs.keys():
                 if not layer[key] == kwargs[key]:
                     valid = False
                     break
             if not valid: continue
-            if grouping == None:
-                units += layer['id']
-            elif grouping == 'layers':
-                units.append(layer['id'])
-            else:
-                units += layer['id']
-                layer_size = len(layer['id'])
-                for unit_id, unit in enumerate(layer['id']):
-                    unit_params = {}
-                    for param in layer.keys():
-                        unit_param_array = \
-                            numpy.array(layer[param]).flatten()
-                        if unit_param_array.size == 1:
-                            unit_params[param] = unit_param_array[0]
-                        elif unit_param_array.size == layer_size:
-                            unit_params[param] = \
-                                unit_param_array[unit_id]
-                    units_params[unit] = unit_params
+            units += layer['id']
         if grouping == None: return units
-        if grouping == 'layers': return units
 
-        # group units
+        # group units by given grouping parameter
+        units_params = {}
+        for unit in units:
+            units_params[unit] = self._get_unit(unit)
         grouping_values = []
         for unit in units:
             if not grouping in units_params[unit].keys():
@@ -231,26 +208,38 @@ class System:
         if not isinstance(link, tuple):
             return nemoa.log('error', """could not get link:
                 link '%s' is unkown.""" % (edge))
-        src_unit, tgt_unit = link
-        src_layer = self._get_unit(src_unit)['layer']
-        tgt_layer = self._get_unit(tgt_unit)['layer']
-        if not src_layer in self._links \
-            or not tgt_layer in self._links[src_layer]['target']:
-            return nemoa.log('error', """could not get link:
-                link ('%s', '%s') is unkown.""" % (src_unit, tgt_unit))
 
-        # get weight and adjacency matrices of link layer
-        layer_params = self._links[src_layer]['target'][tgt_layer]
-        layer_weights = layer_params['W']
-        layer_adjacency = layer_params['A']
+        src, tgt = link
 
-        # get weight and adjacency of link
-        src_unit_id = \
-            self._units[src_layer].params['id'].index(src_unit)
-        tgt_unit_id = \
-            self._units[tgt_layer].params['id'].index(tgt_unit)
-        link_weight = layer_weights[src_unit_id, tgt_unit_id]
-        link_adjacency = layer_adjacency[src_unit_id, tgt_unit_id]
+        src_unit = self._get_unit(src)
+        src_id = src_unit['layer_sub_id']
+        src_layer = src_unit['layer']
+        src_layer_params = self._units[src_layer].params
+
+        tgt_unit = self._get_unit(tgt)
+        tgt_id = tgt_unit['layer_sub_id']
+        tgt_layer = tgt_unit['layer']
+        tgt_layer_params = self._units[tgt_layer].params
+
+        link_layer_params = self._links[src_layer]['target'][tgt_layer]
+        link_layer_size = len(src_layer_params['id']) \
+            * len(tgt_layer_params['id'])
+
+        # get link parameters
+        link_params = {}
+        for param in link_layer_params.keys():
+            layer_param_array = \
+                numpy.array(link_layer_params[param])
+            if layer_param_array.size == 1:
+                link_params[param] = link_layer_params[param]
+            elif layer_param_array.size == link_layer_size:
+                link_params[param] = layer_param_array[src_id, tgt_id]
+
+        # calculate additional link parameters
+        layer_weights = link_layer_params['W']
+        layer_adjacency = link_layer_params['A']
+        link_weight = link_params['W']
+        link_adjacency = link_params['A']
 
         # calculate normalized weight of link (normalized to link layer)
         if link_weight == 0.0:
@@ -261,36 +250,86 @@ class System:
                 numpy.abs(layer_adjacency * layer_weights))
             link_norm_weight = link_weight * adjacency_sum / weight_sum
 
-        return {
-            'adjacency': link_adjacency,
-            'weight': link_weight,
-            'normal': link_norm_weight}
+        link_params['layer'] = (src_layer, tgt_layer)
+        link_params['layer_sub_id'] = (src_id, tgt_id)
+        link_params['adjacency'] = link_params['A']
+        link_params['weight'] = link_params['W']
+        link_params['sign'] = numpy.sign(link_params['W'])
+        link_params['normal'] = link_norm_weight
 
-    def _get_links(self):
-        """Return links from adjacency matrix. """
+        return link_params
 
+    def _get_links(self, grouping = None, **kwargs):
+        """Get links of system.
+
+        Args:
+            grouping: grouping parameter of links. If grouping is not
+                None, the returned links are grouped by the different
+                values of the grouping parameter. Grouping is only
+                possible if every links contains the parameter.
+            **kwargs: filter parameters of links. If kwargs are given,
+                only links that match the filter parameters are
+                returned.
+
+        Returns:
+            If the argument 'grouping' is not set, a list of strings
+            containing name identifiers of links is returned. If
+            'grouping' is a valid link parameter, the links are grouped
+            by the values of the grouping parameter.
+
+        Examples:
+            Get a list of all links grouped by layers:
+                model.system.get('links', grouping = 'layer')
+            Get a list of links with weight = 0.0:
+                model.system.get('units', weight = 0.0)
+
+        """
+
+        # get links, filtered by kwargs
         layers = self._get_layers()
         if not layers: return False
+        links = []
+        links_params = {}
+        for layer_id in xrange(len(layers) - 1):
+            src_layer = layers[layer_id]
+            src_units = self._units[src_layer].params['id']
+            tgt_layer = layers[layer_id + 1]
+            tgt_units = self._units[tgt_layer].params['id']
+            link_layer_id = (layer_id, layer_id + 1)
+            link_layer_params = self._params['links'][link_layer_id]
 
-        links = ()
-        for lid in xrange(len(layers) - 1):
-            src = layers[lid]
-            src_units = self._units[src].params['id']
-            tgt = layers[lid + 1]
-            tgt_units = self._units[tgt].params['id']
+            for src_unit in src_units:
+                for tgt_unit in tgt_units:
+                    link = (src_unit, tgt_unit)
+                    link_params = self._get_link(link)
+                    if not link_params['A']: continue
+                    valid = True
+                    for key in kwargs.keys():
+                        if not link_params[key] == kwargs[key]:
+                            valid = False
+                            break
+                    if not valid: continue
+                    links.append(link)
+                    links_params[link] = link_params
+        if grouping == None: return links
 
-            lg = []
-            for src_unit_id, src_unit in enumerate(src_units):
-                for tgt_unit_id, tgt_unit in enumerate(tgt_units):
-                    link_layer = self._params['links'][(lid, lid + 1)]
-
-                    if not 'A' in link_layer \
-                        or link_layer['A'][src_unit_id, tgt_unit_id]:
-                        lg.append((src_unit, tgt_unit))
-
-            links += (lg, )
-
-        return links
+        # group links by given grouping parameter
+        grouping_values = []
+        for link in links:
+            if not grouping in links_params[link].keys():
+                return nemoa.log('error', """could not get links:
+                    unknown parameter '%s'.""" % (grouping))
+            grouping_value = links_params[link][grouping]
+            if not grouping_value in grouping_values:
+                grouping_values.append(grouping_value)
+        grouped_links = []
+        for grouping_value in grouping_values:
+            group = []
+            for link in links:
+                if links_params[link][grouping] == grouping_value:
+                    group.append(link)
+            grouped_links.append(group)
+        return grouped_links
 
     def get(self, key = None, *args, **kwargs):
 

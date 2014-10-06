@@ -395,15 +395,15 @@ class RBM(nemoa.system.ann.ANN):
         """Set parameters of hidden units using dictionary."""
         return self._units['hidden']._overwrite(params['units'][1])
 
-    def _get_links(self):
-        """Return links from adjacency matrix."""
-        links = []
-        for i, v in enumerate(self._units['visible'].params['id']):
-            for j, h in enumerate(self._units['hidden'].params['id']):
-                if not 'A' in self._params \
-                    or self._params['links'][(0, 1)]['A'][i, j]:
-                    links.append((v, h))
-        return links
+    #def _get_links(self):
+        #"""Return links from adjacency matrix."""
+        #links = []
+        #for i, v in enumerate(self._units['visible'].params['id']):
+            #for j, h in enumerate(self._units['hidden'].params['id']):
+                #if not 'A' in self._params \
+                    #or self._params['links'][(0, 1)]['A'][i, j]:
+                    #links.append((v, h))
+        #return links
 
     def _eval_system_energy(self, data, *args, **kwargs):
         """Pseudo energy function.
