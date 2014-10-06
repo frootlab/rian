@@ -110,42 +110,43 @@ class System:
         """Get units of system.
 
         Args:
-            grouping: grouping of units. Possible values:
-                None: no grouping
-                'layers': group by layers
+            grouping: grouping parameter of units. If grouping is not
+                None, the returned units are grouped by the different
+                values of the grouping parameter. Grouping is only
+                possible if every unit has the parameter.
+            **kwargs: filter parameters of units. If kwargs are given,
+                only units that match the filter parameters are
+                returned.
 
         Returns:
-            Depending on Argument 'grouping':
-                None: List of strings containing labels of units, that
-                    match a given property.
-                'layers': List of lists, representing layers and
-                    containing labels labels of units, that
-                    match a given property.
+            If the argument 'grouping' is not set, a list of strings
+            containing name identifiers of units is returned. If
+            'grouping' is a valid unit parameter, the units are grouped
+            by the values of the grouping parameter.
 
         Examples:
-            Get list of all units grouped by layers:
+            Get a list of all units grouped by layers:
                 model.system.get('units', grouping = 'layer')
-
-            Get list of visible units:
+            Get a list of visible units:
                 model.system.get('units', visible = True)
 
         """
 
         # filter units by attributes and order entries
-        filter_dict = {}
-        # TODO: makes no sense
-        for key in kwargs.keys():
-            if key == 'group':
-                key = 'layer'
-                kwargs['layer'] = kwargs['group']
-            if key in self._params['units'][0].keys():
-                filter_dict[key] = kwargs[key]
+        #filter_dict = {}
+        ## TODO: makes no sense
+        #for key in kwargs.keys():
+            #if key == 'group':
+                #key = 'layer'
+                #kwargs['layer'] = kwargs['group']
+            #if key in self._params['units'][0].keys():
+                #filter_dict[key] = kwargs[key]
         units = []
         units_params = {}
         for layer_id, layer in enumerate(self._params['units']):
             valid = True
-            for key in filter_dict.keys():
-                if not layer[key] == filter_dict[key]:
+            for key in kwargs.keys():
+                if not layer[key] == kwargs[key]:
                     valid = False
                     break
             if not valid: continue
@@ -170,7 +171,7 @@ class System:
         if grouping == None: return units
         if grouping == 'layers': return units
 
-        # get grouping values
+        # group units
         grouping_values = []
         for unit in units:
             if not grouping in units_params[unit].keys():
@@ -179,8 +180,6 @@ class System:
             grouping_value = units_params[unit][grouping]
             if not grouping_value in grouping_values:
                 grouping_values.append(grouping_value)
-
-        # create list of groups
         grouped_units = []
         for grouping_value in grouping_values:
             group = []
@@ -188,7 +187,6 @@ class System:
                 if units_params[unit][grouping] == grouping_value:
                     group.append(unit)
             grouped_units.append(group)
-
         return grouped_units
 
     def _get_layers(self, **kwargs):
@@ -242,24 +240,26 @@ class System:
                 link ('%s', '%s') is unkown.""" % (src_unit, tgt_unit))
 
         # get weight and adjacency matrices of link layer
-        link_layer = self._links[src_layer]['target'][tgt_layer]
-        W = link_layer['W']
-        A = link_layer['A']
+        layer_params = self._links[src_layer]['target'][tgt_layer]
+        layer_weights = layer_params['W']
+        layer_adjacency = layer_params['A']
 
         # get weight and adjacency of link
-        src_id = self._units[src_layer].params['label'].index(src_unit)
-        tgt_id = self._units[tgt_layer].params['label'].index(tgt_unit)
-        link_weight = W[src_id, tgt_id]
-        link_adjacency = A[src_id, tgt_id]
+        src_unit_id = \
+            self._units[src_layer].params['label'].index(src_unit)
+        tgt_unit_id = \
+            self._units[tgt_layer].params['label'].index(tgt_unit)
+        link_weight = layer_weights[src_unit_id, tgt_unit_id]
+        link_adjacency = layer_adjacency[src_unit_id, tgt_unit_id]
 
         # calculate normalized weight of link (normalized to link layer)
         if link_weight == 0.0:
             link_norm_weight = 0.0
         else:
-            W_sum = numpy.sum(numpy.abs(A * W))
-            A_sum = numpy.sum(A)
-            # TODO: Problem with multilayer plain anns
-            link_norm_weight = link_weight * A_sum / W_sum
+            adjacency_sum = numpy.sum(layer_adjacency)
+            weight_sum = numpy.sum(
+                numpy.abs(layer_adjacency * layer_weights))
+            link_norm_weight = link_weight * adjacency_sum / weight_sum
 
         return {
             'adjacency': link_adjacency,
@@ -390,8 +390,8 @@ class System:
             self._config['optimize'] = config
 
         # check dataset
-        if (not 'checkDataset' in config
-            or config['checkDataset'] == True) \
+        if (not 'check_dataset' in config
+            or config['check_dataset'] == True) \
             and not self._check_dataset(dataset): return False
 
         # initialize tracker

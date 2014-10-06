@@ -224,7 +224,6 @@ class model:
                 dataset = self.dataset, schedule = schedule)
 
         nemoa.log('set', indent = '-1')
-
         self.network._update(system = self.system)
         nemoa.log('set', indent = '-1')
 

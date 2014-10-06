@@ -44,20 +44,20 @@ class DBN(nemoa.system.ann.ANN):
             'visible_class': 'gauss',
             'hidden_class': 'sigmoid',
             'visibleSystem': None,
-            'visibleSystemModule': 'rbm',
-            'visibleSystemClass': 'GRBM',
+            'visible_system_module': 'rbm',
+            'visible_system_class': 'GRBM',
             'hiddenSystem': None,
-            'hiddenSystemModule': 'rbm',
-            'hiddenSystemClass': 'RBM' },
+            'hidden_system_module': 'rbm',
+            'hidden_system_class': 'RBM' },
         'init': {
-            'checkDataset': False,
-            'ignoreUnits': [],
-            'wSigma': 0.5 },
+            'check_dataset': False,
+            'ignore_units': [],
+            'w_sigma': 0.5 },
         'optimize': {
             'pretraining': True,
             'finetuning': True,
-            'checkDataset': False,
-            'ignoreUnits': [],
+            'check_dataset': False,
+            'ignore_units': [],
             'algorithm': 'bprop',
             'mod_corruption_enable': False,
             'minibatch_size': 100,
@@ -66,7 +66,7 @@ class DBN(nemoa.system.ann.ANN):
             'schedule': None,
             'visible': None,
             'hidden': None,
-            'useAdjacency': False,
+            'adjacency_enable': False,
             'tracker_obj_function': 'error',
             'tracker_eval_time_interval': 10. ,
             'tracker_estimate_time': True,
@@ -81,17 +81,17 @@ class DBN(nemoa.system.ann.ANN):
         # get configuration dictionary for optimization
         config = self._config['optimize']
 
-        # optionally 'pretraining' of model
+        # (optional) pretraining of system parameters
         # perform forward optimization of ann using
         # restricted boltzmann machines as subsystems
-        if config['pretraining']: self._optimize_pretraining(
-            dataset, schedule, tracker)
+        if config['pretraining']:
+            self._optimize_pretraining(dataset, schedule, tracker)
 
-        # optionally 'finetuning' of model
+        # (optional) finetuning of system parameters
         # perform backward optimization of ann
         # using backpropagation of error
-        if config['finetuning']: self._optimize_finetuning(
-            dataset, schedule, tracker)
+        if config['finetuning']:
+            self._optimize_finetuning(dataset, schedule, tracker)
 
         return True
 
@@ -113,29 +113,31 @@ class DBN(nemoa.system.ann.ANN):
         # create and configure subsystems
         sub_systems = []
         for layer_id in xrange((len(self._params['units']) - 1)  / 2):
-            in_units = self._params['units'][layer_id]
-            out_units = self._params['units'][layer_id + 1]
+            src = self._params['units'][layer_id]
+            tgt = self._params['units'][layer_id + 1]
             links = self._params['links'][(layer_id, layer_id + 1)]
 
             # create configuration for network of subsystem
-            if not in_units['visible']:
-                visible_units = in_units['label']
+            if not src['visible']:
+                visible_units = src['label']
             else:
                 visible_units = self._params['units'][0]['label'] \
                     + self._params['units'][-1]['label']
-            hidden_units = out_units['label']
+            hidden_units = tgt['label']
             network_nodes = {
                 'visible': visible_units,
                 'hidden': hidden_units}
+
             network_edges = {('visible', 'hidden'): []}
             for v in visible_units:
                 for h in hidden_units:
                     network_edges[('visible', 'hidden')].append((v, h))
+
             network_config = {
                 'package': 'base',
                 'class': 'network',
                 'name': '%s ↔ %s' \
-                    % (in_units['layer'], out_units['layer']),
+                    % (src['layer'], tgt['layer']),
                 'type': 'layer',
                 'layer': ['visible', 'hidden'],
                 'nodes': network_nodes,
@@ -149,25 +151,25 @@ class DBN(nemoa.system.ann.ANN):
             network = nemoa.network.new(config = network_config)
 
             # create subsystem configuration
-            sys_type = 'visible' if in_units['visible'] else 'hidden'
             system_config = {
-                'package': \
-                    self._config['params'][sys_type + 'SystemModule'],
-                'class': \
-                    self._config['params'][sys_type + 'SystemClass'],
-                'name': '%s ↔ %s' \
-                    % (in_units['layer'], out_units['layer'])}
+                'name': '%s ↔ %s' % (src['layer'], tgt['layer'])}
+            if src['visible']:
+                system_config['package'] = \
+                    self._config['params']['visible_system_module']
+                system_config['class'] = \
+                    self._config['params']['visible_system_class']
+            else:
+                system_config['package'] = \
+                    self._config['params']['hidden_system_module']
+                system_config['class'] = \
+                    self._config['params']['hidden_system_class']
 
             # create subsystem instance
             system = nemoa.system.new(config = system_config)
-
-            # configure system to network
             system.configure(network = network)
-
-            unit_count = sum([len(group) \
-                for group in system.get('units', grouping = 'layers')])
+            unit_count = len(system.get('units'))
             link_count = len(system.get('links'))
-            nemoa.log("adding subsystem: '%s' (%s units, %s links)" %\
+            nemoa.log("adding subsystem: '%s' (%s units, %s links)" %
                 (system.get('name'), unit_count, link_count))
 
             # link subsystem
@@ -178,25 +180,25 @@ class DBN(nemoa.system.ann.ANN):
 
             # link parameters of layer of subsystem
             if layer_id == 0:
-                in_units['init'] = system._units['visible'].params
-                out_units['init'] = system._units['hidden'].params
-                system._config['init']['ignoreUnits'] = []
-                system._config['optimize']['ignoreUnits'] = []
+                src['init'] = system._units['visible'].params
+                tgt['init'] = system._units['hidden'].params
+                system._config['init']['ignore_units'] = []
+                system._config['optimize']['ignore_units'] = []
             else:
                 # do not link params from upper layer!
                 # upper layer should be linked with previous subsystem
                 # (higher abstraction layer)
-                out_units['init'] = system._params['units'][1]
-                system._config['init']['ignoreUnits'] = ['visible']
-                system._config['optimize']['ignoreUnits'] = ['visible']
+                tgt['init'] = system._params['units'][1]
+                system._config['init']['ignore_units'] = ['visible']
+                system._config['optimize']['ignore_units'] = ['visible']
 
         self._config['check']['sub_systems'] = True
         nemoa.log('set', indent = '-1')
 
         # Optimize subsystems
 
-        # create copy of dataset values (before transformation)
-        dataset_copy = dataset.get('backup')
+        # create backup of dataset values (before transformation)
+        dataset_backup = dataset.get('backup')
 
         # optimize subsystems
         for sys_id in xrange(len(sub_systems)):
@@ -217,7 +219,7 @@ class DBN(nemoa.system.ann.ANN):
                     func = 'expect')
 
             # add / update dataset group 'visible'
-            visible_columns = system.get('units', group = 'visible')
+            visible_columns = system.get('units', layer = 'visible')
             dataset.set('filter', visible = visible_columns)
 
             # initialize (free) system parameters
@@ -227,7 +229,7 @@ class DBN(nemoa.system.ann.ANN):
             system.optimize(dataset, schedule)
 
         # reset data to initial state (before transformation)
-        dataset.set('backup', **dataset_copy)
+        dataset.set('backup', **dataset_backup)
 
         # copy and enrolle parameters of subsystems to dbn
         nemoa.log('initialize system with subsystem parameters')

@@ -485,8 +485,8 @@ class Dataset:
 
             if mapping == None: mapping = system.mapping()
 
-            source_columns = system.get('units', group = mapping[0])
-            target_columns = system.get('units', group = mapping[-1])
+            source_columns = system.get('units', layer = mapping[0])
+            target_columns = system.get('units', layer = mapping[-1])
 
             self._set_col_labels(source_columns)
 

@@ -48,12 +48,12 @@ class ANN(nemoa.system.base.System):
             'hiddenSystemModule': 'rbm',
             'hiddenSystemClass': 'rbm' },
         'init': {
-            'checkDataset': False,
-            'ignoreUnits': [],
-            'wSigma': 0.5 },
+            'check_dataset': False,
+            'ignore_units': [],
+            'w_sigma': 0.5 },
         'optimize': {
-            'checkDataset': False,
-            'ignoreUnits': [],
+            'check_dataset': False,
+            'ignore_units': [],
             'algorithm': 'bprop',
             'mod_corruption_enable': False,
             'minibatch_size': 100,
@@ -62,7 +62,7 @@ class ANN(nemoa.system.base.System):
             'schedule': None,
             'visible': None,
             'hidden': None,
-            'useAdjacency': False,
+            'adjacency_enable': False,
             'tracker_obj_function': 'error',
             'tracker_eval_time_interval': 10. ,
             'tracker_estimate_time': True,
@@ -160,24 +160,26 @@ class ANN(nemoa.system.base.System):
 
         Args:
             dataset: nemoa dataset instance OR None
+
         """
 
         if not (dataset == None) and not \
-            nemoa.type.is_dataset(dataset): return nemoa.log(
-            'error', """could not initilize unit parameters:
+            nemoa.type.is_dataset(dataset):
+            return nemoa.log('error', """could not initilize units:
             invalid dataset argument given!""")
 
-        for layer_name in self._units.keys():
-            if dataset == None \
-                or self._units[layer_name].params['visible'] == False:
+        for layer in self._units.keys():
+            if dataset == None:
+                data = None
+            elif not self._units[layer].params['visible']:
                 data = None
             else:
                 rows = self._config['params']['samples'] \
                     if 'samples' in self._config['params'] else '*'
-                cols = layer_name \
-                    if layer_name in dataset.get('groups') else '*'
+                cols = layer \
+                    if layer in dataset.get('groups') else '*'
                 data = dataset.data(100000, rows = rows, cols = cols)
-            self._units[layer_name].initialize(data)
+            self._units[layer].initialize(data)
 
         return True
 
@@ -192,6 +194,7 @@ class ANN(nemoa.system.base.System):
         self._params['units'] = units
 
         # get unit classes from system config
+        # TODO: get unit classes from network
         visible_unit_class = self._config['params']['visible_class']
         hidden_unit_class = self._config['params']['hidden_class']
         for layer_id in xrange(len(self._params['units'])):
@@ -326,36 +329,30 @@ class ANN(nemoa.system.base.System):
 
         # set adjacency to one if links are given explicitly
         if links:
-            layers = [layer['layer'] for layer in self._params['units']]
 
             for link in links:
                 src, tgt = link
 
                 # get layer id and unit id of link source
-                src_name = src.split(':')[0]
-                src_unit = src[len(src_name) + 1:]
-                if not src_name in layers: continue
-                src_lid = layers.index(src_name)
-                src_list = self._units[src_name].params['label']
-                if not src in src_list: continue
-                scr_uid = src_list.index(src)
+                src_unit = self._get_unit(src)
+                if not src_unit: continue
+                src_layer = src_unit['layer']
+                src_units = self._units[src_layer].params['label']
+                src_lid = src_unit['id']
+                scr_uid = src_units.index(src)
 
                 # get layer id and unit id of link target
-                tgt_name = tgt.split(':')[0]
-                tgt_unit = tgt[len(tgt_name) + 1:]
-                if not tgt_name in layers: continue
-                tgt_lid = layers.index(tgt_name)
-                tgt_list = self._units[tgt_name].params['label']
-                if not tgt in tgt_list: continue
-                tgt_uid = tgt_list.index(tgt)
+                tgt_unit = self._get_unit(tgt)
+                if not tgt_unit: continue
+                tgt_layer = tgt_unit['layer']
+                tgt_units = self._units[tgt_layer].params['label']
+                tgt_lid = tgt_unit['id']
+                tgt_uid = tgt_units.index(tgt)
 
                 # set link adjacency to 1
                 if (src_lid, tgt_lid) in self._params['links']:
                     lnk_dict = self._params['links'][(src_lid, tgt_lid)]
                     lnk_dict['A'][scr_uid, tgt_uid] = 1.0
-                elif (tgt_lid, src_lid) in self._params['links']:
-                    lnk_dict = self._params['links'][(tgt_lid, src_lid)]
-                    lnk_dict['A'][tgt_uid, scr_uid] = 1.0
 
         return self._configure_index_links() and self._init_links()
 
@@ -381,8 +378,8 @@ class ANN(nemoa.system.base.System):
             A = self._params['links'][links]['A']
             x = len(self._units[source].params['label'])
             y = len(self._units[target].params['label'])
-            alpha = self._config['init']['wSigma'] \
-                if 'wSigma' in self._config['init'] else 1.
+            alpha = self._config['init']['w_sigma'] \
+                if 'w_sigma' in self._config['init'] else 1.
             sigma = numpy.ones([x, 1], dtype = float) * alpha / x
 
             if dataset == None: random = \
@@ -424,24 +421,24 @@ class ANN(nemoa.system.base.System):
 
         self._links = {units: {'source': {}, 'target': {}}
             for units in self._units.keys()}
-        for id in self._params['links'].keys():
-            source = self._params['links'][id]['source']
-            target = self._params['links'][id]['target']
-            self._links[source]['target'][target] = \
-                self._params['links'][id]
-            self._units[source].target = \
-                self._params['links'][id]
-            self._links[target]['source'][source] = \
-                self._params['links'][id]
-            self._units[target].source = \
-                self._params['links'][id]
+
+        for link_layer_id in self._params['links'].keys():
+            link_params = self._params['links'][link_layer_id]
+
+            src = link_params['source']
+            tgt = link_params['target']
+
+            self._links[src]['target'][tgt] = link_params
+            self._units[src].target = link_params
+            self._links[tgt]['source'][src] = link_params
+            self._units[tgt].source = link_params
 
         return True
 
     def _get_weights_from_layers(self, source, target):
         """Return ..."""
 
-        if self._config['optimize']['useAdjacency']:
+        if self._config['optimize']['adjacency_enable']:
             if target['name'] in self._links[source['name']]['target']:
                 return self._links[source['name']]['target'][target['name']]['W'] \
                     * self._links[source['name']]['target'][target['name']]['A']
@@ -843,7 +840,7 @@ class ANN(nemoa.system.base.System):
         except: return nemoa.log('error', 'could not evaluate units')
 
         # create dictionary of target units
-        labels = self._get_units(group = e_kwargs['mapping'][-1])
+        labels = self._get_units(layer = e_kwargs['mapping'][-1])
         ret_fmt = funcs[func]['return']
         if ret_fmt == 'vector': return {unit: values[:, uid] \
             for uid, unit in enumerate(labels)}
@@ -1293,8 +1290,8 @@ class ANN(nemoa.system.base.System):
         values = getattr(self, method)(*evalArgs, **eval_kwargs)
 
         # create link dictionary
-        in_labels = self._get_units(group = eval_kwargs['mapping'][-2])
-        out_labels = self._get_units(group = eval_kwargs['mapping'][-1])
+        in_labels = self._get_units(layer = eval_kwargs['mapping'][-2])
+        out_labels = self._get_units(layer = eval_kwargs['mapping'][-1])
         out_fmt = methods[func]['return']
         if out_fmt == 'scalar':
             rel_dict = {}
@@ -1434,9 +1431,9 @@ class ANN(nemoa.system.base.System):
             if ret_fmt == 'array': ret_val = values
             elif ret_fmt == 'dict':
                 in_units = self._get_units(
-                    group = eval_kwargs['mapping'][0])
+                    layer = eval_kwargs['mapping'][0])
                 out_units = self._get_units(
-                    group = eval_kwargs['mapping'][-1])
+                    layer = eval_kwargs['mapping'][-1])
                 ret_val = nemoa.common.dict_from_array(
                     values, (in_units, out_units))
 
@@ -1513,8 +1510,8 @@ class ANN(nemoa.system.base.System):
         """
 
         if not mapping: mapping = self.mapping()
-        in_labels = self._get_units(group = mapping[0])
-        out_labels = self._get_units(group = mapping[-1])
+        in_labels = self._get_units(layer = mapping[0])
+        out_labels = self._get_units(layer = mapping[-1])
 
         # calculate symmetric correlation matrix
         M = numpy.corrcoef(numpy.hstack(data).T)
@@ -1574,8 +1571,8 @@ class ANN(nemoa.system.base.System):
         """
 
         if not mapping: mapping = self.mapping()
-        in_labels = self._get_units(group = mapping[0])
-        out_labels = self._get_units(group = mapping[-1])
+        in_labels = self._get_units(layer = mapping[0])
+        out_labels = self._get_units(layer = mapping[-1])
 
         # prepare knockout matrix
         R = numpy.zeros((len(in_labels), len(out_labels)))
@@ -1628,8 +1625,8 @@ class ANN(nemoa.system.base.System):
         """
 
         if not mapping: mapping = self.mapping()
-        input_units = self._get_units(group = mapping[0])
-        output_units = self._get_units(group = mapping[-1])
+        input_units = self._get_units(layer = mapping[0])
+        output_units = self._get_units(layer = mapping[-1])
         R = numpy.zeros((len(input_units), len(output_units)))
 
         # get indices of representatives

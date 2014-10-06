@@ -72,8 +72,8 @@ class Network:
         self._config['label_format'] = 'generic:string'
         if not 'nodes' in self._config: self._config['nodes'] = {}
         if not 'layer' in self._config: self._config['layer'] = []
-        visible = system.get('units', group = 'visible')
-        hidden = system.get('units', group = 'hidden')
+        visible = system.get('units', layer = 'visible')
+        hidden = system.get('units', layer = 'hidden')
         for unit in hidden:
             (group, label) = unit.split(':')
             if not group in self._config['layer']:
@@ -291,10 +291,28 @@ class Network:
         return self._graph.node[node]
 
     def _get_nodes(self, grouping = None, **kwargs):
-        """get filtered, sorted and grouped list of nodes.
+        """Get nodes of network.
+
+        Args:
+            grouping: grouping parameter of nodes. If grouping is not
+                None, the returned nodes are grouped by the different
+                values of the grouping parameter. Grouping is only
+                possible if every node has the parameter.
+            **kwargs: filter parameters of nodes. If kwargs are given,
+                only nodes that match the filter parameters are
+                returned.
+
+        Returns:
+            If the argument 'grouping' is not set, a list of strings
+            containing name identifiers of nodes is returned. If
+            'grouping' is a valid node parameter, the nodes are grouped
+            by the values of the grouping parameter.
 
         Examples:
-            nodes(type = 'visible')
+            Get a list of all nodes grouped by layers:
+                model.network.get('nodes', grouping = 'layer')
+            Get a list of visible nodes:
+                model.network.get('nodes', visible = True)
 
         """
 
@@ -331,7 +349,6 @@ class Network:
                     == grouping_value:
                     group.append(node)
             grouped_nodes.append(group)
-
         return grouped_nodes
 
     def _get_layer(self, layer):
@@ -419,7 +436,6 @@ class Network:
         for edge in edges:
             src, tgt = edge
             edge_params = self._graph.edge[src][tgt]['params']
-            print edge_params
             if not grouping in edge_params:
                 return nemoa.log('error', """could not get edges:
                     unknown parameter '%s'.""" % (grouping))

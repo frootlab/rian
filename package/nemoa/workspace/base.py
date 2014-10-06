@@ -646,7 +646,7 @@ class config:
                 conf['source']['file_format'] = \
                     nemoa.common.get_file_ext(source_file)
 
-            # only update in the first call of checkDatasetConf
+            # only update in the first call of check_datasetConf
             if update: conf['cache_path'] = self._path['cache']
 
             return obj_conf

@@ -37,12 +37,12 @@ class RBM(nemoa.system.ann.ANN):
             'visible_class': 'sigmoid',
             'hidden_class': 'sigmoid' },
         'init': {
-            'checkDataset': False,
-            'ignoreUnits': [],
-            'wSigma': 0.5 },
+            'check_dataset': False,
+            'ignore_units': [],
+            'w_sigma': 0.5 },
         'optimize': {
-            'checkDataset': False,
-            'ignoreUnits': [],
+            'check_dataset': False,
+            'ignore_units': [],
             'minibatch_size': 100,
             'minibatch_update_interval': 10,
             'updates': 100000,
@@ -63,7 +63,7 @@ class RBM(nemoa.system.ann.ANN):
             'mod_corruption_enable': True,
             'mod_corruption_type': 'mask',
             'mod_corruption_factor': 0.5,
-            'useAdjacency': False,
+            'adjacency_enable': False,
             'tracker_obj_function': 'error',
             'tracker_eval_time_interval': 10. ,
             'tracker_estimate_time': True,
@@ -220,7 +220,7 @@ class RBM(nemoa.system.ann.ANN):
         """Update system parameters."""
 
         config = self._config['optimize']
-        ignore = config['ignoreUnits']
+        ignore = config['ignore_units']
 
         # (optional) Variance maximizing rate adaption
         if config['mod_vmra_enable']:
@@ -547,12 +547,12 @@ class GRBM(RBM):
             'visible_class': 'gauss',
             'hidden_class': 'sigmoid' },
         'init': {
-            'checkDataset': True,
-            'ignoreUnits': [],
-            'wSigma': 0.5 },
+            'check_dataset': True,
+            'ignore_units': [],
+            'w_sigma': 0.5 },
         'optimize': {
-            'checkDataset': True, # check if data is gauss normalized
-            'ignoreUnits': [], # do not ignore units on update (needed for stacked updates)
+            'check_dataset': True, # check if data is gauss normalized
+            'ignore_units': [], # do not ignore units on update (needed for stacked updates)
             'updates': 100000, # number of update steps / epochs
             'algorithm': 'cd', # algorithm used for updates
             'update_cd_sampling_steps': 1, # number of gibbs steps in cdk sampling
@@ -574,7 +574,7 @@ class GRBM(RBM):
             'mod_kl_enable': True, # use Kullback-Leibler penalty
             'mod_kl_rate': 0., # sparsity update
             'mod_kl_expect': 0.5, # aimed value for l2-norm penalty
-            'useAdjacency': False, # do not use selective weight updates
+            'adjacency_enable': False, # do not use selective weight updates
             'tracker_obj_function': 'error', # objective function
             'tracker_eval_time_interval': 20., # time interval for calculation the inspection function
             'tracker_estimate_time': True, # initally estimate time for whole optimization process
