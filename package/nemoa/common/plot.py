@@ -192,7 +192,7 @@ def layergraph(G, **kwargs):
     nodes = [range(count[layer]) for layer in layers]
     for node in G.nodes():
         layer_id = G.node[node]['params']['layer_id']
-        layer_node_id = G.node[node]['params']['layer_node_id']
+        layer_node_id = G.node[node]['params']['layer_sub_id']
         nodes[layer_id][layer_node_id] = node
 
     # (optional) sort nodes

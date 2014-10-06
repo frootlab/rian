@@ -96,28 +96,37 @@ class RBM(nemoa.system.ann.ANN):
             and self._set_hidden_unit_params(params)
             and self._set_link_params(params))
 
-    def _optimize_params(self, dataset, schedule, tracker):
+    def _optimize(self, dataset, schedule, tracker):
         """Optimize system parameters."""
 
         cfg = self._config['optimize']
 
-        if cfg['mod_corruption_enable']: nemoa.log(
-            'note', """using data corruption for denoising with
-            noise model '%s (%.2f)'""" % (
-            cfg['mod_corruption_type'], cfg['mod_corruption_factor']))
-        if cfg['mod_kl_enable']: nemoa.log('note',
-            """using Kullback-Leibler penalty for sparse coding
-            with expectation value %.2f""" % (cfg['mod_kl_expect']))
-        if cfg['mod_vmra_enable']: nemoa.log('note',
-            """using variance maximizing rate adaption
-            with length %i""" % (cfg['mod_vmra_length']))
-        if cfg['mod_sa_enable']: nemoa.log('note',
-            """using simulated annealing  with initial temperature %.2f
-            and annealing factor %.2f""" % (cfg['mod_sa_init_temperature'],
-            cfg['mod_sa_annealing_factor']))
+        nemoa.log('note', "optimize '%s' (%s)" % \
+            (self.get('name'), self.get('type')))
+        nemoa.log('note', """using optimization algorithm '%s'"""
+            % (cfg['algorithm']))
 
-        if cfg['algorithm'].lower() == 'cd': return \
-            self._optimize_cd(dataset, schedule, tracker)
+        if cfg['mod_corruption_enable']:
+            nemoa.log('note', """using data corruption for denoising
+                with noise model '%s (%.2f)'"""
+                % (cfg['mod_corruption_type'],
+                cfg['mod_corruption_factor']))
+        if cfg['mod_kl_enable']:
+            nemoa.log('note', """using Kullback-Leibler penalty for
+                sparse coding with expectation value %.2f"""
+                % (cfg['mod_kl_expect']))
+        if cfg['mod_vmra_enable']:
+            nemoa.log('note', """using variance maximizing rate adaption
+                with tracking length %i""" % (cfg['mod_vmra_length']))
+        if cfg['mod_sa_enable']:
+            nemoa.log('note', """using simulated annealing  with initial
+                temperature %.2f and annealing factor %.2f""" %
+                (cfg['mod_sa_init_temperature'],
+                cfg['mod_sa_annealing_factor']))
+
+        if cfg['algorithm'].lower() == 'cd':
+            return self._optimize_cd(dataset, schedule, tracker)
+
         return nemoa.log('error', """could not optimize model:
             unknown optimization algorithm '%s'""" % (algorithm))
 
@@ -269,7 +278,7 @@ class RBM(nemoa.system.ann.ANN):
         cfg = self._config['optimize']
 
         r = cfg['update_rate'] * cfg['update_factor_vbias'] # update rate
-        v = len(self._units['visible'].params['label'])
+        v = len(self._units['visible'].params['id'])
         diff = numpy.mean(vData - vModel, axis = 0).reshape((1, v))
 
         return { 'bias': r * diff }
@@ -286,7 +295,7 @@ class RBM(nemoa.system.ann.ANN):
 
         cfg = self._config['optimize']
 
-        h = len(self._units['hidden'].params['label'])
+        h = len(self._units['hidden'].params['id'])
         r = cfg['update_rate'] * cfg['update_factor_hbias']
         diff = numpy.mean(hData - hModel, axis = 0).reshape((1, h))
 
@@ -368,62 +377,15 @@ class RBM(nemoa.system.ann.ANN):
         """Calculate temperature for simulated annealing."""
         config = self._config['optimize']
 
-        init      = float(config['mod_sa_init_temperature'])
+        init = float(config['mod_sa_init_temperature'])
         annealing = float(config['mod_sa_annealing_factor'])
-        cycles    = float(config['mod_sa_annealing_cycles'])
-        updates   = int(float(config['updates']) / cycles)
-        epoch     = float(tracker.get('epoch') % updates)
-        heat      = init * (1. - epoch / float(updates)) ** annealing
+        cycles = float(config['mod_sa_annealing_cycles'])
+        updates = int(float(config['updates']) / cycles)
+        epoch = float(tracker.get('epoch') % updates)
+        heat = init * (1. - epoch / float(updates)) ** annealing
 
         if heat < config['mod_sa_min_temperature']: return 0.
         return heat
-
-    #def _get_units_from_config(self):
-        #"""Return tuple with unit information created from config."""
-
-        #if isinstance(self._config['params']['visible'], int):
-            #vLabel = ['v:v%i' % (num) for num \
-                #in xrange(1, self._config['params']['visible'] + 1)]
-        #elif isinstance(self._config['params']['visible'], list):
-            #for node in self._config['params']['visible']:
-                #if not isinstance(node, str):
-                    #return None
-            #vLabel = self._config['params']['visible']
-        #else: vLabel = []
-        #if isinstance(self._config['params']['hidden'], int):
-            #hLabel = ['h:h%i' % (num) for num \
-                #in xrange(1, self._config['params']['hidden'] + 1)]
-        #elif isinstance(self._config['params']['hidden'], list):
-            #for node in self._config['params']['hidden']:
-                #if not isinstance(node, str):
-                    #return None
-            #hLabel = self._config['params']['hidden']
-        #else: hLabel = []
-
-        #return [{
-            #'id': 0, 'name': 'visible',
-            #'visible': True, 'label': vLabel,
-        #}, {
-            #'id': 1, 'name': 'hidden',
-            #'visible': False, 'label': hLabel
-        #}]
-
-    #def _get_units_from_dataset(self, dataset):
-        #"""Return tuple with lists of unit labels ([visible], [hidden]) using dataset for visible."""
-        #return (dataset.get('columns'), self._units['hidden'].params['label'])
-
-    ## TODO: generalize to ann
-    #def _unlink_unit(self, unit):
-        #"""Delete unit links in adjacency matrix."""
-        #if unit in self._units['visible'].params['label']:
-            #i = self._units['visible'].params['label'].index(unit)
-            #self._params['links'][(0, 1)]['A'][i,:] = False
-            #return True
-        #if unit in self._units['hidden'].params['label']:
-            #i = self._units['hidden'].params['label'].index(unit)
-            #self._params['links'][(0, 1)]['A'][:,i] = False
-            #return True
-        #return False
 
     def _set_visible_unit_params(self, params):
         """Set parameters of visible units using dictionary."""
@@ -436,8 +398,8 @@ class RBM(nemoa.system.ann.ANN):
     def _get_links(self):
         """Return links from adjacency matrix."""
         links = []
-        for i, v in enumerate(self._units['visible'].params['label']):
-            for j, h in enumerate(self._units['hidden'].params['label']):
+        for i, v in enumerate(self._units['visible'].params['id']):
+            for j, h in enumerate(self._units['hidden'].params['id']):
                 if not 'A' in self._params \
                     or self._params['links'][(0, 1)]['A'][i, j]:
                     links.append((v, h))
@@ -477,14 +439,14 @@ class RBM(nemoa.system.ann.ANN):
 
     def _set_link_params(self, params):
         """Set link parameters and update link matrices using dictionary."""
-        for i, v in enumerate(self._units['visible'].params['label']):
-            if not v in params['units'][0]['label']:
+        for i, v in enumerate(self._units['visible'].params['id']):
+            if not v in params['units'][0]['id']:
                 continue
-            k = params['units'][0]['label'].index(v)
-            for j, h in enumerate(self._units['hidden'].params['label']):
-                if not h in params['units'][1]['label']:
+            k = params['units'][0]['id'].index(v)
+            for j, h in enumerate(self._units['hidden'].params['id']):
+                if not h in params['units'][1]['id']:
                     continue
-                l = params['units'][1]['label'].index(h)
+                l = params['units'][1]['id'].index(h)
                 self._params['links'][(0, 1)]['A'][i, j] = params['A'][k, l]
                 self._params['links'][(0, 1)]['W'][i, j] = params['W'][k, l]
         return True
@@ -601,7 +563,7 @@ class GRBM(RBM):
 
         cfg = self._config['optimize']
 
-        v = len(self._units['visible'].params['label'])
+        v = len(self._units['visible'].params['id'])
         W = self._params['links'][(0, 1)]['W']
         var = numpy.exp(self._units['visible'].params['lvar'])
         b = self._units['visible'].params['bias']
@@ -637,7 +599,7 @@ class GRBM(RBM):
 
     def _get_visible_unit_params(self, label):
         """Return system parameters of one specific visible unit."""
-        id = self._units['visible'].params['label'].index(label)
+        id = self._units['visible'].params['id'].index(label)
         return {
             'bias': self._units['visible'].params['bias'][0, id],
             'sdev': numpy.sqrt(numpy.exp(

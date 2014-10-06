@@ -75,7 +75,7 @@ class DBN(nemoa.system.ann.ANN):
     def _check_network(self, network):
         return network._is_compatible_dbn()
 
-    def _optimize_params(self, dataset, schedule, tracker):
+    def _optimize(self, dataset, schedule, tracker):
         """Optimize system parameters."""
 
         # get configuration dictionary for optimization
@@ -119,11 +119,11 @@ class DBN(nemoa.system.ann.ANN):
 
             # create configuration for network of subsystem
             if not src['visible']:
-                visible_units = src['label']
+                visible_units = src['id']
             else:
-                visible_units = self._params['units'][0]['label'] \
-                    + self._params['units'][-1]['label']
-            hidden_units = tgt['label']
+                visible_units = self._params['units'][0]['id'] \
+                    + self._params['units'][-1]['id']
+            hidden_units = tgt['id']
             network_nodes = {
                 'visible': visible_units,
                 'hidden': hidden_units}
@@ -237,24 +237,26 @@ class DBN(nemoa.system.ann.ANN):
 
         # keep original inputs and outputs
         mapping = self.mapping()
-        inputs = self._units[mapping[0]].params['label']
-        outputs = self._units[mapping[-1]].params['label']
+        inputs = self._units[mapping[0]].params['id']
+        outputs = self._units[mapping[-1]].params['id']
 
-        # expand unit parameters to all layers
-        nemoa.log("""import unit and link parameters
+        # initialize ann with rbm optimized parameters
+        nemoa.log("""initialize unit and link parameters
             from subsystems (enrolling)""")
         units = self._params['units']
         links = self._params['links']
+        central_layer_id = (len(units) - 1) / 2
 
-        for id in xrange((len(units) - 1)  / 2):
+        # initialize units and links until central unit layer
+        for id in xrange(central_layer_id):
 
             # copy unit parameters
             for attrib in units[id]['init'].keys():
                 # keep name and visibility of layers
-                if attrib in ['layer', 'visible', 'id']:
+                if attrib in ['layer', 'layer_id', 'visible', 'class']:
                     continue
                 # keep labels of hidden layers
-                if attrib == 'label' and not units[id]['visible']:
+                if attrib == 'id' and not units[id]['visible']:
                     continue
                 units[id][attrib] = units[id]['init'][attrib]
                 units[-(id + 1)][attrib] = units[id][attrib]
@@ -271,7 +273,16 @@ class DBN(nemoa.system.ann.ANN):
                     links[(id, id + 1)]['init'][attrib].T
             del links[(id, id + 1)]['init']
 
-        # remove input units from output layer, and vice versa
+        # initialize central unit layer
+        for attrib in units[central_layer_id]['init'].keys():
+            # keep name and visibility of layers
+            if attrib in ['id', 'layer', 'layer_id', 'visible', 'class']:
+                continue
+            units[central_layer_id][attrib] = \
+                units[central_layer_id]['init'][attrib]
+        del units[central_layer_id]['init']
+
+        # remove output units from input layer, and vice versa
         nemoa.log('cleanup unit and linkage parameter arrays')
         self._remove_units(self.mapping()[0], outputs)
         self._remove_units(self.mapping()[-1], inputs)
@@ -287,13 +298,18 @@ class DBN(nemoa.system.ann.ANN):
 
         # Optimize system parameters
 
-        algorithm = self._config['optimize']['algorithm'].lower()
+        cfg = self._config['optimize']
+        nemoa.log('note', "optimize '%s' (%s)" % \
+            (self.get('name'), self.get('type')))
+        nemoa.log('note', """using optimization algorithm '%s'"""
+            % (cfg['algorithm']))
 
-        if algorithm == 'bprop': self._optimize_bprop(
-            dataset, schedule, tracker)
-        elif algorithm == 'rprop': self._optimize_rprop(
-            dataset, schedule, tracker)
-        else: nemoa.log('error', "unknown gradient '%s'!" % (algorithm))
+        if cfg['algorithm'].lower() == 'bprop':
+            self._optimize_bprop(dataset, schedule, tracker)
+        elif cfg['algorithm'].lower() == 'rprop':
+            self._optimize_rprop(dataset, schedule, tracker)
+        else: nemoa.log('error', "unknown gradient '%s'!"
+            % (cfg['algorithm']))
 
         nemoa.log('set', indent = '-1')
         return True

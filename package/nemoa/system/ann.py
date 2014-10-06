@@ -230,14 +230,19 @@ class ANN(nemoa.system.base.System):
         if not isinstance(params, dict) \
             or not 'units' in params.keys() \
             or not isinstance(params['units'], list): return False
+
         for layer_id in xrange(len(params['units'])):
+
+            # test parameter dictionary
             layer = params['units'][layer_id]
             if not isinstance(layer, dict): return False
-            for attr in ['layer', 'visible', 'class', 'label']:
-                if not attr in layer.keys(): return False
+            for key in ['id', 'layer', 'layer_id', 'visible', 'class']:
+                if not key in layer.keys(): return False
+
+            # test unit class
             if layer['class'] == 'gauss' \
                 and not self._GaussUnits.check(layer): return False
-            elif params['units'][layer_id]['class'] == 'sigmoid' \
+            elif layer['class'] == 'sigmoid' \
                 and not self._SigmoidUnits.check(layer): return False
 
         return True
@@ -247,13 +252,13 @@ class ANN(nemoa.system.base.System):
 
         units = []
         for layer in network.get('layers'):
-            label = network.get('nodes', layer = layer)
-            params = network.get('node', label[0])['params']
+            unit_ids = network.get('nodes', layer = layer)
+            params = network.get('node', unit_ids[0])['params']
             units.append({
+                'id': unit_ids,
                 'layer': layer,
-                'label': label,
-                'visible': params['visible'],
-                'id': params['layer_id']})
+                'layer_id': params['layer_id'],
+                'visible': params['visible']})
 
         return units
 
@@ -268,13 +273,13 @@ class ANN(nemoa.system.base.System):
         layer = self._units[layer].params
         select = []
         labels = []
-        for id, unit in enumerate(layer['label']):
+        for id, unit in enumerate(layer['id']):
             if not unit in label:
                 select.append(id)
                 labels.append(unit)
 
         # remove units from unit labels
-        layer['label'] = labels
+        layer['id'] = labels
 
         # delete units from unit parameter arrays
         if layer['class'] == 'gauss':
@@ -311,9 +316,9 @@ class ANN(nemoa.system.base.System):
         # initialize adjacency matrices with default values
         for lid in xrange(len(self._params['units']) - 1):
             src_name = self._params['units'][lid]['layer']
-            src_list = self._units[src_name].params['label']
+            src_list = self._units[src_name].params['id']
             tgt_name = self._params['units'][lid + 1]['layer']
-            tgt_list = self._units[tgt_name].params['label']
+            tgt_list = self._units[tgt_name].params['id']
             lnk_name = (lid, lid + 1)
 
             if links:
@@ -327,32 +332,29 @@ class ANN(nemoa.system.base.System):
                 'A': lnk_adja.astype(float)
             }
 
-        # set adjacency to one if links are given explicitly
+        # set adjacency if links are given explicitly
         if links:
 
             for link in links:
                 src, tgt = link
 
-                # get layer id and unit id of link source
+                # get layer id and layers sub id of link source
                 src_unit = self._get_unit(src)
                 if not src_unit: continue
-                src_layer = src_unit['layer']
-                src_units = self._units[src_layer].params['label']
-                src_lid = src_unit['id']
-                scr_uid = src_units.index(src)
+                src_lid = src_unit['layer_id']
+                src_sid = src_unit['layer_sub_id']
 
-                # get layer id and unit id of link target
+                # get layer id and layer sub id of link target
                 tgt_unit = self._get_unit(tgt)
                 if not tgt_unit: continue
-                tgt_layer = tgt_unit['layer']
-                tgt_units = self._units[tgt_layer].params['label']
-                tgt_lid = tgt_unit['id']
-                tgt_uid = tgt_units.index(tgt)
+                tgt_lid = tgt_unit['layer_id']
+                tgt_sid = tgt_unit['layer_sub_id']
 
-                # set link adjacency to 1
-                if (src_lid, tgt_lid) in self._params['links']:
-                    lnk_dict = self._params['links'][(src_lid, tgt_lid)]
-                    lnk_dict['A'][scr_uid, tgt_uid] = 1.0
+                # set adjacency
+                if not (src_lid, tgt_lid) in self._params['links']:
+                    continue
+                lnk_dict = self._params['links'][(src_lid, tgt_lid)]
+                lnk_dict['A'][src_sid, tgt_sid] = 1.0
 
         return self._configure_index_links() and self._init_links()
 
@@ -361,10 +363,12 @@ class ANN(nemoa.system.base.System):
 
         If dataset is None, initialize weights matrices with zeros
         and all adjacency matrices with ones. if dataset is nemoa
-        network instance, initialize weights with random values.
+        network instance, use data distribution to calculate random
+        initial weights.
 
         Args:
             dataset: nemoa dataset instance OR None
+
         """
 
         if not(dataset == None) and \
@@ -376,8 +380,8 @@ class ANN(nemoa.system.base.System):
             source = self._params['links'][links]['source']
             target = self._params['links'][links]['target']
             A = self._params['links'][links]['A']
-            x = len(self._units[source].params['label'])
-            y = len(self._units[target].params['label'])
+            x = len(self._units[source].params['id'])
+            y = len(self._units[target].params['id'])
             alpha = self._config['init']['w_sigma'] \
                 if 'w_sigma' in self._config['init'] else 1.
             sigma = numpy.ones([x, 1], dtype = float) * alpha / x
@@ -391,7 +395,7 @@ class ANN(nemoa.system.base.System):
                 random = numpy.random.normal(numpy.zeros((x, y)),
                     sigma * numpy.std(data, axis = 0).reshape(1, x).T)
             elif dataset.get('columns') \
-                == self._units[source].params['label']:
+                == self._units[source].params['id']:
                 rows = self._config['params']['samples'] \
                     if 'samples' in self._config['params'] else '*'
                 data = dataset.data(100000, rows = rows, cols = '*')
@@ -522,22 +526,26 @@ class ANN(nemoa.system.base.System):
 
         return True
 
-    def _optimize_params(self, dataset, schedule, tracker):
+    def _optimize(self, dataset, schedule, tracker):
         """Optimize system parameters."""
 
-        nemoa.log('note', 'optimizing model')
+        nemoa.log('note', 'optimize model')
         nemoa.log('set', indent = '+1')
 
         # Optimize system parameters
-        algorithm = self._config['optimize']['algorithm'].lower()
+        cfg = self._config['optimize']
+        nemoa.log('note', "optimize '%s' (%s)" % \
+            (self.get('name'), self.get('type')))
+        nemoa.log('note', """using optimization algorithm '%s'"""
+            % (cfg['algorithm']))
 
-        if algorithm == 'bprop':
+        if cfg['algorithm'].lower() == 'bprop':
             self._optimize_bprop(dataset, schedule, tracker)
-        elif algorithm == 'rprop':
+        elif cfg['algorithm'].lower() == 'rprop':
             self._optimize_rprop(dataset, schedule, tracker)
         else:
             nemoa.log('error', """could not optimize model:
-                unknown algorithm '%s'!""" % (algorithm))
+                unknown algorithm '%s'!""" % (cfg['algorithm']))
 
         nemoa.log('set', indent = '-1')
         return True
@@ -1166,7 +1174,7 @@ class ANN(nemoa.system.base.System):
         """
 
         res = self._eval_units_residuals(data, **kwargs)
-        error = self._get_data_mean(res, norm = norm)
+        error = nemoa.common.data_mean(res, norm = norm)
 
         return error
 
@@ -1190,8 +1198,8 @@ class ANN(nemoa.system.base.System):
         """
 
         res = self._eval_units_residuals(data, **kwargs)
-        normres = self._get_data_mean(res, norm = norm)
-        normdat = self._get_data_mean(data[1], norm = norm)
+        normres = nemoa.common.data_mean(res, norm = norm)
+        normdat = nemoa.common.data_mean(data[1], norm = norm)
 
         return 1. - normres / normdat
 
@@ -1215,8 +1223,8 @@ class ANN(nemoa.system.base.System):
         """
 
         res = self._eval_units_residuals(data, **kwargs)
-        devres = self._get_data_deviation(res, norm = norm)
-        devdat = self._get_data_deviation(data[1], norm = norm)
+        devres = nemoa.common.data_deviation(res, norm = norm)
+        devdat = nemoa.common.data_deviation(data[1], norm = norm)
 
         return 1. - devres / devdat
 
@@ -1755,7 +1763,7 @@ class ANN(nemoa.system.base.System):
 
         def get_delta(self, inData, outDelta, source, target):
 
-            return self.deltaFromBPROP(inData, outDelta,
+            return self.delta_from_bprop(inData, outDelta,
                 self.weights(source), self.weights(target))
 
         def get_samples_from_input(self, data, source):
@@ -1815,7 +1823,7 @@ class ANN(nemoa.system.base.System):
             """Initialize system parameters of sigmoid distributed units
             using data. """
 
-            size = len(self.params['label'])
+            size = len(self.params['id'])
             shape = (1, size)
             self.params['bias'] = 0.5 * numpy.ones(shape)
             return True
@@ -1831,9 +1839,9 @@ class ANN(nemoa.system.base.System):
         def _overwrite(self, params):
             """Merge parameters of sigmoid units."""
 
-            for i, u in enumerate(params['label']):
-                if u in self.params['label']:
-                    l = self.params['label'].index(u)
+            for i, u in enumerate(params['id']):
+                if u in self.params['id']:
+                    l = self.params['id'].index(u)
                     self.params['bias'][0, l] = params['bias'][0, i]
 
             return True
@@ -1880,17 +1888,17 @@ class ANN(nemoa.system.base.System):
             """Return parameter updates of a sigmoidal output layer
             calculated from real data and modeled data. """
 
-            size = len(self.params['label'])
+            size = len(self.params['id'])
 
             return {'bias': numpy.mean(data[1] - model[1], axis = 0).reshape((1, size))}
 
         def get_updates_from_delta(self, delta):
 
-            size = len(self.params['label'])
+            size = len(self.params['id'])
 
             return {'bias': - numpy.mean(delta, axis = 0).reshape((1, size))}
 
-        def deltaFromBPROP(self, data_in, delta_out, W_in, W_out):
+        def delta_from_bprop(self, data_in, delta_out, W_in, W_out):
 
             bias = self.params['bias']
 
@@ -1923,7 +1931,7 @@ class ANN(nemoa.system.base.System):
 
         def get(self, unit):
 
-            id = self.params['label'].index(unit)
+            id = self.params['id'].index(unit)
             cl = self.params['class']
             visible = self.params['visible']
             bias = self.params['bias'][0, id]
@@ -1942,7 +1950,7 @@ class ANN(nemoa.system.base.System):
         def initialize(self, data = None, vSigma = 0.4):
             """Initialize parameters of gauss distributed units. """
 
-            size = len(self.params['label'])
+            size = len(self.params['id'])
             if data == None:
                 self.params['bias'] = numpy.zeros([1, size])
                 self.params['lvar'] = numpy.zeros([1, size])
@@ -1968,7 +1976,7 @@ class ANN(nemoa.system.base.System):
             """Return parameter updates of a gaussian output layer
             calculated from real data and modeled data. """
 
-            shape = (1, len(self.params['label']))
+            shape = (1, len(self.params['id']))
             var = numpy.exp(self.params['lvar'])
             bias = self.params['bias']
 
@@ -1987,7 +1995,7 @@ class ANN(nemoa.system.base.System):
         def get_updates_from_delta(self, delta):
             # TODO: calculate update for lvar
 
-            shape = (1, len(self.params['label']))
+            shape = (1, len(self.params['id']))
             bias = - numpy.mean(delta, axis = 0).reshape(shape)
 
             return { 'bias': bias }
@@ -1995,9 +2003,9 @@ class ANN(nemoa.system.base.System):
         def _overwrite(self, params):
             """Merge parameters of gaussian units. """
 
-            for i, u in enumerate(params['label']):
-                if u in self.params['label']:
-                    l = self.params['label'].index(u)
+            for i, u in enumerate(params['id']):
+                if u in self.params['id']:
+                    l = self.params['id'].index(u)
                     self.params['bias'][0, l] = params['bias'][0, i]
                     self.params['lvar'][0, l] = params['lvar'][0, i]
 
@@ -2062,7 +2070,7 @@ class ANN(nemoa.system.base.System):
 
         def get(self, unit):
 
-            id = self.params['label'].index(unit)
+            id = self.params['id'].index(unit)
 
             cl = self.params['class']
             bias = self.params['bias'][0, id]

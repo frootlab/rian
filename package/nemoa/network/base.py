@@ -252,7 +252,7 @@ class Network:
                     params = {
                         'layer': layer,
                         'layer_id': layer_id,
-                        'layer_node_id': layer_node_id,
+                        'layer_sub_id': layer_node_id,
                         'visible': isvisible } )
 
                 node_order += 1
@@ -357,8 +357,8 @@ class Network:
         if not nodes: return None
         first_node = self._get_node(nodes[0])['params']
         return {
-            'id': first_node['layer_id'],
-            'label': first_node['layer'],
+            'layer_id': first_node['layer_id'],
+            'layer': first_node['layer'],
             'visible': first_node['visible'],
             'nodes': nodes}
 
@@ -583,9 +583,9 @@ class Network:
 
         # test if input and output layers contain identical nodes
         layers = self._get_layers()
-        inputLayer = self._get_layer(layers[0])['nodes']
-        outputLayer = self._get_layer(layers[0])['nodes']
-        if not sorted(inputLayer) == sorted(outputLayer):
+        input_layer = self._get_layer(layers[0])['nodes']
+        output_layer = self._get_layer(layers[0])['nodes']
+        if not sorted(input_layer) == sorted(output_layer):
             return nemoa.log('error', """Autoencoders expect
                 identical input and output nodes""")
 

@@ -82,7 +82,7 @@ class System:
         # search unique layer of unit
         layer_ids = []
         for i in xrange(len(self._params['units'])):
-            if unit in self._params['units'][i]['label']:
+            if unit in self._params['units'][i]['id']:
                 layer_ids.append(i)
         if len(layer_ids) == 0: return nemoa.log('error',
             "could not find unit '%s'." % (unit))
@@ -92,17 +92,17 @@ class System:
 
         # get parameters of unit
         layer_params = self._params['units'][layer_id]
-        layer_units = layer_params['label']
+        layer_units = layer_params['id']
         layer_size = len(layer_units)
-        unit_id = layer_units.index(unit)
-        unit_params = {}
+        layer_unit_id = layer_units.index(unit)
+        unit_params = { 'layer_sub_id': layer_unit_id }
         for param in layer_params.keys():
-            unit_param_array = \
+            layer_param_array = \
                 numpy.array(layer_params[param]).flatten()
-            if unit_param_array.size == 1:
-                unit_params[param] = unit_param_array[0]
-            elif unit_param_array.size == layer_size:
-                unit_params[param] = unit_param_array[unit_id]
+            if layer_param_array.size == 1:
+                unit_params[param] = layer_param_array[0]
+            elif layer_param_array.size == layer_size:
+                unit_params[param] = layer_param_array[layer_unit_id]
 
         return unit_params
 
@@ -151,13 +151,13 @@ class System:
                     break
             if not valid: continue
             if grouping == None:
-                units += layer['label']
+                units += layer['id']
             elif grouping == 'layers':
-                units.append(layer['label'])
+                units.append(layer['id'])
             else:
-                units += layer['label']
-                layer_size = len(layer['label'])
-                for unit_id, unit in enumerate(layer['label']):
+                units += layer['id']
+                layer_size = len(layer['id'])
+                for unit_id, unit in enumerate(layer['id']):
                     unit_params = {}
                     for param in layer.keys():
                         unit_param_array = \
@@ -246,9 +246,9 @@ class System:
 
         # get weight and adjacency of link
         src_unit_id = \
-            self._units[src_layer].params['label'].index(src_unit)
+            self._units[src_layer].params['id'].index(src_unit)
         tgt_unit_id = \
-            self._units[tgt_layer].params['label'].index(tgt_unit)
+            self._units[tgt_layer].params['id'].index(tgt_unit)
         link_weight = layer_weights[src_unit_id, tgt_unit_id]
         link_adjacency = layer_adjacency[src_unit_id, tgt_unit_id]
 
@@ -275,9 +275,9 @@ class System:
         links = ()
         for lid in xrange(len(layers) - 1):
             src = layers[lid]
-            src_units = self._units[src].params['label']
+            src_units = self._units[src].params['id']
             tgt = layers[lid + 1]
-            tgt_units = self._units[tgt].params['label']
+            tgt_units = self._units[tgt].params['id']
 
             lg = []
             for src_unit_id, src_unit in enumerate(src_units):
@@ -291,13 +291,6 @@ class System:
             links += (lg, )
 
         return links
-
-    def _get_layer_of_unit(self, unit):
-        """Return name of unit group of given unit."""
-        for id in xrange(len(self._params['units'])):
-            if unit in self._params['units'][id]['label']:
-                return self._params['units'][id]['name']
-        return None
 
     def get(self, key = None, *args, **kwargs):
 
@@ -392,21 +385,15 @@ class System:
         # check dataset
         if (not 'check_dataset' in config
             or config['check_dataset'] == True) \
-            and not self._check_dataset(dataset): return False
+            and not self._check_dataset(dataset):
+            return False
 
         # initialize tracker
         tracker = nemoa.system.base.Tracker(self)
         tracker.set(data = self._get_test_data(dataset))
 
         # optimize system parameters
-        algorithm = config['algorithm'].title()
-        nemoa.log('note', "optimize '%s' (%s) using algorithm '%s'" % \
-            (self._config['name'], self.get('type'), algorithm))
-        nemoa.log('set', indent = '+1')
-        ret_val = self._optimize_params(dataset, schedule, tracker)
-        nemoa.log('set', indent = '-1')
-
-        return ret_val
+        return self._optimize(dataset, schedule, tracker)
 
     def evaluate(self, data, *args, **kwargs):
 
@@ -432,106 +419,6 @@ class System:
 
         return nemoa.log('warning',
             "unsupported system evaluation '%s'" % (args[0]))
-
-    @staticmethod
-    def _get_data_sum(data, norm = 'S'):
-        """Return sum of data.
-
-        Args:
-            data: numpy array containing data
-            norm: data mean norm
-                'S': Sum of Values
-                'SE': Sum of Errors / L1 Norm
-                'SSE': Sum of Squared Errors
-                'RSSE': Root Sum of Squared Errors
-
-        """
-
-        norm = norm.upper()
-
-        # Sum of Values (S)
-        if norm == 'S':
-            return numpy.sum(data, axis = 0)
-
-        # Sum of Errors (SE) / L1-Norm (L1)
-        if norm == 'SE':
-            return numpy.sum(numpy.abs(data), axis = 0)
-
-        # Sum of Squared Errors (SSE)
-        if norm == 'SSE':
-            return numpy.sum(data ** 2, axis = 0)
-
-        # Root Sum of Squared Errors (RSSE)
-        if norm == 'RSSE':
-            return numpy.sqrt(numpy.sum(data ** 2, axis = 0))
-
-        return nemoa.log('error',
-            "unsupported data sum norm '%s'" % (norm))
-
-    @staticmethod
-    def _get_data_mean(data, norm = 'M'):
-        """Return mean of data.
-
-        Args:
-            data: numpy array containing data
-            norm: data mean norm
-                'M': Arithmetic Mean of Values
-                'ME': Mean of Errors
-                'MSE': Mean of Squared Errors
-                'RMSE': Root Mean of Squared Errors / L2 Norm
-
-        """
-
-        norm = norm.upper()
-
-        # Mean of Values (M)
-        if norm == 'M':
-            return numpy.mean(data, axis = 0)
-
-        # Mean of Errors (ME)
-        if norm == 'ME':
-            return numpy.mean(numpy.abs(data), axis = 0)
-
-        # Mean of Squared Errors (MSE)
-        if norm == 'MSE':
-            return numpy.mean(data ** 2, axis = 0)
-
-        # Root Mean of Squared Errors (RMSE) / L2-Norm
-        if norm == 'RMSE':
-            return numpy.sqrt(numpy.mean(data ** 2, axis = 0))
-
-        return nemoa.log('error',
-            "unsupported data mean norm '%s'" % (norm))
-
-    @staticmethod
-    def _get_data_deviation(data, norm = 'SD'):
-        """Return deviation of data.
-
-        Args:
-            data: numpy array containing data
-            norm: data deviation norm
-                'SD': Standard Deviation of Values
-                'SDE': Standard Deviation of Errors
-                'SDSE': Standard Deviation of Squared Errors
-
-        """
-
-        norm = norm.upper()
-
-        # Standard Deviation of Data (SD)
-        if norm == 'SD':
-            return numpy.std(data, axis = 0)
-
-        # Standard Deviation of Errors (SDE)
-        if norm == 'SDE':
-            return numpy.std(numpy.abs(data), axis = 0)
-
-        # Standard Deviation of Squared Errors (SDSE)
-        if norm == 'SDSE':
-            return numpy.std(data ** 2, axis = 0)
-
-        return nemoa.log('error',
-            "unsupported data deviation norm '%s'" % (deviation))
 
     def about(self, *args):
         """Metainformation of the system.
@@ -562,16 +449,16 @@ class System:
             'relations': self._about_relations()
         }, self._about_system())
 
-        retDict = about
+        ret_dict = about
         path = ['system']
         for arg in args:
-            if not isinstance(retDict, dict): return retDict
-            if not arg in retDict.keys(): return nemoa.log('warning',
+            if not isinstance(ret_dict, dict): return ret_dict
+            if not arg in ret_dict.keys(): return nemoa.log('warning',
                 "%s has no property '%s'" % (' → '.join(path), arg))
             path.append(arg)
-            retDict = retDict[arg]
-        if not isinstance(retDict, dict): return retDict
-        return {key: retDict[key] for key in retDict.keys()}
+            ret_dict = ret_dict[arg]
+        if not isinstance(ret_dict, dict): return ret_dict
+        return {key: ret_dict[key] for key in ret_dict.keys()}
 
 class Tracker:
 
