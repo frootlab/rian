@@ -55,7 +55,7 @@ class System:
         return False
 
     def get(self, key = None, *args, **kwargs):
-        """Get information about system."""
+        """Get system system configuration and parameters."""
 
         # get generic information about system
         if key == 'name': return self._get_name()
@@ -85,7 +85,9 @@ class System:
 
     def _get_type(self):
         """Get type of system, using module and class name."""
-        return self._config['package'] + '.' + self._config['class']
+        module_name = self.__module__.split('.')[-1]
+        class_name = self.__class__.__name__
+        return module_name + '.' + class_name
 
     def _get_copy(self, section = None):
         """Get system copy as dictionary."""
@@ -100,9 +102,6 @@ class System:
             configuration: unknown section '%s'.""" % (section))
 
     def _get_unit(self, unit):
-        """
-
-        """
 
         # get layer of unit
         layer_ids = []
@@ -357,13 +356,15 @@ class System:
         return grouped_links
 
     def set(self, key = None, *args, **kwargs):
+        """Set system configuration and parameters."""
 
+        # get generic information about system
         if key == 'name': return self._set_name(*args, **kwargs)
+
+        # get copy of system configuration and parameters
         if key == 'copy': return self._set_copy(*args, **kwargs)
 
-        if not key == None: return nemoa.log('warning',
-            "unknown key '%s'" % (key))
-        return None
+        return nemoa.log('warning', "unknown key '%s'" % (key))
 
     def _set_name(self, name):
         """Set name of system."""
@@ -379,25 +380,27 @@ class System:
             self._set_params(copy.deepcopy(kwargs['params']))
         return self._configure_update_units_and_links()
 
-    def _set_config(self, config):
+    def _set_config(self, config = None):
         """Set system configuration from dictionary."""
 
         # initialize or update configuration dictionary
         if not hasattr(self, '_config') or not self._config:
             self._config = self._default.copy()
-        nemoa.common.dict_merge(config, self._config)
+        if config:
+            nemoa.common.dict_merge(config, self._config)
 
         # reset consistency check
         self._config['check'] = {
             'config': True, 'network': False, 'dataset': False }
         return True
 
-    def _set_params(self, params):
+    def _set_params(self, params = None):
         """Set system parameters from dictionary."""
         # initialize or update parameter dictionaries
         if not hasattr(self, '_params'):
             self._params = {'units': {}, 'links': {}}
-        nemoa.common.dict_merge(params, self._params)
+        if params:
+            nemoa.common.dict_merge(params, self._params)
         return True
 
     def _initialize(self, dataset = None):
@@ -410,9 +413,9 @@ class System:
 
         """
 
-        if not nemoa.type.is_dataset(dataset): return nemoa.log('error',
-            """could not initilize system parameters:
-            invalid dataset instance given!""")
+        if not nemoa.type.is_dataset(dataset):
+            return nemoa.log('error', """could not initilize system
+                parameters: invalid dataset instance given!""")
         return self._init_params(dataset)
 
     def optimize(self, dataset, schedule):

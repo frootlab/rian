@@ -20,84 +20,10 @@ class Network:
         self._config = config.copy()
         if not 'name' in self._config: self._config['name'] = None
 
-        # TODO: move functionality to network configuration file!
-        # type 'auto' is used for networks
-        # wich include all dataset columns as visible units
-        if self._config['type'] == 'auto':
-            self._config = {'type': 'auto', 'name': '', 'id': 0}
-            return
-
-        # TODO: move functionality to network configuration file!
-        # type 'autolayer' is used for networks
-        # wich are created by layers and sizes
-        if self._config['type'] == 'autolayer':
-            self._get_nodes_from_layers()
-            self._get_edges_from_layers()
-            self._configure_layergraph()
-
         # type 'layer' is used for layered networks
         # wich are manualy defined, by using a dictionary
-        if self._config['type'].lower() == 'layer':
+        if self._config['type'].split('.')[0] == 'layer':
             self._configure_layergraph()
-
-    def _get_nodes_from_layers(self):
-        """Create nodes from layers."""
-        self._config['nodes'] = {}
-        self._config['label_format'] = 'generic:string'
-        for layer in self._config['layer']:
-            nodeNumber = self._config['params'][layer + '.size']
-            self._config['nodes'][layer] = \
-                [layer + str(i) for i in xrange(1, nodeNumber + 1)]
-        return True
-
-    def _get_visible_nodes_from_dataset(self, dataset):
-        """Create nodes from dataset."""
-
-        self._config['visible'] = []
-        self._config['label_format'] = 'generic:string'
-        if not 'nodes' in self._config: self._config['nodes'] = {}
-        if not 'layer' in self._config: self._config['layer'] = []
-        groups = dataset.get('groups')
-        for group in groups:
-            if not group in self._config['visible']:
-                self._config['visible'].append(group)
-            self._config['layer'].append(group)
-            self._config['nodes'][group] = groups[group]
-        return True
-
-    def _get_hidden_nodes_from_system(self, system):
-        """Create nodes from system."""
-
-        self._config['hidden'] = []
-        self._config['label_format'] = 'generic:string'
-        if not 'nodes' in self._config: self._config['nodes'] = {}
-        if not 'layer' in self._config: self._config['layer'] = []
-        visible = system.get('units', layer = 'visible')
-        hidden = system.get('units', layer = 'hidden')
-        for unit in hidden:
-            (group, label) = unit.split(':')
-            if not group in self._config['layer']:
-                self._config['layer'].append(group)
-            if not group in self._config['hidden']:
-                self._config['hidden'].append(group)
-            if not group in self._config['nodes']:
-                self._config['nodes'][group] = []
-            self._config['nodes'][group].append(label)
-        return True
-
-    def _get_edges_from_layers(self):
-        self._config['edges'] = {}
-        for l in xrange(0, len(self._config['layer']) - 1):
-            layerFrom = self._config['layer'][l]
-            layerTo = self._config['layer'][l + 1]
-            edge_layer = (layerFrom, layerTo)
-            if not edge_layer in self._config['edges']:
-                nodesFrom = self._config['nodes'][layerFrom]
-                nodesTo = self._config['nodes'][layerTo]
-                self._config['edges'][edge_layer] = [(nodeFrom, nodeTo)
-                    for nodeFrom in nodesFrom
-                    for nodeTo in nodesTo]
-        return True
 
     def _configure(self, dataset, system):
         """Configure network to dataset and system."""
@@ -122,22 +48,22 @@ class Network:
         # type: 'auto is used for networks
         # wich are created by datasets (visible units)
         # and systems (hidden units)
-        if self._config['type'] == 'auto':
-            self._get_visible_nodes_from_dataset(dataset)
-            self._get_hidden_nodes_from_system(system)
-            self._get_edges_from_layers()
-            self._configure_layergraph()
-            nemoa.log('set', indent = '-1')
-            return True
+        #if self._config['type'] == 'auto':
+            #self._get_visible_nodes_from_dataset(dataset)
+            #self._get_hidden_nodes_from_system(system)
+            #self._get_edges_from_layers()
+            #self._configure_layergraph()
+            #nemoa.log('set', indent = '-1')
+            #return True
 
         # type: 'autolayer' is used for networks
         # wich are created by layers and sizes
-        if self._config['type'] == 'autolayer':
-            self._get_nodes_from_layers()
-            self._get_edges_from_layers()
-            self._configure_layergraph()
-            nemoa.log('set', indent = '-1')
-            return True
+        #if self._config['type'] == 'autolayer':
+            #self._get_nodes_from_layers()
+            #self._get_edges_from_layers()
+            #self._configure_layergraph()
+            #nemoa.log('set', indent = '-1')
+            #return True
 
         # configure network to dataset
         groups = dataset.get('groups')
@@ -286,17 +212,6 @@ class Network:
 
         return True
 
-    def _export_graph(self, file = None, format = 'gml'):
-        if file == None: nemoa.log('error', "no save path was given")
-
-        # create path if not available
-        if not os.path.exists(os.path.dirname(file)):
-            os.makedirs(os.path.dirname(file))
-
-        if format == 'gml':
-            G = self._graph.copy()
-            networkx.write_gml(G, file)
-
     def _is_compatible_lff(self):
         """Test compatibility to layered feed forward networks.
 
@@ -434,7 +349,9 @@ class Network:
 
     def _get_type(self):
         """Get type of network, using module and class name."""
-        return self._config['package'] + '.' + self._config['class']
+        module_name = self.__module__.split('.')[-1]
+        class_name = self.__class__.__name__
+        return module_name + '.' + class_name
 
     def _get_about(self):
         """Get docstring of network."""

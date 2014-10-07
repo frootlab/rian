@@ -146,41 +146,37 @@ class Dataset:
 
         # Annotation
 
-        # get nodes from network and convert to common format
-        if network._config['type'] == 'auto':
-            net_layers = {'v': None}
-        else:
-            # get network node labels, grouped by layers
-            network_layers = network.get('layers', visible = True)
+        # get network node labels, grouped by layers
+        network_layers = network.get('layers', visible = True)
 
-            # convert network node labels to common format
-            nemoa.log('search network nodes in dataset sources')
-            conv_net_layers = {}
-            conv_net_layers_lost = {}
-            conv_net_nodes = []
-            conv_net_nodes_lost = []
-            net_label_format = network._config['label_format']
-            for layer in network_layers:
-                net_layer_node_names = \
-                    network.get('nodes', layer = layer)
-                net_layer_node_labels = []
-                for node in net_layer_node_names:
-                    net_layer_node_labels.append(
-                        network.get('node', node)['label'])
-                conv_net_layers[layer], conv_net_layers_lost[layer] = \
-                    nemoa.dataset.annotation.convert(
-                    net_layer_node_labels, input = net_label_format)
-                conv_net_nodes += conv_net_layers[layer]
-                conv_net_nodes_lost += conv_net_layers_lost[layer]
+        # convert network node labels to common format
+        nemoa.log('search network nodes in dataset sources')
+        conv_net_layers = {}
+        conv_net_layers_lost = {}
+        conv_net_nodes = []
+        conv_net_nodes_lost = []
+        net_label_format = network._config['label_format']
+        for layer in network_layers:
+            net_layer_node_names = \
+                network.get('nodes', layer = layer)
+            net_layer_node_labels = []
+            for node in net_layer_node_names:
+                net_layer_node_labels.append(
+                    network.get('node', node)['label'])
+            conv_net_layers[layer], conv_net_layers_lost[layer] = \
+                nemoa.dataset.annotation.convert(
+                net_layer_node_labels, input = net_label_format)
+            conv_net_nodes += conv_net_layers[layer]
+            conv_net_nodes_lost += conv_net_layers_lost[layer]
 
-            # notify if any network node labels could not be converted
-            if conv_net_nodes_lost:
-                nemoa.log("""%s of %s network nodes could not
-                    be converted! (see logfile)"""
-                    % (len(conv_net_nodes_lost), len(conv_net_nodes)))
-                # TODO: get original node labels for log file
-                nemoa.log('logfile', nemoa.common.str_to_list(
-                    conv_net_nodes_lost))
+        # notify if any network node labels could not be converted
+        if conv_net_nodes_lost:
+            nemoa.log("""%s of %s network nodes could not
+                be converted! (see logfile)"""
+                % (len(conv_net_nodes_lost), len(conv_net_nodes)))
+            # TODO: get original node labels for log file
+            nemoa.log('logfile', nemoa.common.str_to_list(
+                conv_net_nodes_lost))
 
         # get columns from dataset files and convert to common format
         col_labels = {}
@@ -214,40 +210,38 @@ class Dataset:
                 nemoa.log('logfile', ", ".join([columns_conv[i] \
                     for i in columns_conv_lost]))
 
-            if not network._config['type'] == 'auto':
+            # search converted nodes in converted columns
+            num_lost = 0
+            num_all = 0
+            nodes_lost = {}
+            for group in network_layers:
+                nodes_conv_lost = \
+                    [val for val in conv_net_layers[group] \
+                    if val not in columns_conv]
+                num_all += len(conv_net_layers[group])
 
-                # search converted nodes in converted columns
-                num_lost = 0
-                num_all = 0
-                nodes_lost = {}
-                for group in network_layers:
-                    nodes_conv_lost = \
-                        [val for val in conv_net_layers[group] \
-                        if val not in columns_conv]
-                    num_all += len(conv_net_layers[group])
+                if not nodes_conv_lost: continue
+                num_lost += len(nodes_conv_lost)
 
-                    if not nodes_conv_lost: continue
-                    num_lost += len(nodes_conv_lost)
+                # get lost nodes
+                nodes_lost[group] = []
+                for val in nodes_conv_lost:
+                    node_lost_id = conv_net_layers[group].index(val)
+                    node_lost = network.get('nodes',
+                        type = group)[node_lost_id]
+                    node_label = network.get('node',
+                        node_lost)['label']
+                    nodes_lost[group].append(node_label)
 
-                    # get lost nodes
-                    nodes_lost[group] = []
-                    for val in nodes_conv_lost:
-                        node_lost_id = conv_net_layers[group].index(val)
-                        node_lost = network.get('nodes',
-                            type = group)[node_lost_id]
-                        node_label = network.get('node',
-                            node_lost)['label']
-                        nodes_lost[group].append(node_label)
-
-                # notify if any network nodes could not be found
-                if num_lost:
-                    nemoa.log('warning', """%i of %i network nodes
-                        could not be found in dataset source!
-                        (see logfile)""" % (num_lost, num_all))
-                    for group in nodes_lost:
-                        nemoa.log('logfile',
-                            'missing nodes (group %s): ' % (group)
-                            + ', '.join(nodes_lost[group]))
+            # notify if any network nodes could not be found
+            if num_lost:
+                nemoa.log('warning', """%i of %i network nodes
+                    could not be found in dataset source!
+                    (see logfile)""" % (num_lost, num_all))
+                for group in nodes_lost:
+                    nemoa.log('logfile',
+                        'missing nodes (group %s): ' % (group)
+                        + ', '.join(nodes_lost[group]))
 
             # prepare dictionary for column source ids
             col_labels[src] = {
@@ -267,11 +261,11 @@ class Dataset:
 
         # if network type is 'auto', set network visible nodes
         # to intersected data from database files (without label column)
-        if network._config['type'] == 'auto':
-            net_layers['v'] = [label for label in inter_col_labels \
-                if not label == 'label']
-            conv_net_layers = {'v': [label for label in \
-                inter_col_labels if not label == 'label']}
+        #if network._config['type'] == 'auto':
+            #net_layers['v'] = [label for label in inter_col_labels \
+                #if not label == 'label']
+            #conv_net_layers = {'v': [label for label in \
+                #inter_col_labels if not label == 'label']}
 
         # search network nodes in dataset columns
         self._config['columns'] = ()
@@ -282,14 +276,10 @@ class Dataset:
                 if not col in inter_col_labels: continue
                 found += 1
 
-                # add column (use network label and group)
-                if network._config['type'] == 'auto':
-                    self._config['columns'] += \
-                        ((group, net_layers[group][id]), )
-                else:
-                    node_name = network.get('nodes', layer = group)[id]
-                    node_label = network.get('node', node_name)['label']
-                    self._config['columns'] += ((group, node_label), )
+                # add column (use network label and layer)
+                node_name = network.get('nodes', layer = group)[id]
+                node_label = network.get('node', node_name)['label']
+                self._config['columns'] += ((group, node_label), )
 
                 for src in col_labels:
                     col_labels[src]['usecols'] \
@@ -1161,7 +1151,9 @@ class Dataset:
 
     def _get_type(self):
         """Get type of dataset, using module and class name."""
-        return self._config['package'] + '.' + self._config['class']
+        module_name = self.__module__.split('.')[-1]
+        class_name = self.__class__.__name__
+        return module_name + '.' + class_name
 
     def _get_about(self):
         """Get docstring of dataset."""

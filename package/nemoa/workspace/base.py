@@ -637,9 +637,9 @@ class config:
                 return nemoa.log('warning', """skipping dataset '%s':
                     file '%s' not found!""" % (name, source_file))
 
-            # update path for file and set type to 'file'
+            # update path for file
             conf['source']['file'] = self._expand_path(source_file)
-            conf['type'] = 'file'
+            #conf['import_type'] = 'file'
 
             # add missing source information
             if not 'file_format' in conf['source']:
@@ -1016,16 +1016,17 @@ class config:
         def __init__(self, config):
             self.generic = {
                 'name': 'str',
+                'type': 'str',
                 'description': 'str' }
 
             self.sections = {
-                'network': {'type': 'str', 'layers': 'list',
+                'network': {'layers': 'list',
                     'labels': 'list', 'source': 'dict',
                     'params': 'dict'},
-                'dataset': {'preprocessing': 'dict', 'source': 'dict',
-                    'params': 'dict'},
-                'system': {'package': 'str', 'class': 'str',
-                    'params': 'dict'},
+                'dataset': {'preprocessing': 'dict',
+                    'source': 'dict', 'params': 'dict'},
+                'system': {'package': 'str',
+                    'class': 'str', 'params': 'dict'},
                 'schedule': {'stage [0-9a-zA-Z]*': 'dict',
                     'system [0-9a-zA-Z]*': 'dict', 'params': 'dict'},
                 'plot': {'package': 'str', 'class': 'str',

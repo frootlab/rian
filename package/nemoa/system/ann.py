@@ -79,12 +79,8 @@ class ANN(nemoa.system.base.System):
 
         """
 
-        if not 'check' in self._config:
-            self._config['check'] = {
-                'config': False,
-                'network': False,
-                'dataset': False}
         self._set_config(config)
+        self._set_params()
 
         if not network == None:
             self._configure_set_network(network, update)

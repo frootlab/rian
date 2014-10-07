@@ -41,7 +41,7 @@ class Ini:
             'workspace': self._workspace,
             'config': {
                 'package': 'base',
-                'class': 'network',
+                'class': 'Network',
                 'type': None,
                 'name': name,
                 'source': {
@@ -67,24 +67,10 @@ class Ini:
                 netcfg.get('network', 'description').strip()
         else: network['config']['description'] = ''
 
-        # python module containing the network class ('package')
-        if 'package' in netcfg.options('network'):
-            network['config']['package'] = \
-                netcfg.get('network', 'package').strip()
-
-        # python network class inside module ('class')
-        if 'class' in netcfg.options('network'):
-            network['config']['class'] = \
-                netcfg.get('network', 'class').strip()
-
         # type of network ('type')
-        # currently supported:
-        #     'layer': layered feedforward network
         if 'type' in netcfg.options('network'):
             network['config']['type'] = \
-                netcfg.get('network', 'type').strip().lower()
-        # TODO: do not allow auto networks
-        else: network['config']['type'] = 'auto'
+                netcfg.get('network', 'type').strip()
 
         # TODO: make network type specific sections
         # 'labelformat': annotation of nodes, default: 'generic:string'
@@ -95,13 +81,12 @@ class Ini:
 
         # depending on type, use different class methods to parse
         # and interpret type specific parameters and sections
-        if network['config']['type'] in ['layer', 'auto']:
+        if network['config']['type'].split('.')[0] == 'layer':
             return self._parse_layer_network(path, netcfg, network)
 
-        return nemoa.log('warning',
-            """could not import network configuration:
-            file '%s' contains unsupported network type '%s'.""" %
-            (path, network['config']['type']))
+        return nemoa.log('warning', """could not import network
+            configuration: file '%s' contains unsupported network
+            type '%s'.""" % (path, network['config']['type']))
 
     def _parse_layer_network(self, path, netcfg, network):
 

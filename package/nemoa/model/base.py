@@ -477,7 +477,9 @@ class model:
 
     def _get_type(self):
         """Get type of model, using module and class name."""
-        return self._config['package'] + '.' + self._config['class']
+        module_name = self.__module__.split('.')[-1]
+        class_name = self.__class__.__name__
+        return module_name + '.' + class_name
 
     def _get_about(self):
         """Get docstring of model."""

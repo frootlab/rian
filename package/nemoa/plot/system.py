@@ -36,7 +36,8 @@ class graph(nemoa.plot.base.plot):
             if not o == i]
 
         # calculate edge weights from 'weight' relation
-        W = model.evaluate('system', 'relations', self.settings['relation'],
+        W = model.evaluate('system', 'relations',
+            self.settings['relation'],
             preprocessing = self.settings['preprocessing'],
             measure = self.settings['measure'],
             statistics = self.settings['statistics'],
@@ -89,7 +90,7 @@ class graph(nemoa.plot.base.plot):
         S = {edge: 2. * (float(SR[edge] > 0.) - 0.5) for edge in edges}
 
         # create graph and set name
-        graph = networkx.MultiDiGraph(name = rel_about['name'])
+        graph = networkx.DiGraph(name = rel_about['name'])
 
         # add edges and edge attributes to graph
         if self.settings['normalize_weights'] in [None, 'auto']:
@@ -113,13 +114,15 @@ class graph(nemoa.plot.base.plot):
         for i in xrange(len(graphs)):
             for n in graphs[i].nodes():
                 node = model.network.get('node', n)
-                label = nemoa.common.str_format_unit_label(node['label'])
+                label = nemoa.common.str_format_unit_label(
+                    node['label'])
+                # TODO: node_type not in {i, o}
                 node_type = node['params']['layer']
                 graph.node[n]['label'] = label
                 graph.node[n]['type'] = node_type
                 graph.node[n]['complex'] = i
                 graph.node[n]['color'] = {
-                    'i': 'git_grey', 'o': 'white'}[node_type]
+                    'i': 'git_grey1', 'o': 'white'}[node_type]
 
         # create plot
         return nemoa.common.plot.graph(graph, **self.settings)
