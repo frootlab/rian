@@ -286,190 +286,6 @@ class Network:
 
         return True
 
-    def _get_node(self, node):
-        """Return network information of single node."""
-        return self._graph.node[node]
-
-    def _get_nodes(self, grouping = None, **kwargs):
-        """Get nodes of network.
-
-        Args:
-            grouping: grouping parameter of nodes. If grouping is not
-                None, the returned nodes are grouped by the different
-                values of the grouping parameter. Grouping is only
-                possible if every node has the parameter.
-            **kwargs: filter parameters of nodes. If kwargs are given,
-                only nodes that match the filter parameters are
-                returned.
-
-        Returns:
-            If the argument 'grouping' is not set, a list of strings
-            containing name identifiers of nodes is returned. If
-            'grouping' is a valid node parameter, the nodes are grouped
-            by the values of the grouping parameter.
-
-        Examples:
-            Get a list of all nodes grouped by layers:
-                model.network.get('nodes', grouping = 'layer')
-            Get a list of visible nodes:
-                model.network.get('nodes', visible = True)
-
-        """
-
-        # filter nodes by attributes and order entries
-        nodes_sort_list = [None] * self._graph.number_of_nodes()
-        for node, attr in self._graph.nodes(data = True):
-            if not kwargs == {}:
-                passed = True
-                for key in kwargs:
-                    if not key in attr['params'] \
-                        or not kwargs[key] == attr['params'][key]:
-                        passed = False
-                        break
-                if not passed: continue
-            nodes_sort_list[attr['order']] = node
-        nodes = [node for node in nodes_sort_list if node]
-        if grouping == None: return nodes
-
-        # group nodes
-        grouping_values = []
-        for node in nodes:
-            node_params = self._graph.node[node]['params']
-            if not grouping in node_params:
-                return nemoa.log('error', """could not get nodes:
-                    unknown parameter '%s'.""" % (grouping))
-            grouping_value = node_params[grouping]
-            if not grouping_value in grouping_values:
-                grouping_values.append(grouping_value)
-        grouped_nodes = []
-        for grouping_value in grouping_values:
-            group = []
-            for node in nodes:
-                if self._graph.node[node]['params'][grouping] \
-                    == grouping_value:
-                    group.append(node)
-            grouped_nodes.append(group)
-        return grouped_nodes
-
-    def _get_layer(self, layer):
-        """Return dictionary containing information about a layer."""
-        nodes = self._get_nodes(layer = layer)
-        if not nodes: return None
-        first_node = self._get_node(nodes[0])['params']
-        return {
-            'layer_id': first_node['layer_id'],
-            'layer': first_node['layer'],
-            'visible': first_node['visible'],
-            'nodes': nodes}
-
-    def _get_layers(self, **kwargs):
-        """Get node layers of network.
-
-        Returns:
-            List of strings containing labels of node layers that match
-            a given property. The order is from input to output.
-
-        Examples:
-            return visible node layers:
-                model.network.get('layers', visible = True)
-
-            search for node layer 'test':
-                model.network.get('layers', type = 'test')
-
-        """
-
-        graph = self._graph
-
-        # get ordered list of nodes
-        nodes_sort_list = [None] * graph.number_of_nodes()
-        for node, attr in graph.nodes(data = True):
-            if not kwargs == {}:
-                passed = True
-                for key in kwargs:
-                    if not key in attr['params'] \
-                        or not kwargs[key] == attr['params'][key]:
-                        passed = False
-                        break
-                if not passed: continue
-            nodes_sort_list[attr['order']] = node
-        nodes = [node for node in nodes_sort_list if node]
-
-        # get ordered list of layers
-        layers = []
-        for node in nodes:
-            layer = graph.node[node]['params']['layer']
-            if layer in layers: continue
-            layers.append(layer)
-
-        return layers
-
-    def _get_edge(self, edge):
-        if not isinstance(edge, tuple):
-            return nemoa.log('error', """could not get edge:
-                edge '%s' is unkown.""" % (edge))
-        src_node, tgt_node = edge
-        if not src_node in self._graph.edge \
-            or not tgt_node in self._graph.edge[src_node]:
-            return nemoa.log('error', """could not get edge:
-                edge ('%s', '%s') is unkown.""" % (src_node, tgt_node))
-        return self._graph.edge[src_node][tgt_node]
-
-    def _get_edges(self, grouping = None, **kwargs):
-
-        # filter edges by attributes and order entries
-        edge_sort_list = [None] * self._graph.number_of_edges()
-        for src, tgt, attr in self._graph.edges(data = True):
-            if not kwargs == {}:
-                passed = True
-                for key in kwargs:
-                    if not key in attr['params'] \
-                        or not kwargs[key] == attr['params'][key]:
-                        passed = False
-                        break
-                if not passed: continue
-            edge_sort_list[attr['order']] = (src, tgt)
-        edges = [edge for edge in edge_sort_list if edge]
-        if grouping == None: return edges
-
-        # group edges
-        grouping_values = []
-        for edge in edges:
-            src, tgt = edge
-            edge_params = self._graph.edge[src][tgt]['params']
-            if not grouping in edge_params:
-                return nemoa.log('error', """could not get edges:
-                    unknown parameter '%s'.""" % (grouping))
-            grouping_value = edge_params[grouping]
-            if not grouping_value in grouping_values:
-                grouping_values.append(grouping_value)
-        grouped_edges = []
-        for grouping_value in grouping_values:
-            group = []
-            for edge in edges:
-                src, tgt = edge
-                if self._graph.edge[src][tgt]['params'][grouping] \
-                    == grouping_value:
-                    group.append(edge)
-            grouped_edges.append(group)
-
-        return grouped_edges
-
-    def _get_backup(self, sec = None):
-        dict = {
-            'config': copy.deepcopy(self._config),
-            'graph': copy.deepcopy(self._graph) }
-
-        if not sec: return dict
-        if sec in dict: return dict[sec]
-        return None
-
-    def _set_backup(self, **kwargs):
-        if 'config' in kwargs:
-            self._config = copy.deepcopy(kwargs['config'])
-        if 'graph' in kwargs:
-            self._graph = copy.deepcopy(kwargs['graph'])
-        return True
-
     def _export_graph(self, file = None, format = 'gml'):
         if file == None: nemoa.log('error', "no save path was given")
 
@@ -592,25 +408,222 @@ class Network:
         return True
 
     def get(self, key = None, *args, **kwargs):
+        """Get information about network."""
 
-        if key == 'name': return self._config['name']
-        if key == 'about': return self.__doc__
-        if key == 'backup': return self._get_backup(*args, **kwargs)
-        if key == 'edge': return self._get_edge(*args, **kwargs)
-        if key == 'edges': return self._get_edges(*args, **kwargs)
+        # get generic information about dataset
+        if key == 'name': return self._get_name()
+        if key == 'type': return self._get_type()
+        if key == 'about': return self._get_about()
+
+        # get information about network parameters
         if key == 'node': return self._get_node(*args, **kwargs)
         if key == 'nodes': return self._get_nodes(*args, **kwargs)
+        if key == 'edge': return self._get_edge(*args, **kwargs)
+        if key == 'edges': return self._get_edges(*args, **kwargs)
         if key == 'layer': return self._get_layer(*args, **kwargs)
         if key == 'layers': return self._get_layers(*args, **kwargs)
 
-        if not key == None: return nemoa.log('warning',
-            "unknown key '%s'" % (key))
-        return None
+        # get copy of dataset configuration and parameters
+        if key == 'copy': return self._get_copy(*args, **kwargs)
+
+        return nemoa.log('warning', "unknown key '%s'" % (key))
+
+    def _get_name(self):
+        """Get name of network."""
+        return self._config['name'] if 'name' in self._config else None
+
+    def _get_type(self):
+        """Get type of network, using module and class name."""
+        return self._config['package'] + '.' + self._config['class']
+
+    def _get_about(self):
+        """Get docstring of network."""
+        return self.__doc__
+
+    def _get_node(self, node):
+        """Return network information of single node."""
+        return self._graph.node[node]
+
+    def _get_nodes(self, grouping = None, **kwargs):
+        """Get nodes of network.
+
+        Args:
+            grouping: grouping parameter of nodes. If grouping is not
+                None, the returned nodes are grouped by the different
+                values of the grouping parameter. Grouping is only
+                possible if every node has the parameter.
+            **kwargs: filter parameters of nodes. If kwargs are given,
+                only nodes that match the filter parameters are
+                returned.
+
+        Returns:
+            If the argument 'grouping' is not set, a list of strings
+            containing name identifiers of nodes is returned. If
+            'grouping' is a valid node parameter, the nodes are grouped
+            by the values of the grouping parameter.
+
+        Examples:
+            Get a list of all nodes grouped by layers:
+                model.network.get('nodes', grouping = 'layer')
+            Get a list of visible nodes:
+                model.network.get('nodes', visible = True)
+
+        """
+
+        # filter nodes by attributes and order entries
+        nodes_sort_list = [None] * self._graph.number_of_nodes()
+        for node, attr in self._graph.nodes(data = True):
+            if not kwargs == {}:
+                passed = True
+                for key in kwargs:
+                    if not key in attr['params'] \
+                        or not kwargs[key] == attr['params'][key]:
+                        passed = False
+                        break
+                if not passed: continue
+            nodes_sort_list[attr['order']] = node
+        nodes = [node for node in nodes_sort_list if node]
+        if grouping == None: return nodes
+
+        # group nodes
+        grouping_values = []
+        for node in nodes:
+            node_params = self._graph.node[node]['params']
+            if not grouping in node_params:
+                return nemoa.log('error', """could not get nodes:
+                    unknown parameter '%s'.""" % (grouping))
+            grouping_value = node_params[grouping]
+            if not grouping_value in grouping_values:
+                grouping_values.append(grouping_value)
+        grouped_nodes = []
+        for grouping_value in grouping_values:
+            group = []
+            for node in nodes:
+                if self._graph.node[node]['params'][grouping] \
+                    == grouping_value:
+                    group.append(node)
+            grouped_nodes.append(group)
+        return grouped_nodes
+
+    def _get_edge(self, edge):
+        if not isinstance(edge, tuple):
+            return nemoa.log('error', """could not get edge:
+                edge '%s' is unkown.""" % (edge))
+        src_node, tgt_node = edge
+        if not src_node in self._graph.edge \
+            or not tgt_node in self._graph.edge[src_node]:
+            return nemoa.log('error', """could not get edge:
+                edge ('%s', '%s') is unkown.""" % (src_node, tgt_node))
+        return self._graph.edge[src_node][tgt_node]
+
+    def _get_edges(self, grouping = None, **kwargs):
+
+        # filter edges by attributes and order entries
+        edge_sort_list = [None] * self._graph.number_of_edges()
+        for src, tgt, attr in self._graph.edges(data = True):
+            if not kwargs == {}:
+                passed = True
+                for key in kwargs:
+                    if not key in attr['params'] \
+                        or not kwargs[key] == attr['params'][key]:
+                        passed = False
+                        break
+                if not passed: continue
+            edge_sort_list[attr['order']] = (src, tgt)
+        edges = [edge for edge in edge_sort_list if edge]
+        if grouping == None: return edges
+
+        # group edges
+        grouping_values = []
+        for edge in edges:
+            src, tgt = edge
+            edge_params = self._graph.edge[src][tgt]['params']
+            if not grouping in edge_params:
+                return nemoa.log('error', """could not get edges:
+                    unknown parameter '%s'.""" % (grouping))
+            grouping_value = edge_params[grouping]
+            if not grouping_value in grouping_values:
+                grouping_values.append(grouping_value)
+        grouped_edges = []
+        for grouping_value in grouping_values:
+            group = []
+            for edge in edges:
+                src, tgt = edge
+                if self._graph.edge[src][tgt]['params'][grouping] \
+                    == grouping_value:
+                    group.append(edge)
+            grouped_edges.append(group)
+
+        return grouped_edges
+
+    def _get_layer(self, layer):
+        """Return dictionary containing information about a layer."""
+        nodes = self._get_nodes(layer = layer)
+        if not nodes: return None
+        first_node = self._get_node(nodes[0])['params']
+        return {
+            'layer_id': first_node['layer_id'],
+            'layer': first_node['layer'],
+            'visible': first_node['visible'],
+            'nodes': nodes}
+
+    def _get_layers(self, **kwargs):
+        """Get node layers of network.
+
+        Returns:
+            List of strings containing labels of node layers that match
+            a given property. The order is from input to output.
+
+        Examples:
+            return visible node layers:
+                model.network.get('layers', visible = True)
+
+            search for node layer 'test':
+                model.network.get('layers', type = 'test')
+
+        """
+
+        graph = self._graph
+
+        # get ordered list of nodes
+        nodes_sort_list = [None] * graph.number_of_nodes()
+        for node, attr in graph.nodes(data = True):
+            if not kwargs == {}:
+                passed = True
+                for key in kwargs:
+                    if not key in attr['params'] \
+                        or not kwargs[key] == attr['params'][key]:
+                        passed = False
+                        break
+                if not passed: continue
+            nodes_sort_list[attr['order']] = node
+        nodes = [node for node in nodes_sort_list if node]
+
+        # get ordered list of layers
+        layers = []
+        for node in nodes:
+            layer = graph.node[node]['params']['layer']
+            if layer in layers: continue
+            layers.append(layer)
+
+        return layers
+
+    def _get_copy(self, section = None):
+        """Get network copy as dictionary."""
+        if section == None: return {
+            'config': copy.deepcopy(self._config),
+            'graph': copy.deepcopy(self._graph) }
+        elif section == 'config':
+            return copy.deepcopy(self._config)
+        elif section == 'graph':
+            return copy.deepcopy(self._graph)
+        return nemoa.log('error', """could not get copy of
+            configuration: unknown section '%s'.""" % (section))
 
     def set(self, key = None, *args, **kwargs):
 
         if key == 'name': return self._set_name(*args, **kwargs)
-        if key == 'backup': return self._set_backup(*args, **kwargs)
+        if key == 'copy': return self._set_copy(*args, **kwargs)
 
         if not key == None: nemoa.log('warning',
             "unknown key '%s'" % (key))
@@ -618,24 +631,31 @@ class Network:
 
     def _set_name(self, name):
         """Set name of network."""
-
-        if not isinstance(self._config, dict): return False
+        if not isinstance(name, str): return False
         self._config['name'] = name
         return True
 
+    def _set_copy(self, **kwargs):
+        if 'config' in kwargs:
+            self._config = copy.deepcopy(kwargs['config'])
+        if 'graph' in kwargs:
+            self._graph = copy.deepcopy(kwargs['graph'])
+        return True
+
     def _update(self, **kwargs):
-        if 'system' in kwargs:
-            system = kwargs['system']
-            if not nemoa.type.is_system(system):
-                return nemoa.log('error', """could not update network:
-                    system is invalid.""")
+        if not 'system' in kwargs: return False
 
-            for u, v, d in self._graph.edges(data = True):
-                params = system._get_link((u, v))
-                if not params: params = system._get_link((v, u))
-                if not params: continue
-                nemoa.common.dict_merge(
-                    params, self._graph[u][v]['params'])
-                self._graph[u][v]['weight'] = params['weight']
+        system = kwargs['system']
+        if not nemoa.type.is_system(system):
+            return nemoa.log('error', """could not update network:
+                system is invalid.""")
 
-            return True
+        for u, v, d in self._graph.edges(data = True):
+            params = system._get_link((u, v))
+            if not params: params = system._get_link((v, u))
+            if not params: continue
+            nemoa.common.dict_merge(
+                params, self._graph[u][v]['params'])
+            self._graph[u][v]['weight'] = params['weight']
+
+        return True

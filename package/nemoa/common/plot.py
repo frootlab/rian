@@ -97,6 +97,7 @@ def graph(graph, **kwargs):
     matplotlib.pyplot.axes().set_aspect('equal', 'box')
 
     # calculate positions
+    # TODO: allow layouts from pygraphviz_layout
     if kwargs['layout'] == 'random':
         pos = networkx.random_layout(graph)
     elif kwargs['layout'] == 'circular':
@@ -133,7 +134,7 @@ def graph(graph, **kwargs):
         else: len_label = len(cl_label)
         node_font_size = node_font_size_max / numpy.sqrt(len_label)
 
-        # set backcolor (depending on type) and facecolor
+        # set colors (backcolor and facecolor)
         backcolor = COLOR[attr['color']]
         facecolor = COLOR['black']
 

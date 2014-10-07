@@ -34,26 +34,6 @@ class System:
         nemoa.log('set', indent = '-1')
         return ret_val
 
-    def _set_config(self, config):
-        """Set configuration."""
-
-        # create / update configuration dictionary
-        if not hasattr(self, '_config'):
-            self._config = self._default.copy()
-            self._config['check'] = {
-                'config': False,
-                'network': False,
-                'dataset': False
-            }
-        nemoa.common.dict_merge(config, self._config)
-
-        # create / update parameter dictionaries (for units and links)
-        if not hasattr(self, '_params'):
-            self._params = {'units': {}, 'links': {}}
-
-        self._config['check']['config'] = True
-        return True
-
     def _is_configured(self):
         """Return configuration state of system."""
         return self._config['check']['config'] \
@@ -73,6 +53,51 @@ class System:
     def _is_empty(self):
         """Return true if system is a dummy."""
         return False
+
+    def get(self, key = None, *args, **kwargs):
+        """Get information about system."""
+
+        # get generic information about system
+        if key == 'name': return self._get_name()
+        if key == 'type': return self._get_type()
+        if key == 'about': return self._get_about()
+
+        # get information about system parameters
+        if key == 'unit': return self._get_unit(*args, **kwargs)
+        if key == 'units': return self._get_units(*args, **kwargs)
+        if key == 'link': return self._get_link(*args, **kwargs)
+        if key == 'links': return self._get_links(*args, **kwargs)
+        if key == 'layer': return self._get_layer(*args, **kwargs)
+        if key == 'layers': return self._get_layers(*args, **kwargs)
+
+        # get copy of system configuration and parameters
+        if key == 'copy': return self._get_copy(*args, **kwargs)
+
+        return nemoa.log('warning', "unknown key '%s'" % (key))
+
+    def _get_name(self):
+        """Get name of system."""
+        return self._config['name'] if 'name' in self._config else None
+
+    def _get_about(self):
+        """Get docstring of system."""
+        return self.__doc__
+
+    def _get_type(self):
+        """Get type of system, using module and class name."""
+        return self._config['package'] + '.' + self._config['class']
+
+    def _get_copy(self, section = None):
+        """Get system copy as dictionary."""
+        if section == None: return {
+            'config': copy.deepcopy(self._config),
+            'params': copy.deepcopy(self._params) }
+        elif section == 'config':
+            return copy.deepcopy(self._config)
+        elif section == 'params':
+            copy.deepcopy(self._params)
+        return nemoa.log('error', """could not get copy of
+            configuration: unknown section '%s'.""" % (section))
 
     def _get_unit(self, unit):
         """
@@ -331,41 +356,10 @@ class System:
             grouped_links.append(group)
         return grouped_links
 
-    def get(self, key = None, *args, **kwargs):
-
-        if key == 'name': return self._config['name']
-        if key == 'about': return self.__doc__
-        if key == 'backup': return self._get_backup(*args, **kwargs)
-        if key == 'type': return self._get_type(*args, **kwargs)
-
-        if key == 'layer': return self._get_layer(*args, **kwargs)
-        if key == 'layers': return self._get_layers(*args, **kwargs)
-        if key == 'unit': return self._get_unit(*args, **kwargs)
-        if key == 'units': return self._get_units(*args, **kwargs)
-        if key == 'link': return self._get_link(*args, **kwargs)
-        if key == 'links': return self._get_links(*args, **kwargs)
-
-        if not key == None: return nemoa.log('warning',
-            "unknown key '%s'" % (key))
-        return None
-
-    def _get_type(self):
-        return '%s.%s' % (self._config['package'],
-            self._config['class'])
-
-    def _get_backup(self, section = None):
-        """Return system settings as dictionary."""
-        dict = {
-            'config': copy.deepcopy(self._config),
-            'params': copy.deepcopy(self._params) }
-        if not section: return dict
-        if section in dict: return dict[section]
-        return False
-
     def set(self, key = None, *args, **kwargs):
 
         if key == 'name': return self._set_name(*args, **kwargs)
-        if key == 'backup': return self._set_backup(*args, **kwargs)
+        if key == 'copy': return self._set_copy(*args, **kwargs)
 
         if not key == None: return nemoa.log('warning',
             "unknown key '%s'" % (key))
@@ -373,18 +367,38 @@ class System:
 
     def _set_name(self, name):
         """Set name of system."""
-
-        if not isinstance(self._config, dict): return False
+        if not isinstance(name, str): return False
         self._config['name'] = name
         return True
 
-    def _set_backup(self, **kwargs):
+    def _set_copy(self, **kwargs):
         """Set system settings from dictionary."""
         if 'config' in kwargs:
-            self._config = copy.deepcopy(kwargs['config'])
+            self._set_config(copy.deepcopy(kwargs['config']))
         if 'params' in kwargs:
-            self._params = copy.deepcopy(kwargs['params'])
+            self._set_params(copy.deepcopy(kwargs['params']))
         return self._configure_update_units_and_links()
+
+    def _set_config(self, config):
+        """Set system configuration from dictionary."""
+
+        # initialize or update configuration dictionary
+        if not hasattr(self, '_config') or not self._config:
+            self._config = self._default.copy()
+        nemoa.common.dict_merge(config, self._config)
+
+        # reset consistency check
+        self._config['check'] = {
+            'config': True, 'network': False, 'dataset': False }
+        return True
+
+    def _set_params(self, params):
+        """Set system parameters from dictionary."""
+        # initialize or update parameter dictionaries
+        if not hasattr(self, '_params'):
+            self._params = {'units': {}, 'links': {}}
+        nemoa.common.dict_merge(params, self._params)
+        return True
 
     def _initialize(self, dataset = None):
         """Initialize system parameters.
@@ -662,7 +676,7 @@ class Tracker:
             if self._state['obj_opt_value'] == None:
                 self._state['obj_opt_value'] = value
                 self._state['optimum'] = \
-                    {'params': self._system.get('backup', 'params')}
+                    {'params': self._system.get('copy', 'params')}
                 return True
             # allways check last optimum
             if self._state['continue'] \
@@ -683,11 +697,11 @@ class Tracker:
             if new_optimum:
                 self._state['obj_opt_value'] = value
                 self._state['optimum'] = \
-                    {'params': self._system.get('backup', 'params')}
+                    {'params': self._system.get('copy', 'params')}
 
             # set system parameters to optimum on last update
             if not self._state['continue']:
-                return self._system.set('backup', **self._state['optimum'])
+                return self._system.set('copy', **self._state['optimum'])
 
         return True
 

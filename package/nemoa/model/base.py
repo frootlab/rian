@@ -47,18 +47,13 @@ class model:
         if not self._check_model(): return
         self._update_config()
 
-    def _set_config(self, config):
-        """Set configuration from dictionary."""
-        self._config = config.copy()
-        return True
-
     def _export_data(self, *args, **kwargs):
         """Export data to file."""
         # copy dataset
-        settings = self.dataset.get('backup')
+        settings = self.dataset.get('copy')
         self.dataset._transform(system = self.system)
         self.dataset.export(*args, **kwargs)
-        self.dataset.set('backup', settings)
+        self.dataset.set('copy', settings)
         return True
 
     def _import_config_from_dict(self, dict):
@@ -264,7 +259,7 @@ class model:
                 if not isinstance(preprocessing, dict):
                     preprocessing = {}
                 if preprocessing:
-                    dataset_backup = self.dataset.get('backup')
+                    dataset_backup = self.dataset.get('copy')
                     self.dataset.preprocess(preprocessing)
                 if 'statistics' in kwargs.keys():
                     statistics = kwargs['statistics']
@@ -274,62 +269,11 @@ class model:
                 data = self.dataset.data(
                     size = statistics, cols = tuple(cols))
                 if preprocessing:
-                    self.dataset.set('backup', dataset_backup)
+                    self.dataset.set('copy', dataset_backup)
 
             return self.system.evaluate(data, *trailer, **kwargs)
 
         return nemoa.log('warning', 'could not evaluate model')
-
-    def _get_backup(self, sec = None):
-        dict = {
-            'config': copy.deepcopy(self._config),
-            'network': self.network.get('backup'),
-            'dataset': self.dataset.get('backup'),
-            'system': self.system.get('backup')
-        }
-
-        if not sec: return dict
-        if sec in dict: return dict[sec]
-        return None
-
-    def _set_backup(self, dict):
-        """Set configuration, parameters and data of model from given dictionary
-        return true if no error occured"""
-
-        # get config from dict
-        model_backup = self._import_config_from_dict(dict)
-
-        # check self
-        if not nemoa.type.is_dataset(self.dataset):
-            return nemoa.log('error', """could not configure dataset:
-                model does not contain dataset instance.""")
-        if not nemoa.type.is_network(self.network):
-            return nemoa.log('error', """could not configure network:
-                model does not contain network instance.""")
-        if not nemoa.type.is_system(self.system):
-            return nemoa.log('error', """could not configure system:
-                model does not contain system instance.""")
-
-        self._config = model_backup['config'].copy()
-        self.network.set('backup', **model_backup['network'])
-        self.dataset.set('backup', **model_backup['dataset'])
-
-        # prepare
-        # TODO: system.set('backup', ...) should do this
-        if not 'update' in model_backup['system']['config']:
-            model_backup['system']['config']['update'] = {'A': False}
-
-        # TODO: system.set('backup', ...) shall create system and do
-        # something like self.configure ...
-
-        # create system
-        self.system = nemoa.system.new(
-            config = model_backup['system']['config'].copy(),
-            network = self.network,
-            dataset = self.dataset )
-        self.system.set('backup', **model_backup['system'])
-
-        return self
 
     def save(self, file = None):
         """Save model settings to file and return filepath."""
@@ -346,7 +290,7 @@ class model:
         file = nemoa.common.get_empty_file(file)
 
         # save model parameters and configuration to file
-        nemoa.common.dict_to_file(self._get_backup(), file)
+        nemoa.common.dict_to_file(self._get_copy(), file)
 
         # create console message
         nemoa.log("save model as: '%s'" %
@@ -512,21 +456,53 @@ class model:
 
     def get(self, key = None, *args, **kwargs):
 
-        if key == 'name': return self._config['name']
-        if key == 'about': return self.__doc__
-        if key == 'backup': return self._get_backup(*args, **kwargs)
+        # get generic information about model
+        if key == 'name': return self._get_name()
+        if key == 'type': return self._get_type()
+        if key == 'about': return self._get_about()
+
+        # get information about model parameters
         if key == 'network': return self.network.get(*args, **kwargs)
         if key == 'dataset': return self.dataset.get(*args, **kwargs)
         if key == 'system': return self.system.get(*args, **kwargs)
 
-        if not key == None: return nemoa.log('warning',
-            "unknown key '%s'" % (key))
-        return None
+        # get copy of model configuration and parameters
+        if key == 'copy': return self._get_copy(*args, **kwargs)
+
+        return nemoa.log('warning', "unknown key '%s'" % (key))
+
+    def _get_name(self):
+        """Get name of model."""
+        return self._config['name'] if 'name' in self._config else None
+
+    def _get_type(self):
+        """Get type of model, using module and class name."""
+        return self._config['package'] + '.' + self._config['class']
+
+    def _get_about(self):
+        """Get docstring of model."""
+        return self.__doc__
+
+    def _get_copy(self, section = None, *args, **kwargs):
+        """Get model copy as dictionary."""
+        if section == None: return {
+            'config': copy.deepcopy(self._config),
+            'dataset': self.dataset.get('copy'),
+            'network': self.network.get('copy'),
+            'system': self.system.get('copy') }
+        elif section == 'dataset':
+            return self.dataset.get('copy', *args, **kwargs)
+        elif section == 'network':
+            return self.network.get('copy', *args, **kwargs)
+        elif section == 'system':
+            return self.system.get('copy', *args, **kwargs)
+        return nemoa.log('error', """could not get copy of
+            configuration: unknown section '%s'.""" % (section))
 
     def set(self, key = None, *args, **kwargs):
 
         if key == 'name': return self._set_name(*args, **kwargs)
-        if key == 'backup': return self._set_backup(*args, **kwargs)
+        if key == 'copy': return self._set_copy(*args, **kwargs)
 
         if not key == None: return nemoa.log('warning',
             "unknown key '%s'" % (key))
@@ -534,15 +510,74 @@ class model:
 
     def _set_name(self, name):
         """Set name of model."""
-
-        if not isinstance(self._config, dict): return False
+        if not isinstance(name, str): return False
         self._config['name'] = name
         return True
+
+    def _set_copy(self, **kwargs):
+        """Set configuration, parameters and data of model.
+
+        Returns:
+            Bool which is True if and only if no error occured.
+
+        """
+
+        ret_val = True
+
+        if 'config' in kwargs:
+            ret_val &= self._set_config(kwargs['config'])
+        if 'dataset' in kwargs:
+            ret_val &= self._set_dataset(kwargs['dataset'])
+        if 'network' in kwargs:
+            ret_val &= self._set_network(kwargs['network'])
+        if 'system' in kwargs:
+            ret_val &= self._set_system(kwargs['system'])
+
+        return ret_val
+
+    def _set_config(self, config):
+        """Set configuration from dictionary."""
+        self._config = copy.deepcopy(config)
+        return True
+
+    def _set_dataset(self, dataset_copy):
+        if not nemoa.type.is_dataset(self.dataset):
+            return nemoa.log('error', """could not configure dataset:
+                model does not contain dataset instance.""")
+        return self.dataset.set('copy', **dataset_copy)
+
+    def _set_network(self, network_copy):
+        if not nemoa.type.is_network(self.network):
+            return nemoa.log('error', """could not configure network:
+                model does not contain network instance.""")
+        return self.network.set('copy', **network_copy)
+
+    def _set_system(self, system_copy):
+        if not nemoa.type.is_dataset(self.dataset):
+            return nemoa.log('error', """could not configure system:
+                model does not contain dataset instance.""")
+        if not nemoa.type.is_network(self.network):
+            return nemoa.log('error', """could not configure system:
+                model does not contain network instance.""")
+
+        # TODO: make copy of system if allready exists
+
+        # TODO: system.set('copy', ...) should do this
+        if not 'update' in system_copy['config']:
+            system_copy['config']['update'] = {'A': False}
+
+        # create system
+        self.system = nemoa.system.new(
+            config = system_copy['config'],
+            network = self.network,
+            dataset = self.dataset )
+
+        return self.system.set('copy', **system_copy)
 
     def about(self, *args):
         """Return generic information about various parts of the model.
 
-        Arg:
+        Args:
             *args: tuple of strings, containing a breadcrump trail to
                 a specific information about the model
 
@@ -554,17 +589,9 @@ class model:
         """
 
         if not args: return {
-            'name': self._config['name'],
-            'description': '',
-            'dataset': self.dataset.about(*args[1:]),
-            'network': self.network.about(*args[1:]),
             'system': self.system.about(*args[1:])
         }
 
-        if args[0] == 'name': return self._config['name']
-        if args[0] == 'description': return ''
-        if args[0] == 'dataset': return self.dataset.get(*args[1:])
-        if args[0] == 'network': return self.network.get(*args[1:])
         if args[0] == 'system': return self.system.about(*args[1:])
 
         return None

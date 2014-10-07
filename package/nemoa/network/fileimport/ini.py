@@ -8,30 +8,6 @@ import ConfigParser
 import nemoa
 import os
 
-def open(path, file_format = None, workspace = None, **kwargs):
-    """Import network configuration from file."""
-
-    if not os.path.isfile(path):
-        return nemoa.log('error', """could not import network:
-            file does not exist '%s'.""" % (path))
-
-    # if format is not given get format from file extension
-    if not file_format:
-        file_name = os.path.basename(path)
-        file_ext = os.path.splitext(file_name)[1]
-        file_format = file_ext.lstrip('.').strip().lower()
-
-    # get network configuration from file
-    if file_format == 'ini':
-        import_class = nemoa.network.importer.Ini(
-            workspace = workspace, **kwargs)
-    else:
-        return nemoa.log('error', """could not import network '%s':
-            file format '%s' is currently not supported.""" %
-            (path, file_format))
-
-    return import_class.load(path)
-
 class Ini:
     """Import network configuration from ini files."""
 

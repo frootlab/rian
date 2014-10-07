@@ -229,19 +229,19 @@ class workspace:
 
         # load model configuration and parameters from file
         nemoa.log("load model: '%s'" % path)
-        model_dict = nemoa.common.dict_from_file(path)
+        model_copy = nemoa.common.dict_from_file(path)
 
         # create new dataset, network, system and model instances
         model = self._get_model_instance(
-            name = model_dict['config']['name'],
-            config = model_dict['config'],
-            dataset = model_dict['dataset']['config'],
-            network = model_dict['network']['config'],
-            system = model_dict['system']['config'])
+            name = model_copy['config']['name'],
+            config = model_copy['config'],
+            dataset = model_copy['dataset']['config'],
+            network = model_copy['network']['config'],
+            system = model_copy['system']['config'])
         if not nemoa.type.is_model(model): return None
 
         # copy configuration and parameters to model instance
-        model.set('backup', model_dict)
+        model.set('copy', **model_copy)
 
         nemoa.log('set', indent = '-1')
         return model
@@ -251,7 +251,7 @@ class workspace:
         """Return copy of model instance"""
 
         # create backup from original model
-        model_backup = model.get('backup')
+        model_backup = model.get('copy')
         model_config = model_backup['config']
         dataset_config = model_backup['dataset']['config']
         network_config = model_backup['network']['config']
@@ -269,7 +269,7 @@ class workspace:
 
         # finally copy configuration and parameters from the original
         # model to the model copy
-        model_copy.set('backup', model_backup)
+        model_copy.set('copy', model_backup)
 
         return model_copy
 
@@ -508,7 +508,7 @@ class config:
 
         # import network files
         for network_file in glob.iglob(self._expand_path(files)):
-            obj_config = nemoa.network.importer.open(
+            obj_config = nemoa.network.fileimport.open(
                 network_file, workspace = self._workspace)
             self._add_obj_to_store(obj_config)
 
@@ -597,7 +597,7 @@ class config:
                     file '%s' does not exist.""" % (name, file))
 
             # get network config
-            network_cfg = nemoa.network.importer.open(network_file,
+            network_cfg = nemoa.network.fileimport.open(network_file,
                 file_format = file_format, workspace = self._workspace)
 
             if not network_cfg:

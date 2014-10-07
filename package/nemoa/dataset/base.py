@@ -643,11 +643,11 @@ class Dataset:
 
         # Format data
         if isinstance(cols, str): fmtData = self._format(
-            data, cols = self._get_columns(cols), output = output)
+            data, cols = self._get_cols(cols), output = output)
         elif isinstance(cols, list): fmtData = self._format(
             data, cols = cols, output = output)
         elif isinstance(cols, tuple): fmtData = tuple(
-            [self._format(data, cols = self._get_columns(grp),
+            [self._format(data, cols = self._get_cols(grp),
             output = output) for grp in cols])
         else: return nemoa.log('error', """could not get data:
             invalid argument for columns!""")
@@ -744,11 +744,11 @@ class Dataset:
         """
 
         # check columns
-        if cols == '*': cols = self._get_columns()
+        if cols == '*': cols = self._get_cols()
         elif not len(cols) == len(set(cols)):
             return nemoa.log('error', """could not retrieve data:
                 columns are not unique!""")
-        elif [c for c in cols if c not in self._get_columns()]:
+        elif [c for c in cols if c not in self._get_cols()]:
             return nemoa.log('error', """could not retrieve data:
                 unknown columns!""")
 
@@ -778,18 +778,8 @@ class Dataset:
             tuple([col.split(':') for col in labels])
         return True
 
-    def _get_col_groups(self):
-        groups = {}
-        for group, label in self._config['columns']:
-            if not group in groups: groups[group] = []
-            groups[group].append(label)
-        return groups
-
-    def _get_col_filter(self):
-        return self._config['col_filter'].keys()
-
     def _set_col_filter(self, **kwargs):
-        columns = self._get_columns()
+        columns = self._get_cols()
 
         for group in kwargs.keys():
             group_columns = kwargs[group]
@@ -1079,7 +1069,7 @@ class Dataset:
         delim = conf['delimiter'] if 'delimiter' in conf \
             else nemoa.common.csv_get_delimiter(file)
         cols = conf['usecols']
-        names = tuple(self._get_columns())
+        names = tuple(self._get_cols())
         formats = tuple(['<f8' for x in names])
         if not 'rows' in conf or conf['rows']:
             cols = (0,) + cols
@@ -1147,30 +1137,37 @@ class Dataset:
         self._data = npzfile['data'].item()
         return True
 
-    def _get_backup(self, sec = None):
-        dict = {
-            'data': copy.deepcopy(self._data),
-            'config': copy.deepcopy(self._config)
-        }
-
-        if not sec: return dict
-        if sec in dict: return dict[sec]
-        return None
-
     def get(self, key = None, *args, **kwargs):
+        """Get information about dataset."""
 
-        if key == 'name': return self._config['name']
-        if key == 'about': return self.__doc__
-        if key == 'backup': return self._get_backup(*args, **kwargs)
-        if key == 'columns': return self._get_columns(*args, **kwargs)
-        if key == 'groups': return self._get_col_groups(*args, **kwargs)
+        # get generic information about dataset
+        if key == 'name': return self._get_name()
+        if key == 'type': return self._get_type()
+        if key == 'about': return self._get_about()
+
+        # get information about dataset parameters
+        if key == 'cols': return self._get_cols(*args, **kwargs)
         if key == 'filter': return self._get_col_filter(*args, **kwargs)
+        if key == 'groups': return self._get_col_groups(*args, **kwargs)
 
-        if not key == None: return nemoa.log('warning',
-            "unknown key '%s'" % (key))
-        return None
+        # get copy of dataset configuration and parameters
+        if key == 'copy': return self._get_copy(*args, **kwargs)
 
-    def _get_columns(self, group = '*'):
+        return nemoa.log('warning', "unknown key '%s'" % (key))
+
+    def _get_name(self):
+        """Get name of dataset."""
+        return self._config['name'] if 'name' in self._config else None
+
+    def _get_type(self):
+        """Get type of dataset, using module and class name."""
+        return self._config['package'] + '.' + self._config['class']
+
+    def _get_about(self):
+        """Get docstring of dataset."""
+        return self.__doc__
+
+    def _get_cols(self, group = '*'):
         """Return list of strings containing column groups and labels."""
         if group == '*': return ['%s:%s' % (col[0], col[1])
             for col in self._config['columns']]
@@ -1185,10 +1182,32 @@ class Dataset:
                 labels.append('%s:%s' % (col[0], col[1]))
         return labels
 
+    def _get_col_groups(self):
+        groups = {}
+        for group, label in self._config['columns']:
+            if not group in groups: groups[group] = []
+            groups[group].append(label)
+        return groups
+
+    def _get_col_filter(self):
+        return self._config['col_filter'].keys()
+
+    def _get_copy(self, section = None):
+        """Get dataset copy as dictionary."""
+        if section == None: return {
+            'config': copy.deepcopy(self._config),
+            'data': copy.deepcopy(self._data) }
+        elif section == 'config':
+            return copy.deepcopy(self._config)
+        elif section == 'data':
+            return copy.deepcopy(self._config)
+        return nemoa.log('error', """could not get copy of
+            configuration: unknown section '%s'.""" % (section))
+
     def set(self, key = None, *args, **kwargs):
 
         if key == 'name': return self._set_name(*args, **kwargs)
-        if key == 'backup': return self._set_backup(*args, **kwargs)
+        if key == 'copy': return self._set_copy(*args, **kwargs)
         if key == 'filter': return self._set_col_filter(*args, **kwargs)
 
         if not key == None: return nemoa.log('warning',
@@ -1197,36 +1216,14 @@ class Dataset:
 
     def _set_name(self, name):
         """Set name of dataset."""
-
-        if not isinstance(self._config, dict): return False
+        if not isinstance(name, str): return False
         self._config['name'] = name
         return True
 
-    def _set_backup(self, **kwargs):
+    def _set_copy(self, **kwargs):
         if 'data' in kwargs:
             self._data = copy.deepcopy(kwargs['data'])
         if 'config' in kwargs:
             self._config = copy.deepcopy(kwargs['config'])
         return True
-
-    def about(self, *args):
-        """Return generic information about various parts of the dataset.
-
-        Args:
-            *args: tuple of strings, containing a breadcrump trail to
-                a specific information about the dataset
-
-        Examples:
-            about()
-
-        """
-
-        if not args: return {
-            'name': self.name(),
-            'description': self.__doc__
-        }
-
-        if args[0] == 'name': return self.name()
-        if args[0] == 'description': return self.__doc__
-        return None
 

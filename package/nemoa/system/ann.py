@@ -142,7 +142,7 @@ class ANN(nemoa.system.base.System):
         # compare visible unit labels with dataset columns
         mapping = self.mapping()
         units = self._get_units(visible = True)
-        if not dataset.get('columns') == units:
+        if not dataset.get('cols') == units:
             return nemoa.log('error', """could not configure system:
                 visible units differ from dataset columns.""")
         self._config['check']['dataset'] = True
@@ -394,7 +394,7 @@ class ANN(nemoa.system.base.System):
                 data = dataset.data(100000, rows = rows, cols = source)
                 random = numpy.random.normal(numpy.zeros((x, y)),
                     sigma * numpy.std(data, axis = 0).reshape(1, x).T)
-            elif dataset.get('columns') \
+            elif dataset.get('cols') \
                 == self._units[source].params['id']:
                 rows = self._config['params']['samples'] \
                     if 'samples' in self._config['params'] else '*'
