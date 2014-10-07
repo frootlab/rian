@@ -1491,7 +1491,7 @@ class ANN(nemoa.system.base.System):
             'method': '_eval_relation_knockout', 'show': 'heatmap',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'induction': {
-            'name': 'induced deviation',
+            'name': 'induction',
             'description': """
                 directed data manipulation based relation describing
                 the induced deviation of reconstructed values of a given

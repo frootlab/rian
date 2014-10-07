@@ -22,8 +22,8 @@ class plot:
         self.cfg = {}
         if config == None: return None
 
-        self.cfg['name']  = config['name']
-        self.cfg['id']    = config['id']
+        self.cfg['name'] = config['name']
+        self.cfg['id'] = config['id']
         self.cfg['input'] = 'model'
 
         # append / overwrite settings with default settings
@@ -54,7 +54,7 @@ class plot:
     def create(self, model, file = None):
 
         # common matplotlib settings
-        matplotlib.rc('font', family = 'serif')
+        matplotlib.rc('font', family = 'sans-serif')
 
         # close previous figures
         matplotlib.pyplot.close('all')

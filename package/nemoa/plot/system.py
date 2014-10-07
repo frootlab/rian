@@ -61,6 +61,7 @@ class graph(nemoa.plot.base.plot):
             return nemoa.log('error',
                 """could not create relation graph: invalid filter
                 relation '%s'!""" % (self.settings['filter']))
+
         # create filter mask from filter relation (parameter: 'cutoff')
         # and update list of edges
         bound = self.settings['cutoff'] * F['std']
@@ -118,7 +119,7 @@ class graph(nemoa.plot.base.plot):
                 graph.node[n]['type'] = node_type
                 graph.node[n]['complex'] = i
                 graph.node[n]['color'] = {
-                    'i': 'lightgreen', 'o': 'lightblue'}[node_type]
+                    'i': 'git_grey', 'o': 'white'}[node_type]
 
         # create plot
         return nemoa.common.plot.graph(graph, **self.settings)

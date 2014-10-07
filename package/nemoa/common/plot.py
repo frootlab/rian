@@ -18,6 +18,9 @@ COLOR = {
     'green': (0., 0.5, 0., 1.),
     'blue': (0., 0.0  , 0.7, 1.),
     'lightgrey': (0.8, 0.8, 0.8, 1.),
+    'git_grey1': (0.96, 0.96, 0.96, 1.),
+    'git_grey2': (0.867, 0.867, 0.867, 1.),
+    'git_grey3': (0.2, 0.2, 0.2, 1.),
     'lightgreen': (0.6, 0.8, 0.196, 1.),
     'lightblue': (0.439, 0.502, 0.565, 1.),
     'cornflower': (0.27, 0.51, 0.7, 1.),
@@ -111,7 +114,8 @@ def graph(graph, **kwargs):
 
     # calculate sizes of nodes, fonts and lines depending on graph size
     n_count = float(len(graph))
-    n_size = max(node_size_max, node_size_scale * node_size_max / n_count)
+    n_size = max(node_size_max,
+        node_size_scale * node_size_max / n_count)
     n_radius = numpy.sqrt(n_size) / 480.
     f_size = font_size_max * numpy.sqrt(n_size / node_size_max)
     node_font_size_max = f_size * 0.9
@@ -149,7 +153,7 @@ def graph(graph, **kwargs):
             font_weight = 'normal')
 
         # patch node for edges
-        c = Circle(pos[node], radius = n_radius, alpha  = 0.)
+        c = Circle(pos[node], radius = n_radius, alpha = 0.)
         ax.add_patch(c)
         graph.node[node]['patch'] = c
 
@@ -258,28 +262,30 @@ def layergraph(G, **kwargs):
             color = {
                 True: {
                     'bg': COLOR['cornflower'],
-                    'font': COLOR['black'] },
+                    'font': COLOR['black'],
+                    'border': COLOR['git_grey3'] },
                 False: {
-                    'bg': COLOR['lightgrey'],
-                    'font': COLOR['black'] }
+                    'bg': COLOR['git_grey2'],
+                    'font': COLOR['black'],
+                    'border': COLOR['git_grey3'] }
             }[is_visible]
 
             # draw node
-            networkx.draw_networkx_nodes(G, pos,
+            node_obj = networkx.draw_networkx_nodes(G, pos,
                 node_size = graph_node_size,
                 linewidths = graph_line_width,
                 nodelist = [node],
                 node_shape = 'o',
                 node_color = color['bg'])
+            node_obj.set_edgecolor(color['border'])
 
             # draw node label
             node_font_size = \
                 2. * graph_font_size / numpy.sqrt(max(len(node) - 1, 1))
-            networkx.draw_networkx_labels(
-                G, pos,
+            networkx.draw_networkx_labels(G, pos,
                 font_size = node_font_size,
                 labels = {node: label},
-                font_weight = 'normal',
+                font_weight = 'normal' if not is_visible else 'bold',
                 font_color = color['font'])
 
             # draw node caption
@@ -310,7 +316,7 @@ def layergraph(G, **kwargs):
             width = edge_line_width,
             edgelist = [(v, h)],
             edge_color = color,
-            arrows = False,
+            arrows = True,
             alpha = 1.)
 
         # (optional) draw edge labels
@@ -326,6 +332,6 @@ def layergraph(G, **kwargs):
     # draw graph caption
     if kwargs['graph_caption'] and 'caption' in G.graph:
         matplotlib.pyplot.figtext(.5, .11,
-            G.graph['caption'], fontsize = 9, ha = 'center')
+            G.graph['caption'], fontsize = 9., ha = 'center')
 
     return True
