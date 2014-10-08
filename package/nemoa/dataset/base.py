@@ -755,29 +755,6 @@ class Dataset:
         if isinstance(output, str): return ret_tuple[0]
         return ret_tuple
 
-    def _set_col_labels(self, labels):
-        """Set column labels from list of strings."""
-        self._config['columns'] = \
-            tuple([col.split(':') for col in labels])
-        return True
-
-    def _set_col_filter(self, **kwargs):
-        columns = self._get_cols()
-
-        for group in kwargs.keys():
-            group_columns = kwargs[group]
-
-            valid = True
-            for column in group_columns:
-                if not column in columns:
-                    valid = False
-                    break
-
-            if not valid: continue
-            self._config['col_filter'][group] = columns
-
-        return True
-
     #def addRowFilter(self, name, filter):
         ## create unique name for filter
         #filterName = name
@@ -1181,3 +1158,25 @@ class Dataset:
             self._config = copy.deepcopy(kwargs['config'])
         return True
 
+    def _set_col_labels(self, labels):
+        """Set column labels from list of strings."""
+        self._config['columns'] = \
+            tuple([col.split(':') for col in labels])
+        return True
+
+    def _set_col_filter(self, **kwargs):
+        columns = self._get_cols()
+
+        for group in kwargs.keys():
+            group_columns = kwargs[group]
+
+            valid = True
+            for column in group_columns:
+                if not column in columns:
+                    valid = False
+                    break
+
+            if not valid: continue
+            self._config['col_filter'][group] = columns
+
+        return True

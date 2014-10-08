@@ -99,15 +99,17 @@ class Ini:
         # depending on type, use different class methods to parse
         # and interpret type specific parameters and sections
         if network['config']['type'] == 'layer.MultiLayer':
-            return self._import_layer_network(path, netcfg, network)
+            return self._configure_graph(path, netcfg, network)
         if network['config']['type'] == 'layer.Shallow':
-            return self._import_layer_network(path, netcfg, network)
+            return self._configure_graph(path, netcfg, network)
+        if network['config']['type'] == 'layer.Factor':
+            return self._configure_graph(path, netcfg, network)
 
         return nemoa.log('warning', """could not import network
             configuration: file '%s' contains unsupported network
             type '%s'.""" % (path, network['config']['type']))
 
-    def _import_layer_network(self, path, netcfg, network):
+    def _configure_graph(self, path, netcfg, network):
 
         config = network['config']
 

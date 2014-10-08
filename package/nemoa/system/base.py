@@ -97,7 +97,7 @@ class System:
         elif section == 'config':
             return copy.deepcopy(self._config)
         elif section == 'params':
-            copy.deepcopy(self._params)
+            return copy.deepcopy(self._params)
         return nemoa.log('error', """could not get copy of
             configuration: unknown section '%s'.""" % (section))
 

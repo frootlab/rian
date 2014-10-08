@@ -543,18 +543,21 @@ class model:
         return True
 
     def _set_dataset(self, dataset_copy):
+        """Configure dataset from dictionary."""
         if not nemoa.type.is_dataset(self.dataset):
             return nemoa.log('error', """could not configure dataset:
                 model does not contain dataset instance.""")
         return self.dataset.set('copy', **dataset_copy)
 
     def _set_network(self, network_copy):
+        """Configure network from dictionary."""
         if not nemoa.type.is_network(self.network):
             return nemoa.log('error', """could not configure network:
                 model does not contain network instance.""")
         return self.network.set('copy', **network_copy)
 
     def _set_system(self, system_copy):
+        """Configure system from dictionary."""
         if not nemoa.type.is_dataset(self.dataset):
             return nemoa.log('error', """could not configure system:
                 model does not contain dataset instance.""")
@@ -563,11 +566,6 @@ class model:
                 model does not contain network instance.""")
 
         # TODO: make copy of system if allready exists
-
-        # TODO: system.set('copy', ...) should do this
-        if not 'update' in system_copy['config']:
-            system_copy['config']['update'] = {'A': False}
-
         # create system
         self.system = nemoa.system.new(
             config = system_copy['config'],

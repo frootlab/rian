@@ -134,11 +134,9 @@ class DBN(nemoa.system.ann.ANN):
                     network_edges[('visible', 'hidden')].append((v, h))
 
             network_config = {
-                'package': 'base',
-                'class': 'network',
                 'name': '%s ↔ %s' \
                     % (src['layer'], tgt['layer']),
-                'type': 'layer',
+                'type': 'layer.Factor',
                 'layer': ['visible', 'hidden'],
                 'nodes': network_nodes,
                 'edges': network_edges,

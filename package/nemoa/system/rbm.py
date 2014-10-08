@@ -90,11 +90,16 @@ class RBM(nemoa.system.ann.ANN):
             and self._setHiddenUnitUpdateRates(**config)
             and self._setLinkUpdateRates(**config))
 
-    def _set_params(self, params):
-        """Set system parameters from dictionary."""
-        return (self._set_visible_unit_params(params)
-            and self._set_hidden_unit_params(params)
-            and self._set_link_params(params))
+    #def _set_params(self, params = None):
+        #"""Set system parameters from dictionary."""
+        #ret_val = True
+        #if not hasattr(self, '_params'):
+            #self._params = {'units': {}, 'links': {}}
+        #if params:
+            #ret_val &= self._set_visible_unit_params(params)
+            #ret_val &= self._set_hidden_unit_params(params)
+            #ret_val &= self._set_link_params(params)
+        #return ret_val
 
     def _optimize(self, dataset, schedule, tracker):
         """Optimize system parameters."""
