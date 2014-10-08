@@ -7,23 +7,20 @@ __license__ = 'GPLv3'
 import nemoa
 import networkx
 import copy
+import importlib
 
 class Network:
 
+    _default = {
+        'name': None}
     _config = None
     _graph = None
 
-    def __init__(self, config = {}):
+    def __init__(self, **kwargs):
         """Configure network to given dictionary."""
 
         # create copy of config
-        self._config = config.copy()
-        if not 'name' in self._config: self._config['name'] = None
-
-        # type 'layer' is used for layered networks
-        # wich are manualy defined, by using a dictionary
-        if self._config['type'].split('.')[0] == 'layer':
-            self._configure_layergraph()
+        self._set_copy(**kwargs)
 
     def _configure(self, dataset, system):
         """Configure network to dataset and system."""
@@ -51,7 +48,7 @@ class Network:
         for group in groups:
             if not group in self._config['nodes'] \
                 or not (groups[group] == self._config['nodes'][group]):
-                self._configure_layergraph(
+                self._configure_graph(
                     nodelist = {'layer': group, 'list': groups[group]})
 
         nemoa.log('set', indent = '-1')
@@ -61,7 +58,7 @@ class Network:
         """Return true if network type is 'empty'."""
         return self._config['type'] == 'empty'
 
-    def _configure_layergraph(self, nodelist = None, edgelist = None):
+    def _configure_graph(self, nodelist = None, edgelist = None):
         """Configure and create layered NetworkX graph."""
 
         if not nodelist:
@@ -512,14 +509,25 @@ class Network:
     def _get_copy(self, section = None):
         """Get network copy as dictionary."""
         if section == None: return {
-            'config': copy.deepcopy(self._config),
-            'graph': copy.deepcopy(self._graph) }
+            'config': self._get_config(),
+            'graph': self._get_graph() }
         elif section == 'config':
-            return copy.deepcopy(self._config)
+            return self._get_config()
         elif section == 'graph':
-            return copy.deepcopy(self._graph)
+            return self._get_graph()
         return nemoa.log('error', """could not get copy of
             configuration: unknown section '%s'.""" % (section))
+
+    def _get_config(self):
+        return copy.deepcopy(self._config)
+
+    def _get_graph(self):
+        return {
+            'module': self._graph.__module__,
+            'class': self._graph.__class__.__name__,
+            'graph': self._graph.graph,
+            'nodes': self._graph.nodes(data = True),
+            'edges': networkx.to_dict_of_dicts(self._graph) }
 
     def set(self, key = None, *args, **kwargs):
 
@@ -538,13 +546,43 @@ class Network:
 
     def _set_copy(self, **kwargs):
         if 'config' in kwargs:
-            self._config = copy.deepcopy(kwargs['config'])
+            self._set_config(kwargs['config'])
         if 'graph' in kwargs:
-            self._graph = copy.deepcopy(kwargs['graph'])
+            self._set_graph(kwargs['graph'])
         return True
 
-    #def save(self, path):
-        #return nemoa.network.save(self, path)
+    def _set_config(self, config = None):
+        """Set configuration from dictionary."""
+
+        # initialize or update configuration dictionary
+        if not hasattr(self, '_config') or not self._config:
+            self._config = self._default.copy()
+        if config:
+            config_copy = copy.deepcopy(config)
+            nemoa.common.dict_merge(config_copy, self._config)
+            # reconfigure graph
+            self._configure_graph()
+        return True
+
+    def _set_graph(self, graph = None):
+        """Set configuration from dictionary."""
+
+        # initialize graph
+        if not hasattr(self, '_graph') or not self._graph:
+            self._configure_graph()
+
+        # merge graph
+        if graph:
+            graph_copy = self._get_graph()
+            nemoa.common.dict_merge(graph, graph_copy)
+            module = importlib.import_module(graph['module'])
+            self._graph = getattr(module, graph['class'])(
+                graph_copy['edges'])
+            self._graph.graph = graph_copy['graph']
+            for node, attr in graph_copy['nodes']:
+                self._graph.node[node] = attr
+
+        return True
 
     def _update(self, **kwargs):
         if not 'system' in kwargs: return False

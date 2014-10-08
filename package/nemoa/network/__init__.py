@@ -9,15 +9,16 @@ import nemoa.network.fileimport
 import nemoa.network.fileexport
 import importlib
 
-def open(*args, **kwargs):
-    obj_config = nemoa.network.fileimport.open(*args, **kwargs)
-    if not obj_config: return None
-    return new(config = obj_config['config'])
+def load(*args, **kwargs):
+    """Import network configuration and parameters from file."""
+    return nemoa.network.fileimport.load(*args, **kwargs)
 
 def save(*args, **kwargs):
-    ret_val = nemoa.network.fileexport.save(*args, **kwargs)
-    if not ret_val: return None
-    return True
+    """Export network configuration and parameters to file."""
+    return nemoa.network.fileexport.save(*args, **kwargs)
+
+def open(*args, **kwargs):
+    return new(**nemoa.network.fileimport.load(*args, **kwargs))
 
 def new(*args, **kwargs):
     """Return dataset instance."""

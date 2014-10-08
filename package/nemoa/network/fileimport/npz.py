@@ -8,7 +8,7 @@ import nemoa
 import numpy
 
 class Npz:
-    """Import dataset from numpy zip compressed file."""
+    """Import network from numpy zip compressed file."""
 
     _workspace = None
 
@@ -19,4 +19,4 @@ class Npz:
         copy = numpy.load(path)
         return {
             'config': copy['config'].item(),
-            'data': copy['data'].item() }
+            'graph': copy['graph'].item() }

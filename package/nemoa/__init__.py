@@ -9,7 +9,7 @@ complexity.
 
 """
 
-__version__ = '0.4.131'
+__version__ = '0.4.133'
 __status__  = 'Development'
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
@@ -21,11 +21,11 @@ __maintainer__ = 'Patrick Michl'
 from nemoa.common.log import *
 import nemoa.common.type as type
 import nemoa.workspace
-import nemoa.plot
-import nemoa.dataset
-import nemoa.system
-import nemoa.network
 import nemoa.model
+import nemoa.dataset
+import nemoa.network
+import nemoa.system
+import nemoa.plot
 
 log('init')
 

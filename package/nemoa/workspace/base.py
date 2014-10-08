@@ -508,7 +508,7 @@ class config:
 
         # import network files
         for network_file in glob.iglob(self._expand_path(files)):
-            obj_config = nemoa.network.fileimport.open(
+            obj_config = nemoa.network.fileimport.load(
                 network_file, workspace = self._workspace)
             self._add_obj_to_store(obj_config)
 
@@ -597,7 +597,7 @@ class config:
                     file '%s' does not exist.""" % (name, file))
 
             # get network config
-            network_cfg = nemoa.network.fileimport.open(network_file,
+            network_cfg = nemoa.network.fileimport.load(network_file,
                 file_format = file_format, workspace = self._workspace)
 
             if not network_cfg:

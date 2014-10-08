@@ -537,9 +537,15 @@ class model:
 
         return ret_val
 
-    def _set_config(self, config):
+    def _set_config(self, config = None):
         """Set configuration from dictionary."""
-        self._config = copy.deepcopy(config)
+
+        # initialize or update configuration dictionary
+        if not hasattr(self, '_config') or not self._config:
+            self._config = self._default.copy()
+        if config:
+            config_copy = copy.deepcopy(config)
+            nemoa.common.dict_merge(config_copy, self._config)
         return True
 
     def _set_dataset(self, dataset_copy):

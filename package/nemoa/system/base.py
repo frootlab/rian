@@ -11,6 +11,11 @@ import copy
 
 class System:
 
+    _default = {
+        'params': {},
+        'init': {},
+        'optimize': {}}
+
     def __init__(self, *args, **kwargs):
         """Configure system and system parameters."""
 
@@ -375,19 +380,20 @@ class System:
     def _set_copy(self, **kwargs):
         """Set system settings from dictionary."""
         if 'config' in kwargs:
-            self._set_config(copy.deepcopy(kwargs['config']))
+            self._set_config(kwargs['config'])
         if 'params' in kwargs:
             self._set_params(copy.deepcopy(kwargs['params']))
         return self._configure_update_units_and_links()
 
     def _set_config(self, config = None):
-        """Set system configuration from dictionary."""
+        """Set configuration from dictionary."""
 
         # initialize or update configuration dictionary
         if not hasattr(self, '_config') or not self._config:
             self._config = self._default.copy()
         if config:
-            nemoa.common.dict_merge(config, self._config)
+            config_copy = copy.deepcopy(config)
+            nemoa.common.dict_merge(config_copy, self._config)
 
         # reset consistency check
         self._config['check'] = {

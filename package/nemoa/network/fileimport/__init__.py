@@ -8,12 +8,13 @@ import importlib
 import nemoa
 import os
 
-def open(path, file_format = None, **kwargs):
+def load(path, file_format = None, **kwargs):
     """Import network configuration from file."""
 
     if not os.path.isfile(path):
-        return nemoa.log('error', """could not import network:
-            file does not exist '%s'.""" % (path))
+        nemoa.log('error', """could not import network:
+            file '%s' does not exist.""" % (path))
+        return {}
 
     # if format is not given get format from file extension
     if not file_format:
@@ -29,11 +30,10 @@ def open(path, file_format = None, **kwargs):
         if not hasattr(module, class_name): raise ImportError()
         importer = getattr(module, class_name)(**kwargs)
     except ImportError:
-        return nemoa.log('error', """could not import network '%s':
+        nemoa.log('error', """could not import network '%s':
             file format '%s' is not supported.""" %
             (path, file_format))
+        return {}
 
     # import network file
-    config = importer.load(path)
-
-    return config
+    return importer.load(path)

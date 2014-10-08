@@ -11,12 +11,12 @@ import nemoa.dataset.fileexport
 import importlib
 
 def load(*args, **kwargs):
+    """Import dataset configuration and parameters from file."""
     return nemoa.dataset.fileimport.load(*args, **kwargs)
 
 def save(*args, **kwargs):
-    ret_val = nemoa.dataset.fileexport.save(*args, **kwargs)
-    if not ret_val: return None
-    return True
+    """Export dataset configuration and parameters to file."""
+    return nemoa.dataset.fileexport.save(*args, **kwargs)
 
 def new(*args, **kwargs):
     """Return dataset instance."""
