@@ -396,11 +396,15 @@ class System:
 
     def _set_params(self, params = None):
         """Set system parameters from dictionary."""
-        # initialize or update parameter dictionaries
+
+        # create parameter dictionary if needed
         if not hasattr(self, '_params'):
             self._params = {'units': {}, 'links': {}}
+
+        # merge parameters
         if params:
             nemoa.common.dict_merge(params, self._params)
+
         return True
 
     def _initialize(self, dataset = None):

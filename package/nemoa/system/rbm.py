@@ -90,17 +90,6 @@ class RBM(nemoa.system.ann.ANN):
             and self._setHiddenUnitUpdateRates(**config)
             and self._setLinkUpdateRates(**config))
 
-    #def _set_params(self, params = None):
-        #"""Set system parameters from dictionary."""
-        #ret_val = True
-        #if not hasattr(self, '_params'):
-            #self._params = {'units': {}, 'links': {}}
-        #if params:
-            #ret_val &= self._set_visible_unit_params(params)
-            #ret_val &= self._set_hidden_unit_params(params)
-            #ret_val &= self._set_link_params(params)
-        #return ret_val
-
     def _optimize(self, dataset, schedule, tracker):
         """Optimize system parameters."""
 
@@ -392,24 +381,6 @@ class RBM(nemoa.system.ann.ANN):
         if heat < config['mod_sa_min_temperature']: return 0.
         return heat
 
-    def _set_visible_unit_params(self, params):
-        """Set parameters of visible units using dictionary."""
-        return self._units['visible']._overwrite(params['units'][0])
-
-    def _set_hidden_unit_params(self, params):
-        """Set parameters of hidden units using dictionary."""
-        return self._units['hidden']._overwrite(params['units'][1])
-
-    #def _get_links(self):
-        #"""Return links from adjacency matrix."""
-        #links = []
-        #for i, v in enumerate(self._units['visible'].params['id']):
-            #for j, h in enumerate(self._units['hidden'].params['id']):
-                #if not 'A' in self._params \
-                    #or self._params['links'][(0, 1)]['A'][i, j]:
-                    #links.append((v, h))
-        #return links
-
     def _eval_system_energy(self, data, *args, **kwargs):
         """Pseudo energy function.
 
@@ -441,20 +412,6 @@ class RBM(nemoa.system.ann.ANN):
         energy = -numpy.log(1. + numpy.exp(-energy_vector).sum())
 
         return energy
-
-    def _set_link_params(self, params):
-        """Set link parameters and update link matrices using dictionary."""
-        for i, v in enumerate(self._units['visible'].params['id']):
-            if not v in params['units'][0]['id']:
-                continue
-            k = params['units'][0]['id'].index(v)
-            for j, h in enumerate(self._units['hidden'].params['id']):
-                if not h in params['units'][1]['id']:
-                    continue
-                l = params['units'][1]['id'].index(h)
-                self._params['links'][(0, 1)]['A'][i, j] = params['A'][k, l]
-                self._params['links'][(0, 1)]['W'][i, j] = params['W'][k, l]
-        return True
 
     #def _remove_links(self, links = []):
         #"""Remove links from adjacency matrix using list of links."""
@@ -609,7 +566,3 @@ class GRBM(RBM):
             'bias': self._units['visible'].params['bias'][0, id],
             'sdev': numpy.sqrt(numpy.exp(
                 self._units['visible'].params['lvar'][0, id])) }
-
-    def _set_visible_unit_params(self, params):
-        """Set parameters of visible units using dictionary."""
-        return self._units['visible']._overwrite(params['units'][0])
