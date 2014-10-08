@@ -390,8 +390,8 @@ class config:
             self._workspace = workspace
             self._update_paths(base = 'common')
             self._scan_config_files('%common%/%workspace%')
-            self._scan_scripts()
-            self._scan_networks()
+            self._scan_for_scripts()
+            self._scan_for_networks()
 
         # reset to current workspace
         self._workspace = cur_workspace
@@ -416,9 +416,9 @@ class config:
         nemoa.log('init', logfile = self._path['logfile']) # update logger
 
         path = '%user%/%workspace%'
-        self._scan_config_files(path)     # import configuration files
-        self._scan_scripts()              # scan for scriptfiles
-        self._scan_networks()             # scan for network configs
+        self._scan_config_files(path) # import configuration files
+        self._scan_for_scripts()          # scan for scriptfiles
+        self._scan_for_networks()     # scan for network configs
 
         nemoa.log('set', indent = '-1')
         return True
@@ -463,54 +463,61 @@ class config:
         importer = self._ImportConfig(self)
         obj_conf_list = importer.load(configFile)
 
-        for obj_conf in obj_conf_list: self._add_obj_to_store(obj_conf)
+        for obj_conf in obj_conf_list:
+            if self._is_obj_known(obj_conf['class'], obj_conf['name']):
+                continue
+            self._add_obj_to_store(obj_conf)
         self._check(obj_conf_list)
 
         nemoa.log('set', indent = '-1')
         return True
 
-    def _scan_scripts(self, files = None):
-        """Scan for script files (current workspace)."""
-        nemoa.log('scanning for script files')
+    def _scan_for_networks(self, files = None):
+        """Scan for networks in current workspace."""
+        nemoa.log('scanning for networks')
         nemoa.log('set', indent = '+1')
 
-        # assert script files path
-        if files == None: files = self._path['scripts'] + '*.py'
-        # import scripts files
-        for file in glob.iglob(self._expand_path(files)):
-            self._register_script(file)
+        # network files path
+        if files == None: files = self._path['networks'] + '*.ini'
+
+        # scan for network files
+        for path in glob.iglob(self._expand_path(files)):
+            name = os.path.splitext(os.path.basename(path))[0]
+            fullname = self._workspace + '.' + name
+            if self._is_obj_known('network', fullname): continue
+
+            self._add_obj_to_store({
+                'class': 'network',
+                'name': fullname,
+                'workspace': self._workspace,
+                'config': {
+                    'source': {
+                        'file': path,
+                        'file_format': 'ini' }}})
 
         nemoa.log('set', indent = '-1')
         return True
 
-    def _register_script(self, file):
-        """Register script file (current workspace)."""
-        if os.path.isfile(file): scriptFile = file
-        elif os.path.isfile(self._path['scripts'] + file):
-            scriptFile = self._path['scripts'] + file
-        else: return nemoa.log('warning',
-            "script file '%s' does not exist!" % (file))
-
-        # import and register scripts (without testing)
-        importer = self._ImportScript(self)
-        script = importer.load(scriptFile)
-        self._add_obj_to_store(script)
-        return True
-
-    def _scan_networks(self, files = None):
-        """Scan for network configuration files in current workspace."""
-
-        nemoa.log('scanning for networks')
+    def _scan_for_scripts(self, files = None):
+        """Scan for script files in current workspace."""
+        nemoa.log('scanning for script files')
         nemoa.log('set', indent = '+1')
 
-        # assert network files path
-        if files == None: files = self._path['networks'] + '*.ini'
+        # script files path
+        if files == None: files = self._path['scripts'] + '*.py'
 
-        # import network files
-        for network_file in glob.iglob(self._expand_path(files)):
-            obj_config = nemoa.network.fileimport.load(
-                network_file, workspace = self._workspace)
-            self._add_obj_to_store(obj_config)
+        # scan for script files
+        for path in glob.iglob(self._expand_path(files)):
+            name = os.path.splitext(os.path.basename(path))[0]
+            fullname = self._workspace + '.' + name
+            if self._is_obj_known('script', fullname): continue
+            self._add_obj_to_store({
+                'class': 'script',
+                'name': fullname,
+                'workspace': self._workspace,
+                'config': {
+                    'name': name,
+                    'path': path }})
 
         nemoa.log('set', indent = '-1')
         return True
@@ -811,24 +818,24 @@ class config:
         nemoa.log('adding %s: %s' % (type, name))
 
         key = None
-        objID = 0
+        obj_id = 0
 
         if not type in self._store.keys(): return nemoa.log('error',
             """could not register object '%s':
             unsupported object type '%s'!""" % (name, type))
 
         key = self._get_new_key(self._store[type], name)
-        objID = self._get_obj_id_by_name(type, key)
+        obj_id = self._get_obj_id_by_name(type, key)
 
         # add configuration to object tree
         self._store[type][key] = config
-        self._store[type][key]['id'] = objID
+        self._store[type][key]['id'] = obj_id
 
         # add entry to index
-        self._index[objID] = {
+        self._index[obj_id] = {
             'type': type, 'name': key, 'workspace': obj_conf['workspace']}
 
-        return objID
+        return obj_id
 
     def _del_obj_conf(self, obj_conf):
         """Unlink object configuration from object dictionary."""
@@ -1020,9 +1027,9 @@ class config:
                 'about': 'str' }
 
             self.sections = {
-                'network': {'layers': 'list',
-                    'labels': 'list', 'source': 'dict',
-                    'params': 'dict'},
+                #'network': {'layers': 'list',
+                    #'labels': 'list', 'source': 'dict',
+                    #'params': 'dict'},
                 'dataset': {'preprocessing': 'dict',
                     'source': 'dict', 'params': 'dict'},
                 'system': {'package': 'str',
@@ -1098,21 +1105,21 @@ class config:
             if type == 'dict': return nemoa.common.str_to_dict(str)
             return str
 
-    class _ImportScript:
-        """import script files."""
+    #class _ImportScript:
+        #"""import script files."""
 
-        def __init__(self, config):
-            self._workspace = config.workspace()
+        #def __init__(self, config):
+            #self._workspace = config.workspace()
 
-        def load(self, file):
-            name = self._workspace + '.' \
-                + os.path.splitext(os.path.basename(file))[0]
-            path = file
+        #def load(self, file):
+            #name = self._workspace + '.' \
+                #+ os.path.splitext(os.path.basename(file))[0]
+            #path = file
 
-            return {
-                'class': 'script',
-                'name': name,
-                'workspace': self._workspace,
-                'config': {
-                    'name': name,
-                    'path': path }}
+            #return {
+                #'class': 'script',
+                #'name': name,
+                #'workspace': self._workspace,
+                #'config': {
+                    #'name': name,
+                    #'path': path }}

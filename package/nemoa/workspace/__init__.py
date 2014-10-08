@@ -12,7 +12,8 @@ _shared = {}
 
 def _init():
     """Create and link new configuration instance."""
-    _shared['config'] = nemoa.workspace.base.config()
+    if not 'config' in _shared:
+        _shared['config'] = nemoa.workspace.base.config()
     return True
 
 def new():
@@ -63,10 +64,27 @@ def _get_config(type = None, config = None,
 
     # get config
     if not config_name: config_name = name() + '.default'
+    found = False
     for cfg_name in search:
         cfg = _shared['config'].get(
             type = type, name = cfg_name, merge = merge, params = params)
-        if isinstance(cfg, dict): return cfg
+        if isinstance(cfg, dict):
+            found = True
+            break
 
-    return nemoa.log('error', """could not get configuration:
-        no %s with name '%s' could be found""" % (type, config_name))
+    if not found:
+        return nemoa.log('error', """could not get configuration:
+            no %s with name '%s' could be found."""
+            % (type, config_name))
+
+    if type == 'network':
+        path = cfg['source']['file']
+        file_format = cfg['source']['file_format']
+        network_copy = nemoa.network.load(path, file_format =
+            file_format)
+        return network_copy['config']
+
+    return cfg
+
+
+

@@ -25,22 +25,20 @@ class Ini:
 
         """
 
-        # TODO: if workspace is given: search in workspace for path
-
         netcfg = ConfigParser.ConfigParser()
         netcfg.optionxform = str
         netcfg.read(path)
 
         name = os.path.splitext(os.path.basename(path))[0]
-        if isinstance(self._workspace, str) and self._workspace:
-            fullname = '.'.join([self._workspace, name])
-        else:
-            fullname = name
+        #if isinstance(self._workspace, str) and self._workspace:
+            #fullname = '.'.join([self._workspace, name])
+        #else:
+            #fullname = name
 
         network = {
-            'class': 'network',
-            'name': fullname,
-            'workspace': self._workspace,
+            #'class': 'network',
+            #'name': fullname,
+            #'workspace': self._workspace,
             'config': {
                 'name': name,
                 'type': None,

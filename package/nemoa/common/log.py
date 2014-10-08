@@ -56,7 +56,7 @@ def log(*args, **kwargs):
     elif cmd == 'set':
         # set logging mode
         if 'mode' in kwargs and kwargs['mode'] \
-            in ['exec', 'shell', 'debug', 'silent']:
+            in ['debug', 'exec', 'shell', 'silent']:
             __shared['mode'] = kwargs['mode']
         # set indent
         if 'indent' in kwargs:
@@ -117,18 +117,17 @@ def log(*args, **kwargs):
         tty_msg = '  ' * indent + msg
 
     # create file message
-    clrStack  = inspect.stack()[1]
+    clrStack = inspect.stack()[1]
     clrMethod = clrStack[3]
     clrModule = inspect.getmodule(clrStack[0]).__name__
-    clrName   = clrModule + '.' + clrMethod
-    file_msg   = clrName + ' -> ' + msg.strip()
+    clrName = clrModule + '.' + clrMethod
+    file_msg = clrName + ' -> ' + msg.strip()
 
     # create logging records (depending on loglevels)
     if cmd == 'info':
         if mode == 'debug': file_log.info(file_msg)
         if mode == 'silent': return True
-        if mode == 'shell':
-            if toplevel: tty_log.info(pre + tty_msg)
+        if mode == 'shell': return True
         else:
             if toplevel: tty_log.info(
                 color['blue'] + tty_msg + color['default'])
