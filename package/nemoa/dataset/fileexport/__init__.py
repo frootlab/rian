@@ -11,8 +11,8 @@ import os
 def save(dataset, path, file_format = None, **kwargs):
     """Export dataset to file."""
 
-    if not nemoa.common.type.is_network(network):
-        return nemoa.log('error', """could not save datset:
+    if not nemoa.common.type.is_dataset(dataset):
+        return nemoa.log('error', """could not save dataset:
             dataset is not valid.""")
 
     # if format is not given get format from file extension
@@ -29,9 +29,9 @@ def save(dataset, path, file_format = None, **kwargs):
         if not hasattr(module, class_name): raise ImportError()
         exporter = getattr(module, class_name)(**kwargs)
     except ImportError:
-        return nemoa.log('error', """could not export datset '%s':
-            file format '%s' is currently not supported.""" %
-            (path, file_format))
+        return nemoa.log('error', """could not export dataset '%s':
+            file format '%s' not supported.""" %
+            (dataset.get('name'), file_format))
 
     # export network file
     return exporter.save(dataset, path)

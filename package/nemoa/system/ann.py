@@ -735,25 +735,25 @@ class ANN(nemoa.system.base.System):
     def _about_system(): return {
         'energy': {
             'name': 'energy',
-            'description': 'sum of local unit and link energies',
+            'about': 'sum of local unit and link energies',
             'method': '_eval_system_energy',
             'args': 'all', 'format': '%.3f',
             'optimum': 'min'},
         'error': {
             'name': 'average reconstruction error',
-            'description': 'mean error of reconstructed values',
+            'about': 'mean error of reconstructed values',
             'method': '_eval_system_error',
             'args': 'all', 'format': '%.3f',
             'optimum': 'min'},
         'accuracy': {
             'name': 'average accuracy',
-            'description': 'mean accuracy of reconstructed values',
+            'about': 'mean accuracy of reconstructed values',
             'method': '_eval_system_accuracy',
             'args': 'all', 'format': '%.3f',
             'optimum': 'max'},
         'precision': {
             'name': 'average precision',
-            'description': 'mean precision of reconstructed values',
+            'about': 'mean precision of reconstructed values',
             'method': '_eval_system_precision',
             'args': 'all', 'format': '%.3f',
             'optimum': 'max'}
@@ -856,67 +856,67 @@ class ANN(nemoa.system.base.System):
     def _about_units(): return {
         'energy': {
             'name': 'energy',
-            'description': 'energy of units',
+            'about': 'energy of units',
             'method': '_eval_units_energy',
             'show': 'diagram',
             'args': 'input', 'return': 'scalar', 'format': '%.3f'},
         'expect': {
             'name': 'expect',
-            'description': 'reconstructed values',
+            'about': 'reconstructed values',
             'method': '_eval_units_expect',
             'show': 'histogram',
             'args': 'input', 'return': 'vector', 'format': '%.3f'},
         'values': {
             'name': 'values',
-            'description': 'reconstructed values',
+            'about': 'reconstructed values',
             'method': '_eval_units_values',
             'show': 'histogram',
             'args': 'input', 'return': 'vector', 'format': '%.3f'},
         'samples': {
             'name': 'samples',
-            'description': 'reconstructed samples',
+            'about': 'reconstructed samples',
             'method': '_eval_units_samples',
             'show': 'histogram',
             'args': 'input', 'return': 'vector', 'format': '%.3f'},
         'mean': {
             'name': 'mean values',
-            'description': 'mean of reconstructed values',
+            'about': 'mean of reconstructed values',
             'method': '_eval_units_mean',
             'show': 'diagram',
             'args': 'input', 'return': 'scalar', 'format': '%.3f'},
         'variance': {
             'name': 'variance',
-            'description': 'variance of reconstructed values',
+            'about': 'variance of reconstructed values',
             'method': '_eval_units_variance',
             'show': 'diagram',
             'args': 'input', 'return': 'scalar', 'format': '%.3f'},
         'residuals': {
             'name': 'residuals',
-            'description': 'residuals of reconstructed values',
+            'about': 'residuals of reconstructed values',
             'method': '_eval_units_residuals',
             'show': 'histogram',
             'args': 'all', 'return': 'vector', 'format': '%.3f'},
         'error': {
             'name': 'error',
-            'description': 'mean error of reconstructed values',
+            'about': 'mean error of reconstructed values',
             'method': '_eval_units_error',
             'show': 'diagram',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'accuracy': {
             'name': 'accuracy',
-            'description': 'accuracy of reconstructed values',
+            'about': 'accuracy of reconstructed values',
             'method': '_eval_units_accuracy',
             'show': 'diagram',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'precision': {
             'name': 'precision',
-            'description': 'precision of reconstructed values',
+            'about': 'precision of reconstructed values',
             'method': '_eval_units_precision',
             'show': 'diagram',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'correlation': {
             'name': 'correlation',
-            'description': 'correlation of reconstructed to real values',
+            'about': 'correlation of reconstructed to real values',
             'method': '_eval_units_correlation',
             'show': 'diagram',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'}
@@ -1310,7 +1310,7 @@ class ANN(nemoa.system.base.System):
     def _about_links(): return {
         'energy': {
             'name': 'energy',
-            'description': 'local energy of links',
+            'about': 'local energy of links',
             'method': '_eval_links_energy',
             'show': 'graph',
             'args': 'input', 'return': 'vector', 'format': '%.3f'}
@@ -1462,7 +1462,7 @@ class ANN(nemoa.system.base.System):
     def _about_relations(): return {
         'correlation': {
             'name': 'correlation',
-            'description': """
+            'about': """
                 undirected data based relation describing
                 the 'linearity' between variables (units) """,
             'directed': False, 'signed': True, 'normal': True,
@@ -1470,7 +1470,7 @@ class ANN(nemoa.system.base.System):
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'capacity': {
             'name': 'network capacity',
-            'description': """
+            'about': """
                 directed graph based relation describing
                 the 'network capacity' between units (variables). """,
             'directed': True, 'signed': True, 'normal': False,
@@ -1478,7 +1478,7 @@ class ANN(nemoa.system.base.System):
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'knockout': {
             'name': 'knockout effect',
-            'description': """
+            'about': """
                 directed data manipulation based relation describing
                 the increase of the data reconstruction error of a given
                 output unit, when setting the values of a given input
@@ -1488,7 +1488,7 @@ class ANN(nemoa.system.base.System):
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         'induction': {
             'name': 'induction',
-            'description': """
+            'about': """
                 directed data manipulation based relation describing
                 the induced deviation of reconstructed values of a given
                 output unit, when manipulating the values of a given

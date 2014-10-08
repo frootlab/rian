@@ -30,7 +30,7 @@ def open(path, file_format = None, **kwargs):
         importer = getattr(module, class_name)(**kwargs)
     except ImportError:
         return nemoa.log('error', """could not import network '%s':
-            file format '%s' is currently not supported.""" %
+            file format '%s' is not supported.""" %
             (path, file_format))
 
     # import network file

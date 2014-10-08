@@ -9,7 +9,7 @@ complexity.
 
 """
 
-__version__ = '0.4.127'
+__version__ = '0.4.128'
 __status__  = 'Development'
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'

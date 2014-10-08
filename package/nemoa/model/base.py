@@ -395,7 +395,7 @@ class model:
                         'package': 'dataset',
                         'class': 'histogram',
                         'params': {},
-                        'description': 'data distribution',
+                        'about': 'data distribution',
                         'name': 'distribution',
                         'id': 0})
                 elif args[0] == 'network':
@@ -403,7 +403,7 @@ class model:
                         'package': 'network',
                         'class': 'graph',
                         'params': {},
-                        'description': '',
+                        'about': '',
                         'name': 'structure',
                         'id': 0})
                 elif args[0] == 'system':
@@ -422,7 +422,7 @@ class model:
                                 'package': 'system',
                                 'class': rel_class,
                                 'params': {'relation': args[0]},
-                                'description': relation['description'],
+                                'about': relation['about'],
                                 'name': relation['name'],
                                 'id': 0})
                 elif args[0] in self.about('system', 'relations').keys():
@@ -433,7 +433,7 @@ class model:
                         'package': 'system',
                         'class': rel_class,
                         'params': {'relation': args[0]},
-                        'description': relation['description'],
+                        'about': relation['about'],
                         'name': relation['name'],
                         'id': 0})
 
@@ -586,7 +586,7 @@ class model:
         Examples:
             Get a description of the "error" measurement function of the
             systems units:
-                model.about('system', 'units', 'error', 'description')
+                model.about('system', 'units', 'error', 'about')
 
         """
 

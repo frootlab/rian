@@ -496,10 +496,6 @@ class System:
 
         # create information dictionary
         about = nemoa.common.dict_merge({
-            'name': self._config['name'],
-            'description': self.__doc__,
-            'class': self._config['class'],
-            'type': self.get('type'),
             'units': self._about_units(),
             'links': self._about_links(),
             'relations': self._about_relations()

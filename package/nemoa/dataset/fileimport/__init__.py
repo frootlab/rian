@@ -8,8 +8,8 @@ import importlib
 import nemoa
 import os
 
-def open(path, file_format = None, **kwargs):
-    """Import dataset configuration from file."""
+def load(path, file_format = None, **kwargs):
+    """Import dataset from file."""
 
     if not os.path.isfile(path):
         return nemoa.log('error', """could not import dataset:

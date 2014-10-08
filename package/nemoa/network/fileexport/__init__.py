@@ -30,8 +30,8 @@ def save(network, path, file_format = None, **kwargs):
         exporter = getattr(module, class_name)(**kwargs)
     except ImportError:
         return nemoa.log('error', """could not export network '%s':
-            file format '%s' is currently not supported.""" %
-            (path, file_format))
+            file format '%s' is not supported.""" %
+            (network.get('name'), file_format))
 
     # export network file
     return exporter.save(network, path)

@@ -45,26 +45,6 @@ class Network:
         nemoa.log("configure network: '%s'" % (self._config['name']))
         nemoa.log('set', indent = '+1')
 
-        # type: 'auto is used for networks
-        # wich are created by datasets (visible units)
-        # and systems (hidden units)
-        #if self._config['type'] == 'auto':
-            #self._get_visible_nodes_from_dataset(dataset)
-            #self._get_hidden_nodes_from_system(system)
-            #self._get_edges_from_layers()
-            #self._configure_layergraph()
-            #nemoa.log('set', indent = '-1')
-            #return True
-
-        # type: 'autolayer' is used for networks
-        # wich are created by layers and sizes
-        #if self._config['type'] == 'autolayer':
-            #self._get_nodes_from_layers()
-            #self._get_edges_from_layers()
-            #self._configure_layergraph()
-            #nemoa.log('set', indent = '-1')
-            #return True
-
         # configure network to dataset
         groups = dataset.get('groups')
         changes = []
@@ -345,7 +325,9 @@ class Network:
 
     def _get_name(self):
         """Get name of network."""
-        return self._config['name'] if 'name' in self._config else None
+        if 'name' in self._config:
+            return self._config['name']
+        return None
 
     def _get_type(self):
         """Get type of network, using module and class name."""
@@ -354,8 +336,10 @@ class Network:
         return module_name + '.' + class_name
 
     def _get_about(self):
-        """Get docstring of network."""
-        return self.__doc__
+        """Get description of network."""
+        if 'about' in self._config:
+            return self._config['about']
+        return None
 
     def _get_node(self, node):
         """Return network information of single node."""
@@ -558,6 +542,9 @@ class Network:
         if 'graph' in kwargs:
             self._graph = copy.deepcopy(kwargs['graph'])
         return True
+
+    #def save(self, path):
+        #return nemoa.network.save(self, path)
 
     def _update(self, **kwargs):
         if not 'system' in kwargs: return False

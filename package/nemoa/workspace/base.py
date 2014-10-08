@@ -745,11 +745,11 @@ class config:
             system_class = getattr(system_module, config['class'])
 
         # update system description
-        if not 'description' in config:
-            obj_conf['config']['description'] = system_class.__doc__
+        if not 'about' in config:
+            obj_conf['config']['about'] = system_class.__doc__
         else:
-            obj_conf['config']['description'] = \
-                nemoa.common.str_doc_trim(config['description'])
+            obj_conf['config']['about'] = \
+                nemoa.common.str_doc_trim(config['about'])
 
         # cleanup
         del system_class
@@ -1017,7 +1017,7 @@ class config:
             self.generic = {
                 'name': 'str',
                 'type': 'str',
-                'description': 'str' }
+                'about': 'str' }
 
             self.sections = {
                 'network': {'layers': 'list',

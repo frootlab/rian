@@ -10,10 +10,8 @@ import nemoa.dataset.fileimport
 import nemoa.dataset.fileexport
 import importlib
 
-def open(*args, **kwargs):
-    obj_config = nemoa.dataset.fileimport.open(*args, **kwargs)
-    if not obj_config: return None
-    return new(config = obj_config['config'])
+def load(*args, **kwargs):
+    return nemoa.dataset.fileimport.load(*args, **kwargs)
 
 def save(*args, **kwargs):
     ret_val = nemoa.dataset.fileexport.save(*args, **kwargs)
@@ -35,4 +33,11 @@ def new(*args, **kwargs):
     except ImportError:
         return nemoa.log('error', """could not create dataset:
             unknown dataset type '%s'.""" % (config['type']))
+    return dataset
+
+def open(*args, **kwargs):
+    copy = nemoa.dataset.fileimport.load(*args, **kwargs)
+    if not copy: return None
+    dataset = new(config = copy['config'])
+    dataset.set('copy', **copy)
     return dataset

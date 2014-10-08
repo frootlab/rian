@@ -124,17 +124,16 @@ class Dataset:
         if cache_enable:
             cache_file = self._search_cache_file(network)
 
-            # if cachefile exists, load data from cachefile
-            # else create new cache file
-            if self.load(cache_file):
-                nemoa.log("loading data from cachefile: '%s'" \
+            # load data from cachefile
+            try:
+                copy = nemoa.dataset.load(cache_file)
+                nemoa.log("loading data from cachefile: '%s'"
                     % (cache_file))
-                # preprocess data
+                self.set('copy', **copy)
                 if 'preprocessing' in self._config.keys():
                     self.preprocess(**self._config['preprocessing'])
                 nemoa.log('set', indent = '-1')
-                return True
-            else:
+            except:
                 cache_file = self._create_cache_file(network)
 
         # create table with one record for every single dataset file
@@ -259,14 +258,6 @@ class Dataset:
             inter_col_labels = [val for val in inter_col_labels \
                 if val in list and not val in black_list]
 
-        # if network type is 'auto', set network visible nodes
-        # to intersected data from database files (without label column)
-        #if network._config['type'] == 'auto':
-            #net_layers['v'] = [label for label in inter_col_labels \
-                #if not label == 'label']
-            #conv_net_layers = {'v': [label for label in \
-                #inter_col_labels if not label == 'label']}
-
         # search network nodes in dataset columns
         self._config['columns'] = ()
         for group in network_layers:
@@ -327,7 +318,7 @@ class Dataset:
         # save cachefile
         if cache_enable:
             nemoa.log("save cachefile: '%s'" % (cache_file))
-            self.save(cache_file)
+            nemoa.dataset.save(self, cache_file)
 
         # preprocess data
         if 'preprocessing' in self._config.keys():
@@ -615,16 +606,16 @@ class Dataset:
             'error', 'could not get data: invalid argument size!')
 
         # stratify and filter data
-        srcStack = ()
+        src_stack = ()
         for source in self._data.keys():
-            if size > 0: srcData = self._get_data_from_source(source,
+            if size > 0: src_data = self._get_data_from_source(source,
                 size = size + 1, rows = rows)
-            else: srcData = self._get_data_from_source(source, rows = rows)
-            if srcData == False or srcData.size == 0: continue
-            srcStack += (srcData, )
-        if not srcStack: return nemoa.log('error',
+            else: src_data = self._get_data_from_source(source, rows = rows)
+            if src_data == False or src_data.size == 0: continue
+            src_stack += (src_data, )
+        if not src_stack: return nemoa.log('error',
             'could not get data: no valid data sources found!')
-        data = numpy.concatenate(srcStack)
+        data = numpy.concatenate(src_stack)
 
         # (optional) Shuffle data and correct size
         if size:
@@ -671,24 +662,26 @@ class Dataset:
 
         # apply row filter
         if rows == '*' or source + ':*' in self._config['row_filter'][rows]:
-            srcArray = self._data[source]['array']
+            src_array = self._data[source]['array']
         else:
-            rowFilter = self._config['row_filter'][rows]
-            rowFilterFiltered = [
-                row.split(':')[1] for row in rowFilter
-                        if row.split(':')[0] in [source, '*']]
-            rowSelect = numpy.asarray([
-                rowid for rowid, row in enumerate(self._data[source]['array']['label'])
-                    if row in rowFilterFiltered])
-            if rowSelect.size == 0: return rowSelect
-            srcArray = numpy.take(self._data[source]['array'], rowSelect)
+            row_filter = self._config['row_filter'][rows]
+            row_filter_filtered = [
+                row.split(':')[1] for row in row_filter
+                if row.split(':')[0] in [source, '*']]
+            row_select = numpy.asarray([
+                rowid for rowid, row in enumerate(
+                self._data[source]['array']['label'])
+                if row in row_filter_filtered])
+            if row_select.size == 0: return row_select
+            src_array = numpy.take(self._data[source]['array'],
+                row_select)
 
         # stratify and return data as numpy record array
-        if size == 0 or size == None: return srcArray
-        srcFrac = self._data[source]['fraction']
-        rowSelect = numpy.random.randint(srcArray.size,
-            size = round(srcFrac * size))
-        return numpy.take(srcArray, rowSelect)
+        if size == 0 or size == None: return src_array
+        src_frac = self._data[source]['fraction']
+        row_select = numpy.random.randint(src_array.size,
+            size = round(src_frac * size))
+        return numpy.take(src_array, row_select)
 
     def _corrupt(self, data, type = None, factor = 0.5):
         """Corrupt given data.
@@ -1077,35 +1070,10 @@ class Dataset:
 
         return data
 
-    def save(self, file):
-        """Export dataset to numpy zip compressed file."""
-        numpy.savez(file, cfg = self._config, data = self._data)
-
-    def export(self, file, **kwargs):
-        """Export data to file."""
-
-        file = nemoa.common.get_empty_file(file)
-        type = nemoa.common.get_file_ext(file).lower()
-
-        nemoa.log('export data to file')
-        nemoa.log('set', indent = '+1')
-
-        nemoa.log('exporting data to file: \'%s\'' % (file))
-        if type in ['gz', 'data']: ret_val = self.save(file)
-        elif type in ['csv', 'tsv', 'tab', 'txt']:
-            cols, data = self.data(output = ('cols', 'recarray'))
-            ret_val = nemoa.common.csv_save_data(file, data,
-                cols = [''] + cols, **kwargs)
-        else: ret_val = nemoa.log('error', """could not export dataset:
-            unsupported file type '%s'""" % (type))
-
-        nemoa.log('set', indent = '-1')
-        return ret_val
-
     def _get_cache_file(self, network):
         """Return cache file path."""
-        return '%sdata-%s-%s.npz' % (
-            self._config['cache_path'], network._config['id'], self._config['id'])
+        return '%sdata-%s-%s.npz' % (self._config['cache_path'],
+            network._config['id'], self._config['id'])
 
     def _search_cache_file(self, network):
         """Return cache file path if existent."""
@@ -1120,12 +1088,6 @@ class Dataset:
             if not os.path.exists(basedir): os.makedirs(basedir)
             with open(file, 'a'): os.utime(file, None)
         return file
-
-    def load(self, file):
-        npzfile = numpy.load(file)
-        self._config  = npzfile['cfg'].item()
-        self._data = npzfile['data'].item()
-        return True
 
     def get(self, key = None, *args, **kwargs):
         """Get information about dataset."""
