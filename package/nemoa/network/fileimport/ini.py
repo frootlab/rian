@@ -30,15 +30,8 @@ class Ini:
         netcfg.read(path)
 
         name = os.path.splitext(os.path.basename(path))[0]
-        #if isinstance(self._workspace, str) and self._workspace:
-            #fullname = '.'.join([self._workspace, name])
-        #else:
-            #fullname = name
 
         network = {
-            #'class': 'network',
-            #'name': fullname,
-            #'workspace': self._workspace,
             'config': {
                 'name': name,
                 'type': None,
@@ -115,14 +108,16 @@ class Ini:
         if not 'layers' in netcfg.options('network'):
             return nemoa.log('warning', """file '%s' does not
                 contain parameter 'layers'.""" % (path))
-        else: config['layer'] = nemoa.common.str_to_list(
-            netcfg.get('network', 'layers'))
+        else:
+            config['layer'] = nemoa.common.str_to_list(
+                netcfg.get('network', 'layers'))
 
         # init network dictionary
         config['visible'] = []
         config['hidden'] = []
         config['nodes'] = {}
         config['edges'] = {}
+        config['layers'] = {}
 
         visible_layer_ids = [0, len(config['layer']) - 1]
 
@@ -142,6 +137,15 @@ class Ini:
                 config['visible'].append(layer)
             else:
                 config['hidden'].append(layer)
+
+            config['layers'][layer] = {}
+            config['layers'][layer]['visible'] = \
+                layer_id in visible_layer_ids
+
+            # get type of layer nodes
+            if 'type' in netcfg.options(layer_section):
+                config['layers'][layer]['type'] = \
+                    netcfg.get(layer_section, 'type')
 
             # get nodes of layer from given list file ('file')
             if 'file' in netcfg.options(layer_section):
@@ -184,7 +188,7 @@ class Ini:
             config['edges'][edge_layer] = []
             edge_section = 'binding %s-%s' % (src_layer, tgt_layer)
 
-            # create full binfing between two layers if not specified
+            # create full binding between two layers if not specified
             if not edge_section in netcfg.sections():
                 for src_node in config['nodes'][src_layer]:
                     for tgt_node in config['nodes'][tgt_layer]:

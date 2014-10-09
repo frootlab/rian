@@ -108,7 +108,6 @@ class Network:
 
         # clear or create new instance of networkx directed graph
         if self._graph == None:
-            #self._graph = networkx.Graph()
             self._graph = networkx.DiGraph()
         else:
             self._graph.clear()
@@ -123,7 +122,10 @@ class Network:
         # add nodes to graph
         node_order = 0
         for layer_id, layer in enumerate(layers):
-            isvisible = layer in self._config['visible']
+            #is_visible = layer in self._config['visible']
+            is_visible = self._config['layers'][layer]['visible']
+            node_type = self._config['layers'][layer]['type']
+
             if nodelist['layer'] in layers:
                 if layer == nodelist['layer']:
                     if add_nodes: nemoa.log("""adding %i nodes
@@ -131,7 +133,7 @@ class Network:
                     if del_nodes: nemoa.log("""deleting %i nodes
                         from layer '%s'""" % (del_nodes, layer))
             else:
-                if isvisible:
+                if is_visible:
                     nemoa.log("adding visible layer '%s' (%s nodes)"
                         % (layer, len(nodes[layer])))
                 else:
@@ -156,7 +158,8 @@ class Network:
                         'layer': layer,
                         'layer_id': layer_id,
                         'layer_sub_id': layer_node_id,
-                        'visible': isvisible } )
+                        'visible': is_visible,
+                        'type': node_type } )
 
                 node_order += 1
 

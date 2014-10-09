@@ -78,11 +78,7 @@ def _get_config(type = None, config = None,
             % (type, config_name))
 
     if type == 'network':
-        path = cfg['source']['file']
-        file_format = cfg['source']['file_format']
-        network_copy = nemoa.network.load(path, file_format =
-            file_format)
-        return network_copy['config']
+        return nemoa.network.load(cfg['path'])['config']
 
     return cfg
 

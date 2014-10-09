@@ -491,9 +491,12 @@ class config:
                 'name': fullname,
                 'workspace': self._workspace,
                 'config': {
-                    'source': {
-                        'file': path,
-                        'file_format': 'ini' }}})
+                    'name': name,
+                    'path': path }})
+                #'config': {
+                    #'source': {
+                        #'file': path,
+                        #'file_format': 'ini' }}
 
         nemoa.log('set', indent = '-1')
         return True

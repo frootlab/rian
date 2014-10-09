@@ -11,12 +11,9 @@ import os
 def load(path, file_format = None, **kwargs):
     """Import network configuration from file."""
 
+    # get path
     if os.path.isfile(path):
-        # if file format is not given get format from file extension
-        if not file_format:
-            file_name = os.path.basename(path)
-            file_ext = os.path.splitext(file_name)[1]
-            file_format = file_ext.lstrip('.').strip().lower()
+        pass
     elif 'workspace' in kwargs:
         # import workspace and get path and file format from workspace
         if not kwargs['workspace'] == nemoa.workspace.name():
@@ -32,13 +29,17 @@ def load(path, file_format = None, **kwargs):
                 workspace '%s' does not contain network '%s'."""
                 % (kwargs['workspace'], path))
             return  {}
-
-        path = config['source']['file']
-        file_format = config['source']['file_format']
+        path = config['path']
     else:
         nemoa.log('error', """could not import network:
             file '%s' does not exist.""" % (path))
         return {}
+
+    # if file format is not given get format from file extension
+    if not file_format:
+        file_name = os.path.basename(path)
+        file_ext = os.path.splitext(file_name)[1]
+        file_format = file_ext.lstrip('.').strip().lower()
 
     # get network file importer
     module_name = 'nemoa.network.fileimport.%s' % (file_format)
