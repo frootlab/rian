@@ -161,7 +161,7 @@ class Dataset:
             net_layer_node_labels = []
             for node in net_layer_node_names:
                 net_layer_node_labels.append(
-                    network.get('node', node)['label'])
+                    network.get('node', node)['params']['label'])
             conv_net_layers[layer], conv_net_layers_lost[layer] = \
                 nemoa.dataset.annotation.convert(
                 net_layer_node_labels, input = net_label_format)
@@ -229,7 +229,7 @@ class Dataset:
                     node_lost = network.get('nodes',
                         type = group)[node_lost_id]
                     node_label = network.get('node',
-                        node_lost)['label']
+                        node_lost)['params']['label']
                     nodes_lost[group].append(node_label)
 
             # notify if any network nodes could not be found
@@ -269,7 +269,8 @@ class Dataset:
 
                 # add column (use network label and layer)
                 node_name = network.get('nodes', layer = group)[id]
-                node_label = network.get('node', node_name)['label']
+                node_label = network.get('node',
+                    node_name)['params']['label']
                 self._config['columns'] += ((group, node_label), )
 
                 for src in col_labels:

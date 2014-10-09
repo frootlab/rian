@@ -13,7 +13,7 @@ import re
 import ConfigParser
 import glob
 
-class workspace:
+class Workspace:
     """Nemoa workspace."""
 
     _workspace = None
@@ -273,7 +273,7 @@ class workspace:
 
         return model_copy
 
-class config:
+class Config:
     """nemoa workspace module internal configuration object."""
 
     _baseconf = 'nemoa.ini' # base configuration file
@@ -1030,9 +1030,6 @@ class config:
                 'about': 'str' }
 
             self.sections = {
-                #'network': {'layers': 'list',
-                    #'labels': 'list', 'source': 'dict',
-                    #'params': 'dict'},
                 'dataset': {'preprocessing': 'dict',
                     'source': 'dict', 'params': 'dict'},
                 'system': {'package': 'str',

@@ -190,7 +190,7 @@ def graph(graph, **kwargs):
 def layergraph(G, **kwargs):
 
     # create node stack (list with lists of nodes)
-    layers = G.graph['params']['layer']
+    layers = G.graph['layer']
     count = {layer: 0 for layer in layers}
     for node in G.nodes():
         count[G.node[node]['params']['layer']] += 1
@@ -256,7 +256,7 @@ def layergraph(G, **kwargs):
             type = attr['params']['layer']
             typeid = attr['params']['layer_id']
             is_visible = attr['params']['visible']
-            label_str = attr['label'] if is_visible \
+            label_str = attr['params']['label'] if is_visible \
                 else 'n%d' % (layer.index(node) + 1)
             label = nemoa.common.str_format_unit_label(label_str)
 

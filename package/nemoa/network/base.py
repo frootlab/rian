@@ -112,12 +112,14 @@ class Network:
         else:
             self._graph.clear()
 
-        # set graph attributes
-        self._graph.graph = {
-            'name': self._config['name'],
-            'type': 'layer',
-            'params': {
-                'layer': layers }}
+        # add configuration as graph attributes
+        self._graph.graph = self._config
+        # update / set networkx module and class info
+        # to allow export and import of graph to dict
+        self._graph.graph['networkx'] = {
+            'module': self._graph.__module__,
+            'class': self._graph.__class__.__name__ }
+
 
         # add nodes to graph
         node_order = 0
@@ -152,10 +154,11 @@ class Network:
 
                 self._graph.add_node(
                     node_name,
-                    label = node,
-                    order = node_order,
+                    label = node_name,
                     params = {
+                        'label': node,
                         'layer': layer,
+                        'order': node_order,
                         'layer_id': layer_id,
                         'layer_sub_id': layer_node_id,
                         'visible': is_visible,
@@ -181,12 +184,12 @@ class Network:
 
                 self._graph.add_edge(
                     src_node_name, tgt_node_name,
-                    order = edge_order,
-                    direction = (src_node_name, tgt_node_name),
                     weight = 0.,
                     params = {
+                        'order': edge_order,
                         'layer': edge_layer,
-                        'layer_id': layer_id })
+                        'layer_id': layer_id,
+                        'direction': (src_node_name, tgt_node_name)})
 
                 edge_order += 1
 
@@ -382,7 +385,7 @@ class Network:
                         passed = False
                         break
                 if not passed: continue
-            nodes_sort_list[attr['order']] = node
+            nodes_sort_list[attr['params']['order']] = node
         nodes = [node for node in nodes_sort_list if node]
         if grouping == None: return nodes
 
@@ -430,7 +433,7 @@ class Network:
                         passed = False
                         break
                 if not passed: continue
-            edge_sort_list[attr['order']] = (src, tgt)
+            edge_sort_list[attr['params']['order']] = (src, tgt)
         edges = [edge for edge in edge_sort_list if edge]
         if grouping == None: return edges
 
@@ -497,7 +500,7 @@ class Network:
                         passed = False
                         break
                 if not passed: continue
-            nodes_sort_list[attr['order']] = node
+            nodes_sort_list[attr['params']['order']] = node
         nodes = [node for node in nodes_sort_list if node]
 
         # get ordered list of layers
@@ -526,8 +529,6 @@ class Network:
 
     def _get_graph(self):
         return {
-            'module': self._graph.__module__,
-            'class': self._graph.__class__.__name__,
             'graph': self._graph.graph,
             'nodes': self._graph.nodes(data = True),
             'edges': networkx.to_dict_of_dicts(self._graph) }
@@ -578,8 +579,9 @@ class Network:
         if graph:
             graph_copy = self._get_graph()
             nemoa.common.dict_merge(graph, graph_copy)
-            module = importlib.import_module(graph['module'])
-            self._graph = getattr(module, graph['class'])(
+            object_type = graph['graph']['networkx']
+            module = importlib.import_module(object_type['module'])
+            self._graph = getattr(module, object_type['class'])(
                 graph_copy['edges'])
             self._graph.graph = graph_copy['graph']
             for node, attr in graph_copy['nodes']:

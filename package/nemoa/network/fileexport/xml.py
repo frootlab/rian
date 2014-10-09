@@ -8,8 +8,8 @@ import nemoa
 import networkx
 import os
 
-class Gml:
-    """Export network configuration to gml file."""
+class Xml:
+    """Export network configuration to GraphML file."""
 
     _workspace = None
 
@@ -22,6 +22,6 @@ class Gml:
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
 
-        networkx.write_gml(network._graph.copy(), path)
+        networkx.write_graphml(network._graph.copy(), path)
 
         return True

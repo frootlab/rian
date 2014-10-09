@@ -13,16 +13,16 @@ _shared = {}
 def _init():
     """Create and link new configuration instance."""
     if not 'config' in _shared:
-        _shared['config'] = nemoa.workspace.base.config()
+        _shared['config'] = nemoa.workspace.base.Config()
     return True
 
 def new():
     """Return new workspace instance."""
-    return nemoa.workspace.base.workspace()
+    return nemoa.workspace.base.Workspace()
 
 def open(*args, **kwargs):
     """Import and return workspace instance."""
-    return nemoa.workspace.base.workspace(*args, **kwargs)
+    return nemoa.workspace.base.Workspace(*args, **kwargs)
 
 def get(*args, **kwargs):
     if not 'config' in _shared: _init()
