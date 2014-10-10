@@ -283,10 +283,10 @@ class model:
 
         # get filename
         if file == None:
-            fileExt  = 'nmm'
-            fileName = '%s.%s' % (self._config['name'], fileExt)
-            filePath = nemoa.workspace.path('models')
-            file = filePath + fileName
+            file_ext = 'nmm'
+            file_name = '%s.%s' % (self._config['name'], file_ext)
+            file_path = nemoa.workspace.path('models')
+            file = file_path + file_name
         file = nemoa.common.get_empty_file(file)
 
         # save model parameters and configuration to file
@@ -294,7 +294,7 @@ class model:
 
         # create console message
         nemoa.log("save model as: '%s'" %
-            (os.path.basename(file)[:-(len(fileExt) + 1)]))
+            (os.path.basename(file)[:-(len(file_ext) + 1)]))
 
         nemoa.log('set', indent = '-1')
         return file
@@ -334,27 +334,27 @@ class model:
 
         if plot == None: plot = self.system.get('type') + '.default'
         if isinstance(plot, str):
-            plotName, plotParams = nemoa.common.str_split_params(plot)
-            mergeDict = plotParams
-            for param in kwargs.keys(): plotParams[param] = kwargs[param]
-            objPlot = self._get_plot(*args, params = plotParams)
-            if not objPlot:
-                nemoa.log('warning', "could not create plot: unknown configuration '%s'" % (plotName))
+            plot_name, plot_params = nemoa.common.str_split_params(plot)
+            merge_dict = plot_params
+            for param in kwargs.keys(): plot_params[param] = kwargs[param]
+            obj_plot = self._get_plot(*args, params = plot_params)
+            if not obj_plot:
+                nemoa.log('warning', "could not create plot: unknown configuration '%s'" % (plot_name))
                 nemoa.log('set', indent = '-1')
                 return None
-        elif isinstance(plot, dict): objPlot = self._get_plot(config = plot)
-        else: objPlot = self._get_plot()
-        if not objPlot: return None
+        elif isinstance(plot, dict): obj_plot = self._get_plot(config = plot)
+        else: obj_plot = self._get_plot()
+        if not obj_plot: return None
 
         # prepare filename
         if output == 'display': file = None
         elif output == 'file' and not file:
             file = nemoa.common.get_empty_file(nemoa.workspace.path('plots') + \
-                self._config['name'] + '/' + objPlot.cfg['name'] + \
-                '.' + objPlot.settings['fileformat'])
+                self._config['name'] + '/' + obj_plot.cfg['name'] + \
+                '.' + obj_plot.settings['fileformat'])
 
         # create plot
-        ret_val = objPlot.create(self, file = file)
+        ret_val = obj_plot.create(self, file = file)
         if not file == None: nemoa.log('save plot: ' + file)
 
         nemoa.log('set', indent = '-2')

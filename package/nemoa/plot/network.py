@@ -15,7 +15,7 @@ class graph(nemoa.plot.base.plot):
         'path': ('network', ),
         'graph_caption': 'accuracy',
         'graph_direction': 'right',
-        'node_caption': 'accuracy',
+        'node_caption': None,
         'node_sort': True,
         'edge_caption': None,
         'edge_weight': 'normal',
@@ -68,7 +68,7 @@ class graph(nemoa.plot.base.plot):
 
         # (optional) normalize edge signs
         if self.settings['edge_sign_normalize']:
-            number_of_layers = len(graph.graph['layer'])
+            number_of_layers = len(graph.graph['params']['layer'])
             if number_of_layers % 2 == 1:
                 sign_sum = sum([numpy.sign(graph.edge[u][v]['weight'])
                     for (u, v) in graph.edges()])

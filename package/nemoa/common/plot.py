@@ -18,9 +18,9 @@ COLOR = {
     'green': (0., 0.5, 0., 1.),
     'blue': (0., 0.0  , 0.7, 1.),
     'lightgrey': (0.8, 0.8, 0.8, 1.),
-    'git_grey1': (0.96, 0.96, 0.96, 1.),
-    'git_grey2': (0.867, 0.867, 0.867, 1.),
-    'git_grey3': (0.2, 0.2, 0.2, 1.),
+    'lightgrey1': (0.96, 0.96, 0.96, 1.),
+    'lightgrey2': (0.867, 0.867, 0.867, 1.),
+    'lightgrey3': (0.2, 0.2, 0.2, 1.),
     'lightgreen': (0.6, 0.8, 0.196, 1.),
     'lightblue': (0.439, 0.502, 0.565, 1.),
     'cornflower': (0.27, 0.51, 0.7, 1.),
@@ -190,7 +190,7 @@ def graph(graph, **kwargs):
 def layergraph(G, **kwargs):
 
     # create node stack (list with lists of nodes)
-    layers = G.graph['layer']
+    layers = G.graph['params']['layer']
     count = {layer: 0 for layer in layers}
     for node in G.nodes():
         count[G.node[node]['params']['layer']] += 1
@@ -264,11 +264,11 @@ def layergraph(G, **kwargs):
                 True: {
                     'bg': COLOR['cornflower'],
                     'font': COLOR['black'],
-                    'border': COLOR['git_grey3'] },
+                    'border': COLOR['black'] },
                 False: {
-                    'bg': COLOR['git_grey2'],
+                    'bg': COLOR['lightgrey2'],
                     'font': COLOR['black'],
-                    'border': COLOR['git_grey3'] }
+                    'border': COLOR['lightgrey3'] }
             }[is_visible]
 
             # draw node
@@ -306,18 +306,19 @@ def layergraph(G, **kwargs):
         # get edge color and line width (from weight)
         if kwargs['edge_weight'] == 'adjacency':
             color = 'black'
-            edge_line_width = graph_line_width * kwargs['edge_scale']
+            edge_line_width \
+                = 1.5 * graph_line_width * kwargs['edge_scale']
         else:
             color = 'green' if weight > 0. else 'red'
-            edge_line_width = \
-                weight * graph_line_width * kwargs['edge_scale']
+            edge_line_width \
+                = 1.5 * weight * graph_line_width * kwargs['edge_scale']
 
         # draw edges
         networkx.draw_networkx_edges(G, pos,
             width = edge_line_width,
             edgelist = [(v, h)],
             edge_color = color,
-            arrows = True,
+            arrows = False,
             alpha = 1.)
 
         # (optional) draw edge labels

@@ -8,13 +8,11 @@ import nemoa
 import networkx
 import os
 
-class Xml:
-    """Export network configuration to GraphML file."""
-
-    _workspace = None
+class Graphml:
+    """Export network to GraphML file."""
 
     def __init__(self, workspace = None):
-        self._workspace = workspace
+        pass
 
     def save(self, network, path):
 
@@ -22,6 +20,6 @@ class Xml:
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
 
-        networkx.write_graphml(network._graph.copy(), path)
-
+        graph = network.get('graph', type = 'graph', encode = True)
+        networkx.write_graphml(graph, path)
         return True

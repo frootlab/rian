@@ -122,7 +122,7 @@ class graph(nemoa.plot.base.plot):
                 graph.node[n]['type'] = node_type
                 graph.node[n]['complex'] = i
                 graph.node[n]['color'] = {
-                    'i': 'git_grey1', 'o': 'white'}[node_type]
+                    'i': 'lightgrey1', 'o': 'white'}[node_type]
 
         # create plot
         return nemoa.common.plot.graph(graph, **self.settings)

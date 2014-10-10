@@ -117,7 +117,7 @@ class DBN(nemoa.system.ann.ANN):
             tgt = self._params['units'][layer_id + 1]
             links = self._params['links'][(layer_id, layer_id + 1)]
 
-            # create configuration for network of subsystem
+            # create subsystem network configuration
             if not src['visible']:
                 visible_units = src['id']
             else:
@@ -138,11 +138,18 @@ class DBN(nemoa.system.ann.ANN):
                     % (src['layer'], tgt['layer']),
                 'type': 'layer.Factor',
                 'layer': ['visible', 'hidden'],
+                'layers': {
+                    'visible': {
+                        'visible': True, 'type': \
+                            self._config['params']['visible_class']},
+                    'hidden': {
+                        'visible': False, 'type': \
+                            self._config['params']['hidden_class']}},
                 'nodes': network_nodes,
                 'edges': network_edges,
                 'encapsulate_nodes': False,
-                'visible': ['visible'],
-                'hidden': ['hidden'],
+                #'visible': ['visible'],
+                #'hidden': ['hidden'],
                 'label_format': 'generic:string' }
 
             # create network of subsystem

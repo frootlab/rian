@@ -9,7 +9,7 @@ import networkx
 import os
 
 class Gml:
-    """Export network configuration to gml file."""
+    """Export network to gml file."""
 
     _workspace = None
 
@@ -22,6 +22,6 @@ class Gml:
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
 
-        networkx.write_gml(network._graph.copy(), path)
-
+        graph = network.get('graph', type = 'graph', encode = True)
+        networkx.write_gml(graph, path)
         return True

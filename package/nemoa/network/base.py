@@ -8,11 +8,11 @@ import nemoa
 import networkx
 import copy
 import importlib
+import json
 
 class Network:
 
-    _default = {
-        'name': None}
+    _default = { 'name': None }
     _config = None
     _graph = None
 
@@ -113,7 +113,7 @@ class Network:
             self._graph.clear()
 
         # add configuration as graph attributes
-        self._graph.graph = self._config
+        self._graph.graph['params'] = self._config
         # update / set networkx module and class info
         # to allow export and import of graph to dict
         self._graph.graph['networkx'] = {
@@ -124,7 +124,6 @@ class Network:
         # add nodes to graph
         node_order = 0
         for layer_id, layer in enumerate(layers):
-            #is_visible = layer in self._config['visible']
             is_visible = self._config['layers'][layer]['visible']
             node_type = self._config['layers'][layer]['type']
 
@@ -323,6 +322,8 @@ class Network:
 
         # get copy of dataset configuration and parameters
         if key == 'copy': return self._get_copy(*args, **kwargs)
+        if key == 'config': return self._get_config(*args, **kwargs)
+        if key == 'graph': return self._get_graph(*args, **kwargs)
 
         return nemoa.log('warning', "unknown key '%s'" % (key))
 
@@ -527,11 +528,20 @@ class Network:
     def _get_config(self):
         return copy.deepcopy(self._config)
 
-    def _get_graph(self):
-        return {
-            'graph': self._graph.graph,
-            'nodes': self._graph.nodes(data = True),
-            'edges': networkx.to_dict_of_dicts(self._graph) }
+    def _get_graph(self, type = 'dict', encode = False):
+        if encode:
+            graph = self._get_graph_encode()
+        else:
+            graph = self._graph
+
+        if type == 'dict':
+            return {
+                'graph': graph.graph,
+                'nodes': graph.nodes(data = True),
+                'edges': networkx.to_dict_of_dicts(graph) }
+        elif type == 'graph':
+            return graph.copy()
+        return None
 
     def set(self, key = None, *args, **kwargs):
 
@@ -591,18 +601,50 @@ class Network:
 
     def _update(self, **kwargs):
         if not 'system' in kwargs: return False
-
         system = kwargs['system']
         if not nemoa.type.is_system(system):
             return nemoa.log('error', """could not update network:
                 system is invalid.""")
 
-        for u, v, d in self._graph.edges(data = True):
-            params = system._get_link((u, v))
-            if not params: params = system._get_link((v, u))
+        # get edge parameters from system links
+        for edge in self._graph.edges():
+            params = system.get('link', edge)
             if not params: continue
             nemoa.common.dict_merge(
-                params, self._graph[u][v]['params'])
-            self._graph[u][v]['weight'] = params['weight']
+                params, self._graph[edge[0]][edge[1]]['params'])
+            self._graph[edge[0]][edge[1]]['weight'] \
+                = float(params['weight'])
 
         return True
+
+    def _get_graph_encode(self):
+        graph = self._graph.copy()
+
+        # convert edges params keys from tuple to str
+        edges_params = {}
+        for key, val in graph.graph['params']['edges'].iteritems():
+            edges_params[str(key)] = val
+        graph.graph['params']['edges'] = edges_params
+
+        # convert graph params from dict to str
+        graph.graph['nemoa'] \
+            = json.dumps(graph.graph['params'])
+        graph.graph.pop('params', None)
+
+        graph.graph['networkx'] \
+            = json.dumps(graph.graph['networkx'])
+
+        # convert nodes params from dict to str
+        for node in graph.nodes():
+            graph.node[node]['nemoa'] \
+                = json.dumps(graph.node[node]['params'])
+            graph.node[node].pop('params', None)
+
+        # convert edges params from dict to str
+        for edge in graph.edges():
+            in_node, out_node = edge
+            graph.edge[in_node][out_node]['nemoa'] \
+                = json.dumps(graph.edge[in_node][out_node]['params'])
+            graph.edge[in_node][out_node].pop('params', None)
+
+        return graph

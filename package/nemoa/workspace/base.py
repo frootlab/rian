@@ -208,7 +208,7 @@ class Workspace:
         parameters from the file.
 
         Args:
-            path: Path to nemoa model file (with fileextension .nmm)
+            path: Path to nemoa model file (with fileextension .npz)
 
         Returns:
             Nemoa model instance
@@ -565,13 +565,13 @@ class Config:
             for layer in conf['layers']:
                 if '=' in layer:
                     layer_name = layer.split('=')[0].strip()
-                    layerType = layer.split('=')[1].strip().lower()
+                    layer_type = layer.split('=')[1].strip().lower()
                 else:
                     layer_name = layer.strip()
-                    layerType = 'visible'
+                    layer_type = 'visible'
 
                 conf['layer'].append(layer_name)
-                if layerType == 'visible':
+                if layer_type == 'visible':
                     conf['visible'].append(layer_name)
                 else: conf['hidden'].append(layer_name)
             del conf['layers']
