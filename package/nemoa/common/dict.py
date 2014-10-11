@@ -45,7 +45,6 @@ def dict_encode_base64(d, level = 9):
     string = cPickle.dumps(d)
     string_zlib = zlib.compress(string, level)
     string_base64 = base64.b64encode(string_zlib)
-
     return string_base64
 
 def dict_decode_base64(string_base64):
@@ -54,3 +53,15 @@ def dict_decode_base64(string_base64):
     string = zlib.decompress(string_zlib)
     d = cPickle.loads(string)
     return d
+
+def dict_convert_unicode_keys(d):
+    """Convert dictionary keys from unicode to string."""
+    if not isinstance(d, dict): return d
+    d_str = {}
+    for key, val in d.items():
+        if isinstance(key, tuple):
+            new_key = tuple([str(token) for token in key])
+        else:
+            new_key = str(key)
+        d_str[new_key] = dict_convert_unicode_keys(val)
+    return d_str

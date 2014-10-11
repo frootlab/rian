@@ -54,5 +54,5 @@ def load(path, file_format = None, **kwargs):
             (path, file_format))
         return {}
 
-    # import network file
+    # import network as dictionary
     return importer.load(path)

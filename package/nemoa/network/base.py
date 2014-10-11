@@ -528,11 +528,8 @@ class Network:
     def _get_config(self):
         return copy.deepcopy(self._config)
 
-    def _get_graph(self, type = 'dict', encode = False):
-        if encode:
-            graph = self._get_graph_encode()
-        else:
-            graph = self._graph
+    def _get_graph(self, type = 'dict', encode = None):
+        graph = self._get_graph_encode(coding = encode)
 
         if type == 'dict':
             return {
@@ -585,12 +582,7 @@ class Network:
         if not hasattr(self, '_graph') or not self._graph:
             self._configure_graph()
 
-
         if not graph: return True
-
-        # decode graph
-        if 'coding' in graph['graph']:
-            graph = self._set_graph_decode(graph)
 
         # merge graph
         graph_copy = self._get_graph()
@@ -606,28 +598,6 @@ class Network:
             self._graph.node[node] = attr
 
         return True
-
-    def _set_graph_decode(self, graph_dict):
-        copy = graph_dict.copy()
-        if copy['graph']['coding'] == '':
-            return copy
-        if copy['graph']['coding'] == 'json':
-            copy['graph']['params'] = \
-                json.loads(copy['graph']['params'])
-            edges_params = {}
-            for key, val in \
-                copy['graph']['params']['edges'].iteritems():
-                edges_params[json.loads(key)] = val
-            copy['graph']['params']['edges'] = edges_params
-            copy['graph'].pop('coding', None)
-            print copy['edges']
-            print
-            print copy['nodes']
-            quit
-            return True
-
-        return False
-
 
     def _update(self, **kwargs):
         if not 'system' in kwargs: return False
@@ -647,32 +617,38 @@ class Network:
 
         return True
 
-    def _get_graph_encode(self):
+    def _get_graph_encode(self, coding = None):
         """Encode parameter dictionaries in graph."""
-        graph = self._graph.copy()
 
-        # encode graph 'params' dictionary to base64
-        edges_params = {}
-        for key, val in graph.graph['params']['edges'].iteritems():
-            edges_params[str(key)] = val
-        graph.graph['params']['edges'] = edges_params
-        graph.graph['params'] \
-            = nemoa.common.dict_encode_base64(graph.graph['params'])
+        # no encoding
+        if not isinstance(coding, str) or coding.lower() == 'none':
+            return self._graph.copy()
 
-        # encode nodes 'params' dictionaries to base64
-        for node in graph.nodes():
-            graph.node[node]['params'] \
+        # base64 encoding
+        elif coding.lower() == 'base64':
+            graph = self._graph.copy()
+
+            # encode graph 'params' dictionary to base64
+            graph.graph['params'] \
                 = nemoa.common.dict_encode_base64(
-                graph.node[node]['params'])
+                graph.graph['params'])
 
-        # encode edges 'params' dictionaries to base64
-        for edge in graph.edges():
-            in_node, out_node = edge
-            graph.edge[in_node][out_node]['params'] \
-                = nemoa.common.dict_encode_base64(
-                graph.edge[in_node][out_node]['params'])
+            # encode nodes 'params' dictionaries to base64
+            for node in graph.nodes():
+                graph.node[node]['params'] \
+                    = nemoa.common.dict_encode_base64(
+                    graph.node[node]['params'])
 
-        # set flag for 'params' coding
-        graph.graph['coding'] = 'base64'
+            # encode edges 'params' dictionaries to base64
+            for edge in graph.edges():
+                in_node, out_node = edge
+                graph.edge[in_node][out_node]['params'] \
+                    = nemoa.common.dict_encode_base64(
+                    graph.edge[in_node][out_node]['params'])
 
-        return graph
+            # set flag for graph parameter coding
+            graph.graph['coding'] = 'base64'
+            return graph
+
+        return nemoa.log('error', """could not encode graph parameters:
+            unsupported coding '%s'.""" % (coding))

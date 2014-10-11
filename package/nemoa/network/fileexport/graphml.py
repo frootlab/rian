@@ -20,6 +20,6 @@ class Graphml:
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
 
-        graph = network.get('graph', type = 'graph', encode = True)
+        graph = network.get('graph', type = 'graph', encode = 'base64')
         networkx.write_graphml(graph, path)
         return True
