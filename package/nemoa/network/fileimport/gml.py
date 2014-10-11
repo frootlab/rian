@@ -17,6 +17,9 @@ class Gml:
 
     def load(self, path):
         graph = networkx.read_gml(path, relabel = True)
+        print 'graph': graph
+
+
         return self._graph_to_dict(graph)
 
     def _graph_to_dict(self, graph):

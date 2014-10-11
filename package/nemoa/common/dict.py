@@ -6,6 +6,8 @@ __license__ = 'GPLv3'
 
 import cPickle
 import gzip
+import zlib
+import base64
 
 def dict_merge(d1, d2):
     """Return merged dictionary (merge d1 over d2)."""
@@ -37,3 +39,18 @@ def dict_to_array(d, axes):
         for j, y in emumerate(axes[1]):
             arr[i, j] = d[(x, y)] if (x, y) in dict else 0.
     return arr
+
+def dict_encode_base64(d, level = 9):
+    """Encode dictionary to printable ascii-code. """
+    string = cPickle.dumps(d)
+    string_zlib = zlib.compress(string, level)
+    string_base64 = base64.b64encode(string_zlib)
+
+    return string_base64
+
+def dict_decode_base64(string_base64):
+    """Decode printable ascii-code to dictionary. """
+    string_zlib = base64.b64decode(string_base64)
+    string = zlib.decompress(string_zlib)
+    d = cPickle.loads(string)
+    return d

@@ -116,7 +116,7 @@ class Network:
         self._graph.graph['params'] = self._config
         # update / set networkx module and class info
         # to allow export and import of graph to dict
-        self._graph.graph['networkx'] = {
+        self._graph.graph['params']['networkx'] = {
             'module': self._graph.__module__,
             'class': self._graph.__class__.__name__ }
 
@@ -585,19 +585,49 @@ class Network:
         if not hasattr(self, '_graph') or not self._graph:
             self._configure_graph()
 
+
+        if not graph: return True
+
+        # decode graph
+        if 'coding' in graph['graph']:
+            graph = self._set_graph_decode(graph)
+
         # merge graph
-        if graph:
-            graph_copy = self._get_graph()
-            nemoa.common.dict_merge(graph, graph_copy)
-            object_type = graph['graph']['networkx']
-            module = importlib.import_module(object_type['module'])
-            self._graph = getattr(module, object_type['class'])(
-                graph_copy['edges'])
-            self._graph.graph = graph_copy['graph']
-            for node, attr in graph_copy['nodes']:
-                self._graph.node[node] = attr
+        graph_copy = self._get_graph()
+        nemoa.common.dict_merge(graph, graph_copy)
+
+        # create networkx graph instance
+        object_type = graph['graph']['params']['networkx']
+        module = importlib.import_module(object_type['module'])
+        self._graph = getattr(module, object_type['class'])(
+            graph_copy['edges'])
+        self._graph.graph = graph_copy['graph']
+        for node, attr in graph_copy['nodes']:
+            self._graph.node[node] = attr
 
         return True
+
+    def _set_graph_decode(self, graph_dict):
+        copy = graph_dict.copy()
+        if copy['graph']['coding'] == '':
+            return copy
+        if copy['graph']['coding'] == 'json':
+            copy['graph']['params'] = \
+                json.loads(copy['graph']['params'])
+            edges_params = {}
+            for key, val in \
+                copy['graph']['params']['edges'].iteritems():
+                edges_params[json.loads(key)] = val
+            copy['graph']['params']['edges'] = edges_params
+            copy['graph'].pop('coding', None)
+            print copy['edges']
+            print
+            print copy['nodes']
+            quit
+            return True
+
+        return False
+
 
     def _update(self, **kwargs):
         if not 'system' in kwargs: return False
@@ -618,33 +648,31 @@ class Network:
         return True
 
     def _get_graph_encode(self):
+        """Encode parameter dictionaries in graph."""
         graph = self._graph.copy()
 
-        # convert edges params keys from tuple to str
+        # encode graph 'params' dictionary to base64
         edges_params = {}
         for key, val in graph.graph['params']['edges'].iteritems():
             edges_params[str(key)] = val
         graph.graph['params']['edges'] = edges_params
+        graph.graph['params'] \
+            = nemoa.common.dict_encode_base64(graph.graph['params'])
 
-        # convert graph params from dict to str
-        graph.graph['nemoa'] \
-            = json.dumps(graph.graph['params'])
-        graph.graph.pop('params', None)
-
-        graph.graph['networkx'] \
-            = json.dumps(graph.graph['networkx'])
-
-        # convert nodes params from dict to str
+        # encode nodes 'params' dictionaries to base64
         for node in graph.nodes():
-            graph.node[node]['nemoa'] \
-                = json.dumps(graph.node[node]['params'])
-            graph.node[node].pop('params', None)
+            graph.node[node]['params'] \
+                = nemoa.common.dict_encode_base64(
+                graph.node[node]['params'])
 
-        # convert edges params from dict to str
+        # encode edges 'params' dictionaries to base64
         for edge in graph.edges():
             in_node, out_node = edge
-            graph.edge[in_node][out_node]['nemoa'] \
-                = json.dumps(graph.edge[in_node][out_node]['params'])
-            graph.edge[in_node][out_node].pop('params', None)
+            graph.edge[in_node][out_node]['params'] \
+                = nemoa.common.dict_encode_base64(
+                graph.edge[in_node][out_node]['params'])
+
+        # set flag for 'params' coding
+        graph.graph['coding'] = 'base64'
 
         return graph

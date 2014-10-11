@@ -14,7 +14,9 @@ class Graphml:
         pass
 
     def load(self, path):
-        graph = networkx.read_graphml(path, relabel = True)
+        print 'hi'
+        graph = networkx.read_graphml(path)
+        print graph
         return self._graph_to_dict(graph)
 
     def _graph_to_dict(self, graph):
