@@ -528,8 +528,8 @@ class Network:
     def _get_config(self):
         return copy.deepcopy(self._config)
 
-    def _get_graph(self, type = 'dict', encode = None):
-        graph = self._get_graph_encode(coding = encode)
+    def _get_graph(self, type = 'dict'):
+        graph = self._graph.copy()
 
         if type == 'dict':
             return {
@@ -616,39 +616,3 @@ class Network:
                 = float(params['weight'])
 
         return True
-
-    def _get_graph_encode(self, coding = None):
-        """Encode parameter dictionaries in graph."""
-
-        # no encoding
-        if not isinstance(coding, str) or coding.lower() == 'none':
-            return self._graph.copy()
-
-        # base64 encoding
-        elif coding.lower() == 'base64':
-            graph = self._graph.copy()
-
-            # encode graph 'params' dictionary to base64
-            graph.graph['params'] \
-                = nemoa.common.dict_encode_base64(
-                graph.graph['params'])
-
-            # encode nodes 'params' dictionaries to base64
-            for node in graph.nodes():
-                graph.node[node]['params'] \
-                    = nemoa.common.dict_encode_base64(
-                    graph.node[node]['params'])
-
-            # encode edges 'params' dictionaries to base64
-            for edge in graph.edges():
-                in_node, out_node = edge
-                graph.edge[in_node][out_node]['params'] \
-                    = nemoa.common.dict_encode_base64(
-                    graph.edge[in_node][out_node]['params'])
-
-            # set flag for graph parameter coding
-            graph.graph['coding'] = 'base64'
-            return graph
-
-        return nemoa.log('error', """could not encode graph parameters:
-            unsupported coding '%s'.""" % (coding))
