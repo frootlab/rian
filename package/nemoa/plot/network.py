@@ -26,8 +26,8 @@ class graph(nemoa.plot.base.plot):
 
     def _create(self, model):
 
-        # copy graph from system structure of model
-        graph = model.network._graph.copy()
+        # copy graph from model
+        graph = model.network.get('graph', type = 'graph')
 
         # (optional) calculate node captions
         if self.settings['node_caption']:

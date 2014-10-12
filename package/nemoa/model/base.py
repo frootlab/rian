@@ -349,7 +349,8 @@ class model:
         # prepare filename
         if output == 'display': file = None
         elif output == 'file' and not file:
-            file = nemoa.common.get_empty_file(nemoa.workspace.path('plots') + \
+            file = nemoa.common.get_empty_file(
+                nemoa.workspace.path('plots') + \
                 self._config['name'] + '/' + obj_plot.cfg['name'] + \
                 '.' + obj_plot.settings['fileformat'])
 

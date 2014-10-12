@@ -525,12 +525,20 @@ class Network:
         return nemoa.log('error', """could not get copy of
             configuration: unknown section '%s'.""" % (section))
 
-    def _get_config(self):
-        return copy.deepcopy(self._config)
+    def _get_config(self, section = None):
+        """Get configuration or configuration value."""
+        if section == None:
+            return copy.deepcopy(self._config)
+        if isinstance(section, str) and section in self._config.keys():
+            if isinstance(self._config[section], dict):
+                return self._config[section].copy()
+            return self._config[section]
+        return nemoa.log('error', """could not get configuration:
+            unknown section '%s'.""" % (section))
 
     def _get_graph(self, type = 'dict'):
+        """Get graph as dictionary or networkx graph."""
         graph = self._graph.copy()
-
         if type == 'dict':
             return {
                 'graph': graph.graph,
@@ -616,3 +624,7 @@ class Network:
                 = float(params['weight'])
 
         return True
+
+    def save(self, *args, **kwargs):
+        """Export network to file."""
+        return nemoa.network.save(self, *args, **kwargs)

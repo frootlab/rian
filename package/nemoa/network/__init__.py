@@ -10,21 +10,19 @@ import nemoa.network.fileexport
 import importlib
 
 def load(*args, **kwargs):
-    """Import network configuration and parameters from file."""
-    network_copy = nemoa.network.fileimport.load(*args, **kwargs)
-    #print network_copy['config']
-    #quit
-    return network_copy
+    """Import network from file."""
+    return nemoa.network.fileimport.load(*args, **kwargs)
 
 def save(*args, **kwargs):
-    """Export network configuration and parameters to file."""
+    """Export network to file."""
     return nemoa.network.fileexport.save(*args, **kwargs)
 
 def open(*args, **kwargs):
+    """Import network from file and create new network instance."""
     return new(**load(*args, **kwargs))
 
 def new(*args, **kwargs):
-    """Return dataset instance."""
+    """Create new network instance."""
     if not 'config' in kwargs: return None # TODO: error message
     config = kwargs['config']
     if not 'type' in config: return None

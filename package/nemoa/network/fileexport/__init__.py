@@ -8,12 +8,20 @@ import importlib
 import nemoa
 import os
 
-def save(network, path, file_format = None, **kwargs):
+def save(network, path = None, file_format = None, **kwargs):
     """Export network configuration to file."""
 
     if not nemoa.common.type.is_network(network):
         return nemoa.log('error', """could not save network to file:
             network is not valid.""")
+
+    if path == None:
+        source = network.get('config', 'source')
+        path = source['file']
+        if not file_format == None:
+            file_path = nemoa.common.get_file_path(path)
+            file_basename = nemoa.common.get_file_basename(path)
+            path = '%s/%s.%s' % (file_path, file_basename, file_format)
 
     # if format is not given get format from file extension
     if not file_format:

@@ -154,7 +154,7 @@ class Dataset:
         conv_net_layers_lost = {}
         conv_net_nodes = []
         conv_net_nodes_lost = []
-        net_label_format = network._config['label_format']
+        net_label_format = network.get('config', 'label_format')
         for layer in network_layers:
             net_layer_node_names = \
                 network.get('nodes', layer = layer)
@@ -1051,7 +1051,7 @@ class Dataset:
     def _get_cache_file(self, network):
         """Return cache file path."""
         return '%sdata-%s-%s.npz' % (self._config['cache_path'],
-            network._config['id'], self._config['id'])
+            network.get('config', 'id'), self._config['id'])
 
     def _search_cache_file(self, network):
         """Return cache file path if existent."""

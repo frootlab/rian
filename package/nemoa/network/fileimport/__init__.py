@@ -55,4 +55,14 @@ def load(path, file_format = None, **kwargs):
         return {}
 
     # import network as dictionary
-    return importer.load(path)
+    network_dict = importer.load(path)
+
+    # update source
+    network_dict['config']['source'] = {
+        'file': path,
+        'file_format': file_format }
+
+    return network_dict
+
+
+
