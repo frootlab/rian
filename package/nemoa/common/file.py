@@ -7,35 +7,14 @@ __license__ = 'GPLv3'
 import nemoa
 import os
 
-def get_empty_file(path):
-    """Get file path for new file."""
-    file_path = get_file_path(path)
-
-    # create directory if not available
-    if not os.path.exists(file_path):
-        nemoa.log("creating directory '%s'" % (file_path))
-        os.makedirs(file_path)
-
-    # search unused filename
-    file_name = get_file_name(path)
-    file_basename, file_ext = os.path.splitext(file_name)
-    file_base = '%s/%s' % (file_path, file_basename)
-    path = file_base + file_ext
-    file_id = 1
-    while os.path.exists(path):
-        file_id += 1
-        path = '%s (%s)%s' % (file_base, file_id, file_ext)
-
-    return path
-
-def get_file_path(path):
-    """Get filepath.
+def get_file_directory(path):
+    """Get directory path of file.
 
     Args:
         path (string): path to file
 
     Returns:
-        String containing normalized file path.
+        String containing normalized directory path of file.
 
     """
 
@@ -43,77 +22,78 @@ def get_file_path(path):
     file_path = os.path.expandvars(file_path)
     file_path = os.path.abspath(file_path)
     file_path = os.path.normpath(file_path)
-    return os.path.dirname(file_path)
+    file_directory = os.path.dirname(file_path)
+    return file_directory
 
 def get_file_name(path):
-    """Get filename.
+    """Get name of file.
 
     Args:
         path (string): path to file
 
     Returns:
-        String containing filename.
+        String containing name of file.
 
     """
 
     return os.path.basename(path)
 
-def get_file_ext(path):
-    """Get file extension.
+def get_file_basename(path):
+    """Get basename of file.
 
     Args:
         path (string): path to file
 
     Returns:
-        String containing file extension.
+        String containing basename of file.
 
     """
 
-    file_name = get_file_name(path)
-    file_ext = os.path.splitext(file_name)[-1].lstrip('.')
+    file_name = os.path.basename(path)
+    file_basename = os.path.splitext(file_name)[0].rstrip('.')
+    return file_basename
+
+def get_file_extension(path):
+    """Get extension of file.
+
+    Args:
+        path (string): path to file
+
+    Returns:
+        String containing extension of file.
+
+    """
+
+    file_name = os.path.basename(path)
+    file_ext = os.path.splitext(file_name)[1].lstrip('.')
     return file_ext
 
-def get_file_basename(path):
-    """Get file basename.
+def get_unused_file_path(path):
+    """Get unused file path for given file path.
 
     Args:
         path (string): path to file
 
     Returns:
-        String containing file basename.
+        String containing new file path.
 
     """
 
-    file_name = get_file_name(path)
-    file_ext = get_file_ext(path)
-    file_basename_length = len(file_name) - len(file_ext)
-    return file_name[:file_basename_length - 1]
+    # get basepath and create directory if not available
+    file_basepath = get_file_directory(path)
+    if not os.path.exists(file_basepath):
+        nemoa.log("creating directory '%s'" % (file_basepath))
+        os.makedirs(file_basepath)
 
-def get_empty_subdir(basepath, subdir = None):
+    # search for unused filename
+    file_directory = get_file_directory(path)
+    file_basename = get_file_basename(path)
+    file_extension = get_file_extension(path)
+    file_base = '%s/%s' % (file_directory, file_basename)
+    path = '%s.%s' % (file_base, file_extension)
+    file_id = 1
+    while os.path.exists(path):
+        file_id += 1
+        path = '%s (%s).%s' % (file_base, file_id, file_extension)
 
-    # create path if not available
-    if not os.path.exists(basepath): os.makedirs(basepath)
-
-    #
-    if folder: pre = basepath + folder + '_'
-    else: pre = basepath
-
-    # search for unused subfolder, starting with 1
-    i = 1
-    while os.path.exists('%s%s/' % (pre, i)): i += 1
-
-    # create new subdirectory
-    new = '%s%s/' % (pre, i)
-    os.makedirs(new)
-
-    return os.path.abspath(new) + '/'
-
-def get_subdir_from_hash(basepath, string):
-
-    # create path if not available
-    if not os.path.exists(basepath): os.makedirs(basepath)
-
-    # create new subfolder
-    sub_dir = '%s%s/' % (basepath, str_to_hash(string))
-    if not os.path.exists(sub_dir): os.makedirs(sub_dir)
-    return os.path.abspath(sub_dir) + '/'
+    return path

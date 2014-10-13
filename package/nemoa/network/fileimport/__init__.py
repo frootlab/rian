@@ -37,7 +37,7 @@ def load(path, file_format = None, **kwargs):
 
     # if file format is not given get format from file extension
     if not file_format:
-        file_format = nemoa.common.get_file_ext(path).lower()
+        file_format = nemoa.common.get_file_extension(path).lower()
 
     # get network file importer
     module_name = 'nemoa.network.fileimport.%s' % (file_format)

@@ -287,7 +287,7 @@ class model:
             file_name = '%s.%s' % (self._config['name'], file_ext)
             file_path = nemoa.workspace.path('models')
             file = file_path + file_name
-        file = nemoa.common.get_empty_file(file)
+        file = nemoa.common.get_unused_file_path(file)
 
         # save model parameters and configuration to file
         nemoa.common.dict_to_file(self._get_copy(), file)
@@ -349,7 +349,7 @@ class model:
         # prepare filename
         if output == 'display': file = None
         elif output == 'file' and not file:
-            file = nemoa.common.get_empty_file(
+            file = nemoa.common.get_unused_file_path(
                 nemoa.workspace.path('plots') + \
                 self._config['name'] + '/' + obj_plot.cfg['name'] + \
                 '.' + obj_plot.settings['fileformat'])

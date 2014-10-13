@@ -593,7 +593,7 @@ class Config:
 
             if not 'file_format' in conf['source']:
                 obj_conf['config']['source']['file_format'] = \
-                    nemoa.common.get_file_ext(file)
+                    nemoa.common.get_file_extension(file)
 
             file_format = obj_conf['config']['source']['file_format']
 
@@ -654,7 +654,7 @@ class Config:
             # add missing source information
             if not 'file_format' in conf['source']:
                 conf['source']['file_format'] = \
-                    nemoa.common.get_file_ext(source_file)
+                    nemoa.common.get_file_extension(source_file)
 
             # only update in the first call of check_datasetConf
             if update: conf['cache_path'] = self._path['cache']

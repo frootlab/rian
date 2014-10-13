@@ -32,7 +32,7 @@ def save(network, path = None, file_format = None, workspace = None,
         source = network.get('config', 'source')
         path = source['file']
         if not file_format == None:
-            file_path = nemoa.common.get_file_path(path)
+            file_path = nemoa.common.get_file_directory(path)
             file_basename = nemoa.common.get_file_basename(path)
             path = '%s/%s.%s' % (file_path, file_basename, file_format)
 
@@ -59,7 +59,7 @@ def save(network, path = None, file_format = None, workspace = None,
     # if format is not given get format from file extension
     if not file_format:
         print path
-        file_format = nemoa.common.get_file_ext(path).lower()
+        file_format = nemoa.common.get_file_extension(path).lower()
 
     # get network file exporter
     module_name = 'nemoa.network.fileexport.%s' % (file_format)
