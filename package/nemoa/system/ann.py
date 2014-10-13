@@ -55,7 +55,7 @@ class ANN(nemoa.system.base.System):
             'check_dataset': False,
             'ignore_units': [],
             'algorithm': 'bprop',
-            'mod_corruption_enable': False,
+            'add_noise_enable': False,
             'minibatch_size': 100,
             'minibatch_update_interval': 10,
             'updates': 10000,
@@ -66,7 +66,7 @@ class ANN(nemoa.system.base.System):
             'tracker_obj_function': 'error',
             'tracker_eval_time_interval': 10. ,
             'tracker_estimate_time': True,
-            'tracker_estimate_timeWait': 15. }}
+            'tracker_estimate_time_wait': 15. }}
 
     def _configure(self, config = {},
         network = None, dataset = None, update = False):
@@ -138,7 +138,7 @@ class ANN(nemoa.system.base.System):
         # compare visible unit labels with dataset columns
         mapping = self.mapping()
         units = self._get_units(visible = True)
-        if not dataset.get('cols') == units:
+        if not dataset.get('colnames') == units:
             return nemoa.log('error', """could not configure system:
                 visible units differ from dataset columns.""")
         self._config['check']['dataset'] = True
@@ -173,8 +173,8 @@ class ANN(nemoa.system.base.System):
                 rows = self._config['params']['samples'] \
                     if 'samples' in self._config['params'] else '*'
                 cols = layer \
-                    if layer in dataset.get('groups') else '*'
-                data = dataset.data(100000, rows = rows, cols = cols)
+                    if layer in dataset.get('colgroups') else '*'
+                data = dataset.get('data', 100000, rows = rows, cols = cols)
             self._units[layer].initialize(data)
 
         return True
@@ -384,17 +384,17 @@ class ANN(nemoa.system.base.System):
 
             if dataset == None: random = \
                 numpy.random.normal(numpy.zeros((x, y)), sigma)
-            elif source in dataset.get('groups'):
+            elif source in dataset.get('colgroups'):
                 rows = self._config['params']['samples'] \
                     if 'samples' in self._config['params'] else '*'
-                data = dataset.data(100000, rows = rows, cols = source)
+                data = dataset.get('data', 100000, rows = rows, cols = source)
                 random = numpy.random.normal(numpy.zeros((x, y)),
                     sigma * numpy.std(data, axis = 0).reshape(1, x).T)
-            elif dataset.get('cols') \
+            elif dataset.get('colnames') \
                 == self._units[source].params['id']:
                 rows = self._config['params']['samples'] \
                     if 'samples' in self._config['params'] else '*'
-                data = dataset.data(100000, rows = rows, cols = '*')
+                data = dataset.get('data', 100000, rows = rows, cols = '*')
                 random = numpy.random.normal(numpy.zeros((x, y)),
                     sigma * numpy.std(data, axis = 0).reshape(1, x).T)
             else: random = \
@@ -474,10 +474,10 @@ class ANN(nemoa.system.base.System):
 
         config = self._config['optimize']
         kwargs['size'] = config['minibatch_size']
-        if config['mod_corruption_enable']:
-            kwargs['corruption'] = (config['mod_corruption_type'],
-                config['mod_corruption_factor'])
-        return dataset.data(**kwargs)
+        if config['add_noise_enable']:
+            kwargs['noise'] = (config['add_noise_type'],
+                config['add_noise_factor'])
+        return dataset.get('data', **kwargs)
 
     def _optimize_get_values(self, data):
         """Forward pass (compute estimated values, from given input). """
@@ -1715,7 +1715,7 @@ class ANN(nemoa.system.base.System):
     def _get_test_data(self, dataset):
         """Return tuple with default test data."""
 
-        return dataset.data(
+        return dataset.get('data',
             cols = (self.mapping()[0], self.mapping()[-1]))
 
     class Links:

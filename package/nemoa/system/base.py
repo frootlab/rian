@@ -610,7 +610,7 @@ class Tracker:
 
         now = time.time()
         runtime = now - self._state['estim_start_time']
-        if runtime > self._config['tracker_estimate_timeWait']:
+        if runtime > self._config['tracker_estimate_time_wait']:
             estim = (runtime / (self._state['epoch'] + 1)
                 * self._config['updates'])
             estim_str = time.strftime('%H:%M',

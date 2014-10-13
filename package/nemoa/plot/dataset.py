@@ -22,7 +22,7 @@ class histogram(nemoa.plot.base.plot):
     def _create(self, model):
 
         # create data (numpy 1-d array)
-        data = model.dataset.data().flatten()
+        data = model.dataset.get('data', ).flatten()
 
         # create plot
         return nemoa.common.plot.histogram(data, **self.settings)

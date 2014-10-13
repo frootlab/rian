@@ -43,7 +43,7 @@ class Network:
         nemoa.log('set', indent = '+1')
 
         # configure network to dataset
-        groups = dataset.get('groups')
+        groups = dataset.get('colgroups')
         changes = []
         for group in groups:
             if not group in self._config['nodes'] \

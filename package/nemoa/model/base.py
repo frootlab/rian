@@ -266,7 +266,7 @@ class model:
                     del kwargs['statistics']
                 else: statistics = 0
                 cols = self.system.get('layers', visible = True)
-                data = self.dataset.data(
+                data = self.dataset.get('data',
                     size = statistics, cols = tuple(cols))
                 if preprocessing:
                     self.dataset.set('copy', dataset_backup)

@@ -53,21 +53,21 @@ class RBM(nemoa.system.ann.ANN):
             'update_factor_weights': 1.,
             'update_factor_hbias': 0.1,
             'update_factor_vbias': 0.1,
-            'mod_sa_enable': True,
-            'mod_sa_init_temperature': 1.,
-            'mod_sa_annealing_factor': 1.,
-            'mod_sa_annealing_cycles': 1,
-            'mod_kl_enable': True,
-            'mod_kl_rate': 0.,
-            'mod_kl_expect': 0.5,
-            'mod_corruption_enable': True,
-            'mod_corruption_type': 'mask',
-            'mod_corruption_factor': 0.5,
+            'add_sa_enable': True,
+            'add_sa_init_temperature': 1.,
+            'add_sa_annealing_factor': 1.,
+            'add_sa_annealing_cycles': 1,
+            'add_kl_enable': True,
+            'add_kl_rate': 0.,
+            'add_kl_expect': 0.5,
+            'add_noise_enable': True,
+            'add_noise_type': 'mask',
+            'add_noise_factor': 0.5,
             'adjacency_enable': False,
             'tracker_obj_function': 'error',
             'tracker_eval_time_interval': 10. ,
             'tracker_estimate_time': True,
-            'tracker_estimate_timeWait': 20. }}
+            'tracker_estimate_time_wait': 20. }}
 
     def mapping(self):
         v = self._params['units'][0]['layer']
@@ -100,23 +100,23 @@ class RBM(nemoa.system.ann.ANN):
         nemoa.log('note', """using optimization algorithm '%s'"""
             % (cfg['algorithm']))
 
-        if cfg['mod_corruption_enable']:
-            nemoa.log('note', """using data corruption for denoising
+        if cfg['add_noise_enable']:
+            nemoa.log('note', """using artificial noise for denoising
                 with noise model '%s (%.2f)'"""
-                % (cfg['mod_corruption_type'],
-                cfg['mod_corruption_factor']))
-        if cfg['mod_kl_enable']:
+                % (cfg['add_noise_type'],
+                cfg['add_noise_factor']))
+        if cfg['add_kl_enable']:
             nemoa.log('note', """using Kullback-Leibler penalty for
                 sparse coding with expectation value %.2f"""
-                % (cfg['mod_kl_expect']))
-        if cfg['mod_vmra_enable']:
+                % (cfg['add_kl_expect']))
+        if cfg['add_vmra_enable']:
             nemoa.log('note', """using variance maximizing rate adaption
-                with tracking length %i""" % (cfg['mod_vmra_length']))
-        if cfg['mod_sa_enable']:
+                with tracking length %i""" % (cfg['add_vmra_length']))
+        if cfg['add_sa_enable']:
             nemoa.log('note', """using simulated annealing  with initial
                 temperature %.2f and annealing factor %.2f""" %
-                (cfg['mod_sa_init_temperature'],
-                cfg['mod_sa_annealing_factor']))
+                (cfg['add_sa_init_temperature'],
+                cfg['add_sa_annealing_factor']))
 
         if cfg['algorithm'].lower() == 'cd':
             return self._optimize_cd(dataset, schedule, tracker)
@@ -146,17 +146,17 @@ class RBM(nemoa.system.ann.ANN):
         else: wVar = numpy.append([var], store['wVar'])
 
         cfg = self._config['optimize']
-        length = cfg['mod_vmra_length']
+        length = cfg['add_vmra_length']
         if wVar.shape[0] > length:
 
             wVar = wVar[:length]
             A = numpy.array([numpy.arange(0, length),
                 numpy.ones(length)])
             grad = - numpy.linalg.lstsq(A.T, wVar)[0][0]
-            delw = cfg['mod_vmra_factor'] * grad
+            delw = cfg['add_vmra_factor'] * grad
 
             cfg['update_rate'] = min(max(delw,
-                cfg['mod_vmra_min_rate']), cfg['mod_vmra_max_rate'])
+                cfg['add_vmra_min_rate']), cfg['add_vmra_max_rate'])
 
         tracker.write('vmra', wVar = wVar)
         return True
@@ -226,9 +226,9 @@ class RBM(nemoa.system.ann.ANN):
         ignore = config['ignore_units']
 
         # (optional) Variance maximizing rate adaption
-        if config['mod_vmra_enable']:
-            if tracker.get('epoch') % config['mod_vmra_update_interval'] == 0 \
-                and tracker.get('epoch') > config['mod_vmra_init_wait']:
+        if config['add_vmra_enable']:
+            if tracker.get('epoch') % config['add_vmra_update_interval'] == 0 \
+                and tracker.get('epoch') > config['add_vmra_init_wait']:
                 self._optimize_vmra_update_rate(tracker)
 
         # get system estimations (model)
@@ -246,12 +246,12 @@ class RBM(nemoa.system.ann.ANN):
         if not 'links' in ignore: self._optimize_update_links(**deltaL)
 
         # (optional) Kullback-Leibler penalty update for sparsity
-        if config['mod_kl_enable']:
+        if config['add_kl_enable']:
             if not 'hidden' in ignore: self._units['hidden'].update(
                 self._optimize_kl_delta_hidden(*dTuple))
 
         # (optional) Simulated Annealing update to avoid underfitting
-        if config['mod_sa_enable']:
+        if config['add_sa_enable']:
             if not 'visible' in ignore: self._units['visible'].update(
                 self._optimize_sa_delta_visible(tracker))
             if not 'hidden' in ignore: self._units['hidden'].update(
@@ -325,15 +325,15 @@ class RBM(nemoa.system.ann.ANN):
 
         cfg = self._config['optimize']
 
-        p = cfg['mod_kl_expect'] # target expectation value
+        p = cfg['add_kl_expect'] # target expectation value
         q = numpy.mean(hData, axis = 0) # expectation value over samples
-        r = max(cfg['update_rate'], cfg['mod_kl_rate']) # update rate
+        r = max(cfg['update_rate'], cfg['add_kl_rate']) # update rate
 
         return { 'bias': r * (p - q) }
 
     def _optimize_sa_delta_hidden(self, tracker):
         cfg = self._config['optimize']
-        #cfg['mod_sa_init_temperature'], cfg['mod_sa_annealing_factor']
+        #cfg['add_sa_init_temperature'], cfg['add_sa_annealing_factor']
 
         #dBias = numpy.zeros([1, hData.shape[1]])
 
@@ -342,7 +342,7 @@ class RBM(nemoa.system.ann.ANN):
 
     def _optimize_sa_delta_visible(self, tracker):
         cfg = self._config['optimize']
-        #cfg['mod_sa_init_temperature'], cfg['mod_sa_annealing_factor']
+        #cfg['add_sa_init_temperature'], cfg['add_sa_annealing_factor']
 
         #dBias = numpy.zeros([1, vData.shape[1]])
 
@@ -371,14 +371,14 @@ class RBM(nemoa.system.ann.ANN):
         """Calculate temperature for simulated annealing."""
         config = self._config['optimize']
 
-        init = float(config['mod_sa_init_temperature'])
-        annealing = float(config['mod_sa_annealing_factor'])
-        cycles = float(config['mod_sa_annealing_cycles'])
+        init = float(config['add_sa_init_temperature'])
+        annealing = float(config['add_sa_annealing_factor'])
+        cycles = float(config['add_sa_annealing_cycles'])
         updates = int(float(config['updates']) / cycles)
         epoch = float(tracker.get('epoch') % updates)
         heat = init * (1. - epoch / float(updates)) ** annealing
 
-        if heat < config['mod_sa_min_temperature']: return 0.
+        if heat < config['add_sa_min_temperature']: return 0.
         return heat
 
     def _eval_system_energy(self, data, *args, **kwargs):
@@ -488,21 +488,21 @@ class GRBM(RBM):
             'update_factor_vlvar': 0.01, # factor for visible unit logarithmic variance updates (related to update rate)
             'minibatch_size': 500, # number of samples used to calculate updates
             'minibatch_update_interval': 1, # number of updates the same minibatch is used
-            'mod_corruption_enable': False,
-            'mod_corruption_type': 'none', # do not use corruption
-            'mod_corruption_factor': 0., # no corruption of data
-            'mod_sa_enable': True, # use simulated annealing
-            'mod_sa_init_temperature': 1.,
-            'mod_sa_annealing_factor': 1.,
-            'mod_sa_annealing_cycles': 1,
-            'mod_kl_enable': True, # use Kullback-Leibler penalty
-            'mod_kl_rate': 0., # sparsity update
-            'mod_kl_expect': 0.5, # aimed value for l2-norm penalty
+            'add_noise_enable': False,
+            'add_noise_type': 'none', # do not use noise
+            'add_noise_factor': 0., # no noise of data
+            'add_sa_enable': True, # use simulated annealing
+            'add_sa_init_temperature': 1.,
+            'add_sa_annealing_factor': 1.,
+            'add_sa_annealing_cycles': 1,
+            'add_kl_enable': True, # use Kullback-Leibler penalty
+            'add_kl_rate': 0., # sparsity update
+            'add_kl_expect': 0.5, # aimed value for l2-norm penalty
             'adjacency_enable': False, # do not use selective weight updates
             'tracker_obj_function': 'error', # objective function
             'tracker_eval_time_interval': 20., # time interval for calculation the inspection function
             'tracker_estimate_time': True, # initally estimate time for whole optimization process
-            'tracker_estimate_timeWait': 20. # time intervall used for time estimation
+            'tracker_estimate_time_wait': 20. # time intervall used for time estimation
         }}
 
     def _check_dataset(self, dataset):

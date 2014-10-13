@@ -79,15 +79,15 @@ class Workspace:
 
         # try to import model from file
         if isinstance(name, str) and not kwargs:
-            if not name in self.list(type = 'model'): return \
-                nemoa.log('error', """could not import model:
-                a model with name '%s' does not exists!""" % (name))
+            if not name in self.list(type = 'model'):
+                return nemoa.log('error', """could not import model:
+                    a model with name '%s' does not exists!""" % (name))
             return self._import_model(name)
 
         # check keyword arguments
         if not ('network' in kwargs and 'dataset' in kwargs \
-            and 'system' in kwargs): return nemoa.log('error',
-                """could not create model:
+            and 'system' in kwargs):
+            return nemoa.log('error', """could not create model:
                 dataset, network and system parameters needed!""")
 
         # try to create new model

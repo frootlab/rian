@@ -59,7 +59,7 @@ class DBN(nemoa.system.ann.ANN):
             'check_dataset': False,
             'ignore_units': [],
             'algorithm': 'bprop',
-            'mod_corruption_enable': False,
+            'add_noise_enable': False,
             'minibatch_size': 100,
             'minibatch_update_interval': 10,
             'updates': 10000,
@@ -70,7 +70,7 @@ class DBN(nemoa.system.ann.ANN):
             'tracker_obj_function': 'error',
             'tracker_eval_time_interval': 10. ,
             'tracker_estimate_time': True,
-            'tracker_estimate_timeWait': 15. }}
+            'tracker_estimate_time_wait': 15. }}
 
     def _check_network(self, network):
         return network._is_compatible_dbn()
@@ -225,7 +225,7 @@ class DBN(nemoa.system.ann.ANN):
 
             # add / update dataset group 'visible'
             visible_columns = system.get('units', layer = 'visible')
-            dataset.set('filter', visible = visible_columns)
+            dataset.set('colfilter', visible = visible_columns)
 
             # initialize (free) system parameters
             system._initialize(dataset)
