@@ -187,8 +187,7 @@ class Network:
                     params = {
                         'order': edge_order,
                         'layer': edge_layer,
-                        'layer_id': layer_id,
-                        'direction': (src_node_name, tgt_node_name)})
+                        'layer_id': layer_id })
 
                 edge_order += 1
 
