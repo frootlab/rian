@@ -37,3 +37,6 @@ def new(*args, **kwargs):
         return nemoa.log('error', """could not create network:
             unknown network type '%s'.""" % (config['type']))
     return network
+
+def show(*args, **kwargs):
+    return save(*args, filetype = 'image', output = 'display', **kwargs)

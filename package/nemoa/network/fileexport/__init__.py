@@ -8,14 +8,14 @@ import importlib
 import nemoa
 import os
 
-def save(network, path = None, file_format = None, workspace = None,
+def save(network, path = None, filetype = None, workspace = None,
     **kwargs):
-    """Export network configuration to file.
+    """Export network to file.
 
     Args:
         network (object): nemoa network instance
-        path (str, optional): export file path
-        file_format (str, optional): export file format
+        path (str, optional): path of export file
+        filetype (str, optional): filetype export file
         workspace (str, optional): workspace to use for file export
 
     Returns:
@@ -31,10 +31,10 @@ def save(network, path = None, file_format = None, workspace = None,
     if path == None:
         source = network.get('config', 'source')
         path = source['file']
-        if not file_format == None:
+        if not filetype == None:
             file_path = nemoa.common.get_file_directory(path)
             file_basename = nemoa.common.get_file_basename(path)
-            path = '%s/%s.%s' % (file_path, file_basename, file_format)
+            path = '%s/%s.%s' % (file_path, file_basename, filetype)
 
     # get file path from workspace/path if workspace is given
     elif isinstance('workspace', str):
@@ -56,22 +56,21 @@ def save(network, path = None, file_format = None, workspace = None,
             if not current_workspace == None:
                 nemoa.workspace.load(current_workspace)
 
-    # if format is not given get format from file extension
-    if not file_format:
-        print path
-        file_format = nemoa.common.get_file_extension(path).lower()
+    # get file export module name from filetype
+    if filetype:
+        module_name = 'nemoa.network.fileexport.%s' % (filetype)
+    else:
+        module_name = 'nemoa.network.fileexport.%s' % (
+            nemoa.common.get_file_extension(path).lower())
 
-    # get network file exporter
-    module_name = 'nemoa.network.fileexport.%s' % (file_format)
-    class_name = file_format.title()
+    # import network file export module
     try:
         module = importlib.import_module(module_name)
-        if not hasattr(module, class_name): raise ImportError()
-        exporter = getattr(module, class_name)(**kwargs)
+        if not hasattr(module, 'save'):raise ImportError()
     except ImportError:
         return nemoa.log('error', """could not export network '%s':
-            file format '%s' is not supported.""" %
-            (network.get('name'), file_format))
+            filetype '%s' is not supported.""" %
+            (network.get('name'), filetype))
 
-    # export network file
-    return exporter.save(network, path)
+    # export network
+    return module.save(network, path, **kwargs)

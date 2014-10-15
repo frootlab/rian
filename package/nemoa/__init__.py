@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 """nemoa deep data analysis and visualization.
 
-Nemoa is a python package for designing network based models like
-artificial neural networks, which are used for deep data analysis and
-visualisation.
+Nemoa is a python package for network model based deep data analysis and
+visualization.
 
 """
 
-__version__ = '0.4.147'
+__version__ = '0.4.148'
 __status__  = 'Development'
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'

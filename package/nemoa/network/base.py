@@ -627,3 +627,7 @@ class Network:
     def save(self, *args, **kwargs):
         """Export network to file."""
         return nemoa.network.save(self, *args, **kwargs)
+
+    def show(self, *args, **kwargs):
+        """Show network as image."""
+        return nemoa.network.show(self, *args, **kwargs)
