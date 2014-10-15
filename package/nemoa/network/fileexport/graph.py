@@ -15,15 +15,13 @@ def filetypes():
         'graphml': 'Graph Markup Language',
         'dot': 'GraphViz DOT' }
 
-def save(network, path, **kwargs):
-
-    # extract filetype from path
-    filetype = nemoa.common.get_file_extension(path).lower()
+def save(network, path, filetype, **kwargs):
+    """Export network to graph description file."""
 
     # test if filetype is supported
     if not filetype in filetypes():
         return nemoa.log('error', """could not export graph:
-            filetype '%s' is not supported by networkx.""" % (filetype))
+            filetype '%s' is not supported.""" % (filetype))
 
     # create path if not available
     if not os.path.exists(os.path.dirname(path)):
@@ -41,6 +39,41 @@ def save(network, path, **kwargs):
 
     return False
 
+def _graph_encode(graph, coding = None):
+    """Encode graph parameters."""
+
+    # no encoding
+    if not isinstance(coding, str) or coding.lower() == 'none':
+        return self._graph.copy()
+
+    # base64 encoding
+    elif coding.lower() == 'base64':
+
+        # encode graph 'params' dictionary to base64
+        graph.graph['params'] \
+            = nemoa.common.dict_encode_base64(
+            graph.graph['params'])
+
+        # encode nodes 'params' dictionaries to base64
+        for node in graph.nodes():
+            graph.node[node]['params'] \
+                = nemoa.common.dict_encode_base64(
+                graph.node[node]['params'])
+
+        # encode edges 'params' dictionaries to base64
+        for edge in graph.edges():
+            in_node, out_node = edge
+            graph.edge[in_node][out_node]['params'] \
+                = nemoa.common.dict_encode_base64(
+                graph.edge[in_node][out_node]['params'])
+
+        # set flag for graph parameter coding
+        graph.graph['coding'] = 'base64'
+        return graph
+
+    return nemoa.log('error', """could not encode graph parameters:
+        unsupported coding '%s'.""" % (coding))
+
 class Gml:
     """Export network to GML file."""
 
@@ -55,8 +88,7 @@ class Gml:
     def save(self, graph, path):
 
         # encode graph parameter dictionaries
-        graph = nemoa.network.fileexport.encode(graph,
-            coding = self.settings['coding'])
+        graph = _graph_encode(graph, coding = self.settings['coding'])
 
         # write networkx graph to gml file
         networkx.write_gml(graph, path)
@@ -77,8 +109,7 @@ class Graphml:
     def save(self, graph, path):
 
         # encode graph parameter dictionaries
-        graph = nemoa.network.fileexport.encode(graph,
-            coding = self.settings['coding'])
+        graph = _graph_encode(graph, coding = self.settings['coding'])
 
         # write networkx graph to gml file
         networkx.write_graphml(graph, path)
@@ -99,8 +130,7 @@ class Dot:
     def save(self, graph, path):
 
         # encode graph parameter dictionaries
-        graph = nemoa.network.fileexport.encode(graph,
-            coding = self.settings['coding'])
+        graph = _graph_encode(graph, coding = self.settings['coding'])
 
         # check library support for dot files
         try:

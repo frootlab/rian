@@ -18,6 +18,13 @@ def save(*args, **kwargs):
     """Export dataset configuration and parameters to file."""
     return nemoa.dataset.fileexport.save(*args, **kwargs)
 
+def open(*args, **kwargs):
+    copy = nemoa.dataset.fileimport.load(*args, **kwargs)
+    if not copy: return None
+    dataset = new(config = copy['config'])
+    dataset.set('copy', **copy)
+    return dataset
+
 def new(*args, **kwargs):
     """Return dataset instance."""
     if not 'config' in kwargs: return None
@@ -35,9 +42,5 @@ def new(*args, **kwargs):
             unknown dataset type '%s'.""" % (config['type']))
     return dataset
 
-def open(*args, **kwargs):
-    copy = nemoa.dataset.fileimport.load(*args, **kwargs)
-    if not copy: return None
-    dataset = new(config = copy['config'])
-    dataset.set('copy', **copy)
-    return dataset
+def show(*args, **kwargs):
+    return save(*args, output = 'display', **kwargs)

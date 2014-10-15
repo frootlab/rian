@@ -12,7 +12,7 @@ import os
 def filetypes():
     """Get supported graph description filetypes for network import."""
     return {
-        'ini': 'Nemoa Network Description Language',
+        'ini': 'Nemoa Network Description',
         'gml': 'Graph Modelling Language',
         'graphml': 'Graph Markup Language',
         'dot': 'GraphViz DOT' }
@@ -39,13 +39,54 @@ def load(path, **kwargs):
 
     return False
 
+def _graph_decode(graph):
+
+    # no decoding
+    if not 'coding' in graph.graph \
+        or not graph.graph['coding'] \
+        or graph.graph['coding'].lower() == 'none':
+        return graph
+
+    # base64 decoding
+    elif graph.graph['coding'] == 'base64':
+        graph.graph['params'] = \
+            nemoa.common.dict_decode_base64(
+            graph.graph['params'])
+
+        for node in graph.nodes():
+            graph.node[node]['params'] = \
+                nemoa.common.dict_decode_base64(
+                graph.node[node]['params'])
+
+        for src, tgt in graph.edges():
+            graph.edge[src][tgt]['params'] = \
+                nemoa.common.dict_decode_base64(
+                graph.edge[src][tgt]['params'])
+
+        graph.graph['coding'] == 'none'
+        return graph
+
+    else:
+        nemoa.log('error', """could not decode graph parameters:
+            unsupported coding '%s'.""" % (coding))
+
+    return {}
+
+def _graph_to_dict(graph):
+    return {
+        'graph': graph.graph,
+        'nodes': graph.nodes(data = True),
+        'edges': networkx.to_dict_of_dicts(graph) }
+
 class Ini:
     """Import network configuration from ini files."""
 
-    _workspace = None
+    settings = {}
 
-    def __init__(self, workspace = None):
-        self._workspace = workspace
+    def __init__(self, **kwargs):
+        for key, val in kwargs.items():
+            if key in self.settings.keys():
+                self.settings[key] = val
 
     def load(self, path):
         """Return network configuration as dictionary.
@@ -262,113 +303,121 @@ class Ini:
 class Graphml:
     """Import network from GraphML file."""
 
-    def __init__(self, workspace = None):
-        pass
+    settings = {}
+
+    def __init__(self, **kwargs):
+        for key, val in kwargs.items():
+            if key in self.settings.keys():
+                self.settings[key] = val
 
     def load(self, path):
         graph = networkx.read_graphml(path)
-        graph = self._graph_decode(graph)
-        graph_dict = self._graph_to_dict(graph)
+        graph = _graph_decode(graph)
+        graph_dict = _graph_to_dict(graph)
         graph_dict = nemoa.common.dict_convert_unicode_keys(
             graph_dict)
         return {
             'config': graph_dict['graph']['params'],
             'graph': graph_dict }
 
-    @staticmethod
-    def _graph_decode(graph):
+    #@staticmethod
+    #def _graph_decode(graph):
 
-        # no decoding
-        if not 'coding' in graph.graph \
-            or not graph.graph['coding'] \
-            or graph.graph['coding'].lower() == 'none':
-            return graph
+        ## no decoding
+        #if not 'coding' in graph.graph \
+            #or not graph.graph['coding'] \
+            #or graph.graph['coding'].lower() == 'none':
+            #return graph
 
-        # base64 decoding
-        elif graph.graph['coding'] == 'base64':
-            graph.graph['params'] = \
-                nemoa.common.dict_decode_base64(
-                graph.graph['params'])
+        ## base64 decoding
+        #elif graph.graph['coding'] == 'base64':
+            #graph.graph['params'] = \
+                #nemoa.common.dict_decode_base64(
+                #graph.graph['params'])
 
-            for node in graph.nodes():
-                graph.node[node]['params'] = \
-                    nemoa.common.dict_decode_base64(
-                    graph.node[node]['params'])
+            #for node in graph.nodes():
+                #graph.node[node]['params'] = \
+                    #nemoa.common.dict_decode_base64(
+                    #graph.node[node]['params'])
 
-            for src, tgt in graph.edges():
-                graph.edge[src][tgt]['params'] = \
-                    nemoa.common.dict_decode_base64(
-                    graph.edge[src][tgt]['params'])
+            #for src, tgt in graph.edges():
+                #graph.edge[src][tgt]['params'] = \
+                    #nemoa.common.dict_decode_base64(
+                    #graph.edge[src][tgt]['params'])
 
-            graph.graph['coding'] == 'none'
-            return graph
+            #graph.graph['coding'] == 'none'
+            #return graph
 
-        else:
-            nemoa.log('error', """could not decode graph parameters:
-                unsupported coding '%s'.""" % (coding))
+        #else:
+            #nemoa.log('error', """could not decode graph parameters:
+                #unsupported coding '%s'.""" % (coding))
 
-        return {}
+        #return {}
 
-    @staticmethod
-    def _graph_to_dict(graph):
-        return {
-            'graph': graph.graph,
-            'nodes': graph.nodes(data = True),
-            'edges': networkx.to_dict_of_dicts(graph) }
+    #@staticmethod
+    #def _graph_to_dict(graph):
+        #return {
+            #'graph': graph.graph,
+            #'nodes': graph.nodes(data = True),
+            #'edges': networkx.to_dict_of_dicts(graph) }
 
 class Gml:
     """Import network from GML file."""
 
-    def __init__(self, workspace = None):
-        pass
+    settings = {}
+
+    def __init__(self, **kwargs):
+        for key, val in kwargs.items():
+            if key in self.settings.keys():
+                self.settings[key] = val
 
     def load(self, path):
         graph = networkx.read_gml(path, relabel = True)
-        graph = self._graph_decode(graph)
-        graph_dict = self._graph_to_dict(graph)
+        graph = _graph_decode(graph)
+        graph_dict = _graph_to_dict(graph)
         graph_dict = nemoa.common.dict_convert_unicode_keys(
             graph_dict)
         return {
             'config': graph_dict['graph']['params'],
             'graph': graph_dict }
 
-    @staticmethod
-    def _graph_decode(graph):
+    #@staticmethod
+    #def _graph_decode(graph):
 
-        # no decoding
-        if not 'coding' in graph.graph \
-            or not graph.graph['coding'] \
-            or graph.graph['coding'].lower() == 'none':
-            return graph
+        ## no decoding
+        #if not 'coding' in graph.graph \
+            #or not graph.graph['coding'] \
+            #or graph.graph['coding'].lower() == 'none':
+            #return graph
 
-        # base64 decoding
-        elif graph.graph['coding'] == 'base64':
-            graph.graph['params'] = \
-                nemoa.common.dict_decode_base64(
-                graph.graph['params'])
+        ## base64 decoding
+        #elif graph.graph['coding'] == 'base64':
+            #graph.graph['params'] = \
+                #nemoa.common.dict_decode_base64(
+                #graph.graph['params'])
 
-            for node in graph.nodes():
-                graph.node[node]['params'] = \
-                    nemoa.common.dict_decode_base64(
-                    graph.node[node]['params'])
+            #for node in graph.nodes():
+                #graph.node[node]['params'] = \
+                    #nemoa.common.dict_decode_base64(
+                    #graph.node[node]['params'])
 
-            for src, tgt in graph.edges():
-                graph.edge[src][tgt]['params'] = \
-                    nemoa.common.dict_decode_base64(
-                    graph.edge[src][tgt]['params'])
+            #for src, tgt in graph.edges():
+                #graph.edge[src][tgt]['params'] = \
+                    #nemoa.common.dict_decode_base64(
+                    #graph.edge[src][tgt]['params'])
 
-            graph.graph['coding'] == 'none'
-            return graph
+            #graph.graph['coding'] == 'none'
+            #return graph
 
-        else:
-            nemoa.log('error', """could not decode graph parameters:
-                unsupported coding '%s'.""" % (coding))
+        #else:
+            #nemoa.log('error', """could not decode graph parameters:
+                #unsupported coding '%s'.""" % (coding))
 
-        return {}
+        #return {}
 
-    @staticmethod
-    def _graph_to_dict(graph):
-        return {
-            'graph': graph.graph,
-            'nodes': graph.nodes(data = True),
-            'edges': networkx.to_dict_of_dicts(graph) }
+    #@staticmethod
+    #def _graph_to_dict(graph):
+        #return {
+            #'graph': graph.graph,
+            #'nodes': graph.nodes(data = True),
+            #'edges': networkx.to_dict_of_dicts(graph) }

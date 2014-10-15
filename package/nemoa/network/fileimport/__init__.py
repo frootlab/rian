@@ -5,7 +5,7 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa.network.fileimport.graph
-import nemoa.network.fileimport.dump
+import nemoa.network.fileimport.archive
 import os
 
 def filetypes(filetype = None):
@@ -18,10 +18,10 @@ def filetypes(filetype = None):
     for key, val in graph_types.items():
         type_dict[key] = ('graph', val)
 
-    # get supported dump filetypes
-    dump_types = nemoa.network.fileimport.dump.filetypes()
-    for key, val in dump_types.items():
-        type_dict[key] = ('dump', val)
+    # get supported archive filetypes
+    archive_types = nemoa.network.fileimport.archive.filetypes()
+    for key, val in archive_types.items():
+        type_dict[key] = ('archive', val)
 
     if filetype == None:
         return {key: val[1] for key, val in type_dict.items()}
@@ -70,8 +70,8 @@ def load(path, filetype = None, **kwargs):
     if module_name == 'graph':
         network_dict = nemoa.network.fileimport.graph.load(
             path, **kwargs)
-    elif module_name == 'dump':
-        network_dict = nemoa.network.fileimport.dump.load(
+    elif module_name == 'archive':
+        network_dict = nemoa.network.fileimport.archive.load(
             path, **kwargs)
     else:
         return False

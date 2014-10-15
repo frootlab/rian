@@ -4,14 +4,19 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.network.fileexport.image
+import nemoa.network.fileexport.archive
 import nemoa.network.fileexport.graph
-import nemoa.network.fileexport.dump
+import nemoa.network.fileexport.image
 
 def filetypes(filetype = None):
     """Get supported network export filetypes."""
 
     type_dict = {}
+
+    # get supported archive filetypes
+    archive_types = nemoa.network.fileexport.archive.filetypes()
+    for key, val in archive_types.items():
+        type_dict[key] = ('archive', val)
 
     # get supported graph description file types
     graph_types = nemoa.network.fileexport.graph.filetypes()
@@ -22,11 +27,6 @@ def filetypes(filetype = None):
     image_types = nemoa.network.fileexport.image.filetypes()
     for key, val in image_types.items():
         type_dict[key] = ('image', val)
-
-    # get supported dump filetypes
-    dump_types = nemoa.network.fileexport.dump.filetypes()
-    for key, val in dump_types.items():
-        type_dict[key] = ('dump', val)
 
     if filetype == None:
         return {key: val[1] for key, val in type_dict.items()}
@@ -42,7 +42,7 @@ def save(network, path = None, filetype = None, workspace = None,
     Args:
         network (object): nemoa network instance
         path (str, optional): path of export file
-        filetype (str, optional): filetype export file
+        filetype (str, optional): filetype of export file
         workspace (str, optional): workspace to use for file export
 
     Returns:
@@ -76,8 +76,7 @@ def save(network, path = None, filetype = None, workspace = None,
         if not workspace == current_workspace:
             if not nemoa.workspace.load(workspace):
                 nemoa.log('error', """could not export network:
-                    workspace '%s' does not exist"""
-                    % (workspace))
+                    workspace '%s' does not exist""" % (workspace))
                 return  {}
 
         # get network path from workspace
@@ -100,47 +99,12 @@ def save(network, path = None, filetype = None, workspace = None,
     module_name = filetypes(filetype)[0]
     if module_name == 'graph':
         return nemoa.network.fileexport.graph.save(
-            network, path, **kwargs)
-    if module_name == 'dump':
-        return nemoa.network.fileexport.dump.save(
-            network, path, **kwargs)
+            network, path, filetype, **kwargs)
+    if module_name == 'archive':
+        return nemoa.network.fileexport.archive.save(
+            network, path, filetype, **kwargs)
     if module_name == 'image':
         return nemoa.network.fileexport.image.save(
-            network, path, **kwargs)
+            network, path, filetype, **kwargs)
 
     return False
-
-def encode(graph, coding = None):
-    """Encode graph parameters."""
-
-    # no encoding
-    if not isinstance(coding, str) or coding.lower() == 'none':
-        return self._graph.copy()
-
-    # base64 encoding
-    elif coding.lower() == 'base64':
-
-        # encode graph 'params' dictionary to base64
-        graph.graph['params'] \
-            = nemoa.common.dict_encode_base64(
-            graph.graph['params'])
-
-        # encode nodes 'params' dictionaries to base64
-        for node in graph.nodes():
-            graph.node[node]['params'] \
-                = nemoa.common.dict_encode_base64(
-                graph.node[node]['params'])
-
-        # encode edges 'params' dictionaries to base64
-        for edge in graph.edges():
-            in_node, out_node = edge
-            graph.edge[in_node][out_node]['params'] \
-                = nemoa.common.dict_encode_base64(
-                graph.edge[in_node][out_node]['params'])
-
-        # set flag for graph parameter coding
-        graph.graph['coding'] = 'base64'
-        return graph
-
-    return nemoa.log('error', """could not encode graph parameters:
-        unsupported coding '%s'.""" % (coding))

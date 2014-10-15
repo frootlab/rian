@@ -45,9 +45,19 @@ def csv_get_delimiter(file, delimiters = [',', ';', '\t', ' ']):
     return nemoa.log('warning',
         "could not determine delimiter of .csv file '%s'!" % (file))
 
-def csv_save_data(file, data, cols = None, delimiter = '\t',
-    comments = ''):
-    header = delimiter.join(cols) if isinstance(cols, list) else None
+def csv_save_data(path, data, cols = None, comment = None,
+    delimiter = ',', **kwargs):
+
+    header = None
+    if isinstance(comment, str):
+        header = '# %s' % (comment.replace('\n', '\n# '))
+    if isinstance(cols, list):
+        if header == None:
+            header = delimiter.join(cols)
+        else:
+            header += '\n' + delimiter.join(cols)
+
     fmt = delimiter.join(['%s'] + ['%10.10f'] * (len(data[0]) - 1))
-    return numpy.savetxt(file, data, fmt = fmt, delimiter = delimiter,
-        header = header, comments = comments)
+    numpy.savetxt(path, data, fmt = fmt, header = header,
+        comments = '', **kwargs)
+    return True

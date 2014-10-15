@@ -517,10 +517,8 @@ class Network:
         if section == None: return {
             'config': self._get_config(),
             'graph': self._get_graph() }
-        elif section == 'config':
-            return self._get_config()
-        elif section == 'graph':
-            return self._get_graph()
+        elif section == 'config': return self._get_config()
+        elif section == 'graph': return self._get_graph()
         return nemoa.log('error', """could not get copy of
             configuration: unknown section '%s'.""" % (section))
 

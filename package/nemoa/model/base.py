@@ -304,7 +304,7 @@ class model:
         if key == 'network': return self.network.show(*args, **kwargs)
 
         kwargs['output'] = 'show'
-        return self.plot(*args, **kwargs)
+        return self.plot(key, *args, **kwargs)
 
     def plot(self, *args, **kwargs):
         """Create plot of model."""

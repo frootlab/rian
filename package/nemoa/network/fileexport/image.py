@@ -15,12 +15,10 @@ def filetypes():
     """Get supported image filetypes for network export."""
     return matplotlib.pyplot.gcf().canvas.get_supported_filetypes()
 
-def save(network, path = None, plot = None, output = 'file', **kwargs):
+def save(network, path = None, filetype = None, plot = None,
+    output = 'file', **kwargs):
 
     if output.lower() == 'file':
-
-        # extract filetype from path
-        filetype = nemoa.common.get_file_extension(path).lower()
 
         # test if filetype is supported by matplotlib
         if not filetype in filetypes():

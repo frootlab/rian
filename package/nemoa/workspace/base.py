@@ -1102,22 +1102,3 @@ class Config:
             if type == 'list': return nemoa.common.str_to_list(str)
             if type == 'dict': return nemoa.common.str_to_dict(str)
             return str
-
-    #class _ImportScript:
-        #"""import script files."""
-
-        #def __init__(self, config):
-            #self._workspace = config.workspace()
-
-        #def load(self, file):
-            #name = self._workspace + '.' \
-                #+ os.path.splitext(os.path.basename(file))[0]
-            #path = file
-
-            #return {
-                #'class': 'script',
-                #'name': name,
-                #'workspace': self._workspace,
-                #'config': {
-                    #'name': name,
-                    #'path': path }}

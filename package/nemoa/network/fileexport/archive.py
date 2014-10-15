@@ -9,17 +9,23 @@ import numpy
 import os
 
 def filetypes():
-    """Get supported dump filetypes for network export."""
+    """Get supported archive filetypes for network export."""
     return {
         'npz': 'Numpy Zipped Archive' }
 
-def save(network, path, **kwargs):
-    """Export network to dump file."""
+def save(network, path, filetype, **kwargs):
+    """Export network to archive file."""
+
+    # test if filetype is supported
+    if not filetype in filetypes():
+        return nemoa.log('error', """could not export network:
+            filetype '%s' is not supported.""" % (filetype))
+
     copy = network.get('copy')
     return Npz(**kwargs).save(copy, path)
 
 class Npz:
-    """Export network to numpy zip compressed file."""
+    """Export network to numpy zipped archive."""
 
     settings = {
         'compress': True }
