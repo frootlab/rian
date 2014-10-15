@@ -8,11 +8,20 @@ import nemoa
 import networkx
 import os
 
+def save(network, path, **kwargs):
+
+    return Gml(**kwargs).save(network, path)
+
 class Gml:
     """Export network to GML file."""
 
-    def __init__(self, workspace = None):
-        pass
+    settings = {
+        'coding': 'base64' }
+
+    def __init__(self, **kwargs):
+        for key, val in kwargs.items():
+            if key in self.settings.keys():
+                self.settings[key] = val
 
     def save(self, network, path):
 
@@ -23,46 +32,11 @@ class Gml:
         # get networkx graph from network
         graph = network.get('graph', type = 'graph')
 
-        # encode graph parameter dictionaries to base64
-        graph = self._graph_encode(graph, coding = 'base64')
+        # encode graph parameter dictionaries
+        graph = nemoa.network.fileexport.encode(graph,
+            coding = self.settings['coding'])
 
         # write networkx graph to gml file
         networkx.write_gml(graph, path)
 
-        return True
-
-    @staticmethod
-    def _graph_encode(graph, coding = None):
-        """Encode graph parameters."""
-
-        # no encoding
-        if not isinstance(coding, str) or coding.lower() == 'none':
-            return self._graph.copy()
-
-        # base64 encoding
-        elif coding.lower() == 'base64':
-
-            # encode graph 'params' dictionary to base64
-            graph.graph['params'] \
-                = nemoa.common.dict_encode_base64(
-                graph.graph['params'])
-
-            # encode nodes 'params' dictionaries to base64
-            for node in graph.nodes():
-                graph.node[node]['params'] \
-                    = nemoa.common.dict_encode_base64(
-                    graph.node[node]['params'])
-
-            # encode edges 'params' dictionaries to base64
-            for edge in graph.edges():
-                in_node, out_node = edge
-                graph.edge[in_node][out_node]['params'] \
-                    = nemoa.common.dict_encode_base64(
-                    graph.edge[in_node][out_node]['params'])
-
-            # set flag for graph parameter coding
-            graph.graph['coding'] = 'base64'
-            return graph
-
-        return nemoa.log('error', """could not encode graph parameters:
-            unsupported coding '%s'.""" % (coding))
+        return path

@@ -68,6 +68,8 @@ def save(network, path = None, plot = None, output = 'file', **kwargs):
     # clear figures and release memory
     matplotlib.pyplot.clf()
 
+    if output.lower() == 'file':
+        return path
     return True
 
 class Graph:

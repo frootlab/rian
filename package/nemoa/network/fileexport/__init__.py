@@ -56,14 +56,14 @@ def save(network, path = None, filetype = None, workspace = None,
             if not current_workspace == None:
                 nemoa.workspace.load(current_workspace)
 
-    # get file export module name from filetype
+    # get file export module name from filetype or file extension
     if filetype:
         module_name = 'nemoa.network.fileexport.%s' % (filetype)
     else:
         module_name = 'nemoa.network.fileexport.%s' % (
             nemoa.common.get_file_extension(path).lower())
 
-    # import network file export module
+    # import python module for network file export
     try:
         module = importlib.import_module(module_name)
         if not hasattr(module, 'save'):raise ImportError()
@@ -74,3 +74,38 @@ def save(network, path = None, filetype = None, workspace = None,
 
     # export network
     return module.save(network, path, **kwargs)
+
+def encode(graph, coding = None):
+    """Encode graph parameters."""
+
+    # no encoding
+    if not isinstance(coding, str) or coding.lower() == 'none':
+        return self._graph.copy()
+
+    # base64 encoding
+    elif coding.lower() == 'base64':
+
+        # encode graph 'params' dictionary to base64
+        graph.graph['params'] \
+            = nemoa.common.dict_encode_base64(
+            graph.graph['params'])
+
+        # encode nodes 'params' dictionaries to base64
+        for node in graph.nodes():
+            graph.node[node]['params'] \
+                = nemoa.common.dict_encode_base64(
+                graph.node[node]['params'])
+
+        # encode edges 'params' dictionaries to base64
+        for edge in graph.edges():
+            in_node, out_node = edge
+            graph.edge[in_node][out_node]['params'] \
+                = nemoa.common.dict_encode_base64(
+                graph.edge[in_node][out_node]['params'])
+
+        # set flag for graph parameter coding
+        graph.graph['coding'] = 'base64'
+        return graph
+
+    return nemoa.log('error', """could not encode graph parameters:
+        unsupported coding '%s'.""" % (coding))
