@@ -11,6 +11,10 @@ import os
 import importlib
 import matplotlib.pyplot
 
+def filetypes():
+    """Get supported image filetypes for network export."""
+    return matplotlib.pyplot.gcf().canvas.get_supported_filetypes()
+
 def save(network, path = None, plot = None, output = 'file', **kwargs):
 
     if output.lower() == 'file':
@@ -19,9 +23,7 @@ def save(network, path = None, plot = None, output = 'file', **kwargs):
         filetype = nemoa.common.get_file_extension(path).lower()
 
         # test if filetype is supported by matplotlib
-        filetypes = \
-            matplotlib.pyplot.gcf().canvas.get_supported_filetypes()
-        if not filetype in filetypes:
+        if not filetype in filetypes():
             return nemoa.log('error', """could not create plot:
                 filetype '%s' is not supported by matplotlib.""" %
                 (filetype))

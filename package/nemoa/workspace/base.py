@@ -493,10 +493,6 @@ class Config:
                 'config': {
                     'name': name,
                     'path': path }})
-                #'config': {
-                    #'source': {
-                        #'file': path,
-                        #'file_format': 'ini' }}
 
         nemoa.log('set', indent = '-1')
         return True
@@ -583,38 +579,40 @@ class Config:
                     missing source information! (parameter:
                     'source:file')""" % (name))
 
-            file = conf['source']['file']
-            if not self._expand_path(file, check = True):
+            path = conf['source']['file']
+            if not self._expand_path(path, check = True):
                 return nemoa.log('warning', """skipping network '%s':
-                    file '%s' not found!""" % (name, file))
+                    file '%s' not found!""" % (name, path))
 
             obj_conf['config']['source']['file'] = \
-                self._expand_path(file)
+                self._expand_path(path)
 
-            if not 'file_format' in conf['source']:
-                obj_conf['config']['source']['file_format'] = \
-                    nemoa.common.get_file_extension(file)
+            if not 'filetype' in conf['source']:
+                obj_conf['config']['source']['filetype'] = \
+                    nemoa.common.get_file_extension(path)
 
-            file_format = obj_conf['config']['source']['file_format']
+            filetype = obj_conf['config']['source']['filetype']
 
             # get network file
-            if os.path.isfile(file): network_file = file
-            elif os.path.isfile(self._path['networks'] + file):
-                network_file = self._path['networks'] + file
-            else: network_file = None
+            if os.path.isfile(path):
+                network_file = path
+            elif os.path.isfile(self._path['networks'] + path):
+                network_file = self._path['networks'] + path
+            else:
+                network_file = None
+
             if not network_file:
                 return nemoa.log('error', """skipping network '%s':
-                    file '%s' does not exist.""" % (name, file))
+                    file '%s' does not exist.""" % (name, path))
 
             # get network config
             network_cfg = nemoa.network.fileimport.load(network_file,
-                file_format = file_format, workspace = self._workspace)
+                filetype = filetype, workspace = self._workspace)
 
             if not network_cfg:
                 return nemoa.log('error', """skipping network '%s':
                     could not import file '%s'."""
                     % (name, network_file))
-            #self._add_obj_to_store(network_cfg)
 
             # update configuration
             for key in network_cfg:
@@ -652,8 +650,8 @@ class Config:
             #conf['import_type'] = 'file'
 
             # add missing source information
-            if not 'file_format' in conf['source']:
-                conf['source']['file_format'] = \
+            if not 'filetype' in conf['source']:
+                conf['source']['filetype'] = \
                     nemoa.common.get_file_extension(source_file)
 
             # only update in the first call of check_datasetConf

@@ -8,9 +8,15 @@ import nemoa
 import numpy
 import os
 
-def save(network, path, **kwargs):
+def filetypes():
+    """Get supported dump filetypes for network export."""
+    return {
+        'npz': 'Numpy Zipped Archive' }
 
-    return Npz(**kwargs).save(network, path)
+def save(network, path, **kwargs):
+    """Export network to dump file."""
+    copy = network.get('copy')
+    return Npz(**kwargs).save(copy, path)
 
 class Npz:
     """Export network to numpy zip compressed file."""
@@ -23,15 +29,15 @@ class Npz:
             if key in self.settings.keys():
                 self.settings[key] = val
 
-    def save(self, network, path):
+    def save(self, copy, path):
 
         # create path if not available
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
 
         if self.settings['compress']:
-            numpy.savez_compressed(path, **network.get('copy'))
+            numpy.savez_compressed(path, **copy)
         else:
-            numpy.savez(path, **network.get('copy'))
+            numpy.savez(path, **copy)
 
         return path

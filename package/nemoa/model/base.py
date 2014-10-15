@@ -299,8 +299,10 @@ class model:
         nemoa.log('set', indent = '-1')
         return file
 
-    def show(self, *args, **kwargs):
+    def show(self, key = None, *args, **kwargs):
         """Create plot of model with output to display."""
+        if key == 'network': return self.network.show(*args, **kwargs)
+
         kwargs['output'] = 'show'
         return self.plot(*args, **kwargs)
 

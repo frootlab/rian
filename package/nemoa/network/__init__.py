@@ -39,4 +39,4 @@ def new(*args, **kwargs):
     return network
 
 def show(*args, **kwargs):
-    return save(*args, filetype = 'image', output = 'display', **kwargs)
+    return save(*args, output = 'display', **kwargs)

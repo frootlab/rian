@@ -4,11 +4,33 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import importlib
-import nemoa
+import nemoa.network.fileimport.graph
+import nemoa.network.fileimport.dump
 import os
 
-def load(path, file_format = None, **kwargs):
+def filetypes(filetype = None):
+    """Get supported network import filetypes."""
+
+    type_dict = {}
+
+    # get supported graph description file types
+    graph_types = nemoa.network.fileimport.graph.filetypes()
+    for key, val in graph_types.items():
+        type_dict[key] = ('graph', val)
+
+    # get supported dump filetypes
+    dump_types = nemoa.network.fileimport.dump.filetypes()
+    for key, val in dump_types.items():
+        type_dict[key] = ('dump', val)
+
+    if filetype == None:
+        return {key: val[1] for key, val in type_dict.items()}
+    if filetype in type_dict:
+        return type_dict[filetype]
+
+    return False
+
+def load(path, filetype = None, **kwargs):
     """Import network configuration from file."""
 
     # get path
@@ -36,31 +58,31 @@ def load(path, file_format = None, **kwargs):
         return {}
 
     # if file format is not given get format from file extension
-    if not file_format:
-        file_format = nemoa.common.get_file_extension(path).lower()
+    if not filetype:
+        filetype = nemoa.common.get_file_extension(path).lower()
 
-    # get network file importer
-    module_name = 'nemoa.network.fileimport.%s' % (file_format)
-    class_name = file_format.title()
-    try:
-        module = importlib.import_module(module_name)
-        if not hasattr(module, class_name): raise ImportError()
-        importer = getattr(module, class_name)(**kwargs)
-    except ImportError:
-        nemoa.log('error', """could not import network '%s':
-            file format '%s' is not supported.""" %
-            (path, file_format))
-        return {}
+    # test if filetype is supported
+    if not filetype in filetypes().keys():
+        return nemoa.log('error', """could not import network:
+            filetype '%s' is not supported.""" % (filetype))
 
-    # import network as dictionary
-    network_dict = importer.load(path)
+    module_name = filetypes(filetype)[0]
+    if module_name == 'graph':
+        network_dict = nemoa.network.fileimport.graph.load(
+            path, **kwargs)
+    elif module_name == 'dump':
+        network_dict = nemoa.network.fileimport.dump.load(
+            path, **kwargs)
+    else:
+        return False
 
     # update source
     network_dict['config']['source'] = {
         'file': path,
-        'file_format': file_format }
+        'filetype': filetype }
 
     return network_dict
+
 
 
 

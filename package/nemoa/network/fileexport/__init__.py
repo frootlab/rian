@@ -4,9 +4,36 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import importlib
-import nemoa
-import os
+import nemoa.network.fileexport.image
+import nemoa.network.fileexport.graph
+import nemoa.network.fileexport.dump
+
+def filetypes(filetype = None):
+    """Get supported network export filetypes."""
+
+    type_dict = {}
+
+    # get supported graph description file types
+    graph_types = nemoa.network.fileexport.graph.filetypes()
+    for key, val in graph_types.items():
+        type_dict[key] = ('graph', val)
+
+    # get supported image filetypes
+    image_types = nemoa.network.fileexport.image.filetypes()
+    for key, val in image_types.items():
+        type_dict[key] = ('image', val)
+
+    # get supported dump filetypes
+    dump_types = nemoa.network.fileexport.dump.filetypes()
+    for key, val in dump_types.items():
+        type_dict[key] = ('dump', val)
+
+    if filetype == None:
+        return {key: val[1] for key, val in type_dict.items()}
+    if filetype in type_dict:
+        return type_dict[filetype]
+
+    return False
 
 def save(network, path = None, filetype = None, workspace = None,
     **kwargs):
@@ -26,6 +53,11 @@ def save(network, path = None, filetype = None, workspace = None,
     if not nemoa.common.type.is_network(network):
         return nemoa.log('error', """could not save network to file:
             network is not valid.""")
+
+    # display output
+    if 'output' in kwargs and kwargs['output'] == 'display':
+        return nemoa.network.fileexport.image.save(
+            network, **kwargs)
 
     # get file path from network source file if path not given
     if path == None:
@@ -56,24 +88,27 @@ def save(network, path = None, filetype = None, workspace = None,
             if not current_workspace == None:
                 nemoa.workspace.load(current_workspace)
 
-    # get file export module name from filetype or file extension
-    if filetype:
-        module_name = 'nemoa.network.fileexport.%s' % (filetype)
-    else:
-        module_name = 'nemoa.network.fileexport.%s' % (
-            nemoa.common.get_file_extension(path).lower())
+    # get filetype from file extension if not given
+    if not filetype:
+        filetype = nemoa.common.get_file_extension(path).lower()
 
-    # import python module for network file export
-    try:
-        module = importlib.import_module(module_name)
-        if not hasattr(module, 'save'):raise ImportError()
-    except ImportError:
-        return nemoa.log('error', """could not export network '%s':
-            filetype '%s' is not supported.""" %
-            (network.get('name'), filetype))
+    # test if filetype is supported
+    if not filetype in filetypes().keys():
+        return nemoa.log('error', """could not export network:
+            filetype '%s' is not supported.""" % (filetype))
 
-    # export network
-    return module.save(network, path, **kwargs)
+    module_name = filetypes(filetype)[0]
+    if module_name == 'graph':
+        return nemoa.network.fileexport.graph.save(
+            network, path, **kwargs)
+    if module_name == 'dump':
+        return nemoa.network.fileexport.dump.save(
+            network, path, **kwargs)
+    if module_name == 'image':
+        return nemoa.network.fileexport.image.save(
+            network, path, **kwargs)
+
+    return False
 
 def encode(graph, coding = None):
     """Encode graph parameters."""
