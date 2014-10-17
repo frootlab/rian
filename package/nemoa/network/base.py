@@ -17,9 +17,7 @@ class Network:
     _graph = None
 
     def __init__(self, **kwargs):
-        """Configure network to given dictionary."""
-
-        # create copy of config
+        """Import network from dictionary."""
         self._set_copy(**kwargs)
 
     def _configure(self, dataset, system):
@@ -304,14 +302,20 @@ class Network:
         return True
 
     def get(self, key = None, *args, **kwargs):
-        """Get information about network."""
+        """Get meta information, parameters and data of network."""
 
-        # get generic information about dataset
+        # get meta information of network
+        if key == 'fullname': return self._get_fullname()
         if key == 'name': return self._get_name()
-        if key == 'type': return self._get_type()
+        if key == 'branch': return self._get_branch()
+        if key == 'version': return self._get_version()
         if key == 'about': return self._get_about()
+        if key == 'author': return self._get_author()
+        if key == 'email': return self._get_email()
+        if key == 'license': return self._get_license()
+        if key == 'type': return self._get_type()
 
-        # get information about network parameters
+        # get network parameters and data
         if key == 'node': return self._get_node(*args, **kwargs)
         if key == 'nodes': return self._get_nodes(*args, **kwargs)
         if key == 'edge': return self._get_edge(*args, **kwargs)
@@ -319,17 +323,57 @@ class Network:
         if key == 'layer': return self._get_layer(*args, **kwargs)
         if key == 'layers': return self._get_layers(*args, **kwargs)
 
-        # get copy of dataset configuration and parameters
+        # export network configuration and graph
         if key == 'copy': return self._get_copy(*args, **kwargs)
         if key == 'config': return self._get_config(*args, **kwargs)
         if key == 'graph': return self._get_graph(*args, **kwargs)
 
         return nemoa.log('warning', "unknown key '%s'" % (key))
 
+    def _get_fullname(self):
+        """Get fullname of network."""
+        fullname = ''
+        name = self._get_name()
+        if name: fullname += name
+        branch = self._get_branch()
+        if branch: fullname += '.' + branch
+        version = self._get_version()
+        if version: fullname += '.' + str(version)
+        return fullname
+
     def _get_name(self):
         """Get name of network."""
-        if 'name' in self._config:
-            return self._config['name']
+        if 'name' in self._config: return self._config['name']
+        return None
+
+    def _get_branch(self):
+        """Get branch of network."""
+        if 'branch' in self._config: return self._config['branch']
+        return None
+
+    def _get_version(self):
+        """Get version number of network branch."""
+        if 'version' in self._config: return self._config['version']
+        return None
+
+    def _get_about(self):
+        """Get description of network."""
+        if 'about' in self._config: return self._config['about']
+        return None
+
+    def _get_author(self):
+        """Get author of network."""
+        if 'author' in self._config: return self._config['author']
+        return None
+
+    def _get_email(self):
+        """Get email of author of network."""
+        if 'email' in self._config: return self._config['email']
+        return None
+
+    def _get_license(self):
+        """Get license of network."""
+        if 'license' in self._config: return self._config['license']
         return None
 
     def _get_type(self):
@@ -337,12 +381,6 @@ class Network:
         module_name = self.__module__.split('.')[-1]
         class_name = self.__class__.__name__
         return module_name + '.' + class_name
-
-    def _get_about(self):
-        """Get description of network."""
-        if 'about' in self._config:
-            return self._config['about']
-        return None
 
     def _get_node(self, node):
         """Return network information of single node."""
@@ -546,25 +584,71 @@ class Network:
         return None
 
     def set(self, key = None, *args, **kwargs):
+        """Set meta information, parameters and data of network."""
 
+        # set meta information of network
         if key == 'name': return self._set_name(*args, **kwargs)
+        if key == 'branch': return self._set_branch(*args, **kwargs)
+        if key == 'version': return self._set_version(*args, **kwargs)
+        if key == 'about': return self._set_about(*args, **kwargs)
+        if key == 'author': return self._set_author(*args, **kwargs)
+        if key == 'email': return self._set_email(*args, **kwargs)
+        if key == 'license': return self._set_license(*args, **kwargs)
+
+        # import network configuration and graph
         if key == 'copy': return self._set_copy(*args, **kwargs)
+        if key == 'config': return self._set_config(*args, **kwargs)
+        if key == 'graph': return self._set_graph(*args, **kwargs)
 
         if not key == None: nemoa.log('warning',
             "unknown key '%s'" % (key))
         return None
 
-    def _set_name(self, name):
+    def _set_name(self, network_name):
         """Set name of network."""
-        if not isinstance(name, str): return False
-        self._config['name'] = name
+        if not isinstance(network_name, str): return False
+        self._config['name'] = network_name
+        return True
+
+    def _set_branch(self, network_branch):
+        """Set branch of network."""
+        if not isinstance(network_branch, str): return False
+        self._config['branch'] = network_branch
+        return True
+
+    def _set_version(self, network_version):
+        """Set version number of network branch."""
+        if not isinstance(network_version, int): return False
+        self._config['version'] = network_version
+        return True
+
+    def _set_about(self, network_about):
+        """Get description of network."""
+        if not isinstance(network_about, str): return False
+        self._config['about'] = network_about
+        return True
+
+    def _set_author(self, network_author):
+        """Set author of network."""
+        if not isinstance(network_author, str): return False
+        self._config['author'] = network_author
+        return True
+
+    def _set_email(self, network_author_email):
+        """Set email of author of network."""
+        if not isinstance(network_author_email, str): return False
+        self._config['email'] = network_author_email
+        return True
+
+    def _set_license(self, network_license):
+        """Set license of network."""
+        if not isinstance(network_license, str): return False
+        self._config['license'] = network_license
         return True
 
     def _set_copy(self, **kwargs):
-        if 'config' in kwargs:
-            self._set_config(kwargs['config'])
-        if 'graph' in kwargs:
-            self._set_graph(kwargs['graph'])
+        if 'config' in kwargs: self._set_config(kwargs['config'])
+        if 'graph' in kwargs: self._set_graph(kwargs['graph'])
         return True
 
     def _set_config(self, config = None):

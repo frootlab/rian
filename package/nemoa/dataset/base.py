@@ -14,13 +14,13 @@ import scipy.cluster.vq
 
 class Dataset:
 
+    _default = { 'name': None }
     _config = None
     _source = None
 
-    def __init__(self, config = {}):
-        """Set configuration of dataset from dictionary."""
-        self._config = config.copy()
-        self._source = {}
+    def __init__(self, **kwargs):
+        """Import dataset from dictionary."""
+        self._set_copy(**kwargs)
 
     def _is_empty(self):
         """Return true if dataset is empty."""
@@ -912,48 +912,88 @@ class Dataset:
         return file
 
     def get(self, key = None, *args, **kwargs):
-        """Get information about dataset."""
+        """Get meta information, parameters and data of dataset."""
 
-        # get generic information about dataset
+        # get meta information of dataset
+        if key == 'fullname': return self._get_fullname()
         if key == 'name': return self._get_name()
-        if key == 'type': return self._get_type()
+        if key == 'branch': return self._get_branch()
+        if key == 'version': return self._get_version()
         if key == 'about': return self._get_about()
+        if key == 'author': return self._get_author()
+        if key == 'email': return self._get_email()
+        if key == 'license': return self._get_license()
+        if key == 'type': return self._get_type()
 
-        # get information about columns
+        # get dataset parameters and data
         if key == 'colnames': return self._get_colnames(*args, **kwargs)
         if key == 'colgroups': return self._get_colgroups()
         if key == 'colfilter': return self._get_colfilter(*args, **kwargs)
         if key == 'colfilters': return self._get_colfilters()
-
-        # get information about rows
         if key == 'rownames': return self._get_rownames(*args, **kwargs)
         if key == 'rowfilter': return self._get_rowfilter(*args, **kwargs)
         if key == 'rowfilters': return self._get_rowfilters()
-
-        # get data from dataset
         if key == 'data': return self._get_data(*args, **kwargs)
         if key == 'value': return self._get_value(*args, **kwargs)
 
-        # get copy of dataset configuration and source data
+        # export dataset configuration and data
         if key == 'copy': return self._get_copy(*args, **kwargs)
         if key == 'config': return self._get_config(*args, **kwargs)
         if key == 'source': return self._get_source(*args, **kwargs)
 
         return nemoa.log('warning', "unknown key '%s'" % (key))
 
+    def _get_fullname(self):
+        """Get fullname of dataset."""
+        fullname = ''
+        name = self._get_name()
+        if name: fullname += name
+        branch = self._get_branch()
+        if branch: fullname += '.' + branch
+        version = self._get_version()
+        if version: fullname += '.' + str(version)
+        return fullname
+
     def _get_name(self):
         """Get name of dataset."""
-        return self._config['name'] if 'name' in self._config else None
+        if 'name' in self._config: return self._config['name']
+        return None
+
+    def _get_branch(self):
+        """Get branch of dataset."""
+        if 'branch' in self._config: return self._config['branch']
+        return None
+
+    def _get_version(self):
+        """Get version number of dataset branch."""
+        if 'version' in self._config: return self._config['version']
+        return None
+
+    def _get_about(self):
+        """Get description of dataset."""
+        if 'about' in self._config: return self._config['about']
+        return None
+
+    def _get_author(self):
+        """Get author of dataset."""
+        if 'author' in self._config: return self._config['author']
+        return None
+
+    def _get_email(self):
+        """Get email of author of dataset."""
+        if 'email' in self._config: return self._config['email']
+        return None
+
+    def _get_license(self):
+        """Get license of dataset."""
+        if 'license' in self._config: return self._config['license']
+        return None
 
     def _get_type(self):
         """Get type of dataset, using module and class name."""
         module_name = self.__module__.split('.')[-1]
         class_name = self.__class__.__name__
         return module_name + '.' + class_name
-
-    def _get_about(self):
-        """Get docstring of dataset."""
-        return self.__doc__
 
     def _get_colnames(self, filter = '*'):
         """Return list of strings containing column groups and labels."""
@@ -1179,35 +1219,75 @@ class Dataset:
             return numpy.take(src_array, row_select)
 
     def set(self, key = None, *args, **kwargs):
+        """Set meta information, parameters and data of dataset."""
 
-        # set generic dataset information
+        # set meta information of dataset
         if key == 'name': return self._set_name(*args, **kwargs)
+        if key == 'branch': return self._set_branch(*args, **kwargs)
+        if key == 'version': return self._set_version(*args, **kwargs)
+        if key == 'about': return self._set_about(*args, **kwargs)
+        if key == 'author': return self._set_author(*args, **kwargs)
+        if key == 'email': return self._set_email(*args, **kwargs)
+        if key == 'license': return self._set_license(*args, **kwargs)
 
+        # modify dataset parameters and data
         if key == 'colfilter': return self._set_colfilter(**kwargs)
 
+        # import dataset configuration and source data
         if key == 'copy': return self._set_copy(*args, **kwargs)
+        if key == 'config': return self._set_config(*args, **kwargs)
+        if key == 'source': return self._set_source(*args, **kwargs)
 
         if not key == None: return nemoa.log('warning',
             "unknown key '%s'" % (key))
         return None
 
-    def _set_name(self, name):
+    def _set_name(self, dataset_name):
         """Set name of dataset."""
-        if not isinstance(name, str): return False
-        self._config['name'] = name
+        if not isinstance(dataset_name, str): return False
+        self._config['name'] = dataset_name
         return True
 
-    def _set_copy(self, **kwargs):
-        if 'source' in kwargs:
-            self._source = copy.deepcopy(kwargs['source'])
-        if 'config' in kwargs:
-            self._config = copy.deepcopy(kwargs['config'])
+    def _set_branch(self, dataset_branch):
+        """Set branch of dataset."""
+        if not isinstance(dataset_branch, str): return False
+        self._config['branch'] = dataset_branch
         return True
 
-    def _set_colnames(self, col_names):
+    def _set_version(self, dataset_version):
+        """Set version number of dataset branch."""
+        if not isinstance(dataset_version, int): return False
+        self._config['version'] = dataset_version
+        return True
+
+    def _set_about(self, dataset_about):
+        """Get description of dataset."""
+        if not isinstance(dataset_about, str): return False
+        self._config['about'] = dataset_about
+        return True
+
+    def _set_author(self, dataset_author):
+        """Set author of dataset."""
+        if not isinstance(dataset_author, str): return False
+        self._config['author'] = dataset_author
+        return True
+
+    def _set_email(self, dataset_author_email):
+        """Set email of author of dataset."""
+        if not isinstance(dataset_author_email, str): return False
+        self._config['email'] = dataset_author_email
+        return True
+
+    def _set_license(self, dataset_license):
+        """Set license of dataset."""
+        if not isinstance(dataset_license, str): return False
+        self._config['license'] = dataset_license
+        return True
+
+    def _set_colnames(self, colnames):
         """Set column names from list of strings."""
         self._config['columns'] = \
-            tuple([col.split(':') for col in col_names])
+            tuple([col.split(':') for col in colnames])
         return True
 
     def _set_colfilter(self, **kwargs):
@@ -1228,6 +1308,29 @@ class Dataset:
             self._config['col_filter'][col_filter_name] \
                 = col_filter_cols
 
+        return True
+
+    def _set_copy(self, **kwargs):
+        if 'config' in kwargs: self._set_config(kwargs['config'])
+        if 'source' in kwargs: self._set_source(kwargs['source'])
+        return True
+
+    def _set_config(self, config = None):
+        """Set configuration from dictionary."""
+
+        # initialize or update configuration dictionary
+        if not hasattr(self, '_config') or not self._config:
+            self._config = self._default.copy()
+        if config:
+            config_copy = copy.deepcopy(config)
+            nemoa.common.dict_merge(config_copy, self._config)
+            # TODO: reconfigure!?
+            self._source = {}
+        return True
+
+    def _set_source(self, source = None):
+        if isinstance(source, dict):
+            self._source = copy.deepcopy(source)
         return True
 
     def save(self, *args, **kwargs):

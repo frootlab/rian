@@ -62,11 +62,15 @@ def save(dataset, path = None, filetype = None, workspace = None,
     # get file path from dataset source file if path not given
     if path == None:
         source = dataset.get('config', 'source')
-        path = source['file']
-        if not filetype == None:
-            file_path = nemoa.common.get_file_directory(path)
-            file_basename = nemoa.common.get_file_basename(path)
-            path = '%s/%s.%s' % (file_path, file_basename, filetype)
+        source_path = source['file']
+        file_directory = nemoa.common.get_file_directory(source_path)
+        file_basename = dataset.get('fullname')
+        if filetype == None:
+            file_extension \
+                = nemoa.common.get_file_extension(source_path)
+        else:
+            file_extension = filetype
+        path = '%s/%s.%s' % (file_directory, file_basename, file_extension)
 
     # get file path from workspace/path if workspace is given
     elif isinstance('workspace', str):

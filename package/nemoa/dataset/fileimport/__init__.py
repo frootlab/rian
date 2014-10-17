@@ -4,34 +4,88 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import importlib
-import nemoa
+import nemoa.dataset.fileimport.archive
+import nemoa.dataset.fileimport.text
 import os
 
-def load(path, file_format = None, **kwargs):
+def filetypes(filetype = None):
+    """Get supported dataset import filetypes."""
+
+    type_dict = {}
+
+    # get supported archive filetypes
+    archive_types = nemoa.dataset.fileimport.archive.filetypes()
+    for key, val in archive_types.items():
+        type_dict[key] = ('archive', val)
+
+    # get supported text filetypes
+    text_types = nemoa.dataset.fileimport.text.filetypes()
+    for key, val in text_types.items():
+        type_dict[key] = ('text', val)
+
+    if filetype == None:
+        return {key: val[1] for key, val in type_dict.items()}
+    if filetype in type_dict:
+        return type_dict[filetype]
+
+    return False
+
+def load(path, filetype = None, **kwargs):
     """Import dataset from file."""
 
-    if not os.path.isfile(path):
+    # get path
+    if os.path.isfile(path):
+        pass
+    elif 'workspace' in kwargs:
+        # import workspace and get path and filetype from workspace
+        if not kwargs['workspace'] == nemoa.workspace.name():
+            if not nemoa.workspace.load(kwargs['workspace']):
+                nemoa.log('error', """could not import dataset:
+                    workspace '%s' does not exist"""
+                    % (kwargs['workspace']))
+                return  {}
+        name = '.'.join([kwargs['workspace'], path])
+        config = nemoa.workspace.get('dataset', name = name)
+        if not isinstance(config, dict):
+            nemoa.log('error', """could not import dataset:
+                workspace '%s' does not contain dataset '%s'."""
+                % (kwargs['workspace'], path))
+            return  {}
+        path = config['path']
+    else:
+        nemoa.log('error', """could not import dataset:
+            file '%s' does not exist.""" % (path))
+        return {}
+
+    # if filetype is not given get filtype from file extension
+    if not filetype:
+        filetype = nemoa.common.get_file_extension(path).lower()
+
+    # test if filetype is supported
+    if not filetype in filetypes().keys():
         return nemoa.log('error', """could not import dataset:
-            file does not exist '%s'.""" % (path))
+            filetype '%s' is not supported.""" % (filetype))
 
-    # if format is not given get format from file extension
-    if not file_format:
-        file_name = os.path.basename(path)
-        file_ext = os.path.splitext(file_name)[1]
-        file_format = file_ext.lstrip('.').strip().lower()
+    module_name = filetypes(filetype)[0]
+    if module_name == 'archive':
+        dataset_dict = nemoa.dataset.fileimport.archive.load(
+            path, **kwargs)
+    elif module_name == 'text':
+        dataset_dict = nemoa.dataset.fileimport.text.load(
+            path, **kwargs)
+    else:
+        return False
 
-    # get network file importer
-    module_name = 'nemoa.dataset.fileimport.%s' % (file_format)
-    class_name = file_format.title()
-    try:
-        module = importlib.import_module(module_name)
-        if not hasattr(module, class_name): raise ImportError()
-        importer = getattr(module, class_name)(**kwargs)
-    except ImportError:
-        return nemoa.log('error', """could not import dataset '%s':
-            file format '%s' is currently not supported.""" %
-            (path, file_format))
+    # test dataset dictionary
+    if not dataset_dict:
+        nemoa.log('error', """could not import dataset:
+            file '%s' is not valid.""" % (path))
+        return {}
 
-    # import dataset file
-    return importer.load(path)
+    # update source
+    if not 'source' in dataset_dict['config']:
+        dataset_dict['config']['source'] = {}
+    dataset_dict['config']['source']['file'] = path
+    dataset_dict['config']['source']['filetype'] = filetype
+
+    return dataset_dict

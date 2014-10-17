@@ -8,16 +8,16 @@ import nemoa
 import numpy
 
 def filetypes():
-    """Get supported archive filetypes for network import."""
+    """Get supported archive filetypes for dataset import."""
     return {
         'npz': 'Numpy Zipped Archive' }
 
 def load(path, **kwargs):
-    """Import network from archive file."""
-    return Npz(**kwargs),load(path)
+    """Import dataset from archive file."""
+    return Npz(**kwargs).load(path)
 
 class Npz:
-    """Import network from numpy zipped archive."""
+    """Import dataset from numpy zipped archive."""
 
     settings = {}
 
@@ -30,4 +30,4 @@ class Npz:
         copy = numpy.load(path)
         return {
             'config': copy['config'].item(),
-            'graph': copy['graph'].item() }
+            'source': copy['source'].item() }

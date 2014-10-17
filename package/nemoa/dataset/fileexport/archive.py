@@ -13,7 +13,7 @@ def filetypes():
     return {
         'npz': 'Numpy Zipped Archive' }
 
-def save(network, path, filetype, **kwargs):
+def save(dataset, path, filetype, **kwargs):
     """Export dataset to archive file."""
 
     # test if filetype is supported

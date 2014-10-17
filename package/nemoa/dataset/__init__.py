@@ -19,11 +19,8 @@ def save(*args, **kwargs):
     return nemoa.dataset.fileexport.save(*args, **kwargs)
 
 def open(*args, **kwargs):
-    copy = nemoa.dataset.fileimport.load(*args, **kwargs)
-    if not copy: return None
-    dataset = new(config = copy['config'])
-    dataset.set('copy', **copy)
-    return dataset
+    """Import dataset from file and create new dataset instance."""
+    return new(**load(*args, **kwargs))
 
 def new(*args, **kwargs):
     """Return dataset instance."""

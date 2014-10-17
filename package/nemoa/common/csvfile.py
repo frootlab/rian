@@ -50,12 +50,12 @@ def csv_save_data(path, data, cols = None, comment = None,
 
     header = None
     if isinstance(comment, str):
-        header = '# %s' % (comment.replace('\n', '\n# '))
+        header = '# %s\n\n' % (comment.replace('\n', '\n# '))
     if isinstance(cols, list):
         if header == None:
             header = delimiter.join(cols)
         else:
-            header += '\n' + delimiter.join(cols)
+            header += delimiter.join(cols)
 
     fmt = delimiter.join(['%s'] + ['%10.10f'] * (len(data[0]) - 1))
     numpy.savetxt(path, data, fmt = fmt, header = header,

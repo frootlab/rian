@@ -13,6 +13,7 @@ def filetypes():
     return {
         'gml': 'Graph Modelling Language',
         'graphml': 'Graph Markup Language',
+        'xml': 'Graph Markup Language',
         'dot': 'GraphViz DOT' }
 
 def save(network, path, filetype, **kwargs):
@@ -32,7 +33,7 @@ def save(network, path, filetype, **kwargs):
 
     if filetype == 'gml':
         return Gml(**kwargs).save(graph, path)
-    if filetype == 'graphml':
+    if filetype in ['graphml', 'xml']:
         return Graphml(**kwargs).save(graph, path)
     if filetype == 'dot':
         return Dot(**kwargs).save(graph, path)

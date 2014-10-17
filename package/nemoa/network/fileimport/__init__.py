@@ -4,8 +4,9 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.network.fileimport.graph
 import nemoa.network.fileimport.archive
+import nemoa.network.fileimport.graph
+import nemoa.network.fileimport.text
 import os
 
 def filetypes(filetype = None):
@@ -13,15 +14,20 @@ def filetypes(filetype = None):
 
     type_dict = {}
 
-    # get supported graph description file types
-    graph_types = nemoa.network.fileimport.graph.filetypes()
-    for key, val in graph_types.items():
-        type_dict[key] = ('graph', val)
-
     # get supported archive filetypes
     archive_types = nemoa.network.fileimport.archive.filetypes()
     for key, val in archive_types.items():
         type_dict[key] = ('archive', val)
+
+    # get supported graph description filetypes
+    graph_types = nemoa.network.fileimport.graph.filetypes()
+    for key, val in graph_types.items():
+        type_dict[key] = ('graph', val)
+
+    # get supported text filetypes
+    text_types = nemoa.network.fileimport.text.filetypes()
+    for key, val in text_types.items():
+        type_dict[key] = ('text', val)
 
     if filetype == None:
         return {key: val[1] for key, val in type_dict.items()}
@@ -31,13 +37,13 @@ def filetypes(filetype = None):
     return False
 
 def load(path, filetype = None, **kwargs):
-    """Import network configuration from file."""
+    """Import network from file."""
 
     # get path
     if os.path.isfile(path):
         pass
     elif 'workspace' in kwargs:
-        # import workspace and get path and file format from workspace
+        # import workspace and get path and filetype from workspace
         if not kwargs['workspace'] == nemoa.workspace.name():
             if not nemoa.workspace.load(kwargs['workspace']):
                 nemoa.log('error', """could not import network:
@@ -57,7 +63,7 @@ def load(path, filetype = None, **kwargs):
             file '%s' does not exist.""" % (path))
         return {}
 
-    # if file format is not given get format from file extension
+    # if filetype is not given get filtype from file extension
     if not filetype:
         filetype = nemoa.common.get_file_extension(path).lower()
 
@@ -67,22 +73,23 @@ def load(path, filetype = None, **kwargs):
             filetype '%s' is not supported.""" % (filetype))
 
     module_name = filetypes(filetype)[0]
-    if module_name == 'graph':
+    if module_name == 'archive':
+        network_dict = nemoa.network.fileimport.archive.load(
+            path, **kwargs)
+    elif module_name == 'graph':
         network_dict = nemoa.network.fileimport.graph.load(
             path, **kwargs)
-    elif module_name == 'archive':
-        network_dict = nemoa.network.fileimport.archive.load(
+    elif module_name == 'text':
+        network_dict = nemoa.network.fileimport.text.load(
             path, **kwargs)
     else:
         return False
 
     # update source
-    network_dict['config']['source'] = {
-        'file': path,
-        'filetype': filetype }
+    if not 'source' in network_dict['config']:
+        network_dict['config']['source'] = {}
+    network_dict['config']['source']['file'] = path
+    network_dict['config']['source']['filetype'] = filetype
 
     return network_dict
-
-
-
 
