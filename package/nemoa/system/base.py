@@ -126,7 +126,6 @@ class System:
         layer_unit_id = layer_units.index(unit)
         unit_params = { 'layer_sub_id': layer_unit_id }
         for param in layer_params.keys():
-            # TODO: flatten() maybe not needed
             layer_param_array = \
                 numpy.array(layer_params[param]).flatten()
             if layer_param_array.size == 1:
