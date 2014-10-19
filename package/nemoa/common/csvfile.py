@@ -7,31 +7,66 @@ __license__ = 'GPLv3'
 import csv
 import nemoa
 import numpy
-import re
 import os
 
-def csv_get_col_labels(file, delim = None, type = None):
-    """Return list with column labels (first row) from csv file."""
+def csv_get_col_labels(path, delimiter = None):
+    """Get labels from CSV file.
+
+    Returns:
+        List of strings containing column labels from first non comment,
+        non empty line from CSV file.
+
+    """
+
+    # check file
+    if not os.path.isfile(path): return nemoa.log('error',
+        "could not determine column labels: file '%s' does not exist."
+        % (path))
 
     # get delimiter
-    if not delim: delim = csv_get_delimiter(file)
-    if not delim: return nemoa.log('error',
-        'could not get column labels: unknown delimiter!')
+    if not delimiter: delimiter = csv_get_delimiter(path)
+    if not delimiter: return nemoa.log('error',
+        'could not get column labels: unknown delimiter.')
 
-    # get first line
-    with open(file, 'r') as f: firstline = f.readline()
+    # get first and second non comment and non empty line
+    first = None
+    second = None
+    with open(path, 'r') as csvfile:
+        for line in csvfile:
 
-    # parse first line depending on type
-    reg_ex = r'''\s*([^DELIM"']+?|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')\s*(?:DELIM|$)'''.replace('DELIM', re.escape(delim))
-    r = re.compile(reg_ex, re.VERBOSE)
-    if type == None: return r.findall(firstline)
-    elif type == 'r-table': return [label.strip('\"\'')
-        for label in ['label'] + r.findall(firstline)]
+            # check exclusion criteria
+            stripped_line = line.lstrip(' ')
+            if stripped_line.startswith('#'): continue
+            if stripped_line == '\n': continue
+
+            if first == None:
+                first = line
+            elif second == None:
+                second = line
+                break
+
+    if first == None or second == None:
+        return nemoa.log('error', """could not get column labels:
+            file '%s' is not valid.""" % (path))
+
+    if first.count(delimiter) == second.count(delimiter):
+        csvtype = 'default'
+    elif first.count(delimiter) == second.count(delimiter) - 1:
+        csvtype == 'r-table'
+    else:
+        return nemoa.log('error', """could not get column labels:
+            file '%s' is not valid.""" % (path))
+
+    col_labels = first.split(delimiter)
+    col_labels = [col.strip('\"\' \n') for col in col_labels]
+
+    if csvtype == 'default': return col_labels
+    if csvtype == 'r_table': return ['label'] + col_labels
     return []
 
 def csv_get_delimiter(path, delimiters = [',', ';', '\t', ' '],
     minprobesize = 3, maxprobesize = 100):
-    """Get delimiter of csv file.
+    """Get delimiter from CSV file.
 
     Args:
         path (string): file path to csv file.
@@ -48,6 +83,7 @@ def csv_get_delimiter(path, delimiters = [',', ';', '\t', ' '],
 
     """
 
+    # check file
     if not os.path.isfile(path): return nemoa.log('error',
         "could not determine delimiter: file '%s' does not exist."
         % (path))
@@ -82,6 +118,60 @@ def csv_get_delimiter(path, delimiters = [',', ';', '\t', ' '],
             of csv file '%s'!""" % (path))
 
     return delimiter
+
+def csv_get_data(path, delimiter = None, labels = None,
+    rowlabels = None, usecols = None):
+    """Get data from CSV file."""
+
+    # check file
+    if not os.path.isfile(path): return nemoa.log('error',
+        "could not get data from csv file: file '%s' does not exist."
+        % (path))
+
+    # get delimiter
+    if not delimiter: delimiter = csv_get_delimiter(path)
+    if not delimiter: return nemoa.log('error',
+        "could not get data from csv file: unknown delimiter.")
+
+    # get labels
+    if not labels:
+        labels = csv_get_col_labels(path, delimiter = delimiter)
+        usecols = None
+    if not labels: return nemoa.log('error',
+        "could not get data from csv file: unknown labels.")
+
+    # get datatype
+    if rowlabels:
+        formats = ('<f8',) * len(labels)
+    else:
+        if isinstance(usecols, tuple):
+            usecols = (0,) + usecols
+        labels = ('label',) + labels
+        formats = ('<U12',) + ('<f8',) * len(labels)
+    dtype = {'names': labels, 'formats': formats}
+
+    # count rows to skip
+    skiprows = 1
+    with open(path, 'r') as csvfile:
+        for line in csvfile:
+
+            # check exclusion criteria
+            stripped_line = line.lstrip(' ')
+            if stripped_line.startswith('#'):
+                skiprows += 1
+                continue
+            if stripped_line == '\n':
+                skiprows += 1
+                continue
+            break
+
+    try:
+        data = numpy.loadtxt(path, skiprows = skiprows,
+            delimiter = delimiter, usecols = usecols, dtype = dtype)
+    except:
+        return nemoa.log('error', 'could not import data from file.')
+
+    return data
 
 def csv_save_data(path, data, cols = None, comment = None,
     delimiter = ',', **kwargs):

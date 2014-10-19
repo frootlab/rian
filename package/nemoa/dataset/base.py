@@ -150,29 +150,33 @@ class Dataset:
 
         # convert network node labels to common format
         nemoa.log('search network nodes in dataset sources')
-        conv_net_layers = {}
-        conv_net_layers_lost = {}
-        conv_net_nodes = []
+        nodes_conv = {}
         nodes_lost = []
+        nodes_conv_count = 0
         net_label_format = network.get('config', 'label_format')
         for layer in layers:
+
+            # get node names of layer
             nodes = network.get('nodes', layer = layer)
+
+            # get node labels of layer
             node_labels = []
             for node in nodes:
                 node_labels.append(
                     network.get('node', node)['params']['label'])
 
-            conv_net_layers[layer], conv_net_layers_lost[layer] = \
-                nemoa.dataset.annotation.convert(
+            # convert node labels to standard label format
+            conv, lost = nemoa.dataset.annotation.convert(
                 node_labels, input = net_label_format)
-            conv_net_nodes += conv_net_layers[layer]
-            nodes_lost += conv_net_layers_lost[layer]
+            nodes_conv[layer] = conv
+            nodes_lost += lost
+            nodes_conv_count += len(nodes_conv[layer])
 
-        # notify if any network node labels could not be converted
+        # notify about lost (not convertable) nodes
         if nodes_lost:
             nemoa.log("""%s of %s network nodes could not
                 be converted! (see logfile)"""
-                % (len(nodes_lost), len(conv_net_nodes)))
+                % (len(nodes_lost), nodes_conv_count))
             nemoa.log('logfile', nemoa.common.str_to_list(nodes_lost))
 
         # get columns from dataset files and convert to common format
@@ -186,8 +190,10 @@ class Dataset:
             # get column labels from csv-file
             csv_type = src_cnf['source']['csvtype'].strip().lower() \
                 if 'csvtype' in src_cnf['source'] else None
+            # TODO: if column labels are allready known
+            # get columns from source config
             orig_col_labels = nemoa.common.csv_get_col_labels(
-                src_cnf['source']['file'], type = csv_type)
+                src_cnf['source']['file'])
             if not orig_col_labels: continue
 
             # set annotation format
@@ -213,9 +219,9 @@ class Dataset:
             nodes_lost = {}
             for layer in layers:
                 nodes_conv_lost = \
-                    [val for val in conv_net_layers[layer] \
+                    [val for val in nodes_conv[layer] \
                     if val not in columns_conv]
-                num_all += len(conv_net_layers[layer])
+                num_all += len(nodes_conv[layer])
 
                 if not nodes_conv_lost: continue
                 num_lost += len(nodes_conv_lost)
@@ -224,7 +230,7 @@ class Dataset:
                 nodes_lost[layer] = []
 
                 for val in nodes_conv_lost:
-                    node_lost_id = conv_net_layers[layer].index(val)
+                    node_lost_id = nodes_conv[layer].index(val)
                     node_lost = network.get('nodes',
                         layer = layer)[node_lost_id]
                     node_label = network.get('node',
@@ -262,15 +268,14 @@ class Dataset:
         for layer in layers:
             found = 0
 
-            for id, col in enumerate(conv_net_layers[layer]):
+            for id, col in enumerate(nodes_conv[layer]):
                 if not col in inter_col_labels: continue
                 found += 1
 
                 # add column (use network label and layer)
-                node_name = network.get('nodes', layer = layer)[id]
-                node_label = network.get('node',
-                    node_name)['params']['label']
-                self._config['columns'] += ((layer, node_label), )
+                node = network.get('nodes', layer = layer)[id]
+                label = network.get('node', node)['params']['label']
+                self._config['columns'] += ((layer, label), )
 
                 for src in col_labels:
                     col_labels[src]['usecols'] \
@@ -303,16 +308,29 @@ class Dataset:
             self._config['row_filter'][source] = [source + ':*']
             self._config['row_partitions']['source'].append(source)
 
-        # import data from .csv-files into numpy arrays
-
-        # import data from sources
+        # import data from csv files
         nemoa.log('import data from sources')
         nemoa.log('set', indent = '+1')
         self._source = {}
         for src in self._config['table']:
+            source_config = self._config['table'][src]['source']
+            path = source_config['file']
+            labels = tuple(self._get_colnames())
+            if 'rows' in source_config and source_config['rows']:
+                rowlabels = source_config['rows']
+            else:
+                rowlabels = None
+            if 'usecols' in source_config and source_config['usecols']:
+                usecols = source_config['usecols']
+            else:
+                usecols = None
+            data = nemoa.common.csv_get_data(path, labels = labels,
+                rowlabels = rowlabels, usecols = usecols)
+
             self._source[src] = {
                 'fraction': self._config['table'][src]['fraction'],
-                'array': self._csv_get_data(src) }
+                'array': data }
+
         nemoa.log('set', indent = '-1')
 
         # save cachefile
@@ -855,41 +873,6 @@ class Dataset:
         ##dist = numpy.nan_to_num(corrDiff / (numpy.max(numpy.max(corrDiff, axis = 0), 0.000001)))
         ##dist = (dist > 0) * dist
         #return distance
-
-    #def getMeanCorr(self, array, axis = 1):
-        #if not axis:
-            #array = array.T
-        #cCorr = numpy.asarray([])
-        #for i in xrange(array.shape[1] - 1):
-            #for j in xrange(i + 1, array.shape[1]):
-                #cCorr = numpy.append(cCorr, numpy.corrcoef(array[:, i], array[:, j])[0, 1])
-
-        #return numpy.mean(cCorr)
-
-    # TODO: move to nemoa.common
-    def _csv_get_data(self, name):
-        conf = self._config['table'][name]['source']
-        file = conf['file']
-        delim = conf['delimiter'] if 'delimiter' in conf \
-            else nemoa.common.csv_get_delimiter(file)
-        cols = conf['usecols']
-        names = tuple(self._get_colnames())
-        formats = tuple(['<f8' for x in names])
-        if not 'rows' in conf or conf['rows']:
-            cols = (0,) + cols
-            names = ('label',) + names
-            formats = ('<U12',) + formats
-        dtype = {'names': names, 'formats': formats}
-
-        nemoa.log("import data from csv file: " + file)
-
-        try:
-            data = numpy.loadtxt(file, skiprows = 1, delimiter = delim,
-                usecols = cols, dtype = dtype)
-        except:
-            return nemoa.log('error', 'could not import data from file!')
-
-        return data
 
     def _get_cache_file(self, network):
         """Return cache file path."""
