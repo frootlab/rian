@@ -93,11 +93,11 @@ class Csv:
                 self.settings[key] = val
 
     def save(self, dataset, path):
-        comment = _encode_config(dataset, **self.settings)
+        header = _encode_config(dataset, **self.settings)
+        delimiter = self.settings['delimiter']
         cols, data = dataset.get('data', output = ('cols', 'recarray'))
-        nemoa.common.csv_save_data(path, data, cols = [''] + cols,
-            comment = comment, delimiter = self.settings['delimiter'])
-        return path
+        return nemoa.common.csv_save_data(path, data, header = header,
+            delimiter = delimiter, labels = [''] + cols)
 
 class Tsv(Csv):
     """Export dataset to Tab Separated Values."""

@@ -192,18 +192,18 @@ class Dataset:
                 if 'csvtype' in src_cnf['source'] else None
             # TODO: if column labels are allready known
             # get columns from source config
-            orig_col_labels = nemoa.common.csv_get_col_labels(
-                src_cnf['source']['file'])
+            path = src_cnf['source']['file']
+            orig_col_labels = nemoa.common.csv_get_labels(path)
             if not orig_col_labels: continue
 
             # set annotation format
-            format = src_cnf['source']['columns'] \
+            label_format = src_cnf['source']['columns'] \
                 if 'columns' in src_cnf['source'] else 'generic:string'
 
             # convert column labes
             columns_conv, columns_conv_lost = \
                 nemoa.dataset.annotation.convert(
-                orig_col_labels, input = format)
+                orig_col_labels, input = label_format)
 
             # notify if any dataset columns could not be converted
             if columns_conv_lost:
@@ -317,15 +317,15 @@ class Dataset:
             path = source_config['file']
             labels = tuple(self._get_colnames())
             if 'rows' in source_config and source_config['rows']:
-                rowlabels = source_config['rows']
+                rowlabelcol = None
             else:
-                rowlabels = None
+                rowlabelcol = 0
             if 'usecols' in source_config and source_config['usecols']:
                 usecols = source_config['usecols']
             else:
                 usecols = None
             data = nemoa.common.csv_get_data(path, labels = labels,
-                rowlabels = rowlabels, usecols = usecols)
+                rowlabelcol = rowlabelcol, usecols = usecols)
 
             self._source[src] = {
                 'fraction': self._config['table'][src]['fraction'],
