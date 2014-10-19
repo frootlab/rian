@@ -8,6 +8,7 @@ import csv
 import nemoa
 import numpy
 import re
+import os
 
 def csv_get_col_labels(file, delim = None, type = None):
     """Return list with column labels (first row) from csv file."""
@@ -21,29 +22,66 @@ def csv_get_col_labels(file, delim = None, type = None):
     with open(file, 'r') as f: firstline = f.readline()
 
     # parse first line depending on type
-    regEx = r'''\s*([^DELIM"']+?|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')\s*(?:DELIM|$)'''.replace('DELIM', re.escape(delim))
-    r = re.compile(regEx, re.VERBOSE)
+    reg_ex = r'''\s*([^DELIM"']+?|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')\s*(?:DELIM|$)'''.replace('DELIM', re.escape(delim))
+    r = re.compile(reg_ex, re.VERBOSE)
     if type == None: return r.findall(firstline)
     elif type == 'r-table': return [label.strip('\"\'')
         for label in ['label'] + r.findall(firstline)]
     return []
 
-def csv_get_delimiter(file, delimiters = [',', ';', '\t', ' ']):
-    """Return estimated delimiter of csv file."""
+def csv_get_delimiter(path, delimiters = [',', ';', '\t', ' '],
+    minprobesize = 3, maxprobesize = 100):
+    """Get delimiter of csv file.
 
-    found = False
-    lines = 10
-    while not found and lines <= 50:
-        with open(file, 'rb') as csvfile:
-            probe = csvfile.read(len(csvfile.readline()) * lines)
-            try:
-                dialect = csv.Sniffer().sniff(probe, delimiters)
-                found = True
-            except:
-                lines += 10
-    if found: return dialect.delimiter
-    return nemoa.log('warning',
-        "could not determine delimiter of .csv file '%s'!" % (file))
+    Args:
+        path (string): file path to csv file.
+        delimiters (list, optional): list of strings containing
+            delimiter candidates to search for.
+        minprobesize (integer, optional): minimum number of non comment,
+            non empty lines used to detect csv delimiter.
+        maxprobesize (integer, optional): maximum number of non comment,
+            non empty lines used to detect csv delimiter.
+
+    Returns:
+        String containing delimiter of csv file or False if delimiter
+        could not be detected.
+
+    """
+
+    if not os.path.isfile(path): return nemoa.log('error',
+        "could not determine delimiter: file '%s' does not exist."
+        % (path))
+
+    delimiter = None
+    with open(path, 'rb') as csvfile:
+        lines = 1
+        probe = ''
+        for line in csvfile:
+
+            # check termination criteria
+            if not delimiter == None: break
+            if lines > maxprobesize: break
+
+            # check exclusion criteria
+            stripped_line = line.lstrip(' ')
+            if stripped_line.startswith('#'): continue
+            if stripped_line == '\n': continue
+
+            # increase probe
+            probe += line
+            lines += 1
+
+            # try to detect delimiter of probe
+            if lines > minprobesize:
+                try: dialect = csv.Sniffer().sniff(probe, delimiters)
+                except: continue
+                delimiter = dialect.delimiter
+
+    if delimiter == None:
+        return nemoa.log('warning', """could not determine delimiter
+            of csv file '%s'!""" % (path))
+
+    return delimiter
 
 def csv_save_data(path, data, cols = None, comment = None,
     delimiter = ',', **kwargs):

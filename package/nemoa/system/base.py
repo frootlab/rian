@@ -378,10 +378,8 @@ class System:
 
     def _set_copy(self, **kwargs):
         """Set system settings from dictionary."""
-        if 'config' in kwargs:
-            self._set_config(kwargs['config'])
-        if 'params' in kwargs:
-            self._set_params(copy.deepcopy(kwargs['params']))
+        if 'config' in kwargs: self._set_config(kwargs['config'])
+        if 'params' in kwargs: self._set_params(kwargs['params'])
         return self._configure_update_units_and_links()
 
     def _set_config(self, config = None):
@@ -402,13 +400,13 @@ class System:
     def _set_params(self, params = None):
         """Set system parameters from dictionary."""
 
-        # create parameter dictionary if needed
+        # create parameter dictionary
         if not hasattr(self, '_params'):
             self._params = {'units': {}, 'links': {}}
 
         # merge parameters
         if params:
-            nemoa.common.dict_merge(params, self._params)
+            nemoa.common.dict_merge(copy.deepcopy(params), self._params)
 
         return True
 

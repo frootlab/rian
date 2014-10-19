@@ -5,9 +5,7 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa
-import numpy
 import copy
-import time
 import os
 
 class model:
@@ -57,7 +55,7 @@ class model:
         return True
 
     def _import_config_from_dict(self, dict):
-        """Import numpy configuration from dictionary."""
+        """Import configuration from dictionary."""
         # copy dataset, network and system configuration
         keys = ['config', 'dataset', 'network', 'system']
         for key in keys:

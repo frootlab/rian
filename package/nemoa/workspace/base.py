@@ -1060,11 +1060,12 @@ class Config:
             """Parse sections."""
 
             # use regular expression to match sections
-            reSection = re.compile('\A' + '|'.join(self.sections.keys()))
-            reMatch = reSection.match(section)
-            if not reMatch: return None
+            re_section = re.compile('\A' + '|'.join(
+                self.sections.keys()))
+            re_match = re_section.match(section)
+            if not re_match: return None
 
-            type = reMatch.group()
+            type = re_match.group()
             name = self._workspace + '.' + section[len(type):].strip()
 
             if type in self.sections.keys():
@@ -1077,11 +1078,12 @@ class Config:
                     else: config[key] = self._convert('', frmt)
 
                 # add special options (use regular expressions)
-                for (regExKey, frmt) in self.sections[type].items():
-                    reKey = re.compile(regExKey)
+                for (reg_ex_key, frmt) in self.sections[type].items():
+                    re_key = re.compile(reg_ex_key)
                     for key in cfg.options(section):
-                        if not reKey.match(key): continue
-                        config[key] = self._convert(cfg.get(section, key), frmt)
+                        if not re_key.match(key): continue
+                        config[key] = self._convert(
+                            cfg.get(section, key), frmt)
 
             else: return None
 

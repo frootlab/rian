@@ -54,10 +54,13 @@ class Csv:
         """Get dataset configuration and source data.
 
         Args:
-            path: csv file used to generate dataset configuration
-                and source data.
+            path (string): csv file containing dataset configuration and
+                source data.
 
         """
+
+        # get csv comment
+
         return
 
 class Tsv(Csv):
