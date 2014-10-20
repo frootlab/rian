@@ -410,6 +410,15 @@ class System:
 
         return True
 
+    def save(self, *args, **kwargs):
+        """Export system to file."""
+        return nemoa.system.save(self, *args, **kwargs)
+
+    def show(self, *args, **kwargs):
+        """Show system as image."""
+        return nemoa.system.show(self, *args, **kwargs)
+
+
     def _initialize(self, dataset = None):
         """Initialize system parameters.
 
@@ -757,3 +766,4 @@ class Tracker:
             return nemoa.log('note', out % (progr, prop['name'], value))
 
         return False
+

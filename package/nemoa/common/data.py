@@ -7,99 +7,104 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-def data_sum(data, norm = 'S'):
-    """Return sum of data.
+def data_sum(data, norm = 'S', axis = 0):
+    """Sum of data.
+
+    Calculate sum of data along given axes, using a given norm.
 
     Args:
-        data: numpy array containing data
-        norm: data mean norm
+        data (ndarray): Numpy array containing data
+        norm (str, optional): Data mean norm
             'S': Sum of Values
             'SE': Sum of Errors / L1 Norm
             'SSE': Sum of Squared Errors
             'RSSE': Root Sum of Squared Errors
+        axis (None or int or tuple of ints, optional):
+            Axis or axes along which a sum is performed.
+
+    Returns:
+        Sum of data as ndarray
+        or False if given norm is not supported.
 
     """
 
-    norm = norm.upper()
+    n = norm.upper()
 
     # Sum of Values (S)
-    if norm == 'S':
-        return numpy.sum(data, axis = 0)
-
+    if n == 'S': return numpy.sum(data, axis = axis)
     # Sum of Errors (SE) / L1-Norm (L1)
-    if norm == 'SE':
-        return numpy.sum(numpy.abs(data), axis = 0)
-
+    if n == 'SE': return numpy.sum(numpy.abs(data), axis = axis)
     # Sum of Squared Errors (SSE)
-    if norm == 'SSE':
-        return numpy.sum(data ** 2, axis = 0)
-
+    if n == 'SSE': return numpy.sum(data ** 2, axis = axis)
     # Root Sum of Squared Errors (RSSE)
-    if norm == 'RSSE':
-        return numpy.sqrt(numpy.sum(data ** 2, axis = 0))
+    if n == 'RSSE': return numpy.sqrt(numpy.sum(data ** 2, axis = axis))
 
-    return nemoa.log('error',
-        "unsupported data sum norm '%s'" % (norm))
+    return nemoa.log('error', """could not calculate data sum:
+        unsupported data sum norm '%s'""" % (norm))
 
-def data_mean(data, norm = 'M'):
-    """Return mean of data.
+def data_mean(data, norm = 'M', axis = 0):
+    """Mean of data.
+
+    Calculate mean of data along given axes, using a given norm.
 
     Args:
-        data: numpy array containing data
-        norm: data mean norm
+        data (ndarray): Numpy array containing data
+        norm (str, optional): Data mean norm
             'M': Arithmetic Mean of Values
             'ME': Mean of Errors
             'MSE': Mean of Squared Errors
             'RMSE': Root Mean of Squared Errors / L2 Norm
+        axis (None or int or tuple of ints, optional):
+            Axis or axes along which a mean is performed.
+
+    Returns:
+        Mean of data as ndarray
+        or False if given norm is not supported.
 
     """
 
-    norm = norm.upper()
+    n = norm.upper()
 
     # Mean of Values (M)
-    if norm == 'M':
-        return numpy.mean(data, axis = 0)
-
+    if n == 'M': return numpy.mean(data, axis = axis)
     # Mean of Errors (ME)
-    if norm == 'ME':
-        return numpy.mean(numpy.abs(data), axis = 0)
-
+    if n == 'ME': return numpy.mean(numpy.abs(data), axis = axis)
     # Mean of Squared Errors (MSE)
-    if norm == 'MSE':
-        return numpy.mean(data ** 2, axis = 0)
-
+    if n == 'MSE': return numpy.mean(data ** 2, axis = axis)
     # Root Mean of Squared Errors (RMSE) / L2-Norm
-    if norm == 'RMSE':
-        return numpy.sqrt(numpy.mean(data ** 2, axis = 0))
+    if n == 'RMSE': return numpy.sqrt(numpy.mean(data ** 2, axis = axis))
 
-    return nemoa.log('error',
-        "unsupported data mean norm '%s'" % (norm))
+    return nemoa.log('error', """could not calculate data mean:
+        unsupported data mean norm '%s'""" % (norm))
 
-def data_deviation(data, norm = 'SD'):
-    """Return deviation of data.
+def data_deviation(data, norm = 'SD', axis = 0):
+    """Deviation of data.
+
+    Calculate deviation of data along given axes, using a given norm.
 
     Args:
-        data: numpy array containing data
-        norm: data deviation norm
+        data (ndarray): Numpy array containing data
+        norm (str, optional): Data deviation norm
             'SD': Standard Deviation of Values
             'SDE': Standard Deviation of Errors
             'SDSE': Standard Deviation of Squared Errors
+        axis (None or int or tuple of ints, optional):
+            Axis or axes along which a deviation is performed.
+
+    Returns:
+        Deviation of data as ndarray
+        or False if given norm is not supported.
 
     """
 
-    norm = norm.upper()
+    n = norm.upper()
 
     # Standard Deviation of Data (SD)
-    if norm == 'SD':
-        return numpy.std(data, axis = 0)
-
+    if n == 'SD': return numpy.std(data, axis = axis)
     # Standard Deviation of Errors (SDE)
-    if norm == 'SDE':
-        return numpy.std(numpy.abs(data), axis = 0)
-
+    if n == 'SDE': return numpy.std(numpy.abs(data), axis = axis)
     # Standard Deviation of Squared Errors (SDSE)
-    if norm == 'SDSE':
-        return numpy.std(data ** 2, axis = 0)
+    if n == 'SDSE': return numpy.std(data ** 2, axis = axis)
 
-    return nemoa.log('error',
-        "unsupported data deviation norm '%s'" % (deviation))
+    return nemoa.log('error', """could not calculate data deviation:
+        unsupported data deviation norm '%s'""" % (norm))

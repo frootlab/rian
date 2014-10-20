@@ -1235,8 +1235,12 @@ class Dataset:
 
     def _set_colnames(self, colnames):
         """Set column names from list of strings."""
-        self._config['columns'] = \
-            tuple([col.split(':') for col in colnames])
+        self._config['columns'] = tuple()
+        for col in colnames:
+            if ':' in col:
+                colnames += (col.split(':'), )
+            else:
+                colnames += (('', col), )
         return True
 
     def _set_colfilter(self, **kwargs):

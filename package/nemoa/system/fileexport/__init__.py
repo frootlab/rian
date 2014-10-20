@@ -4,29 +4,23 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.dataset.fileexport.archive
-import nemoa.dataset.fileexport.image
-import nemoa.dataset.fileexport.text
+import nemoa.system.fileexport.archive
+import nemoa.system.fileexport.image
 
 def filetypes(filetype = None):
-    """Get supported dataset export filetypes."""
+    """Get supported system export filetypes."""
 
     type_dict = {}
 
     # get supported archive filetypes
-    archive_types = nemoa.dataset.fileexport.archive.filetypes()
+    archive_types = nemoa.system.fileexport.archive.filetypes()
     for key, val in archive_types.items():
         type_dict[key] = ('archive', val)
 
     # get supported image filetypes
-    image_types = nemoa.dataset.fileexport.image.filetypes()
+    image_types = nemoa.system.fileexport.image.filetypes()
     for key, val in image_types.items():
         type_dict[key] = ('image', val)
-
-    # get supported text filetypes
-    text_types = nemoa.dataset.fileexport.text.filetypes()
-    for key, val in text_types.items():
-        type_dict[key] = ('text', val)
 
     if filetype == None:
         return {key: val[1] for key, val in type_dict.items()}
@@ -35,12 +29,12 @@ def filetypes(filetype = None):
 
     return False
 
-def save(dataset, path = None, filetype = None, workspace = None,
+def save(system, path = None, filetype = None, workspace = None,
     **kwargs):
-    """Export dataset to file.
+    """Export system to file.
 
     Args:
-        dataset (object): nemoa dataset instance
+        system (object): nemoa system instance
         path (str, optional): path of export file
         filetype (str, optional): filetype of export file
         workspace (str, optional): workspace to use for file export
@@ -50,21 +44,21 @@ def save(dataset, path = None, filetype = None, workspace = None,
 
     """
 
-    if not nemoa.common.type.is_dataset(dataset):
-        return nemoa.log('error', """could not save dataset to file:
-            dataset is not valid.""")
+    if not nemoa.common.type.is_system(system):
+        return nemoa.log('error', """could not save system to file:
+            system is not valid.""")
 
     # display output
     if 'output' in kwargs and kwargs['output'] == 'display':
-        return nemoa.dataset.fileexport.image.save(
-            dataset, **kwargs)
+        return nemoa.system.fileexport.image.save(
+            system, **kwargs)
 
-    # get file path from dataset source file if path is not given
+    # get file path from system source file if path is not given
     if path == None:
-        source = dataset.get('config', 'source')
+        source = system.get('config', 'source')
         source_path = source['file']
         file_directory = nemoa.common.get_file_directory(source_path)
-        file_basename = dataset.get('fullname')
+        file_basename = system.get('fullname')
         if filetype == None:
             file_extension \
                 = nemoa.common.get_file_extension(source_path)
@@ -80,12 +74,12 @@ def save(dataset, path = None, filetype = None, workspace = None,
         current_workspace = nemoa.workspace.name()
         if not workspace == current_workspace:
             if not nemoa.workspace.load(workspace):
-                nemoa.log('error', """could not export dataset:
+                nemoa.log('error', """could not export system:
                     workspace '%s' does not exist""" % (workspace))
                 return  {}
 
-        # get dataset path from workspace
-        path = nemoa.workspace.path('datasets') + path
+        # get system path from workspace
+        path = nemoa.workspace.path('systems') + path
 
         # import previous workspace if workspace differs from current
         if not workspace == current_workspace:
@@ -98,18 +92,15 @@ def save(dataset, path = None, filetype = None, workspace = None,
 
     # test if filetype is supported
     if not filetype in filetypes().keys():
-        return nemoa.log('error', """could not export dataset:
+        return nemoa.log('error', """could not export system:
             filetype '%s' is not supported.""" % (filetype))
 
     module_name = filetypes(filetype)[0]
-    if module_name == 'text':
-        return nemoa.dataset.fileexport.text.save(
-            dataset, path, filetype, **kwargs)
     if module_name == 'archive':
-        return nemoa.dataset.fileexport.archive.save(
-            dataset, path, filetype, **kwargs)
+        return nemoa.system.fileexport.archive.save(
+            system, path, filetype, **kwargs)
     if module_name == 'image':
-        return nemoa.dataset.fileexport.image.save(
-            dataset, path, filetype, **kwargs)
+        return nemoa.system.fileexport.image.save(
+            system, path, filetype, **kwargs)
 
     return False
