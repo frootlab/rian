@@ -260,7 +260,7 @@ def csv_get_data(path, delimiter = None, labels = None,
         labels = ('label',) + labels
         formats = ('<U12',) + ('<f8',) * float_count
     else:
-        float_count = len(usecols)
+        float_count = len(usecols) - 1
         rowlabelcollabel = labels[usecols.index(rowlabelcol)]
         usecols = (rowlabelcol, ) + tuple(col for col in usecols
             if not col == rowlabelcol)
@@ -289,7 +289,8 @@ def csv_get_data(path, delimiter = None, labels = None,
         data = numpy.loadtxt(path, skiprows = skiprows,
             delimiter = delimiter, usecols = usecols, dtype = dtype)
     except:
-        return nemoa.log('error', 'could not import data from file.')
+        return nemoa.log('error', """could not import data from CSV
+            file.""")
 
     return data
 

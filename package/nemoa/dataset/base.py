@@ -294,19 +294,15 @@ class Dataset:
 
         # Column & Row Filters
 
-        # add column filters and partitions from network layers
+        # add column filters from network layers
         self._config['col_filter'] = {'*': ['*:*']}
-        self._config['col_partitions'] = {'groups': []}
         for layer in layers:
             self._config['col_filter'][layer] = [layer + ':*']
-            self._config['col_partitions']['groups'].append(layer)
 
         # add row filters and partitions from sources
         self._config['row_filter'] = {'*': ['*:*']}
-        self._config['row_partitions'] = {'source': []}
         for source in self._config['table']:
             self._config['row_filter'][source] = [source + ':*']
-            self._config['row_partitions']['source'].append(source)
 
         # import data from csv files
         nemoa.log('import data from sources')
@@ -648,53 +644,11 @@ class Dataset:
         if isinstance(output, str): return ret_tuple[0]
         return ret_tuple
 
-
-
     #def delColFilter(self, name):
         #if name in self._config['col_filter']:
             #del self._config['col_filter'][name]
             #return True
         #return False
-
-    #def addRowPartition(self, name, partition):
-        #if name in self._config['row_partitions']:
-            #nemoa.log('warning', "row partition '" + name + "' allready exists!")
-
-        ## create unique name for partition
-        #partitionName = name
-        #i = 1
-        #while partitionName in self._config['row_partitions']:
-            #i += 1
-            #partitionName = '%s.%i' % (name, i)
-
-        #filterNames = []
-        #for id, filter in enumerate(partition):
-            #filterNames.append(
-                #self.addRowFilter('%s.%i' % (name, id + 1), filter))
-
-        #self._config['row_partitions'][partitionName] = filterNames
-        #return partitionName
-
-    #def delRowPartition(self, name):
-        #pass
-
-    #def getRowPartition(self, name):
-        #if not name in self._config['row_partitions']:
-            #nemoa.log('warning', "unknown row partition '" + name + "'!")
-            #return []
-        #return self._config['row_partitions'][name]
-
-    #def getRowPartitionList(self):
-        #return self._config['row_partitions'].keys()
-
-    #def createRowPartition(self, algorithm = 'bcca', **params):
-        #if algorithm == 'bcca':
-            #partition = self.getBccaPartition(**params)
-        #else:
-            #nemoa.log('warning', "unknown partition function '%s'")
-
-        ## add partition
-        #return self.addRowPartition(algorithm, partition)
 
     #def getBccaPartition(self, **params):
         #rowLabels, data = self._get_data(output = 'list,array')
@@ -704,7 +658,8 @@ class Dataset:
         #if 'groups' in params:
             #groups = params['groups']
         #else:
-            #nemoa.log('warning', "parameter 'groups' is needed to create BCCA partition!")
+            #nemoa.log('warning', """parameter 'groups' is needed to
+                #create BCCA partition!""")
             #return []
 
         ## get BCCA biclusters

@@ -18,9 +18,17 @@ def str_split_params(str):
     func_params = str_to_dict(str.lstrip(func_name).strip()[1:-1])
     return func_name, func_params
 
-def str_to_list(str, delim = ','):
+def str_to_type(string, type):
+    if type == 'str': return string.strip().replace('\n', '')
+    if type == 'int': return int(string)
+    if type == 'float': return float(string)
+    if type == 'list': return str_to_list(string)
+    if type == 'dict': return str_to_dict(string)
+    return string
+
+def str_to_list(string, delim = ','):
     """Return list from given string."""
-    return [item.strip() for item in str.split(delim)]
+    return [item.strip() for item in string.split(delim)]
 
 def str_to_dict(string, delim = ','):
     """Return dictionary from given string in ini format."""

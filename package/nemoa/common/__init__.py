@@ -11,4 +11,5 @@ from nemoa.common.string import *
 from nemoa.common.data import *
 from nemoa.common.dict import *
 from nemoa.common.func import *
+from nemoa.common.inifile import *
 from nemoa.common.plot import *
