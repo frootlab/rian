@@ -146,7 +146,7 @@ def csv_get_labels(path, delimiter = None):
             file '%s' is not valid.""" % (path))
 
     col_labels = first.split(delimiter)
-    col_labels = [col.strip('\"\' \n') for col in col_labels]
+    col_labels = [col.strip('\"\'\n\r\t ') for col in col_labels]
 
     if csvtype == 'default': return col_labels
     if csvtype == 'r_table': return ['label'] + col_labels

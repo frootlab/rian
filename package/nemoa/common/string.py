@@ -33,6 +33,7 @@ def str_to_list(string, delim = ','):
 def str_to_dict(string, delim = ','):
     """Return dictionary from given string in ini format."""
     if string.strip() == '': return {}
+
     pp_num = pyparsing.Word(pyparsing.nums + '.')
     pp_str = pyparsing.quotedString
     pp_bool = pyparsing.Or(
@@ -40,26 +41,37 @@ def str_to_dict(string, delim = ','):
     pp_key = pyparsing.Word(pyparsing.alphas + "_",
         pyparsing.alphanums + "_.")
     pp_val = pyparsing.Or(pp_num | pp_str | pp_bool)
+
+    # try dictionary dialect "<key> = <value>, ..."
     pp_term = pyparsing.Group(pp_key + '=' + pp_val)
     pp_term_lists = pp_term + pyparsing.ZeroOrMore(delim + pp_term)
+    try: list = pp_term_lists.parseString(string.strip('{}'))
+    except: list = None
 
-    try: list = pp_term_lists.parseString(string)
-    except: return {}
+    # try dictionary dialect "'<key>': <value>, ..."
+    if list == None:
+        pp_term = pyparsing.Group(pp_str + ':' + pp_val)
+        pp_term_lists = pp_term + pyparsing.ZeroOrMore(delim + pp_term)
+        try: list = pp_term_lists.parseString(string.strip('{}'))
+        except: return {}
 
     # create dictionary
-    dict = {}
+    dictionary = {}
     for item in list:
         if len(item) == 1:
             if item[0] == ',': continue
-            dict[item] = True
+            dictionary[item] = True
             continue
-        key = item[0]
-        value = item[2]
-        try: dict[key] = eval(value)
+        try:
+            key = item[0].strip('\'\"')
+            value = eval(item[2])
         except: continue
-        if isinstance(dict[key], str): dict[key] = dict[key].strip()
 
-    return dict
+        dictionary[key] = value
+        if isinstance(dictionary[key], str):
+            dictionary[key] = dictionary[key].strip()
+
+    return dictionary
 
 def str_format_unit_label(string):
     """Return TeX style unit String used for plots."""

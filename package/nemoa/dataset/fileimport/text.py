@@ -32,25 +32,6 @@ def load(path, **kwargs):
 
     return False
 
-def _decode_config(header, **kwargs):
-
-    structure = {
-        'name': 'str',
-        'branch': 'str',
-        'version': 'int',
-        'about': 'str',
-        'author': 'str',
-        'email': 'str',
-        'license': 'str',
-        'filetype': 'str',
-        'application': 'str',
-        'preprocessing': 'dict',
-        'type': 'str',
-        'labelformat': 'str' }
-
-    return nemoa.common.ini_loads(header, nosection = True,
-        structure = structure)
-
 class Csv:
     """Import dataset from Comma Separated Values."""
 
@@ -74,15 +55,40 @@ class Csv:
 
         # get config from csv header
         header = nemoa.common.csv_get_header(path)
-        config = _decode_config(header)
-        copy = config.copy()
-        name = config['name']
-        data = nemoa.common.csv_get_data(path)
 
-        config['table'] = {name: copy}
+        structure = {
+            'name': 'str',
+            'branch': 'str',
+            'version': 'int',
+            'about': 'str',
+            'author': 'str',
+            'email': 'str',
+            'license': 'str',
+            'filetype': 'str',
+            'application': 'str',
+            'preprocessing': 'dict',
+            'type': 'str',
+            'labelformat': 'str' }
+
+        config = nemoa.common.ini_loads(header, nosection = True,
+            structure = structure)
+
+        if 'name' in config:
+            name = config['name']
+        else:
+            name = nemoa.common.get_file_basename(path)
+            config['name'] = name
+        if not 'type' in config:
+            config['type'] = 'base.Dataset'
+
+        config['table'] = {name: config.copy()}
         config['table'][name]['fraction'] = 1.0
+
+        # add column androw filters
         config['col_filter'] = {'*': ['*:*']}
         config['row_filter'] = {'*': ['*:*'], name: [name + ':*']}
+
+        data = nemoa.common.csv_get_data(path)
 
         config['columns'] = tuple()
         for col in data.dtype.names:

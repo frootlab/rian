@@ -633,14 +633,22 @@ class Dataset:
         # format data
         ret_tuple = ()
         for fmt_str in fmt_tuple:
-            if fmt_str == 'array': ret_tuple += (
-                data[cols].view('<f8').reshape(data.size, len(cols)), )
-            elif fmt_str == 'recarray': ret_tuple += (
-                data[['label'] + cols], )
-            elif fmt_str == 'cols': ret_tuple += (
-                [col.split(':')[1] for col in cols], )
-            elif fmt_str in ['rows', 'list']: ret_tuple += (
-                data['label'].tolist(), )
+            if fmt_str == 'array':
+                ret_tuple += (data[cols].view('<f8').reshape(data.size,
+                    len(cols)), )
+            elif fmt_str == 'recarray':
+                ret_tuple += (data[['label'] + cols], )
+            elif fmt_str == 'cols':
+                #ret_tuple += (data.dtype.names, )
+                col_list = []
+                for col in cols:
+                    if ':' in col:
+                        col_list.append(col.split(':')[1])
+                    else:
+                        col_list.append(col)
+                ret_tuple += (col_list, )
+            elif fmt_str in ['rows', 'list']:
+                ret_tuple += (data['label'].tolist(), )
         if isinstance(output, str): return ret_tuple[0]
         return ret_tuple
 
@@ -863,11 +871,11 @@ class Dataset:
         if key == 'type': return self._get_type()
 
         # get dataset parameters and data
-        if key == 'colnames': return self._get_colnames(*args, **kwargs)
+        if key == 'columns': return self._get_colnames(*args, **kwargs)
         if key == 'colgroups': return self._get_colgroups()
         if key == 'colfilter': return self._get_colfilter(*args, **kwargs)
         if key == 'colfilters': return self._get_colfilters()
-        if key == 'rownames': return self._get_rownames(*args, **kwargs)
+        if key == 'rows': return self._get_rownames(*args, **kwargs)
         if key == 'rowfilter': return self._get_rowfilter(*args, **kwargs)
         if key == 'rowfilters': return self._get_rowfilters()
         if key == 'data': return self._get_data(*args, **kwargs)

@@ -51,7 +51,7 @@ def load(path, filetype = None, **kwargs):
                 workspace '%s' does not contain dataset '%s'."""
                 % (kwargs['workspace'], path))
             return  {}
-        path = config['path']
+        path = config['source']['file']
     else:
         nemoa.log('error', """could not import dataset:
             file '%s' does not exist.""" % (path))
