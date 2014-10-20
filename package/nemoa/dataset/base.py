@@ -935,19 +935,23 @@ class Dataset:
     def _get_colnames(self, filter = '*'):
         """Return list of strings containing column groups and labels."""
         if filter == '*':
-            return ['%s:%s' % (col[0], col[1]) \
-                for col in self._config['columns']]
+            colnames = []
+            for col in self._config['columns']:
+                if col[0]: colnames.append('%s:%s' % (col[0], col[1]))
+                elif col[1]: colnames.append(col[1])
+            return colnames
         if not filter in self._config['col_filter']:
             return []
         col_filter = self._config['col_filter'][filter]
-        labels = []
+        colnames = []
         for col in self._config['columns']:
             if ('*:*') in col_filter \
                 or ('%s:*' % (col[0])) in col_filter \
                 or ('*:%s' % (col[1])) in col_filter \
                 or ('%s:%s' % (col[0], col[1])) in col_filter:
-                labels.append('%s:%s' % (col[0], col[1]))
-        return labels
+                if col[0]: colnames.append('%s:%s' % (col[0], col[1]))
+                elif col[1]: colnames.append(col[1])
+        return colnames
 
     def _get_colgroups(self):
         groups = {}

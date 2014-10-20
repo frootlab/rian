@@ -77,18 +77,22 @@ class Csv:
         config = _decode_config(header)
         copy = config.copy()
         name = config['name']
+        data = nemoa.common.csv_get_data(path)
+
         config['table'] = {name: copy}
         config['table'][name]['fraction'] = 1.0
-        config['col_filter'] = {'*': ['*:*'], name: [name + ':*']}
+        config['col_filter'] = {'*': ['*:*']}
         config['row_filter'] = {'*': ['*:*'], name: [name + ':*']}
+
         config['columns'] = tuple()
-        for col in nemoa.common.csv_get_labels(path):
-            config['columns'] += ((name, col),)
+        for col in data.dtype.names:
+            if col == 'label': continue
+            config['columns'] += (('', col),)
 
         # get source data from csv data
         source = {
             name: {
-                'array': nemoa.common.csv_get_data(path),
+                'array': data,
                 'fraction': 1.0}}
 
         return {'config': config, 'source': source}
