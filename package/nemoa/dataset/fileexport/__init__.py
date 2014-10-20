@@ -59,7 +59,7 @@ def save(dataset, path = None, filetype = None, workspace = None,
         return nemoa.dataset.fileexport.image.save(
             dataset, **kwargs)
 
-    # get file path from dataset source file if path not given
+    # get file path from dataset source file if path is not given
     if path == None:
         source = dataset.get('config', 'source')
         source_path = source['file']
@@ -73,7 +73,7 @@ def save(dataset, path = None, filetype = None, workspace = None,
         path = '%s/%s.%s' % (file_directory, file_basename, file_extension)
 
     # get file path from workspace/path if workspace is given
-    elif isinstance('workspace', str):
+    elif isinstance(workspace, str) and not workspace == 'None':
 
         # import workspace if workspace differs from current
         current_workspace = nemoa.workspace.name()
