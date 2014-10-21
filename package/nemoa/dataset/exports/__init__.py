@@ -54,11 +54,6 @@ def save(dataset, path = None, filetype = None, workspace = None,
         return nemoa.log('error', """could not save dataset to file:
             dataset is not valid.""")
 
-    # display output
-    if 'output' in kwargs and kwargs['output'] == 'display':
-        return nemoa.dataset.exports.image.save(
-            dataset, **kwargs)
-
     # get file path from dataset source file if path is not given
     if path == None:
         source = dataset.get('config', 'source')
@@ -113,3 +108,6 @@ def save(dataset, path = None, filetype = None, workspace = None,
             dataset, path, filetype, **kwargs)
 
     return False
+
+def show(dataset, *args, **kwargs):
+    return nemoa.dataset.exports.image.show(dataset, *args, **kwargs)

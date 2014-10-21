@@ -23,6 +23,3 @@ def open(*args, **kwargs):
 def new(*args, **kwargs):
     """Create new system instance."""
     return nemoa.system.classes.new(*args, **kwargs)
-
-def show(*args, **kwargs):
-    return save(*args, output = 'display', **kwargs)

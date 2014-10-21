@@ -6,7 +6,7 @@ visualization.
 
 """
 
-__version__ = '0.4.168'
+__version__ = '0.4.169'
 __status__  = 'Development'
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
@@ -22,7 +22,6 @@ import nemoa.model
 import nemoa.dataset
 import nemoa.network
 import nemoa.system
-import nemoa.plot
 
 log('init')
 

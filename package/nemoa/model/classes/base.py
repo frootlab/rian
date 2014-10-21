@@ -25,77 +25,16 @@ class Model:
     network = None
     system = None
 
-    def __init__(self, config = None, dataset = None, network = None,
-        system = None):
+    def __init__(self, **kwargs):
         """Initialize model and configure dataset, network and system.
-
-        Args:
-            config:
-            dataset (dataset instance):
-            network (network instance):
-            system (system instance):
 
         """
 
-        if config: self._set_config(config)
-        self.dataset = dataset
-        self.network = network
-        self.system = system
-
-        if self._is_empty(): return
-        self.configure()
-
-    def _export_data(self, *args, **kwargs):
-        """Export data to file."""
-        # copy dataset
-        settings = self.dataset.get('copy')
-        self.dataset._transform(system = self.system)
-        self.dataset.export(*args, **kwargs)
-        self.dataset.set('copy', settings)
-        return True
-
-    def _import_config_from_dict(self, dict):
-        """Import configuration from dictionary."""
-        # copy dataset, network and system configuration
-        keys = ['config', 'dataset', 'network', 'system']
-        for key in keys:
-            if not key in dict: return nemoa.log('error',
-                """could not import configuration:
-                given dictionary does not contain '%s' information!
-                """ % (key))
-        return {key: dict[key].copy() for key in keys}
-
-    def _check_model(self, allow_none = False):
-        if (allow_none and self.dataset == None) \
-            or not nemoa.type.is_dataset(self.dataset): return False
-        if (allow_none and self.network == None) \
-            or not nemoa.type.is_network(self.network): return False
-        if (allow_none and self.system == None) \
-            or not nemoa.type.is_system(self.system): return False
-        return True
-
-    def _update_config(self):
-        """Update model configuration."""
-
-        # set name of model
-        if not 'name' in self._config or not self._config['name']:
-            if not self.network.get('name'):
-                self._set_name('%s-%s' % (
-                    self.dataset.get('name'),
-                    self.system.get('name')))
-            else:
-                self._set_name('%s-%s-%s' % (
-                    self.dataset.get('name'),
-                    self.network.get('name'),
-                    self.system.get('name')))
-        return True
-
-    def configure(self):
+        self._set_copy(**kwargs)
         self.dataset.configure(network = self.network)
         self.network._configure(dataset = self.dataset,
             system = self.system)
         self.system.configure(network = self.network)
-        return True
 
     def _configure(self):
         """Configure model."""
@@ -308,165 +247,6 @@ class Model:
         #kwargs['output'] = 'show'
         #return self.plot(key, *args, **kwargs)
 
-    def save(self, *args, **kwargs):
-        """Export model to file."""
-        return nemoa.model.save(self, *args, **kwargs)
-
-    def show(self, *args, **kwargs):
-        """Show model as image."""
-        return nemoa.model.show(self, *args, **kwargs)
-
-    def plot(self, *args, **kwargs):
-        """Create plot of model."""
-
-        if args[0] == 'network':
-            return self.network.plot(*args[1:], **kwargs)
-        if args[0] == 'dataset':
-            return self.dataset.plot(*args[1:], **kwargs)
-
-        nemoa.log('create plot of model')
-        nemoa.log('set', indent = '+1')
-
-        # check args and kwargs
-        if 'output' in kwargs:
-            output = kwargs['output']
-            del(kwargs['output'])
-        else: output = 'file'
-        if 'file' in kwargs:
-            file = kwargs['file']
-            del(kwargs['file'])
-        else: file = None
-        if len(args): plot = args[0]
-        else: plot = None
-
-        # check if model is configured
-        if not self._is_configured():
-            nemoa.log('error', """could not create plot of model:
-                model is not yet configured!""")
-            nemoa.log('set', indent = '-1')
-            return False
-
-        # get plot instance
-        nemoa.log('create plot instance')
-        nemoa.log('set', indent = '+1')
-
-        if plot == None: plot = self.system.get('type') + '.default'
-        if isinstance(plot, str):
-            plot_name, plot_params = nemoa.common.str_split_params(plot)
-            merge_dict = plot_params
-            for param in kwargs.keys(): plot_params[param] = kwargs[param]
-            obj_plot = self._get_plot(*args, params = plot_params)
-            if not obj_plot:
-                nemoa.log('warning', "could not create plot: unknown configuration '%s'" % (plot_name))
-                nemoa.log('set', indent = '-1')
-                return None
-        elif isinstance(plot, dict): obj_plot = self._get_plot(config = plot)
-        else: obj_plot = self._get_plot()
-        if not obj_plot: return None
-
-        # prepare filename
-        if output == 'display': file = None
-        elif output == 'file' and not file:
-            file = nemoa.common.get_unused_file_path(
-                nemoa.workspace.path('plots') + \
-                self._config['name'] + '/' + obj_plot.cfg['name'] + \
-                '.' + obj_plot.settings['fileformat'])
-
-        # create plot
-        ret_val = obj_plot.create(self, file = file)
-        if not file == None: nemoa.log('save plot: ' + file)
-
-        nemoa.log('set', indent = '-2')
-        return ret_val
-
-    def _get_plot(self, *args, **kwargs):
-        """Return new plot instance"""
-
-        # return empty plot instance if no configuration was given
-        if not args and not 'config' in kwargs: return nemoa.plot.new()
-
-        if 'params' in kwargs:
-            params = kwargs['params']
-            del(kwargs['params'])
-        else: params = None
-        if 'config' in kwargs:
-            config = kwargs['config']
-            del(kwargs['config'])
-        else: config = None
-        options = kwargs
-
-        # get plot configuration from plot name
-        if isinstance(args[0], str):
-            cfg = None
-
-            # search for given configuration
-            for plot in [args[0],
-                '%s.%s' % (self.system.get('type'), args[0]),
-                'base.' + args[0]]:
-                cfg = nemoa.workspace.get('plot', \
-                   name = plot, params = params)
-                if isinstance(cfg, dict): break
-
-            # search in model / system relations
-            if not isinstance(cfg, dict):
-                if args[0] == 'dataset':
-                    cfg = nemoa.common.dict_merge(params, {
-                        'package': 'dataset',
-                        'class': 'histogram',
-                        'params': {},
-                        'about': 'data distribution',
-                        'name': 'distribution',
-                        'id': 0})
-                elif args[0] == 'network':
-                    cfg = nemoa.common.dict_merge(params, {
-                        'package': 'network',
-                        'class': 'graph',
-                        'params': {},
-                        'about': '',
-                        'name': 'structure',
-                        'id': 0})
-                elif args[0] == 'system':
-                    if len(args) == 1:
-                        pass #2Do
-                    elif args[1] == 'relations':
-                        if len(args) == 2:
-                            pass
-                        elif args[2] in self.about('system',
-                            'relations').keys():
-                            relation = self.about('system',
-                                'relations')[args[2]]
-                            if len(args) > 3: rel_class = args[3]
-                            else: rel_class = relation['show']
-                            cfg = nemoa.common.dict_merge(params, {
-                                'package': 'system',
-                                'class': rel_class,
-                                'params': {'relation': args[0]},
-                                'about': relation['about'],
-                                'name': relation['name'],
-                                'id': 0})
-                elif args[0] in self.about('system', 'relations').keys():
-                    relation = self.about('system', 'relations')[args[0]]
-                    if len(args) > 1: rel_class = args[1]
-                    else: rel_class = relation['show']
-                    cfg = nemoa.common.dict_merge(params, {
-                        'package': 'system',
-                        'class': rel_class,
-                        'params': {'relation': args[0]},
-                        'about': relation['about'],
-                        'name': relation['name'],
-                        'id': 0})
-
-            # could not find configuration
-            if not isinstance(cfg, dict):
-                return nemoa.log('error', """could not create plot:
-                    unsupported plot '%s'""" % (args[0]))
-        elif isinstance(config, dict): cfg = config
-
-        # overwrite config with given params
-        if isinstance(params, dict):
-            for key in params.keys(): cfg['params'][key] = params[key]
-
-        return nemoa.plot.new(config = cfg)
 
 
     def _is_empty(self):
@@ -570,22 +350,31 @@ class Model:
             nemoa.common.dict_merge(config_copy, self._config)
         return True
 
-    def _set_dataset(self, dataset_copy):
+    def _set_dataset(self, dataset):
         """Configure dataset from dictionary."""
+        if nemoa.type.is_dataset(dataset):
+            self.dataset = dataset
+            return True
         if not nemoa.type.is_dataset(self.dataset):
             return nemoa.log('error', """could not configure dataset:
                 model does not contain dataset instance.""")
-        return self.dataset.set('copy', **dataset_copy)
+        return self.dataset.set('copy', **dataset)
 
-    def _set_network(self, network_copy):
+    def _set_network(self, network):
         """Configure network from dictionary."""
+        if nemoa.type.is_network(network):
+            self.network = network
+            return True
         if not nemoa.type.is_network(self.network):
             return nemoa.log('error', """could not configure network:
                 model does not contain network instance.""")
-        return self.network.set('copy', **network_copy)
+        return self.network.set('copy', **network)
 
-    def _set_system(self, system_copy):
+    def _set_system(self, system):
         """Configure system from dictionary."""
+        if nemoa.type.is_system(system):
+            self.system = system
+            return True
         if not nemoa.type.is_dataset(self.dataset):
             return nemoa.log('error', """could not configure system:
                 model does not contain dataset instance.""")
@@ -596,11 +385,17 @@ class Model:
         # TODO: make copy of system if allready exists
         # create system
         self.system = nemoa.system.new(
-            config = system_copy['config'],
-            network = self.network,
-            dataset = self.dataset )
+            config = system_copy['config'], network = self.network)
 
-        return self.system.set('copy', **system_copy)
+        return self.system.set('copy', **system)
+
+    def save(self, *args, **kwargs):
+        """Export model to file."""
+        return nemoa.model.save(self, *args, **kwargs)
+
+    def show(self, *args, **kwargs):
+        """Show model as image."""
+        return nemoa.model.show(self, *args, **kwargs)
 
     def about(self, *args):
         """Return generic information about various parts of the model.

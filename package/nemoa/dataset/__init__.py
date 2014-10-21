@@ -26,4 +26,5 @@ def save(*args, **kwargs):
     return nemoa.dataset.exports.save(*args, **kwargs)
 
 def show(*args, **kwargs):
-    return save(*args, output = 'display', **kwargs)
+    """Show dataset as image."""
+    return nemoa.dataset.exports.show(*args, **kwargs)

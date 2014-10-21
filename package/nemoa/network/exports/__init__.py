@@ -54,11 +54,6 @@ def save(network, path = None, filetype = None, workspace = None,
         return nemoa.log('error', """could not save network to file:
             network is not valid.""")
 
-    # display output
-    if 'output' in kwargs and kwargs['output'] == 'display':
-        return nemoa.network.exports.image.save(
-            network, **kwargs)
-
     # get file path from network source file if path not given
     if path == None:
         source = network.get('config', 'source')
@@ -108,3 +103,6 @@ def save(network, path = None, filetype = None, workspace = None,
             network, path, filetype, **kwargs)
 
     return False
+
+def show(network, *args, **kwargs):
+    return nemoa.network.exports.image.show(network, *args, **kwargs)

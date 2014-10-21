@@ -25,4 +25,5 @@ def save(*args, **kwargs):
     return nemoa.network.exports.save(*args, **kwargs)
 
 def show(*args, **kwargs):
-    return save(*args, output = 'display', **kwargs)
+    """Show network as image."""
+    return nemoa.network.exports.show(*args, **kwargs)
