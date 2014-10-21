@@ -8,7 +8,7 @@ import nemoa
 import copy
 import os
 
-class model:
+class Model:
     """nemoa model class.
 
     Attributes:
@@ -18,32 +18,32 @@ class model:
 
     """
 
+    _default = {}
+    _config = None
+
     dataset = None
     network = None
     system = None
 
-    def __init__(self, config = {}, dataset = None, network = None,
-        system = None, name = None):
+    def __init__(self, config = None, dataset = None, network = None,
+        system = None):
         """Initialize model and configure dataset, network and system.
 
         Args:
-            dataset: nemoa dataset instance
-            network: nemoa network instance
-            system: nemoa system instance
+            config:
+            dataset (dataset instance):
+            network (network instance):
+            system (system instance):
 
         """
 
-        self._config = {'name': name} # initialize class attributes
-
-        nemoa.log("""linking dataset, network and system instances
-            to model""")
+        if config: self._set_config(config)
         self.dataset = dataset
         self.network = network
         self.system = system
 
         if self._is_empty(): return
-        if not self._check_model(): return
-        self._update_config()
+        self.configure()
 
     def _export_data(self, *args, **kwargs):
         """Export data to file."""
@@ -77,9 +77,6 @@ class model:
     def _update_config(self):
         """Update model configuration."""
 
-        # set version of model
-        self._config['version'] = nemoa.version
-
         # set name of model
         if not 'name' in self._config or not self._config['name']:
             if not self.network.get('name'):
@@ -93,13 +90,20 @@ class model:
                     self.system.get('name')))
         return True
 
+    def configure(self):
+        self.dataset.configure(network = self.network)
+        self.network._configure(dataset = self.dataset,
+            system = self.system)
+        self.system.configure(network = self.network)
+        return True
+
     def _configure(self):
         """Configure model."""
         nemoa.log("configure model '%s'" % (self._config['name']))
         nemoa.log('set', indent = '+1')
         if not 'check' in self._config:
             self._config['check'] = {'dataset': False,
-                'network': False, 'System': False}
+                'network': False, 'system': False}
         self._config['check']['dataset'] = \
             self.dataset.configure(network = self.network)
         if not self._config['check']['dataset']:
@@ -271,29 +275,33 @@ class model:
 
         return nemoa.log('warning', 'could not evaluate model')
 
-    def save(self, file = None):
-        """Save model settings to file and return filepath."""
+    def save(self, *args, **kwargs):
+        """Export model to file."""
+        return nemoa.model.save(self, *args, **kwargs)
 
-        nemoa.log('save model to file')
-        nemoa.log('set', indent = '+1')
+    #def save(self, file = None):
+        #"""Save model settings to file and return filepath."""
 
-        # get filename
-        if file == None:
-            file_ext = 'nmm'
-            file_name = '%s.%s' % (self._config['name'], file_ext)
-            file_path = nemoa.workspace.path('models')
-            file = file_path + file_name
-        file = nemoa.common.get_unused_file_path(file)
+        #nemoa.log('save model to file')
+        #nemoa.log('set', indent = '+1')
 
-        # save model parameters and configuration to file
-        nemoa.common.dict_to_file(self._get_copy(), file)
+        ## get filename
+        #if file == None:
+            #file_ext = 'nmm'
+            #file_name = '%s.%s' % (self._config['name'], file_ext)
+            #file_path = nemoa.workspace.path('models')
+            #file = file_path + file_name
+        #file = nemoa.common.get_unused_file_path(file)
 
-        # create console message
-        nemoa.log("save model as: '%s'" %
-            (os.path.basename(file)[:-(len(file_ext) + 1)]))
+        ## save model parameters and configuration to file
+        #nemoa.common.dict_to_file(self._get_copy(), file)
 
-        nemoa.log('set', indent = '-1')
-        return file
+        ## create console message
+        #nemoa.log("save model as: '%s'" %
+            #(os.path.basename(file)[:-(len(file_ext) + 1)]))
+
+        #nemoa.log('set', indent = '-1')
+        #return file
 
     def show(self, key = None, *args, **kwargs):
         """Create plot of model with output to display."""

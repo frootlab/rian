@@ -10,10 +10,10 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.system.ann
+import nemoa.system.classes.ann
 import numpy
 
-class RBM(nemoa.system.ann.ANN):
+class RBM(nemoa.system.classes.ann.ANN):
     """Restricted Boltzmann Machine (RBM).
 
     Restricted Boltzmann Machines (1) are energy based undirected

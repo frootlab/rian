@@ -21,12 +21,6 @@ class System:
         self._set_copy(**kwargs)
         if network: self._set_params(network = network)
 
-    #def __init__(self, *args, **kwargs):
-        #"""Configure system and system parameters."""
-
-        ## set configuration and update units and links
-        #self._set_config(kwargs['config'] if 'config' in kwargs else {})
-
     def configure(self, config = None, network = None):
         """Configure system to network and dataset."""
 
@@ -34,26 +28,8 @@ class System:
 
         if config: retval &= self._set_config(config)
         if network: retval &= self._set_params(network = network)
-        #else: retval &= self._set_params()
 
         return retval
-
-    #def _configure(self, config = None, network = None):
-        #"""Configure ANN to network.
-
-        #Args:
-            #config: dictionary containing system configuration
-            #network: nemoa network instance
-
-        #"""
-
-        #retval = True
-
-        #retval &= self._set_config(config)
-        #retval &= self._set_params()
-        #if network: retval &= self._set_params(network = network)
-
-        #return retval
 
     def _configure_set_dataset(self, dataset):
         """check if dataset columns match with visible units."""
@@ -867,7 +843,7 @@ class System:
             return False
 
         # initialize tracker
-        tracker = nemoa.system.base.Tracker(self)
+        tracker = nemoa.system.classes.base.Tracker(self)
         tracker.set(data = self._get_test_data(dataset))
 
         # optimize system parameters

@@ -130,6 +130,7 @@ class Workspace:
     def _create_new_model(self, name, config = None,
         dataset = None, network = None, system = None,
         configure = True, initialize = True):
+
         nemoa.log('create new model')
         nemoa.log('set', indent = '+1')
 
@@ -156,8 +157,11 @@ class Workspace:
         nemoa.log('set', indent = '+1')
 
         # create dataset instance (if not given)
-        if not nemoa.type.is_dataset(dataset): dataset = \
-            self._get_instance(type = 'dataset', config = dataset)
+        if not nemoa.type.is_dataset(dataset):
+            #dataset = nemoa.dataset.open(dataset,
+                #workspace = self._workspace)
+            dataset = self._get_instance(
+                type = 'dataset', config = dataset)
         if not nemoa.type.is_dataset(dataset):
             nemoa.log('error',
                 'could not create model instance: dataset is invalid!')
@@ -165,9 +169,9 @@ class Workspace:
             return None
 
         # create network instance (if not given)
-        if network == None: network = {'type': 'auto'}
-        if not nemoa.type.is_network(network): network = \
-            self._get_instance(type = 'network', config = network)
+        if not nemoa.type.is_network(network):
+            network = nemoa.network.open(network,
+                workspace = self._workspace)
         if not nemoa.type.is_network(network):
             nemoa.log('error',
                 'could not create model instance: network is invalid!')
@@ -175,8 +179,9 @@ class Workspace:
             return None
 
         # create system instance (if not given)
-        if not nemoa.type.is_system(system): system = \
-            self._get_instance(type = 'system', config = system)
+        if not nemoa.type.is_system(system):
+            system = self._get_instance(
+                type = 'system', config = system)
         if not nemoa.type.is_system(system):
             nemoa.log('error',
                 'could not create model instance: system is invalid!')
@@ -190,9 +195,11 @@ class Workspace:
                 str(network.get('name')),
                 str(system.get('name'))])
 
+        # update config
+        config = {'name': name, 'type': 'base.Model'}
+
         # create model instance
-        model = self._get_instance(
-            type = 'model', config = config, name = name,
+        model = nemoa.model.new(config = config,
             dataset = dataset, network = network, system = system)
 
         nemoa.log('set', indent = '-1')
@@ -733,7 +740,7 @@ class Config:
             return nemoa.log('warning', """skipping system '%s':
                 missing parameter 'package'.""" % (name))
         try:
-            module_name = 'nemoa.system.%s' % (config['package'])
+            module_name = 'nemoa.system.classes.%s' % (config['package'])
             system_module = importlib.import_module(module_name)
         except:
             return nemoa.log('warning', """skipping system '%s':

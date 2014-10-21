@@ -10,10 +10,10 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.system.ann
+import nemoa.system.classes.ann
 import numpy
 
-class DBN(nemoa.system.ann.ANN):
+class DBN(nemoa.system.classes.ann.ANN):
     """Deep Belief Network (DBN).
 
     'Deep Belief Networks' are layered feed forward Artificial Neural
@@ -194,7 +194,6 @@ class DBN(nemoa.system.ann.ANN):
                 system._config['init']['ignore_units'] = ['visible']
                 system._config['optimize']['ignore_units'] = ['visible']
 
-        self._config['check']['sub_systems'] = True
         nemoa.log('set', indent = '-1')
 
         # Optimize subsystems
@@ -211,7 +210,6 @@ class DBN(nemoa.system.ann.ANN):
             # transform dataset with previous system / fix lower stack
             if sys_id > 0:
                 prev_sys = sub_systems[sys_id - 1]
-
                 visible_layer = prev_sys._params['units'][0]['layer']
                 hidden_layer = prev_sys._params['units'][1]['layer']
                 mapping = (visible_layer, hidden_layer)

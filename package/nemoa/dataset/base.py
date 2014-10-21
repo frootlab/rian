@@ -474,10 +474,11 @@ class Dataset:
             if not nemoa.type.is_system(system):
                 return nemoa.log('error', """could not transform data
                     using system: invalid system.""")
+
             nemoa.log("transform data using system '%s'"
                 % (system.get('name')))
-            nemoa.log('set', indent = '+1')
 
+            nemoa.log('set', indent = '+1')
             if mapping == None: mapping = system.mapping()
 
             source_columns = system.get('units', layer = mapping[0])
@@ -1240,12 +1241,13 @@ class Dataset:
 
     def _set_colnames(self, colnames):
         """Set column names from list of strings."""
+
         self._config['columns'] = tuple()
         for col in colnames:
             if ':' in col:
-                colnames += (col.split(':'), )
+                self._config['columns'] += (col.split(':'), )
             else:
-                colnames += (('', col), )
+                self._config['columns'] += (('', col), )
         return True
 
     def _set_colfilter(self, **kwargs):

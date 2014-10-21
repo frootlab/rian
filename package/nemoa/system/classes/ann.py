@@ -20,7 +20,7 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-class ANN(nemoa.system.base.System):
+class ANN(nemoa.system.classes.base.System):
     """Artificial Neuronal Network (ANN).
 
     Generic class of layered feed forward networks aimed to provide
