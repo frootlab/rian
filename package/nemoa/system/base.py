@@ -16,9 +16,10 @@ class System:
         'init': {},
         'optimize': {}}
 
-    def __init__(self, **kwargs):
+    def __init__(self, network = None, **kwargs):
         """Import system from dictionary."""
         self._set_copy(**kwargs)
+        if network: self._set_params(network = network)
 
     #def __init__(self, *args, **kwargs):
         #"""Configure system and system parameters."""
@@ -26,22 +27,51 @@ class System:
         ## set configuration and update units and links
         #self._set_config(kwargs['config'] if 'config' in kwargs else {})
 
-    def configure(self, network = None, dataset = None, *args, **kwargs):
+    def configure(self, config = None, network = None):
         """Configure system to network and dataset."""
-        if not hasattr(self.__class__, '_configure') \
-            or not callable(getattr(self.__class__, '_configure')):
-            return True
-        nemoa.log("configure system '%s'" % (self._config['name']))
-        nemoa.log('set', indent = '+1')
-        if not self._check_network(network):
-            nemoa.log('error', """system could not be configured:
-                network is not valid!""")
-            nemoa.log('set', indent = '-1')
-            return False
-        ret_val = self._configure(dataset = dataset, network = network,
-            *args, **kwargs)
-        nemoa.log('set', indent = '-1')
-        return ret_val
+
+        retval = True
+
+        if config: retval &= self._set_config(config)
+        if network: retval &= self._set_params(network = network)
+        #else: retval &= self._set_params()
+
+        return retval
+
+    #def _configure(self, config = None, network = None):
+        #"""Configure ANN to network.
+
+        #Args:
+            #config: dictionary containing system configuration
+            #network: nemoa network instance
+
+        #"""
+
+        #retval = True
+
+        #retval &= self._set_config(config)
+        #retval &= self._set_params()
+        #if network: retval &= self._set_params(network = network)
+
+        #return retval
+
+    def _configure_set_dataset(self, dataset):
+        """check if dataset columns match with visible units."""
+
+        # test if argument dataset is nemoa dataset instance
+        if not nemoa.type.is_dataset(dataset): return nemoa.log(
+            'error', """could not configure system:
+            dataset instance is not valid.""")
+
+        # compare visible unit labels with dataset columns
+        mapping = self.mapping()
+        units = self._get_units(visible = True)
+        if not dataset.get('columns') == units:
+            return nemoa.log('error', """could not configure system:
+                visible units differ from dataset columns.""")
+        self._config['check']['dataset'] = True
+
+        return True
 
     def _is_configured(self):
         """Return configuration state of system."""
@@ -277,19 +307,24 @@ class System:
 
         src, tgt = link
 
+        layers = [layer['layer'] for layer in self._params['units']]
+
         src_unit = self._get_unit(src)
         src_id = src_unit['layer_sub_id']
         src_layer = src_unit['layer']
-        src_layer_params = self._units[src_layer].params
+        src_layer_id = layers.index(src_layer)
+        src_layer_params = self._params['units'][src_layer_id]
 
         tgt_unit = self._get_unit(tgt)
         tgt_id = tgt_unit['layer_sub_id']
         tgt_layer = tgt_unit['layer']
-        tgt_layer_params = self._units[tgt_layer].params
+        tgt_layer_id = layers.index(tgt_layer)
+        tgt_layer_params = self._params['units'][tgt_layer_id]
 
-        link_layer_params = self._links[src_layer]['target'][tgt_layer]
-        link_layer_size = len(src_layer_params['id']) \
-            * len(tgt_layer_params['id'])
+        link_layer_params = \
+            self._params['links'][(src_layer_id, tgt_layer_id)]
+        link_layer_size = \
+            len(src_layer_params['id']) * len(tgt_layer_params['id'])
 
         # get link parameters
         link_params = {}
@@ -356,11 +391,12 @@ class System:
         if not layers: return False
         links = []
         links_params = {}
+
         for layer_id in xrange(len(layers) - 1):
             src_layer = layers[layer_id]
-            src_units = self._units[src_layer].params['id']
+            src_units = self._params['units'][layer_id]['id']
             tgt_layer = layers[layer_id + 1]
-            tgt_units = self._units[tgt_layer].params['id']
+            tgt_units = self._params['units'][layer_id + 1]['id']
             link_layer_id = (layer_id, layer_id + 1)
             link_layer_params = self._params['links'][link_layer_id]
 
@@ -449,7 +485,7 @@ class System:
         if key == 'license': return self._set_license(*args, **kwargs)
 
         # set configuration and parameters
-        if key == 'units': return self._set_units(*args, **kwargs)
+        #if key == 'units': return self._set_units(*args, **kwargs)
         if key == 'links': return self._set_links(*args, **kwargs)
 
         # import configuration and parameters
@@ -501,47 +537,6 @@ class System:
         self._config['license'] = system_license
         return True
 
-    def _set_units(self, units = None, initialize = True):
-        """Create instances for units."""
-
-        if not 'units' in self._params: self._params['units'] = []
-        if not hasattr(self, 'units'): self._units = {}
-
-        if not isinstance(units, list): return False
-        if len(units) < 2: return False
-        self._params['units'] = units
-
-        # get unit classes from system config
-        # TODO: get unit classes from network
-        visible_unit_class = self._config['params']['visible_class']
-        hidden_unit_class = self._config['params']['hidden_class']
-        for layer_id in xrange(len(self._params['units'])):
-            if self._params['units'][layer_id]['visible'] == True:
-                self._params['units'][layer_id]['class'] = \
-                    visible_unit_class
-            else:
-                self._params['units'][layer_id]['class'] = \
-                    hidden_unit_class
-
-        # create instances of unit classes
-        # and link units params to local params dict
-        self._units = {}
-        for layer_id in xrange(len(self._params['units'])):
-            layer_class = self._params['units'][layer_id]['class']
-            layer = self._params['units'][layer_id]['layer']
-            if layer_class == 'sigmoid':
-                self._units[layer] = self.UnitsSigmoid()
-            elif layer_class == 'gauss':
-                self._units[layer] = self.UnitsGauss()
-            else:
-                return nemoa.log('error', """could not create system:
-                    unit class '%s' is not supported!"""
-                    % (layer_class))
-            self._units[layer].params = self._params['units'][layer_id]
-
-        if initialize: return self._init_units()
-        return True
-
     def _set_links(self, links = None, initialize = True):
         """Create link configuration from units."""
 
@@ -550,7 +545,7 @@ class System:
                 units have not been configured.""")
 
         if not 'links' in self._params: self._params['links'] = {}
-        if not initialize: return self._configure_index_links()
+        if not initialize: return self._set_params_create_links()
 
         # initialize adjacency matrices with default values
         for lid in xrange(len(self._params['units']) - 1):
@@ -595,7 +590,8 @@ class System:
                 lnk_dict = self._params['links'][(src_lid, tgt_lid)]
                 lnk_dict['A'][src_sid, tgt_sid] = 1.0
 
-        return self._configure_index_links() and self._init_links()
+        return self._set_params_create_links() \
+            and self._set_params_init_links()
 
     def _set_copy(self, config = None, params = None):
         """Set configuration and parameters of system.
@@ -631,18 +627,191 @@ class System:
             'config': True, 'network': False, 'dataset': False }
         return True
 
-    def _set_params(self, params = None):
+    def _set_params(self, params = None, network = None):
         """Set system parameters from dictionary."""
 
         if not hasattr(self, '_params'):
             self._params = {'units': {}, 'links': {}}
 
-        # merge parameters
-        if not params: return True
-        nemoa.common.dict_merge(copy.deepcopy(params), self._params)
+        # get system parameters from dict
+        if params:
+            nemoa.common.dict_merge(copy.deepcopy(params), self._params)
 
-        self._set_units(self._params['units'], initialize = False)
-        self._set_links(self._params['links'], initialize = False)
+        # get system parameters from network
+        elif network:
+            if not nemoa.type.is_network(network):
+                return nemoa.log('error', """could not configure system:
+                    network instance is not valid!""")
+
+            # get unit layers and unit params
+            layers = network.get('layers')
+            units = [network.get('layer', layer) for layer in layers]
+            for layer in units: layer['id'] = layer.pop('nodes')
+
+            # get link layers and link params
+            links = {}
+            for lid in xrange(len(units) - 1):
+                src = units[lid]['layer']
+                src_list = units[lid]['id']
+                tgt = units[lid + 1]['layer']
+                tgt_list = units[lid + 1]['id']
+                link_layer = (lid, lid + 1)
+                link_layer_shape = (len(src_list), len(tgt_list))
+                link_layer_adj = numpy.zeros(link_layer_shape)
+                links[link_layer] = {
+                    'source': src, 'target': tgt,
+                    'A': link_layer_adj.astype(float) }
+            for link in network.get('edges'):
+                src, tgt = link
+                found = False
+                for lid in xrange(len(units) - 1):
+                    if src in units[lid]['id']:
+                        src_lid = lid
+                        src_sid = units[lid]['id'].index(src)
+                        tgt_lid = lid + 1
+                        tgt_sid = units[lid + 1]['id'].index(tgt)
+                        found = True
+                        break
+                if not found: continue
+                if not (src_lid, tgt_lid) in links: continue
+                links[(src_lid, tgt_lid)]['A'][src_sid, tgt_sid] = 1.0
+
+            params = {'units': units, 'links': links}
+            nemoa.common.dict_merge(params, self._params)
+
+        # get unit classes from system config
+        # TODO: get unit classes from network
+        visible_unit_class = self._config['params']['visible_class']
+        hidden_unit_class = self._config['params']['hidden_class']
+        for layer_id in xrange(len(self._params['units'])):
+            if self._params['units'][layer_id]['visible'] == True:
+                self._params['units'][layer_id]['class'] = \
+                    visible_unit_class
+            else:
+                self._params['units'][layer_id]['class'] = \
+                    hidden_unit_class
+
+        # create instances of units and links
+        self._set_params_create_units()
+        self._set_params_create_links()
+
+        if network: self._set_params_init_links()
+
+        return True
+
+    def _set_params_create_units(self):
+
+        # create instances of unit classes
+        # and link units params to local params dict
+        self._units = {}
+        for layer_id in xrange(len(self._params['units'])):
+            layer_params = self._params['units'][layer_id]
+            layer_class = layer_params['class']
+            layer_name = layer_params['layer']
+            if layer_class == 'sigmoid':
+                self._units[layer_name] = self.UnitsSigmoid(layer_params)
+            elif layer_class == 'gauss':
+                self._units[layer_name] = self.UnitsGauss(layer_params)
+            else:
+                return nemoa.log('error', """could not create system:
+                    unit class '%s' is not supported!"""
+                    % (layer_class))
+
+        return True
+
+    def _set_params_create_links(self):
+
+        self._links = {units: {'source': {}, 'target': {}}
+            for units in self._units.keys()}
+
+        for link_layer_id in self._params['links'].keys():
+            link_params = self._params['links'][link_layer_id]
+
+            src = link_params['source']
+            tgt = link_params['target']
+
+            self._links[src]['target'][tgt] = link_params
+            self._units[src].target = link_params
+            self._links[tgt]['source'][src] = link_params
+            self._units[tgt].source = link_params
+
+        return True
+
+    def _set_params_init_units(self, dataset = None):
+        """Initialize unit parameteres.
+
+        Args:
+            dataset: nemoa dataset instance OR None
+
+        """
+
+        if not (dataset == None) and not \
+            nemoa.type.is_dataset(dataset):
+            return nemoa.log('error', """could not initilize units:
+            invalid dataset argument given!""")
+
+        for layer in self._units.keys():
+            if dataset == None:
+                data = None
+            elif not self._units[layer].params['visible']:
+                data = None
+            else:
+                rows = self._config['params']['samples'] \
+                    if 'samples' in self._config['params'] else '*'
+                cols = layer \
+                    if layer in dataset.get('colgroups') else '*'
+                data = dataset.get('data', 100000, rows = rows, cols = cols)
+            self._units[layer].initialize(data)
+
+        return True
+
+    def _set_params_init_links(self, dataset = None):
+        """Initialize link parameteres (weights).
+
+        If dataset is None, initialize weights matrices with zeros
+        and all adjacency matrices with ones. if dataset is nemoa
+        network instance, use data distribution to calculate random
+        initial weights.
+
+        Args:
+            dataset: nemoa dataset instance OR None
+
+        """
+
+        if not(dataset == None) and \
+            not nemoa.type.is_dataset(dataset): return nemoa.log(
+            'error', """could not initilize link parameters:
+            invalid dataset argument given!""")
+
+        for links in self._params['links']:
+            source = self._params['links'][links]['source']
+            target = self._params['links'][links]['target']
+            A = self._params['links'][links]['A']
+            x = len(self._units[source].params['id'])
+            y = len(self._units[target].params['id'])
+            alpha = self._config['init']['w_sigma'] \
+                if 'w_sigma' in self._config['init'] else 1.
+            sigma = numpy.ones([x, 1], dtype = float) * alpha / x
+
+            if dataset == None: random = \
+                numpy.random.normal(numpy.zeros((x, y)), sigma)
+            elif source in dataset.get('colgroups'):
+                rows = self._config['params']['samples'] \
+                    if 'samples' in self._config['params'] else '*'
+                data = dataset.get('data', 100000, rows = rows, cols = source)
+                random = numpy.random.normal(numpy.zeros((x, y)),
+                    sigma * numpy.std(data, axis = 0).reshape(1, x).T)
+            elif dataset.get('columns') \
+                == self._units[source].params['id']:
+                rows = self._config['params']['samples'] \
+                    if 'samples' in self._config['params'] else '*'
+                data = dataset.get('data', 100000, rows = rows, cols = '*')
+                random = numpy.random.normal(numpy.zeros((x, y)),
+                    sigma * numpy.std(data, axis = 0).reshape(1, x).T)
+            else: random = \
+                numpy.random.normal(numpy.zeros((x, y)), sigma)
+
+            self._params['links'][links]['W'] = A * random
 
         return True
 
@@ -654,7 +823,7 @@ class System:
         """Show system as image."""
         return nemoa.system.show(self, *args, **kwargs)
 
-    def _initialize(self, dataset = None):
+    def initialize(self, dataset = None):
         """Initialize system parameters.
 
         Initialize all system parameters to dataset.
@@ -667,7 +836,9 @@ class System:
         if not nemoa.type.is_dataset(dataset):
             return nemoa.log('error', """could not initilize system
                 parameters: invalid dataset instance given!""")
-        return self._init_params(dataset)
+
+        return self._set_params_init_units(dataset) \
+            and self._set_params_init_links(dataset)
 
     def optimize(self, dataset, schedule):
         """Optimize system parameters using data and given schedule."""
@@ -762,6 +933,373 @@ class System:
             ret_dict = ret_dict[arg]
         if not isinstance(ret_dict, dict): return ret_dict
         return {key: ret_dict[key] for key in ret_dict.keys()}
+
+    class Links:
+        """Class to unify common ann link attributes."""
+
+        params = {}
+
+        def __init__(self): pass
+
+        @staticmethod
+        def energy(dSrc, dTgt, src, tgt, links, calc = 'mean'):
+            """Return link energy as numpy array."""
+
+            if src['class'] == 'gauss':
+                M = - links['A'] * links['W'] \
+                    / numpy.sqrt(numpy.exp(src['lvar'])).T
+            elif src['class'] == 'sigmoid':
+                M = - links['A'] * links['W']
+            else: return nemoa.log('error', 'unsupported unit class')
+
+            return numpy.einsum('ij,ik,jk->ijk', dSrc, dTgt, M)
+
+        @staticmethod
+        def get_updates(data, model):
+            """Return weight updates of a link layer."""
+
+            D = numpy.dot(data[0].T, data[1]) / float(data[1].size)
+            M = numpy.dot(model[0].T, model[1]) / float(data[1].size)
+
+            return { 'W': D - M }
+
+        @staticmethod
+        def get_updates_from_delta(data, delta):
+
+            return { 'W': -numpy.dot(data.T, delta) / float(data.size) }
+
+    class Units:
+        """Base Class for Unit Layer.
+
+        Unification of common unit layer functions and attributes.
+        """
+
+        params = {}
+        source = {}
+        target = {}
+
+        def __init__(self, params = None):
+            if params:
+                self.params = params
+                if not self.check(params): self.initialize()
+
+        def expect(self, data, source):
+
+            if source['class'] == 'sigmoid': return \
+                self.expect_from_sigmoid_layer(data, source, self.weights(source))
+            elif source['class'] == 'gauss': return \
+                self.expect_from_gauss_layer(data, source, self.weights(source))
+
+            return False
+
+        def get_updates(self, data, model, source):
+
+            return self.get_param_updates(data, model, self.weights(source))
+
+        def get_delta(self, in_data, out_delta, source, target):
+
+            return self.delta_from_bprop(in_data, out_delta,
+                self.weights(source), self.weights(target))
+
+        def get_samples_from_input(self, data, source):
+
+            if source['class'] == 'sigmoid':
+                return self.get_samples(
+                    self.expect_from_sigmoid_layer(
+                    data, source, self.weights(source)))
+            elif source['class'] == 'gauss':
+                return self.get_samples(
+                    self.expect_from_gauss_layer(
+                    data, source, self.weights(source)))
+
+            return False
+
+        def weights(self, source):
+
+            if 'source' in self.source \
+                and source['layer'] == self.source['source']:
+                return self.source['W']
+            elif 'target' in self.target \
+                and source['layer'] == self.target['target']:
+                return self.target['W'].T
+            else: return nemoa.log('error', """could not get links:
+                layers '%s' and '%s' are not connected!"""
+                % (source['layer'], self.params['layer']))
+
+        def links(self, source):
+
+            if 'source' in self.source \
+                and source['layer'] == self.source['source']:
+                return self.source
+            elif 'target' in self.target \
+                and source['layer'] == self.target['target']:
+                return {'W': self.target['W'].T, 'A': self.target['A'].T}
+            else: return nemoa.log('error', """could not get links:
+                layers '%s' and '%s' are not connected!"""
+                % (source['name'], self.params['name']))
+
+        def adjacency(self, source):
+
+            if 'source' in self.source \
+                and source['layer'] == self.source['source']:
+                return self.source['A']
+            elif 'target' in self.target \
+                and source['layer'] == self.target['target']:
+                return self.target['A'].T
+            else: return nemoa.log('error', """could not get links:
+                layers '%s' and '%s' are not connected!"""
+                % (source['layer'], self.params['layer']))
+
+    class UnitsSigmoid(Units):
+        """Sigmoidal Unit Layer.
+
+        Layer of units with sigmoidal activation function and bernoulli
+        distributed sampling.
+
+        """
+
+        def initialize(self, data = None):
+            """Initialize system parameters of sigmoid distributed units
+            using data. """
+
+            size = len(self.params['id'])
+            shape = (1, size)
+            self.params['bias'] = 0.5 * numpy.ones(shape)
+            return True
+
+        def update(self, updates):
+            """Update parameter of sigmoid units. """
+
+            if 'bias'in updates:
+                self.params['bias'] += updates['bias']
+
+            return True
+
+        @staticmethod
+        def remove(layer, select):
+            """Delete selection (list of ids) of units from parameter arrays. """
+
+            layer['bias'] = layer['bias'][0, [select]]
+
+            return True
+
+        @staticmethod
+        def check(layer):
+
+            return 'bias' in layer
+
+        def energy(self, data):
+            """Return system energy of sigmoidal units as numpy array. """
+
+            bias = self.params['bias']
+
+            return - data * bias
+
+        def expect_from_sigmoid_layer(self, data, source, weights):
+            """Return expected values of a sigmoid output layer
+            calculated from a sigmoid input layer. """
+
+            bias = self.params['bias']
+
+            return nemoa.common.sigmoid(bias + numpy.dot(data, weights))
+
+        def expect_from_gauss_layer(self, data, source, weights):
+            """Return expected values of a sigmoid output layer
+            calculated from a gaussian input layer. """
+
+            bias = self.params['bias']
+            sdev = numpy.sqrt(numpy.exp(source['lvar']))
+
+            return nemoa.common.sigmoid(
+                bias + numpy.dot(data / sdev, weights))
+
+        def get_param_updates(self, data, model, weights):
+            """Return parameter updates of a sigmoidal output layer
+            calculated from real data and modeled data. """
+
+            size = len(self.params['id'])
+
+            return {'bias': numpy.mean(data[1] - model[1], axis = 0).reshape((1, size))}
+
+        def get_updates_from_delta(self, delta):
+
+            size = len(self.params['id'])
+
+            return {'bias': - numpy.mean(delta, axis = 0).reshape((1, size))}
+
+        def delta_from_bprop(self, data_in, delta_out, W_in, W_out):
+
+            bias = self.params['bias']
+
+            return numpy.dot(delta_out, W_out) * \
+                nemoa.common.diff_sigmoid((bias + numpy.dot(data_in, W_in)))
+
+        @staticmethod
+        def grad(x):
+            """Return gradiant of standard logistic function. """
+
+            numpy.seterr(over = 'ignore')
+
+            return ((1. / (1. + numpy.exp(-x)))
+                * (1. - 1. / (1. + numpy.exp(-x))))
+
+        @staticmethod
+        def get_values(data):
+            """Return median of bernoulli distributed layer
+            calculated from expected values. """
+
+            return (data > 0.5).astype(float)
+
+        @staticmethod
+        def get_samples(data):
+            """Return sample of bernoulli distributed layer
+            calculated from expected value. """
+
+            return (data > numpy.random.rand(
+                data.shape[0], data.shape[1])).astype(float)
+
+        def get(self, unit):
+
+            id = self.params['id'].index(unit)
+            cl = self.params['class']
+            visible = self.params['visible']
+            bias = self.params['bias'][0, id]
+
+            return {'label': unit, 'id': id, 'class': cl,
+                'visible': visible, 'bias': bias}
+
+    class UnitsGauss(Units):
+        """Layer of Gaussian Linear Units (GLU).
+
+        Artificial neural network units with linear activation function
+        and gaussian sampling.
+
+        """
+
+        def initialize(self, data = None, v_sigma = 0.4):
+            """Initialize parameters of gauss distributed units. """
+
+            size = len(self.params['id'])
+            if data == None:
+                self.params['bias'] = \
+                    numpy.zeros([1, size])
+                self.params['lvar'] = \
+                    numpy.log((v_sigma * numpy.ones((1, size))) ** 2)
+            else:
+                self.params['bias'] = \
+                    numpy.mean(data, axis = 0).reshape(1, size)
+                self.params['lvar'] = \
+                    numpy.log((v_sigma * numpy.ones((1, size))) ** 2)
+
+            return True
+
+        def update(self, updates):
+            """Update gaussian units parameters."""
+
+            if 'bias' in updates:
+                self.params['bias'] += updates['bias']
+            if 'lvar' in updates:
+                self.params['lvar'] += updates['lvar']
+
+            return True
+
+        def get_param_updates(self, data, model, weights):
+            """Return parameter updates of a gaussian output layer
+            calculated from real data and modeled data. """
+
+            shape = (1, len(self.params['id']))
+            var = numpy.exp(self.params['lvar'])
+            bias = self.params['bias']
+
+            updBias = numpy.mean(
+                data[1] - model[1], axis = 0).reshape(shape) / var
+            updLVarData = numpy.mean(
+                0.5 * (data[1] - bias) ** 2 - data[1]
+                * numpy.dot(data[0], weights), axis = 0)
+            updLVarModel = numpy.mean(
+                0.5 * (model[1] - bias) ** 2 - model[1]
+                * numpy.dot(model[0], weights), axis = 0)
+            updLVar = (updLVarData - updLVarModel).reshape(shape) / var
+
+            return { 'bias': updBias, 'lvar': updLVar }
+
+        def get_updates_from_delta(self, delta):
+            # TODO: calculate update for lvar
+
+            shape = (1, len(self.params['id']))
+            bias = - numpy.mean(delta, axis = 0).reshape(shape)
+
+            return { 'bias': bias }
+
+        @staticmethod
+        def remove(layer, select):
+            """Delete selection (list of ids) of units from parameter arrays. """
+
+            layer['bias'] = layer['bias'][0, [select]]
+            layer['lvar'] = layer['lvar'][0, [select]]
+
+            return True
+
+        def expect_from_sigmoid_layer(self, data, source, weights):
+            """Return expected values of a gaussian output layer
+            calculated from a sigmoid input layer. """
+
+            return self.params['bias'] + numpy.dot(data, weights)
+
+        def expect_from_gauss_layer(self, data, source, weights):
+            """Return expected values of a gaussian output layer
+            calculated from a gaussian input layer. """
+
+            bias = self.params['bias']
+            sdev = numpy.sqrt(numpy.exp(source['lvar']))
+
+            return bias + numpy.dot(data / sdev, weights)
+
+        @staticmethod
+        def grad(x):
+            """Return gradient of activation function."""
+
+            return 1.
+
+        @staticmethod
+        def check(layer):
+
+            return 'bias' in layer and 'lvar' in layer
+
+        def energy(self, data):
+
+            bias = self.params['bias']
+            var = numpy.exp(self.params['lvar'])
+            energy = 0.5 * (data - bias) ** 2 / var
+
+            return energy
+
+        @staticmethod
+        def get_values(data):
+            """Return median of gauss distributed layer
+            calculated from expected values."""
+
+            return data
+
+        def get_samples(self, data):
+            """Return sample of gauss distributed layer
+            calculated from expected values. """
+
+            sigma = numpy.sqrt(numpy.exp(self.params['lvar']))
+            return numpy.random.normal(data, sigma)
+
+        def get(self, unit):
+
+            id = self.params['id'].index(unit)
+
+            cl = self.params['class']
+            bias = self.params['bias'][0, id]
+            lvar = self.params['lvar'][0, id]
+            visible = self.params['visible']
+
+            return {
+                'label': unit, 'id': id, 'class': cl,
+                'visible': visible, 'bias': bias, 'lvar': lvar }
 
 class Tracker:
 
@@ -1001,4 +1539,5 @@ class Tracker:
             return nemoa.log('note', out % (progr, prop['name'], value))
 
         return False
+
 

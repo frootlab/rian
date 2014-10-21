@@ -116,9 +116,7 @@ class model:
             nemoa.log('set', indent = '-1')
             return False
         self._config['check']['system'] = \
-            self.system.configure(
-                network = self.network,
-                dataset = self.dataset)
+            self.system.configure(network = self.network)
         if not self._config['check']['system']:
             nemoa.log('error', """could not configure model: system
                 could not be configured!""")
@@ -162,7 +160,7 @@ class model:
         if self.system._is_empty(): return False
 
         # initialize system parameters with dataset
-        self.system._initialize(self.dataset)
+        self.system.initialize(self.dataset)
 
         # update network with initial system parameters
         self.network._update(system = self.system)
@@ -299,13 +297,21 @@ class model:
 
     def show(self, key = None, *args, **kwargs):
         """Create plot of model with output to display."""
+
         if key == 'network': return self.network.show(*args, **kwargs)
+        if key == 'dataset': return self.dataset.show(*args, **kwargs)
 
         kwargs['output'] = 'show'
         return self.plot(key, *args, **kwargs)
 
     def plot(self, *args, **kwargs):
         """Create plot of model."""
+
+        if args[0] == 'network':
+            return self.network.plot(*args[1:], **kwargs)
+        if args[0] == 'dataset':
+            return self.dataset.plot(*args[1:], **kwargs)
+
         nemoa.log('create plot of model')
         nemoa.log('set', indent = '+1')
 

@@ -133,45 +133,42 @@ class DBN(nemoa.system.ann.ANN):
                 for h in hidden_units:
                     network_edges[('visible', 'hidden')].append((v, h))
 
-            network_config = {
-                'name': '%s ↔ %s' \
-                    % (src['layer'], tgt['layer']),
+            # create network of subsystem
+            network = nemoa.network.new(config = {
+                'name': '%s ↔ %s' % (src['layer'], tgt['layer']),
                 'type': 'layer.Factor',
                 'layer': ['visible', 'hidden'],
                 'layers': {
                     'visible': {
-                        'visible': True, 'type': \
+                        'visible': True,
+                        'type': \
                             self._config['params']['visible_class']},
                     'hidden': {
-                        'visible': False, 'type': \
+                        'visible': False,
+                        'type': \
                             self._config['params']['hidden_class']}},
                 'nodes': network_nodes,
                 'edges': network_edges,
                 'encapsulate_nodes': False,
-                #'visible': ['visible'],
-                #'hidden': ['hidden'],
-                'label_format': 'generic:string' }
-
-            # create network of subsystem
-            network = nemoa.network.new(config = network_config)
+                'label_format': 'generic:string' })
 
             # create subsystem configuration
-            system_config = {
-                'name': '%s ↔ %s' % (src['layer'], tgt['layer'])}
+            config = {'name': '%s ↔ %s' % (src['layer'], tgt['layer'])}
             if src['visible']:
-                system_config['package'] = \
+                config['package'] = \
                     self._config['params']['visible_system_module']
-                system_config['class'] = \
+                config['class'] = \
                     self._config['params']['visible_system_class']
             else:
-                system_config['package'] = \
+                config['package'] = \
                     self._config['params']['hidden_system_module']
-                system_config['class'] = \
+                config['class'] = \
                     self._config['params']['hidden_system_class']
 
             # create subsystem instance
-            system = nemoa.system.new(config = system_config)
-            system.configure(network = network)
+            system = nemoa.system.new(
+                config = config, network = network)
+
             unit_count = len(system.get('units'))
             link_count = len(system.get('links'))
             nemoa.log("adding subsystem: '%s' (%s units, %s links)" %
@@ -227,10 +224,10 @@ class DBN(nemoa.system.ann.ANN):
             visible_columns = system.get('units', layer = 'visible')
             dataset.set('colfilter', visible = visible_columns)
 
-            # initialize (free) system parameters
-            system._initialize(dataset)
+            # initialize system parameters
+            system.initialize(dataset)
 
-            # optimize (free) system parameter
+            # optimize system parameter
             system.optimize(dataset, schedule)
 
         # reset data to initial state (before transformation)
