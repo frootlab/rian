@@ -413,31 +413,6 @@ class RBM(nemoa.system.ann.ANN):
 
         return energy
 
-    #def _remove_links(self, links = []):
-        #"""Remove links from adjacency matrix using list of links."""
-        #if not self._configure_test(self._params): # check params
-            #nemoa.log('error', """
-                #could not remove links:
-                #units have not been set yet!""")
-            #return False
-
-        ## search links and update list of current links
-        #curLinks = self._get_links() # get current links
-        #for link in links:
-            #found = False
-            #if (link[0], link[1]) in curLinks:
-                #del curLinks[curLinks.index((link[0], link[1]))]
-                #found = True
-            #if (link[1], link[0]) in curLinks:
-                #del curLinks[curLinks.index((link[1], link[0]))]
-                #found = True
-            #if not found:
-                #nemoa.log('warning', """could not delete link (%s → %s):
-                    #link could not be found!""" % (link[0], link[1]))
-                #continue
-
-        #return self._configure_set_links(curLinks)
-
     def _optimize_update_links(self, **updates):
         """Set updates for links."""
         if 'W' in updates:

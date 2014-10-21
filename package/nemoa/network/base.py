@@ -550,37 +550,43 @@ class Network:
 
         return layers
 
-    def _get_copy(self, section = None):
+    def _get_copy(self, key = None, *args, **kwargs):
         """Get network copy as dictionary."""
-        if section == None: return {
-            'config': self._get_config(),
-            'graph': self._get_graph() }
-        elif section == 'config': return self._get_config()
-        elif section == 'graph': return self._get_graph()
-        return nemoa.log('error', """could not get copy of
-            configuration: unknown section '%s'.""" % (section))
 
-    def _get_config(self, section = None):
+        if key == None: return {
+            'config': self._get_config(), 'graph': self._get_graph() }
+
+        if key == 'config': return self._get_config(*args, **kwargs)
+        if key == 'graph': return self._get_graph(*args, **kwargs)
+
+        return nemoa.log('error', """could not get network copy:
+            unknown key '%s'.""" % (key))
+
+    def _get_config(self, key = None, *args, **kwargs):
         """Get configuration or configuration value."""
-        if section == None:
-            return copy.deepcopy(self._config)
-        if isinstance(section, str) and section in self._config.keys():
-            if isinstance(self._config[section], dict):
-                return self._config[section].copy()
-            return self._config[section]
+
+        if key == None: return copy.deepcopy(self._config)
+
+        if isinstance(key, str) and key in self._config.keys():
+            if isinstance(self._config[key], dict):
+                return self._config[key].copy()
+            return self._config[key]
+
         return nemoa.log('error', """could not get configuration:
-            unknown section '%s'.""" % (section))
+            unknown key '%s'.""" % (key))
 
     def _get_graph(self, type = 'dict'):
         """Get graph as dictionary or networkx graph."""
+
         graph = self._graph.copy()
+
+        if type == 'graph': return graph
         if type == 'dict':
             return {
                 'graph': graph.graph,
                 'nodes': graph.nodes(data = True),
                 'edges': networkx.to_dict_of_dicts(graph) }
-        elif type == 'graph':
-            return graph.copy()
+
         return None
 
     def set(self, key = None, *args, **kwargs):
@@ -646,10 +652,24 @@ class Network:
         self._config['license'] = network_license
         return True
 
-    def _set_copy(self, **kwargs):
-        if 'config' in kwargs: self._set_config(kwargs['config'])
-        if 'graph' in kwargs: self._set_graph(kwargs['graph'])
-        return True
+    def _set_copy(self, config = None, graph = None):
+        """Set configuration and graph of network.
+
+        Args:
+            config (dict or None, optional): network configuration
+            graph (dict or None, optional): network graph
+
+        Returns:
+            Bool which is True if and only if no error occured.
+
+        """
+
+        retval = True
+
+        if config: retval &= self._set_config(config)
+        if graph: retval &= self._set_graph(graph)
+
+        return retval
 
     def _set_config(self, config = None):
         """Set configuration from dictionary."""

@@ -1080,26 +1080,31 @@ class Dataset:
         """get single value from dataset."""
         return float(self._get_data(cols = [col], rows = [row]))
 
-    def _get_copy(self, section = None):
+    def _get_copy(self, key = None, *args, **kwargs):
         """get dataset copy as dictionary."""
-        if section == None: return {
+
+        if key == None: return {
             'config': self._get_config(),
             'source': self._get_source() }
-        elif section == 'config': return self._get_config()
-        elif section == 'source': return self._get_source()
-        return nemoa.log('error', """could not get copy of
-            configuration: unknown section '%s'.""" % (section))
 
-    def _get_config(self, section = None):
+        if key == 'config': return self._get_config(*args, **kwargs)
+        if key == 'source': return self._get_source(*args, **kwargs)
+
+        return nemoa.log('error', """could not get dataset copy:
+            unknown key '%s'.""" % (key))
+
+    def _get_config(self, key = None, *args, **kwargs):
         """Get configuration or configuration value."""
-        if section == None:
-            return copy.deepcopy(self._config)
-        if isinstance(section, str) and section in self._config.keys():
-            if isinstance(self._config[section], dict):
-                return self._config[section].copy()
-            return self._config[section]
+
+        if key == None: return copy.deepcopy(self._config)
+
+        if isinstance(key, str) and key in self._config.keys():
+            if isinstance(self._config[key], dict):
+                return self._config[key].copy()
+            return self._config[key]
+
         return nemoa.log('error', """could not get configuration:
-            unknown section '%s'.""" % (section))
+            unknown key '%s'.""" % (key))
 
     def _get_source(self, type = 'dict', source = None, size = 0,
         rows = '*'):
@@ -1263,27 +1268,61 @@ class Dataset:
 
         return True
 
-    def _set_copy(self, **kwargs):
-        if 'config' in kwargs: self._set_config(kwargs['config'])
-        if 'source' in kwargs: self._set_source(kwargs['source'])
-        return True
+    def _set_copy(self, config = None, source = None):
+        """Set configuration and source data of dataset.
+
+        Args:
+            config (dict or None, optional): dataset configuration
+            source (dict or None, optional): dataset source data
+
+        Returns:
+            Bool which is True if and only if no error occured.
+
+        """
+
+        retval = True
+
+        if config: retval &= self._set_config(config)
+        if source: retval &= self._set_source(source)
+
+        return retval
 
     def _set_config(self, config = None):
-        """Set configuration from dictionary."""
+        """Set configuration of dataset.
 
-        # initialize or update configuration dictionary
-        if not hasattr(self, '_config') or not self._config:
-            self._config = self._default.copy()
-        if config:
-            config_copy = copy.deepcopy(config)
-            nemoa.common.dict_merge(config_copy, self._config)
-            # TODO: reconfigure!?
-            self._source = {}
+        Args:
+            config (dict or None, optional): dataset configuration
+
+        Returns:
+            Bool which is True if and only if no error occured.
+
+        """
+
+        # initialize configuration dictionary
+        if not self._config: self._config = self._default.copy()
+
+        # update configuration dictionary
+        if not config: return True
+        nemoa.common.dict_merge(copy.deepcopy(config), self._config)
+        # TODO: reconfigure!?
+        self._source = {}
+
         return True
 
     def _set_source(self, source = None):
-        if isinstance(source, dict):
-            self._source = copy.deepcopy(source)
+        """Set source data of dataset.
+
+        Args:
+            source (dict or None, optional): dataset source data
+
+        Returns:
+            Bool which is True if and only if no error occured.
+
+        """
+
+        if not source: return True
+        nemoa.common.dict_merge(copy.deepcopy(source), self._source)
+
         return True
 
     def save(self, *args, **kwargs):

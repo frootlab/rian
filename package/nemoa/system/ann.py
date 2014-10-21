@@ -89,16 +89,6 @@ class ANN(nemoa.system.base.System):
 
         return self._is_configured()
 
-    def _configure_update_units_and_links(self, *args, **kwargs):
-
-        nemoa.log('update system units and links')
-        self._configure_set_units(
-            self._params['units'], initialize = False)
-        self._configure_set_links(
-            self._params['links'], initialize = False)
-
-        return True
-
     def _configure_set_network(self, network, update = False):
         """Update units and links to network instance."""
 
@@ -114,13 +104,10 @@ class ANN(nemoa.system.base.System):
 
         initialize = (update == False)
 
-        self._configure_set_units(
+        self._set_units(
             self._get_units_from_network(network),
             initialize = initialize)
-
-        self._configure_set_links(
-            network.get('edges'),
-            initialize = initialize)
+        self._set_links(network.get('edges'), initialize = initialize)
 
         self._config['check']['network'] = True
         nemoa.log('set', indent = '-1')
@@ -177,47 +164,6 @@ class ANN(nemoa.system.base.System):
                 data = dataset.get('data', 100000, rows = rows, cols = cols)
             self._units[layer].initialize(data)
 
-        return True
-
-    def _configure_set_units(self, units = None, initialize = True):
-        """Create instances for units."""
-
-        if not 'units' in self._params: self._params['units'] = []
-        if not hasattr(self, 'units'): self._units = {}
-
-        if not isinstance(units, list): return False
-        if len(units) < 2: return False
-        self._params['units'] = units
-
-        # get unit classes from system config
-        # TODO: get unit classes from network
-        visible_unit_class = self._config['params']['visible_class']
-        hidden_unit_class = self._config['params']['hidden_class']
-        for layer_id in xrange(len(self._params['units'])):
-            if self._params['units'][layer_id]['visible'] == True:
-                self._params['units'][layer_id]['class'] = \
-                    visible_unit_class
-            else:
-                self._params['units'][layer_id]['class'] = \
-                    hidden_unit_class
-
-        # create instances of unit classes
-        # and link units params to local params dict
-        self._units = {}
-        for layer_id in xrange(len(self._params['units'])):
-            layer_class = self._params['units'][layer_id]['class']
-            layer = self._params['units'][layer_id]['layer']
-            if layer_class == 'sigmoid':
-                self._units[layer] = self.UnitsSigmoid()
-            elif layer_class == 'gauss':
-                self._units[layer] = self.UnitsGauss()
-            else:
-                return nemoa.log('error', """could not create system:
-                    unit class '%s' is not supported!"""
-                    % (layer_class))
-            self._units[layer].params = self._params['units'][layer_id]
-
-        if initialize: return self._init_units()
         return True
 
     def _configure_test_units(self, params):
@@ -298,61 +244,6 @@ class ANN(nemoa.system.base.System):
                 links['target'][tgt]['W'][select, :]
 
         return True
-
-    def _configure_set_links(self, links = None, initialize = True):
-        """Create link configuration from units."""
-
-        if not self._configure_test_units(self._params):
-            return nemoa.log('error', """could not configure links:
-                units have not been configured.""")
-
-        if not 'links' in self._params: self._params['links'] = {}
-        if not initialize: return self._configure_index_links()
-
-        # initialize adjacency matrices with default values
-        for lid in xrange(len(self._params['units']) - 1):
-            src_name = self._params['units'][lid]['layer']
-            src_list = self._units[src_name].params['id']
-            tgt_name = self._params['units'][lid + 1]['layer']
-            tgt_list = self._units[tgt_name].params['id']
-            lnk_name = (lid, lid + 1)
-
-            if links:
-                lnk_adja = numpy.zeros((len(src_list), len(tgt_list)))
-            else:
-                lnk_adja = numpy.ones((len(src_list), len(tgt_list)))
-
-            self._params['links'][lnk_name] = {
-                'source': src_name,
-                'target': tgt_name,
-                'A': lnk_adja.astype(float)
-            }
-
-        # set adjacency if links are given explicitly
-        if links:
-
-            for link in links:
-                src, tgt = link
-
-                # get layer id and layers sub id of link source
-                src_unit = self._get_unit(src)
-                if not src_unit: continue
-                src_lid = src_unit['layer_id']
-                src_sid = src_unit['layer_sub_id']
-
-                # get layer id and layer sub id of link target
-                tgt_unit = self._get_unit(tgt)
-                if not tgt_unit: continue
-                tgt_lid = tgt_unit['layer_id']
-                tgt_sid = tgt_unit['layer_sub_id']
-
-                # set adjacency
-                if not (src_lid, tgt_lid) in self._params['links']:
-                    continue
-                lnk_dict = self._params['links'][(src_lid, tgt_lid)]
-                lnk_dict['A'][src_sid, tgt_sid] = 1.0
-
-        return self._configure_index_links() and self._init_links()
 
     def _init_links(self, dataset = None):
         """Initialize link parameteres (weights).

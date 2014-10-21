@@ -517,26 +517,29 @@ class model:
         self._config['name'] = name
         return True
 
-    def _set_copy(self, **kwargs):
+    def _set_copy(self, config = None, dataset = None, network = None,
+        system = None):
         """Set configuration, parameters and data of model.
+
+        Args:
+            config (dict or None, optional): model configuration
+            dataset (dict or None, optional): dataset copy as dictionary
+            network (dict or None, optional): network copy as dictionary
+            system (dict or None, optional): system copy as dictionary
 
         Returns:
             Bool which is True if and only if no error occured.
 
         """
 
-        ret_val = True
+        retval = True
 
-        if 'config' in kwargs:
-            ret_val &= self._set_config(kwargs['config'])
-        if 'dataset' in kwargs:
-            ret_val &= self._set_dataset(kwargs['dataset'])
-        if 'network' in kwargs:
-            ret_val &= self._set_network(kwargs['network'])
-        if 'system' in kwargs:
-            ret_val &= self._set_system(kwargs['system'])
+        if config: retval &= self._set_config(config)
+        if dataset: retval &= self._set_dataset(dataset)
+        if network: retval &= self._set_network(network)
+        if system: retval &= self._set_system(system)
 
-        return ret_val
+        return retval
 
     def _set_config(self, config = None):
         """Set configuration from dictionary."""

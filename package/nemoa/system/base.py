@@ -16,11 +16,15 @@ class System:
         'init': {},
         'optimize': {}}
 
-    def __init__(self, *args, **kwargs):
-        """Configure system and system parameters."""
+    def __init__(self, **kwargs):
+        """Import system from dictionary."""
+        self._set_copy(**kwargs)
 
-        # set configuration and update units and links
-        self._set_config(kwargs['config'] if 'config' in kwargs else {})
+    #def __init__(self, *args, **kwargs):
+        #"""Configure system and system parameters."""
+
+        ## set configuration and update units and links
+        #self._set_config(kwargs['config'] if 'config' in kwargs else {})
 
     def configure(self, network = None, dataset = None, *args, **kwargs):
         """Configure system to network and dataset."""
@@ -60,14 +64,20 @@ class System:
         return False
 
     def get(self, key = None, *args, **kwargs):
-        """Get system system configuration and parameters."""
+        """Get meta information, configuration and parameters."""
 
-        # get generic information about system
+        # get meta information
+        if key == 'fullname': return self._get_fullname()
         if key == 'name': return self._get_name()
-        if key == 'type': return self._get_type()
+        if key == 'branch': return self._get_branch()
+        if key == 'version': return self._get_version()
         if key == 'about': return self._get_about()
+        if key == 'author': return self._get_author()
+        if key == 'email': return self._get_email()
+        if key == 'license': return self._get_license()
+        if key == 'type': return self._get_type()
 
-        # get information about system parameters
+        # get configuration and parameters
         if key == 'unit': return self._get_unit(*args, **kwargs)
         if key == 'units': return self._get_units(*args, **kwargs)
         if key == 'link': return self._get_link(*args, **kwargs)
@@ -75,36 +85,64 @@ class System:
         if key == 'layer': return self._get_layer(*args, **kwargs)
         if key == 'layers': return self._get_layers(*args, **kwargs)
 
-        # get copy of system configuration and parameters
+        # export configuration and parameters
         if key == 'copy': return self._get_copy(*args, **kwargs)
+        if key == 'config': return self._get_config(*args, **kwargs)
+        if key == 'params': return self._get_params(*args, **kwargs)
 
         return nemoa.log('warning', "unknown key '%s'" % (key))
 
+    def _get_fullname(self):
+        """Get fullname of system."""
+        fullname = ''
+        name = self._get_name()
+        if name: fullname += name
+        branch = self._get_branch()
+        if branch: fullname += '.' + branch
+        version = self._get_version()
+        if version: fullname += '.' + str(version)
+        return fullname
+
     def _get_name(self):
         """Get name of system."""
-        return self._config['name'] if 'name' in self._config else None
+        if 'name' in self._config: return self._config['name']
+        return None
+
+    def _get_branch(self):
+        """Get branch of system."""
+        if 'branch' in self._config: return self._config['branch']
+        return None
+
+    def _get_version(self):
+        """Get version number of system branch."""
+        if 'version' in self._config: return self._config['version']
+        return None
 
     def _get_about(self):
-        """Get docstring of system."""
-        return self.__doc__
+        """Get description of system."""
+        if 'about' in self._config: return self._config['about']
+        return None
+
+    def _get_author(self):
+        """Get author of system."""
+        if 'author' in self._config: return self._config['author']
+        return None
+
+    def _get_email(self):
+        """Get email of author of system."""
+        if 'email' in self._config: return self._config['email']
+        return None
+
+    def _get_license(self):
+        """Get license of system."""
+        if 'license' in self._config: return self._config['license']
+        return None
 
     def _get_type(self):
         """Get type of system, using module and class name."""
         module_name = self.__module__.split('.')[-1]
         class_name = self.__class__.__name__
         return module_name + '.' + class_name
-
-    def _get_copy(self, section = None):
-        """Get system copy as dictionary."""
-        if section == None: return {
-            'config': copy.deepcopy(self._config),
-            'params': copy.deepcopy(self._params) }
-        elif section == 'config':
-            return copy.deepcopy(self._config)
-        elif section == 'params':
-            return copy.deepcopy(self._params)
-        return nemoa.log('error', """could not get copy of
-            configuration: unknown section '%s'.""" % (section))
 
     def _get_unit(self, unit):
 
@@ -359,28 +397,224 @@ class System:
             grouped_links.append(group)
         return grouped_links
 
+    def _get_copy(self, key = None, *args, **kwargs):
+        """Get system copy as dictionary."""
+
+        if key == None: return {
+            'config': self._get_config(),
+            'params': self._get_params() }
+
+        if key == 'config': return self._get_config(*args, **kwargs)
+        if key == 'params': return self._get_params(*args, **kwargs)
+
+        return nemoa.log('error', """could not get system copy:
+            unknown key '%s'.""" % (key))
+
+    def _get_config(self, key = None, *args, **kwargs):
+        """Get configuration or configuration value."""
+
+        if key == None: return copy.deepcopy(self._config)
+
+        if isinstance(key, str) and key in self._config.keys():
+            if isinstance(self._config[key], dict):
+                return self._config[key].copy()
+            return self._config[key]
+
+        return nemoa.log('error', """could not get configuration:
+            unknown key '%s'.""" % (key))
+
+    def _get_params(self, key = None, *args, **kwargs):
+        """Get configuration or configuration value."""
+
+        if key == None: return copy.deepcopy(self._params)
+
+        if isinstance(key, str) and key in self._params.keys():
+            if isinstance(self._params[key], dict):
+                return self._params[key].copy()
+            return self._params[key]
+
+        return nemoa.log('error', """could not get parameters:
+            unknown key '%s'.""" % (key))
+
     def set(self, key = None, *args, **kwargs):
-        """Set system configuration and parameters."""
+        """Set meta information, configuration and parameters."""
 
-        # get generic information about system
+        # set meta information
         if key == 'name': return self._set_name(*args, **kwargs)
+        if key == 'branch': return self._set_branch(*args, **kwargs)
+        if key == 'version': return self._set_version(*args, **kwargs)
+        if key == 'about': return self._set_about(*args, **kwargs)
+        if key == 'author': return self._set_author(*args, **kwargs)
+        if key == 'email': return self._set_email(*args, **kwargs)
+        if key == 'license': return self._set_license(*args, **kwargs)
 
-        # get copy of system configuration and parameters
+        # set configuration and parameters
+        if key == 'units': return self._set_units(*args, **kwargs)
+        if key == 'links': return self._set_links(*args, **kwargs)
+
+        # import configuration and parameters
         if key == 'copy': return self._set_copy(*args, **kwargs)
+        if key == 'config': return self._set_config(*args, **kwargs)
+        if key == 'params': return self._set_params(*args, **kwargs)
 
         return nemoa.log('warning', "unknown key '%s'" % (key))
 
-    def _set_name(self, name):
+    def _set_name(self, system_name):
         """Set name of system."""
-        if not isinstance(name, str): return False
-        self._config['name'] = name
+        if not isinstance(system_name, str): return False
+        self._config['name'] = system_name
         return True
 
-    def _set_copy(self, **kwargs):
-        """Set system settings from dictionary."""
-        if 'config' in kwargs: self._set_config(kwargs['config'])
-        if 'params' in kwargs: self._set_params(kwargs['params'])
-        return self._configure_update_units_and_links()
+    def _set_branch(self, system_branch):
+        """Set branch of system."""
+        if not isinstance(system_branch, str): return False
+        self._config['branch'] = system_branch
+        return True
+
+    def _set_version(self, system_version):
+        """Set version number of system branch."""
+        if not isinstance(system_version, int): return False
+        self._config['version'] = system_version
+        return True
+
+    def _set_about(self, system_about):
+        """Get description of system."""
+        if not isinstance(system_about, str): return False
+        self._config['about'] = system_about
+        return True
+
+    def _set_author(self, system_author):
+        """Set author of system."""
+        if not isinstance(system_author, str): return False
+        self._config['author'] = system_author
+        return True
+
+    def _set_email(self, system_author_email):
+        """Set email of author of system."""
+        if not isinstance(system_author_email, str): return False
+        self._config['email'] = system_author_email
+        return True
+
+    def _set_license(self, system_license):
+        """Set license of system."""
+        if not isinstance(system_license, str): return False
+        self._config['license'] = system_license
+        return True
+
+    def _set_units(self, units = None, initialize = True):
+        """Create instances for units."""
+
+        if not 'units' in self._params: self._params['units'] = []
+        if not hasattr(self, 'units'): self._units = {}
+
+        if not isinstance(units, list): return False
+        if len(units) < 2: return False
+        self._params['units'] = units
+
+        # get unit classes from system config
+        # TODO: get unit classes from network
+        visible_unit_class = self._config['params']['visible_class']
+        hidden_unit_class = self._config['params']['hidden_class']
+        for layer_id in xrange(len(self._params['units'])):
+            if self._params['units'][layer_id]['visible'] == True:
+                self._params['units'][layer_id]['class'] = \
+                    visible_unit_class
+            else:
+                self._params['units'][layer_id]['class'] = \
+                    hidden_unit_class
+
+        # create instances of unit classes
+        # and link units params to local params dict
+        self._units = {}
+        for layer_id in xrange(len(self._params['units'])):
+            layer_class = self._params['units'][layer_id]['class']
+            layer = self._params['units'][layer_id]['layer']
+            if layer_class == 'sigmoid':
+                self._units[layer] = self.UnitsSigmoid()
+            elif layer_class == 'gauss':
+                self._units[layer] = self.UnitsGauss()
+            else:
+                return nemoa.log('error', """could not create system:
+                    unit class '%s' is not supported!"""
+                    % (layer_class))
+            self._units[layer].params = self._params['units'][layer_id]
+
+        if initialize: return self._init_units()
+        return True
+
+    def _set_links(self, links = None, initialize = True):
+        """Create link configuration from units."""
+
+        if not self._configure_test_units(self._params):
+            return nemoa.log('error', """could not configure links:
+                units have not been configured.""")
+
+        if not 'links' in self._params: self._params['links'] = {}
+        if not initialize: return self._configure_index_links()
+
+        # initialize adjacency matrices with default values
+        for lid in xrange(len(self._params['units']) - 1):
+            src_name = self._params['units'][lid]['layer']
+            src_list = self._units[src_name].params['id']
+            tgt_name = self._params['units'][lid + 1]['layer']
+            tgt_list = self._units[tgt_name].params['id']
+            lnk_name = (lid, lid + 1)
+
+            if links:
+                lnk_adja = numpy.zeros((len(src_list), len(tgt_list)))
+            else:
+                lnk_adja = numpy.ones((len(src_list), len(tgt_list)))
+
+            self._params['links'][lnk_name] = {
+                'source': src_name,
+                'target': tgt_name,
+                'A': lnk_adja.astype(float)
+            }
+
+        # set adjacency if links are given explicitly
+        if links:
+
+            for link in links:
+                src, tgt = link
+
+                # get layer id and layers sub id of link source
+                src_unit = self._get_unit(src)
+                if not src_unit: continue
+                src_lid = src_unit['layer_id']
+                src_sid = src_unit['layer_sub_id']
+
+                # get layer id and layer sub id of link target
+                tgt_unit = self._get_unit(tgt)
+                if not tgt_unit: continue
+                tgt_lid = tgt_unit['layer_id']
+                tgt_sid = tgt_unit['layer_sub_id']
+
+                # set adjacency
+                if not (src_lid, tgt_lid) in self._params['links']:
+                    continue
+                lnk_dict = self._params['links'][(src_lid, tgt_lid)]
+                lnk_dict['A'][src_sid, tgt_sid] = 1.0
+
+        return self._configure_index_links() and self._init_links()
+
+    def _set_copy(self, config = None, params = None):
+        """Set configuration and parameters of system.
+
+        Args:
+            config (dict or None, optional): system configuration
+            params (dict or None, optional): system parameters
+
+        Returns:
+            Bool which is True if and only if no error occured.
+
+        """
+
+        retval = True
+
+        if config: retval &= self._set_config(config)
+        if params: retval &= self._set_params(params)
+
+        return retval
 
     def _set_config(self, config = None):
         """Set configuration from dictionary."""
@@ -400,13 +634,15 @@ class System:
     def _set_params(self, params = None):
         """Set system parameters from dictionary."""
 
-        # create parameter dictionary
         if not hasattr(self, '_params'):
             self._params = {'units': {}, 'links': {}}
 
         # merge parameters
-        if params:
-            nemoa.common.dict_merge(copy.deepcopy(params), self._params)
+        if not params: return True
+        nemoa.common.dict_merge(copy.deepcopy(params), self._params)
+
+        self._set_units(self._params['units'], initialize = False)
+        self._set_links(self._params['links'], initialize = False)
 
         return True
 
@@ -417,7 +653,6 @@ class System:
     def show(self, *args, **kwargs):
         """Show system as image."""
         return nemoa.system.show(self, *args, **kwargs)
-
 
     def _initialize(self, dataset = None):
         """Initialize system parameters.
