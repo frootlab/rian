@@ -4,9 +4,9 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.network.fileimport.archive
-import nemoa.network.fileimport.graph
-import nemoa.network.fileimport.text
+import nemoa.network.imports.archive
+import nemoa.network.imports.graph
+import nemoa.network.imports.text
 import os
 
 def filetypes(filetype = None):
@@ -15,17 +15,17 @@ def filetypes(filetype = None):
     type_dict = {}
 
     # get supported archive filetypes
-    archive_types = nemoa.network.fileimport.archive.filetypes()
+    archive_types = nemoa.network.imports.archive.filetypes()
     for key, val in archive_types.items():
         type_dict[key] = ('archive', val)
 
     # get supported graph description filetypes
-    graph_types = nemoa.network.fileimport.graph.filetypes()
+    graph_types = nemoa.network.imports.graph.filetypes()
     for key, val in graph_types.items():
         type_dict[key] = ('graph', val)
 
     # get supported text filetypes
-    text_types = nemoa.network.fileimport.text.filetypes()
+    text_types = nemoa.network.imports.text.filetypes()
     for key, val in text_types.items():
         type_dict[key] = ('text', val)
 
@@ -74,13 +74,13 @@ def load(path, filetype = None, **kwargs):
 
     module_name = filetypes(filetype)[0]
     if module_name == 'archive':
-        network_dict = nemoa.network.fileimport.archive.load(
+        network_dict = nemoa.network.imports.archive.load(
             path, **kwargs)
     elif module_name == 'graph':
-        network_dict = nemoa.network.fileimport.graph.load(
+        network_dict = nemoa.network.imports.graph.load(
             path, **kwargs)
     elif module_name == 'text':
-        network_dict = nemoa.network.fileimport.text.load(
+        network_dict = nemoa.network.imports.text.load(
             path, **kwargs)
     else:
         return False

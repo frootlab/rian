@@ -5,12 +5,12 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa.network.classes
-import nemoa.network.fileexport
-import nemoa.network.fileimport
+import nemoa.network.exports
+import nemoa.network.imports
 
 def load(*args, **kwargs):
     """Import network from file."""
-    return nemoa.network.fileimport.load(*args, **kwargs)
+    return nemoa.network.imports.load(*args, **kwargs)
 
 def new(*args, **kwargs):
     """Create new network instance."""
@@ -22,7 +22,7 @@ def open(*args, **kwargs):
 
 def save(*args, **kwargs):
     """Export network to file."""
-    return nemoa.network.fileexport.save(*args, **kwargs)
+    return nemoa.network.exports.save(*args, **kwargs)
 
 def show(*args, **kwargs):
     return save(*args, output = 'display', **kwargs)

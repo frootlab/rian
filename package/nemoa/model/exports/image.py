@@ -4,35 +4,32 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+import importlib
+import matplotlib.pyplot
 import nemoa
 import networkx
 import numpy
 import os
-import importlib
-import matplotlib.pyplot
 
 def filetypes():
     """Get supported image filetypes for model export."""
     return matplotlib.pyplot.gcf().canvas.get_supported_filetypes()
 
-def save(model, path = None, filetype = None, plot = None,
-    output = 'file', **kwargs):
+def save(model, path = None, filetype = None, plot = None, **kwargs):
 
-    if output.lower() == 'file':
-
-        # test if filetype is supported by matplotlib
-        if not filetype in filetypes():
-            return nemoa.log('error', """could not create plot:
-                filetype '%s' is not supported by matplotlib.""" %
-                (filetype))
+    # test if filetype is supported by matplotlib
+    if not filetype in filetypes():
+        return nemoa.log('error', """could not create plot:
+            filetype '%s' is not supported by matplotlib.""" %
+            (filetype))
 
     # get class for plotting from attribute 'plot'
-    if plot == None: plot = 'histogram'
+    if plot == None: plot = 'graph'
     class_name = plot.lower().title()
     module_name = save.__module__
     try:
         module = importlib.import_module(module_name)
-        if not hasattr(module, class_name):raise ImportError()
+        if not hasattr(module, class_name): raise ImportError()
     except ImportError:
         return nemoa.log('error', """could not plot model '%s':
             plot type '%s' is not supported.""" %
@@ -40,6 +37,23 @@ def save(model, path = None, filetype = None, plot = None,
 
     # create plot of model
     plot = getattr(module, class_name)(**kwargs)
+
+    # assert units
+    mapping = model.system.mapping()
+    in_units = model.system.get('units', layer = mapping[0])
+    out_units = model.system.get('units', layer = mapping[-1])
+    if not isinstance(plot.settings['units'], tuple) \
+        or not isinstance(plot.settings['units'][0], list) \
+        or not isinstance(plot.settings['units'][1], list):
+        plot.settings['units'] = (in_units, out_units)
+
+    # get information about relation
+    if plot.settings['show_title']:
+        rel_id = nemoa.common.str_split_params(
+            plot.settings['relation'])[0]
+        rel_dict = model.about('system', 'relations', rel_id)
+        rel_name = rel_dict['name']
+        plot.settings['title'] = rel_name.title()
 
     # common matplotlib settings
     matplotlib.rc('font', family = 'sans-serif')
@@ -59,26 +73,83 @@ def save(model, path = None, filetype = None, plot = None,
             matplotlib.pyplot.title(title, fontsize = 11.)
 
         # output
-        if output.lower() == 'file':
-            matplotlib.pyplot.savefig(
-                path, dpi = plot.settings['dpi'])
-        elif output.lower() == 'display':
-            matplotlib.pyplot.show()
+        matplotlib.pyplot.savefig(path, dpi = plot.settings['dpi'])
 
     # clear figures and release memory
     matplotlib.pyplot.clf()
 
-    if output.lower() == 'file':
-        return path
+    return path
+
+def show(model, plot = None, **kwargs):
+
+    # get class for plotting from attribute 'plot'
+    if plot == None: plot = 'graph'
+    class_name = plot.lower().title()
+    module_name = save.__module__
+    try:
+        module = importlib.import_module(module_name)
+        if not hasattr(module, class_name): raise ImportError()
+    except ImportError:
+        return nemoa.log('error', """could not plot model '%s':
+            plot type '%s' is not supported.""" %
+            (model.get('name'), plot))
+
+    # create plot of model
+    plot = getattr(module, class_name)(**kwargs)
+
+    # assert units
+    mapping = model.system.mapping()
+    in_units = model.system.get('units', layer = mapping[0])
+    out_units = model.system.get('units', layer = mapping[-1])
+    if not isinstance(plot.settings['units'], tuple) \
+        or not isinstance(plot.settings['units'][0], list) \
+        or not isinstance(plot.settings['units'][1], list):
+        plot.settings['units'] = (in_units, out_units)
+
+    # get information about relation
+    if plot.settings['show_title']:
+        rel_id = nemoa.common.str_split_params(
+            plot.settings['relation'])[0]
+        rel_dict = model.about('system', 'relations', rel_id)
+        rel_name = rel_dict['name']
+        plot.settings['title'] = rel_name.title()
+
+    # common matplotlib settings
+    matplotlib.rc('font', family = 'sans-serif')
+
+    # close previous figures
+    matplotlib.pyplot.close('all')
+
+    # create plot
+    if plot.create(model):
+
+        # (optional) draw title
+        if plot.settings['show_title']:
+            if 'title' in plot.settings \
+                and isinstance(plot.settings['title'], str):
+                title = plot.settings['title']
+            else: title = '' # TODO: self._get_title(model)
+            matplotlib.pyplot.title(title, fontsize = 11.)
+
+        # output
+        matplotlib.pyplot.show()
+
+    # clear figures and release memory
+    matplotlib.pyplot.clf()
+
     return True
 
 class Graph:
 
-    @staticmethod
-    def _settings(): return {
+    settings = {
+        'fileformat': 'pdf',
+        'dpi': 300,
+        'show_title': True,
+        'title': None,
+        'bg_color': 'none',
         'graph_caption': True,
         'units': (None, None),
-        'relation': 'correlation',
+        'relation': 'induction',
         'preprocessing': None,
         'measure': 'error',
         'statistics': 10000,
@@ -88,10 +159,15 @@ class Graph:
         'filter': None,
         'cutoff': 0.5,
         'node_caption': 'accuracy',
-        'layout': 'spring',
+        'layout': 'spring'
     }
 
-    def _create(self, model):
+    def __init__(self, **kwargs):
+        for key, val in kwargs.items():
+            if key in self.settings.keys():
+                self.settings[key] = val
+
+    def create(self, model):
 
         # get units and edges
         units = self.settings['units']
@@ -213,18 +289,11 @@ class Heatmap:
             if key in self.settings.keys():
                 self.settings[key] = val
 
-    def create(self, system):
-
-        # create data (numpy 1-d array)
-        data = dataset.get('data').flatten()
-
-        # create plot
-        return nemoa.common.plot.histogram(data, **self.settings)
-
-    def _create(self, model):
+    def create(self, model):
 
         # calculate relation
-        R = model.evaluate('system', 'relations', self.settings['relation'],
+        R = model.evaluate('system', 'relations',
+            self.settings['relation'],
             preprocessing = self.settings['preprocessing'],
             measure = self.settings['measure'],
             statistics = self.settings['statistics'],
@@ -239,8 +308,12 @@ class Heatmap:
 
 class Histogram:
 
-    @staticmethod
-    def _settings(): return {
+    settings = {
+        'fileformat': 'pdf',
+        'dpi': 300,
+        'show_title': True,
+        'title': None,
+        'bg_color': 'none',
         'path': ('system', 'relations'),
         'graph_caption': True,
         'units': (None, None),
@@ -256,7 +329,12 @@ class Histogram:
         'histtype': 'bar',
         'linewidth': 0.5 }
 
-    def _create(self, model):
+    def __init__(self, **kwargs):
+        for key, val in kwargs.items():
+            if key in self.settings.keys():
+                self.settings[key] = val
+
+    def create(self, model):
 
         # get units and edges
         units = self.settings['units']

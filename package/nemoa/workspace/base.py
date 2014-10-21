@@ -613,7 +613,7 @@ class Config:
                     file '%s' does not exist.""" % (name, path))
 
             # get network config
-            network_cfg = nemoa.network.fileimport.load(network_file,
+            network_cfg = nemoa.network.imports.load(network_file,
                 filetype = filetype, workspace = self._workspace)
 
             if not network_cfg:

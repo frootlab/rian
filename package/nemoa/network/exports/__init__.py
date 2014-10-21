@@ -4,9 +4,9 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.network.fileexport.archive
-import nemoa.network.fileexport.graph
-import nemoa.network.fileexport.image
+import nemoa.network.exports.archive
+import nemoa.network.exports.graph
+import nemoa.network.exports.image
 
 def filetypes(filetype = None):
     """Get supported network export filetypes."""
@@ -14,17 +14,17 @@ def filetypes(filetype = None):
     type_dict = {}
 
     # get supported archive filetypes
-    archive_types = nemoa.network.fileexport.archive.filetypes()
+    archive_types = nemoa.network.exports.archive.filetypes()
     for key, val in archive_types.items():
         type_dict[key] = ('archive', val)
 
     # get supported graph description file types
-    graph_types = nemoa.network.fileexport.graph.filetypes()
+    graph_types = nemoa.network.exports.graph.filetypes()
     for key, val in graph_types.items():
         type_dict[key] = ('graph', val)
 
     # get supported image filetypes
-    image_types = nemoa.network.fileexport.image.filetypes()
+    image_types = nemoa.network.exports.image.filetypes()
     for key, val in image_types.items():
         type_dict[key] = ('image', val)
 
@@ -56,7 +56,7 @@ def save(network, path = None, filetype = None, workspace = None,
 
     # display output
     if 'output' in kwargs and kwargs['output'] == 'display':
-        return nemoa.network.fileexport.image.save(
+        return nemoa.network.exports.image.save(
             network, **kwargs)
 
     # get file path from network source file if path not given
@@ -98,13 +98,13 @@ def save(network, path = None, filetype = None, workspace = None,
 
     module_name = filetypes(filetype)[0]
     if module_name == 'graph':
-        return nemoa.network.fileexport.graph.save(
+        return nemoa.network.exports.graph.save(
             network, path, filetype, **kwargs)
     if module_name == 'archive':
-        return nemoa.network.fileexport.archive.save(
+        return nemoa.network.exports.archive.save(
             network, path, filetype, **kwargs)
     if module_name == 'image':
-        return nemoa.network.fileexport.image.save(
+        return nemoa.network.exports.image.save(
             network, path, filetype, **kwargs)
 
     return False

@@ -4,7 +4,7 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.system.fileexport.archive
+import nemoa.system.exports.archive
 
 def filetypes(filetype = None):
     """Get supported system export filetypes."""
@@ -12,7 +12,7 @@ def filetypes(filetype = None):
     type_dict = {}
 
     # get supported archive filetypes
-    archive_types = nemoa.system.fileexport.archive.filetypes()
+    archive_types = nemoa.system.exports.archive.filetypes()
     for key, val in archive_types.items():
         type_dict[key] = ('archive', val)
 
@@ -86,7 +86,7 @@ def save(system, path = None, filetype = None, workspace = None,
 
     module_name = filetypes(filetype)[0]
     if module_name == 'archive':
-        return nemoa.system.fileexport.archive.save(
+        return nemoa.system.exports.archive.save(
             system, path, filetype, **kwargs)
 
     return False

@@ -4,8 +4,8 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.dataset.fileimport.archive
-import nemoa.dataset.fileimport.text
+import nemoa.dataset.imports.archive
+import nemoa.dataset.imports.text
 import os
 
 def filetypes(filetype = None):
@@ -14,12 +14,12 @@ def filetypes(filetype = None):
     type_dict = {}
 
     # get supported archive filetypes
-    archive_types = nemoa.dataset.fileimport.archive.filetypes()
+    archive_types = nemoa.dataset.imports.archive.filetypes()
     for key, val in archive_types.items():
         type_dict[key] = ('archive', val)
 
     # get supported text filetypes
-    text_types = nemoa.dataset.fileimport.text.filetypes()
+    text_types = nemoa.dataset.imports.text.filetypes()
     for key, val in text_types.items():
         type_dict[key] = ('text', val)
 
@@ -68,10 +68,10 @@ def load(path, filetype = None, **kwargs):
 
     module_name = filetypes(filetype)[0]
     if module_name == 'archive':
-        dataset_dict = nemoa.dataset.fileimport.archive.load(
+        dataset_dict = nemoa.dataset.imports.archive.load(
             path, **kwargs)
     elif module_name == 'text':
-        dataset_dict = nemoa.dataset.fileimport.text.load(
+        dataset_dict = nemoa.dataset.imports.text.load(
             path, **kwargs)
     else:
         return False

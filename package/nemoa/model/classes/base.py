@@ -275,10 +275,6 @@ class Model:
 
         return nemoa.log('warning', 'could not evaluate model')
 
-    def save(self, *args, **kwargs):
-        """Export model to file."""
-        return nemoa.model.save(self, *args, **kwargs)
-
     #def save(self, file = None):
         #"""Save model settings to file and return filepath."""
 
@@ -303,14 +299,22 @@ class Model:
         #nemoa.log('set', indent = '-1')
         #return file
 
-    def show(self, key = None, *args, **kwargs):
-        """Create plot of model with output to display."""
+    #def show(self, key = None, *args, **kwargs):
+        #"""Create plot of model with output to display."""
 
-        if key == 'network': return self.network.show(*args, **kwargs)
-        if key == 'dataset': return self.dataset.show(*args, **kwargs)
+        #if key == 'network': return self.network.show(*args, **kwargs)
+        #if key == 'dataset': return self.dataset.show(*args, **kwargs)
 
-        kwargs['output'] = 'show'
-        return self.plot(key, *args, **kwargs)
+        #kwargs['output'] = 'show'
+        #return self.plot(key, *args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        """Export model to file."""
+        return nemoa.model.save(self, *args, **kwargs)
+
+    def show(self, *args, **kwargs):
+        """Show model as image."""
+        return nemoa.model.show(self, *args, **kwargs)
 
     def plot(self, *args, **kwargs):
         """Create plot of model."""

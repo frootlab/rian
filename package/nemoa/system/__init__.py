@@ -5,16 +5,16 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa.system.classes
-import nemoa.system.fileimport
-import nemoa.system.fileexport
+import nemoa.system.imports
+import nemoa.system.exports
 
 def load(*args, **kwargs):
     """Import system configuration and parameters from file."""
-    return nemoa.system.fileimport.load(*args, **kwargs)
+    return nemoa.system.imports.load(*args, **kwargs)
 
 def save(*args, **kwargs):
     """Export system configuration and parameters to file."""
-    return nemoa.system.fileexport.save(*args, **kwargs)
+    return nemoa.system.exports.save(*args, **kwargs)
 
 def open(*args, **kwargs):
     """Import system from file and create new system instance."""
