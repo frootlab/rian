@@ -40,9 +40,7 @@ def load(path, filetype = None, **kwargs):
     """Import network from file."""
 
     # get path
-    if os.path.isfile(path):
-        pass
-    elif 'workspace' in kwargs:
+    if not os.path.isfile(path) and 'workspace' in kwargs:
         # import workspace and get path and filetype from workspace
         if not kwargs['workspace'] == nemoa.workspace.name():
             if not nemoa.workspace.load(kwargs['workspace']):
@@ -88,6 +86,7 @@ def load(path, filetype = None, **kwargs):
     # update source
     if not 'source' in network_dict['config']:
         network_dict['config']['source'] = {}
+    network_dict['config']['path'] = path
     network_dict['config']['source']['file'] = path
     network_dict['config']['source']['filetype'] = filetype
 

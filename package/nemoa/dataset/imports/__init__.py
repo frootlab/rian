@@ -34,9 +34,7 @@ def load(path, filetype = None, **kwargs):
     """Import dataset from file."""
 
     # get path
-    if os.path.isfile(path):
-        pass
-    elif 'workspace' in kwargs:
+    if not os.path.isfile(path) and 'workspace' in kwargs:
         # import workspace and get path and filetype from workspace
         if not kwargs['workspace'] == nemoa.workspace.name():
             if not nemoa.workspace.load(kwargs['workspace']):
@@ -51,7 +49,7 @@ def load(path, filetype = None, **kwargs):
                 workspace '%s' does not contain dataset '%s'."""
                 % (kwargs['workspace'], path))
             return  {}
-        path = config['source']['file']
+        path = config['path']
     else:
         nemoa.log('error', """could not import dataset:
             file '%s' does not exist.""" % (path))
@@ -83,6 +81,9 @@ def load(path, filetype = None, **kwargs):
         return {}
 
     # update source
+    dataset_dict['config']['path'] = path
+
+    # TODO: old
     if not 'source' in dataset_dict['config']:
         dataset_dict['config']['source'] = {}
     dataset_dict['config']['source']['file'] = path

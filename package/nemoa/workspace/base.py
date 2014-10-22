@@ -338,10 +338,10 @@ class Config:
     def _update_paths(self, base = 'user'):
 
         self._workspace_path = {
-            'datasets': '%workspace%/data/',
+            'datasets': '%workspace%/datasets/',
+            'networks': '%workspace%/networks/',
             'models': '%workspace%/models/',
             'scripts': '%workspace%/scripts/',
-            'networks': '%workspace%/networks/',
             'cache': '%workspace%/cache/',
             'logfile': '%workspace%/nemoa.log'
         }
@@ -398,6 +398,8 @@ class Config:
             self._scan_config_files('%common%/%workspace%')
             self._scan_for_scripts()
             self._scan_for_networks()
+            self._scan_for_datasets()
+            self._scan_for_models()
 
         # reset to current workspace
         self._workspace = cur_workspace
@@ -423,8 +425,10 @@ class Config:
 
         path = '%user%/%workspace%'
         self._scan_config_files(path) # import configuration files
-        self._scan_for_scripts()          # scan for scriptfiles
-        self._scan_for_networks()     # scan for network configs
+        self._scan_for_scripts()      # scan for scriptfiles
+        self._scan_for_networks()     # scan for networks
+        self._scan_for_datasets()     # scan for datasets
+        self._scan_for_models()
 
         nemoa.log('set', indent = '-1')
         return True
@@ -504,6 +508,58 @@ class Config:
                     'path': path }})
 
         nemoa.log('set', indent = '-1')
+        return True
+
+    def _scan_for_datasets(self, files = None):
+        """Scan for datasets in current workspace."""
+        nemoa.log('scanning for datasets')
+        nemoa.log('set', indent = '+1')
+
+        # network files path
+        if files == None: files = self._path['datasets'] + '*.*'
+        filetypes = nemoa.dataset.imports.filetypes()
+
+        # scan for dataset files
+        for path in glob.iglob(self._expand_path(files)):
+            filetype = nemoa.common.get_file_extension(path)
+            if not filetype in filetypes: continue
+            name = nemoa.common.get_file_basename(path)
+            fullname = self._workspace + '.' + name
+            if self._is_obj_known('dataset', fullname): continue
+
+            self._add_obj_to_store({
+                'class': 'dataset',
+                'name': fullname,
+                'workspace': self._workspace,
+                'config': {
+                    'name': name,
+                    'path': path }})
+
+        nemoa.log('set', indent = '-1')
+        return True
+
+    def _scan_for_models(self, files = None):
+        """Scan for models in current workspace."""
+
+        # network files path
+        if files == None: files = self._path['models'] + '*.*'
+        filetypes = nemoa.model.imports.filetypes()
+
+        # scan for model files
+        for path in glob.iglob(self._expand_path(files)):
+            filetype = nemoa.common.get_file_extension(path)
+            if not filetype in filetypes: continue
+            name = nemoa.common.get_file_basename(path)
+            fullname = self._workspace + '.' + name
+            if self._is_obj_known('model', fullname): continue
+
+            self._add_obj_to_store({
+                'class': 'model',
+                'name': fullname,
+                'workspace': self._workspace,
+                'config': {
+                    'name': name,
+                    'path': path }})
         return True
 
     def _scan_for_scripts(self, files = None):
