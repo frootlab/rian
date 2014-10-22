@@ -69,7 +69,7 @@ class System:
         """Return true if system is a dummy."""
         return False
 
-    def get(self, key = None, *args, **kwargs):
+    def get(self, key = 'name', *args, **kwargs):
         """Get meta information, configuration and parameters."""
 
         # get meta information

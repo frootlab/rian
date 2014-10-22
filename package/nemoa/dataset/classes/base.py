@@ -857,10 +857,10 @@ class Dataset:
             with open(file, 'a'): os.utime(file, None)
         return file
 
-    def get(self, key = None, *args, **kwargs):
+    def get(self, key = 'name', *args, **kwargs):
         """Get meta information, parameters and data of dataset."""
 
-        # get meta information of dataset
+        # get meta information
         if key == 'fullname': return self._get_fullname()
         if key == 'name': return self._get_name()
         if key == 'branch': return self._get_branch()
@@ -871,7 +871,7 @@ class Dataset:
         if key == 'license': return self._get_license()
         if key == 'type': return self._get_type()
 
-        # get dataset parameters and data
+        # get parameters and data
         if key == 'columns': return self._get_columns(*args, **kwargs)
         if key == 'colgroups': return self._get_colgroups()
         if key == 'colfilter': return self._get_colfilter(*args, **kwargs)
@@ -883,7 +883,7 @@ class Dataset:
         if key == 'data': return self._get_data(*args, **kwargs)
         if key == 'value': return self._get_value(*args, **kwargs)
 
-        # export dataset configuration and data
+        # export configuration and data
         if key == 'copy': return self._get_copy(*args, **kwargs)
         if key == 'config': return self._get_config(*args, **kwargs)
         if key == 'source': return self._get_source(*args, **kwargs)
@@ -1180,7 +1180,7 @@ class Dataset:
     def set(self, key = None, *args, **kwargs):
         """Set meta information, parameters and data of dataset."""
 
-        # set meta information of dataset
+        # set meta information
         if key == 'name': return self._set_name(*args, **kwargs)
         if key == 'branch': return self._set_branch(*args, **kwargs)
         if key == 'version': return self._set_version(*args, **kwargs)
@@ -1192,14 +1192,12 @@ class Dataset:
         # modify dataset parameters and data
         if key == 'colfilter': return self._set_colfilter(**kwargs)
 
-        # import dataset configuration and source data
+        # import configuration and source data
         if key == 'copy': return self._set_copy(*args, **kwargs)
         if key == 'config': return self._set_config(*args, **kwargs)
         if key == 'source': return self._set_source(*args, **kwargs)
 
-        if not key == None: return nemoa.log('warning',
-            "unknown key '%s'" % (key))
-        return None
+        return nemoa.log('warning', "unknown key '%s'" % (key))
 
     def _set_name(self, dataset_name):
         """Set name of dataset."""

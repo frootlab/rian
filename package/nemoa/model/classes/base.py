@@ -12,9 +12,9 @@ class Model:
     """nemoa model class.
 
     Attributes:
-        dataset: nemoa dataset instance
-        network: nemoa network instance
-        system: nemoa system instance
+        dataset (dataset instance):
+        network (network instance):
+        system (system instance):
 
     """
 
@@ -26,9 +26,7 @@ class Model:
     system = None
 
     def __init__(self, **kwargs):
-        """Initialize model and configure dataset, network and system.
-
-        """
+        """Initialize model and configure dataset, network and system."""
 
         self._set_copy(**kwargs)
         self.dataset.configure(network = self.network)
@@ -253,36 +251,82 @@ class Model:
         """Return true if model is empty."""
         return not 'name' in self._config or not self._config['name']
 
-    def get(self, key = None, *args, **kwargs):
+    def get(self, key = 'name', *args, **kwargs):
+        """Get meta information and parameters of model."""
 
-        # get generic information about model
+        # get meta information
+        if key == 'fullname': return self._get_fullname()
         if key == 'name': return self._get_name()
-        if key == 'type': return self._get_type()
+        if key == 'branch': return self._get_branch()
+        if key == 'version': return self._get_version()
         if key == 'about': return self._get_about()
+        if key == 'author': return self._get_author()
+        if key == 'email': return self._get_email()
+        if key == 'license': return self._get_license()
+        if key == 'type': return self._get_type()
 
         # get information about model parameters
         if key == 'network': return self.network.get(*args, **kwargs)
         if key == 'dataset': return self.dataset.get(*args, **kwargs)
         if key == 'system': return self.system.get(*args, **kwargs)
 
-        # get copy of model configuration and parameters
+        # export configuration and parameters
         if key == 'copy': return self._get_copy(*args, **kwargs)
+        if key == 'config': return self._get_config(*args, **kwargs)
 
         return nemoa.log('warning', "unknown key '%s'" % (key))
 
+    def _get_fullname(self):
+        """Get fullname of model."""
+        fullname = ''
+        name = self._get_name()
+        if name: fullname += name
+        branch = self._get_branch()
+        if branch: fullname += '.' + branch
+        version = self._get_version()
+        if version: fullname += '.' + str(version)
+        return fullname
+
     def _get_name(self):
         """Get name of model."""
-        return self._config['name'] if 'name' in self._config else None
+        if 'name' in self._config: return self._config['name']
+        return None
+
+    def _get_branch(self):
+        """Get branch of model."""
+        if 'branch' in self._config: return self._config['branch']
+        return None
+
+    def _get_version(self):
+        """Get version number of model branch."""
+        if 'version' in self._config: return self._config['version']
+        return None
+
+    def _get_about(self):
+        """Get description of model."""
+        if 'about' in self._config: return self._config['about']
+        return None
+
+    def _get_author(self):
+        """Get author of model."""
+        if 'author' in self._config: return self._config['author']
+        return None
+
+    def _get_email(self):
+        """Get email of author of model."""
+        if 'email' in self._config: return self._config['email']
+        return None
+
+    def _get_license(self):
+        """Get license of model."""
+        if 'license' in self._config: return self._config['license']
+        return None
 
     def _get_type(self):
         """Get type of model, using module and class name."""
         module_name = self.__module__.split('.')[-1]
         class_name = self.__class__.__name__
         return module_name + '.' + class_name
-
-    def _get_about(self):
-        """Get docstring of model."""
-        return self.__doc__
 
     def _get_copy(self, key = None, *args, **kwargs):
         """Get model copy as dictionary."""
@@ -331,18 +375,68 @@ class Model:
         if type == 'dict': return self.system.get('copy')
 
     def set(self, key = None, *args, **kwargs):
+        """Set meta information and parameters of model."""
 
+        # set meta information
         if key == 'name': return self._set_name(*args, **kwargs)
-        if key == 'copy': return self._set_copy(*args, **kwargs)
+        if key == 'branch': return self._set_branch(*args, **kwargs)
+        if key == 'version': return self._set_version(*args, **kwargs)
+        if key == 'about': return self._set_about(*args, **kwargs)
+        if key == 'author': return self._set_author(*args, **kwargs)
+        if key == 'email': return self._set_email(*args, **kwargs)
+        if key == 'license': return self._set_license(*args, **kwargs)
 
-        if not key == None: return nemoa.log('warning',
-            "unknown key '%s'" % (key))
-        return None
+        # set model parameters
+        if key == 'network': return self.network.set(*args, **kwargs)
+        if key == 'dataset': return self.dataset.set(*args, **kwargs)
+        if key == 'system': return self.system.set(*args, **kwargs)
+
+        # import configuration
+        if key == 'copy': return self._set_copy(*args, **kwargs)
+        if key == 'config': return self._set_config(*args, **kwargs)
+
+        return nemoa.log('warning', "unknown key '%s'" % (key))
 
     def _set_name(self, name):
         """Set name of model."""
         if not isinstance(name, str): return False
         self._config['name'] = name
+        return True
+
+    def _set_branch(self, branch):
+        """Set branch of model."""
+        if not isinstance(branch, str): return False
+        self._config['branch'] = branch
+        return True
+
+    def _set_version(self, version):
+        """Set version number of model branch."""
+        if not isinstance(version, int): return False
+        self._config['version'] = version
+        return True
+
+    def _set_about(self, about):
+        """Get description of model."""
+        if not isinstance(about, str): return False
+        self._config['about'] = about
+        return True
+
+    def _set_author(self, author):
+        """Set author of model."""
+        if not isinstance(author, str): return False
+        self._config['author'] = author
+        return True
+
+    def _set_email(self, email):
+        """Set email of author of model."""
+        if not isinstance(email, str): return False
+        self._config['email'] = email
+        return True
+
+    def _set_license(self, model_license):
+        """Set license of model."""
+        if not isinstance(model_license, str): return False
+        self._config['license'] = model_license
         return True
 
     def _set_copy(self, config = None, dataset = None, network = None,

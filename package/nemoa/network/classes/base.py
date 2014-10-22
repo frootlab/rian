@@ -301,7 +301,7 @@ class Network:
 
         return True
 
-    def get(self, key = None, *args, **kwargs):
+    def get(self, key = 'name', *args, **kwargs):
         """Get meta information, parameters and data of network."""
 
         # get meta information of network
@@ -606,9 +606,7 @@ class Network:
         if key == 'config': return self._set_config(*args, **kwargs)
         if key == 'graph': return self._set_graph(*args, **kwargs)
 
-        if not key == None: nemoa.log('warning',
-            "unknown key '%s'" % (key))
-        return None
+        return nemoa.log('warning', "unknown key '%s'" % (key))
 
     def _set_name(self, network_name):
         """Set name of network."""
