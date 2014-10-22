@@ -303,7 +303,7 @@ class Config:
         # init tree structure for configuration storage
         self._store = {
             'dataset': {}, 'network': {}, 'system': {},
-            'plot': {}, 'schedule': {}, 'script': {} }
+            'model': {}, 'schedule': {}, 'script': {} }
         self._index = {}
 
         if shared: self._import_shared() # import shared resources
@@ -342,7 +342,6 @@ class Config:
             'models': '%workspace%/models/',
             'scripts': '%workspace%/scripts/',
             'networks': '%workspace%/networks/',
-            'plots': '%workspace%/plots/',
             'cache': '%workspace%/cache/',
             'logfile': '%workspace%/nemoa.log'
         }
@@ -485,11 +484,14 @@ class Config:
         nemoa.log('set', indent = '+1')
 
         # network files path
-        if files == None: files = self._path['networks'] + '*.ini'
+        if files == None: files = self._path['networks'] + '*.*'
+        filetypes = nemoa.network.imports.filetypes()
 
         # scan for network files
         for path in glob.iglob(self._expand_path(files)):
-            name = os.path.splitext(os.path.basename(path))[0]
+            filetype = nemoa.common.get_file_extension(path)
+            if not filetype in filetypes: continue
+            name = nemoa.common.get_file_basename(path)
             fullname = self._workspace + '.' + name
             if self._is_obj_known('network', fullname): continue
 
@@ -549,8 +551,6 @@ class Config:
             return self._update_system_config(obj_conf)
         if obj_conf['class'] == 'schedule':
             return self._update_schedule_config(obj_conf)
-        if obj_conf['class'] == 'plot':
-            return obj_conf
 
         return None
 
@@ -1040,9 +1040,7 @@ class Config:
                 'system': {'package': 'str',
                     'class': 'str', 'params': 'dict'},
                 'schedule': {'stage [0-9a-zA-Z]*': 'dict',
-                    'system [0-9a-zA-Z]*': 'dict', 'params': 'dict'},
-                'plot': {'package': 'str', 'class': 'str',
-                    'params': 'dict'} }
+                    'system [0-9a-zA-Z]*': 'dict', 'params': 'dict'}}
 
             self._path = config.path()
             self._workspace = config.workspace()
