@@ -9,6 +9,10 @@ import nemoa.dataset.classes
 import nemoa.dataset.exports
 import nemoa.dataset.imports
 
+def copy(dataset, *args, **kwargs):
+    """Create copy of dataset."""
+    return new(**dataset.get('copy'))
+
 def load(*args, **kwargs):
     """Import dataset configuration and parameters from file."""
     return nemoa.dataset.imports.load(*args, **kwargs)

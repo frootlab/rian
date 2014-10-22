@@ -8,6 +8,10 @@ import nemoa.system.classes
 import nemoa.system.imports
 import nemoa.system.exports
 
+def copy(system, *args, **kwargs):
+    """Create copy of system."""
+    return new(**system.get('copy'))
+
 def load(*args, **kwargs):
     """Import system configuration and parameters from file."""
     return nemoa.system.imports.load(*args, **kwargs)

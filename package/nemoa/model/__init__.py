@@ -8,6 +8,10 @@ import nemoa.model.classes
 import nemoa.model.exports
 import nemoa.model.imports
 
+def copy(model, *args, **kwargs):
+    """Create copy of model."""
+    return new(**model.get('copy'))
+
 def load(*args, **kwargs):
     """Import model configuration and parameters from file."""
     return nemoa.model.imports.load(*args, **kwargs)

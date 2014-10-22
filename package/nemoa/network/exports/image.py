@@ -148,7 +148,7 @@ class Graph:
             #caption = model.evaluate('system',
                 #self.settings['graph_caption'])
             #if caption:
-                #name = model.about('system',
+                #name = model.system.about(
                     #self.settings['graph_caption'])['name'].title()
                 #graph.graph['caption'] = \
                     #name + ': $%i' % (round(100. * caption)) + '\%$'

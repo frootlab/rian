@@ -799,6 +799,10 @@ class System:
         """Show system as image."""
         return nemoa.system.show(self, *args, **kwargs)
 
+    def copy(self, *args, **kwargs):
+        """Create copy of system."""
+        return nemoa.system.copy(self, *args, **kwargs)
+
     def initialize(self, dataset = None):
         """Initialize system parameters.
 

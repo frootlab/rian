@@ -401,7 +401,7 @@ class ANN(nemoa.system.classes.base.System):
             data: 2-tuple of numpy arrays: source data and target data
             func: string containing the name of a supported system
                 evaluation function. For a full list of available
-                functions use: model.about('system', 'eval')
+                functions use: model.system.about('eval')
 
         Returns:
             Scalar system evaluation value (respective to given data).
@@ -499,7 +499,7 @@ class ANN(nemoa.system.classes.base.System):
             data: 2-tuple with numpy arrays: source and target data
             func: string containing name of unit evaluation function
                 For a full list of available system evaluation functions
-                see: model.about('system', 'units')
+                see: model.system.about('units')
             units: list of target unit names (within the same layer). If
                 not given, all output units are selected.
 

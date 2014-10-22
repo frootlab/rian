@@ -51,7 +51,7 @@ def save(model, path = None, filetype = None, plot = None, **kwargs):
     if plot.settings['show_title']:
         rel_id = nemoa.common.str_split_params(
             plot.settings['relation'])[0]
-        rel_dict = model.about('system', 'relations', rel_id)
+        rel_dict = model.system.about('relations', rel_id)
         rel_name = rel_dict['name']
         plot.settings['title'] = rel_name.title()
 
@@ -110,7 +110,7 @@ def show(model, plot = None, **kwargs):
     if plot.settings['show_title']:
         rel_id = nemoa.common.str_split_params(
             plot.settings['relation'])[0]
-        rel_dict = model.about('system', 'relations', rel_id)
+        rel_dict = model.system.about('relations', rel_id)
         rel_name = rel_dict['name']
         plot.settings['title'] = rel_name.title()
 
@@ -185,7 +185,7 @@ class Graph:
             return nemoa.log('error',
                 """could not create relation graph: invalid weight
                 relation '%s'!""" % (self.settings['relation']))
-        rel_about = model.about('system', 'relations',
+        rel_about = model.system.about('relations',
             nemoa.common.str_split_params(self.settings['relation'])[0])
 
         # calculate edge filter from 'filter' relation

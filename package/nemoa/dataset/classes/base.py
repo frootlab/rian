@@ -295,14 +295,14 @@ class Dataset:
         # Column & Row Filters
 
         # add column filters from network layers
-        self._config['col_filter'] = {'*': ['*:*']}
+        self._config['colfilter'] = {'*': ['*:*']}
         for layer in layers:
-            self._config['col_filter'][layer] = [layer + ':*']
+            self._config['colfilter'][layer] = [layer + ':*']
 
         # add row filters and partitions from sources
-        self._config['row_filter'] = {'*': ['*:*']}
+        self._config['rowfilter'] = {'*': ['*:*']}
         for source in self._config['table']:
-            self._config['row_filter'][source] = [source + ':*']
+            self._config['rowfilter'][source] = [source + ':*']
 
         # import data from csv files
         nemoa.log('import data from sources')
@@ -311,7 +311,7 @@ class Dataset:
         for src in self._config['table']:
             source_config = self._config['table'][src]['source']
             path = source_config['file']
-            labels = tuple(self._get_colnames())
+            labels = tuple(self._get_columns())
             if 'rows' in source_config and source_config['rows']:
                 rowlabelcol = None
             else:
@@ -617,11 +617,11 @@ class Dataset:
         """
 
         # check columns
-        if cols == '*': cols = self._get_colnames()
+        if cols == '*': cols = self._get_columns()
         elif not len(cols) == len(set(cols)):
             return nemoa.log('error', """could not retrieve data:
                 columns are not unique!""")
-        elif [c for c in cols if c not in self._get_colnames()]:
+        elif [c for c in cols if c not in self._get_columns()]:
             return nemoa.log('error', """could not retrieve data:
                 unknown columns!""")
 
@@ -654,8 +654,8 @@ class Dataset:
         return ret_tuple
 
     #def delColFilter(self, name):
-        #if name in self._config['col_filter']:
-            #del self._config['col_filter'][name]
+        #if name in self._config['colfilter']:
+            #del self._config['colfilter'][name]
             #return True
         #return False
 
@@ -707,7 +707,7 @@ class Dataset:
 
     #def getBiclusters(self, algorithm = 'bcca', **params):
         #if algorithm == 'bcca':
-            #return getBccaBiclusters(**params)
+            #return self.getBccaBiclusters(**params)
 
         #nemoa.log('warning', "unsupported biclustering algorithm '" + algorithm + "'!")
         #return None
@@ -872,11 +872,12 @@ class Dataset:
         if key == 'type': return self._get_type()
 
         # get dataset parameters and data
-        if key == 'columns': return self._get_colnames(*args, **kwargs)
+        if key == 'columns': return self._get_columns(*args, **kwargs)
         if key == 'colgroups': return self._get_colgroups()
         if key == 'colfilter': return self._get_colfilter(*args, **kwargs)
         if key == 'colfilters': return self._get_colfilters()
-        if key == 'rows': return self._get_rownames(*args, **kwargs)
+        if key == 'rows': return self._get_rows(*args, **kwargs)
+        if key == 'rowgroups': return self._get_rowgroups(*args, **kwargs)
         if key == 'rowfilter': return self._get_rowfilter(*args, **kwargs)
         if key == 'rowfilters': return self._get_rowfilters()
         if key == 'data': return self._get_data(*args, **kwargs)
@@ -941,7 +942,7 @@ class Dataset:
         class_name = self.__class__.__name__
         return module_name + '.' + class_name
 
-    def _get_colnames(self, filter = '*'):
+    def _get_columns(self, filter = '*'):
         """Return list of strings containing column groups and labels."""
         if filter == '*':
             colnames = []
@@ -949,9 +950,9 @@ class Dataset:
                 if col[0]: colnames.append('%s:%s' % (col[0], col[1]))
                 elif col[1]: colnames.append(col[1])
             return colnames
-        if not filter in self._config['col_filter']:
+        if not filter in self._config['colfilter']:
             return []
-        col_filter = self._config['col_filter'][filter]
+        col_filter = self._config['colfilter'][filter]
         colnames = []
         for col in self._config['columns']:
             if ('*:*') in col_filter \
@@ -970,29 +971,32 @@ class Dataset:
         return groups
 
     def _get_colfilter(self, name):
-        if not name in self._config['col_filter']:
-            nemoa.log('warning', "unknown rcolumn filter '" + name + "'!")
+        if not name in self._config['colfilter']:
+            nemoa.log('warning', "unknown column filter '" + name + "'!")
             return []
-        return self._config['col_filter'][name]
+        return self._config['colfilter'][name]
 
     def _get_colfilters(self):
-        return self._config['col_filter'].keys()
+        return self._config['colfilter'].keys()
 
-    def _get_rownames(self):
+    def _get_rows(self):
         row_names = []
         for source in self._source.keys():
             labels = self._source[source]['array']['label'].tolist()
             row_names += ['%s:%s' % (source, name) for name in labels]
         return row_names
 
+    def _get_rowgroups(self):
+        return self._source.keys()
+
     def _get_rowfilter(self, name):
-        if not name in self._config['row_filter']:
+        if not name in self._config['rowfilter']:
             nemoa.log('warning', "unknown row filter '" + name + "'!")
             return []
-        return self._config['row_filter'][name]
+        return self._config['rowfilter'][name]
 
     def _get_rowfilters(self):
-        return self._config['row_filter'].keys()
+        return self._config['rowfilter'].keys()
 
     def _get_data(self, size = 0, rows = '*', cols = '*',
         noise = (None, 0.), output = 'array'):
@@ -1059,7 +1063,7 @@ class Dataset:
         # format data
         if isinstance(cols, str):
             fmt_data = self._format(data,
-                cols = self._get_colnames(cols),
+                cols = self._get_columns(cols),
                 output = output)
         elif isinstance(cols, list):
             fmt_data = self._format(data,
@@ -1067,7 +1071,7 @@ class Dataset:
                 output = output)
         elif isinstance(cols, tuple):
             fmt_data = tuple([self._format(data,
-                cols = self._get_colnames(col_filter),
+                cols = self._get_columns(col_filter),
                 output = output) for col_filter in cols])
         else:
             return nemoa.log('error', """could not get data:
@@ -1140,12 +1144,12 @@ class Dataset:
             if isinstance(rows, str):
 
                 # check row Filter
-                if not rows in self._config['row_filter']:
+                if not rows in self._config['rowfilter']:
                     return nemoa.log('error', """could not retrieve
                         data: invalid row filter: '%s'!""" % (rows))
 
                 # get row filter
-                row_filter = self._config['row_filter'][rows]
+                row_filter = self._config['rowfilter'][rows]
 
             elif isinstance(rows, list):
                 # TODO filter list to valid row names
@@ -1251,7 +1255,7 @@ class Dataset:
         return True
 
     def _set_colfilter(self, **kwargs):
-        col_names = self._get_colnames()
+        col_names = self._get_columns()
 
         for col_filter_name in kwargs.keys():
             col_filter_cols = kwargs[col_filter_name]
@@ -1265,7 +1269,7 @@ class Dataset:
             if not valid: continue
 
             # add / set column filter
-            self._config['col_filter'][col_filter_name] \
+            self._config['colfilter'][col_filter_name] \
                 = col_filter_cols
 
         return True
@@ -1335,20 +1339,24 @@ class Dataset:
         """Show dataset as image."""
         return nemoa.dataset.show(self, *args, **kwargs)
 
+    def copy(self, *args, **kwargs):
+        """Create copy of dataset."""
+        return nemoa.dataset.copy(self, *args, **kwargs)
+
     #def addRowFilter(self, name, filter):
         ## create unique name for filter
         #filterName = name
         #i = 1
-        #while filterName in self._config['row_filter']:
+        #while filterName in self._config['rowfilter']:
             #i += 1
             #filterName = '%s.%i' % (name, i)
 
         ## TODO: check filter
-        #self._config['row_filter'][filterName] = filter
+        #self._config['rowfilter'][filterName] = filter
         #return filterName
 
     #def delRowFilter(self, name):
-        #if name in self._config['row_filter']:
-            #del self._config['row_filter'][name]
+        #if name in self._config['rowfilter']:
+            #del self._config['rowfilter'][name]
             #return True
         #return False

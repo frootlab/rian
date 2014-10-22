@@ -85,8 +85,8 @@ class Csv:
         config['table'][name]['fraction'] = 1.0
 
         # add column androw filters
-        config['col_filter'] = {'*': ['*:*']}
-        config['row_filter'] = {'*': ['*:*'], name: [name + ':*']}
+        config['colfilter'] = {'*': ['*:*']}
+        config['rowfilter'] = {'*': ['*:*'], name: [name + ':*']}
 
         data = nemoa.common.csv_get_data(path)
 

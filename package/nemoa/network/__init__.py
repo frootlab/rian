@@ -8,6 +8,10 @@ import nemoa.network.classes
 import nemoa.network.exports
 import nemoa.network.imports
 
+def copy(network, *args, **kwargs):
+    """Create copy of network."""
+    return new(**network.get('copy'))
+
 def load(*args, **kwargs):
     """Import network from file."""
     return nemoa.network.imports.load(*args, **kwargs)

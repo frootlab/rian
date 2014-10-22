@@ -733,3 +733,7 @@ class Network:
     def show(self, *args, **kwargs):
         """Show network as image."""
         return nemoa.network.show(self, *args, **kwargs)
+
+    def copy(self, *args, **kwargs):
+        """Create copy of network."""
+        return nemoa.network.copy(self, *args, **kwargs)
