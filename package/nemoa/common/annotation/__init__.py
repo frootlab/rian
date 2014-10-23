@@ -14,8 +14,8 @@ def convert(list, input, output = None, filter = False):
 
     if isinstance(list, (numpy.ndarray)):
         list = list.tolist()
-        inputDtype = 'nparray'
-    else: inputDtype = 'list'
+        input_dtype = 'nparray'
+    else: input_dtype = 'list'
 
     # 'input'
     if input in generic_types:
@@ -47,16 +47,16 @@ def convert(list, input, output = None, filter = False):
 
     # trivial cases
     if input_class == 'generic' or input_format == output_format:
-        if inputDtype == 'nparray':
+        if input_dtype == 'nparray':
             return numpy.asarray(list), numpy.asarray([])
         else: return list, []
 
     # import annotation module
     module_name = input_class.lower()
-    module = importlib.import_module('nemoa.dataset.annotation.' + module_name)
+    module = importlib.import_module('nemoa.common.annotation.' + module_name)
     converter = getattr(module, module_name)()
     output_list, output_lost = converter.convert_list(
         list, input_format, output_format, filter)
-    if inputDtype == 'nparray':
+    if input_dtype == 'nparray':
         return numpy.asarray(output_list), numpy.asarray(output_lost)
     return output_list, output_lost

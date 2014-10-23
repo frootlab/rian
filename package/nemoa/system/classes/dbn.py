@@ -44,11 +44,9 @@ class DBN(nemoa.system.classes.ann.ANN):
             'visible_class': 'gauss',
             'hidden_class': 'sigmoid',
             'visibleSystem': None,
-            'visible_system_module': 'rbm',
-            'visible_system_class': 'GRBM',
+            'visible_system_type': 'rbm.GRBM',
             'hiddenSystem': None,
-            'hidden_system_module': 'rbm',
-            'hidden_system_class': 'RBM' },
+            'hidden_system_type': 'rbm.RBM' },
         'init': {
             'check_dataset': False,
             'ignore_units': [],
@@ -133,37 +131,42 @@ class DBN(nemoa.system.classes.ann.ANN):
                 for h in hidden_units:
                     network_edges[('visible', 'hidden')].append((v, h))
 
-            # create network of subsystem
-            network = nemoa.network.new(config = {
-                'name': '%s ↔ %s' % (src['layer'], tgt['layer']),
-                'type': 'layer.Factor',
-                'layer': ['visible', 'hidden'],
-                'layers': {
-                    'visible': {
-                        'visible': True,
-                        'type': \
-                            self._config['params']['visible_class']},
-                    'hidden': {
-                        'visible': False,
-                        'type': \
-                            self._config['params']['hidden_class']}},
-                'nodes': network_nodes,
-                'edges': network_edges,
-                'encapsulate_nodes': False,
-                'label_format': 'generic:string' })
+            network_config = nemoa.network.builder.build('factor',
+                name = '%s ↔ %s' % (src['layer'], tgt['layer']),
+                visible_nodes = visible_units,
+                hidden_nodes = hidden_units,
+                visible_type = self._config['params']['visible_class'],
+                hidden_type = self._config['params']['hidden_class'])
+
+            network = nemoa.network.new(**network_config)
+
+            ## create network of subsystem
+            #network = nemoa.network.new(config = {
+                #'name': '%s ↔ %s' % (src['layer'], tgt['layer']),
+                #'type': 'layer.Factor',
+                #'layer': ['visible', 'hidden'],
+                #'layers': {
+                    #'visible': {
+                        #'visible': True,
+                        #'type': \
+                            #self._config['params']['visible_class']},
+                    #'hidden': {
+                        #'visible': False,
+                        #'type': \
+                            #self._config['params']['hidden_class']}},
+                #'nodes': network_nodes,
+                #'edges': network_edges,
+                #'labelencapsulate': False,
+                #'labelformat': 'generic:string' })
 
             # create subsystem configuration
             config = {'name': '%s ↔ %s' % (src['layer'], tgt['layer'])}
             if src['visible']:
-                config['package'] = \
-                    self._config['params']['visible_system_module']
-                config['class'] = \
-                    self._config['params']['visible_system_class']
+                config['type'] = \
+                    self._config['params']['visible_system_type']
             else:
-                config['package'] = \
-                    self._config['params']['hidden_system_module']
-                config['class'] = \
-                    self._config['params']['hidden_system_class']
+                config['type'] = \
+                    self._config['params']['hidden_system_type']
 
             # create subsystem instance
             system = nemoa.system.new(
@@ -276,8 +279,8 @@ class DBN(nemoa.system.classes.ann.ANN):
         # initialize central unit layer
         for attrib in units[central_layer_id]['init'].keys():
             # keep name and visibility of layers
-            if attrib in ['id', 'layer', 'layer_id', 'visible', 'class']:
-                continue
+            if attrib in ['id', 'layer', 'layer_id', 'visible',
+                'class']: continue
             units[central_layer_id][attrib] = \
                 units[central_layer_id]['init'][attrib]
         del units[central_layer_id]['init']

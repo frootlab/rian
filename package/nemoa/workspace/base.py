@@ -158,10 +158,8 @@ class Workspace:
 
         # create dataset instance (if not given)
         if not nemoa.type.is_dataset(dataset):
-            #dataset = nemoa.dataset.open(dataset,
-                #workspace = self._workspace)
-            dataset = self._get_instance(
-                type = 'dataset', config = dataset)
+            dataset = nemoa.dataset.open(dataset,
+                workspace = self._workspace)
         if not nemoa.type.is_dataset(dataset):
             nemoa.log('error',
                 'could not create model instance: dataset is invalid!')
@@ -180,6 +178,8 @@ class Workspace:
 
         # create system instance (if not given)
         if not nemoa.type.is_system(system):
+            #system = nemoa.system.open(system,
+                #workspace = self._workspace)
             system = self._get_instance(
                 type = 'system', config = system)
         if not nemoa.type.is_system(system):
@@ -792,39 +792,9 @@ class Config:
         name = obj_conf['name']
 
         # system module
-        if not 'package' in config:
+        if not 'type' in config:
             return nemoa.log('warning', """skipping system '%s':
-                missing parameter 'package'.""" % (name))
-        try:
-            module_name = 'nemoa.system.classes.%s' % (config['package'])
-            system_module = importlib.import_module(module_name)
-        except:
-            return nemoa.log('warning', """skipping system '%s':
-                module 'nemoa.system.%s' could not be imported."""
-                % (name, config['package']))
-
-        # system class
-        if not 'class' in config:
-            return nemoa.log('warning', """skipping system '%s':
-                missing parameter 'class'.""" % (name))
-        if not hasattr(system_module, config['class']):
-            return nemoa.log('warning', """skipping system '%s':
-                python module 'nemoa.system.%s' does not contain class
-                '%s'. (parameter 'class')."""
-                % (name, config['class'], config['package']))
-        else:
-            system_class = getattr(system_module, config['class'])
-
-        # update system description
-        if not 'about' in config:
-            obj_conf['config']['about'] = system_class.__doc__
-        else:
-            obj_conf['config']['about'] = \
-                nemoa.common.str_doc_trim(config['about'])
-
-        # cleanup
-        del system_class
-        del system_module
+                missing parameter 'type'.""" % (name))
 
         return obj_conf
 
@@ -1093,8 +1063,7 @@ class Config:
             self.sections = {
                 'dataset': {'preprocessing': 'dict',
                     'source': 'dict', 'params': 'dict'},
-                'system': {'package': 'str',
-                    'class': 'str', 'params': 'dict'},
+                'system': {'type': 'str', 'params': 'dict'},
                 'schedule': {'stage [0-9a-zA-Z]*': 'dict',
                     'system [0-9a-zA-Z]*': 'dict', 'params': 'dict'}}
 

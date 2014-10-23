@@ -107,36 +107,31 @@ class Dataset:
         """Return true if dataset is configured."""
         return len(self._source.keys()) > 0
 
-    def configure(self, network, cache_enable = False, **kwargs):
+    def configure(self, network):
         """Configure dataset to a given network.
 
         Args:
-            network (object): nemoa network instance
-            cache_enable (bool, optional): enable caching
+            network (dataset instance): nemoa network instance
 
         """
 
-        nemoa.log("configure dataset '%s' to network '%s'" % \
-            (self._config['name'], network.get('name')))
-        nemoa.log('set', indent = '+1')
+        ## load data from cachefile if caching is activated
+        #if cache_enable:
+            #cache_file = self._search_cache_file(network)
 
-        # load data from cachefile if caching is activated
-        if cache_enable:
-            cache_file = self._search_cache_file(network)
+            ## load data from cachefile
+            #try:
+                #copy = nemoa.dataset.load(cache_file)
+                #nemoa.log("loading data from cachefile: '%s'"
+                    #% (cache_file))
+                #self.set('copy', **copy)
+                #if 'preprocessing' in self._config.keys():
+                    #self.preprocess(**self._config['preprocessing'])
+                #nemoa.log('set', indent = '-1')
+            #except:
+                #cache_file = self._create_cache_file(network)
 
-            # load data from cachefile
-            try:
-                copy = nemoa.dataset.load(cache_file)
-                nemoa.log("loading data from cachefile: '%s'"
-                    % (cache_file))
-                self.set('copy', **copy)
-                if 'preprocessing' in self._config.keys():
-                    self.preprocess(**self._config['preprocessing'])
-                nemoa.log('set', indent = '-1')
-            except:
-                cache_file = self._create_cache_file(network)
-
-        # create table with one record for every single dataset file
+        # create table with source configurations
         if not 'table' in self._config:
             conf = self._config.copy()
             self._config['table'] = {}
@@ -145,73 +140,68 @@ class Dataset:
 
         # Annotation
 
-        # get network node labels, grouped by layers
+        # get network layers
         layers = network.get('layers', visible = True)
 
         # convert network node labels to common format
-        nemoa.log('search network nodes in dataset sources')
         nodes_conv = {}
         nodes_lost = []
-        nodes_conv_count = 0
-        net_label_format = network.get('config', 'label_format')
+        nodes_count = 0
+        net_labelformat = network.get('config', 'labelformat')
         for layer in layers:
 
-            # get node names of layer
+            # get nodes from layer
             nodes = network.get('nodes', layer = layer)
 
-            # get node labels of layer
+            # get node labels from layer
             node_labels = []
             for node in nodes:
                 node_labels.append(
                     network.get('node', node)['params']['label'])
 
             # convert node labels to standard label format
-            conv, lost = nemoa.dataset.annotation.convert(
-                node_labels, input = net_label_format)
+            conv, lost = nemoa.common.annotation.convert(
+                node_labels, input = net_labelformat)
             nodes_conv[layer] = conv
-            nodes_lost += lost
-            nodes_conv_count += len(nodes_conv[layer])
+            nodes_lost += [conv[i] for i in lost]
+            nodes_count += len(nodes_conv[layer])
 
         # notify about lost (not convertable) nodes
         if nodes_lost:
-            nemoa.log("""%s of %s network nodes could not
-                be converted! (see logfile)"""
-                % (len(nodes_lost), nodes_conv_count))
-            nemoa.log('logfile', nemoa.common.str_to_list(nodes_lost))
+            nemoa.log('error', """%s of %s network nodes could not
+                be converted!""" % (len(nodes_lost), nodes_count))
+            nemoa.log('logfile', nemoa.common.str_from_list(nodes_lost))
 
         # get columns from dataset files and convert to common format
         col_labels = {}
-        nemoa.log('configure data sources')
-        nemoa.log('set', indent = '+1')
-        for src in self._config['table']:
-            nemoa.log("configure '%s'" % (src))
-            src_cnf = self._config['table'][src]
+        for source_name in self._config['table']:
+            source_config = self._config['table'][source_name]
+            source_columns = \
+                self._source[source_name]['array'].dtype.names
 
-            # get column labels from csv-file
-            csv_type = src_cnf['source']['csvtype'].strip().lower() \
-                if 'csvtype' in src_cnf['source'] else None
-            # TODO: if column labels are allready known
-            # get columns from source config
-            path = src_cnf['source']['file']
-            orig_col_labels = nemoa.common.csv_get_labels(path)
-            if not orig_col_labels: continue
-
-            # set annotation format
-            label_format = src_cnf['source']['columns'] \
-                if 'columns' in src_cnf['source'] else 'generic:string'
-
-            # convert column labes
-            columns_conv, columns_conv_lost = \
-                nemoa.dataset.annotation.convert(
-                orig_col_labels, input = label_format)
+            # convert column names
+            if 'columns_conv' in source_config \
+                and 'columns_lost' in source_config:
+                columns_conv = source_config['columns_conv']
+                columns_lost = source_config['columns_lost']
+            else:
+                if 'labelformat' in source_config:
+                    source_labelformat = source_config['labelformat']
+                else:
+                    source_labelformat = 'generic:string'
+                columns_conv, columns_lost = \
+                    nemoa.common.annotation.convert(
+                    source_columns, input = source_labelformat)
+                source_config['columns_conv'] = columns_conv
+                source_config['columns_lost'] = columns_lost
 
             # notify if any dataset columns could not be converted
-            if columns_conv_lost:
-                nemoa.log('warning', """%i of %i dataset columns
-                    could not be converted! (see logfile)""" %
-                    (len(columns_conv_lost), len(columns_conv)))
+            if columns_lost:
+                nemoa.log('error', """%i of %i dataset columns
+                    could not be converted.""" %
+                    (len(columns_lost), len(columns_conv)))
                 nemoa.log('logfile', ", ".join([columns_conv[i] \
-                    for i in columns_conv_lost]))
+                    for i in columns_lost]))
 
             # search converted nodes in converted columns
             num_lost = 0
@@ -228,7 +218,6 @@ class Dataset:
 
                 # get lost nodes
                 nodes_lost[layer] = []
-
                 for val in nodes_conv_lost:
                     node_lost_id = nodes_conv[layer].index(val)
                     node_lost = network.get('nodes',
@@ -239,7 +228,7 @@ class Dataset:
 
             # notify if any network nodes could not be found
             if num_lost:
-                nemoa.log('warning', """%i of %i network nodes
+                nemoa.log('error', """%i of %i network nodes
                     could not be found in dataset source!
                     (see logfile)""" % (num_lost, num_all))
                 for layer in nodes_lost:
@@ -247,19 +236,18 @@ class Dataset:
                         % (layer) + ', '.join(nodes_lost[layer]))
 
             # prepare dictionary for column source ids
-            col_labels[src] = {
+            col_labels[source_name] = {
+                'original': source_columns,
                 'conv': columns_conv,
                 'usecols': (),
-                'notusecols': columns_conv_lost }
-
-        nemoa.log('set', indent = '-1')
+                'notusecols': columns_lost }
 
         # intersect converted dataset column labels
         inter_col_labels = col_labels[col_labels.keys()[0]]['conv']
-        for src in col_labels:
-            list = col_labels[src]['conv']
+        for source_name in col_labels:
+            list = col_labels[source_name]['conv']
             black_list = [list[i] for i in \
-                col_labels[src]['notusecols']]
+                col_labels[source_name]['notusecols']]
             inter_col_labels = [val for val in inter_col_labels \
                 if val in list and not val in black_list]
 
@@ -277,9 +265,9 @@ class Dataset:
                 label = network.get('node', node)['params']['label']
                 self._config['columns'] += ((layer, label), )
 
-                for src in col_labels:
-                    col_labels[src]['usecols'] \
-                        += (col_labels[src]['conv'].index(col), )
+                for source_name in col_labels:
+                    col_labels[source_name]['usecols'] += tuple(
+                        [col_labels[source_name]['conv'].index(col)])
 
             if not found:
                 nemoa.log('error', """no node from network layer '%s'
@@ -287,83 +275,48 @@ class Dataset:
                 nemoa.log('set', indent = '-1')
                 return False
 
-        # update source file config
-        for src in col_labels:
-            self._config['table'][src]['source']['usecols'] \
-                = col_labels[src]['usecols']
-
-        # Column & Row Filters
+        # update columns in source config
+        for source_name in col_labels:
+            self._config['table'][source_name]['columns'] = []
+            for col_id in col_labels[source_name]['usecols']:
+                self._config['table'][source_name]['columns'].append(
+                    col_labels[source_name]['original'][col_id])
 
         # add column filters from network layers
         self._config['colfilter'] = {'*': ['*:*']}
         for layer in layers:
             self._config['colfilter'][layer] = [layer + ':*']
 
-        # add row filters and partitions from sources
+        # add row filters from sources
         self._config['rowfilter'] = {'*': ['*:*']}
         for source in self._config['table']:
             self._config['rowfilter'][source] = [source + ':*']
-
-        # import data from csv files
-        nemoa.log('import data from sources')
-        nemoa.log('set', indent = '+1')
-        self._source = {}
-        for src in self._config['table']:
-            source_config = self._config['table'][src]['source']
-            path = source_config['file']
-            labels = tuple(self._get_columns())
-            if 'rows' in source_config and source_config['rows']:
-                rowlabelcol = None
-            else:
-                rowlabelcol = 0
-            if 'usecols' in source_config and source_config['usecols']:
-                usecols = source_config['usecols']
-            else:
-                usecols = None
-            data = nemoa.common.csv_get_data(path, labels = labels,
-                rowlabelcol = rowlabelcol, usecols = usecols)
-
-            self._source[src] = {
-                'fraction': self._config['table'][src]['fraction'],
-                'array': data }
-
-        nemoa.log('set', indent = '-1')
-
-        # save cachefile
-        if cache_enable:
-            nemoa.log("save cachefile: '%s'" % (cache_file))
-            nemoa.dataset.save(self, cache_file)
 
         # preprocess data
         if 'preprocessing' in self._config.keys():
             self.preprocess(**self._config['preprocessing'])
 
-        nemoa.log('set', indent = '-1')
         return True
 
-    def preprocess(self, **kwargs):
+    def preprocess(self, stratify = None, normalize = None,
+        transform = None):
         """Data preprocessing.
 
         Stratification, normalization and transformation of data.
 
         Args:
-            stratify: see method self._stratify()
-            normalize: see method self._normalize()
-            transform: see method self._transform()
+            stratify (dict or None): see method self._stratify()
+            normalize (dict or None): see method self._normalize()
+            transform (dict or None): see method self._transform()
 
         """
 
         nemoa.log('preprocessing data')
         nemoa.log('set', indent = '+1')
 
-        if 'stratify' in kwargs.keys():
-            self._stratify(kwargs['stratify'])
-
-        if 'normalize' in kwargs.keys():
-            self._normalize(kwargs['normalize'])
-
-        if 'transform' in kwargs.keys():
-            self._transform(kwargs['transform'])
+        if stratify: self._stratify(stratify)
+        if normalize: self._normalize(normalize)
+        if transform: self._transform(transform)
 
         nemoa.log('set', indent = '-1')
 
@@ -425,16 +378,15 @@ class Dataset:
         # for single source datasets take all data
         # for multi source datasets take a big bunch of stratified data
         if len(self._source.keys()) == 1:
-            source = self._source.keys()[0]
-            data = self._get_source(type = 'recarray', source = source)
+            data = self._get_source(source = self._source.keys()[0])
         else:
             data = self._get_data(size = size, output = 'recarray')
 
         # iterative normalize sources
         for source in self._source.keys():
             source_array = self._source[source]['array']
-            if source_array == None:
-                continue
+            if source_array == None: continue
+
             # iterative normalize columns (recarray)
             for col in source_array.dtype.names[1:]:
                 mean = data[col].mean()
@@ -486,12 +438,20 @@ class Dataset:
 
             self._set_colnames(source_columns)
 
+            # TODO: find better solution
+            cols = []
+            for col in source_columns:
+                if ':' in col:
+                    cols.append(col.split(':')[1])
+                else:
+                    cols.append(col)
+
             for src in self._source:
 
                 # get data, mapping and transformation function
                 data = self._source[src]['array']
-                data_array = data[source_columns].view('<f8').reshape(
-                    data.size, len(source_columns))
+                data_array = data[cols].view('<f8').reshape(
+                    data.size, len(cols))
                 if mapping == None: mapping = system.mapping()
                 if not 'func' in kwargs: func = 'expect'
                 else: func = kwargs['func']
@@ -572,86 +532,6 @@ class Dataset:
 
         return nemoa.log('error', """could not transform data:
             unknown algorithm '%s'!""" % (algorithm))
-
-    def _corrupt(self, data, type = None, factor = 0.5):
-        """Corrupt given data.
-
-        Args:
-            data: numpy array containing data
-            type (str): noise model
-                'mask': Masking Noise
-                    A fraction of every sample is forced to zero
-                'gauss': Gaussian Noise
-                    Additive isotropic Gaussian noise
-                'salt': Salt-and-pepper noise
-                    A fraction of every sample is forced to min or max
-                    with equal possibility
-            factor (float, optional): strengt of the noise
-                The influence of the parameter depends on the
-                noise model
-
-        Returns:
-            Numpy array with (partly) corrupted data. The shape is
-            identical to the shape of the given data.
-
-        """
-
-        if type in [None, 'none']: return data
-        elif type == 'mask': return data * numpy.random.binomial(
-            size = data.shape, n = 1, p = 1. - factor)
-        elif type == 'gauss': return data + numpy.random.normal(
-            size = data.shape, loc = 0., scale = factor)
-        # TODO: implement salt and pepper noise
-        #elif type == 'salt': return
-        else: return nemoa.log('error',
-            "unkown data noise type '%s'!" % (type))
-
-    def _format(self, data, cols = '*', output = 'array'):
-        """Return data in given format.
-
-        Args:
-            cols: name of column group
-                default: value '*' does not filter columns
-            output: ...
-
-        """
-
-        # check columns
-        if cols == '*': cols = self._get_columns()
-        elif not len(cols) == len(set(cols)):
-            return nemoa.log('error', """could not retrieve data:
-                columns are not unique!""")
-        elif [c for c in cols if c not in self._get_columns()]:
-            return nemoa.log('error', """could not retrieve data:
-                unknown columns!""")
-
-        # check format
-        if isinstance(output, str): fmt_tuple = (output, )
-        elif isinstance(output, tuple): fmt_tuple = output
-        else: return nemoa.log('error',
-            "could not retrieve data: invalid 'format' argument!")
-
-        # format data
-        ret_tuple = ()
-        for fmt_str in fmt_tuple:
-            if fmt_str == 'array':
-                ret_tuple += (data[cols].view('<f8').reshape(data.size,
-                    len(cols)), )
-            elif fmt_str == 'recarray':
-                ret_tuple += (data[['label'] + cols], )
-            elif fmt_str == 'cols':
-                #ret_tuple += (data.dtype.names, )
-                col_list = []
-                for col in cols:
-                    if ':' in col:
-                        col_list.append(col.split(':')[1])
-                    else:
-                        col_list.append(col)
-                ret_tuple += (col_list, )
-            elif fmt_str in ['rows', 'list']:
-                ret_tuple += (data['label'].tolist(), )
-        if isinstance(output, str): return ret_tuple[0]
-        return ret_tuple
 
     #def delColFilter(self, name):
         #if name in self._config['colfilter']:
@@ -838,24 +718,24 @@ class Dataset:
         ##dist = (dist > 0) * dist
         #return distance
 
-    def _get_cache_file(self, network):
-        """Return cache file path."""
-        return '%sdata-%s-%s.npz' % (self._config['cache_path'],
-            network.get('config', 'id'), self._config['id'])
+    #def _get_cache_file(self, network):
+        #"""Return cache file path."""
+        #return '%sdata-%s-%s.npz' % (self._config['cache_path'],
+            #network.get('config', 'id'), self._config['id'])
 
-    def _search_cache_file(self, network):
-        """Return cache file path if existent."""
-        file = self._get_cache_file(network)
-        return file if os.path.isfile(file) else None
+    #def _search_cache_file(self, network):
+        #"""Return cache file path if existent."""
+        #file = self._get_cache_file(network)
+        #return file if os.path.isfile(file) else None
 
-    def _create_cache_file(self, network):
-        """Return empty cache file if existent."""
-        file = self._get_cache_file(network)
-        if not os.path.isfile(file):
-            basedir = os.path.dirname(file)
-            if not os.path.exists(basedir): os.makedirs(basedir)
-            with open(file, 'a'): os.utime(file, None)
-        return file
+    #def _create_cache_file(self, network):
+        #"""Return empty cache file if existent."""
+        #file = self._get_cache_file(network)
+        #if not os.path.isfile(file):
+            #basedir = os.path.dirname(file)
+            #if not os.path.exists(basedir): os.makedirs(basedir)
+            #with open(file, 'a'): os.utime(file, None)
+        #return file
 
     def get(self, key = 'name', *args, **kwargs):
         """Get meta information, parameters and data of dataset."""
@@ -1017,15 +897,15 @@ class Dataset:
                     'gauss': Gaussian Noise
                         Additive isotropic Gaussian noise
                     'salt': Salt-and-pepper noise
-                        A fraction of every sample is forced to min or max
-                        with equal possibility
+                        A fraction of every sample is forced to min or
+                        max with equal possibility
                     default: Value None equals to 'no'
                 second entry of tuple: noise factor
                     float in interval [0, 1] describing the strengt
                     of the noise. The influence of the parameter
                     depends on the noise type
                     default: Value 0.5
-            fmt: tuple of strings describing data output. Supported strings:
+            fmt: tuple of strings describing data output:
                 'array': numpy array with data
                 'recarray': numpy record array with data
                 'cols': list of column names
@@ -1044,15 +924,16 @@ class Dataset:
         src_stack = ()
         for source in self._source.keys():
             if size > 0:
-                src_data = self._get_source(type = 'recarray',
-                    source = source, size = size + 1, rows = rows)
+                src_data = self._get_source(source = source,
+                    size = size + 1, rows = rows)
             else:
-                src_data = self._get_source(type = 'recarray',
-                    source = source, rows = rows)
+                src_data = self._get_source(source = source,
+                    rows = rows)
             if src_data == False or src_data.size == 0: continue
             src_stack += (src_data, )
-        if not src_stack: return nemoa.log('error',
-            'could not get data: no valid data sources found!')
+        if not src_stack:
+            return nemoa.log('error', """could not get data:
+                no valid data sources found!""")
         data = numpy.concatenate(src_stack)
 
         # (optional) shuffle data and correct size
@@ -1062,15 +943,15 @@ class Dataset:
 
         # format data
         if isinstance(cols, str):
-            fmt_data = self._format(data,
+            fmt_data = self._get_data_format(data,
                 cols = self._get_columns(cols),
                 output = output)
         elif isinstance(cols, list):
-            fmt_data = self._format(data,
+            fmt_data = self._get_data_format(data,
                 cols = cols,
                 output = output)
         elif isinstance(cols, tuple):
-            fmt_data = tuple([self._format(data,
+            fmt_data = tuple([self._get_data_format(data,
                 cols = self._get_columns(col_filter),
                 output = output) for col_filter in cols])
         else:
@@ -1078,8 +959,98 @@ class Dataset:
                 invalid argument for columns!""")
 
         # Corrupt data (optional)
-        return self._corrupt(fmt_data, \
+        return self._get_data_corrupt(fmt_data, \
             type = noise[0], factor = noise[1])
+
+    def _get_data_format(self, data, cols = '*', output = 'array'):
+        """Return data in given format.
+
+        Args:
+            cols: name of column group
+                default: value '*' does not filter columns
+            output: ...
+
+        """
+
+        # check columns
+        if cols == '*': cols = self._get_columns()
+        elif not len(cols) == len(set(cols)):
+            return nemoa.log('error', """could not retrieve data:
+                columns are not unique!""")
+        elif [c for c in cols if c not in self._get_columns()]:
+            return nemoa.log('error', """could not retrieve data:
+                unknown columns!""")
+
+        # check format
+        if isinstance(output, str): fmt_tuple = (output, )
+        elif isinstance(output, tuple): fmt_tuple = output
+        else: return nemoa.log('error',
+            "could not retrieve data: invalid 'format' argument!")
+
+        # format data
+        ret_tuple = ()
+
+        # TODO: find much better solution!!
+        colnames = []
+        for col in cols:
+            if ':' in col:
+                colnames.append(col.split(':')[1])
+            else:
+                colnames.append(col)
+        cols = colnames
+
+        for fmt_str in fmt_tuple:
+            if fmt_str == 'array':
+                ret_tuple += (data[cols].view('<f8').reshape(data.size,
+                    len(cols)), )
+            elif fmt_str == 'recarray':
+                ret_tuple += (data[['label'] + cols], )
+            elif fmt_str == 'cols':
+                #ret_tuple += (data.dtype.names, )
+                col_list = []
+                for col in cols:
+                    if ':' in col:
+                        col_list.append(col.split(':')[1])
+                    else:
+                        col_list.append(col)
+                ret_tuple += (col_list, )
+            elif fmt_str in ['rows', 'list']:
+                ret_tuple += (data['label'].tolist(), )
+        if isinstance(output, str): return ret_tuple[0]
+        return ret_tuple
+
+    def _get_data_corrupt(self, data, type = None, factor = 0.5):
+        """Corrupt given data.
+
+        Args:
+            data: numpy array containing data
+            type (str): noise model
+                'mask': Masking Noise
+                    A fraction of every sample is forced to zero
+                'gauss': Gaussian Noise
+                    Additive isotropic Gaussian noise
+                'salt': Salt-and-pepper noise
+                    A fraction of every sample is forced to min or max
+                    with equal possibility
+            factor (float, optional): strengt of the noise
+                The influence of the parameter depends on the
+                noise model
+
+        Returns:
+            Numpy array with (partly) corrupted data. The shape is
+            identical to the shape of the given data.
+
+        """
+
+        if type in [None, 'none']: return data
+        elif type == 'mask': return data * numpy.random.binomial(
+            size = data.shape, n = 1, p = 1. - factor)
+        elif type == 'gauss': return data + numpy.random.normal(
+            size = data.shape, loc = 0., scale = factor)
+        # TODO: implement salt and pepper noise
+        #elif type == 'salt': return
+        else: return nemoa.log('error',
+            "unkown data noise type '%s'!" % (type))
 
     def _get_value(self, row = None, col = None):
         """get single value from dataset."""
@@ -1111,17 +1082,21 @@ class Dataset:
         return nemoa.log('error', """could not get configuration:
             unknown key '%s'.""" % (key))
 
-    def _get_source(self, type = 'dict', source = None, size = 0,
-        rows = '*'):
+    def _get_source(self, source = None, cols = '*', rows = '*',
+        size = 0):
         """Get data from sources.
 
         Args:
-            type (string, optional): 'dict' or 'recarray'
-            source: name of data source to get data from
-            size: number of random choosen samples to return
-                default: value 0 returns all samples of given source
-            rows: string describing a row filter using wildcards
-                default: value '*' selects all rows
+            source (string or None, optional): name of data source to
+                get data from. If None, then a copy of all data is
+                returned
+            cols (string, optional): string describing a col filter
+                using wildcards. Default value '*' selects all cols
+            rows (string, optional): string describing a row filter
+                using wildcards. Default value '*' selects all rows
+            size (int, optional): number of random choosen samples to
+                return. Default value 0 returns all samples of given
+                source
 
         Returns:
             Dictionary with source data OR numpy recarray with data
@@ -1129,53 +1104,64 @@ class Dataset:
 
         """
 
-        if type == 'dict': return copy.deepcopy(self._source)
-        if type == 'recarray':
+        if source == None: return copy.deepcopy(self._source)
 
-            # check source
-            if not isinstance(source, str) \
-                or not source in self._source \
-                or not isinstance(self._source[source]['array'],
-                numpy.ndarray):
-                return nemoa.log('error', """could not retrieve data:
-                    invalid source: '%s'!""" % (source))
+        # check source
+        if not isinstance(source, str) \
+            or not source in self._source \
+            or not isinstance(self._source[source]['array'],
+            numpy.ndarray):
+            return nemoa.log('error', """could not retrieve table:
+                invalid table name: '%s'.""" % (source))
 
-            # get valid row names from row filter
-            if isinstance(rows, str):
+        # get column names from filter
+        if isinstance(cols, str):
+            if not cols in self._config['colfilter']:
+                return nemoa.log('error', """could not retrieve
+                    data: invalid column filter: '%s'!""" % (cols))
+            colfilter = self._config['colfilter'][cols]
+        elif isinstance(cols, list):
+            # TODO filter list to valid col names
+            colfilter = cols
 
-                # check row Filter
-                if not rows in self._config['rowfilter']:
-                    return nemoa.log('error', """could not retrieve
-                        data: invalid row filter: '%s'!""" % (rows))
+        # get row names from filter
+        if isinstance(rows, str):
+            if not rows in self._config['rowfilter']:
+                return nemoa.log('error', """could not retrieve
+                    data: invalid row filter: '%s'!""" % (rows))
+            rowfilter = self._config['rowfilter'][rows]
+        elif isinstance(rows, list):
+            # TODO filter list to valid row names
+            rowfilter = rows
 
-                # get row filter
-                row_filter = self._config['rowfilter'][rows]
+        # column selection
+        colsel = self._config['table'][source]['columns']
+        if '*:*' in colfilter:
+            src_array_colsel = self._source[source]['array'][colsel]
+        else:
+            # TODO!!!!
+            pass
 
-            elif isinstance(rows, list):
-                # TODO filter list to valid row names
-                row_filter = rows
+        # row selection
+        if '*:*' in rowfilter or source + ':*' in rowfilter:
+            src_array = src_array_colsel
+        else:
+            rowfilter_filtered = [
+                row.split(':')[1] for row in rowfilter
+                if row.split(':')[0] in [source, '*']]
+            rowsel = numpy.asarray([
+                rowid for rowid, row in enumerate(
+                self._source[source]['array']['label'])
+                if row in rowfilter_filtered])
+            src_array = numpy.take(src_array_colsel, rowsel)
 
-            # get filtered source array
-            if '*:*' in row_filter or source + ':*' in row_filter:
-                src_array = self._source[source]['array']
-            else:
-                row_filter_filtered = [
-                    row.split(':')[1] for row in row_filter
-                    if row.split(':')[0] in [source, '*']]
-                row_select = numpy.asarray([
-                    rowid for rowid, row in enumerate(
-                    self._source[source]['array']['label'])
-                    if row in row_filter_filtered])
-                if row_select.size == 0: return row_select
-                src_array = numpy.take(self._source[source]['array'],
-                    row_select)
+        # stratify and return data as numpy record array
+        if size == 0 or size == None: return src_array
+        src_frac = self._config['table'][source]['fraction']
+        rowsel = numpy.random.randint(src_array.size,
+            size = round(src_frac * size))
 
-            # stratify and return data as numpy record array
-            if size == 0 or size == None: return src_array
-            src_frac = self._source[source]['fraction']
-            row_select = numpy.random.randint(src_array.size,
-                size = round(src_frac * size))
-            return numpy.take(src_array, row_select)
+        return numpy.take(src_array, rowsel)
 
     def set(self, key = None, *args, **kwargs):
         """Set meta information, parameters and data of dataset."""

@@ -283,6 +283,7 @@ def layergraph(G, **kwargs):
             # draw node label
             node_font_size = \
                 2. * graph_font_size / numpy.sqrt(max(len(node) - 1, 1))
+
             networkx.draw_networkx_labels(G, pos,
                 font_size = node_font_size,
                 labels = {node: label},

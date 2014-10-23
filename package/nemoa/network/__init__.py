@@ -4,6 +4,7 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+import nemoa.network.builder
 import nemoa.network.classes
 import nemoa.network.exports
 import nemoa.network.imports
@@ -11,6 +12,10 @@ import nemoa.network.imports
 def copy(network, *args, **kwargs):
     """Create copy of network."""
     return new(**network.get('copy'))
+
+def create(*args, **kwargs):
+    """Create new network from building script."""
+    return new(**nemoa.network.builder.build(*args, **kwargs))
 
 def load(*args, **kwargs):
     """Import network from file."""

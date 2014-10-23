@@ -18,7 +18,8 @@ def str_split_params(str):
     func_params = str_to_dict(str.lstrip(func_name).strip()[1:-1])
     return func_name, func_params
 
-def str_to_type(string, type):
+def str_to_type(string, type = None):
+    if type == 'bool': return string.lower().strip() == 'true'
     if type == 'str': return string.strip().replace('\n', '')
     if type == 'int': return int(string)
     if type == 'float': return float(string)
@@ -29,6 +30,10 @@ def str_to_type(string, type):
 def str_to_list(string, delim = ','):
     """Return list from given string."""
     return [item.strip() for item in string.split(delim)]
+
+def str_from_list(list, delim = ','):
+    """Return string from given list."""
+    return delim.join(list)
 
 def str_to_dict(string, delim = ','):
     """Return dictionary from given string in ini format."""

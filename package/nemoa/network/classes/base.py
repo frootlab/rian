@@ -140,8 +140,8 @@ class Network:
                         % (layer, len(nodes[layer])))
 
             for layer_node_id, node in enumerate(nodes[layer]):
-                if 'encapsulate_nodes' in self._config \
-                    and self._config['encapsulate_nodes'] == False:
+                if 'labelencapsulate' in self._config \
+                    and self._config['labelencapsulate'] == False:
                     node_name = node
                 else:
                     node_name = layer + ':' + node
@@ -171,8 +171,8 @@ class Network:
             edge_layer = (src_layer, tgt_layer)
 
             for (src_node, tgt_node) in edges[edge_layer]:
-                if not 'encapsulate_nodes' in self._config \
-                    or self._config['encapsulate_nodes'] == True:
+                if not 'labelencapsulate' in self._config \
+                    or self._config['labelencapsulate'] == True:
                     src_node_name = src_layer + ':' + src_node
                     tgt_node_name = tgt_layer + ':' + tgt_node
                 else:

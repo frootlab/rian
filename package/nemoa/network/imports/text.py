@@ -65,7 +65,7 @@ class Ini:
                 'email': None,
                 'license': None,
                 'type': None,
-                'label_format': 'generic:string',
+                'labelformat': 'generic:string',
                 'source': {
                     'file': path,
                     'filetype': 'ini' }}}
@@ -120,7 +120,7 @@ class Ini:
 
         # 'labelformat': annotation of the nodes
         if 'labelformat' in netcfg.options('network'):
-            network['config']['label_format'] \
+            network['config']['labelformat'] \
                 = netcfg.get('network', 'labelformat').strip()
 
         # depending on type, use different methods to parse and

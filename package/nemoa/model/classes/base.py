@@ -505,6 +505,7 @@ class Model:
         if not nemoa.type.is_network(self.network):
             return nemoa.log('error', """could not configure system:
                 model does not contain network instance.""")
+
         self.system = nemoa.system.new(
             config = system_copy['config'], network = self.network)
 

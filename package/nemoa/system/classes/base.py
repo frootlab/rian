@@ -18,6 +18,7 @@ class System:
 
     def __init__(self, network = None, **kwargs):
         """Import system from dictionary."""
+
         self._set_copy(**kwargs)
         if network: self._set_params(network = network)
 
@@ -774,7 +775,8 @@ class System:
             elif source in dataset.get('colgroups'):
                 rows = self._config['params']['samples'] \
                     if 'samples' in self._config['params'] else '*'
-                data = dataset.get('data', 100000, rows = rows, cols = source)
+                data = dataset.get('data', 100000, rows = rows,
+                    cols = source)
                 random = numpy.random.normal(numpy.zeros((x, y)),
                     sigma * numpy.std(data, axis = 0).reshape(1, x).T)
             elif dataset.get('columns') \

@@ -81,19 +81,20 @@ class Csv:
         if not 'type' in config:
             config['type'] = 'base.Dataset'
 
-        config['table'] = {name: config.copy()}
-        config['table'][name]['fraction'] = 1.0
-
         # add column androw filters
         config['colfilter'] = {'*': ['*:*']}
         config['rowfilter'] = {'*': ['*:*'], name: [name + ':*']}
 
         data = nemoa.common.csv_get_data(path)
 
+        config['table'] = {name: config.copy()}
+        config['table'][name]['fraction'] = 1.0
         config['columns'] = tuple()
+        config['table'][name]['columns'] = []
         for col in data.dtype.names:
             if col == 'label': continue
             config['columns'] += (('', col),)
+            config['table'][name]['columns'].append(col)
 
         # get source data from csv data
         source = {
