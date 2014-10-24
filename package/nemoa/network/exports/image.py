@@ -131,8 +131,6 @@ class Graph:
 
     def create(self, network):
 
-        print network.get('type')
-
         # copy graph from system structure of model
         graph = network.get('graph', type = 'graph')
 

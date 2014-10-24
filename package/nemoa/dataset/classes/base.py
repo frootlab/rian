@@ -389,9 +389,8 @@ class Dataset:
                     (source_array[col] - mean) / sdev
         return True
 
-    def _transform(self, algorithm = 'system', system = None,
-        mapping = None, **kwargs):
-        """Transform dataset.
+    def _transform(self, algorithm = 'system', *args, **kwargs):
+        """Transform data in tables.
 
         Args:
             algorithm (str): name of algorithm used for data
@@ -417,74 +416,7 @@ class Dataset:
 
         # system based data transformation
         if algorithm.lower() == 'system':
-            if not nemoa.type.is_system(system):
-                return nemoa.log('error', """could not transform data
-                    using system: invalid system.""")
-
-            nemoa.log("transform data using system '%s'"
-                % (system.get('name')))
-
-            nemoa.log('set', indent = '+1')
-            if mapping == None: mapping = system.mapping()
-
-            source_columns = system.get('units', layer = mapping[0])
-            target_columns = system.get('units', layer = mapping[-1])
-
-            self._set_columns(source_columns)
-
-            # TODO: find better solution
-            cols = []
-            for col in source_columns:
-                if ':' in col:
-                    cols.append(col.split(':')[1])
-                else:
-                    cols.append(col)
-
-            for src in self._tables:
-
-                # get data, mapping and transformation function
-                data = self._tables[src]['array']
-                data_array = data[cols].view('<f8').reshape(
-                    data.size, len(cols))
-                if mapping == None: mapping = system.mapping()
-                if not 'func' in kwargs: func = 'expect'
-                else: func = kwargs['func']
-
-                # transform data
-                if func == 'expect':
-                    trans_array = system._eval_units_expect(
-                        data_array, mapping)
-                elif func == 'value':
-                    trans_array = system._eval_units_values(
-                        data_array, mapping)
-                elif func == 'sample':
-                    trans_array = system._eval_units_samples(
-                        data_array, mapping)
-
-                # create empty record array
-                num_rows = self._tables[src]['array']['label'].size
-                col_names = ('label',) + tuple(target_columns)
-                col_formats = ('<U12',) + tuple(['<f8' \
-                    for x in target_columns])
-                new_rec_array = numpy.recarray((num_rows,),
-                    dtype = zip(col_names, col_formats))
-
-                # set values in record array
-                new_rec_array['label'] = \
-                    self._tables[src]['array']['label']
-                for colID, colName in \
-                    enumerate(new_rec_array.dtype.names[1:]):
-
-                    # update source data columns
-                    new_rec_array[colName] = \
-                        (trans_array[:, colID]).astype(float)
-
-                # set record array
-                self._tables[src]['array'] = new_rec_array
-
-            self._set_columns(target_columns)
-            nemoa.log('set', indent = '-1')
-            return True
+            return self._transform_system(*args, **kwargs)
 
         # gauss to binary data transformation
         elif algorithm.lower() in ['gausstobinary', 'binary']:
@@ -526,6 +458,71 @@ class Dataset:
 
         return nemoa.log('error', """could not transform data:
             unknown algorithm '%s'!""" % (algorithm))
+
+    def _transform_system(self, system = None, mapping = None,
+        func = 'expect'):
+        if not nemoa.type.is_system(system):
+            return nemoa.log('error', """could not transform data
+                using system: invalid system.""")
+
+        nemoa.log("transform data using system '%s'"
+            % (system.get('name')))
+
+        nemoa.log('set', indent = '+1')
+        if mapping == None: mapping = system.mapping()
+
+        source_columns = system.get('units', layer = mapping[0])
+        target_columns = system.get('units', layer = mapping[-1])
+
+        colnames = self._get_colnames(source_columns)
+
+        for table in self._tables:
+
+            # get data, mapping and transformation function
+            data = self._tables[table]['array']
+            data_array = data[colnames].view('<f8').reshape(
+                data.size, len(colnames))
+
+            # transform data
+            if func == 'expect':
+                trans_array = system._eval_units_expect(
+                    data_array, mapping)
+            elif func == 'value':
+                trans_array = system._eval_units_values(
+                    data_array, mapping)
+            elif func == 'sample':
+                trans_array = system._eval_units_samples(
+                    data_array, mapping)
+
+            # create empty record array
+            num_rows = self._tables[table]['array']['label'].size
+            col_names = ('label',) + tuple(target_columns)
+            col_formats = ('<U12',) + tuple(['<f8' \
+                for x in target_columns])
+            new_rec_array = numpy.recarray((num_rows,),
+                dtype = zip(col_names, col_formats))
+
+            # set values in record array
+            new_rec_array['label'] = \
+                self._tables[table]['array']['label']
+            for colid, colname in \
+                enumerate(new_rec_array.dtype.names[1:]):
+
+                # update source data columns
+                new_rec_array[colname] = \
+                    (trans_array[:, colid]).astype(float)
+
+            # set record array
+            self._tables[table]['array'] = new_rec_array
+
+        # create column mapping
+        colmapping = {}
+        for column in target_columns:
+            colmapping[column] = column
+
+        self._set_columns(colmapping)
+        nemoa.log('set', indent = '-1')
+        return True
 
     #def delColFilter(self, name):
         #if name in self._config['colfilter']:

@@ -4,10 +4,10 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+import base64
 import cPickle
 import gzip
 import zlib
-import base64
 
 def dict_merge(d1, d2):
     """Return merged dictionary (merge d1 over d2)."""
