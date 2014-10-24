@@ -81,7 +81,7 @@ class Csv:
         if not 'type' in config:
             config['type'] = 'base.Dataset'
 
-        # add column androw filters
+        # add column and row filters
         config['colfilter'] = {'*': ['*:*']}
         config['rowfilter'] = {'*': ['*:*'], name: [name + ':*']}
 
@@ -90,19 +90,21 @@ class Csv:
         config['table'] = {name: config.copy()}
         config['table'][name]['fraction'] = 1.0
         config['columns'] = tuple()
+        config['colmapping'] = {}
         config['table'][name]['columns'] = []
-        for col in data.dtype.names:
-            if col == 'label': continue
-            config['columns'] += (('', col),)
-            config['table'][name]['columns'].append(col)
+        for column in data.dtype.names:
+            if column == 'label': continue
+            config['columns'] += (('', column),)
+            config['colmapping'][column] = column
+            config['table'][name]['columns'].append(column)
 
-        # get source data from csv data
-        source = {
+        # get data table from csv data
+        tables = {
             name: {
                 'array': data,
                 'fraction': 1.0}}
 
-        return {'config': config, 'source': source}
+        return {'config': config, 'source': tables}
 
 class Tsv(Csv):
     """Export dataset to Tab Separated Values."""
