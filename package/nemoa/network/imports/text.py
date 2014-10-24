@@ -4,7 +4,6 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import ConfigParser
 import nemoa
 import os
 
@@ -49,108 +48,67 @@ class Ini:
 
         """
 
-        netcfg = ConfigParser.ConfigParser()
-        netcfg.optionxform = str
-        netcfg.read(path)
+        structure = {'network': { 'type': 'str' }}
+        network = nemoa.common.ini_load(path, structure)
 
-        name = os.path.splitext(os.path.basename(path))[0]
+        layer_networks = ['layer.MultiLayer', 'layer.Shallow',
+            'layer.Factor']
 
-        network = {
-            'config': {
-                'name': name,
-                'branch': None,
-                'version': None,
-                'about': None,
-                'author': None,
-                'email': None,
-                'license': None,
-                'type': None,
-                'labelformat': 'generic:string',
-                'source': {
-                    'file': path,
-                    'filetype': 'ini' }}}
-
-        # [network] section
-        if not 'network' in netcfg.sections():
-            return nemoa.log('warning', """could not import network
-                configuration: file '%s' does not contain section
-                'network'!""" % (path))
-
-        # 'name': name of network
-        if 'name' in netcfg.options('network'):
-            network_name = netcfg.get('network', 'name').strip()
-            network['name'] = \
-                '.'.join([self._workspace, network_name])
-            network['config']['name'] = network_name
-
-        # 'branch': branch of the network
-        if 'branch' in netcfg.options('network'):
-            network['config']['branch'] = \
-                netcfg.get('network', 'branch').strip()
-
-        # 'version': version number of network branch
-        if 'version' in netcfg.options('network'):
-            network['config']['version'] = \
-                int(netcfg.get('network', 'about'))
-
-        # 'about': short description of the network
-        if 'about' in netcfg.options('network'):
-            network['config']['about'] = \
-                netcfg.get('network', 'about').strip()
-
-        # 'author': author of the network
-        if 'author' in netcfg.options('network'):
-            network['config']['author'] = \
-                netcfg.get('network', 'author').strip()
-
-        # 'email': email of the author of the network
-        if 'email' in netcfg.options('network'):
-            network['config']['email'] = \
-                netcfg.get('network', 'email').strip()
-
-        # 'license': license of the network
-        if 'license' in netcfg.options('network'):
-            network['config']['license'] = \
-                netcfg.get('network', 'license').strip()
-
-        # 'type': type of the network
-        if 'type' in netcfg.options('network'):
-            network['config']['type'] = \
-                netcfg.get('network', 'type').strip()
-
-        # 'labelformat': annotation of the nodes
-        if 'labelformat' in netcfg.options('network'):
-            network['config']['labelformat'] \
-                = netcfg.get('network', 'labelformat').strip()
-
-        # depending on type, use different methods to parse and
-        # interpret parameters and sections
-        if network['config']['type'] == 'layer.MultiLayer':
-            return self._configure_graph(path, netcfg, network)
-        if network['config']['type'] == 'layer.Shallow':
-            return self._configure_graph(path, netcfg, network)
-        if network['config']['type'] == 'layer.Factor':
-            return self._configure_graph(path, netcfg, network)
+        if network['network']['type'] in layer_networks:
+            return self._parse_layer_network(path)
 
         return nemoa.log('warning', """could not import network
             configuration: file '%s' contains unsupported network
             type '%s'.""" % (path, network['config']['type']))
 
-    def _configure_graph(self, path, netcfg, network):
+    def _parse_layer_network(self, path):
 
-        config = network['config']
+        structure = {
+            'network': {
+                'name': 'str',
+                'branch': 'str',
+                'version': 'str',
+                'about': 'str',
+                'author': 'str',
+                'email': 'str',
+                'license': 'str',
+                'type': 'str',
+                'labelformat': 'str',
+                'layers': 'list'},
+            'layer [0-9a-zA-Z]*': {
+                'type': 'str',
+                'file': 'str',
+                'nodes': 'list',
+                'size': 'int' },
+            'binding [0-9a-zA-Z]*-[0-9a-zA-Z]*': {
+                '[0-9a-zA-Z]*': 'list' }}
 
-        # 'layers': ordered list of network layers
-        if not 'layers' in netcfg.options('network'):
+        ini_dict = nemoa.common.ini_load(path, structure = structure)
+
+        if not 'network' in ini_dict:
+            return nemoa.log('warning', """could not import network
+                configuration: file '%s' does not contain section
+                'network'.""" % (path))
+        config = ini_dict['network'].copy()
+
+        # layers
+        if not 'layers' in config:
             return nemoa.log('warning', """file '%s' does not
                 contain parameter 'layers'.""" % (path))
-        else:
-            config['layer'] = nemoa.common.str_to_list(
-                netcfg.get('network', 'layers'))
+        config['layer'] = config['layers']
+        del config['layers']
+
+        # name
+        if not 'name' in config:
+            config['name'] = nemoa.common.get_file_basename(path)
+
+        # node labelformat
+        if not 'labelformat' in config:
+            config['labelformat'] = 'generic:string'
 
         # init network dictionary
-        config['visible'] = []
-        config['hidden'] = []
+        #config['visible'] = []
+        #config['hidden'] = []
         config['nodes'] = {}
         config['edges'] = {}
         config['layers'] = {}
@@ -161,31 +119,23 @@ class Ini:
         for layer_id, layer in enumerate(config['layer']):
 
             layer_section = 'layer ' + layer
-            if not layer_section in netcfg.sections():
+            if not layer_section in ini_dict:
                 return nemoa.log('warning', """could not import layer
                     network: file '%s' does not contain information
                     about layer '%s'.""" % (path, layer))
-
-            # TODO: type in ('gauss', 'sigmoid', 'linear')
-            # get type of layer ('type')
-            # layer type can be ether 'visible' or 'hidden'
-            if layer_id in visible_layer_ids:
-                config['visible'].append(layer)
-            else:
-                config['hidden'].append(layer)
 
             config['layers'][layer] = {}
             config['layers'][layer]['visible'] = \
                 layer_id in visible_layer_ids
 
             # get type of layer nodes
-            if 'type' in netcfg.options(layer_section):
+            if 'type' in ini_dict[layer_section]:
                 config['layers'][layer]['type'] = \
-                    netcfg.get(layer_section, 'type')
+                    ini_dict[layer_section]['type']
 
             # get nodes of layer from given list file ('file')
-            if 'file' in netcfg.options(layer_section):
-                file_str = netcfg.get(layer_section, 'file')
+            if 'file' in ini_dict[layer_section]:
+                file_str = ini_dict[layer_section]['file']
                 list_file = nemoa.workspace._expand_path(file_str)
                 if not os.path.exists(list_file):
                     return nemoa.log('error', """listfile '%s'
@@ -193,13 +143,14 @@ class Ini:
                 with open(list_file, 'r') as list_file:
                     fileLines = list_file.readlines()
                 node_list = [node.strip() for node in fileLines]
+
             # get nodes of layer from given list ('nodes')
-            elif 'nodes' in netcfg.options(layer_section):
-                node_str = netcfg.get(layer_section, 'nodes')
-                node_list = nemoa.common.str_to_list(node_str)
+            elif 'nodes' in ini_dict[layer_section]:
+                node_list = ini_dict[layer_section]['nodes']
+
             # get nodes of layer from given layer size ('size')
-            elif 'size' in netcfg.options(layer_section):
-                layer_size = int(netcfg.get(layer_section, 'size'))
+            elif 'size' in ini_dict[layer_section]:
+                layer_size = ini_dict[layer_section]['size']
                 node_list = []
                 for n in xrange(1, layer_size + 1):
                     node_list.append('n%s' % (n))
@@ -225,7 +176,7 @@ class Ini:
             edge_section = 'binding %s-%s' % (src_layer, tgt_layer)
 
             # create full binding between two layers if not specified
-            if not edge_section in netcfg.sections():
+            if not edge_section in ini_dict:
                 for src_node in config['nodes'][src_layer]:
                     for tgt_node in config['nodes'][tgt_layer]:
                         edge = (src_node, tgt_node)
@@ -233,14 +184,13 @@ class Ini:
                 continue
 
             # get edges from '[binding *]' section
-            for src_node in netcfg.options(edge_section):
+            for src_node in ini_dict[edge_section]:
                 src_node = src_node.strip()
                 if src_node == '':
                     continue
                 if not src_node in config['nodes'][src_layer]:
                     continue
-                for tgt_node in nemoa.common.str_to_list(
-                    netcfg.get(edge_section, src_node)):
+                for tgt_node in ini_dict[edge_section][src_node]:
                     tgt_node = tgt_node.strip()
                     if tgt_node == '':
                         continue
@@ -262,4 +212,4 @@ class Ini:
                     layer '%s' are not connected!"""
                     % (src_layer, tgt_layer))
 
-        return network
+        return {'config': config}

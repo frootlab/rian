@@ -32,7 +32,17 @@ def ini_dumps(dictionary, nosection = True):
 
     return string
 
-#def ini_load(path, )
+def ini_load(path, structure = None):
+
+    # get config file parser
+    parser = ConfigParser.ConfigParser()
+    parser.optionxform = str
+    parser.read(path)
+
+    # parse sections and create config dictionary
+    if isinstance(structure, dict):
+        return ini_parse_regex(parser, structure)
+    return ini_parse(parser)
 
 def ini_loads(string, structure = None, nosection = False):
 
@@ -48,37 +58,60 @@ def ini_loads(string, structure = None, nosection = False):
     else:
         config_string = '\n'.join(config_list)
 
-    # get config file handler
-    config_handler = ConfigParser.ConfigParser()
-    config_handler.optionxform = str
-    config_handler.readfp(io.BytesIO(config_string))
+    # get config file parser
+    parser = ConfigParser.ConfigParser()
+    parser.optionxform = str
+    parser.readfp(io.BytesIO(config_string))
+
+    # parse sections and create config dictionary
+    if isinstance(structure, dict):
+        config = ini_parse_regex(parser, structure)
+    else:
+        config = ini_parse(parser)
+
+    if nosection: return config['root']
+    return config
+
+def ini_parse_regex(parser, structure):
 
     # parse sections and create config dictionary
     config = {}
-    if isinstance(structure, dict):
-        re_section = re.compile('\A' + '|'.join(structure.keys()))
-    for section in config_handler.sections():
+    regex_section = {}
+    for key in structure.keys():
+        regex_section[key] = re.compile('\A' + key)
 
-        # use regular expression to match sections in structure
-        if isinstance(structure, dict):
-            re_match = re_section.match(section)
-            if not re_match: continue
-            struc_sec = re_match.group()
-            if not struc_sec in structure.keys(): continue
-            section_dict = {}
-            for (reg_ex_key, fmt) in structure[struc_sec].items():
-                re_key = re.compile(reg_ex_key)
-                for key in config_handler.options(section):
-                    if not re_key.match(key): continue
-                    val = config_handler.get(section, key)
-                    section_dict[key] = \
-                        nemoa.common.str_to_type(val, fmt)
-        else:
-            section_dict = {}
-            for key in config_handler.options(section):
-                section_dict[key] = config_handler.get(section, key)
+    for section in parser.sections():
+
+        # use regular expression to match sections
+        section_regex = None
+        for key in structure.keys():
+            regex_match = regex_section[key].match(section)
+            if not regex_match: continue
+            section_regex = key
+            break
+        if not section_regex: continue
+        section_name = regex_match.group()
+        section_dict = {}
+
+        # use regular expression to match keys
+        for regex_key, fmt in structure[section_regex].iteritems():
+            re_key = re.compile(regex_key)
+            for key in parser.options(section):
+                if not re_key.match(key): continue
+                val = parser.get(section, key)
+                section_dict[key] = \
+                    nemoa.common.str_to_type(val, fmt)
 
         config[section] = section_dict
 
-    if nosection: return config['root']
+    return config
+
+def ini_parse(parser):
+
+    config = {}
+    for section in parser.sections():
+        config[section] = {}
+        for key in parser.options(section):
+            config[section][key] = parser.get(section, key)
+
     return config
