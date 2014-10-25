@@ -29,7 +29,7 @@ class Model:
         """Initialize model and configure dataset, network and system."""
 
         self._set_copy(**kwargs)
-        self.configure()
+
 
         # TODO: ugly workaround -> because parameters are lost
         # during new configuration
@@ -533,12 +533,7 @@ class Model:
         if nemoa.type.is_system(self.system):
             return self.system.set('copy', **system)
 
-        if not nemoa.type.is_network(self.network):
-            return nemoa.log('error', """could not configure system:
-                model does not contain network instance.""")
-
-        self.system = nemoa.system.new(
-            config = system['config'], network = self.network)
+        self.system = nemoa.system.new(**system)
         return True
 
     def save(self, *args, **kwargs):

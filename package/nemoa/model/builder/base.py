@@ -38,9 +38,9 @@ class Model:
                 self.settings[key] = val
 
     def build(self):
-        model_dict = {}
 
-        # get dataset, network and system configurations
+        # create model dictionary including dataset, network and system
+        model_dict = {}
         model_dict['dataset'] \
             = nemoa.dataset.load(self.settings['dataset'])
         if not model_dict['dataset']: return {}
@@ -50,8 +50,6 @@ class Model:
         model_dict['system'] \
             = nemoa.system.load(self.settings['system'])
         if not model_dict['system']: return {}
-
-        # create model configuration
         model_dict['config'] = {
             'name': '-'.join([
                 model_dict['dataset']['config']['name'],
@@ -59,11 +57,11 @@ class Model:
                 model_dict['system']['config']['name']]),
             'type': 'base.Model'}
 
-        # initialize and optimize parameters of model
-        if self.settings['initialize'] or self.settings['optimize']:
-            model = nemoa.model.new(**model_dict)
-            model.initialize()
-            if self.settings['optimize']: model.optimize()
-            model_dict = model.get('copy')
+        # create instance of model
+        # configure, iniztalize and optimize model
+        model = nemoa.model.new(**model_dict)
+        model.configure()
+        if self.settings['initialize']: model.initialize()
+        if self.settings['optimize']: model.optimize()
 
-        return model_dict
+        return model.get('copy')

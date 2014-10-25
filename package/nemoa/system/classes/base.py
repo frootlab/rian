@@ -15,12 +15,13 @@ class System:
         'params': {},
         'init': {},
         'optimize': {}}
+    _params = None
 
     def __init__(self, network = None, **kwargs):
         """Import system from dictionary."""
 
         self._set_copy(**kwargs)
-        if network: self._set_params(network = network)
+        #if network: self._set_params(network = network)
 
     def configure(self, network = None):
         """Configure system to network."""
@@ -606,7 +607,7 @@ class System:
     def _set_params(self, params = None, network = None):
         """Set system parameters from dictionary."""
 
-        if not hasattr(self, '_params'):
+        if not hasattr(self, '_params') or not self._params:
             self._params = {'units': {}, 'links': {}}
 
         # get system parameters from dict

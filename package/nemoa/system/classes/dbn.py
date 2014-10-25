@@ -98,8 +98,6 @@ class DBN(nemoa.system.classes.ann.ANN):
         nemoa.log('set', indent = '+1')
 
         # configure subsystems for pretraining
-        nemoa.log('configure subsystems')
-        nemoa.log('set', indent = '+1')
         if not 'units' in self._params:
             nemoa.log('error', """could not configure subsystems:
                 no layers have been defined!""")
@@ -109,12 +107,9 @@ class DBN(nemoa.system.classes.ann.ANN):
         # create and configure subsystems
         sub_systems = []
 
-        # TODO: find better solution
         all_visible = self._params['units'][0]['id'] \
             + self._params['units'][-1]['id']
 
-        # TODO: find out why all_visible differs
-        # from dataset.get('columns')
         for layer_id in xrange((len(self._params['units']) - 1)  / 2):
             src = self._params['units'][layer_id]
             tgt = self._params['units'][layer_id + 1]
@@ -134,7 +129,7 @@ class DBN(nemoa.system.classes.ann.ANN):
                 hidden_nodes = hidden['nodes'],
                 hidden_type = hidden['type'])
 
-            # create subsystem configuration
+            # create subsystem and configure with network
             config = { 'name': name }
             if src['visible']:
                 config['type'] = \
@@ -142,16 +137,8 @@ class DBN(nemoa.system.classes.ann.ANN):
             else:
                 config['type'] = \
                     self._config['params']['hidden_system_type']
-
-            # create subsystem instance
-            system = nemoa.system.new(
-                config = config, network = network)
-
-            # TODO: find better sollution
-            unit_count = len(system.get('units'))
-            link_count = len(system.get('links'))
-            nemoa.log("adding subsystem: '%s' (%s units, %s links)" %
-                (system.get('name'), unit_count, link_count))
+            system = nemoa.system.new(config = config)
+            system.configure(network)
 
             # link subsystem
             sub_systems.append(system)
@@ -172,8 +159,6 @@ class DBN(nemoa.system.classes.ann.ANN):
                 tgt['init'] = system._params['units'][1]
                 system._config['init']['ignore_units'] = ['visible']
                 system._config['optimize']['ignore_units'] = ['visible']
-
-        nemoa.log('set', indent = '-1')
 
         # Optimize subsystems
 
@@ -210,18 +195,12 @@ class DBN(nemoa.system.classes.ann.ANN):
         # reset data to initial state (before transformation)
         dataset.set('copy', **dataset_backup)
 
-        # copy and enrolle parameters of subsystems to dbn
-        nemoa.log('initialize system with subsystem parameters')
-        nemoa.log('set', indent = '+1')
-
         # keep original inputs and outputs
         mapping = self.mapping()
         inputs = self._units[mapping[0]].params['id']
         outputs = self._units[mapping[-1]].params['id']
 
         # initialize ann with rbm optimized parameters
-        nemoa.log("""initialize unit and link parameters
-            from subsystems (enrolling)""")
         units = self._params['units']
         links = self._params['links']
         central_layer_id = (len(units) - 1) / 2
@@ -266,7 +245,7 @@ class DBN(nemoa.system.classes.ann.ANN):
         self._remove_units(self.mapping()[0], outputs)
         self._remove_units(self.mapping()[-1], inputs)
 
-        nemoa.log('set', indent = '-2')
+        nemoa.log('set', indent = '-1')
         return True
 
     def _optimize_finetuning(self, dataset, schedule, tracker):
