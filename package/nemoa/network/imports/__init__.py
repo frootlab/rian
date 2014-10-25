@@ -36,59 +36,74 @@ def filetypes(filetype = None):
 
     return False
 
-def load(path, filetype = None, **kwargs):
-    """Import network from file."""
+def load(path, filetype = None, workspace = None, **kwargs):
+    """Import network dictionary from file or workspace."""
 
-    # get path
-    if not os.path.isfile(path) and 'workspace' in kwargs:
-        # import workspace and get path and filetype from workspace
-        if not kwargs['workspace'] == nemoa.workspace.name():
-            if not nemoa.workspace.load(kwargs['workspace']):
+    # try if path exists or import given workspace and get path from
+    # workspace or get path from current workspace
+    if not os.path.isfile(path) and workspace:
+        current_workspace = nemoa.workspace.name()
+        if not workspace == current_workspace:
+            if not nemoa.workspace.load(workspace):
                 nemoa.log('error', """could not import network:
-                    workspace '%s' does not exist"""
-                    % (kwargs['workspace']))
+                    workspace '%s' does not exist""" % (workspace))
                 return  {}
-        name = '.'.join([kwargs['workspace'], path])
-        config = nemoa.workspace.get('network', name = name)
+        config = nemoa.workspace.get('network', path)
+        if not workspace == current_workspace and current_workspace:
+            nemoa.workspace.load(current_workspace)
         if not isinstance(config, dict):
             nemoa.log('error', """could not import network:
-                workspace '%s' does not contain network '%s'."""
-                % (kwargs['workspace'], path))
+                workspace '%s' does not contain a network '%s'."""
+                % (workspace, path))
             return  {}
+        if not 'path' in config:
+            return {'config': config}
         path = config['path']
-    else:
+    if not os.path.isfile(path):
+        config = nemoa.workspace.find('network', path)
+        if not isinstance(config, dict):
+            current_workspace = nemoa.workspace.name()
+            if current_workspace:
+                nemoa.log('error', """could not import network:
+                    current workspace '%s' does not contain a network
+                    '%s'.""" % (current_workspace, path))
+            else:
+                nemoa.log('error', """could not import network:
+                    file '%s' does not exist.""" % (path))
+            return  {}
+        if not 'path' in config: return {'config': config}
+        path = config['path']
+    if not os.path.isfile(path):
         nemoa.log('error', """could not import network:
             file '%s' does not exist.""" % (path))
         return {}
 
     # if filetype is not given get filtype from file extension
+    # and test if filetype is supported
     if not filetype:
         filetype = nemoa.common.get_file_extension(path).lower()
-
-    # test if filetype is supported
     if not filetype in filetypes().keys():
         return nemoa.log('error', """could not import network:
             filetype '%s' is not supported.""" % (filetype))
 
+    # import, check and update dictionary
     module_name = filetypes(filetype)[0]
     if module_name == 'archive':
-        network_dict = nemoa.network.imports.archive.load(
-            path, **kwargs)
+        network = nemoa.network.imports.archive.load(path, **kwargs)
     elif module_name == 'graph':
-        network_dict = nemoa.network.imports.graph.load(
-            path, **kwargs)
+        network = nemoa.network.imports.graph.load(path, **kwargs)
     elif module_name == 'text':
-        network_dict = nemoa.network.imports.text.load(
-            path, **kwargs)
-    else:
-        return False
+        network = nemoa.network.imports.text.load(path, **kwargs)
+    if not network:
+        nemoa.log('error', """could not import network: file '%s' is
+            not valid.""" % (path))
+        return {}
+    if not 'source' in network['config']:
+        network['config']['source'] = {}
+    network['config']['path'] = path
+    network['config']['workspace'] = nemoa.workspace.name()
+    network['config']['source']['file'] = path
+    network['config']['source']['filetype'] = filetype
 
-    # update source
-    if not 'source' in network_dict['config']:
-        network_dict['config']['source'] = {}
-    network_dict['config']['path'] = path
-    network_dict['config']['source']['file'] = path
-    network_dict['config']['source']['filetype'] = filetype
-
-    return network_dict
+    return network
 

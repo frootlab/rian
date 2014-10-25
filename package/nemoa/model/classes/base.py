@@ -29,63 +29,41 @@ class Model:
         """Initialize model and configure dataset, network and system."""
 
         self._set_copy(**kwargs)
-        self.dataset.configure(network = self.network)
-        self.network._configure(dataset = self.dataset,
-            system = self.system)
-        self.system.configure(network = self.network)
+        self.configure()
 
-    def _configure(self):
+        # TODO: ugly workaround -> because parameters are lost
+        # during new configuration
+        #self._set_copy(**kwargs)
+
+    def configure(self):
         """Configure model."""
-        nemoa.log("configure model '%s'" % (self._config['name']))
-        nemoa.log('set', indent = '+1')
-        if not 'check' in self._config:
-            self._config['check'] = {'dataset': False,
-                'network': False, 'system': False}
-        self._config['check']['dataset'] = \
-            self.dataset.configure(network = self.network)
-        if not self._config['check']['dataset']:
-            nemoa.log('error', """could not configure model: dataset
-                could not be configured!""")
-            nemoa.log('set', indent = '-1')
-            return False
-        self._config['check']['network'] = \
-            self.network._configure(dataset = self.dataset,
-                system = self.system)
-        if not self._config['check']['network']:
-            nemoa.log('error', """could not configure model: network
-                could not be configured!""")
-            nemoa.log('set', indent = '-1')
-            return False
-        self._config['check']['system'] = \
-            self.system.configure(network = self.network)
-        if not self._config['check']['system']:
-            nemoa.log('error', """could not configure model: system
-                could not be configured!""")
-            nemoa.log('set', indent = '-1')
-            return False
-        nemoa.log('set', indent = '-1')
-        return True
 
-    def _is_configured(self):
-        """Return True if model is allready configured."""
-        return 'check' in self._config \
-            and self._config['check']['dataset'] \
-            and self._config['check']['network'] \
-            and self._config['check']['system']
+        if not nemoa.type.is_dataset(self.dataset):
+            return nemoa.log('error', """could not configure model:
+                dataset is not valid.""")
+        if not nemoa.type.is_network(self.network):
+            return nemoa.log('error', """could not configure model:
+                network is not valid.""")
+        if not nemoa.type.is_system(self.system):
+            return nemoa.log('error', """could not configure model:
+                system is not valid.""")
 
-    def _initialize(self):
-        """Initialize model parameters and return self."""
+        retval = True
+
+        retval &= self.dataset.configure(self.network)
+        retval &= self.network.configure(self.dataset)
+        retval &= self.system.configure(self.network)
+
+        return retval
+
+    def initialize(self):
+        """Initialize model parameters."""
 
         # TODO: check if system is configured
 
         # check if model is empty and can not be initialized
         if (self.dataset == None or self.system == None) \
             and self._is_empty(): return self
-
-        # check if model is configured
-        if not self._is_configured():
-            return nemoa.log('error', """could not initialize model:
-                model is not yet configured.""")
 
         # check dataset
         if not nemoa.type.is_dataset(self.dataset):
@@ -100,13 +78,15 @@ class Model:
         # check if system is empty
         if self.system._is_empty(): return False
 
-        # initialize system parameters with dataset
+        # TODO: preprocess data
+
+        # initialize system parameters by using statistics from dataset
         self.system.initialize(self.dataset)
 
-        # update network with initial system parameters
-        self.network._update(system = self.system)
+        # initialize network parameters with system parameters
+        self.network.initialize(self.system)
 
-        return self
+        return True
 
     def optimize(self, schedule = None, **kwargs):
         """Optimize system parameters."""
@@ -120,19 +100,12 @@ class Model:
             nemoa.log('set', indent = '-1')
             return self
 
-        # check if model is configured
-        if not self._is_configured():
-            nemoa.log('error', """could not optimize model:
-                model is not yet configured.""")
-            nemoa.log('set', indent = '-1')
-            return False
-
         # get optimization schedule
         if schedule == None:
             schedule = self.system.get('type') + '.default'
         elif not '.' in schedule:
             schedule = self.system.get('type') + '.' + schedule
-        schedule = nemoa.workspace._get_config(
+        schedule = nemoa.workspace.find(
             type = 'schedule', config = schedule,
             merge = ['params', self.system.get('type')],
             **kwargs)
@@ -156,7 +129,9 @@ class Model:
                 dataset = self.dataset, schedule = schedule)
 
         nemoa.log('set', indent = '-1')
-        self.network._update(system = self.system)
+
+        # update network parameters from system parameters
+        self.network.initialize(self.system)
         nemoa.log('set', indent = '-1')
 
         return self

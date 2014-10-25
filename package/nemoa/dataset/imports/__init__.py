@@ -30,63 +30,71 @@ def filetypes(filetype = None):
 
     return False
 
-def load(path, filetype = None, **kwargs):
-    """Import dataset from file."""
+def load(path, filetype = None, workspace = None, **kwargs):
+    """Import dataset dictionary from file or workspace."""
 
-    # get path
-    if not os.path.isfile(path) and 'workspace' in kwargs:
-        # import workspace and get path and filetype from workspace
-        if not kwargs['workspace'] == nemoa.workspace.name():
-            if not nemoa.workspace.load(kwargs['workspace']):
+    # try if path exists or import given workspace and get path from
+    # workspace or get path from current workspace
+    if not os.path.isfile(path) and workspace:
+        current_workspace = nemoa.workspace.name()
+        if not workspace == current_workspace:
+            if not nemoa.workspace.load(workspace):
                 nemoa.log('error', """could not import dataset:
-                    workspace '%s' does not exist"""
-                    % (kwargs['workspace']))
+                    workspace '%s' does not exist""" % (workspace))
                 return  {}
-        name = '.'.join([kwargs['workspace'], path])
-        config = nemoa.workspace.get('dataset', name = name)
+        config = nemoa.workspace.find('dataset', path)
+        if not workspace == current_workspace and current_workspace:
+            nemoa.workspace.load(current_workspace)
         if not isinstance(config, dict):
             nemoa.log('error', """could not import dataset:
-                workspace '%s' does not contain dataset '%s'."""
-                % (kwargs['workspace'], path))
+                workspace '%s' does not contain a dataset '%s'."""
+                % (workspace, path))
             return  {}
+        if not 'path' in config:
+            return {'config': config}
         path = config['path']
-    else:
+    if not os.path.isfile(path):
+        config = nemoa.workspace.find('dataset', path)
+        if not isinstance(config, dict):
+            current_workspace = nemoa.workspace.name()
+            if current_workspace:
+                nemoa.log('error', """could not import dataset:
+                    current workspace '%s' does not contain a dataset
+                    '%s'.""" % (current_workspace, path))
+            else:
+                nemoa.log('error', """could not import dataset:
+                    file '%s' does not exist.""" % (path))
+            return  {}
+        if not 'path' in config: return {'config': config}
+        path = config['path']
+    if not os.path.isfile(path):
         nemoa.log('error', """could not import dataset:
             file '%s' does not exist.""" % (path))
         return {}
 
     # if filetype is not given get filtype from file extension
+    # and check if filetype is supported
     if not filetype:
         filetype = nemoa.common.get_file_extension(path).lower()
-
-    # test if filetype is supported
     if not filetype in filetypes().keys():
         return nemoa.log('error', """could not import dataset:
             filetype '%s' is not supported.""" % (filetype))
 
+    # import and check dictionary
     module_name = filetypes(filetype)[0]
     if module_name == 'archive':
-        dataset_dict = nemoa.dataset.imports.archive.load(
-            path, **kwargs)
+        dataset = nemoa.dataset.imports.archive.load(path, **kwargs)
     elif module_name == 'text':
-        dataset_dict = nemoa.dataset.imports.text.load(
-            path, **kwargs)
-    else:
-        return False
-
-    # test dataset dictionary
-    if not dataset_dict:
-        nemoa.log('error', """could not import dataset:
-            file '%s' is not valid.""" % (path))
+        dataset = nemoa.dataset.imports.text.load(path, **kwargs)
+    if not dataset:
+        nemoa.log('error', """could not import dataset: file '%s' is
+            not valid.""" % (path))
         return {}
+    if not 'source' in dataset['config']:
+        dataset['config']['source'] = {}
+    dataset['config']['path'] = path
+    dataset['config']['workspace'] = nemoa.workspace.name()
+    dataset['config']['source']['file'] = path
+    dataset['config']['source']['filetype'] = filetype
 
-    # update source
-    dataset_dict['config']['path'] = path
-
-    # TODO: old
-    if not 'source' in dataset_dict['config']:
-        dataset_dict['config']['source'] = {}
-    dataset_dict['config']['source']['file'] = path
-    dataset_dict['config']['source']['filetype'] = filetype
-
-    return dataset_dict
+    return dataset

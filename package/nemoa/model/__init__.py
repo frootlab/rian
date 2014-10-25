@@ -4,6 +4,7 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+import nemoa.model.builder
 import nemoa.model.classes
 import nemoa.model.exports
 import nemoa.model.imports
@@ -11,6 +12,10 @@ import nemoa.model.imports
 def copy(model, *args, **kwargs):
     """Create copy of model."""
     return new(**model.get('copy'))
+
+def create(*args, **kwargs):
+    """Create new model from building script."""
+    return new(**nemoa.model.builder.build(*args, **kwargs))
 
 def load(*args, **kwargs):
     """Import model configuration and parameters from file."""

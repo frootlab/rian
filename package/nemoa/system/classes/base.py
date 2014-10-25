@@ -22,15 +22,14 @@ class System:
         self._set_copy(**kwargs)
         if network: self._set_params(network = network)
 
-    def configure(self, config = None, network = None):
-        """Configure system to network and dataset."""
+    def configure(self, network = None):
+        """Configure system to network."""
 
-        retval = True
+        if not nemoa.type.is_network(network):
+            return nemoa.log('error', """could not configure system:
+                network is not valid.""")
 
-        if config: retval &= self._set_config(config)
-        if network: retval &= self._set_params(network = network)
-
-        return retval
+        return self._set_params(network = network)
 
     def _configure_set_dataset(self, dataset):
         """check if dataset columns match with visible units."""

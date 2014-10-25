@@ -24,59 +24,69 @@ def filetypes(filetype = None):
 
     return False
 
-def load(path, filetype = None, **kwargs):
-    """Import system from file."""
+def load(path, filetype = None, workspace = None, **kwargs):
+    """Import system dictionary from file or workspace."""
 
-    # get path
-    if os.path.isfile(path):
-        pass
-    elif 'workspace' in kwargs:
-        # import workspace and get path and filetype from workspace
-        if not kwargs['workspace'] == nemoa.workspace.name():
-            if not nemoa.workspace.load(kwargs['workspace']):
+    # try if path exists or import given workspace and get path from
+    # workspace or get path from current workspace
+    if not os.path.isfile(path) and workspace:
+        current_workspace = nemoa.workspace.name()
+        if not workspace == current_workspace:
+            if not nemoa.workspace.load(workspace):
                 nemoa.log('error', """could not import system:
-                    workspace '%s' does not exist"""
-                    % (kwargs['workspace']))
+                    workspace '%s' does not exist""" % (workspace))
                 return  {}
-        name = '.'.join([kwargs['workspace'], path])
-        config = nemoa.workspace.get('system', name = name)
+        config = nemoa.workspace.find('system', path)
+        if not workspace == current_workspace and current_workspace:
+            nemoa.workspace.load(current_workspace)
         if not isinstance(config, dict):
             nemoa.log('error', """could not import system:
-                workspace '%s' does not contain system '%s'."""
-                % (kwargs['workspace'], path))
+                workspace '%s' does not contain a system '%s'."""
+                % (workspace, path))
             return  {}
-        path = config['source']['file']
-    else:
+        if not 'path' in config:
+            return {'config': config}
+        path = config['path']
+    if not os.path.isfile(path):
+        config = nemoa.workspace.find('system', path)
+        if not isinstance(config, dict):
+            current_workspace = nemoa.workspace.name()
+            if current_workspace:
+                nemoa.log('error', """could not import system:
+                    current workspace '%s' does not contain a system
+                    '%s'.""" % (current_workspace, path))
+            else:
+                nemoa.log('error', """could not import system:
+                    file '%s' does not exist.""" % (path))
+            return  {}
+        if not 'path' in config: return {'config': config}
+        path = config['path']
+    if not os.path.isfile(path):
         nemoa.log('error', """could not import system:
             file '%s' does not exist.""" % (path))
         return {}
 
     # if filetype is not given get filtype from file extension
+    # and check if filetype is supported
     if not filetype:
         filetype = nemoa.common.get_file_extension(path).lower()
-
-    # test if filetype is supported
     if not filetype in filetypes().keys():
         return nemoa.log('error', """could not import system:
             filetype '%s' is not supported.""" % (filetype))
 
+    # import and check dictionary
     module_name = filetypes(filetype)[0]
     if module_name == 'archive':
-        system_dict = nemoa.system.imports.archive.load(
-            path, **kwargs)
-    else:
-        return False
-
-    # test system dictionary
-    if not system_dict:
-        nemoa.log('error', """could not import system:
-            file '%s' is not valid.""" % (path))
+        system = nemoa.system.imports.archive.load(path, **kwargs)
+    if not system:
+        nemoa.log('error', """could not import system: file '%s' is
+            not valid.""" % (path))
         return {}
+    if not 'source' in system['config']:
+        system['config']['source'] = {}
+    system['config']['path'] = path
+    system['config']['workspace'] = nemoa.workspace.name()
+    system['config']['source']['file'] = path
+    system['config']['source']['filetype'] = filetype
 
-    # update source
-    if not 'source' in system_dict['config']:
-        system_dict['config']['source'] = {}
-    system_dict['config']['source']['file'] = path
-    system_dict['config']['source']['filetype'] = filetype
-
-    return system_dict
+    return system

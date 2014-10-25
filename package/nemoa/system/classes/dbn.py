@@ -43,9 +43,7 @@ class DBN(nemoa.system.classes.ann.ANN):
             'hidden': 'auto',
             'visible_class': 'gauss',
             'hidden_class': 'sigmoid',
-            'visibleSystem': None,
             'visible_system_type': 'rbm.GRBM',
-            'hiddenSystem': None,
             'hidden_system_type': 'rbm.RBM' },
         'init': {
             'check_dataset': False,
@@ -110,57 +108,34 @@ class DBN(nemoa.system.classes.ann.ANN):
 
         # create and configure subsystems
         sub_systems = []
+
+        # TODO: find better solution
+        all_visible = self._params['units'][0]['id'] \
+            + self._params['units'][-1]['id']
+
+        # TODO: find out why all_visible differs
+        # from dataset.get('columns')
         for layer_id in xrange((len(self._params['units']) - 1)  / 2):
             src = self._params['units'][layer_id]
             tgt = self._params['units'][layer_id + 1]
             links = self._params['links'][(layer_id, layer_id + 1)]
 
-            # create subsystem network configuration
-            if not src['visible']:
-                visible_units = src['id']
-            else:
-                visible_units = self._params['units'][0]['id'] \
-                    + self._params['units'][-1]['id']
-            hidden_units = tgt['id']
-            network_nodes = {
-                'visible': visible_units,
-                'hidden': hidden_units}
-
-            network_edges = {('visible', 'hidden'): []}
-            for v in visible_units:
-                for h in hidden_units:
-                    network_edges[('visible', 'hidden')].append((v, h))
-
-            network_config = nemoa.network.builder.build('factor',
-                name = '%s ↔ %s' % (src['layer'], tgt['layer']),
-                visible_nodes = visible_units,
-                hidden_nodes = hidden_units,
-                visible_type = self._config['params']['visible_class'],
-                hidden_type = self._config['params']['hidden_class'])
-
-            network = nemoa.network.new(**network_config)
-
-            ## create network of subsystem
-            #network = nemoa.network.new(config = {
-                #'name': '%s ↔ %s' % (src['layer'], tgt['layer']),
-                #'type': 'layer.Factor',
-                #'layer': ['visible', 'hidden'],
-                #'layers': {
-                    #'visible': {
-                        #'visible': True,
-                        #'type': \
-                            #self._config['params']['visible_class']},
-                    #'hidden': {
-                        #'visible': False,
-                        #'type': \
-                            #self._config['params']['hidden_class']}},
-                #'nodes': network_nodes,
-                #'edges': network_edges,
-                #'labelencapsulate': False,
-                #'labelformat': 'generic:string' })
+            # create network of subsystem
+            name = '%s ↔ %s' % (src['layer'], tgt['layer'])
+            visible = {
+                'nodes': all_visible if src['visible'] else src['id'],
+                'type': self._config['params']['visible_class'] }
+            hidden = {
+                'nodes': tgt['id'],
+                'type': self._config['params']['hidden_class'] }
+            network = nemoa.network.create('factor', name = name,
+                visible_nodes = visible['nodes'],
+                visible_type = visible['type'],
+                hidden_nodes = hidden['nodes'],
+                hidden_type = hidden['type'])
 
             # create subsystem configuration
-            config = {'name': '%s ↔ %s' % (src['layer'], tgt['layer'])}
+            config = { 'name': name }
             if src['visible']:
                 config['type'] = \
                     self._config['params']['visible_system_type']
@@ -172,6 +147,7 @@ class DBN(nemoa.system.classes.ann.ANN):
             system = nemoa.system.new(
                 config = config, network = network)
 
+            # TODO: find better sollution
             unit_count = len(system.get('units'))
             link_count = len(system.get('links'))
             nemoa.log("adding subsystem: '%s' (%s units, %s links)" %

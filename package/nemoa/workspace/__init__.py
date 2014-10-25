@@ -44,8 +44,8 @@ def load(*args, **kwargs):
     if not 'config' in _shared: _init()
     return _shared['config'].load(*args, **kwargs)
 
-def _get_config(type = None, config = None,
-    merge = ['params'], **kwargs):
+def find(type = None, config = None,
+    merge = ['params'], scope = 'local', **kwargs):
     """Return object configuration as dictionary."""
     if config == None: return {}
     if isinstance(config, dict): return copy.deepcopy(config)
@@ -81,6 +81,4 @@ def _get_config(type = None, config = None,
         return nemoa.network.load(cfg['path'])['config']
 
     return cfg
-
-
 

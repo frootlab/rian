@@ -47,12 +47,12 @@ class Workspace:
         """execute nemoa script."""
         script_name = name \
             if '.' in name else '%s.%s' % (self._workspace, name)
-        config = nemoa.workspace._get_config(
+        config = nemoa.workspace.find(
             type = 'script', config = script_name, **kwargs)
 
         if not config and not '.' in name:
             script_name = 'base.' + name
-            config = nemoa.workspace._get_config(
+            config = nemoa.workspace.find(
                 type = 'script', config = script_name, **kwargs)
         if not config: return False
         if not os.path.isfile(config['path']):
@@ -62,36 +62,17 @@ class Workspace:
         script = imp.load_source('script', config['path'])
         return script.main(self, **config['params'])
 
-    def dataset(self, config = None, **kwargs):
-        """Return new dataset instance."""
-        return self._get_instance('dataset', config, **kwargs)
+    #def dataset(self, config = None, **kwargs):
+        #"""Return new dataset instance."""
+        #return self._get_instance('dataset', config, **kwargs)
 
-    def network(self, config = None, **kwargs):
-        """Return new network instance."""
-        return self._get_instance('network', config, **kwargs)
+    #def network(self, config = None, **kwargs):
+        #"""Return new network instance."""
+        #return self._get_instance('network', config, **kwargs)
 
-    def system(self, config = None, **kwargs):
-        """Return new system instance."""
-        return self._get_instance('system', config, **kwargs)
-
-    def model(self, name = None, **kwargs):
-        """Return model instance."""
-
-        # try to import model from file
-        if isinstance(name, str) and not kwargs:
-            if not name in self.list(type = 'model'):
-                return nemoa.log('error', """could not import model:
-                    a model with name '%s' does not exists!""" % (name))
-            return self._import_model(name)
-
-        # check keyword arguments
-        if not ('network' in kwargs and 'dataset' in kwargs \
-            and 'system' in kwargs):
-            return nemoa.log('error', """could not create model:
-                dataset, network and system parameters needed!""")
-
-        # try to create new model
-        return self._create_new_model(name, **kwargs)
+    #def system(self, config = None, **kwargs):
+        #"""Return new system instance."""
+        #return self._get_instance('system', config, **kwargs)
 
     def _get_instance(self, type = None, config = None,
         empty = False, **kwargs):
@@ -104,7 +85,7 @@ class Workspace:
         module = importlib.import_module('nemoa.' + str(type))
 
         # get objects configuration as dictionary
-        config = nemoa.workspace._get_config(type = type,
+        config = nemoa.workspace.find(type = type,
             config = config, **kwargs)
         if not isinstance(config, dict):
             nemoa.log('error', """could not create %s instance:
@@ -127,158 +108,176 @@ class Workspace:
         nemoa.log('set', indent = '-1')
         return instance
 
-    def _create_new_model(self, name, config = None,
-        dataset = None, network = None, system = None,
-        configure = True, initialize = True):
+    #def model(self, name = None, **kwargs):
+        #"""Return model instance."""
 
-        nemoa.log('create new model')
-        nemoa.log('set', indent = '+1')
+        ## try to import model from file
+        #if isinstance(name, str) and not kwargs:
+            #if not name in self.list(type = 'model'):
+                #return nemoa.log('error', """could not import model:
+                    #a model with name '%s' does not exists!""" % (name))
+            #return self._import_model(name)
 
-        model = self._get_model_instance(
-            name = name, config = config,
-            dataset = dataset, network = network, system  = system)
+        ## check keyword arguments
+        #if not ('network' in kwargs and 'dataset' in kwargs \
+            #and 'system' in kwargs):
+            #return nemoa.log('error', """could not create model:
+                #dataset, network and system parameters needed!""")
 
-        if not nemoa.type.is_model(model):
-            nemoa.log('error', 'could not create new model!')
-            nemoa.log('set', indent = '-1')
-            return False
+        ## try to create new model
+        #return self._create_new_model(name, **kwargs)
 
-        if configure: model._configure() # configure model
-        if initialize: model._initialize() # initialize model parameters
+    #def _create_new_model(self, name, config = None,
+        #dataset = None, network = None, system = None,
+        #configure = True, initialize = True):
 
-        nemoa.log('set', indent = '-1')
-        return model
+        #nemoa.log('create new model')
+        #nemoa.log('set', indent = '+1')
 
-    def _get_model_instance(self, name = None, config = None,
-        dataset = None, network = None, system = None):
-        """Return new model instance."""
+        #model = self._get_model_instance(
+            #name = name, config = config,
+            #dataset = dataset, network = network, system  = system)
 
-        nemoa.log('create model instance')
-        nemoa.log('set', indent = '+1')
+        #if not nemoa.type.is_model(model):
+            #nemoa.log('error', 'could not create new model!')
+            #nemoa.log('set', indent = '-1')
+            #return False
 
-        # create dataset instance (if not given)
-        if not nemoa.type.is_dataset(dataset):
-            dataset = nemoa.dataset.open(dataset,
-                workspace = self._workspace)
-        if not nemoa.type.is_dataset(dataset):
-            nemoa.log('error',
-                'could not create model instance: dataset is invalid!')
-            nemoa.log('set', indent = '-1')
-            return None
+        #if configure: model._configure() # configure model
+        #if initialize: model.initialize() # initialize model parameters
 
-        # create network instance (if not given)
-        if not nemoa.type.is_network(network):
-            network = nemoa.network.open(network,
-                workspace = self._workspace)
-        if not nemoa.type.is_network(network):
-            nemoa.log('error',
-                'could not create model instance: network is invalid!')
-            nemoa.log('set', indent = '-1')
-            return None
+        #nemoa.log('set', indent = '-1')
+        #return model
 
-        # create system instance (if not given)
-        if not nemoa.type.is_system(system):
-            #system = nemoa.system.open(system,
+    #def _get_model_instance(self, name = None, config = None,
+        #dataset = None, network = None, system = None):
+        #"""Return new model instance."""
+
+        #nemoa.log('create model instance')
+        #nemoa.log('set', indent = '+1')
+
+        ## create dataset instance (if not given)
+        #if not nemoa.type.is_dataset(dataset):
+            #dataset = nemoa.dataset.open(dataset,
                 #workspace = self._workspace)
-            system = self._get_instance(
-                type = 'system', config = system)
-        if not nemoa.type.is_system(system):
-            nemoa.log('error',
-                'could not create model instance: system is invalid!')
-            nemoa.log('set', indent = '-1')
-            return None
+        #if not nemoa.type.is_dataset(dataset):
+            #nemoa.log('error',
+                #'could not create model instance: dataset is invalid!')
+            #nemoa.log('set', indent = '-1')
+            #return None
 
-        # create name string (if not given)
-        if name == None:
-            name = '-'.join([
-                str(dataset.get('name')),
-                str(network.get('name')),
-                str(system.get('name'))])
+        ## create network instance (if not given)
+        #if not nemoa.type.is_network(network):
+            #network = nemoa.network.open(network,
+                #workspace = self._workspace)
+        #if not nemoa.type.is_network(network):
+            #nemoa.log('error',
+                #'could not create model instance: network is invalid!')
+            #nemoa.log('set', indent = '-1')
+            #return None
 
-        # update config
-        config = {'name': name, 'type': 'base.Model'}
+        ## create system instance (if not given)
+        #if not nemoa.type.is_system(system):
+            ##system = nemoa.system.open(system,
+                ##workspace = self._workspace)
+            #system = self._get_instance(
+                #type = 'system', config = system)
+        #if not nemoa.type.is_system(system):
+            #nemoa.log('error',
+                #'could not create model instance: system is invalid!')
+            #nemoa.log('set', indent = '-1')
+            #return None
 
-        # create model instance
-        model = nemoa.model.new(config = config,
-            dataset = dataset, network = network, system = system)
+        ## create name string (if not given)
+        #if name == None:
+            #name = '-'.join([
+                #str(dataset.get('name')),
+                #str(network.get('name')),
+                #str(system.get('name'))])
 
-        nemoa.log('set', indent = '-1')
-        return model
+        ## update config
+        #config = {'name': name, 'type': 'base.Model'}
 
-    def _import_model(self, path):
-        """Import model from file.
+        ## create model instance
+        #model = nemoa.model.new(config = config,
+            #dataset = dataset, network = network, system = system)
 
-        Opens gzip compressed model configuration and parameters. The
-        configuration is first used to configure and init a new dataset,
-        network and system instance and finally a new model instance.
-        After this the parameters of the model are overwritten by the
-        parameters from the file.
+        #nemoa.log('set', indent = '-1')
+        #return model
 
-        Args:
-            path: Path to nemoa model file (with fileextension .npz)
+    #def _import_model(self, path):
+        #"""Import model from file.
 
-        Returns:
-            Nemoa model instance
+        #Opens gzip compressed model configuration and parameters. The
+        #configuration is first used to configure and init a new dataset,
+        #network and system instance and finally a new model instance.
+        #After this the parameters of the model are overwritten by the
+        #parameters from the file.
 
-        """
+        #Args:
+            #path: Path to nemoa model file (with fileextension .npz)
 
-        nemoa.log('import model from file')
-        nemoa.log('set', indent = '+1')
+        #Returns:
+            #Nemoa model instance
 
-        # check file
-        if not os.path.exists(path):
-            if os.path.exists(
-                nemoa.workspace.path('models') + path + '.nmm'):
-                path = nemoa.workspace.path('models') + path + '.nmm'
-            else:
-                return nemoa.log('error', """could not load model '%s':
-                    file does not exist.""" % path)
+        #"""
 
-        # load model configuration and parameters from file
-        nemoa.log("load model: '%s'" % path)
-        model_copy = nemoa.common.dict_from_file(path)
+        #nemoa.log('import model from file')
+        #nemoa.log('set', indent = '+1')
 
-        # create new dataset, network, system and model instances
-        model = self._get_model_instance(
-            name = model_copy['config']['name'],
-            config = model_copy['config'],
-            dataset = model_copy['dataset']['config'],
-            network = model_copy['network']['config'],
-            system = model_copy['system']['config'])
-        if not nemoa.type.is_model(model): return None
+        ## check file
+        #if not os.path.exists(path):
+            #if os.path.exists(
+                #nemoa.workspace.path('models') + path + '.nmm'):
+                #path = nemoa.workspace.path('models') + path + '.nmm'
+            #else:
+                #return nemoa.log('error', """could not load model '%s':
+                    #file does not exist.""" % path)
 
-        # copy configuration and parameters to model instance
-        model.set('copy', **model_copy)
+        ## load model configuration and parameters from file
+        #nemoa.log("load model: '%s'" % path)
+        #model_copy = nemoa.common.dict_from_file(path)
 
-        nemoa.log('set', indent = '-1')
-        return model
+        ## create new dataset, network, system and model instances
+        #model = self._get_model_instance(
+            #name = model_copy['config']['name'],
+            #config = model_copy['config'],
+            #dataset = model_copy['dataset']['config'],
+            #network = model_copy['network']['config'],
+            #system = model_copy['system']['config'])
+        #if not nemoa.type.is_model(model): return None
 
-    # TODO: move to model base class as model.copy
-    def _copy_model(self, model):
-        """Return copy of model instance"""
+        ## copy configuration and parameters to model instance
+        #model.set('copy', **model_copy)
 
-        # create backup from original model
-        model_backup = model.get('copy')
-        model_config = model_backup['config']
-        dataset_config = model_backup['dataset']['config']
-        network_config = model_backup['network']['config']
-        system_config = model_backup['system']['config']
+        #nemoa.log('set', indent = '-1')
+        #return model
 
-        # create new model with configurations from original model
-        # this ensures objects of same type as in the original model
-        model_copy = self.model(
-            configure = False,
-            initialize = False,
-            config = model_config,
-            dataset = dataset_config,
-            network = network_config,
-            system = system_config)
+    #def _copy_model(self, model):
+        #"""Return copy of model instance"""
 
-        # finally copy configuration and parameters from the original
-        # model to the model copy
-        model_copy.set('copy', model_backup)
+        ## create backup from original model
+        #model_backup = model.get('copy')
+        #model_config = model_backup['config']
+        #dataset_config = model_backup['dataset']['config']
+        #network_config = model_backup['network']['config']
+        #system_config = model_backup['system']['config']
 
-        return model_copy
+        ## create new model with configurations from original model
+        ## this ensures objects of same type as in the original model
+        #model_copy = self.model(
+            #configure = False,
+            #initialize = False,
+            #config = model_config,
+            #dataset = dataset_config,
+            #network = network_config,
+            #system = system_config)
+
+        ## finally copy configuration and parameters from the original
+        ## model to the model copy
+        #model_copy.set('copy', model_backup)
+
+        #return model_copy
 
 class Config:
     """nemoa workspace module internal configuration object."""

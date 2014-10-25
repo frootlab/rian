@@ -20,8 +20,8 @@ class Network:
         """Import network from dictionary."""
         self._set_copy(**kwargs)
 
-    def _configure(self, dataset, system):
-        """Configure network to dataset and system."""
+    def configure(self, dataset = None):
+        """Configure network to dataset."""
 
         # check if network instance is empty
         if self._is_empty(): return nemoa.log(
@@ -31,11 +31,6 @@ class Network:
         if not nemoa.type.is_dataset(dataset): return nemoa.log(
             'error', """could not configure network:
             no valid dataset instance given:""")
-
-         # check if system instance is available
-        if not nemoa.type.is_system(system): return nemoa.log(
-            'error', """could not configure network:
-            no valid system instance given.""")
 
         nemoa.log("configure network: '%s'" % (self._config['name']))
         nemoa.log('set', indent = '+1')
@@ -51,10 +46,6 @@ class Network:
 
         nemoa.log('set', indent = '-1')
         return True
-
-    def _is_empty(self):
-        """Return true if network type is 'empty'."""
-        return self._config['type'] == 'empty'
 
     def _configure_graph(self, nodelist = None, edgelist = None):
         """Configure and create layered NetworkX graph."""
@@ -190,6 +181,10 @@ class Network:
                 edge_order += 1
 
         return True
+
+    def _is_empty(self):
+        """Return true if network type is 'empty'."""
+        return self._config['type'] == 'empty'
 
     def _is_compatible_lff(self):
         """Test compatibility to layered feed forward networks.
@@ -706,9 +701,8 @@ class Network:
 
         return True
 
-    def _update(self, **kwargs):
-        if not 'system' in kwargs: return False
-        system = kwargs['system']
+    def initialize(self, system = None):
+        if not system: return False
         if not nemoa.type.is_system(system):
             return nemoa.log('error', """could not update network:
                 system is invalid.""")

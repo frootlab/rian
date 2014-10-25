@@ -19,10 +19,6 @@ class Dataset:
         """Import dataset from dictionary."""
         self._set_copy(**kwargs)
 
-    #def _is_empty(self):
-        #"""Return true if dataset is empty."""
-        #return not 'name' in self._config or not self._config['name']
-
     def _is_binary(self):
         """Test if dataset contains only binary data.
 
@@ -111,14 +107,6 @@ class Dataset:
             network (network instance): nemoa network instance
 
         """
-
-        ## create table with source configurations
-        #if not 'table' in self._config:
-            #conf = self._config
-            #conf_copy = conf.copy()
-            #conf['table'] = {}
-            #conf['table'][conf['name']] = conf_copy
-            #conf['table'][conf['name']]['fraction'] = 1.
 
         # get visible network layers and node label format
         layers = network.get('layers', visible = True)
@@ -246,6 +234,7 @@ class Dataset:
         # search network nodes in dataset columns and create
         # dictionary for column mapping from columns to table column
         # names
+        columns = []
         mapping = {}
         for layer in layers:
 
@@ -258,24 +247,15 @@ class Dataset:
                 # TODO: network.get('nodelabel', node = node)
                 node = network.get('nodes', layer = layer)[id]
                 label = network.get('node', node)['params']['label']
-                mapping[layer + ':' + label] = column
-
-                #for table in col_labels:
-                    #col_labels[table]['usecols'] += tuple(
-                        #[col_labels[table]['conv'].index(col)])
+                colid = layer + ':' + label
+                columns.append(colid)
+                mapping[colid] = column
 
             if not found:
                 return nemoa.log('error', """no node from network layer
                     '%s' could be found in dataset tables.""" % (layer))
 
-        self._set_columns(mapping)
-
-        ## update columns in source config
-        #for table in col_labels:
-            #self._config['table'][table]['columns'] = []
-            #for col_id in col_labels[table]['usecols']:
-                #self._config['table'][table]['columns'].append(
-                    #col_labels[table]['conv'][col_id])
+        self._set_columns(columns, mapping)
 
         # add '*' and network layer names as column filters
         colfilter = {key: [key + ':*'] for key in layers + ['*']}
@@ -444,7 +424,7 @@ class Dataset:
             return True
 
         # gauss to distance data transformation
-        # ????
+        # TODO: obsolete
         elif algorithm.lower() in ['gausstodistance', 'distance']:
             nemoa.log('transform data using \'%s\'' % (algorithm))
             for src in self._tables:
@@ -520,213 +500,9 @@ class Dataset:
         for column in target_columns:
             colmapping[column] = column
 
-        self._set_columns(colmapping)
+        self._set_columns(target_columns, colmapping)
         nemoa.log('set', indent = '-1')
         return True
-
-    #def delColFilter(self, name):
-        #if name in self._config['colfilter']:
-            #del self._config['colfilter'][name]
-            #return True
-        #return False
-
-    #def getBccaPartition(self, **params):
-        #rowLabels, data = self._get_data(output = 'list,array')
-        #num_rows, numCols = data.shape
-
-        ## check parameters
-        #if 'groups' in params:
-            #groups = params['groups']
-        #else:
-            #nemoa.log('warning', """parameter 'groups' is needed to
-                #create BCCA partition!""")
-            #return []
-
-        ## get BCCA biclusters
-        #biclusters = self.getBccaBiclusters(**params)
-
-        ## get bicluster distances
-        #distance = self.getBiclusterDistance(biclusters, **params)
-
-        ## cluster samples using k-means
-        #nemoa.log('cluster distances using k-means with k = %i' % (groups))
-        #clusters = self.getClusters(algorithm = 'k-means', data = distance, k = groups)
-        #cIDs = numpy.asarray(clusters)
-        #partition = []
-        #for cID in xrange(groups):
-            #partition.append(numpy.where(cIDs == cID)[0].tolist())
-
-        ## get labels
-        #labeledPartition = []
-        #for pID, c in enumerate(partition):
-            #labels = []
-            #for sID in c:
-                #labels.append(rowLabels[sID])
-            #labeledPartition.append(list(set(labels)))
-
-        #return labeledPartition
-
-    #def getClusters(self, algorithm = 'k-means', **params):
-        #if algorithm == 'k-means':
-            #return self.getKMeansClusters(**params)
-
-        #nemoa.log('warning', "unsupported clustering algorithm '" + algorithm + "'!")
-        #return None
-
-    #def getKMeansClusters(self, data, k = 3):
-        #return scipy.cluster.vq.vq(data, scipy.cluster.vq.kmeans(data, k)[0])[0]
-
-    #def getBiclusters(self, algorithm = 'bcca', **params):
-        #if algorithm == 'bcca':
-            #return self.getBccaBiclusters(**params)
-
-        #nemoa.log('warning', "unsupported biclustering algorithm '" + algorithm + "'!")
-        #return None
-
-    #def getBccaBiclusters(self, **params):
-        #data = self._get_data(output = 'array')
-        #num_rows, numCols = data.shape
-
-        ## check params
-        #if not 'threshold' in params:
-            #nemoa.log("param 'threshold' is needed for BCCA Clustering!")
-            #return []
-        #if not ('minsize' in params or 'size' in params):
-            #nemoa.log("param 'size' or 'minsize' is needed for BCCA Clustering!")
-            #return []
-
-        ## get params
-        #threshold = params['threshold']
-        #if 'minsize' in params:
-            #minsize = params['minsize']
-            #size = 0
-        #else:
-            #minsize = 3
-            #size = params['size']
-
-        ## start clustering
-        #nemoa.log('detecting bi-correlation clusters')
-        #startTime = time.time()
-
-        #biclusters = []
-        #for i in xrange(numCols - 1):
-            #for j in xrange(i + 1, numCols):
-
-                #npRowIDs = numpy.arange(num_rows)
-
-                ## drop rows until corr(i, j) > sigma or too few rows are left
-                #rowIDs = npRowIDs.tolist()
-                #corr = numpy.corrcoef(data[:,i], data[:,j])[0, 1]
-
-                #while (size and len(rowIDs) > size) or \
-                    #(not size and len(rowIDs) > minsize and corr < threshold):
-                    #rowCorr = numpy.zeros(len(rowIDs))
-
-                    #for id in xrange(len(rowIDs)):
-                        #mask = rowIDs[:id] + rowIDs[id:][1:]
-                        #rowCorr[id] = numpy.corrcoef(data[mask, i], data[mask, j])[0, 1]
-
-                    #rowMaxID = rowCorr.argmax()
-                    #corr = rowCorr[rowMaxID]
-                    #rowIDs.pop(rowMaxID)
-
-                #if i == 0 and j == 1:
-                    #elapsed = time.time() - startTime
-                    #estimated = elapsed * numCols ** 2 / 2
-                    #nemoa.log('estimated duration: %.1fs' % (estimated))
-
-                #if corr < threshold:
-                    #continue
-
-                # expand remaining rows over columns
-                #colIDs = [i, j]
-                #for id in [id for id in xrange(numCols) if id not in colIDs]:
-                    #if numpy.corrcoef(data[rowIDs, i], data[rowIDs, id])[0, 1] < threshold:
-                        #continue
-                    #if numpy.corrcoef(data[rowIDs, j], data[rowIDs, id])[0, 1] < threshold:
-                        #continue
-                    #colIDs.append(id)
-
-                # append bicluster if not yet existing
-                #bicluster = (list(set(rowIDs)), list(set(colIDs)))
-                #if not bicluster in biclusters:
-                    #biclusters.append(bicluster)
-
-        ## info
-        #if size:
-            #nemoa.log('found %i biclusters with: correlation > %.2f, number of samples = %i' \
-                #% (len(biclusters), threshold, size))
-        #else:
-            #nemoa.log('found %i biclusters with: correlation > %.2f, number of samples > %i' \
-                #% (len(biclusters), threshold, minsize - 1))
-
-        #return biclusters
-
-    #def getBiclusterDistance(self, biclusters, **params):
-        #if 'distance' in params:
-            #type = params['distance']
-        #else:
-            #type = 'correlation'
-
-        #if type == 'hamming':
-            #return self.getBiclusterHammingDistance(biclusters)
-        #elif type == 'correlation':
-            #return self.getBiclusterCorrelationDistance(biclusters)
-
-        #nemoa.log('warning', "   unknown distance type '" + type + "'!")
-        #return None
-
-    #def getBiclusterHammingDistance(self, biclusters):
-        #data = self._get_data(output = 'array')
-        #num_rows, numCols = data.shape
-
-        ## create distance matrix using binary metric
-        #distance = numpy.ones(shape = (num_rows, len(biclusters)))
-        #for cID, (cRowIDs, cColIDs) in enumerate(biclusters):
-            #distance[cRowIDs, cID] = 0
-
-        #return distance
-
-    #def getBiclusterCorrelationDistance(self, biclusters):
-        ### EXPERIMENTAL!!
-        #data = self._get_data(output = 'array')
-        #num_rows, numCols = data.shape
-
-        ## calculate differences in correlation
-        #corrDiff = numpy.zeros(shape = (num_rows, len(biclusters)))
-        #for cID, (cRowIDs, cColIDs) in enumerate(biclusters):
-
-            ## calculate mean correlation within bicluster
-            #cCorr = self.getMeanCorr(data[cRowIDs, :][:, cColIDs])
-
-            ## calculate mean correlation by appending single rows
-            #for rowID in xrange(num_rows):
-                #corrDiff[rowID, cID] = cCorr - self.getMeanCorr(data[cRowIDs + [rowID], :][:, cColIDs])
-
-        ## calculate distances of samples and clusters
-        #distance = corrDiff
-        ##dist = numpy.nan_to_num(corrDiff / (numpy.max(numpy.max(corrDiff, axis = 0), 0.000001)))
-        ##dist = (dist > 0) * dist
-        #return distance
-
-    #def _get_cache_file(self, network):
-        #"""Return cache file path."""
-        #return '%sdata-%s-%s.npz' % (self._config['cache_path'],
-            #network.get('config', 'id'), self._config['id'])
-
-    #def _search_cache_file(self, network):
-        #"""Return cache file path if existent."""
-        #file = self._get_cache_file(network)
-        #return file if os.path.isfile(file) else None
-
-    #def _create_cache_file(self, network):
-        #"""Return empty cache file if existent."""
-        #file = self._get_cache_file(network)
-        #if not os.path.isfile(file):
-            #basedir = os.path.dirname(file)
-            #if not os.path.exists(basedir): os.makedirs(basedir)
-            #with open(file, 'a'): os.utime(file, None)
-        #return file
 
     def get(self, key = 'name', *args, **kwargs):
         """Get meta information, parameters and data of dataset."""
@@ -1080,8 +856,10 @@ class Dataset:
             size = data.shape, n = 1, p = 1. - factor)
         elif type == 'gauss': return data + numpy.random.normal(
             size = data.shape, loc = 0., scale = factor)
+
         # TODO: implement salt and pepper noise
         #elif type == 'salt': return
+
         else: return nemoa.log('error',
             "unkown data noise type '%s'!" % (type))
 
@@ -1153,16 +931,6 @@ class Dataset:
         colnames = self._get_colnames(columns)
         if labels: colnames = ['label'] + colnames
 
-        ## get column names from filter
-        #if isinstance(cols, str):
-            #if not cols in self._config['colfilter']:
-                #return nemoa.log('error', """could not retrieve
-                    #data: invalid column filter: '%s'!""" % (cols))
-            #colfilter = self._config['colfilter'][cols]
-        #elif isinstance(cols, list):
-            ## TODO filter list to valid col names
-            #colfilter = cols
-
         # get row names from filter
         if isinstance(rows, str):
             if not rows in self._config['rowfilter']:
@@ -1173,13 +941,6 @@ class Dataset:
             # TODO filter list to valid row names
             rowfilter = rows
 
-        ## column selection
-        #colsel = self._config['table'][source]['columns']
-        #if '*:*' in colfilter:
-            #src_array_colsel = self._tables[source]['array'][colsel]
-        #else:
-            ## TODO!!!!
-            #pass
         src_array_colsel = self._tables[source]['array'][colnames]
 
         # row selection
@@ -1268,7 +1029,7 @@ class Dataset:
         self._config['license'] = dataset_license
         return True
 
-    def _set_columns(self, mapping):
+    def _set_columns(self, columns, mapping):
         """Set external column names.
 
         Nemoa datasets differ between internal column names (colnames)
@@ -1280,6 +1041,7 @@ class Dataset:
         different column names, for example used by autoencoders.
 
         Args:
+            columns (liats): list of external column names
             mapping (dict): mapping from external columns to internal
                 colnames.
 
@@ -1288,12 +1050,24 @@ class Dataset:
 
         """
 
+        # assert validity of argument 'columns'
+        if not isinstance(columns, list):
+            return nemoa.log('error', """could not set columns:
+                columns list is not valid.""")
+
         # assert validity of argument 'mapping'
         if not isinstance(mapping, dict):
             return nemoa.log('error', """could not set columns:
                 mapping dictionary is not valid.""")
 
-        # assert validity of internal 'colnames'
+        # assert validity of external columns in 'mapping'
+        for column in columns:
+            if not column in mapping.keys():
+                return nemoa.log('error', """could not set columns:
+                    column '%s' can not be mapped to table column."""
+                    % (column))
+
+        # assert validity of internal columns in 'mapping'
         for column in list(set(mapping.values())):
             for table in self._tables.iterkeys():
                 if column in self._tables[table]['array'].dtype.names:
@@ -1304,11 +1078,11 @@ class Dataset:
 
         # set 'columns' and 'colmapping'
         self._config['colmapping'] = mapping.copy()
-        columns = []
-        for column in mapping.iterkeys():
-            if not ':' in column: columns.append(('', column))
-            else: columns.append(tuple(column.split(':')))
-        self._config['columns'] = tuple(columns)
+        self._config['columns'] = tuple()
+        for column in columns:
+            if ':' in column: colid = tuple(column.split(':'))
+            else: colid = ('', column)
+            self._config['columns'] += (colid, )
 
         return True
 
@@ -1400,21 +1174,3 @@ class Dataset:
     def copy(self, *args, **kwargs):
         """Create copy of dataset."""
         return nemoa.dataset.copy(self, *args, **kwargs)
-
-    #def addRowFilter(self, name, filter):
-        ## create unique name for filter
-        #filterName = name
-        #i = 1
-        #while filterName in self._config['rowfilter']:
-            #i += 1
-            #filterName = '%s.%i' % (name, i)
-
-        ## TODO: check filter
-        #self._config['rowfilter'][filterName] = filter
-        #return filterName
-
-    #def delRowFilter(self, name):
-        #if name in self._config['rowfilter']:
-            #del self._config['rowfilter'][name]
-            #return True
-        #return False
