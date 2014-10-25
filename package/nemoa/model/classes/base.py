@@ -475,41 +475,96 @@ class Model:
         return True
 
     def _set_dataset(self, dataset):
-        """Configure dataset from dictionary."""
+        """Set dataset to model.
+
+        Create a new dataset from dataset dictionary or reconfigure
+        existing dataset with dataset dictionary or copy a dataset
+        instance.
+
+        Args:
+            dataset (dict or dataset instance): dataset dictionary
+                or dataset instance
+
+        Returns:
+            bool: True if no error occured
+
+        """
+
         if nemoa.type.is_dataset(dataset):
             self.dataset = dataset
             return True
-        if not nemoa.type.is_dataset(self.dataset):
-            return nemoa.log('error', """could not configure dataset:
-                model does not contain dataset instance.""")
-        return self.dataset.set('copy', **dataset)
+
+        if not isinstance(dataset, dict):
+            return False
+
+        if nemoa.type.is_dataset(self.dataset):
+            return self.dataset.set('copy', **dataset)
+
+        self.dataset = nemoa.dataset.new(**dataset)
+        return True
 
     def _set_network(self, network):
-        """Configure network from dictionary."""
+        """Set network to model.
+
+        Create a new network from network dictionary or reconfigure
+        existing network with network dictionary or copy a network
+        instance.
+
+        Args:
+            network (dict or network instance): network dictionary
+                or network instance
+
+        Returns:
+            bool: True if no error occured
+
+        """
+
         if nemoa.type.is_network(network):
             self.network = network
             return True
-        if not nemoa.type.is_network(self.network):
-            return nemoa.log('error', """could not configure network:
-                model does not contain network instance.""")
-        return self.network.set('copy', **network)
+
+        if not isinstance(network, dict):
+            return False
+
+        if nemoa.type.is_network(self.network):
+            return self.network.set('copy', **network)
+
+        self.network = nemoa.network.new(**network)
+        return True
 
     def _set_system(self, system):
-        """Configure system from dictionary."""
+        """Set system to model.
+
+        Create a new system from system dictionary or reconfigure
+        existing system with system dictionary or copy a system
+        instance.
+
+        Args:
+            system (dict or system instance): system dictionary
+                or system instance
+
+        Returns:
+            bool: True if no error occured
+
+        """
+
         if nemoa.type.is_system(system):
             self.system = system
             return True
-        if not nemoa.type.is_dataset(self.dataset):
-            return nemoa.log('error', """could not configure system:
-                model does not contain dataset instance.""")
+
+        if not isinstance(system, dict):
+            return False
+
+        if nemoa.type.is_system(self.system):
+            return self.system.set('copy', **system)
+
         if not nemoa.type.is_network(self.network):
             return nemoa.log('error', """could not configure system:
                 model does not contain network instance.""")
 
         self.system = nemoa.system.new(
-            config = system_copy['config'], network = self.network)
-
-        return self.system.set('copy', **system)
+            config = system['config'], network = self.network)
+        return True
 
     def save(self, *args, **kwargs):
         """Export model to file."""

@@ -6,7 +6,7 @@ visualization.
 
 """
 
-__version__ = '0.4.177'
+__version__ = '0.4.178'
 __status__  = 'Development'
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
