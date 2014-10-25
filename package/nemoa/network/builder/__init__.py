@@ -35,7 +35,13 @@ def build(type, *args, **kwargs):
     module_name = types(type)[0]
 
     if module_name == 'layer':
-        return nemoa.network.builder.layer.build(type, *args, **kwargs)
+        network = nemoa.network.builder.layer.build(type, *args, **kwargs)
 
-    return False
+    if not network: return {}
 
+    # update source
+    path = nemoa.workspace.path('networks') \
+        + network['config']['name'] + '.npz'
+    network['config']['source'] = { 'file': path, 'filetype': 'npz' }
+    network['config']['path'] = path
+    return network

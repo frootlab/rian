@@ -35,7 +35,14 @@ def build(type = 'model', *args, **kwargs):
     module_name = types(type)[0]
 
     if module_name == 'base':
-        return nemoa.model.builder.base.build(type, *args, **kwargs)
+         model = nemoa.model.builder.base.build(type, *args, **kwargs)
 
-    return False
+    if not model: return {}
+
+    # update source
+    path = nemoa.workspace.path('models') \
+        + model['config']['name'] + '.npz'
+    model['config']['source'] = { 'file': path, 'filetype': 'npz' }
+    model['config']['path'] = path
+    return model
 

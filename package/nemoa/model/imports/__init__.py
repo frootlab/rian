@@ -27,56 +27,66 @@ def filetypes(filetype = None):
 def load(path, filetype = None, **kwargs):
     """Import model from file."""
 
-    # get path
-    if os.path.isfile(path):
-        pass
-    elif 'workspace' in kwargs:
-        # import workspace and get path and filetype from workspace
-        if not kwargs['workspace'] == nemoa.workspace.name():
-            if not nemoa.workspace.load(kwargs['workspace']):
+    # try if path exists or import given workspace and get path from
+    # workspace or get path from current workspace
+    if not os.path.isfile(path) and workspace:
+        current_workspace = nemoa.workspace.name()
+        if not workspace == current_workspace:
+            if not nemoa.workspace.load(workspace):
                 nemoa.log('error', """could not import model:
-                    workspace '%s' does not exist"""
-                    % (kwargs['workspace']))
+                    workspace '%s' does not exist""" % (workspace))
                 return  {}
-        name = '.'.join([kwargs['workspace'], path])
-        config = nemoa.workspace.get('model', name = name)
+        config = nemoa.workspace.find('model', path)
+        if not workspace == current_workspace and current_workspace:
+            nemoa.workspace.load(current_workspace)
         if not isinstance(config, dict):
             nemoa.log('error', """could not import model:
-                workspace '%s' does not contain model '%s'."""
-                % (kwargs['workspace'], path))
+                workspace '%s' does not contain a model '%s'."""
+                % (workspace, path))
             return  {}
-        path = config['source']['file']
-    else:
+        if not 'path' in config:
+            return {'config': config}
+        path = config['path']
+    if not os.path.isfile(path):
+        config = nemoa.workspace.find('model', path)
+        if not isinstance(config, dict):
+            current_workspace = nemoa.workspace.name()
+            if current_workspace:
+                nemoa.log('error', """could not import model:
+                    current workspace '%s' does not contain a model
+                    '%s'.""" % (current_workspace, path))
+            else:
+                nemoa.log('error', """could not import model:
+                    file '%s' does not exist.""" % (path))
+            return  {}
+        if not 'path' in config: return {'config': config}
+        path = config['path']
+    if not os.path.isfile(path):
         nemoa.log('error', """could not import model:
             file '%s' does not exist.""" % (path))
         return {}
 
     # if filetype is not given get filtype from file extension
+    # and check if filetype is supported
     if not filetype:
         filetype = nemoa.common.get_file_extension(path).lower()
-
-    # test if filetype is supported
     if not filetype in filetypes().keys():
         return nemoa.log('error', """could not import model:
             filetype '%s' is not supported.""" % (filetype))
 
+    # import and check dictionary
     module_name = filetypes(filetype)[0]
     if module_name == 'archive':
-        model_dict = nemoa.model.imports.archive.load(
-            path, **kwargs)
-    else:
-        return False
-
-    # test model dictionary
-    if not model_dict:
-        nemoa.log('error', """could not import model:
-            file '%s' is not valid.""" % (path))
+        model = nemoa.model.imports.archive.load(path, **kwargs)
+    if not model:
+        nemoa.log('error', """could not import model: file '%s' is
+            not valid.""" % (path))
         return {}
+    if not 'source' in model['config']:
+        model['config']['source'] = {}
+    model['config']['path'] = path
+    model['config']['workspace'] = nemoa.workspace.name()
+    model['config']['source']['file'] = path
+    model['config']['source']['filetype'] = filetype
 
-    # update source
-    if not 'source' in model_dict['config']:
-        model_dict['config']['source'] = {}
-    model_dict['config']['source']['file'] = path
-    model_dict['config']['source']['filetype'] = filetype
-
-    return model_dict
+    return model

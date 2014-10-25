@@ -30,7 +30,7 @@ class Model:
         'network': None,
         'system': None,
         'initialize': True,
-        'optimize': True }
+        'optimize': False }
 
     def __init__(self, **kwargs):
         for key, val in kwargs.items():
