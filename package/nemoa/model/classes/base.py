@@ -45,8 +45,11 @@ class Model:
 
         retval = True
 
+        # configure dataset columns to network
         retval &= self.dataset.configure(self.network)
+        # configure network to restrict nodes to found columns
         retval &= self.network.configure(self.dataset)
+        # configure system to nodes in network
         retval &= self.system.configure(self.network)
 
         return retval
@@ -65,8 +68,9 @@ class Model:
                 system is not valid.""")
 
         retval = True
-        # TODO: preprocess data
 
+        # initialize dataset to system including normalization
+        retval &= self.dataset.initialize(self.system)
         # initialize system parameters by using statistics from dataset
         retval &= self.system.initialize(self.dataset)
         # initialize network parameters with system parameters

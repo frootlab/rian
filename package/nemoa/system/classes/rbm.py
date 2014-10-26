@@ -482,11 +482,13 @@ class GRBM(RBM):
 
     def _check_dataset(self, dataset):
         """Check if dataset contains gauss normalized values."""
-        if not nemoa.type.is_dataset(dataset): return nemoa.log('error',
-            'could not test dataset: invalid dataset instance given!')
-        if not dataset._eval_normalization_gauss(): return nemoa.log('error',
-            """dataset '%s' is not valid: GRBMs expect
-            standard normal distributed data.""" % (dataset.get('name')))
+        if not nemoa.type.is_dataset(dataset):
+            return nemoa.log('error', """could not test dataset:
+                invalid dataset instance given.""")
+        if not dataset._eval_normalization('gauss'):
+            return nemoa.log('error', """dataset '%s' is not valid:
+                GRBMs expect standard normal distributed data."""
+                % (dataset.get('name')))
         return True
 
     def _optimize_cd_delta_visible(self, vData, hData, vModel, hModel,

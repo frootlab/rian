@@ -36,7 +36,8 @@ class Dataset:
 
         return True
 
-    def _eval_normalization(self, algorithm = 'gauss', **kwargs):
+    def _eval_normalization(self, distribution = 'gauss',
+        *args, **kwargs):
         """Test dataset for normalization.
 
         Args:
@@ -46,10 +47,10 @@ class Dataset:
         """
 
         nemoa.log("""test dataset for normalization assuming
-            distribution '%s'""" % (algorithm))
+            distribution '%s'""" % (distribution))
 
-        if algorithm.lower() == 'gauss':
-            return self._eval_normalization_gauss(**kwargs)
+        if distribution.lower() == 'gauss':
+            return self._eval_normalization_gauss(*args, **kwargs)
 
         return False
 
@@ -96,15 +97,14 @@ class Dataset:
 
         return True
 
-    def _is_configured(self):
-        """Return true if dataset is configured."""
-        return len(self._tables.keys()) > 0
-
     def configure(self, network):
         """Configure dataset columns to a given network.
 
         Args:
             network (network instance): nemoa network instance
+
+        Returns:
+            Boolen value which is True if no error occured.
 
         """
 
@@ -266,118 +266,221 @@ class Dataset:
         rowfilter = {key: [key + ':*'] for key in tables + ['*']}
         self._config['rowfilter'] = rowfilter
 
-        # preprocess data
-        if 'preprocessing' in self._config.keys():
-            self.preprocess(**self._config['preprocessing'])
-
         return True
 
-    def preprocess(self, stratify = None, normalize = None,
-        transform = None):
-        """Data preprocessing.
+    def initialize(self, system = None):
+        """Initialize data / data preprocessing.
 
-        Stratification, normalization and transformation of data.
+        Stratification, normalization and transformation of tables.
 
-        Args:
-            stratify (dict or None): see method self._stratify()
-            normalize (dict or None): see method self._normalize()
-            transform (dict or None): see method self._transform()
+        Returns:
+            Boolen value which is True if no error occured.
 
         """
 
         nemoa.log('preprocessing data')
         nemoa.log('set', indent = '+1')
 
-        if stratify: self._stratify(stratify)
-        if normalize: self._normalize(normalize)
-        if transform: self._transform(transform)
+        stratify = None
+        normalize = None
+        transform = None
+
+        # get preprocessing parameters from dataset configuration
+        if 'preprocessing' in self._config:
+            preprocessing = self._config['preprocessing']
+            if 'stratify' in preprocessing:
+                stratify = preprocessing['stratify']
+            if 'normalize' in preprocessing:
+                normalize = preprocessing['normalize']
+            if 'transform' in preprocessing:
+                transform = preprocessing['transform']
+
+        # get preprocessing parameters from system
+        if nemoa.type.is_system(system):
+            input_layer = system.get('layers')[0]
+            distribution = system.get('layer', input_layer)['class']
+            if distribution == 'gauss': normalize = 'gauss'
+            if distribution == 'sigmoid': normalize = 'bernoulli'
+
+        retval = True
+
+        if stratify: retval &= self._initialize_stratify(stratify)
+        if normalize: retval &= self._initialize_normalize(normalize)
+        if transform: retval &= self._initialize_transform(transform)
 
         nemoa.log('set', indent = '-1')
 
-        return True
+        return retval
 
-    def _stratify(self, algorithm = 'auto'):
-        """Stratify data.
+    def _initialize_stratify(self, stratification = 'hierarchical',
+        *args, **kwargs):
+        """Update sampling fractions for stratified sampling.
+
+        Calculates sampling fractions for each table used in stratified
+        sampling. The method get('data', 'size' = $n$) creates
+        stratified samples of size $n$. The assigned fraction $f_t$ of
+        a table $t$ determines the ratio of the samples that is taken
+        from table $t$.
 
         Args:
-            algorithm (str): name of algorithm used for stratification
-                'none':
-                    probabilities of sources are
-                    number of all samples / number of samples in source
-                'auto':
-                    probabilities of sources are hierarchical distributed
-                    as defined in the configuration
+            stratification (str, optional): name of algorithm used to
+                calculate the sampling fractions for each table.
+                'proportional':
+                    The sampling fractions of the tables are choosen to
+                    be the proportion of the size of the table to the
+                    total population.
                 'equal':
-                    probabilities of sources are
-                    1 / number of sources
+                    The sampling fractions are equal distributed to
+                    the tables. Therefore the hierarchical structure
+                    of the compound is assumed to be flat.
+                'hierarchical':
+                    The sampling fractions are choosen to represent
+                    the hierarchical structure of the compounds.
+
+        Returns:
+            Boolen value which is True if no error occured.
 
         """
 
-        nemoa.log("stratify data using '%s'" % (algorithm))
+        nemoa.log("update sampling fractions using stratification '%s'."
+            % (stratification))
 
-        if algorithm.lower() in ['none']:
-            allcount = 0
-            for table in self._tables:
-                allcount += self._tables[table].shape[0]
-            for table in self._tables:
-                self._config['tables'][table]['fraction'] = \
-                    float(allcount) \
-                    / float(self._tables[table].shape[0])
+        # hierarchical sampling fractions
+        if stratification.lower() == 'hierarchical':
             return True
 
-        if algorithm.lower() in ['auto']: return True
-        if algorithm.lower() in ['equal']:
-            frac = 1. / float(len(self._tables))
-            for src in self._tables: self._tables[src]['fraction'] = frac
+        # proportional sampling fractions
+        if stratification.lower() == 'proportional':
+            total = 0
+            for table in self._tables:
+                total += self._tables[table].shape[0]
+            for table in self._tables:
+                size = self._tables[table].shape[0]
+                fraction = float(total) / float(size)
+                self._config['tables'][table]['fraction'] = fraction
             return True
-        return False
 
-    def _normalize(self, algorithm = 'gauss', **kwargs):
-        """Normalize data
+        # equal sampling fractions
+        if stratification.lower() == 'equal':
+            fraction = 1. / float(len(self._tables))
+            for src in self._tables:
+                self._config['tables'][table]['fraction'] = fraction
+            return True
+
+        return nemoa.log('error', """could not update sampling
+            fractions: stratification '%s' is not supported.""" %
+            (stratification))
+
+    def _initialize_normalize(self, distribution = 'gauss',
+        *args, **kwargs):
+        """Normalize data to a given distribution.
 
         Args:
-            algorithm: name of distribution to normalize
-                'gauss': normalization of gauss distribution
+            distribution (str, optional): name of distribution to
+                be normalized.
+                'gauss': normalization of gauss distributed data
+                    to (mu = 0, sigma = 1.)
+                'bernoulli': normalization of bernoulli distributed data
+                    to (q = 0.5)
+
+        Returns:
+            Boolen value which is True if no error occured.
 
         """
 
-        nemoa.log("normalize data using '%s'" % (algorithm))
+        nemoa.log("normalize data using '%s'" % (distribution))
 
-        if algorithm.lower() == 'gauss':
-            return self._normalize_gauss(**kwargs)
+        if distribution.lower() == 'gauss':
+            return self._initialize_normalize_gauss(*args, **kwargs)
+        if distribution.lower() == 'bernoulli':
+            return self._initialize_normalize_bernoulli(*args, **kwargs)
 
         return False
 
-    def _normalize_gauss(self, size = 100000):
-        """Gauss normalization of dataset."""
+    def _initialize_normalize_gauss(self, mu = 0., sigma = 1.,
+        size = 100000):
+        """Gauss normalization of tables.
 
-        # get data for calculation of mean and standard deviation
-        # for single source datasets take all data
-        # for multi source datasets take a big bunch of stratified data
-        if len(self._tables.keys()) == 1:
-            data = self._get_tables(source = self._tables.keys()[0])
-        else:
-            data = self._get_data(size = size, output = 'recarray')
+        Args:
+            mu (float, optional): mean value of normalized data.
+            sigma (float, optional): Variance of normalized data.
+            size (int, optional): Number of samples to calculate
+                quantiles if dataset is stratified
 
-        # iterative normalize sources
-        for table in self._tables.keys():
-            source_array = self._tables[table]
-            if source_array == None: continue
+        Returns:
+            Boolen value which is True if no error occured.
 
-            # iterative normalize columns (recarray)
-            for column in source_array.dtype.names[1:]:
-                mean = data[column].mean()
-                sdev = data[column].std()
+        """
+
+        tables = self._tables.keys()
+        columns = self._get_colnames()
+
+        # get data for calculation of mean value and standard deviation
+        # for single table datasets take all data from
+        # for multi table datasets take a big bunch of stratified data
+        if len(tables) == 1: data = self._get_tables(source = tables[0])
+        else: data = self._get_data(size = size, output = 'recarray')
+
+        # calculate mean value and standard deviation for each column
+        mean = {col: data[col].mean() for col in columns}
+        sdev = {col: data[col].std() for col in columns}
+
+        # iterative normalize tables and columns
+        for table in tables:
+            for column in columns:
                 self._tables[table][column] = \
-                    (source_array[column] - mean) / sdev
+                    (self._tables[table][column] - mean[column] + mu) \
+                    / sdev[column] * sigma
+
         return True
 
-    def _transform(self, algorithm = 'system', *args, **kwargs):
+    def _initialize_normalize_bernoulli(self, p = 0.5, size = 100000):
+        """Bernoulli normalization of tables.
+
+        Args:
+            p (float, optional): Probability for value 1.
+            size (int, optional): Number of samples to calculate
+                quantiles if dataset is stratified
+
+        Returns:
+            Boolen value which is True if no error occured.
+
+        """
+
+        tables = self._tables.keys()
+        columns = self._get_colnames()
+
+        # get data for calculation of mean value and standard deviation
+        # for single table datasets take all data from
+        # for multi table datasets take a big bunch of stratified data
+        if len(tables) == 1: data = self._get_tables(source = tables[0])
+        else: data = self._get_data(size = size, output = 'recarray')
+
+        # calculate q-quantile for each column
+        quantile = {}
+        for col in columns:
+            scol = numpy.sort(data[col])
+            rid = int((1. - p) * data.size)
+            if data.size % 2: quantile[col] = scol[rid]
+            else: quantile[col] = 0.5 * (scol[rid] + scol[rid + 1])
+
+        # iterative normalize tables and columns
+        for table in self._tables.keys():
+            for column in self._tables[table].dtype.names[1:]:
+                mean = data[column].mean()
+                self._tables[table][column] = \
+                    (self._tables[table][column] > quantile[column]
+                    ).astype(float)
+
+        return True
+
+    def _initialize_transform(self, transformation = 'system',
+        *args, **kwargs):
         """Transform data in tables.
 
         Args:
-            algorithm (str): name of algorithm used for data
-                transformation
+            transformation (str, optional): name of algorithm used for
+                data transformation
                 'system':
                     Transform data using nemoa system instance
                 'gaussToBinary':
@@ -393,32 +496,29 @@ class Dataset:
                 'system') used for model based transformation of data
             mapping: ...
 
+        Returns:
+            Boolen value which is True if no error occured.
+
         """
 
-        if not isinstance(algorithm, str): return False
+        nemoa.log("transform data using '%s'" % (transformation))
 
         # system based data transformation
-        if algorithm.lower() == 'system':
-            return self._transform_system(*args, **kwargs)
+        if transformation.lower() == 'system':
+            return self._initialize_transform_system(*args, **kwargs)
 
         # gauss to binary data transformation
-        elif algorithm.lower() in ['gausstobinary', 'binary']:
-            nemoa.log('transform data using \'%s\'' % (algorithm))
+        if transformation.lower() in ['gausstobinary', 'binary']:
             for table in self._tables:
-                # update source per column (recarray)
                 for column in self._tables[table].dtype.names[1:]:
-                    # update source data columns
                     self._tables[table][column] = \
                         (self._tables[table][column] > 0.).astype(float)
             return True
 
         # gauss to weight in [0, 1] data transformation
-        elif algorithm.lower() in ['gausstoweight', 'weight']:
-            nemoa.log('transform data using \'%s\'' % (algorithm))
+        if transformation.lower() in ['gausstoweight', 'weight']:
             for table in self._tables:
-                # update source per column (recarray)
                 for column in self._tables[table].dtype.names[1:]:
-                    # update source data columns
                     self._tables[table][column] = \
                         (2. / (1. + numpy.exp(-1. * \
                         self._tables[table][column] ** 2))
@@ -426,11 +526,8 @@ class Dataset:
             return True
 
         # gauss to distance data transformation
-        # TODO: obsolete
-        elif algorithm.lower() in ['gausstodistance', 'distance']:
-            nemoa.log('transform data using \'%s\'' % (algorithm))
+        if transformation.lower() in ['gausstodistance', 'distance']:
             for table in self._tables:
-                # update source per column (recarray)
                 for column in self._tables[table].dtype.names[1:]:
                     self._tables[table][column] = \
                         (1. - (2. / (1. + numpy.exp(-1. * \
@@ -439,10 +536,11 @@ class Dataset:
             return True
 
         return nemoa.log('error', """could not transform data:
-            unknown algorithm '%s'!""" % (algorithm))
+            unknown transformation '%s'!""" % (transformation))
 
-    def _transform_system(self, system = None, mapping = None,
-        func = 'expect'):
+    def _initialize_transform_system(self, system = None,
+        mapping = None, func = 'expect'):
+
         if not nemoa.type.is_system(system):
             return nemoa.log('error', """could not transform data
                 using system: invalid system.""")
@@ -602,33 +700,41 @@ class Dataset:
         different column names, for example used by autoencoders.
 
         Args:
-            colfilter (string, optional):
+            filter (str, optional): name of column filter
 
         Returns:
-            List of strings containing column names.
+            List of strings containing dataset column names or False
+            if column filter is not known.
 
         """
 
         if filter == '*':
-            colnames = []
-            for col in self._config['columns']:
-                if col[0]: colnames.append('%s:%s' % (col[0], col[1]))
-                elif col[1]: colnames.append(col[1])
-            return colnames
-        if not filter in self._config['colfilter']:
-            return []
-        col_filter = self._config['colfilter'][filter]
-        colnames = []
-        for col in self._config['columns']:
-            if ('*:*') in col_filter \
-                or ('%s:*' % (col[0])) in col_filter \
-                or ('*:%s' % (col[1])) in col_filter \
-                or ('%s:%s' % (col[0], col[1])) in col_filter:
-                if col[0]: colnames.append('%s:%s' % (col[0], col[1]))
-                elif col[1]: colnames.append(col[1])
-        return colnames
+            columns = []
+            for column in self._config['columns']:
+                if column[0]:
+                    columns.append('%s:%s' % (column[0], column[1]))
+                elif column[1]:
+                    columns.append(column[1])
+            return columns
 
-    def _get_colnames(self, columns):
+        if filter in self._config['colfilter']:
+            colfilter = self._config['colfilter'][filter]
+            columns = []
+            for column in self._config['columns']:
+                if ('*:*') in colfilter \
+                    or ('%s:*' % (column[0])) in colfilter \
+                    or ('*:%s' % (column[1])) in colfilter \
+                    or ('%s:%s' % (column[0], column[1])) in colfilter:
+                    if column[0]:
+                        columns.append('%s:%s' % (column[0], column[1]))
+                    elif column[1]:
+                        columns.append(column[1])
+            return columns
+
+        return nemoa.log('error', """could not retrive dataset columns:
+            column filter '%s' is not known.""" % (filter))
+
+    def _get_colnames(self, columns = None):
         """Get internal columns.
 
         Nemoa datasets differ between internal column names (colnames)
@@ -639,7 +745,16 @@ class Dataset:
         accessing tables, which allows to provide identical columns to
         different column names, for example used by autoencoders.
 
+        Args:
+            columns (list of strings or None): Dataset column names.
+                Default value None retrieves all dataset columns.
+
+        Returns:
+            List of strings containing table column names.
+
         """
+
+        if columns == None: columns = self._get_columns()
 
         mapping = self._config['colmapping']
         mapper = lambda column: mapping[column]
@@ -649,6 +764,7 @@ class Dataset:
     def _get_colgroups(self):
         groups = {}
         for group, label in self._config['columns']:
+            if not group: continue
             if not group in groups: groups[group] = []
             groups[group].append(label)
         return groups
@@ -719,11 +835,9 @@ class Dataset:
 
         """
 
-        # check Configuration and Keyword Arguments
-        if not self._is_configured(): return nemoa.log('error',
-            'could not get data: dataset is not yet configured!')
-        if not isinstance(size, int) or size < 0: return nemoa.log(
-            'error', 'could not get data: invalid argument size!')
+        if not isinstance(size, int) or size < 0:
+            return nemoa.log('error', """could not get data:
+                invalid argument 'size'.""")
 
         # stratify and filter data
         src_stack = ()
