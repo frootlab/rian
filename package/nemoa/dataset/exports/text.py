@@ -51,7 +51,7 @@ class Csv:
         # as header as a subset of the dataset configuration
         keys = ['name', 'branch', 'version', 'about', 'author', 'email',
             'license', 'filetype', 'application', 'preprocessing',
-            'type', 'labelformat' ]
+            'type', 'labelformat']
         config = {}
         for key, val in dataset.get('config').iteritems():
             if key in keys: config[key] = val

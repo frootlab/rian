@@ -39,22 +39,17 @@ def save(system, path = None, filetype = None, workspace = None,
     """
 
     if not nemoa.common.type.is_system(system):
-        return nemoa.log('error', """could not save system to file:
+        return nemoa.log('error', """could not export system to file:
             system is not valid.""")
 
     # get file path from system source file if path is not given
     if path == None:
-        source = system.get('config', 'source')
-        source_path = source['file']
-        file_directory = nemoa.common.get_file_directory(source_path)
-        file_basename = system.get('fullname')
-        if filetype == None:
-            file_extension \
-                = nemoa.common.get_file_extension(source_path)
-        else:
-            file_extension = filetype
-        path = '%s/%s.%s' % (file_directory, file_basename,
-            file_extension)
+        path = system.get('config', 'path')
+        filedir = nemoa.common.get_file_directory(path)
+        filename = system.get('fullname')
+        if filetype: fileext = filetype
+        else: fileext = nemoa.common.get_file_extension(path)
+        path = '%s/%s.%s' % (filedir, filename, fileext)
 
     # get file path from workspace/path if workspace is given
     elif isinstance(workspace, str) and not workspace == 'None':

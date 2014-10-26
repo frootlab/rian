@@ -859,23 +859,23 @@ class System:
 
         # Default system evaluation
         if len(args) == 0:
-            return self._eval_system(data, **kwargs)
+            return self._get_eval_system(data, **kwargs)
 
         # Evaluate system units
         if args[0] == 'units':
-            return self._eval_units(data, *args[1:], **kwargs)
+            return self._get_eval_units(data, *args[1:], **kwargs)
 
         # Evaluate system links
         if args[0] == 'links':
-            return self._eval_links(data, *args[1:], **kwargs)
+            return self._get_eval_links(data, *args[1:], **kwargs)
 
         # Evaluate system relations
         if args[0] == 'relations':
-            return self._eval_relation(data, *args[1:], **kwargs)
+            return self._get_eval_relation(data, *args[1:], **kwargs)
 
         # Evaluate system
         if args[0] in self._about_system().keys():
-            return self._eval_system(data, *args, **kwargs)
+            return self._get_eval_system(data, *args, **kwargs)
 
         return nemoa.log('warning',
             "unsupported system evaluation '%s'" % (args[0]))

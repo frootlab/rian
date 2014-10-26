@@ -36,8 +36,7 @@ class Csv:
     """Import dataset from Comma Separated Values."""
 
     settings = {
-        'delimiter': ',',
-        'csvtype': None }
+        'delimiter': ',' }
 
     def __init__(self, **kwargs):
         for key, val in kwargs.items():
@@ -99,10 +98,7 @@ class Csv:
             config['table'][name]['columns'].append(column)
 
         # get data table from csv data
-        tables = {
-            name: {
-                'array': data,
-                'fraction': 1.0}}
+        tables = { name: data }
 
         return {'config': config, 'source': tables}
 
@@ -110,5 +106,4 @@ class Tsv(Csv):
     """Export dataset to Tab Separated Values."""
 
     settings = {
-        'delimiter': '\t',
-        'csvtype': None }
+        'delimiter': '\t' }

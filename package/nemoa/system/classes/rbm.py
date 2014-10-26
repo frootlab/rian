@@ -183,11 +183,11 @@ class RBM(nemoa.system.classes.ann.ANN):
         k = cfg['update_cd_sampling_steps']
         m = cfg['update_cd_sampling_iterations']
 
-        hData = self._eval_units_expect(data, ('visible', 'hidden'))
+        hData = self._get_eval_units_expect(data, ('visible', 'hidden'))
         if k == 1 and m == 1:
-            vModel = self._eval_units_samples(hData, ('hidden', 'visible'),
-                expectLast = True)
-            hModel = self._eval_units_expect(vModel, ('visible', 'hidden'))
+            vModel = self._get_eval_units_samples(hData, ('hidden', 'visible'),
+                expect_last = True)
+            hModel = self._get_eval_units_expect(vModel, ('visible', 'hidden'))
             return data, hData, vModel, hModel
 
         vModel = numpy.zeros(shape = data.shape)
@@ -197,22 +197,22 @@ class RBM(nemoa.system.classes.ann.ANN):
 
                 # calculate hSample from hExpect
                 # in first sampling step init hSample with h_data
-                if j == 0: hSample = self._eval_units_samples(
+                if j == 0: hSample = self._get_eval_units_samples(
                     hData, ('hidden', ))
-                else: hSample = self._eval_units_samples(hExpect, (
+                else: hSample = self._get_eval_units_samples(hExpect, (
                     'hidden', ))
 
                 # calculate vExpect from hSample
-                vExpect = self._eval_units_expect(hSample, ('hidden',
+                vExpect = self._get_eval_units_expect(hSample, ('hidden',
                     'visible'))
 
                 # calculate hExpect from vSample
                 # in last sampling step use vExpect
                 # instead of vSample to reduce noise
-                if j + 1 == k: hExpect = self._eval_units_expect(vExpect,
+                if j + 1 == k: hExpect = self._get_eval_units_expect(vExpect,
                     ('visible', 'hidden'))
-                else: hExpect = self._eval_units_samples(vExpect,
-                    ('visible', 'hidden'), expectLast = True)
+                else: hExpect = self._get_eval_units_samples(vExpect,
+                    ('visible', 'hidden'), expect_last = True)
 
             vModel += vExpect / m
             hModel += hExpect / m
@@ -353,13 +353,13 @@ class RBM(nemoa.system.classes.ann.ANN):
         cfg = self._config['optimize']
         params = tracker.read('sa')
         if params:
-            initRate = params['initRate']
+            init_rate = params['init_rate']
         else:
-            initRate = cfg['update_rate']
-            tracker.write('sa', initRate = initRate)
+            init_rate = cfg['update_rate']
+            tracker.write('sa', init_rate = init_rate)
 
         shape = self._params['links'][(0, 1)]['W'].shape
-        r = initRate ** 2 / cfg['update_rate'] * cfg['update_factor_weights']
+        r = init_rate ** 2 / cfg['update_rate'] * cfg['update_factor_weights']
         temperature = self._optimize_sa_temperature(tracker)
         if temperature == 0.: return {}
         sigma = r * temperature
@@ -381,7 +381,7 @@ class RBM(nemoa.system.classes.ann.ANN):
         if heat < config['add_sa_min_temperature']: return 0.
         return heat
 
-    def _eval_system_energy(self, data, *args, **kwargs):
+    def _get_eval_system_energy(self, data, *args, **kwargs):
         """Pseudo energy function.
 
         Calculates the logarithm of the sum of exponential negative
@@ -394,15 +394,15 @@ class RBM(nemoa.system.classes.ann.ANN):
         map_hidden = ('visible', 'hidden')
 
         # calculate energies of visible units
-        energy_visible = self._eval_units_energy(
+        energy_visible = self._get_eval_units_energy(
             data[0], mapping = map_visible).sum(axis = 1)
 
         # calculate hidden unit energies of all samples
-        energy_hidden = self._eval_units_energy(
+        energy_hidden = self._get_eval_units_energy(
             data[0], mapping = map_hidden).sum(axis = 1)
 
         # calculate link energies of all samples
-        energy_links = self._eval_links_energy(
+        energy_links = self._get_eval_links_energy(
             data[0], mapping = map_hidden).sum(axis = (1, 2))
 
         # calculate energies of all samples

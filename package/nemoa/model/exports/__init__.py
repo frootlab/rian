@@ -45,22 +45,17 @@ def save(model, path = None, filetype = None, workspace = None,
     """
 
     if not nemoa.common.type.is_model(model):
-        return nemoa.log('error', """could not save model to file:
+        return nemoa.log('error', """could not export model to file:
             model is not valid.""")
 
     # get file path from model source file if path is not given
     if path == None:
-        source = model.get('config', 'source')
-        source_path = source['file']
-        file_directory = nemoa.common.get_file_directory(source_path)
-        file_basename = model.get('fullname')
-        if filetype == None:
-            file_extension \
-                = nemoa.common.get_file_extension(source_path)
-        else:
-            file_extension = filetype
-        path = '%s/%s.%s' % (file_directory, file_basename,
-            file_extension)
+        path = model.get('config', 'path')
+        filedir = nemoa.common.get_file_directory(path)
+        filename = model.get('fullname')
+        if filetype: fileext = filetype
+        else: fileext = nemoa.common.get_file_extension(path)
+        path = '%s/%s.%s' % (filedir, filename, fileext)
 
     # get file path from workspace/path if workspace is given
     elif isinstance(workspace, str) and not workspace == 'None':

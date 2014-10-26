@@ -136,7 +136,7 @@ class Graph:
 
         ## (optional) calculate node captions
         #if self.settings['node_caption']:
-            #caption = model.evaluate('system', 'units',
+            #caption = model.get('eval', 'system', 'units',
                 #self.settings['node_caption'])
             #if caption:
                 #for node in caption.keys():
@@ -145,7 +145,7 @@ class Graph:
 
         ## (optional) calculate graph caption
         #if self.settings['graph_caption']:
-            #caption = model.evaluate('system',
+            #caption = model.get('eval', 'system',
                 #self.settings['graph_caption'])
             #if caption:
                 #name = model.system.about(

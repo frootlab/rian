@@ -156,7 +156,7 @@ class Dataset:
                 columns_lost = table_config['columns_lost']
             else:
                 source_columns = \
-                    self._tables[table]['array'].dtype.names
+                    self._tables[table].dtype.names
 
                 if 'labelformat' in table_config:
                     source_labelformat = table_config['labelformat']
@@ -172,7 +172,7 @@ class Dataset:
                 table_config['columns_lost'] = columns_lost
 
             # convert table columns
-            self._tables[table]['array'].dtype.names = \
+            self._tables[table].dtype.names = \
                 tuple(table_config['columns_conv'])
 
             # notify if any table columns could not be converted
@@ -316,12 +316,15 @@ class Dataset:
         nemoa.log("stratify data using '%s'" % (algorithm))
 
         if algorithm.lower() in ['none']:
-            allSize = 0
-            for src in self._tables:
-                allSize += self._tables[src]['array'].shape[0]
-            for src in self._tables: self._tables[src]['fraction'] = \
-                float(allSize) / float(self._tables[src]['array'].shape[0])
+            allcount = 0
+            for table in self._tables:
+                allcount += self._tables[table].shape[0]
+            for table in self._tables:
+                self._config['tables'][table]['fraction'] = \
+                    float(allcount) \
+                    / float(self._tables[table].shape[0])
             return True
+
         if algorithm.lower() in ['auto']: return True
         if algorithm.lower() in ['equal']:
             frac = 1. / float(len(self._tables))
@@ -357,16 +360,16 @@ class Dataset:
             data = self._get_data(size = size, output = 'recarray')
 
         # iterative normalize sources
-        for source in self._tables.keys():
-            source_array = self._tables[source]['array']
+        for table in self._tables.keys():
+            source_array = self._tables[table]
             if source_array == None: continue
 
             # iterative normalize columns (recarray)
-            for col in source_array.dtype.names[1:]:
-                mean = data[col].mean()
-                sdev = data[col].std()
-                self._tables[source]['array'][col] = \
-                    (source_array[col] - mean) / sdev
+            for column in source_array.dtype.names[1:]:
+                mean = data[column].mean()
+                sdev = data[column].std()
+                self._tables[table][column] = \
+                    (source_array[column] - mean) / sdev
         return True
 
     def _transform(self, algorithm = 'system', *args, **kwargs):
@@ -401,25 +404,24 @@ class Dataset:
         # gauss to binary data transformation
         elif algorithm.lower() in ['gausstobinary', 'binary']:
             nemoa.log('transform data using \'%s\'' % (algorithm))
-            for src in self._tables:
+            for table in self._tables:
                 # update source per column (recarray)
-                for colName in self._tables[src]['array'].dtype.names[1:]:
+                for column in self._tables[table].dtype.names[1:]:
                     # update source data columns
-                    self._tables[src]['array'][colName] = \
-                        (self._tables[src]['array'][colName] > 0.
-                        ).astype(float)
+                    self._tables[table][column] = \
+                        (self._tables[table][column] > 0.).astype(float)
             return True
 
         # gauss to weight in [0, 1] data transformation
         elif algorithm.lower() in ['gausstoweight', 'weight']:
             nemoa.log('transform data using \'%s\'' % (algorithm))
-            for src in self._tables:
+            for table in self._tables:
                 # update source per column (recarray)
-                for colName in self._tables[src]['array'].dtype.names[1:]:
+                for column in self._tables[table].dtype.names[1:]:
                     # update source data columns
-                    self._tables[src]['array'][colName] = \
+                    self._tables[table][column] = \
                         (2. / (1. + numpy.exp(-1. * \
-                        self._tables[src]['array'][colName] ** 2))
+                        self._tables[table][column] ** 2))
                         ).astype(float)
             return True
 
@@ -427,12 +429,12 @@ class Dataset:
         # TODO: obsolete
         elif algorithm.lower() in ['gausstodistance', 'distance']:
             nemoa.log('transform data using \'%s\'' % (algorithm))
-            for src in self._tables:
+            for table in self._tables:
                 # update source per column (recarray)
-                for colName in self._tables[src]['array'].dtype.names[1:]:
-                    self._tables[src]['array'][colName] = \
+                for column in self._tables[table].dtype.names[1:]:
+                    self._tables[table][column] = \
                         (1. - (2. / (1. + numpy.exp(-1. * \
-                        self._tables[src]['array'][colName] ** 2)))
+                        self._tables[table][column] ** 2)))
                         ).astype(float)
             return True
 
@@ -459,23 +461,23 @@ class Dataset:
         for table in self._tables:
 
             # get data, mapping and transformation function
-            data = self._tables[table]['array']
+            data = self._tables[table]
             data_array = data[colnames].view('<f8').reshape(
                 data.size, len(colnames))
 
             # transform data
             if func == 'expect':
-                trans_array = system._eval_units_expect(
+                trans_array = system._get_eval_units_expect(
                     data_array, mapping)
             elif func == 'value':
-                trans_array = system._eval_units_values(
+                trans_array = system._get_eval_units_values(
                     data_array, mapping)
             elif func == 'sample':
-                trans_array = system._eval_units_samples(
+                trans_array = system._get_eval_units_samples(
                     data_array, mapping)
 
             # create empty record array
-            num_rows = self._tables[table]['array']['label'].size
+            num_rows = self._tables[table]['label'].size
             col_names = ('label',) + tuple(target_columns)
             col_formats = ('<U12',) + tuple(['<f8' \
                 for x in target_columns])
@@ -483,8 +485,7 @@ class Dataset:
                 dtype = zip(col_names, col_formats))
 
             # set values in record array
-            new_rec_array['label'] = \
-                self._tables[table]['array']['label']
+            new_rec_array['label'] = self._tables[table]['label']
             for colid, colname in \
                 enumerate(new_rec_array.dtype.names[1:]):
 
@@ -493,7 +494,7 @@ class Dataset:
                     (trans_array[:, colid]).astype(float)
 
             # set record array
-            self._tables[table]['array'] = new_rec_array
+            self._tables[table] = new_rec_array
 
         # create column mapping
         colmapping = {}
@@ -664,7 +665,7 @@ class Dataset:
     def _get_rows(self):
         row_names = []
         for source in self._tables.keys():
-            labels = self._tables[source]['array']['label'].tolist()
+            labels = self._tables[source]['label'].tolist()
             row_names += ['%s:%s' % (source, name) for name in labels]
         return row_names
 
@@ -921,8 +922,7 @@ class Dataset:
         # check source
         if not isinstance(source, str) \
             or not source in self._tables \
-            or not isinstance(self._tables[source]['array'],
-            numpy.ndarray):
+            or not isinstance(self._tables[source], numpy.ndarray):
             return nemoa.log('error', """could not retrieve table:
                 invalid table name: '%s'.""" % (source))
 
@@ -941,7 +941,7 @@ class Dataset:
             # TODO filter list to valid row names
             rowfilter = rows
 
-        src_array_colsel = self._tables[source]['array'][colnames]
+        src_array_colsel = self._tables[source][colnames]
 
         # row selection
         if '*:*' in rowfilter or source + ':*' in rowfilter:
@@ -952,7 +952,7 @@ class Dataset:
                 if row.split(':')[0] in [source, '*']]
             rowsel = numpy.asarray([
                 rowid for rowid, row in enumerate(
-                self._tables[source]['array']['label'])
+                self._tables[source]['label'])
                 if row in rowfilter_filtered])
             src_array = numpy.take(src_array_colsel, rowsel)
 
@@ -1070,7 +1070,7 @@ class Dataset:
         # assert validity of internal columns in 'mapping'
         for column in list(set(mapping.values())):
             for table in self._tables.iterkeys():
-                if column in self._tables[table]['array'].dtype.names:
+                if column in self._tables[table].dtype.names:
                     continue
                 return nemoa.log('error', """could not set columns:
                     table '%s' has no column '%s'."""
