@@ -459,10 +459,11 @@ class Dataset:
         # calculate q-quantile for each column
         quantile = {}
         for col in columns:
-            scol = numpy.sort(data[col])
+            scol = numpy.sort(data[col].copy())
             rid = int((1. - p) * data.size)
-            if data.size % 2: quantile[col] = scol[rid]
-            else: quantile[col] = 0.5 * (scol[rid] + scol[rid + 1])
+            lrid = rid - int(0.1 * p * data.size)
+            urid = rid + int(0.1 * p * data.size)
+            quantile[col] = scol[lrid:urid].mean()
 
         # iterative normalize tables and columns
         for table in self._tables.keys():

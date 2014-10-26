@@ -79,6 +79,8 @@ class Ini:
                 'labelformat': 'str',
                 'layers': 'list'},
             'layer [0-9a-zA-Z]*': {
+                'function': 'str',
+                'distribution': 'str',
                 'type': 'str',
                 'file': 'str',
                 'nodes': 'list',
@@ -110,8 +112,6 @@ class Ini:
             config['labelformat'] = 'generic:string'
 
         # init network dictionary
-        #config['visible'] = []
-        #config['hidden'] = []
         config['nodes'] = {}
         config['edges'] = {}
         config['layers'] = {}
@@ -135,6 +135,16 @@ class Ini:
             if 'type' in ini_dict[layer_section]:
                 config['layers'][layer]['type'] = \
                     ini_dict[layer_section]['type']
+
+            # get function of layer nodes
+            if 'function' in ini_dict[layer_section]:
+                config['layers'][layer]['function'] = \
+                    ini_dict[layer_section]['function']
+
+            # get distribution of layer nodes
+            if 'distribution' in ini_dict[layer_section]:
+                config['layers'][layer]['distribution'] = \
+                    ini_dict[layer_section]['distribution']
 
             # get nodes of layer from given list file ('file')
             if 'file' in ini_dict[layer_section]:

@@ -111,26 +111,27 @@ class Network:
 
 
         # add nodes to graph
-        node_order = 0
-        for layer_id, layer in enumerate(layers):
-            is_visible = self._config['layers'][layer]['visible']
-            node_type = self._config['layers'][layer]['type']
+        order = 0
+        for layerid, layer in enumerate(layers):
+            #is_visible = self._config['layers'][layer]['visible']
+            #if not 'ty'
+            #node_type = self._config['layers'][layer]['type']
 
-            if nodelist['layer'] in layers:
-                if layer == nodelist['layer']:
-                    if add_nodes: nemoa.log("""adding %i nodes
-                        to layer '%s'""" % (add_nodes, layer))
-                    if del_nodes: nemoa.log("""deleting %i nodes
-                        from layer '%s'""" % (del_nodes, layer))
-            else:
-                if is_visible:
-                    nemoa.log("adding visible layer '%s' (%s nodes)"
-                        % (layer, len(nodes[layer])))
-                else:
-                    nemoa.log("adding hidden layer '%s' (%s nodes)"
-                        % (layer, len(nodes[layer])))
+            #if nodelist['layer'] in layers:
+                #if layer == nodelist['layer']:
+                    #if add_nodes: nemoa.log("""adding %i nodes
+                        #to layer '%s'""" % (add_nodes, layer))
+                    #if del_nodes: nemoa.log("""deleting %i nodes
+                        #from layer '%s'""" % (del_nodes, layer))
+            #else:
+                #if is_visible:
+                    #nemoa.log("adding visible layer '%s' (%s nodes)"
+                        #% (layer, len(nodes[layer])))
+                #else:
+                    #nemoa.log("adding hidden layer '%s' (%s nodes)"
+                        #% (layer, len(nodes[layer])))
 
-            for layer_node_id, node in enumerate(nodes[layer]):
+            for layersubid, node in enumerate(nodes[layer]):
                 if 'labelencapsulate' in self._config \
                     and self._config['labelencapsulate'] == False:
                     node_name = node
@@ -140,19 +141,18 @@ class Network:
                 # if node is allready known, do not add node
                 if node_name in self._graph.nodes(): continue
 
-                self._graph.add_node(
-                    node_name,
-                    label = node_name,
-                    params = {
-                        'label': node,
-                        'layer': layer,
-                        'order': node_order,
-                        'layer_id': layer_id,
-                        'layer_sub_id': layer_node_id,
-                        'visible': is_visible,
-                        'type': node_type } )
+                # create dictionary with node parameters
+                node_params = self._config['layers'][layer].copy()
+                node_params['label'] = node
+                node_params['layer'] = layer
+                node_params['order'] = order
+                node_params['layer_id'] = layerid
+                node_params['layer_sub_id'] = layersubid
 
-                node_order += 1
+                self._graph.add_node(node_name,
+                    label = node_name, params = node_params )
+
+                order += 1
 
         # add edges to graph
         edge_order = 0
@@ -495,14 +495,12 @@ class Network:
 
     def _get_layer(self, layer):
         """Return dictionary containing information about a layer."""
-        nodes = self._get_nodes(layer = layer)
-        if not nodes: return None
-        first_node = self._get_node(nodes[0])['params']
-        return {
-            'layer_id': first_node['layer_id'],
-            'layer': first_node['layer'],
-            'visible': first_node['visible'],
-            'nodes': nodes}
+        if not layer in self._config['layers']: return None
+        retdict = self._config['layers'][layer]
+        retdict['layer'] = layer
+        retdict['nodes'] = self._get_nodes(layer = layer)
+        retdict['layer_id'] = self._config['layer'].index(layer)
+        return retdict
 
     def _get_layers(self, **kwargs):
         """Get node layers of network.

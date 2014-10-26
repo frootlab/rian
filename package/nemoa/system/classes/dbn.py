@@ -117,26 +117,20 @@ class DBN(nemoa.system.classes.ann.ANN):
 
             # create network of subsystem
             name = '%s ↔ %s' % (src['layer'], tgt['layer'])
-            visible = {
-                'nodes': all_visible if src['visible'] else src['id'],
-                'type': self._config['params']['visible_class'] }
-            hidden = {
-                'nodes': tgt['id'],
-                'type': self._config['params']['hidden_class'] }
+            visible_nodes = all_visible if src['visible'] else src['id']
             network = nemoa.network.create('factor', name = name,
-                visible_nodes = visible['nodes'],
-                visible_type = visible['type'],
-                hidden_nodes = hidden['nodes'],
-                hidden_type = hidden['type'])
+                visible_nodes = visible_nodes,
+                visible_type = src['class'],
+                hidden_nodes = tgt['id'],
+                hidden_type = tgt['class'])
 
             # create subsystem and configure with network
             config = { 'name': name }
-            if src['visible']:
-                config['type'] = \
-                    self._config['params']['visible_system_type']
-            else:
-                config['type'] = \
-                    self._config['params']['hidden_system_type']
+            if (src['class'], tgt['class']) == ('gauss', 'sigmoid'):
+                config['type'] = 'rbm.GRBM'
+            elif (src['class'], tgt['class']) == ('sigmoid', 'sigmoid'):
+                config['type'] = 'rbm.RBM'
+
             system = nemoa.system.new(config = config)
             system.configure(network)
 

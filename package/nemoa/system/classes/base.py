@@ -21,7 +21,6 @@ class System:
         """Import system from dictionary."""
 
         self._set_copy(**kwargs)
-        #if network: self._set_params(network = network)
 
     def configure(self, network = None):
         """Configure system to network."""
@@ -32,29 +31,23 @@ class System:
 
         return self._set_params(network = network)
 
-    def _configure_set_dataset(self, dataset):
-        """check if dataset columns match with visible units."""
+    #def _configure_set_dataset(self, dataset):
+        #"""check if dataset columns match with visible units."""
 
-        # test if argument dataset is nemoa dataset instance
-        if not nemoa.type.is_dataset(dataset): return nemoa.log(
-            'error', """could not configure system:
-            dataset instance is not valid.""")
+        ## test if argument dataset is nemoa dataset instance
+        #if not nemoa.type.is_dataset(dataset): return nemoa.log(
+            #'error', """could not configure system:
+            #dataset instance is not valid.""")
 
-        # compare visible unit labels with dataset columns
-        mapping = self.mapping()
-        units = self._get_units(visible = True)
-        if not dataset.get('columns') == units:
-            return nemoa.log('error', """could not configure system:
-                visible units differ from dataset columns.""")
-        self._config['check']['dataset'] = True
+        ## compare visible unit labels with dataset columns
+        #mapping = self.mapping()
+        #units = self._get_units(visible = True)
+        #if not dataset.get('columns') == units:
+            #return nemoa.log('error', """could not configure system:
+                #visible units differ from dataset columns.""")
+        #self._config['check']['dataset'] = True
 
-        return True
-
-    def _is_configured(self):
-        """Return configuration state of system."""
-        return self._config['check']['config'] \
-            and self._config['check']['network'] \
-            and self._config['check']['dataset']
+        #return True
 
     def _check_network(self, network, *args, **kwargs):
         """Check if network is valid for system."""
@@ -623,7 +616,12 @@ class System:
             # get unit layers and unit params
             layers = network.get('layers')
             units = [network.get('layer', layer) for layer in layers]
-            for layer in units: layer['id'] = layer.pop('nodes')
+
+            for layer in units:
+                layer['id'] = layer.pop('nodes')
+                if 'type' in layer: layer['class'] = layer.pop('type')
+                elif layer['visible']: layer['class'] = 'gauss'
+                else: layer['class'] = 'sigmoid'
 
             # get link layers and link params
             links = {}
@@ -656,18 +654,6 @@ class System:
             params = {'units': units, 'links': links}
             nemoa.common.dict_merge(params, self._params)
 
-        # get unit classes from system config
-        # TODO: get unit classes from network
-        visible_unit_class = self._config['params']['visible_class']
-        hidden_unit_class = self._config['params']['hidden_class']
-        for layer_id in xrange(len(self._params['units'])):
-            if self._params['units'][layer_id]['visible'] == True:
-                self._params['units'][layer_id]['class'] = \
-                    visible_unit_class
-            else:
-                self._params['units'][layer_id]['class'] = \
-                    hidden_unit_class
-
         # create instances of units and links
         self._set_params_create_units()
         self._set_params_create_links()
@@ -686,9 +672,11 @@ class System:
             layer_class = layer_params['class']
             layer_name = layer_params['layer']
             if layer_class == 'sigmoid':
-                self._units[layer_name] = self.UnitsSigmoid(layer_params)
+                self._units[layer_name] \
+                    = self.UnitsSigmoid(layer_params)
             elif layer_class == 'gauss':
-                self._units[layer_name] = self.UnitsGauss(layer_params)
+                self._units[layer_name] \
+                    = self.UnitsGauss(layer_params)
             else:
                 return nemoa.log('error', """could not create system:
                     unit class '%s' is not supported!"""
@@ -770,15 +758,15 @@ class System:
                 if 'w_sigma' in self._config['init'] else 1.
             sigma = numpy.ones([x, 1], dtype = float) * alpha / x
 
-            if dataset == None: random = \
-                numpy.random.normal(numpy.zeros((x, y)), sigma)
+            if dataset == None:
+                random = numpy.random.normal(numpy.zeros((x, y)), sigma)
             elif source in dataset.get('colgroups'):
                 rows = self._config['params']['samples'] \
                     if 'samples' in self._config['params'] else '*'
                 data = dataset.get('data', 100000, rows = rows,
                     cols = source)
-                random = numpy.random.normal(numpy.zeros((x, y)),
-                    sigma * numpy.std(data, axis = 0).reshape(1, x).T)
+                delta = sigma * data.std(axis = 0).reshape(x, 1) + 0.001
+                random = numpy.random.normal(numpy.zeros((x, y)), delta)
             elif dataset.get('columns') \
                 == self._units[source].params['id']:
                 rows = self._config['params']['samples'] \
