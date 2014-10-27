@@ -20,7 +20,7 @@ class Workspace:
 
     def __init__(self, workspace = None):
         """initialize shared configuration."""
-        nemoa.workspace._init()
+        #nemoa.workspace._init()
         if workspace:
             self._workspace = workspace
             self.load(workspace)

@@ -32,8 +32,7 @@ def save(model, path = None, filetype = None, plot = None, **kwargs):
         if not hasattr(module, class_name): raise ImportError()
     except ImportError:
         return nemoa.log('error', """could not plot model '%s':
-            plot type '%s' is not supported.""" %
-            (model.get('name'), plot))
+            plot type '%s' is not supported.""" %  (model.name, plot))
 
     # create plot of model
     plot = getattr(module, class_name)(**kwargs)
@@ -91,8 +90,7 @@ def show(model, plot = None, **kwargs):
         if not hasattr(module, class_name): raise ImportError()
     except ImportError:
         return nemoa.log('error', """could not plot model '%s':
-            plot type '%s' is not supported.""" %
-            (model.get('name'), plot))
+            plot type '%s' is not supported.""" % (model.name, plot))
 
     # create plot of model
     plot = getattr(module, class_name)(**kwargs)

@@ -15,9 +15,35 @@ class Dataset:
     _config = None
     _tables = None
 
-    def __init__(self, **kwargs):
+    _readwrite = ['name', 'branch', 'version', 'about', 'author',
+        'email', 'license']
+    _readonly = ['fullname', 'type', 'columns', 'rows']
+    _writeonly = []
+
+    def __init__(self, *args, **kwargs):
         """Import dataset from dictionary."""
         self._set_copy(**kwargs)
+
+    def __getattr__(self, key):
+        """Attribute wrapper to get method."""
+
+        if key in self._readwrite: return self.get(key)
+        if key in self._readonly: return self.get(key)
+        if key in self._writeonly: return nemoa.log('warning',
+            "attribute '%s' can not be accessed directly.")
+
+        raise AttributeError('%s instance has no attribute %r'
+            % (self.__class__.__name__, key))
+
+    def __setattr__(self, key, val):
+        """Attribute wrapper to set method."""
+
+        if key in self._readwrite: return self.set(key, val)
+        if key in self._writeonly: return self.set(key, val)
+        if key in self._readonly: return nemoa.log('warning',
+            "attribute '%s' can not be changed directly.")
+
+        self.__dict__[key] = val
 
     def _is_binary(self):
         """Test if dataset contains only binary data.
@@ -546,8 +572,7 @@ class Dataset:
             return nemoa.log('error', """could not transform data
                 using system: invalid system.""")
 
-        nemoa.log("transform data using system '%s'"
-            % (system.get('name')))
+        nemoa.log("transform data using system '%s'." % (system.name))
 
         nemoa.log('set', indent = '+1')
         if mapping == None: mapping = system.mapping()

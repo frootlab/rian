@@ -46,7 +46,7 @@ def save(system, path = None, filetype = None, workspace = None,
     if path == None:
         path = system.get('config', 'path')
         filedir = nemoa.common.get_file_directory(path)
-        filename = system.get('fullname')
+        filename = system.fullname
         if filetype: fileext = filetype
         else: fileext = nemoa.common.get_file_extension(path)
         path = '%s/%s.%s' % (filedir, filename, fileext)

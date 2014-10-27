@@ -9,7 +9,7 @@ import copy
 import os
 
 class Model:
-    """nemoa model class.
+    """Model base class.
 
     Attributes:
         dataset (dataset instance):
@@ -21,14 +21,39 @@ class Model:
     _default = {}
     _config = None
 
+    _readwrite = ['name', 'branch', 'version', 'about', 'author',
+        'email', 'license']
+    _readonly = ['fullname', 'type']
+    _writeonly = []
+
     dataset = None
     network = None
     system = None
 
-    def __init__(self, **kwargs):
-        """Initialize model and configure dataset, network and system."""
-
+    def __init__(self, *args, **kwargs):
+        """Import model from dictionary."""
         self._set_copy(**kwargs)
+
+    def __getattr__(self, key):
+        """Attribute wrapper to get method."""
+
+        if key in self._readwrite: return self.get(key)
+        if key in self._readonly: return self.get(key)
+        if key in self._writeonly: return nemoa.log('warning',
+            "attribute '%s' can not be accessed directly.")
+
+        raise AttributeError('%s instance has no attribute %r'
+            % (self.__class__.__name__, key))
+
+    def __setattr__(self, key, val):
+        """Attribute wrapper to set method."""
+
+        if key in self._readwrite: return self.set(key, val)
+        if key in self._writeonly: return self.set(key, val)
+        if key in self._readonly: return nemoa.log('warning',
+            "attribute '%s' can not be changed directly.")
+
+        self.__dict__[key] = val
 
     def configure(self):
         """Configure model."""
@@ -96,12 +121,12 @@ class Model:
 
         # get optimization schedule
         if schedule == None:
-            schedule = self.system.get('type') + '.default'
+            schedule = self.system.type + '.default'
         elif not '.' in schedule:
-            schedule = self.system.get('type') + '.' + schedule
+            schedule = self.system.type + '.' + schedule
         schedule = nemoa.workspace.find(
             type = 'schedule', config = schedule,
-            merge = ['params', self.system.get('type')],
+            merge = ['params', self.system.type],
             **kwargs)
         if not schedule:
             nemoa.log('error', """could not optimize system parameters:

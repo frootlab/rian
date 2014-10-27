@@ -58,7 +58,7 @@ def save(network, path = None, filetype = None, workspace = None,
     if path == None:
         path = network.get('config', 'path')
         filedir = nemoa.common.get_file_directory(path)
-        filename = network.get('fullname')
+        filename = network.fullname
         if filetype: fileext = filetype
         else: fileext = nemoa.common.get_file_extension(path)
         path = '%s/%s.%s' % (filedir, filename, fileext)

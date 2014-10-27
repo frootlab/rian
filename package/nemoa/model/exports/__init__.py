@@ -52,7 +52,7 @@ def save(model, path = None, filetype = None, workspace = None,
     if path == None:
         path = model.get('config', 'path')
         filedir = nemoa.common.get_file_directory(path)
-        filename = model.get('fullname')
+        filename = model.fullname
         if filetype: fileext = filetype
         else: fileext = nemoa.common.get_file_extension(path)
         path = '%s/%s.%s' % (filedir, filename, fileext)

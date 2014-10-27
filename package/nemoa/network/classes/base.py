@@ -8,17 +8,75 @@ import nemoa
 import networkx
 import copy
 import importlib
-import json
 
 class Network:
+    """Network base class.
+
+    Attributes:
+        about (str): Read- & writeable wrapping attribute to
+            get('about') and set('about', str).
+        author (str): Read- & writeable wrapping attribute to
+            get('author') and set('author', str).
+        branch (str): Read- & writeable wrapping attribute to
+            get('branch') and set('branch', str).
+        edges (list of str): Readonly wrapping attribute to
+            get('edges'), which returns a list of all edges in the
+            network.
+        email (str): Read- & writeable wrapping attribute to
+            get('email') and set('email', str).
+        fullname (str): Readonly wrapping attribute to get('fullname'),
+            which returns a concatenation of the 'name' and if not None,
+             the 'branch' and if not None, the 'version' number.
+        layers (list of str): Readonly wrapping attribute to
+            get('layers'), which returns a list of all layers in the
+            network.
+        license (str): Read- & writeable wrapping attribute to
+            get('license') and set('license', str).
+        name (str): Read- & writeable wrapping attribute to
+            get('name') and set('name', str).
+        nodes (list of str): Readonly wrapping attribute to
+            get('nodes'), which returns a list of all nodes in the
+            network.
+        type (str): Readonly wrapping attribute to get('type'), which
+            returns '[modulename].['classname']'
+        version (int): Read- & writeable wrapping attribute to
+            get('name') and set('name', int).
+
+    """
 
     _default = { 'name': None }
     _config = None
     _graph = None
 
-    def __init__(self, **kwargs):
+    _readwrite = ['name', 'branch', 'version', 'about', 'author',
+        'email', 'license']
+    _readonly = ['fullname', 'type', 'nodes', 'edges', 'layers']
+    _writeonly = []
+
+    def __init__(self, *args, **kwargs):
         """Import network from dictionary."""
         self._set_copy(**kwargs)
+
+    def __getattr__(self, key):
+        """Attribute wrapper to get method."""
+
+        if key in self._readwrite: return self.get(key)
+        if key in self._readonly: return self.get(key)
+        if key in self._writeonly: return nemoa.log('warning',
+            "attribute '%s' can not be accessed directly.")
+
+        raise AttributeError('%s instance has no attribute %r'
+            % (self.__class__.__name__, key))
+
+    def __setattr__(self, key, val):
+        """Attribute wrapper to set method."""
+
+        if key in self._readwrite: return self.set(key, val)
+        if key in self._writeonly: return self.set(key, val)
+        if key in self._readonly: return nemoa.log('warning',
+            "attribute '%s' can not be changed directly.")
+
+        self.__dict__[key] = val
 
     def configure(self, dataset = None):
         """Configure network to dataset."""
@@ -651,7 +709,7 @@ class Network:
             graph (dict or None, optional): network graph
 
         Returns:
-            Bool which is True if and only if no error occured.
+            bool: True if no error occured, else False
 
         """
 
@@ -663,7 +721,12 @@ class Network:
         return retval
 
     def _set_config(self, config = None):
-        """Set configuration from dictionary."""
+        """Set configuration from dictionary.
+
+        Returns:
+            bool: True if no error occured, else False
+
+        """
 
         # initialize or update configuration dictionary
         if not hasattr(self, '_config') or not self._config:
@@ -673,10 +736,16 @@ class Network:
             nemoa.common.dict_merge(config_copy, self._config)
             # reconfigure graph
             self._configure_graph()
+
         return True
 
     def _set_graph(self, graph = None):
-        """Set configuration from dictionary."""
+        """Set configuration from dictionary.
+
+        Returns:
+            bool: True if no error occured, else False
+
+        """
 
         # initialize graph
         if not hasattr(self, '_graph') or not self._graph:

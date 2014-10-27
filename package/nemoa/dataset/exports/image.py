@@ -25,8 +25,7 @@ def show(dataset, plot = None, **kwargs):
         if not hasattr(module, class_name):raise ImportError()
     except ImportError:
         return nemoa.log('error', """could not plot dataset '%s':
-            plot type '%s' is not supported.""" %
-            (dataset.get('name'), plot))
+            plot type '%s' is not supported.""" % (dataset.name, plot))
 
     # create plot of dataset
     plot = getattr(module, class_name)(**kwargs)
@@ -73,8 +72,7 @@ def save(dataset, path = None, filetype = None, plot = None, **kwargs):
         if not hasattr(module, class_name):raise ImportError()
     except ImportError:
         return nemoa.log('error', """could not plot dataset '%s':
-            plot type '%s' is not supported.""" %
-            (dataset.get('name'), plot))
+            plot type '%s' is not supported.""" % (dataset.name, plot))
 
     # create plot of dataset
     plot = getattr(module, class_name)(**kwargs)

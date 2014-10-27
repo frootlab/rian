@@ -232,7 +232,7 @@ class ANN(nemoa.system.classes.base.System):
         # Optimize system parameters
         cfg = self._config['optimize']
         nemoa.log('note', "optimize '%s' (%s)" % \
-            (self.get('name'), self.get('type')))
+            (self._get_name(), self._get_type()))
         nemoa.log('note', """using optimization algorithm '%s'"""
             % (cfg['algorithm']))
 

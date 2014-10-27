@@ -17,10 +17,35 @@ class System:
         'optimize': {}}
     _params = None
 
-    def __init__(self, network = None, **kwargs):
-        """Import system from dictionary."""
+    _readwrite = ['name', 'branch', 'version', 'about', 'author',
+        'email', 'license']
+    _readonly = ['fullname', 'type', 'units', 'links', 'layers']
+    _writeonly = []
 
+    def __init__(self, *args, **kwargs):
+        """Import system from dictionary."""
         self._set_copy(**kwargs)
+
+    def __getattr__(self, key):
+        """Attribute wrapper to get method."""
+
+        if key in self._readwrite: return self.get(key)
+        if key in self._readonly: return self.get(key)
+        if key in self._writeonly: return nemoa.log('warning',
+            "attribute '%s' can not be accessed directly.")
+
+        raise AttributeError('%s instance has no attribute %r'
+            % (self.__class__.__name__, key))
+
+    def __setattr__(self, key, val):
+        """Attribute wrapper to set method."""
+
+        if key in self._readwrite: return self.set(key, val)
+        if key in self._writeonly: return self.set(key, val)
+        if key in self._readonly: return nemoa.log('warning',
+            "attribute '%s' can not be changed directly.")
+
+        self.__dict__[key] = val
 
     def configure(self, network = None):
         """Configure system to network."""
@@ -31,23 +56,22 @@ class System:
 
         return self._set_params(network = network)
 
-    #def _configure_set_dataset(self, dataset):
-        #"""check if dataset columns match with visible units."""
+    def initialize(self, dataset = None):
+        """Initialize system parameters.
 
-        ## test if argument dataset is nemoa dataset instance
-        #if not nemoa.type.is_dataset(dataset): return nemoa.log(
-            #'error', """could not configure system:
-            #dataset instance is not valid.""")
+        Initialize all system parameters to dataset.
 
-        ## compare visible unit labels with dataset columns
-        #mapping = self.mapping()
-        #units = self._get_units(visible = True)
-        #if not dataset.get('columns') == units:
-            #return nemoa.log('error', """could not configure system:
-                #visible units differ from dataset columns.""")
-        #self._config['check']['dataset'] = True
+        Args:
+            dataset: nemoa dataset instance
 
-        #return True
+        """
+
+        if not nemoa.type.is_dataset(dataset):
+            return nemoa.log('error', """could not initilize system:
+                dataset is not valid.""")
+
+        return self._set_params_init_units(dataset) \
+            and self._set_params_init_links(dataset)
 
     def _check_network(self, network, *args, **kwargs):
         """Check if network is valid for system."""
@@ -199,6 +223,11 @@ class System:
 
         """
 
+        # test if system is initialized to network
+        if not isinstance(self._params, dict) \
+            or not 'units' in self._params:
+            return []
+
         # get filtered list of units
         units = []
         for layer in self._params['units']:
@@ -247,6 +276,11 @@ class System:
                 model.system.get('layers', type = 'test')
 
         """
+
+        # test if system is initialized to network
+        if not isinstance(self._params, dict) \
+            or not 'units' in self._params:
+            return []
 
         filter_list = []
         for key in kwargs.keys():
@@ -355,6 +389,11 @@ class System:
                 model.system.get('units', weight = 0.0)
 
         """
+
+        # test if system is initialized to network
+        if not isinstance(self._params, dict) \
+            or not 'links' in self._params:
+            return []
 
         # get links, filtered by kwargs
         layers = self._get_layers()
@@ -597,15 +636,21 @@ class System:
             'config': True, 'network': False, 'dataset': False }
         return True
 
-    def _set_params(self, params = None, network = None):
+    def _set_params(self, params = None, network = None, dataset = None):
         """Set system parameters from dictionary."""
 
-        if not hasattr(self, '_params') or not self._params:
+        if not self._params:
             self._params = {'units': {}, 'links': {}}
+
+        retval = True
 
         # get system parameters from dict
         if params:
             nemoa.common.dict_merge(copy.deepcopy(params), self._params)
+
+            # create instances of units and links
+            retval &= self._set_params_create_units()
+            retval &= self._set_params_create_links()
 
         # get system parameters from network
         elif network:
@@ -636,7 +681,7 @@ class System:
                 links[link_layer] = {
                     'source': src, 'target': tgt,
                     'A': link_layer_adj.astype(float) }
-            for link in network.get('edges'):
+            for link in network.edges:
                 src, tgt = link
                 found = False
                 for lid in xrange(len(units) - 1):
@@ -654,13 +699,23 @@ class System:
             params = {'units': units, 'links': links}
             nemoa.common.dict_merge(params, self._params)
 
-        # create instances of units and links
-        self._set_params_create_units()
-        self._set_params_create_links()
+            # create instances of units and links
+            retval &= self._set_params_create_units()
+            retval &= self._set_params_create_links()
 
-        if network: self._set_params_init_links()
+            retval &= self._set_params_init_links()
 
-        return True
+
+        # initialize system parameters if dataset is given
+        if dataset:
+            if not nemoa.type.is_dataset(dataset):
+                return nemoa.log('error', """could not initialize
+                    system: dataset instance is not valid.""")
+
+            retval &= self._set_params_init_units(dataset)
+            retval &= self._set_params_init_links(dataset)
+
+        return retval
 
     def _set_params_create_units(self):
 
@@ -739,7 +794,10 @@ class System:
         initial weights.
 
         Args:
-            dataset: nemoa dataset instance OR None
+            dataset (dataset instance OR None):
+
+        Returns:
+
 
         """
 
@@ -767,7 +825,7 @@ class System:
                     cols = source)
                 delta = sigma * data.std(axis = 0).reshape(x, 1) + 0.001
                 random = numpy.random.normal(numpy.zeros((x, y)), delta)
-            elif dataset.get('columns') \
+            elif dataset.columns \
                 == self._units[source].params['id']:
                 rows = self._config['params']['samples'] \
                     if 'samples' in self._config['params'] else '*'
@@ -793,23 +851,6 @@ class System:
         """Create copy of system."""
         return nemoa.system.copy(self, *args, **kwargs)
 
-    def initialize(self, dataset = None):
-        """Initialize system parameters.
-
-        Initialize all system parameters to dataset.
-
-        Args:
-            dataset: nemoa dataset instance
-
-        """
-
-        if not nemoa.type.is_dataset(dataset):
-            return nemoa.log('error', """could not initilize system
-                parameters: invalid dataset instance given!""")
-
-        return self._set_params_init_units(dataset) \
-            and self._set_params_init_links(dataset)
-
     def optimize(self, dataset, schedule):
         """Optimize system parameters using data and given schedule."""
 
@@ -819,15 +860,15 @@ class System:
             config = self._default['optimize'].copy()
             nemoa.common.dict_merge(self._config['optimize'], config)
             self._config['optimize'] = config
-        elif not self.get('type') in schedule['params']:
+        elif not self._get_type() in schedule['params']:
             return nemoa.log('error', """could not optimize model:
                 optimization schedule '%s' does not include system '%s'
-                """ % (schedule['name'], self.get('type')))
+                """ % (schedule['name'], self._get_type()))
         else:
             config = self._default['optimize'].copy()
             nemoa.common.dict_merge(self._config['optimize'], config)
             nemoa.common.dict_merge(
-                schedule['params'][self.get('type')], config)
+                schedule['params'][self._get_type()], config)
             self._config['optimize'] = config
 
         # check dataset

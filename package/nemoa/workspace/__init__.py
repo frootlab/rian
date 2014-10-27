@@ -10,43 +10,46 @@ import copy
 
 _shared = {}
 
-def _init():
+def configure():
     """Create and link new configuration instance."""
-    if not 'config' in _shared:
-        _shared['config'] = nemoa.workspace.base.Config()
+    _shared['config'] = nemoa.workspace.base.Config()
     return True
 
 def new():
     """Return new workspace instance."""
+    if not 'config' in _shared: configure()
     return nemoa.workspace.base.Workspace()
 
 def open(*args, **kwargs):
     """Import and return workspace instance."""
+    if not 'config' in _shared: configure()
     return nemoa.workspace.base.Workspace(*args, **kwargs)
 
 def get(*args, **kwargs):
-    if not 'config' in _shared: _init()
+    if not 'config' in _shared: configure()
     return _shared['config'].get(*args, **kwargs)
 
 def list(*args, **kwargs):
-    if not 'config' in _shared: _init()
+    if not 'config' in _shared: configure()
     return _shared['config'].list(*args, **kwargs)
 
 def path(*args, **kwargs):
-    if not 'config' in _shared: _init()
+    if not 'config' in _shared: configure()
     return _shared['config'].path(*args, **kwargs)
 
 def name():
-    if not 'config' in _shared: _init()
+    if not 'config' in _shared: configure()
     return _shared['config'].workspace()
 
 def load(*args, **kwargs):
-    if not 'config' in _shared: _init()
+    if not 'config' in _shared: configure()
     return _shared['config'].load(*args, **kwargs)
 
 def find(type = None, config = None,
     merge = ['params'], scope = 'local', **kwargs):
     """Return object configuration as dictionary."""
+    if not 'config' in _shared: configure()
+
     if config == None: return {}
     if isinstance(config, dict): return copy.deepcopy(config)
     elif not isinstance(config, str) \
@@ -77,8 +80,8 @@ def find(type = None, config = None,
             no %s with name '%s' could be found."""
             % (type, config_name))
 
-    if type == 'network':
-        return nemoa.network.load(cfg['path'])['config']
+    #if type == 'network':
+        #return nemoa.network.load(cfg['path'])['config']
 
     return cfg
 

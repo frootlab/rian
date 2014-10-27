@@ -58,7 +58,7 @@ def save(dataset, path = None, filetype = None, workspace = None,
     if path == None:
         path = dataset.get('config', 'path')
         filedir = nemoa.common.get_file_directory(path)
-        filename = dataset.get('fullname')
+        filename = dataset.fullname
         if filetype: fileext = filetype
         else: fileext = nemoa.common.get_file_extension(path)
         path = '%s/%s.%s' % (filedir, filename, fileext)

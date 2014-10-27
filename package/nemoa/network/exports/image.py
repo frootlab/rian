@@ -26,8 +26,7 @@ def show(network, plot = None, **kwargs):
         if not hasattr(module, class_name):raise ImportError()
     except ImportError:
         return nemoa.log('error', """could not plot network '%s':
-            plot type '%s' is not supported.""" %
-            (network.get('name'), plot))
+            plot type '%s' is not supported.""" % (network.name, plot))
 
     # create plot of network
     plot = getattr(module, class_name)(**kwargs)
@@ -74,8 +73,7 @@ def save(network, path = None, filetype = None, plot = None, **kwargs):
         if not hasattr(module, class_name):raise ImportError()
     except ImportError:
         return nemoa.log('error', """could not plot network '%s':
-            plot type '%s' is not supported.""" %
-            (network.get('name'), plot))
+            plot type '%s' is not supported.""" % (network.name, plot))
 
     # create plot of network
     plot = getattr(module, class_name)(**kwargs)
