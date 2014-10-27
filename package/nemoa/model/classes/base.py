@@ -12,46 +12,75 @@ class Model:
     """Model base class.
 
     Attributes:
+        about (str): Short description of the content of the resource.
+            Hint: Read- & writeable wrapping attribute to get('about')
+                and set('about', str).
+        author (str): A person, an organization, or a service that is
+            responsible for the creation of the content of the resource.
+            Hint: Read- & writeable wrapping attribute to get('author')
+                and set('author', str).
+        branch (str): Name of a duplicate of the original resource.
+            Hint: Read- & writeable wrapping attribute to get('branch')
+                and set('branch', str).
         dataset (dataset instance):
+        email (str): Email address to a person, an organization, or a
+            service that is responsible for the content of the resource.
+            Hint: Read- & writeable wrapping attribute to get('email')
+                and set('email', str).
+        fullname (str): String concatenation of name, branch and
+            version. Branch and version are only conatenated if they
+            exist.
+            Hint: Readonly wrapping attribute to get('fullname')
+        license (str): Namereference to a legal document giving official
+            permission to do something with the resource.
+            Hint: Read- & writeable wrapping attribute to get('license')
+                and set('license', str).
+        name (str): Name of the resource.
+            Hint: Read- & writeable wrapping attribute to get('name')
+                and set('name', str).
         network (network instance):
         system (system instance):
+        type (str): String concatenation of module name and class name
+            of the instance.
+            Hint: Readonly wrapping attribute to get('type')
+        version (int): Versionnumber of the resource.
+            Hint: Read- & writeable wrapping attribute to get('version')
+                and set('version', int).
 
     """
 
+    dataset  = None
+    network  = None
+    system   = None
+    _config  = None
     _default = {}
-    _config = None
-
-    _readwrite = ['name', 'branch', 'version', 'about', 'author',
-        'email', 'license']
-    _readonly = ['fullname', 'type']
-    _writeonly = []
-
-    dataset = None
-    network = None
-    system = None
+    _attr    = {'fullname': 'r', 'type': 'r', 'name': 'rw',
+                'branch': 'rw', 'version': 'rw', 'about': 'rw',
+                'author': 'rw', 'email': 'rw', 'license': 'rw'}
 
     def __init__(self, *args, **kwargs):
         """Import model from dictionary."""
+
         self._set_copy(**kwargs)
 
     def __getattr__(self, key):
-        """Attribute wrapper to get method."""
+        """Attribute wrapper to method get(key)."""
 
-        if key in self._readwrite: return self.get(key)
-        if key in self._readonly: return self.get(key)
-        if key in self._writeonly: return nemoa.log('warning',
-            "attribute '%s' can not be accessed directly.")
+        if key in self._attr:
+            if 'r' in self._attr[key]: return self.get(key)
+            return nemoa.log('warning',
+                "attribute '%s' can not be accessed directly.")
 
         raise AttributeError('%s instance has no attribute %r'
             % (self.__class__.__name__, key))
 
     def __setattr__(self, key, val):
-        """Attribute wrapper to set method."""
+        """Attribute wrapper to method set(key, val)."""
 
-        if key in self._readwrite: return self.set(key, val)
-        if key in self._writeonly: return self.set(key, val)
-        if key in self._readonly: return nemoa.log('warning',
-            "attribute '%s' can not be changed directly.")
+        if key in self._attr:
+            if 'w' in self._attr[key]: return self.set(key, val)
+            return nemoa.log('warning',
+                "attribute '%s' can not be changed directly.")
 
         self.__dict__[key] = val
 

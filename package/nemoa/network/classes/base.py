@@ -13,68 +13,77 @@ class Network:
     """Network base class.
 
     Attributes:
-        about (str): Read- & writeable wrapping attribute to
-            get('about') and set('about', str).
-        author (str): Read- & writeable wrapping attribute to
-            get('author') and set('author', str).
-        branch (str): Read- & writeable wrapping attribute to
-            get('branch') and set('branch', str).
-        edges (list of str): Readonly wrapping attribute to
-            get('edges'), which returns a list of all edges in the
-            network.
-        email (str): Read- & writeable wrapping attribute to
-            get('email') and set('email', str).
-        fullname (str): Readonly wrapping attribute to get('fullname'),
-            which returns a concatenation of the 'name' and if not None,
-             the 'branch' and if not None, the 'version' number.
-        layers (list of str): Readonly wrapping attribute to
-            get('layers'), which returns a list of all layers in the
-            network.
-        license (str): Read- & writeable wrapping attribute to
-            get('license') and set('license', str).
-        name (str): Read- & writeable wrapping attribute to
-            get('name') and set('name', str).
-        nodes (list of str): Readonly wrapping attribute to
-            get('nodes'), which returns a list of all nodes in the
-            network.
-        type (str): Readonly wrapping attribute to get('type'), which
-            returns '[modulename].['classname']'
-        version (int): Read- & writeable wrapping attribute to
-            get('name') and set('name', int).
+        about (str): Short description of the content of the resource.
+            Hint: Read- & writeable wrapping attribute to get('about')
+                and set('about', str).
+        author (str): A person, an organization, or a service that is
+            responsible for the creation of the content of the resource.
+            Hint: Read- & writeable wrapping attribute to get('author')
+                and set('author', str).
+        branch (str): Name of a duplicate of the original resource.
+            Hint: Read- & writeable wrapping attribute to get('branch')
+                and set('branch', str).
+        edges (list of str): List of all edges in the network.
+            Hint: Readonly wrapping attribute to get('edges')
+        email (str): Email address to a person, an organization, or a
+            service that is responsible for the content of the resource.
+            Hint: Read- & writeable wrapping attribute to get('email')
+                and set('email', str).
+        fullname (str): String concatenation of name, branch and
+            version. Branch and version are only conatenated if they
+            exist.
+            Hint: Readonly wrapping attribute to get('fullname')
+        layers (list of str): List of all layers in the network.
+            Hint: Readonly wrapping attribute to get('layers')
+        license (str): Namereference to a legal document giving official
+            permission to do something with the resource.
+            Hint: Read- & writeable wrapping attribute to get('license')
+                and set('license', str).
+        name (str): Name of the resource.
+            Hint: Read- & writeable wrapping attribute to get('name')
+                and set('name', str).
+        nodes (list of str): List of all nodes in the network.
+            Hint: Readonly wrapping attribute to get('nodes')
+        type (str): String concatenation of module name and class name
+            of the instance.
+            Hint: Readonly wrapping attribute to get('type')
+        version (int): Versionnumber of the resource.
+            Hint: Read- & writeable wrapping attribute to get('version')
+                and set('version', int).
 
     """
 
+    _config  = None
+    _graph   = None
     _default = { 'name': None }
-    _config = None
-    _graph = None
-
-    _readwrite = ['name', 'branch', 'version', 'about', 'author',
-        'email', 'license']
-    _readonly = ['fullname', 'type', 'nodes', 'edges', 'layers']
-    _writeonly = []
+    _attr    = {'nodes': 'r', 'edges': 'r', 'layers': 'r',
+                'fullname': 'r', 'type': 'r', 'name': 'rw',
+                'branch': 'rw', 'version': 'rw', 'about': 'rw',
+                'author': 'rw', 'email': 'rw', 'license': 'rw'}
 
     def __init__(self, *args, **kwargs):
         """Import network from dictionary."""
+
         self._set_copy(**kwargs)
 
     def __getattr__(self, key):
-        """Attribute wrapper to get method."""
+        """Attribute wrapper to method get(key)."""
 
-        if key in self._readwrite: return self.get(key)
-        if key in self._readonly: return self.get(key)
-        if key in self._writeonly: return nemoa.log('warning',
-            "attribute '%s' can not be accessed directly.")
+        if key in self._attr:
+            if 'r' in self._attr[key]: return self.get(key)
+            return nemoa.log('warning',
+                "attribute '%s' can not be accessed directly.")
 
         raise AttributeError('%s instance has no attribute %r'
             % (self.__class__.__name__, key))
 
     def __setattr__(self, key, val):
-        """Attribute wrapper to set method."""
+        """Attribute wrapper to method set(key, val)."""
 
-        if key in self._readwrite: return self.set(key, val)
-        if key in self._writeonly: return self.set(key, val)
-        if key in self._readonly: return nemoa.log('warning',
-            "attribute '%s' can not be changed directly.")
+        if key in self._attr:
+            if 'w' in self._attr[key]: return self.set(key, val)
+            return nemoa.log('warning',
+                "attribute '%s' can not be changed directly.")
 
         self.__dict__[key] = val
 
@@ -439,33 +448,34 @@ class Network:
         """Return network information of single node."""
         return self._graph.node[node]
 
-    def _get_nodes(self, grouping = None, **kwargs):
+    def _get_nodes(self, groupby = None, **kwargs):
         """Get nodes of network.
 
         Args:
-            grouping: grouping parameter of nodes. If grouping is not
+            groupby (str or None): Name of a node attribute
+                used to group nodes. If groupby is not
                 None, the returned nodes are grouped by the different
-                values of the grouping parameter. Grouping is only
-                possible if every node has the parameter.
+                values of this attribute. Grouping is only
+                possible if every node contains the attribute.
             **kwargs: filter parameters of nodes. If kwargs are given,
                 only nodes that match the filter parameters are
                 returned.
 
         Returns:
-            If the argument 'grouping' is not set, a list of strings
+            If the argument 'groupby' is not set, a list of strings
             containing name identifiers of nodes is returned. If
-            'grouping' is a valid node parameter, the nodes are grouped
+            'groupby' is a valid node parameter, the nodes are grouped
             by the values of the grouping parameter.
 
         Examples:
             Get a list of all nodes grouped by layers:
-                model.network.get('nodes', grouping = 'layer')
+                model.network.get('nodes', groupby = 'layer')
             Get a list of visible nodes:
                 model.network.get('nodes', visible = True)
 
         """
 
-        # filter nodes by attributes and order entries
+        # filter nodes to given attributes
         nodes_sort_list = [None] * self._graph.number_of_nodes()
         for node, attr in self._graph.nodes(data = True):
             if not kwargs == {}:
@@ -478,23 +488,23 @@ class Network:
                 if not passed: continue
             nodes_sort_list[attr['params']['order']] = node
         nodes = [node for node in nodes_sort_list if node]
-        if grouping == None: return nodes
+        if groupby == None: return nodes
 
-        # group nodes
+        # group nodes by given attribute
         grouping_values = []
         for node in nodes:
             node_params = self._graph.node[node]['params']
-            if not grouping in node_params:
+            if not groupby in node_params:
                 return nemoa.log('error', """could not get nodes:
-                    unknown parameter '%s'.""" % (grouping))
-            grouping_value = node_params[grouping]
+                    unknown node attribute '%s'.""" % (groupby))
+            grouping_value = node_params[groupby]
             if not grouping_value in grouping_values:
                 grouping_values.append(grouping_value)
         grouped_nodes = []
         for grouping_value in grouping_values:
             group = []
             for node in nodes:
-                if self._graph.node[node]['params'][grouping] \
+                if self._graph.node[node]['params'][groupby] \
                     == grouping_value:
                     group.append(node)
             grouped_nodes.append(group)
@@ -511,9 +521,34 @@ class Network:
                 edge ('%s', '%s') is unkown.""" % (src_node, tgt_node))
         return self._graph.edge[src_node][tgt_node]
 
-    def _get_edges(self, grouping = None, **kwargs):
+    def _get_edges(self, groupby = None, **kwargs):
+        """Get edges of network.
 
-        # filter edges by attributes and order entries
+        Args:
+            groupby (str or None): Name of an edge attribute
+                used to group edges. If groupby is not
+                None, the returned edges are grouped by the different
+                values of this attribute. Grouping is only
+                possible if every edge contains the attribute.
+            **kwargs: filter attributs of edges. If kwargs are given,
+                only edges that match the filter attributes are
+                returned.
+
+        Returns:
+            If the argument 'groupby' is not set, a list of strings
+            containing name identifiers of edges is returned. If
+            'groupby' is a valid edge attribute, the links are grouped
+            by the values of this attribute.
+
+        Examples:
+            Get a list of all edges grouped by layers:
+                model.system.get('edges', groupby = 'layer')
+            Get a list of edges with negative sign:
+                model.system.get('edges', sign = -1)
+
+        """
+
+        # filter efges to given attributes
         edge_sort_list = [None] * self._graph.number_of_edges()
         for src, tgt, attr in self._graph.edges(data = True):
             if not kwargs == {}:
@@ -526,17 +561,17 @@ class Network:
                 if not passed: continue
             edge_sort_list[attr['params']['order']] = (src, tgt)
         edges = [edge for edge in edge_sort_list if edge]
-        if grouping == None: return edges
+        if groupby == None: return edges
 
-        # group edges
+        # group edges by given attribute
         grouping_values = []
         for edge in edges:
             src, tgt = edge
             edge_params = self._graph.edge[src][tgt]['params']
-            if not grouping in edge_params:
+            if not groupby in edge_params:
                 return nemoa.log('error', """could not get edges:
-                    unknown parameter '%s'.""" % (grouping))
-            grouping_value = edge_params[grouping]
+                    unknown edge attribute '%s'.""" % (groupby))
+            grouping_value = edge_params[groupby]
             if not grouping_value in grouping_values:
                 grouping_values.append(grouping_value)
         grouped_edges = []
@@ -544,11 +579,10 @@ class Network:
             group = []
             for edge in edges:
                 src, tgt = edge
-                if self._graph.edge[src][tgt]['params'][grouping] \
+                if self._graph.edge[src][tgt]['params'][groupby] \
                     == grouping_value:
                     group.append(edge)
             grouped_edges.append(group)
-
         return grouped_edges
 
     def _get_layer(self, layer):

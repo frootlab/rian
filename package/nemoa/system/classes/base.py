@@ -10,40 +10,79 @@ import time
 import copy
 
 class System:
+    """System base class.
 
-    _default = {
-        'params': {},
-        'init': {},
-        'optimize': {}}
-    _params = None
+    Attributes:
+        about (str): Short description of the content of the resource.
+            Hint: Read- & writeable wrapping attribute to get('about')
+                and set('about', str).
+        author (str): A person, an organization, or a service that is
+            responsible for the creation of the content of the resource.
+            Hint: Read- & writeable wrapping attribute to get('author')
+                and set('author', str).
+        branch (str): Name of a duplicate of the original resource.
+            Hint: Read- & writeable wrapping attribute to get('branch')
+                and set('branch', str).
+        edges (list of str): List of all edges in the network.
+            Hint: Readonly wrapping attribute to get('edges')
+        email (str): Email address to a person, an organization, or a
+            service that is responsible for the content of the resource.
+            Hint: Read- & writeable wrapping attribute to get('email')
+                and set('email', str).
+        fullname (str): String concatenation of name, branch and
+            version. Branch and version are only conatenated if they
+            exist.
+            Hint: Readonly wrapping attribute to get('fullname')
+        layers (list of str): List of all layers in the network.
+            Hint: Readonly wrapping attribute to get('layers')
+        license (str): Namereference to a legal document giving official
+            permission to do something with the resource.
+            Hint: Read- & writeable wrapping attribute to get('license')
+                and set('license', str).
+        name (str): Name of the resource.
+            Hint: Read- & writeable wrapping attribute to get('name')
+                and set('name', str).
+        nodes (list of str): List of all nodes in the network.
+            Hint: Readonly wrapping attribute to get('nodes')
+        type (str): String concatenation of module name and class name
+            of the instance.
+            Hint: Readonly wrapping attribute to get('type')
+        version (int): Versionnumber of the resource.
+            Hint: Read- & writeable wrapping attribute to get('version')
+                and set('version', int).
 
-    _readwrite = ['name', 'branch', 'version', 'about', 'author',
-        'email', 'license']
-    _readonly = ['fullname', 'type', 'units', 'links', 'layers']
-    _writeonly = []
+    """
+
+    _params  = None
+    _default = {'params': {}, 'init': {}, 'optimize': {}}
+    _attr    = {'units': 'r', 'links': 'r', 'layers': 'r',
+                'fullname': 'r', 'type': 'r', 'name': 'rw',
+                'branch': 'rw', 'version': 'rw', 'about': 'rw',
+                'author': 'rw', 'email': 'rw', 'license': 'rw'}
 
     def __init__(self, *args, **kwargs):
         """Import system from dictionary."""
+
         self._set_copy(**kwargs)
 
     def __getattr__(self, key):
-        """Attribute wrapper to get method."""
+        """Attribute wrapper to method get(key)."""
 
-        if key in self._readwrite: return self.get(key)
-        if key in self._readonly: return self.get(key)
-        if key in self._writeonly: return nemoa.log('warning',
-            "attribute '%s' can not be accessed directly.")
+        if key in self._attr:
+            if 'r' in self._attr[key]: return self.get(key)
+            return nemoa.log('warning',
+                "attribute '%s' can not be accessed directly.")
 
         raise AttributeError('%s instance has no attribute %r'
             % (self.__class__.__name__, key))
 
     def __setattr__(self, key, val):
-        """Attribute wrapper to set method."""
+        """Attribute wrapper to method set(key, val)."""
 
-        if key in self._readwrite: return self.set(key, val)
-        if key in self._writeonly: return self.set(key, val)
-        if key in self._readonly: return nemoa.log('warning',
-            "attribute '%s' can not be changed directly.")
+        if key in self._attr:
+            if 'w' in self._attr[key]: return self.set(key, val)
+            return nemoa.log('warning',
+                "attribute '%s' can not be changed directly.")
 
         self.__dict__[key] = val
 
@@ -197,27 +236,28 @@ class System:
 
         return unit_params
 
-    def _get_units(self, grouping = None, **kwargs):
+    def _get_units(self, groupby = None, **kwargs):
         """Get units of system.
 
         Args:
-            grouping: grouping parameter of units. If grouping is not
+            groupby (str or 'None): Name of a unit attribute
+                used to group units. If groupby is not
                 None, the returned units are grouped by the different
-                values of the grouping parameter. Grouping is only
-                possible if every unit contains the parameter.
+                values of this attribute. Grouping is only
+                possible if every unit contains the attribute.
             **kwargs: filter parameters of units. If kwargs are given,
                 only units that match the filter parameters are
                 returned.
 
         Returns:
-            If the argument 'grouping' is not set, a list of strings
+            If the argument 'groupby' is not set, a list of strings
             containing name identifiers of units is returned. If
-            'grouping' is a valid unit parameter, the units are grouped
-            by the values of the grouping parameter.
+            'groupby' is a valid unit attribute, the units are grouped
+            by the values of this attribute.
 
         Examples:
             Get a list of all units grouped by layers:
-                model.system.get('units', grouping = 'layer')
+                model.system.get('units', groupby = 'layer')
             Get a list of visible units:
                 model.system.get('units', visible = True)
 
@@ -228,7 +268,7 @@ class System:
             or not 'units' in self._params:
             return []
 
-        # get filtered list of units
+        # filter units to given attributes
         units = []
         for layer in self._params['units']:
             valid = True
@@ -238,25 +278,25 @@ class System:
                     break
             if not valid: continue
             units += layer['id']
-        if grouping == None: return units
+        if groupby == None: return units
 
-        # group units by given grouping parameter
+        # group units by given attribute
         units_params = {}
         for unit in units:
             units_params[unit] = self._get_unit(unit)
         grouping_values = []
         for unit in units:
-            if not grouping in units_params[unit].keys():
+            if not groupby in units_params[unit].keys():
                 return nemoa.log('error', """could not get units:
-                    unknown parameter '%s'.""" % (grouping))
-            grouping_value = units_params[unit][grouping]
+                    unknown parameter '%s'.""" % (groupby))
+            grouping_value = units_params[unit][groupby]
             if not grouping_value in grouping_values:
                 grouping_values.append(grouping_value)
         grouped_units = []
         for grouping_value in grouping_values:
             group = []
             for unit in units:
-                if units_params[unit][grouping] == grouping_value:
+                if units_params[unit][groupby] == grouping_value:
                     group.append(unit)
             grouped_units.append(group)
         return grouped_units
@@ -364,29 +404,30 @@ class System:
 
         return link_params
 
-    def _get_links(self, grouping = None, **kwargs):
+    def _get_links(self, groupby = None, **kwargs):
         """Get links of system.
 
         Args:
-            grouping: grouping parameter of links. If grouping is not
+            groupby (str or None): Name of a link attribute
+                used to group links. If groupby is not
                 None, the returned links are grouped by the different
-                values of the grouping parameter. Grouping is only
-                possible if every links contains the parameter.
-            **kwargs: filter parameters of links. If kwargs are given,
-                only links that match the filter parameters are
+                values of this attribute. Grouping is only
+                possible if every link contains the attribute.
+            **kwargs: filter attributs of links. If kwargs are given,
+                only links that match the filter attributes are
                 returned.
 
         Returns:
-            If the argument 'grouping' is not set, a list of strings
+            If the argument 'groupby' is not set, a list of strings
             containing name identifiers of links is returned. If
-            'grouping' is a valid link parameter, the links are grouped
-            by the values of the grouping parameter.
+            'groupby' is a valid link attribute, the links are grouped
+            by the values of this attribute.
 
         Examples:
             Get a list of all links grouped by layers:
-                model.system.get('links', grouping = 'layer')
+                model.system.get('links', groupby = 'layer')
             Get a list of links with weight = 0.0:
-                model.system.get('units', weight = 0.0)
+                model.system.get('links', weight = 0.0)
 
         """
 
@@ -395,7 +436,7 @@ class System:
             or not 'links' in self._params:
             return []
 
-        # get links, filtered by kwargs
+        # filter links by given attributes
         layers = self._get_layers()
         if not layers: return False
         links = []
@@ -422,22 +463,22 @@ class System:
                     if not valid: continue
                     links.append(link)
                     links_params[link] = link_params
-        if grouping == None: return links
+        if groupby == None: return links
 
-        # group links by given grouping parameter
+        # group links by given attribute
         grouping_values = []
         for link in links:
-            if not grouping in links_params[link].keys():
+            if not groupby in links_params[link].keys():
                 return nemoa.log('error', """could not get links:
-                    unknown parameter '%s'.""" % (grouping))
-            grouping_value = links_params[link][grouping]
+                    unknown link attribute '%s'.""" % (groupby))
+            grouping_value = links_params[link][groupby]
             if not grouping_value in grouping_values:
                 grouping_values.append(grouping_value)
         grouped_links = []
         for grouping_value in grouping_values:
             group = []
             for link in links:
-                if links_params[link][grouping] == grouping_value:
+                if links_params[link][groupby] == grouping_value:
                     group.append(link)
             grouped_links.append(group)
         return grouped_links

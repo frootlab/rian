@@ -92,7 +92,7 @@ class DBN(nemoa.system.classes.ann.ANN):
         return True
 
     def _optimize_pretraining(self, dataset, schedule, tracker):
-        """Pretraining model using restricted boltzmann machines."""
+        """Pretraining model using Restricted Boltzmann Machines."""
 
         nemoa.log('note', 'pretraining model')
         nemoa.log('set', indent = '+1')
@@ -105,7 +105,7 @@ class DBN(nemoa.system.classes.ann.ANN):
             return False
 
         # create and configure subsystems
-        sub_systems = []
+        subsystems = []
 
         all_visible = self._params['units'][0]['id'] \
             + self._params['units'][-1]['id']
@@ -125,17 +125,23 @@ class DBN(nemoa.system.classes.ann.ANN):
                 hidden_type = tgt['class'])
 
             # create subsystem and configure with network
-            config = { 'name': name }
-            if (src['class'], tgt['class']) == ('gauss', 'sigmoid'):
-                config['type'] = 'rbm.GRBM'
-            elif (src['class'], tgt['class']) == ('sigmoid', 'sigmoid'):
-                config['type'] = 'rbm.RBM'
+            config = { 'name': name, 'type': None }
+            if src['class'] == 'gauss':
+                if tgt['class'] == 'sigmoid':
+                    config['type'] = 'rbm.GRBM'
+            elif src['class'] == 'sigmoid':
+                if tgt['class'] == 'sigmoid':
+                    config['type'] = 'rbm.RBM'
+            if not config['type']:
+                return nemoa.log('error', """could not create
+                    rbm: unsupported pair of unit classes '%s ↔ %s'"""
+                    % (src['class'], tgt['class']))
 
             system = nemoa.system.new(config = config)
             system.configure(network)
 
             # link subsystem
-            sub_systems.append(system)
+            subsystems.append(system)
 
             # link parameters of links of subsystem
             links['init'] = system._params['links'][(0, 1)]
@@ -160,14 +166,14 @@ class DBN(nemoa.system.classes.ann.ANN):
         dataset_backup = dataset.get('copy')
 
         # optimize subsystems
-        for sys_id in xrange(len(sub_systems)):
+        for sys_id in xrange(len(subsystems)):
 
             # link subsystem
-            system = sub_systems[sys_id]
+            system = subsystems[sys_id]
 
             # transform dataset with previous system / fix lower stack
             if sys_id > 0:
-                prev_sys = sub_systems[sys_id - 1]
+                prev_sys = subsystems[sys_id - 1]
                 visible_layer = prev_sys._params['units'][0]['layer']
                 hidden_layer = prev_sys._params['units'][1]['layer']
                 mapping = (visible_layer, hidden_layer)
