@@ -46,23 +46,27 @@ class RBM(nemoa.system.classes.ann.ANN):
             'minibatch_size': 100,
             'minibatch_update_interval': 10,
             'updates': 100000,
-            'algorithm': 'vrcd',
+            'algorithm': 'cd',
+            'res_module': 'klpt',
+            'den_module': 'corr',
+            'acc_module': 'vmra',
+            'gen_module': 'rasa',
             'update_cd_sampling_steps': 1,
             'update_cd_sampling_iterations': 1,
             'update_rate': 0.1,
             'update_factor_weights': 1.,
             'update_factor_hbias': 0.1,
             'update_factor_vbias': 0.1,
-            'add_sa_enable': True,
-            'add_sa_init_temperature': 1.,
-            'add_sa_annealing_factor': 1.,
-            'add_sa_annealing_cycles': 1,
-            'add_kl_enable': True,
-            'add_kl_rate': 0.,
-            'add_kl_expect': 0.5,
-            'add_noise_enable': True,
-            'add_noise_type': 'mask',
-            'add_noise_factor': 0.5,
+            'gen_rasa_enable': True,
+            'gen_rasa_init_temperature': 1.,
+            'gen_rasa_annealing_factor': 1.,
+            'gen_rasa_annealing_cycles': 1,
+            'res_klpt_enable': True,
+            'res_klpt_rate': 0.,
+            'res_klpt_expect': 0.5,
+            'den_corr_enable': True,
+            'den_corr_type': 'mask',
+            'den_corr_factor': 0.5,
             'adjacency_enable': False,
             'tracker_obj_function': 'error',
             'tracker_eval_time_interval': 10. ,
@@ -97,27 +101,62 @@ class RBM(nemoa.system.classes.ann.ANN):
 
         nemoa.log('note', "optimize '%s' (%s)" % \
             (self._get_name(), self._get_type()))
+
         nemoa.log('note', """using optimization algorithm '%s'"""
             % (cfg['algorithm']))
 
-        if cfg['add_noise_enable']:
-            nemoa.log('note', """using artificial noise for denoising
-                with noise model '%s (%.2f)'"""
-                % (cfg['add_noise_type'],
-                cfg['add_noise_factor']))
-        if cfg['add_kl_enable']:
-            nemoa.log('note', """using Kullback-Leibler penalty for
-                sparse coding with expectation value %.2f"""
-                % (cfg['add_kl_expect']))
-        if cfg['add_vmra_enable']:
-            nemoa.log('note', """using variance maximizing rate adaption
-                with tracking length %i""" % (cfg['add_vmra_length']))
-        if cfg['add_sa_enable']:
-            nemoa.log('note', """using simulated annealing  with initial
-                temperature %.2f and annealing factor %.2f""" %
-                (cfg['add_sa_init_temperature'],
-                cfg['add_sa_annealing_factor']))
+        # set enable flags for restriction extensions
+        cfg['res_klpt_enable'] =  False
+        if cfg['res_module']:
+            found = False
+            if cfg['res_module'] == 'klpt':
+                cfg['res_klpt_enable'] =  True
+                about = """Kullback-Leibler penalty (expectation
+                    value %.2f)""" % (cfg['res_klpt_expect'])
+                found = True
+            if found:
+                nemoa.log('note', 'using restriction: %s' % (about))
 
+        # set enable flags for denoising extensions
+        cfg['den_corr_enable'] = False
+        if cfg['den_module']:
+            found = False
+            if cfg['den_module'].lower() == 'corr':
+                cfg['den_corr_enable'] = True
+                about = """data corruption (noise model '%s',
+                    factor %.2f)""" % (cfg['den_corr_type'],
+                    cfg['den_corr_factor'])
+                found = True
+            if found:
+                nemoa.log('note', 'using denoising: %s' % (about))
+
+        # set enable flags for acceleration extensions
+        cfg['acc_vmra_enable'] = False
+        if cfg['acc_module']:
+            found = False
+            if cfg['acc_module'].lower() == 'vmra':
+                cfg['acc_vmra_enable'] = True
+                about = """variance maximizing rate adaption (tail
+                    length %i)""" % (cfg['acc_vmra_length'])
+                found = True
+            if found:
+                nemoa.log('note', 'using acceleration: %s' % (about))
+
+        # set enable flags for globalization extensions
+        cfg['gen_rasa_enable'] =  False
+        if cfg['gen_module']:
+            found = False
+            if cfg['gen_module'].lower() == 'rasa':
+                cfg['gen_rasa_enable'] =  True
+                about = """rate adaptive annealing (temperature %.1f,
+                    annealing %.1f)""" % (
+                    cfg['gen_rasa_init_temperature'],
+                    cfg['gen_rasa_annealing_factor'])
+                found = True
+            if found:
+                nemoa.log('note', 'using generalization: %s' % (about))
+
+        # start optimization
         if cfg['algorithm'].lower() == 'cd':
             return self._optimize_cd(dataset, schedule, tracker)
 
@@ -127,15 +166,17 @@ class RBM(nemoa.system.classes.ann.ANN):
     def _optimize_cd(self, dataset, schedule, tracker):
         """Optimize system parameters with Contrastive Divergency."""
 
-        cfg  = self._config['optimize']
+        data_update_interval = \
+            self._config['optimize']['minibatch_update_interval']
 
         while tracker.update():
 
-            # get data (sample from minibatches)
-            if tracker.get('epoch') % cfg['minibatch_update_interval'] == 0:
+            # get data (stratified samples)
+            if not tracker.get('epoch') % data_update_interval:
                 data = self._optimize_get_data(dataset)
 
-            self._optimize_cd_update(data, tracker) # Update system parameters
+            # update system parameters
+            self._optimize_cd_update(data, tracker)
 
         return True
 
@@ -146,17 +187,17 @@ class RBM(nemoa.system.classes.ann.ANN):
         else: wVar = numpy.append([var], store['wVar'])
 
         cfg = self._config['optimize']
-        length = cfg['add_vmra_length']
+        length = cfg['acc_vmra_length']
         if wVar.shape[0] > length:
 
             wVar = wVar[:length]
             A = numpy.array([numpy.arange(0, length),
                 numpy.ones(length)])
             grad = - numpy.linalg.lstsq(A.T, wVar)[0][0]
-            delw = cfg['add_vmra_factor'] * grad
+            delw = cfg['acc_vmra_factor'] * grad
 
             cfg['update_rate'] = min(max(delw,
-                cfg['add_vmra_min_rate']), cfg['add_vmra_max_rate'])
+                cfg['acc_vmra_min_rate']), cfg['acc_vmra_max_rate'])
 
         tracker.write('vmra', wVar = wVar)
         return True
@@ -226,9 +267,9 @@ class RBM(nemoa.system.classes.ann.ANN):
         ignore = config['ignore_units']
 
         # (optional) Variance maximizing rate adaption
-        if config['add_vmra_enable']:
-            if tracker.get('epoch') % config['add_vmra_update_interval'] == 0 \
-                and tracker.get('epoch') > config['add_vmra_init_wait']:
+        if config['acc_vmra_enable']:
+            if tracker.get('epoch') % config['acc_vmra_update_interval'] == 0 \
+                and tracker.get('epoch') > config['acc_vmra_init_wait']:
                 self._optimize_vmra_update_rate(tracker)
 
         # get system estimations (model)
@@ -246,18 +287,18 @@ class RBM(nemoa.system.classes.ann.ANN):
         if not 'links' in ignore: self._optimize_update_links(**deltaL)
 
         # (optional) Kullback-Leibler penalty update for sparsity
-        if config['add_kl_enable']:
+        if config['res_klpt_enable']:
             if not 'hidden' in ignore: self._units['hidden'].update(
-                self._optimize_kl_delta_hidden(*dTuple))
+                self._optimize_klpt_delta_hidden(*dTuple))
 
         # (optional) Simulated Annealing update to avoid underfitting
-        if config['add_sa_enable']:
+        if config['gen_rasa_enable']:
             if not 'visible' in ignore: self._units['visible'].update(
-                self._optimize_sa_delta_visible(tracker))
+                self._optimize_rasa_delta_visible(tracker))
             if not 'hidden' in ignore: self._units['hidden'].update(
-                self._optimize_sa_delta_hidden(tracker))
+                self._optimize_rasa_delta_hidden(tracker))
             if not 'links' in ignore: self._optimize_update_links(
-                **self._optimize_sa_delta_links(tracker))
+                **self._optimize_rasa_delta_links(tracker))
 
         return True
 
@@ -313,7 +354,8 @@ class RBM(nemoa.system.classes.ann.ANN):
 
         return { 'W': r * (D - M) }
 
-    def _optimize_kl_delta_hidden(self, vData, hData, vModel, hModel):
+    def _optimize_klpt_delta_hidden(self, v_data, h_data, v_model,
+        h_model):
         """Kullback-Leibler penalty gradients of hidden units.
 
         Returns:
@@ -323,33 +365,38 @@ class RBM(nemoa.system.classes.ann.ANN):
 
         """
 
-        cfg = self._config['optimize']
+        config = self._config['optimize']
 
-        p = cfg['add_kl_expect'] # target expectation value
-        q = numpy.mean(hData, axis = 0) # expectation value over samples
-        r = max(cfg['update_rate'], cfg['add_kl_rate']) # update rate
+        # get expectation value target
+        p = config['res_klpt_expect']
+
+        # get expectation value
+        q = numpy.mean(h_data, axis = 0)
+
+        # get update rate
+        r = max(config['update_rate'], config['res_klpt_rate'])
 
         return { 'bias': r * (p - q) }
 
-    def _optimize_sa_delta_hidden(self, tracker):
+    def _optimize_rasa_delta_hidden(self, tracker):
         cfg = self._config['optimize']
-        #cfg['add_sa_init_temperature'], cfg['add_sa_annealing_factor']
+        #cfg['gen_rasa_init_temperature'], cfg['gen_rasa_annealing_factor']
 
         #dBias = numpy.zeros([1, hData.shape[1]])
 
         #return { 'bias': dBias }
         return {}
 
-    def _optimize_sa_delta_visible(self, tracker):
+    def _optimize_rasa_delta_visible(self, tracker):
         cfg = self._config['optimize']
-        #cfg['add_sa_init_temperature'], cfg['add_sa_annealing_factor']
+        #cfg['gen_rasa_init_temperature'], cfg['gen_rasa_annealing_factor']
 
         #dBias = numpy.zeros([1, vData.shape[1]])
 
         #return { 'bias': dBias }
         return {}
 
-    def _optimize_sa_delta_links(self, tracker):
+    def _optimize_rasa_delta_links(self, tracker):
         cfg = self._config['optimize']
         params = tracker.read('sa')
         if params:
@@ -360,25 +407,25 @@ class RBM(nemoa.system.classes.ann.ANN):
 
         shape = self._params['links'][(0, 1)]['W'].shape
         r = init_rate ** 2 / cfg['update_rate'] * cfg['update_factor_weights']
-        temperature = self._optimize_sa_temperature(tracker)
+        temperature = self._optimize_rasa_temperature(tracker)
         if temperature == 0.: return {}
         sigma = r * temperature
         W = numpy.random.normal(0., sigma, shape)
 
         return { 'W': W }
 
-    def _optimize_sa_temperature(self, tracker):
+    def _optimize_rasa_temperature(self, tracker):
         """Calculate temperature for simulated annealing."""
         config = self._config['optimize']
 
-        init = float(config['add_sa_init_temperature'])
-        annealing = float(config['add_sa_annealing_factor'])
-        cycles = float(config['add_sa_annealing_cycles'])
+        init = float(config['gen_rasa_init_temperature'])
+        annealing = float(config['gen_rasa_annealing_factor'])
+        cycles = float(config['gen_rasa_annealing_cycles'])
         updates = int(float(config['updates']) / cycles)
         epoch = float(tracker.get('epoch') % updates)
         heat = init * (1. - epoch / float(updates)) ** annealing
 
-        if heat < config['add_sa_min_temperature']: return 0.
+        if heat < config['gen_rasa_min_temperature']: return 0.
         return heat
 
     def _get_eval_system_energy(self, data, *args, **kwargs):
@@ -454,6 +501,10 @@ class GRBM(RBM):
             'ignore_units': [], # do not ignore units on update (needed for stacked updates)
             'updates': 100000, # number of update steps / epochs
             'algorithm': 'cd', # algorithm used for updates
+            'res_module': 'klpt',
+            'acc_module': 'vmra',
+            'gen_module': 'rasa',
+            'den_module': 'corr',
             'update_cd_sampling_steps': 1, # number of gibbs steps in cdk sampling
             'update_cd_sampling_iterations': 1, # number of iterations in cdk sampling
             'update_rate': 0.001, # update rate (depends in algorithm)
@@ -463,16 +514,16 @@ class GRBM(RBM):
             'update_factor_vlvar': 0.01, # factor for visible unit logarithmic variance updates (related to update rate)
             'minibatch_size': 500, # number of samples used to calculate updates
             'minibatch_update_interval': 1, # number of updates the same minibatch is used
-            'add_noise_enable': False,
-            'add_noise_type': 'none', # do not use noise
-            'add_noise_factor': 0., # no noise of data
-            'add_sa_enable': True, # use simulated annealing
-            'add_sa_init_temperature': 1.,
-            'add_sa_annealing_factor': 1.,
-            'add_sa_annealing_cycles': 1,
-            'add_kl_enable': True, # use Kullback-Leibler penalty
-            'add_kl_rate': 0., # sparsity update
-            'add_kl_expect': 0.5, # aimed value for l2-norm penalty
+            'den_corr_enable': False,
+            'den_corr_type': 'none', # do not use noise
+            'den_corr_factor': 0., # no noise of data
+            'gen_rasa_enable': True, # use simulated annealing
+            'gen_rasa_init_temperature': 1.,
+            'gen_rasa_annealing_factor': 1.,
+            'gen_rasa_annealing_cycles': 1,
+            'res_klpt_enable': True, # use Kullback-Leibler penalty term
+            'res_klpt_rate': 0., # sparsity update
+            'res_klpt_expect': 0.5, # aimed value for l2-norm penalty
             'adjacency_enable': False, # do not use selective weight updates
             'tracker_obj_function': 'error', # objective function
             'tracker_eval_time_interval': 20., # time interval for calculation the inspection function

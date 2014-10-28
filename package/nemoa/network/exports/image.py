@@ -108,7 +108,7 @@ class Graph:
     settings = {
         'fileformat': 'pdf',
         'dpi': 300,
-        'show_title': True,
+        'show_title': False,
         'title': None,
         'bg_color': 'none',
         'graph_caption': 'accuracy',

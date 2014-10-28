@@ -49,7 +49,7 @@ class ANN(nemoa.system.classes.base.System):
             'check_dataset': False,
             'ignore_units': [],
             'algorithm': 'bprop',
-            'add_noise_enable': False,
+            'den_corr_enable': False,
             'minibatch_size': 100,
             'minibatch_update_interval': 10,
             'updates': 10000,
@@ -173,9 +173,9 @@ class ANN(nemoa.system.classes.base.System):
 
         config = self._config['optimize']
         kwargs['size'] = config['minibatch_size']
-        if config['add_noise_enable']:
-            kwargs['noise'] = (config['add_noise_type'],
-                config['add_noise_factor'])
+        if config['den_corr_enable']:
+            kwargs['noise'] = (config['den_corr_type'],
+                config['den_corr_factor'])
         return dataset.get('data', **kwargs)
 
     def _optimize_get_values(self, data):

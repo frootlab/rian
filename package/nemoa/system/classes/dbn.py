@@ -55,7 +55,7 @@ class DBN(nemoa.system.classes.ann.ANN):
             'check_dataset': False,
             'ignore_units': [],
             'algorithm': 'bprop',
-            'add_noise_enable': False,
+            'den_corr_enable': False,
             'minibatch_size': 100,
             'minibatch_update_interval': 10,
             'updates': 10000,
