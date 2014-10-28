@@ -24,6 +24,16 @@ COLOR = {
     'lightgreen': (0.6, 0.8, 0.196, 1.),
     'lightblue': (0.439, 0.502, 0.565, 1.),
     'cornflower': (0.27, 0.51, 0.7, 1.),
+    'lg1-bg': (0.9529, 0.9529, 0.9529, 1.),
+    'lg1-border': (0.7765, 0.7765, 0.7765, 1.),
+    'lg1-font': (0.2667, 0.2667, 0.2667, 1.),
+    'lb1-bg': (0.5450, 0.6470, 0.8078, 1.),
+    'lb1-font': (0.1367, 0.1367, 0.1367, 1.),
+    #'lb1-border': (0.0039, 0.2745, 0.4156, 1.),
+    'lb1-border': (0.1058, 0.3215, 0.4352, 1.),
+    'lg2-bg': (0.8235, 0.8235, 0.8235, 1.),
+    'lg2-border': (0.5356, 0.5356, 0.5356, 1.),
+    'lg2-font': (0.2667, 0.2667, 0.2667, 1.),
 }
 
 def heatmap(array, **kwargs):
@@ -42,10 +52,10 @@ def heatmap(array, **kwargs):
 
     # create labels for axis
     max_font_size = 12.
-    y_labels = [nemoa.common.str_format_unit_label(label.split(':')[1]) \
-        for label in kwargs['units'][0]]
-    x_labels = [nemoa.common.str_format_unit_label(label.split(':')[1]) \
-        for label in kwargs['units'][1]]
+    y_labels = [nemoa.common.str_format_unit_label(
+        label.split(':')[1]) for label in kwargs['units'][0]]
+    x_labels = [nemoa.common.str_format_unit_label(
+        label.split(':')[1]) for label in kwargs['units'][1]]
     fontsize = min(max_font_size, \
         400. / float(max(len(x_labels), len(y_labels))))
     matplotlib.pyplot.xticks(
@@ -187,7 +197,7 @@ def graph(graph, **kwargs):
 
     return True
 
-def layergraph(G, **kwargs):
+def oldlayergraph(G, **kwargs):
 
     # create node stack (list with lists of nodes)
     layers = G.graph['params']['layer']
@@ -223,6 +233,7 @@ def layergraph(G, **kwargs):
     l_len = len(nodes)
     scale = min(240. / n_len, 150. / l_len, 35.)
     graph_node_size = 0.9 * scale ** 2
+    graph_node_radius = numpy.sqrt(graph_node_size) / 480.
     graph_font_size = 0.4 * scale
     graph_caption_pos = -0.0025 * scale
     graph_line_width = 0.3
@@ -278,6 +289,7 @@ def layergraph(G, **kwargs):
                 nodelist = [node],
                 node_shape = 'o',
                 node_color = color['bg'])
+
             node_obj.set_edgecolor(color['border'])
 
             # draw node label
@@ -338,3 +350,190 @@ def layergraph(G, **kwargs):
             G.graph['caption'], fontsize = 9., ha = 'center')
 
     return True
+
+def layergraph(graph, edge_curvature = 1.0, **kwargs):
+
+    node_size_max = 800.     # maximum node size
+    node_size_scale = 1.85   # node size scale factor
+    font_size_max = 18.      # maximum font size
+    edge_line_width_max = 4. # maximum edge line with
+    edge_arr_scale = 8.      # edge arrow size scale factor
+    #curvature = 0.45         # edge curvature for fancy edges
+
+    # create node stack (list with lists of nodes)
+    layers = graph.graph['params']['layer']
+    count = {layer: 0 for layer in layers}
+    for node in graph.nodes():
+        count[graph.node[node]['params']['layer']] += 1
+    nodes = [range(count[layer]) for layer in layers]
+    for node in graph.nodes():
+        layer_id = graph.node[node]['params']['layer_id']
+        layer_node_id = graph.node[node]['params']['layer_sub_id']
+        nodes[layer_id][layer_node_id] = node
+
+    # (optional) sort nodes
+    if kwargs['node_sort']:
+        for layer, tgt_nodes in enumerate(nodes):
+            if layer == 0: continue
+            sort = []
+            for tgt_id, tgt_node in enumerate(tgt_nodes):
+                sort_order = 0.
+                for src_id, src_node in enumerate(nodes[layer - 1]):
+                    if (src_node, tgt_node) in graph.edges():
+                        weight = graph.edge[src_node][tgt_node]['weight']
+                    elif (tgt_node, src_node) in graph.edges():
+                        weight = graph.edge[tgt_node][src_node]['weight']
+                    else: weight = 0.
+                    sort_order += float(src_id) * numpy.abs(weight)
+                sort.append((sort_order, tgt_node))
+            nodes[layer] = [src_node[1] for src_node in \
+                sorted(sort, key = lambda x: x[0])]
+
+    # calculate sizes
+    n_len = max([len(layer) for layer in nodes])
+    l_len = len(nodes)
+    scale = min(240. / n_len, 150. / l_len, 35.)
+    graph_caption_pos = -0.0025 * scale
+
+    # calculate node positions for layer graph layout
+    pos = {}
+    pos_cap = {}
+    for l_id, layer in enumerate(nodes):
+        for n_id, node in enumerate(layer):
+            n_pos = (n_id + 0.5) / len(layer)
+            l_pos = 1. - l_id / (len(nodes) - 1.)
+            pos[node] = {
+                'down': (n_pos, l_pos),
+                'up': (n_pos, 1. - l_pos),
+                'left': (l_pos, n_pos),
+                'right': (1. - l_pos, n_pos)}[kwargs['graph_direction']]
+            pos_cap[node] = (pos[node][0],
+                pos[node][1] + graph_caption_pos)
+
+    # create figure object
+    fig = matplotlib.pyplot.figure()
+    fig.patch.set_facecolor(kwargs['bg_color'])
+    ax = fig.add_subplot(111)
+    ax.axis('off')
+    matplotlib.pyplot.axes().set_aspect('equal', 'box')
+
+    # calculate sizes of nodes, fonts and lines depending on graph size
+    n_count = float(len(graph))
+    n_size = max(node_size_max,
+        node_size_scale * node_size_max / n_count)
+    n_radius = numpy.sqrt(n_size) / 600.
+    f_size = font_size_max * numpy.sqrt(n_size / node_size_max)
+    node_font_size_max = f_size * 0.9
+    line_width = 5. / n_count
+    edge_line_width = edge_line_width_max / n_count
+
+    # draw nodes
+    for layer in nodes:
+        for node in layer:
+            attr = graph.node[node]
+
+            is_visible = attr['params']['visible']
+            label_str = attr['params']['label'] if is_visible \
+                else 'n%d' % (layer.index(node) + 1)
+            label = nemoa.common.str_format_unit_label(label_str)
+
+            color = {
+                True: {
+                    'bg': COLOR['lb1-bg'],
+                    'font': COLOR['lb1-font'],
+                    'border': COLOR['lb1-border'] },
+                False: {
+                    'bg': COLOR['lg2-bg'],
+                    'font': COLOR['lg2-font'],
+                    'border': COLOR['lg2-border'] }
+            }[is_visible]
+
+            # calculate node fontsize depending on label
+            cl_label = label.replace('{', '').replace('}', '')
+            if '_' in cl_label:
+                len_label = len('_'.split(cl_label)[0]) \
+                    + 0.5 * len('_'.split(cl_label)[0])
+            else: len_label = len(cl_label)
+            node_font_size = node_font_size_max / numpy.sqrt(len_label)
+
+            # set colors (backcolor and facecolor)
+            backcolor = color['bg'] # COLOR[attr['color']]
+            facecolor = color['font'] #COLOR['black']
+
+            # draw node
+            node_obj = networkx.draw_networkx_nodes(graph, pos,
+                node_size = n_size,
+                linewidths = line_width,
+                nodelist = [node],
+                node_shape = 'o',
+                node_color = backcolor)
+
+            node_obj.set_edgecolor(color['border'])
+
+            # draw node label
+            networkx.draw_networkx_labels(graph, pos,
+                font_size = node_font_size,
+                labels = {node: label},
+                font_color = facecolor,
+                font_weight = 'normal')
+
+            # patch node for edges
+            c = Circle(pos[node], radius = n_radius, alpha = 0.)
+            ax.add_patch(c)
+            graph.node[node]['patch'] = c
+
+    # draw edges
+    seen = {}
+    for (u, v, attr) in graph.edges(data = True):
+
+        # calculate edge radius
+
+        n1 = graph.node[u]['patch']
+        n2 = graph.node[v]['patch']
+
+        rad = edge_curvature
+        if kwargs['graph_direction'] == 'right':
+            rad *= (pos[u][1] - pos[v][1]) * (pos[v][0] - pos[u][0])
+        elif kwargs['graph_direction'] == 'left':
+            rad *= (pos[v][1] - pos[u][1]) * (pos[u][0] - pos[v][0])
+        elif kwargs['graph_direction'] == 'up':
+            rad *= (pos[v][1] - pos[u][1]) * (pos[v][0] - pos[u][0])
+        elif kwargs['graph_direction'] == 'down':
+            rad *= ()(pos[u][0] - pos[v][0])
+        else:
+            rad = 0.0
+
+        # get weight
+        weight = graph.edge[u][v]['weight']
+
+        # get linecolor and linewidth (from weight)
+        if kwargs['edge_weight'] == 'adjacency':
+            linecolor = 'black'
+            linewidth = edge_line_width
+        else:
+            linecolor = 'green' if weight > 0. else 'red'
+            linewidth = edge_line_width * weight
+
+        if (u, v) in seen:
+            rad = seen.get((u, v))
+            rad = -(rad + float(numpy.sign(rad)) * 0.2)
+
+        arrow = matplotlib.patches.FancyArrowPatch(
+            posA = n1.center,
+            posB = n2.center,
+            patchA = n1,
+            patchB = n2,
+            arrowstyle = '-|>',
+            connectionstyle = 'arc3,rad=%s' % rad,
+            mutation_scale = edge_arr_scale,
+            linewidth = linewidth,
+            color = linecolor)
+
+        seen[(u, v)] = rad
+        ax.add_patch(arrow)
+
+    return True
+
+
+
+

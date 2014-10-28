@@ -178,7 +178,7 @@ class DBN(nemoa.system.classes.ann.ANN):
                 hidden_layer = prev_sys._params['units'][1]['layer']
                 mapping = (visible_layer, hidden_layer)
 
-                dataset._transform(algorithm = 'system',
+                dataset._initialize_transform_system(
                     system = prev_sys, mapping = mapping,
                     func = 'expect')
 

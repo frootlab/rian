@@ -120,7 +120,8 @@ class Graph:
         'edge_sign_normalize': True,
         'edge_contrast': 10.,
         'edge_threshold': 0.25,
-        'edge_scale': 1.5 }
+        'edge_scale': 1.5,
+        'edge_curvature': 1.0 }
 
     def __init__(self, **kwargs):
         for key, val in kwargs.items():
