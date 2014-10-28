@@ -94,15 +94,9 @@ class DBN(nemoa.system.classes.ann.ANN):
     def _optimize_pretraining(self, dataset, schedule, tracker):
         """Pretraining model using Restricted Boltzmann Machines."""
 
-        nemoa.log('note', 'pretraining model')
-        nemoa.log('set', indent = '+1')
-
-        # configure subsystems for pretraining
         if not 'units' in self._params:
-            nemoa.log('error', """could not configure subsystems:
+            return nemoa.log('error', """could not configure subsystems:
                 no layers have been defined!""")
-            nemoa.log('set', indent = '-1')
-            return False
 
         # create and configure subsystems
         subsystems = []
@@ -245,17 +239,13 @@ class DBN(nemoa.system.classes.ann.ANN):
         self._remove_units(self.mapping()[0], outputs)
         self._remove_units(self.mapping()[-1], inputs)
 
-        nemoa.log('set', indent = '-1')
         return True
 
     def _optimize_finetuning(self, dataset, schedule, tracker):
         """Finetuning model using backpropagation of error."""
 
-        nemoa.log('note', 'finetuning model')
-        nemoa.log('set', indent = '+1')
 
         # Optimize system parameters
-
         cfg = self._config['optimize']
         nemoa.log('note', "optimize '%s' (%s)" % \
             (self._get_name(), self._get_type()))
@@ -269,5 +259,4 @@ class DBN(nemoa.system.classes.ann.ANN):
         else: nemoa.log('error', "unknown gradient '%s'!"
             % (cfg['algorithm']))
 
-        nemoa.log('set', indent = '-1')
         return True

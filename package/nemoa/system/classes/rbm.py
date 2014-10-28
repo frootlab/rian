@@ -47,7 +47,7 @@ class RBM(nemoa.system.classes.ann.ANN):
             'minibatch_update_interval': 10,
             'updates': 100000,
             'algorithm': 'cd',
-            'res_module': 'klpt',
+            'con_module': 'klpt',
             'den_module': 'corr',
             'acc_module': 'vmra',
             'gen_module': 'rasa',
@@ -61,9 +61,9 @@ class RBM(nemoa.system.classes.ann.ANN):
             'gen_rasa_init_temperature': 1.,
             'gen_rasa_annealing_factor': 1.,
             'gen_rasa_annealing_cycles': 1,
-            'res_klpt_enable': True,
-            'res_klpt_rate': 0.,
-            'res_klpt_expect': 0.5,
+            'con_klpt_enable': True,
+            'con_klpt_rate': 0.,
+            'con_klpt_expect': 0.5,
             'den_corr_enable': True,
             'den_corr_type': 'mask',
             'den_corr_factor': 0.5,
@@ -106,13 +106,13 @@ class RBM(nemoa.system.classes.ann.ANN):
             % (cfg['algorithm']))
 
         # set enable flags for restriction extensions
-        cfg['res_klpt_enable'] =  False
-        if cfg['res_module']:
+        cfg['con_klpt_enable'] =  False
+        if cfg['con_module']:
             found = False
-            if cfg['res_module'] == 'klpt':
-                cfg['res_klpt_enable'] =  True
+            if cfg['con_module'] == 'klpt':
+                cfg['con_klpt_enable'] =  True
                 about = """Kullback-Leibler penalty (expectation
-                    value %.2f)""" % (cfg['res_klpt_expect'])
+                    value %.2f)""" % (cfg['con_klpt_expect'])
                 found = True
             if found:
                 nemoa.log('note', 'using restriction: %s' % (about))
@@ -169,6 +169,10 @@ class RBM(nemoa.system.classes.ann.ANN):
         data_update_interval = \
             self._config['optimize']['minibatch_update_interval']
 
+        # init rasa
+        tracker.write('sa',
+            init_rate = self._config['optimize']['update_rate'])
+
         while tracker.update():
 
             # get data (stratified samples)
@@ -217,6 +221,7 @@ class RBM(nemoa.system.classes.ann.ANN):
                 vModel: sampled values of visible units after k sampling
                     steps calculated as mean values over m iterations.
                 hModel: expected values of hidden units for vModel
+
         """
 
         cfg = self._config['optimize']
@@ -226,9 +231,10 @@ class RBM(nemoa.system.classes.ann.ANN):
 
         hData = self._get_eval_units_expect(data, ('visible', 'hidden'))
         if k == 1 and m == 1:
-            vModel = self._get_eval_units_samples(hData, ('hidden', 'visible'),
-                expect_last = True)
-            hModel = self._get_eval_units_expect(vModel, ('visible', 'hidden'))
+            vModel = self._get_eval_units_samples(hData,
+                ('hidden', 'visible'), expect_last = True)
+            hModel = self._get_eval_units_expect(vModel,
+                ('visible', 'hidden'))
             return data, hData, vModel, hModel
 
         vModel = numpy.zeros(shape = data.shape)
@@ -244,14 +250,14 @@ class RBM(nemoa.system.classes.ann.ANN):
                     'hidden', ))
 
                 # calculate vExpect from hSample
-                vExpect = self._get_eval_units_expect(hSample, ('hidden',
-                    'visible'))
+                vExpect = self._get_eval_units_expect(
+                    hSample, ('hidden', 'visible'))
 
                 # calculate hExpect from vSample
                 # in last sampling step use vExpect
                 # instead of vSample to reduce noise
-                if j + 1 == k: hExpect = self._get_eval_units_expect(vExpect,
-                    ('visible', 'hidden'))
+                if j + 1 == k: hExpect = self._get_eval_units_expect(
+                    vExpect, ('visible', 'hidden'))
                 else: hExpect = self._get_eval_units_samples(vExpect,
                     ('visible', 'hidden'), expect_last = True)
 
@@ -264,45 +270,50 @@ class RBM(nemoa.system.classes.ann.ANN):
         """Update system parameters."""
 
         config = self._config['optimize']
-        ignore = config['ignore_units']
+        updatev = not 'visible' in config['ignore_units']
+        updateh = not 'hidden' in config['ignore_units']
+        updatel = not 'links' in config['ignore_units']
 
-        # (optional) Variance maximizing rate adaption
+        # (optional) variance maximizing rate adaption
         if config['acc_vmra_enable']:
-            if tracker.get('epoch') % config['acc_vmra_update_interval'] == 0 \
+            if tracker.get('epoch') % \
+                config['acc_vmra_update_interval'] == 0 \
                 and tracker.get('epoch') > config['acc_vmra_init_wait']:
                 self._optimize_vmra_update_rate(tracker)
 
-        # get system estimations (model)
-        dTuple = self._optimize_cd_sampling(data)
+        # get updates of system parameters
+        sampling = self._optimize_cd_sampling(data)
+        if updatev: deltav = self._get_delta_visible(sampling, tracker)
+        if updateh: deltah = self._get_delta_hidden(sampling, tracker)
+        if updatel: deltal = self._get_delta_links(sampling, tracker)
 
-        # Calculate contrastive divergency updates
-        # (without affecting the calculations)
-        if not 'visible' in ignore: deltaV = self._optimize_cd_delta_visible(*dTuple)
-        if not 'hidden' in ignore: deltaH = self._optimize_cd_delta_hidden(*dTuple)
-        if not 'links' in ignore: deltaL = self._optimize_cd_delta_links(*dTuple)
-
-        # Contrastive Divergency update
-        if not 'visible' in ignore: self._units['visible'].update(deltaV)
-        if not 'hidden' in ignore: self._units['hidden'].update(deltaH)
-        if not 'links' in ignore: self._optimize_update_links(**deltaL)
-
-        # (optional) Kullback-Leibler penalty update for sparsity
-        if config['res_klpt_enable']:
-            if not 'hidden' in ignore: self._units['hidden'].update(
-                self._optimize_klpt_delta_hidden(*dTuple))
-
-        # (optional) Simulated Annealing update to avoid underfitting
-        if config['gen_rasa_enable']:
-            if not 'visible' in ignore: self._units['visible'].update(
-                self._optimize_rasa_delta_visible(tracker))
-            if not 'hidden' in ignore: self._units['hidden'].update(
-                self._optimize_rasa_delta_hidden(tracker))
-            if not 'links' in ignore: self._optimize_update_links(
-                **self._optimize_rasa_delta_links(tracker))
+        # update system parameters
+        if updatev: self._units['visible'].update(deltav)
+        if updateh: self._units['hidden'].update(deltah)
+        if updatel: self._optimize_update_links(**deltal)
 
         return True
 
-    def _optimize_cd_delta_visible(self, vData, hData, vModel, hModel, **kwargs):
+    def _get_delta_visible(self, sampling, tracker):
+
+        config = self._config['optimize']
+
+        deltas = []
+        if config['algorithm'] == 'cd':
+            deltas.append(
+                self._get_delta_visible_cd(*sampling))
+        if config['con_klpt_enable']:
+            deltas.append(
+                self._get_delta_visible_klpt(*sampling))
+        if config['gen_rasa_enable']:
+            deltas.append(
+                self._get_delta_visible_rasa(tracker))
+        delta = nemoa.common.dict_sum(*deltas)
+
+        return delta
+
+    def _get_delta_visible_cd(self, vData, hData, vModel, hModel,
+        **kwargs):
         """Constrastive divergency gradients of visible units.
 
         Returns:
@@ -312,13 +323,40 @@ class RBM(nemoa.system.classes.ann.ANN):
 
         cfg = self._config['optimize']
 
-        r = cfg['update_rate'] * cfg['update_factor_vbias'] # update rate
+        r = cfg['update_rate'] * cfg['update_factor_vbias']
         v = len(self._units['visible'].params['id'])
-        diff = numpy.mean(vData - vModel, axis = 0).reshape((1, v))
+        d = numpy.mean(vData - vModel, axis = 0).reshape((1, v))
 
-        return { 'bias': r * diff }
+        return { 'bias': r * d }
 
-    def _optimize_cd_delta_hidden(self, vData, hData, vModel, hModel,
+    def _get_delta_visible_klpt(self, v_data, h_data, v_model,
+        h_model):
+
+        return {}
+
+    def _get_delta_visible_rasa(self, tracker):
+
+        return {}
+
+    def _get_delta_hidden(self, sampling, tracker):
+
+        config = self._config['optimize']
+
+        deltas = []
+        if config['algorithm'] == 'cd':
+            deltas.append(
+                self._get_delta_hidden_cd(*sampling))
+        if config['con_klpt_enable']:
+            deltas.append(
+                self._get_delta_hidden_klpt(*sampling))
+        if config['gen_rasa_enable']:
+            deltas.append(
+                self._get_delta_hidden_rasa(tracker))
+        delta = nemoa.common.dict_sum(*deltas)
+
+        return delta
+
+    def _get_delta_hidden_cd(self, vData, hData, vModel, hModel,
         **kwargs):
         """Constrastive divergency gradients of hidden units.
 
@@ -328,34 +366,16 @@ class RBM(nemoa.system.classes.ann.ANN):
 
         """
 
-        cfg = self._config['optimize']
+        config = self._config['optimize']
 
+        r = config['update_rate'] * config['update_factor_hbias']
         h = len(self._units['hidden'].params['id'])
-        r = cfg['update_rate'] * cfg['update_factor_hbias']
-        diff = numpy.mean(hData - hModel, axis = 0).reshape((1, h))
+        d = numpy.mean(hData - hModel, axis = 0).reshape((1, h))
 
-        return { 'bias': r * diff }
+        return { 'bias': r * d }
 
-    def _optimize_cd_delta_links(self, vData, hData, vModel, hModel,
-        **kwargs):
-        """Constrastive divergency gradients of links.
-
-        Returns:
-            Dictionary with numpy arrays containing link parameter
-            gradients, calculated by contrastive divergency.
-
-        """
-
-        cfg = self._config['optimize']
-
-        D = numpy.dot(vData.T, hData) / float(vData.size)
-        M = numpy.dot(vModel.T, hModel) / float(vData.size)
-        r = cfg['update_rate'] * cfg['update_factor_weights']
-
-        return { 'W': r * (D - M) }
-
-    def _optimize_klpt_delta_hidden(self, v_data, h_data, v_model,
-        h_model):
+    def _get_delta_hidden_klpt(self, vdata, hdata, vexpect,
+        hexpect):
         """Kullback-Leibler penalty gradients of hidden units.
 
         Returns:
@@ -368,56 +388,86 @@ class RBM(nemoa.system.classes.ann.ANN):
         config = self._config['optimize']
 
         # get expectation value target
-        p = config['res_klpt_expect']
+        p = config['con_klpt_expect']
 
-        # get expectation value
-        q = numpy.mean(h_data, axis = 0)
+        # get current expectation value
+        # TODO: test if hexpect is better
+        q = numpy.mean(hdata, axis = 0)
 
         # get update rate
-        r = max(config['update_rate'], config['res_klpt_rate'])
+        r = max(config['update_rate'], config['con_klpt_rate'])
 
         return { 'bias': r * (p - q) }
 
-    def _optimize_rasa_delta_hidden(self, tracker):
-        cfg = self._config['optimize']
-        #cfg['gen_rasa_init_temperature'], cfg['gen_rasa_annealing_factor']
+    def _get_delta_hidden_rasa(self, tracker):
 
-        #dBias = numpy.zeros([1, hData.shape[1]])
-
-        #return { 'bias': dBias }
         return {}
 
-    def _optimize_rasa_delta_visible(self, tracker):
-        cfg = self._config['optimize']
-        #cfg['gen_rasa_init_temperature'], cfg['gen_rasa_annealing_factor']
+    def _get_delta_links(self, sampling, tracker):
 
-        #dBias = numpy.zeros([1, vData.shape[1]])
+        config = self._config['optimize']
 
-        #return { 'bias': dBias }
+        deltas = []
+        if config['algorithm'] == 'cd':
+            deltas.append(
+                self._get_delta_links_cd(*sampling))
+        if config['con_klpt_enable']:
+            deltas.append(
+                self._get_delta_links_klpt(*sampling))
+        if config['gen_rasa_enable']:
+            deltas.append(
+                self._get_delta_links_rasa(deltas, tracker))
+        delta = nemoa.common.dict_sum(*deltas)
+
+        return delta
+
+    def _get_delta_links_cd(self, vData, hData, vModel, hModel,
+        **kwargs):
+        """Constrastive divergency gradients of links.
+
+        Returns:
+            Dictionary with numpy arrays containing link parameter
+            gradients, calculated by contrastive divergency.
+
+        """
+
+        config = self._config['optimize']
+
+        r = config['update_rate'] * config['update_factor_weights']
+        D = numpy.dot(vData.T, hData) / float(vData.size)
+        M = numpy.dot(vModel.T, hModel) / float(vData.size)
+
+        return { 'W': r * (D - M) }
+
+    def _get_delta_links_klpt(self, v_data, h_data, v_model,
+        h_model):
+
         return {}
 
-    def _optimize_rasa_delta_links(self, tracker):
-        cfg = self._config['optimize']
-        params = tracker.read('sa')
-        if params:
-            init_rate = params['init_rate']
-        else:
-            init_rate = cfg['update_rate']
-            tracker.write('sa', init_rate = init_rate)
+    def _get_delta_links_rasa(self, deltas, tracker):
+        config = self._config['optimize']
+
+        init_rate = tracker.read('sa')['init_rate']
 
         shape = self._params['links'][(0, 1)]['W'].shape
-        r = init_rate ** 2 / cfg['update_rate'] * cfg['update_factor_weights']
+        r = init_rate ** 2 / config['update_rate'] \
+            * config['update_factor_weights']
+
         temperature = self._optimize_rasa_temperature(tracker)
         if temperature == 0.: return {}
+        #sigma_deltas = nemoa.common.dict_sum(*deltas)['W'].std()
+
         sigma = r * temperature
+
         W = numpy.random.normal(0., sigma, shape)
+        #W = numpy.random.normal(0., sigma_deltas, shape)
 
         return { 'W': W }
 
     def _optimize_rasa_temperature(self, tracker):
         """Calculate temperature for simulated annealing."""
-        config = self._config['optimize']
 
+        config = self._config['optimize']
         init = float(config['gen_rasa_init_temperature'])
         annealing = float(config['gen_rasa_annealing_factor'])
         cycles = float(config['gen_rasa_annealing_cycles'])
@@ -426,6 +476,7 @@ class RBM(nemoa.system.classes.ann.ANN):
         heat = init * (1. - epoch / float(updates)) ** annealing
 
         if heat < config['gen_rasa_min_temperature']: return 0.
+
         return heat
 
     def _get_eval_system_energy(self, data, *args, **kwargs):
@@ -501,7 +552,7 @@ class GRBM(RBM):
             'ignore_units': [], # do not ignore units on update (needed for stacked updates)
             'updates': 100000, # number of update steps / epochs
             'algorithm': 'cd', # algorithm used for updates
-            'res_module': 'klpt',
+            'con_module': 'klpt',
             'acc_module': 'vmra',
             'gen_module': 'rasa',
             'den_module': 'corr',
@@ -521,9 +572,9 @@ class GRBM(RBM):
             'gen_rasa_init_temperature': 1.,
             'gen_rasa_annealing_factor': 1.,
             'gen_rasa_annealing_cycles': 1,
-            'res_klpt_enable': True, # use Kullback-Leibler penalty term
-            'res_klpt_rate': 0., # sparsity update
-            'res_klpt_expect': 0.5, # aimed value for l2-norm penalty
+            'con_klpt_enable': True, # use Kullback-Leibler penalty term
+            'con_klpt_rate': 0., # sparsity update
+            'con_klpt_expect': 0.5, # aimed value for l2-norm penalty
             'adjacency_enable': False, # do not use selective weight updates
             'tracker_obj_function': 'error', # objective function
             'tracker_eval_time_interval': 20., # time interval for calculation the inspection function
@@ -542,7 +593,7 @@ class GRBM(RBM):
                 % (dataset.name))
         return True
 
-    def _optimize_cd_delta_visible(self, vData, hData, vModel, hModel,
+    def _get_delta_visible_cd(self, vData, hData, vModel, hModel,
         **kwargs):
         """Return cd gradient based updates for visible units.
 
@@ -569,7 +620,7 @@ class GRBM(RBM):
             'bias': r1 * diff / var,
             'lvar': r2 * (d - m) / var }
 
-    def _optimize_cd_delta_links(self, vData, hData, vModel, hModel,
+    def _get_delta_links_cd(self, vData, hData, vModel, hModel,
         **kwargs):
         """Return cd gradient based updates for links.
 
@@ -580,17 +631,9 @@ class GRBM(RBM):
         """
 
         cfg = self._config['optimize']
-        var = numpy.exp(self._units['visible'].params['lvar']).T # variance of visible units
-        r = cfg['update_rate'] * cfg['update_factor_weights'] # update rate
+        var = numpy.exp(self._units['visible'].params['lvar']).T
+        r = cfg['update_rate'] * cfg['update_factor_weights']
         D = numpy.dot(vData.T, hData) / float(vData.size)
         M = numpy.dot(vModel.T, hModel) / float(vData.size)
 
         return { 'W': r * (D - M) / var }
-
-    def _get_visible_unit_params(self, label):
-        """Return system parameters of one specific visible unit."""
-        id = self._units['visible'].params['id'].index(label)
-        return {
-            'bias': self._units['visible'].params['bias'][0, id],
-            'sdev': numpy.sqrt(numpy.exp(
-                self._units['visible'].params['lvar'][0, id])) }

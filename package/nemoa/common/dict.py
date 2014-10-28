@@ -11,11 +11,20 @@ import zlib
 
 def dict_merge(d1, d2):
     """Return merged dictionary (merge d1 over d2)."""
-    for k1,v1 in d1.iteritems():
+    for k1, v1 in d1.iteritems():
         if not k1 in d2: d2[k1] = v1 # create in d2 if not existent
         elif isinstance(v1, dict): dict_merge(v1, d2[k1])
         else: d2[k1] = v1 # overwrite in d2 if allready there
     return d2
+
+def dict_sum(*args):
+    dsum = {}
+    for d in args:
+        if not isinstance(d, dict): continue
+        for key, val in d.items():
+            if not key in dsum: dsum[key] = val
+            else: dsum[key] += val
+    return dsum
 
 def dict_to_file(d, file):
     """Dump dictionary to gzip compressed file."""
