@@ -94,6 +94,17 @@ class DBN(nemoa.system.classes.ann.ANN):
     def _optimize_pretraining(self, dataset, schedule, tracker):
         """Pretraining model using Restricted Boltzmann Machines."""
 
+        def _copy_attributes(from_dict, to_dict):
+            for attrib in from_dict.keys():
+
+                # keep name and visibility of layers
+                if attrib in ['id', 'layer', 'layer_id', 'visible',
+                    'class']:
+                    continue
+
+                to_dict[attrib] = from_dict[attrib]
+            return True
+
         if not 'units' in self._params:
             return nemoa.log('error', """could not configure subsystems:
                 no layers have been defined!""")
@@ -101,13 +112,22 @@ class DBN(nemoa.system.classes.ann.ANN):
         # create and configure subsystems
         subsystems = []
 
+        # create backup of dataset values (before transformation)
+        dataset_backup = dataset.get('copy')
+
         all_visible = self._params['units'][0]['id'] \
             + self._params['units'][-1]['id']
 
-        for layer_id in xrange((len(self._params['units']) - 1)  / 2):
-            src = self._params['units'][layer_id]
-            tgt = self._params['units'][layer_id + 1]
-            links = self._params['links'][(layer_id, layer_id + 1)]
+        cid = (len(self._units) - 1) / 2
+
+        rbmparams = { 'units': [], 'links': [] }
+        params = self._params.copy()
+
+        for lid in xrange(cid):
+
+            src = self._params['units'][lid]
+            tgt = self._params['units'][lid + 1]
+            links = self._params['links'][(lid, lid + 1)]
 
             # create network of subsystem
             name = '%s ↔ %s' % (src['layer'], tgt['layer'])
@@ -134,40 +154,24 @@ class DBN(nemoa.system.classes.ann.ANN):
             system = nemoa.system.new(config = config)
             system.configure(network)
 
-            # link subsystem
+            # add system to list of subsystems
             subsystems.append(system)
 
-            # link parameters of links of subsystem
+            # link rbm parameters
+            # in first layer link visible, links and hidden
+            # in other layers only link links and hidden
             links['init'] = system._params['links'][(0, 1)]
+            if lid == 0: src['init'] = system._units['visible'].params
+            tgt['init'] = system._units['hidden'].params
 
-            # link parameters of layer of subsystem
-            if layer_id == 0:
-                src['init'] = system._units['visible'].params
-                tgt['init'] = system._units['hidden'].params
-                system._config['init']['ignore_units'] = []
-                system._config['optimize']['ignore_units'] = []
-            else:
-                # do not link params from upper layer!
-                # upper layer should be linked with previous subsystem
-                # (higher abstraction layer)
-                tgt['init'] = system._params['units'][1]
-                system._config['init']['ignore_units'] = ['visible']
-                system._config['optimize']['ignore_units'] = ['visible']
-
-        # Optimize subsystems
-
-        # create backup of dataset values (before transformation)
-        dataset_backup = dataset.get('copy')
-
-        # optimize subsystems
-        for sys_id in xrange(len(subsystems)):
-
-            # link subsystem
-            system = subsystems[sys_id]
+            if lid: ignore_units = ['visible']
+            else: ignore_units = []
+            system._config['init']['ignore_units'] = ignore_units
+            system._config['optimize']['ignore_units'] = ignore_units
 
             # transform dataset with previous system / fix lower stack
-            if sys_id > 0:
-                prev_sys = subsystems[sys_id - 1]
+            if lid:
+                prev_sys = subsystems[lid - 1]
                 visible_layer = prev_sys._params['units'][0]['layer']
                 hidden_layer = prev_sys._params['units'][1]['layer']
                 mapping = (visible_layer, hidden_layer)
@@ -183,8 +187,18 @@ class DBN(nemoa.system.classes.ann.ANN):
             # initialize system parameters
             system.initialize(dataset)
 
+            if lid:
+                _copy_attributes(rbmparams['units'][-1],
+                    system._params['units'][0])
+
             # optimize system parameter
             system.optimize(dataset, schedule)
+
+            if not lid:
+                rbmparams['units'].append(
+                    system.get('layer', 'visible'))
+            rbmparams['links'].append(system._params['links'][(0, 1)])
+            rbmparams['units'].append(system.get('layer', 'hidden'))
 
         # reset data to initial state (before transformation)
         dataset.set('copy', **dataset_backup)
@@ -197,10 +211,10 @@ class DBN(nemoa.system.classes.ann.ANN):
         # initialize ann with rbm optimized parameters
         units = self._params['units']
         links = self._params['links']
-        central_layer_id = (len(units) - 1) / 2
+        central_lid = (len(units) - 1) / 2
 
         # initialize units and links until central unit layer
-        for id in xrange(central_layer_id):
+        for id in xrange(central_lid):
 
             # copy unit parameters
             for attrib in units[id]['init'].keys():
@@ -226,13 +240,13 @@ class DBN(nemoa.system.classes.ann.ANN):
             del links[(id, id + 1)]['init']
 
         # initialize central unit layer
-        for attrib in units[central_layer_id]['init'].keys():
+        for attrib in units[central_lid]['init'].keys():
             # keep name and visibility of layers
             if attrib in ['id', 'layer', 'layer_id', 'visible',
                 'class']: continue
-            units[central_layer_id][attrib] = \
-                units[central_layer_id]['init'][attrib]
-        del units[central_layer_id]['init']
+            units[central_lid][attrib] = \
+                units[central_lid]['init'][attrib]
+        del units[central_lid]['init']
 
         # remove output units from input layer, and vice versa
         nemoa.log('cleanup unit and linkage parameter arrays')

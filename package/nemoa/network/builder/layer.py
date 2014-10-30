@@ -68,8 +68,8 @@ class Factor:
         'hidden_layer': 'hidden',
         'visible_type': 'gauss',
         'hidden_type': 'sigmoid',
-        'visible_params': {},
-        'hidden_params': {},
+        #'visible_params': {},
+        #'hidden_params': {},
         'labelformat': 'generic:string',
         'labelencapsulate': False }
 
@@ -79,7 +79,6 @@ class Factor:
                 self.settings[key] = val
 
     def build(self):
-
         network_name = self.settings['name']
         network_labelfmt = self.settings['labelformat']
         network_labelenc = self.settings['labelencapsulate']
@@ -87,8 +86,10 @@ class Factor:
         hidden_nodes = self.settings['hidden_nodes']
         visible_layer = self.settings['visible_layer']
         hidden_layer = self.settings['hidden_layer']
-        visible_params = self.settings['visible_params']
-        hidden_params = self.settings['hidden_params']
+        #visible_params = self.settings['visible_params']
+        #hidden_params = self.settings['hidden_params']
+        visible_params = {}
+        hidden_params = {}
         visible_type = self.settings['visible_type']
         hidden_type = self.settings['hidden_type']
 

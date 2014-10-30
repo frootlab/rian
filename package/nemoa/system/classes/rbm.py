@@ -539,8 +539,8 @@ class GRBM(RBM):
         'params': {
             'samples': '*',
             'subnet': '*',
-            'visible': 'sigmoid',
-            'hidden': 'sigmoid',
+            'visible': 'auto',
+            'hidden': 'auto',
             'visible_class': 'gauss',
             'hidden_class': 'sigmoid' },
         'init': {

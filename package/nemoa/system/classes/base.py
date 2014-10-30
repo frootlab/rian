@@ -821,7 +821,7 @@ class System:
                     if 'samples' in self._config['params'] else '*'
                 cols = layer \
                     if layer in dataset.get('colgroups') else '*'
-                data = dataset.get('data', 100000, rows = rows, cols = cols)
+                data = dataset.get('data', rows = rows, cols = cols)
             self._units[layer].initialize(data)
 
         return True
@@ -1228,20 +1228,21 @@ class System:
 
         """
 
-        def initialize(self, data = None, v_sigma = 0.4):
+        def initialize(self, data = None, sigma = 0.1):
             """Initialize parameters of gauss distributed units. """
 
+            # get mean and standard deviation
             size = len(self.params['id'])
             if data == None:
-                self.params['bias'] = \
-                    numpy.zeros([1, size])
-                self.params['lvar'] = \
-                    numpy.log((v_sigma * numpy.ones((1, size))) ** 2)
+                mean = numpy.zeros([1, size])
+                sdev = numpy.ones([1, size])
             else:
-                self.params['bias'] = \
-                    numpy.mean(data, axis = 0).reshape(1, size)
-                self.params['lvar'] = \
-                    numpy.log((v_sigma * numpy.ones((1, size))) ** 2)
+                mean = numpy.mean(data, axis = 0).reshape(1, size)
+                sdev = numpy.std(data, axis = 0).reshape(1, size)
+
+            # initialise bias and log variance of units
+            self.params['bias'] = mean
+            self.params['lvar'] = numpy.log(sigma * sdev ** 2)
 
             return True
 
