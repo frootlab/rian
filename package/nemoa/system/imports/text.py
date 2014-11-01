@@ -51,9 +51,12 @@ class Ini:
         structure = {
             'system': {
                 'name': 'str',
-                'type': 'str' }}
+                'type': 'str' },
+            'schedule [.0-9a-zA-Z]*': {
+                'system [.0-9a-zA-Z]*': 'dict' }}
 
         system = nemoa.common.ini_load(path, structure)
+
         if not system \
             or not 'system' in system \
             or not 'type' in system['system']:

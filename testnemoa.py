@@ -3,9 +3,11 @@ import sys
 sys.path.append('./package')
 import nemoa
 
-class TestNemoa(unittest.TestCase):
+class NemoaTestCase(unittest.TestCase):
 
     def setUp(self):
+        nemoa.log('set', mode = 'silent')
+        self.workspace = nemoa.open('unittest')
         pass
 
     def test_list_workspaces(self):
@@ -15,34 +17,24 @@ class TestNemoa(unittest.TestCase):
         self.assertEqual(test, True)
 
     def test_dataset_import_tab(self):
-        nemoa.log('set', mode = 'silent')
-        workspace = nemoa.open('unittest')
         test = nemoa.type.is_dataset(nemoa.dataset.open('test'))
         self.assertEqual(test, True)
 
     def test_network_import_ini(self):
-        nemoa.log('set', mode = 'silent')
-        workspace = nemoa.open('unittest')
         test = nemoa.type.is_network(nemoa.network.open('multilayer'))
         self.assertEqual(test, True)
 
     def test_system_import_ini(self):
-        nemoa.log('set', mode = 'silent')
-        workspace = nemoa.open('unittest')
-        test = nemoa.type.is_system(nemoa.system.open('deep'))
+        test = nemoa.type.is_system(nemoa.system.open('dbn'))
         self.assertEqual(test, True)
 
     def test_model_create_dbn(self):
-        nemoa.log('set', mode = 'silent')
-        workspace = nemoa.open('unittest')
         model = nemoa.model.create(
-            dataset = 'test', network = 'multilayer', system = 'deep')
+            dataset = 'test', network = 'multilayer', system = 'dbn')
         test = nemoa.type.is_model(model)
         self.assertEqual(test, True)
 
     def test_model_import_npz(self):
-        nemoa.log('set', mode = 'silent')
-        workspace = nemoa.open('unittest')
         test = nemoa.type.is_model(nemoa.model.open('test'))
         self.assertEqual(test, True)
 
