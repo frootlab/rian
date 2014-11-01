@@ -87,12 +87,12 @@ class RBM(nemoa.system.classes.ann.ANN):
             % (dataset.name))
         return True
 
-    def _set_update_rates(self, **config):
-        """Initialize updates for system parameters."""
-        if not 'optimize' in self._config: self._config['optimize'] = {}
-        return (self._setVisibleUnitUpdateRates(**config)
-            and self._setHiddenUnitUpdateRates(**config)
-            and self._setLinkUpdateRates(**config))
+    #def _set_update_rates(self, **config):
+        #"""Initialize updates for system parameters."""
+        #if not 'optimize' in self._config: self._config['optimize'] = {}
+        #return (self._setVisibleUnitUpdateRates(**config)
+            #and self._setHiddenUnitUpdateRates(**config)
+            #and self._setLinkUpdateRates(**config))
 
     def _optimize(self, dataset, schedule, tracker):
         """Optimize system parameters."""
@@ -336,7 +336,18 @@ class RBM(nemoa.system.classes.ann.ANN):
 
     def _get_delta_visible_rasa(self, tracker):
 
-        return {}
+        # calculate temperature (t) and rate adaptive coefficient (r)
+        t = self._optimize_rasa_temperature(tracker)
+        if t == 0.: return {}
+        config = self._config['optimize']
+        r = tracker.read('sa')['init_rate'] ** 2 \
+            / config['update_rate'] \
+            * config['update_factor_vbias']
+
+        shape = (1, len(self._units['visible'].params['id']))
+        vb = numpy.random.normal(0., 1., shape)
+
+        return { 'bias': r * t * vb }
 
     def _get_delta_hidden(self, sampling, tracker):
 
@@ -401,7 +412,18 @@ class RBM(nemoa.system.classes.ann.ANN):
 
     def _get_delta_hidden_rasa(self, tracker):
 
-        return {}
+        # calculate temperature (t) and rate adaptive coefficient (r)
+        t = self._optimize_rasa_temperature(tracker)
+        if t == 0.: return {}
+        config = self._config['optimize']
+        r = tracker.read('sa')['init_rate'] ** 2 \
+            / config['update_rate'] \
+            * config['update_factor_hbias']
+
+        shape = (1, len(self._units['hidden'].params['id']))
+        hb = numpy.random.normal(0., 1., shape)
+
+        return { 'bias': r * t * hb }
 
     def _get_delta_links(self, sampling, tracker):
 
@@ -445,24 +467,19 @@ class RBM(nemoa.system.classes.ann.ANN):
         return {}
 
     def _get_delta_links_rasa(self, deltas, tracker):
+
+        # calculate temperature (t) and rate adaptive coefficient (r)
+        t = self._optimize_rasa_temperature(tracker)
+        if t == 0.: return {}
         config = self._config['optimize']
-
-        init_rate = tracker.read('sa')['init_rate']
-
-        shape = self._params['links'][(0, 1)]['W'].shape
-        r = init_rate ** 2 / config['update_rate'] \
+        r = tracker.read('sa')['init_rate'] ** 2 \
+            / config['update_rate'] \
             * config['update_factor_weights']
 
-        temperature = self._optimize_rasa_temperature(tracker)
-        if temperature == 0.: return {}
-        #sigma_deltas = nemoa.common.dict_sum(*deltas)['W'].std()
+        shape = self._params['links'][(0, 1)]['W'].shape
+        W = numpy.random.normal(0., 1., shape)
 
-        sigma = r * temperature
-
-        W = numpy.random.normal(0., sigma, shape)
-        #W = numpy.random.normal(0., sigma_deltas, shape)
-
-        return { 'W': W }
+        return { 'W': r * t * W }
 
     def _optimize_rasa_temperature(self, tracker):
         """Calculate temperature for simulated annealing."""
