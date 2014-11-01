@@ -1012,13 +1012,15 @@ class Dataset:
         """Corrupt given data.
 
         Args:
-            data: numpy array containing data
+            data (numpy ndarray): numpy array containing data
             type (str): noise model
-                'mask': Masking Noise
+                'gauss': Gaussian noise model
+                    Additive isotropic Gaussian distributed noise
+                'bernoulli': Bernoulli noise model
+                    Additive isotropic Bernoulli distributed noise
+                'mask': Masking noise Model
                     A fraction of every sample is forced to zero
-                'gauss': Gaussian Noise
-                    Additive isotropic Gaussian noise
-                'salt': Salt-and-pepper noise
+                'salt': Salt-and-pepper noise model
                     A fraction of every sample is forced to min or max
                     with equal possibility
             factor (float, optional): strengt of the noise
@@ -1031,17 +1033,43 @@ class Dataset:
 
         """
 
-        if type in [None, 'none']: return data
-        elif type == 'mask': return data * numpy.random.binomial(
-            size = data.shape, n = 1, p = 1. - factor)
-        elif type == 'gauss': return data + numpy.random.normal(
-            size = data.shape, loc = 0., scale = factor)
+        if not isinstance(type, basestring): return data
 
-        # TODO: implement salt and pepper noise
-        #elif type == 'salt': return
+        if type.lower() == 'none':
+            return data
 
-        else: return nemoa.log('error',
-            "unkown data noise type '%s'!" % (type))
+        # gaussian noise model
+        elif type.lower() == 'gauss':
+            noise = numpy.random.normal(
+                size = data.shape, loc = 0., scale = factor)
+            return data + noise
+
+        # bernoulli noise model
+        elif type.lower() == 'bernoulli':
+            mask = numpy.random.binomial(
+                size = data.shape, n = 1, p = 1. - factor)
+            return (data - mask).astype(bool).astype(int)
+
+        # masking noise model
+        elif type.lower() == 'mask':
+            mask = numpy.random.binomial(
+                size = data.shape, n = 1, p = 1. - factor)
+            return mask * data
+
+        # salt & pepper noise model
+        elif type.lower() == 'salt':
+            amax = numpy.amax(data, axis = 0)
+            amin = numpy.amin(data, axis = 0)
+            mask = numpy.random.binomial(
+                size = data.shape, n = 1, p = 1. - factor)
+            sp = numpy.random.binomial(
+                size = data.shape, n = 1, p = .5)
+            noise = mask * (amax * sp + amin * (1. - sp))
+
+            return data + noise
+
+        else: return nemoa.log('error', """could not corrupt data:
+            unkown noise model '%s'.""" % (type))
 
     def _get_value(self, row = None, col = None):
         """get single value from dataset."""
