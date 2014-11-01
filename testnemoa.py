@@ -23,21 +23,27 @@ class TestNemoa(unittest.TestCase):
     def test_network_import_ini(self):
         nemoa.log('set', mode = 'silent')
         workspace = nemoa.open('unittest')
-        test = nemoa.type.is_network(nemoa.network.open('test'))
+        test = nemoa.type.is_network(nemoa.network.open('multilayer'))
         self.assertEqual(test, True)
 
-    def test_model_import_npz(self):
+    def test_system_import_ini(self):
         nemoa.log('set', mode = 'silent')
         workspace = nemoa.open('unittest')
-        test = nemoa.type.is_model(nemoa.model.open('test'))
+        test = nemoa.type.is_system(nemoa.system.open('deep'))
         self.assertEqual(test, True)
 
     def test_model_create_dbn(self):
         nemoa.log('set', mode = 'silent')
         workspace = nemoa.open('unittest')
         model = nemoa.model.create(
-            dataset = 'test', network = 'test', system = 'dbn')
+            dataset = 'test', network = 'multilayer', system = 'deep')
         test = nemoa.type.is_model(model)
+        self.assertEqual(test, True)
+
+    def test_model_import_npz(self):
+        nemoa.log('set', mode = 'silent')
+        workspace = nemoa.open('unittest')
+        test = nemoa.type.is_model(nemoa.model.open('test'))
         self.assertEqual(test, True)
 
 if __name__ == '__main__':

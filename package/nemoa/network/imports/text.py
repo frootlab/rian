@@ -54,14 +54,14 @@ class Ini:
             or not 'network' in network \
             or not 'type' in network['network']:
             return nemoa.log('error', """could not import network:
-                configuration: file '%s' is not valid.""" % (path))
+                configuration file '%s' is not valid.""" % (path))
 
         if network['network']['type'] in \
             ['layer.MultiLayer', 'layer.Shallow', 'layer.Factor']:
             return self._parse_layer_network(path)
 
         return nemoa.log('error', """could not import network
-            configuration: file '%s' contains unsupported network
+            configuration file '%s' contains unsupported network
             type '%s'.""" % (path, network['network']['type']))
 
     def _parse_layer_network(self, path):
@@ -89,11 +89,6 @@ class Ini:
                 '[0-9a-zA-Z]*': 'list' }}
 
         ini_dict = nemoa.common.ini_load(path, structure = structure)
-
-        if not 'network' in ini_dict:
-            return nemoa.log('warning', """could not import network
-                configuration: file '%s' does not contain section
-                'network'.""" % (path))
         config = ini_dict['network'].copy()
 
         # layers
@@ -225,4 +220,4 @@ class Ini:
                     layer '%s' are not connected!"""
                     % (src_layer, tgt_layer))
 
-        return {'config': config}
+        return { 'config': config }

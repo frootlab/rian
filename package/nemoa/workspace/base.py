@@ -156,6 +156,7 @@ class Config:
         self._workspace_path = {
             'datasets': '%workspace%/datasets/',
             'networks': '%workspace%/networks/',
+            'systems': '%workspace%/systems/',
             'models': '%workspace%/models/',
             'scripts': '%workspace%/scripts/',
             'cache': '%workspace%/cache/',
@@ -215,6 +216,7 @@ class Config:
             self._scan_for_scripts()
             self._scan_for_networks()
             self._scan_for_datasets()
+            self._scan_for_systems()
             self._scan_for_models()
 
         # reset to current workspace
@@ -240,10 +242,11 @@ class Config:
         nemoa.log('init', logfile = self._path['logfile']) # update logger
 
         path = '%user%/%workspace%'
-        self._scan_config_files(path) # import configuration files
-        self._scan_for_scripts()      # scan for scriptfiles
-        self._scan_for_networks()     # scan for networks
-        self._scan_for_datasets()     # scan for datasets
+        self._scan_config_files(path)
+        self._scan_for_scripts()
+        self._scan_for_networks()
+        self._scan_for_datasets()
+        self._scan_for_systems()
         self._scan_for_models()
 
         nemoa.log('set', indent = '-1')
@@ -393,6 +396,34 @@ class Config:
             if self._is_obj_known('script', fullname): continue
             self._add_obj_to_store({
                 'class': 'script',
+                'name': fullname,
+                'workspace': self._workspace,
+                'config': {
+                    'name': name,
+                    'path': path }})
+
+        nemoa.log('set', indent = '-1')
+        return True
+
+    def _scan_for_systems(self, files = None):
+        """Scan for systems in current workspace."""
+        nemoa.log('scanning for systems')
+        nemoa.log('set', indent = '+1')
+
+        # network files path
+        if files == None: files = self._path['systems'] + '*.*'
+        filetypes = nemoa.system.imports.filetypes()
+
+        # scan for system files
+        for path in glob.iglob(self._expand_path(files)):
+            filetype = nemoa.common.get_file_extension(path)
+            if not filetype in filetypes: continue
+            name = nemoa.common.get_file_basename(path)
+            fullname = self._workspace + '.' + name
+            if self._is_obj_known('system', fullname): continue
+
+            self._add_obj_to_store({
+                'class': 'system',
                 'name': fullname,
                 'workspace': self._workspace,
                 'config': {

@@ -48,14 +48,21 @@ class Ini:
 
         """
 
-        structure = {'system': { 'type': 'str' }}
+        structure = {
+            'system': {
+                'name': 'str',
+                'type': 'str' }}
+
         system = nemoa.common.ini_load(path, structure)
         if not system \
             or not 'system' in system \
             or not 'type' in system['system']:
             return nemoa.log('error', """could not import system:
-                configuration: file '%s' is not valid.""" % (path))
+                configuration file '%s' is not valid.""" % (path))
 
-        return nemoa.log('error', """could not import network
-            configuration: file '%s' contains unsupported network
-            type '%s'.""" % (path, network['network']['type']))
+        config = system['system'].copy()
+
+        if not 'name' in config:
+            config['name'] = nemoa.common.get_file_basename(path)
+
+        return { 'config': config }

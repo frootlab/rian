@@ -5,6 +5,7 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa.system.imports.archive
+import nemoa.system.imports.text
 import os
 
 def filetypes(filetype = None):
@@ -16,6 +17,11 @@ def filetypes(filetype = None):
     archive_types = nemoa.system.imports.archive.filetypes()
     for key, val in archive_types.items():
         type_dict[key] = ('archive', val)
+
+    # get supported text filetypes
+    text_types = nemoa.system.imports.text.filetypes()
+    for key, val in text_types.items():
+        type_dict[key] = ('text', val)
 
     if filetype == None:
         return {key: val[1] for key, val in type_dict.items()}
@@ -78,6 +84,8 @@ def load(path, filetype = None, workspace = None, **kwargs):
     module_name = filetypes(filetype)[0]
     if module_name == 'archive':
         system = nemoa.system.imports.archive.load(path, **kwargs)
+    if module_name == 'text':
+        system = nemoa.system.imports.text.load(path, **kwargs)
     if not system:
         nemoa.log('error', """could not import system: file '%s' is
             not valid.""" % (path))
