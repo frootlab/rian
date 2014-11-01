@@ -24,7 +24,7 @@ def filetypes(filetype = None):
 
     return False
 
-def load(path, filetype = None, **kwargs):
+def load(path, filetype = None, workspace = None, **kwargs):
     """Import model from file."""
 
     # try if path exists or import given workspace and get path from

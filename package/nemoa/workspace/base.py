@@ -701,16 +701,6 @@ class Config:
     def list(self, type = None, namespace = None):
         """List known object configurations."""
 
-        if type == 'model':
-            fileExt = 'nmm'
-            search_path = '%s*.%s' % (self._path['models'], fileExt)
-            models = []
-            for model in glob.iglob(search_path):
-                if os.path.isdir(model): continue
-                name = os.path.basename(model)[:-(len(fileExt) + 1)]
-                models.append(name)
-            return sorted(models, key = str.lower)
-
         # TODO: Something wents wrong if list is executed from inside
         if type == 'workspace':
             return sorted(self._list_user_workspaces())
