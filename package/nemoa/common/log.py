@@ -31,9 +31,11 @@ def log(*args, **kwargs):
         # and set up console handler
         logger_console = logging.getLogger(__name__ + '.tty')
         logger_console.setLevel(logging.INFO)
-        for h in logger_console.handlers: logger_console.removeHandler(h)
+        for h in logger_console.handlers:
+            logger_console.removeHandler(h)
         console_handler = logging.StreamHandler()
-        console_handler.setFormatter(logging.Formatter(fmt = '%(message)s'))
+        console_handler.setFormatter(
+            logging.Formatter(fmt = '%(message)s'))
         logger_console.addHandler(console_handler)
 
         # initialize file logger, remove all previous handlers
@@ -117,11 +119,11 @@ def log(*args, **kwargs):
         tty_msg = '  ' * indent + msg
 
     # create file message
-    clrStack = inspect.stack()[1]
-    clrMethod = clrStack[3]
-    clrModule = inspect.getmodule(clrStack[0]).__name__
-    clrName = clrModule + '.' + clrMethod
-    file_msg = clrName + ' -> ' + msg.strip()
+    clr_stack = inspect.stack()[1]
+    clr_method = clr_stack[3]
+    clr_module = inspect.getmodule(clr_stack[0]).__name__
+    clr_name = clr_module + '.' + clr_method
+    file_msg = clr_name + ' -> ' + msg.strip()
 
     # create logging records (depending on loglevels)
     if cmd == 'info':
@@ -150,7 +152,8 @@ def log(*args, **kwargs):
 
     if cmd == 'warning':
         if not mode == 'silent':
-            tty_log.warning(pre + color['yellow'] + tty_msg + color['default'])
+            tty_log.warning(pre + color['yellow'] \
+                + tty_msg + color['default'])
         file_log.warning(file_msg)
         return False
 
@@ -159,12 +162,14 @@ def log(*args, **kwargs):
             + ' (see logfile for debug info)' + color['default'])
         file_log.error(file_msg)
         for line in traceback.format_stack():
-            msg = line.strip().replace('\n', '-> ').replace('  ', ' ').strip()
+            msg = line.strip().replace(
+                '\n', '-> ').replace('  ', ' ').strip()
             file_log.error(msg)
         return False
 
     if cmd == 'critical':
-        tty_log.critical(pre + color['yellow'] + tty_msg + color['default'])
+        tty_log.critical(pre + color['yellow'] \
+            + tty_msg + color['default'])
         file_log.critical(file_msg)
         return False
 

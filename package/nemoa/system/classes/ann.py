@@ -46,7 +46,6 @@ class ANN(nemoa.system.classes.base.System):
             'ignore_units': [],
             'w_sigma': 0.5 },
         'optimize': {
-            'check_dataset': False,
             'ignore_units': [],
             'algorithm': 'bprop',
             'den_corr_enable': False,

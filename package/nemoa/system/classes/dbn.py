@@ -50,10 +50,9 @@ class DBN(nemoa.system.classes.ann.ANN):
             'ignore_units': [],
             'w_sigma': 0.5 },
         'optimize': {
+            'ignore_units': [],
             'pretraining': True,
             'finetuning': True,
-            'check_dataset': False,
-            'ignore_units': [],
             'algorithm': 'bprop',
             'den_corr_enable': False,
             'minibatch_size': 100,

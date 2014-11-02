@@ -557,14 +557,13 @@ class Config:
 
             # update path for file
             conf['source']['file'] = self._expand_path(source_file)
-            #conf['import_type'] = 'file'
 
             # add missing source information
             if not 'filetype' in conf['source']:
                 conf['source']['filetype'] = \
                     nemoa.common.get_file_extension(source_file)
 
-            # only update in the first call of check_datasetConf
+            # only update in the first call
             if update: conf['cache_path'] = self._path['cache']
 
             return obj_conf

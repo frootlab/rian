@@ -41,7 +41,6 @@ class RBM(nemoa.system.classes.ann.ANN):
             'ignore_units': [],
             'w_sigma': 0.5 },
         'optimize': {
-            'check_dataset': False,
             'ignore_units': [],
             'minibatch_size': 100,
             'minibatch_update_interval': 10,
@@ -80,19 +79,13 @@ class RBM(nemoa.system.classes.ann.ANN):
 
     def _check_dataset(self, dataset):
         """Check if dataset contains binary values."""
-        if not nemoa.type.is_dataset(dataset): return nemoa.log('error',
-            'could not test dataset: invalid dataset instance given!')
-        if not dataset._is_binary(): return nemoa.log('error',
-            "dataset '%s' is not valid: RBMs expect binary data."
-            % (dataset.name))
+        if not nemoa.type.is_dataset(dataset):
+            return nemoa.log('error', """could not test dataset:
+                invalid dataset instance given.""")
+        if not dataset._is_binary():
+            return nemoa.log('error', """dataset '%s' is not valid:
+                RBMs expect binary data.""" % (dataset.name))
         return True
-
-    #def _set_update_rates(self, **config):
-        #"""Initialize updates for system parameters."""
-        #if not 'optimize' in self._config: self._config['optimize'] = {}
-        #return (self._setVisibleUnitUpdateRates(**config)
-            #and self._setHiddenUnitUpdateRates(**config)
-            #and self._setLinkUpdateRates(**config))
 
     def _optimize(self, dataset, schedule, tracker):
         """Optimize system parameters."""
@@ -561,43 +554,51 @@ class GRBM(RBM):
             'visible_class': 'gauss',
             'hidden_class': 'sigmoid' },
         'init': {
-            'check_dataset': True,
+            'check_dataset': False,
             'ignore_units': [],
             'w_sigma': 0.5 },
         'optimize': {
-            'check_dataset': True, # check if data is gauss normalized
-            'ignore_units': [], # do not ignore units on update (needed for stacked updates)
-            'updates': 100000, # number of update steps / epochs
-            'algorithm': 'cd', # algorithm used for updates
-            'con_module': 'klpt',
+            'ignore_units': [],
+            'algorithm': 'cd',
+            'updates': 100000,
+            'update_rate': 0.0005,
+            'update_factor_weights': 1.,
+            'update_factor_hbias': 0.1,
+            'update_factor_vbias': 0.1,
+            'update_factor_vlvar': 0.01,
+            'update_cd_sampling_steps': 1,
+            'update_cd_sampling_iterations': 1,
+            'minibatch_size': 100,
+            'minibatch_update_interval': 1,
+            'con_module': '',
+            'den_module': 'corr',
             'acc_module': 'vmra',
             'gen_module': 'rasa',
-            'den_module': 'corr',
-            'update_cd_sampling_steps': 1, # number of gibbs steps in cdk sampling
-            'update_cd_sampling_iterations': 1, # number of iterations in cdk sampling
-            'update_rate': 0.001, # update rate (depends in algorithm)
-            'update_factor_weights': 1., # factor for weight updates (related to update rate)
-            'update_factor_hbias': 0.1, # factor for hidden unit bias updates (related to update rate)
-            'update_factor_vbias': 0.1, # factor for visible unit bias updates (related to update rate)
-            'update_factor_vlvar': 0.01, # factor for visible unit logarithmic variance updates (related to update rate)
-            'minibatch_size': 500, # number of samples used to calculate updates
-            'minibatch_update_interval': 1, # number of updates the same minibatch is used
-            'den_corr_enable': False,
-            'den_corr_type': 'none', # do not use noise
-            'den_corr_factor': 0., # no noise of data
-            'gen_rasa_enable': True, # use simulated annealing
-            'gen_rasa_init_temperature': 1.,
-            'gen_rasa_annealing_factor': 1.,
-            'gen_rasa_annealing_cycles': 1,
-            'con_klpt_enable': True, # use Kullback-Leibler penalty term
-            'con_klpt_rate': 0., # sparsity update
-            'con_klpt_expect': 0.5, # aimed value for l2-norm penalty
-            'adjacency_enable': False, # do not use selective weight updates
-            'tracker_obj_function': 'error', # objective function
-            'tracker_eval_time_interval': 20., # time interval for calculation the inspection function
-            'tracker_estimate_time': True, # initally estimate time for whole optimization process
-            'tracker_estimate_time_wait': 20. # time intervall used for time estimation
-        }}
+            'acc_vmra_init_rate': 0.0005,
+            'acc_vmra_length': 3,
+            'acc_vmra_update_interval': 10,
+            'acc_vmra_init_wait': 100,
+            'acc_vmra_factor': 10.,
+            'acc_vmra_min_rate': 0.0005,
+            'acc_vmra_max_rate': 0.02,
+            'gen_rasa_init_temperature': 10.,
+            'gen_rasa_min_temperature': 0.01,
+            'gen_rasa_annealing_factor': 10.,
+            'gen_rasa_annealing_cycles': 2,
+            'con_klpt_rate': 0.0001,
+            'con_klpt_expect': 0.35,
+            'den_corr_type': 'gauss',
+            'den_corr_factor': 0.75,
+            'tracker_estimate_time': False,
+            'tracker_estimate_time_wait': 15.,
+            'tracker_obj_tracking_enable': True,
+            'tracker_obj_init_wait': 0.01,
+            'tracker_obj_function': 'accuracy',
+            'tracker_obj_keep_optimum': True,
+            'tracker_obj_update_interval': 100,
+            'tracker_eval_enable': True,
+            'tracker_eval_function': 'accuracy',
+            'tracker_eval_time_interval': 10. }}
 
     def _check_dataset(self, dataset):
         """Check if dataset contains gauss normalized values."""

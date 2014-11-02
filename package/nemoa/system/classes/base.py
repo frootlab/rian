@@ -913,8 +913,8 @@ class System:
             self._config['optimize'] = config
 
         # check dataset
-        if (not 'check_dataset' in config
-            or config['check_dataset'] == True) \
+        if (not 'check_dataset' in self._default['init']
+            or self._default['init']['check_dataset'] == True) \
             and not self._check_dataset(dataset):
             return False
 
