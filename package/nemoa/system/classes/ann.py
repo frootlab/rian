@@ -85,9 +85,11 @@ class ANN(nemoa.system.classes.base.System):
 
             # test unit class
             if layer['class'] == 'gauss' \
-                and not self.UnitsGauss.check(layer): return False
+                and not nemoa.system.commons.units.Gauss.check(layer):
+                return False
             elif layer['class'] == 'sigmoid' \
-                and not self.UnitsSigmoid.check(layer): return False
+                and not nemoa.system.commons.units.Sigmoid.check(layer):
+                return False
 
         return True
 
@@ -112,9 +114,9 @@ class ANN(nemoa.system.classes.base.System):
 
         # delete units from unit parameter arrays
         if layer['class'] == 'gauss':
-            self.UnitsGauss.remove(layer, select)
+            nemoa.system.commons.units.Gauss.remove(layer, select)
         elif layer['class'] == 'sigmoid':
-            self.UnitsSigmoid.remove(layer, select)
+            nemoa.system.commons.units.Sigmoid.remove(layer, select)
 
         # delete units from link parameter arrays
         links = self._links[layer['layer']]
@@ -285,8 +287,8 @@ class ANN(nemoa.system.classes.base.System):
                 self._units[tgt].get_updates_from_delta(
                 delta[src, tgt]), rate)
             links[(src, tgt)] = getUpdate(
-                self.Links.get_updates_from_delta(out[src],
-                delta[src, tgt]), rate)
+                nemoa.system.commons.links.Links.get_updates_from_delta(
+                out[src], delta[src, tgt]), rate)
 
         return {'units': units, 'links': links}
 
@@ -352,8 +354,8 @@ class ANN(nemoa.system.classes.base.System):
             grad['units'][tgt] = \
                 self._units[tgt].get_updates_from_delta(delta[src, tgt])
             grad['links'][(src, tgt)] = \
-                self.Links.get_updates_from_delta(out[src],
-                delta[src, tgt])
+                nemoa.system.commons.links.Links.get_updates_from_delta(
+                out[src], delta[src, tgt])
 
         # Get previous gradients and updates
         prev = tracker.read('rprop')
@@ -1079,10 +1081,12 @@ class ANN(nemoa.system.classes.base.System):
 
         if (s_id, t_id) in self._params['links']:
             links = self._params['links'][(s_id, t_id)]
-            return self.Links.energy(d_src, d_tgt, src, tgt, links)
+            return nemoa.system.commons.links.Links.energy(
+                d_src, d_tgt, src, tgt, links)
         elif (t_id, s_id) in self._params['links']:
             links = self._params['links'][(t_id, s_id)]
-            return self.Links.energy(d_tgt, d_src, tgt, src, links)
+            return nemoa.system.commons.links.Links.energy(
+                d_tgt, d_src, tgt, src, links)
 
     def _get_eval_relation(self, data, func = 'correlation',
         relations = None, eval_stat = True, **kwargs):

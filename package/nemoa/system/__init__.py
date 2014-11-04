@@ -5,6 +5,7 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa.system.classes
+import nemoa.system.commons
 import nemoa.system.imports
 import nemoa.system.exports
 
