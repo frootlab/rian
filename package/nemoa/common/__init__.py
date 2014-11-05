@@ -13,4 +13,3 @@ from nemoa.common.dict import *
 from nemoa.common.func import *
 from nemoa.common.inifile import *
 from nemoa.common.plot import *
-import nemoa.common.annotation

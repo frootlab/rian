@@ -5,6 +5,7 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa.dataset.classes
+import nemoa.dataset.commons
 import nemoa.dataset.exports
 import nemoa.dataset.imports
 

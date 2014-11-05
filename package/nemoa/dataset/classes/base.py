@@ -195,7 +195,7 @@ class Dataset:
                     network.get('node', node)['params']['label'])
 
             # convert node labels to standard label format
-            conv, lost = nemoa.common.annotation.convert(
+            conv, lost = nemoa.dataset.commons.labels.convert(
                 node_labels, input = labelformat)
             nodes_conv[layer] = conv
             nodes_lost += [conv[i] for i in lost]
@@ -229,7 +229,7 @@ class Dataset:
                     source_labelformat = 'generic:string'
 
                 columns_conv, columns_lost = \
-                    nemoa.common.annotation.convert(
+                    nemoa.dataset.commons.labels.convert(
                     source_columns, input = source_labelformat)
 
                 table_config['columns_orig'] = source_columns
