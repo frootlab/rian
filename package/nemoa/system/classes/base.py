@@ -52,12 +52,14 @@ class System:
 
     """
 
+    _config  = None
     _params  = None
     _default = {'params': {}, 'init': {}, 'optimize': {}}
     _attr    = {'units': 'r', 'links': 'r', 'layers': 'r',
                 'fullname': 'r', 'type': 'r', 'name': 'rw',
                 'branch': 'rw', 'version': 'rw', 'about': 'rw',
                 'author': 'rw', 'email': 'rw', 'license': 'rw'}
+    _schedules = None
 
     def __init__(self, *args, **kwargs):
         """Import system from dictionary."""
@@ -487,10 +489,13 @@ class System:
 
         if key == None: return {
             'config': self._get_config(),
-            'params': self._get_params() }
+            'params': self._get_params(),
+            'schedules': self._get_schedules() }
 
         if key == 'config': return self._get_config(*args, **kwargs)
         if key == 'params': return self._get_params(*args, **kwargs)
+        if key == 'schedules':
+            return self._get_schedules(*args, **kwargs)
 
         return nemoa.log('error', """could not get system copy:
             unknown key '%s'.""" % (key))
@@ -520,6 +525,19 @@ class System:
 
         return nemoa.log('error', """could not get parameters:
             unknown key '%s'.""" % (key))
+
+    def _get_schedules(self, key = None, *args, **kwargs):
+        """Get optimizeation schedules."""
+
+        if key == None: return copy.deepcopy(self._schedules)
+
+        if isinstance(key, str) and key in self._schedules.keys():
+            if isinstance(self._schedules[key], dict):
+                return self._schedules[key].copy()
+            return self._schedules[key]
+
+        return nemoa.log('error', """could not get optimization
+            schedules: unknown key '%s'.""" % (key))
 
     def set(self, key = None, *args, **kwargs):
         """Set meta information, configuration and parameters."""
@@ -642,12 +660,14 @@ class System:
         return self._set_params_create_links() \
             and self._set_params_init_links()
 
-    def _set_copy(self, config = None, params = None):
+    def _set_copy(self, config = None, params = None, schedules = None):
         """Set configuration and parameters of system.
 
         Args:
             config (dict or None, optional): system configuration
             params (dict or None, optional): system parameters
+            schedules (dict or None, optional): system optimization
+                schedules
 
         Returns:
             Bool which is True if and only if no error occured.
@@ -658,6 +678,7 @@ class System:
 
         if config: retval &= self._set_config(config)
         if params: retval &= self._set_params(params)
+        if schedules: retval &= self._set_schedules(schedules)
 
         return retval
 
@@ -877,6 +898,18 @@ class System:
                 numpy.random.normal(numpy.zeros((x, y)), sigma)
 
             self._params['links'][links]['W'] = A * random
+
+        return True
+
+    def _set_schedules(self, schedules = None):
+        """Set optimization schedules from dictionary."""
+
+        # update optimization schedules dictionary
+        if not isinstance(self._schedules, dict):
+            self._schedules = {}
+        if schedules:
+            schedules_copy = copy.deepcopy(schedules)
+            nemoa.common.dict_merge(schedules_copy, self._schedules)
 
         return True
 

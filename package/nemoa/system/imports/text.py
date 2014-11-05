@@ -64,8 +64,12 @@ class Ini:
                 configuration file '%s' is not valid.""" % (path))
 
         config = system['system'].copy()
-
         if not 'name' in config:
             config['name'] = nemoa.common.get_file_basename(path)
 
-        return { 'config': config }
+        schedules = {}
+        for key in system:
+            if key[:8] == 'schedule':
+                schedules[key[9:]] = system[key]
+
+        return { 'config': config, 'schedules': schedules }
