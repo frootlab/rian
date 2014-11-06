@@ -54,12 +54,12 @@ class System:
 
     _config  = None
     _params  = None
-    _default = {'params': {}, 'init': {}, 'optimize': {}}
+    _default = {'params': {}, 'init': {}, 'optimize': {},
+                'schedules': {}}
     _attr    = {'units': 'r', 'links': 'r', 'layers': 'r',
                 'fullname': 'r', 'type': 'r', 'name': 'rw',
                 'branch': 'rw', 'version': 'rw', 'about': 'rw',
                 'author': 'rw', 'email': 'rw', 'license': 'rw'}
-    _schedules = None
 
     def __init__(self, *args, **kwargs):
         """Import system from dictionary."""
@@ -122,10 +122,6 @@ class System:
         """Check if network is valid for system."""
         if not nemoa.type.is_dataset(dataset): return False
         return True
-
-    def _is_empty(self):
-        """Return true if system is a dummy."""
-        return False
 
     def get(self, key = 'name', *args, **kwargs):
         """Get meta information, configuration and parameters."""
@@ -489,13 +485,10 @@ class System:
 
         if key == None: return {
             'config': self._get_config(),
-            'params': self._get_params(),
-            'schedules': self._get_schedules() }
+            'params': self._get_params() }
 
         if key == 'config': return self._get_config(*args, **kwargs)
         if key == 'params': return self._get_params(*args, **kwargs)
-        if key == 'schedules':
-            return self._get_schedules(*args, **kwargs)
 
         return nemoa.log('error', """could not get system copy:
             unknown key '%s'.""" % (key))
@@ -525,19 +518,6 @@ class System:
 
         return nemoa.log('error', """could not get parameters:
             unknown key '%s'.""" % (key))
-
-    def _get_schedules(self, key = None, *args, **kwargs):
-        """Get optimizeation schedules."""
-
-        if key == None: return copy.deepcopy(self._schedules)
-
-        if isinstance(key, str) and key in self._schedules.keys():
-            if isinstance(self._schedules[key], dict):
-                return self._schedules[key].copy()
-            return self._schedules[key]
-
-        return nemoa.log('error', """could not get optimization
-            schedules: unknown key '%s'.""" % (key))
 
     def set(self, key = None, *args, **kwargs):
         """Set meta information, configuration and parameters."""
@@ -660,14 +640,12 @@ class System:
         return self._set_params_create_links() \
             and self._set_params_init_links()
 
-    def _set_copy(self, config = None, params = None, schedules = None):
+    def _set_copy(self, config = None, params = None):
         """Set configuration and parameters of system.
 
         Args:
             config (dict or None, optional): system configuration
             params (dict or None, optional): system parameters
-            schedules (dict or None, optional): system optimization
-                schedules
 
         Returns:
             Bool which is True if and only if no error occured.
@@ -678,7 +656,6 @@ class System:
 
         if config: retval &= self._set_config(config)
         if params: retval &= self._set_params(params)
-        if schedules: retval &= self._set_schedules(schedules)
 
         return retval
 
@@ -901,18 +878,6 @@ class System:
 
         return True
 
-    def _set_schedules(self, schedules = None):
-        """Set optimization schedules from dictionary."""
-
-        # update optimization schedules dictionary
-        if not isinstance(self._schedules, dict):
-            self._schedules = {}
-        if schedules:
-            schedules_copy = copy.deepcopy(schedules)
-            nemoa.common.dict_merge(schedules_copy, self._schedules)
-
-        return True
-
     def save(self, *args, **kwargs):
         """Export system to file."""
         return nemoa.system.save(self, *args, **kwargs)
@@ -925,25 +890,50 @@ class System:
         """Create copy of system."""
         return nemoa.system.copy(self, *args, **kwargs)
 
-    def optimize(self, dataset, schedule):
+    def optimize(self, dataset, schedule = None):
         """Optimize system parameters using data and given schedule."""
 
-        # check if optimization schedule exists for current system
-        # and merge default, existing and given schedule
-        if not 'params' in schedule:
-            config = self._default['optimize'].copy()
-            nemoa.common.dict_merge(self._config['optimize'], config)
-            self._config['optimize'] = config
-        elif not self._get_type() in schedule['params']:
+        # get optimization schedule
+        if not isinstance(schedule, dict):
+            if schedule == None: key = 'default'
+            elif isinstance(schedule, basestring): key = schedule
+            else:
+                return nemoa.log('error', """could not optimize model:
+                    optimization schedule is not valid.""")
+            if key in self._config['schedules']:
+                schedule = self._config['schedules'][key].copy()
+            else:
+                schedule = {}
+
+        # check if optimization schedule supports current system
+        if not self._get_type() in schedule:
+            print schedule.keys()
+            print self._get_type()
             return nemoa.log('error', """could not optimize model:
-                optimization schedule '%s' does not include system '%s'
+                optimization schedule '%s' does not support system '%s'.
                 """ % (schedule['name'], self._get_type()))
-        else:
-            config = self._default['optimize'].copy()
-            nemoa.common.dict_merge(self._config['optimize'], config)
-            nemoa.common.dict_merge(
-                schedule['params'][self._get_type()], config)
-            self._config['optimize'] = config
+
+        # merge default, current and given optimization schedule
+        config = self._default['optimize'].copy()
+        nemoa.common.dict_merge(self._config['optimize'], config)
+        nemoa.common.dict_merge(schedule[self._get_type()], config)
+        self._config['optimize'] = config
+
+        ## merge default, existing and given schedule
+        #if not isinstance(schedule, dict) or not 'params' in schedule:
+            #config = self._default['optimize'].copy()
+            #nemoa.common.dict_merge(self._config['optimize'], config)
+            #self._config['optimize'] = config
+        #if not self._get_type() in schedule['params']:
+            #return nemoa.log('error', """could not optimize model:
+                #optimization schedule '%s' does not include system '%s'
+                #""" % (schedule['name'], self._get_type()))
+        #else:
+            #config = self._default['optimize'].copy()
+            #nemoa.common.dict_merge(self._config['optimize'], config)
+            #nemoa.common.dict_merge(
+                #schedule['params'][self._get_type()], config)
+            #self._config['optimize'] = config
 
         # check dataset
         if (not 'check_dataset' in self._default['init']
@@ -972,11 +962,11 @@ class System:
         if args[0] == 'links':
             return self._get_eval_links(data, *args[1:], **kwargs)
 
-        # Evaluate system relations
+        # evaluate system relations
         if args[0] == 'relations':
             return self._get_eval_relation(data, *args[1:], **kwargs)
 
-        # Evaluate system
+        # evaluate system
         if args[0] in self._about_system().keys():
             return self._get_eval_system(data, *args, **kwargs)
 

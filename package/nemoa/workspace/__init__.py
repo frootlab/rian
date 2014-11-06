@@ -5,8 +5,6 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa.workspace.base
-import importlib
-import copy
 
 _shared = {}
 
@@ -45,43 +43,22 @@ def load(*args, **kwargs):
     if not 'config' in _shared: configure()
     return _shared['config'].load(*args, **kwargs)
 
-def find(type = None, config = None,
-    merge = ['params'], scope = 'local', **kwargs):
+def find(type = None, config = None, merge = ['params'], **kwargs):
     """Return object configuration as dictionary."""
     if not 'config' in _shared: configure()
 
     if config == None: return {}
-    if isinstance(config, dict): return copy.deepcopy(config)
-    elif not isinstance(config, str) \
-        or not isinstance(type, str): return False
+    if isinstance(config, dict): return config.copy()
+    if not isinstance(config, basestring) \
+        or not isinstance(type, basestring):
+        print 'hi'
+        return False
 
     config_name, params = nemoa.common.str_split_params(config)
     if 'params' in kwargs and isinstance(kwargs['params'], dict):
         params = nemoa.common.dict_merge(kwargs['params'], params)
 
-    search = [config_name, '%s.%s' % (name(), config_name),
-        config_name + '.default', 'base.' + config_name]
-    if isinstance(config, str):
-        search += [config, '%s.%s' % (name(), config),
-        config + '.default', 'base.' + config]
-
     # get config
-    if not config_name: config_name = name() + '.default'
-    found = False
-    for cfg_name in search:
-        cfg = _shared['config'].get(
-            type = type, name = cfg_name, merge = merge, params = params)
-        if isinstance(cfg, dict):
-            found = True
-            break
-
-    if not found:
-        return nemoa.log('error', """could not get configuration:
-            no %s with name '%s' could be found."""
-            % (type, config_name))
-
-    #if type == 'network':
-        #return nemoa.network.load(cfg['path'])['config']
-
-    return cfg
+    return _shared['config'].get(type = type, name = config_name,
+        merge = merge, params = params)
 

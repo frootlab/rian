@@ -90,10 +90,6 @@ class Network:
     def configure(self, dataset = None):
         """Configure network to dataset."""
 
-        # check if network instance is empty
-        if self._is_empty(): return nemoa.log(
-            "configuration is not needed: network is 'empty'.")
-
         # check if dataset instance is available
         if not nemoa.type.is_dataset(dataset): return nemoa.log(
             'error', """could not configure network:
@@ -248,10 +244,6 @@ class Network:
                 edge_order += 1
 
         return True
-
-    def _is_empty(self):
-        """Return true if network type is 'empty'."""
-        return self._config['type'] == 'empty'
 
     def _is_compatible_lff(self):
         """Test compatibility to layered feed forward networks.

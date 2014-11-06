@@ -132,7 +132,7 @@ class Model:
 
         return retval
 
-    def optimize(self, schedule = None, **kwargs):
+    def optimize(self, *args, **kwargs):
         """Optimize system parameters."""
 
         if not nemoa.type.is_dataset(self.dataset):
@@ -145,44 +145,21 @@ class Model:
             return nemoa.log('error', """could not optimize model:
                 system is not valid.""")
 
-        nemoa.log('optimize model')
-        nemoa.log('set', indent = '+1')
+        retval = True
 
-        # get optimization schedule
-        if schedule == None:
-            schedule = self.system.type + '.default'
-        elif not '.' in schedule:
-            schedule = self.system.type + '.' + schedule
-        schedule = nemoa.workspace.find(
-            type = 'schedule', config = schedule,
-            merge = ['params', self.system.type],
-            **kwargs)
-        if not schedule:
-            nemoa.log('error', """could not optimize system parameters:
-                optimization schedule is not valid!""")
-            nemoa.log('set', indent = '-1')
-            return self
-
-        # optimization of system parameters
-        nemoa.log("starting optimization schedule: '%s'"
-            % (schedule['name']))
-        nemoa.log('set', indent = '+1')
-
-        # TODO: find better solution for multistage optimization
-        if 'stage' in schedule and len(schedule['stage']) > 0:
-            for stage, params in enumerate(config['stage']):
-                self.system.optimize(self.dataset, **params)
-        elif 'params' in schedule:
-            self.system.optimize(
-                dataset = self.dataset, schedule = schedule)
-
-        nemoa.log('set', indent = '-1')
+        # optimize system paramaters
+        retval &= self.system.optimize(
+            dataset = self.dataset, *args, **kwargs)
 
         # update network parameters from system parameters
-        self.network.initialize(self.system)
-        nemoa.log('set', indent = '-1')
+        retval &= self.network.initialize(self.system)
 
-        return True
+        ## TODO: find better solution for multistage optimization
+        #if 'stage' in schedule and len(schedule['stage']) > 0:
+            #for stage, params in enumerate(config['stage']):
+                #self.system.optimize(self.dataset, **params)
+
+        return retval
 
     def get(self, key = 'name', *args, **kwargs):
         """Get meta information and parameters of model."""

@@ -1128,7 +1128,7 @@ class Dataset:
 
         # check source
         if not isinstance(source, str) \
-            or not source in self._tables \
+            or not source in self._tables.keys() \
             or not isinstance(self._tables[source], numpy.ndarray):
             return nemoa.log('error', """could not retrieve table:
                 invalid table name: '%s'.""" % (source))
