@@ -1,0 +1,764 @@
+11/01/2014 21:41:50 ERROR nemoa.workspace.find -> could not get configuration: no system with name 'deep' could be found.
+11/01/2014 21:41:50 ERROR File "testnemoa.py", line 42, in <module>->   unittest.main()
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/main.py", line 95, in __init__->   self.runTests()
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/main.py", line 232, in runTests->   self.result = testRunner.run(self.test)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/runner.py", line 151, in run->   test(result)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 70, in __call__->   return self.run(*args, **kwds)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 108, in run->   test(result)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 70, in __call__->   return self.run(*args, **kwds)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 108, in run->   test(result)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/case.py", line 395, in __call__->   return self.run(*args, **kwds)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/case.py", line 331, in run->   testMethod()
+11/01/2014 21:41:50 ERROR File "testnemoa.py", line 33, in test_model_create_dbn->   dataset = 'test', network = 'multilayer', system = 'deep')
+11/01/2014 21:41:50 ERROR File "./package/nemoa/model/__init__.py", line 18, in create->   return new(**nemoa.model.builder.build(*args, **kwargs))
+11/01/2014 21:41:50 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/01/2014 21:41:50 ERROR File "./package/nemoa/model/builder/base.py", line 21, in build->   if type == 'model': return Model(**kwargs).build()
+11/01/2014 21:41:50 ERROR File "./package/nemoa/model/builder/base.py", line 51, in build->   = nemoa.system.load(self.settings['system'])
+11/01/2014 21:41:50 ERROR File "./package/nemoa/system/__init__.py", line 17, in load->   return nemoa.system.imports.load(*args, **kwargs)
+11/01/2014 21:41:50 ERROR File "./package/nemoa/system/imports/__init__.py", line 57, in load->   config = nemoa.workspace.find('system', path)
+11/01/2014 21:41:50 ERROR File "./package/nemoa/workspace/__init__.py", line 81, in find->   % (type, config_name))
+11/01/2014 21:41:50 ERROR File "./package/nemoa/common/log.py", line 161, in log->   for line in traceback.format_stack():
+11/01/2014 21:41:50 ERROR nemoa.system.imports.load -> could not import system: current workspace 'unittest' does not contain a system 'deep'.
+11/01/2014 21:41:50 ERROR File "testnemoa.py", line 42, in <module>->   unittest.main()
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/main.py", line 95, in __init__->   self.runTests()
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/main.py", line 232, in runTests->   self.result = testRunner.run(self.test)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/runner.py", line 151, in run->   test(result)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 70, in __call__->   return self.run(*args, **kwds)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 108, in run->   test(result)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 70, in __call__->   return self.run(*args, **kwds)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 108, in run->   test(result)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/case.py", line 395, in __call__->   return self.run(*args, **kwds)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/case.py", line 331, in run->   testMethod()
+11/01/2014 21:41:50 ERROR File "testnemoa.py", line 33, in test_model_create_dbn->   dataset = 'test', network = 'multilayer', system = 'deep')
+11/01/2014 21:41:50 ERROR File "./package/nemoa/model/__init__.py", line 18, in create->   return new(**nemoa.model.builder.build(*args, **kwargs))
+11/01/2014 21:41:50 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/01/2014 21:41:50 ERROR File "./package/nemoa/model/builder/base.py", line 21, in build->   if type == 'model': return Model(**kwargs).build()
+11/01/2014 21:41:50 ERROR File "./package/nemoa/model/builder/base.py", line 51, in build->   = nemoa.system.load(self.settings['system'])
+11/01/2014 21:41:50 ERROR File "./package/nemoa/system/__init__.py", line 17, in load->   return nemoa.system.imports.load(*args, **kwargs)
+11/01/2014 21:41:50 ERROR File "./package/nemoa/system/imports/__init__.py", line 63, in load->   '%s'.""" % (current_workspace, path))
+11/01/2014 21:41:50 ERROR File "./package/nemoa/common/log.py", line 161, in log->   for line in traceback.format_stack():
+11/01/2014 21:41:50 ERROR nemoa.workspace.find -> could not get configuration: no system with name 'deep' could be found.
+11/01/2014 21:41:50 ERROR File "testnemoa.py", line 42, in <module>->   unittest.main()
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/main.py", line 95, in __init__->   self.runTests()
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/main.py", line 232, in runTests->   self.result = testRunner.run(self.test)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/runner.py", line 151, in run->   test(result)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 70, in __call__->   return self.run(*args, **kwds)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 108, in run->   test(result)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 70, in __call__->   return self.run(*args, **kwds)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 108, in run->   test(result)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/case.py", line 395, in __call__->   return self.run(*args, **kwds)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/case.py", line 331, in run->   testMethod()
+11/01/2014 21:41:50 ERROR File "testnemoa.py", line 28, in test_system_import_ini->   test = nemoa.type.is_system(nemoa.system.open('deep'))
+11/01/2014 21:41:50 ERROR File "./package/nemoa/system/__init__.py", line 25, in open->   return new(**load(*args, **kwargs))
+11/01/2014 21:41:50 ERROR File "./package/nemoa/system/__init__.py", line 17, in load->   return nemoa.system.imports.load(*args, **kwargs)
+11/01/2014 21:41:50 ERROR File "./package/nemoa/system/imports/__init__.py", line 57, in load->   config = nemoa.workspace.find('system', path)
+11/01/2014 21:41:50 ERROR File "./package/nemoa/workspace/__init__.py", line 81, in find->   % (type, config_name))
+11/01/2014 21:41:50 ERROR File "./package/nemoa/common/log.py", line 161, in log->   for line in traceback.format_stack():
+11/01/2014 21:41:50 ERROR nemoa.system.imports.load -> could not import system: current workspace 'unittest' does not contain a system 'deep'.
+11/01/2014 21:41:50 ERROR File "testnemoa.py", line 42, in <module>->   unittest.main()
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/main.py", line 95, in __init__->   self.runTests()
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/main.py", line 232, in runTests->   self.result = testRunner.run(self.test)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/runner.py", line 151, in run->   test(result)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 70, in __call__->   return self.run(*args, **kwds)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 108, in run->   test(result)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 70, in __call__->   return self.run(*args, **kwds)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 108, in run->   test(result)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/case.py", line 395, in __call__->   return self.run(*args, **kwds)
+11/01/2014 21:41:50 ERROR File "/usr/lib/python2.7/unittest/case.py", line 331, in run->   testMethod()
+11/01/2014 21:41:50 ERROR File "testnemoa.py", line 28, in test_system_import_ini->   test = nemoa.type.is_system(nemoa.system.open('deep'))
+11/01/2014 21:41:50 ERROR File "./package/nemoa/system/__init__.py", line 25, in open->   return new(**load(*args, **kwargs))
+11/01/2014 21:41:50 ERROR File "./package/nemoa/system/__init__.py", line 17, in load->   return nemoa.system.imports.load(*args, **kwargs)
+11/01/2014 21:41:50 ERROR File "./package/nemoa/system/imports/__init__.py", line 63, in load->   '%s'.""" % (current_workspace, path))
+11/01/2014 21:41:50 ERROR File "./package/nemoa/common/log.py", line 161, in log->   for line in traceback.format_stack():
+11/01/2014 21:42:35 ERROR nemoa.workspace.find -> could not get configuration: no system with name 'deep' could be found.
+11/01/2014 21:42:35 ERROR File "testnemoa.py", line 42, in <module>->   unittest.main()
+11/01/2014 21:42:35 ERROR File "/usr/lib/python2.7/unittest/main.py", line 95, in __init__->   self.runTests()
+11/01/2014 21:42:35 ERROR File "/usr/lib/python2.7/unittest/main.py", line 232, in runTests->   self.result = testRunner.run(self.test)
+11/01/2014 21:42:35 ERROR File "/usr/lib/python2.7/unittest/runner.py", line 151, in run->   test(result)
+11/01/2014 21:42:35 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 70, in __call__->   return self.run(*args, **kwds)
+11/01/2014 21:42:35 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 108, in run->   test(result)
+11/01/2014 21:42:35 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 70, in __call__->   return self.run(*args, **kwds)
+11/01/2014 21:42:35 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 108, in run->   test(result)
+11/01/2014 21:42:35 ERROR File "/usr/lib/python2.7/unittest/case.py", line 395, in __call__->   return self.run(*args, **kwds)
+11/01/2014 21:42:35 ERROR File "/usr/lib/python2.7/unittest/case.py", line 331, in run->   testMethod()
+11/01/2014 21:42:35 ERROR File "testnemoa.py", line 28, in test_system_import_ini->   test = nemoa.type.is_system(nemoa.system.open('deep'))
+11/01/2014 21:42:35 ERROR File "./package/nemoa/system/__init__.py", line 25, in open->   return new(**load(*args, **kwargs))
+11/01/2014 21:42:35 ERROR File "./package/nemoa/system/__init__.py", line 17, in load->   return nemoa.system.imports.load(*args, **kwargs)
+11/01/2014 21:42:35 ERROR File "./package/nemoa/system/imports/__init__.py", line 57, in load->   config = nemoa.workspace.find('system', path)
+11/01/2014 21:42:35 ERROR File "./package/nemoa/workspace/__init__.py", line 81, in find->   % (type, config_name))
+11/01/2014 21:42:35 ERROR File "./package/nemoa/common/log.py", line 161, in log->   for line in traceback.format_stack():
+11/01/2014 21:42:35 ERROR nemoa.system.imports.load -> could not import system: current workspace 'unittest' does not contain a system 'deep'.
+11/01/2014 21:42:35 ERROR File "testnemoa.py", line 42, in <module>->   unittest.main()
+11/01/2014 21:42:35 ERROR File "/usr/lib/python2.7/unittest/main.py", line 95, in __init__->   self.runTests()
+11/01/2014 21:42:35 ERROR File "/usr/lib/python2.7/unittest/main.py", line 232, in runTests->   self.result = testRunner.run(self.test)
+11/01/2014 21:42:35 ERROR File "/usr/lib/python2.7/unittest/runner.py", line 151, in run->   test(result)
+11/01/2014 21:42:35 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 70, in __call__->   return self.run(*args, **kwds)
+11/01/2014 21:42:35 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 108, in run->   test(result)
+11/01/2014 21:42:35 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 70, in __call__->   return self.run(*args, **kwds)
+11/01/2014 21:42:35 ERROR File "/usr/lib/python2.7/unittest/suite.py", line 108, in run->   test(result)
+11/01/2014 21:42:35 ERROR File "/usr/lib/python2.7/unittest/case.py", line 395, in __call__->   return self.run(*args, **kwds)
+11/01/2014 21:42:35 ERROR File "/usr/lib/python2.7/unittest/case.py", line 331, in run->   testMethod()
+11/01/2014 21:42:35 ERROR File "testnemoa.py", line 28, in test_system_import_ini->   test = nemoa.type.is_system(nemoa.system.open('deep'))
+11/01/2014 21:42:35 ERROR File "./package/nemoa/system/__init__.py", line 25, in open->   return new(**load(*args, **kwargs))
+11/01/2014 21:42:35 ERROR File "./package/nemoa/system/__init__.py", line 17, in load->   return nemoa.system.imports.load(*args, **kwargs)
+11/01/2014 21:42:35 ERROR File "./package/nemoa/system/imports/__init__.py", line 63, in load->   '%s'.""" % (current_workspace, path))
+11/01/2014 21:42:35 ERROR File "./package/nemoa/common/log.py", line 161, in log->   for line in traceback.format_stack():
+11/04/2014 22:57:56 ERROR nemoa.workspace.find -> could not get configuration: no system with name 'deep' could be found.
+11/04/2014 22:57:56 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/04/2014 22:57:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/04/2014 22:57:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/04/2014 22:57:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/04/2014 22:57:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/04/2014 22:57:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/04/2014 22:57:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/04/2014 22:57:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/04/2014 22:57:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/04/2014 22:57:56 ERROR File "<ipython-input-5-bc6fdf01a1db>", line 1, in <module>->   system = nemoa.system.open('deep')
+11/04/2014 22:57:56 ERROR File "./package/nemoa/system/__init__.py", line 26, in open->   return new(**load(*args, **kwargs))
+11/04/2014 22:57:56 ERROR File "./package/nemoa/system/__init__.py", line 18, in load->   return nemoa.system.imports.load(*args, **kwargs)
+11/04/2014 22:57:56 ERROR File "./package/nemoa/system/imports/__init__.py", line 57, in load->   config = nemoa.workspace.find('system', path)
+11/04/2014 22:57:56 ERROR File "./package/nemoa/workspace/__init__.py", line 81, in find->   % (type, config_name))
+11/04/2014 22:57:56 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/04/2014 22:57:56 ERROR nemoa.system.imports.load -> could not import system: current workspace 'unittest' does not contain a system 'deep'.
+11/04/2014 22:57:56 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/04/2014 22:57:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/04/2014 22:57:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/04/2014 22:57:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/04/2014 22:57:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/04/2014 22:57:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/04/2014 22:57:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/04/2014 22:57:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/04/2014 22:57:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/04/2014 22:57:56 ERROR File "<ipython-input-5-bc6fdf01a1db>", line 1, in <module>->   system = nemoa.system.open('deep')
+11/04/2014 22:57:56 ERROR File "./package/nemoa/system/__init__.py", line 26, in open->   return new(**load(*args, **kwargs))
+11/04/2014 22:57:56 ERROR File "./package/nemoa/system/__init__.py", line 18, in load->   return nemoa.system.imports.load(*args, **kwargs)
+11/04/2014 22:57:56 ERROR File "./package/nemoa/system/imports/__init__.py", line 63, in load->   '%s'.""" % (current_workspace, path))
+11/04/2014 22:57:56 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/05/2014 17:31:56 ERROR nemoa.workspace.find -> could not get configuration: no dataset with name 't1' could be found.
+11/05/2014 17:31:56 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/05/2014 17:31:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/05/2014 17:31:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/05/2014 17:31:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/05/2014 17:31:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/05/2014 17:31:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/05/2014 17:31:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/05/2014 17:31:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/05/2014 17:31:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/05/2014 17:31:56 ERROR File "<ipython-input-2-bfc0b883b62e>", line 1, in <module>->   model = nemoa.model.create(dataset = 't1', network = 'ann(2)', system = 'dbn')
+11/05/2014 17:31:56 ERROR File "./package/nemoa/model/__init__.py", line 18, in create->   return new(**nemoa.model.builder.build(*args, **kwargs))
+11/05/2014 17:31:56 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/05/2014 17:31:56 ERROR File "./package/nemoa/model/builder/base.py", line 21, in build->   if type == 'model': return Model(**kwargs).build()
+11/05/2014 17:31:56 ERROR File "./package/nemoa/model/builder/base.py", line 45, in build->   = nemoa.dataset.load(self.settings['dataset'])
+11/05/2014 17:31:56 ERROR File "./package/nemoa/dataset/__init__.py", line 18, in load->   return nemoa.dataset.imports.load(*args, **kwargs)
+11/05/2014 17:31:56 ERROR File "./package/nemoa/dataset/imports/__init__.py", line 57, in load->   config = nemoa.workspace.find('dataset', path)
+11/05/2014 17:31:56 ERROR File "./package/nemoa/workspace/__init__.py", line 81, in find->   % (type, config_name))
+11/05/2014 17:31:56 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/05/2014 17:31:56 ERROR nemoa.dataset.imports.load -> could not import dataset: current workspace 'unittest' does not contain a dataset 't1'.
+11/05/2014 17:31:56 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/05/2014 17:31:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/05/2014 17:31:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/05/2014 17:31:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/05/2014 17:31:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/05/2014 17:31:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/05/2014 17:31:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/05/2014 17:31:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/05/2014 17:31:56 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/05/2014 17:31:56 ERROR File "<ipython-input-2-bfc0b883b62e>", line 1, in <module>->   model = nemoa.model.create(dataset = 't1', network = 'ann(2)', system = 'dbn')
+11/05/2014 17:31:56 ERROR File "./package/nemoa/model/__init__.py", line 18, in create->   return new(**nemoa.model.builder.build(*args, **kwargs))
+11/05/2014 17:31:56 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/05/2014 17:31:56 ERROR File "./package/nemoa/model/builder/base.py", line 21, in build->   if type == 'model': return Model(**kwargs).build()
+11/05/2014 17:31:56 ERROR File "./package/nemoa/model/builder/base.py", line 45, in build->   = nemoa.dataset.load(self.settings['dataset'])
+11/05/2014 17:31:56 ERROR File "./package/nemoa/dataset/__init__.py", line 18, in load->   return nemoa.dataset.imports.load(*args, **kwargs)
+11/05/2014 17:31:56 ERROR File "./package/nemoa/dataset/imports/__init__.py", line 63, in load->   '%s'.""" % (current_workspace, path))
+11/05/2014 17:31:56 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/05/2014 17:42:49 ERROR nemoa.workspace.find -> could not get configuration: no dataset with name 't1' could be found.
+11/05/2014 17:42:49 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/05/2014 17:42:49 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/05/2014 17:42:49 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/05/2014 17:42:49 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/05/2014 17:42:49 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/05/2014 17:42:49 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/05/2014 17:42:49 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/05/2014 17:42:49 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/05/2014 17:42:49 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/05/2014 17:42:49 ERROR File "<ipython-input-4-bfc0b883b62e>", line 1, in <module>->   model = nemoa.model.create(dataset = 't1', network = 'ann(2)', system = 'dbn')
+11/05/2014 17:42:49 ERROR File "./package/nemoa/model/__init__.py", line 18, in create->   return new(**nemoa.model.builder.build(*args, **kwargs))
+11/05/2014 17:42:49 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/05/2014 17:42:49 ERROR File "./package/nemoa/model/builder/base.py", line 21, in build->   if type == 'model': return Model(**kwargs).build()
+11/05/2014 17:42:49 ERROR File "./package/nemoa/model/builder/base.py", line 45, in build->   = nemoa.dataset.load(self.settings['dataset'])
+11/05/2014 17:42:49 ERROR File "./package/nemoa/dataset/__init__.py", line 18, in load->   return nemoa.dataset.imports.load(*args, **kwargs)
+11/05/2014 17:42:49 ERROR File "./package/nemoa/dataset/imports/__init__.py", line 57, in load->   config = nemoa.workspace.find('dataset', path)
+11/05/2014 17:42:49 ERROR File "./package/nemoa/workspace/__init__.py", line 81, in find->   % (type, config_name))
+11/05/2014 17:42:49 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/05/2014 17:42:49 ERROR nemoa.dataset.imports.load -> could not import dataset: current workspace 'unittest' does not contain a dataset 't1'.
+11/05/2014 17:42:49 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/05/2014 17:42:49 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/05/2014 17:42:49 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/05/2014 17:42:49 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/05/2014 17:42:49 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/05/2014 17:42:49 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/05/2014 17:42:49 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/05/2014 17:42:49 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/05/2014 17:42:49 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/05/2014 17:42:49 ERROR File "<ipython-input-4-bfc0b883b62e>", line 1, in <module>->   model = nemoa.model.create(dataset = 't1', network = 'ann(2)', system = 'dbn')
+11/05/2014 17:42:49 ERROR File "./package/nemoa/model/__init__.py", line 18, in create->   return new(**nemoa.model.builder.build(*args, **kwargs))
+11/05/2014 17:42:49 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/05/2014 17:42:49 ERROR File "./package/nemoa/model/builder/base.py", line 21, in build->   if type == 'model': return Model(**kwargs).build()
+11/05/2014 17:42:49 ERROR File "./package/nemoa/model/builder/base.py", line 45, in build->   = nemoa.dataset.load(self.settings['dataset'])
+11/05/2014 17:42:49 ERROR File "./package/nemoa/dataset/__init__.py", line 18, in load->   return nemoa.dataset.imports.load(*args, **kwargs)
+11/05/2014 17:42:49 ERROR File "./package/nemoa/dataset/imports/__init__.py", line 63, in load->   '%s'.""" % (current_workspace, path))
+11/05/2014 17:42:49 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/05/2014 17:43:24 ERROR nemoa.workspace.find -> could not get configuration: no network with name 'test' could be found.
+11/05/2014 17:43:24 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/05/2014 17:43:24 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/05/2014 17:43:24 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/05/2014 17:43:24 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/05/2014 17:43:24 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/05/2014 17:43:24 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/05/2014 17:43:24 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/05/2014 17:43:24 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/05/2014 17:43:24 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/05/2014 17:43:24 ERROR File "<ipython-input-5-c19413596ee7>", line 1, in <module>->   model = nemoa.model.create(dataset = 'test', network = 'test', system = 'dbn')
+11/05/2014 17:43:24 ERROR File "./package/nemoa/model/__init__.py", line 18, in create->   return new(**nemoa.model.builder.build(*args, **kwargs))
+11/05/2014 17:43:24 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/05/2014 17:43:24 ERROR File "./package/nemoa/model/builder/base.py", line 21, in build->   if type == 'model': return Model(**kwargs).build()
+11/05/2014 17:43:24 ERROR File "./package/nemoa/model/builder/base.py", line 48, in build->   = nemoa.network.load(self.settings['network'])
+11/05/2014 17:43:24 ERROR File "./package/nemoa/network/__init__.py", line 22, in load->   return nemoa.network.imports.load(*args, **kwargs)
+11/05/2014 17:43:24 ERROR File "./package/nemoa/network/imports/__init__.py", line 63, in load->   config = nemoa.workspace.find('network', path)
+11/05/2014 17:43:24 ERROR File "./package/nemoa/workspace/__init__.py", line 81, in find->   % (type, config_name))
+11/05/2014 17:43:24 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/05/2014 17:43:24 ERROR nemoa.network.imports.load -> could not import network: current workspace 'unittest' does not contain a network 'test'.
+11/05/2014 17:43:24 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/05/2014 17:43:24 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/05/2014 17:43:24 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/05/2014 17:43:24 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/05/2014 17:43:24 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/05/2014 17:43:24 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/05/2014 17:43:24 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/05/2014 17:43:24 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/05/2014 17:43:24 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/05/2014 17:43:24 ERROR File "<ipython-input-5-c19413596ee7>", line 1, in <module>->   model = nemoa.model.create(dataset = 'test', network = 'test', system = 'dbn')
+11/05/2014 17:43:24 ERROR File "./package/nemoa/model/__init__.py", line 18, in create->   return new(**nemoa.model.builder.build(*args, **kwargs))
+11/05/2014 17:43:24 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/05/2014 17:43:24 ERROR File "./package/nemoa/model/builder/base.py", line 21, in build->   if type == 'model': return Model(**kwargs).build()
+11/05/2014 17:43:24 ERROR File "./package/nemoa/model/builder/base.py", line 48, in build->   = nemoa.network.load(self.settings['network'])
+11/05/2014 17:43:24 ERROR File "./package/nemoa/network/__init__.py", line 22, in load->   return nemoa.network.imports.load(*args, **kwargs)
+11/05/2014 17:43:24 ERROR File "./package/nemoa/network/imports/__init__.py", line 69, in load->   '%s'.""" % (current_workspace, path))
+11/05/2014 17:43:24 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/05/2014 17:43:38 ERROR nemoa.workspace.find -> could not get configuration: no dataset with name 't1' could be found.
+11/05/2014 17:43:38 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/05/2014 17:43:38 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/05/2014 17:43:38 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/05/2014 17:43:38 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/05/2014 17:43:38 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/05/2014 17:43:38 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/05/2014 17:43:38 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/05/2014 17:43:38 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/05/2014 17:43:38 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/05/2014 17:43:38 ERROR File "<ipython-input-6-bfc0b883b62e>", line 1, in <module>->   model = nemoa.model.create(dataset = 't1', network = 'ann(2)', system = 'dbn')
+11/05/2014 17:43:38 ERROR File "./package/nemoa/model/__init__.py", line 18, in create->   return new(**nemoa.model.builder.build(*args, **kwargs))
+11/05/2014 17:43:38 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/05/2014 17:43:38 ERROR File "./package/nemoa/model/builder/base.py", line 21, in build->   if type == 'model': return Model(**kwargs).build()
+11/05/2014 17:43:38 ERROR File "./package/nemoa/model/builder/base.py", line 45, in build->   = nemoa.dataset.load(self.settings['dataset'])
+11/05/2014 17:43:38 ERROR File "./package/nemoa/dataset/__init__.py", line 18, in load->   return nemoa.dataset.imports.load(*args, **kwargs)
+11/05/2014 17:43:38 ERROR File "./package/nemoa/dataset/imports/__init__.py", line 57, in load->   config = nemoa.workspace.find('dataset', path)
+11/05/2014 17:43:38 ERROR File "./package/nemoa/workspace/__init__.py", line 81, in find->   % (type, config_name))
+11/05/2014 17:43:38 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/05/2014 17:43:38 ERROR nemoa.dataset.imports.load -> could not import dataset: current workspace 'unittest' does not contain a dataset 't1'.
+11/05/2014 17:43:38 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/05/2014 17:43:38 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/05/2014 17:43:38 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/05/2014 17:43:38 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/05/2014 17:43:38 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/05/2014 17:43:38 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/05/2014 17:43:38 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/05/2014 17:43:38 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/05/2014 17:43:38 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/05/2014 17:43:38 ERROR File "<ipython-input-6-bfc0b883b62e>", line 1, in <module>->   model = nemoa.model.create(dataset = 't1', network = 'ann(2)', system = 'dbn')
+11/05/2014 17:43:38 ERROR File "./package/nemoa/model/__init__.py", line 18, in create->   return new(**nemoa.model.builder.build(*args, **kwargs))
+11/05/2014 17:43:38 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/05/2014 17:43:38 ERROR File "./package/nemoa/model/builder/base.py", line 21, in build->   if type == 'model': return Model(**kwargs).build()
+11/05/2014 17:43:38 ERROR File "./package/nemoa/model/builder/base.py", line 45, in build->   = nemoa.dataset.load(self.settings['dataset'])
+11/05/2014 17:43:38 ERROR File "./package/nemoa/dataset/__init__.py", line 18, in load->   return nemoa.dataset.imports.load(*args, **kwargs)
+11/05/2014 17:43:38 ERROR File "./package/nemoa/dataset/imports/__init__.py", line 63, in load->   '%s'.""" % (current_workspace, path))
+11/05/2014 17:43:38 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 10:05:09 ERROR nemoa.system.classes.base.optimize -> could not optimize model: optimization schedule 'default' is not valid for system 'dbn.DBN'.
+11/06/2014 10:05:09 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 10:05:09 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 10:05:09 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 10:05:09 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 10:05:09 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 10:05:09 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 10:05:09 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 10:05:09 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 10:05:09 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 10:05:09 ERROR File "<ipython-input-3-2e21ba85c148>", line 1, in <module>->   model.optimize()
+11/06/2014 10:05:09 ERROR File "./package/nemoa/model/classes/base.py", line 173, in optimize->   self.system.optimize(dataset = self.dataset, *args, **kwargs)
+11/06/2014 10:05:09 ERROR File "./package/nemoa/system/classes/base.py", line 912, in optimize->   """ % (schedule['name'], self._get_type()))
+11/06/2014 10:05:09 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 10:07:23 ERROR nemoa.system.classes.base.optimize -> could not optimize model: optimization schedule 'default' is not valid for system 'dbn.DBN'.
+11/06/2014 10:07:23 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 10:07:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 10:07:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 10:07:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 10:07:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 10:07:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 10:07:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 10:07:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 10:07:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 10:07:23 ERROR File "<ipython-input-3-2e21ba85c148>", line 1, in <module>->   model.optimize()
+11/06/2014 10:07:23 ERROR File "./package/nemoa/model/classes/base.py", line 177, in optimize->   dataset = self.dataset, *args, **kwargs)
+11/06/2014 10:07:23 ERROR File "./package/nemoa/system/classes/base.py", line 912, in optimize->   """ % (schedule['name'], self._get_type()))
+11/06/2014 10:07:23 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 10:10:09 ERROR nemoa.system.classes.base.optimize -> could not optimize model: optimization schedule 'default' does not support system 'dbn.DBN'.
+11/06/2014 10:10:09 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 10:10:09 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 10:10:09 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 10:10:09 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 10:10:09 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 10:10:09 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 10:10:09 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 10:10:09 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 10:10:09 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 10:10:09 ERROR File "<ipython-input-3-2e21ba85c148>", line 1, in <module>->   model.optimize()
+11/06/2014 10:10:09 ERROR File "./package/nemoa/model/classes/base.py", line 152, in optimize->   dataset = self.dataset, *args, **kwargs)
+11/06/2014 10:10:09 ERROR File "./package/nemoa/system/classes/base.py", line 914, in optimize->   """ % (schedule['name'], self._get_type()))
+11/06/2014 10:10:09 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 12:27:08 ERROR nemoa.workspace.find -> could not get configuration: no system with name 'deep' could be found.
+11/06/2014 12:27:08 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 12:27:08 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 12:27:08 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 12:27:08 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 12:27:08 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 12:27:08 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 12:27:08 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 12:27:08 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 12:27:08 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 12:27:08 ERROR File "<ipython-input-7-bc6fdf01a1db>", line 1, in <module>->   system = nemoa.system.open('deep')
+11/06/2014 12:27:08 ERROR File "./package/nemoa/system/__init__.py", line 26, in open->   return new(**load(*args, **kwargs))
+11/06/2014 12:27:08 ERROR File "./package/nemoa/system/__init__.py", line 18, in load->   return nemoa.system.imports.load(*args, **kwargs)
+11/06/2014 12:27:08 ERROR File "./package/nemoa/system/imports/__init__.py", line 57, in load->   config = nemoa.workspace.find('system', path)
+11/06/2014 12:27:08 ERROR File "./package/nemoa/workspace/__init__.py", line 81, in find->   % (type, config_name))
+11/06/2014 12:27:08 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 12:27:08 ERROR nemoa.system.imports.load -> could not import system: current workspace 'unittest' does not contain a system 'deep'.
+11/06/2014 12:27:08 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 12:27:08 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 12:27:08 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 12:27:08 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 12:27:08 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 12:27:08 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 12:27:08 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 12:27:08 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 12:27:08 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 12:27:08 ERROR File "<ipython-input-7-bc6fdf01a1db>", line 1, in <module>->   system = nemoa.system.open('deep')
+11/06/2014 12:27:08 ERROR File "./package/nemoa/system/__init__.py", line 26, in open->   return new(**load(*args, **kwargs))
+11/06/2014 12:27:08 ERROR File "./package/nemoa/system/__init__.py", line 18, in load->   return nemoa.system.imports.load(*args, **kwargs)
+11/06/2014 12:27:08 ERROR File "./package/nemoa/system/imports/__init__.py", line 63, in load->   '%s'.""" % (current_workspace, path))
+11/06/2014 12:27:08 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 17:48:39 WARNING nemoa.workspace.base.get -> could not get configuration: name of object is not known.
+11/06/2014 17:49:54 WARNING nemoa.workspace.base.get -> could not get configuration: name of object is not known.
+11/06/2014 17:51:44 WARNING nemoa.workspace.base.get -> could not get configuration: name of object is not known.
+11/06/2014 17:52:36 WARNING nemoa.workspace.base.get -> could not get configuration: name of object is not known.
+11/06/2014 18:02:04 ERROR nemoa.dataset.classes.base._get_tables -> could not retrieve table: invalid table name: 't1'.
+11/06/2014 18:02:04 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 18:02:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 18:02:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 18:02:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 18:02:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 18:02:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 18:02:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 18:02:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 18:02:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 18:02:04 ERROR File "<ipython-input-3-6079bcc03907>", line 1, in <module>->   model.show()
+11/06/2014 18:02:04 ERROR File "./package/nemoa/model/classes/base.py", line 534, in show->   return nemoa.model.show(self, *args, **kwargs)
+11/06/2014 18:02:04 ERROR File "./package/nemoa/model/__init__.py", line 38, in show->   return nemoa.model.exports.show(*args, **kwargs)
+11/06/2014 18:02:04 ERROR File "./package/nemoa/model/exports/__init__.py", line 99, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+11/06/2014 18:02:04 ERROR File "./package/nemoa/model/exports/image.py", line 122, in show->   if plot.create(model):
+11/06/2014 18:02:04 ERROR File "./package/nemoa/model/exports/image.py", line 181, in create->   transform = self.settings['transform'])
+11/06/2014 18:02:04 ERROR File "./package/nemoa/model/classes/base.py", line 182, in get->   if key == 'eval': return self._get_eval(*args, **kwargs)
+11/06/2014 18:02:04 ERROR File "./package/nemoa/model/classes/base.py", line 285, in _get_eval->   size = statistics, cols = tuple(cols))
+11/06/2014 18:02:04 ERROR File "./package/nemoa/dataset/classes/base.py", line 694, in get->   if key == 'data': return self._get_data(*args, **kwargs)
+11/06/2014 18:02:04 ERROR File "./package/nemoa/dataset/classes/base.py", line 913, in _get_data->   rows = rows, size = size + 1, labels = True)
+11/06/2014 18:02:04 ERROR File "./package/nemoa/dataset/classes/base.py", line 1134, in _get_tables->   invalid table name: '%s'.""" % (source))
+11/06/2014 18:02:04 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 18:02:04 ERROR nemoa.dataset.classes.base._get_data -> could not get data: no valid data sources found!
+11/06/2014 18:02:04 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 18:02:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 18:02:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 18:02:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 18:02:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 18:02:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 18:02:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 18:02:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 18:02:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 18:02:04 ERROR File "<ipython-input-3-6079bcc03907>", line 1, in <module>->   model.show()
+11/06/2014 18:02:04 ERROR File "./package/nemoa/model/classes/base.py", line 534, in show->   return nemoa.model.show(self, *args, **kwargs)
+11/06/2014 18:02:04 ERROR File "./package/nemoa/model/__init__.py", line 38, in show->   return nemoa.model.exports.show(*args, **kwargs)
+11/06/2014 18:02:04 ERROR File "./package/nemoa/model/exports/__init__.py", line 99, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+11/06/2014 18:02:04 ERROR File "./package/nemoa/model/exports/image.py", line 122, in show->   if plot.create(model):
+11/06/2014 18:02:04 ERROR File "./package/nemoa/model/exports/image.py", line 181, in create->   transform = self.settings['transform'])
+11/06/2014 18:02:04 ERROR File "./package/nemoa/model/classes/base.py", line 182, in get->   if key == 'eval': return self._get_eval(*args, **kwargs)
+11/06/2014 18:02:04 ERROR File "./package/nemoa/model/classes/base.py", line 285, in _get_eval->   size = statistics, cols = tuple(cols))
+11/06/2014 18:02:04 ERROR File "./package/nemoa/dataset/classes/base.py", line 694, in get->   if key == 'data': return self._get_data(*args, **kwargs)
+11/06/2014 18:02:04 ERROR File "./package/nemoa/dataset/classes/base.py", line 921, in _get_data->   no valid data sources found!""")
+11/06/2014 18:02:04 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 18:06:00 ERROR nemoa.dataset.classes.base._get_tables -> could not retrieve table: invalid table name: 't1'.
+11/06/2014 18:06:00 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 18:06:00 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 18:06:00 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 18:06:00 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 18:06:00 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 18:06:00 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 18:06:00 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 18:06:00 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 18:06:00 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 18:06:00 ERROR File "<ipython-input-5-6079bcc03907>", line 1, in <module>->   model.show()
+11/06/2014 18:06:00 ERROR File "./package/nemoa/model/classes/base.py", line 534, in show->   return nemoa.model.show(self, *args, **kwargs)
+11/06/2014 18:06:00 ERROR File "./package/nemoa/model/__init__.py", line 38, in show->   return nemoa.model.exports.show(*args, **kwargs)
+11/06/2014 18:06:00 ERROR File "./package/nemoa/model/exports/__init__.py", line 99, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+11/06/2014 18:06:00 ERROR File "./package/nemoa/model/exports/image.py", line 122, in show->   if plot.create(model):
+11/06/2014 18:06:00 ERROR File "./package/nemoa/model/exports/image.py", line 181, in create->   transform = self.settings['transform'])
+11/06/2014 18:06:00 ERROR File "./package/nemoa/model/classes/base.py", line 182, in get->   if key == 'eval': return self._get_eval(*args, **kwargs)
+11/06/2014 18:06:00 ERROR File "./package/nemoa/model/classes/base.py", line 285, in _get_eval->   size = statistics, cols = tuple(cols))
+11/06/2014 18:06:00 ERROR File "./package/nemoa/dataset/classes/base.py", line 694, in get->   if key == 'data': return self._get_data(*args, **kwargs)
+11/06/2014 18:06:00 ERROR File "./package/nemoa/dataset/classes/base.py", line 913, in _get_data->   rows = rows, size = size + 1, labels = True)
+11/06/2014 18:06:00 ERROR File "./package/nemoa/dataset/classes/base.py", line 1134, in _get_tables->   invalid table name: '%s'.""" % (source))
+11/06/2014 18:06:00 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 18:06:00 ERROR nemoa.dataset.classes.base._get_data -> could not get data: no valid data sources found!
+11/06/2014 18:06:00 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 18:06:00 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 18:06:00 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 18:06:00 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 18:06:00 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 18:06:00 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 18:06:00 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 18:06:00 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 18:06:00 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 18:06:00 ERROR File "<ipython-input-5-6079bcc03907>", line 1, in <module>->   model.show()
+11/06/2014 18:06:00 ERROR File "./package/nemoa/model/classes/base.py", line 534, in show->   return nemoa.model.show(self, *args, **kwargs)
+11/06/2014 18:06:00 ERROR File "./package/nemoa/model/__init__.py", line 38, in show->   return nemoa.model.exports.show(*args, **kwargs)
+11/06/2014 18:06:00 ERROR File "./package/nemoa/model/exports/__init__.py", line 99, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+11/06/2014 18:06:00 ERROR File "./package/nemoa/model/exports/image.py", line 122, in show->   if plot.create(model):
+11/06/2014 18:06:00 ERROR File "./package/nemoa/model/exports/image.py", line 181, in create->   transform = self.settings['transform'])
+11/06/2014 18:06:00 ERROR File "./package/nemoa/model/classes/base.py", line 182, in get->   if key == 'eval': return self._get_eval(*args, **kwargs)
+11/06/2014 18:06:00 ERROR File "./package/nemoa/model/classes/base.py", line 285, in _get_eval->   size = statistics, cols = tuple(cols))
+11/06/2014 18:06:00 ERROR File "./package/nemoa/dataset/classes/base.py", line 694, in get->   if key == 'data': return self._get_data(*args, **kwargs)
+11/06/2014 18:06:00 ERROR File "./package/nemoa/dataset/classes/base.py", line 921, in _get_data->   no valid data sources found!""")
+11/06/2014 18:06:00 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 18:09:47 ERROR nemoa.dataset.classes.base._get_tables -> could not retrieve table: invalid table name: 't1'.
+11/06/2014 18:09:47 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 18:09:47 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 18:09:47 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 18:09:47 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 18:09:47 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 18:09:47 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 18:09:47 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 18:09:47 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 18:09:47 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 18:09:47 ERROR File "<ipython-input-3-6079bcc03907>", line 1, in <module>->   model.show()
+11/06/2014 18:09:47 ERROR File "./package/nemoa/model/classes/base.py", line 534, in show->   return nemoa.model.show(self, *args, **kwargs)
+11/06/2014 18:09:47 ERROR File "./package/nemoa/model/__init__.py", line 38, in show->   return nemoa.model.exports.show(*args, **kwargs)
+11/06/2014 18:09:47 ERROR File "./package/nemoa/model/exports/__init__.py", line 99, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+11/06/2014 18:09:47 ERROR File "./package/nemoa/model/exports/image.py", line 122, in show->   if plot.create(model):
+11/06/2014 18:09:47 ERROR File "./package/nemoa/model/exports/image.py", line 181, in create->   transform = self.settings['transform'])
+11/06/2014 18:09:47 ERROR File "./package/nemoa/model/classes/base.py", line 182, in get->   if key == 'eval': return self._get_eval(*args, **kwargs)
+11/06/2014 18:09:47 ERROR File "./package/nemoa/model/classes/base.py", line 285, in _get_eval->   size = statistics, cols = tuple(cols))
+11/06/2014 18:09:47 ERROR File "./package/nemoa/dataset/classes/base.py", line 694, in get->   if key == 'data': return self._get_data(*args, **kwargs)
+11/06/2014 18:09:47 ERROR File "./package/nemoa/dataset/classes/base.py", line 913, in _get_data->   rows = rows, size = size + 1, labels = True)
+11/06/2014 18:09:47 ERROR File "./package/nemoa/dataset/classes/base.py", line 1134, in _get_tables->   invalid table name: '%s'.""" % (source))
+11/06/2014 18:09:47 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 18:09:47 ERROR nemoa.dataset.classes.base._get_data -> could not get data: no valid data sources found!
+11/06/2014 18:09:47 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 18:09:47 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 18:09:47 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 18:09:47 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 18:09:47 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 18:09:47 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 18:09:47 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 18:09:47 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 18:09:47 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 18:09:47 ERROR File "<ipython-input-3-6079bcc03907>", line 1, in <module>->   model.show()
+11/06/2014 18:09:47 ERROR File "./package/nemoa/model/classes/base.py", line 534, in show->   return nemoa.model.show(self, *args, **kwargs)
+11/06/2014 18:09:47 ERROR File "./package/nemoa/model/__init__.py", line 38, in show->   return nemoa.model.exports.show(*args, **kwargs)
+11/06/2014 18:09:47 ERROR File "./package/nemoa/model/exports/__init__.py", line 99, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+11/06/2014 18:09:47 ERROR File "./package/nemoa/model/exports/image.py", line 122, in show->   if plot.create(model):
+11/06/2014 18:09:47 ERROR File "./package/nemoa/model/exports/image.py", line 181, in create->   transform = self.settings['transform'])
+11/06/2014 18:09:47 ERROR File "./package/nemoa/model/classes/base.py", line 182, in get->   if key == 'eval': return self._get_eval(*args, **kwargs)
+11/06/2014 18:09:47 ERROR File "./package/nemoa/model/classes/base.py", line 285, in _get_eval->   size = statistics, cols = tuple(cols))
+11/06/2014 18:09:47 ERROR File "./package/nemoa/dataset/classes/base.py", line 694, in get->   if key == 'data': return self._get_data(*args, **kwargs)
+11/06/2014 18:09:47 ERROR File "./package/nemoa/dataset/classes/base.py", line 921, in _get_data->   no valid data sources found!""")
+11/06/2014 18:09:47 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 18:12:45 ERROR nemoa.dataset.classes.base._get_tables -> could not retrieve table: invalid table name: 't1'.
+11/06/2014 18:12:45 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 18:12:45 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 18:12:45 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 18:12:45 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 18:12:45 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 18:12:45 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 18:12:45 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 18:12:45 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 18:12:45 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 18:12:45 ERROR File "<ipython-input-3-6079bcc03907>", line 1, in <module>->   model.show()
+11/06/2014 18:12:45 ERROR File "./package/nemoa/model/classes/base.py", line 535, in show->   return nemoa.model.show(self, *args, **kwargs)
+11/06/2014 18:12:45 ERROR File "./package/nemoa/model/__init__.py", line 38, in show->   return nemoa.model.exports.show(*args, **kwargs)
+11/06/2014 18:12:45 ERROR File "./package/nemoa/model/exports/__init__.py", line 99, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+11/06/2014 18:12:45 ERROR File "./package/nemoa/model/exports/image.py", line 122, in show->   if plot.create(model):
+11/06/2014 18:12:45 ERROR File "./package/nemoa/model/exports/image.py", line 181, in create->   transform = self.settings['transform'])
+11/06/2014 18:12:45 ERROR File "./package/nemoa/model/classes/base.py", line 182, in get->   if key == 'eval': return self._get_eval(*args, **kwargs)
+11/06/2014 18:12:45 ERROR File "./package/nemoa/model/classes/base.py", line 285, in _get_eval->   size = statistics, cols = tuple(cols))
+11/06/2014 18:12:45 ERROR File "./package/nemoa/dataset/classes/base.py", line 694, in get->   if key == 'data': return self._get_data(*args, **kwargs)
+11/06/2014 18:12:45 ERROR File "./package/nemoa/dataset/classes/base.py", line 913, in _get_data->   rows = rows, size = size + 1, labels = True)
+11/06/2014 18:12:45 ERROR File "./package/nemoa/dataset/classes/base.py", line 1134, in _get_tables->   invalid table name: '%s'.""" % (source))
+11/06/2014 18:12:45 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 18:12:45 ERROR nemoa.dataset.classes.base._get_data -> could not get data: no valid data sources found!
+11/06/2014 18:12:45 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 18:12:45 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 18:12:45 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 18:12:45 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 18:12:45 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 18:12:45 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 18:12:45 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 18:12:45 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 18:12:45 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 18:12:45 ERROR File "<ipython-input-3-6079bcc03907>", line 1, in <module>->   model.show()
+11/06/2014 18:12:45 ERROR File "./package/nemoa/model/classes/base.py", line 535, in show->   return nemoa.model.show(self, *args, **kwargs)
+11/06/2014 18:12:45 ERROR File "./package/nemoa/model/__init__.py", line 38, in show->   return nemoa.model.exports.show(*args, **kwargs)
+11/06/2014 18:12:45 ERROR File "./package/nemoa/model/exports/__init__.py", line 99, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+11/06/2014 18:12:45 ERROR File "./package/nemoa/model/exports/image.py", line 122, in show->   if plot.create(model):
+11/06/2014 18:12:45 ERROR File "./package/nemoa/model/exports/image.py", line 181, in create->   transform = self.settings['transform'])
+11/06/2014 18:12:45 ERROR File "./package/nemoa/model/classes/base.py", line 182, in get->   if key == 'eval': return self._get_eval(*args, **kwargs)
+11/06/2014 18:12:45 ERROR File "./package/nemoa/model/classes/base.py", line 285, in _get_eval->   size = statistics, cols = tuple(cols))
+11/06/2014 18:12:45 ERROR File "./package/nemoa/dataset/classes/base.py", line 694, in get->   if key == 'data': return self._get_data(*args, **kwargs)
+11/06/2014 18:12:45 ERROR File "./package/nemoa/dataset/classes/base.py", line 921, in _get_data->   no valid data sources found!""")
+11/06/2014 18:12:45 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 18:16:23 ERROR nemoa.dataset.classes.base._get_tables -> could not retrieve table: invalid table name: 't1'.
+11/06/2014 18:16:23 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 18:16:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 18:16:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 18:16:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 18:16:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 18:16:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 18:16:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 18:16:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 18:16:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 18:16:23 ERROR File "<ipython-input-3-6079bcc03907>", line 1, in <module>->   model.show()
+11/06/2014 18:16:23 ERROR File "./package/nemoa/model/classes/base.py", line 534, in show->   return nemoa.model.show(self, *args, **kwargs)
+11/06/2014 18:16:23 ERROR File "./package/nemoa/model/__init__.py", line 38, in show->   return nemoa.model.exports.show(*args, **kwargs)
+11/06/2014 18:16:23 ERROR File "./package/nemoa/model/exports/__init__.py", line 99, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+11/06/2014 18:16:23 ERROR File "./package/nemoa/model/exports/image.py", line 122, in show->   if plot.create(model):
+11/06/2014 18:16:23 ERROR File "./package/nemoa/model/exports/image.py", line 181, in create->   transform = self.settings['transform'])
+11/06/2014 18:16:23 ERROR File "./package/nemoa/model/classes/base.py", line 182, in get->   if key == 'eval': return self._get_eval(*args, **kwargs)
+11/06/2014 18:16:23 ERROR File "./package/nemoa/model/classes/base.py", line 285, in _get_eval->   size = statistics, cols = tuple(cols))
+11/06/2014 18:16:23 ERROR File "./package/nemoa/dataset/classes/base.py", line 694, in get->   if key == 'data': return self._get_data(*args, **kwargs)
+11/06/2014 18:16:23 ERROR File "./package/nemoa/dataset/classes/base.py", line 913, in _get_data->   rows = rows, size = size + 1, labels = True)
+11/06/2014 18:16:23 ERROR File "./package/nemoa/dataset/classes/base.py", line 1134, in _get_tables->   invalid table name: '%s'.""" % (source))
+11/06/2014 18:16:23 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 18:16:23 ERROR nemoa.dataset.classes.base._get_data -> could not get data: no valid data sources found!
+11/06/2014 18:16:23 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 18:16:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 18:16:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 18:16:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 18:16:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 18:16:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 18:16:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 18:16:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 18:16:23 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 18:16:23 ERROR File "<ipython-input-3-6079bcc03907>", line 1, in <module>->   model.show()
+11/06/2014 18:16:23 ERROR File "./package/nemoa/model/classes/base.py", line 534, in show->   return nemoa.model.show(self, *args, **kwargs)
+11/06/2014 18:16:23 ERROR File "./package/nemoa/model/__init__.py", line 38, in show->   return nemoa.model.exports.show(*args, **kwargs)
+11/06/2014 18:16:23 ERROR File "./package/nemoa/model/exports/__init__.py", line 99, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+11/06/2014 18:16:23 ERROR File "./package/nemoa/model/exports/image.py", line 122, in show->   if plot.create(model):
+11/06/2014 18:16:23 ERROR File "./package/nemoa/model/exports/image.py", line 181, in create->   transform = self.settings['transform'])
+11/06/2014 18:16:23 ERROR File "./package/nemoa/model/classes/base.py", line 182, in get->   if key == 'eval': return self._get_eval(*args, **kwargs)
+11/06/2014 18:16:23 ERROR File "./package/nemoa/model/classes/base.py", line 285, in _get_eval->   size = statistics, cols = tuple(cols))
+11/06/2014 18:16:23 ERROR File "./package/nemoa/dataset/classes/base.py", line 694, in get->   if key == 'data': return self._get_data(*args, **kwargs)
+11/06/2014 18:16:23 ERROR File "./package/nemoa/dataset/classes/base.py", line 921, in _get_data->   no valid data sources found!""")
+11/06/2014 18:16:23 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 18:17:57 ERROR nemoa.dataset.classes.base._get_tables -> could not retrieve table: invalid table name: 't1'.
+11/06/2014 18:17:57 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 18:17:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 18:17:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 18:17:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 18:17:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 18:17:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 18:17:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 18:17:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 18:17:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 18:17:57 ERROR File "<ipython-input-3-6079bcc03907>", line 1, in <module>->   model.show()
+11/06/2014 18:17:57 ERROR File "./package/nemoa/model/classes/base.py", line 534, in show->   return nemoa.model.show(self, *args, **kwargs)
+11/06/2014 18:17:57 ERROR File "./package/nemoa/model/__init__.py", line 38, in show->   return nemoa.model.exports.show(*args, **kwargs)
+11/06/2014 18:17:57 ERROR File "./package/nemoa/model/exports/__init__.py", line 99, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+11/06/2014 18:17:57 ERROR File "./package/nemoa/model/exports/image.py", line 122, in show->   if plot.create(model):
+11/06/2014 18:17:57 ERROR File "./package/nemoa/model/exports/image.py", line 181, in create->   transform = self.settings['transform'])
+11/06/2014 18:17:57 ERROR File "./package/nemoa/model/classes/base.py", line 182, in get->   if key == 'eval': return self._get_eval(*args, **kwargs)
+11/06/2014 18:17:57 ERROR File "./package/nemoa/model/classes/base.py", line 285, in _get_eval->   size = statistics, cols = tuple(cols))
+11/06/2014 18:17:57 ERROR File "./package/nemoa/dataset/classes/base.py", line 694, in get->   if key == 'data': return self._get_data(*args, **kwargs)
+11/06/2014 18:17:57 ERROR File "./package/nemoa/dataset/classes/base.py", line 913, in _get_data->   rows = rows, size = size + 1, labels = True)
+11/06/2014 18:17:57 ERROR File "./package/nemoa/dataset/classes/base.py", line 1135, in _get_tables->   invalid table name: '%s'.""" % (source))
+11/06/2014 18:17:57 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 18:17:57 ERROR nemoa.dataset.classes.base._get_data -> could not get data: no valid data sources found!
+11/06/2014 18:17:57 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 18:17:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 18:17:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 18:17:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 18:17:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 18:17:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 18:17:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 18:17:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 18:17:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 18:17:57 ERROR File "<ipython-input-3-6079bcc03907>", line 1, in <module>->   model.show()
+11/06/2014 18:17:57 ERROR File "./package/nemoa/model/classes/base.py", line 534, in show->   return nemoa.model.show(self, *args, **kwargs)
+11/06/2014 18:17:57 ERROR File "./package/nemoa/model/__init__.py", line 38, in show->   return nemoa.model.exports.show(*args, **kwargs)
+11/06/2014 18:17:57 ERROR File "./package/nemoa/model/exports/__init__.py", line 99, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+11/06/2014 18:17:57 ERROR File "./package/nemoa/model/exports/image.py", line 122, in show->   if plot.create(model):
+11/06/2014 18:17:57 ERROR File "./package/nemoa/model/exports/image.py", line 181, in create->   transform = self.settings['transform'])
+11/06/2014 18:17:57 ERROR File "./package/nemoa/model/classes/base.py", line 182, in get->   if key == 'eval': return self._get_eval(*args, **kwargs)
+11/06/2014 18:17:57 ERROR File "./package/nemoa/model/classes/base.py", line 285, in _get_eval->   size = statistics, cols = tuple(cols))
+11/06/2014 18:17:57 ERROR File "./package/nemoa/dataset/classes/base.py", line 694, in get->   if key == 'data': return self._get_data(*args, **kwargs)
+11/06/2014 18:17:57 ERROR File "./package/nemoa/dataset/classes/base.py", line 921, in _get_data->   no valid data sources found!""")
+11/06/2014 18:17:57 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 18:19:32 ERROR nemoa.dataset.classes.base._get_tables -> could not retrieve table: invalid table name: 't1'.
+11/06/2014 18:19:32 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 18:19:32 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 18:19:32 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 18:19:32 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 18:19:32 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 18:19:32 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 18:19:32 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 18:19:32 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 18:19:32 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 18:19:32 ERROR File "<ipython-input-3-6079bcc03907>", line 1, in <module>->   model.show()
+11/06/2014 18:19:32 ERROR File "./package/nemoa/model/classes/base.py", line 534, in show->   return nemoa.model.show(self, *args, **kwargs)
+11/06/2014 18:19:32 ERROR File "./package/nemoa/model/__init__.py", line 38, in show->   return nemoa.model.exports.show(*args, **kwargs)
+11/06/2014 18:19:32 ERROR File "./package/nemoa/model/exports/__init__.py", line 99, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+11/06/2014 18:19:32 ERROR File "./package/nemoa/model/exports/image.py", line 122, in show->   if plot.create(model):
+11/06/2014 18:19:32 ERROR File "./package/nemoa/model/exports/image.py", line 181, in create->   transform = self.settings['transform'])
+11/06/2014 18:19:32 ERROR File "./package/nemoa/model/classes/base.py", line 182, in get->   if key == 'eval': return self._get_eval(*args, **kwargs)
+11/06/2014 18:19:32 ERROR File "./package/nemoa/model/classes/base.py", line 285, in _get_eval->   size = statistics, cols = tuple(cols))
+11/06/2014 18:19:32 ERROR File "./package/nemoa/dataset/classes/base.py", line 694, in get->   if key == 'data': return self._get_data(*args, **kwargs)
+11/06/2014 18:19:32 ERROR File "./package/nemoa/dataset/classes/base.py", line 913, in _get_data->   rows = rows, size = size + 1, labels = True)
+11/06/2014 18:19:32 ERROR File "./package/nemoa/dataset/classes/base.py", line 1137, in _get_tables->   invalid table name: '%s'.""" % (source))
+11/06/2014 18:19:32 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 18:19:32 ERROR nemoa.dataset.classes.base._get_data -> could not get data: no valid data sources found!
+11/06/2014 18:19:32 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 18:19:32 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 18:19:32 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 18:19:32 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 18:19:32 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 18:19:32 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 18:19:32 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 18:19:32 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 18:19:32 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 18:19:32 ERROR File "<ipython-input-3-6079bcc03907>", line 1, in <module>->   model.show()
+11/06/2014 18:19:32 ERROR File "./package/nemoa/model/classes/base.py", line 534, in show->   return nemoa.model.show(self, *args, **kwargs)
+11/06/2014 18:19:32 ERROR File "./package/nemoa/model/__init__.py", line 38, in show->   return nemoa.model.exports.show(*args, **kwargs)
+11/06/2014 18:19:32 ERROR File "./package/nemoa/model/exports/__init__.py", line 99, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+11/06/2014 18:19:32 ERROR File "./package/nemoa/model/exports/image.py", line 122, in show->   if plot.create(model):
+11/06/2014 18:19:32 ERROR File "./package/nemoa/model/exports/image.py", line 181, in create->   transform = self.settings['transform'])
+11/06/2014 18:19:32 ERROR File "./package/nemoa/model/classes/base.py", line 182, in get->   if key == 'eval': return self._get_eval(*args, **kwargs)
+11/06/2014 18:19:32 ERROR File "./package/nemoa/model/classes/base.py", line 285, in _get_eval->   size = statistics, cols = tuple(cols))
+11/06/2014 18:19:32 ERROR File "./package/nemoa/dataset/classes/base.py", line 694, in get->   if key == 'data': return self._get_data(*args, **kwargs)
+11/06/2014 18:19:32 ERROR File "./package/nemoa/dataset/classes/base.py", line 921, in _get_data->   no valid data sources found!""")
+11/06/2014 18:19:32 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 18:20:14 ERROR nemoa.dataset.classes.base._get_tables -> could not retrieve table: invalid table name: 't1'.
+11/06/2014 18:20:14 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 18:20:14 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 18:20:14 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 18:20:14 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 18:20:14 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 18:20:14 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 18:20:14 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 18:20:14 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 18:20:14 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 18:20:14 ERROR File "<ipython-input-3-6079bcc03907>", line 1, in <module>->   model.show()
+11/06/2014 18:20:14 ERROR File "./package/nemoa/model/classes/base.py", line 534, in show->   return nemoa.model.show(self, *args, **kwargs)
+11/06/2014 18:20:14 ERROR File "./package/nemoa/model/__init__.py", line 38, in show->   return nemoa.model.exports.show(*args, **kwargs)
+11/06/2014 18:20:14 ERROR File "./package/nemoa/model/exports/__init__.py", line 99, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+11/06/2014 18:20:14 ERROR File "./package/nemoa/model/exports/image.py", line 122, in show->   if plot.create(model):
+11/06/2014 18:20:14 ERROR File "./package/nemoa/model/exports/image.py", line 181, in create->   transform = self.settings['transform'])
+11/06/2014 18:20:14 ERROR File "./package/nemoa/model/classes/base.py", line 182, in get->   if key == 'eval': return self._get_eval(*args, **kwargs)
+11/06/2014 18:20:14 ERROR File "./package/nemoa/model/classes/base.py", line 285, in _get_eval->   size = statistics, cols = tuple(cols))
+11/06/2014 18:20:14 ERROR File "./package/nemoa/dataset/classes/base.py", line 694, in get->   if key == 'data': return self._get_data(*args, **kwargs)
+11/06/2014 18:20:14 ERROR File "./package/nemoa/dataset/classes/base.py", line 913, in _get_data->   rows = rows, size = size + 1, labels = True)
+11/06/2014 18:20:14 ERROR File "./package/nemoa/dataset/classes/base.py", line 1138, in _get_tables->   invalid table name: '%s'.""" % (source))
+11/06/2014 18:20:14 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 18:20:14 ERROR nemoa.dataset.classes.base._get_data -> could not get data: no valid data sources found!
+11/06/2014 18:20:14 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 18:20:14 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 18:20:14 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 18:20:14 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 18:20:14 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 18:20:14 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 18:20:14 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 18:20:14 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 18:20:14 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 18:20:14 ERROR File "<ipython-input-3-6079bcc03907>", line 1, in <module>->   model.show()
+11/06/2014 18:20:14 ERROR File "./package/nemoa/model/classes/base.py", line 534, in show->   return nemoa.model.show(self, *args, **kwargs)
+11/06/2014 18:20:14 ERROR File "./package/nemoa/model/__init__.py", line 38, in show->   return nemoa.model.exports.show(*args, **kwargs)
+11/06/2014 18:20:14 ERROR File "./package/nemoa/model/exports/__init__.py", line 99, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+11/06/2014 18:20:14 ERROR File "./package/nemoa/model/exports/image.py", line 122, in show->   if plot.create(model):
+11/06/2014 18:20:14 ERROR File "./package/nemoa/model/exports/image.py", line 181, in create->   transform = self.settings['transform'])
+11/06/2014 18:20:14 ERROR File "./package/nemoa/model/classes/base.py", line 182, in get->   if key == 'eval': return self._get_eval(*args, **kwargs)
+11/06/2014 18:20:14 ERROR File "./package/nemoa/model/classes/base.py", line 285, in _get_eval->   size = statistics, cols = tuple(cols))
+11/06/2014 18:20:14 ERROR File "./package/nemoa/dataset/classes/base.py", line 694, in get->   if key == 'data': return self._get_data(*args, **kwargs)
+11/06/2014 18:20:14 ERROR File "./package/nemoa/dataset/classes/base.py", line 921, in _get_data->   no valid data sources found!""")
+11/06/2014 18:20:14 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 18:21:06 ERROR nemoa.dataset.classes.base._get_tables -> could not retrieve table: invalid table name: 't1'.
+11/06/2014 18:21:06 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 18:21:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 18:21:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 18:21:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 18:21:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 18:21:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 18:21:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 18:21:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 18:21:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 18:21:06 ERROR File "<ipython-input-3-6079bcc03907>", line 1, in <module>->   model.show()
+11/06/2014 18:21:06 ERROR File "./package/nemoa/model/classes/base.py", line 534, in show->   return nemoa.model.show(self, *args, **kwargs)
+11/06/2014 18:21:06 ERROR File "./package/nemoa/model/__init__.py", line 38, in show->   return nemoa.model.exports.show(*args, **kwargs)
+11/06/2014 18:21:06 ERROR File "./package/nemoa/model/exports/__init__.py", line 99, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+11/06/2014 18:21:06 ERROR File "./package/nemoa/model/exports/image.py", line 122, in show->   if plot.create(model):
+11/06/2014 18:21:06 ERROR File "./package/nemoa/model/exports/image.py", line 181, in create->   transform = self.settings['transform'])
+11/06/2014 18:21:06 ERROR File "./package/nemoa/model/classes/base.py", line 182, in get->   if key == 'eval': return self._get_eval(*args, **kwargs)
+11/06/2014 18:21:06 ERROR File "./package/nemoa/model/classes/base.py", line 285, in _get_eval->   size = statistics, cols = tuple(cols))
+11/06/2014 18:21:06 ERROR File "./package/nemoa/dataset/classes/base.py", line 694, in get->   if key == 'data': return self._get_data(*args, **kwargs)
+11/06/2014 18:21:06 ERROR File "./package/nemoa/dataset/classes/base.py", line 913, in _get_data->   rows = rows, size = size + 1, labels = True)
+11/06/2014 18:21:06 ERROR File "./package/nemoa/dataset/classes/base.py", line 1140, in _get_tables->   invalid table name: '%s'.""" % (source))
+11/06/2014 18:21:06 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 18:21:06 ERROR nemoa.dataset.classes.base._get_data -> could not get data: no valid data sources found!
+11/06/2014 18:21:06 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 18:21:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 18:21:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 18:21:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 18:21:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 18:21:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 18:21:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 18:21:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 18:21:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 18:21:06 ERROR File "<ipython-input-3-6079bcc03907>", line 1, in <module>->   model.show()
+11/06/2014 18:21:06 ERROR File "./package/nemoa/model/classes/base.py", line 534, in show->   return nemoa.model.show(self, *args, **kwargs)
+11/06/2014 18:21:06 ERROR File "./package/nemoa/model/__init__.py", line 38, in show->   return nemoa.model.exports.show(*args, **kwargs)
+11/06/2014 18:21:06 ERROR File "./package/nemoa/model/exports/__init__.py", line 99, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+11/06/2014 18:21:06 ERROR File "./package/nemoa/model/exports/image.py", line 122, in show->   if plot.create(model):
+11/06/2014 18:21:06 ERROR File "./package/nemoa/model/exports/image.py", line 181, in create->   transform = self.settings['transform'])
+11/06/2014 18:21:06 ERROR File "./package/nemoa/model/classes/base.py", line 182, in get->   if key == 'eval': return self._get_eval(*args, **kwargs)
+11/06/2014 18:21:06 ERROR File "./package/nemoa/model/classes/base.py", line 285, in _get_eval->   size = statistics, cols = tuple(cols))
+11/06/2014 18:21:06 ERROR File "./package/nemoa/dataset/classes/base.py", line 694, in get->   if key == 'data': return self._get_data(*args, **kwargs)
+11/06/2014 18:21:06 ERROR File "./package/nemoa/dataset/classes/base.py", line 921, in _get_data->   no valid data sources found!""")
+11/06/2014 18:21:06 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 18:24:59 WARNING nemoa.workspace.base.get -> could not get configuration: name of object is not known.
+11/06/2014 18:24:59 ERROR nemoa.model.imports.load -> could not import model: current workspace 'unittest' does not contain a model 'test'.
+11/06/2014 18:24:59 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 18:24:59 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 18:24:59 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 18:24:59 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 18:24:59 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 18:24:59 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 18:24:59 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 18:24:59 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 18:24:59 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 18:24:59 ERROR File "<ipython-input-2-a17241a3028d>", line 1, in <module>->   model = nemoa.model.open('test')
+11/06/2014 18:24:59 ERROR File "./package/nemoa/model/__init__.py", line 30, in open->   return new(**load(*args, **kwargs))
+11/06/2014 18:24:59 ERROR File "./package/nemoa/model/__init__.py", line 22, in load->   return nemoa.model.imports.load(*args, **kwargs)
+11/06/2014 18:24:59 ERROR File "./package/nemoa/model/imports/__init__.py", line 57, in load->   '%s'.""" % (current_workspace, path))
+11/06/2014 18:24:59 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():

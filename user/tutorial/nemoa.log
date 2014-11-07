@@ -1,0 +1,213 @@
+11/01/2014 23:08:50 ERROR nemoa.workspace.find -> could not get configuration: no network with name 'amm' could be found.
+11/01/2014 23:08:50 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/01/2014 23:08:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/01/2014 23:08:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/01/2014 23:08:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/01/2014 23:08:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/01/2014 23:08:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/01/2014 23:08:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/01/2014 23:08:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/01/2014 23:08:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/01/2014 23:08:50 ERROR File "<ipython-input-2-899b5776dc13>", line 1, in <module>->   model = nemoa.model.create(dataset = 't1', network = 'amm(2)', system = 'dbn')
+11/01/2014 23:08:50 ERROR File "./package/nemoa/model/__init__.py", line 18, in create->   return new(**nemoa.model.builder.build(*args, **kwargs))
+11/01/2014 23:08:50 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/01/2014 23:08:50 ERROR File "./package/nemoa/model/builder/base.py", line 21, in build->   if type == 'model': return Model(**kwargs).build()
+11/01/2014 23:08:50 ERROR File "./package/nemoa/model/builder/base.py", line 48, in build->   = nemoa.network.load(self.settings['network'])
+11/01/2014 23:08:50 ERROR File "./package/nemoa/network/__init__.py", line 22, in load->   return nemoa.network.imports.load(*args, **kwargs)
+11/01/2014 23:08:50 ERROR File "./package/nemoa/network/imports/__init__.py", line 63, in load->   config = nemoa.workspace.find('network', path)
+11/01/2014 23:08:50 ERROR File "./package/nemoa/workspace/__init__.py", line 81, in find->   % (type, config_name))
+11/01/2014 23:08:50 ERROR File "./package/nemoa/common/log.py", line 161, in log->   for line in traceback.format_stack():
+11/01/2014 23:08:50 ERROR nemoa.network.imports.load -> could not import network: current workspace 'tutorial' does not contain a network 'amm(2)'.
+11/01/2014 23:08:50 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/01/2014 23:08:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/01/2014 23:08:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/01/2014 23:08:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/01/2014 23:08:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/01/2014 23:08:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/01/2014 23:08:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/01/2014 23:08:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/01/2014 23:08:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/01/2014 23:08:50 ERROR File "<ipython-input-2-899b5776dc13>", line 1, in <module>->   model = nemoa.model.create(dataset = 't1', network = 'amm(2)', system = 'dbn')
+11/01/2014 23:08:50 ERROR File "./package/nemoa/model/__init__.py", line 18, in create->   return new(**nemoa.model.builder.build(*args, **kwargs))
+11/01/2014 23:08:50 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/01/2014 23:08:50 ERROR File "./package/nemoa/model/builder/base.py", line 21, in build->   if type == 'model': return Model(**kwargs).build()
+11/01/2014 23:08:50 ERROR File "./package/nemoa/model/builder/base.py", line 48, in build->   = nemoa.network.load(self.settings['network'])
+11/01/2014 23:08:50 ERROR File "./package/nemoa/network/__init__.py", line 22, in load->   return nemoa.network.imports.load(*args, **kwargs)
+11/01/2014 23:08:50 ERROR File "./package/nemoa/network/imports/__init__.py", line 69, in load->   '%s'.""" % (current_workspace, path))
+11/01/2014 23:08:50 ERROR File "./package/nemoa/common/log.py", line 161, in log->   for line in traceback.format_stack():
+11/04/2014 18:16:01 ERROR nemoa.workspace.find -> could not get configuration: no network with name 'ann' could be found.
+11/04/2014 18:16:01 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/04/2014 18:16:01 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/04/2014 18:16:01 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/04/2014 18:16:01 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/04/2014 18:16:01 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/04/2014 18:16:01 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/04/2014 18:16:01 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/04/2014 18:16:01 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/04/2014 18:16:01 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/04/2014 18:16:01 ERROR File "<ipython-input-6-06f1bc91d61d>", line 1, in <module>->   model = nemoa.model.create(dataset = 't1', network = 'ann(8,4)', system = 'dbn')
+11/04/2014 18:16:01 ERROR File "./package/nemoa/model/__init__.py", line 18, in create->   return new(**nemoa.model.builder.build(*args, **kwargs))
+11/04/2014 18:16:01 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/04/2014 18:16:01 ERROR File "./package/nemoa/model/builder/base.py", line 21, in build->   if type == 'model': return Model(**kwargs).build()
+11/04/2014 18:16:01 ERROR File "./package/nemoa/model/builder/base.py", line 48, in build->   = nemoa.network.load(self.settings['network'])
+11/04/2014 18:16:01 ERROR File "./package/nemoa/network/__init__.py", line 22, in load->   return nemoa.network.imports.load(*args, **kwargs)
+11/04/2014 18:16:01 ERROR File "./package/nemoa/network/imports/__init__.py", line 63, in load->   config = nemoa.workspace.find('network', path)
+11/04/2014 18:16:01 ERROR File "./package/nemoa/workspace/__init__.py", line 81, in find->   % (type, config_name))
+11/04/2014 18:16:01 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/04/2014 18:16:01 ERROR nemoa.network.imports.load -> could not import network: current workspace 'tutorial' does not contain a network 'ann(8,4)'.
+11/04/2014 18:16:01 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/04/2014 18:16:01 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/04/2014 18:16:01 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/04/2014 18:16:01 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/04/2014 18:16:01 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/04/2014 18:16:01 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/04/2014 18:16:01 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/04/2014 18:16:01 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/04/2014 18:16:01 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/04/2014 18:16:01 ERROR File "<ipython-input-6-06f1bc91d61d>", line 1, in <module>->   model = nemoa.model.create(dataset = 't1', network = 'ann(8,4)', system = 'dbn')
+11/04/2014 18:16:01 ERROR File "./package/nemoa/model/__init__.py", line 18, in create->   return new(**nemoa.model.builder.build(*args, **kwargs))
+11/04/2014 18:16:01 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/04/2014 18:16:01 ERROR File "./package/nemoa/model/builder/base.py", line 21, in build->   if type == 'model': return Model(**kwargs).build()
+11/04/2014 18:16:01 ERROR File "./package/nemoa/model/builder/base.py", line 48, in build->   = nemoa.network.load(self.settings['network'])
+11/04/2014 18:16:01 ERROR File "./package/nemoa/network/__init__.py", line 22, in load->   return nemoa.network.imports.load(*args, **kwargs)
+11/04/2014 18:16:01 ERROR File "./package/nemoa/network/imports/__init__.py", line 69, in load->   '%s'.""" % (current_workspace, path))
+11/04/2014 18:16:01 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/04/2014 22:50:27 ERROR nemoa.workspace.find -> could not get configuration: no system with name 'deep' could be found.
+11/04/2014 22:50:27 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/04/2014 22:50:27 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/04/2014 22:50:27 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/04/2014 22:50:27 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/04/2014 22:50:27 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/04/2014 22:50:27 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/04/2014 22:50:27 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/04/2014 22:50:27 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/04/2014 22:50:27 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/04/2014 22:50:27 ERROR File "<ipython-input-2-bc6fdf01a1db>", line 1, in <module>->   system = nemoa.system.open('deep')
+11/04/2014 22:50:27 ERROR File "./package/nemoa/system/__init__.py", line 26, in open->   return new(**load(*args, **kwargs))
+11/04/2014 22:50:27 ERROR File "./package/nemoa/system/__init__.py", line 18, in load->   return nemoa.system.imports.load(*args, **kwargs)
+11/04/2014 22:50:27 ERROR File "./package/nemoa/system/imports/__init__.py", line 57, in load->   config = nemoa.workspace.find('system', path)
+11/04/2014 22:50:27 ERROR File "./package/nemoa/workspace/__init__.py", line 81, in find->   % (type, config_name))
+11/04/2014 22:50:27 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/04/2014 22:50:27 ERROR nemoa.system.imports.load -> could not import system: current workspace 'tutorial' does not contain a system 'deep'.
+11/04/2014 22:50:27 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/04/2014 22:50:27 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/04/2014 22:50:27 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/04/2014 22:50:27 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/04/2014 22:50:27 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/04/2014 22:50:27 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/04/2014 22:50:27 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/04/2014 22:50:27 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/04/2014 22:50:27 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/04/2014 22:50:27 ERROR File "<ipython-input-2-bc6fdf01a1db>", line 1, in <module>->   system = nemoa.system.open('deep')
+11/04/2014 22:50:27 ERROR File "./package/nemoa/system/__init__.py", line 26, in open->   return new(**load(*args, **kwargs))
+11/04/2014 22:50:27 ERROR File "./package/nemoa/system/__init__.py", line 18, in load->   return nemoa.system.imports.load(*args, **kwargs)
+11/04/2014 22:50:27 ERROR File "./package/nemoa/system/imports/__init__.py", line 63, in load->   '%s'.""" % (current_workspace, path))
+11/04/2014 22:50:27 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/04/2014 22:50:34 ERROR nemoa.workspace.find -> could not get configuration: no system with name 'deep' could be found.
+11/04/2014 22:50:34 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/04/2014 22:50:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/04/2014 22:50:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/04/2014 22:50:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/04/2014 22:50:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/04/2014 22:50:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/04/2014 22:50:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/04/2014 22:50:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/04/2014 22:50:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/04/2014 22:50:34 ERROR File "<ipython-input-3-bc6fdf01a1db>", line 1, in <module>->   system = nemoa.system.open('deep')
+11/04/2014 22:50:34 ERROR File "./package/nemoa/system/__init__.py", line 26, in open->   return new(**load(*args, **kwargs))
+11/04/2014 22:50:34 ERROR File "./package/nemoa/system/__init__.py", line 18, in load->   return nemoa.system.imports.load(*args, **kwargs)
+11/04/2014 22:50:34 ERROR File "./package/nemoa/system/imports/__init__.py", line 57, in load->   config = nemoa.workspace.find('system', path)
+11/04/2014 22:50:34 ERROR File "./package/nemoa/workspace/__init__.py", line 81, in find->   % (type, config_name))
+11/04/2014 22:50:34 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/04/2014 22:50:34 ERROR nemoa.system.imports.load -> could not import system: current workspace 'tutorial' does not contain a system 'deep'.
+11/04/2014 22:50:34 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/04/2014 22:50:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/04/2014 22:50:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/04/2014 22:50:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/04/2014 22:50:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/04/2014 22:50:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/04/2014 22:50:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/04/2014 22:50:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/04/2014 22:50:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/04/2014 22:50:34 ERROR File "<ipython-input-3-bc6fdf01a1db>", line 1, in <module>->   system = nemoa.system.open('deep')
+11/04/2014 22:50:34 ERROR File "./package/nemoa/system/__init__.py", line 26, in open->   return new(**load(*args, **kwargs))
+11/04/2014 22:50:34 ERROR File "./package/nemoa/system/__init__.py", line 18, in load->   return nemoa.system.imports.load(*args, **kwargs)
+11/04/2014 22:50:34 ERROR File "./package/nemoa/system/imports/__init__.py", line 63, in load->   '%s'.""" % (current_workspace, path))
+11/04/2014 22:50:34 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 11:48:51 ERROR nemoa.workspace.find -> could not get configuration: no dataset with name 'test' could be found.
+11/06/2014 11:48:51 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 11:48:51 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 11:48:51 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 11:48:51 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 11:48:51 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 11:48:51 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 11:48:51 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 11:48:51 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 11:48:51 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 11:48:51 ERROR File "<ipython-input-5-0fd69ff72bf1>", line 1, in <module>->   model = nemoa.model.create(dataset = 'test', network = 'multilayer', system = 'dbn')
+11/06/2014 11:48:51 ERROR File "./package/nemoa/model/__init__.py", line 18, in create->   return new(**nemoa.model.builder.build(*args, **kwargs))
+11/06/2014 11:48:51 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/06/2014 11:48:51 ERROR File "./package/nemoa/model/builder/base.py", line 21, in build->   if type == 'model': return Model(**kwargs).build()
+11/06/2014 11:48:51 ERROR File "./package/nemoa/model/builder/base.py", line 45, in build->   = nemoa.dataset.load(self.settings['dataset'])
+11/06/2014 11:48:51 ERROR File "./package/nemoa/dataset/__init__.py", line 18, in load->   return nemoa.dataset.imports.load(*args, **kwargs)
+11/06/2014 11:48:51 ERROR File "./package/nemoa/dataset/imports/__init__.py", line 57, in load->   config = nemoa.workspace.find('dataset', path)
+11/06/2014 11:48:51 ERROR File "./package/nemoa/workspace/__init__.py", line 81, in find->   % (type, config_name))
+11/06/2014 11:48:51 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 11:48:51 ERROR nemoa.dataset.imports.load -> could not import dataset: current workspace 'tutorial' does not contain a dataset 'test'.
+11/06/2014 11:48:51 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 11:48:51 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 11:48:51 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 11:48:51 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 11:48:51 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 11:48:51 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 11:48:51 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 11:48:51 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 11:48:51 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 11:48:51 ERROR File "<ipython-input-5-0fd69ff72bf1>", line 1, in <module>->   model = nemoa.model.create(dataset = 'test', network = 'multilayer', system = 'dbn')
+11/06/2014 11:48:51 ERROR File "./package/nemoa/model/__init__.py", line 18, in create->   return new(**nemoa.model.builder.build(*args, **kwargs))
+11/06/2014 11:48:51 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/06/2014 11:48:51 ERROR File "./package/nemoa/model/builder/base.py", line 21, in build->   if type == 'model': return Model(**kwargs).build()
+11/06/2014 11:48:51 ERROR File "./package/nemoa/model/builder/base.py", line 45, in build->   = nemoa.dataset.load(self.settings['dataset'])
+11/06/2014 11:48:51 ERROR File "./package/nemoa/dataset/__init__.py", line 18, in load->   return nemoa.dataset.imports.load(*args, **kwargs)
+11/06/2014 11:48:51 ERROR File "./package/nemoa/dataset/imports/__init__.py", line 63, in load->   '%s'.""" % (current_workspace, path))
+11/06/2014 11:48:51 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 17:50:22 WARNING nemoa.workspace.base.get -> could not get configuration: name of object is not known.
+11/06/2014 17:50:22 WARNING nemoa.workspace.base.get -> could not get configuration: name of object is not known.
+11/06/2014 17:50:22 WARNING nemoa.workspace.base.get -> could not get configuration: name of object is not known.
+11/06/2014 17:50:22 WARNING nemoa.workspace.base.get -> could not get configuration: name of object is not known.
+11/06/2014 17:50:22 WARNING nemoa.workspace.base.get -> could not get configuration: name of object is not known.
+11/06/2014 17:50:22 WARNING nemoa.workspace.base.get -> could not get configuration: name of object is not known.
+11/06/2014 17:50:22 WARNING nemoa.workspace.base.get -> could not get configuration: name of object is not known.
+11/06/2014 17:50:22 WARNING nemoa.workspace.base.get -> could not get configuration: name of object is not known.
+11/06/2014 17:50:22 ERROR nemoa.workspace.find -> could not get configuration: no model with name 'test-multilayer-dbn' could be found.
+11/06/2014 17:50:22 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 17:50:22 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 17:50:22 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 17:50:22 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 17:50:22 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 17:50:22 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 17:50:22 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 17:50:22 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 17:50:22 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 17:50:22 ERROR File "<ipython-input-5-301a3971afb8>", line 1, in <module>->   model = nemoa.model.open('test-multilayer-dbn')
+11/06/2014 17:50:22 ERROR File "./package/nemoa/model/__init__.py", line 30, in open->   return new(**load(*args, **kwargs))
+11/06/2014 17:50:22 ERROR File "./package/nemoa/model/__init__.py", line 22, in load->   return nemoa.model.imports.load(*args, **kwargs)
+11/06/2014 17:50:22 ERROR File "./package/nemoa/model/imports/__init__.py", line 51, in load->   config = nemoa.workspace.find('model', path)
+11/06/2014 17:50:22 ERROR File "./package/nemoa/workspace/__init__.py", line 81, in find->   % (type, config_name))
+11/06/2014 17:50:22 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 17:50:22 ERROR nemoa.model.imports.load -> could not import model: current workspace 'tutorial' does not contain a model 'test-multilayer-dbn'.
+11/06/2014 17:50:22 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/06/2014 17:50:22 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/06/2014 17:50:22 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/06/2014 17:50:22 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/06/2014 17:50:22 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/06/2014 17:50:22 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/06/2014 17:50:22 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/06/2014 17:50:22 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/06/2014 17:50:22 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/06/2014 17:50:22 ERROR File "<ipython-input-5-301a3971afb8>", line 1, in <module>->   model = nemoa.model.open('test-multilayer-dbn')
+11/06/2014 17:50:22 ERROR File "./package/nemoa/model/__init__.py", line 30, in open->   return new(**load(*args, **kwargs))
+11/06/2014 17:50:22 ERROR File "./package/nemoa/model/__init__.py", line 22, in load->   return nemoa.model.imports.load(*args, **kwargs)
+11/06/2014 17:50:22 ERROR File "./package/nemoa/model/imports/__init__.py", line 57, in load->   '%s'.""" % (current_workspace, path))
+11/06/2014 17:50:22 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/06/2014 17:50:45 WARNING nemoa.workspace.base.get -> could not get configuration: name of object is not known.
