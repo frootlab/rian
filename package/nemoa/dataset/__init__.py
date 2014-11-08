@@ -4,6 +4,7 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+import nemoa.dataset.builder
 import nemoa.dataset.classes
 import nemoa.dataset.commons
 import nemoa.dataset.exports
@@ -12,6 +13,10 @@ import nemoa.dataset.imports
 def copy(dataset, *args, **kwargs):
     """Create copy of dataset."""
     return new(**dataset.get('copy'))
+
+def create(*args, **kwargs):
+    """Create new dataset from building script."""
+    return new(**nemoa.dataset.builder.build(*args, **kwargs))
 
 def load(*args, **kwargs):
     """Import dataset configuration and parameters from file."""

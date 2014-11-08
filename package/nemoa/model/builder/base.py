@@ -41,20 +41,36 @@ class Model:
 
         # create model dictionary including dataset, network and system
         model_dict = {}
-        model_dict['dataset'] \
-            = nemoa.dataset.load(self.settings['dataset'])
-        if not model_dict['dataset']: return {}
-        model_dict['network'] \
-            = nemoa.network.load(self.settings['network'])
-        if not model_dict['network']: return {}
-        model_dict['system'] \
-            = nemoa.system.load(self.settings['system'])
-        if not model_dict['system']: return {}
+
+        if nemoa.type.is_dataset(self.settings['dataset']):
+            model_dict['dataset'] = self.settings['dataset']
+            dataset_name = self.settings['dataset'].name
+        else:
+            model_dict['dataset'] \
+                = nemoa.dataset.load(self.settings['dataset'])
+            if not model_dict['dataset']: return {}
+            dataset_name = model_dict['dataset']['config']['name']
+
+        if nemoa.type.is_network(self.settings['network']):
+            model_dict['network'] = self.settings['network']
+            network_name = self.settings['network'].name
+        else:
+            model_dict['network'] \
+                = nemoa.network.load(self.settings['network'])
+            if not model_dict['network']: return {}
+            network_name = model_dict['network']['config']['name']
+
+        if nemoa.type.is_system(self.settings['system']):
+            model_dict['system'] = self.settings['system']
+            system_name = self.settings['system'].name
+        else:
+            model_dict['system'] \
+                = nemoa.system.load(self.settings['system'])
+            if not model_dict['system']: return {}
+            system_name = model_dict['system']['config']['name']
+
         model_dict['config'] = {
-            'name': '-'.join([
-                model_dict['dataset']['config']['name'],
-                model_dict['network']['config']['name'],
-                model_dict['system']['config']['name']]),
+            'name': '-'.join([dataset_name, network_name, system_name]),
             'type': 'base.Model'}
 
         # create instance of model
