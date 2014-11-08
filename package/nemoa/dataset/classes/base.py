@@ -693,6 +693,7 @@ class Dataset:
         if key == 'rowfilters': return self._get_rowfilters()
         if key == 'data': return self._get_data(*args, **kwargs)
         if key == 'value': return self._get_value(*args, **kwargs)
+        if key == 'eval': return self._get_eval(*args, **kwargs)
 
         # export configuration and data
         if key == 'copy': return self._get_copy(*args, **kwargs)
@@ -1074,6 +1075,13 @@ class Dataset:
     def _get_value(self, row = None, col = None):
         """get single value from dataset."""
         return float(self._get_data(cols = [col], rows = [row]))
+
+    def _get_eval(self, key = None, *args, **kwargs):
+        """get evaluation of dataset."""
+
+        # Todo: create dataset evaluation functions!
+
+        return True
 
     def _get_copy(self, key = None, *args, **kwargs):
         """get dataset copy as dictionary."""

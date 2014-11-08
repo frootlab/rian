@@ -239,26 +239,17 @@ class Model:
         class_name = self.__class__.__name__
         return module_name + '.' + class_name
 
-    def _get_eval(self, *args, **kwargs):
+    def _get_eval(self, key = None, *args, **kwargs):
         """Get evaluation of model."""
 
-        if len(args) == 0:
-            header = 'system'
-            trailer = args
-        else:
-            header = args[0]
-            trailer = args[1:]
+        if not key: key = 'system'
 
         # evaluate dataset
-        if header == 'dataset':
-            return self.dataset.evaluate(*trailer, **kwargs)
-
-        # evaluate network
-        if header == 'network':
-            return self.network.evaluate(*trailer, **kwargs)
-
-        # evaluate system
-        if header == 'system':
+        if key == 'dataset':
+            return self.dataset.get('eval', *args, **kwargs)
+        if key == 'network':
+            return self.network.get('eval', *args, **kwargs)
+        if key == 'system':
             # get data for system evaluation
             if 'data' in kwargs.keys():
                 # get data from keyword argument
@@ -286,11 +277,9 @@ class Model:
                 if preprocessing:
                     self.dataset.set('copy', dataset_backup)
 
-            return self.system.evaluate(data, *trailer, **kwargs)
+            return self.system.get('eval', data, *args, **kwargs)
 
         return nemoa.log('warning', 'could not evaluate model')
-
-
 
     def _get_copy(self, key = None, *args, **kwargs):
         """Get model copy as dictionary."""

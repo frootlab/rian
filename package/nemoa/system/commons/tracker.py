@@ -154,7 +154,7 @@ class Tracker:
 
         # calculate objective function value
         func = cfg['tracker_obj_function']
-        value = self._system.evaluate(
+        value = self._system.get('eval',
             data = self._state['data'], func = func)
         progr = float(self._state['epoch']) / float(cfg['updates'])
 
@@ -215,7 +215,7 @@ class Tracker:
         if not self._state['continue']:
             func = cfg['tracker_eval_function']
             prop = self._system.about(func)
-            value = self._system.evaluate(
+            value = self._system.get('eval',
                 data = self._state['data'], func = func)
             out = 'found optimum with: %s = ' + prop['format']
             self._state['eval_enable'] = False
@@ -225,7 +225,7 @@ class Tracker:
             > cfg['tracker_eval_time_interval']):
             func = cfg['tracker_eval_function']
             prop = self._system.about(func)
-            value = self._system.evaluate(
+            value = self._system.get('eval',
                 data = self._state['data'], func = func)
             progr = float(self._state['epoch']) \
                 / float(cfg['updates']) * 100.

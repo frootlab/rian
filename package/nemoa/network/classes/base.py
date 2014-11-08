@@ -376,6 +376,7 @@ class Network:
         if key == 'edges': return self._get_edges(*args, **kwargs)
         if key == 'layer': return self._get_layer(*args, **kwargs)
         if key == 'layers': return self._get_layers(*args, **kwargs)
+        if key == 'eval': return self._get_eval(*args, **kwargs)
 
         # export network configuration and graph
         if key == 'copy': return self._get_copy(*args, **kwargs)
@@ -626,6 +627,14 @@ class Network:
             layers.append(layer)
 
         return layers
+
+    def _get_eval(self, key = None, *args, **kwargs):
+        """get evaluation of network."""
+
+        # Todo: create network evaluation functions!
+
+        return True
+
 
     def _get_copy(self, key = None, *args, **kwargs):
         """Get network copy as dictionary."""

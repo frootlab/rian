@@ -144,6 +144,7 @@ class System:
         if key == 'links': return self._get_links(*args, **kwargs)
         if key == 'layer': return self._get_layer(*args, **kwargs)
         if key == 'layers': return self._get_layers(*args, **kwargs)
+        if key == 'eval': return self._get_eval(*args, **kwargs)
 
         # export configuration and parameters
         if key == 'copy': return self._get_copy(*args, **kwargs)
@@ -479,6 +480,31 @@ class System:
                     group.append(link)
             grouped_links.append(group)
         return grouped_links
+
+    def _get_eval(self, data, *args, **kwargs):
+
+        # default system evaluation
+        if len(args) == 0:
+            return self._get_eval_system(data, **kwargs)
+
+        # evaluate system units
+        if args[0] == 'units':
+            return self._get_eval_units(data, *args[1:], **kwargs)
+
+        # evaluate system links
+        if args[0] == 'links':
+            return self._get_eval_links(data, *args[1:], **kwargs)
+
+        # evaluate system relations
+        if args[0] == 'relations':
+            return self._get_eval_relation(data, *args[1:], **kwargs)
+
+        # evaluate system
+        if args[0] in self._about_system().keys():
+            return self._get_eval_system(data, *args, **kwargs)
+
+        return nemoa.log('warning',
+            "unsupported system evaluation '%s'" % (args[0]))
 
     def _get_copy(self, key = None, *args, **kwargs):
         """Get system copy as dictionary."""
@@ -919,22 +945,6 @@ class System:
         nemoa.common.dict_merge(schedule[self._get_type()], config)
         self._config['optimize'] = config
 
-        ## merge default, existing and given schedule
-        #if not isinstance(schedule, dict) or not 'params' in schedule:
-            #config = self._default['optimize'].copy()
-            #nemoa.common.dict_merge(self._config['optimize'], config)
-            #self._config['optimize'] = config
-        #if not self._get_type() in schedule['params']:
-            #return nemoa.log('error', """could not optimize model:
-                #optimization schedule '%s' does not include system '%s'
-                #""" % (schedule['name'], self._get_type()))
-        #else:
-            #config = self._default['optimize'].copy()
-            #nemoa.common.dict_merge(self._config['optimize'], config)
-            #nemoa.common.dict_merge(
-                #schedule['params'][self._get_type()], config)
-            #self._config['optimize'] = config
-
         # check dataset
         if (not 'check_dataset' in self._default['init']
             or self._default['init']['check_dataset'] == True) \
@@ -947,31 +957,6 @@ class System:
 
         # optimize system parameters
         return self._optimize(dataset, schedule, tracker)
-
-    def evaluate(self, data, *args, **kwargs):
-
-        # Default system evaluation
-        if len(args) == 0:
-            return self._get_eval_system(data, **kwargs)
-
-        # Evaluate system units
-        if args[0] == 'units':
-            return self._get_eval_units(data, *args[1:], **kwargs)
-
-        # Evaluate system links
-        if args[0] == 'links':
-            return self._get_eval_links(data, *args[1:], **kwargs)
-
-        # evaluate system relations
-        if args[0] == 'relations':
-            return self._get_eval_relation(data, *args[1:], **kwargs)
-
-        # evaluate system
-        if args[0] in self._about_system().keys():
-            return self._get_eval_system(data, *args, **kwargs)
-
-        return nemoa.log('warning',
-            "unsupported system evaluation '%s'" % (args[0]))
 
     def about(self, *args):
         """Metainformation of the system.
