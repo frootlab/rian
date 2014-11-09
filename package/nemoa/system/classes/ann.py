@@ -186,7 +186,7 @@ class ANN(nemoa.system.classes.base.System):
         out = {}
         for lid, layer in enumerate(mapping):
             if lid == 0: out[layer] = data
-            else: out[layer] = self._get_eval_units_expect(
+            else: out[layer] = self._calc_units_expect(
                 out[mapping[lid - 1]], mapping[lid - 1:lid + 1])
 
         return out
@@ -396,7 +396,183 @@ class ANN(nemoa.system.classes.base.System):
 
         return update
 
-    def _get_eval_system(self, data, func = 'accuracy', **kwargs):
+    #def _get_algorithms(self):
+        #return {
+            #'system': {
+                #'energy': {
+                    #'name': 'energy',
+                    #'about': 'sum of local unit and link energies',
+                    #'method': '_calc_system_energy',
+                    #'args': 'all', 'format': '%.3f',
+                    #'optimum': 'min'},
+                #'error': {
+                    #'name': 'average reconstruction error',
+                    #'about': 'mean error of reconstructed values',
+                    #'method': '_calc_system_error',
+                    #'args': 'all', 'format': '%.3f',
+                    #'optimum': 'min'},
+                #'accuracy': {
+                    #'name': 'average accuracy',
+                    #'about': 'mean accuracy of reconstructed values',
+                    #'method': '_calc_system_accuracy',
+                    #'args': 'all', 'format': '%.3f',
+                    #'optimum': 'max'},
+                #'precision': {
+                    #'name': 'average precision',
+                    #'about': 'mean precision of reconstructed values',
+                    #'method': '_calc_system_precision',
+                    #'args': 'all', 'format': '%.3f',
+                    #'optimum': 'max'} } }
+
+    @staticmethod
+    def _about_system(): return {
+        'energy': {
+            'name': 'energy',
+            'about': 'sum of local unit and link energies',
+            'method': '_calc_system_energy',
+            'args': 'all', 'format': '%.3f',
+            'optimum': 'min'},
+        'error': {
+            'name': 'average reconstruction error',
+            'about': 'mean error of reconstructed values',
+            'method': '_calc_system_error',
+            'args': 'all', 'format': '%.3f',
+            'optimum': 'min'},
+        'accuracy': {
+            'name': 'average accuracy',
+            'about': 'mean accuracy of reconstructed values',
+            'method': '_calc_system_accuracy',
+            'args': 'all', 'format': '%.3f',
+            'optimum': 'max'},
+        'precision': {
+            'name': 'average precision',
+            'about': 'mean precision of reconstructed values',
+            'method': '_calc_system_precision',
+            'args': 'all', 'format': '%.3f',
+            'optimum': 'max'}
+        }
+
+    @staticmethod
+    def _about_units(): return {
+        'energy': {
+            'name': 'energy',
+            'about': 'energy of units',
+            'method': '_calc_units_energy',
+            'show': 'diagram',
+            'args': 'input', 'return': 'scalar', 'format': '%.3f'},
+        'expect': {
+            'name': 'expect',
+            'about': 'reconstructed values',
+            'method': '_calc_units_expect',
+            'show': 'histogram',
+            'args': 'input', 'return': 'vector', 'format': '%.3f'},
+        'values': {
+            'name': 'values',
+            'about': 'reconstructed values',
+            'method': '_calc_units_values',
+            'show': 'histogram',
+            'args': 'input', 'return': 'vector', 'format': '%.3f'},
+        'samples': {
+            'name': 'samples',
+            'about': 'reconstructed samples',
+            'method': '_calc_units_samples',
+            'show': 'histogram',
+            'args': 'input', 'return': 'vector', 'format': '%.3f'},
+        'mean': {
+            'name': 'mean values',
+            'about': 'mean of reconstructed values',
+            'method': '_calc_units_mean',
+            'show': 'diagram',
+            'args': 'input', 'return': 'scalar', 'format': '%.3f'},
+        'variance': {
+            'name': 'variance',
+            'about': 'variance of reconstructed values',
+            'method': '_calc_units_variance',
+            'show': 'diagram',
+            'args': 'input', 'return': 'scalar', 'format': '%.3f'},
+        'residuals': {
+            'name': 'residuals',
+            'about': 'residuals of reconstructed values',
+            'method': '_calc_units_residuals',
+            'show': 'histogram',
+            'args': 'all', 'return': 'vector', 'format': '%.3f'},
+        'error': {
+            'name': 'error',
+            'about': 'mean error of reconstructed values',
+            'method': '_calc_units_error',
+            'show': 'diagram',
+            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
+        'accuracy': {
+            'name': 'accuracy',
+            'about': 'accuracy of reconstructed values',
+            'method': '_calc_units_accuracy',
+            'show': 'diagram',
+            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
+        'precision': {
+            'name': 'precision',
+            'about': 'precision of reconstructed values',
+            'method': '_calc_units_precision',
+            'show': 'diagram',
+            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
+        'correlation': {
+            'name': 'correlation',
+            'about': 'correlation of reconstructed to real values',
+            'method': '_calc_units_correlation',
+            'show': 'diagram',
+            'args': 'all', 'return': 'scalar', 'format': '%.3f'}
+        }
+
+    @staticmethod
+    def _about_links(): return {
+        'energy': {
+            'name': 'energy',
+            'about': 'local energy of links',
+            'method': '_calc_links_energy',
+            'show': 'graph',
+            'args': 'input', 'return': 'vector', 'format': '%.3f'}
+        }
+
+    @staticmethod
+    def _about_relations(): return {
+        'correlation': {
+            'name': 'correlation',
+            'about': """
+                undirected data based relation describing
+                the 'linearity' between variables (units) """,
+            'directed': False, 'signed': True, 'normal': True,
+            'method': '_calc_relation_correlation', 'show': 'heatmap',
+            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
+        'capacity': {
+            'name': 'network capacity',
+            'about': """
+                directed graph based relation describing
+                the 'network capacity' between units (variables). """,
+            'directed': True, 'signed': True, 'normal': False,
+            'method': '_calc_relation_capacity', 'show': 'heatmap',
+            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
+        'knockout': {
+            'name': 'knockout effect',
+            'about': """
+                directed data manipulation based relation describing
+                the increase of the data reconstruction error of a given
+                output unit, when setting the values of a given input
+                unit to its mean value. """,
+            'directed': True, 'signed': True, 'normal': False,
+            'method': '_calc_relation_knockout', 'show': 'heatmap',
+            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
+        'induction': {
+            'name': 'induction',
+            'about': """
+                directed data manipulation based relation describing
+                the induced deviation of reconstructed values of a given
+                output unit, when manipulating the values of a given
+                input unit. """,
+            'directed': True, 'signed': True, 'normal': True,
+            'method': '_calc_relation_induction', 'show': 'heatmap',
+            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
+        }
+
+    def _calc_system(self, data, func = 'accuracy', **kwargs):
         """Evaluation of system.
 
         Args:
@@ -435,49 +611,7 @@ class ANN(nemoa.system.classes.base.System):
         # evaluate system
         return getattr(self, method)(*eval_args, **eval_kwargs)
 
-    @staticmethod
-    def _about_system(): return {
-        'energy': {
-            'name': 'energy',
-            'about': 'sum of local unit and link energies',
-            'method': '_get_eval_system_energy',
-            'args': 'all', 'format': '%.3f',
-            'optimum': 'min'},
-        'error': {
-            'name': 'average reconstruction error',
-            'about': 'mean error of reconstructed values',
-            'method': '_get_eval_system_error',
-            'args': 'all', 'format': '%.3f',
-            'optimum': 'min'},
-        'accuracy': {
-            'name': 'average accuracy',
-            'about': 'mean accuracy of reconstructed values',
-            'method': '_get_eval_system_accuracy',
-            'args': 'all', 'format': '%.3f',
-            'optimum': 'max'},
-        'precision': {
-            'name': 'average precision',
-            'about': 'mean precision of reconstructed values',
-            'method': '_get_eval_system_precision',
-            'args': 'all', 'format': '%.3f',
-            'optimum': 'max'}
-        }
-
-    def _get_eval_system_error(self, *args, **kwargs):
-        """Mean data reconstruction error of output units."""
-        return numpy.mean(self._get_eval_units_error(*args, **kwargs))
-
-    def _get_eval_system_accuracy(self, *args, **kwargs):
-        """Mean data reconstruction accuracy of output units."""
-        return numpy.mean(
-            self._get_eval_units_accuracy(*args, **kwargs))
-
-    def _get_eval_system_precision(self, *args, **kwargs):
-        """Mean data reconstruction precision of output units."""
-        return numpy.mean(
-            self._get_eval_units_precision(*args, **kwargs))
-
-    def _get_eval_system_energy(self, data, *args, **kwargs):
+    def _calc_system_energy(self, data, *args, **kwargs):
         """Sum of local link and unit energies."""
 
         mapping = list(self.mapping())
@@ -486,18 +620,18 @@ class ANN(nemoa.system.classes.base.System):
         # sum local unit energies
         for i in xrange(1, len(mapping) + 1):
             energy += numpy.sum(
-                self._get_eval_units_energy(data[0],
+                self._calc_units_energy(data[0],
                 mapping = tuple(mapping[:i])))
 
         # sum local link energies
         for i in xrange(1, len(mapping)):
             energy += numpy.sum(
-                self._get_eval_links_energy(data[0],
+                self._calc_links_energy(data[0],
                 mapping = tuple(mapping[:i+1])))
 
         return energy
 
-    def _get_eval_units(self, data, func = 'accuracy', units = None,
+    def _calc_units(self, data, func = 'accuracy', units = None,
         **kwargs):
         """Evaluation of target units.
 
@@ -559,245 +693,7 @@ class ANN(nemoa.system.classes.base.System):
             for uid, unit in enumerate(labels)}
         return nemoa.log('error', 'could not evaluate units')
 
-    @staticmethod
-    def _about_units(): return {
-        'energy': {
-            'name': 'energy',
-            'about': 'energy of units',
-            'method': '_get_eval_units_energy',
-            'show': 'diagram',
-            'args': 'input', 'return': 'scalar', 'format': '%.3f'},
-        'expect': {
-            'name': 'expect',
-            'about': 'reconstructed values',
-            'method': '_get_eval_units_expect',
-            'show': 'histogram',
-            'args': 'input', 'return': 'vector', 'format': '%.3f'},
-        'values': {
-            'name': 'values',
-            'about': 'reconstructed values',
-            'method': '_get_eval_units_values',
-            'show': 'histogram',
-            'args': 'input', 'return': 'vector', 'format': '%.3f'},
-        'samples': {
-            'name': 'samples',
-            'about': 'reconstructed samples',
-            'method': '_get_eval_units_samples',
-            'show': 'histogram',
-            'args': 'input', 'return': 'vector', 'format': '%.3f'},
-        'mean': {
-            'name': 'mean values',
-            'about': 'mean of reconstructed values',
-            'method': '_get_eval_units_mean',
-            'show': 'diagram',
-            'args': 'input', 'return': 'scalar', 'format': '%.3f'},
-        'variance': {
-            'name': 'variance',
-            'about': 'variance of reconstructed values',
-            'method': '_get_eval_units_variance',
-            'show': 'diagram',
-            'args': 'input', 'return': 'scalar', 'format': '%.3f'},
-        'residuals': {
-            'name': 'residuals',
-            'about': 'residuals of reconstructed values',
-            'method': '_get_eval_units_residuals',
-            'show': 'histogram',
-            'args': 'all', 'return': 'vector', 'format': '%.3f'},
-        'error': {
-            'name': 'error',
-            'about': 'mean error of reconstructed values',
-            'method': '_get_eval_units_error',
-            'show': 'diagram',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        'accuracy': {
-            'name': 'accuracy',
-            'about': 'accuracy of reconstructed values',
-            'method': '_get_eval_units_accuracy',
-            'show': 'diagram',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        'precision': {
-            'name': 'precision',
-            'about': 'precision of reconstructed values',
-            'method': '_get_eval_units_precision',
-            'show': 'diagram',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        'correlation': {
-            'name': 'correlation',
-            'about': 'correlation of reconstructed to real values',
-            'method': '_get_eval_units_correlation',
-            'show': 'diagram',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'}
-        }
-
-    def _get_eval_units_expect(self, data, mapping = None,
-        block = None):
-        """Expectation values of target units.
-
-        Args:
-            data: numpy array containing source data corresponding to
-                the source unit layer (first argument of the mapping)
-            mapping: n-tuple of strings containing the mapping
-                from source unit layer (first argument of tuple)
-                to target unit layer (last argument of tuple)
-            block: list of strings containing labels of source units
-                that are 'blocked' by setting their values to the means
-                of their values.
-
-        Returns:
-            Numpy array of shape (data, targets).
-
-        """
-
-        if mapping == None: mapping = self.mapping()
-        if block == None: in_data = data
-        else:
-            in_data = numpy.copy(data)
-            for i in block: in_data[:,i] = numpy.mean(in_data[:,i])
-        if len(mapping) == 2: return self._units[mapping[1]].expect(
-            in_data, self._units[mapping[0]].params)
-        outData = numpy.copy(in_data)
-        for id in xrange(len(mapping) - 1):
-            outData = self._units[mapping[id + 1]].expect(
-                outData, self._units[mapping[id]].params)
-
-        return outData
-
-    def _get_eval_units_values(self, data, mapping = None, block = None,
-        expect_last = False):
-        """Unit maximum likelihood values of target units.
-
-        Args:
-            data: numpy array containing source data corresponding to
-                the source unit layer (first argument of the mapping)
-            mapping: n-tuple of strings containing the mapping
-                from source unit layer (first argument of tuple)
-                to target unit layer (last argument of tuple)
-            block: list of strings containing labels of source units
-                that are 'blocked' by setting their values to the means
-                of their values.
-            expect_last: return expectation values of the units
-                for the last step instead of maximum likelihood values.
-
-        Returns:
-            Numpy array of shape (data, targets).
-
-        """
-
-        if mapping == None: mapping = self.mapping()
-        if block == None: in_data = data
-        else:
-            in_data = numpy.copy(data)
-            for i in block: in_data[:,i] = numpy.mean(in_data[:,i])
-        if expect_last:
-            if len(mapping) == 1:
-                return in_data
-            elif len(mapping) == 2:
-                return self._units[mapping[1]].expect(
-                    self._units[mapping[0]].get_samples(in_data),
-                    self._units[mapping[0]].params)
-            return self._units[mapping[-1]].expect(
-                self._get_eval_units_values(data, mapping[0:-1]),
-                self._units[mapping[-2]].params)
-        else:
-            if len(mapping) == 1:
-                return self._units[mapping[0]].get_values(in_data)
-            elif len(mapping) == 2:
-                return self._units[mapping[1]].get_values(
-                    self._units[mapping[1]].expect(in_data,
-                    self._units[mapping[0]].params))
-            data = numpy.copy(in_data)
-            for id in xrange(len(mapping) - 1):
-                data = self._units[mapping[id + 1]].get_values(
-                    self._units[mapping[id + 1]].expect(data,
-                    self._units[mapping[id]].params))
-            return data
-
-    def _get_eval_units_samples(self, data, mapping = None,
-        block = None, expect_last = False):
-        """Sampled unit values of target units.
-
-        Args:
-            data: numpy array containing source data corresponding to
-                the source unit layer (first argument of the mapping)
-            mapping: n-tuple of strings containing the mapping
-                from source unit layer (first argument of tuple)
-                to target unit layer (last argument of tuple)
-            block: list of strings containing labels of source units
-                that are 'blocked' by setting their values to the means
-                of their values.
-            expect_last: return expectation values of the units
-                for the last step instead of sampled values
-
-        Returns:
-            Numpy array of shape (data, targets).
-
-        """
-
-        if mapping == None: mapping = self.mapping()
-        if block == None: in_data = data
-        else:
-            in_data = numpy.copy(data)
-            for i in block: in_data[:,i] = numpy.mean(in_data[:,i])
-        if expect_last:
-            if len(mapping) == 1:
-                return data
-            elif len(mapping) == 2:
-                return self._units[mapping[1]].expect(
-                    self._units[mapping[0]].get_samples(data),
-                    self._units[mapping[0]].params)
-            return self._units[mapping[-1]].expect(
-                self._get_eval_units_samples(data, mapping[0:-1]),
-                self._units[mapping[-2]].params)
-        else:
-            if len(mapping) == 1:
-                return self._units[mapping[0]].get_samples(data)
-            elif len(mapping) == 2:
-                return self._units[mapping[1]].get_samples_from_input(
-                    data, self._units[mapping[0]].params)
-            data = numpy.copy(data)
-            for id in xrange(len(mapping) - 1):
-                data = \
-                    self._units[mapping[id + 1]].get_samples_from_input(
-                    data, self._units[mapping[id]].params)
-            return data
-
-    def _get_eval_units_residuals(self, data, mapping = None,
-        block = None):
-        """Reconstruction residuals of target units.
-
-        Args:
-            data: 2-tuple of numpy arrays containing source and target
-                data corresponding to the first and the last argument
-                of the mapping
-            mapping: n-tuple of strings containing the mapping
-                from source unit layer (first argument of tuple)
-                to target unit layer (last argument of tuple)
-            block: list of strings containing labels of source units
-                that are 'blocked' by setting their values to the means
-                of their values.
-
-        Returns:
-            Numpy array of shape (data, targets).
-
-        """
-
-        d_src, d_tgt = data
-
-        # set mapping: inLayer to outLayer (if not set)
-        if mapping == None: mapping = self.mapping()
-
-        # set unit values to mean (optional)
-        if isinstance(block, list):
-            d_src = numpy.copy(d_src)
-            for i in block: d_src[:, i] = numpy.mean(d_src[:, i])
-
-        # calculate estimated output values
-        mOut = self._get_eval_units_expect(d_src, mapping)
-
-        # calculate residuals
-        return d_tgt - mOut
-
-    def _get_eval_units_energy(self, data, mapping = None):
+    def _calc_units_energy(self, data, mapping = None):
         """Unit energies of target units.
 
         Args:
@@ -815,181 +711,11 @@ class ANN(nemoa.system.classes.base.System):
         # set mapping: inLayer to outLayer (if not set)
         if mapping == None: mapping = self.mapping()
 
-        data = self._get_eval_units_expect(data, mapping)
+        data = self._calc_units_expect(data, mapping)
 
         return self._units[mapping[-1]].energy(data)
 
-    def _get_eval_units_mean(self, data, mapping = None, block = None):
-        """Mean values of reconstructed target units.
-
-        Args:
-            data: numpy array containing source data corresponding to
-                the source unit layer (first argument of the mapping)
-            mapping: n-tuple of strings containing the mapping
-                from source unit layer (first argument of tuple)
-                to target unit layer (last argument of tuple)
-            block: list of strings containing labels of source units
-                that are 'blocked' by setting their values to the means
-                of their values.
-
-        Returns:
-            Numpy array of shape (targets).
-
-        """
-
-        if mapping == None: mapping = self.mapping()
-        if block == None:
-            model_out = self._get_eval_units_expect(data[0], mapping)
-        else:
-            data_in_copy = numpy.copy(data)
-            for i in block:
-                data_in_copy[:,i] = numpy.mean(data_in_copy[:,i])
-            model_out = self._get_eval_units_expect(
-                data_in_copy, mapping)
-
-        return model_out.mean(axis = 0)
-
-    def _get_eval_units_variance(self, data, mapping = None,
-        block = None, **kwargs):
-        """Return variance of reconstructed unit values.
-
-        Args:
-            data: numpy array containing source data corresponding to
-                the first layer in the mapping
-            mapping: n-tuple of strings containing the mapping
-                from source unit layer (first argument of tuple)
-                to target unit layer (last argument of tuple)
-            block: list of strings containing labels of source units
-                that are blocked by setting the values to their means
-        """
-
-        if mapping == None:
-            mapping = self.mapping()
-        if block == None:
-            model_out = self._get_eval_units_expect(data, mapping)
-        else:
-            data_in_copy = numpy.copy(data)
-            for i in block:
-                data_in_copy[:,i] = numpy.mean(data_in_copy[:,i])
-            model_out = self._get_eval_units_expect(
-                data_in_copy, mapping)
-
-        return model_out.var(axis = 0)
-
-    def _get_eval_units_error(self, data, norm = 'MSE', **kwargs):
-        """Unit reconstruction error.
-
-        The unit reconstruction error is defined by:
-            error := norm(residuals)
-
-        Args:
-            data: 2-tuple of numpy arrays containing source and target
-                data corresponding to the first and the last layer in
-                the mapping
-            mapping: n-tuple of strings containing the mapping
-                from source unit layer (first argument of tuple)
-                to target unit layer (last argument of tuple)
-            block: list of strings containing labels of source units
-                that are blocked by setting the values to their means
-            norm: used norm to calculate data reconstuction error from
-                residuals. see nemoa.common.data_mean for a list of
-                provided norms
-
-        """
-
-        res = self._get_eval_units_residuals(data, **kwargs)
-        error = nemoa.common.data_mean(res, norm = norm)
-
-        return error
-
-    def _get_eval_units_accuracy(self, data, norm = 'MSE', **kwargs):
-        """Unit reconstruction accuracy.
-
-        The unit reconstruction accuracy is defined by:
-            accuracy := 1 - norm(residuals) / norm(data).
-
-        Args:
-            data: 2-tuple of numpy arrays containing source and target
-                data corresponding to the first and the last layer
-                in the mapping
-            mapping: n-tuple of strings containing the mapping
-                from source unit layer (first argument of tuple)
-                to target unit layer (last argument of tuple)
-            block: list of strings containing labels of source units
-                that are blocked by setting the values to their means
-            norm: used norm to calculate accuracy
-                see nemoa.common.data_mean for a list of provided norms
-
-        """
-
-        res = self._get_eval_units_residuals(data, **kwargs)
-        normres = nemoa.common.data_mean(res, norm = norm)
-        normdat = nemoa.common.data_mean(data[1], norm = norm)
-
-        return 1. - normres / normdat
-
-    def _get_eval_units_precision(self, data, norm = 'SD', **kwargs):
-        """Unit reconstruction precision.
-
-        The unit reconstruction precision is defined by:
-            precision := 1 - dev(residuals) / dev(data).
-
-        Args:
-            data: 2-tuple of numpy arrays containing source and target
-                data corresponding to the first and the last layer
-                in the mapping
-            mapping: n-tuple of strings containing the mapping
-                from source unit layer (first argument of tuple)
-                to target unit layer (last argument of tuple)
-            block: list of strings containing labels of source units
-                that are blocked by setting the values to their means
-            norm: used norm to calculate precision
-                see _get_data_deviation for a list of provided norms
-
-        """
-
-        res = self._get_eval_units_residuals(data, **kwargs)
-        devres = nemoa.common.data_deviation(res, norm = norm)
-        devdat = nemoa.common.data_deviation(data[1], norm = norm)
-
-        return 1. - devres / devdat
-
-    def _get_eval_units_correlation(self, data, mapping = None,
-        block = None, **kwargs):
-        """Correlation of reconstructed unit values.
-
-        Args:
-            data: 2-tuple of numpy arrays containing source and target
-                data corresponding to the first and the last layer in
-                the mapping
-            mapping: n-tuple of strings containing the mapping
-                from source unit layer (first argument of tuple)
-                to target unit layer (last argument of tuple)
-            block: list of string containing labels of units in the
-                input layer that are blocked by setting the values to
-                their means
-
-        Returns:
-            Numpy array with reconstructed correlation of units.
-
-        """
-
-        if mapping == None:
-            mapping = self.mapping()
-        if block == None:
-            model_out = self._get_eval_units_expect(data, mapping)
-        else:
-            data_in_copy = numpy.copy(data)
-            for i in block:
-                data_in_copy[:,i] = numpy.mean(data_in_copy[:,i])
-            model_out = self._get_eval_units_expect(
-                data_in_copy, mapping)
-
-        M = numpy.corrcoef(numpy.hstack(data).T)
-
-        return True
-
-    def _get_eval_links(self, data, func = 'energy', **kwargs):
+    def _calc_links(self, data, func = 'energy', **kwargs):
         """Evaluate system links respective to data.
 
         Args:
@@ -1043,17 +769,7 @@ class ANN(nemoa.system.classes.base.System):
             return rel_dict
         return nemoa.log('warning', 'could not perform evaluation')
 
-    @staticmethod
-    def _about_links(): return {
-        'energy': {
-            'name': 'energy',
-            'about': 'local energy of links',
-            'method': '_get_eval_links_energy',
-            'show': 'graph',
-            'args': 'input', 'return': 'vector', 'format': '%.3f'}
-        }
-
-    def _get_eval_links_energy(self, data, mapping = None, **kwargs):
+    def _calc_links_energy(self, data, mapping = None, **kwargs):
         """Return link energies of a layer.
 
         Args:
@@ -1066,13 +782,13 @@ class ANN(nemoa.system.classes.base.System):
         if len(mapping) == 1:
             # TODO
             return nemoa.log('error', """sorry: bad implementation of
-                ann._get_eval_links_energy""")
+                ann._calc_links_energy""")
         elif len(mapping) == 2:
             d_src  = data
-            d_tgt = self._get_eval_units_values(d_src, mapping)
+            d_tgt = self._calc_units_values(d_src, mapping)
         else:
-            d_src  = self._get_eval_units_expect(data, mapping[0:-1])
-            d_tgt = self._get_eval_units_values(d_src, mapping[-2:])
+            d_src  = self._calc_units_expect(data, mapping[0:-1])
+            d_tgt = self._calc_units_values(d_src, mapping[-2:])
 
         s_id = self.mapping().index(mapping[-2])
         t_id = self.mapping().index(mapping[-1])
@@ -1088,7 +804,7 @@ class ANN(nemoa.system.classes.base.System):
             return nemoa.system.commons.links.Links.energy(
                 d_tgt, d_src, tgt, src, links)
 
-    def _get_eval_relation(self, data, func = 'correlation',
+    def _calc_relation(self, data, func = 'correlation',
         relations = None, eval_stat = True, **kwargs):
         """Evaluate relations between source and target units.
 
@@ -1169,7 +885,7 @@ class ANN(nemoa.system.classes.base.System):
             if transform:
                 M = values
                 if 'C' in transform:
-                    C = self._get_eval_relation_correlation(data)
+                    C = self._calc_relation_correlation(data)
                 try:
                     T = eval(transform)
                     values = T
@@ -1202,220 +918,6 @@ class ANN(nemoa.system.classes.base.System):
                 'could not perform evaluation')
 
             return ret_val
-
-    @staticmethod
-    def _about_relations(): return {
-        'correlation': {
-            'name': 'correlation',
-            'about': """
-                undirected data based relation describing
-                the 'linearity' between variables (units) """,
-            'directed': False, 'signed': True, 'normal': True,
-            'method': '_get_eval_relation_correlation', 'show': 'heatmap',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        'capacity': {
-            'name': 'network capacity',
-            'about': """
-                directed graph based relation describing
-                the 'network capacity' between units (variables). """,
-            'directed': True, 'signed': True, 'normal': False,
-            'method': '_get_eval_relation_capacity', 'show': 'heatmap',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        'knockout': {
-            'name': 'knockout effect',
-            'about': """
-                directed data manipulation based relation describing
-                the increase of the data reconstruction error of a given
-                output unit, when setting the values of a given input
-                unit to its mean value. """,
-            'directed': True, 'signed': True, 'normal': False,
-            'method': '_get_eval_relation_knockout', 'show': 'heatmap',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        'induction': {
-            'name': 'induction',
-            'about': """
-                directed data manipulation based relation describing
-                the induced deviation of reconstructed values of a given
-                output unit, when manipulating the values of a given
-                input unit. """,
-            'directed': True, 'signed': True, 'normal': True,
-            'method': '_get_eval_relation_induction', 'show': 'heatmap',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        }
-
-    def _get_eval_relation_correlation(self, data, mapping = None, **kwargs):
-        """Data correlation between source and target units.
-
-        Args:
-            data: 2-tuple with numpy arrays: input data and output data
-            mapping: tuple of strings containing the mapping
-                from input layer (first argument of tuple)
-                to output layer (last argument of tuple)
-
-        Returns:
-            Numpy array of shape (source, target) containing pairwise
-            correlation between source and target units.
-
-        """
-
-        if not mapping: mapping = self.mapping()
-        in_labels = self._get_units(layer = mapping[0])
-        out_labels = self._get_units(layer = mapping[-1])
-
-        # calculate symmetric correlation matrix
-        M = numpy.corrcoef(numpy.hstack(data).T)
-        u_list = in_labels + out_labels
-
-        # create asymmetric output matrix
-        R = numpy.zeros(shape = (len(in_labels), len(out_labels)))
-        for i, u1 in enumerate(in_labels):
-            k = u_list.index(u1)
-            for j, u2 in enumerate(out_labels):
-                l = u_list.index(u2)
-                R[i, j] = M[k, l]
-
-        return R
-
-    def _get_eval_relation_capacity(self, data, mapping = None, **kwargs):
-        """Network Capacity from source to target units.
-
-        Args:
-            data: 2-tuple with numpy arrays: input data and output data
-            mapping: tuple of strings containing the mapping
-                from input layer (first argument of tuple)
-                to output layer (last argument of tuple)
-
-        Returns:
-            Numpy array of shape (source, target) containing pairwise
-            network capacity from source to target units.
-
-        """
-
-        if mapping == None: mapping = self.mapping()
-
-        # calculate product of weight matrices
-        for i in range(1, len(mapping))[::-1]:
-            W = self._units[mapping[i-1]].links({'name': mapping[i]})['W']
-            if i == len(mapping) - 1: R = W.copy()
-            else: R = numpy.dot(R.copy(), W)
-
-        return R.T
-
-    def _get_eval_relation_knockout(self, data, mapping = None, **kwargs):
-        """Knockout effect from source to target units.
-
-        Knockout single source units and measure effects on target units
-        respective to given data
-
-        Args:
-            data: 2-tuple with numpy arrays: input data and output data
-            mapping: tuple of strings containing the mapping
-                from input layer (first argument of tuple)
-                to output layer (last argument of tuple)
-
-        Returns:
-            Numpy array of shape (source, target) containing pairwise
-            knockout effects from source to target units.
-
-        """
-
-        if not mapping: mapping = self.mapping()
-        in_labels = self._get_units(layer = mapping[0])
-        out_labels = self._get_units(layer = mapping[-1])
-
-        # prepare knockout matrix
-        R = numpy.zeros((len(in_labels), len(out_labels)))
-
-        # calculate unit values without knockout
-        if not 'measure' in kwargs: measure = 'error'
-        else: measure = kwargs['measure']
-        method_name = self.about('units', measure, 'name')
-        default = self._get_eval_units(data,
-            func = measure, mapping = mapping)
-
-        # calculate unit values with knockout
-        for in_id, in_unit in enumerate(in_labels):
-
-            # modify unit and calculate unit values
-            knockout = self._get_eval_units(data, func = measure,
-                mapping = mapping, block = [in_id])
-
-            # store difference in knockout matrix
-            for out_id, out_unit in enumerate(out_labels):
-                R[in_id, out_id] = \
-                    knockout[out_unit] - default[out_unit]
-
-        return R
-
-    def _get_eval_relation_induction(self, data, mapping = None,
-        points = 10, amplify = 2., gauge = 0.05, **kwargs):
-        """Induced deviation from source to target units.
-
-        For each sample and for each source the induced deviation on
-        target units is calculated by respectively fixing one sample,
-        modifying the value for one source unit (n uniformly taken
-        points from it's own distribution) and measuring the deviation
-        of the expected valueas of each target unit. Then calculate the
-        mean of deviations over a given percentage of the strongest
-        induced deviations.
-
-        Args:
-            data: 2-tuple with numpy arrays: input data and output data
-            mapping: tuple of strings containing the mapping
-                from source layer (first argument of tuple)
-                to target layer (last argument of tuple)
-            points: number of points to extrapolate induction
-            amplify: amplification of the modified source values
-            gauge: cutoff for strongest induced deviations
-
-        Returns:
-            Numpy array of shape (source, target) containing pairwise
-            induced deviation from source to target units.
-
-        """
-
-        if not mapping: mapping = self.mapping()
-        input_units = self._get_units(layer = mapping[0])
-        output_units = self._get_units(layer = mapping[-1])
-        R = numpy.zeros((len(input_units), len(output_units)))
-
-        # get indices of representatives
-        r_ids = [int((i + 0.5) * int(float(data[0].shape[0])
-            / points)) for i in xrange(points)]
-
-        for i_id, i_unit in enumerate(input_units):
-            i_curve = numpy.take(numpy.sort(data[0][:, i_id]), r_ids)
-            i_curve = amplify * i_curve
-
-            # create output matrix for each output
-            C = {o_unit: numpy.zeros((data[0].shape[0], points)) \
-                for o_unit in output_units}
-            for p_id in xrange(points):
-                i_data  = data[0].copy()
-                i_data[:, i_id] = i_curve[p_id]
-                o_expect = self._get_eval_units((i_data, data[1]),
-                    func = 'expect', mapping = mapping)
-                for o_unit in output_units:
-                    C[o_unit][:, p_id] = o_expect[o_unit]
-
-            # calculate mean of standard deviations of outputs
-            for o_id, o_unit in enumerate(output_units):
-
-                # calculate sign by correlating input and output
-                corr = numpy.zeros(data[0].shape[0])
-                for i in xrange(data[0].shape[0]):
-                    corr[i] = numpy.correlate(C[o_unit][i, :], i_curve)
-                sign = numpy.sign(corr.mean())
-
-                # calculate norm by mean over maximum 5% of data
-                bound = int((1. - gauge) * data[0].shape[0])
-                subset = numpy.sort(C[o_unit].std(axis = 1))[bound:]
-                norm = subset.mean() / data[1][:, o_id].std()
-
-                # calculate influence
-                R[i_id, o_id] = sign * norm
-
-        return R
 
     def mapping(self, src = None, tgt = None):
         """Mapping of units from source to target.

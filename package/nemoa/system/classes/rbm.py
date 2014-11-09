@@ -222,11 +222,11 @@ class RBM(nemoa.system.classes.ann.ANN):
         k = cfg['update_cd_sampling_steps']
         m = cfg['update_cd_sampling_iterations']
 
-        hData = self._get_eval_units_expect(data, ('visible', 'hidden'))
+        hData = self._calc_units_expect(data, ('visible', 'hidden'))
         if k == 1 and m == 1:
-            vModel = self._get_eval_units_samples(hData,
+            vModel = self._calc_units_samples(hData,
                 ('hidden', 'visible'), expect_last = True)
-            hModel = self._get_eval_units_expect(vModel,
+            hModel = self._calc_units_expect(vModel,
                 ('visible', 'hidden'))
             return data, hData, vModel, hModel
 
@@ -237,21 +237,21 @@ class RBM(nemoa.system.classes.ann.ANN):
 
                 # calculate hSample from hExpect
                 # in first sampling step init hSample with h_data
-                if j == 0: hSample = self._get_eval_units_samples(
+                if j == 0: hSample = self._calc_units_samples(
                     hData, ('hidden', ))
-                else: hSample = self._get_eval_units_samples(hExpect, (
+                else: hSample = self._calc_units_samples(hExpect, (
                     'hidden', ))
 
                 # calculate vExpect from hSample
-                vExpect = self._get_eval_units_expect(
+                vExpect = self._calc_units_expect(
                     hSample, ('hidden', 'visible'))
 
                 # calculate hExpect from vSample
                 # in last sampling step use vExpect
                 # instead of vSample to reduce noise
-                if j + 1 == k: hExpect = self._get_eval_units_expect(
+                if j + 1 == k: hExpect = self._calc_units_expect(
                     vExpect, ('visible', 'hidden'))
-                else: hExpect = self._get_eval_units_samples(vExpect,
+                else: hExpect = self._calc_units_samples(vExpect,
                     ('visible', 'hidden'), expect_last = True)
 
             vModel += vExpect / m
@@ -489,7 +489,7 @@ class RBM(nemoa.system.classes.ann.ANN):
 
         return heat
 
-    def _get_eval_system_energy(self, data, *args, **kwargs):
+    def _calc_system_energy(self, data, *args, **kwargs):
         """Pseudo energy function.
 
         Calculates the logarithm of the sum of exponential negative
@@ -502,15 +502,15 @@ class RBM(nemoa.system.classes.ann.ANN):
         map_hidden = ('visible', 'hidden')
 
         # calculate energies of visible units
-        energy_visible = self._get_eval_units_energy(
+        energy_visible = self._calc_units_energy(
             data[0], mapping = map_visible).sum(axis = 1)
 
         # calculate hidden unit energies of all samples
-        energy_hidden = self._get_eval_units_energy(
+        energy_hidden = self._calc_units_energy(
             data[0], mapping = map_hidden).sum(axis = 1)
 
         # calculate link energies of all samples
-        energy_links = self._get_eval_links_energy(
+        energy_links = self._calc_links_energy(
             data[0], mapping = map_hidden).sum(axis = (1, 2))
 
         # calculate energies of all samples

@@ -630,13 +630,13 @@ class Dataset:
 
             # transform data
             if func == 'expect':
-                trans_array = system._get_eval_units_expect(
+                trans_array = system._calc_units_expect(
                     data_array, mapping)
             elif func == 'value':
-                trans_array = system._get_eval_units_values(
+                trans_array = system._calc_units_values(
                     data_array, mapping)
             elif func == 'sample':
-                trans_array = system._get_eval_units_samples(
+                trans_array = system._calc_units_samples(
                     data_array, mapping)
 
             # create empty record array
@@ -693,7 +693,7 @@ class Dataset:
         if key == 'rowfilters': return self._get_rowfilters()
         if key == 'data': return self._get_data(*args, **kwargs)
         if key == 'value': return self._get_value(*args, **kwargs)
-        if key == 'eval': return self._get_eval(*args, **kwargs)
+        if key == 'eval': return self._calc(*args, **kwargs)
 
         # export configuration and data
         if key == 'copy': return self._get_copy(*args, **kwargs)
@@ -1076,13 +1076,6 @@ class Dataset:
         """get single value from dataset."""
         return float(self._get_data(cols = [col], rows = [row]))
 
-    def _get_eval(self, key = None, *args, **kwargs):
-        """get evaluation of dataset."""
-
-        # Todo: create dataset evaluation functions!
-
-        return True
-
     def _get_copy(self, key = None, *args, **kwargs):
         """get dataset copy as dictionary."""
 
@@ -1375,6 +1368,13 @@ class Dataset:
 
         if not source: return True
         nemoa.common.dict_merge(copy.deepcopy(source), self._tables)
+
+        return True
+
+    def calc(self, key = None, *args, **kwargs):
+        """Get evaluation of dataset."""
+
+        # Todo: create dataset evaluation functions!
 
         return True
 

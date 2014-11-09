@@ -368,6 +368,7 @@ class Network:
         if key == 'email': return self._get_email()
         if key == 'license': return self._get_license()
         if key == 'type': return self._get_type()
+        if key == 'algorithms': return self._get_algorithms()
 
         # get network parameters and data
         if key == 'node': return self._get_node(*args, **kwargs)
@@ -376,7 +377,6 @@ class Network:
         if key == 'edges': return self._get_edges(*args, **kwargs)
         if key == 'layer': return self._get_layer(*args, **kwargs)
         if key == 'layers': return self._get_layers(*args, **kwargs)
-        if key == 'eval': return self._get_eval(*args, **kwargs)
 
         # export network configuration and graph
         if key == 'copy': return self._get_copy(*args, **kwargs)
@@ -436,6 +436,12 @@ class Network:
         module_name = self.__module__.split('.')[-1]
         class_name = self.__class__.__name__
         return module_name + '.' + class_name
+
+    def _get_algorithms(self):
+        """Get algorithms provided by network."""
+        import inspect
+        return dict(inspect.getmembers(
+            networkx.algorithms, inspect.isfunction))
 
     def _get_node(self, node):
         """Return network information of single node."""
@@ -628,22 +634,6 @@ class Network:
 
         return layers
 
-    def _get_eval(self, key = None, *args, **kwargs):
-        """get evaluation of network."""
-
-        eval_functions = self._get_eval_functions()
-        if not key in eval_functions.keys():
-            return nemoa.log('error', """could not evaluate network:
-                unknown networkx algorithm name '%s'.""" % (key))
-
-        return eval_functions[key](self._graph, *args, **kwargs)
-
-    def _get_eval_functions(self):
-
-        import inspect
-        return dict(inspect.getmembers(
-            networkx.algorithms, inspect.isfunction))
-
     def _get_copy(self, key = None, *args, **kwargs):
         """Get network copy as dictionary."""
 
@@ -810,6 +800,16 @@ class Network:
             self._graph.node[node] = attr
 
         return True
+
+    def calc(self, key = None, *args, **kwargs):
+        """get evaluation of network."""
+
+        algorithms = self._get_algorithms()
+        if not key in algorithms.keys():
+            return nemoa.log('error', """could not evaluate network:
+                unknown networkx algorithm name '%s'.""" % (key))
+
+        return algorithms[key](self._graph, *args, **kwargs)
 
     def initialize(self, system = None):
         if not system: return False

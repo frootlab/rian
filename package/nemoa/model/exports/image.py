@@ -173,7 +173,7 @@ class Graph:
             if not o == i]
 
         # calculate edge weights from 'weight' relation
-        W = model.get('eval', 'system', 'relations',
+        W = model.calc('system', 'relations',
             self.settings['relation'],
             preprocessing = self.settings['preprocessing'],
             measure = self.settings['measure'],
@@ -190,7 +190,7 @@ class Graph:
         # default: use the same relation, as used for weights
         if not self.settings['filter'] or self.settings['filter'] == \
             self.settings['relation']: F = W
-        else: F = model.get('eval', 'system', 'relations',
+        else: F = model.calc('system', 'relations',
             self.settings['filter'],
             preprocessing = self.settings['preprocessing'],
             measure = self.settings['measure'],
@@ -215,7 +215,7 @@ class Graph:
             or self.settings['sign'] == self.settings['relation']:
             SR = W
         else:
-            SR = model.get('eval', 'system', 'relations',
+            SR = model.calc('system', 'relations',
                 self.settings['sign'],
                 preprocessing = self.settings['preprocessing'],
                 measure = self.settings['measure'],
@@ -290,7 +290,7 @@ class Heatmap:
     def create(self, model):
 
         # calculate relation
-        R = model.get('eval', 'system', 'relations',
+        R = model.calc('system', 'relations',
             self.settings['relation'],
             preprocessing = self.settings['preprocessing'],
             measure = self.settings['measure'],
@@ -342,7 +342,7 @@ class Histogram:
                 edges.append((i, o))
 
         # calculate relation
-        R = model.get('eval', 'system', 'relations', self.settings['relation'],
+        R = model.calc('system', 'relations', self.settings['relation'],
             preprocessing = self.settings['preprocessing'],
             measure = self.settings['measure'],
             statistics = self.settings['statistics'],

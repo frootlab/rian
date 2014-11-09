@@ -179,7 +179,7 @@ class Model:
         if key == 'network': return self.network.get(*args, **kwargs)
         if key == 'dataset': return self.dataset.get(*args, **kwargs)
         if key == 'system': return self.system.get(*args, **kwargs)
-        if key == 'eval': return self._get_eval(*args, **kwargs)
+        if key == 'eval': return self._calc(*args, **kwargs)
 
         # export configuration and parameters
         if key == 'copy': return self._get_copy(*args, **kwargs)
@@ -238,48 +238,6 @@ class Model:
         module_name = self.__module__.split('.')[-1]
         class_name = self.__class__.__name__
         return module_name + '.' + class_name
-
-    def _get_eval(self, key = None, *args, **kwargs):
-        """Get evaluation of model."""
-
-        if not key: key = 'system'
-
-        # evaluate dataset
-        if key == 'dataset':
-            return self.dataset.get('eval', *args, **kwargs)
-        if key == 'network':
-            return self.network.get('eval', *args, **kwargs)
-        if key == 'system':
-            # get data for system evaluation
-            if 'data' in kwargs.keys():
-                # get data from keyword argument
-                data = kwargs['data']
-                del kwargs['data']
-            else:
-                # fetch data from dataset using parameters:
-                # 'preprocessing', 'statistics'
-                if 'preprocessing' in kwargs.keys():
-                    preprocessing = kwargs['preprocessing']
-                    del kwargs['preprocessing']
-                else: preprocessing = {}
-                if not isinstance(preprocessing, dict):
-                    preprocessing = {}
-                if preprocessing:
-                    dataset_backup = self.dataset.get('copy')
-                    self.dataset.preprocess(preprocessing)
-                if 'statistics' in kwargs.keys():
-                    statistics = kwargs['statistics']
-                    del kwargs['statistics']
-                else: statistics = 0
-                cols = self.system.get('layers', visible = True)
-                data = self.dataset.get('data',
-                    size = statistics, cols = tuple(cols))
-                if preprocessing:
-                    self.dataset.set('copy', dataset_backup)
-
-            return self.system.get('eval', data, *args, **kwargs)
-
-        return nemoa.log('warning', 'could not evaluate model')
 
     def _get_copy(self, key = None, *args, **kwargs):
         """Get model copy as dictionary."""
@@ -513,6 +471,48 @@ class Model:
 
         self.system = nemoa.system.new(**system)
         return True
+
+    def calc(self, key = None, *args, **kwargs):
+        """Get evaluation of model."""
+
+        if not key: key = 'system'
+
+        # evaluate dataset
+        if key == 'dataset':
+            return self.dataset.calc(*args, **kwargs)
+        if key == 'network':
+            return self.network.calc(*args, **kwargs)
+        if key == 'system':
+            # get data for system evaluation
+            if 'data' in kwargs.keys():
+                # get data from keyword argument
+                data = kwargs['data']
+                del kwargs['data']
+            else:
+                # fetch data from dataset using parameters:
+                # 'preprocessing', 'statistics'
+                if 'preprocessing' in kwargs.keys():
+                    preprocessing = kwargs['preprocessing']
+                    del kwargs['preprocessing']
+                else: preprocessing = {}
+                if not isinstance(preprocessing, dict):
+                    preprocessing = {}
+                if preprocessing:
+                    dataset_backup = self.dataset.get('copy')
+                    self.dataset.preprocess(preprocessing)
+                if 'statistics' in kwargs.keys():
+                    statistics = kwargs['statistics']
+                    del kwargs['statistics']
+                else: statistics = 0
+                cols = self.system.get('layers', visible = True)
+                data = self.dataset.get('data',
+                    size = statistics, cols = tuple(cols))
+                if preprocessing:
+                    self.dataset.set('copy', dataset_backup)
+
+            return self.system.calc(data, *args, **kwargs)
+
+        return nemoa.log('warning', 'could not evaluate model')
 
     def save(self, *args, **kwargs):
         """Export model to file."""

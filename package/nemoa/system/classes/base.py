@@ -144,7 +144,7 @@ class System:
         if key == 'links': return self._get_links(*args, **kwargs)
         if key == 'layer': return self._get_layer(*args, **kwargs)
         if key == 'layers': return self._get_layers(*args, **kwargs)
-        if key == 'eval': return self._get_eval(*args, **kwargs)
+        if key == 'eval': return self._calc(*args, **kwargs)
 
         # export configuration and parameters
         if key == 'copy': return self._get_copy(*args, **kwargs)
@@ -480,31 +480,6 @@ class System:
                     group.append(link)
             grouped_links.append(group)
         return grouped_links
-
-    def _get_eval(self, data, *args, **kwargs):
-
-        # default system evaluation
-        if len(args) == 0:
-            return self._get_eval_system(data, **kwargs)
-
-        # evaluate system units
-        if args[0] == 'units':
-            return self._get_eval_units(data, *args[1:], **kwargs)
-
-        # evaluate system links
-        if args[0] == 'links':
-            return self._get_eval_links(data, *args[1:], **kwargs)
-
-        # evaluate system relations
-        if args[0] == 'relations':
-            return self._get_eval_relation(data, *args[1:], **kwargs)
-
-        # evaluate system
-        if args[0] in self._about_system().keys():
-            return self._get_eval_system(data, *args, **kwargs)
-
-        return nemoa.log('warning',
-            "unsupported system evaluation '%s'" % (args[0]))
 
     def _get_copy(self, key = None, *args, **kwargs):
         """Get system copy as dictionary."""
@@ -903,6 +878,557 @@ class System:
             self._params['links'][links]['W'] = A * random
 
         return True
+
+    def calc(self, data, *args, **kwargs):
+
+        # default system evaluation
+        if len(args) == 0:
+            return self._calc_system(data, **kwargs)
+
+        # evaluate system units
+        if args[0] == 'units':
+            return self._calc_units(data, *args[1:], **kwargs)
+
+        # evaluate system links
+        if args[0] == 'links':
+            return self._calc_links(data, *args[1:], **kwargs)
+
+        # evaluate system relations
+        if args[0] == 'relations':
+            return self._calc_relation(data, *args[1:], **kwargs)
+
+        # evaluate system
+        if args[0] in self._about_system().keys():
+            return self._calc_system(data, *args, **kwargs)
+
+        return nemoa.log('warning',
+            "unsupported system evaluation '%s'" % (args[0]))
+
+    def _calc_system_error(self, *args, **kwargs):
+        """Mean data reconstruction error of output units."""
+        return numpy.mean(self._calc_units_error(*args, **kwargs))
+
+    def _calc_system_accuracy(self, *args, **kwargs):
+        """Mean data reconstruction accuracy of output units."""
+        return numpy.mean(
+            self._calc_units_accuracy(*args, **kwargs))
+
+    def _calc_system_precision(self, *args, **kwargs):
+        """Mean data reconstruction precision of output units."""
+        return numpy.mean(
+            self._calc_units_precision(*args, **kwargs))
+
+    def _calc_units_mean(self, data, mapping = None, block = None):
+        """Mean values of reconstructed target units.
+
+        Args:
+            data: numpy array containing source data corresponding to
+                the source unit layer (first argument of the mapping)
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+            block: list of strings containing labels of source units
+                that are 'blocked' by setting their values to the means
+                of their values.
+
+        Returns:
+            Numpy array of shape (targets).
+
+        """
+
+        if mapping == None: mapping = self.mapping()
+        if block == None:
+            model_out = self._calc_units_expect(data[0], mapping)
+        else:
+            data_in_copy = numpy.copy(data)
+            for i in block:
+                data_in_copy[:,i] = numpy.mean(data_in_copy[:,i])
+            model_out = self._calc_units_expect(
+                data_in_copy, mapping)
+
+        return model_out.mean(axis = 0)
+
+    def _calc_units_variance(self, data, mapping = None,
+        block = None, **kwargs):
+        """Return variance of reconstructed unit values.
+
+        Args:
+            data: numpy array containing source data corresponding to
+                the first layer in the mapping
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+            block: list of strings containing labels of source units
+                that are blocked by setting the values to their means
+        """
+
+        if mapping == None:
+            mapping = self.mapping()
+        if block == None:
+            model_out = self._calc_units_expect(data, mapping)
+        else:
+            data_in_copy = numpy.copy(data)
+            for i in block:
+                data_in_copy[:,i] = numpy.mean(data_in_copy[:,i])
+            model_out = self._calc_units_expect(
+                data_in_copy, mapping)
+
+        return model_out.var(axis = 0)
+
+    def _calc_units_correlation(self, data, mapping = None,
+        block = None, **kwargs):
+        """Correlation of reconstructed unit values.
+
+        Args:
+            data: 2-tuple of numpy arrays containing source and target
+                data corresponding to the first and the last layer in
+                the mapping
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+            block: list of string containing labels of units in the
+                input layer that are blocked by setting the values to
+                their means
+
+        Returns:
+            Numpy array with reconstructed correlation of units.
+
+        """
+
+        if mapping == None:
+            mapping = self.mapping()
+        if block == None:
+            model_out = self._calc_units_expect(data, mapping)
+        else:
+            data_in_copy = numpy.copy(data)
+            for i in block:
+                data_in_copy[:,i] = numpy.mean(data_in_copy[:,i])
+            model_out = self._calc_units_expect(
+                data_in_copy, mapping)
+
+        M = numpy.corrcoef(numpy.hstack(data).T)
+
+        return True
+
+    def _calc_units_expect(self, data, mapping = None,
+        block = None):
+        """Expectation values of target units.
+
+        Args:
+            data: numpy array containing source data corresponding to
+                the source unit layer (first argument of the mapping)
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+            block: list of strings containing labels of source units
+                that are 'blocked' by setting their values to the means
+                of their values.
+
+        Returns:
+            Numpy array of shape (data, targets).
+
+        """
+
+        if mapping == None: mapping = self.mapping()
+        if block == None: in_data = data
+        else:
+            in_data = numpy.copy(data)
+            for i in block: in_data[:,i] = numpy.mean(in_data[:,i])
+        if len(mapping) == 2: return self._units[mapping[1]].expect(
+            in_data, self._units[mapping[0]].params)
+        outData = numpy.copy(in_data)
+        for id in xrange(len(mapping) - 1):
+            outData = self._units[mapping[id + 1]].expect(
+                outData, self._units[mapping[id]].params)
+
+        return outData
+
+    def _calc_units_values(self, data, mapping = None, block = None,
+        expect_last = False):
+        """Unit maximum likelihood values of target units.
+
+        Args:
+            data: numpy array containing source data corresponding to
+                the source unit layer (first argument of the mapping)
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+            block: list of strings containing labels of source units
+                that are 'blocked' by setting their values to the means
+                of their values.
+            expect_last: return expectation values of the units
+                for the last step instead of maximum likelihood values.
+
+        Returns:
+            Numpy array of shape (data, targets).
+
+        """
+
+        if mapping == None: mapping = self.mapping()
+        if block == None: in_data = data
+        else:
+            in_data = numpy.copy(data)
+            for i in block: in_data[:,i] = numpy.mean(in_data[:,i])
+        if expect_last:
+            if len(mapping) == 1:
+                return in_data
+            elif len(mapping) == 2:
+                return self._units[mapping[1]].expect(
+                    self._units[mapping[0]].get_samples(in_data),
+                    self._units[mapping[0]].params)
+            return self._units[mapping[-1]].expect(
+                self._calc_units_values(data, mapping[0:-1]),
+                self._units[mapping[-2]].params)
+        else:
+            if len(mapping) == 1:
+                return self._units[mapping[0]].get_values(in_data)
+            elif len(mapping) == 2:
+                return self._units[mapping[1]].get_values(
+                    self._units[mapping[1]].expect(in_data,
+                    self._units[mapping[0]].params))
+            data = numpy.copy(in_data)
+            for id in xrange(len(mapping) - 1):
+                data = self._units[mapping[id + 1]].get_values(
+                    self._units[mapping[id + 1]].expect(data,
+                    self._units[mapping[id]].params))
+            return data
+
+    def _calc_units_samples(self, data, mapping = None,
+        block = None, expect_last = False):
+        """Sampled unit values of target units.
+
+        Args:
+            data: numpy array containing source data corresponding to
+                the source unit layer (first argument of the mapping)
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+            block: list of strings containing labels of source units
+                that are 'blocked' by setting their values to the means
+                of their values.
+            expect_last: return expectation values of the units
+                for the last step instead of sampled values
+
+        Returns:
+            Numpy array of shape (data, targets).
+
+        """
+
+        if mapping == None: mapping = self.mapping()
+        if block == None: in_data = data
+        else:
+            in_data = numpy.copy(data)
+            for i in block: in_data[:,i] = numpy.mean(in_data[:,i])
+        if expect_last:
+            if len(mapping) == 1:
+                return data
+            elif len(mapping) == 2:
+                return self._units[mapping[1]].expect(
+                    self._units[mapping[0]].get_samples(data),
+                    self._units[mapping[0]].params)
+            return self._units[mapping[-1]].expect(
+                self._calc_units_samples(data, mapping[0:-1]),
+                self._units[mapping[-2]].params)
+        else:
+            if len(mapping) == 1:
+                return self._units[mapping[0]].get_samples(data)
+            elif len(mapping) == 2:
+                return self._units[mapping[1]].get_samples_from_input(
+                    data, self._units[mapping[0]].params)
+            data = numpy.copy(data)
+            for id in xrange(len(mapping) - 1):
+                data = \
+                    self._units[mapping[id + 1]].get_samples_from_input(
+                    data, self._units[mapping[id]].params)
+            return data
+
+    def _calc_units_residuals(self, data, mapping = None,
+        block = None):
+        """Reconstruction residuals of target units.
+
+        Args:
+            data: 2-tuple of numpy arrays containing source and target
+                data corresponding to the first and the last argument
+                of the mapping
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+            block: list of strings containing labels of source units
+                that are 'blocked' by setting their values to the means
+                of their values.
+
+        Returns:
+            Numpy array of shape (data, targets).
+
+        """
+
+        d_src, d_tgt = data
+
+        # set mapping: inLayer to outLayer (if not set)
+        if mapping == None: mapping = self.mapping()
+
+        # set unit values to mean (optional)
+        if isinstance(block, list):
+            d_src = numpy.copy(d_src)
+            for i in block: d_src[:, i] = numpy.mean(d_src[:, i])
+
+        # calculate estimated output values
+        m_out = self._calc_units_expect(d_src, mapping)
+
+        # calculate residuals
+        return d_tgt - m_out
+
+    def _calc_units_error(self, data, norm = 'MSE', **kwargs):
+        """Unit reconstruction error.
+
+        The unit reconstruction error is defined by:
+            error := norm(residuals)
+
+        Args:
+            data: 2-tuple of numpy arrays containing source and target
+                data corresponding to the first and the last layer in
+                the mapping
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+            block: list of strings containing labels of source units
+                that are blocked by setting the values to their means
+            norm: used norm to calculate data reconstuction error from
+                residuals. see nemoa.common.data_mean for a list of
+                provided norms
+
+        """
+
+        res = self._calc_units_residuals(data, **kwargs)
+        error = nemoa.common.data_mean(res, norm = norm)
+
+        return error
+
+    def _calc_units_accuracy(self, data, norm = 'MSE', **kwargs):
+        """Unit reconstruction accuracy.
+
+        The unit reconstruction accuracy is defined by:
+            accuracy := 1 - norm(residuals) / norm(data).
+
+        Args:
+            data: 2-tuple of numpy arrays containing source and target
+                data corresponding to the first and the last layer
+                in the mapping
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+            block: list of strings containing labels of source units
+                that are blocked by setting the values to their means
+            norm: used norm to calculate accuracy
+                see nemoa.common.data_mean for a list of provided norms
+
+        """
+
+        res = self._calc_units_residuals(data, **kwargs)
+        normres = nemoa.common.data_mean(res, norm = norm)
+        normdat = nemoa.common.data_mean(data[1], norm = norm)
+
+        return 1. - normres / normdat
+
+    def _calc_units_precision(self, data, norm = 'SD', **kwargs):
+        """Unit reconstruction precision.
+
+        The unit reconstruction precision is defined by:
+            precision := 1 - dev(residuals) / dev(data).
+
+        Args:
+            data: 2-tuple of numpy arrays containing source and target
+                data corresponding to the first and the last layer
+                in the mapping
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+            block: list of strings containing labels of source units
+                that are blocked by setting the values to their means
+            norm: used norm to calculate precision
+                see _get_data_deviation for a list of provided norms
+
+        """
+
+        res = self._calc_units_residuals(data, **kwargs)
+        devres = nemoa.common.data_deviation(res, norm = norm)
+        devdat = nemoa.common.data_deviation(data[1], norm = norm)
+
+        return 1. - devres / devdat
+
+    def _calc_relation_correlation(self, data, mapping = None, **kwargs):
+        """Data correlation between source and target units.
+
+        Args:
+            data: 2-tuple with numpy arrays: input data and output data
+            mapping: tuple of strings containing the mapping
+                from input layer (first argument of tuple)
+                to output layer (last argument of tuple)
+
+        Returns:
+            Numpy array of shape (source, target) containing pairwise
+            correlation between source and target units.
+
+        """
+
+        if not mapping: mapping = self.mapping()
+        in_labels = self._get_units(layer = mapping[0])
+        out_labels = self._get_units(layer = mapping[-1])
+
+        # calculate symmetric correlation matrix
+        M = numpy.corrcoef(numpy.hstack(data).T)
+        u_list = in_labels + out_labels
+
+        # create asymmetric output matrix
+        R = numpy.zeros(shape = (len(in_labels), len(out_labels)))
+        for i, u1 in enumerate(in_labels):
+            k = u_list.index(u1)
+            for j, u2 in enumerate(out_labels):
+                l = u_list.index(u2)
+                R[i, j] = M[k, l]
+
+        return R
+
+    def _calc_relation_capacity(self, data, mapping = None, **kwargs):
+        """Network Capacity from source to target units.
+
+        Args:
+            data: 2-tuple with numpy arrays: input data and output data
+            mapping: tuple of strings containing the mapping
+                from input layer (first argument of tuple)
+                to output layer (last argument of tuple)
+
+        Returns:
+            Numpy array of shape (source, target) containing pairwise
+            network capacity from source to target units.
+
+        """
+
+        if mapping == None: mapping = self.mapping()
+
+        # calculate product of weight matrices
+        for i in range(1, len(mapping))[::-1]:
+            W = self._units[mapping[i-1]].links({'name': mapping[i]})['W']
+            if i == len(mapping) - 1: R = W.copy()
+            else: R = numpy.dot(R.copy(), W)
+
+        return R.T
+
+    def _calc_relation_knockout(self, data, mapping = None, **kwargs):
+        """Knockout effect from source to target units.
+
+        Knockout single source units and measure effects on target units
+        respective to given data
+
+        Args:
+            data: 2-tuple with numpy arrays: input data and output data
+            mapping: tuple of strings containing the mapping
+                from input layer (first argument of tuple)
+                to output layer (last argument of tuple)
+
+        Returns:
+            Numpy array of shape (source, target) containing pairwise
+            knockout effects from source to target units.
+
+        """
+
+        if not mapping: mapping = self.mapping()
+        in_labels = self._get_units(layer = mapping[0])
+        out_labels = self._get_units(layer = mapping[-1])
+
+        # prepare knockout matrix
+        R = numpy.zeros((len(in_labels), len(out_labels)))
+
+        # calculate unit values without knockout
+        if not 'measure' in kwargs: measure = 'error'
+        else: measure = kwargs['measure']
+        method_name = self.about('units', measure, 'name')
+        default = self._calc_units(data,
+            func = measure, mapping = mapping)
+
+        # calculate unit values with knockout
+        for in_id, in_unit in enumerate(in_labels):
+
+            # modify unit and calculate unit values
+            knockout = self._calc_units(data, func = measure,
+                mapping = mapping, block = [in_id])
+
+            # store difference in knockout matrix
+            for out_id, out_unit in enumerate(out_labels):
+                R[in_id, out_id] = \
+                    knockout[out_unit] - default[out_unit]
+
+        return R
+
+    def _calc_relation_induction(self, data, mapping = None,
+        points = 10, amplify = 2., gauge = 0.05, **kwargs):
+        """Induced deviation from source to target units.
+
+        For each sample and for each source the induced deviation on
+        target units is calculated by respectively fixing one sample,
+        modifying the value for one source unit (n uniformly taken
+        points from it's own distribution) and measuring the deviation
+        of the expected valueas of each target unit. Then calculate the
+        mean of deviations over a given percentage of the strongest
+        induced deviations.
+
+        Args:
+            data: 2-tuple with numpy arrays: input data and output data
+            mapping: tuple of strings containing the mapping
+                from source layer (first argument of tuple)
+                to target layer (last argument of tuple)
+            points: number of points to extrapolate induction
+            amplify: amplification of the modified source values
+            gauge: cutoff for strongest induced deviations
+
+        Returns:
+            Numpy array of shape (source, target) containing pairwise
+            induced deviation from source to target units.
+
+        """
+
+        if not mapping: mapping = self.mapping()
+        input_units = self._get_units(layer = mapping[0])
+        output_units = self._get_units(layer = mapping[-1])
+        R = numpy.zeros((len(input_units), len(output_units)))
+
+        # get indices of representatives
+        r_ids = [int((i + 0.5) * int(float(data[0].shape[0])
+            / points)) for i in xrange(points)]
+
+        for i_id, i_unit in enumerate(input_units):
+            i_curve = numpy.take(numpy.sort(data[0][:, i_id]), r_ids)
+            i_curve = amplify * i_curve
+
+            # create output matrix for each output
+            C = {o_unit: numpy.zeros((data[0].shape[0], points)) \
+                for o_unit in output_units}
+            for p_id in xrange(points):
+                i_data  = data[0].copy()
+                i_data[:, i_id] = i_curve[p_id]
+                o_expect = self._calc_units((i_data, data[1]),
+                    func = 'expect', mapping = mapping)
+                for o_unit in output_units:
+                    C[o_unit][:, p_id] = o_expect[o_unit]
+
+            # calculate mean of standard deviations of outputs
+            for o_id, o_unit in enumerate(output_units):
+
+                # calculate sign by correlating input and output
+                corr = numpy.zeros(data[0].shape[0])
+                for i in xrange(data[0].shape[0]):
+                    corr[i] = numpy.correlate(C[o_unit][i, :], i_curve)
+                sign = numpy.sign(corr.mean())
+
+                # calculate norm by mean over maximum 5% of data
+                bound = int((1. - gauge) * data[0].shape[0])
+                subset = numpy.sort(C[o_unit].std(axis = 1))[bound:]
+                norm = subset.mean() / data[1][:, o_id].std()
+
+                # calculate influence
+                R[i_id, o_id] = sign * norm
+
+        return R
 
     def save(self, *args, **kwargs):
         """Export system to file."""
