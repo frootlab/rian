@@ -631,10 +631,18 @@ class Network:
     def _get_eval(self, key = None, *args, **kwargs):
         """get evaluation of network."""
 
-        # Todo: create network evaluation functions!
+        eval_functions = self._get_eval_functions()
+        if not key in eval_functions.keys():
+            return nemoa.log('error', """could not evaluate network:
+                unknown networkx algorithm name '%s'.""" % (key))
 
-        return True
+        return eval_functions[key](self._graph, *args, **kwargs)
 
+    def _get_eval_functions(self):
+
+        import inspect
+        return dict(inspect.getmembers(
+            networkx.algorithms, inspect.isfunction))
 
     def _get_copy(self, key = None, *args, **kwargs):
         """Get network copy as dictionary."""
