@@ -102,6 +102,44 @@ def save(dataset, path = None, filetype = None, plot = None, **kwargs):
 
     return path
 
+class Heatmap:
+
+    settings = {
+        'fileformat': 'pdf',
+        'dpi': 300,
+        'show_title': True,
+        'title': None,
+        'bg_color': 'none',
+        'path': ('system', 'relations'),
+        'units': (None, None),
+        'relation': 'correlation',
+        'preprocessing': None,
+        'measure': 'error',
+        'statistics': 10000,
+        'transform': '',
+        'layer': None,
+        'interpolation': 'nearest' }
+
+    def __init__(self, **kwargs):
+        for key, val in kwargs.items():
+            if key in self.settings.keys():
+                self.settings[key] = val
+
+    def create(self, dataset):
+
+        # calculate relation
+        R = dataset.calc(self.settings['relation'])
+
+        if not isinstance(R, numpy.ndarray): return nemoa.log('error',
+            'could not plot heatmap: relation matrix is not valid!')
+
+        # Todo: ugly workaround
+        columns = dataset.get('columns')
+        self.settings['units'] = (columns, columns)
+
+        # create plot
+        return nemoa.common.plot.heatmap(R, **self.settings)
+
 class Histogram:
 
     settings = {
@@ -130,3 +168,4 @@ class Histogram:
 
         # create plot
         return nemoa.common.plot.histogram(data, **self.settings)
+

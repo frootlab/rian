@@ -144,7 +144,9 @@ class System:
         if key == 'links': return self._get_links(*args, **kwargs)
         if key == 'layer': return self._get_layer(*args, **kwargs)
         if key == 'layers': return self._get_layers(*args, **kwargs)
-        if key == 'eval': return self._calc(*args, **kwargs)
+
+
+        if key == 'eval': return self.calc(*args, **kwargs)
 
         # export configuration and parameters
         if key == 'copy': return self._get_copy(*args, **kwargs)
@@ -545,13 +547,13 @@ class System:
 
     def _set_name(self, system_name):
         """Set name of system."""
-        if not isinstance(system_name, str): return False
+        if not isinstance(system_name, basestring): return False
         self._config['name'] = system_name
         return True
 
     def _set_branch(self, system_branch):
         """Set branch of system."""
-        if not isinstance(system_branch, str): return False
+        if not isinstance(system_branch, basestring): return False
         self._config['branch'] = system_branch
         return True
 
@@ -563,13 +565,13 @@ class System:
 
     def _set_about(self, system_about):
         """Get description of system."""
-        if not isinstance(system_about, str): return False
+        if not isinstance(system_about, basestring): return False
         self._config['about'] = system_about
         return True
 
     def _set_author(self, system_author):
         """Set author of system."""
-        if not isinstance(system_author, str): return False
+        if not isinstance(system_author, basestring): return False
         self._config['author'] = system_author
         return True
 
@@ -904,19 +906,17 @@ class System:
         return nemoa.log('warning',
             "unsupported system evaluation '%s'" % (args[0]))
 
-    def _calc_system_error(self, *args, **kwargs):
+    def _calc_error(self, *args, **kwargs):
         """Mean data reconstruction error of output units."""
         return numpy.mean(self._calc_units_error(*args, **kwargs))
 
-    def _calc_system_accuracy(self, *args, **kwargs):
+    def _calc_accuracy(self, *args, **kwargs):
         """Mean data reconstruction accuracy of output units."""
-        return numpy.mean(
-            self._calc_units_accuracy(*args, **kwargs))
+        return numpy.mean(self._calc_units_accuracy(*args, **kwargs))
 
-    def _calc_system_precision(self, *args, **kwargs):
+    def _calc_precision(self, *args, **kwargs):
         """Mean data reconstruction precision of output units."""
-        return numpy.mean(
-            self._calc_units_precision(*args, **kwargs))
+        return numpy.mean(self._calc_units_precision(*args, **kwargs))
 
     def _calc_units_mean(self, data, mapping = None, block = None):
         """Mean values of reconstructed target units.
@@ -948,8 +948,7 @@ class System:
 
         return model_out.mean(axis = 0)
 
-    def _calc_units_variance(self, data, mapping = None,
-        block = None, **kwargs):
+    def _calc_units_variance(self, data, mapping = None, block = None):
         """Return variance of reconstructed unit values.
 
         Args:
@@ -976,7 +975,7 @@ class System:
         return model_out.var(axis = 0)
 
     def _calc_units_correlation(self, data, mapping = None,
-        block = None, **kwargs):
+        block = None):
         """Correlation of reconstructed unit values.
 
         Args:
@@ -1010,8 +1009,7 @@ class System:
 
         return True
 
-    def _calc_units_expect(self, data, mapping = None,
-        block = None):
+    def _calc_units_expect(self, data, mapping = None, block = None):
         """Expectation values of target units.
 
         Args:
@@ -1142,8 +1140,7 @@ class System:
                     data, self._units[mapping[id]].params)
             return data
 
-    def _calc_units_residuals(self, data, mapping = None,
-        block = None):
+    def _calc_units_residuals(self, data, mapping = None, block = None):
         """Reconstruction residuals of target units.
 
         Args:
@@ -1245,7 +1242,7 @@ class System:
                 to target unit layer (last argument of tuple)
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
-            norm: used norm to calculate precision
+            norm: used norm to calculate deviation for precision
                 see _get_data_deviation for a list of provided norms
 
         """

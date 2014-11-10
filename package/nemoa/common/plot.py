@@ -52,10 +52,14 @@ def heatmap(array, **kwargs):
 
     # create labels for axis
     max_font_size = 12.
-    y_labels = [nemoa.common.str_format_unit_label(
-        label.split(':')[1]) for label in kwargs['units'][0]]
-    x_labels = [nemoa.common.str_format_unit_label(
-        label.split(':')[1]) for label in kwargs['units'][1]]
+    y_labels = []
+    for label in kwargs['units'][0]:
+        if ':' in label: label = label.split(':', 1)[1]
+        y_labels.append(nemoa.common.str_format_unit_label(label))
+    x_labels = []
+    for label in kwargs['units'][1]:
+        if ':' in label: label = label.split(':', 1)[1]
+        x_labels.append(nemoa.common.str_format_unit_label(label))
     fontsize = min(max_font_size, \
         400. / float(max(len(x_labels), len(y_labels))))
     matplotlib.pyplot.xticks(

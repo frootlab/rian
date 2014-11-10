@@ -408,19 +408,19 @@ class ANN(nemoa.system.classes.base.System):
                 #'error': {
                     #'name': 'average reconstruction error',
                     #'about': 'mean error of reconstructed values',
-                    #'method': '_calc_system_error',
+                    #'method': '_calc_error',
                     #'args': 'all', 'format': '%.3f',
                     #'optimum': 'min'},
                 #'accuracy': {
                     #'name': 'average accuracy',
                     #'about': 'mean accuracy of reconstructed values',
-                    #'method': '_calc_system_accuracy',
+                    #'method': '_calc_accuracy',
                     #'args': 'all', 'format': '%.3f',
                     #'optimum': 'max'},
                 #'precision': {
                     #'name': 'average precision',
                     #'about': 'mean precision of reconstructed values',
-                    #'method': '_calc_system_precision',
+                    #'method': '_calc_precision',
                     #'args': 'all', 'format': '%.3f',
                     #'optimum': 'max'} } }
 
@@ -435,19 +435,19 @@ class ANN(nemoa.system.classes.base.System):
         'error': {
             'name': 'average reconstruction error',
             'about': 'mean error of reconstructed values',
-            'method': '_calc_system_error',
+            'method': '_calc_error',
             'args': 'all', 'format': '%.3f',
             'optimum': 'min'},
         'accuracy': {
             'name': 'average accuracy',
             'about': 'mean accuracy of reconstructed values',
-            'method': '_calc_system_accuracy',
+            'method': '_calc_accuracy',
             'args': 'all', 'format': '%.3f',
             'optimum': 'max'},
         'precision': {
             'name': 'average precision',
             'about': 'mean precision of reconstructed values',
-            'method': '_calc_system_precision',
+            'method': '_calc_precision',
             'args': 'all', 'format': '%.3f',
             'optimum': 'max'}
         }

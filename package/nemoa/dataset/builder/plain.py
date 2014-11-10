@@ -34,6 +34,7 @@ class Rules:
         'normalize': 'gauss',
         'rowlabel': 'r%i',
         'samples': 100,
+        'abin': 0.0,
         'sdev': 1.0 }
 
     def __init__(self, **kwargs):
@@ -69,10 +70,19 @@ class Rules:
             for i in range(rowsize)]
         data['label'] = rowlabels
         for column in columns:
-            gauss = numpy.random.normal(0, self.settings['sdev'],
-                size = rowsize)
-            bernoulli = numpy.random.randint(2,
-                size = rowsize) - 0.5
+
+            if self.settings['sdev'] > 0.:
+                gauss = numpy.random.normal(0, self.settings['sdev'],
+                    size = rowsize)
+            else:
+                gauss = 0.
+
+            if self.settings['abin'] > 0.:
+                bernoulli = self.settings['abin'] * 2.0 \
+                    * numpy.random.randint(2, size = rowsize) - 0.5
+            else:
+                bernoulli = 0.
+
             data[column] = gauss + bernoulli
 
         # manipulate array data
@@ -92,4 +102,4 @@ class Rules:
             data[column] = (data[column] - data[column].mean()) \
                 / data[column].std()
 
-        return { 'config': config, 'source': { name: data } }
+        return { 'config': config, 'tables': { name: data } }

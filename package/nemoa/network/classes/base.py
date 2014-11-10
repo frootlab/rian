@@ -437,11 +437,10 @@ class Network:
         class_name = self.__class__.__name__
         return module_name + '.' + class_name
 
-    def _get_algorithms(self):
-        """Get algorithms provided by network."""
-        import inspect
-        return dict(inspect.getmembers(
-            networkx.algorithms, inspect.isfunction))
+    def _get_algorithms(self, values = 'about'):
+        """Get evaluation algorithms provided by network."""
+        return nemoa.common.module.getfunctions(
+            networkx.algorithms, prefix = '', values = values)
 
     def _get_node(self, node):
         """Return network information of single node."""
@@ -694,13 +693,13 @@ class Network:
 
     def _set_name(self, network_name):
         """Set name of network."""
-        if not isinstance(network_name, str): return False
+        if not isinstance(network_name, basestring): return False
         self._config['name'] = network_name
         return True
 
     def _set_branch(self, network_branch):
         """Set branch of network."""
-        if not isinstance(network_branch, str): return False
+        if not isinstance(network_branch, basestring): return False
         self._config['branch'] = network_branch
         return True
 
@@ -712,13 +711,13 @@ class Network:
 
     def _set_about(self, network_about):
         """Get description of network."""
-        if not isinstance(network_about, str): return False
+        if not isinstance(network_about, basestring): return False
         self._config['about'] = network_about
         return True
 
     def _set_author(self, network_author):
         """Set author of network."""
-        if not isinstance(network_author, str): return False
+        if not isinstance(network_author, basestring): return False
         self._config['author'] = network_author
         return True
 
@@ -802,9 +801,9 @@ class Network:
         return True
 
     def calc(self, key = None, *args, **kwargs):
-        """get evaluation of network."""
+        """Get evaluation of network."""
 
-        algorithms = self._get_algorithms()
+        algorithms = self._get_algorithms(values = 'reference')
         if not key in algorithms.keys():
             return nemoa.log('error', """could not evaluate network:
                 unknown networkx algorithm name '%s'.""" % (key))

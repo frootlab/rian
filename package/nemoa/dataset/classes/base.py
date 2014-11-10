@@ -84,84 +84,6 @@ class Dataset:
 
         self.__dict__[key] = val
 
-    def _is_binary(self):
-        """Test if dataset contains only binary data.
-
-        Returns:
-            Boolean value which is True if dataset contains only
-            binary values.
-
-        """
-
-        data = self._get_data()
-        binary = ((data == data.astype(bool)).sum() == data.size)
-
-        if not binary: return nemoa.log('error',
-            'The dataset does not contain binary data!')
-
-        return True
-
-    def _eval_normalization(self, distribution = 'gauss',
-        *args, **kwargs):
-        """Test dataset for normalization.
-
-        Args:
-            algorithm: name of distribution to test for normalization
-                'gauss': normalization of gauss distribution
-
-        """
-
-        nemoa.log("""test dataset for normalization assuming
-            distribution '%s'""" % (distribution))
-
-        if distribution.lower() == 'gauss':
-            return self._eval_normalization_gauss(*args, **kwargs)
-
-        return False
-
-    def _eval_normalization_gauss(self, size = 100000,
-        max_diff_mean = 0.05, max_diff_sdev = 0.05):
-        """Test if dataset contains gauss normalized data.
-
-        Args:
-            size (int, optional): number of samples used to calculate
-                mean of absolute values and standard deviation
-            max_diff_mean (float, optional): allowed maximum difference
-                to zero for mean value
-            max_diff_sdev (float, optional): allowed maximum difference
-                to one for standard deviation
-
-        Returns:
-            Boolean value which is True if the following conditions are
-            satisfied:
-            (1) The mean value over a given number of random samples
-                has a distance to zero which is lower than max_diff_mean
-            (2) The standard deviation over a given number of random
-                samples has a distance to one zero which is lower than
-                max_diff_sdev
-
-        """
-
-        data = self._get_data(size) # get numpy array with data
-
-        # test mean value
-        mean = data.mean()
-        diff_mean = numpy.abs(0. - mean)
-        if diff_mean > max_diff_mean:
-            return nemoa.log('error',
-                """dataset does not contain gauss normalized data:
-                mean value is %.3f!""" % (mean))
-
-        # test standard deviation
-        sdev = data.std()
-        diff_sdev = numpy.abs(1. - sdev)
-        if diff_sdev > max_diff_sdev:
-            return nemoa.log('error',
-                """dataset does not contain gauss normalized data:
-                standard deviation is %.3f!""" % (sdev))
-
-        return True
-
     def configure(self, network):
         """Configure dataset columns to a given network.
 
@@ -483,7 +405,7 @@ class Dataset:
         # get data for calculation of mean value and standard deviation
         # for single table datasets take all data from
         # for multi table datasets take a big bunch of stratified data
-        if len(tables) == 1: data = self._get_tables(source = tables[0])
+        if len(tables) == 1: data = self._get_table(table = tables[0])
         else: data = self._get_data(size = size, output = 'recarray')
 
         # calculate mean value and standard deviation for each column
@@ -518,7 +440,7 @@ class Dataset:
         # get data for calculation of mean value and standard deviation
         # for single table datasets take all data from
         # for multi table datasets take a big bunch of stratified data
-        if len(tables) == 1: data = self._get_tables(source = tables[0])
+        if len(tables) == 1: data = self._get_table(table = tables[0])
         else: data = self._get_data(size = size, output = 'recarray')
 
         # calculate q-quantile for each column
@@ -681,8 +603,9 @@ class Dataset:
         if key == 'email': return self._get_email()
         if key == 'license': return self._get_license()
         if key == 'type': return self._get_type()
+        if key == 'algorithms': return self._get_algorithms()
 
-        # get parameters and data
+        # get dataset parameters
         if key == 'columns': return self._get_columns(*args, **kwargs)
         if key == 'colgroups': return self._get_colgroups()
         if key == 'colfilter': return self._get_colfilter(*args, **kwargs)
@@ -691,14 +614,16 @@ class Dataset:
         if key == 'rowgroups': return self._get_rowgroups(*args, **kwargs)
         if key == 'rowfilter': return self._get_rowfilter(*args, **kwargs)
         if key == 'rowfilters': return self._get_rowfilters()
-        if key == 'data': return self._get_data(*args, **kwargs)
-        if key == 'value': return self._get_value(*args, **kwargs)
-        if key == 'eval': return self._calc(*args, **kwargs)
 
-        # export configuration and data
+        # get data from dataset
+        if key == 'value': return self._get_value(*args, **kwargs)
+        if key == 'table': return self._get_table(*args, **kwargs)
+        if key == 'data': return self._get_data(*args, **kwargs)
+
+        # export dataset configuration and dataset tables
         if key == 'copy': return self._get_copy(*args, **kwargs)
         if key == 'config': return self._get_config(*args, **kwargs)
-        if key == 'source': return self._get_tables(*args, **kwargs)
+        if key == 'tables': return self._get_table(*args, **kwargs)
 
         return nemoa.log('warning', "unknown key '%s'" % (key))
 
@@ -753,6 +678,11 @@ class Dataset:
         module_name = self.__module__.split('.')[-1]
         class_name = self.__class__.__name__
         return module_name + '.' + class_name
+
+    def _get_algorithms(self, values = 'about'):
+        """Get evaluation algorithms provided by dataset."""
+        return nemoa.common.module.getmethods(self,
+            prefix = '_calc_', values = values)
 
     def _get_columns(self, filter = '*'):
         """Get external columns.
@@ -846,9 +776,9 @@ class Dataset:
 
     def _get_rows(self):
         row_names = []
-        for source in self._tables.keys():
-            labels = self._tables[source]['label'].tolist()
-            row_names += ['%s:%s' % (source, name) for name in labels]
+        for table in self._tables.keys():
+            labels = self._tables[table]['label'].tolist()
+            row_names += ['%s:%s' % (table, name) for name in labels]
         return row_names
 
     def _get_rowgroups(self):
@@ -868,14 +798,15 @@ class Dataset:
         """Return a given number of stratified samples.
 
         Args:
-            size: Size of data (Number of samples)
+            size (int, optional): size of data (number of samples)
                 default: value 0 returns all samples unstratified
-            rows: string describing row filter
-                default: value '*' selects all rows
-            cols: string describing column filter
-                default: value '*' selects all columns
-            noise: 2-tuple describing noise model and strength
-                first entry of tuple: type of noise / noise model
+            rows (str, optional): name of row filter used to select rows
+                default: '*' selects all rows
+            cols (str, optional): name of column filter used to
+                select columns.
+                default: '*' selects all columns
+            noise (2-tuple, optional): noise model and noise strength
+                first entry of tuple (string): name of noise model
                     'none': no noise
                     'mask': Masking Noise
                         A fraction of every sample is forced to zero
@@ -884,20 +815,19 @@ class Dataset:
                     'salt': Salt-and-pepper noise
                         A fraction of every sample is forced to min or
                         max with equal possibility
-                    default: Value None equals to 'no'
-                second entry of tuple: noise factor
-                    float in interval [0, 1] describing the strengt
-                    of the noise. The influence of the parameter
-                    depends on the noise type
-                    default: Value 0.5
-            output (string or tuple of strings, optional):
+                    default: 'none'
+                second entry of tuple (float): noise strength
+                    float in interval [0, 1] describing the noise
+                    strengt factor, depending on the used noise model.
+                    default: 0.5
+            output (str or tuple of str, optional):
                 data return format:
                 'recarray': numpy record array containing data, column
                     names and row names in column 'label'
                 'array': numpy ndarray containing data
                 'cols': list of column names
                 'rows': list of row names
-                default value is 'array'
+                default: 'array'
 
         """
 
@@ -908,12 +838,12 @@ class Dataset:
         # stratify and filter data
         src_stack = ()
         for table in self._tables.iterkeys():
-            # TODO: fix size: size + 1 -> size
+            # Todo: fix size: size + 1 -> size
             if size > 0:
-                src_data = self._get_tables(source = table,
+                src_data = self._get_table(table = table,
                     rows = rows, size = size + 1, labels = True)
             else:
-                src_data = self._get_tables(source = table,
+                src_data = self._get_table(table = table,
                     rows = rows, labels = True)
             if src_data == False or src_data.size == 0: continue
             src_stack += (src_data, )
@@ -1072,37 +1002,7 @@ class Dataset:
         else: return nemoa.log('error', """could not corrupt data:
             unkown noise model '%s'.""" % (type))
 
-    def _get_value(self, row = None, col = None):
-        """get single value from dataset."""
-        return float(self._get_data(cols = [col], rows = [row]))
-
-    def _get_copy(self, key = None, *args, **kwargs):
-        """get dataset copy as dictionary."""
-
-        if key == None: return {
-            'config': self._get_config(),
-            'source': self._get_tables() }
-
-        if key == 'config': return self._get_config(*args, **kwargs)
-        if key == 'source': return self._get_tables(*args, **kwargs)
-
-        return nemoa.log('error', """could not get dataset copy:
-            unknown key '%s'.""" % (key))
-
-    def _get_config(self, key = None, *args, **kwargs):
-        """Get configuration or configuration value."""
-
-        if key == None: return copy.deepcopy(self._config)
-
-        if isinstance(key, str) and key in self._config.keys():
-            if isinstance(self._config[key], dict):
-                return self._config[key].copy()
-            return self._config[key]
-
-        return nemoa.log('error', """could not get configuration:
-            unknown key '%s'.""" % (key))
-
-    def _get_tables(self, source = None, cols = '*', rows = '*',
+    def _get_table(self, table = None, cols = '*', rows = '*',
         size = 0, labels = False):
         """Get data from tables.
 
@@ -1120,19 +1020,18 @@ class Dataset:
                 contains a column 'label' which contains row labels.
 
         Returns:
-            Dictionary with tables data OR numpy recarray with data
-            from a single table.
+            Numpy recarray with data from a single dataset table.
 
         """
 
-        if source == None: return copy.deepcopy(self._tables)
+        if table == None: return copy.deepcopy(self._tables)
 
-        # check source
-        if not isinstance(source, str) \
-            or not source in self._tables.keys() \
-            or not isinstance(self._tables[source], numpy.ndarray):
+        # check table name
+        if not isinstance(table, str) \
+            or not table in self._tables.keys() \
+            or not isinstance(self._tables[table], numpy.ndarray):
             return nemoa.log('error', """could not retrieve table:
-                invalid table name: '%s'.""" % (source))
+                invalid table name: '%s'.""" % (table))
 
         # get column names from column filter
         columns = self._get_columns(cols)
@@ -1146,36 +1045,77 @@ class Dataset:
                     data: invalid row filter: '%s'!""" % (rows))
             rowfilter = self._config['rowfilter'][rows]
         elif isinstance(rows, list):
-            # TODO filter list to valid row names
+            # Todo: filter list to valid row names
             rowfilter = rows
 
-        src_array_colsel = self._tables[source][colnames]
+        table_colsel = self._tables[table][colnames]
 
         # row selection
         if '*:*' in rowfilter or source + ':*' in rowfilter:
-            src_array = src_array_colsel
+            data = table_colsel
         else:
             rowfilter_filtered = [
                 row.split(':')[1] for row in rowfilter
                 if row.split(':')[0] in [source, '*']]
             rowsel = numpy.asarray([
                 rowid for rowid, row in enumerate(
-                self._tables[source]['label'])
+                self._tables[table]['label'])
                 if row in rowfilter_filtered])
-            src_array = numpy.take(src_array_colsel, rowsel)
+            data = numpy.take(table_colsel, rowsel)
 
         # stratify and return data as numpy record array
-        if size == 0 or size == None: return src_array
-        src_frac = self._config['table'][source]['fraction']
-        rowsel = numpy.random.randint(src_array.size,
-            size = round(src_frac * size))
+        if size == 0 or size == None: return data
+        fraction = self._config['table'][table]['fraction']
+        rowsel = numpy.random.randint(data.size,
+            size = round(fraction * size))
 
-        return numpy.take(src_array, rowsel)
+        return numpy.take(data, rowsel)
+
+    def _get_value(self, row = None, col = None):
+        """Get single value from dataset."""
+        return float(self._get_data(cols = [col], rows = [row]))
+
+    def _get_copy(self, key = None, *args, **kwargs):
+        """Get dataset copy as dictionary."""
+
+        if key == None: return {
+            'config': self._get_config(),
+            'tables': self._get_tables() }
+
+        if key == 'config': return self._get_config(*args, **kwargs)
+        if key == 'tables': return self._get_tables(*args, **kwargs)
+
+        return nemoa.log('error', """could not get dataset copy:
+            unknown key '%s'.""" % (key))
+
+    def _get_config(self, key = None, *args, **kwargs):
+        """Get configuration or configuration value."""
+
+        if key == None: return copy.deepcopy(self._config)
+
+        if isinstance(key, str) and key in self._config.keys():
+            if isinstance(self._config[key], dict):
+                return self._config[key].copy()
+            return self._config[key]
+
+        return nemoa.log('error', """could not get configuration:
+            unknown key '%s'.""" % (key))
+
+    def _get_tables(self, key = None):
+        """Get dataset tables."""
+
+        if key == None: return copy.deepcopy(self._tables)
+
+        if isinstance(key, str) and key in self._tables.keys():
+            return self._tables[key]
+
+        return nemoa.log('error', """could not get table:
+            unknown tables name '%s'.""" % (key))
 
     def set(self, key = None, *args, **kwargs):
         """Set meta information, parameters and data of dataset."""
 
-        # set meta information
+        # modify meta information
         if key == 'name': return self._set_name(*args, **kwargs)
         if key == 'branch': return self._set_branch(*args, **kwargs)
         if key == 'version': return self._set_version(*args, **kwargs)
@@ -1184,26 +1124,26 @@ class Dataset:
         if key == 'email': return self._set_email(*args, **kwargs)
         if key == 'license': return self._set_license(*args, **kwargs)
 
-        # modify dataset parameters and data
+        # modify dataset parameters
         if key == 'columns': return self._set_columns(*args, **kwargs)
         if key == 'colfilter': return self._set_colfilter(**kwargs)
 
-        # import configuration and source data
+        # import dataset configuration and dataset tables
         if key == 'copy': return self._set_copy(*args, **kwargs)
         if key == 'config': return self._set_config(*args, **kwargs)
-        if key == 'source': return self._set_tables(*args, **kwargs)
+        if key == 'tables': return self._set_tables(*args, **kwargs)
 
         return nemoa.log('warning', "unknown key '%s'" % (key))
 
     def _set_name(self, dataset_name):
         """Set name of dataset."""
-        if not isinstance(dataset_name, str): return False
+        if not isinstance(dataset_name, basestring): return False
         self._config['name'] = dataset_name
         return True
 
     def _set_branch(self, dataset_branch):
         """Set branch of dataset."""
-        if not isinstance(dataset_branch, str): return False
+        if not isinstance(dataset_branch, basestring): return False
         self._config['branch'] = dataset_branch
         return True
 
@@ -1214,14 +1154,14 @@ class Dataset:
         return True
 
     def _set_about(self, dataset_about):
-        """Get description of dataset."""
-        if not isinstance(dataset_about, str): return False
+        """Set description of dataset."""
+        if not isinstance(dataset_about, basestring): return False
         self._config['about'] = dataset_about
         return True
 
     def _set_author(self, dataset_author):
         """Set author of dataset."""
-        if not isinstance(dataset_author, str): return False
+        if not isinstance(dataset_author, basestring): return False
         self._config['author'] = dataset_author
         return True
 
@@ -1249,7 +1189,7 @@ class Dataset:
         different column names, for example used by autoencoders.
 
         Args:
-            columns (liats): list of external column names
+            columns (list of 2-tuples): list of external column names
             mapping (dict): mapping from external columns to internal
                 colnames.
 
@@ -1314,12 +1254,12 @@ class Dataset:
 
         return True
 
-    def _set_copy(self, config = None, source = None):
-        """Set configuration and source data of dataset.
+    def _set_copy(self, config = None, tables = None):
+        """Set dataset configuration and dataset tables.
 
         Args:
             config (dict or None, optional): dataset configuration
-            source (dict or None, optional): dataset source data
+            tables (dict or None, optional): dataset tables data
 
         Returns:
             Bool which is True if and only if no error occured.
@@ -1329,7 +1269,7 @@ class Dataset:
         retval = True
 
         if config: retval &= self._set_config(config)
-        if source: retval &= self._set_tables(source)
+        if tables: retval &= self._set_tables(tables)
 
         return retval
 
@@ -1350,31 +1290,113 @@ class Dataset:
         # update configuration dictionary
         if not config: return True
         nemoa.common.dict_merge(copy.deepcopy(config), self._config)
-        # TODO: reconfigure!?
+        # Todo: reconfigure!?
         self._tables = {}
 
         return True
 
-    def _set_tables(self, source = None):
-        """Set source data of dataset.
+    def _set_tables(self, tables = None):
+        """Set tables of dataset.
 
         Args:
-            source (dict or None, optional): dataset source data
+            tables (dict or None, optional): dataset tables
 
         Returns:
             Bool which is True if and only if no error occured.
 
         """
 
-        if not source: return True
-        nemoa.common.dict_merge(copy.deepcopy(source), self._tables)
+        if not tables: return True
+        nemoa.common.dict_merge(copy.deepcopy(tables), self._tables)
 
         return True
 
     def calc(self, key = None, *args, **kwargs):
-        """Get evaluation of dataset."""
+        """Calculate evaluation of dataset."""
 
-        # Todo: create dataset evaluation functions!
+        algorithms = self._get_algorithms(values = 'reference')
+        if not key in algorithms.keys():
+            return nemoa.log('error', """could not evaluate dataset:
+                unknown algorithm name '%s'.""" % (key))
+
+        return algorithms[key](*args, **kwargs)
+
+    def _calc_correlation(self, cols = '*'):
+        """Calculate correlation coefficients between columns."""
+
+        # get numpy array with test data
+        data = self._get_data(cols = cols)
+
+        return numpy.corrcoef(data.T)
+
+    def _calc_test_binary(self, cols = '*'):
+        """Test if dataset contains only binary values.
+
+        Args:
+            cols (str, optional): column filter used to select columns
+                default: '*' selects all columns
+
+        Returns:
+            Boolean value which is True if dataset contains only
+            binary values.
+
+        """
+
+        # get numpy array with test data
+        data = self._get_data(cols = cols)
+
+        isbinary = ((data == data.astype(bool)).sum() == data.size)
+        if not isbinary: return nemoa.log('warning',
+            'dataset does not contain binary data.')
+
+        return True
+
+    def _calc_test_gauss(self, cols = '*', mu = 0., sigma = 1.,
+        delta = .05):
+        """Test if dataset contains gauss normalized data per columns.
+
+        Args:
+            cols (str, optional): name of column filter used to
+                select columns.
+                default: '*' selects all columns
+            mu (float, optional): parameter of the gauss distribution
+                which is compared to the mean values of the data.
+                default: 0.0
+            sigma (float, optional): parameter of the gauss distribution
+                which is compared to the standard deviation of the data.
+                default 1.0
+            delta (float, optional): allowed maximum difference
+                to distribution parameters per column.
+                default: 0.05
+
+        Returns:
+            Boolean value which is True if the following conditions are
+            satisfied:
+            (1) The mean value of every selected column over a given
+                number of random selected samples has a distance to mu
+                which is lower than delta.
+            (2) The standard deviation of every selected column over a
+                given number of random selected samples has a distance
+                to sigma which is lower than delta.
+
+        """
+
+        # get numpy array with test data
+        data = self._get_data(cols = cols)
+
+        # test mean values of columns
+        mean = data.mean(axis = 0)
+        if numpy.any(numpy.abs(mu - mean) > delta):
+            return nemoa.log('warning',
+                """dataset does not contain gauss normalized data:
+                mean value is %.3f!""" % (mean))
+
+        # test standard deviations of columns
+        sdev = data.std(axis = 0)
+        if numpy.any(numpy.abs(sigma - sdev) > delta):
+            return nemoa.log('warning',
+                """dataset does not contain gauss normalized data:
+                standard deviation is %.3f!""" % (sdev))
 
         return True
 

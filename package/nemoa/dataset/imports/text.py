@@ -35,8 +35,7 @@ def load(path, **kwargs):
 class Csv:
     """Import dataset from Comma Separated Values."""
 
-    settings = {
-        'delimiter': ',' }
+    settings = { 'delimiter': ',' }
 
     def __init__(self, **kwargs):
         for key, val in kwargs.items():
@@ -44,11 +43,11 @@ class Csv:
                 self.settings[key] = val
 
     def load(self, path):
-        """Get dataset configuration and source data.
+        """Get dataset configuration and dataset tables.
 
         Args:
             path (string): csv file containing dataset configuration and
-                source data.
+                dataset table.
 
         """
 
@@ -100,10 +99,9 @@ class Csv:
         # get data table from csv data
         tables = { name: data }
 
-        return {'config': config, 'source': tables}
+        return { 'config': config, 'tables': tables }
 
 class Tsv(Csv):
     """Export dataset to Tab Separated Values."""
 
-    settings = {
-        'delimiter': '\t' }
+    settings = { 'delimiter': '\t' }

@@ -15,6 +15,10 @@ class Model:
         about (str): Short description of the content of the resource.
             Hint: Read- & writeable wrapping attribute to get('about')
                 and set('about', str).
+        accuracy (numpy.float64): Average reconstruction accuracy of
+            output units, defined by:
+                accuracy := 1 - mean(residuals) / mean(data)
+            Hint: Readonly wrapping attribute to get('accuracy')
         author (str): A person, an organization, or a service that is
             responsible for the creation of the content of the resource.
             Hint: Read- & writeable wrapping attribute to get('author')
@@ -27,6 +31,10 @@ class Model:
             service that is responsible for the content of the resource.
             Hint: Read- & writeable wrapping attribute to get('email')
                 and set('email', str).
+        error (numpy.float64): Average reconstruction error of
+            output units, defined by:
+                error := mean(residuals)
+            Hint: Readonly wrapping attribute to get('error')
         fullname (str): String concatenation of name, branch and
             version. Branch and version are only conatenated if they
             exist.
@@ -39,6 +47,10 @@ class Model:
             Hint: Read- & writeable wrapping attribute to get('name')
                 and set('name', str).
         network (network instance):
+        precision (numpy.float64): Average reconstruction precision
+            of output units defined by:
+                precision := 1 - dev(residuals) / dev(data).
+            Hint: Readonly wrapping attribute to get('precision')
         system (system instance):
         type (str): String concatenation of module name and class name
             of the instance.
@@ -54,7 +66,8 @@ class Model:
     system   = None
     _config  = None
     _default = {}
-    _attr    = {'fullname': 'r', 'type': 'r', 'name': 'rw',
+    _attr    = {'error': 'r', 'accuracy': 'r', 'precision': 'r',
+                'fullname': 'r', 'type': 'r', 'name': 'rw',
                 'branch': 'rw', 'version': 'rw', 'about': 'rw',
                 'author': 'rw', 'email': 'rw', 'license': 'rw'}
 
@@ -179,7 +192,11 @@ class Model:
         if key == 'network': return self.network.get(*args, **kwargs)
         if key == 'dataset': return self.dataset.get(*args, **kwargs)
         if key == 'system': return self.system.get(*args, **kwargs)
-        if key == 'eval': return self._calc(*args, **kwargs)
+
+        # calculate standard model evaluations
+        if key == 'error': return self.calc('system', 'error')
+        if key == 'accuracy': return self.calc('system', 'accuracy')
+        if key == 'precision': return self.calc('system', 'precision')
 
         # export configuration and parameters
         if key == 'copy': return self._get_copy(*args, **kwargs)
@@ -310,13 +327,13 @@ class Model:
 
     def _set_name(self, name):
         """Set name of model."""
-        if not isinstance(name, str): return False
+        if not isinstance(name, basestring): return False
         self._config['name'] = name
         return True
 
     def _set_branch(self, branch):
         """Set branch of model."""
-        if not isinstance(branch, str): return False
+        if not isinstance(branch, basestring): return False
         self._config['branch'] = branch
         return True
 
@@ -328,13 +345,13 @@ class Model:
 
     def _set_about(self, about):
         """Get description of model."""
-        if not isinstance(about, str): return False
+        if not isinstance(about, basestring): return False
         self._config['about'] = about
         return True
 
     def _set_author(self, author):
         """Set author of model."""
-        if not isinstance(author, str): return False
+        if not isinstance(author, basestring): return False
         self._config['author'] = author
         return True
 

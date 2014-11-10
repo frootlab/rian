@@ -82,7 +82,7 @@ class RBM(nemoa.system.classes.ann.ANN):
         if not nemoa.type.is_dataset(dataset):
             return nemoa.log('error', """could not test dataset:
                 invalid dataset instance given.""")
-        if not dataset._is_binary():
+        if not dataset._calc_test_binary():
             return nemoa.log('error', """dataset '%s' is not valid:
                 RBMs expect binary data.""" % (dataset.name))
         return True
@@ -605,7 +605,7 @@ class GRBM(RBM):
         if not nemoa.type.is_dataset(dataset):
             return nemoa.log('error', """could not test dataset:
                 invalid dataset instance given.""")
-        if not dataset._eval_normalization('gauss'):
+        if not dataset.calc('test_gauss'):
             return nemoa.log('error', """dataset '%s' is not valid:
                 GRBMs expect standard normal distributed data."""
                 % (dataset.name))

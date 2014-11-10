@@ -30,4 +30,4 @@ class Npz:
         copy = numpy.load(path)
         return {
             'config': copy['config'].item(),
-            'source': copy['source'].item() }
+            'tables': copy['tables'].item() }

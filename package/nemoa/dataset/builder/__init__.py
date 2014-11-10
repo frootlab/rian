@@ -40,8 +40,10 @@ def build(type, *args, **kwargs):
     if not dataset: return {}
 
     # update source
-    path = nemoa.workspace.path('datasets') \
-        + dataset['config']['name'] + '.npz'
-    dataset['config']['source'] = { 'file': path, 'filetype': 'npz' }
-    dataset['config']['path'] = path
+    basepath = nemoa.workspace.path('datasets')
+    if basepath:
+        path = basepath + dataset['config']['name'] + '.npz'
+        dataset['config']['source'] = {
+            'file': path, 'filetype': 'npz' }
+        dataset['config']['path'] = path
     return dataset

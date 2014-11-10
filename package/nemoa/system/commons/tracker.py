@@ -154,8 +154,8 @@ class Tracker:
 
         # calculate objective function value
         func = cfg['tracker_obj_function']
-        value = self._system.get('eval',
-            data = self._state['data'], func = func)
+        value = self._system.calc(data = self._state['data'],
+            func = func)
         progr = float(self._state['epoch']) / float(cfg['updates'])
 
         # add objective function value to array
@@ -215,8 +215,8 @@ class Tracker:
         if not self._state['continue']:
             func = cfg['tracker_eval_function']
             prop = self._system.about(func)
-            value = self._system.get('eval',
-                data = self._state['data'], func = func)
+            value = self._system.calc(data = self._state['data'],
+                func = func)
             out = 'found optimum with: %s = ' + prop['format']
             self._state['eval_enable'] = False
             return nemoa.log('note', out % (prop['name'], value))
@@ -225,8 +225,8 @@ class Tracker:
             > cfg['tracker_eval_time_interval']):
             func = cfg['tracker_eval_function']
             prop = self._system.about(func)
-            value = self._system.get('eval',
-                data = self._state['data'], func = func)
+            value = self._system.calc(data = self._state['data'],
+                func = func)
             progr = float(self._state['epoch']) \
                 / float(cfg['updates']) * 100.
 
