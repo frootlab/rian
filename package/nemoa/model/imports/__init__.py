@@ -36,7 +36,7 @@ def load(path, filetype = None, workspace = None, **kwargs):
                 nemoa.log('error', """could not import model:
                     workspace '%s' does not exist""" % (workspace))
                 return  {}
-        config = nemoa.workspace.find('model', path)
+        config = nemoa.workspace.get('model', path)
         if not workspace == current_workspace and current_workspace:
             nemoa.workspace.load(current_workspace)
         if not isinstance(config, dict):
@@ -48,7 +48,7 @@ def load(path, filetype = None, workspace = None, **kwargs):
             return {'config': config}
         path = config['path']
     if not os.path.isfile(path):
-        config = nemoa.workspace.find('model', path)
+        config = nemoa.workspace.get('model', path)
         if not isinstance(config, dict):
             current_workspace = nemoa.workspace.name()
             if current_workspace:

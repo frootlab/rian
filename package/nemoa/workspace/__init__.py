@@ -43,22 +43,3 @@ def load(*args, **kwargs):
     if not 'config' in _shared: configure()
     return _shared['config'].load(*args, **kwargs)
 
-def find(type = None, config = None, merge = ['params'], **kwargs):
-    """Return object configuration as dictionary."""
-    if not 'config' in _shared: configure()
-
-    if config == None: return {}
-    if isinstance(config, dict): return config.copy()
-    if not isinstance(config, basestring) \
-        or not isinstance(type, basestring):
-        print 'hi'
-        return False
-
-    config_name, params = nemoa.common.str_split_params(config)
-    if 'params' in kwargs and isinstance(kwargs['params'], dict):
-        params = nemoa.common.dict_merge(kwargs['params'], params)
-
-    # get config
-    return _shared['config'].get(type = type, name = config_name,
-        merge = merge, params = params)
-

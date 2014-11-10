@@ -38,21 +38,14 @@ class Workspace:
         else: names = [item[2] for item in list]
         return names
 
-    def execute(self, name = None, **kwargs):
+    def execute(self, name = None, *args, **kwargs):
         """execute nemoa script."""
-        script_name = name \
-            if '.' in name else '%s.%s' % (self._workspace, name)
-        config = nemoa.workspace.find(
-            type = 'script', config = script_name, **kwargs)
 
-        if not config and not '.' in name:
-            script_name = 'base.' + name
-            config = nemoa.workspace.find(
-                type = 'script', config = script_name, **kwargs)
+        config = nemoa.workspace.get('script', name)
         if not config: return False
         if not os.path.isfile(config['path']):
             return nemoa.log('error', """could not run script '%s':
-            file '%s' not found!""" % (script_name, config['path']))
+                file '%s' not found.""" % (scriptname, config['path']))
 
         script = imp.load_source('script', config['path'])
         return script.main(self, **config['params'])
@@ -60,6 +53,7 @@ class Workspace:
 class Config:
     """nemoa workspace module internal configuration object."""
 
+    _config  = None
     _default = {
         'baseconf': 'nemoa.ini', # base configuration file
         'basepath': { # paths for shared ressources and workspaces
@@ -82,7 +76,6 @@ class Config:
             'system': {},
             'model': {},
             'script': {} }}
-    _config = None
 
     def __init__(self, shared = True):
         """ """
@@ -178,8 +171,7 @@ class Config:
         calculated as hash from type and name"""
         return nemoa.common.str_to_hash(str(type) + chr(10) + str(name))
 
-    def get(self, type = None, name = None, merge = ['params'],
-        params = None):
+    def get(self, type = None, name = None):
         """Return configuration as dictionary for given object."""
 
         if not type in self._config['store'].keys():
@@ -197,29 +189,11 @@ class Config:
             if fullname in self._config['store'][type].keys():
                 found = True
                 break
-
         if not found:
             return nemoa.log('warning', """could not get configuration:
-                name of object is not known.""")
+                %s with name '%s' is not known.""" % (type, name))
 
-        cfg = self._config['store'][type][fullname].copy()
-
-        if not cfg: return None
-
-        # optionaly merge sub dictionaries
-        # defined by a list of keys and a dictionary
-        if params == None \
-            or not isinstance(params, dict) \
-            or not isinstance(merge, list): return cfg
-        sub_merge = cfg
-        for key in merge:
-            if not isinstance(sub_merge, dict): return cfg
-            if not key in sub_merge.keys(): sub_merge[key] = {}
-            sub_merge = sub_merge[key]
-        for key in params.keys():
-            sub_merge[key] = params[key]
-
-        return cfg
+        return self._config['store'][type][fullname].copy()
 
     def _get_workspace(self):
         return self._config['workspace']

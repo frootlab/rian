@@ -60,7 +60,7 @@ def load(path, filetype = None, workspace = None, **kwargs):
             return {'config': config}
         path = config['path']
     if not os.path.isfile(path):
-        config = nemoa.workspace.find('network', path)
+        config = nemoa.workspace.get('network', path)
         if not isinstance(config, dict):
             current_workspace = nemoa.workspace.name()
             if current_workspace:
