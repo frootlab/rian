@@ -285,7 +285,7 @@ def csv_get_data(path, delimiter = None, labels = None,
             break
 
     try:
-        # TODO: use genfromtxt to allow missing values
+        # Todo: use genfromtxt to allow missing values
         data = numpy.loadtxt(path, skiprows = skiprows,
             delimiter = delimiter, usecols = usecols, dtype = dtype)
     except:

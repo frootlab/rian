@@ -395,7 +395,7 @@ class RBM(nemoa.system.classes.ann.ANN):
         p = config['con_klpt_expect']
 
         # get current expectation value
-        # TODO: test if hexpect is better
+        # Todo: test if hexpect is better
         q = numpy.mean(hdata, axis = 0)
 
         # get update rate

@@ -68,7 +68,7 @@ def save(model, path = None, filetype = None, plot = None, **kwargs):
             if 'title' in plot.settings \
                 and isinstance(plot.settings['title'], str):
                 title = plot.settings['title']
-            else: title = '' # TODO: self._get_title(model)
+            else: title = '' # Todo: self._get_title(model)
             matplotlib.pyplot.title(title, fontsize = 11.)
 
         # output
@@ -79,7 +79,7 @@ def save(model, path = None, filetype = None, plot = None, **kwargs):
 
     return path
 
-def show(model, plot = None, **kwargs):
+def show(model, plot = None, *args, **kwargs):
 
     # get class for plotting from attribute 'plot'
     if plot == None: plot = 'graph'
@@ -93,7 +93,7 @@ def show(model, plot = None, **kwargs):
             plot type '%s' is not supported.""" % (model.name, plot))
 
     # create plot of model
-    plot = getattr(module, class_name)(**kwargs)
+    plot = getattr(module, class_name)(*args, **kwargs)
 
     # assert units
     mapping = model.system.mapping()
@@ -126,7 +126,7 @@ def show(model, plot = None, **kwargs):
             if 'title' in plot.settings \
                 and isinstance(plot.settings['title'], str):
                 title = plot.settings['title']
-            else: title = '' # TODO: self._get_title(model)
+            else: title = '' # Todo: self._get_title(model)
             matplotlib.pyplot.title(title, fontsize = 11.)
 
         # output
@@ -161,9 +161,7 @@ class Graph:
     }
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items():
-            if key in self.settings.keys():
-                self.settings[key] = val
+        for key, val in kwargs.items(): self.settings[key] = val
 
     def create(self, model):
 
@@ -244,7 +242,7 @@ class Graph:
         # find (disconected) complexes in graph
         graphs = networkx.connected_component_subgraphs(
             graph.to_undirected())
-        if len(graphs) > 1: nemoa.log(
+        if len(graphs) > 1: nemoa.log('note',
             '%i complexes found' % (len(graphs)))
 
         # update node attributes
@@ -253,7 +251,7 @@ class Graph:
                 node = model.network.get('node', n)
                 label = nemoa.common.str_format_unit_label(
                     node['params']['label'])
-                # TODO: node_type not in {i, o}
+                # Todo: node_type not in {i, o}
                 node_type = node['params']['layer']
                 graph.node[n]['label'] = label
                 graph.node[n]['type'] = node_type
@@ -280,29 +278,24 @@ class Heatmap:
         'statistics': 10000,
         'transform': '',
         'layer': None,
-        'interpolation': 'nearest' }
+        'interpolation': 'nearest',
+        'format': 'array' }
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items():
-            if key in self.settings.keys():
-                self.settings[key] = val
+        for key, val in kwargs.items(): self.settings[key] = val
 
     def create(self, model):
 
         # calculate relation
-        R = model.calc('system', 'relations',
-            self.settings['relation'],
-            preprocessing = self.settings['preprocessing'],
-            measure = self.settings['measure'],
-            statistics = self.settings['statistics'],
-            transform = self.settings['transform'],
-            format = 'array')
+        relation = model.calc('system', 'relations',
+            self.settings['relation'], **self.settings)
 
-        if not isinstance(R, numpy.ndarray): return nemoa.log('error',
-            'could not plot heatmap: relation matrix is not valid!')
+        if not isinstance(relation, numpy.ndarray):
+            return nemoa.log('error', """could not plot heatmap:
+                relation matrix is not valid.""")
 
         # create plot
-        return nemoa.common.plot.heatmap(R, **self.settings)
+        return nemoa.common.plot.heatmap(relation, **self.settings)
 
 class Histogram:
 
@@ -328,9 +321,7 @@ class Histogram:
         'linewidth': 0.5 }
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items():
-            if key in self.settings.keys():
-                self.settings[key] = val
+        for key, val in kwargs.items(): self.settings[key] = val
 
     def create(self, model):
 

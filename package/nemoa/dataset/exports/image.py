@@ -44,7 +44,7 @@ def show(dataset, plot = None, **kwargs):
             if 'title' in plot.settings \
                 and isinstance(plot.settings['title'], str):
                 title = plot.settings['title']
-            else: title = '' # TODO: self._get_title(model)
+            else: title = '' # Todo: self._get_title(model)
             matplotlib.pyplot.title(title, fontsize = 11.)
 
         # output
@@ -91,7 +91,7 @@ def save(dataset, path = None, filetype = None, plot = None, **kwargs):
             if 'title' in plot.settings \
                 and isinstance(plot.settings['title'], str):
                 title = plot.settings['title']
-            else: title = '' # TODO: self._get_title(model)
+            else: title = '' # Todo: self._get_title(model)
             matplotlib.pyplot.title(title, fontsize = 11.)
 
         # output

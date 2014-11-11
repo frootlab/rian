@@ -567,7 +567,7 @@ class ANN(nemoa.system.classes.base.System):
                 the induced deviation of reconstructed values of a given
                 output unit, when manipulating the values of a given
                 input unit. """,
-            'directed': True, 'signed': True, 'normal': True,
+            'directed': True, 'signed': False, 'normal': False,
             'method': '_calc_relation_induction', 'show': 'heatmap',
             'args': 'all', 'return': 'scalar', 'format': '%.3f'},
         }

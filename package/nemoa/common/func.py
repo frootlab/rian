@@ -8,6 +8,7 @@ import numpy
 
 def intensify(x, factor = 10., bound = 1.):
     """Return intensify function."""
+    factor = max(factor, 0.000001)
     return numpy.abs(x) * (sigmoid(factor * (x + 0.5 * bound))
         + sigmoid(factor * (x - 0.5 * bound)) - 1.) \
         / numpy.abs(sigmoid(1.5 * factor * bound)

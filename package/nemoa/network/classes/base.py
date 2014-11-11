@@ -176,24 +176,6 @@ class Network:
         # add nodes to graph
         order = 0
         for layerid, layer in enumerate(layers):
-            #is_visible = self._config['layers'][layer]['visible']
-            #if not 'ty'
-            #node_type = self._config['layers'][layer]['type']
-
-            #if nodelist['layer'] in layers:
-                #if layer == nodelist['layer']:
-                    #if add_nodes: nemoa.log("""adding %i nodes
-                        #to layer '%s'""" % (add_nodes, layer))
-                    #if del_nodes: nemoa.log("""deleting %i nodes
-                        #from layer '%s'""" % (del_nodes, layer))
-            #else:
-                #if is_visible:
-                    #nemoa.log("adding visible layer '%s' (%s nodes)"
-                        #% (layer, len(nodes[layer])))
-                #else:
-                    #nemoa.log("adding hidden layer '%s' (%s nodes)"
-                        #% (layer, len(nodes[layer])))
-
             for layersubid, node in enumerate(nodes[layer]):
                 if 'labelencapsulate' in self._config \
                     and self._config['labelencapsulate'] == False:

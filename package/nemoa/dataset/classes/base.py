@@ -109,8 +109,8 @@ class Dataset:
             nodes = network.get('nodes', layer = layer)
 
             # get node labels from layer
-            # TODO: network.get('nodelabel', node = node)
-            # TODO: network.get('nodelabels', layer = layer)
+            # Todo: network.get('nodelabel', node = node)
+            # Todo: network.get('nodelabels', layer = layer)
             node_labels = []
             for node in nodes:
                 node_labels.append(
@@ -231,7 +231,7 @@ class Dataset:
                 found = True
 
                 # add column (use network label and layer)
-                # TODO: network.get('nodelabel', node = node)
+                # Todo: network.get('nodelabel', node = node)
                 node = network.get('nodes', layer = layer)[id]
                 label = network.get('node', node)['params']['label']
                 colid = layer + ':' + label

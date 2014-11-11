@@ -244,3 +244,64 @@
 11/10/2014 18:48:27 ERROR File "./package/nemoa/network/__init__.py", line 26, in new->   return nemoa.network.classes.new(*args, **kwargs)
 11/10/2014 18:48:27 ERROR File "./package/nemoa/network/classes/__init__.py", line 17, in new->   configuration is not valid.""")
 11/10/2014 18:48:27 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/10/2014 19:45:43 ERROR nemoa.model.exports.image.show -> could not plot model 'sinus-ann(8)-dbn': plot type 'induction' is not supported.
+11/10/2014 19:45:43 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/10/2014 19:45:43 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/10/2014 19:45:43 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/10/2014 19:45:43 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/10/2014 19:45:43 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/10/2014 19:45:43 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/10/2014 19:45:43 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/10/2014 19:45:43 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/10/2014 19:45:43 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/10/2014 19:45:43 ERROR File "<ipython-input-4-370ebd8148c6>", line 1, in <module>->   model.show('induction')
+11/10/2014 19:45:43 ERROR File "./package/nemoa/model/classes/base.py", line 540, in show->   return nemoa.model.show(self, *args, **kwargs)
+11/10/2014 19:45:43 ERROR File "./package/nemoa/model/__init__.py", line 38, in show->   return nemoa.model.exports.show(*args, **kwargs)
+11/10/2014 19:45:43 ERROR File "./package/nemoa/model/exports/__init__.py", line 99, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+11/10/2014 19:45:43 ERROR File "./package/nemoa/model/exports/image.py", line 93, in show->   plot type '%s' is not supported.""" % (model.name, plot))
+11/10/2014 19:45:43 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/10/2014 21:40:06 ERROR nemoa.model.exports.image.show -> could not plot model 'sinus-ann(4,2)-dbn': plot type 'induction' is not supported.
+11/10/2014 21:40:06 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/10/2014 21:40:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/10/2014 21:40:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/10/2014 21:40:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/10/2014 21:40:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/10/2014 21:40:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/10/2014 21:40:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/10/2014 21:40:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/10/2014 21:40:06 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/10/2014 21:40:06 ERROR File "<ipython-input-24-3a1efb1c6b37>", line 1, in <module>->   model.show('induction', relation = 'correlation')
+11/10/2014 21:40:06 ERROR File "./package/nemoa/model/classes/base.py", line 540, in show->   return nemoa.model.show(self, *args, **kwargs)
+11/10/2014 21:40:06 ERROR File "./package/nemoa/model/__init__.py", line 38, in show->   return nemoa.model.exports.show(*args, **kwargs)
+11/10/2014 21:40:06 ERROR File "./package/nemoa/model/exports/__init__.py", line 99, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+11/10/2014 21:40:06 ERROR File "./package/nemoa/model/exports/image.py", line 93, in show->   plot type '%s' is not supported.""" % (model.name, plot))
+11/10/2014 21:40:06 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/10/2014 21:53:00 WARNING nemoa.network.classes.base.get -> unknown key 'approximate_current_flow_betweenness_centrality'
+11/10/2014 22:03:11 ERROR nemoa.network.classes.base.calc -> could not evaluate network: unknown networkx algorithm name 'bfs'.
+11/10/2014 22:03:11 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/10/2014 22:03:11 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/10/2014 22:03:11 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/10/2014 22:03:11 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/10/2014 22:03:11 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/10/2014 22:03:11 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/10/2014 22:03:11 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/10/2014 22:03:11 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/10/2014 22:03:11 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/10/2014 22:03:11 ERROR File "<ipython-input-44-554480eccfa9>", line 1, in <module>->   model.network.calc('bfs')
+11/10/2014 22:03:11 ERROR File "./package/nemoa/network/classes/base.py", line 809, in calc->   unknown networkx algorithm name '%s'.""" % (key))
+11/10/2014 22:03:11 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/10/2014 22:35:19 ERROR nemoa.dataset.classes.base._get_data_format -> could not retrieve data: unknown columns!
+11/10/2014 22:35:19 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/10/2014 22:35:19 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/10/2014 22:35:19 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/10/2014 22:35:19 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/10/2014 22:35:19 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/10/2014 22:35:19 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/10/2014 22:35:19 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/10/2014 22:35:19 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2770, in run_ast_nodes->   if self.run_code(code):
+11/10/2014 22:35:19 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/10/2014 22:35:19 ERROR File "<ipython-input-7-9258b2f354e3>", line 1, in <module>->   model.dataset.get('data', cols = ['i:i1', 'o.o1'])
+11/10/2014 22:35:19 ERROR File "./package/nemoa/dataset/classes/base.py", line 621, in get->   if key == 'data': return self._get_data(*args, **kwargs)
+11/10/2014 22:35:19 ERROR File "./package/nemoa/dataset/classes/base.py", line 868, in _get_data->   output = output)
+11/10/2014 22:35:19 ERROR File "./package/nemoa/dataset/classes/base.py", line 913, in _get_data_format->   unknown columns!""")
+11/10/2014 22:35:19 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():

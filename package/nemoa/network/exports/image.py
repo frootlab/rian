@@ -45,7 +45,7 @@ def show(network, plot = None, **kwargs):
             if 'title' in plot.settings \
                 and isinstance(plot.settings['title'], str):
                 title = plot.settings['title']
-            else: title = '' # TODO: self._get_title(model)
+            else: title = '' # Todo: self._get_title(model)
             matplotlib.pyplot.title(title, fontsize = 11.)
 
         # output
@@ -92,7 +92,7 @@ def save(network, path = None, filetype = None, plot = None, **kwargs):
             if 'title' in plot.settings \
                 and isinstance(plot.settings['title'], str):
                 title = plot.settings['title']
-            else: title = '' # TODO: self._get_title(model)
+            else: title = '' # Todo: self._get_title(model)
             matplotlib.pyplot.title(title, fontsize = 11.)
 
         # output
@@ -116,7 +116,7 @@ class Graph:
         'node_caption': 'accuracy',
         'node_sort': True,
         'edge_caption': None,
-        'edge_weight': 'normal',
+        'edge_weight': 'intensity',
         'edge_sign_normalize': True,
         'edge_contrast': 10.,
         'edge_threshold': 0.25,
@@ -156,18 +156,18 @@ class Graph:
         for (u, v) in graph.edges():
             edge = graph.edge[u][v]
 
-            weight_params = self.settings['edge_weight']
-            if  weight_params in edge['params']:
-                edge['weight'] = edge['params'][weight_params]
+            weightparam = self.settings['edge_weight']
+            if  weightparam in edge['params']:
+                edge['weight'] = edge['params'][weightparam]
             else:
                 edge['weight'] = 1.
 
-            # (optional) intensify weights
-            if self.settings['edge_contrast'] > 0.:
-                edge['weight'] = \
-                    nemoa.common.intensify(edge['weight'],
-                        factor = self.settings['edge_contrast'],
-                        bound = 1.) # TODO: set bound to mean value
+            ## (optional) intensify weights
+            #if self.settings['edge_contrast'] > 0.:
+                #edge['weight'] = \
+                    #nemoa.common.intensify(edge['weight'],
+                        #factor = self.settings['edge_contrast'],
+                        #bound = 1.) # Todo: set bound to mean value
 
             # (optional) threshold weights
             if self.settings['edge_threshold'] > 0.:

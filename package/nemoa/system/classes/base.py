@@ -386,7 +386,7 @@ class System:
         link_weight = link_params['W']
         link_adjacency = link_params['A']
 
-        # calculate normalized weight of link (normalized to link layer)
+        # calculate normalized weight of link (per link layer)
         if link_weight == 0.0:
             link_norm_weight = 0.0
         else:
@@ -395,12 +395,23 @@ class System:
                 numpy.abs(layer_adjacency * layer_weights))
             link_norm_weight = link_weight * adjacency_sum / weight_sum
 
+        # calculate intensified weight of link (per link layer)
+        if link_norm_weight == 0.0:
+            link_intensity = 0.0
+        else:
+            link_norm_max = numpy.amax(numpy.abs(layer_adjacency
+                * layer_weights)) * adjacency_sum / weight_sum
+            link_intensity = nemoa.common.func.intensify(
+                link_norm_weight, factor = 10.,
+                bound = 0.7 * link_norm_max)
+
         link_params['layer'] = (src_layer, tgt_layer)
         link_params['layer_sub_id'] = (src_id, tgt_id)
         link_params['adjacency'] = link_params['A']
         link_params['weight'] = link_params['W']
         link_params['sign'] = numpy.sign(link_params['W'])
         link_params['normal'] = link_norm_weight
+        link_params['intensity'] = link_intensity
 
         return link_params
 
@@ -1358,7 +1369,8 @@ class System:
         return R
 
     def _calc_relation_induction(self, data, mapping = None,
-        points = 10, amplify = 2., gauge = 0.05, **kwargs):
+        points = 10, amplify = 1., gauge = 0.25, contrast = 20.0,
+        **kwargs):
         """Induced deviation from source to target units.
 
         For each sample and for each source the induced deviation on
@@ -1377,6 +1389,7 @@ class System:
             points: number of points to extrapolate induction
             amplify: amplification of the modified source values
             gauge: cutoff for strongest induced deviations
+            contrast:
 
         Returns:
             Numpy array of shape (source, target) containing pairwise
@@ -1411,21 +1424,17 @@ class System:
             # calculate mean of standard deviations of outputs
             for o_id, o_unit in enumerate(output_units):
 
-                # calculate sign by correlating input and output
-                corr = numpy.zeros(data[0].shape[0])
-                for i in xrange(data[0].shape[0]):
-                    corr[i] = numpy.correlate(C[o_unit][i, :], i_curve)
-                sign = numpy.sign(corr.mean())
-
-                # calculate norm by mean over maximum 5% of data
+                # calculate norm by mean over part of data
                 bound = int((1. - gauge) * data[0].shape[0])
                 subset = numpy.sort(C[o_unit].std(axis = 1))[bound:]
                 norm = subset.mean() / data[1][:, o_id].std()
 
                 # calculate influence
-                R[i_id, o_id] = sign * norm
+                R[i_id, o_id] = norm
 
-        return R
+        # amplify norm
+        return nemoa.common.func.intensify(R, factor = contrast,
+            bound = numpy.amax(R))
 
     def save(self, *args, **kwargs):
         """Export system to file."""

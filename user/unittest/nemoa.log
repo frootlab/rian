@@ -14,3 +14,19 @@
 11/10/2014 14:21:13 ERROR File "./package/nemoa/dataset/exports/__init__.py", line 108, in show->   return nemoa.dataset.exports.image.show(dataset, *args, **kwargs)
 11/10/2014 14:21:13 ERROR File "./package/nemoa/dataset/exports/image.py", line 28, in show->   plot type '%s' is not supported.""" % (dataset.name, plot))
 11/10/2014 14:21:13 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/10/2014 20:12:57 WARNING nemoa.workspace.base.get -> could not get configuration: model with name 'sinus-ann(8)-dbn' is not known.
+11/10/2014 20:12:57 ERROR nemoa.model.imports.load -> could not import model: current workspace 'unittest' does not contain a model 'sinus-ann(8)-dbn'.
+11/10/2014 20:12:57 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/10/2014 20:12:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/10/2014 20:12:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/10/2014 20:12:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/10/2014 20:12:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/10/2014 20:12:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/10/2014 20:12:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/10/2014 20:12:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/10/2014 20:12:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/10/2014 20:12:57 ERROR File "<ipython-input-4-3046a13945e9>", line 1, in <module>->   model = nemoa.model.open('sinus-ann(8)-dbn')
+11/10/2014 20:12:57 ERROR File "./package/nemoa/model/__init__.py", line 30, in open->   return new(**load(*args, **kwargs))
+11/10/2014 20:12:57 ERROR File "./package/nemoa/model/__init__.py", line 22, in load->   return nemoa.model.imports.load(*args, **kwargs)
+11/10/2014 20:12:57 ERROR File "./package/nemoa/model/imports/__init__.py", line 57, in load->   '%s'.""" % (current_workspace, path))
+11/10/2014 20:12:57 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():

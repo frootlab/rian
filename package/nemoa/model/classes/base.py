@@ -167,7 +167,7 @@ class Model:
         # update network parameters from system parameters
         retval &= self.network.initialize(self.system)
 
-        ## TODO: find better solution for multistage optimization
+        ## Todo: find better solution for multistage optimization
         #if 'stage' in schedule and len(schedule['stage']) > 0:
             #for stage, params in enumerate(config['stage']):
                 #self.system.optimize(self.dataset, **params)
