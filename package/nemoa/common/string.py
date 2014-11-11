@@ -81,7 +81,11 @@ def str_to_dict(string, delim = ','):
 def str_format_unit_label(string):
     """Return TeX style unit String used for plots."""
     text = string.rstrip(''.join([str(x) for x in xrange(0, 10)]))
-    return '$%s_{%d}$' % (text, int(string.lstrip(text)))
+    try:
+        label = '$%s_{%d}$' % (text, int(string.lstrip(text)))
+    except:
+        label = '$%s$' % (text)
+    return label
 
 def str_doc_trim(string):
     if not string: return ''

@@ -40,8 +40,12 @@ def build(type, *args, **kwargs):
     if not network: return {}
 
     # update source
-    path = nemoa.workspace.path('networks') \
-        + network['config']['name'] + '.npz'
-    network['config']['source'] = { 'file': path, 'filetype': 'npz' }
-    network['config']['path'] = path
+    basepath = nemoa.workspace.path('networks')
+    if basepath:
+        path = basepath + network['config']['name'] + '.npz'
+        network['config']['source'] = {
+            'file': path,
+            'filetype': 'npz' }
+        network['config']['path'] = path
+
     return network
