@@ -6,17 +6,15 @@ __license__ = 'GPLv3'
 
 import nemoa
 import networkx
-import os
 
 def types():
     """Get supported layer network types for network building."""
 
     return {
         'autoencoder': 'Autoencoder',
-        #'dbn': 'Deep Beliefe Network',
         'factor': 'Factor Graph',
         'multilayer': 'Feedforward MultiLayer Network',
-        #'shallow': 'Shallow Network'
+        'shallow': 'Shallow Network'
     }
 
 def build(type = None, *args, **kwargs):
@@ -25,13 +23,12 @@ def build(type = None, *args, **kwargs):
     if type == 'factor': return Factor(*args, **kwargs).build()
     if type == 'multilayer': return MultiLayer(*args, **kwargs).build()
     if type == 'autoencoder': return AutoEncoder(*args, **kwargs).build()
-    #if type == 'dbn': return DBN(**kwargs).build()
-    #if type == 'shallow': return Shallow(**kwargs).build()
+    if type == 'shallow': return Shallow(*args, **kwargs).build()
 
     return False
 
 class AutoEncoder:
-    """Build autoencoder network from dataset and parameters."""
+    """Build autoencoder network from dataset."""
 
     settings = None
 
@@ -48,20 +45,6 @@ class AutoEncoder:
 
     def build(self):
         return MultiLayer(**self.settings).build()
-
-class Shallow:
-    """Build shallow network from parameters."""
-
-    settings = {
-        'dataset': None }
-
-    def __init__(self, **kwargs):
-        for key, val in kwargs.items():
-            if key in self.settings.keys():
-                self.settings[key] = val
-
-    def build(self):
-        return {}
 
 class MultiLayer:
     """Build multilayer network."""
@@ -206,3 +189,17 @@ class Factor:
                 'labelformat': network_labelfmt }}
 
         return network_dict
+
+class Shallow:
+    """Build shallow network."""
+
+    settings = None
+
+    def __init__(self, inputs = None, outputs = None, *args, **kwargs):
+        self.settings = kwargs.copy()
+        if inputs: self.settings['inputs'] = inputs
+        if outputs: self.settings['outputs'] = outputs
+        self.settings['shape'] = []
+
+    def build(self):
+        return MultiLayer(**self.settings).build()
