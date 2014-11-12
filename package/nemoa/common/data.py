@@ -6,6 +6,12 @@ __license__ = 'GPLv3'
 
 import nemoa
 import numpy
+import numpy.lib.recfunctions
+
+def data_insert(data, source, columns = None):
+    if not columns: columns = source.dtype.names
+    return numpy.lib.recfunctions.rec_append_fields(
+        data, columns, [source[col] for col in columns])
 
 def data_sum(data, norm = 'S', axis = 0):
     """Sum of data.

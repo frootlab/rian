@@ -1048,7 +1048,33 @@ class Dataset:
             # Todo: filter list to valid row names
             rowfilter = rows
 
-        table_colsel = self._tables[table][colnames]
+        # test for not unique column names and create dublicates
+        if len(set(colnames)) == len(colnames):
+            table_colsel = self._tables[table][colnames]
+        else:
+            if labels: datacols = colnames[1:]
+            else: datacols = colnames
+            redcols = sorted(set(datacols), key = datacols.index)
+            redrec = self._tables[table][redcols]
+            redfmt = [col[1] for col in redrec.dtype.descr]
+            select = [redcols.index(col) for col in datacols]
+            names = []
+            counter = dict(zip(redcols, [0] * len(redcols)))
+            for col in datacols:
+                counter[col] += 1
+                if counter[col] == 1: names.append(col)
+                else: names.append('%s.%i' % (col, counter[col]))
+            formats = [redfmt[cid] for cid in select]
+            dtype = numpy.dtype({'names': names, 'formats': formats})
+            array = redrec[redcols].view('<f8').reshape(
+                redrec.size, len(redcols))[:,select].copy().view(
+                type = numpy.recarray, dtype = dtype)
+
+            if labels:
+                table_colsel = nemoa.common.data_insert(array,
+                    self._tables[table], ['label'])
+            else:
+                table_colsel = array
 
         # row selection
         if '*:*' in rowfilter or source + ':*' in rowfilter:
