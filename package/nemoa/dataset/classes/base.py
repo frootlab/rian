@@ -920,16 +920,29 @@ class Dataset:
             return nemoa.log('error', """could not retrieve data:
                 invalid 'format' argument!""")
 
+        # get unique colnames
+        if len(set(colnames)) == len(colnames):
+            ucolnames = colnames
+        else:
+            redcols = sorted(set(colnames),
+                key = colnames.index)
+            counter = dict(zip(redcols, [0] * len(redcols)))
+            ucolnames = []
+            for col in colnames:
+                counter[col] += 1
+                if counter[col] == 1: ucolnames.append(col)
+                else: ucolnames.append('%s.%i' % (col, counter[col]))
+
         # format data
         rettuple = ()
         for fmt_str in fmt_tuple:
             if fmt_str == 'recarray':
-                rettuple += (data[['label'] + colnames], )
+                rettuple += (data[['label'] + ucolnames], )
             elif fmt_str == 'array':
-                rettuple += (data[colnames].view('<f8').reshape(
-                    data.size, len(colnames)), )
+                rettuple += (data[ucolnames].view('<f8').reshape(
+                    data.size, len(ucolnames)), )
             elif fmt_str == 'cols':
-                rettuple += (colnames, )
+                rettuple += (ucolnames, )
             elif fmt_str == 'rows':
                 rettuple += (data['label'].tolist(), )
             else:
