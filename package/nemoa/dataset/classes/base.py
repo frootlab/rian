@@ -547,8 +547,12 @@ class Dataset:
 
             # get data, mapping and transformation function
             data = self._tables[table]
-            data_array = data[colnames].view('<f8').reshape(
-                data.size, len(colnames))
+            data = self._get_table(table, cols = source_columns)
+            data_array = data.view('<f8').reshape(data.size,
+                len(source_columns))
+
+            #data_array = data[colnames].view('<f8').reshape(
+                #data.size, len(colnames))
 
             # transform data
             if func == 'expect':
@@ -703,6 +707,10 @@ class Dataset:
             if column filter is not known.
 
         """
+
+        if isinstance(filter, list):
+            # Todo: test for existing columns
+            return filter
 
         if filter == '*':
             columns = []
