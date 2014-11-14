@@ -33,3 +33,171 @@
 11/11/2014 15:57:00 ERROR File "./package/nemoa/model/__init__.py", line 22, in load->   return nemoa.model.imports.load(*args, **kwargs)
 11/11/2014 15:57:00 ERROR File "./package/nemoa/model/imports/__init__.py", line 57, in load->   '%s'.""" % (current_workspace, path))
 11/11/2014 15:57:00 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/14/2014 20:07:02 ERROR nemoa.dataset.classes.base.configure -> 24 of 24 network nodes could not be found in dataset table column names! (see logfile)
+11/14/2014 20:07:02 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/14/2014 20:07:02 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/14/2014 20:07:02 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/14/2014 20:07:02 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/14/2014 20:07:02 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/14/2014 20:07:02 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/14/2014 20:07:02 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/14/2014 20:07:02 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/14/2014 20:07:02 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/14/2014 20:07:02 ERROR File "<ipython-input-5-712b5f58f6f7>", line 1, in <module>->   model = nemoa.model.create('autoencoder', dataset = dataset)
+11/14/2014 20:07:02 ERROR File "./package/nemoa/model/__init__.py", line 22, in create->   return new(**build(*args, **kwargs))
+11/14/2014 20:07:02 ERROR File "./package/nemoa/model/__init__.py", line 14, in build->   return nemoa.model.builder.build(*args, **kwargs)
+11/14/2014 20:07:02 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/14/2014 20:07:02 ERROR File "./package/nemoa/model/builder/base.py", line 19, in build->   if type == 'autoencoder': return AutoEncoder(**kwargs).build()
+11/14/2014 20:07:02 ERROR File "./package/nemoa/model/builder/base.py", line 50, in build->   return Model(**self.settings).build()
+11/14/2014 20:07:02 ERROR File "./package/nemoa/model/builder/base.py", line 104, in build->   model.configure()
+11/14/2014 20:07:02 ERROR File "./package/nemoa/model/classes/base.py", line 116, in configure->   retval &= self.dataset.configure(self.network)
+11/14/2014 20:07:02 ERROR File "./package/nemoa/dataset/classes/base.py", line 200, in configure->   (see logfile)""" % (num_lost, num_all))
+11/14/2014 20:07:02 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/14/2014 20:07:02 INFO nemoa.dataset.classes.base.configure -> missing nodes (layer 'i'): i:i1, i:i2, i:i3, i:i4, i:o1, i:o2, o:i1, o:i2, o:i3, o:i4, o:o1, o:o2
+11/14/2014 20:07:02 INFO nemoa.dataset.classes.base.configure -> missing nodes (layer 'o'): i:i1, i:i2, i:i3, i:i4, i:o1, i:o2, o:i1, o:i2, o:i3, o:i4, o:o1, o:o2
+11/14/2014 20:07:02 ERROR nemoa.dataset.classes.base.configure -> no node from network layer 'i' could be found in dataset tables.
+11/14/2014 20:07:02 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/14/2014 20:07:02 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/14/2014 20:07:02 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/14/2014 20:07:02 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/14/2014 20:07:02 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/14/2014 20:07:02 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/14/2014 20:07:02 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/14/2014 20:07:02 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/14/2014 20:07:02 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/14/2014 20:07:02 ERROR File "<ipython-input-5-712b5f58f6f7>", line 1, in <module>->   model = nemoa.model.create('autoencoder', dataset = dataset)
+11/14/2014 20:07:02 ERROR File "./package/nemoa/model/__init__.py", line 22, in create->   return new(**build(*args, **kwargs))
+11/14/2014 20:07:02 ERROR File "./package/nemoa/model/__init__.py", line 14, in build->   return nemoa.model.builder.build(*args, **kwargs)
+11/14/2014 20:07:02 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/14/2014 20:07:02 ERROR File "./package/nemoa/model/builder/base.py", line 19, in build->   if type == 'autoencoder': return AutoEncoder(**kwargs).build()
+11/14/2014 20:07:02 ERROR File "./package/nemoa/model/builder/base.py", line 50, in build->   return Model(**self.settings).build()
+11/14/2014 20:07:02 ERROR File "./package/nemoa/model/builder/base.py", line 104, in build->   model.configure()
+11/14/2014 20:07:02 ERROR File "./package/nemoa/model/classes/base.py", line 116, in configure->   retval &= self.dataset.configure(self.network)
+11/14/2014 20:07:02 ERROR File "./package/nemoa/dataset/classes/base.py", line 243, in configure->   '%s' could be found in dataset tables.""" % (layer))
+11/14/2014 20:07:02 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/14/2014 20:07:20 ERROR nemoa.dataset.classes.base.configure -> 24 of 24 network nodes could not be found in dataset table column names! (see logfile)
+11/14/2014 20:07:20 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/14/2014 20:07:20 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/14/2014 20:07:20 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/14/2014 20:07:20 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/14/2014 20:07:20 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/14/2014 20:07:20 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/14/2014 20:07:20 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/14/2014 20:07:20 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/14/2014 20:07:20 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/14/2014 20:07:20 ERROR File "<ipython-input-6-712b5f58f6f7>", line 1, in <module>->   model = nemoa.model.create('autoencoder', dataset = dataset)
+11/14/2014 20:07:20 ERROR File "./package/nemoa/model/__init__.py", line 22, in create->   return new(**build(*args, **kwargs))
+11/14/2014 20:07:20 ERROR File "./package/nemoa/model/__init__.py", line 14, in build->   return nemoa.model.builder.build(*args, **kwargs)
+11/14/2014 20:07:20 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/14/2014 20:07:20 ERROR File "./package/nemoa/model/builder/base.py", line 19, in build->   if type == 'autoencoder': return AutoEncoder(**kwargs).build()
+11/14/2014 20:07:20 ERROR File "./package/nemoa/model/builder/base.py", line 50, in build->   return Model(**self.settings).build()
+11/14/2014 20:07:20 ERROR File "./package/nemoa/model/builder/base.py", line 104, in build->   model.configure()
+11/14/2014 20:07:20 ERROR File "./package/nemoa/model/classes/base.py", line 116, in configure->   retval &= self.dataset.configure(self.network)
+11/14/2014 20:07:20 ERROR File "./package/nemoa/dataset/classes/base.py", line 200, in configure->   (see logfile)""" % (num_lost, num_all))
+11/14/2014 20:07:20 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/14/2014 20:07:20 INFO nemoa.dataset.classes.base.configure -> missing nodes (layer 'i'): i:i1, i:i2, i:i3, i:i4, i:o1, i:o2, o:i1, o:i2, o:i3, o:i4, o:o1, o:o2
+11/14/2014 20:07:20 INFO nemoa.dataset.classes.base.configure -> missing nodes (layer 'o'): i:i1, i:i2, i:i3, i:i4, i:o1, i:o2, o:i1, o:i2, o:i3, o:i4, o:o1, o:o2
+11/14/2014 20:07:20 ERROR nemoa.dataset.classes.base.configure -> no node from network layer 'i' could be found in dataset tables.
+11/14/2014 20:07:20 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/14/2014 20:07:20 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/14/2014 20:07:20 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/14/2014 20:07:20 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/14/2014 20:07:20 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/14/2014 20:07:20 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/14/2014 20:07:20 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/14/2014 20:07:20 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/14/2014 20:07:20 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/14/2014 20:07:20 ERROR File "<ipython-input-6-712b5f58f6f7>", line 1, in <module>->   model = nemoa.model.create('autoencoder', dataset = dataset)
+11/14/2014 20:07:20 ERROR File "./package/nemoa/model/__init__.py", line 22, in create->   return new(**build(*args, **kwargs))
+11/14/2014 20:07:20 ERROR File "./package/nemoa/model/__init__.py", line 14, in build->   return nemoa.model.builder.build(*args, **kwargs)
+11/14/2014 20:07:20 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/14/2014 20:07:20 ERROR File "./package/nemoa/model/builder/base.py", line 19, in build->   if type == 'autoencoder': return AutoEncoder(**kwargs).build()
+11/14/2014 20:07:20 ERROR File "./package/nemoa/model/builder/base.py", line 50, in build->   return Model(**self.settings).build()
+11/14/2014 20:07:20 ERROR File "./package/nemoa/model/builder/base.py", line 104, in build->   model.configure()
+11/14/2014 20:07:20 ERROR File "./package/nemoa/model/classes/base.py", line 116, in configure->   retval &= self.dataset.configure(self.network)
+11/14/2014 20:07:20 ERROR File "./package/nemoa/dataset/classes/base.py", line 243, in configure->   '%s' could be found in dataset tables.""" % (layer))
+11/14/2014 20:07:20 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/14/2014 20:07:26 ERROR nemoa.dataset.classes.base.configure -> 24 of 24 network nodes could not be found in dataset table column names! (see logfile)
+11/14/2014 20:07:26 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/14/2014 20:07:26 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/14/2014 20:07:26 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/14/2014 20:07:26 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/14/2014 20:07:26 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/14/2014 20:07:26 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/14/2014 20:07:26 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/14/2014 20:07:26 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/14/2014 20:07:26 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/14/2014 20:07:26 ERROR File "<ipython-input-7-712b5f58f6f7>", line 1, in <module>->   model = nemoa.model.create('autoencoder', dataset = dataset)
+11/14/2014 20:07:26 ERROR File "./package/nemoa/model/__init__.py", line 22, in create->   return new(**build(*args, **kwargs))
+11/14/2014 20:07:26 ERROR File "./package/nemoa/model/__init__.py", line 14, in build->   return nemoa.model.builder.build(*args, **kwargs)
+11/14/2014 20:07:26 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/14/2014 20:07:26 ERROR File "./package/nemoa/model/builder/base.py", line 19, in build->   if type == 'autoencoder': return AutoEncoder(**kwargs).build()
+11/14/2014 20:07:26 ERROR File "./package/nemoa/model/builder/base.py", line 50, in build->   return Model(**self.settings).build()
+11/14/2014 20:07:26 ERROR File "./package/nemoa/model/builder/base.py", line 104, in build->   model.configure()
+11/14/2014 20:07:26 ERROR File "./package/nemoa/model/classes/base.py", line 116, in configure->   retval &= self.dataset.configure(self.network)
+11/14/2014 20:07:26 ERROR File "./package/nemoa/dataset/classes/base.py", line 200, in configure->   (see logfile)""" % (num_lost, num_all))
+11/14/2014 20:07:26 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/14/2014 20:07:26 INFO nemoa.dataset.classes.base.configure -> missing nodes (layer 'i'): i:i1, i:i2, i:i3, i:i4, i:o1, i:o2, o:i1, o:i2, o:i3, o:i4, o:o1, o:o2
+11/14/2014 20:07:26 INFO nemoa.dataset.classes.base.configure -> missing nodes (layer 'o'): i:i1, i:i2, i:i3, i:i4, i:o1, i:o2, o:i1, o:i2, o:i3, o:i4, o:o1, o:o2
+11/14/2014 20:07:26 ERROR nemoa.dataset.classes.base.configure -> no node from network layer 'i' could be found in dataset tables.
+11/14/2014 20:07:26 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/14/2014 20:07:26 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/14/2014 20:07:26 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/14/2014 20:07:26 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/14/2014 20:07:26 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/14/2014 20:07:26 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/14/2014 20:07:26 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/14/2014 20:07:26 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/14/2014 20:07:26 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/14/2014 20:07:26 ERROR File "<ipython-input-7-712b5f58f6f7>", line 1, in <module>->   model = nemoa.model.create('autoencoder', dataset = dataset)
+11/14/2014 20:07:26 ERROR File "./package/nemoa/model/__init__.py", line 22, in create->   return new(**build(*args, **kwargs))
+11/14/2014 20:07:26 ERROR File "./package/nemoa/model/__init__.py", line 14, in build->   return nemoa.model.builder.build(*args, **kwargs)
+11/14/2014 20:07:26 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/14/2014 20:07:26 ERROR File "./package/nemoa/model/builder/base.py", line 19, in build->   if type == 'autoencoder': return AutoEncoder(**kwargs).build()
+11/14/2014 20:07:26 ERROR File "./package/nemoa/model/builder/base.py", line 50, in build->   return Model(**self.settings).build()
+11/14/2014 20:07:26 ERROR File "./package/nemoa/model/builder/base.py", line 104, in build->   model.configure()
+11/14/2014 20:07:26 ERROR File "./package/nemoa/model/classes/base.py", line 116, in configure->   retval &= self.dataset.configure(self.network)
+11/14/2014 20:07:26 ERROR File "./package/nemoa/dataset/classes/base.py", line 243, in configure->   '%s' could be found in dataset tables.""" % (layer))
+11/14/2014 20:07:26 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/14/2014 20:07:48 ERROR nemoa.dataset.classes.base.configure -> 24 of 24 network nodes could not be found in dataset table column names! (see logfile)
+11/14/2014 20:07:48 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/14/2014 20:07:48 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/14/2014 20:07:48 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/14/2014 20:07:48 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/14/2014 20:07:48 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/14/2014 20:07:48 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/14/2014 20:07:48 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/14/2014 20:07:48 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/14/2014 20:07:48 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/14/2014 20:07:48 ERROR File "<ipython-input-11-712b5f58f6f7>", line 1, in <module>->   model = nemoa.model.create('autoencoder', dataset = dataset)
+11/14/2014 20:07:48 ERROR File "./package/nemoa/model/__init__.py", line 22, in create->   return new(**build(*args, **kwargs))
+11/14/2014 20:07:48 ERROR File "./package/nemoa/model/__init__.py", line 14, in build->   return nemoa.model.builder.build(*args, **kwargs)
+11/14/2014 20:07:48 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/14/2014 20:07:48 ERROR File "./package/nemoa/model/builder/base.py", line 19, in build->   if type == 'autoencoder': return AutoEncoder(**kwargs).build()
+11/14/2014 20:07:48 ERROR File "./package/nemoa/model/builder/base.py", line 50, in build->   return Model(**self.settings).build()
+11/14/2014 20:07:48 ERROR File "./package/nemoa/model/builder/base.py", line 104, in build->   model.configure()
+11/14/2014 20:07:48 ERROR File "./package/nemoa/model/classes/base.py", line 116, in configure->   retval &= self.dataset.configure(self.network)
+11/14/2014 20:07:48 ERROR File "./package/nemoa/dataset/classes/base.py", line 200, in configure->   (see logfile)""" % (num_lost, num_all))
+11/14/2014 20:07:48 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():
+11/14/2014 20:07:48 INFO nemoa.dataset.classes.base.configure -> missing nodes (layer 'i'): i:i1, i:i2, i:i3, i:i4, i:o1, i:o2, o:i1, o:i2, o:i3, o:i4, o:o1, o:o2
+11/14/2014 20:07:48 INFO nemoa.dataset.classes.base.configure -> missing nodes (layer 'o'): i:i1, i:i2, i:i3, i:i4, i:o1, i:o2, o:i1, o:i2, o:i3, o:i4, o:o1, o:o2
+11/14/2014 20:07:48 ERROR nemoa.dataset.classes.base.configure -> no node from network layer 'i' could be found in dataset tables.
+11/14/2014 20:07:48 ERROR File "/usr/bin/ipython", line 6, in <module>->   start_ipython()
+11/14/2014 20:07:48 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 118, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+11/14/2014 20:07:48 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 546, in launch_instance->   app.start()
+11/14/2014 20:07:48 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 362, in start->   self.shell.mainloop()
+11/14/2014 20:07:48 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 436, in mainloop->   self.interact(display_banner=display_banner)
+11/14/2014 20:07:48 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 555, in interact->   self.run_cell(source_raw, store_history=True)
+11/14/2014 20:07:48 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2660, in run_cell->   interactivity=interactivity, compiler=compiler)
+11/14/2014 20:07:48 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2764, in run_ast_nodes->   if self.run_code(code):
+11/14/2014 20:07:48 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2820, in run_code->   exec code_obj in self.user_global_ns, self.user_ns
+11/14/2014 20:07:48 ERROR File "<ipython-input-11-712b5f58f6f7>", line 1, in <module>->   model = nemoa.model.create('autoencoder', dataset = dataset)
+11/14/2014 20:07:48 ERROR File "./package/nemoa/model/__init__.py", line 22, in create->   return new(**build(*args, **kwargs))
+11/14/2014 20:07:48 ERROR File "./package/nemoa/model/__init__.py", line 14, in build->   return nemoa.model.builder.build(*args, **kwargs)
+11/14/2014 20:07:48 ERROR File "./package/nemoa/model/builder/__init__.py", line 38, in build->   model = nemoa.model.builder.base.build(type, *args, **kwargs)
+11/14/2014 20:07:48 ERROR File "./package/nemoa/model/builder/base.py", line 19, in build->   if type == 'autoencoder': return AutoEncoder(**kwargs).build()
+11/14/2014 20:07:48 ERROR File "./package/nemoa/model/builder/base.py", line 50, in build->   return Model(**self.settings).build()
+11/14/2014 20:07:48 ERROR File "./package/nemoa/model/builder/base.py", line 104, in build->   model.configure()
+11/14/2014 20:07:48 ERROR File "./package/nemoa/model/classes/base.py", line 116, in configure->   retval &= self.dataset.configure(self.network)
+11/14/2014 20:07:48 ERROR File "./package/nemoa/dataset/classes/base.py", line 243, in configure->   '%s' could be found in dataset tables.""" % (layer))
+11/14/2014 20:07:48 ERROR File "./package/nemoa/common/log.py", line 164, in log->   for line in traceback.format_stack():

@@ -10,28 +10,32 @@ import nemoa.dataset.commons
 import nemoa.dataset.exports
 import nemoa.dataset.imports
 
+def build(*args, **kwargs):
+    """Create dataset dictionary from building script."""
+    return nemoa.dataset.builder.build(*args, **kwargs)
+
 def copy(dataset, *args, **kwargs):
-    """Create copy of dataset."""
+    """Create copy of dataset instance."""
     return new(**dataset.get('copy'))
 
 def create(*args, **kwargs):
-    """Create new dataset from building script."""
-    return new(**nemoa.dataset.builder.build(*args, **kwargs))
+    """Create dataset instance from building script."""
+    return new(**build(*args, **kwargs))
 
 def load(*args, **kwargs):
-    """Import dataset configuration and parameters from file."""
+    """Import dataset dictionary from file."""
     return nemoa.dataset.imports.load(*args, **kwargs)
 
 def new(*args, **kwargs):
-    """Create new dataset instance."""
+    """Create dataset instance from dataset dictionary."""
     return nemoa.dataset.classes.new(*args, **kwargs)
 
 def open(*args, **kwargs):
-    """Import dataset from file and create new dataset instance."""
+    """Import dataset instance from file."""
     return new(**load(*args, **kwargs))
 
 def save(*args, **kwargs):
-    """Export dataset configuration and parameters to file."""
+    """Export dataset instance to file."""
     return nemoa.dataset.exports.save(*args, **kwargs)
 
 def show(*args, **kwargs):

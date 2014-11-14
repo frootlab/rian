@@ -9,28 +9,32 @@ import nemoa.model.classes
 import nemoa.model.exports
 import nemoa.model.imports
 
+def build(*args, **kwargs):
+    """Create model dictionary from building script."""
+    return nemoa.model.builder.build(*args, **kwargs)
+
 def copy(model, *args, **kwargs):
-    """Create copy of model."""
+    """Create copy of model instance."""
     return new(**model.get('copy'))
 
 def create(*args, **kwargs):
-    """Create new model from building script."""
-    return new(**nemoa.model.builder.build(*args, **kwargs))
+    """Create model instance from building script."""
+    return new(**build(*args, **kwargs))
 
 def load(*args, **kwargs):
-    """Import model configuration and parameters from file."""
+    """Import model dictionary from file."""
     return nemoa.model.imports.load(*args, **kwargs)
 
 def new(*args, **kwargs):
-    """Create new model instance."""
+    """Create model instance from model dictionary."""
     return nemoa.model.classes.new(*args, **kwargs)
 
 def open(*args, **kwargs):
-    """Import model from file and create new model instance."""
+    """Import model instance from file."""
     return new(**load(*args, **kwargs))
 
 def save(*args, **kwargs):
-    """Export model configuration and parameters to file."""
+    """Export model instance to file."""
     return nemoa.model.exports.save(*args, **kwargs)
 
 def show(*args, **kwargs):

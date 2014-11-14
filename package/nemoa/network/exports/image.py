@@ -118,7 +118,6 @@ class Graph:
         'edge_caption': None,
         'edge_weight': 'intensity',
         'edge_sign_normalize': True,
-        'edge_contrast': 10.,
         'edge_threshold': 0.25,
         'edge_scale': 1.5,
         'edge_curvature': 1.0 }
@@ -161,13 +160,6 @@ class Graph:
                 edge['weight'] = edge['params'][weightparam]
             else:
                 edge['weight'] = 1.
-
-            ## (optional) intensify weights
-            #if self.settings['edge_contrast'] > 0.:
-                #edge['weight'] = \
-                    #nemoa.common.intensify(edge['weight'],
-                        #factor = self.settings['edge_contrast'],
-                        #bound = 1.) # Todo: set bound to mean value
 
             # (optional) threshold weights
             if self.settings['edge_threshold'] > 0.:

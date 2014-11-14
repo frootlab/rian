@@ -30,10 +30,11 @@ def build(type = None, *args, **kwargs):
 class AutoEncoder:
     """Build autoencoder network from dataset."""
 
-    settings = None
+    settings = {
+        'name': 'autoencoder' }
 
     def __init__(self, dataset = None, *args, **kwargs):
-        self.settings = kwargs.copy()
+        nemoa.common.dict_merge(kwargs, self.settings)
 
         if nemoa.type.is_dataset(dataset):
             columns = dataset.columns
