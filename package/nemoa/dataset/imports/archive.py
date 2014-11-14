@@ -9,11 +9,13 @@ import numpy
 
 def filetypes():
     """Get supported archive filetypes for dataset import."""
+
     return {
         'npz': 'Numpy Zipped Archive' }
 
 def load(path, **kwargs):
     """Import dataset from archive file."""
+
     return Npz(**kwargs).load(path)
 
 class Npz:

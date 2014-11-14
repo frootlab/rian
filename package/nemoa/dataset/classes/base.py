@@ -39,6 +39,9 @@ class Dataset:
         name (str): Name of the resource.
             Hint: Read- & writeable wrapping attribute to get('name')
                 and set('name', str).
+        path (str):
+            Hint: Read- & writeable wrapping attribute to get('path')
+                and set('path', str).
         rows (list of str): List of all rows in the dataset.
             Hint: Readonly wrapping attribute to get('rows')
         type (str): String concatenation of module name and class name
@@ -56,7 +59,8 @@ class Dataset:
     _attr    = {'columns': 'r', 'rows': 'r',
                 'fullname': 'r', 'type': 'r', 'name': 'rw',
                 'branch': 'rw', 'version': 'rw', 'about': 'rw',
-                'author': 'rw', 'email': 'rw', 'license': 'rw'}
+                'author': 'rw', 'email': 'rw', 'license': 'rw',
+                'path': 'rw'}
 
     def __init__(self, *args, **kwargs):
         """Import dataset from dictionary."""
@@ -608,6 +612,7 @@ class Dataset:
         if key == 'license': return self._get_license()
         if key == 'type': return self._get_type()
         if key == 'algorithms': return self._get_algorithms()
+        if key == 'path': return self._get_path()
 
         # get dataset parameters
         if key == 'columns': return self._get_columns(*args, **kwargs)
@@ -687,6 +692,11 @@ class Dataset:
         """Get evaluation algorithms provided by dataset."""
         return nemoa.common.module.getmethods(self,
             prefix = '_calc_', values = values)
+
+    def _get_path(self):
+        """Get path of dataset."""
+        if 'path' in self._config: return self._config['path']
+        return None
 
     def _get_columns(self, filter = '*'):
         """Get external columns.
@@ -1170,6 +1180,7 @@ class Dataset:
         if key == 'author': return self._set_author(*args, **kwargs)
         if key == 'email': return self._set_email(*args, **kwargs)
         if key == 'license': return self._set_license(*args, **kwargs)
+        if key == 'path': return self._set_path(*args, **kwargs)
 
         # modify dataset parameters
         if key == 'columns': return self._set_columns(*args, **kwargs)
@@ -1222,6 +1233,12 @@ class Dataset:
         """Set license of dataset."""
         if not isinstance(dataset_license, str): return False
         self._config['license'] = dataset_license
+        return True
+
+    def _set_path(self, dataset_path):
+        """Set path of dataset."""
+        if not isinstance(dataset_path, basestring): return False
+        self._config['path'] = dataset_path
         return True
 
     def _set_columns(self, columns, mapping):

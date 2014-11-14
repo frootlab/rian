@@ -82,11 +82,11 @@ def load(path, filetype = None, workspace = None, **kwargs):
         nemoa.log('error', """could not import model: file '%s' is
             not valid.""" % (path))
         return {}
-    if not 'source' in model['config']:
-        model['config']['source'] = {}
+    #if not 'source' in model['config']:
+        #model['config']['source'] = {}
     model['config']['path'] = path
     model['config']['workspace'] = nemoa.workspace.name()
-    model['config']['source']['file'] = path
-    model['config']['source']['filetype'] = filetype
+    #model['config']['source']['file'] = path
+    #model['config']['source']['filetype'] = filetype
 
     return model

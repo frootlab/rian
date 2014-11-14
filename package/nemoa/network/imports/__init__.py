@@ -98,12 +98,8 @@ def load(path, filetype = None, workspace = None, **kwargs):
         nemoa.log('error', """could not import network: file '%s' is
             not valid.""" % (path))
         return {}
-    if not 'source' in network['config']:
-        network['config']['source'] = {}
     network['config']['path'] = path
     network['config']['workspace'] = nemoa.workspace.name()
-    network['config']['source']['file'] = path
-    network['config']['source']['filetype'] = filetype
 
     return network
 

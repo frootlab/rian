@@ -44,6 +44,9 @@ class Network:
                 and set('name', str).
         nodes (list of str): List of all nodes in the network.
             Hint: Readonly wrapping attribute to get('nodes')
+        path (str):
+            Hint: Read- & writeable wrapping attribute to get('path')
+                and set('path', str).
         type (str): String concatenation of module name and class name
             of the instance.
             Hint: Readonly wrapping attribute to get('type')
@@ -59,7 +62,8 @@ class Network:
     _attr    = {'nodes': 'r', 'edges': 'r', 'layers': 'r',
                 'fullname': 'r', 'type': 'r', 'name': 'rw',
                 'branch': 'rw', 'version': 'rw', 'about': 'rw',
-                'author': 'rw', 'email': 'rw', 'license': 'rw'}
+                'author': 'rw', 'email': 'rw', 'license': 'rw',
+                'path': 'rw'}
 
     def __init__(self, *args, **kwargs):
         """Import network from dictionary."""
@@ -351,6 +355,7 @@ class Network:
         if key == 'license': return self._get_license()
         if key == 'type': return self._get_type()
         if key == 'algorithms': return self._get_algorithms()
+        if key == 'path': return self._get_path()
 
         # get network parameters and data
         if key == 'node': return self._get_node(*args, **kwargs)
@@ -423,6 +428,11 @@ class Network:
         """Get evaluation algorithms provided by network."""
         return nemoa.common.module.getfunctions(
             networkx.algorithms, prefix = '', values = values)
+
+    def _get_path(self):
+        """Get path of network."""
+        if 'path' in self._config: return self._config['path']
+        return None
 
     def _get_node(self, node):
         """Return network information of single node."""
@@ -657,7 +667,7 @@ class Network:
     def set(self, key = None, *args, **kwargs):
         """Set meta information, parameters and data of network."""
 
-        # set meta information of network
+        # set meta information
         if key == 'name': return self._set_name(*args, **kwargs)
         if key == 'branch': return self._set_branch(*args, **kwargs)
         if key == 'version': return self._set_version(*args, **kwargs)
@@ -665,6 +675,7 @@ class Network:
         if key == 'author': return self._set_author(*args, **kwargs)
         if key == 'email': return self._set_email(*args, **kwargs)
         if key == 'license': return self._set_license(*args, **kwargs)
+        if key == 'path': return self._set_path(*args, **kwargs)
 
         # import network configuration and graph
         if key == 'copy': return self._set_copy(*args, **kwargs)
@@ -713,6 +724,12 @@ class Network:
         """Set license of network."""
         if not isinstance(network_license, str): return False
         self._config['license'] = network_license
+        return True
+
+    def _set_path(self, network_path):
+        """Set path of network."""
+        if not isinstance(network_path, basestring): return False
+        self._config['path'] = network_path
         return True
 
     def _set_copy(self, config = None, graph = None):

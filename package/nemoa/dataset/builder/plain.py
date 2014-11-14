@@ -4,6 +4,7 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+import nemoa
 import numpy
 
 def types():
@@ -86,15 +87,19 @@ class Rules:
             data[column] = gauss + bernoulli
 
         # manipulate array data
-        for key, val in self.settings['rules'].iteritems():
+        rules = self.settings['rules'].copy()
+        for key, val in rules.iteritems():
             if not key in columns: continue
             for column in columns:
                 val = val.replace(
                     '%' + column + '%', "data['%s']" % (column))
-            self.settings['rules'][key] = val
-        for key, val in self.settings['rules'].iteritems():
+            rules[key] = val
+        for key, val in rules.iteritems():
             try: column = eval(val)
-            except: continue
+            except:
+                nemoa.log('warning', 'could not interpret "%s".'
+                    % (self.settings['rules'][key]))
+                continue
             data[key] = column
 
         # normalize data (gauss)

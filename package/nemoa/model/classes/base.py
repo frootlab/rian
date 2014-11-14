@@ -47,6 +47,9 @@ class Model:
             Hint: Read- & writeable wrapping attribute to get('name')
                 and set('name', str).
         network (network instance):
+        path (str):
+            Hint: Read- & writeable wrapping attribute to get('path')
+                and set('path', str).
         precision (numpy.float64): Average reconstruction precision
             of output units defined by:
                 precision := 1 - dev(residuals) / dev(data).
@@ -69,7 +72,8 @@ class Model:
     _attr    = {'error': 'r', 'accuracy': 'r', 'precision': 'r',
                 'fullname': 'r', 'type': 'r', 'name': 'rw',
                 'branch': 'rw', 'version': 'rw', 'about': 'rw',
-                'author': 'rw', 'email': 'rw', 'license': 'rw'}
+                'author': 'rw', 'email': 'rw', 'license': 'rw',
+                'path': 'rw'}
 
     def __init__(self, *args, **kwargs):
         """Import model from dictionary."""
@@ -187,6 +191,7 @@ class Model:
         if key == 'email': return self._get_email()
         if key == 'license': return self._get_license()
         if key == 'type': return self._get_type()
+        if key == 'path': return self._get_path()
 
         # get information about model parameters
         if key == 'network': return self.network.get(*args, **kwargs)
@@ -256,6 +261,11 @@ class Model:
         class_name = self.__class__.__name__
         return module_name + '.' + class_name
 
+    def _get_path(self):
+        """Get path of model."""
+        if 'path' in self._config: return self._config['path']
+        return None
+
     def _get_copy(self, key = None, *args, **kwargs):
         """Get model copy as dictionary."""
 
@@ -313,6 +323,7 @@ class Model:
         if key == 'author': return self._set_author(*args, **kwargs)
         if key == 'email': return self._set_email(*args, **kwargs)
         if key == 'license': return self._set_license(*args, **kwargs)
+        if key == 'path': return self._set_path(*args, **kwargs)
 
         # set model parameters
         if key == 'network': return self.network.set(*args, **kwargs)
@@ -365,6 +376,12 @@ class Model:
         """Set license of model."""
         if not isinstance(model_license, str): return False
         self._config['license'] = model_license
+        return True
+
+    def _set_path(self, model_path):
+        """Set path of model."""
+        if not isinstance(model_path, basestring): return False
+        self._config['path'] = model_path
         return True
 
     def _set_copy(self, config = None, dataset = None, network = None,

@@ -68,6 +68,15 @@ def get_file_extension(path):
     file_ext = os.path.splitext(file_name)[1].lstrip('.')
     return file_ext
 
+def get_current_directory():
+    """Get path of current working derctory.
+
+    Returns:
+        String containing path of current working directory.
+
+    """
+    return os.getcwd() + os.sep
+
 def get_unused_file_path(path):
     """Get unused file path for given file path.
 
@@ -82,14 +91,14 @@ def get_unused_file_path(path):
     # get basepath and create directory if not available
     file_basepath = get_file_directory(path)
     if not os.path.exists(file_basepath):
-        nemoa.log("creating directory '%s'" % (file_basepath))
+        nemoa.log("creating directory '%s'." % (file_basepath))
         os.makedirs(file_basepath)
 
     # search for unused filename
     file_directory = get_file_directory(path)
     file_basename = get_file_basename(path)
     file_extension = get_file_extension(path)
-    file_base = '%s/%s' % (file_directory, file_basename)
+    file_base = os.path.join(file_directory, file_basename)
     path = '%s.%s' % (file_base, file_extension)
     file_id = 1
     while os.path.exists(path):

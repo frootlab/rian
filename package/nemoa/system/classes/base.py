@@ -43,6 +43,9 @@ class System:
                 and set('name', str).
         nodes (list of str): List of all nodes in the network.
             Hint: Readonly wrapping attribute to get('nodes')
+        path (str):
+            Hint: Read- & writeable wrapping attribute to get('path')
+                and set('path', str).
         type (str): String concatenation of module name and class name
             of the instance.
             Hint: Readonly wrapping attribute to get('type')
@@ -59,7 +62,8 @@ class System:
     _attr    = {'units': 'r', 'links': 'r', 'layers': 'r',
                 'fullname': 'r', 'type': 'r', 'name': 'rw',
                 'branch': 'rw', 'version': 'rw', 'about': 'rw',
-                'author': 'rw', 'email': 'rw', 'license': 'rw'}
+                'author': 'rw', 'email': 'rw', 'license': 'rw',
+                'path': 'rw'}
 
     def __init__(self, *args, **kwargs):
         """Import system from dictionary."""
@@ -136,6 +140,7 @@ class System:
         if key == 'email': return self._get_email()
         if key == 'license': return self._get_license()
         if key == 'type': return self._get_type()
+        if key == 'path': return self._get_path()
 
         # get configuration and parameters
         if key == 'unit': return self._get_unit(*args, **kwargs)
@@ -206,6 +211,11 @@ class System:
         module_name = self.__module__.split('.')[-1]
         class_name = self.__class__.__name__
         return module_name + '.' + class_name
+
+    def _get_path(self):
+        """Get path of system."""
+        if 'path' in self._config: return self._config['path']
+        return None
 
     def _get_unit(self, unit):
 
@@ -544,6 +554,7 @@ class System:
         if key == 'author': return self._set_author(*args, **kwargs)
         if key == 'email': return self._set_email(*args, **kwargs)
         if key == 'license': return self._set_license(*args, **kwargs)
+        if key == 'path': return self._set_path(*args, **kwargs)
 
         # set configuration and parameters
         #if key == 'units': return self._set_units(*args, **kwargs)
@@ -596,6 +607,12 @@ class System:
         """Set license of system."""
         if not isinstance(system_license, str): return False
         self._config['license'] = system_license
+        return True
+
+    def _set_path(self, system_path):
+        """Set path of system."""
+        if not isinstance(system_path, basestring): return False
+        self._config['path'] = system_path
         return True
 
     def _set_links(self, links = None, initialize = True):

@@ -39,10 +39,11 @@ def build(type = 'model', *args, **kwargs):
 
     if not model: return {}
 
-    # update source
-    path = nemoa.workspace.path('models') \
-        + model['config']['name'] + '.npz'
-    model['config']['source'] = { 'file': path, 'filetype': 'npz' }
-    model['config']['path'] = path
+    # update path
+    basepath = nemoa.workspace.path('models')
+    if not basepath: basepath = nemoa.common.get_current_directory()
+    model['config']['path'] = \
+        basepath + model['config']['name'] + '.npz'
+
     return model
 

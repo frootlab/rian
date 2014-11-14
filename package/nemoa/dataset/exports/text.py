@@ -57,7 +57,7 @@ class Csv:
             if key in keys: config[key] = val
 
         # update configuration to include current appliucation settings
-        config['application'] = 'nemoa ' + nemoa.version()
+        #config['application'] = 'nemoa ' + nemoa.version()
 
         # prepare CSV parameters and write CSV file
         header = nemoa.common.ini_dumps(config).strip('\n')

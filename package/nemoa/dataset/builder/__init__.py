@@ -39,11 +39,10 @@ def build(type, *args, **kwargs):
 
     if not dataset: return {}
 
-    # update source
+    # update path
     basepath = nemoa.workspace.path('datasets')
-    if basepath:
-        path = basepath + dataset['config']['name'] + '.npz'
-        dataset['config']['source'] = {
-            'file': path, 'filetype': 'npz' }
-        dataset['config']['path'] = path
+    if not basepath: basepath = nemoa.common.get_current_directory()
+    dataset['config']['path'] = \
+        basepath + dataset['config']['name'] + '.csv'
+
     return dataset
