@@ -235,9 +235,41 @@ class Graph:
         else: return nemoa.log('error',
             """could not create relation graph:
             invalid value for parameter 'normalize_weights'!""")
-        for edge in edges: graph.add_edge(*edge,
-            weight = abs(W[edge] / W['std'] if normalize else W[edge]),
-            color = {1: 'green', 0: 'black', -1: 'red'}[S[edge]])
+
+        for edge in edges:
+            src, tgt = edge
+            if ':' in src: src = src.split(':')[1]
+            if ':' in tgt: tgt = tgt.split(':')[1]
+            if src == tgt: continue
+
+            weight = abs(W[edge] / W['std'] if normalize else W[edge])
+            color = {1: 'green', 0: 'black', -1: 'red'}[S[edge]]
+
+            graph.add_edge(src, tgt, weight = weight, color = color)
+
+            if not 'label' in graph.node[src]:
+                node = model.network.get('node', edge[0])
+                label = nemoa.common.str_format_unit_label(
+                    node['params']['label'])
+                # Todo: node_type not in {i, o}
+                node_type = node['params']['layer']
+                graph.node[src]['label'] = label
+                graph.node[src]['type'] = node_type
+                graph.node[src]['color'] = {
+                    'i': 'lightgrey1', 'o': 'white'}[node_type]
+
+            graph.add_edge(src, tgt, weight = weight, color = color)
+
+            if not 'label' in graph.node[tgt]:
+                node = model.network.get('node', edge[1])
+                label = nemoa.common.str_format_unit_label(
+                    node['params']['label'])
+                # Todo: node_type not in {i, o}
+                node_type = node['params']['layer']
+                graph.node[tgt]['label'] = label
+                graph.node[tgt]['type'] = node_type
+                graph.node[tgt]['color'] = {
+                    'i': 'lightgrey1', 'o': 'white'}[node_type]
 
         # find (disconected) complexes in graph
         graphs = networkx.connected_component_subgraphs(
@@ -248,16 +280,17 @@ class Graph:
         # update node attributes
         for i in xrange(len(graphs)):
             for n in graphs[i].nodes():
-                node = model.network.get('node', n)
-                label = nemoa.common.str_format_unit_label(
-                    node['params']['label'])
-                # Todo: node_type not in {i, o}
-                node_type = node['params']['layer']
-                graph.node[n]['label'] = label
-                graph.node[n]['type'] = node_type
                 graph.node[n]['complex'] = i
-                graph.node[n]['color'] = {
-                    'i': 'lightgrey1', 'o': 'white'}[node_type]
+                #node = model.network.get('node', n)
+                #label = nemoa.common.str_format_unit_label(
+                    #node['params']['label'])
+                ## Todo: node_type not in {i, o}
+                #node_type = node['params']['layer']
+                #graph.node[n]['label'] = label
+                #graph.node[n]['type'] = node_type
+                #graph.node[n]['complex'] = i
+                #graph.node[n]['color'] = {
+                    #'i': 'lightgrey1', 'o': 'white'}[node_type]
 
         # create plot
         return nemoa.common.plot.graph(graph, **self.settings)

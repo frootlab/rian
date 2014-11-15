@@ -1415,50 +1415,50 @@ class System:
         """
 
         if not mapping: mapping = self.mapping()
-        input_units = self._get_units(layer = mapping[0])
-        output_units = self._get_units(layer = mapping[-1])
-        R = numpy.zeros((len(input_units), len(output_units)))
+        inputs = self._get_units(layer = mapping[0])
+        outputs = self._get_units(layer = mapping[-1])
+        R = numpy.zeros((len(inputs), len(outputs)))
 
         # get indices of representatives
         r_ids = [int((i + 0.5) * int(float(data[0].shape[0])
             / points)) for i in xrange(points)]
 
-        for i_id, i_unit in enumerate(input_units):
-            i_curve = numpy.take(numpy.sort(data[0][:, i_id]), r_ids)
+        for inid, inunit in enumerate(inputs):
+            i_curve = numpy.take(numpy.sort(data[0][:, inid]), r_ids)
             i_curve = amplify * i_curve
 
             # create output matrix for each output
-            C = {o_unit: numpy.zeros((data[0].shape[0], points)) \
-                for o_unit in output_units}
+            C = {outunit: numpy.zeros((data[0].shape[0], points)) \
+                for outunit in outputs}
             for p_id in xrange(points):
                 i_data  = data[0].copy()
-                i_data[:, i_id] = i_curve[p_id]
+                i_data[:, inid] = i_curve[p_id]
                 o_expect = self._calc_units((i_data, data[1]),
                     func = 'expect', mapping = mapping)
-                for o_unit in output_units:
-                    C[o_unit][:, p_id] = o_expect[o_unit]
+                for outunit in outputs:
+                    C[outunit][:, p_id] = o_expect[outunit]
 
             # calculate mean of standard deviations of outputs
-            for o_id, o_unit in enumerate(output_units):
+            for outid, outunit in enumerate(outputs):
 
                 # calculate norm by mean over part of data
                 bound = int((1. - gauge) * data[0].shape[0])
-                subset = numpy.sort(C[o_unit].std(axis = 1))[bound:]
-                norm = subset.mean() / data[1][:, o_id].std()
+                subset = numpy.sort(C[outunit].std(axis = 1))[bound:]
+                norm = subset.mean() / data[1][:, outid].std()
 
                 # calculate influence
-                R[i_id, o_id] = norm
+                R[inid, outid] = norm
 
         # amplify contrast of induction
         A = R.copy()
-        for cid, col in enumerate(input_units):
-            for rid, row in enumerate(output_units):
-                if ':' in col: collbl = col.split(':')[1]
-                else: collbl = col
-                if ':' in row: rowlbl = row.split(':')[1]
-                else: rowlbl = row
-                if collbl == rowlbl: A[rid, cid] = 0.0
-        bound = numpy.amax(A
+        for inid, inunit in enumerate(inputs):
+            for outid, outunit in enumerate(outputs):
+                if ':' in outunit: inlabel = outunit.split(':')[1]
+                else: inlabel = outunit
+                if ':' in inunit: outlabel = inunit.split(':')[1]
+                else: outlabel = inunit
+                if inlabel == outlabel: A[inid, outid] = 0.0
+        bound = numpy.amax(A)
 
         R = nemoa.common.func.intensify(R, factor = contrast,
             bound = bound)
