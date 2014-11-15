@@ -1449,9 +1449,21 @@ class System:
                 # calculate influence
                 R[i_id, o_id] = norm
 
-        # amplify norm
-        return nemoa.common.func.intensify(R, factor = contrast,
-            bound = numpy.amax(R))
+        # amplify contrast of induction
+        A = R.copy()
+        for cid, col in enumerate(input_units):
+            for rid, row in enumerate(output_units):
+                if ':' in col: collbl = col.split(':')[1]
+                else: collbl = col
+                if ':' in row: rowlbl = row.split(':')[1]
+                else: rowlbl = row
+                if collbl == rowlbl: A[rid, cid] = 0.0
+        bound = numpy.amax(A
+
+        R = nemoa.common.func.intensify(R, factor = contrast,
+            bound = bound)
+
+        return R
 
     def save(self, *args, **kwargs):
         """Export system to file."""

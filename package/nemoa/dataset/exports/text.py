@@ -63,6 +63,11 @@ class Csv:
         header = nemoa.common.ini_dumps(config).strip('\n')
         delimiter = self.settings['delimiter']
         cols, data = dataset.get('data', output = ('cols', 'recarray'))
+        #print cols
+        #print data.dtype.names
+        #quit
+
+
         return nemoa.common.csv_save_data(path, data, header = header,
             delimiter = delimiter, labels = [''] + cols)
 

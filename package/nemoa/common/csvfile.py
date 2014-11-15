@@ -10,7 +10,7 @@ import numpy
 import os
 
 def csv_get_header(path):
-    """Get delimiter from CSV file.
+    """Get header from CSV file.
 
     Args:
         path (string): file path to CSV file.
@@ -307,3 +307,9 @@ def csv_save_data(path, data, header = None, labels = None,
     fmt = delimiter.join(['%s'] + ['%10.10f'] * (len(data[0]) - 1))
     numpy.savetxt(path, data, fmt = fmt, header = header, comments = '')
     return path
+
+def csv_dump(dic, path, **kwargs):
+    header = dic['header']
+    data = dic['table']
+    labels = data.dtype.names
+    return csv_save_data(path, data, header, labels, **kwargs)

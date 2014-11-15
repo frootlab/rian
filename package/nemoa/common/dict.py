@@ -5,19 +5,18 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import base64
-import cPickle
-import gzip
 import zlib
 
 def dict_merge(d1, d2):
-    """Return merged dictionary (merge d1 over d2)."""
+    """Return merged dictionary (right merge d1 over d2)."""
     for k1, v1 in d1.iteritems():
-        if not k1 in d2: d2[k1] = v1 # create in d2 if not existent
+        if not k1 in d2: d2[k1] = v1
         elif isinstance(v1, dict): dict_merge(v1, d2[k1])
-        else: d2[k1] = v1 # overwrite in d2 if allready there
+        else: d2[k1] = v1
     return d2
 
 def dict_sum(*args):
+    """Sum values of common keys in differnet dictionaries."""
     dsum = {}
     for d in args:
         if not isinstance(d, dict): continue
@@ -25,15 +24,6 @@ def dict_sum(*args):
             if not key in dsum: dsum[key] = val
             else: dsum[key] += val
     return dsum
-
-def dict_to_file(d, file):
-    """Dump dictionary to gzip compressed file."""
-    return cPickle.dump(obj = d,
-        file = gzip.open(file, "wb"), protocol = 2)
-
-def dict_from_file(file):
-    """Return dictionary from gzip compressed file."""
-    return cPickle.load(gzip.open(file, 'rb'))
 
 def dict_from_array(array, axes):
     """Return dictionary from 2-dimensional numpy array."""
@@ -63,7 +53,7 @@ def dict_decode_base64(string_base64):
     d = cPickle.loads(string)
     return d
 
-def dict_convert_unicode_keys(d):
+def dict_convert_string_keys(d):
     """Convert dictionary keys from unicode to string."""
     if not isinstance(d, dict): return d
     d_str = {}
@@ -72,5 +62,5 @@ def dict_convert_unicode_keys(d):
             new_key = tuple([str(token) for token in key])
         else:
             new_key = str(key)
-        d_str[new_key] = dict_convert_unicode_keys(val)
+        d_str[new_key] = dict_convert_string_keys(val)
     return d_str

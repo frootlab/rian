@@ -4,7 +4,6 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
 import os
 
 def get_file_directory(path):
@@ -90,9 +89,7 @@ def get_unused_file_path(path):
 
     # get basepath and create directory if not available
     file_basepath = get_file_directory(path)
-    if not os.path.exists(file_basepath):
-        nemoa.log("creating directory '%s'." % (file_basepath))
-        os.makedirs(file_basepath)
+    if not os.path.exists(file_basepath): os.makedirs(file_basepath)
 
     # search for unused filename
     file_directory = get_file_directory(path)
