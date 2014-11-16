@@ -139,7 +139,8 @@ def show(model, plot = None, *args, **kwargs):
 
 class Graph:
 
-    settings = {
+    settings = None
+    default = {
         'fileformat': 'pdf',
         'dpi': 300,
         'show_title': True,
@@ -157,11 +158,20 @@ class Graph:
         'filter': None,
         'cutoff': 0.5,
         'node_caption': 'accuracy',
-        'layout': 'spring'
-    }
+        'layout': 'spring',
+        'source_bg_color': 'lb1-bg',
+        'source_font_color': 'lb1-font',
+        'source_border_color': 'lb1-font',
+        'target_bg_color': 'lb1-bg',
+        'target_font_color': 'lb1-font',
+        'target_border_color': 'lb1-font',
+        'nexus_bg_color': 'lb1-bg',
+        'nexus_font_color': 'lb1-font',
+        'nexus_border_color': 'lb1-font' }
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items(): self.settings[key] = val
+        self.settings = self.default.copy()
+        nemoa.common.dict_merge(kwargs, self.settings)
 
     def create(self, model):
 
@@ -236,10 +246,20 @@ class Graph:
             """could not create relation graph:
             invalid value for parameter 'normalize_weights'!""")
 
+        srclabels = []
+        for src in units[0]:
+            if ':' in src: srclabels.append(src.split(':')[1])
+            else: srclabels.append(src)
+        tgtlabels = []
+        for tgt in units[1]:
+            if ':' in tgt: tgtlabels.append(tgt.split(':')[1])
+            else: tgtlabels.append(tgt)
+
         for edge in edges:
             src, tgt = edge
             if ':' in src: src = src.split(':')[1]
             if ':' in tgt: tgt = tgt.split(':')[1]
+            # prevent loop edges
             if src == tgt: continue
 
             weight = abs(W[edge] / W['std'] if normalize else W[edge])
@@ -251,53 +271,43 @@ class Graph:
                 node = model.network.get('node', edge[0])
                 label = nemoa.common.str_format_unit_label(
                     node['params']['label'])
-                # Todo: node_type not in {i, o}
-                node_type = node['params']['layer']
                 graph.node[src]['label'] = label
-                graph.node[src]['type'] = node_type
-                graph.node[src]['color'] = {
-                    'i': 'lightgrey1', 'o': 'white'}[node_type]
-
-            graph.add_edge(src, tgt, weight = weight, color = color)
+                graph.node[src]['layer'] = node['params']['layer']
+                if src in tgtlabels:
+                    graph.node[src]['type'] = 'source'
+                    graph.node[src]['color'] \
+                        = self.settings['source_bg_color']
+                else:
+                    graph.node[src]['type'] = 'nexus'
+                    graph.node[src]['color'] \
+                        = self.settings['nexus_bg_color']
 
             if not 'label' in graph.node[tgt]:
                 node = model.network.get('node', edge[1])
                 label = nemoa.common.str_format_unit_label(
                     node['params']['label'])
-                # Todo: node_type not in {i, o}
-                node_type = node['params']['layer']
                 graph.node[tgt]['label'] = label
-                graph.node[tgt]['type'] = node_type
-                graph.node[tgt]['color'] = {
-                    'i': 'lightgrey1', 'o': 'white'}[node_type]
+                graph.node[tgt]['layer'] = node['params']['layer']
+                graph.node[tgt]['type'] = 'target'
+                graph.node[tgt]['color'] \
+                        = self.settings['target_bg_color']
 
         # find (disconected) complexes in graph
         graphs = networkx.connected_component_subgraphs(
             graph.to_undirected())
         if len(graphs) > 1: nemoa.log('note',
             '%i complexes found' % (len(graphs)))
-
-        # update node attributes
         for i in xrange(len(graphs)):
             for n in graphs[i].nodes():
                 graph.node[n]['complex'] = i
-                #node = model.network.get('node', n)
-                #label = nemoa.common.str_format_unit_label(
-                    #node['params']['label'])
-                ## Todo: node_type not in {i, o}
-                #node_type = node['params']['layer']
-                #graph.node[n]['label'] = label
-                #graph.node[n]['type'] = node_type
-                #graph.node[n]['complex'] = i
-                #graph.node[n]['color'] = {
-                    #'i': 'lightgrey1', 'o': 'white'}[node_type]
 
         # create plot
         return nemoa.common.plot.graph(graph, **self.settings)
 
 class Heatmap:
 
-    settings = {
+    settings = None
+    default = {
         'fileformat': 'pdf',
         'dpi': 300,
         'show_title': True,
@@ -315,7 +325,8 @@ class Heatmap:
         'format': 'array' }
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items(): self.settings[key] = val
+        self.settings = self.default.copy()
+        nemoa.common.dict_merge(kwargs, self.settings)
 
     def create(self, model):
 
@@ -332,7 +343,8 @@ class Heatmap:
 
 class Histogram:
 
-    settings = {
+    settings = None
+    default = {
         'fileformat': 'pdf',
         'dpi': 300,
         'show_title': True,
@@ -354,7 +366,8 @@ class Histogram:
         'linewidth': 0.5 }
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items(): self.settings[key] = val
+        self.settings = self.default.copy()
+        nemoa.common.dict_merge(kwargs, self.settings)
 
     def create(self, model):
 
