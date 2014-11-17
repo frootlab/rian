@@ -128,21 +128,22 @@ class System:
         return True
 
     def get(self, key = 'name', *args, **kwargs):
-        """Get meta information, configuration and parameters."""
+        """Get meta information and content."""
 
-        # get meta information
-        if key == 'fullname': return self._get_fullname()
-        if key == 'name': return self._get_name()
-        if key == 'branch': return self._get_branch()
-        if key == 'version': return self._get_version()
+        # meta information
         if key == 'about': return self._get_about()
+        if key == 'algorithms': return self._get_algorithms()
         if key == 'author': return self._get_author()
+        if key == 'branch': return self._get_branch()
         if key == 'email': return self._get_email()
+        if key == 'fullname': return self._get_fullname()
         if key == 'license': return self._get_license()
-        if key == 'type': return self._get_type()
+        if key == 'name': return self._get_name()
         if key == 'path': return self._get_path()
+        if key == 'type': return self._get_type()
+        if key == 'version': return self._get_version()
 
-        # get configuration and parameters
+        # content
         if key == 'unit': return self._get_unit(*args, **kwargs)
         if key == 'units': return self._get_units(*args, **kwargs)
         if key == 'link': return self._get_link(*args, **kwargs)
@@ -150,10 +151,7 @@ class System:
         if key == 'layer': return self._get_layer(*args, **kwargs)
         if key == 'layers': return self._get_layers(*args, **kwargs)
 
-
-        if key == 'eval': return self.calc(*args, **kwargs)
-
-        # export configuration and parameters
+        # direct access
         if key == 'copy': return self._get_copy(*args, **kwargs)
         if key == 'config': return self._get_config(*args, **kwargs)
         if key == 'params': return self._get_params(*args, **kwargs)
@@ -211,6 +209,23 @@ class System:
         module_name = self.__module__.split('.')[-1]
         class_name = self.__class__.__name__
         return module_name + '.' + class_name
+
+    def _get_algorithms(self, values = 'about'):
+        """Get evaluation algorithms provided by system."""
+        subclasses = ['units', 'links', 'relation']
+        unstructured = nemoa.common.module.getmethods(self,
+            prefix = '_calc_', values = values)
+        structured = {key: {} for key in subclasses}
+        for key, val in unstructured.iteritems():
+            if key in subclasses: continue
+            found = False
+            for subclass in subclasses:
+                if key[:len(subclass) + 1] == subclass + '_':
+                    structured[subclass][key[len(subclass) + 1:]] = val
+                    found = True
+            if found: continue
+            structured[key] = val
+        return structured
 
     def _get_path(self):
         """Get path of system."""

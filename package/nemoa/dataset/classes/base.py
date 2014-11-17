@@ -599,22 +599,22 @@ class Dataset:
         return True
 
     def get(self, key = 'name', *args, **kwargs):
-        """Get meta information, parameters and data of dataset."""
+        """Get meta information and content."""
 
-        # get meta information
-        if key == 'fullname': return self._get_fullname()
-        if key == 'name': return self._get_name()
-        if key == 'branch': return self._get_branch()
-        if key == 'version': return self._get_version()
+        # meta information
         if key == 'about': return self._get_about()
-        if key == 'author': return self._get_author()
-        if key == 'email': return self._get_email()
-        if key == 'license': return self._get_license()
-        if key == 'type': return self._get_type()
         if key == 'algorithms': return self._get_algorithms()
+        if key == 'author': return self._get_author()
+        if key == 'branch': return self._get_branch()
+        if key == 'email': return self._get_email()
+        if key == 'fullname': return self._get_fullname()
+        if key == 'license': return self._get_license()
+        if key == 'name': return self._get_name()
         if key == 'path': return self._get_path()
+        if key == 'type': return self._get_type()
+        if key == 'version': return self._get_version()
 
-        # get dataset parameters
+        # content
         if key == 'columns': return self._get_columns(*args, **kwargs)
         if key == 'colgroups': return self._get_colgroups()
         if key == 'colfilter': return self._get_colfilter(*args, **kwargs)
@@ -623,13 +623,11 @@ class Dataset:
         if key == 'rowgroups': return self._get_rowgroups(*args, **kwargs)
         if key == 'rowfilter': return self._get_rowfilter(*args, **kwargs)
         if key == 'rowfilters': return self._get_rowfilters()
-
-        # get data from dataset
         if key == 'value': return self._get_value(*args, **kwargs)
         if key == 'table': return self._get_table(*args, **kwargs)
         if key == 'data': return self._get_data(*args, **kwargs)
 
-        # export dataset configuration and dataset tables
+        # direct access
         if key == 'copy': return self._get_copy(*args, **kwargs)
         if key == 'config': return self._get_config(*args, **kwargs)
         if key == 'tables': return self._get_table(*args, **kwargs)

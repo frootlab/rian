@@ -179,33 +179,32 @@ class Model:
         return retval
 
     def get(self, key = 'name', *args, **kwargs):
-        """Get meta information and parameters of model."""
+        """Get meta information and content."""
 
-        # get meta information
-        if key == 'fullname': return self._get_fullname()
-        if key == 'name': return self._get_name()
-        if key == 'branch': return self._get_branch()
-        if key == 'version': return self._get_version()
+        # meta information
         if key == 'about': return self._get_about()
+        if key == 'algorithms': return self._get_algorithms()
         if key == 'author': return self._get_author()
+        if key == 'branch': return self._get_branch()
         if key == 'email': return self._get_email()
+        if key == 'fullname': return self._get_fullname()
         if key == 'license': return self._get_license()
-        if key == 'type': return self._get_type()
+        if key == 'name': return self._get_name()
         if key == 'path': return self._get_path()
+        if key == 'type': return self._get_type()
+        if key == 'version': return self._get_version()
 
-        # get information about model parameters
-        if key == 'network': return self.network.get(*args, **kwargs)
-        if key == 'dataset': return self.dataset.get(*args, **kwargs)
-        if key == 'system': return self.system.get(*args, **kwargs)
-
-        # calculate standard model evaluations
+        # content
         if key == 'error': return self.calc('system', 'error')
         if key == 'accuracy': return self.calc('system', 'accuracy')
         if key == 'precision': return self.calc('system', 'precision')
 
-        # export configuration and parameters
+        # direct access
         if key == 'copy': return self._get_copy(*args, **kwargs)
         if key == 'config': return self._get_config(*args, **kwargs)
+        if key == 'dataset': return self.dataset.get(*args, **kwargs)
+        if key == 'network': return self.network.get(*args, **kwargs)
+        if key == 'system': return self.system.get(*args, **kwargs)
 
         return nemoa.log('warning', "unknown key '%s'" % (key))
 
@@ -260,6 +259,14 @@ class Model:
         module_name = self.__module__.split('.')[-1]
         class_name = self.__class__.__name__
         return module_name + '.' + class_name
+
+    def _get_algorithms(self, *args, **kwargs):
+        """Get evaluation algorithms provided by model."""
+        structured = {
+            'dataset': self.dataset.get('algorithms', *args, **kwargs),
+            'network': self.network.get('algorithms', *args, **kwargs),
+            'system': self.system.get('algorithms', *args, **kwargs)}
+        return structured
 
     def _get_path(self):
         """Get path of model."""

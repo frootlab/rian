@@ -342,22 +342,22 @@ class Network:
         return True
 
     def get(self, key = 'name', *args, **kwargs):
-        """Get meta information, parameters and data of network."""
+        """Get meta information and content."""
 
-        # get meta information of network
-        if key == 'fullname': return self._get_fullname()
-        if key == 'name': return self._get_name()
-        if key == 'branch': return self._get_branch()
-        if key == 'version': return self._get_version()
+        # meta information
         if key == 'about': return self._get_about()
-        if key == 'author': return self._get_author()
-        if key == 'email': return self._get_email()
-        if key == 'license': return self._get_license()
-        if key == 'type': return self._get_type()
         if key == 'algorithms': return self._get_algorithms()
+        if key == 'author': return self._get_author()
+        if key == 'branch': return self._get_branch()
+        if key == 'email': return self._get_email()
+        if key == 'fullname': return self._get_fullname()
+        if key == 'license': return self._get_license()
+        if key == 'name': return self._get_name()
         if key == 'path': return self._get_path()
+        if key == 'type': return self._get_type()
+        if key == 'version': return self._get_version()
 
-        # get network parameters and data
+        # content
         if key == 'node': return self._get_node(*args, **kwargs)
         if key == 'nodes': return self._get_nodes(*args, **kwargs)
         if key == 'edge': return self._get_edge(*args, **kwargs)
@@ -365,7 +365,7 @@ class Network:
         if key == 'layer': return self._get_layer(*args, **kwargs)
         if key == 'layers': return self._get_layers(*args, **kwargs)
 
-        # export network configuration and graph
+        # direct access
         if key == 'copy': return self._get_copy(*args, **kwargs)
         if key == 'config': return self._get_config(*args, **kwargs)
         if key == 'graph': return self._get_graph(*args, **kwargs)
