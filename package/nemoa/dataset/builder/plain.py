@@ -26,7 +26,8 @@ def build(type = None, *args, **kwargs):
 class Rules:
     """Build rule based manipulated dataset from building parameters."""
 
-    settings = {
+    settings = None
+    default = {
         'name': 'data',
         'columns': ['i1', 'i2', 'i3', 'i4', 'o1', 'o2'],
         'rules': {
@@ -39,9 +40,8 @@ class Rules:
         'sdev': 1.0 }
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items():
-            if key in self.settings.keys():
-                self.settings[key] = val
+        self.settings = self.default.copy()
+        nemoa.common.dict_merge(kwargs, self.settings)
 
     def build(self):
 

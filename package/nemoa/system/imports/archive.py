@@ -19,12 +19,12 @@ def load(path, **kwargs):
 class Npz:
     """Import system from numpy zipped archive."""
 
-    settings = {}
+    settings = None
+    default = {}
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items():
-            if key in self.settings.keys():
-                self.settings[key] = val
+        self.settings = self.default.copy()
+        nemoa.common.dict_merge(kwargs, self.settings)
 
     def load(self, path):
         copy = numpy.load(path)

@@ -105,7 +105,8 @@ def save(network, path = None, filetype = None, plot = None, **kwargs):
 
 class Graph:
 
-    settings = {
+    settings = None
+    default = {
         'fileformat': 'pdf',
         'dpi': 300,
         'show_title': False,
@@ -123,9 +124,8 @@ class Graph:
         'edge_curvature': 1.0 }
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items():
-            if key in self.settings.keys():
-                self.settings[key] = val
+        self.settings = self.default.copy()
+        nemoa.common.dict_merge(kwargs, self.settings)
 
     def create(self, network):
 

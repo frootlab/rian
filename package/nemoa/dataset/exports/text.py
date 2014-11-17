@@ -36,14 +36,12 @@ def save(dataset, path, filetype, **kwargs):
 class Csv:
     """Export dataset to Comma Separated Values."""
 
-    settings = {
-        'delimiter': ',',
-        'csvtype': None }
+    settings = None
+    default = { 'delimiter': ',' }
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items():
-            if key in self.settings.keys():
-                self.settings[key] = val
+        self.settings = self.default.copy()
+        nemoa.common.dict_merge(kwargs, self.settings)
 
     def save(self, dataset, path):
 
@@ -74,6 +72,4 @@ class Csv:
 class Tsv(Csv):
     """Export dataset to Tab Separated Values."""
 
-    settings = {
-        'delimiter': '\t',
-        'csvtype': None }
+    default = { 'delimiter': '\t' }

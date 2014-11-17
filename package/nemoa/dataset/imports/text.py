@@ -35,12 +35,12 @@ def load(path, **kwargs):
 class Csv:
     """Import dataset from Comma Separated Values."""
 
-    settings = { 'delimiter': ',' }
+    settings = None
+    default = { 'delimiter': ',' }
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items():
-            if key in self.settings.keys():
-                self.settings[key] = val
+        self.settings = self.default.copy()
+        nemoa.common.dict_merge(kwargs, self.settings)
 
     def load(self, path):
         """Get dataset configuration and dataset tables.
@@ -104,4 +104,4 @@ class Csv:
 class Tsv(Csv):
     """Export dataset to Tab Separated Values."""
 
-    settings = { 'delimiter': '\t' }
+    default = { 'delimiter': '\t' }

@@ -30,10 +30,11 @@ def build(type = None, *args, **kwargs):
 class AutoEncoder:
     """Build autoencoder network from dataset."""
 
-    settings = {
-        'name': 'autoencoder' }
+    settings = None
+    default = { 'name': 'autoencoder' }
 
     def __init__(self, dataset = None, *args, **kwargs):
+        self.settings = self.default.copy()
         nemoa.common.dict_merge(kwargs, self.settings)
 
         if nemoa.type.is_dataset(dataset):
@@ -50,7 +51,8 @@ class AutoEncoder:
 class MultiLayer:
     """Build multilayer network."""
 
-    settings = {
+    settings = None
+    default = {
         'name': 'multilayer',
         'inputs': ['i1', 'i2', 'i3', 'i4'],
         'outputs': ['o1', 'o2'],
@@ -60,9 +62,8 @@ class MultiLayer:
         'labelformat': 'generic:string' }
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items():
-            if key in self.settings.keys():
-                self.settings[key] = val
+        self.settings = self.default.copy()
+        nemoa.common.dict_merge(kwargs, self.settings)
 
     def build(self):
         name = self.settings['name']
@@ -124,7 +125,8 @@ class MultiLayer:
 class Factor:
     """Build factor graph from parameters."""
 
-    settings = {
+    settings = None
+    default = {
         'name': 'factor',
         'factors': None,
         'visible_nodes': ['i1', 'i2', 'i3', 'i4', 'o1', 'o2'],
@@ -137,9 +139,8 @@ class Factor:
         'labelencapsulate': False }
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items():
-            if key in self.settings.keys():
-                self.settings[key] = val
+        self.settings = self.default.copy()
+        nemoa.common.dict_merge(kwargs, self.settings)
 
     def build(self):
         network_name = self.settings['name']

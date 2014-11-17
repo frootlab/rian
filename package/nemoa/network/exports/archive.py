@@ -27,13 +27,12 @@ def save(network, path, filetype, **kwargs):
 class Npz:
     """Export network to numpy zipped archive."""
 
-    settings = {
-        'compress': True }
+    settings = None
+    default = { 'compress': True }
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items():
-            if key in self.settings.keys():
-                self.settings[key] = val
+        self.settings = self.default.copy()
+        nemoa.common.dict_merge(kwargs, self.settings)
 
     def save(self, copy, path):
 

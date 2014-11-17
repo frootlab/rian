@@ -24,12 +24,14 @@ def build(type = None, *args, **kwargs):
 class AutoEncoder:
     """Build deep AutoEncoder from dataset and network parameters."""
 
-    settings = {
+    settings = None
+    default = {
         'dataset': None,
         'network': None,
         'system': 'dbn' }
 
     def __init__(self, dataset = None, **kwargs):
+        self.settings = self.default.copy()
         nemoa.common.dict_merge(kwargs, self.settings)
 
         if nemoa.type.is_dataset(dataset):
@@ -52,7 +54,8 @@ class AutoEncoder:
 class Model:
     """Build standard model from parameters."""
 
-    settings = {
+    settings = None
+    default = {
         'dataset': None,
         'network': None,
         'system': None,
@@ -60,6 +63,7 @@ class Model:
         'optimize': False }
 
     def __init__(self, **kwargs):
+        self.settings = self.default.copy()
         nemoa.common.dict_merge(kwargs, self.settings)
 
     def build(self):

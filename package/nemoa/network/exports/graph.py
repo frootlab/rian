@@ -78,13 +78,12 @@ def _graph_encode(graph, coding = None):
 class Gml:
     """Export network to GML file."""
 
-    settings = {
-        'coding': 'base64' }
+    settings = None
+    default = { 'coding': 'base64' }
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items():
-            if key in self.settings.keys():
-                self.settings[key] = val
+        self.settings = self.default.copy()
+        nemoa.common.dict_merge(kwargs, self.settings)
 
     def save(self, graph, path):
 
@@ -99,13 +98,12 @@ class Gml:
 class Graphml:
     """Export network to GraphML file."""
 
-    settings = {
-        'coding': 'base64' }
+    settings = None
+    default = { 'coding': 'base64' }
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items():
-            if key in self.settings.keys():
-                self.settings[key] = val
+        self.settings = self.default.copy()
+        nemoa.common.dict_merge(kwargs, self.settings)
 
     def save(self, graph, path):
 
@@ -120,13 +118,12 @@ class Graphml:
 class Dot:
     """Export network to GraphViz Dot file."""
 
-    settings = {
-        'coding': 'base64' }
+    settings = None
+    default = { 'coding': 'base64' }
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items():
-            if key in self.settings.keys():
-                self.settings[key] = val
+        self.settings = self.default.copy()
+        nemoa.common.dict_merge(kwargs, self.settings)
 
     def save(self, graph, path):
 

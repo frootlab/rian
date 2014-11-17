@@ -104,7 +104,8 @@ def save(dataset, path = None, filetype = None, plot = None, **kwargs):
 
 class Heatmap:
 
-    settings = {
+    settings = None
+    default = {
         'fileformat': 'pdf',
         'dpi': 300,
         'show_title': True,
@@ -121,9 +122,8 @@ class Heatmap:
         'interpolation': 'nearest' }
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items():
-            if key in self.settings.keys():
-                self.settings[key] = val
+        self.settings = self.default.copy()
+        nemoa.common.dict_merge(kwargs, self.settings)
 
     def create(self, dataset):
 
@@ -142,7 +142,8 @@ class Heatmap:
 
 class Histogram:
 
-    settings = {
+    settings = None
+    default = {
         'fileformat': 'pdf',
         'dpi': 300,
         'show_title': True,
@@ -157,9 +158,8 @@ class Histogram:
         'linewidth': 0.5 }
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items():
-            if key in self.settings.keys():
-                self.settings[key] = val
+        self.settings = self.default.copy()
+        nemoa.common.dict_merge(kwargs, self.settings)
 
     def create(self, dataset):
 

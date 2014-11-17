@@ -32,12 +32,12 @@ def load(path, **kwargs):
 class Ini:
     """Import system configuration from ini file."""
 
-    settings = {}
+    settings = None
+    default = {}
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items():
-            if key in self.settings.keys():
-                self.settings[key] = val
+        self.settings = self.default.copy()
+        nemoa.common.dict_merge(kwargs, self.settings)
 
     def load(self, path):
         """Return system configuration as dictionary.

@@ -78,12 +78,12 @@ def _graph_to_dict(graph):
 class Graphml:
     """Import network from GraphML file."""
 
-    settings = {}
+    settings = None
+    default = {}
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items():
-            if key in self.settings.keys():
-                self.settings[key] = val
+        self.settings = self.default.copy()
+        nemoa.common.dict_merge(kwargs, self.settings)
 
     def load(self, path):
         graph = networkx.read_graphml(path)
@@ -97,12 +97,12 @@ class Graphml:
 class Gml:
     """Import network from GML file."""
 
-    settings = {}
+    settings = None
+    default = {}
 
     def __init__(self, **kwargs):
-        for key, val in kwargs.items():
-            if key in self.settings.keys():
-                self.settings[key] = val
+        self.settings = self.default.copy()
+        nemoa.common.dict_merge(kwargs, self.settings)
 
     def load(self, path):
         graph = networkx.read_gml(path, relabel = True)
