@@ -90,7 +90,8 @@ def load(path, filetype = None, workspace = None, **kwargs):
         nemoa.log('error', """could not import dataset: file '%s' is
             not valid.""" % (path))
         return {}
+
+    # update path
     dataset['config']['path'] = path
-    dataset['config']['workspace'] = nemoa.workspace.name()
 
     return dataset

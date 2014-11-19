@@ -90,11 +90,8 @@ def load(path, filetype = None, workspace = None, **kwargs):
         nemoa.log('error', """could not import system: file '%s' is
             not valid.""" % (path))
         return {}
-    #if not 'source' in system['config']:
-        #system['config']['source'] = {}
+
+    # update path
     system['config']['path'] = path
-    system['config']['workspace'] = nemoa.workspace.name()
-    #system['config']['source']['file'] = path
-    #system['config']['source']['filetype'] = filetype
 
     return system
