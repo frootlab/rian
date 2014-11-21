@@ -50,13 +50,13 @@ def save(dataset, path = None, filetype = None, workspace = None,
 
     """
 
-    if not nemoa.common.type.is_dataset(dataset):
+    if not nemoa.common.type.isdataset(dataset):
         return nemoa.log('error', """could not export dataset to file:
             dataset is not valid.""")
 
     # get file path from dataset source file if path is not given
     if path == None:
-        path = dataset.get('config', 'path')
+        path = dataset.path
         filedir = nemoa.common.get_file_directory(path)
         filename = dataset.fullname
         if filetype: fileext = filetype

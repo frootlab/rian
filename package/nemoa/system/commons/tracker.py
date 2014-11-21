@@ -21,7 +21,7 @@ class Tracker:
         _state = {}
         _store = {}
 
-        if not nemoa.type.is_system(system): return nemoa.log('warning',
+        if not nemoa.type.issystem(system): return nemoa.log('warning',
             'could not configure tracker: system is not valid!')
         if not hasattr(system, '_config'): return nemoa.log('warning',
             'could not configure tracker: system contains no configuration!')

@@ -4,32 +4,22 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-def is_instance_of_type(object, type):
-    """Return true if the object is a instance of given class."""
-    return hasattr(object, '__module__') \
-        and object.__module__.split('.')[1] == type
-
-def is_dataset(object):
+def isdataset(object):
     """Return true if the object is a dataset instance."""
     return hasattr(object, '__module__') \
         and object.__module__.split('.')[1] == 'dataset'
 
-def is_network(object):
+def isnetwork(object):
     """Return true if the object is a network instance."""
     return hasattr(object, '__module__') \
         and object.__module__.split('.')[1] == 'network'
 
-def is_system(object):
+def issystem(object):
     """Return true if the object is a system instance."""
     return hasattr(object, '__module__') \
         and object.__module__.split('.')[1] == 'system'
 
-def is_model(object):
+def ismodel(object):
     """Return true if the object is a model instance."""
     return hasattr(object, '__module__') \
         and object.__module__.split('.')[1] == 'model'
-
-def is_plot(object):
-    """Return true if the object is a plot instance."""
-    return hasattr(object, '__module__') \
-        and object.__module__.split('.')[1] == 'plot'

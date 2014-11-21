@@ -42,7 +42,6 @@ class Npz:
 
         if self.settings['compress']:
             numpy.savez_compressed(path, **copy)
-        else:
-            numpy.savez(path, **copy)
+        else: numpy.savez(path, **copy)
 
         return path

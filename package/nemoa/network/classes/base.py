@@ -95,7 +95,7 @@ class Network:
         """Configure network to dataset."""
 
         # check if dataset instance is available
-        if not nemoa.type.is_dataset(dataset): return nemoa.log(
+        if not nemoa.type.isdataset(dataset): return nemoa.log(
             'error', """could not configure network:
             no valid dataset instance given:""")
 
@@ -811,7 +811,7 @@ class Network:
 
     def initialize(self, system = None):
         if not system: return False
-        if not nemoa.type.is_system(system):
+        if not nemoa.type.issystem(system):
             return nemoa.log('error', """could not update network:
                 system is invalid.""")
 

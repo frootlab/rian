@@ -34,7 +34,7 @@ class AutoEncoder:
         self.settings = self.default.copy()
         nemoa.common.dict_merge(kwargs, self.settings)
 
-        if nemoa.type.is_dataset(dataset):
+        if nemoa.type.isdataset(dataset):
             self.settings['dataset'] = dataset
         else:
             self.settings['dataset'] = nemoa.dataset.load(dataset)
@@ -42,7 +42,7 @@ class AutoEncoder:
     def build(self):
 
         # create dataset instance
-        if not nemoa.type.is_dataset(self.settings['dataset']):
+        if not nemoa.type.isdataset(self.settings['dataset']):
             return {}
 
         # create network instance from dataset instance
@@ -71,7 +71,7 @@ class Model:
         # create model dictionary including dataset, network and system
         model_dict = {}
 
-        if nemoa.type.is_dataset(self.settings['dataset']):
+        if nemoa.type.isdataset(self.settings['dataset']):
             model_dict['dataset'] = self.settings['dataset']
             dataset_name = self.settings['dataset'].name
         else:
@@ -80,7 +80,7 @@ class Model:
             if not model_dict['dataset']: return {}
             dataset_name = model_dict['dataset']['config']['name']
 
-        if nemoa.type.is_network(self.settings['network']):
+        if nemoa.type.isnetwork(self.settings['network']):
             model_dict['network'] = self.settings['network']
             network_name = self.settings['network'].name
         else:
@@ -89,7 +89,7 @@ class Model:
             if not model_dict['network']: return {}
             network_name = model_dict['network']['config']['name']
 
-        if nemoa.type.is_system(self.settings['system']):
+        if nemoa.type.issystem(self.settings['system']):
             model_dict['system'] = self.settings['system']
             system_name = self.settings['system'].name
         else:

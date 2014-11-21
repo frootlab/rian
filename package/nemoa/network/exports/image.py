@@ -132,25 +132,6 @@ class Graph:
         # copy graph from system structure of model
         graph = network.get('graph', type = 'graph')
 
-        ## (optional) calculate node captions
-        #if self.settings['node_caption']:
-            #caption = model.calc('system', 'units',
-                #self.settings['node_caption'])
-            #if caption:
-                #for node in caption.keys():
-                    #graph.node[node]['caption'] = \
-                        #' $%i' % (round(100. * caption[node])) + '\%$'
-
-        ## (optional) calculate graph caption
-        #if self.settings['graph_caption']:
-            #caption = model.calc('system',
-                #self.settings['graph_caption'])
-            #if caption:
-                #name = model.system.about(
-                    #self.settings['graph_caption'])['name'].title()
-                #graph.graph['caption'] = \
-                    #name + ': $%i' % (round(100. * caption)) + '\%$'
-
         # update edge weights
         for (u, v) in graph.edges():
             edge = graph.edge[u][v]

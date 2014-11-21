@@ -50,13 +50,13 @@ def save(network, path = None, filetype = None, workspace = None,
 
     """
 
-    if not nemoa.common.type.is_network(network):
+    if not nemoa.common.type.isnetwork(network):
         return nemoa.log('error', """could not export network to file:
             network is not valid.""")
 
     # get file path from network source file if path not given
     if path == None:
-        path = network.get('config', 'path')
+        path = network.path
         filedir = nemoa.common.get_file_directory(path)
         filename = network.fullname
         if filetype: fileext = filetype

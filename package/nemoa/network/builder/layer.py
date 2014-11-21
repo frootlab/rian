@@ -37,7 +37,7 @@ class AutoEncoder:
         self.settings = self.default.copy()
         nemoa.common.dict_merge(kwargs, self.settings)
 
-        if nemoa.type.is_dataset(dataset):
+        if nemoa.type.isdataset(dataset):
             columns = dataset.columns
             self.settings['inputs'] = columns
             self.settings['outputs'] = columns

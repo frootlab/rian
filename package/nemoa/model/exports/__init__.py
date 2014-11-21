@@ -44,13 +44,13 @@ def save(model, path = None, filetype = None, workspace = None,
 
     """
 
-    if not nemoa.common.type.is_model(model):
+    if not nemoa.common.type.ismodel(model):
         return nemoa.log('error', """could not export model to file:
             model is not valid.""")
 
     # get file path from model source file if path is not given
     if path == None:
-        path = model.get('config', 'path')
+        path = model.path
         filedir = nemoa.common.get_file_directory(path)
         filename = model.fullname
         if filetype: fileext = filetype
