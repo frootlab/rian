@@ -30,12 +30,14 @@ class Rules:
     default = {
         'name': 'data',
         'columns': ['i1', 'i2', 'i3', 'i4', 'o1', 'o2'],
-        'rules': {
-            'o1': '%i1% + %i2%',
-            'o2': '%i3% + %i4%' },
+        'rules': {},
+        # example:
+        #'rules': {
+            #'o1': '%i1% + %i2%',
+            #'o2': '%i3% + %i4%' },
         'normalize': 'gauss',
         'rowlabel': 'r%i',
-        'samples': 100,
+        'samples': 1000,
         'abin': 0.0,
         'sdev': 1.0 }
 
