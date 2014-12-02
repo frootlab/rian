@@ -222,12 +222,12 @@ class Gauss(UnitsBaseClass):
 
         # get mean and standard deviation
         size = len(self.params['id'])
-        if data == None:
-            mean = numpy.zeros([1, size])
-            sdev = numpy.ones([1, size])
-        else:
+        if isinstance(data, numpy.ndarray):
             mean = numpy.mean(data, axis = 0).reshape(1, size)
             sdev = numpy.std(data, axis = 0).reshape(1, size)
+        else:
+            mean = numpy.zeros([1, size])
+            sdev = numpy.ones([1, size])
 
         # initialise bias and log variance of units
         self.params['bias'] = mean

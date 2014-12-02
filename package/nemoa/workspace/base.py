@@ -13,17 +13,19 @@ class Workspace:
     """Nemoa workspace."""
 
     _workspace = None
+    _base = 'user'
 
-    def __init__(self, workspace = None):
+    def __init__(self, workspace = None, base = 'user'):
         """initialize shared configuration."""
         #nemoa.workspace._init()
         if workspace:
-            self._workspace = workspace
-            self.load(workspace)
+            self.load(workspace, base = base)
 
-    def load(self, workspace):
+    def load(self, workspace, base = 'user'):
         """import workspace and update paths and logfile."""
-        return nemoa.workspace.load(workspace)
+        self._workspace = workspace
+        self._base = base
+        return nemoa.workspace.load(workspace, base = base)
 
     def name(self):
         """Return name of workspace."""
@@ -128,10 +130,10 @@ class Config:
 
         return self._config['path'].copy()
 
-    def load(self, workspace):
+    def load(self, workspace, base = 'user'):
         """Import configuration files from workspace."""
 
-        self._set_workspace(workspace, base = 'user')
+        self._set_workspace(workspace, base = base)
         nemoa.log('init', logfile = self._config['path']['logfile'])
         self._set_workspace_scan_files()
 
