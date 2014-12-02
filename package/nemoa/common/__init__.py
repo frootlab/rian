@@ -13,4 +13,5 @@ from nemoa.common.dict import *
 from nemoa.common.func import *
 from nemoa.common.inifile import *
 from nemoa.common.plot import *
+from nemoa.common.ostype import *
 import nemoa.common.module

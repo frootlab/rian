@@ -7,6 +7,7 @@ __license__ = 'GPLv3'
 import os
 import logging
 import inspect
+import platform
 import traceback
 
 __shared = {'indent': 0, 'mode': 'exec'}
@@ -90,13 +91,22 @@ def log(*args, **kwargs):
     if len(args) == 2:
         msg = args[1]
 
-    # define colors
-    color = {
-        'blue': '\033[94m',
-        'yellow': '\033[93m',
-        'red': '\033[91m',
-        'green': '\033[92m',
-        'default': '\033[0m'}
+    # define colors (platform dependent workaround)
+    systype = platform.system().lower()
+    if systype == 'windows':
+        color = {
+            'blue': '',
+            'yellow': '',
+            'red': '',
+            'green': '',
+            'default': ''}
+    else:
+        color = {
+            'blue': '\033[94m',
+            'yellow': '\033[93m',
+            'red': '\033[91m',
+            'green': '\033[92m',
+            'default': '\033[0m'}
 
     # get loggers
     loggers = logging.Logger.manager.loggerDict.keys()

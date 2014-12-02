@@ -87,30 +87,6 @@ class _GetchMacCarbon:
 
 
 def getch():
-    if inkey == None: inkey = _Getch()
+    global inkey
+    if not inkey: inkey = _Getch()
     return inkey()
-
-#import termios
-#import fcntl
-
-#def getch():
-    #"""Return single character from stdin, or None."""
-
-    #fd = sys.stdin.fileno()
-    #oldterm = termios.tcgetattr(fd)
-    #newattr = termios.tcgetattr(fd)
-    #newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
-    #termios.tcsetattr(fd, termios.TCSANOW, newattr)
-    #oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
-    #fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
-
-    #c = None
-
-    #try:
-        #try: c = sys.stdin.read(1)
-        #except IOError: pass
-    #finally:
-        #termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
-        #fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
-
-    #return c
