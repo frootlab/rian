@@ -293,13 +293,12 @@ class Graph:
                         = self.settings['target_bg_color']
 
         # find (disconected) complexes in graph
-        graphs = networkx.connected_component_subgraphs(
-            graph.to_undirected())
-        if len(graphs) > 1: nemoa.log('note',
-            '%i complexes found' % (len(graphs)))
+        graphs = list(networkx.connected_component_subgraphs(
+            graph.to_undirected()))
+        if len(graphs) > 1:
+            nemoa.log('note', '%i complexes found' % (len(graphs)))
         for i in xrange(len(graphs)):
-            for n in graphs[i].nodes():
-                graph.node[n]['complex'] = i
+            for n in graphs[i].nodes(): graph.node[n]['complex'] = i
 
         # create plot
         return nemoa.common.plot.graph(graph, **self.settings)
