@@ -53,7 +53,7 @@ class Workspace:
 class Config:
     """nemoa workspace module internal configuration object."""
 
-    _config  = None
+    _config = None
     _default = {
         'baseconf': 'nemoa.ini', # base configuration file
         'basepath': { # paths for shared ressources and workspaces
@@ -263,12 +263,12 @@ class Config:
             if not workspace in self._list_user_workspaces():
                 return nemoa.log('warning', """could not open workspace
                     '%s': folder could not be found in '%s'."""
-                    % (workspace, self._basepath['user']))
+                    % (workspace, self._config['basepath']['user']))
         elif base == 'common':
             if not workspace in self._list_shared_workspaces():
                 return nemoa.log('warning', """could not open workspace
                     '%s': folder could not be found in '%s'."""
-                    % (workspace, self._basepath['common']))
+                    % (workspace, self._config['basepath']['common']))
         else:
             return nemoa.log('error', """could not open workspace
                 '%s': base of workspace is not valid.""" % (workspace))
