@@ -93,12 +93,13 @@ def histogram(array, **kwargs):
 
 def graph(graph, **kwargs):
 
-    node_size_max = 800.      # maximum node size
-    node_size_scale = 1.85    # node size scale factor
-    font_size_max = 18.       # maximum font size
-    edge_line_width_max = 10. # maximum edge line with
-    edge_arr_scale = 8.       # edge arrow size scale factor
-    edge_radius = 0.15        # edge radius for fancy edges
+    node_size_max = 800.     # maximum node size
+    node_size_scale = 1.85   # node size scale factor
+    font_size_max = 18.      # maximum font size
+    edge_size_scale = 4.     # edge size scale factor
+    edge_normalize = True
+    edge_arr_scale = 8.      # edge arrow size scale factor
+    edge_radius = 0.15       # edge radius for fancy edges
 
     # create figure object
     fig = matplotlib.pyplot.figure()
@@ -125,7 +126,7 @@ def graph(graph, **kwargs):
     f_size = font_size_max * numpy.sqrt(n_size / node_size_max)
     node_font_size_max = f_size * 0.9
     line_width = 2. / n_count
-    edge_line_width = edge_line_width_max / n_count
+    edge_line_width = edge_size_scale / numpy.sqrt(n_count)
 
     # draw nodes
     for node, attr in graph.nodes(data = True):
@@ -164,6 +165,12 @@ def graph(graph, **kwargs):
         graph.node[node]['patch'] = c
 
     # draw edges
+    if edge_normalize:
+        max_weight = 0.0
+        for (u, v, attr) in graph.edges(data = True):
+            if max_weight > attr['weight']: continue
+            max_weight = attr['weight']
+        edge_line_width /= max_weight
     seen = {}
     for (u, v, attr) in graph.edges(data = True):
         n1 = graph.node[u]['patch']
@@ -197,7 +204,7 @@ def layergraph(graph, edge_curvature = 1.0, **kwargs):
     node_size_max = 800.     # maximum node size
     node_size_scale = 1.85   # node size scale factor
     font_size_max = 18.      # maximum font size
-    edge_line_width_max = 4. # maximum edge line with
+    edge_line_width_max = 4. # maximum edge linewidth
     edge_arr_scale = 8.      # edge arrow size scale factor
 
     # create node stack (list with lists of nodes)
