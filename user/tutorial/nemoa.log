@@ -30,3 +30,12 @@
 12/04/2014 22:29:37 WARNING nemoa.workspace.base._set_workspace -> could not open workspace 'unittest': folder could not be found in './user/'.
 12/04/2014 22:47:53 WARNING nemoa.workspace.base._set_workspace -> could not open workspace 'unittest': folder could not be found in './user/'.
 12/04/2014 22:49:08 WARNING nemoa.workspace.base._set_workspace -> could not open workspace 'unittest': folder could not be found in './user/'.
+12/05/2014 17:06:14 WARNING nemoa.workspace.base._set_workspace -> could not open workspace 'unittest': folder could not be found in './user/'.
+12/05/2014 17:06:32 WARNING nemoa.system.classes.base.get -> unknown key 'error'
+12/05/2014 17:06:47 WARNING nemoa.model.classes.base.calc -> could not evaluate model
+12/05/2014 17:07:15 WARNING nemoa.model.classes.base.calc -> could not evaluate model
+12/05/2014 18:18:33 WARNING nemoa.workspace.base._set_workspace -> could not open workspace 'unittest': folder could not be found in './user/'.
+12/05/2014 18:19:06 WARNING nemoa.workspace.base._set_workspace -> could not open workspace 'unittest': folder could not be found in './user/'.
+12/05/2014 18:22:24 WARNING nemoa.workspace.base._set_workspace -> could not open workspace 'unittest': folder could not be found in './user/'.
+12/05/2014 18:35:11 WARNING nemoa.workspace.base._set_workspace -> could not open workspace 'unittest': folder could not be found in './user/'.
+12/05/2014 18:37:55 WARNING nemoa.workspace.base._set_workspace -> could not open workspace 'unittest': folder could not be found in './user/'.

@@ -39,13 +39,27 @@ def getmethods(classname, prefix = '', removeprefix = True,
                     del methods[key]
                 continue
             del methods[key]
+    if values == 'name': return methods.keys()
     if values == 'reference': return methods
+    methoddict = {}
     if values == 'about':
         for key in methods.keys():
             if isinstance(methods[key].__doc__, basestring):
-                methods[key] = \
+                methoddict[key] = \
                     methods[key].__doc__.split('\n', 1)[0].strip(' .')
             else:
-                methods[key] = ''
-        return methods
+                methoddict[key] = ''
+        return methoddict
+    else:
+        for key in methods.keys():
+            methoddict[key] = {'name': key, 'reference': methods[key]}
+            if isinstance(methods[key].__doc__, basestring):
+                methoddict[key]['about'] = \
+                    methods[key].__doc__.split('\n', 1)[0].strip(' .')
+            else:
+                methoddict[key]['about'] = ''
+            for attr in methods[key].__dict__:
+                methoddict[key][attr] = methods[key].__dict__[attr]
+        return methoddict
+
     return False

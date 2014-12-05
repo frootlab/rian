@@ -396,61 +396,33 @@ class ANN(nemoa.system.classes.base.System):
 
         return update
 
-    #def _get_algorithms(self):
-        #return {
-            #'system': {
-                #'energy': {
-                    #'name': 'energy',
-                    #'about': 'sum of local unit and link energies',
-                    #'method': '_calc_system_energy',
-                    #'args': 'all', 'format': '%.3f',
-                    #'optimum': 'min'},
-                #'error': {
-                    #'name': 'average reconstruction error',
-                    #'about': 'mean error of reconstructed values',
-                    #'method': '_calc_error',
-                    #'args': 'all', 'format': '%.3f',
-                    #'optimum': 'min'},
-                #'accuracy': {
-                    #'name': 'average accuracy',
-                    #'about': 'mean accuracy of reconstructed values',
-                    #'method': '_calc_accuracy',
-                    #'args': 'all', 'format': '%.3f',
-                    #'optimum': 'max'},
-                #'precision': {
-                    #'name': 'average precision',
-                    #'about': 'mean precision of reconstructed values',
-                    #'method': '_calc_precision',
-                    #'args': 'all', 'format': '%.3f',
-                    #'optimum': 'max'} } }
-
-    @staticmethod
-    def _about_system(): return {
-        'energy': {
-            'name': 'energy',
-            'about': 'sum of local unit and link energies',
-            'method': '_calc_system_energy',
-            'args': 'all', 'format': '%.3f',
-            'optimum': 'min'},
-        'error': {
-            'name': 'average reconstruction error',
-            'about': 'mean error of reconstructed values',
-            'method': '_calc_error',
-            'args': 'all', 'format': '%.3f',
-            'optimum': 'min'},
-        'accuracy': {
-            'name': 'average accuracy',
-            'about': 'mean accuracy of reconstructed values',
-            'method': '_calc_accuracy',
-            'args': 'all', 'format': '%.3f',
-            'optimum': 'max'},
-        'precision': {
-            'name': 'average precision',
-            'about': 'mean precision of reconstructed values',
-            'method': '_calc_precision',
-            'args': 'all', 'format': '%.3f',
-            'optimum': 'max'}
-        }
+    #@staticmethod
+    #def _about_system(): return {
+        #'energy': {
+            #'name': 'energy',
+            #'about': 'sum of local unit and link energies',
+            #'method': '_calc_system_energy',
+            #'args': 'all', 'format': '%.3f',
+            #'optimum': 'min'},
+        #'error': {
+            #'name': 'average reconstruction error',
+            #'about': 'mean error of reconstructed values',
+            #'method': '_calc_error',
+            #'args': 'all', 'format': '%.3f',
+            #'optimum': 'min'},
+        #'accuracy': {
+            #'name': 'average accuracy',
+            #'about': 'mean accuracy of reconstructed values',
+            #'method': '_calc_accuracy',
+            #'args': 'all', 'format': '%.3f',
+            #'optimum': 'max'},
+        #'precision': {
+            #'name': 'average precision',
+            #'about': 'mean precision of reconstructed values',
+            #'method': '_calc_precision',
+            #'args': 'all', 'format': '%.3f',
+            #'optimum': 'max'}
+        #}
 
     @staticmethod
     def _about_units(): return {
@@ -532,84 +504,7 @@ class ANN(nemoa.system.classes.base.System):
             'args': 'input', 'return': 'vector', 'format': '%.3f'}
         }
 
-    @staticmethod
-    def _about_relations(): return {
-        'correlation': {
-            'name': 'correlation',
-            'about': """
-                undirected data based relation describing
-                the 'linearity' between variables (units) """,
-            'directed': False, 'signed': True, 'normal': True,
-            'method': '_calc_relation_correlation', 'show': 'heatmap',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        'capacity': {
-            'name': 'network capacity',
-            'about': """
-                directed graph based relation describing
-                the 'network capacity' between units (variables). """,
-            'directed': True, 'signed': True, 'normal': False,
-            'method': '_calc_relation_capacity', 'show': 'heatmap',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        'knockout': {
-            'name': 'knockout effect',
-            'about': """
-                directed data manipulation based relation describing
-                the increase of the data reconstruction error of a given
-                output unit, when setting the values of a given input
-                unit to its mean value. """,
-            'directed': True, 'signed': True, 'normal': False,
-            'method': '_calc_relation_knockout', 'show': 'heatmap',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        'induction': {
-            'name': 'induction',
-            'about': """
-                directed data manipulation based relation describing
-                the induced deviation of reconstructed values of a given
-                output unit, when manipulating the values of a given
-                input unit. """,
-            'directed': True, 'signed': False, 'normal': False,
-            'method': '_calc_relation_induction', 'show': 'heatmap',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        }
 
-    def _calc_system(self, data, func = 'accuracy', **kwargs):
-        """Evaluation of system.
-
-        Args:
-            data: 2-tuple of numpy arrays: source data and target data
-            func: string containing the name of a supported system
-                evaluation function. For a full list of available
-                functions use: model.system.about('eval')
-
-        Returns:
-            Scalar system evaluation value (respective to given data).
-
-        """
-
-        # get evaluation function
-        methods = self._about_system()
-        if not func in methods.keys(): return nemoa.log('error',
-            "could not evaluate system: unknown method '%s'" % (func))
-        method = methods[func]['method']
-        if not hasattr(self, method): return nemoa.log('error',
-            "could not evaluate units: unknown method '%s'" % (method))
-
-        # prepare (non keyword) arguments for evaluation function
-        eval_args = []
-        args_type = methods[func]['args']
-        if args_type == 'none': pass
-        elif args_type == 'input': eval_args.append(data[0])
-        elif args_type == 'output': eval_args.append(data[1])
-        elif args_type == 'all': eval_args.append(data)
-
-        # prepare keyword arguments for evaluation function
-        eval_kwargs = kwargs.copy()
-        if not 'mapping' in eval_kwargs.keys() \
-            or eval_kwargs['mapping'] == None:
-            eval_kwargs['mapping'] = self.mapping()
-
-        # evaluate system
-        return getattr(self, method)(*eval_args, **eval_kwargs)
 
     def _calc_system_energy(self, data, *args, **kwargs):
         """Sum of local link and unit energies."""

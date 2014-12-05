@@ -210,7 +210,7 @@ class System:
         class_name = self.__class__.__name__
         return module_name + '.' + class_name
 
-    def _get_algorithms(self, values = 'about'):
+    def _get_algorithms(self, values = 'about', type = None):
         """Get evaluation algorithms provided by system."""
         subclasses = ['units', 'links', 'relation']
         unstructured = nemoa.common.module.getmethods(self,
@@ -943,24 +943,87 @@ class System:
             return self._calc_relation(data, *args[1:], **kwargs)
 
         # evaluate system
-        if args[0] in self._about_system().keys():
+        if args[0] in self._get_algorithms(type = 'system', values = 'names'):
             return self._calc_system(data, *args, **kwargs)
 
         return nemoa.log('warning',
             "unsupported system evaluation '%s'" % (args[0]))
 
+    def _calc_system(self, data, func = 'accuracy', **kwargs):
+        """Evaluation of system.
+
+        Args:
+            data: 2-tuple of numpy arrays: source data and target data
+            func: string containing the name of a supported system
+                evaluation function. For a full list of available
+                functions use: model.system.about('eval')
+
+        Returns:
+            Scalar system evaluation value (respective to given data).
+
+        """
+
+        # get evaluation function
+        methods = self._get_algorithms(values = 'all')
+
+        #methods = self._about_system()
+        if not func in methods.keys(): return nemoa.log('error',
+            "could not evaluate system: unknown method '%s'" % (func))
+
+        # prepare (non keyword) arguments for evaluation function
+        eval_args = []
+        args_type = methods[func]['args']
+        if args_type == 'none': pass
+        elif args_type == 'input': eval_args.append(data[0])
+        elif args_type == 'output': eval_args.append(data[1])
+        elif args_type == 'all': eval_args.append(data)
+
+        # prepare keyword arguments for evaluation function
+        eval_kwargs = kwargs.copy()
+        if not 'mapping' in eval_kwargs.keys() \
+            or eval_kwargs['mapping'] == None:
+            eval_kwargs['mapping'] = self.mapping()
+
+        # evaluate system
+        return methods[func]['reference'](*eval_args, **eval_kwargs)
+
+    @nemoa.common.decorators.attributes(
+        name    = 'error',
+        type    = 'system.evaluation',
+        args    = 'all',
+        format  = '%.3f',
+        optimum = 'min')
     def _calc_error(self, *args, **kwargs):
         """Mean data reconstruction error of output units."""
         return numpy.mean(self._calc_units_error(*args, **kwargs))
 
+    @nemoa.common.decorators.attributes(
+        name    = 'accuracy',
+        type    = 'system.evaluation',
+        args    = 'all',
+        format  = '%.3f',
+        optimum = 'min')
     def _calc_accuracy(self, *args, **kwargs):
         """Mean data reconstruction accuracy of output units."""
         return numpy.mean(self._calc_units_accuracy(*args, **kwargs))
 
+    @nemoa.common.decorators.attributes(
+        name    = 'precision',
+        type    = 'system.evaluation',
+        args    = 'all',
+        format  = '%.3f',
+        optimum = 'min')
     def _calc_precision(self, *args, **kwargs):
         """Mean data reconstruction precision of output units."""
         return numpy.mean(self._calc_units_precision(*args, **kwargs))
 
+    @nemoa.common.decorators.attributes(
+        name   = 'mean',
+        type   = 'system.units.evaluation',
+        args   = 'input',
+        retfmt = 'scalar',
+        format = '%.3f',
+        show   = 'diagram')
     def _calc_units_mean(self, data, mapping = None, block = None):
         """Mean values of reconstructed target units.
 
@@ -991,6 +1054,13 @@ class System:
 
         return model_out.mean(axis = 0)
 
+    @nemoa.common.decorators.attributes(
+        name   = 'variance',
+        type   = 'system.units.evaluation',
+        args   = 'input',
+        retfmt = 'scalar',
+        format = '%.3f',
+        show   = 'diagram')
     def _calc_units_variance(self, data, mapping = None, block = None):
         """Return variance of reconstructed unit values.
 
@@ -1017,6 +1087,13 @@ class System:
 
         return model_out.var(axis = 0)
 
+    @nemoa.common.decorators.attributes(
+        name   = 'correlation',
+        type   = 'system.units.evaluation',
+        args   = 'all',
+        retfmt = 'scalar',
+        format = '%.3f',
+        show   = 'diagram')
     def _calc_units_correlation(self, data, mapping = None,
         block = None):
         """Correlation of reconstructed unit values.
@@ -1052,6 +1129,13 @@ class System:
 
         return True
 
+    @nemoa.common.decorators.attributes(
+        name   = 'expect',
+        type   = 'system.units.evaluation',
+        args   = 'input',
+        retfmt = 'vector',
+        format = '%.3f',
+        show   = 'histogram')
     def _calc_units_expect(self, data, mapping = None, block = None):
         """Expectation values of target units.
 
@@ -1084,6 +1168,13 @@ class System:
 
         return outData
 
+    @nemoa.common.decorators.attributes(
+        name   = 'values',
+        type   = 'system.units.evaluation',
+        args   = 'input',
+        retfmt = 'vector',
+        format = '%.3f',
+        show   = 'histogram')
     def _calc_units_values(self, data, mapping = None, block = None,
         expect_last = False):
         """Unit maximum likelihood values of target units.
@@ -1134,6 +1225,13 @@ class System:
                     self._units[mapping[id]].params))
             return data
 
+    @nemoa.common.decorators.attributes(
+        name   = 'samples',
+        type   = 'system.units.evaluation',
+        args   = 'input',
+        retfmt = 'vector',
+        format = '%.3f',
+        show   = 'histogram')
     def _calc_units_samples(self, data, mapping = None,
         block = None, expect_last = False):
         """Sampled unit values of target units.
@@ -1183,6 +1281,13 @@ class System:
                     data, self._units[mapping[id]].params)
             return data
 
+    @nemoa.common.decorators.attributes(
+        name   = 'residuals',
+        type   = 'system.units.evaluation',
+        args   = 'all',
+        retfmt = 'vector',
+        format = '%.3f',
+        show   = 'histogram')
     def _calc_units_residuals(self, data, mapping = None, block = None):
         """Reconstruction residuals of target units.
 
@@ -1218,6 +1323,13 @@ class System:
         # calculate residuals
         return d_tgt - m_out
 
+    @nemoa.common.decorators.attributes(
+        name   = 'error',
+        type   = 'system.units.evaluation',
+        args   = 'all',
+        retfmt = 'scalar',
+        format = '%.3f',
+        show   = 'diagram')
     def _calc_units_error(self, data, norm = 'MSE', **kwargs):
         """Unit reconstruction error.
 
@@ -1244,6 +1356,13 @@ class System:
 
         return error
 
+    @nemoa.common.decorators.attributes(
+        name   = 'accuracy',
+        type   = 'system.units.evaluation',
+        args   = 'all',
+        retfmt = 'scalar',
+        format = '%.3f',
+        show   = 'diagram')
     def _calc_units_accuracy(self, data, norm = 'MSE', **kwargs):
         """Unit reconstruction accuracy.
 
@@ -1270,6 +1389,13 @@ class System:
 
         return 1. - normres / normdat
 
+    @nemoa.common.decorators.attributes(
+        name   = 'precision',
+        type   = 'system.units.evaluation',
+        args   = 'all',
+        retfmt = 'scalar',
+        format = '%.3f',
+        show   = 'diagram')
     def _calc_units_precision(self, data, norm = 'SD', **kwargs):
         """Unit reconstruction precision.
 
@@ -1296,8 +1422,21 @@ class System:
 
         return 1. - devres / devdat
 
+    @nemoa.common.decorators.attributes(
+        name     = 'correlation',
+        type     = 'system.relation.evaluation',
+        directed = False,
+        signed   = True,
+        normal   = True,
+        args     = 'all',
+        retfmt   = 'scalar',
+        show     = 'heatmap',
+        format   = '%.3f')
     def _calc_relation_correlation(self, data, mapping = None, **kwargs):
         """Data correlation between source and target units.
+
+        Undirected data based relation describing the 'linearity'
+        between variables (units).
 
         Args:
             data: 2-tuple with numpy arrays: input data and output data
@@ -1329,8 +1468,21 @@ class System:
 
         return R
 
+    @nemoa.common.decorators.attributes(
+        name     = 'capacity',
+        type     = 'system.relation.evaluation',
+        directed = True,
+        signed   = True,
+        normal   = False,
+        args     = 'all',
+        retfmt   = 'scalar',
+        show     = 'heatmap',
+        format   = '%.3f')
     def _calc_relation_capacity(self, data, mapping = None, **kwargs):
         """Network Capacity from source to target units.
+
+        Directed graph based relation describing the 'network capacity'
+        between units (variables).
 
         Args:
             data: 2-tuple with numpy arrays: input data and output data
@@ -1354,8 +1506,23 @@ class System:
 
         return R.T
 
+    @nemoa.common.decorators.attributes(
+        name     = 'knockout',
+        type     = 'system.relation.evaluation',
+        directed = True,
+        signed   = True,
+        normal   = False,
+        args     = 'all',
+        retfmt   = 'scalar',
+        show     = 'heatmap',
+        format   = '%.3f')
     def _calc_relation_knockout(self, data, mapping = None, **kwargs):
         """Knockout effect from source to target units.
+
+        Directed data manipulation based relation describing the
+        increase of the data reconstruction error of a given output
+        unit, when setting the values of a given input unit to its mean
+        value.
 
         Knockout single source units and measure effects on target units
         respective to given data
@@ -1400,10 +1567,24 @@ class System:
 
         return R
 
+    @nemoa.common.decorators.attributes(
+        name     = 'induction',
+        type     = 'system.relation.evaluation',
+        directed = True,
+        signed   = False,
+        normal   = False,
+        args     = 'all',
+        retfmt   = 'scalar',
+        show     = 'heatmap',
+        format   = '%.3f')
     def _calc_relation_induction(self, data, mapping = None,
         points = 10, amplify = 1., gauge = 0.25, contrast = 20.0,
         **kwargs):
         """Induced deviation from source to target units.
+
+        Directed data manipulation based relation describing the induced
+        deviation of reconstructed values of a given output unit, when
+        manipulating the values of a given input unit.
 
         For each sample and for each source the induced deviation on
         target units is calculated by respectively fixing one sample,
