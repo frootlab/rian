@@ -154,7 +154,7 @@ class Tracker:
 
         # calculate objective function value
         func = cfg['tracker_obj_function']
-        value = self._system.calc(data = self._state['data'],
+        value = self._system.evaluate(data = self._state['data'],
             func = func)
         progr = float(self._state['epoch']) / float(cfg['updates'])
 
@@ -179,7 +179,8 @@ class Tracker:
                 < cfg['tracker_obj_init_wait']:
                 return True
 
-            type_of_optimum = self._system.about(func)['optimum']
+            type_of_optimum = self._system.get('algorithm', func,
+                attribute = 'optimum')
             current_optimum = self._state['obj_opt_value']
 
             if type_of_optimum == 'min' and value < current_optimum:
@@ -214,8 +215,8 @@ class Tracker:
 
         if not self._state['continue']:
             func = cfg['tracker_eval_function']
-            prop = self._system.about(func)
-            value = self._system.calc(data = self._state['data'],
+            prop = self._system.get('algorithm', func)
+            value = self._system.evaluate(data = self._state['data'],
                 func = func)
             out = 'found optimum with: %s = ' + prop['format']
             self._state['eval_enable'] = False
@@ -224,8 +225,8 @@ class Tracker:
         if ((now - self._state['eval_prev_time']) \
             > cfg['tracker_eval_time_interval']):
             func = cfg['tracker_eval_function']
-            prop = self._system.about(func)
-            value = self._system.calc(data = self._state['data'],
+            prop = self._system.get('algorithm', func)
+            value = self._system.evaluate(data = self._state['data'],
                 func = func)
             progr = float(self._state['epoch']) \
                 / float(cfg['updates']) * 100.

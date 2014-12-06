@@ -346,7 +346,6 @@ class Network:
 
         # meta information
         if key == 'about': return self._get_about()
-        if key == 'algorithms': return self._get_algorithms()
         if key == 'author': return self._get_author()
         if key == 'branch': return self._get_branch()
         if key == 'email': return self._get_email()
@@ -356,6 +355,12 @@ class Network:
         if key == 'path': return self._get_path()
         if key == 'type': return self._get_type()
         if key == 'version': return self._get_version()
+
+        # algorithms
+        if key == 'algorithm':
+            return self._get_algorithm(*args, **kwargs)
+        if key == 'algorithms': return self._get_algorithms(
+            attribute = 'about', *args, **kwargs)
 
         # content
         if key == 'node': return self._get_node(*args, **kwargs)
@@ -424,10 +429,15 @@ class Network:
         class_name = self.__class__.__name__
         return module_name + '.' + class_name
 
-    def _get_algorithms(self, values = 'about'):
-        """Get evaluation algorithms provided by network."""
+    def _get_algorithm(self, algorithm = None, *args, **kwargs):
+        """Get algorithm provided by network."""
+        algorithms = self._get_algorithms(*args, **kwargs)
+        return algorithms[algorithm]
+
+    def _get_algorithms(self, category = None, attribute = None):
+        """Get algorithms provided by network."""
         return nemoa.common.module.getfunctions(
-            networkx.algorithms, prefix = '', values = values)
+            networkx.algorithms, prefix = '', attribute = attribute)
 
     def _get_path(self):
         """Get path of network."""
@@ -799,15 +809,15 @@ class Network:
 
         return True
 
-    def calc(self, key = None, *args, **kwargs):
-        """Get evaluation of network."""
+    def evaluate(self, name = None, *args, **kwargs):
+        """Evaluate network."""
 
-        algorithms = self._get_algorithms(values = 'reference')
-        if not key in algorithms.keys():
+        algorithms = self._get_algorithms(attribute = 'reference')
+        if not name in algorithms.keys():
             return nemoa.log('error', """could not evaluate network:
-                unknown networkx algorithm name '%s'.""" % (key))
+                unknown networkx algorithm name '%s'.""" % (name))
 
-        return algorithms[key](self._graph, *args, **kwargs)
+        return algorithms[name](self._graph, *args, **kwargs)
 
     def initialize(self, system = None):
         if not system: return False

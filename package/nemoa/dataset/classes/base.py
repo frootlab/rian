@@ -560,13 +560,13 @@ class Dataset:
 
             # transform data
             if func == 'expect':
-                trans_array = system._calc_units_expect(
+                trans_array = system._eval_units_expect(
                     data_array, mapping)
             elif func == 'value':
-                trans_array = system._calc_units_values(
+                trans_array = system._eval_units_values(
                     data_array, mapping)
             elif func == 'sample':
-                trans_array = system._calc_units_samples(
+                trans_array = system._eval_units_samples(
                     data_array, mapping)
 
             # create empty record array
@@ -603,7 +603,6 @@ class Dataset:
 
         # meta information
         if key == 'about': return self._get_about()
-        if key == 'algorithms': return self._get_algorithms()
         if key == 'author': return self._get_author()
         if key == 'branch': return self._get_branch()
         if key == 'email': return self._get_email()
@@ -613,6 +612,12 @@ class Dataset:
         if key == 'path': return self._get_path()
         if key == 'type': return self._get_type()
         if key == 'version': return self._get_version()
+
+        # algorithms
+        if key == 'algorithm':
+            return self._get_algorithm(*args, **kwargs)
+        if key == 'algorithms': return self._get_algorithms(
+            attribute = 'about', *args, **kwargs)
 
         # content
         if key == 'columns': return self._get_columns(*args, **kwargs)
@@ -686,10 +691,15 @@ class Dataset:
         class_name = self.__class__.__name__
         return module_name + '.' + class_name
 
-    def _get_algorithms(self, values = 'about'):
-        """Get evaluation algorithms provided by dataset."""
+    def _get_algorithm(self, algorithm = None, *args, **kwargs):
+        """Get algorithm provided by dataset."""
+        algorithms = self._get_algorithms(*args, **kwargs)
+        return algorithms[algorithm]
+
+    def _get_algorithms(self, category = None, attribute = None):
+        """Get algorithms provided by dataset."""
         return nemoa.common.module.getmethods(self,
-            prefix = '_calc_', values = values)
+            prefix = '_eval_', attribute = attribute)
 
     def _get_path(self):
         """Get path of dataset."""
@@ -1373,17 +1383,21 @@ class Dataset:
 
         return True
 
-    def calc(self, key = None, *args, **kwargs):
-        """Calculate evaluation of dataset."""
+    def evaluate(self, name = None, *args, **kwargs):
+        """Evaluate dataset."""
 
-        algorithms = self._get_algorithms(values = 'reference')
-        if not key in algorithms.keys():
+        algorithms = self._get_algorithms(attribute = 'reference')
+        if not name in algorithms.keys():
             return nemoa.log('error', """could not evaluate dataset:
-                unknown algorithm name '%s'.""" % (key))
+                unknown algorithm name '%s'.""" % (name))
 
-        return algorithms[key](*args, **kwargs)
+        return algorithms[name](*args, **kwargs)
 
-    def _calc_correlation(self, cols = '*'):
+    @nemoa.common.decorators.attributes(
+        name     = 'correlation',
+        category = ('dataset', 'relation', 'evaluation'),
+        format   = '%.3f')
+    def _eval_correlation(self, cols = '*'):
         """Calculate correlation coefficients between columns."""
 
         # get numpy array with test data
@@ -1391,7 +1405,11 @@ class Dataset:
 
         return numpy.corrcoef(data.T)
 
-    def _calc_test_binary(self, cols = '*'):
+    @nemoa.common.decorators.attributes(
+        name     = 'correlation',
+        category = ('dataset', 'evaluation'),
+        format   = '%.3f')
+    def _eval_test_binary(self, cols = '*'):
         """Test if dataset contains only binary values.
 
         Args:
@@ -1413,7 +1431,11 @@ class Dataset:
 
         return True
 
-    def _calc_test_gauss(self, cols = '*', mu = 0., sigma = 1.,
+    @nemoa.common.decorators.attributes(
+        name     = 'correlation',
+        category = ('dataset', 'evaluation'),
+        format   = '%.3f')
+    def _eval_test_gauss(self, cols = '*', mu = 0., sigma = 1.,
         delta = .05):
         """Test if dataset contains gauss normalized data per columns.
 

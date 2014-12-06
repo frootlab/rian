@@ -132,7 +132,6 @@ class System:
 
         # meta information
         if key == 'about': return self._get_about()
-        if key == 'algorithms': return self._get_algorithms()
         if key == 'author': return self._get_author()
         if key == 'branch': return self._get_branch()
         if key == 'email': return self._get_email()
@@ -142,6 +141,12 @@ class System:
         if key == 'path': return self._get_path()
         if key == 'type': return self._get_type()
         if key == 'version': return self._get_version()
+
+        # algorithms
+        if key == 'algorithm':
+            return self._get_algorithm(*args, **kwargs)
+        if key == 'algorithms': return self._get_algorithms(
+            attribute = 'about', *args, **kwargs)
 
         # content
         if key == 'unit': return self._get_unit(*args, **kwargs)
@@ -210,21 +215,63 @@ class System:
         class_name = self.__class__.__name__
         return module_name + '.' + class_name
 
-    def _get_algorithms(self, values = 'about', type = None):
-        """Get evaluation algorithms provided by system."""
-        subclasses = ['units', 'links', 'relation']
+    def _get_algorithm(self, algorithm = None, *args, **kwargs):
+        """Get algorithm provided by system."""
+        algorithms = self._get_algorithms(*args, **kwargs)
+        return algorithms[algorithm]
+
+    def _get_algorithms(self, category = None, attribute = None):
+        """Get algorithms provided by system."""
+
+        # get unstructured dictionary of all algorithms by prefix
         unstructured = nemoa.common.module.getmethods(self,
-            prefix = '_calc_', values = values)
-        structured = {key: {} for key in subclasses}
-        for key, val in unstructured.iteritems():
-            if key in subclasses: continue
-            found = False
-            for subclass in subclasses:
-                if key[:len(subclass) + 1] == subclass + '_':
-                    structured[subclass][key[len(subclass) + 1:]] = val
-                    found = True
-            if found: continue
-            structured[key] = val
+            prefix = '_eval_')
+
+        # filter algorithms by supported keys and given category
+        for ukey, udata in unstructured.items():
+            if not isinstance(udata, dict):
+                del unstructured[ukey]
+                continue
+            if attribute and not attribute in udata.keys():
+                del unstructured[ukey]
+                continue
+            if not 'name' in udata.keys():
+                del unstructured[ukey]
+                continue
+            if not 'category' in udata.keys():
+                del unstructured[ukey]
+                continue
+            if category and not udata['category'] == category:
+                del unstructured[ukey]
+
+        # create flat structure id category is given
+        structured = {}
+        if category:
+            for ukey, udata in unstructured.iteritems():
+                if attribute: structured[udata['name']] = \
+                    udata[attribute]
+                else: structured[udata['name']] = udata
+            return structured
+
+        # create tree structure if category is not given
+        categories = {
+            ('system', 'evaluation'): None,
+            ('system', 'units', 'evaluation'): 'units',
+            ('system', 'links', 'evaluation'): 'links',
+            ('system', 'relation', 'evaluation'): 'relation' }
+        for ukey, udata in unstructured.iteritems():
+            if not udata['category'] in categories.keys(): continue
+            ckey = categories[udata['category']]
+            if ckey == None:
+                if attribute: structured[udata['name']] = \
+                    udata[attribute]
+                else: structured[udata['name']] = udata
+            else:
+                if not ckey in structured.keys(): structured[ckey] = {}
+                if attribute: structured[ckey][udata['name']] = \
+                    udata[attribute]
+                else: structured[ckey][udata['name']] = udata
+
         return structured
 
     def _get_path(self):
@@ -924,107 +971,348 @@ class System:
 
         return True
 
-    def calc(self, data, *args, **kwargs):
+    def evaluate(self, data, *args, **kwargs):
+        """Evaluate system using data."""
 
         # default system evaluation
         if len(args) == 0:
-            return self._calc_system(data, **kwargs)
+            return self._eval_system(data, **kwargs)
 
         # evaluate system units
         if args[0] == 'units':
-            return self._calc_units(data, *args[1:], **kwargs)
+            return self._eval_units(data, *args[1:], **kwargs)
 
         # evaluate system links
         if args[0] == 'links':
-            return self._calc_links(data, *args[1:], **kwargs)
+            return self._eval_links(data, *args[1:], **kwargs)
 
         # evaluate system relations
         if args[0] == 'relations':
-            return self._calc_relation(data, *args[1:], **kwargs)
+            return self._eval_relation(data, *args[1:], **kwargs)
 
         # evaluate system
-        if args[0] in self._get_algorithms(type = 'system', values = 'names'):
-            return self._calc_system(data, *args, **kwargs)
+        algorithms = self._get_algorithms(attribute = 'name',
+            category = ('system', 'evaluation')).values()
+        if args[0] in algorithms:
+            return self._eval_system(data, *args, **kwargs)
 
         return nemoa.log('warning',
             "unsupported system evaluation '%s'" % (args[0]))
 
-    def _calc_system(self, data, func = 'accuracy', **kwargs):
+    def _eval_system(self, data, func = 'accuracy', **kwargs):
         """Evaluation of system.
 
         Args:
             data: 2-tuple of numpy arrays: source data and target data
             func: string containing the name of a supported system
                 evaluation function. For a full list of available
-                functions use: model.system.about('eval')
+                functions use: model.system.get('algorithms')
 
         Returns:
             Scalar system evaluation value (respective to given data).
 
         """
 
-        # get evaluation function
-        methods = self._get_algorithms(values = 'all')
+        # check if data is valid
+        if not isinstance(data, tuple): return nemoa.log('error',
+            'could not evaluate system: invalid data.')
 
-        #methods = self._about_system()
-        if not func in methods.keys(): return nemoa.log('error',
-            "could not evaluate system: unknown method '%s'" % (func))
+        # get evaluation algorithms
+        algorithms = self._get_algorithms(
+            category = ('system', 'evaluation'))
+        if not func in algorithms.keys(): return nemoa.log('error',
+            """could not evaluate system:
+            unknown algorithm name '%s'.""" % (func))
+        algorithm = algorithms[func]
 
         # prepare (non keyword) arguments for evaluation function
-        eval_args = []
-        args_type = methods[func]['args']
-        if args_type == 'none': pass
-        elif args_type == 'input': eval_args.append(data[0])
-        elif args_type == 'output': eval_args.append(data[1])
-        elif args_type == 'all': eval_args.append(data)
+        evalargs = []
+        if algorithm['args'] == 'none': pass
+        elif algorithm['args'] == 'input': evalargs.append(data[0])
+        elif algorithm['args'] == 'output': evalargs.append(data[1])
+        elif algorithm['args'] == 'all': evalargs.append(data)
 
         # prepare keyword arguments for evaluation function
-        eval_kwargs = kwargs.copy()
-        if not 'mapping' in eval_kwargs.keys() \
-            or eval_kwargs['mapping'] == None:
-            eval_kwargs['mapping'] = self.mapping()
+        evalkwargs = kwargs.copy()
+        if not 'mapping' in evalkwargs.keys() \
+            or evalkwargs['mapping'] == None:
+            evalkwargs['mapping'] = self.mapping()
 
         # evaluate system
-        return methods[func]['reference'](*eval_args, **eval_kwargs)
+        return algorithm['reference'](*evalargs, **evalkwargs)
+
+    def _eval_units(self, data, func = 'accuracy', units = None,
+        **kwargs):
+        """Evaluation of target units.
+
+        Args:
+            data: 2-tuple with numpy arrays: source and target data
+            func: string containing name of unit evaluation function
+                For a full list of available system evaluation functions
+                see: model.system.get('algorithms')
+            units: list of target unit names (within the same layer). If
+                not given, all output units are selected.
+
+        Returns:
+            Dictionary with unit evaluation values for target units. The
+            keys of the dictionary are given by the names of the target
+            units, the values depend on the used evaluation function and
+            are ether scalar (float) or vectorially (flat numpy array).
+
+        """
+
+        # check if data is valid
+        if not isinstance(data, tuple): return nemoa.log('error',
+            'could not evaluate system units: invalid data.')
+
+        # get evaluation algorithms
+        algorithms = self._get_algorithms(
+            category = ('system', 'units', 'evaluation'))
+        if not func in algorithms.keys(): return nemoa.log('error',
+            """could not evaluate system units:
+            unknown algorithm name '%s'.""" % (func))
+        algorithm = algorithms[func]
+
+        # prepare (non keyword) arguments for evaluation
+        if algorithm['args'] == 'none': evalargs = []
+        elif algorithm['args'] == 'input': evalargs = [data[0]]
+        elif algorithm['args'] == 'output': evalargs = [data[1]]
+        elif algorithm['args'] == 'all': evalargs = [data]
+
+        # prepare keyword arguments for evaluation
+        evalkwargs = kwargs.copy()
+        if isinstance(units, str):
+            evalkwargs['mapping'] = self.mapping(tgt = units)
+        elif not 'mapping' in evalkwargs.keys() \
+            or evalkwargs['mapping'] == None:
+            evalkwargs['mapping'] = self.mapping()
+
+        # evaluate units
+        try: values = algorithm['reference'](*evalargs, **evalkwargs)
+        except: return nemoa.log('error', 'could not evaluate units')
+
+        # create dictionary of target units
+        labels = self._get_units(layer = evalkwargs['mapping'][-1])
+        if algorithm['retfmt'] == 'vector': return {unit: \
+            values[:, uid] for uid, unit in enumerate(labels)}
+        elif algorithm['retfmt'] == 'scalar': return {unit:
+            values[uid] for uid, unit in enumerate(labels)}
+        return nemoa.log('warning', """could not evaluate system units:
+            unknown return format '%s'.""" % (algorithm['retfmt']))
+
+    def _eval_links(self, data, func = 'energy', **kwargs):
+        """Evaluate system links respective to data.
+
+        Args:
+            data: 2-tuple of numpy arrays containing source and target
+                data corresponding to the first and the last argument
+                of the mapping
+            mapping: n-tuple of strings containing the mapping
+                from source unit layer (first argument of tuple)
+                to target unit layer (last argument of tuple)
+            func: string containing name of link evaluation function
+                For a full list of available link evaluation functions
+                see: model.system.get('algorithms')
+
+        """
+
+        # check if data is valid
+        if not isinstance(data, tuple): return nemoa.log('error',
+            'could not evaluate system links: invalid data.')
+
+        # get evaluation algorithms
+        algorithms = self._get_algorithms(
+            category = ('system', 'links', 'evaluation'))
+        if not func in algorithms.keys(): return nemoa.log('error',
+            """could not evaluate system links:
+            unknown algorithm name '%s'.""" % (func))
+        algorithm = algorithms[func]
+
+        # prepare (non keyword) arguments for evaluation
+        if algorithm['args'] == 'none': evalargs = []
+        elif algorithm['args'] == 'input': evalargs = [data[0]]
+        elif algorithm['args'] == 'output': evalargs = [data[1]]
+        elif algorithm['args'] == 'all': evalargs = [data]
+
+        # prepare keyword arguments for evaluation
+        evalkwargs = kwargs.copy()
+        if isinstance(units, str):
+            evalkwargs['mapping'] = self.mapping(tgt = units)
+        elif not 'mapping' in evalkwargs.keys() \
+            or evalkwargs['mapping'] == None:
+            evalkwargs['mapping'] = self.mapping()
+
+        # perform evaluation
+        try: values = algorithm['reference'](*evalargs, **evalkwargs)
+        except: return nemoa.log('error', 'could not evaluate links')
+
+        # create link dictionary
+        in_labels = self._get_units(layer = evalkwargs['mapping'][-2])
+        out_labels = self._get_units(layer = evalkwargs['mapping'][-1])
+        if algorithm['retfmt'] == 'scalar':
+            rel_dict = {}
+            for in_id, in_unit in enumerate(in_labels):
+                for out_id, out_unit in enumerate(out_labels):
+                    rel_dict[(in_unit, out_unit)] = \
+                        values[in_id, out_id]
+            return rel_dict
+        return nemoa.log('warning', """could not evaluate system links:
+            unknown return format '%s'.""" % (algorithm['retfmt']))
+
+    def _eval_relation(self, data, func = 'correlation',
+        evalstat = True, **kwargs):
+        """Evaluate relations between source and target units.
+
+        Args:
+            data: 2-tuple with numpy arrays: input data and output data
+            func: string containing name of unit relation function
+                For a full list of available unit relation functions
+                see: model.system.get('algorithms')
+            transform: optional formula for transformation of relation
+                which is executed by python eval() function. The usable
+                variables are:
+                    M: for the relation matrix as numpy array with shape
+                        (source, target)
+                    C: for the standard correlation matrix s numpy array
+                        with shape (source, target)
+                Example: 'M**2 - C'
+            format: string describing format of return values
+                'array': return values as numpy array
+                'dict': return values as python dictionary
+            eval_stat: if format is 'dict' and eval_stat is True then
+                the return dictionary includes additional statistical
+                values:
+                    min: minimum value of unit relation
+                    max: maximum value of unit relation
+                    mean: mean value of unit relation
+                    std: standard deviation of unit relation
+
+        Returns:
+            Python dictionary or numpy array with unit relation values.
+
+        """
+
+        # check if data is valid
+        if not isinstance(data, tuple): return nemoa.log('error',
+            'could not evaluate system unit relation: invalid data.')
+
+        # get evaluation algorithms
+        algorithms = self._get_algorithms(
+            category = ('system', 'relation', 'evaluation'))
+        if not func in algorithms.keys(): return nemoa.log('error',
+            """could not evaluate system unit relation:
+            unknown algorithm name '%s'.""" % (func))
+        algorithm = algorithms[func]
+
+        # prepare (non keyword) arguments for evaluation
+        if algorithm['args'] == 'none': evalargs = []
+        elif algorithm['args'] == 'input': evalargs = [data[0]]
+        elif algorithm['args'] == 'output': evalargs = [data[1]]
+        elif algorithm['args'] == 'all': evalargs = [data]
+
+        # prepare keyword arguments for evaluation
+        if 'transform' in kwargs.keys() \
+            and isinstance(kwargs['transform'], str):
+            transform = kwargs['transform']
+            del kwargs['transform']
+        else: transform = ''
+        if 'format' in kwargs.keys() \
+            and isinstance(kwargs['format'], str):
+            retfmt = kwargs['format']
+            del kwargs['format']
+        else: retfmt = 'dict'
+        evalkwargs = kwargs.copy()
+        if not 'mapping' in evalkwargs.keys() \
+            or evalkwargs['mapping'] == None:
+            evalkwargs['mapping'] = self.mapping()
+
+        # perform evaluation
+        try: values = algorithm['reference'](*evalargs, **evalkwargs)
+        except: return nemoa.log('error', """
+            could not evaluate system unit relations""")
+
+        # create formated return values as matrix or dict
+        # (for scalar relation evaluations)
+        if algorithm['retfmt'] == 'scalar':
+            # (optional) transform relation using 'transform' string
+            if transform:
+                M = values
+                # todo: calc real relation
+                if 'C' in transform:
+                    C = self._eval_relation_correlation(data)
+                try:
+                    T = eval(transform)
+                    values = T
+                except: return nemoa.log('error',
+                    'could not transform relations: invalid syntax!')
+
+            # create formated return values
+            if retfmt == 'array': retval = values
+            elif retfmt == 'dict':
+                inunits = self._get_units(
+                    layer = evalkwargs['mapping'][0])
+                outunits = self._get_units(
+                    layer = evalkwargs['mapping'][-1])
+                retval = nemoa.common.dict_from_array(
+                    values, (inunits, outunits))
+
+                # optionally add statistics
+                if evalstat:
+                    filtered = [retval[key] for key in retval.keys()
+                        if not key[0].split(':')[1] \
+                        == key[1].split(':')[1]]
+                    array = numpy.array(filtered)
+                    retval['max']  = numpy.amax(array)
+                    retval['min']  = numpy.amin(array)
+                    retval['mean'] = numpy.mean(array)
+                    retval['std']  = numpy.std(array)
+                    ## force symmetric distribution with mean at 0
+                    ## by adding additive inverse values
+                    #B = numpy.concatenate((array, -array))
+                    #retval['cstd'] = numpy.std(B) - numpy.mean(array)
+            else: return nemoa.log('warning',
+                'could not perform system unit relation evaluation')
+
+            return retval
 
     @nemoa.common.decorators.attributes(
-        name    = 'error',
-        type    = 'system.evaluation',
-        args    = 'all',
-        format  = '%.3f',
-        optimum = 'min')
-    def _calc_error(self, *args, **kwargs):
+        name     = 'error',
+        category = ('system', 'evaluation'),
+        args     = 'all',
+        format   = '%.3f',
+        optimum  = 'min')
+    def _eval_error(self, *args, **kwargs):
         """Mean data reconstruction error of output units."""
-        return numpy.mean(self._calc_units_error(*args, **kwargs))
+        return numpy.mean(self._eval_units_error(*args, **kwargs))
 
     @nemoa.common.decorators.attributes(
-        name    = 'accuracy',
-        type    = 'system.evaluation',
-        args    = 'all',
-        format  = '%.3f',
-        optimum = 'min')
-    def _calc_accuracy(self, *args, **kwargs):
+        name     = 'accuracy',
+        category = ('system', 'evaluation'),
+        args     = 'all',
+        format   = '%.3f',
+        optimum  = 'min')
+    def _eval_accuracy(self, *args, **kwargs):
         """Mean data reconstruction accuracy of output units."""
-        return numpy.mean(self._calc_units_accuracy(*args, **kwargs))
+        return numpy.mean(self._eval_units_accuracy(*args, **kwargs))
 
     @nemoa.common.decorators.attributes(
-        name    = 'precision',
-        type    = 'system.evaluation',
-        args    = 'all',
-        format  = '%.3f',
-        optimum = 'min')
-    def _calc_precision(self, *args, **kwargs):
+        name     = 'precision',
+        category = ('system', 'evaluation'),
+        args     = 'all',
+        format   = '%.3f',
+        optimum  = 'min')
+    def _eval_precision(self, *args, **kwargs):
         """Mean data reconstruction precision of output units."""
-        return numpy.mean(self._calc_units_precision(*args, **kwargs))
+        return numpy.mean(self._eval_units_precision(*args, **kwargs))
 
     @nemoa.common.decorators.attributes(
-        name   = 'mean',
-        type   = 'system.units.evaluation',
-        args   = 'input',
-        retfmt = 'scalar',
-        format = '%.3f',
-        show   = 'diagram')
-    def _calc_units_mean(self, data, mapping = None, block = None):
+        name     = 'mean',
+        category = ('system', 'units', 'evaluation'),
+        args     = 'input',
+        retfmt   = 'scalar',
+        format   = '%.3f',
+        show     = 'diagram')
+    def _eval_units_mean(self, data, mapping = None, block = None):
         """Mean values of reconstructed target units.
 
         Args:
@@ -1044,24 +1332,24 @@ class System:
 
         if mapping == None: mapping = self.mapping()
         if block == None:
-            model_out = self._calc_units_expect(data[0], mapping)
+            model_out = self._eval_units_expect(data[0], mapping)
         else:
             data_in_copy = numpy.copy(data)
             for i in block:
                 data_in_copy[:,i] = numpy.mean(data_in_copy[:,i])
-            model_out = self._calc_units_expect(
+            model_out = self._eval_units_expect(
                 data_in_copy, mapping)
 
         return model_out.mean(axis = 0)
 
     @nemoa.common.decorators.attributes(
-        name   = 'variance',
-        type   = 'system.units.evaluation',
-        args   = 'input',
-        retfmt = 'scalar',
-        format = '%.3f',
-        show   = 'diagram')
-    def _calc_units_variance(self, data, mapping = None, block = None):
+        name     = 'variance',
+        category = ('system', 'units', 'evaluation'),
+        args     = 'input',
+        retfmt   = 'scalar',
+        format   = '%.3f',
+        show     = 'diagram')
+    def _eval_units_variance(self, data, mapping = None, block = None):
         """Return variance of reconstructed unit values.
 
         Args:
@@ -1077,24 +1365,24 @@ class System:
         if mapping == None:
             mapping = self.mapping()
         if block == None:
-            model_out = self._calc_units_expect(data, mapping)
+            model_out = self._eval_units_expect(data, mapping)
         else:
             data_in_copy = numpy.copy(data)
             for i in block:
                 data_in_copy[:,i] = numpy.mean(data_in_copy[:,i])
-            model_out = self._calc_units_expect(
+            model_out = self._eval_units_expect(
                 data_in_copy, mapping)
 
         return model_out.var(axis = 0)
 
     @nemoa.common.decorators.attributes(
-        name   = 'correlation',
-        type   = 'system.units.evaluation',
-        args   = 'all',
-        retfmt = 'scalar',
-        format = '%.3f',
-        show   = 'diagram')
-    def _calc_units_correlation(self, data, mapping = None,
+        name     = 'correlation',
+        category = ('system', 'units', 'evaluation'),
+        args     = 'all',
+        retfmt   = 'scalar',
+        format   = '%.3f',
+        show     = 'diagram')
+    def _eval_units_correlation(self, data, mapping = None,
         block = None):
         """Correlation of reconstructed unit values.
 
@@ -1117,12 +1405,12 @@ class System:
         if mapping == None:
             mapping = self.mapping()
         if block == None:
-            model_out = self._calc_units_expect(data, mapping)
+            model_out = self._eval_units_expect(data, mapping)
         else:
             data_in_copy = numpy.copy(data)
             for i in block:
                 data_in_copy[:,i] = numpy.mean(data_in_copy[:,i])
-            model_out = self._calc_units_expect(
+            model_out = self._eval_units_expect(
                 data_in_copy, mapping)
 
         M = numpy.corrcoef(numpy.hstack(data).T)
@@ -1130,13 +1418,13 @@ class System:
         return True
 
     @nemoa.common.decorators.attributes(
-        name   = 'expect',
-        type   = 'system.units.evaluation',
-        args   = 'input',
-        retfmt = 'vector',
-        format = '%.3f',
-        show   = 'histogram')
-    def _calc_units_expect(self, data, mapping = None, block = None):
+        name     = 'expect',
+        category = ('system', 'units', 'evaluation'),
+        args     = 'input',
+        retfmt   = 'vector',
+        format   = '%.3f',
+        show     = 'histogram')
+    def _eval_units_expect(self, data, mapping = None, block = None):
         """Expectation values of target units.
 
         Args:
@@ -1169,13 +1457,13 @@ class System:
         return outData
 
     @nemoa.common.decorators.attributes(
-        name   = 'values',
-        type   = 'system.units.evaluation',
-        args   = 'input',
-        retfmt = 'vector',
-        format = '%.3f',
-        show   = 'histogram')
-    def _calc_units_values(self, data, mapping = None, block = None,
+        name     = 'values',
+        category = ('system', 'units', 'evaluation'),
+        args     = 'input',
+        retfmt   = 'vector',
+        format   = '%.3f',
+        show     = 'histogram')
+    def _eval_units_values(self, data, mapping = None, block = None,
         expect_last = False):
         """Unit maximum likelihood values of target units.
 
@@ -1209,7 +1497,7 @@ class System:
                     self._units[mapping[0]].get_samples(in_data),
                     self._units[mapping[0]].params)
             return self._units[mapping[-1]].expect(
-                self._calc_units_values(data, mapping[0:-1]),
+                self._eval_units_values(data, mapping[0:-1]),
                 self._units[mapping[-2]].params)
         else:
             if len(mapping) == 1:
@@ -1226,13 +1514,13 @@ class System:
             return data
 
     @nemoa.common.decorators.attributes(
-        name   = 'samples',
-        type   = 'system.units.evaluation',
-        args   = 'input',
-        retfmt = 'vector',
-        format = '%.3f',
-        show   = 'histogram')
-    def _calc_units_samples(self, data, mapping = None,
+        name     = 'samples',
+        category = ('system', 'units', 'evaluation'),
+        args     = 'input',
+        retfmt   = 'vector',
+        format   = '%.3f',
+        show     = 'histogram')
+    def _eval_units_samples(self, data, mapping = None,
         block = None, expect_last = False):
         """Sampled unit values of target units.
 
@@ -1266,7 +1554,7 @@ class System:
                     self._units[mapping[0]].get_samples(data),
                     self._units[mapping[0]].params)
             return self._units[mapping[-1]].expect(
-                self._calc_units_samples(data, mapping[0:-1]),
+                self._eval_units_samples(data, mapping[0:-1]),
                 self._units[mapping[-2]].params)
         else:
             if len(mapping) == 1:
@@ -1282,13 +1570,13 @@ class System:
             return data
 
     @nemoa.common.decorators.attributes(
-        name   = 'residuals',
-        type   = 'system.units.evaluation',
-        args   = 'all',
-        retfmt = 'vector',
-        format = '%.3f',
-        show   = 'histogram')
-    def _calc_units_residuals(self, data, mapping = None, block = None):
+        name     = 'residuals',
+        category = ('system', 'units', 'evaluation'),
+        args     = 'all',
+        retfmt   = 'vector',
+        format   = '%.3f',
+        show     = 'histogram')
+    def _eval_units_residuals(self, data, mapping = None, block = None):
         """Reconstruction residuals of target units.
 
         Args:
@@ -1318,19 +1606,19 @@ class System:
             for i in block: d_src[:, i] = numpy.mean(d_src[:, i])
 
         # calculate estimated output values
-        m_out = self._calc_units_expect(d_src, mapping)
+        m_out = self._eval_units_expect(d_src, mapping)
 
         # calculate residuals
         return d_tgt - m_out
 
     @nemoa.common.decorators.attributes(
-        name   = 'error',
-        type   = 'system.units.evaluation',
-        args   = 'all',
-        retfmt = 'scalar',
-        format = '%.3f',
-        show   = 'diagram')
-    def _calc_units_error(self, data, norm = 'MSE', **kwargs):
+        name     = 'error',
+        category = ('system', 'units', 'evaluation'),
+        args     = 'all',
+        retfmt   = 'scalar',
+        format   = '%.3f',
+        show     = 'diagram')
+    def _eval_units_error(self, data, norm = 'MSE', **kwargs):
         """Unit reconstruction error.
 
         The unit reconstruction error is defined by:
@@ -1351,19 +1639,19 @@ class System:
 
         """
 
-        res = self._calc_units_residuals(data, **kwargs)
+        res = self._eval_units_residuals(data, **kwargs)
         error = nemoa.common.data_mean(res, norm = norm)
 
         return error
 
     @nemoa.common.decorators.attributes(
-        name   = 'accuracy',
-        type   = 'system.units.evaluation',
-        args   = 'all',
-        retfmt = 'scalar',
-        format = '%.3f',
-        show   = 'diagram')
-    def _calc_units_accuracy(self, data, norm = 'MSE', **kwargs):
+        name     = 'accuracy',
+        category = ('system', 'units', 'evaluation'),
+        args     = 'all',
+        retfmt   = 'scalar',
+        format   = '%.3f',
+        show     = 'diagram')
+    def _eval_units_accuracy(self, data, norm = 'MSE', **kwargs):
         """Unit reconstruction accuracy.
 
         The unit reconstruction accuracy is defined by:
@@ -1383,20 +1671,20 @@ class System:
 
         """
 
-        res = self._calc_units_residuals(data, **kwargs)
+        res = self._eval_units_residuals(data, **kwargs)
         normres = nemoa.common.data_mean(res, norm = norm)
         normdat = nemoa.common.data_mean(data[1], norm = norm)
 
         return 1. - normres / normdat
 
     @nemoa.common.decorators.attributes(
-        name   = 'precision',
-        type   = 'system.units.evaluation',
-        args   = 'all',
-        retfmt = 'scalar',
-        format = '%.3f',
-        show   = 'diagram')
-    def _calc_units_precision(self, data, norm = 'SD', **kwargs):
+        name     = 'precision',
+        category = ('system', 'units', 'evaluation'),
+        args     = 'all',
+        retfmt   = 'scalar',
+        format   = '%.3f',
+        show     = 'diagram')
+    def _eval_units_precision(self, data, norm = 'SD', **kwargs):
         """Unit reconstruction precision.
 
         The unit reconstruction precision is defined by:
@@ -1416,7 +1704,7 @@ class System:
 
         """
 
-        res = self._calc_units_residuals(data, **kwargs)
+        res = self._eval_units_residuals(data, **kwargs)
         devres = nemoa.common.data_deviation(res, norm = norm)
         devdat = nemoa.common.data_deviation(data[1], norm = norm)
 
@@ -1424,7 +1712,7 @@ class System:
 
     @nemoa.common.decorators.attributes(
         name     = 'correlation',
-        type     = 'system.relation.evaluation',
+        category = ('system', 'relation', 'evaluation'),
         directed = False,
         signed   = True,
         normal   = True,
@@ -1432,7 +1720,7 @@ class System:
         retfmt   = 'scalar',
         show     = 'heatmap',
         format   = '%.3f')
-    def _calc_relation_correlation(self, data, mapping = None, **kwargs):
+    def _eval_relation_correlation(self, data, mapping = None, **kwargs):
         """Data correlation between source and target units.
 
         Undirected data based relation describing the 'linearity'
@@ -1470,7 +1758,7 @@ class System:
 
     @nemoa.common.decorators.attributes(
         name     = 'capacity',
-        type     = 'system.relation.evaluation',
+        category = ('system', 'relation', 'evaluation'),
         directed = True,
         signed   = True,
         normal   = False,
@@ -1478,7 +1766,7 @@ class System:
         retfmt   = 'scalar',
         show     = 'heatmap',
         format   = '%.3f')
-    def _calc_relation_capacity(self, data, mapping = None, **kwargs):
+    def _eval_relation_capacity(self, data, mapping = None, **kwargs):
         """Network Capacity from source to target units.
 
         Directed graph based relation describing the 'network capacity'
@@ -1508,7 +1796,7 @@ class System:
 
     @nemoa.common.decorators.attributes(
         name     = 'knockout',
-        type     = 'system.relation.evaluation',
+        category = ('system', 'relation', 'evaluation'),
         directed = True,
         signed   = True,
         normal   = False,
@@ -1516,7 +1804,7 @@ class System:
         retfmt   = 'scalar',
         show     = 'heatmap',
         format   = '%.3f')
-    def _calc_relation_knockout(self, data, mapping = None, **kwargs):
+    def _eval_relation_knockout(self, data, mapping = None, **kwargs):
         """Knockout effect from source to target units.
 
         Directed data manipulation based relation describing the
@@ -1549,15 +1837,14 @@ class System:
         # calculate unit values without knockout
         if not 'measure' in kwargs: measure = 'error'
         else: measure = kwargs['measure']
-        method_name = self.about('units', measure, 'name')
-        default = self._calc_units(data,
+        default = self._eval_units(data,
             func = measure, mapping = mapping)
 
         # calculate unit values with knockout
         for in_id, in_unit in enumerate(in_labels):
 
             # modify unit and calculate unit values
-            knockout = self._calc_units(data, func = measure,
+            knockout = self._eval_units(data, func = measure,
                 mapping = mapping, block = [in_id])
 
             # store difference in knockout matrix
@@ -1569,7 +1856,7 @@ class System:
 
     @nemoa.common.decorators.attributes(
         name     = 'induction',
-        type     = 'system.relation.evaluation',
+        category = ('system', 'relation', 'evaluation'),
         directed = True,
         signed   = False,
         normal   = False,
@@ -1577,7 +1864,7 @@ class System:
         retfmt   = 'scalar',
         show     = 'heatmap',
         format   = '%.3f')
-    def _calc_relation_induction(self, data, mapping = None,
+    def _eval_relation_induction(self, data, mapping = None,
         points = 10, amplify = 1., gauge = 0.25, contrast = 20.0,
         **kwargs):
         """Induced deviation from source to target units.
@@ -1629,7 +1916,7 @@ class System:
             for p_id in xrange(points):
                 i_data  = data[0].copy()
                 i_data[:, inid] = i_curve[p_id]
-                o_expect = self._calc_units((i_data, data[1]),
+                o_expect = self._eval_units((i_data, data[1]),
                     func = 'expect', mapping = mapping)
                 for outunit in outputs:
                     C[outunit][:, p_id] = o_expect[outunit]
@@ -1715,38 +2002,38 @@ class System:
         # optimize system parameters
         return self._optimize(dataset, schedule, tracker)
 
-    def about(self, *args):
-        """Metainformation of the system.
+    #def about(self, *args):
+        #"""Metainformation of the system.
 
-        Args:
-            *args: strings, containing a breadcrump trail to
-                a specific information about the system
+        #Args:
+            #*args: strings, containing a breadcrump trail to
+                #a specific information about the system
 
-        Examples:
-            about('units', 'error')
-                Returns information about the 'error' measurement
-                function of the systems units.
+        #Examples:
+            #about('units', 'error')
+                #Returns information about the 'error' measurement
+                #function of the systems units.
 
-        Returns:
-            Dictionary containing generic information about various
-            parts of the system.
+        #Returns:
+            #Dictionary containing generic information about various
+            #parts of the system.
 
-        """
+        #"""
 
-        # create information dictionary
-        about = nemoa.common.dict_merge({
-            'units': self._about_units(),
-            'links': self._about_links(),
-            'relations': self._about_relations()
-        }, self._about_system())
+        ## create information dictionary
+        #about = nemoa.common.dict_merge({
+            #'units': self._about_units(),
+            #'links': self._about_links(),
+            #'relations': self._about_relations()
+        #}, self._about_system())
 
-        ret_dict = about
-        path = ['system']
-        for arg in args:
-            if not isinstance(ret_dict, dict): return ret_dict
-            if not arg in ret_dict.keys(): return nemoa.log('warning',
-                "%s has no property '%s'" % (' → '.join(path), arg))
-            path.append(arg)
-            ret_dict = ret_dict[arg]
-        if not isinstance(ret_dict, dict): return ret_dict
-        return {key: ret_dict[key] for key in ret_dict.keys()}
+        #ret_dict = about
+        #path = ['system']
+        #for arg in args:
+            #if not isinstance(ret_dict, dict): return ret_dict
+            #if not arg in ret_dict.keys(): return nemoa.log('warning',
+                #"%s has no property '%s'" % (' → '.join(path), arg))
+            #path.append(arg)
+            #ret_dict = ret_dict[arg]
+        #if not isinstance(ret_dict, dict): return ret_dict
+        #return {key: ret_dict[key] for key in ret_dict.keys()}

@@ -10,5 +10,6 @@ def attributes(**attr):
             return method(self, *args, **kwargs)
         for key, val in attr.iteritems():
             setattr(wrapped, key, val)
+        wrapped.__doc__ = method.__doc__
         return wrapped
     return wrapper

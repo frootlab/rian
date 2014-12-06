@@ -29,7 +29,7 @@ class _Getch:
                 found = True
             except ImportError:
                 pass
-            
+
     def __call__(self): return self.impl()
 
 
@@ -40,14 +40,29 @@ class _GetchUnix:
         import tty
 
     def __call__(self):
-        import sys, tty, termios
+
+        import sys
+        import select
+
+        def keypressed():
+            return select.select([sys.stdin], [], [], 0) \
+                == ([sys.stdin], [], [])
+
+        import termios
+        import tty
+
+        if not keypressed(): return None
+
         fd = sys.stdin.fileno()
         old_settings = termios.tcgetattr(fd)
         try:
             tty.setraw(sys.stdin.fileno())
+            print 'hi'
             ch = sys.stdin.read(1)
+            print 'ho'
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
         return ch
 
 class _GetchWindows:

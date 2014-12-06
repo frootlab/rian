@@ -52,14 +52,14 @@ class NemoaTestCase(unittest.TestCase):
         model = nemoa.model.create(
             dataset = 'linear', network = 'shallow', system = 'ann')
         model.optimize()
-        test = model.calc('system', 'error') < 0.1
+        test = model.evaluate('system', 'error') < 0.1
         self.assertTrue(test)
 
     def test_model_optimize_deep_dbn(self):
         model = nemoa.model.create(
             dataset = 'linear', network = 'deep', system = 'dbn')
         model.optimize()
-        test = model.calc('system', 'error') < 0.3
+        test = model.evaluate('system', 'error') < 0.3
         self.assertTrue(test)
 
 if __name__ == '__main__':

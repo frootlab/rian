@@ -183,7 +183,6 @@ class Model:
 
         # meta information
         if key == 'about': return self._get_about()
-        if key == 'algorithms': return self._get_algorithms()
         if key == 'author': return self._get_author()
         if key == 'branch': return self._get_branch()
         if key == 'email': return self._get_email()
@@ -194,10 +193,16 @@ class Model:
         if key == 'type': return self._get_type()
         if key == 'version': return self._get_version()
 
-        # content
-        if key == 'error': return self.calc('system', 'error')
-        if key == 'accuracy': return self.calc('system', 'accuracy')
-        if key == 'precision': return self.calc('system', 'precision')
+        # algorithms
+        if key == 'algorithm':
+            return self._get_algorithm(*args, **kwargs)
+        if key == 'algorithms': return self._get_algorithms(
+            attribute = 'about', *args, **kwargs)
+
+        # model evaluation
+        if key == 'error': return self.evaluate('system', 'error')
+        if key == 'accuracy': return self.evaluate('system', 'accuracy')
+        if key == 'precision': return self.evaluate('system', 'precision')
 
         # direct access
         if key == 'copy': return self._get_copy(*args, **kwargs)
@@ -260,12 +265,17 @@ class Model:
         class_name = self.__class__.__name__
         return module_name + '.' + class_name
 
+    def _get_algorithm(self, algorithm = None, *args, **kwargs):
+        """Get algorithm provided by model."""
+        algorithms = self._get_algorithms(*args, **kwargs)
+        return algorithms[algorithm]
+
     def _get_algorithms(self, *args, **kwargs):
-        """Get evaluation algorithms provided by model."""
+        """Get algorithms provided by model."""
         structured = {
             'dataset': self.dataset.get('algorithms', *args, **kwargs),
             'network': self.network.get('algorithms', *args, **kwargs),
-            'system': self.system.get('algorithms', *args, **kwargs)}
+            'system': self.system.get('algorithms', *args, **kwargs) }
         return structured
 
     def _get_path(self):
@@ -513,16 +523,16 @@ class Model:
         self.system = nemoa.system.new(**system)
         return True
 
-    def calc(self, key = None, *args, **kwargs):
-        """Get evaluation of model."""
+    def evaluate(self, key = None, *args, **kwargs):
+        """Evaluate model."""
 
         if not key: key = 'system'
 
         # evaluate dataset
         if key == 'dataset':
-            return self.dataset.calc(*args, **kwargs)
+            return self.dataset.evaluate(*args, **kwargs)
         if key == 'network':
-            return self.network.calc(*args, **kwargs)
+            return self.network.evaluate(*args, **kwargs)
         if key == 'system':
             # get data for system evaluation
             if 'data' in kwargs.keys():
@@ -551,7 +561,7 @@ class Model:
                 if preprocessing:
                     self.dataset.set('copy', dataset_backup)
 
-            return self.system.calc(data, *args, **kwargs)
+            return self.system.evaluate(data, *args, **kwargs)
 
         return nemoa.log('warning', 'could not evaluate model')
 

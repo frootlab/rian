@@ -128,7 +128,7 @@ class Heatmap:
     def create(self, dataset):
 
         # calculate relation
-        R = dataset.calc(self.settings['relation'])
+        R = dataset.evaluate(self.settings['relation'])
 
         if not isinstance(R, numpy.ndarray): return nemoa.log('error',
             'could not plot heatmap: relation matrix is not valid!')

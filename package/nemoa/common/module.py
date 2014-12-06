@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import inspect
 
 def getfunctions(modulename, prefix = '', removeprefix = True,
-    values = 'reference'):
+    attribute = 'reference'):
     functions = dict(inspect.getmembers(modulename, inspect.isfunction))
     if prefix:
         for key in functions.keys():
@@ -17,8 +17,8 @@ def getfunctions(modulename, prefix = '', removeprefix = True,
                     del functions[key]
                     continue
             del functions[key]
-    if values == 'reference': return functions
-    if values == 'about':
+    if attribute == 'reference': return functions
+    if attribute == 'about':
         for key in functions.keys():
             if isinstance(functions[key].__doc__, basestring):
                 functions[key] = \
@@ -29,37 +29,43 @@ def getfunctions(modulename, prefix = '', removeprefix = True,
     return False
 
 def getmethods(classname, prefix = '', removeprefix = True,
-    values = 'reference'):
+    attribute = None):
+
+    # create dictionary with references
     methods = dict(inspect.getmembers(classname, inspect.ismethod))
     if prefix:
-        for key in methods.keys():
-            if key.startswith(prefix) and not key == prefix:
+        for name in methods.keys():
+            if name.startswith(prefix) and not name == prefix:
                 if removeprefix:
-                    methods[key[len(prefix):]] = methods[key]
-                    del methods[key]
+                    methods[name[len(prefix):]] = methods[name]
+                    del methods[name]
                 continue
-            del methods[key]
-    if values == 'name': return methods.keys()
-    if values == 'reference': return methods
-    methoddict = {}
-    if values == 'about':
-        for key in methods.keys():
-            if isinstance(methods[key].__doc__, basestring):
-                methoddict[key] = \
-                    methods[key].__doc__.split('\n', 1)[0].strip(' .')
-            else:
-                methoddict[key] = ''
-        return methoddict
-    else:
-        for key in methods.keys():
-            methoddict[key] = {'name': key, 'reference': methods[key]}
-            if isinstance(methods[key].__doc__, basestring):
-                methoddict[key]['about'] = \
-                    methods[key].__doc__.split('\n', 1)[0].strip(' .')
-            else:
-                methoddict[key]['about'] = ''
-            for attr in methods[key].__dict__:
-                methoddict[key][attr] = methods[key].__dict__[attr]
-        return methoddict
+            del methods[name]
+    if attribute == 'reference': return methods
 
-    return False
+    # create dictionary with all attributes and references
+    methoddict = {}
+    for name in methods.keys():
+        methoddict[name] = { 'reference': methods[name], 'about': '' }
+
+        # copy method attributes to dictionary
+        for attr in methods[name].__dict__:
+            methoddict[name][attr] = methods[name].__dict__[attr]
+
+        # copy first line of docstring to dictionary
+        if isinstance(methods[name].__doc__, basestring):
+            methoddict[name]['about'] = \
+                methods[name].__doc__.split('\n', 1)[0].strip(' .')
+    if attribute == None: return methoddict
+
+    # create dictionary only with given attribute
+    methoddictattrib = {}
+    for name in methoddict.keys():
+        if not attribute in methoddict[name]: continue
+        if not name in methoddictattrib.keys():
+            methoddictattrib[name] = methoddict[name][attribute]
+            continue
+        if not isinstance(methoddictattrib[name], list):
+            methoddictattrib[name] = [methoddictattrib[name]]
+        methoddictattrib[name].append(methoddict[name][attribute])
+    return methoddictattrib

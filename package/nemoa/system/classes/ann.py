@@ -186,7 +186,7 @@ class ANN(nemoa.system.classes.base.System):
         out = {}
         for lid, layer in enumerate(mapping):
             if lid == 0: out[layer] = data
-            else: out[layer] = self._calc_units_expect(
+            else: out[layer] = self._eval_units_expect(
                 out[mapping[lid - 1]], mapping[lid - 1:lid + 1])
 
         return out
@@ -401,112 +401,112 @@ class ANN(nemoa.system.classes.base.System):
         #'energy': {
             #'name': 'energy',
             #'about': 'sum of local unit and link energies',
-            #'method': '_calc_system_energy',
+            #'method': '_eval_system_energy',
             #'args': 'all', 'format': '%.3f',
             #'optimum': 'min'},
         #'error': {
             #'name': 'average reconstruction error',
             #'about': 'mean error of reconstructed values',
-            #'method': '_calc_error',
+            #'method': '_eval_error',
             #'args': 'all', 'format': '%.3f',
             #'optimum': 'min'},
         #'accuracy': {
             #'name': 'average accuracy',
             #'about': 'mean accuracy of reconstructed values',
-            #'method': '_calc_accuracy',
+            #'method': '_eval_accuracy',
             #'args': 'all', 'format': '%.3f',
             #'optimum': 'max'},
         #'precision': {
             #'name': 'average precision',
             #'about': 'mean precision of reconstructed values',
-            #'method': '_calc_precision',
+            #'method': '_eval_precision',
             #'args': 'all', 'format': '%.3f',
             #'optimum': 'max'}
         #}
 
-    @staticmethod
-    def _about_units(): return {
-        'energy': {
-            'name': 'energy',
-            'about': 'energy of units',
-            'method': '_calc_units_energy',
-            'show': 'diagram',
-            'args': 'input', 'return': 'scalar', 'format': '%.3f'},
-        'expect': {
-            'name': 'expect',
-            'about': 'reconstructed values',
-            'method': '_calc_units_expect',
-            'show': 'histogram',
-            'args': 'input', 'return': 'vector', 'format': '%.3f'},
-        'values': {
-            'name': 'values',
-            'about': 'reconstructed values',
-            'method': '_calc_units_values',
-            'show': 'histogram',
-            'args': 'input', 'return': 'vector', 'format': '%.3f'},
-        'samples': {
-            'name': 'samples',
-            'about': 'reconstructed samples',
-            'method': '_calc_units_samples',
-            'show': 'histogram',
-            'args': 'input', 'return': 'vector', 'format': '%.3f'},
-        'mean': {
-            'name': 'mean values',
-            'about': 'mean of reconstructed values',
-            'method': '_calc_units_mean',
-            'show': 'diagram',
-            'args': 'input', 'return': 'scalar', 'format': '%.3f'},
-        'variance': {
-            'name': 'variance',
-            'about': 'variance of reconstructed values',
-            'method': '_calc_units_variance',
-            'show': 'diagram',
-            'args': 'input', 'return': 'scalar', 'format': '%.3f'},
-        'residuals': {
-            'name': 'residuals',
-            'about': 'residuals of reconstructed values',
-            'method': '_calc_units_residuals',
-            'show': 'histogram',
-            'args': 'all', 'return': 'vector', 'format': '%.3f'},
-        'error': {
-            'name': 'error',
-            'about': 'mean error of reconstructed values',
-            'method': '_calc_units_error',
-            'show': 'diagram',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        'accuracy': {
-            'name': 'accuracy',
-            'about': 'accuracy of reconstructed values',
-            'method': '_calc_units_accuracy',
-            'show': 'diagram',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        'precision': {
-            'name': 'precision',
-            'about': 'precision of reconstructed values',
-            'method': '_calc_units_precision',
-            'show': 'diagram',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        'correlation': {
-            'name': 'correlation',
-            'about': 'correlation of reconstructed to real values',
-            'method': '_calc_units_correlation',
-            'show': 'diagram',
-            'args': 'all', 'return': 'scalar', 'format': '%.3f'}
-        }
+    #@staticmethod
+    #def _about_units(): return {
+        #'energy': {
+            #'name': 'energy',
+            #'about': 'energy of units',
+            #'method': '_eval_units_energy',
+            #'show': 'diagram',
+            #'args': 'input', 'return': 'scalar', 'format': '%.3f'},
+        #'expect': {
+            #'name': 'expect',
+            #'about': 'reconstructed values',
+            #'method': '_eval_units_expect',
+            #'show': 'histogram',
+            #'args': 'input', 'return': 'vector', 'format': '%.3f'},
+        #'values': {
+            #'name': 'values',
+            #'about': 'reconstructed values',
+            #'method': '_eval_units_values',
+            #'show': 'histogram',
+            #'args': 'input', 'return': 'vector', 'format': '%.3f'},
+        #'samples': {
+            #'name': 'samples',
+            #'about': 'reconstructed samples',
+            #'method': '_eval_units_samples',
+            #'show': 'histogram',
+            #'args': 'input', 'return': 'vector', 'format': '%.3f'},
+        #'mean': {
+            #'name': 'mean values',
+            #'about': 'mean of reconstructed values',
+            #'method': '_eval_units_mean',
+            #'show': 'diagram',
+            #'args': 'input', 'return': 'scalar', 'format': '%.3f'},
+        #'variance': {
+            #'name': 'variance',
+            #'about': 'variance of reconstructed values',
+            #'method': '_eval_units_variance',
+            #'show': 'diagram',
+            #'args': 'input', 'return': 'scalar', 'format': '%.3f'},
+        #'residuals': {
+            #'name': 'residuals',
+            #'about': 'residuals of reconstructed values',
+            #'method': '_eval_units_residuals',
+            #'show': 'histogram',
+            #'args': 'all', 'return': 'vector', 'format': '%.3f'},
+        #'error': {
+            #'name': 'error',
+            #'about': 'mean error of reconstructed values',
+            #'method': '_eval_units_error',
+            #'show': 'diagram',
+            #'args': 'all', 'return': 'scalar', 'format': '%.3f'},
+        #'accuracy': {
+            #'name': 'accuracy',
+            #'about': 'accuracy of reconstructed values',
+            #'method': '_eval_units_accuracy',
+            #'show': 'diagram',
+            #'args': 'all', 'return': 'scalar', 'format': '%.3f'},
+        #'precision': {
+            #'name': 'precision',
+            #'about': 'precision of reconstructed values',
+            #'method': '_eval_units_precision',
+            #'show': 'diagram',
+            #'args': 'all', 'return': 'scalar', 'format': '%.3f'},
+        #'correlation': {
+            #'name': 'correlation',
+            #'about': 'correlation of reconstructed to real values',
+            #'method': '_eval_units_correlation',
+            #'show': 'diagram',
+            #'args': 'all', 'return': 'scalar', 'format': '%.3f'}
+        #}
 
     @staticmethod
     def _about_links(): return {
         'energy': {
             'name': 'energy',
             'about': 'local energy of links',
-            'method': '_calc_links_energy',
+            'method': '_eval_links_energy',
             'show': 'graph',
             'args': 'input', 'return': 'vector', 'format': '%.3f'}
         }
 
 
 
-    def _calc_system_energy(self, data, *args, **kwargs):
+    def _eval_system_energy(self, data, *args, **kwargs):
         """Sum of local link and unit energies."""
 
         mapping = list(self.mapping())
@@ -515,80 +515,25 @@ class ANN(nemoa.system.classes.base.System):
         # sum local unit energies
         for i in xrange(1, len(mapping) + 1):
             energy += numpy.sum(
-                self._calc_units_energy(data[0],
+                self._eval_units_energy(data[0],
                 mapping = tuple(mapping[:i])))
 
         # sum local link energies
         for i in xrange(1, len(mapping)):
             energy += numpy.sum(
-                self._calc_links_energy(data[0],
+                self._eval_links_energy(data[0],
                 mapping = tuple(mapping[:i+1])))
 
         return energy
 
-    def _calc_units(self, data, func = 'accuracy', units = None,
-        **kwargs):
-        """Evaluation of target units.
+        #'energy': {
+            #'name': 'energy',
+            #'about': 'energy of units',
+            #'method': '_eval_units_energy',
+            #'show': 'diagram',
+            #'args': 'input', 'return': 'scalar', 'format': '%.3f'},
 
-        Args:
-            data: 2-tuple with numpy arrays: source and target data
-            func: string containing name of unit evaluation function
-                For a full list of available system evaluation functions
-                see: model.system.about('units')
-            units: list of target unit names (within the same layer). If
-                not given, all output units are selected.
-
-        Returns:
-            Dictionary with unit evaluation values for target units. The
-            keys of the dictionary are given by the names of the target
-            units, the values depend on the used evaluation function and
-            are ether scalar (float) or vectorially (flat numpy array).
-
-        """
-
-        # check if data is valid
-        if not isinstance(data, tuple): return nemoa.log('error',
-            'could not evaluate units: invalid data format')
-
-        # look for name of unit evaluation function in dictionary
-        funcs = self._about_units()
-        if not func in funcs.keys(): return nemoa.log('error',
-            "could not evaluate units: unknown function '%s'" % (func))
-
-        # get name of class method used for unit evaluation
-        method = funcs[func]['method']
-        if not hasattr(self, method): return nemoa.log('error',
-            "could not evaluate units: unknown method '%s'" % (method))
-
-        # prepare (non keyword) arguments for evaluation
-        func_args = funcs[func]['args']
-        if func_args == 'none': eArgs = []
-        elif func_args == 'input': eArgs = [data[0]]
-        elif func_args == 'output': eArgs = [data[1]]
-        elif func_args == 'all': eArgs = [data]
-
-        # prepare keyword arguments for evaluation
-        e_kwargs = kwargs.copy()
-        if isinstance(units, str):
-            e_kwargs['mapping'] = self.mapping(tgt = units)
-        elif not 'mapping' in e_kwargs.keys() \
-            or e_kwargs['mapping'] == None:
-            e_kwargs['mapping'] = self.mapping()
-
-        # evaluate units
-        try: values = getattr(self, method)(*eArgs, **e_kwargs)
-        except: return nemoa.log('error', 'could not evaluate units')
-
-        # create dictionary of target units
-        labels = self._get_units(layer = e_kwargs['mapping'][-1])
-        ret_fmt = funcs[func]['return']
-        if ret_fmt == 'vector': return {unit: values[:, uid] \
-            for uid, unit in enumerate(labels)}
-        elif ret_fmt == 'scalar': return {unit: values[uid] \
-            for uid, unit in enumerate(labels)}
-        return nemoa.log('error', 'could not evaluate units')
-
-    def _calc_units_energy(self, data, mapping = None):
+    def _eval_units_energy(self, data, mapping = None):
         """Unit energies of target units.
 
         Args:
@@ -606,65 +551,11 @@ class ANN(nemoa.system.classes.base.System):
         # set mapping: inLayer to outLayer (if not set)
         if mapping == None: mapping = self.mapping()
 
-        data = self._calc_units_expect(data, mapping)
+        data = self._eval_units_expect(data, mapping)
 
         return self._units[mapping[-1]].energy(data)
 
-    def _calc_links(self, data, func = 'energy', **kwargs):
-        """Evaluate system links respective to data.
-
-        Args:
-            data: 2-tuple of numpy arrays containing source and target
-                data corresponding to the first and the last argument
-                of the mapping
-            mapping: n-tuple of strings containing the mapping
-                from source unit layer (first argument of tuple)
-                to target unit layer (last argument of tuple)
-            func: string containing name of link evaluation function
-                For a full list of available link evaluation functions
-                see: system.about('links')
-
-        """
-
-        # get link evaluation function
-        methods = self._about_links()
-        if not func in methods.keys(): return nemoa.log('error',
-            "could not evaluate links: unknown method '%s'" % (func))
-        method = methods[func]['method']
-        if not hasattr(self, method): return nemoa.log('error',
-            "could not evaluate links: unknown method '%s'" % (method))
-
-        # prepare arguments for evaluation functions
-        eval_args = []
-        args_type = methods[func]['args']
-        if args_type == 'none': pass
-        elif args_type == 'input': eval_args.append(data[0])
-        elif args_type == 'output': eval_args.append(data[1])
-        elif args_type == 'all': eval_args.append(data)
-
-        # prepare keyword arguments for evaluation functions
-        eval_kwargs = kwargs.copy()
-        if not 'mapping' in eval_kwargs.keys() \
-            or eval_kwargs['mapping'] == None:
-            eval_kwargs['mapping'] = self.mapping()
-
-        # evaluate
-        values = getattr(self, method)(*eval_args, **eval_kwargs)
-
-        # create link dictionary
-        in_labels = self._get_units(layer = eval_kwargs['mapping'][-2])
-        out_labels = self._get_units(layer = eval_kwargs['mapping'][-1])
-        out_fmt = methods[func]['return']
-        if out_fmt == 'scalar':
-            rel_dict = {}
-            for in_id, in_unit in enumerate(in_labels):
-                for out_id, out_unit in enumerate(out_labels):
-                    rel_dict[(in_unit, out_unit)] = \
-                        values[in_id, out_id]
-            return rel_dict
-        return nemoa.log('warning', 'could not perform evaluation')
-
-    def _calc_links_energy(self, data, mapping = None, **kwargs):
+    def _eval_links_energy(self, data, mapping = None, **kwargs):
         """Return link energies of a layer.
 
         Args:
@@ -677,13 +568,13 @@ class ANN(nemoa.system.classes.base.System):
         if len(mapping) == 1:
             # TODO
             return nemoa.log('error', """sorry: bad implementation of
-                ann._calc_links_energy""")
+                ann._eval_links_energy""")
         elif len(mapping) == 2:
             d_src  = data
-            d_tgt = self._calc_units_values(d_src, mapping)
+            d_tgt = self._eval_units_values(d_src, mapping)
         else:
-            d_src  = self._calc_units_expect(data, mapping[0:-1])
-            d_tgt = self._calc_units_values(d_src, mapping[-2:])
+            d_src  = self._eval_units_expect(data, mapping[0:-1])
+            d_tgt = self._eval_units_values(d_src, mapping[-2:])
 
         s_id = self.mapping().index(mapping[-2])
         t_id = self.mapping().index(mapping[-1])
@@ -698,121 +589,6 @@ class ANN(nemoa.system.classes.base.System):
             links = self._params['links'][(t_id, s_id)]
             return nemoa.system.commons.links.Links.energy(
                 d_tgt, d_src, tgt, src, links)
-
-    def _calc_relation(self, data, func = 'correlation',
-        relations = None, eval_stat = True, **kwargs):
-        """Evaluate relations between source and target units.
-
-        Args:
-            data: 2-tuple with numpy arrays: input data and output data
-            func: string containing name of unit relation function
-                For a full list of available unit relation functions
-                see: system.about('relations')
-            transform: optional formula for transformation of relation
-                which is executed by python eval() function. The usable
-                variables are:
-                    M: for the relation matrix as numpy array with shape
-                        (source, target)
-                    C: for the standard correlation matrix s numpy array
-                        with shape (source, target)
-                Example: 'M**2 - C'
-            format: string describing format of return values
-                'array': return values as numpy array
-                'dict': return values as python dictionary
-            eval_stat: if format is 'dict' and eval_stat is True then
-                the return dictionary includes additional statistical
-                values:
-                    min: minimum value of unit relation
-                    max: maximum value of unit relation
-                    mean: mean value of unit relation
-                    std: standard deviation of unit relation
-
-        Returns:
-            Python dictionary or numpy array with unit relation values.
-
-        """
-
-        # get evaluation function
-        methods = self._about_relations()
-        if not func in methods.keys():
-            return nemoa.log('error', """could not evaluate relations:
-                unknown method '%s'.""" % (func))
-        method = methods[func]['method']
-        if not hasattr(self, method):
-            return nemoa.log('error', """could not evaluate relations:
-                unknown method '%s'.""" % (method))
-
-        # prepare arguments for evaluation function
-        eval_args = []
-        args_type = methods[func]['args']
-        if args_type == 'none': pass
-        elif args_type == 'input': eval_args.append(data[0])
-        elif args_type == 'output': eval_args.append(data[1])
-        elif args_type == 'all': eval_args.append(data)
-
-        # extract keyword arguments:
-        # 'transform', 'format' and 'eval_stat'
-        if 'transform' in kwargs.keys():
-            transform = kwargs['transform']
-            del kwargs['transform']
-        else: transform = ''
-        if not isinstance(transform, str): transform = ''
-        if 'format' in kwargs.keys():
-            ret_fmt = kwargs['format']
-            del kwargs['format']
-        else: ret_fmt = 'dict'
-        if not isinstance(ret_fmt, str): ret_fmt = 'dict'
-
-        # prepare keyword arguments for evaluation function
-        eval_kwargs = kwargs.copy()
-        if not 'mapping' in eval_kwargs.keys() \
-            or eval_kwargs['mapping'] == None:
-            eval_kwargs['mapping'] = self.mapping()
-
-        # evaluate relations and get information about relation values
-        values = getattr(self, method)(*eval_args, **eval_kwargs)
-        values_fmt = methods[func]['return']
-
-        # create formated return values as matrix or dict
-        # (for scalar relation evaluations)
-        if values_fmt == 'scalar':
-            # (optional) transform relation using 'transform' string
-            if transform:
-                M = values
-                if 'C' in transform:
-                    C = self._calc_relation_correlation(data)
-                try:
-                    T = eval(transform)
-                    values = T
-                except: return nemoa.log('error',
-                    'could not transform relations: invalid syntax!')
-
-            # create formated return values
-            if ret_fmt == 'array': ret_val = values
-            elif ret_fmt == 'dict':
-                in_units = self._get_units(
-                    layer = eval_kwargs['mapping'][0])
-                out_units = self._get_units(
-                    layer = eval_kwargs['mapping'][-1])
-                ret_val = nemoa.common.dict_from_array(
-                    values, (in_units, out_units))
-
-                # optionally evaluate statistical values over all relations
-                if eval_stat:
-                    A = numpy.array([ret_val[key] for key in ret_val.keys()
-                        if not key[0].split(':')[1] == key[1].split(':')[1]])
-                    ret_val['max'] = numpy.amax(A)
-                    ret_val['min'] = numpy.amin(A)
-                    ret_val['mean'] = numpy.mean(A)
-                    ret_val['std'] = numpy.std(A)
-                    # force symmetric distribution with mean at 0
-                    # by adding additive inverse values
-                    B = numpy.concatenate((A, -A))
-                    ret_val['cstd'] = numpy.std(B) - numpy.mean(A)
-            else: return nemoa.log('warning',
-                'could not perform evaluation')
-
-            return ret_val
 
     def mapping(self, src = None, tgt = None):
         """Mapping of units from source to target.

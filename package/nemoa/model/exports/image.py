@@ -50,7 +50,8 @@ def save(model, path = None, filetype = None, plot = None, **kwargs):
     if plot.settings['show_title']:
         rel_id = nemoa.common.str_split_params(
             plot.settings['relation'])[0]
-        rel_dict = model.system.about('relations', rel_id)
+        rel_dict = model.system.get('algorithm', rel_id,
+            category = ('system', 'relation', 'evaluation'))
         rel_name = rel_dict['name']
         plot.settings['title'] = rel_name.title()
 
@@ -108,7 +109,8 @@ def show(model, plot = None, *args, **kwargs):
     if plot.settings['show_title']:
         rel_id = nemoa.common.str_split_params(
             plot.settings['relation'])[0]
-        rel_dict = model.system.about('relations', rel_id)
+        rel_dict = model.system.get('algorithm', rel_id,
+            category = ('system', 'relation', 'evaluation'))
         rel_name = rel_dict['name']
         plot.settings['title'] = rel_name.title()
 
@@ -181,7 +183,7 @@ class Graph:
             if not o == i]
 
         # calculate edge weights from 'weight' relation
-        W = model.calc('system', 'relations',
+        W = model.evaluate('system', 'relations',
             self.settings['relation'],
             preprocessing = self.settings['preprocessing'],
             measure = self.settings['measure'],
@@ -191,14 +193,16 @@ class Graph:
             return nemoa.log('error',
                 """could not create relation graph: invalid weight
                 relation '%s'!""" % (self.settings['relation']))
-        rel_about = model.system.about('relations',
-            nemoa.common.str_split_params(self.settings['relation'])[0])
+        relname = nemoa.common.str_split_params(
+            self.settings['relation'])[0]
+        rel_about = model.system.get('algorithm', relname,
+            category = ('system', 'relation', 'evaluation'))
 
         # calculate edge filter from 'filter' relation
         # default: use the same relation, as used for weights
         if not self.settings['filter'] or self.settings['filter'] == \
             self.settings['relation']: F = W
-        else: F = model.calc('system', 'relations',
+        else: F = model.evaluate('system', 'relations',
             self.settings['filter'],
             preprocessing = self.settings['preprocessing'],
             measure = self.settings['measure'],
@@ -223,7 +227,7 @@ class Graph:
             or self.settings['sign'] == self.settings['relation']:
             SR = W
         else:
-            SR = model.calc('system', 'relations',
+            SR = model.evaluate('system', 'relations',
                 self.settings['sign'],
                 preprocessing = self.settings['preprocessing'],
                 measure = self.settings['measure'],
@@ -330,7 +334,7 @@ class Heatmap:
     def create(self, model):
 
         # calculate relation
-        relation = model.calc('system', 'relations',
+        relation = model.evaluate('system', 'relations',
             self.settings['relation'], **self.settings)
 
         if not isinstance(relation, numpy.ndarray):
@@ -378,7 +382,8 @@ class Histogram:
                 edges.append((i, o))
 
         # calculate relation
-        R = model.calc('system', 'relations', self.settings['relation'],
+        R = model.evaluate('system', 'relations',
+            self.settings['relation'],
             preprocessing = self.settings['preprocessing'],
             measure = self.settings['measure'],
             statistics = self.settings['statistics'],
