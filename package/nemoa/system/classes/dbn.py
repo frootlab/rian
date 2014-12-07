@@ -71,6 +71,12 @@ class DBN(nemoa.system.classes.ann.ANN):
         return network._is_compatible_dbn()
 
     def _optimize(self, dataset, schedule, tracker):
+        return self._optimize_dbn(dataset, schedule, tracker)
+
+    @nemoa.common.decorators.attributes(
+        name     = 'dbn',
+        category = ('system', 'optimization'))
+    def _optimize_dbn(self, dataset, schedule, tracker):
         """Optimize system parameters."""
 
         # get configuration dictionary for optimization
@@ -80,17 +86,17 @@ class DBN(nemoa.system.classes.ann.ANN):
         # perform forward optimization of ann using
         # restricted boltzmann machines as subsystems
         if config['pretraining']:
-            self._optimize_pretraining(dataset, schedule, tracker)
+            self._optimize_dbn_pretraining(dataset, schedule, tracker)
 
         # (optional) finetuning of system parameters
         # perform backward optimization of ann
         # using backpropagation of error
         if config['finetuning']:
-            self._optimize_finetuning(dataset, schedule, tracker)
+            self._optimize_dbn_finetuning(dataset, schedule, tracker)
 
         return True
 
-    def _optimize_pretraining(self, dataset, schedule, tracker):
+    def _optimize_dbn_pretraining(self, dataset, schedule, tracker):
         """Pretraining model using Restricted Boltzmann Machines."""
 
         def _copy_attributes(from_dict, to_dict):
@@ -254,9 +260,8 @@ class DBN(nemoa.system.classes.ann.ANN):
 
         return True
 
-    def _optimize_finetuning(self, dataset, schedule, tracker):
+    def _optimize_dbn_finetuning(self, dataset, schedule, tracker):
         """Finetuning model using backpropagation of error."""
-
 
         # Optimize system parameters
         cfg = self._config['optimize']

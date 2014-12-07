@@ -171,6 +171,7 @@ class ANN(nemoa.system.classes.base.System):
             """ % (srcname, tgtname))
 
     def _optimize_get_data(self, dataset, **kwargs):
+        """Get data for optimization."""
 
         config = self._config['optimize']
         kwargs['size'] = config['minibatch_size']
@@ -248,6 +249,9 @@ class ANN(nemoa.system.classes.base.System):
         nemoa.log('set', indent = '-1')
         return True
 
+    @nemoa.common.decorators.attributes(
+        name     = 'bprop',
+        category = ('system', 'optimization'))
     def _optimize_bprop(self, dataset, schedule, tracker):
         """Optimize parameters using backpropagation of error."""
 
@@ -292,6 +296,9 @@ class ANN(nemoa.system.classes.base.System):
 
         return {'units': units, 'links': links}
 
+    @nemoa.common.decorators.attributes(
+        name     = 'rprop',
+        category = ('system', 'optimization'))
     def _optimize_rprop(self, dataset, schedule, tracker):
         """Optimize parameters using resiliant backpropagation (RPROP).
 
@@ -396,116 +403,12 @@ class ANN(nemoa.system.classes.base.System):
 
         return update
 
-    #@staticmethod
-    #def _about_system(): return {
-        #'energy': {
-            #'name': 'energy',
-            #'about': 'sum of local unit and link energies',
-            #'method': '_eval_system_energy',
-            #'args': 'all', 'format': '%.3f',
-            #'optimum': 'min'},
-        #'error': {
-            #'name': 'average reconstruction error',
-            #'about': 'mean error of reconstructed values',
-            #'method': '_eval_error',
-            #'args': 'all', 'format': '%.3f',
-            #'optimum': 'min'},
-        #'accuracy': {
-            #'name': 'average accuracy',
-            #'about': 'mean accuracy of reconstructed values',
-            #'method': '_eval_accuracy',
-            #'args': 'all', 'format': '%.3f',
-            #'optimum': 'max'},
-        #'precision': {
-            #'name': 'average precision',
-            #'about': 'mean precision of reconstructed values',
-            #'method': '_eval_precision',
-            #'args': 'all', 'format': '%.3f',
-            #'optimum': 'max'}
-        #}
-
-    #@staticmethod
-    #def _about_units(): return {
-        #'energy': {
-            #'name': 'energy',
-            #'about': 'energy of units',
-            #'method': '_eval_units_energy',
-            #'show': 'diagram',
-            #'args': 'input', 'return': 'scalar', 'format': '%.3f'},
-        #'expect': {
-            #'name': 'expect',
-            #'about': 'reconstructed values',
-            #'method': '_eval_units_expect',
-            #'show': 'histogram',
-            #'args': 'input', 'return': 'vector', 'format': '%.3f'},
-        #'values': {
-            #'name': 'values',
-            #'about': 'reconstructed values',
-            #'method': '_eval_units_values',
-            #'show': 'histogram',
-            #'args': 'input', 'return': 'vector', 'format': '%.3f'},
-        #'samples': {
-            #'name': 'samples',
-            #'about': 'reconstructed samples',
-            #'method': '_eval_units_samples',
-            #'show': 'histogram',
-            #'args': 'input', 'return': 'vector', 'format': '%.3f'},
-        #'mean': {
-            #'name': 'mean values',
-            #'about': 'mean of reconstructed values',
-            #'method': '_eval_units_mean',
-            #'show': 'diagram',
-            #'args': 'input', 'return': 'scalar', 'format': '%.3f'},
-        #'variance': {
-            #'name': 'variance',
-            #'about': 'variance of reconstructed values',
-            #'method': '_eval_units_variance',
-            #'show': 'diagram',
-            #'args': 'input', 'return': 'scalar', 'format': '%.3f'},
-        #'residuals': {
-            #'name': 'residuals',
-            #'about': 'residuals of reconstructed values',
-            #'method': '_eval_units_residuals',
-            #'show': 'histogram',
-            #'args': 'all', 'return': 'vector', 'format': '%.3f'},
-        #'error': {
-            #'name': 'error',
-            #'about': 'mean error of reconstructed values',
-            #'method': '_eval_units_error',
-            #'show': 'diagram',
-            #'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        #'accuracy': {
-            #'name': 'accuracy',
-            #'about': 'accuracy of reconstructed values',
-            #'method': '_eval_units_accuracy',
-            #'show': 'diagram',
-            #'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        #'precision': {
-            #'name': 'precision',
-            #'about': 'precision of reconstructed values',
-            #'method': '_eval_units_precision',
-            #'show': 'diagram',
-            #'args': 'all', 'return': 'scalar', 'format': '%.3f'},
-        #'correlation': {
-            #'name': 'correlation',
-            #'about': 'correlation of reconstructed to real values',
-            #'method': '_eval_units_correlation',
-            #'show': 'diagram',
-            #'args': 'all', 'return': 'scalar', 'format': '%.3f'}
-        #}
-
-    @staticmethod
-    def _about_links(): return {
-        'energy': {
-            'name': 'energy',
-            'about': 'local energy of links',
-            'method': '_eval_links_energy',
-            'show': 'graph',
-            'args': 'input', 'return': 'vector', 'format': '%.3f'}
-        }
-
-
-
+    @nemoa.common.decorators.attributes(
+        name     = 'energy',
+        category = ('system', 'evaluation'),
+        args     = 'all',
+        format   = '%.3f',
+        optimum  = 'min')
     def _eval_system_energy(self, data, *args, **kwargs):
         """Sum of local link and unit energies."""
 
@@ -526,13 +429,13 @@ class ANN(nemoa.system.classes.base.System):
 
         return energy
 
-        #'energy': {
-            #'name': 'energy',
-            #'about': 'energy of units',
-            #'method': '_eval_units_energy',
-            #'show': 'diagram',
-            #'args': 'input', 'return': 'scalar', 'format': '%.3f'},
-
+    @nemoa.common.decorators.attributes(
+        name     = 'energy',
+        category = ('system', 'units', 'evaluation'),
+        args     = 'input',
+        retfmt   = 'scalar',
+        format   = '%.3f',
+        show     = 'diagram')
     def _eval_units_energy(self, data, mapping = None):
         """Unit energies of target units.
 
@@ -555,6 +458,13 @@ class ANN(nemoa.system.classes.base.System):
 
         return self._units[mapping[-1]].energy(data)
 
+    @nemoa.common.decorators.attributes(
+        name     = 'energy',
+        category = ('system', 'links', 'evaluation'),
+        args     = 'input',
+        retfmt   = 'scalar',
+        format   = '%.3f',
+        show     = 'diagram')
     def _eval_links_energy(self, data, mapping = None, **kwargs):
         """Return link energies of a layer.
 

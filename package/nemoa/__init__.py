@@ -6,11 +6,12 @@ visualization.
 
 """
 
-__version__ = '0.4.238'
+__version__ = '0.4.239'
 __status__  = 'Development'
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
-__credits__ = ['Rainer Koenig', 'Rebecca Krauss', 'Sebastian Michl']
+__credits__ = ['Rainer Koenig', 'Marcus Oswald', 'Anna Dieckmann',
+               'Alexandra Poos', 'Rebecca Krauss', 'Sebastian Michl']
 __license__ = 'GPLv3'
 __copyright__ = 'Copyright 2013-2014, Patrick Michl'
 __maintainer__ = 'Patrick Michl'

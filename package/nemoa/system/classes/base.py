@@ -2001,39 +2001,3 @@ class System:
 
         # optimize system parameters
         return self._optimize(dataset, schedule, tracker)
-
-    #def about(self, *args):
-        #"""Metainformation of the system.
-
-        #Args:
-            #*args: strings, containing a breadcrump trail to
-                #a specific information about the system
-
-        #Examples:
-            #about('units', 'error')
-                #Returns information about the 'error' measurement
-                #function of the systems units.
-
-        #Returns:
-            #Dictionary containing generic information about various
-            #parts of the system.
-
-        #"""
-
-        ## create information dictionary
-        #about = nemoa.common.dict_merge({
-            #'units': self._about_units(),
-            #'links': self._about_links(),
-            #'relations': self._about_relations()
-        #}, self._about_system())
-
-        #ret_dict = about
-        #path = ['system']
-        #for arg in args:
-            #if not isinstance(ret_dict, dict): return ret_dict
-            #if not arg in ret_dict.keys(): return nemoa.log('warning',
-                #"%s has no property '%s'" % (' → '.join(path), arg))
-            #path.append(arg)
-            #ret_dict = ret_dict[arg]
-        #if not isinstance(ret_dict, dict): return ret_dict
-        #return {key: ret_dict[key] for key in ret_dict.keys()}
