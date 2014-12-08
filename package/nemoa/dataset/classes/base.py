@@ -560,13 +560,13 @@ class Dataset:
 
             # transform data
             if func == 'expect':
-                trans_array = system._eval_units_expect(
+                trans_array = system._algorithm_unitexpect(
                     data_array, mapping)
             elif func == 'value':
-                trans_array = system._eval_units_values(
+                trans_array = system._algorithm_unitvalues(
                     data_array, mapping)
             elif func == 'sample':
-                trans_array = system._eval_units_samples(
+                trans_array = system._algorithm_unitsamples(
                     data_array, mapping)
 
             # create empty record array
@@ -699,7 +699,7 @@ class Dataset:
     def _get_algorithms(self, category = None, attribute = None):
         """Get algorithms provided by dataset."""
         return nemoa.common.module.getmethods(self,
-            prefix = '_eval_', attribute = attribute)
+            prefix = '_algorithm_', attribute = attribute)
 
     def _get_path(self):
         """Get path of dataset."""
@@ -1396,8 +1396,9 @@ class Dataset:
     @nemoa.common.decorators.attributes(
         name     = 'correlation',
         category = ('dataset', 'relation', 'evaluation'),
-        format   = '%.3f')
-    def _eval_correlation(self, cols = '*'):
+        format   = '%.3f',
+        formater = lambda val: '%.3f' % (val))
+    def _algorithm_correlation(self, cols = '*'):
         """Calculate correlation coefficients between columns."""
 
         # get numpy array with test data
@@ -1408,8 +1409,9 @@ class Dataset:
     @nemoa.common.decorators.attributes(
         name     = 'correlation',
         category = ('dataset', 'evaluation'),
+        formater = lambda val: '%.3f' % (val),
         format   = '%.3f')
-    def _eval_test_binary(self, cols = '*'):
+    def _algorithm_test_binary(self, cols = '*'):
         """Test if dataset contains only binary values.
 
         Args:
@@ -1434,8 +1436,9 @@ class Dataset:
     @nemoa.common.decorators.attributes(
         name     = 'correlation',
         category = ('dataset', 'evaluation'),
+        formater = lambda val: '%.3f' % (val),
         format   = '%.3f')
-    def _eval_test_gauss(self, cols = '*', mu = 0., sigma = 1.,
+    def _algorithm_test_gauss(self, cols = '*', mu = 0., sigma = 1.,
         delta = .05):
         """Test if dataset contains gauss normalized data per columns.
 

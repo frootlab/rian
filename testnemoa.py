@@ -48,14 +48,14 @@ class NemoaTestCase(unittest.TestCase):
         test = nemoa.type.ismodel(model)
         self.assertTrue(test)
 
-    def test_model_optimize_shallow_ann(self):
+    def test_model_algorithm_shallow_ann(self):
         model = nemoa.model.create(
             dataset = 'linear', network = 'shallow', system = 'ann')
         model.optimize()
         test = model.evaluate('system', 'error') < 0.1
         self.assertTrue(test)
 
-    def test_model_optimize_deep_dbn(self):
+    def test_model_algorithm_deep_dbn(self):
         model = nemoa.model.create(
             dataset = 'linear', network = 'deep', system = 'dbn')
         model.optimize()

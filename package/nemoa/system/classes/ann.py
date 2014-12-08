@@ -170,7 +170,7 @@ class ANN(nemoa.system.classes.base.System):
             Layer '%s' and layer '%s' are not connected.
             """ % (srcname, tgtname))
 
-    def _optimize_get_data(self, dataset, **kwargs):
+    def _algorithm_get_data(self, dataset, **kwargs):
         """Get data for optimization."""
 
         config = self._config['optimize']
@@ -180,19 +180,19 @@ class ANN(nemoa.system.classes.base.System):
                 config['den_corr_factor'])
         return dataset.get('data', **kwargs)
 
-    def _optimize_get_values(self, data):
+    def _algorithm_get_values(self, data):
         """Forward pass (compute estimated values, from given input). """
 
         mapping = self.mapping()
         out = {}
         for lid, layer in enumerate(mapping):
             if lid == 0: out[layer] = data
-            else: out[layer] = self._eval_units_expect(
+            else: out[layer] = self._algorithm_unitexpect(
                 out[mapping[lid - 1]], mapping[lid - 1:lid + 1])
 
         return out
 
-    def _optimize_get_deltas(self, outputData, out):
+    def _algorithm_get_deltas(self, outputData, out):
         """Return weight delta from backpropagation of error. """
 
         layers = self.mapping()
@@ -212,7 +212,7 @@ class ANN(nemoa.system.classes.base.System):
 
         return delta
 
-    def _optimize_update_params(self, updates):
+    def _algorithm_update_params(self, updates):
         """Update parameters from dictionary."""
 
         layers = self.mapping()
@@ -239,9 +239,9 @@ class ANN(nemoa.system.classes.base.System):
             % (cfg['algorithm']))
 
         if cfg['algorithm'].lower() == 'bprop':
-            self._optimize_bprop(dataset, schedule, tracker)
+            self._algorithm_bprop(dataset, schedule, tracker)
         elif cfg['algorithm'].lower() == 'rprop':
-            self._optimize_rprop(dataset, schedule, tracker)
+            self._algorithm_rprop(dataset, schedule, tracker)
         else:
             nemoa.log('error', """could not optimize model:
                 unknown algorithm '%s'!""" % (cfg['algorithm']))
@@ -252,7 +252,7 @@ class ANN(nemoa.system.classes.base.System):
     @nemoa.common.decorators.attributes(
         name     = 'bprop',
         category = ('system', 'optimization'))
-    def _optimize_bprop(self, dataset, schedule, tracker):
+    def _algorithm_bprop(self, dataset, schedule, tracker):
         """Optimize parameters using backpropagation of error."""
 
         cnf = self._config['optimize']
@@ -263,20 +263,20 @@ class ANN(nemoa.system.classes.base.System):
 
             # Get data (sample from minibatches)
             if tracker.get('epoch') % cnf['minibatch_update_interval'] == 0:
-                data = self._optimize_get_data(dataset,
+                data = self._algorithm_get_data(dataset,
                     cols = (mapping[0], mapping[-1]))
             # Forward pass (Compute value estimations from given input)
-            out = self._optimize_get_values(data[0])
+            out = self._algorithm_get_values(data[0])
             # Backward pass (Compute deltas from backpropagation of error)
-            delta = self._optimize_get_deltas(data[1], out)
+            delta = self._algorithm_get_deltas(data[1], out)
             # Compute parameter updates
-            updates = self._optimize_bprop_get_updates(out, delta)
+            updates = self._algorithm_bprop_get_updates(out, delta)
             # Update parameters
-            self._optimize_update_params(updates)
+            self._algorithm_update_params(updates)
 
         return True
 
-    def _optimize_bprop_get_updates(self, out, delta, rate = 0.1):
+    def _algorithm_bprop_get_updates(self, out, delta, rate = 0.1):
         """Compute parameter update directions from weight deltas."""
 
         def getUpdate(grad, rate): return {
@@ -299,7 +299,7 @@ class ANN(nemoa.system.classes.base.System):
     @nemoa.common.decorators.attributes(
         name     = 'rprop',
         category = ('system', 'optimization'))
-    def _optimize_rprop(self, dataset, schedule, tracker):
+    def _algorithm_rprop(self, dataset, schedule, tracker):
         """Optimize parameters using resiliant backpropagation (RPROP).
 
         resiliant backpropagation ...
@@ -314,21 +314,21 @@ class ANN(nemoa.system.classes.base.System):
 
             # Get data (sample from minibatches)
             if epoch % cnf['minibatch_update_interval'] == 0:
-                data = self._optimize_get_data(dataset,
+                data = self._algorithm_get_data(dataset,
                     cols = (mapping[0], mapping[-1]))
             # Forward pass (Compute value estimations from given input)
-            out = self._optimize_get_values(data[0])
+            out = self._algorithm_get_values(data[0])
             # Backward pass (Compute deltas from BPROP)
-            delta = self._optimize_get_deltas(data[1], out)
+            delta = self._algorithm_get_deltas(data[1], out)
             # Compute updates
-            updates = self._optimize_rprop_get_updates(out, delta,
+            updates = self._algorithm_rprop_get_updates(out, delta,
                 tracker)
             # Update parameters
-            self._optimize_update_params(updates)
+            self._algorithm_update_params(updates)
 
         return True
 
-    def _optimize_rprop_get_updates(self, out, delta, tracker):
+    def _algorithm_rprop_get_updates(self, out, delta, tracker):
 
         def getDict(dict, val): return {key: val * numpy.ones(
             shape = dict[key].shape) for key in dict.keys()}
@@ -407,9 +407,10 @@ class ANN(nemoa.system.classes.base.System):
         name     = 'energy',
         category = ('system', 'evaluation'),
         args     = 'all',
+        formater = lambda val: '%.3f' % (val),
         format   = '%.3f',
         optimum  = 'min')
-    def _eval_system_energy(self, data, *args, **kwargs):
+    def _algorithm_system_energy(self, data, *args, **kwargs):
         """Sum of local link and unit energies."""
 
         mapping = list(self.mapping())
@@ -418,13 +419,13 @@ class ANN(nemoa.system.classes.base.System):
         # sum local unit energies
         for i in xrange(1, len(mapping) + 1):
             energy += numpy.sum(
-                self._eval_units_energy(data[0],
+                self._algorithm_units_energy(data[0],
                 mapping = tuple(mapping[:i])))
 
         # sum local link energies
         for i in xrange(1, len(mapping)):
             energy += numpy.sum(
-                self._eval_links_energy(data[0],
+                self._algorithm_links_energy(data[0],
                 mapping = tuple(mapping[:i+1])))
 
         return energy
@@ -434,9 +435,10 @@ class ANN(nemoa.system.classes.base.System):
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
         retfmt   = 'scalar',
+        formater = lambda val: '%.3f' % (val),
         format   = '%.3f',
-        show     = 'diagram')
-    def _eval_units_energy(self, data, mapping = None):
+        plot     = 'diagram')
+    def _algorithm_units_energy(self, data, mapping = None):
         """Unit energies of target units.
 
         Args:
@@ -454,7 +456,7 @@ class ANN(nemoa.system.classes.base.System):
         # set mapping: inLayer to outLayer (if not set)
         if mapping == None: mapping = self.mapping()
 
-        data = self._eval_units_expect(data, mapping)
+        data = self._algorithm_unitexpect(data, mapping)
 
         return self._units[mapping[-1]].energy(data)
 
@@ -463,9 +465,10 @@ class ANN(nemoa.system.classes.base.System):
         category = ('system', 'links', 'evaluation'),
         args     = 'input',
         retfmt   = 'scalar',
+        formater = lambda val: '%.3f' % (val),
         format   = '%.3f',
-        show     = 'diagram')
-    def _eval_links_energy(self, data, mapping = None, **kwargs):
+        plot     = 'diagram')
+    def _algorithm_links_energy(self, data, mapping = None, **kwargs):
         """Return link energies of a layer.
 
         Args:
@@ -478,13 +481,13 @@ class ANN(nemoa.system.classes.base.System):
         if len(mapping) == 1:
             # TODO
             return nemoa.log('error', """sorry: bad implementation of
-                ann._eval_links_energy""")
+                ann._algorithm_links_energy""")
         elif len(mapping) == 2:
             d_src  = data
-            d_tgt = self._eval_units_values(d_src, mapping)
+            d_tgt = self._algorithm_unitvalues(d_src, mapping)
         else:
-            d_src  = self._eval_units_expect(data, mapping[0:-1])
-            d_tgt = self._eval_units_values(d_src, mapping[-2:])
+            d_src  = self._algorithm_unitexpect(data, mapping[0:-1])
+            d_tgt = self._algorithm_unitvalues(d_src, mapping[-2:])
 
         s_id = self.mapping().index(mapping[-2])
         t_id = self.mapping().index(mapping[-1])

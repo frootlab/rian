@@ -82,7 +82,7 @@ class RBM(nemoa.system.classes.ann.ANN):
         if not nemoa.type.isdataset(dataset):
             return nemoa.log('error', """could not test dataset:
                 invalid dataset instance given.""")
-        if not dataset._eval_test_binary():
+        if not dataset._algorithm_test_binary():
             return nemoa.log('error', """dataset '%s' is not valid:
                 RBMs expect binary data.""" % (dataset.name))
         return True
@@ -151,12 +151,15 @@ class RBM(nemoa.system.classes.ann.ANN):
 
         # start optimization
         if cfg['algorithm'].lower() == 'cd':
-            return self._optimize_cd(dataset, schedule, tracker)
+            return self._algorithm_cd(dataset, schedule, tracker)
 
         return nemoa.log('error', """could not optimize model:
             unknown optimization algorithm '%s'""" % (algorithm))
 
-    def _optimize_cd(self, dataset, schedule, tracker):
+    @nemoa.common.decorators.attributes(
+        name     = 'cd',
+        category = ('system', 'optimization'))
+    def _algorithm_cd(self, dataset, schedule, tracker):
         """Optimize system parameters with Contrastive Divergency."""
 
         data_update_interval = \
@@ -170,14 +173,14 @@ class RBM(nemoa.system.classes.ann.ANN):
 
             # get data (stratified samples)
             if not tracker.get('epoch') % data_update_interval:
-                data = self._optimize_get_data(dataset)
+                data = self._algorithm_get_data(dataset)
 
             # update system parameters
-            self._optimize_cd_update(data, tracker)
+            self._algorithm_cd_update(data, tracker)
 
         return True
 
-    def _optimize_vmra_update_rate(self, tracker):
+    def _algorithm_vmra_update_rate(self, tracker):
         store = tracker.read('vmra')
         var = numpy.var(self._params['links'][(0, 1)]['W'])
         if not 'wVar' in store: wVar = numpy.array([var])
@@ -199,7 +202,7 @@ class RBM(nemoa.system.classes.ann.ANN):
         tracker.write('vmra', wVar = wVar)
         return True
 
-    def _optimize_cd_sampling(self, data):
+    def _algorithm_cd_sampling(self, data):
         """Contrastive divergency sampling.
 
         Args:
@@ -222,11 +225,11 @@ class RBM(nemoa.system.classes.ann.ANN):
         k = cfg['update_cd_sampling_steps']
         m = cfg['update_cd_sampling_iterations']
 
-        hData = self._eval_units_expect(data, ('visible', 'hidden'))
+        hData = self._algorithm_unitexpect(data, ('visible', 'hidden'))
         if k == 1 and m == 1:
-            vModel = self._eval_units_samples(hData,
+            vModel = self._algorithm_unitsamples(hData,
                 ('hidden', 'visible'), expect_last = True)
-            hModel = self._eval_units_expect(vModel,
+            hModel = self._algorithm_unitexpect(vModel,
                 ('visible', 'hidden'))
             return data, hData, vModel, hModel
 
@@ -237,21 +240,21 @@ class RBM(nemoa.system.classes.ann.ANN):
 
                 # calculate hSample from hExpect
                 # in first sampling step init hSample with h_data
-                if j == 0: hSample = self._eval_units_samples(
+                if j == 0: hSample = self._algorithm_unitsamples(
                     hData, ('hidden', ))
-                else: hSample = self._eval_units_samples(hExpect, (
+                else: hSample = self._algorithm_unitsamples(hExpect, (
                     'hidden', ))
 
                 # calculate vExpect from hSample
-                vExpect = self._eval_units_expect(
+                vExpect = self._algorithm_unitexpect(
                     hSample, ('hidden', 'visible'))
 
                 # calculate hExpect from vSample
                 # in last sampling step use vExpect
                 # instead of vSample to reduce noise
-                if j + 1 == k: hExpect = self._eval_units_expect(
+                if j + 1 == k: hExpect = self._algorithm_unitexpect(
                     vExpect, ('visible', 'hidden'))
-                else: hExpect = self._eval_units_samples(vExpect,
+                else: hExpect = self._algorithm_unitsamples(vExpect,
                     ('visible', 'hidden'), expect_last = True)
 
             vModel += vExpect / m
@@ -259,7 +262,7 @@ class RBM(nemoa.system.classes.ann.ANN):
 
         return data, hData, vModel, hModel
 
-    def _optimize_cd_update(self, data, tracker):
+    def _algorithm_cd_update(self, data, tracker):
         """Update system parameters."""
 
         config = self._config['optimize']
@@ -272,10 +275,10 @@ class RBM(nemoa.system.classes.ann.ANN):
             if tracker.get('epoch') % \
                 config['acc_vmra_update_interval'] == 0 \
                 and tracker.get('epoch') > config['acc_vmra_init_wait']:
-                self._optimize_vmra_update_rate(tracker)
+                self._algorithm_vmra_update_rate(tracker)
 
         # get updates of system parameters
-        sampling = self._optimize_cd_sampling(data)
+        sampling = self._algorithm_cd_sampling(data)
         if updatev: deltav = self._get_delta_visible(sampling, tracker)
         if updateh: deltah = self._get_delta_hidden(sampling, tracker)
         if updatel: deltal = self._get_delta_links(sampling, tracker)
@@ -283,7 +286,7 @@ class RBM(nemoa.system.classes.ann.ANN):
         # update system parameters
         if updatev: self._units['visible'].update(deltav)
         if updateh: self._units['hidden'].update(deltah)
-        if updatel: self._optimize_update_links(**deltal)
+        if updatel: self._algorithm_update_links(**deltal)
 
         return True
 
@@ -330,7 +333,7 @@ class RBM(nemoa.system.classes.ann.ANN):
     def _get_delta_visible_rasa(self, tracker):
 
         # calculate temperature (t) and rate adaptive coefficient (r)
-        t = self._optimize_rasa_temperature(tracker)
+        t = self._algorithm_rasa_temperature(tracker)
         if t == 0.: return {}
         config = self._config['optimize']
         r = tracker.read('sa')['init_rate'] ** 2 \
@@ -406,7 +409,7 @@ class RBM(nemoa.system.classes.ann.ANN):
     def _get_delta_hidden_rasa(self, tracker):
 
         # calculate temperature (t) and rate adaptive coefficient (r)
-        t = self._optimize_rasa_temperature(tracker)
+        t = self._algorithm_rasa_temperature(tracker)
         if t == 0.: return {}
         config = self._config['optimize']
         r = tracker.read('sa')['init_rate'] ** 2 \
@@ -462,7 +465,7 @@ class RBM(nemoa.system.classes.ann.ANN):
     def _get_delta_links_rasa(self, deltas, tracker):
 
         # calculate temperature (t) and rate adaptive coefficient (r)
-        t = self._optimize_rasa_temperature(tracker)
+        t = self._algorithm_rasa_temperature(tracker)
         if t == 0.: return {}
         config = self._config['optimize']
         r = tracker.read('sa')['init_rate'] ** 2 \
@@ -474,7 +477,7 @@ class RBM(nemoa.system.classes.ann.ANN):
 
         return { 'W': r * t * W }
 
-    def _optimize_rasa_temperature(self, tracker):
+    def _algorithm_rasa_temperature(self, tracker):
         """Calculate temperature for simulated annealing."""
 
         config = self._config['optimize']
@@ -489,7 +492,7 @@ class RBM(nemoa.system.classes.ann.ANN):
 
         return heat
 
-    def _eval_system_energy(self, data, *args, **kwargs):
+    def _algorithm_system_energy(self, data, *args, **kwargs):
         """Pseudo energy function.
 
         Calculates the logarithm of the sum of exponential negative
@@ -502,15 +505,15 @@ class RBM(nemoa.system.classes.ann.ANN):
         map_hidden = ('visible', 'hidden')
 
         # calculate energies of visible units
-        energy_visible = self._eval_units_energy(
+        energy_visible = self._algorithm_units_energy(
             data[0], mapping = map_visible).sum(axis = 1)
 
         # calculate hidden unit energies of all samples
-        energy_hidden = self._eval_units_energy(
+        energy_hidden = self._algorithm_units_energy(
             data[0], mapping = map_hidden).sum(axis = 1)
 
         # calculate link energies of all samples
-        energy_links = self._eval_links_energy(
+        energy_links = self._algorithm_links_energy(
             data[0], mapping = map_hidden).sum(axis = (1, 2))
 
         # calculate energies of all samples
@@ -521,7 +524,7 @@ class RBM(nemoa.system.classes.ann.ANN):
 
         return energy
 
-    def _optimize_update_links(self, **updates):
+    def _algorithm_update_links(self, **updates):
         """Set updates for links."""
         if 'W' in updates:
             self._params['links'][(0, 1)]['W'] += updates['W']

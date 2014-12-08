@@ -218,9 +218,9 @@ class Tracker:
             prop = self._system.get('algorithm', func)
             value = self._system.evaluate(data = self._state['data'],
                 func = func)
-            out = 'found optimum with: %s = ' + prop['format']
             self._state['eval_enable'] = False
-            return nemoa.log('note', out % (prop['name'], value))
+            return nemoa.log('note', 'found optimum with: %s = %s' % (
+                prop['name'], prop['formater'](value)))
 
         if ((now - self._state['eval_prev_time']) \
             > cfg['tracker_eval_time_interval']):
@@ -243,8 +243,8 @@ class Tracker:
                     numpy.vstack((self._state['eval_values'], \
                     numpy.array([[progr, value]])))
 
-            out = 'finished %.1f%%: %s = ' + prop['format']
-            return nemoa.log('note', out % (progr, prop['name'], value))
+            return nemoa.log('note', 'finished %.1f%%: %s = %s' % (
+                progr, prop['name'], prop['formater'](value)))
 
         return False
 

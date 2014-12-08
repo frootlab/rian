@@ -218,6 +218,7 @@ class System:
     def _get_algorithm(self, algorithm = None, *args, **kwargs):
         """Get algorithm provided by system."""
         algorithms = self._get_algorithms(*args, **kwargs)
+        if not algorithm in algorithms: return None
         return algorithms[algorithm]
 
     def _get_algorithms(self, category = None, attribute = None):
@@ -225,7 +226,7 @@ class System:
 
         # get unstructured dictionary of all algorithms by prefix
         unstructured = nemoa.common.module.getmethods(self,
-            prefix = '_eval_')
+            prefix = '_algorithm_')
 
         # filter algorithms by supported keys and given category
         for ukey, udata in unstructured.items():
@@ -976,30 +977,30 @@ class System:
 
         # default system evaluation
         if len(args) == 0:
-            return self._eval_system(data, **kwargs)
+            return self._evaluate_system(data, **kwargs)
 
         # evaluate system units
         if args[0] == 'units':
-            return self._eval_units(data, *args[1:], **kwargs)
+            return self._evaluate_units(data, *args[1:], **kwargs)
 
         # evaluate system links
         if args[0] == 'links':
-            return self._eval_links(data, *args[1:], **kwargs)
+            return self._evaluate_links(data, *args[1:], **kwargs)
 
         # evaluate system relations
         if args[0] == 'relations':
-            return self._eval_relation(data, *args[1:], **kwargs)
+            return self._evaluate_relation(data, *args[1:], **kwargs)
 
         # evaluate system
         algorithms = self._get_algorithms(attribute = 'name',
             category = ('system', 'evaluation')).values()
         if args[0] in algorithms:
-            return self._eval_system(data, *args, **kwargs)
+            return self._evaluate_system(data, *args, **kwargs)
 
         return nemoa.log('warning',
             "unsupported system evaluation '%s'" % (args[0]))
 
-    def _eval_system(self, data, func = 'accuracy', **kwargs):
+    def _evaluate_system(self, data, func = 'accuracy', **kwargs):
         """Evaluation of system.
 
         Args:
@@ -1041,7 +1042,7 @@ class System:
         # evaluate system
         return algorithm['reference'](*evalargs, **evalkwargs)
 
-    def _eval_units(self, data, func = 'accuracy', units = None,
+    def _evaluate_units(self, data, func = 'accuracy', units = None,
         **kwargs):
         """Evaluation of target units.
 
@@ -1100,7 +1101,7 @@ class System:
         return nemoa.log('warning', """could not evaluate system units:
             unknown return format '%s'.""" % (algorithm['retfmt']))
 
-    def _eval_links(self, data, func = 'energy', **kwargs):
+    def _evaluate_links(self, data, func = 'energy', **kwargs):
         """Evaluate system links respective to data.
 
         Args:
@@ -1159,7 +1160,7 @@ class System:
         return nemoa.log('warning', """could not evaluate system links:
             unknown return format '%s'.""" % (algorithm['retfmt']))
 
-    def _eval_relation(self, data, func = 'correlation',
+    def _evaluate_relation(self, data, func = 'correlation',
         evalstat = True, **kwargs):
         """Evaluate relations between source and target units.
 
@@ -1239,7 +1240,7 @@ class System:
                 M = values
                 # todo: calc real relation
                 if 'C' in transform:
-                    C = self._eval_relation_correlation(data)
+                    C = self._algorithm_unitcorrelation(data)
                 try:
                     T = eval(transform)
                     values = T
@@ -1279,40 +1280,44 @@ class System:
         name     = 'error',
         category = ('system', 'evaluation'),
         args     = 'all',
+        formater = lambda val: '%.3f' % (val),
         format   = '%.3f',
         optimum  = 'min')
-    def _eval_error(self, *args, **kwargs):
+    def _algorithm_error(self, *args, **kwargs):
         """Mean data reconstruction error of output units."""
-        return numpy.mean(self._eval_units_error(*args, **kwargs))
+        return numpy.mean(self._algorithm_uniterror(*args, **kwargs))
 
     @nemoa.common.decorators.attributes(
         name     = 'accuracy',
         category = ('system', 'evaluation'),
         args     = 'all',
+        formater = lambda val: '%.1f%%' % (val * 100.),
         format   = '%.3f',
         optimum  = 'min')
-    def _eval_accuracy(self, *args, **kwargs):
+    def _algorithm_accuracy(self, *args, **kwargs):
         """Mean data reconstruction accuracy of output units."""
-        return numpy.mean(self._eval_units_accuracy(*args, **kwargs))
+        return numpy.mean(self._algorithm_unitaccuracy(*args, **kwargs))
 
     @nemoa.common.decorators.attributes(
         name     = 'precision',
         category = ('system', 'evaluation'),
         args     = 'all',
+        formater = lambda val: '%.1f%%' % (val * 100.),
         format   = '%.3f',
         optimum  = 'min')
-    def _eval_precision(self, *args, **kwargs):
+    def _algorithm_precision(self, *args, **kwargs):
         """Mean data reconstruction precision of output units."""
-        return numpy.mean(self._eval_units_precision(*args, **kwargs))
+        return numpy.mean(self._algorithm_unitprecision(*args, **kwargs))
 
     @nemoa.common.decorators.attributes(
         name     = 'mean',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
         retfmt   = 'scalar',
+        formater = lambda val: '%.3f' % (val),
         format   = '%.3f',
-        show     = 'diagram')
-    def _eval_units_mean(self, data, mapping = None, block = None):
+        plot     = 'diagram')
+    def _algorithm_unitmean(self, data, mapping = None, block = None):
         """Mean values of reconstructed target units.
 
         Args:
@@ -1332,12 +1337,12 @@ class System:
 
         if mapping == None: mapping = self.mapping()
         if block == None:
-            model_out = self._eval_units_expect(data[0], mapping)
+            model_out = self._algorithm_unitexpect(data[0], mapping)
         else:
             data_in_copy = numpy.copy(data)
             for i in block:
                 data_in_copy[:,i] = numpy.mean(data_in_copy[:,i])
-            model_out = self._eval_units_expect(
+            model_out = self._algorithm_unitexpect(
                 data_in_copy, mapping)
 
         return model_out.mean(axis = 0)
@@ -1347,9 +1352,10 @@ class System:
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
         retfmt   = 'scalar',
+        formater = lambda val: '%.3f' % (val),
         format   = '%.3f',
-        show     = 'diagram')
-    def _eval_units_variance(self, data, mapping = None, block = None):
+        plot     = 'diagram')
+    def _algorithm_unitvariance(self, data, mapping = None, block = None):
         """Return variance of reconstructed unit values.
 
         Args:
@@ -1365,12 +1371,12 @@ class System:
         if mapping == None:
             mapping = self.mapping()
         if block == None:
-            model_out = self._eval_units_expect(data, mapping)
+            model_out = self._algorithm_unitexpect(data, mapping)
         else:
             data_in_copy = numpy.copy(data)
             for i in block:
                 data_in_copy[:,i] = numpy.mean(data_in_copy[:,i])
-            model_out = self._eval_units_expect(
+            model_out = self._algorithm_unitexpect(
                 data_in_copy, mapping)
 
         return model_out.var(axis = 0)
@@ -1380,9 +1386,10 @@ class System:
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
         retfmt   = 'scalar',
+        formater = lambda val: '%.3f' % (val),
         format   = '%.3f',
-        show     = 'diagram')
-    def _eval_units_correlation(self, data, mapping = None,
+        plot     = 'diagram')
+    def _algorithm_unitcorrelation(self, data, mapping = None,
         block = None):
         """Correlation of reconstructed unit values.
 
@@ -1405,12 +1412,12 @@ class System:
         if mapping == None:
             mapping = self.mapping()
         if block == None:
-            model_out = self._eval_units_expect(data, mapping)
+            model_out = self._algorithm_unitexpect(data, mapping)
         else:
             data_in_copy = numpy.copy(data)
             for i in block:
                 data_in_copy[:,i] = numpy.mean(data_in_copy[:,i])
-            model_out = self._eval_units_expect(
+            model_out = self._algorithm_unitexpect(
                 data_in_copy, mapping)
 
         M = numpy.corrcoef(numpy.hstack(data).T)
@@ -1422,9 +1429,10 @@ class System:
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
         retfmt   = 'vector',
+        formater = lambda val: '%.3f' % (val),
         format   = '%.3f',
-        show     = 'histogram')
-    def _eval_units_expect(self, data, mapping = None, block = None):
+        plot     = 'histogram')
+    def _algorithm_unitexpect(self, data, mapping = None, block = None):
         """Expectation values of target units.
 
         Args:
@@ -1461,9 +1469,10 @@ class System:
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
         retfmt   = 'vector',
+        formater = lambda val: '%.3f' % (val),
         format   = '%.3f',
-        show     = 'histogram')
-    def _eval_units_values(self, data, mapping = None, block = None,
+        plot     = 'histogram')
+    def _algorithm_unitvalues(self, data, mapping = None, block = None,
         expect_last = False):
         """Unit maximum likelihood values of target units.
 
@@ -1497,7 +1506,7 @@ class System:
                     self._units[mapping[0]].get_samples(in_data),
                     self._units[mapping[0]].params)
             return self._units[mapping[-1]].expect(
-                self._eval_units_values(data, mapping[0:-1]),
+                self._algorithm_unitvalues(data, mapping[0:-1]),
                 self._units[mapping[-2]].params)
         else:
             if len(mapping) == 1:
@@ -1518,9 +1527,10 @@ class System:
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
         retfmt   = 'vector',
+        formater = lambda val: '%.3f' % (val),
         format   = '%.3f',
-        show     = 'histogram')
-    def _eval_units_samples(self, data, mapping = None,
+        plot     = 'histogram')
+    def _algorithm_unitsamples(self, data, mapping = None,
         block = None, expect_last = False):
         """Sampled unit values of target units.
 
@@ -1554,7 +1564,7 @@ class System:
                     self._units[mapping[0]].get_samples(data),
                     self._units[mapping[0]].params)
             return self._units[mapping[-1]].expect(
-                self._eval_units_samples(data, mapping[0:-1]),
+                self._algorithm_unitsamples(data, mapping[0:-1]),
                 self._units[mapping[-2]].params)
         else:
             if len(mapping) == 1:
@@ -1574,9 +1584,10 @@ class System:
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
         retfmt   = 'vector',
+        formater = lambda val: '%.3f' % (val),
         format   = '%.3f',
-        show     = 'histogram')
-    def _eval_units_residuals(self, data, mapping = None, block = None):
+        plot     = 'histogram')
+    def _algorithm_unitresiduals(self, data, mapping = None, block = None):
         """Reconstruction residuals of target units.
 
         Args:
@@ -1606,7 +1617,7 @@ class System:
             for i in block: d_src[:, i] = numpy.mean(d_src[:, i])
 
         # calculate estimated output values
-        m_out = self._eval_units_expect(d_src, mapping)
+        m_out = self._algorithm_unitexpect(d_src, mapping)
 
         # calculate residuals
         return d_tgt - m_out
@@ -1616,9 +1627,10 @@ class System:
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
         retfmt   = 'scalar',
+        formater = lambda val: '%.3f' % (val),
         format   = '%.3f',
-        show     = 'diagram')
-    def _eval_units_error(self, data, norm = 'MSE', **kwargs):
+        plot     = 'diagram')
+    def _algorithm_uniterror(self, data, norm = 'MSE', **kwargs):
         """Unit reconstruction error.
 
         The unit reconstruction error is defined by:
@@ -1639,7 +1651,7 @@ class System:
 
         """
 
-        res = self._eval_units_residuals(data, **kwargs)
+        res = self._algorithm_unitresiduals(data, **kwargs)
         error = nemoa.common.data_mean(res, norm = norm)
 
         return error
@@ -1649,9 +1661,10 @@ class System:
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
         retfmt   = 'scalar',
+        formater = lambda val: '%.3f' % (val),
         format   = '%.3f',
-        show     = 'diagram')
-    def _eval_units_accuracy(self, data, norm = 'MSE', **kwargs):
+        plot     = 'diagram')
+    def _algorithm_unitaccuracy(self, data, norm = 'MSE', **kwargs):
         """Unit reconstruction accuracy.
 
         The unit reconstruction accuracy is defined by:
@@ -1671,7 +1684,7 @@ class System:
 
         """
 
-        res = self._eval_units_residuals(data, **kwargs)
+        res = self._algorithm_unitresiduals(data, **kwargs)
         normres = nemoa.common.data_mean(res, norm = norm)
         normdat = nemoa.common.data_mean(data[1], norm = norm)
 
@@ -1682,9 +1695,10 @@ class System:
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
         retfmt   = 'scalar',
+        formater = lambda val: '%.3f' % (val),
         format   = '%.3f',
-        show     = 'diagram')
-    def _eval_units_precision(self, data, norm = 'SD', **kwargs):
+        plot     = 'diagram')
+    def _algorithm_unitprecision(self, data, norm = 'SD', **kwargs):
         """Unit reconstruction precision.
 
         The unit reconstruction precision is defined by:
@@ -1704,7 +1718,7 @@ class System:
 
         """
 
-        res = self._eval_units_residuals(data, **kwargs)
+        res = self._algorithm_unitresiduals(data, **kwargs)
         devres = nemoa.common.data_deviation(res, norm = norm)
         devdat = nemoa.common.data_deviation(data[1], norm = norm)
 
@@ -1718,9 +1732,10 @@ class System:
         normal   = True,
         args     = 'all',
         retfmt   = 'scalar',
-        show     = 'heatmap',
+        plot     = 'heatmap',
+        formater = lambda val: '%.3f' % (val),
         format   = '%.3f')
-    def _eval_relation_correlation(self, data, mapping = None, **kwargs):
+    def _algorithm_unitcorrelation(self, data, mapping = None, **kwargs):
         """Data correlation between source and target units.
 
         Undirected data based relation describing the 'linearity'
@@ -1764,9 +1779,10 @@ class System:
         normal   = False,
         args     = 'all',
         retfmt   = 'scalar',
-        show     = 'heatmap',
+        plot     = 'heatmap',
+        formater = lambda val: '%.3f' % (val),
         format   = '%.3f')
-    def _eval_relation_capacity(self, data, mapping = None, **kwargs):
+    def _algorithm_unitcapacity(self, data, mapping = None, **kwargs):
         """Network Capacity from source to target units.
 
         Directed graph based relation describing the 'network capacity'
@@ -1802,9 +1818,10 @@ class System:
         normal   = False,
         args     = 'all',
         retfmt   = 'scalar',
-        show     = 'heatmap',
+        plot     = 'heatmap',
+        formater = lambda val: '%.3f' % (val),
         format   = '%.3f')
-    def _eval_relation_knockout(self, data, mapping = None, **kwargs):
+    def _algorithm_unitknockout(self, data, mapping = None, **kwargs):
         """Knockout effect from source to target units.
 
         Directed data manipulation based relation describing the
@@ -1837,14 +1854,14 @@ class System:
         # calculate unit values without knockout
         if not 'measure' in kwargs: measure = 'error'
         else: measure = kwargs['measure']
-        default = self._eval_units(data,
+        default = self._evaluate_units(data,
             func = measure, mapping = mapping)
 
         # calculate unit values with knockout
         for in_id, in_unit in enumerate(in_labels):
 
             # modify unit and calculate unit values
-            knockout = self._eval_units(data, func = measure,
+            knockout = self._evaluate_units(data, func = measure,
                 mapping = mapping, block = [in_id])
 
             # store difference in knockout matrix
@@ -1862,9 +1879,10 @@ class System:
         normal   = False,
         args     = 'all',
         retfmt   = 'scalar',
-        show     = 'heatmap',
+        plot     = 'heatmap',
+        formater = lambda val: '%.3f' % (val),
         format   = '%.3f')
-    def _eval_relation_induction(self, data, mapping = None,
+    def _algorithm_unitinduction(self, data, mapping = None,
         points = 10, amplify = 1., gauge = 0.25, contrast = 20.0,
         **kwargs):
         """Induced deviation from source to target units.
@@ -1916,7 +1934,7 @@ class System:
             for p_id in xrange(points):
                 i_data  = data[0].copy()
                 i_data[:, inid] = i_curve[p_id]
-                o_expect = self._eval_units((i_data, data[1]),
+                o_expect = self._evaluate_units((i_data, data[1]),
                     func = 'expect', mapping = mapping)
                 for outunit in outputs:
                     C[outunit][:, p_id] = o_expect[outunit]
@@ -1977,8 +1995,6 @@ class System:
 
         # check if optimization schedule supports current system
         if not self._get_type() in schedule:
-            print schedule.keys()
-            print self._get_type()
             return nemoa.log('error', """could not optimize model:
                 optimization schedule '%s' does not support system '%s'.
                 """ % (schedule['name'], self._get_type()))
@@ -1999,5 +2015,18 @@ class System:
         tracker = nemoa.system.commons.tracker.Tracker(self)
         tracker.set(data = self._get_test_data(dataset))
 
+        # get optimization algorithm
+        if 'force_algorithm' in config:
+            algorithm = config['force_algorithm'].lower()
+        else:
+            algorithm = config['algorithm'].lower()
+        algorithmdict = self._get_algorithm(algorithm,
+            category = ('system', 'optimization'))
+        if not algorithmdict: return nemoa.log('error',
+            """could not optimize system:
+            unsupported optimization algorithm '%s'.""" % algorithm)
+        optimizer = algorithmdict['reference']
+
         # optimize system parameters
+        #return optimizer(dataset, schedule, tracker)
         return self._optimize(dataset, schedule, tracker)
