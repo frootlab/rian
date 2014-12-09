@@ -34,36 +34,73 @@ class _Getch:
 
 
 class _GetchUnix:
+
+    _buffer = None
+
     def __init__(self):
-        import sys
         import termios
-        import tty
+
+        self._start_getch()
 
     def __call__(self):
 
+        import time
         import sys
-        import select
 
-        def keypressed():
-            return select.select([sys.stdin], [], [], 0) \
-                == ([sys.stdin], [], [])
+        if not self._is_running():
+            self._start_getch()
 
+        if time.time() - self._buffer['time'] > 0.5:
+            self._buffer['time'] = time.time()
+            if not self._buffer['stdin'].empty():
+                ch = self._buffer['stdin'].get()
+                if ch == 'q': self._stop_getch()
+                return ch
+
+    def _start_getch(self):
+        import sys
+        import threading
+        import time
+        import Queue
         import termios
-        import tty
-
-        if not keypressed(): return None
 
         fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        try:
-            tty.setraw(sys.stdin.fileno())
-            print 'hi'
-            ch = sys.stdin.read(1)
-            print 'ho'
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        curterm = termios.tcgetattr(fd)
 
-        return ch
+        # new terminal setting unbuffered
+        newterm = termios.tcgetattr(fd)
+        newterm[3] = (newterm[3] & ~termios.ICANON & ~termios.ECHO)
+
+        # set unbuffered terminal
+        termios.tcsetattr(fd, termios.TCSAFLUSH, newterm)
+
+        self._buffer = {
+            'stdin': Queue.Queue(),
+            'runsignal': True,
+            'time': time.time(),
+            'curterm': curterm,
+            'fd': fd }
+
+        def instream(dictionary):
+            while dictionary['runsignal']:
+                dictionary['stdin'].put(sys.stdin.read(1))
+
+        self._buffer['handler'] = threading.Thread(
+            target = instream, args = (self._buffer, ))
+        self._buffer['handler'].daemon = True
+        self._buffer['handler'].start()
+
+    def _is_running(self):
+        return not self._buffer == None
+
+    def _stop_getch(self):
+        import termios
+
+        fd = self._buffer['fd']
+        curterm = self._buffer['curterm']
+        termios.tcsetattr(fd, termios.TCSAFLUSH, curterm)
+        self._buffer['runsignal'] = False
+        self._buffer = None
 
 class _GetchWindows:
     def __init__(self):
@@ -106,3 +143,6 @@ def getch():
     global inkey
     if not inkey: inkey = _Getch()
     return inkey()
+
+def cleanup():
+    inkey = None

@@ -115,6 +115,10 @@ class Tracker:
         if self._state['estim_enable']: self._update_time_estimation()
         if self._state['obj_enable']: self._update_objective_function()
         if self._state['eval_enable']: self._update_evaluation()
+
+        if not self._state['continue']:
+            nemoa.common.console.cleanup()
+
         return self._state['continue']
 
     def _update_epoch(self):
