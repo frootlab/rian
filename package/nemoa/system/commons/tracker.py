@@ -134,9 +134,9 @@ class Tracker:
                 the optimization""")
             self._state['key_events_started'] = True
 
-        c = nemoa.common.getch()
-        if isinstance(c, str):
-            if c == 'q':
+        char = nemoa.common.getch()
+        if isinstance(char, str):
+            if char == 'q':
                 nemoa.log('note', '... aborting optimization')
                 self._state['continue'] = False
 
@@ -145,24 +145,27 @@ class Tracker:
     def _update_objective_function(self):
         """Calculate objective function of system."""
 
+        # check testdata
         if self._state['data'] == None:
             nemoa.log('warning', """tracking the objective function
-                is not possible: testdata is needed!""")
+                is not possible: testdata is needed.""")
             self._state['obj_enable'] = False
             return False
 
-        cfg = self._config
-        interval = cfg['tracker_obj_update_interval']
-        if self._state['continue'] \
-            and not (self._state['epoch'] % interval == 0): return True
+        # check 'continue' flag
+        if self._state['continue']:
 
-        # calculate objective function value
-        func = cfg['tracker_obj_function']
+            # check update interval
+            if not not (self._state['epoch'] \
+                % self._config['tracker_obj_update_interval'] == 0):
+                return True
+
+        # calculate objective function and add value to array
+        func = self._config['tracker_obj_function']
         value = self._system.evaluate(data = self._state['data'],
             func = func)
-        progr = float(self._state['epoch']) / float(cfg['updates'])
-
-        # add objective function value to array
+        progr = float(self._state['epoch']) \
+            / float(self._config['updates'])
         if self._state['obj_values'] == None:
             self._state['obj_values'] = numpy.array([[progr, value]])
         else: self._state['obj_values'] = \
@@ -170,20 +173,22 @@ class Tracker:
             numpy.array([[progr, value]])))
 
         # (optional) check for new optimum
-        if cfg['tracker_obj_keep_optimum']:
+        if self._config['tracker_obj_keep_optimum']:
+
             # init optimum with first value
             if self._state['obj_opt_value'] == None:
                 self._state['obj_opt_value'] = value
                 self._state['optimum'] = \
                     {'params': self._system.get('copy', 'params')}
                 return True
+
             # allways check last optimum
             if self._state['continue'] \
-                and float(self._state['epoch']) / float(cfg['updates']) \
-                < cfg['tracker_obj_init_wait']:
+                and progr < self._config['tracker_obj_init_wait']:
                 return True
 
             type_of_optimum = self._system.get('algorithm', func,
+                category = ('system', 'evaluation'),
                 attribute = 'optimum')
             current_optimum = self._state['obj_opt_value']
 
