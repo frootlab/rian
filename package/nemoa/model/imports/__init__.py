@@ -24,37 +24,41 @@ def filetypes(filetype = None):
 
     return False
 
-def load(path, filetype = None, workspace = None, **kwargs):
+def load(path, filetype = None, workspace = None, base = 'user',
+    **kwargs):
     """Import model from file."""
 
     # try if path exists or import given workspace and get path from
     # workspace or get path from current workspace
     if not os.path.isfile(path) and workspace:
-        current_workspace = nemoa.workspace.name()
-        if not workspace == current_workspace:
-            if not nemoa.workspace.load(workspace):
+        current = nemoa.workspace.current()
+        if not workspace == current['name'] \
+            or not base == current['base']:
+            if not nemoa.workspace.load(workspace, base):
                 nemoa.log('error', """could not import model:
-                    workspace '%s' does not exist""" % (workspace))
+                    workspace '%s' does not exist.""" % (workspace))
                 return  {}
         config = nemoa.workspace.get('model', path)
-        if not workspace == current_workspace and current_workspace:
-            nemoa.workspace.load(current_workspace)
+        if current['name'] and (not workspace == current['name']
+            or not base == current['base']):
+            nemoa.workspace.load(current['name'], current['base'])
         if not isinstance(config, dict):
             nemoa.log('error', """could not import model:
-                workspace '%s' does not contain a model '%s'."""
-                % (workspace, path))
+                workspace '%s' does not contain a model with name
+                '%s'.""" % (workspace, path))
             return  {}
         if not 'path' in config:
             return {'config': config}
         path = config['path']
+
     if not os.path.isfile(path):
         config = nemoa.workspace.get('model', path)
         if not isinstance(config, dict):
-            current_workspace = nemoa.workspace.name()
-            if current_workspace:
+            current = nemoa.workspace.current()
+            if current['name']:
                 nemoa.log('error', """could not import model:
                     current workspace '%s' does not contain a model
-                    '%s'.""" % (current_workspace, path))
+                    with name '%s'.""" % (current['name'], path))
             else:
                 nemoa.log('error', """could not import model:
                     file '%s' does not exist.""" % (path))

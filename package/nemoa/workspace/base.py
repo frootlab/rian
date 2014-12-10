@@ -114,6 +114,9 @@ class Config:
 
         return self._config['workspace']
 
+    def _get_base(self):
+        return self._config['workspace_base']
+
     def name(self):
         """Return name of current workspace."""
 
