@@ -30,8 +30,9 @@ class _Getch:
             except ImportError:
                 pass
 
-    def __call__(self): return self.impl()
-
+    def get(self): return self.impl.get()
+    def start(self): return self.impl.start()
+    def stop(self): return self.impl.stop()
 
 class _GetchUnix:
 
@@ -40,24 +41,19 @@ class _GetchUnix:
     def __init__(self):
         import termios
 
-        self._start_getch()
-
-    def __call__(self):
+    def get(self):
 
         import time
         import sys
 
-        if not self._is_running():
-            self._start_getch()
-
+        if not self._is_running(): self.start()
         if time.time() - self._buffer['time'] > 0.5:
             self._buffer['time'] = time.time()
             if not self._buffer['stdin'].empty():
                 ch = self._buffer['stdin'].get()
-                if ch == 'q': self._stop_getch()
                 return ch
 
-    def _start_getch(self):
+    def start(self):
         import sys
         import threading
         import time
@@ -93,7 +89,7 @@ class _GetchUnix:
     def _is_running(self):
         return not self._buffer == None
 
-    def _stop_getch(self):
+    def stop(self):
         import termios
 
         fd = self._buffer['fd']
@@ -105,11 +101,11 @@ class _GetchUnix:
 class _GetchWindows:
     def __init__(self):
         import msvcrt
-
-    def __call__(self):
+    def start(self): pass
+    def get(self):
         import msvcrt
-        if msvcrt.kbhit():
-            return msvcrt.getch()
+        if msvcrt.kbhit(): return msvcrt.getch()
+    def stop(self): pass
 
 class _GetchMacCarbon:
     """
@@ -120,8 +116,8 @@ class _GetchMacCarbon:
     """
     def __init__(self):
         import Carbon
-
-    def __call__(self):
+    def start(self): pass
+    def get(self):
         import Carbon
         if Carbon.Evt.EventAvail(0x0008)[0]==0: # 0x0008 is the keyDownMask
             return ''
@@ -137,12 +133,19 @@ class _GetchMacCarbon:
             #
             (what,msg,when,where,mod)=Carbon.Evt.GetNextEvent(0x0008)[1]
             return chr(msg & 0x000000FF)
+    def stop(self): pass
 
+def startgetch():
+    global inkey
+    if not inkey: inkey = _Getch()
+    return inkey.start()
+
+def stopgetch():
+    global inkey
+    if not inkey: inkey = _Getch()
+    return inkey.stop()
 
 def getch():
     global inkey
     if not inkey: inkey = _Getch()
-    return inkey()
-
-def cleanup():
-    inkey = None
+    return inkey.get()
