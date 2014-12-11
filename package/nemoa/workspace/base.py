@@ -122,16 +122,39 @@ class Config:
 
         return self._config['workspace']
 
-    def path(self, key = None):
+    def path(self, type = None, workspace = None, base = 'user'):
         """Return path."""
 
-        if isinstance(key, basestring) \
-            and key in self._config['path'].keys():
-            if isinstance(self._config['path'][key], dict):
-                return self._config['path'][key].copy()
-            return self._config['path'][key]
+        # (optional) load workspace of given object
+        cur_workspace = self._get_workspace()
+        cur_base = self._get_base()
+        if workspace == None:
+            workspace = cur_workspace
+            base = cur_base
+        elif not workspace == cur_workspace or not base == cur_base:
+            if not self.load(workspace, base):
+                nemoa.log('warning', """could not get path:
+                    workspace '%s' does not exist.""" % (workspace))
+                return  {}
 
-        return self._config['path'].copy()
+        # get path
+        if type == None: path = self._config['path'].copy()
+        elif not isinstance(type, basestring):
+            nemoa.log('warning', """could not get path:
+                object type is not valid.""")
+            path = None
+        elif not type in self._config['path'].keys():
+            nemoa.log('warning', """could not get path:
+                object type '%s' is not valid.""" % (type))
+            path = None
+        else: path = self._config['path'][type]
+
+        # (optional) load current workspace
+        if cur_workspace:
+            if not workspace == cur_workspace or not base == cur_base:
+                self.load(cur_workspace, cur_base)
+
+        return path
 
     def load(self, workspace, base = 'user'):
         """Import workspace."""
@@ -176,8 +199,7 @@ class Config:
         calculated as hash from type and name"""
         return nemoa.common.str_to_hash(str(type) + chr(10) + str(name))
 
-    def get(self, type = None, name = None, workspace = None,
-        base = 'user'):
+    def get(self, type, name = None, workspace = None, base = 'user'):
         """Return object configuration as dictionary."""
 
         if not type in self._config['store'].keys():

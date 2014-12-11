@@ -36,7 +36,7 @@ def filetypes(filetype = None):
     return False
 
 def save(dataset, path = None, filetype = None, workspace = None,
-    **kwargs):
+    base = 'user', **kwargs):
     """Export dataset to file.
 
     Args:
@@ -54,43 +54,36 @@ def save(dataset, path = None, filetype = None, workspace = None,
         return nemoa.log('error', """could not export dataset to file:
             dataset is not valid.""")
 
-    # get file path from dataset source file if path is not given
-    if path == None:
-        path = dataset.path
-        filedir = nemoa.common.get_file_directory(path)
-        filename = dataset.fullname
-        if filetype: fileext = filetype
-        else: fileext = nemoa.common.get_file_extension(path)
-        path = '%s/%s.%s' % (filedir, filename, fileext)
-
-    # get file path from workspace/path if workspace is given
-    elif isinstance(workspace, str) and not workspace == 'None':
-
-        # import workspace if workspace differs from current
-        current_workspace = nemoa.workspace.name()
-        if not workspace == current_workspace:
-            if not nemoa.workspace.load(workspace):
-                nemoa.log('error', """could not export dataset:
-                    workspace '%s' does not exist""" % (workspace))
-                return  {}
-
-        # get dataset path from workspace
-        path = nemoa.workspace.path('datasets') + path
-
-        # import previous workspace if workspace differs from current
-        if not workspace == current_workspace:
-            if not current_workspace == None:
-                nemoa.workspace.load(current_workspace)
+    # get directory, filename and fileextension
+    if isinstance(workspace, basestring) and not workspace == 'None':
+        directory = nemoa.workspace.path('datasets',
+            workspace = workspace, base = base)
+    elif isinstance(path, basestring):
+        directory = nemoa.common.get_file_directory(path)
+    else:
+        directory = nemoa.common.get_file_directory(dataset.path)
+    if isinstance(path, basestring):
+        name = nemoa.common.get_file_basename(path)
+    else:
+        name = dataset.fullname
+    if isinstance(filetype, basestring):
+        fileext = filetype
+    elif isinstance(path, basestring):
+        fileext = nemoa.common.get_file_extension(path)
+        if not fileext:
+            fileext = nemoa.common.get_file_extension(dataset.path)
+    else:
+        fileext = nemoa.common.get_file_extension(dataset.path)
+    path = nemoa.common.get_file_path(directory, name, fileext)
 
     # get filetype from file extension if not given
-    if not filetype:
-        filetype = nemoa.common.get_file_extension(path).lower()
-
-    # test if filetype is supported
+    # and test if filetype is supported
+    if not filetype: filetype = fileext.lower()
     if not filetype in filetypes().keys():
         return nemoa.log('error', """could not export dataset:
             filetype '%s' is not supported.""" % (filetype))
 
+    # export to file
     module_name = filetypes(filetype)[0]
     if module_name == 'text':
         return nemoa.dataset.exports.text.save(

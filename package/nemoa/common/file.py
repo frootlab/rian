@@ -37,6 +37,27 @@ def get_file_name(path):
 
     return os.path.basename(path)
 
+def get_file_path(directory, name, extension):
+    """Get path of file.
+
+    Args:
+        directory (string): file directory
+        name (string): file basename
+        extension (string): file extension
+
+    Returns:
+        String containing path of file.
+
+    """
+
+    path = '%s%s%s.%s' % (directory, os.sep, name, extension)
+    path = os.path.expanduser(path)
+    path = os.path.expandvars(path)
+    path = os.path.abspath(path)
+    path = os.path.normpath(path)
+
+    return path
+
 def get_file_basename(path):
     """Get basename of file.
 

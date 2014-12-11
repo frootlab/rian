@@ -24,7 +24,7 @@ def filetypes(filetype = None):
     return False
 
 def save(system, path = None, filetype = None, workspace = None,
-    **kwargs):
+    base = 'user', **kwargs):
     """Export system to file.
 
     Args:
@@ -42,47 +42,36 @@ def save(system, path = None, filetype = None, workspace = None,
         return nemoa.log('error', """could not export system to file:
             system is not valid.""")
 
-    # get file path from system source file if path is not given
-    if path == None:
-        path = system.path
-
-        if filetype:
-            filename = '%s.%s' % (system.fullname, filetype)
-        else:
-            fileext = nemoa.common.get_file_extension(path)
-            filename = '%s.%s' % (system.fullname, fileext)
-
-        filedir = nemoa.common.get_file_directory(path)
-        path = '%s/%s.%s' % (filedir, filename)
-
-    # get file path from workspace/path if workspace is given
-    elif isinstance(workspace, str) and not workspace == 'None':
-
-        # import workspace if workspace differs from current
-        current_workspace = nemoa.workspace.name()
-        if not workspace == current_workspace:
-            if not nemoa.workspace.load(workspace):
-                nemoa.log('error', """could not export system:
-                    workspace '%s' does not exist""" % (workspace))
-                return  {}
-
-        # get system path from workspace
-        path = nemoa.workspace.path('systems') + path
-
-        # import previous workspace if workspace differs from current
-        if not workspace == current_workspace:
-            if not current_workspace == None:
-                nemoa.workspace.load(current_workspace)
+    # get directory, filename and fileextension
+    if isinstance(workspace, basestring) and not workspace == 'None':
+        directory = nemoa.workspace.path('systems',
+            workspace = workspace, base = base)
+    elif isinstance(path, basestring):
+        directory = nemoa.common.get_file_directory(path)
+    else:
+        directory = nemoa.common.get_file_directory(system.path)
+    if isinstance(path, basestring):
+        name = nemoa.common.get_file_basename(path)
+    else:
+        name = system.fullname
+    if isinstance(filetype, basestring):
+        fileext = filetype
+    elif isinstance(path, basestring):
+        fileext = nemoa.common.get_file_extension(path)
+        if not fileext:
+            fileext = nemoa.common.get_file_extension(system.path)
+    else:
+        fileext = nemoa.common.get_file_extension(system.path)
+    path = nemoa.common.get_file_path(directory, name, fileext)
 
     # get filetype from file extension if not given
-    if not filetype:
-        filetype = nemoa.common.get_file_extension(path).lower()
-
-    # test if filetype is supported
+    # and test if filetype is supported
+    if not filetype: filetype = fileext.lower()
     if not filetype in filetypes().keys():
         return nemoa.log('error', """could not export system:
             filetype '%s' is not supported.""" % (filetype))
 
+    # export to file
     module_name = filetypes(filetype)[0]
     if module_name == 'archive':
         return nemoa.system.exports.archive.save(
