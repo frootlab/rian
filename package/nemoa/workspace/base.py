@@ -134,7 +134,7 @@ class Config:
         return self._config['path'].copy()
 
     def load(self, workspace, base = 'user'):
-        """Import configuration files from workspace."""
+        """Import workspace."""
 
         self._set_workspace(workspace, base = base)
         nemoa.log('init', logfile = self._config['path']['logfile'])
@@ -176,29 +176,48 @@ class Config:
         calculated as hash from type and name"""
         return nemoa.common.str_to_hash(str(type) + chr(10) + str(name))
 
-    def get(self, type = None, name = None):
-        """Return configuration as dictionary for given object."""
+    def get(self, type = None, name = None, workspace = None,
+        base = 'user'):
+        """Return object configuration as dictionary."""
 
         if not type in self._config['store'].keys():
             return nemoa.log('warning', """could not get configuration:
-                object class '%s' is not supported.""" % type)
+                object class '%s' is not supported.""" % (type))
         if not isinstance(name, basestring):
-            return nemoa.log('warning', """could not get configuration:
-                name of object is not known.""")
+            return nemoa.log('warning', """could not get %s:
+                name of object is not valid.""" % (type))
 
-        search = [name, '%s.%s' % (self._get_workspace(), name),
+        # (optional) load workspace of given object
+        cur_workspace = self._get_workspace()
+        cur_base = self._get_base()
+        if workspace == None:
+            workspace = cur_workspace
+            base = cur_base
+        elif not workspace == cur_workspace or not base == cur_base:
+            if not self.load(workspace, base):
+                nemoa.log('warning', """could not get configuration:
+                    workspace '%s' does not exist.""" % (workspace))
+                return  {}
+
+        # find obbject configuration in workspace
+        search = [name, '%s.%s' % (workspace, name),
             name + '.default', 'base.' + name]
-
-        found = False
+        config = None
         for fullname in search:
             if fullname in self._config['store'][type].keys():
-                found = True
+                config = self._config['store'][type][fullname]
                 break
-        if not found:
-            return nemoa.log('warning', """could not get configuration:
-                %s with name '%s' is not known.""" % (type, name))
 
-        return self._config['store'][type][fullname].copy()
+        # (optional) load current workspace
+        if cur_workspace:
+            if not workspace == cur_workspace or not base == cur_base:
+                self.load(cur_workspace, cur_base)
+
+        if not config:
+            return nemoa.log('warning', """could not get configuration:
+                %s with name '%s' is not found in
+                %s workspace '%s'.""" % (type, name, base, workspace))
+        return config.copy()
 
     def _get_workspace(self):
         return self._config['workspace']

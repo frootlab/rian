@@ -26,51 +26,24 @@ def filetypes(filetype = None):
 
 def load(path, filetype = None, workspace = None, base = 'user',
     **kwargs):
-    """Import model from file."""
+    """Import model dictionary from file or workspace."""
 
-    # try if path exists or import given workspace and get path from
-    # workspace or get path from current workspace
-    if not os.path.isfile(path) and workspace:
-        current = nemoa.workspace.current()
-        if not workspace == current['name'] \
-            or not base == current['base']:
-            if not nemoa.workspace.load(workspace, base):
-                nemoa.log('error', """could not import model:
-                    workspace '%s' does not exist.""" % (workspace))
-                return  {}
-        config = nemoa.workspace.get('model', path)
-        if current['name'] and (not workspace == current['name']
-            or not base == current['base']):
-            nemoa.workspace.load(current['name'], current['base'])
+    # get path
+    if workspace or not os.path.isfile(path):
+        config = nemoa.workspace.get('model', name = path,
+            workspace = workspace, base = base)
         if not isinstance(config, dict):
             nemoa.log('error', """could not import model:
                 workspace '%s' does not contain a model with name
                 '%s'.""" % (workspace, path))
             return  {}
-        if not 'path' in config:
-            return {'config': config}
+        if not 'path' in config or not os.path.isfile(config['path']):
+            nemoa.log('error', """could not import model:
+                file '%s' does not exist.""" % (config['path']))
+            return {}
         path = config['path']
 
-    if not os.path.isfile(path):
-        config = nemoa.workspace.get('model', path)
-        if not isinstance(config, dict):
-            current = nemoa.workspace.current()
-            if current['name']:
-                nemoa.log('error', """could not import model:
-                    current workspace '%s' does not contain a model
-                    with name '%s'.""" % (current['name'], path))
-            else:
-                nemoa.log('error', """could not import model:
-                    file '%s' does not exist.""" % (path))
-            return  {}
-        if not 'path' in config: return {'config': config}
-        path = config['path']
-    if not os.path.isfile(path):
-        nemoa.log('error', """could not import model:
-            file '%s' does not exist.""" % (path))
-        return {}
-
-    # if filetype is not given get filtype from file extension
+    # get filtype from file extension if not given
     # and check if filetype is supported
     if not filetype:
         filetype = nemoa.common.get_file_extension(path).lower()

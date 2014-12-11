@@ -43,9 +43,3 @@ def load(*args, **kwargs):
     if not 'config' in _shared: configure()
     return _shared['config'].load(*args, **kwargs)
 
-def current():
-    if not 'config' in _shared: configure()
-    return {
-        'name': _shared['config'].workspace(),
-        'base': _shared['config']._get_base()}
-
