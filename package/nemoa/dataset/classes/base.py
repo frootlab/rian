@@ -602,6 +602,12 @@ class Dataset(nemoa.common.classes.BaseObject):
         return nemoa.common.module.getmethods(self,
             prefix = '_algorithm_', attribute = attribute)
 
+    def _get_algorithm(self, algorithm = None, *args, **kwargs):
+        """Get algorithm."""
+        algorithms = self._get_algorithms(*args, **kwargs)
+        if not algorithm in algorithms: return None
+        return algorithms[algorithm]
+
     def _get_columns(self, filter = '*'):
         """Get external columns.
 
@@ -1047,6 +1053,19 @@ class Dataset(nemoa.common.classes.BaseObject):
         if key == 'tables': return self._get_tables(*args, **kwargs)
 
         return nemoa.log('error', """could not get dataset copy:
+            unknown key '%s'.""" % (key))
+
+    def _get_config(self, key = None, *args, **kwargs):
+        """Get configuration or configuration value."""
+
+        if key == None: return copy.deepcopy(self._config)
+
+        if isinstance(key, str) and key in self._config.keys():
+            if isinstance(self._config[key], dict):
+                return self._config[key].copy()
+            return self._config[key]
+
+        return nemoa.log('error', """could not get configuration:
             unknown key '%s'.""" % (key))
 
     def _get_tables(self, key = None):

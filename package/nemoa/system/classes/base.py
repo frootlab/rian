@@ -178,10 +178,11 @@ class System(nemoa.common.classes.BaseObject):
 
         return structured
 
-    #def _get_path(self):
-        #"""Get path of system."""
-        #if 'path' in self._config: return self._config['path']
-        #return None
+    def _get_algorithm(self, algorithm = None, *args, **kwargs):
+        """Get algorithm."""
+        algorithms = self._get_algorithms(*args, **kwargs)
+        if not algorithm in algorithms: return None
+        return algorithms[algorithm]
 
     def _get_unit(self, unit):
 
@@ -483,18 +484,18 @@ class System(nemoa.common.classes.BaseObject):
         return nemoa.log('error', """could not get system copy:
             unknown key '%s'.""" % (key))
 
-    #def _get_config(self, key = None, *args, **kwargs):
-        #"""Get configuration or configuration value."""
+    def _get_config(self, key = None, *args, **kwargs):
+        """Get configuration or configuration value."""
 
-        #if key == None: return copy.deepcopy(self._config)
+        if key == None: return copy.deepcopy(self._config)
 
-        #if isinstance(key, str) and key in self._config.keys():
-            #if isinstance(self._config[key], dict):
-                #return self._config[key].copy()
-            #return self._config[key]
+        if isinstance(key, str) and key in self._config.keys():
+            if isinstance(self._config[key], dict):
+                return self._config[key].copy()
+            return self._config[key]
 
-        #return nemoa.log('error', """could not get configuration:
-            #unknown key '%s'.""" % (key))
+        return nemoa.log('error', """could not get configuration:
+            unknown key '%s'.""" % (key))
 
     def _get_params(self, key = None, *args, **kwargs):
         """Get configuration or configuration value."""

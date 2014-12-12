@@ -176,6 +176,12 @@ class Model(nemoa.common.classes.BaseObject):
             'system': self.system.get('algorithms', *args, **kwargs) }
         return structured
 
+    def _get_algorithm(self, algorithm = None, *args, **kwargs):
+        """Get algorithm."""
+        algorithms = self._get_algorithms(*args, **kwargs)
+        if not algorithm in algorithms: return None
+        return algorithms[algorithm]
+
     def _get_copy(self, key = None, *args, **kwargs):
         """Get model copy as dictionary."""
 
