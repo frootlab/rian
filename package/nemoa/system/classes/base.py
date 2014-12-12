@@ -8,7 +8,7 @@ import nemoa
 import numpy
 import copy
 
-class System:
+class System(nemoa.common.classes.BaseObject):
     """System base class.
 
     Attributes:
@@ -59,37 +59,7 @@ class System:
     _params  = None
     _default = {'params': {}, 'init': {}, 'optimize': {},
                 'schedules': {}}
-    _attr    = {'units': 'r', 'links': 'r', 'layers': 'r',
-                'fullname': 'r', 'type': 'r', 'name': 'rw',
-                'branch': 'rw', 'version': 'rw', 'about': 'rw',
-                'author': 'rw', 'email': 'rw', 'license': 'rw',
-                'path': 'rw'}
-
-    def __init__(self, *args, **kwargs):
-        """Import system from dictionary."""
-
-        self._set_copy(**kwargs)
-
-    def __getattr__(self, key):
-        """Attribute wrapper to method get(key)."""
-
-        if key in self._attr:
-            if 'r' in self._attr[key]: return self.get(key)
-            return nemoa.log('warning',
-                "attribute '%s' can not be accessed directly.")
-
-        raise AttributeError('%s instance has no attribute %r'
-            % (self.__class__.__name__, key))
-
-    def __setattr__(self, key, val):
-        """Attribute wrapper to method set(key, val)."""
-
-        if key in self._attr:
-            if 'w' in self._attr[key]: return self.set(key, val)
-            return nemoa.log('warning',
-                "attribute '%s' can not be changed directly.")
-
-        self.__dict__[key] = val
+    _attr    = {'units': 'r', 'links': 'r', 'layers': 'r'}
 
     def configure(self, network = None):
         """Configure system to network."""
@@ -131,16 +101,7 @@ class System:
         """Get meta information and content."""
 
         # meta information
-        if key == 'about': return self._get_about()
-        if key == 'author': return self._get_author()
-        if key == 'branch': return self._get_branch()
-        if key == 'email': return self._get_email()
-        if key == 'fullname': return self._get_fullname()
-        if key == 'license': return self._get_license()
-        if key == 'name': return self._get_name()
-        if key == 'path': return self._get_path()
-        if key == 'type': return self._get_type()
-        if key == 'version': return self._get_version()
+        if key in self._attr_meta: return self._get_meta(key)
 
         # algorithms
         if key == 'algorithm':
@@ -162,64 +123,6 @@ class System:
         if key == 'params': return self._get_params(*args, **kwargs)
 
         return nemoa.log('warning', "unknown key '%s'" % (key))
-
-    def _get_fullname(self):
-        """Get fullname of system."""
-        fullname = ''
-        name = self._get_name()
-        if name: fullname += name
-        branch = self._get_branch()
-        if branch: fullname += '.' + branch
-        version = self._get_version()
-        if version: fullname += '.' + str(version)
-        return fullname
-
-    def _get_name(self):
-        """Get name of system."""
-        if 'name' in self._config: return self._config['name']
-        return None
-
-    def _get_branch(self):
-        """Get branch of system."""
-        if 'branch' in self._config: return self._config['branch']
-        return None
-
-    def _get_version(self):
-        """Get version number of system branch."""
-        if 'version' in self._config: return self._config['version']
-        return None
-
-    def _get_about(self):
-        """Get description of system."""
-        if 'about' in self._config: return self._config['about']
-        return None
-
-    def _get_author(self):
-        """Get author of system."""
-        if 'author' in self._config: return self._config['author']
-        return None
-
-    def _get_email(self):
-        """Get email of author of system."""
-        if 'email' in self._config: return self._config['email']
-        return None
-
-    def _get_license(self):
-        """Get license of system."""
-        if 'license' in self._config: return self._config['license']
-        return None
-
-    def _get_type(self):
-        """Get type of system, using module and class name."""
-        module_name = self.__module__.split('.')[-1]
-        class_name = self.__class__.__name__
-        return module_name + '.' + class_name
-
-    def _get_algorithm(self, algorithm = None, *args, **kwargs):
-        """Get algorithm provided by system."""
-        algorithms = self._get_algorithms(*args, **kwargs)
-        if not algorithm in algorithms: return None
-        return algorithms[algorithm]
 
     def _get_algorithms(self, category = None, attribute = None):
         """Get algorithms provided by system."""
@@ -275,10 +178,10 @@ class System:
 
         return structured
 
-    def _get_path(self):
-        """Get path of system."""
-        if 'path' in self._config: return self._config['path']
-        return None
+    #def _get_path(self):
+        #"""Get path of system."""
+        #if 'path' in self._config: return self._config['path']
+        #return None
 
     def _get_unit(self, unit):
 
@@ -580,18 +483,18 @@ class System:
         return nemoa.log('error', """could not get system copy:
             unknown key '%s'.""" % (key))
 
-    def _get_config(self, key = None, *args, **kwargs):
-        """Get configuration or configuration value."""
+    #def _get_config(self, key = None, *args, **kwargs):
+        #"""Get configuration or configuration value."""
 
-        if key == None: return copy.deepcopy(self._config)
+        #if key == None: return copy.deepcopy(self._config)
 
-        if isinstance(key, str) and key in self._config.keys():
-            if isinstance(self._config[key], dict):
-                return self._config[key].copy()
-            return self._config[key]
+        #if isinstance(key, str) and key in self._config.keys():
+            #if isinstance(self._config[key], dict):
+                #return self._config[key].copy()
+            #return self._config[key]
 
-        return nemoa.log('error', """could not get configuration:
-            unknown key '%s'.""" % (key))
+        #return nemoa.log('error', """could not get configuration:
+            #unknown key '%s'.""" % (key))
 
     def _get_params(self, key = None, *args, **kwargs):
         """Get configuration or configuration value."""
@@ -610,14 +513,7 @@ class System:
         """Set meta information, configuration and parameters."""
 
         # set meta information
-        if key == 'name': return self._set_name(*args, **kwargs)
-        if key == 'branch': return self._set_branch(*args, **kwargs)
-        if key == 'version': return self._set_version(*args, **kwargs)
-        if key == 'about': return self._set_about(*args, **kwargs)
-        if key == 'author': return self._set_author(*args, **kwargs)
-        if key == 'email': return self._set_email(*args, **kwargs)
-        if key == 'license': return self._set_license(*args, **kwargs)
-        if key == 'path': return self._set_path(*args, **kwargs)
+        if key in self._attr_meta: return self._set_meta(key, *args, **kwargs)
 
         # set configuration and parameters
         #if key == 'units': return self._set_units(*args, **kwargs)
@@ -629,54 +525,6 @@ class System:
         if key == 'params': return self._set_params(*args, **kwargs)
 
         return nemoa.log('warning', "unknown key '%s'" % (key))
-
-    def _set_name(self, system_name):
-        """Set name of system."""
-        if not isinstance(system_name, basestring): return False
-        self._config['name'] = system_name
-        return True
-
-    def _set_branch(self, system_branch):
-        """Set branch of system."""
-        if not isinstance(system_branch, basestring): return False
-        self._config['branch'] = system_branch
-        return True
-
-    def _set_version(self, system_version):
-        """Set version number of system branch."""
-        if not isinstance(system_version, int): return False
-        self._config['version'] = system_version
-        return True
-
-    def _set_about(self, system_about):
-        """Get description of system."""
-        if not isinstance(system_about, basestring): return False
-        self._config['about'] = system_about
-        return True
-
-    def _set_author(self, system_author):
-        """Set author of system."""
-        if not isinstance(system_author, basestring): return False
-        self._config['author'] = system_author
-        return True
-
-    def _set_email(self, system_author_email):
-        """Set email of author of system."""
-        if not isinstance(system_author_email, str): return False
-        self._config['email'] = system_author_email
-        return True
-
-    def _set_license(self, system_license):
-        """Set license of system."""
-        if not isinstance(system_license, str): return False
-        self._config['license'] = system_license
-        return True
-
-    def _set_path(self, system_path):
-        """Set path of system."""
-        if not isinstance(system_path, basestring): return False
-        self._config['path'] = system_path
-        return True
 
     def _set_links(self, links = None, initialize = True):
         """Create link configuration from units."""

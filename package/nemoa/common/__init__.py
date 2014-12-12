@@ -4,6 +4,7 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+import nemoa.common.classes
 from nemoa.common.console import *
 from nemoa.common.csvfile import *
 from nemoa.common.data import *
