@@ -48,7 +48,7 @@ def save(model, path = None, filetype = None, plot = None, **kwargs):
 
     # get information about relation
     if plot.settings['show_title']:
-        rel_id = nemoa.common.str_split_params(
+        rel_id = nemoa.common.string.split_kwargs(
             plot.settings['relation'])[0]
         rel_dict = model.system.get('algorithm', rel_id,
             category = ('system', 'relation', 'evaluation'))
@@ -107,7 +107,7 @@ def show(model, plot = None, *args, **kwargs):
 
     # get information about relation
     if plot.settings['show_title']:
-        rel_id = nemoa.common.str_split_params(
+        rel_id = nemoa.common.string.split_kwargs(
             plot.settings['relation'])[0]
         rel_dict = model.system.get('algorithm', rel_id,
             category = ('system', 'relation', 'evaluation'))
@@ -173,7 +173,7 @@ class Graph:
 
     def __init__(self, **kwargs):
         self.settings = self.default.copy()
-        nemoa.common.dict_merge(kwargs, self.settings)
+        nemoa.common.dict.merge(kwargs, self.settings)
 
     def create(self, model):
 
@@ -193,7 +193,7 @@ class Graph:
             return nemoa.log('error',
                 """could not create relation graph: invalid weight
                 relation '%s'!""" % (self.settings['relation']))
-        relname = nemoa.common.str_split_params(
+        relname = nemoa.common.string.split_kwargs(
             self.settings['relation'])[0]
         rel_about = model.system.get('algorithm', relname,
             category = ('system', 'relation', 'evaluation'))
@@ -273,7 +273,7 @@ class Graph:
 
             if not 'label' in graph.node[src]:
                 node = model.network.get('node', edge[0])
-                label = nemoa.common.str_format_unit_label(
+                label = nemoa.common.string.labelfomat(
                     node['params']['label'])
                 graph.node[src]['label'] = label
                 graph.node[src]['layer'] = node['params']['layer']
@@ -288,7 +288,7 @@ class Graph:
 
             if not 'label' in graph.node[tgt]:
                 node = model.network.get('node', edge[1])
-                label = nemoa.common.str_format_unit_label(
+                label = nemoa.common.string.labelfomat(
                     node['params']['label'])
                 graph.node[tgt]['label'] = label
                 graph.node[tgt]['layer'] = node['params']['layer']
@@ -329,7 +329,7 @@ class Heatmap:
 
     def __init__(self, **kwargs):
         self.settings = self.default.copy()
-        nemoa.common.dict_merge(kwargs, self.settings)
+        nemoa.common.dict.merge(kwargs, self.settings)
 
     def create(self, model):
 
@@ -370,7 +370,7 @@ class Histogram:
 
     def __init__(self, **kwargs):
         self.settings = self.default.copy()
-        nemoa.common.dict_merge(kwargs, self.settings)
+        nemoa.common.dict.merge(kwargs, self.settings)
 
     def create(self, model):
 

@@ -9,7 +9,7 @@ import nemoa
 import numpy
 import os
 
-def csv_get_header(path):
+def getheader(path):
     """Get header from CSV file.
 
     Args:
@@ -40,7 +40,7 @@ def csv_get_header(path):
 
     return header
 
-def csv_get_delimiter(path, delimiters = [',', ';', '\t', ' '],
+def getdelim(path, delimiters = [',', ';', '\t', ' '],
     minprobesize = 3, maxprobesize = 100):
     """Get delimiter from CSV file.
 
@@ -95,7 +95,7 @@ def csv_get_delimiter(path, delimiters = [',', ';', '\t', ' '],
 
     return delimiter
 
-def csv_get_labels(path, delimiter = None):
+def getlabels(path, delimiter = None):
     """Get (column) labels from CSV file.
 
     Args:
@@ -113,7 +113,7 @@ def csv_get_labels(path, delimiter = None):
         "could not get csv labels: file '%s' does not exist." % (path))
 
     # get delimiter
-    if not delimiter: delimiter = csv_get_delimiter(path)
+    if not delimiter: delimiter = getdelim(path)
     if not delimiter: return nemoa.log('error',
         'could not get column labels: unknown delimiter.')
 
@@ -152,7 +152,7 @@ def csv_get_labels(path, delimiter = None):
     if csvtype == 'r_table': return ['label'] + col_labels
     return []
 
-def csv_get_rowlabelcol(path, delimiter = None):
+def getlabelcolumn(path, delimiter = None):
     """Get column id for column containing row labels from CSV file.
 
     Args:
@@ -171,7 +171,7 @@ def csv_get_rowlabelcol(path, delimiter = None):
         file '%s' does not exist.""" % (path))
 
     # get delimiter
-    if not delimiter: delimiter = csv_get_delimiter(path)
+    if not delimiter: delimiter = getdelim(path)
     if not delimiter: return nemoa.log('error',
         "could not get csv row label column id: unknown delimiter.")
 
@@ -206,8 +206,8 @@ def csv_get_rowlabelcol(path, delimiter = None):
 
     return False
 
-def csv_get_data(path, delimiter = None, labels = None,
-    usecols = None, rowlabelcol = None):
+def load(path, delimiter = None, labels = None, usecols = None,
+    rowlabelcol = None):
     """Import data from CSV file.
 
     Args:
@@ -233,7 +233,7 @@ def csv_get_data(path, delimiter = None, labels = None,
         "could not get csv data: file '%s' does not exist." % (path))
 
     # get delimiter
-    if not delimiter: delimiter = csv_get_delimiter(path)
+    if not delimiter: delimiter = getdelim(path)
     if not delimiter: return nemoa.log('error',
         "could not get data from csv file: unknown delimiter.")
 
@@ -242,14 +242,14 @@ def csv_get_data(path, delimiter = None, labels = None,
         if not usecols: return nemoa.log('error',
             "could not get data from csv file: usecols are not given.")
     else:
-        labels = csv_get_labels(path, delimiter = delimiter)
+        labels = getlabels(path, delimiter = delimiter)
         usecols = tuple(range(len(labels)))
     if not labels: return nemoa.log('error',
         "could not get data from csv file: unknown labels.")
 
     # get row label coumn id
     if rowlabelcol == None:
-        rowlabelcol = csv_get_rowlabelcol(path, delimiter = delimiter)
+        rowlabelcol = getlabelcolumn(path, delimiter = delimiter)
 
     # get datatype
     if rowlabelcol == None:
@@ -294,8 +294,7 @@ def csv_get_data(path, delimiter = None, labels = None,
 
     return data
 
-def csv_save_data(path, data, header = None, labels = None,
-    delimiter = ','):
+def dump(path, data, header = None, labels = None, delimiter = ','):
 
     if isinstance(header, str):
         header = '# %s\n\n' % (header.replace('\n', '\n# '))
@@ -306,10 +305,5 @@ def csv_save_data(path, data, header = None, labels = None,
 
     fmt = delimiter.join(['%s'] + ['%10.10f'] * (len(data[0]) - 1))
     numpy.savetxt(path, data, fmt = fmt, header = header, comments = '')
-    return path
 
-def csv_dump(dic, path, **kwargs):
-    header = dic['header']
-    data = dic['table']
-    labels = data.dtype.names
-    return csv_save_data(path, data, header, labels, **kwargs)
+    return True

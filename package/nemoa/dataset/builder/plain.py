@@ -43,7 +43,7 @@ class Rules:
 
     def __init__(self, **kwargs):
         self.settings = self.default.copy()
-        nemoa.common.dict_merge(kwargs, self.settings)
+        nemoa.common.dict.merge(kwargs, self.settings)
 
     def build(self):
 

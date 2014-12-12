@@ -41,7 +41,7 @@ class Csv:
 
     def __init__(self, **kwargs):
         self.settings = self.default.copy()
-        nemoa.common.dict_merge(kwargs, self.settings)
+        nemoa.common.dict.merge(kwargs, self.settings)
 
     def save(self, dataset, path):
 
@@ -54,19 +54,13 @@ class Csv:
         for key, val in dataset.get('config').iteritems():
             if key in keys: config[key] = val
 
-        # update configuration to include current appliucation settings
-        #config['application'] = 'nemoa ' + nemoa.version()
-
         # prepare CSV parameters and write CSV file
-        header = nemoa.common.ini_dumps(config).strip('\n')
+        header = nemoa.common.inifile.dumps(config).strip('\n')
         delimiter = self.settings['delimiter']
         cols, data = dataset.get('data', output = ('cols', 'recarray'))
-        #print cols
-        #print data.dtype.names
-        #quit
 
-
-        return nemoa.common.csv_save_data(path, data, header = header,
+        return nemoa.common.csvfile.dump(path, data,
+            header = header,
             delimiter = delimiter, labels = [''] + cols)
 
 class Tsv(Csv):

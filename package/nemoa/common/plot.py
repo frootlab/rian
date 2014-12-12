@@ -52,11 +52,11 @@ def heatmap(array, **kwargs):
     y_labels = []
     for label in kwargs['units'][0]:
         if ':' in label: label = label.split(':', 1)[1]
-        y_labels.append(nemoa.common.str_format_unit_label(label))
+        y_labels.append(nemoa.common.string.labelfomat(label))
     x_labels = []
     for label in kwargs['units'][1]:
         if ':' in label: label = label.split(':', 1)[1]
-        x_labels.append(nemoa.common.str_format_unit_label(label))
+        x_labels.append(nemoa.common.string.labelfomat(label))
     fontsize = min(max_font_size, \
         400. / float(max(len(x_labels), len(y_labels))))
     matplotlib.pyplot.xticks(
@@ -312,7 +312,7 @@ def layergraph(graph, edge_curvature = 1.0, **kwargs):
             is_visible = attr['params']['visible']
             label_str = attr['params']['label'] if is_visible \
                 else 'n%d' % (layer.index(node) + 1)
-            label = nemoa.common.str_format_unit_label(label_str)
+            label = nemoa.common.string.labelfomat(label_str)
 
             color = {
                 True: {

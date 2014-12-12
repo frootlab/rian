@@ -20,7 +20,7 @@ def load(path, **kwargs):
     """Import network from graph description file."""
 
     # extract filetype from path
-    filetype = nemoa.common.get_file_extension(path).lower()
+    filetype = nemoa.common.ospath.fileext(path).lower()
 
     # test if filetype is supported
     if not filetype in filetypes():
@@ -46,19 +46,17 @@ def _graph_decode(graph):
 
     # base64 decoding
     elif graph.graph['coding'] == 'base64':
-        graph.graph['params'] = \
-            nemoa.common.dict_decode_base64(
-            graph.graph['params'])
+        graph.graph['params'] = nemoa.common.dict.from_string(
+            graph.graph['params'], encode = 'base64')
 
         for node in graph.nodes():
-            graph.node[node]['params'] = \
-                nemoa.common.dict_decode_base64(
-                graph.node[node]['params'])
+            graph.node[node]['params'] = nemoa.common.dict.from_string(
+                graph.node[node]['params'], encode = 'base64')
 
         for src, tgt in graph.edges():
             graph.edge[src][tgt]['params'] = \
-                nemoa.common.dict_decode_base64(
-                graph.edge[src][tgt]['params'])
+                nemoa.common.dict.from_string(
+                graph.edge[src][tgt]['params'], encode = 'base64')
 
         graph.graph['coding'] == 'none'
         return graph
@@ -83,13 +81,13 @@ class Graphml:
 
     def __init__(self, **kwargs):
         self.settings = self.default.copy()
-        nemoa.common.dict_merge(kwargs, self.settings)
+        nemoa.common.dict.merge(kwargs, self.settings)
 
     def load(self, path):
         graph = networkx.read_graphml(path)
         graph = _graph_decode(graph)
         graph_dict = _graph_to_dict(graph)
-        graph_dict = nemoa.common.dict_convert_string_keys(graph_dict)
+        graph_dict = nemoa.common.dict.convert_string_keys(graph_dict)
         return {
             'config': graph_dict['graph']['params'],
             'graph': graph_dict }
@@ -102,13 +100,13 @@ class Gml:
 
     def __init__(self, **kwargs):
         self.settings = self.default.copy()
-        nemoa.common.dict_merge(kwargs, self.settings)
+        nemoa.common.dict.merge(kwargs, self.settings)
 
     def load(self, path):
         graph = networkx.read_gml(path, relabel = True)
         graph = _graph_decode(graph)
         graph_dict = _graph_to_dict(graph)
-        graph_dict = nemoa.common.dict_convert_string_keys(graph_dict)
+        graph_dict = nemoa.common.dict.convert_string_keys(graph_dict)
         return {
             'config': graph_dict['graph']['params'],
             'graph': graph_dict }

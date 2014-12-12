@@ -277,7 +277,7 @@ class Model(nemoa.common.classes.BaseObject):
             self._config = self._default.copy()
         if config:
             config_copy = copy.deepcopy(config)
-            nemoa.common.dict_merge(config_copy, self._config)
+            nemoa.common.dict.merge(config_copy, self._config)
         return True
 
     def _set_dataset(self, dataset):

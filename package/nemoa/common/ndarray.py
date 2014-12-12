@@ -6,14 +6,8 @@ __license__ = 'GPLv3'
 
 import nemoa
 import numpy
-import numpy.lib.recfunctions
 
-def data_insert(data, source, columns = None):
-    if not columns: columns = source.dtype.names
-    return numpy.lib.recfunctions.rec_append_fields(
-        data, columns, [source[col] for col in columns])
-
-def data_sum(data, norm = 'S', axis = 0):
+def sumnorm(data, norm = 'S', axis = 0):
     """Sum of data.
 
     Calculate sum of data along given axes, using a given norm.
@@ -45,10 +39,10 @@ def data_sum(data, norm = 'S', axis = 0):
     # Root Sum of Squared Errors (RSSE)
     if n == 'RSSE': return numpy.sqrt(numpy.sum(data ** 2, axis = axis))
 
-    return nemoa.log('error', """could not calculate data sum:
-        unsupported data sum norm '%s'""" % (norm))
+    return nemoa.log('warning', """could not calculate normed sum:
+        unsupported norm '%s'""" % (norm))
 
-def data_mean(data, norm = 'M', axis = 0):
+def meannorm(data, norm = 'M', axis = 0):
     """Mean of data.
 
     Calculate mean of data along given axes, using a given norm.
@@ -80,10 +74,10 @@ def data_mean(data, norm = 'M', axis = 0):
     # Root Mean of Squared Errors (RMSE) / L2-Norm
     if n == 'RMSE': return numpy.sqrt(numpy.mean(data ** 2, axis = axis))
 
-    return nemoa.log('error', """could not calculate data mean:
-        unsupported data mean norm '%s'""" % (norm))
+    return nemoa.log('error', """could not calculate normed mean:
+        unsupported norm '%s'""" % (norm))
 
-def data_deviation(data, norm = 'SD', axis = 0):
+def devnorm(data, norm = 'SD', axis = 0):
     """Deviation of data.
 
     Calculate deviation of data along given axes, using a given norm.
@@ -112,5 +106,5 @@ def data_deviation(data, norm = 'SD', axis = 0):
     # Standard Deviation of Squared Errors (SDSE)
     if n == 'SDSE': return numpy.std(data ** 2, axis = axis)
 
-    return nemoa.log('error', """could not calculate data deviation:
-        unsupported data deviation norm '%s'""" % (norm))
+    return nemoa.log('error', """could not calculate normed deviation:
+        unsupported deviation norm '%s'""" % (norm))

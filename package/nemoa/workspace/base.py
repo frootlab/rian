@@ -86,7 +86,8 @@ class Config:
 
         # update basepaths from base configuration
         if os.path.exists(self._config['baseconf']):
-            ini_dict = nemoa.common.ini_load(self._config['baseconf'], {
+            ini_dict = nemoa.common.inifile.load(
+                self._config['baseconf'], {
                 'folders': {
                     'user': 'str',
                     'cache': 'str',
@@ -193,11 +194,6 @@ class Config:
         shared = self._expand_path(self._config['basepath']['common'])
         return [os.path.basename(w) for w in glob.iglob(shared + '*')
             if os.path.isdir(w)]
-
-    def _get_obj_id_by_name(self, type, name):
-        """Return id of object as integer
-        calculated as hash from type and name"""
-        return nemoa.common.str_to_hash(str(type) + chr(10) + str(name))
 
     def get(self, type, name = None, workspace = None, base = 'user'):
         """Return object configuration as dictionary."""
@@ -359,9 +355,9 @@ class Config:
 
             # scan for files
             for path in glob.iglob(self._expand_path(files)):
-                filetype = nemoa.common.get_file_extension(path)
+                filetype = nemoa.common.ospath.fileext(path)
                 if not filetype in filetypes: continue
-                name = nemoa.common.get_file_basename(path)
+                name = nemoa.common.ospath.basename(path)
                 workspace = self._config['workspace']
                 fullname = '%s.%s' % (workspace, name)
                 if fullname in self._config['store'][type]: continue

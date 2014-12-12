@@ -17,7 +17,7 @@ def load(path, **kwargs):
     """Import network from text file."""
 
     # extract filetype from path
-    filetype = nemoa.common.get_file_extension(path).lower()
+    filetype = nemoa.common.ospath.fileext(path).lower()
 
     # test if filetype is supported
     if not filetype in filetypes():
@@ -37,7 +37,7 @@ class Ini:
 
     def __init__(self, **kwargs):
         self.settings = self.default.copy()
-        nemoa.common.dict_merge(kwargs, self.settings)
+        nemoa.common.dict.merge(kwargs, self.settings)
 
     def load(self, path):
         """Return network configuration as dictionary.
@@ -49,7 +49,7 @@ class Ini:
         """
 
         structure = {'network': { 'type': 'str' }}
-        network = nemoa.common.ini_load(path, structure)
+        network = nemoa.common.inifile.load(path, structure)
         if not network \
             or not 'network' in network \
             or not 'type' in network['network']:
@@ -88,7 +88,8 @@ class Ini:
             'binding [0-9a-zA-Z]*-[0-9a-zA-Z]*': {
                 '[0-9a-zA-Z]*': 'list' }}
 
-        ini_dict = nemoa.common.ini_load(path, structure = structure)
+        ini_dict = nemoa.common.inifile.load(path,
+            structure = structure)
         config = ini_dict['network'].copy()
 
         # layers
@@ -100,7 +101,7 @@ class Ini:
 
         # name
         if not 'name' in config:
-            config['name'] = nemoa.common.get_file_basename(path)
+            config['name'] = nemoa.common.ospath.basename(path)
 
         # node labelformat
         if not 'labelformat' in config:

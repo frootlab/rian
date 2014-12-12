@@ -18,7 +18,7 @@ def load(path, **kwargs):
     """Import dataset from text file."""
 
     # get extract filetype from file extension
-    filetype = nemoa.common.get_file_extension(path).lower()
+    filetype = nemoa.common.ospath.fileext(path).lower()
 
     # test if filetype is supported
     if not filetype in filetypes():
@@ -40,7 +40,7 @@ class Csv:
 
     def __init__(self, **kwargs):
         self.settings = self.default.copy()
-        nemoa.common.dict_merge(kwargs, self.settings)
+        nemoa.common.dict.merge(kwargs, self.settings)
 
     def load(self, path):
         """Get dataset configuration and dataset tables.
@@ -52,7 +52,7 @@ class Csv:
         """
 
         # get config from csv header
-        header = nemoa.common.csv_get_header(path)
+        header = nemoa.common.csvfile.getheader(path)
 
         structure = {
             'name': 'str',
@@ -68,13 +68,13 @@ class Csv:
             'type': 'str',
             'labelformat': 'str' }
 
-        config = nemoa.common.ini_loads(header, nosection = True,
+        config = nemoa.common.inifile.loads(header, nosection = True,
             structure = structure)
 
         if 'name' in config:
             name = config['name']
         else:
-            name = nemoa.common.get_file_basename(path)
+            name = nemoa.common.ospath.basename(path)
             config['name'] = name
         if not 'type' in config:
             config['type'] = 'base.Dataset'
@@ -83,7 +83,7 @@ class Csv:
         config['colfilter'] = {'*': ['*:*']}
         config['rowfilter'] = {'*': ['*:*'], name: [name + ':*']}
 
-        data = nemoa.common.csv_get_data(path)
+        data = nemoa.common.csvfile.load(path)
 
         config['table'] = {name: config.copy()}
         config['table'][name]['fraction'] = 1.0

@@ -141,8 +141,9 @@ class Sigmoid(UnitsBaseClass):
         calculated from a sigmoid input layer. """
 
         bias = self.params['bias']
+        sigmoid = nemoa.common.math.sigmoid
 
-        return nemoa.common.sigmoid(bias + numpy.dot(data, weights))
+        return sigmoid(bias + numpy.dot(data, weights))
 
     def expect_from_gauss_layer(self, data, source, weights):
         """Return expected values of a sigmoid output layer
@@ -150,9 +151,9 @@ class Sigmoid(UnitsBaseClass):
 
         bias = self.params['bias']
         sdev = numpy.sqrt(numpy.exp(source['lvar']))
+        sigmoid = nemoa.common.math.sigmoid
 
-        return nemoa.common.sigmoid(
-            bias + numpy.dot(data / sdev, weights))
+        return sigmoid(bias + numpy.dot(data / sdev, weights))
 
     def get_param_updates(self, data, model, weights):
         """Return parameter updates of a sigmoidal output layer
@@ -168,12 +169,21 @@ class Sigmoid(UnitsBaseClass):
 
         return {'bias': - numpy.mean(delta, axis = 0).reshape((1, size))}
 
-    def delta_from_bprop(self, data_in, delta_out, W_in, W_out):
+    def delta_from_bprop(self, data, delta, win, wout):
+        """
 
+        data: input data
+        delta: error delta out
+        win: weights in
+        wout: weights out
+        """
+
+        value = numpy.dot(delta, wout)
         bias = self.params['bias']
+        dsigmoid = nemoa.common.math.dsigmoid
+        backdelta = value * dsigmoid((bias + numpy.dot(data, win)))
 
-        return numpy.dot(delta_out, W_out) * \
-            nemoa.common.diff_sigmoid((bias + numpy.dot(data_in, W_in)))
+        return backdelta
 
     @staticmethod
     def grad(x):

@@ -41,7 +41,7 @@ def build(type, *args, **kwargs):
 
     # update path
     basepath = nemoa.workspace.path('datasets')
-    if not basepath: basepath = nemoa.common.get_current_directory()
+    if not basepath: basepath = nemoa.common.ospath.cwd()
     dataset['config']['path'] = \
         basepath + dataset['config']['name'] + '.csv'
 

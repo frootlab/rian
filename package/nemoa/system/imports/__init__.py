@@ -52,7 +52,7 @@ def load(path, filetype = None, workspace = None, base = 'user',
     # get filtype from file extension if not given
     # and check if filetype is supported
     if not filetype:
-        filetype = nemoa.common.get_file_extension(path).lower()
+        filetype = nemoa.common.ospath.fileext(path).lower()
     if not filetype in filetypes().keys():
         return nemoa.log('error', """could not import system:
             filetype '%s' is not supported.""" % (filetype))

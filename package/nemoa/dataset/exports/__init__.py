@@ -59,22 +59,22 @@ def save(dataset, path = None, filetype = None, workspace = None,
         directory = nemoa.workspace.path('datasets',
             workspace = workspace, base = base)
     elif isinstance(path, basestring):
-        directory = nemoa.common.get_file_directory(path)
+        directory = nemoa.common.ospath.directory(path)
     else:
-        directory = nemoa.common.get_file_directory(dataset.path)
+        directory = nemoa.common.ospath.directory(dataset.path)
     if isinstance(path, basestring):
-        name = nemoa.common.get_file_basename(path)
+        name = nemoa.common.ospath.basename(path)
     else:
         name = dataset.fullname
     if isinstance(filetype, basestring):
         fileext = filetype
     elif isinstance(path, basestring):
-        fileext = nemoa.common.get_file_extension(path)
+        fileext = nemoa.common.ospath.fileext(path)
         if not fileext:
-            fileext = nemoa.common.get_file_extension(dataset.path)
+            fileext = nemoa.common.ospath.fileext(dataset.path)
     else:
-        fileext = nemoa.common.get_file_extension(dataset.path)
-    path = nemoa.common.get_file_path(directory, name, fileext)
+        fileext = nemoa.common.ospath.fileext(dataset.path)
+    path = nemoa.common.ospath.joinpath(directory, name, fileext)
 
     # get filetype from file extension if not given
     # and test if filetype is supported

@@ -41,7 +41,7 @@ def build(type, *args, **kwargs):
 
     # update path
     basepath = nemoa.workspace.path('networks')
-    if not basepath: basepath = nemoa.common.get_current_directory()
+    if not basepath: basepath = nemoa.common.ospath.cwd()
     network['config']['path'] = \
         basepath + network['config']['name'] + '.npz'
 

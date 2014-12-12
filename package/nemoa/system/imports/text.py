@@ -17,7 +17,7 @@ def load(path, **kwargs):
     """Import system from text file."""
 
     # extract filetype from path
-    filetype = nemoa.common.get_file_extension(path).lower()
+    filetype = nemoa.common.ospath.fileext(path).lower()
 
     # test if filetype is supported
     if not filetype in filetypes():
@@ -37,7 +37,7 @@ class Ini:
 
     def __init__(self, **kwargs):
         self.settings = self.default.copy()
-        nemoa.common.dict_merge(kwargs, self.settings)
+        nemoa.common.dict.merge(kwargs, self.settings)
 
     def load(self, path):
         """Return system configuration as dictionary.
@@ -50,7 +50,7 @@ class Ini:
 
         # import ini file to dictionary, using ini file structure
         # described with regular expressions
-        system = nemoa.common.ini_load(path, {
+        system = nemoa.common.inifile.load(path, {
             'system': {
                 'name': 'str',
                 'type': 'str' },
@@ -67,7 +67,7 @@ class Ini:
 
         # update / set name
         if not 'name' in config:
-            config['name'] = nemoa.common.get_file_basename(path)
+            config['name'] = nemoa.common.ospath.basename(path)
 
         # update / set optimization schedules
         schedules = {}

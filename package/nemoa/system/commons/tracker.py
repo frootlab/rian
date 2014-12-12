@@ -136,7 +136,7 @@ class Tracker:
                 the optimization""")
             self._state['key_events_started'] = True
 
-        char = nemoa.common.getch()
+        char = nemoa.common.console.getch()
         if isinstance(char, str):
             if char == 'q':
                 nemoa.log('note', '... aborting optimization')

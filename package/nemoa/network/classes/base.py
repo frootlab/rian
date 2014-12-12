@@ -635,7 +635,7 @@ class Network(nemoa.common.classes.BaseObject):
             self._config = self._default.copy()
         if config:
             config_copy = copy.deepcopy(config)
-            nemoa.common.dict_merge(config_copy, self._config)
+            nemoa.common.dict.merge(config_copy, self._config)
             # reconfigure graph
             self._configure_graph()
 
@@ -657,7 +657,7 @@ class Network(nemoa.common.classes.BaseObject):
 
         # merge graph
         graph_copy = self._get_graph()
-        nemoa.common.dict_merge(graph, graph_copy)
+        nemoa.common.dict.merge(graph, graph_copy)
 
         # create networkx graph instance
         object_type = graph['graph']['params']['networkx']
@@ -690,7 +690,7 @@ class Network(nemoa.common.classes.BaseObject):
         for edge in self._graph.edges():
             params = system.get('link', edge)
             if not params: continue
-            nemoa.common.dict_merge(
+            nemoa.common.dict.merge(
                 params, self._graph[edge[0]][edge[1]]['params'])
             self._graph[edge[0]][edge[1]]['weight'] \
                 = float(params['weight'])

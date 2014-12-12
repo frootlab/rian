@@ -10,7 +10,7 @@ import nemoa
 import os
 import re
 
-def ini_dumps(dictionary, nosection = True):
+def dumps(dictionary, nosection = True):
 
     if nosection:
         dictionary = dictionary.copy()
@@ -32,7 +32,7 @@ def ini_dumps(dictionary, nosection = True):
 
     return string
 
-def ini_load(path, structure = None):
+def load(path, structure = None):
 
     # get config file parser
     parser = ConfigParser.ConfigParser()
@@ -40,11 +40,9 @@ def ini_load(path, structure = None):
     parser.read(path)
 
     # parse sections and create config dictionary
-    if isinstance(structure, dict):
-        return ini_parse_regex(parser, structure)
-    return ini_parse(parser)
+    return parse(parser, structure)
 
-def ini_loads(string, structure = None, nosection = False):
+def loads(string, structure = None, nosection = False):
 
     # prepare config string
     config_list = string.split('\n')
@@ -64,18 +62,24 @@ def ini_loads(string, structure = None, nosection = False):
     parser.readfp(io.BytesIO(config_string))
 
     # parse sections and create config dictionary
-    if isinstance(structure, dict):
-        config = ini_parse_regex(parser, structure)
-    else:
-        config = ini_parse(parser)
+    config = parse(parser, structure)
 
     if nosection: return config['root']
     return config
 
-def ini_parse_regex(parser, structure):
+def parse(parser, structure = None):
 
     # parse sections and create config dictionary
     config = {}
+
+    if not isinstance(structure, dict):
+        for section in parser.sections():
+            config[section] = {}
+            for key in parser.options(section):
+                config[section][key] = parser.get(section, key)
+
+        return config
+
     regex_section = {}
     for key in structure.keys():
         regex_section[key] = re.compile('\A' + key)
@@ -100,18 +104,8 @@ def ini_parse_regex(parser, structure):
                 if not re_key.match(key): continue
                 val = parser.get(section, key)
                 section_dict[key] = \
-                    nemoa.common.str_to_type(val, fmt)
+                    nemoa.common.string.astype(val, fmt)
 
         config[section] = section_dict
-
-    return config
-
-def ini_parse(parser):
-
-    config = {}
-    for section in parser.sections():
-        config[section] = {}
-        for key in parser.options(section):
-            config[section][key] = parser.get(section, key)
 
     return config

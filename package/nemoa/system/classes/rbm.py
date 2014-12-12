@@ -304,7 +304,7 @@ class RBM(nemoa.system.classes.ann.ANN):
         if config['gen_rasa_enable']:
             deltas.append(
                 self._get_delta_visible_rasa(tracker))
-        delta = nemoa.common.dict_sum(*deltas)
+        delta = nemoa.common.dict.keyjoinsum(*deltas)
 
         return delta
 
@@ -359,7 +359,7 @@ class RBM(nemoa.system.classes.ann.ANN):
         if config['gen_rasa_enable']:
             deltas.append(
                 self._get_delta_hidden_rasa(tracker))
-        delta = nemoa.common.dict_sum(*deltas)
+        delta = nemoa.common.dict.keyjoinsum(*deltas)
 
         return delta
 
@@ -435,7 +435,7 @@ class RBM(nemoa.system.classes.ann.ANN):
         if config['gen_rasa_enable']:
             deltas.append(
                 self._get_delta_links_rasa(deltas, tracker))
-        delta = nemoa.common.dict_sum(*deltas)
+        delta = nemoa.common.dict.keyjoinsum(*deltas)
 
         return delta
 

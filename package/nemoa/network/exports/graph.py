@@ -51,22 +51,19 @@ def _graph_encode(graph, coding = None):
     elif coding.lower() == 'base64':
 
         # encode graph 'params' dictionary to base64
-        graph.graph['params'] \
-            = nemoa.common.dict_encode_base64(
-            graph.graph['params'])
+        graph.graph['params'] = nemoa.common.dict.as_string(
+            graph.graph['params'], encode = 'base64')
 
         # encode nodes 'params' dictionaries to base64
         for node in graph.nodes():
-            graph.node[node]['params'] \
-                = nemoa.common.dict_encode_base64(
-                graph.node[node]['params'])
+            graph.node[node]['params'] = nemoa.common.dict.as_string(
+                graph.node[node]['params'], encode = 'base64')
 
         # encode edges 'params' dictionaries to base64
-        for edge in graph.edges():
-            in_node, out_node = edge
-            graph.edge[in_node][out_node]['params'] \
-                = nemoa.common.dict_encode_base64(
-                graph.edge[in_node][out_node]['params'])
+        for src, tgt in graph.edges():
+            graph.edge[src][tgt]['params'] \
+                = nemoa.common.dict.as_string(
+                graph.edge[src][tgt]['params'], encode = 'base64')
 
         # set flag for graph parameter coding
         graph.graph['coding'] = 'base64'
@@ -83,7 +80,7 @@ class Gml:
 
     def __init__(self, **kwargs):
         self.settings = self.default.copy()
-        nemoa.common.dict_merge(kwargs, self.settings)
+        nemoa.common.dict.merge(kwargs, self.settings)
 
     def save(self, graph, path):
 
@@ -103,7 +100,7 @@ class Graphml:
 
     def __init__(self, **kwargs):
         self.settings = self.default.copy()
-        nemoa.common.dict_merge(kwargs, self.settings)
+        nemoa.common.dict.merge(kwargs, self.settings)
 
     def save(self, graph, path):
 
@@ -123,7 +120,7 @@ class Dot:
 
     def __init__(self, **kwargs):
         self.settings = self.default.copy()
-        nemoa.common.dict_merge(kwargs, self.settings)
+        nemoa.common.dict.merge(kwargs, self.settings)
 
     def save(self, graph, path):
 

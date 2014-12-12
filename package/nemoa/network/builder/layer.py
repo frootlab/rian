@@ -35,7 +35,7 @@ class AutoEncoder:
 
     def __init__(self, dataset = None, *args, **kwargs):
         self.settings = self.default.copy()
-        nemoa.common.dict_merge(kwargs, self.settings)
+        nemoa.common.dict.merge(kwargs, self.settings)
 
         if nemoa.type.isdataset(dataset):
             columns = dataset.columns
@@ -63,7 +63,7 @@ class MultiLayer:
 
     def __init__(self, **kwargs):
         self.settings = self.default.copy()
-        nemoa.common.dict_merge(kwargs, self.settings)
+        nemoa.common.dict.merge(kwargs, self.settings)
 
     def build(self):
         name = self.settings['name']
@@ -140,7 +140,7 @@ class Factor:
 
     def __init__(self, **kwargs):
         self.settings = self.default.copy()
-        nemoa.common.dict_merge(kwargs, self.settings)
+        nemoa.common.dict.merge(kwargs, self.settings)
 
     def build(self):
         network_name = self.settings['name']

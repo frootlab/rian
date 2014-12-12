@@ -378,7 +378,7 @@ class System(nemoa.common.classes.BaseObject):
         else:
             link_norm_max = numpy.amax(numpy.abs(layer_adjacency
                 * layer_weights)) * adjacency_sum / weight_sum
-            link_intensity = nemoa.common.func.intensify(
+            link_intensity = nemoa.common.math.intensify(
                 link_norm_weight, factor = 10.,
                 bound = 0.7 * link_norm_max)
 
@@ -610,7 +610,7 @@ class System(nemoa.common.classes.BaseObject):
             self._config = self._default.copy()
         if config:
             config_copy = copy.deepcopy(config)
-            nemoa.common.dict_merge(config_copy, self._config)
+            nemoa.common.dict.merge(config_copy, self._config)
 
         # reset consistency check
         self._config['check'] = {
@@ -627,7 +627,7 @@ class System(nemoa.common.classes.BaseObject):
 
         # get system parameters from dict
         if params:
-            nemoa.common.dict_merge(copy.deepcopy(params), self._params)
+            nemoa.common.dict.merge(copy.deepcopy(params), self._params)
 
             # create instances of units and links
             retval &= self._set_params_create_units()
@@ -678,7 +678,7 @@ class System(nemoa.common.classes.BaseObject):
                 links[(src_lid, tgt_lid)]['A'][src_sid, tgt_sid] = 1.0
 
             params = {'units': units, 'links': links}
-            nemoa.common.dict_merge(params, self._params)
+            nemoa.common.dict.merge(params, self._params)
 
             # create instances of units and links
             retval &= self._set_params_create_units()
@@ -1103,7 +1103,7 @@ class System(nemoa.common.classes.BaseObject):
                     layer = evalkwargs['mapping'][0])
                 outunits = self._get_units(
                     layer = evalkwargs['mapping'][-1])
-                retval = nemoa.common.dict_from_array(
+                retval = nemoa.common.dict.from_ndarray(
                     values, (inunits, outunits))
 
                 # optionally add statistics
@@ -1484,13 +1484,13 @@ class System(nemoa.common.classes.BaseObject):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate data reconstuction error from
-                residuals. see nemoa.common.data_mean for a list of
-                provided norms
+                residuals. see nemoa.common.ndarray.meannorm for a list
+                of provided norms
 
         """
 
         res = self._algorithm_unitresiduals(data, **kwargs)
-        error = nemoa.common.data_mean(res, norm = norm)
+        error = nemoa.common.ndarray.meannorm(res, norm = norm)
 
         return error
 
@@ -1517,13 +1517,14 @@ class System(nemoa.common.classes.BaseObject):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate accuracy
-                see nemoa.common.data_mean for a list of provided norms
+                see nemoa.common.ndarray.meannorm for a list of provided
+                norms
 
         """
 
         res = self._algorithm_unitresiduals(data, **kwargs)
-        normres = nemoa.common.data_mean(res, norm = norm)
-        normdat = nemoa.common.data_mean(data[1], norm = norm)
+        normres = nemoa.common.ndarray.meannorm(res, norm = norm)
+        normdat = nemoa.common.ndarray.meannorm(data[1], norm = norm)
 
         return 1. - normres / normdat
 
@@ -1550,13 +1551,14 @@ class System(nemoa.common.classes.BaseObject):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate deviation for precision
-                see _get_data_deviation for a list of provided norms
+                see nemoa.common.ndarray.devnorm for a list of provided
+                norms
 
         """
 
         res = self._algorithm_unitresiduals(data, **kwargs)
-        devres = nemoa.common.data_deviation(res, norm = norm)
-        devdat = nemoa.common.data_deviation(data[1], norm = norm)
+        devres = nemoa.common.ndarray.devnorm(res, norm = norm)
+        devdat = nemoa.common.ndarray.devnorm(data[1], norm = norm)
 
         return 1. - devres / devdat
 
@@ -1793,7 +1795,7 @@ class System(nemoa.common.classes.BaseObject):
                 if inlabel == outlabel: A[inid, outid] = 0.0
         bound = numpy.amax(A)
 
-        R = nemoa.common.func.intensify(R, factor = contrast,
+        R = nemoa.common.math.intensify(R, factor = contrast,
             bound = bound)
 
         return R
@@ -1833,8 +1835,8 @@ class System(nemoa.common.classes.BaseObject):
 
         # merge default, current and given optimization schedule
         config = self._default['optimize'].copy()
-        nemoa.common.dict_merge(self._config['optimize'], config)
-        nemoa.common.dict_merge(schedule[self._get_type()], config)
+        nemoa.common.dict.merge(self._config['optimize'], config)
+        nemoa.common.dict.merge(schedule[self._get_type()], config)
         self._config['optimize'] = config
 
         # check dataset

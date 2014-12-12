@@ -101,7 +101,7 @@ class Dataset(nemoa.common.classes.BaseObject):
         if nodes_lost:
             nemoa.log('error', """%s of %s network nodes could not
                 be converted!""" % (len(nodes_lost), nodes_count))
-            nemoa.log('logfile', nemoa.common.str_from_list(nodes_lost))
+            nemoa.log('logfile', ', '.join(nodes_lost))
 
         # get columns from dataset files and convert to common format
         col_labels = {}
@@ -1012,7 +1012,7 @@ class Dataset(nemoa.common.classes.BaseObject):
                 type = numpy.recarray, dtype = dtype)
 
             if labels:
-                table_colsel = nemoa.common.data_insert(array,
+                table_colsel = nemoa.common.recarray.insert(array,
                     self._tables[table], ['label'])
             else:
                 table_colsel = array
@@ -1208,7 +1208,7 @@ class Dataset(nemoa.common.classes.BaseObject):
 
         # update configuration dictionary
         if not config: return True
-        nemoa.common.dict_merge(copy.deepcopy(config), self._config)
+        nemoa.common.dict.merge(copy.deepcopy(config), self._config)
         # Todo: reconfigure!?
         self._tables = {}
 
@@ -1226,7 +1226,7 @@ class Dataset(nemoa.common.classes.BaseObject):
         """
 
         if not tables: return True
-        nemoa.common.dict_merge(copy.deepcopy(tables), self._tables)
+        nemoa.common.dict.merge(copy.deepcopy(tables), self._tables)
 
         return True
 
