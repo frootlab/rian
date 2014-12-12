@@ -10,7 +10,7 @@ import inspect
 import platform
 import traceback
 
-__shared = {'indent': 0, 'mode': 'exec'}
+__shared = { 'indent': 0, 'mode': 'exec' }
 
 def log(*args, **kwargs):
     """Log message."""
@@ -196,3 +196,5 @@ def log(*args, **kwargs):
         return True
 
     return log('warning', "unknown logging command '%s'!" % (cmd))
+
+log('init')

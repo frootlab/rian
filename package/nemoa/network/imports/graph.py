@@ -46,16 +46,16 @@ def _graph_decode(graph):
 
     # base64 decoding
     elif graph.graph['coding'] == 'base64':
-        graph.graph['params'] = nemoa.common.dict.from_string(
+        graph.graph['params'] = nemoa.common.compress.loads(
             graph.graph['params'], encode = 'base64')
 
         for node in graph.nodes():
-            graph.node[node]['params'] = nemoa.common.dict.from_string(
+            graph.node[node]['params'] = nemoa.common.compress.loads(
                 graph.node[node]['params'], encode = 'base64')
 
         for src, tgt in graph.edges():
             graph.edge[src][tgt]['params'] = \
-                nemoa.common.dict.from_string(
+                nemoa.common.compress.loads(
                 graph.edge[src][tgt]['params'], encode = 'base64')
 
         graph.graph['coding'] == 'none'

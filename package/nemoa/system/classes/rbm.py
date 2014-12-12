@@ -79,7 +79,7 @@ class RBM(nemoa.system.classes.ann.ANN):
 
     def _check_dataset(self, dataset):
         """Check if dataset contains binary values."""
-        if not nemoa.type.isdataset(dataset):
+        if not nemoa.common.type.isdataset(dataset):
             return nemoa.log('error', """could not test dataset:
                 invalid dataset instance given.""")
         if not dataset._algorithm_test_binary():
@@ -304,7 +304,7 @@ class RBM(nemoa.system.classes.ann.ANN):
         if config['gen_rasa_enable']:
             deltas.append(
                 self._get_delta_visible_rasa(tracker))
-        delta = nemoa.common.dict.keyjoinsum(*deltas)
+        delta = nemoa.common.dict.sumjoin(*deltas)
 
         return delta
 
@@ -359,7 +359,7 @@ class RBM(nemoa.system.classes.ann.ANN):
         if config['gen_rasa_enable']:
             deltas.append(
                 self._get_delta_hidden_rasa(tracker))
-        delta = nemoa.common.dict.keyjoinsum(*deltas)
+        delta = nemoa.common.dict.sumjoin(*deltas)
 
         return delta
 
@@ -427,15 +427,12 @@ class RBM(nemoa.system.classes.ann.ANN):
 
         deltas = []
         if config['algorithm'] == 'cd':
-            deltas.append(
-                self._get_delta_links_cd(*sampling))
+            deltas.append(self._get_delta_links_cd(*sampling))
         if config['con_klpt_enable']:
-            deltas.append(
-                self._get_delta_links_klpt(*sampling))
+            deltas.append(self._get_delta_links_klpt(*sampling))
         if config['gen_rasa_enable']:
-            deltas.append(
-                self._get_delta_links_rasa(deltas, tracker))
-        delta = nemoa.common.dict.keyjoinsum(*deltas)
+            deltas.append(self._get_delta_links_rasa(deltas, tracker))
+        delta = nemoa.common.dict.sumjoin(*deltas)
 
         return delta
 
@@ -473,9 +470,9 @@ class RBM(nemoa.system.classes.ann.ANN):
             * config['update_factor_weights']
 
         shape = self._params['links'][(0, 1)]['W'].shape
-        W = numpy.random.normal(0., 1., shape)
+        weights = numpy.random.normal(0., 1., shape)
 
-        return { 'W': r * t * W }
+        return { 'W': r * t * weights }
 
     def _algorithm_rasa_temperature(self, tracker):
         """Calculate temperature for simulated annealing."""
@@ -507,18 +504,14 @@ class RBM(nemoa.system.classes.ann.ANN):
         # calculate energies of visible units
         energy_visible = self._algorithm_units_energy(
             data[0], mapping = map_visible).sum(axis = 1)
-
         # calculate hidden unit energies of all samples
         energy_hidden = self._algorithm_units_energy(
             data[0], mapping = map_hidden).sum(axis = 1)
-
         # calculate link energies of all samples
         energy_links = self._algorithm_links_energy(
             data[0], mapping = map_hidden).sum(axis = (1, 2))
-
         # calculate energies of all samples
         energy_vector = energy_visible + energy_hidden + energy_links
-
         # calculate (pseudo) energy of system
         energy = -numpy.log(1. + numpy.exp(-energy_vector).sum())
 
@@ -605,7 +598,7 @@ class GRBM(RBM):
 
     def _check_dataset(self, dataset):
         """Check if dataset contains gauss normalized values."""
-        if not nemoa.type.isdataset(dataset):
+        if not nemoa.common.type.isdataset(dataset):
             return nemoa.log('error', """could not test dataset:
                 invalid dataset instance given.""")
         if not dataset.evaluate('test_gauss'):

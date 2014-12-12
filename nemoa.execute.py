@@ -51,7 +51,7 @@ def print_scripts(workspace):
     nemoa.log('set', mode = 'silent')
     workspace = nemoa.open(workspace)
     name = workspace.name()
-    scripts = workspace.list(type = 'script', namespace = name)
+    scripts = workspace.list(type = 'script', workspace = name)
     print 'Scripts in workspace %s:\n' % (name)
     for script in scripts: print '    %s' % (script)
     print

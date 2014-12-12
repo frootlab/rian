@@ -257,7 +257,7 @@ class Dataset(nemoa.common.classes.BaseObject):
                 transform = preprocessing['transform']
 
         # get preprocessing parameters from system
-        if nemoa.type.issystem(system):
+        if nemoa.common.type.issystem(system):
             input_layer = system.get('layers')[0]
             distribution = system.get('layer', input_layer)['class']
             if distribution == 'gauss': normalize = 'gauss'
@@ -503,7 +503,7 @@ class Dataset(nemoa.common.classes.BaseObject):
     def _initialize_transform_system(self, system = None,
         mapping = None, func = 'expect'):
 
-        if not nemoa.type.issystem(system):
+        if not nemoa.common.type.issystem(system):
             return nemoa.log('error', """could not transform data
                 using system: invalid system.""")
 

@@ -12,36 +12,114 @@ import glob
 class Workspace:
     """Nemoa workspace."""
 
-    _workspace = None
-    _base = 'user'
+    _config = None
+    _attr_meta = {'name': 'r', 'about': 'rw', 'path': 'r', 'base': 'r'}
 
     def __init__(self, workspace = None, base = 'user'):
         """initialize shared configuration."""
-        #nemoa.workspace._init()
+
+        self._config = {}
+
         if workspace:
             self.load(workspace, base = base)
 
+    def __getattr__(self, key):
+        """Attribute wrapper to getter methods."""
+
+        if key in self._attr_meta:
+            if 'r' in self._attr_meta[key]: return self._get_meta(key)
+            return nemoa.log('warning',
+                "attribute '%s' is not readable.")
+
+        raise AttributeError('%s instance has no attribute %r'
+            % (self.__class__.__name__, key))
+
+    def __setattr__(self, key, val):
+        """Attribute wrapper to setter methods."""
+
+        if key in self._attr_meta:
+            if 'w' in self._attr_meta[key]:
+                return self._set_meta(key, val)
+            return nemoa.log('warning',
+                "attribute '%s' is not writeable." % (key))
+
+        self.__dict__[key] = val
+
     def load(self, workspace, base = 'user'):
         """import workspace and update paths and logfile."""
-        self._workspace = workspace
-        self._base = base
+        self._config['name'] = workspace
+        self._config['base'] = base
         return nemoa.workspace.load(workspace, base = base)
 
-    def name(self):
-        """Return name of workspace."""
-        return self._workspace
+    def _get_meta(self, key):
+        """Get meta information like 'name' or 'path'."""
 
-    def list(self, type = None, namespace = None):
+        if key == 'about': return self._get_about()
+        if key == 'base': return self._get_about()
+        if key == 'name': return self._get_name()
+        if key == 'path': return self._get_path()
+
+        return nemoa.log('warning', "unknown key '%s'" % (key))
+
+    def _get_about(self):
+        """Get description.
+
+        Short description of the content of the resource.
+
+        Returns:
+            Basestring containing a description of the resource.
+
+        """
+
+        if 'about' in self._config: return self._config['about']
+
+        return None
+
+    def _get_base(self):
+        """Get workspace base."""
+
+        if 'base' in self._config: return self._config['base']
+
+        return None
+
+    def _get_name(self):
+        """Get name."""
+
+        if 'name' in self._config: return self._config['name']
+
+        return None
+
+    def _get_path(self):
+        """Get path."""
+
+        if 'path' in self._config: return self._config['path']
+
+        return None
+
+    def _set_meta(self, key, *args, **kwargs):
+        """Set meta information like 'name' or 'path'."""
+
+        if key == 'about': return self._set_about(*args, **kwargs)
+
+        return nemoa.log('warning', "unknown key '%s'" % (key))
+
+    def _set_about(self, val):
+        """Set description."""
+
+        if not isinstance(val, basestring): return nemoa.log('warning',
+            "attribute 'about' requires datatype 'basestring'.")
+        self._config['about'] = val
+
+        return True
+
+    def list(self, type = None):
         """Return a list of known objects."""
-        list = nemoa.workspace.list(type = type,
-            namespace = self.name())
-        if not type: names = \
-            ['%s (%s)' % (item[2], item[1]) for item in list]
-        else: names = [item[2] for item in list]
-        return names
+
+        return nemoa.workspace.list(type = type,
+            workspace = self._get_name(), base = self._get_base())
 
     def execute(self, name = None, *args, **kwargs):
-        """execute nemoa script."""
+        """execute script."""
 
         config = nemoa.workspace.get('script', name)
         if not config: return False
@@ -166,22 +244,33 @@ class Config:
 
         return True
 
-    def list(self, type = None, namespace = None):
+    def list(self, type = None, workspace = None, base = None):
         """List known object configurations."""
 
         if type == 'workspace':
-            return sorted(self._list_user_workspaces())
+            if base == None:
+                return sorted(self._list_user_workspaces()
+                    + self._list_shared_workspaces())
+            if base == 'user':
+                return sorted(self._list_user_workspaces())
+            if base == 'common':
+                return sorted(self._list_shared_workspaces())
+            return False
 
-        if type and not type in self._config['store']: return False
+        if type:
+            if not type in self._config['store']: return False
 
+        # create dictionary
         objlist = []
         for key in self._config['store'].keys():
             if type and not key == type: continue
-            for name, obj in self._config['store'][key].items():
-                if namespace and not namespace == obj['workspace']:
+            for obj in self._config['store'][key].itervalues():
+                if base and not base == obj['base']: continue
+                if workspace and not workspace == obj['workspace']:
                     continue
-                objlist.append((0, obj['type'], obj['name']))
-        return sorted(objlist, key = lambda col: col[2])
+                objlist.append(obj)
+
+        return sorted(objlist, key = lambda obj: obj['name'])
 
     def _list_user_workspaces(self):
         """Return list of private workspaces."""
@@ -218,7 +307,32 @@ class Config:
                 return  {}
 
         # find obbject configuration in workspace
-        search = [name, '%s.%s' % (workspace, name),
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        #search = [name, '%s.%s' % (workspace, name),
+            #name + '.default', 'base.' + name]
+        search = [name, '%s.%s.%s' % (base, workspace, name),
             name + '.default', 'base.' + name]
         config = None
         for fullname in search:
@@ -358,16 +472,19 @@ class Config:
                 filetype = nemoa.common.ospath.fileext(path)
                 if not filetype in filetypes: continue
                 name = nemoa.common.ospath.basename(path)
-                workspace = self._config['workspace']
-                fullname = '%s.%s' % (workspace, name)
+                workspace = self._get_workspace()
+                base = self._get_base()
+                fullname = '%s.%s.%s' % (base, workspace, name)
                 if fullname in self._config['store'][type]: continue
 
                 # add configuration to object tree
                 self._config['store'][type][fullname] = {
-                    'name': fullname,
+                    'name': name,
                     'type': type,
                     'path': path,
-                    'workspace': workspace }
+                    'workspace': workspace,
+                    'base': base,
+                    'fullname': fullname }
 
         # change current workspace and update paths
         if workspace and not workspace == cur_workspace:

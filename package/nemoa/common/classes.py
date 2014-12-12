@@ -26,12 +26,12 @@ class BaseObject:
             if 'r' in self._attr_meta[key]:
                 return self._get_meta(key)
             return nemoa.log('warning',
-                "attribute '%s' is not readable.")
+                "attribute '%s' is not readable." % (key))
 
         if key in self._attr:
             if 'r' in self._attr[key]: return self.get(key)
             return nemoa.log('warning',
-                "attribute '%s' is not readable.")
+                "attribute '%s' is not readable." % (key))
 
         raise AttributeError('%s instance has no attribute %r'
             % (self.__class__.__name__, key))
@@ -43,12 +43,12 @@ class BaseObject:
             if 'w' in self._attr_meta[key]:
                 return self._set_meta(key, val)
             return nemoa.log('warning',
-                "attribute '%s' is not writeable.")
+                "attribute '%s' is not writeable." % (key))
 
         if key in self._attr:
             if 'w' in self._attr[key]: return self.set(key, val)
             return nemoa.log('warning',
-                "attribute '%s' is not writeable.")
+                "attribute '%s' is not writeable." % (key))
 
         self.__dict__[key] = val
 
@@ -180,7 +180,7 @@ class BaseObject:
         """Set description."""
 
         if not isinstance(val, basestring): return nemoa.log('warning',
-            "Attribute 'about' requires datatype 'basestring'.")
+            "attribute 'about' requires datatype 'basestring'.")
         self._config['about'] = val
 
         return True
@@ -189,7 +189,7 @@ class BaseObject:
         """Set author."""
 
         if not isinstance(val, basestring): return nemoa.log('warning',
-            "Attribute 'author' requires datatype 'basestring'.")
+            "attribute 'author' requires datatype 'basestring'.")
         self._config['author'] = val
 
         return True
@@ -198,7 +198,7 @@ class BaseObject:
         """Set branch."""
 
         if not isinstance(val, basestring): return nemoa.log('warning',
-            "Attribute 'branch' requires datatype 'basestring'.")
+            "attribute 'branch' requires datatype 'basestring'.")
         self._config['branch'] = val
 
         return True
@@ -207,7 +207,7 @@ class BaseObject:
         """Set email of author."""
 
         if not isinstance(val, basestring): return nemoa.log('warning',
-            "Attribute 'email' requires datatype 'basestring'.")
+            "attribute 'email' requires datatype 'basestring'.")
         self._config['email'] = val
 
         return True
@@ -216,7 +216,7 @@ class BaseObject:
         """Set license."""
 
         if not isinstance(val, basestring): return nemoa.log('warning',
-            "Attribute 'license' requires datatype 'basestring'.")
+            "attribute 'license' requires datatype 'basestring'.")
         self._config['license'] = val
 
         return True
@@ -225,7 +225,7 @@ class BaseObject:
         """Set name."""
 
         if not isinstance(val, basestring): return nemoa.log('warning',
-            "Attribute 'name' requires datatype 'basestring'.")
+            "attribute 'name' requires datatype 'basestring'.")
         self._config['name'] = val
 
         return True
@@ -234,7 +234,7 @@ class BaseObject:
         """Set path."""
 
         if not isinstance(val, basestring): return nemoa.log('warning',
-            "Attribute 'path' requires datatype 'basestring'.")
+            "attribute 'path' requires datatype 'basestring'.")
         self._config['path'] = val
 
         return True
@@ -243,7 +243,7 @@ class BaseObject:
         """Set version number of branch."""
 
         if not isinstance(val, int): return nemoa.log('warning',
-            "Attribute 'version' requires datatype 'int'.")
+            "attribute 'version' requires datatype 'int'.")
         self._config['version'] = val
 
         return True

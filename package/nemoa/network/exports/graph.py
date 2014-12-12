@@ -51,18 +51,18 @@ def _graph_encode(graph, coding = None):
     elif coding.lower() == 'base64':
 
         # encode graph 'params' dictionary to base64
-        graph.graph['params'] = nemoa.common.dict.as_string(
+        graph.graph['params'] = nemoa.common.compress.dumps(
             graph.graph['params'], encode = 'base64')
 
         # encode nodes 'params' dictionaries to base64
         for node in graph.nodes():
-            graph.node[node]['params'] = nemoa.common.dict.as_string(
+            graph.node[node]['params'] = nemoa.common.compress.dumps(
                 graph.node[node]['params'], encode = 'base64')
 
         # encode edges 'params' dictionaries to base64
         for src, tgt in graph.edges():
             graph.edge[src][tgt]['params'] \
-                = nemoa.common.dict.as_string(
+                = nemoa.common.compress.dumps(
                 graph.edge[src][tgt]['params'], encode = 'base64')
 
         # set flag for graph parameter coding

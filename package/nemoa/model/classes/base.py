@@ -74,13 +74,13 @@ class Model(nemoa.common.classes.BaseObject):
     def configure(self):
         """Configure model."""
 
-        if not nemoa.type.isdataset(self.dataset):
+        if not nemoa.common.type.isdataset(self.dataset):
             return nemoa.log('error', """could not configure model:
                 dataset is not valid.""")
-        if not nemoa.type.isnetwork(self.network):
+        if not nemoa.common.type.isnetwork(self.network):
             return nemoa.log('error', """could not configure model:
                 network is not valid.""")
-        if not nemoa.type.issystem(self.system):
+        if not nemoa.common.type.issystem(self.system):
             return nemoa.log('error', """could not configure model:
                 system is not valid.""")
 
@@ -98,13 +98,13 @@ class Model(nemoa.common.classes.BaseObject):
     def initialize(self):
         """Initialize model parameters."""
 
-        if not nemoa.type.isdataset(self.dataset):
+        if not nemoa.common.type.isdataset(self.dataset):
             return nemoa.log('error', """could not initialize model:
                 dataset is not valid.""")
-        if not nemoa.type.isnetwork(self.network):
+        if not nemoa.common.type.isnetwork(self.network):
             return nemoa.log('error', """could not initialize model:
                 network is not valid.""")
-        if not nemoa.type.issystem(self.system):
+        if not nemoa.common.type.issystem(self.system):
             return nemoa.log('error', """could not initialize model:
                 system is not valid.""")
 
@@ -122,13 +122,13 @@ class Model(nemoa.common.classes.BaseObject):
     def optimize(self, *args, **kwargs):
         """Optimize system parameters."""
 
-        if not nemoa.type.isdataset(self.dataset):
+        if not nemoa.common.type.isdataset(self.dataset):
             return nemoa.log('error', """could not optimize model:
                 dataset is not valid.""")
-        if not nemoa.type.isnetwork(self.network):
+        if not nemoa.common.type.isnetwork(self.network):
             return nemoa.log('error', """could not optimize model:
                 network is not valid.""")
-        if not nemoa.type.issystem(self.system):
+        if not nemoa.common.type.issystem(self.system):
             return nemoa.log('error', """could not optimize model:
                 system is not valid.""")
 
@@ -296,14 +296,14 @@ class Model(nemoa.common.classes.BaseObject):
 
         """
 
-        if nemoa.type.isdataset(dataset):
+        if nemoa.common.type.isdataset(dataset):
             self.dataset = dataset
             return True
 
         if not isinstance(dataset, dict):
             return False
 
-        if nemoa.type.isdataset(self.dataset):
+        if nemoa.common.type.isdataset(self.dataset):
             return self.dataset.set('copy', **dataset)
 
         self.dataset = nemoa.dataset.new(**dataset)
@@ -325,14 +325,14 @@ class Model(nemoa.common.classes.BaseObject):
 
         """
 
-        if nemoa.type.isnetwork(network):
+        if nemoa.common.type.isnetwork(network):
             self.network = network
             return True
 
         if not isinstance(network, dict):
             return False
 
-        if nemoa.type.isnetwork(self.network):
+        if nemoa.common.type.isnetwork(self.network):
             return self.network.set('copy', **network)
 
         self.network = nemoa.network.new(**network)
@@ -354,14 +354,14 @@ class Model(nemoa.common.classes.BaseObject):
 
         """
 
-        if nemoa.type.issystem(system):
+        if nemoa.common.type.issystem(system):
             self.system = system
             return True
 
         if not isinstance(system, dict):
             return False
 
-        if nemoa.type.issystem(self.system):
+        if nemoa.common.type.issystem(self.system):
             return self.system.set('copy', **system)
 
         self.system = nemoa.system.new(**system)

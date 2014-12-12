@@ -64,7 +64,7 @@ class System(nemoa.common.classes.BaseObject):
     def configure(self, network = None):
         """Configure system to network."""
 
-        if not nemoa.type.isnetwork(network):
+        if not nemoa.common.type.isnetwork(network):
             return nemoa.log('error', """could not configure system:
                 network is not valid.""")
 
@@ -80,7 +80,7 @@ class System(nemoa.common.classes.BaseObject):
 
         """
 
-        if not nemoa.type.isdataset(dataset):
+        if not nemoa.common.type.isdataset(dataset):
             return nemoa.log('error', """could not initilize system:
                 dataset is not valid.""")
 
@@ -89,12 +89,12 @@ class System(nemoa.common.classes.BaseObject):
 
     def _check_network(self, network, *args, **kwargs):
         """Check if network is valid for system."""
-        if not nemoa.type.isnetwork(network): return False
+        if not nemoa.common.type.isnetwork(network): return False
         return True
 
     def _check_dataset(self, dataset, *args, **kwargs):
         """Check if network is valid for system."""
-        if not nemoa.type.isdataset(dataset): return False
+        if not nemoa.common.type.isdataset(dataset): return False
         return True
 
     def get(self, key = 'name', *args, **kwargs):
@@ -635,7 +635,7 @@ class System(nemoa.common.classes.BaseObject):
 
         # get system parameters from network
         elif network:
-            if not nemoa.type.isnetwork(network):
+            if not nemoa.common.type.isnetwork(network):
                 return nemoa.log('error', """could not configure system:
                     network instance is not valid!""")
 
@@ -689,7 +689,7 @@ class System(nemoa.common.classes.BaseObject):
 
         # initialize system parameters if dataset is given
         if dataset:
-            if not nemoa.type.isdataset(dataset):
+            if not nemoa.common.type.isdataset(dataset):
                 return nemoa.log('error', """could not initialize
                     system: dataset instance is not valid.""")
 
@@ -748,7 +748,7 @@ class System(nemoa.common.classes.BaseObject):
         """
 
         if not (dataset == None) and not \
-            nemoa.type.isdataset(dataset):
+            nemoa.common.type.isdataset(dataset):
             return nemoa.log('error', """could not initilize units:
             invalid dataset argument given!""")
 
@@ -784,7 +784,7 @@ class System(nemoa.common.classes.BaseObject):
         """
 
         if not(dataset == None) and \
-            not nemoa.type.isdataset(dataset): return nemoa.log(
+            not nemoa.common.type.isdataset(dataset): return nemoa.log(
             'error', """could not initilize link parameters:
             invalid dataset argument given!""")
 
@@ -1097,33 +1097,32 @@ class System(nemoa.common.classes.BaseObject):
                     'could not transform relations: invalid syntax!')
 
             # create formated return values
-            if retfmt == 'array': retval = values
+            if retfmt == 'array':
+                retval = values
             elif retfmt == 'dict':
-                inunits = self._get_units(
-                    layer = evalkwargs['mapping'][0])
-                outunits = self._get_units(
-                    layer = evalkwargs['mapping'][-1])
-                retval = nemoa.common.dict.from_ndarray(
-                    values, (inunits, outunits))
+                src = self._get_units(layer = evalkwargs['mapping'][0])
+                tgt = self._get_units(layer = evalkwargs['mapping'][-1])
+                retval = nemoa.common.dict.fromarray(values, (src, tgt))
+                if not evalstat: return retval
 
-                # optionally add statistics
-                if evalstat:
-                    filtered = [retval[key] for key in retval.keys()
-                        if not key[0].split(':')[1] \
-                        == key[1].split(':')[1]]
-                    array = numpy.array(filtered)
-                    retval['max']  = numpy.amax(array)
-                    retval['min']  = numpy.amin(array)
-                    retval['mean'] = numpy.mean(array)
-                    retval['std']  = numpy.std(array)
-                    ## force symmetric distribution with mean at 0
-                    ## by adding additive inverse values
-                    #B = numpy.concatenate((array, -array))
-                    #retval['cstd'] = numpy.std(B) - numpy.mean(array)
+                # (optional) add statistics
+                filtered = []
+                for src, tgt in retval:
+                    sunit = src.split(':')[1] if ':' in src else src
+                    tunit = tgt.split(':')[1] if ':' in tgt else tgt
+                    if not sunit == tunit: filtered.append((src, tgt))
+                array = numpy.array(filtered)
+                retval['max'] = numpy.amax(array)
+                retval['min'] = numpy.amin(array)
+                retval['mean'] = numpy.mean(array)
+                retval['std'] = numpy.std(array)
+
+                return retval
+
             else: return nemoa.log('warning',
                 'could not perform system unit relation evaluation')
 
-            return retval
+            return False
 
     @nemoa.common.decorators.attributes(
         name     = 'error',
