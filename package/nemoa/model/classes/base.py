@@ -8,7 +8,7 @@ import nemoa
 import copy
 import os
 
-class Model(nemoa.common.classes.BaseObject):
+class Model(nemoa.common.classes.ClassesBaseClass):
     """Model base class.
 
     Attributes:

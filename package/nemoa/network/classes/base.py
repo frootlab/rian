@@ -9,7 +9,7 @@ import networkx
 import copy
 import importlib
 
-class Network(nemoa.common.classes.BaseObject):
+class Network(nemoa.common.classes.ClassesBaseClass):
     """Network base class.
 
     Attributes:

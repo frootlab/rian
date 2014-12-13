@@ -6,7 +6,7 @@ visualization.
 
 """
 
-__version__    = '0.4.251'
+__version__    = '0.4.252'
 __status__     = 'Development'
 __author__     = 'Patrick Michl'
 __email__      = 'patrick.michl@gmail.com'
@@ -44,6 +44,6 @@ def welcome():
     """Print welcome message to standard output."""
     return log('header', 'nemoa ' + __version__)
 
-def workspaces():
+def list():
     """Return list of workspaces."""
     return nemoa.workspace.list('workspace')

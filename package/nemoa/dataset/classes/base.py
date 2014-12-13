@@ -8,7 +8,7 @@ import copy
 import nemoa
 import numpy
 
-class Dataset(nemoa.common.classes.BaseObject):
+class Dataset(nemoa.common.classes.ClassesBaseClass):
     """Dataset base class.
 
     Attributes:
@@ -39,7 +39,8 @@ class Dataset(nemoa.common.classes.BaseObject):
         name (str): Name of the resource.
             Hint: Read- & writeable wrapping attribute to get('name')
                 and set('name', str).
-        path (str):
+        path (str): Path to a file containing or referencing the
+            resource.
             Hint: Read- & writeable wrapping attribute to get('path')
                 and set('path', str).
         rows (list of str): List of all rows in the dataset.
@@ -1083,7 +1084,8 @@ class Dataset(nemoa.common.classes.BaseObject):
         """Set meta information, parameters and data of dataset."""
 
         # set meta information
-        if key in self._attr_meta: return self._set_meta(key, *args, **kwargs)
+        if key in self._attr_meta:
+            return self._set_meta(key, *args, **kwargs)
 
         # modify dataset parameters
         if key == 'columns': return self._set_columns(*args, **kwargs)
@@ -1243,8 +1245,8 @@ class Dataset(nemoa.common.classes.BaseObject):
     @nemoa.common.decorators.attributes(
         name     = 'correlation',
         category = ('dataset', 'relation', 'evaluation'),
-        format   = '%.3f',
-        formater = lambda val: '%.3f' % (val))
+        formater = lambda val: '%.3f' % (val)
+    )
     def _algorithm_correlation(self, cols = '*'):
         """Calculate correlation coefficients between columns."""
 
@@ -1256,8 +1258,8 @@ class Dataset(nemoa.common.classes.BaseObject):
     @nemoa.common.decorators.attributes(
         name     = 'correlation',
         category = ('dataset', 'evaluation'),
-        formater = lambda val: '%.3f' % (val),
-        format   = '%.3f')
+        formater = lambda val: '%.3f' % (val)
+    )
     def _algorithm_test_binary(self, cols = '*'):
         """Test if dataset contains only binary values.
 
@@ -1281,10 +1283,10 @@ class Dataset(nemoa.common.classes.BaseObject):
         return True
 
     @nemoa.common.decorators.attributes(
-        name     = 'correlation',
+        name = 'correlation',
         category = ('dataset', 'evaluation'),
-        formater = lambda val: '%.3f' % (val),
-        format   = '%.3f')
+        formater = lambda val: '%.3f' % (val)
+    )
     def _algorithm_test_gauss(self, cols = '*', mu = 0., sigma = 1.,
         delta = .05):
         """Test if dataset contains gauss normalized data per columns.

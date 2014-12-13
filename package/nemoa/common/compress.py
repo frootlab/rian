@@ -13,6 +13,7 @@ import zlib
 
 def dump(d, f, *args, **kwargs):
     """Dump dictionary to compressed and encoded file."""
+
     return pickle.dump(dumps(d, *args, **kwargs), file = open(f, 'wb'))
 
 def dumps(d, level = 9, encode = 'base64'):
@@ -29,6 +30,7 @@ def dumps(d, level = 9, encode = 'base64'):
 
 def load(f, *args, **kwargs):
     """Decode and decompress file to dictionary. """
+
     return loads(pickle.load(open(f, 'rb')), *args, **kwargs)
 
 def loads(string, encode = 'base64'):

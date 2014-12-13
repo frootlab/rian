@@ -417,17 +417,16 @@ class ANN(nemoa.system.classes.base.System):
 
         # sum local unit energies
         for i in xrange(1, len(mapping) + 1):
-            energy += numpy.sum(
-                self._algorithm_units_energy(data[0],
-                mapping = tuple(mapping[:i])))
+            energy += self._algorithm_units_energy(data[0],
+                mapping = tuple(mapping[:i])).sum(axis = 1)
 
         # sum local link energies
         for i in xrange(1, len(mapping)):
-            energy += numpy.sum(
-                self._algorithm_links_energy(data[0],
-                mapping = tuple(mapping[:i+1])))
+            energy += self._algorithm_links_energy(data[0],
+                mapping = tuple(mapping[:i + 1])).sum(axis = (1, 2))
 
-        return energy
+        # calculate (pseudo) energy of system
+        return numpy.log(1. + numpy.exp(-energy).sum())
 
     @nemoa.common.decorators.attributes(
         name     = 'energy',

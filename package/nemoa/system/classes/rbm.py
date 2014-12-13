@@ -489,34 +489,6 @@ class RBM(nemoa.system.classes.ann.ANN):
 
         return heat
 
-    def _algorithm_system_energy(self, data, *args, **kwargs):
-        """Pseudo energy function.
-
-        Calculates the logarithm of the sum of exponential negative
-        sample energies (plus one).
-
-        """
-
-        # mapping tuples for visible and hidden units
-        map_visible = ('visible', )
-        map_hidden = ('visible', 'hidden')
-
-        # calculate energies of visible units
-        energy_visible = self._algorithm_units_energy(
-            data[0], mapping = map_visible).sum(axis = 1)
-        # calculate hidden unit energies of all samples
-        energy_hidden = self._algorithm_units_energy(
-            data[0], mapping = map_hidden).sum(axis = 1)
-        # calculate link energies of all samples
-        energy_links = self._algorithm_links_energy(
-            data[0], mapping = map_hidden).sum(axis = (1, 2))
-        # calculate energies of all samples
-        energy_vector = energy_visible + energy_hidden + energy_links
-        # calculate (pseudo) energy of system
-        energy = -numpy.log(1. + numpy.exp(-energy_vector).sum())
-
-        return energy
-
     def _algorithm_update_links(self, **updates):
         """Set updates for links."""
         if 'W' in updates:
