@@ -163,7 +163,7 @@ class Sigmoid(UnitsBaseClass):
 
         return {'bias': numpy.mean(data[1] - model[1], axis = 0).reshape((1, size))}
 
-    def get_updates_from_delta(self, delta):
+    def get_updates_delta(self, delta):
 
         size = len(self.params['id'])
 
@@ -275,7 +275,7 @@ class Gauss(UnitsBaseClass):
 
         return { 'bias': updBias, 'lvar': updLVar }
 
-    def get_updates_from_delta(self, delta):
+    def get_updates_delta(self, delta):
         # Todo: calculate update for lvar
 
         shape = (1, len(self.params['id']))

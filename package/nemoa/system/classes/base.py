@@ -1130,7 +1130,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
         category = ('system', 'evaluation'),
         args     = 'all',
         formater = lambda val: '%.3f' % (val),
-        optimum  = 'min')
+        optimum  = 'min'
+    )
     def _algorithm_error(self, *args, **kwargs):
         """Mean data reconstruction error of output units."""
         return numpy.mean(self._algorithm_uniterror(*args, **kwargs))
@@ -1140,7 +1141,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
         category = ('system', 'evaluation'),
         args     = 'all',
         formater = lambda val: '%.1f%%' % (val * 100.),
-        optimum  = 'max')
+        optimum  = 'max'
+    )
     def _algorithm_accuracy(self, *args, **kwargs):
         """Mean data reconstruction accuracy of output units."""
         return numpy.mean(self._algorithm_unitaccuracy(*args, **kwargs))
@@ -1150,7 +1152,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
         category = ('system', 'evaluation'),
         args     = 'all',
         formater = lambda val: '%.1f%%' % (val * 100.),
-        optimum  = 'max')
+        optimum  = 'max'
+    )
     def _algorithm_precision(self, *args, **kwargs):
         """Mean data reconstruction precision of output units."""
         return numpy.mean(self._algorithm_unitprecision(*args, **kwargs))
@@ -1161,7 +1164,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
         args     = 'input',
         retfmt   = 'scalar',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'diagram')
+        plot     = 'diagram'
+    )
     def _algorithm_unitmean(self, data, mapping = None, block = None):
         """Mean values of reconstructed target units.
 
@@ -1198,7 +1202,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
         args     = 'input',
         retfmt   = 'scalar',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'diagram')
+        plot     = 'diagram'
+    )
     def _algorithm_unitvariance(self, data, mapping = None, block = None):
         """Return variance of reconstructed unit values.
 
@@ -1231,7 +1236,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
         args     = 'all',
         retfmt   = 'scalar',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'diagram')
+        plot     = 'diagram'
+    )
     def _algorithm_unitcorrelation(self, data, mapping = None,
         block = None):
         """Correlation of reconstructed unit values.
@@ -1273,7 +1279,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
         args     = 'input',
         retfmt   = 'vector',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'histogram')
+        plot     = 'histogram'
+    )
     def _algorithm_unitexpect(self, data, mapping = None, block = None):
         """Expectation values of target units.
 
@@ -1312,7 +1319,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
         args     = 'input',
         retfmt   = 'vector',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'histogram')
+        plot     = 'histogram'
+    )
     def _algorithm_unitvalues(self, data, mapping = None, block = None,
         expect_last = False):
         """Unit maximum likelihood values of target units.
@@ -1369,7 +1377,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
         args     = 'input',
         retfmt   = 'vector',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'histogram')
+        plot     = 'histogram'
+    )
     def _algorithm_unitsamples(self, data, mapping = None,
         block = None, expect_last = False):
         """Sampled unit values of target units.
@@ -1425,7 +1434,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
         args     = 'all',
         retfmt   = 'vector',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'histogram')
+        plot     = 'histogram'
+    )
     def _algorithm_unitresiduals(self, data, mapping = None, block = None):
         """Reconstruction residuals of target units.
 
@@ -1467,7 +1477,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
         args     = 'all',
         retfmt   = 'scalar',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'diagram')
+        plot     = 'diagram'
+    )
     def _algorithm_uniterror(self, data, norm = 'MSE', **kwargs):
         """Unit reconstruction error.
 
@@ -1500,7 +1511,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
         args     = 'all',
         retfmt   = 'scalar',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'diagram')
+        plot     = 'diagram'
+    )
     def _algorithm_unitaccuracy(self, data, norm = 'MSE', **kwargs):
         """Unit reconstruction accuracy.
 
@@ -1534,7 +1546,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
         args     = 'all',
         retfmt   = 'scalar',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'diagram')
+        plot     = 'diagram'
+    )
     def _algorithm_unitprecision(self, data, norm = 'SD', **kwargs):
         """Unit reconstruction precision.
 
@@ -1571,7 +1584,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
         args     = 'all',
         retfmt   = 'scalar',
         plot     = 'heatmap',
-        formater = lambda val: '%.3f' % (val))
+        formater = lambda val: '%.3f' % (val)
+    )
     def _algorithm_unitcorrelation(self, data, mapping = None, **kwargs):
         """Data correlation between source and target units.
 
@@ -1617,7 +1631,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
         args     = 'all',
         retfmt   = 'scalar',
         plot     = 'heatmap',
-        formater = lambda val: '%.3f' % (val))
+        formater = lambda val: '%.3f' % (val)
+    )
     def _algorithm_unitcapacity(self, data, mapping = None, **kwargs):
         """Network Capacity from source to target units.
 
@@ -1655,7 +1670,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
         args     = 'all',
         retfmt   = 'scalar',
         plot     = 'heatmap',
-        formater = lambda val: '%.3f' % (val))
+        formater = lambda val: '%.3f' % (val)
+    )
     def _algorithm_unitknockout(self, data, mapping = None, **kwargs):
         """Knockout effect from source to target units.
 
@@ -1715,7 +1731,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
         args     = 'all',
         retfmt   = 'scalar',
         plot     = 'heatmap',
-        formater = lambda val: '%.3f' % (val))
+        formater = lambda val: '%.3f' % (val)
+    )
     def _algorithm_unitinduction(self, data, mapping = None,
         points = 10, amplify = 1., gauge = 0.25, contrast = 20.0,
         **kwargs):

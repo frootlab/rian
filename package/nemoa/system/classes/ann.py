@@ -180,7 +180,7 @@ class ANN(nemoa.system.classes.base.System):
                 config['den_corr_factor'])
         return dataset.get('data', **kwargs)
 
-    def _algorithm_get_values(self, data):
+    def _algorithm_bprop_values(self, data):
         """Forward pass (compute estimated values, from given input). """
 
         mapping = self.mapping()
@@ -192,7 +192,7 @@ class ANN(nemoa.system.classes.base.System):
 
         return out
 
-    def _algorithm_get_deltas(self, outputData, out):
+    def _algorithm_bprop_deltas(self, outputData, out):
         """Return weight delta from backpropagation of error. """
 
         layers = self.mapping()
@@ -225,33 +225,10 @@ class ANN(nemoa.system.classes.base.System):
 
         return True
 
-    #def _optimize(self, dataset, schedule, tracker):
-        #"""Optimize system parameters."""
-
-        #nemoa.log('note', 'optimize model')
-        #nemoa.log('set', indent = '+1')
-
-        ## Optimize system parameters
-        #cfg = self._config['optimize']
-        #nemoa.log('note', "optimize '%s' (%s)" % \
-            #(self._get_name(), self._get_type()))
-        #nemoa.log('note', """using optimization algorithm '%s'"""
-            #% (cfg['algorithm']))
-
-        #if cfg['algorithm'].lower() == 'bprop':
-            #self._algorithm_bprop(dataset, schedule, tracker)
-        #elif cfg['algorithm'].lower() == 'rprop':
-            #self._algorithm_rprop(dataset, schedule, tracker)
-        #else:
-            #nemoa.log('error', """could not optimize model:
-                #unknown algorithm '%s'!""" % (cfg['algorithm']))
-
-        #nemoa.log('set', indent = '-1')
-        #return True
-
     @nemoa.common.decorators.attributes(
         name     = 'bprop',
-        category = ('system', 'optimization'))
+        category = ('system', 'optimization')
+    )
     def _algorithm_bprop(self, dataset, schedule, tracker):
         """Optimize parameters using backpropagation of error."""
 
@@ -262,21 +239,22 @@ class ANN(nemoa.system.classes.base.System):
         while tracker.update():
 
             # Get data (sample from minibatches)
-            if tracker.get('epoch') % cnf['minibatch_update_interval'] == 0:
+            if tracker.get('epoch') \
+                % cnf['minibatch_update_interval'] == 0:
                 data = self._algorithm_get_data(dataset,
                     cols = (mapping[0], mapping[-1]))
-            # Forward pass (Compute value estimations from given input)
-            out = self._algorithm_get_values(data[0])
-            # Backward pass (Compute deltas from backpropagation of error)
-            delta = self._algorithm_get_deltas(data[1], out)
-            # Compute parameter updates
-            updates = self._algorithm_bprop_get_updates(out, delta)
-            # Update parameters
+            # forward pass (Compute value estimations from given input)
+            out = self._algorithm_bprop_values(data[0])
+            # backward pass (Compute deltas from bprop)
+            delta = self._algorithm_bprop_deltas(data[1], out)
+            # compute parameter updates
+            updates = self._algorithm_bprop_updates(out, delta)
+            # update parameters
             self._algorithm_update_params(updates)
 
         return True
 
-    def _algorithm_bprop_get_updates(self, out, delta, rate = 0.1):
+    def _algorithm_bprop_updates(self, out, delta, rate = 0.1):
         """Compute parameter update directions from weight deltas."""
 
         layers = self.mapping()
@@ -284,25 +262,20 @@ class ANN(nemoa.system.classes.base.System):
         units = {}
         for id, src in enumerate(layers[:-1]):
             tgt = layers[id + 1]
-            updu = self._units[tgt].get_updates_from_delta(delta[src, tgt])
-            updl = nemoa.system.commons.links.Links.get_updates_from_delta(
+            updu = self._units[tgt].get_updates_delta(delta[src, tgt])
+            updl = nemoa.system.commons.links.Links.get_updates_delta(
                 out[src], delta[src, tgt])
             units[tgt] = {key: rate * updu[key]
                 for key in updu.iterkeys()}
             links[(src, tgt)] = {key: rate * updl[key]
                 for key in updl.iterkeys()}
-            #units[tgt] = getUpdate(
-                #self._units[tgt].get_updates_from_delta(
-                #delta[src, tgt]), rate)
-            #links[(src, tgt)] = getUpdate(
-                #nemoa.system.commons.links.Links.get_updates_from_delta(
-                #out[src], delta[src, tgt]), rate)
 
         return {'units': units, 'links': links}
 
     @nemoa.common.decorators.attributes(
         name     = 'rprop',
-        category = ('system', 'optimization'))
+        category = ('system', 'optimization')
+    )
     def _algorithm_rprop(self, dataset, schedule, tracker):
         """Optimize parameters using resiliant backpropagation (RPROP).
 
@@ -321,9 +294,9 @@ class ANN(nemoa.system.classes.base.System):
                 data = self._algorithm_get_data(dataset,
                     cols = (mapping[0], mapping[-1]))
             # Forward pass (Compute value estimations from given input)
-            out = self._algorithm_get_values(data[0])
+            out = self._algorithm_bprop_values(data[0])
             # Backward pass (Compute deltas from BPROP)
-            delta = self._algorithm_get_deltas(data[1], out)
+            delta = self._algorithm_bprop_deltas(data[1], out)
             # Compute updates
             updates = self._algorithm_rprop_get_updates(out, delta,
                 tracker)
@@ -358,17 +331,17 @@ class ANN(nemoa.system.classes.base.System):
 
         layers = self.mapping()
 
-        # Compute gradient from delta rule
+        # compute gradient from delta rule
         grad = {'units': {}, 'links': {}}
         for id, src in enumerate(layers[:-1]):
             tgt = layers[id + 1]
             grad['units'][tgt] = \
-                self._units[tgt].get_updates_from_delta(delta[src, tgt])
+                self._units[tgt].get_updates_delta(delta[src, tgt])
             grad['links'][(src, tgt)] = \
-                nemoa.system.commons.links.Links.get_updates_from_delta(
+                nemoa.system.commons.links.Links.get_updates_delta(
                 out[src], delta[src, tgt])
 
-        # Get previous gradients and updates
+        # get previous gradients and updates
         prev = tracker.read('rprop')
         if not prev:
             prev = {
@@ -383,7 +356,7 @@ class ANN(nemoa.system.classes.base.System):
         prev_gradient = prev['gradient']
         prev_update = prev['update']
 
-        # Compute updates
+        # compute updates
         update = {'units': {}, 'links': {}}
         for id, src in enumerate(layers[:-1]):
             tgt = layers[id + 1]
@@ -402,7 +375,7 @@ class ANN(nemoa.system.classes.base.System):
                 grad['links'][(src, tgt)],
                 accel, min_factor, max_factor)
 
-        # Save updates to store
+        # save updates to store
         tracker.write('rprop', gradient = grad, update = update)
 
         return update
@@ -412,7 +385,8 @@ class ANN(nemoa.system.classes.base.System):
         category = ('system', 'evaluation'),
         args     = 'all',
         formater = lambda val: '%.3f' % (val),
-        optimum  = 'min')
+        optimum  = 'min'
+    )
     def _algorithm_energy(self, data, *args, **kwargs):
         """Sum of local link and unit energies."""
 
@@ -438,7 +412,8 @@ class ANN(nemoa.system.classes.base.System):
         args     = 'input',
         retfmt   = 'scalar',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'diagram')
+        plot     = 'diagram'
+    )
     def _algorithm_units_energy(self, data, mapping = None):
         """Unit energies of target units.
 
@@ -467,7 +442,8 @@ class ANN(nemoa.system.classes.base.System):
         args     = 'input',
         retfmt   = 'scalar',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'diagram')
+        plot     = 'diagram'
+    )
     def _algorithm_links_energy(self, data, mapping = None, **kwargs):
         """Return link energies of a layer.
 

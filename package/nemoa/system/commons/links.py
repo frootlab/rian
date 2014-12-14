@@ -37,6 +37,6 @@ class Links:
         return { 'W': D - M }
 
     @staticmethod
-    def get_updates_from_delta(data, delta):
+    def get_updates_delta(data, delta):
 
         return { 'W': -numpy.dot(data.T, delta) / float(data.size) }

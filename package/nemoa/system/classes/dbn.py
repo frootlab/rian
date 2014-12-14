@@ -73,7 +73,9 @@ class DBN(nemoa.system.classes.ann.ANN):
 
     @nemoa.common.decorators.attributes(
         name     = 'dbn',
-        category = ('system', 'optimization'))
+        category = ('system', 'optimization'),
+        netcheck = lambda net: net._is_compatible_dbn()
+    )
     def _algorithm_dbn(self, dataset, schedule, tracker):
         """Optimize system parameters."""
 
