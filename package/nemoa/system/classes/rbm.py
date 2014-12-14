@@ -87,80 +87,64 @@ class RBM(nemoa.system.classes.ann.ANN):
                 RBMs expect binary data.""" % (dataset.name))
         return True
 
-    def _optimize(self, dataset, schedule, tracker):
-        """Optimize system parameters."""
+    @nemoa.common.decorators.attributes(
+        name     = 'cd',
+        category = ('system', 'optimization'))
+    def _algorithm_cd(self, dataset, schedule, tracker):
+        """Contrastive Divergency parameter optimization."""
 
-        cfg = self._config['optimize']
-
-        nemoa.log('note', "optimize '%s' (%s)" % \
-            (self._get_name(), self._get_type()))
-
-        nemoa.log('note', """using optimization algorithm '%s'"""
-            % (cfg['algorithm']))
+        config = self._config['optimize']
 
         # set enable flags for restriction extensions
-        cfg['con_klpt_enable'] =  False
-        if cfg['con_module']:
+        config['con_klpt_enable'] =  False
+        if config['con_module']:
             found = False
-            if cfg['con_module'] == 'klpt':
-                cfg['con_klpt_enable'] =  True
+            if config['con_module'] == 'klpt':
+                config['con_klpt_enable'] =  True
                 about = """Kullback-Leibler penalty (expectation
-                    value %.2f)""" % (cfg['con_klpt_expect'])
+                    value %.2f)""" % (config['con_klpt_expect'])
                 found = True
             if found:
                 nemoa.log('note', 'using restriction: %s' % (about))
 
         # set enable flags for denoising extensions
-        cfg['den_corr_enable'] = False
-        if cfg['den_module']:
+        config['den_corr_enable'] = False
+        if config['den_module']:
             found = False
-            if cfg['den_module'].lower() == 'corr':
-                cfg['den_corr_enable'] = True
+            if config['den_module'].lower() == 'corr':
+                config['den_corr_enable'] = True
                 about = """data corruption (noise model '%s',
-                    factor %.2f)""" % (cfg['den_corr_type'],
-                    cfg['den_corr_factor'])
+                    factor %.2f)""" % (config['den_corr_type'],
+                    config['den_corr_factor'])
                 found = True
             if found:
                 nemoa.log('note', 'using denoising: %s' % (about))
 
         # set enable flags for acceleration extensions
-        cfg['acc_vmra_enable'] = False
-        if cfg['acc_module']:
+        config['acc_vmra_enable'] = False
+        if config['acc_module']:
             found = False
-            if cfg['acc_module'].lower() == 'vmra':
-                cfg['acc_vmra_enable'] = True
+            if config['acc_module'].lower() == 'vmra':
+                config['acc_vmra_enable'] = True
                 about = """variance maximizing rate adaption (tail
-                    length %i)""" % (cfg['acc_vmra_length'])
+                    length %i)""" % (config['acc_vmra_length'])
                 found = True
             if found:
                 nemoa.log('note', 'using acceleration: %s' % (about))
 
         # set enable flags for globalization extensions
-        cfg['gen_rasa_enable'] =  False
-        if cfg['gen_module']:
+        config['gen_rasa_enable'] =  False
+        if config['gen_module']:
             found = False
-            if cfg['gen_module'].lower() == 'rasa':
-                cfg['gen_rasa_enable'] =  True
+            if config['gen_module'].lower() == 'rasa':
+                config['gen_rasa_enable'] =  True
                 about = """rate adaptive annealing (temperature %.1f,
                     annealing %.1f)""" % (
-                    cfg['gen_rasa_init_temperature'],
-                    cfg['gen_rasa_annealing_factor'])
+                    config['gen_rasa_init_temperature'],
+                    config['gen_rasa_annealing_factor'])
                 found = True
             if found:
                 nemoa.log('note', 'using generalization: %s' % (about))
-
-        # start optimization
-        if cfg['algorithm'].lower() == 'cd':
-            return self._algorithm_cd(dataset, schedule, tracker)
-
-        return nemoa.log('error', """could not optimize model:
-            unknown optimization algorithm '%s'""" % (algorithm))
-
-    @nemoa.common.decorators.attributes(
-        name     = 'cd',
-        category = ('system', 'optimization'))
-    def _algorithm_cd(self, dataset, schedule, tracker):
-        """Optimize system parameters with Contrastive Divergency."""
 
         data_update_interval = \
             self._config['optimize']['minibatch_update_interval']

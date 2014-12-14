@@ -1110,7 +1110,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
                 for src, tgt in retval:
                     sunit = src.split(':')[1] if ':' in src else src
                     tunit = tgt.split(':')[1] if ':' in tgt else tgt
-                    if not sunit == tunit: filtered.append((src, tgt))
+                    if sunit == tunit: continue
+                    filtered.append(retval[(src, tgt)])
                 array = numpy.array(filtered)
                 retval['max'] = numpy.amax(array)
                 retval['min'] = numpy.amin(array)
@@ -1849,17 +1850,19 @@ class System(nemoa.common.classes.ClassesBaseClass):
         tracker.set(data = self._get_test_data(dataset))
 
         # get optimization algorithm
-        if 'force_algorithm' in config:
-            algorithm = config['force_algorithm'].lower()
+        if 'meta_algorithm' in config and config['meta_algorithm']:
+            algorithm = config['meta_algorithm'].lower()
         else:
             algorithm = config['algorithm'].lower()
-        algorithmdict = self._get_algorithm(algorithm,
+        optimizer = self._get_algorithm(algorithm,
             category = ('system', 'optimization'))
-        if not algorithmdict: return nemoa.log('error',
-            """could not optimize system:
-            unsupported optimization algorithm '%s'.""" % algorithm)
-        optimizer = algorithmdict['reference']
+        if optimizer: nemoa.log('note',
+            "optimize '%s' (%s) using algorithm %s." % \
+            (self._get_name(), self._get_type(), optimizer['name']))
+        else: return nemoa.log('error',
+            """could not optimize '%s' (%s):
+            unsupported optimization algorithm '%s'."""
+            % (self._get_name(), self._get_type(), algorithm))
 
         # optimize system parameters
-        #return optimizer(dataset, schedule, tracker)
-        return self._optimize(dataset, schedule, tracker)
+        return optimizer['reference'](dataset, schedule, tracker)

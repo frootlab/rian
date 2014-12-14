@@ -1,2 +1,68 @@
 12/12/2014 23:04:49 WARNING nemoa.log -> could not open workspace 'unittes': folder could not be found in './user/'.
 12/12/2014 23:04:51 WARNING nemoa.log -> could not open workspace 'unittest': folder could not be found in './user/'.
+12/14/2014 16:36:57 WARNING nemoa.log -> could not get configuration: network with name 'sinus' is not found in user workspace 'tutorial'.
+12/14/2014 16:36:57 ERROR nemoa.log -> could not import network: workspace 'None' does not contain a network with name 'sinus'.
+12/14/2014 16:36:57 ERROR File "/usr/bin/ipython", line 5, in <module>->   start_ipython()
+12/14/2014 16:36:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 120, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+12/14/2014 16:36:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 565, in launch_instance->   app.start()
+12/14/2014 16:36:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 371, in start->   self.shell.mainloop()
+12/14/2014 16:36:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 443, in mainloop->   self.interact(display_banner=display_banner)
+12/14/2014 16:36:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 567, in interact->   self.run_cell(source_raw, store_history=True)
+12/14/2014 16:36:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2741, in run_cell->   interactivity=interactivity, compiler=compiler)
+12/14/2014 16:36:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2827, in run_ast_nodes->   if self.run_code(code):
+12/14/2014 16:36:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2883, in run_code->   exec(code_obj, self.user_global_ns, self.user_ns)
+12/14/2014 16:36:57 ERROR File "<ipython-input-2-4c4cb04f044f>", line 1, in <module>->   network = nemoa.network.open('sinus')
+12/14/2014 16:36:57 ERROR File "./package/nemoa/network/__init__.py", line 34, in open->   return new(**load(*args, **kwargs))
+12/14/2014 16:36:57 ERROR File "./package/nemoa/network/__init__.py", line 26, in load->   return nemoa.network.imports.load(*args, **kwargs)
+12/14/2014 16:36:57 ERROR File "./package/nemoa/network/imports/__init__.py", line 50, in load->   '%s'.""" % (workspace, path))
+12/14/2014 16:36:57 ERROR File "./package/nemoa/__init__.py", line 29, in log->   return nemoa.common.log.log(*args, **kwargs)
+12/14/2014 16:36:57 ERROR File "./package/nemoa/common/log.py", line 174, in log->   for line in traceback.format_stack():
+12/14/2014 16:36:57 ERROR nemoa.log -> could not create network: configuration is not valid.
+12/14/2014 16:36:57 ERROR File "/usr/bin/ipython", line 5, in <module>->   start_ipython()
+12/14/2014 16:36:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 120, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+12/14/2014 16:36:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 565, in launch_instance->   app.start()
+12/14/2014 16:36:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 371, in start->   self.shell.mainloop()
+12/14/2014 16:36:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 443, in mainloop->   self.interact(display_banner=display_banner)
+12/14/2014 16:36:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 567, in interact->   self.run_cell(source_raw, store_history=True)
+12/14/2014 16:36:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2741, in run_cell->   interactivity=interactivity, compiler=compiler)
+12/14/2014 16:36:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2827, in run_ast_nodes->   if self.run_code(code):
+12/14/2014 16:36:57 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2883, in run_code->   exec(code_obj, self.user_global_ns, self.user_ns)
+12/14/2014 16:36:57 ERROR File "<ipython-input-2-4c4cb04f044f>", line 1, in <module>->   network = nemoa.network.open('sinus')
+12/14/2014 16:36:57 ERROR File "./package/nemoa/network/__init__.py", line 34, in open->   return new(**load(*args, **kwargs))
+12/14/2014 16:36:57 ERROR File "./package/nemoa/network/__init__.py", line 30, in new->   return nemoa.network.classes.new(*args, **kwargs)
+12/14/2014 16:36:57 ERROR File "./package/nemoa/network/classes/__init__.py", line 17, in new->   configuration is not valid.""")
+12/14/2014 16:36:57 ERROR File "./package/nemoa/__init__.py", line 29, in log->   return nemoa.common.log.log(*args, **kwargs)
+12/14/2014 16:36:57 ERROR File "./package/nemoa/common/log.py", line 174, in log->   for line in traceback.format_stack():
+12/14/2014 16:37:04 WARNING nemoa.log -> could not get configuration: network with name 'sinus' is not found in user workspace 'tutorial'.
+12/14/2014 16:37:04 ERROR nemoa.log -> could not import network: workspace 'None' does not contain a network with name 'sinus'.
+12/14/2014 16:37:04 ERROR File "/usr/bin/ipython", line 5, in <module>->   start_ipython()
+12/14/2014 16:37:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 120, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+12/14/2014 16:37:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 565, in launch_instance->   app.start()
+12/14/2014 16:37:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 371, in start->   self.shell.mainloop()
+12/14/2014 16:37:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 443, in mainloop->   self.interact(display_banner=display_banner)
+12/14/2014 16:37:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 567, in interact->   self.run_cell(source_raw, store_history=True)
+12/14/2014 16:37:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2741, in run_cell->   interactivity=interactivity, compiler=compiler)
+12/14/2014 16:37:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2827, in run_ast_nodes->   if self.run_code(code):
+12/14/2014 16:37:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2883, in run_code->   exec(code_obj, self.user_global_ns, self.user_ns)
+12/14/2014 16:37:04 ERROR File "<ipython-input-3-36e19b899d28>", line 1, in <module>->   dataset = nemoa.network.open('sinus')
+12/14/2014 16:37:04 ERROR File "./package/nemoa/network/__init__.py", line 34, in open->   return new(**load(*args, **kwargs))
+12/14/2014 16:37:04 ERROR File "./package/nemoa/network/__init__.py", line 26, in load->   return nemoa.network.imports.load(*args, **kwargs)
+12/14/2014 16:37:04 ERROR File "./package/nemoa/network/imports/__init__.py", line 50, in load->   '%s'.""" % (workspace, path))
+12/14/2014 16:37:04 ERROR File "./package/nemoa/__init__.py", line 29, in log->   return nemoa.common.log.log(*args, **kwargs)
+12/14/2014 16:37:04 ERROR File "./package/nemoa/common/log.py", line 174, in log->   for line in traceback.format_stack():
+12/14/2014 16:37:04 ERROR nemoa.log -> could not create network: configuration is not valid.
+12/14/2014 16:37:04 ERROR File "/usr/bin/ipython", line 5, in <module>->   start_ipython()
+12/14/2014 16:37:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 120, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+12/14/2014 16:37:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 565, in launch_instance->   app.start()
+12/14/2014 16:37:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 371, in start->   self.shell.mainloop()
+12/14/2014 16:37:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 443, in mainloop->   self.interact(display_banner=display_banner)
+12/14/2014 16:37:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 567, in interact->   self.run_cell(source_raw, store_history=True)
+12/14/2014 16:37:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2741, in run_cell->   interactivity=interactivity, compiler=compiler)
+12/14/2014 16:37:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2827, in run_ast_nodes->   if self.run_code(code):
+12/14/2014 16:37:04 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2883, in run_code->   exec(code_obj, self.user_global_ns, self.user_ns)
+12/14/2014 16:37:04 ERROR File "<ipython-input-3-36e19b899d28>", line 1, in <module>->   dataset = nemoa.network.open('sinus')
+12/14/2014 16:37:04 ERROR File "./package/nemoa/network/__init__.py", line 34, in open->   return new(**load(*args, **kwargs))
+12/14/2014 16:37:04 ERROR File "./package/nemoa/network/__init__.py", line 30, in new->   return nemoa.network.classes.new(*args, **kwargs)
+12/14/2014 16:37:04 ERROR File "./package/nemoa/network/classes/__init__.py", line 17, in new->   configuration is not valid.""")
+12/14/2014 16:37:04 ERROR File "./package/nemoa/__init__.py", line 29, in log->   return nemoa.common.log.log(*args, **kwargs)
+12/14/2014 16:37:04 ERROR File "./package/nemoa/common/log.py", line 174, in log->   for line in traceback.format_stack():

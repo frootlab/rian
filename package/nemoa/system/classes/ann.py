@@ -225,29 +225,29 @@ class ANN(nemoa.system.classes.base.System):
 
         return True
 
-    def _optimize(self, dataset, schedule, tracker):
-        """Optimize system parameters."""
+    #def _optimize(self, dataset, schedule, tracker):
+        #"""Optimize system parameters."""
 
-        nemoa.log('note', 'optimize model')
-        nemoa.log('set', indent = '+1')
+        #nemoa.log('note', 'optimize model')
+        #nemoa.log('set', indent = '+1')
 
-        # Optimize system parameters
-        cfg = self._config['optimize']
-        nemoa.log('note', "optimize '%s' (%s)" % \
-            (self._get_name(), self._get_type()))
-        nemoa.log('note', """using optimization algorithm '%s'"""
-            % (cfg['algorithm']))
+        ## Optimize system parameters
+        #cfg = self._config['optimize']
+        #nemoa.log('note', "optimize '%s' (%s)" % \
+            #(self._get_name(), self._get_type()))
+        #nemoa.log('note', """using optimization algorithm '%s'"""
+            #% (cfg['algorithm']))
 
-        if cfg['algorithm'].lower() == 'bprop':
-            self._algorithm_bprop(dataset, schedule, tracker)
-        elif cfg['algorithm'].lower() == 'rprop':
-            self._algorithm_rprop(dataset, schedule, tracker)
-        else:
-            nemoa.log('error', """could not optimize model:
-                unknown algorithm '%s'!""" % (cfg['algorithm']))
+        #if cfg['algorithm'].lower() == 'bprop':
+            #self._algorithm_bprop(dataset, schedule, tracker)
+        #elif cfg['algorithm'].lower() == 'rprop':
+            #self._algorithm_rprop(dataset, schedule, tracker)
+        #else:
+            #nemoa.log('error', """could not optimize model:
+                #unknown algorithm '%s'!""" % (cfg['algorithm']))
 
-        nemoa.log('set', indent = '-1')
-        return True
+        #nemoa.log('set', indent = '-1')
+        #return True
 
     @nemoa.common.decorators.attributes(
         name     = 'bprop',
@@ -279,20 +279,24 @@ class ANN(nemoa.system.classes.base.System):
     def _algorithm_bprop_get_updates(self, out, delta, rate = 0.1):
         """Compute parameter update directions from weight deltas."""
 
-        def getUpdate(grad, rate): return {
-            key: rate * grad[key] for key in grad.keys()}
-
         layers = self.mapping()
         links = {}
         units = {}
         for id, src in enumerate(layers[:-1]):
             tgt = layers[id + 1]
-            units[tgt] = getUpdate(
-                self._units[tgt].get_updates_from_delta(
-                delta[src, tgt]), rate)
-            links[(src, tgt)] = getUpdate(
-                nemoa.system.commons.links.Links.get_updates_from_delta(
-                out[src], delta[src, tgt]), rate)
+            updu = self._units[tgt].get_updates_from_delta(delta[src, tgt])
+            updl = nemoa.system.commons.links.Links.get_updates_from_delta(
+                out[src], delta[src, tgt])
+            units[tgt] = {key: rate * updu[key]
+                for key in updu.iterkeys()}
+            links[(src, tgt)] = {key: rate * updl[key]
+                for key in updl.iterkeys()}
+            #units[tgt] = getUpdate(
+                #self._units[tgt].get_updates_from_delta(
+                #delta[src, tgt]), rate)
+            #links[(src, tgt)] = getUpdate(
+                #nemoa.system.commons.links.Links.get_updates_from_delta(
+                #out[src], delta[src, tgt]), rate)
 
         return {'units': units, 'links': links}
 

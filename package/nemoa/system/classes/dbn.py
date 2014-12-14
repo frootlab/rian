@@ -51,9 +51,9 @@ class DBN(nemoa.system.classes.ann.ANN):
             'w_sigma': 0.5 },
         'optimize': {
             'ignore_units': [],
+            'meta_algorithm': 'dbn',
             'pretraining': True,
             'finetuning': True,
-            'force_algorithm': 'dbn',
             'algorithm': 'bprop',
             'den_corr_enable': False,
             'minibatch_size': 100,
@@ -70,9 +70,6 @@ class DBN(nemoa.system.classes.ann.ANN):
 
     def _check_network(self, network):
         return network._is_compatible_dbn()
-
-    def _optimize(self, dataset, schedule, tracker):
-        return self._algorithm_dbn(dataset, schedule, tracker)
 
     @nemoa.common.decorators.attributes(
         name     = 'dbn',
@@ -264,18 +261,10 @@ class DBN(nemoa.system.classes.ann.ANN):
     def _algorithm_dbn_finetuning(self, dataset, schedule, tracker):
         """Finetuning model using backpropagation of error."""
 
-        # Optimize system parameters
-        cfg = self._config['optimize']
-        nemoa.log('note', "optimize '%s' (%s)" % \
-            (self._get_name(), self._get_type()))
-        nemoa.log('note', """using optimization algorithm '%s'"""
-            % (cfg['algorithm']))
-
-        if cfg['algorithm'].lower() == 'bprop':
-            self._algorithm_bprop(dataset, schedule, tracker)
-        elif cfg['algorithm'].lower() == 'rprop':
-            self._algorithm_rprop(dataset, schedule, tracker)
-        else: nemoa.log('error', "unknown gradient '%s'!"
-            % (cfg['algorithm']))
+        # optimize system parameters
+        force = self._config['optimize']['meta_algorithm']
+        self._config['optimize']['meta_algorithm'] = None
+        self.optimize(dataset, schedule)
+        self._config['optimize']['meta_algorithm'] = force
 
         return True
