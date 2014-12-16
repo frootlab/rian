@@ -511,7 +511,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         nemoa.log("transform data using system '%s'." % (system.name))
 
         nemoa.log('set', indent = '+1')
-        if mapping == None: mapping = system.mapping()
+        if mapping == None: mapping = system.mapping
 
         source_columns = system.get('units', layer = mapping[0])
         target_columns = system.get('units', layer = mapping[-1])

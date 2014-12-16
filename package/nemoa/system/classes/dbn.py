@@ -209,7 +209,7 @@ class DBN(nemoa.system.classes.ann.ANN):
         dataset.set('copy', **dataset_backup)
 
         # keep original inputs and outputs
-        mapping = self.mapping()
+        mapping = self._get_mapping()
         inputs = self._units[mapping[0]].params['id']
         outputs = self._units[mapping[-1]].params['id']
 
@@ -255,8 +255,9 @@ class DBN(nemoa.system.classes.ann.ANN):
 
         # remove output units from input layer, and vice versa
         nemoa.log('cleanup unit and linkage parameter arrays')
-        self._remove_units(self.mapping()[0], outputs)
-        self._remove_units(self.mapping()[-1], inputs)
+        mapping = self._get_mapping()
+        self._remove_units(mapping[0], outputs)
+        self._remove_units(mapping[-1], inputs)
 
         return True
 

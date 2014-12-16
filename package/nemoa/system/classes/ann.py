@@ -183,7 +183,7 @@ class ANN(nemoa.system.classes.base.System):
     def _algorithm_bprop_values(self, data):
         """Forward pass (compute estimated values, from given input). """
 
-        mapping = self.mapping()
+        mapping = self._get_mapping()
         out = {}
         for lid, layer in enumerate(mapping):
             if lid == 0: out[layer] = data
@@ -195,7 +195,7 @@ class ANN(nemoa.system.classes.base.System):
     def _algorithm_bprop_deltas(self, outputData, out):
         """Return weight delta from backpropagation of error. """
 
-        layers = self.mapping()
+        layers = self._get_mapping()
         delta = {}
         for id in range(len(layers) - 1)[::-1]:
             src = layers[id]
@@ -215,7 +215,7 @@ class ANN(nemoa.system.classes.base.System):
     def _algorithm_update_params(self, updates):
         """Update parameters from dictionary."""
 
-        layers = self.mapping()
+        layers = self._get_mapping()
         for id, layer in enumerate(layers[:-1]):
             src = layer
             tgt = layers[id + 1]
@@ -233,7 +233,7 @@ class ANN(nemoa.system.classes.base.System):
         """Optimize parameters using backpropagation of error."""
 
         cnf = self._config['optimize']
-        mapping = self.mapping()
+        mapping = self._get_mapping()
 
         # update parameters
         while tracker.update():
@@ -257,7 +257,7 @@ class ANN(nemoa.system.classes.base.System):
     def _algorithm_bprop_updates(self, out, delta, rate = 0.1):
         """Compute parameter update directions from weight deltas."""
 
-        layers = self.mapping()
+        layers = self._get_mapping()
         links = {}
         units = {}
         for id, src in enumerate(layers[:-1]):
@@ -284,7 +284,7 @@ class ANN(nemoa.system.classes.base.System):
         """
 
         cnf = self._config['optimize']
-        mapping = self.mapping()
+        mapping = self._get_mapping()
 
         # update parameters
         while tracker.update():
@@ -307,10 +307,10 @@ class ANN(nemoa.system.classes.base.System):
 
     def _algorithm_rprop_get_updates(self, out, delta, tracker):
 
-        def getDict(dict, val): return {key: val * numpy.ones(
+        def _get_dict(dict, val): return {key: val * numpy.ones(
             shape = dict[key].shape) for key in dict.keys()}
 
-        def getUpdate(prevGrad, prev_update, grad, accel, min_factor,
+        def _get_update(prevGrad, prev_update, grad, accel, min_factor,
             max_factor):
             update = {}
             for key in grad.keys():
@@ -329,7 +329,7 @@ class ANN(nemoa.system.classes.base.System):
         min_factor = 0.000001
         max_factor = 50.
 
-        layers = self.mapping()
+        layers = self._get_mapping()
 
         # compute gradient from delta rule
         grad = {'units': {}, 'links': {}}
@@ -350,9 +350,9 @@ class ANN(nemoa.system.classes.base.System):
             for id, src in enumerate(layers[:-1]):
                 tgt = layers[id + 1]
                 prev['update']['units'][tgt] = \
-                    getDict(grad['units'][tgt], init_rate)
+                    _get_dict(grad['units'][tgt], init_rate)
                 prev['update']['links'][(src, tgt)] = \
-                    getDict(grad['links'][(src, tgt)], init_rate)
+                    _get_dict(grad['links'][(src, tgt)], init_rate)
         prev_gradient = prev['gradient']
         prev_update = prev['update']
 
@@ -362,14 +362,14 @@ class ANN(nemoa.system.classes.base.System):
             tgt = layers[id + 1]
 
             # calculate current rates for units
-            update['units'][tgt] = getUpdate(
+            update['units'][tgt] = _get_update(
                 prev_gradient['units'][tgt],
                 prev_update['units'][tgt],
                 grad['units'][tgt],
                 accel, min_factor, max_factor)
 
             # calculate current rates for links
-            update['links'][(src, tgt)] = getUpdate(
+            update['links'][(src, tgt)] = _get_update(
                 prev_gradient['links'][(src, tgt)],
                 prev_update['links'][(src, tgt)],
                 grad['links'][(src, tgt)],
@@ -390,7 +390,7 @@ class ANN(nemoa.system.classes.base.System):
     def _algorithm_energy(self, data, *args, **kwargs):
         """Sum of local link and unit energies."""
 
-        mapping = list(self.mapping())
+        mapping = list(self._get_mapping())
         energy = 0.
 
         # sum local unit energies
@@ -430,10 +430,8 @@ class ANN(nemoa.system.classes.base.System):
         """
 
         # set mapping: inLayer to outLayer (if not set)
-        if mapping == None: mapping = self.mapping()
-
+        if mapping == None: mapping = self._get_mapping()
         data = self._algorithm_unitexpect(data, mapping)
-
         return self._units[mapping[-1]].energy(data)
 
     @nemoa.common.decorators.attributes(
@@ -465,8 +463,8 @@ class ANN(nemoa.system.classes.base.System):
             d_src  = self._algorithm_unitexpect(data, mapping[0:-1])
             d_tgt = self._algorithm_unitvalues(d_src, mapping[-2:])
 
-        s_id = self.mapping().index(mapping[-2])
-        t_id = self.mapping().index(mapping[-1])
+        s_id = self._get_mapping().index(mapping[-2])
+        t_id = self._get_mapping().index(mapping[-1])
         src = self._units[mapping[-2]].params
         tgt = self._units[mapping[-1]].params
 
@@ -479,29 +477,8 @@ class ANN(nemoa.system.classes.base.System):
             return nemoa.system.commons.links.Links.energy(
                 d_tgt, d_src, tgt, src, links)
 
-    def mapping(self, src = None, tgt = None):
-        """Mapping of units from source to target.
-
-        Args:
-            src: name of source unit layer
-            tgt: name of target unit layer
-
-        Returns:
-            tuple with names of unit layers from source to target.
-
-        """
-
-        mapping = tuple([l['layer'] for l in self._params['units']])
-        sid = mapping.index(src) \
-            if isinstance(src, str) and src in mapping else 0
-        tid = mapping.index(tgt) \
-            if isinstance(tgt, str) and tgt in mapping else len(mapping)
-
-        return mapping[sid:tid + 1] if sid <= tid \
-            else mapping[tid:sid + 1][::-1]
-
     def _get_test_data(self, dataset):
         """Return tuple with default test data."""
 
-        return dataset.get('data',
-            cols = (self.mapping()[0], self.mapping()[-1]))
+        mapping = self._get_mapping()
+        return dataset.get('data', cols = (mapping[0], mapping[-1]))

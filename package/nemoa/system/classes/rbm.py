@@ -72,13 +72,17 @@ class RBM(nemoa.system.classes.ann.ANN):
             'tracker_estimate_time': True,
             'tracker_estimate_time_wait': 20. }}
 
-    def mapping(self):
+    def _set_params_create_mapping(self):
         v = self._params['units'][0]['layer']
         h = self._params['units'][1]['layer']
-        return (v, h, v)
+        mapping = (v, h, v)
+        self._set_mapping(mapping)
+
+        return True
+
 
     def _check_dataset(self, dataset):
-        """Check if dataset contains binary values."""
+        """Check if dataset contains only binary values."""
         if not nemoa.common.type.isdataset(dataset):
             return nemoa.log('error', """could not test dataset:
                 invalid dataset instance given.""")
@@ -89,7 +93,8 @@ class RBM(nemoa.system.classes.ann.ANN):
 
     @nemoa.common.decorators.attributes(
         name     = 'cd',
-        category = ('system', 'optimization'))
+        category = ('system', 'optimization')
+    )
     def _algorithm_cd(self, dataset, schedule, tracker):
         """Contrastive Divergency parameter optimization."""
 

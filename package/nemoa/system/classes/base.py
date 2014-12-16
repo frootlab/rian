@@ -59,7 +59,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
     _params  = None
     _default = {'params': {}, 'init': {}, 'optimize': {},
                 'schedules': {}}
-    _attr    = {'units': 'r', 'links': 'r', 'layers': 'r'}
+    _attr    = {'units': 'r', 'links': 'r', 'layers': 'r',
+                'mapping': 'rw'}
 
     def configure(self, network = None):
         """Configure system to network."""
@@ -116,6 +117,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
         if key == 'links': return self._get_links(*args, **kwargs)
         if key == 'layer': return self._get_layer(*args, **kwargs)
         if key == 'layers': return self._get_layers(*args, **kwargs)
+        if key == 'mapping': return self._get_mapping(*args, **kwargs)
 
         # direct access
         if key == 'copy': return self._get_copy(*args, **kwargs)
@@ -185,6 +187,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
         return algorithms[algorithm]
 
     def _get_unit(self, unit):
+        """Get unit information."""
 
         # get layer of unit
         layer_ids = []
@@ -471,6 +474,30 @@ class System(nemoa.common.classes.ClassesBaseClass):
             grouped_links.append(group)
         return grouped_links
 
+    def _get_mapping(self, src = None, tgt = None):
+        """Get mapping of unit layers from source to target.
+
+        Args:
+            src: name of source unit layer
+            tgt: name of target unit layer
+
+        Returns:
+            tuple with names of unit layers from source to target.
+
+        """
+
+        if 'mapping' in self._params: mapping = self._params['mapping']
+        else:
+            mapping = tuple([l['layer'] for l in self._params['units']])
+
+        sid = mapping.index(src) \
+            if isinstance(src, str) and src in mapping else 0
+        tid = mapping.index(tgt) \
+            if isinstance(tgt, str) and tgt in mapping else len(mapping)
+
+        return mapping[sid:tid + 1] if sid <= tid \
+            else mapping[tid:sid + 1][::-1]
+
     def _get_copy(self, key = None, *args, **kwargs):
         """Get system copy as dictionary."""
 
@@ -514,11 +541,13 @@ class System(nemoa.common.classes.ClassesBaseClass):
         """Set meta information, configuration and parameters."""
 
         # set meta information
-        if key in self._attr_meta: return self._set_meta(key, *args, **kwargs)
+        if key in self._attr_meta:
+            return self._set_meta(key, *args, **kwargs)
 
         # set configuration and parameters
         #if key == 'units': return self._set_units(*args, **kwargs)
         if key == 'links': return self._set_links(*args, **kwargs)
+        if key == 'mapping': return self._set_mapping(*args, **kwargs)
 
         # import configuration and parameters
         if key == 'copy': return self._set_copy(*args, **kwargs)
@@ -582,6 +611,13 @@ class System(nemoa.common.classes.ClassesBaseClass):
 
         return self._set_params_create_links() \
             and self._set_params_init_links()
+
+    def _set_mapping(self, mapping):
+        """Set the layer mapping of the system."""
+        if not isinstance(mapping, tuple): return nemoa.log('warning',
+            "attribute 'mapping' requires datatype 'tuple'.")
+        self._params['mapping'] = mapping
+        return True
 
     def _set_copy(self, config = None, params = None):
         """Set configuration and parameters of system.
@@ -683,7 +719,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
             # create instances of units and links
             retval &= self._set_params_create_units()
             retval &= self._set_params_create_links()
-
+            retval &= self._set_params_create_mapping()
             retval &= self._set_params_init_links()
 
 
@@ -736,6 +772,12 @@ class System(nemoa.common.classes.ClassesBaseClass):
             self._units[src].target = link_params
             self._links[tgt]['source'][src] = link_params
             self._units[tgt].source = link_params
+
+        return True
+
+    def _set_params_create_mapping(self):
+        mapping = tuple([l['layer'] for l in self._params['units']])
+        self._set_mapping(mapping)
 
         return True
 
@@ -886,7 +928,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
         evalkwargs = kwargs.copy()
         if not 'mapping' in evalkwargs.keys() \
             or evalkwargs['mapping'] == None:
-            evalkwargs['mapping'] = self.mapping()
+            evalkwargs['mapping'] = self._get_mapping()
 
         # evaluate system
         return algorithm['reference'](*evalargs, **evalkwargs)
@@ -932,10 +974,10 @@ class System(nemoa.common.classes.ClassesBaseClass):
         # prepare keyword arguments for evaluation
         evalkwargs = kwargs.copy()
         if isinstance(units, str):
-            evalkwargs['mapping'] = self.mapping(tgt = units)
+            evalkwargs['mapping'] = self._get_mapping(tgt = units)
         elif not 'mapping' in evalkwargs.keys() \
             or evalkwargs['mapping'] == None:
-            evalkwargs['mapping'] = self.mapping()
+            evalkwargs['mapping'] = self._get_mapping()
 
         # evaluate units
         try: values = algorithm['reference'](*evalargs, **evalkwargs)
@@ -987,10 +1029,10 @@ class System(nemoa.common.classes.ClassesBaseClass):
         # prepare keyword arguments for evaluation
         evalkwargs = kwargs.copy()
         if isinstance(units, str):
-            evalkwargs['mapping'] = self.mapping(tgt = units)
+            evalkwargs['mapping'] = self._get_mapping(tgt = units)
         elif not 'mapping' in evalkwargs.keys() \
             or evalkwargs['mapping'] == None:
-            evalkwargs['mapping'] = self.mapping()
+            evalkwargs['mapping'] = self._get_mapping()
 
         # perform evaluation
         try: values = algorithm['reference'](*evalargs, **evalkwargs)
@@ -1074,7 +1116,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
         evalkwargs = kwargs.copy()
         if not 'mapping' in evalkwargs.keys() \
             or evalkwargs['mapping'] == None:
-            evalkwargs['mapping'] = self.mapping()
+            evalkwargs['mapping'] = self._get_mapping()
 
         # perform evaluation
         try: values = algorithm['reference'](*evalargs, **evalkwargs)
@@ -1184,7 +1226,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
 
         """
 
-        if mapping == None: mapping = self.mapping()
+        if mapping == None: mapping = self._get_mapping()
         if block == None:
             model_out = self._algorithm_unitexpect(data[0], mapping)
         else:
@@ -1217,8 +1259,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
                 that are blocked by setting the values to their means
         """
 
-        if mapping == None:
-            mapping = self.mapping()
+        if mapping == None: mapping = self._get_mapping()
         if block == None:
             model_out = self._algorithm_unitexpect(data, mapping)
         else:
@@ -1258,8 +1299,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
 
         """
 
-        if mapping == None:
-            mapping = self.mapping()
+        if mapping == None: mapping = self._get_mapping()
         if block == None:
             model_out = self._algorithm_unitexpect(data, mapping)
         else:
@@ -1299,7 +1339,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
 
         """
 
-        if mapping == None: mapping = self.mapping()
+        if mapping == None: mapping = self._get_mapping()
         if block == None: in_data = data
         else:
             in_data = numpy.copy(data)
@@ -1342,7 +1382,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
 
         """
 
-        if mapping == None: mapping = self.mapping()
+        if mapping == None: mapping = self._get_mapping()
         if block == None: in_data = data
         else:
             in_data = numpy.copy(data)
@@ -1400,7 +1440,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
 
         """
 
-        if mapping == None: mapping = self.mapping()
+        if mapping == None: mapping = self._get_mapping()
         if block == None: in_data = data
         else:
             in_data = numpy.copy(data)
@@ -1458,7 +1498,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
         d_src, d_tgt = data
 
         # set mapping: inLayer to outLayer (if not set)
-        if mapping == None: mapping = self.mapping()
+        if mapping == None: mapping = self._get_mapping()
 
         # set unit values to mean (optional)
         if isinstance(block, list):
@@ -1604,7 +1644,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
 
         """
 
-        if not mapping: mapping = self.mapping()
+        if not mapping: mapping = self._get_mapping()
         in_labels = self._get_units(layer = mapping[0])
         out_labels = self._get_units(layer = mapping[-1])
 
@@ -1651,13 +1691,14 @@ class System(nemoa.common.classes.ClassesBaseClass):
 
         """
 
-        if mapping == None: mapping = self.mapping()
+        if mapping == None: mapping = self._get_mapping()
 
         # calculate product of weight matrices
         for i in range(1, len(mapping))[::-1]:
-            W = self._units[mapping[i-1]].links({'name': mapping[i]})['W']
-            if i == len(mapping) - 1: R = W.copy()
-            else: R = numpy.dot(R.copy(), W)
+            weights = self._units[mapping[i-1]].links(
+                {'name': mapping[i]})['W']
+            if i == len(mapping) - 1: R = weights.copy()
+            else: R = numpy.dot(R.copy(), weights)
 
         return R.T
 
@@ -1695,7 +1736,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
 
         """
 
-        if not mapping: mapping = self.mapping()
+        if not mapping: mapping = self._get_mapping()
         in_labels = self._get_units(layer = mapping[0])
         out_labels = self._get_units(layer = mapping[-1])
 
@@ -1766,7 +1807,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
 
         """
 
-        if not mapping: mapping = self.mapping()
+        if not mapping: mapping = self._get_mapping()
         inputs = self._get_units(layer = mapping[0])
         outputs = self._get_units(layer = mapping[-1])
         R = numpy.zeros((len(inputs), len(outputs)))
