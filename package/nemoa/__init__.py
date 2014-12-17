@@ -3,12 +3,12 @@
 
 Nemoa is a python package for deep data analysis and visualization. By
 utilizing artificial neural networks, it provides intuitive
-presentations of complex data transformations and allows local and
-global restrictions of the underlying data structure.
+presentations of complex data transformations and also allows to
+implement local and global restrictions to the optimization.
 
 """
 
-__version__    = '0.4.256'
+__version__    = '0.4.257'
 __status__     = 'Development'
 __author__     = 'Patrick Michl'
 __email__      = 'patrick.michl@gmail.com'

@@ -38,7 +38,7 @@ def save(model, path = None, filetype = None, plot = None, **kwargs):
     plot = getattr(module, class_name)(**kwargs)
 
     # assert units
-    mapping = model.system.mapping()
+    mapping = model.system.mapping
     in_units = model.system.get('units', layer = mapping[0])
     out_units = model.system.get('units', layer = mapping[-1])
     if not isinstance(plot.settings['units'], tuple) \
@@ -97,7 +97,7 @@ def show(model, plot = None, *args, **kwargs):
     plot = getattr(module, class_name)(*args, **kwargs)
 
     # assert units
-    mapping = model.system.mapping()
+    mapping = model.system.mapping
     in_units = model.system.get('units', layer = mapping[0])
     out_units = model.system.get('units', layer = mapping[-1])
     if not isinstance(plot.settings['units'], tuple) \

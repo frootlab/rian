@@ -498,6 +498,24 @@ class System(nemoa.common.classes.ClassesBaseClass):
         return mapping[sid:tid + 1] if sid <= tid \
             else mapping[tid:sid + 1][::-1]
 
+    def _get_eval_data(self, dataset):
+        """Get data for evaluation."""
+
+        mapping = self._get_mapping()
+
+        return dataset.get('data', cols = (mapping[0], mapping[-1]))
+
+    def _get_training_data(self, dataset, **kwargs):
+        """Get data for optimization."""
+
+        config = self._config['optimize']
+        kwargs['size'] = config['minibatch_size']
+        if config['den_corr_enable']:
+            kwargs['noise'] = (config['den_corr_type'],
+                config['den_corr_factor'])
+
+        return dataset.get('data', **kwargs)
+
     def _get_copy(self, key = None, *args, **kwargs):
         """Get system copy as dictionary."""
 
@@ -1871,7 +1889,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
         return nemoa.system.copy(self, *args, **kwargs)
 
     def optimize(self, dataset, schedule = None):
-        """Optimize system parameters using data and given schedule."""
+        """Optimize system parameters to dataset."""
 
         # get optimization schedule
         if not isinstance(schedule, dict):
@@ -1905,7 +1923,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
 
         # initialize tracker
         tracker = nemoa.system.commons.tracker.Tracker(self)
-        tracker.set(data = self._get_test_data(dataset))
+        tracker.set(data = self._get_eval_data(dataset))
 
         # get optimization algorithm
         if 'meta_algorithm' in config and config['meta_algorithm']:

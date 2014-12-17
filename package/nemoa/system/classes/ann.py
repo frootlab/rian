@@ -170,30 +170,37 @@ class ANN(nemoa.system.classes.base.System):
             Layer '%s' and layer '%s' are not connected.
             """ % (srcname, tgtname))
 
-    def _algorithm_get_data(self, dataset, **kwargs):
-        """Get data for optimization."""
+    def _algorithm_bprop_forward(self, data):
+        """Backpropagation of error forward pass.
 
-        config = self._config['optimize']
-        kwargs['size'] = config['minibatch_size']
-        if config['den_corr_enable']:
-            kwargs['noise'] = (config['den_corr_type'],
-                config['den_corr_factor'])
-        return dataset.get('data', **kwargs)
+        Compute (most) estimated values for all layers, from given data
+        on input layer.
 
-    def _algorithm_bprop_values(self, data):
-        """Forward pass (compute estimated values, from given input). """
+        Returns:
+            Dictionary with layers names as keys and expectation values
+            of (the units of) the layers as values, stored in numpy
+            arrays.
+
+        """
 
         mapping = self._get_mapping()
-        out = {}
+        values = {}
         for lid, layer in enumerate(mapping):
-            if lid == 0: out[layer] = data
-            else: out[layer] = self._algorithm_unitexpect(
-                out[mapping[lid - 1]], mapping[lid - 1:lid + 1])
+            if lid == 0:
+                values[layer] = data
+                continue
+            values[layer] = self._algorithm_unitexpect(
+                values[mapping[lid - 1]], mapping[lid - 1:lid + 1])
 
-        return out
+        return values
 
-    def _algorithm_bprop_deltas(self, outputData, out):
-        """Return weight delta from backpropagation of error. """
+    def _algorithm_bprop_backward(self, outputData, out):
+        """Backpropagation of error backward pass.
+
+        Returns:
+            Weight delta from backpropagation of error.
+
+        """
 
         layers = self._get_mapping()
         delta = {}
@@ -241,20 +248,20 @@ class ANN(nemoa.system.classes.base.System):
             # Get data (sample from minibatches)
             if tracker.get('epoch') \
                 % cnf['minibatch_update_interval'] == 0:
-                data = self._algorithm_get_data(dataset,
+                data = self._get_training_data(dataset,
                     cols = (mapping[0], mapping[-1]))
-            # forward pass (Compute value estimations from given input)
-            out = self._algorithm_bprop_values(data[0])
-            # backward pass (Compute deltas from bprop)
-            delta = self._algorithm_bprop_deltas(data[1], out)
+            # forward pass (compute estimations from given input)
+            values = self._algorithm_bprop_forward(data[0])
+            # backward pass (compute deltas from given output)
+            delta = self._algorithm_bprop_backward(data[1], values)
             # compute parameter updates
-            updates = self._algorithm_bprop_updates(out, delta)
+            updates = self._algorithm_bprop_update(values, delta)
             # update parameters
             self._algorithm_update_params(updates)
 
         return True
 
-    def _algorithm_bprop_updates(self, out, delta, rate = 0.1):
+    def _algorithm_bprop_update(self, out, delta, rate = 0.1):
         """Compute parameter update directions from weight deltas."""
 
         layers = self._get_mapping()
@@ -291,12 +298,12 @@ class ANN(nemoa.system.classes.base.System):
 
             # Get data (sample from minibatches)
             if epoch % cnf['minibatch_update_interval'] == 0:
-                data = self._algorithm_get_data(dataset,
+                data = self._get_training_data(dataset,
                     cols = (mapping[0], mapping[-1]))
             # Forward pass (Compute value estimations from given input)
-            out = self._algorithm_bprop_values(data[0])
+            out = self._algorithm_bprop_forward(data[0])
             # Backward pass (Compute deltas from BPROP)
-            delta = self._algorithm_bprop_deltas(data[1], out)
+            delta = self._algorithm_bprop_backward(data[1], out)
             # Compute updates
             updates = self._algorithm_rprop_get_updates(out, delta,
                 tracker)
@@ -429,7 +436,7 @@ class ANN(nemoa.system.classes.base.System):
 
         """
 
-        # set mapping: inLayer to outLayer (if not set)
+        # set mapping from input layer to output layer (if not set)
         if mapping == None: mapping = self._get_mapping()
         data = self._algorithm_unitexpect(data, mapping)
         return self._units[mapping[-1]].energy(data)
@@ -457,28 +464,22 @@ class ANN(nemoa.system.classes.base.System):
             return nemoa.log('error', """sorry: bad implementation of
                 ann._algorithm_links_energy""")
         elif len(mapping) == 2:
-            d_src  = data
-            d_tgt = self._algorithm_unitvalues(d_src, mapping)
+            sdata = data
+            tdata = self._algorithm_unitvalues(sdata, mapping)
         else:
-            d_src  = self._algorithm_unitexpect(data, mapping[0:-1])
-            d_tgt = self._algorithm_unitvalues(d_src, mapping[-2:])
+            sdata = self._algorithm_unitexpect(data, mapping[0:-1])
+            tdata = self._algorithm_unitvalues(sdata, mapping[-2:])
 
-        s_id = self._get_mapping().index(mapping[-2])
-        t_id = self._get_mapping().index(mapping[-1])
+        sid = self._get_mapping().index(mapping[-2])
+        tid = self._get_mapping().index(mapping[-1])
         src = self._units[mapping[-2]].params
         tgt = self._units[mapping[-1]].params
 
-        if (s_id, t_id) in self._params['links']:
-            links = self._params['links'][(s_id, t_id)]
+        if (sid, tid) in self._params['links']:
+            links = self._params['links'][(sid, tid)]
             return nemoa.system.commons.links.Links.energy(
-                d_src, d_tgt, src, tgt, links)
-        elif (t_id, s_id) in self._params['links']:
-            links = self._params['links'][(t_id, s_id)]
+                sdata, tdata, src, tgt, links)
+        elif (tid, sid) in self._params['links']:
+            links = self._params['links'][(tid, sid)]
             return nemoa.system.commons.links.Links.energy(
-                d_tgt, d_src, tgt, src, links)
-
-    def _get_test_data(self, dataset):
-        """Return tuple with default test data."""
-
-        mapping = self._get_mapping()
-        return dataset.get('data', cols = (mapping[0], mapping[-1]))
+                tdata, sdata, tgt, src, links)

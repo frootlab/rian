@@ -80,7 +80,6 @@ class RBM(nemoa.system.classes.ann.ANN):
 
         return True
 
-
     def _check_dataset(self, dataset):
         """Check if dataset contains only binary values."""
         if not nemoa.common.type.isdataset(dataset):
@@ -162,7 +161,7 @@ class RBM(nemoa.system.classes.ann.ANN):
 
             # get data (stratified samples)
             if not tracker.get('epoch') % data_update_interval:
-                data = self._algorithm_get_data(dataset)
+                data = self._get_training_data(dataset)
 
             # update system parameters
             self._algorithm_cd_update(data, tracker)
@@ -201,11 +200,12 @@ class RBM(nemoa.system.classes.ann.ANN):
         Returns:
             tuple (vData, hData, vModel, hModel)
             containing numpy arrays:
-                vData: input data of visible units
-                hData: expected values of hidden units for vData
-                vModel: sampled values of visible units after k sampling
-                    steps calculated as mean values over m iterations.
-                hModel: expected values of hidden units for vModel
+                vdata: input data of visible units
+                hdata: expected values of hidden units for vData
+                vmodel: sampled values of visible units after $k$
+                    sampling steps calculated as mean values over $m$
+                    iterations.
+                hmodel: expected values of hidden units for vmodel
 
         """
 
@@ -214,42 +214,44 @@ class RBM(nemoa.system.classes.ann.ANN):
         k = cfg['update_cd_sampling_steps']
         m = cfg['update_cd_sampling_iterations']
 
-        hData = self._algorithm_unitexpect(data, ('visible', 'hidden'))
+        hdata = self._algorithm_unitexpect(data, ('visible', 'hidden'))
         if k == 1 and m == 1:
-            vModel = self._algorithm_unitsamples(hData,
+            vmodel = self._algorithm_unitsamples(hdata,
                 ('hidden', 'visible'), expect_last = True)
-            hModel = self._algorithm_unitexpect(vModel,
+            hmodel = self._algorithm_unitexpect(vmodel,
                 ('visible', 'hidden'))
-            return data, hData, vModel, hModel
+            return data, hdata, vmodel, hmodel
 
-        vModel = numpy.zeros(shape = data.shape)
-        hModel = numpy.zeros(shape = hData.shape)
+        vmodel = numpy.zeros(shape = data.shape)
+        hmodel = numpy.zeros(shape = hdata.shape)
         for i in xrange(m):
             for j in xrange(k):
 
-                # calculate hSample from hExpect
-                # in first sampling step init hSample with h_data
-                if j == 0: hSample = self._algorithm_unitsamples(
-                    hData, ('hidden', ))
-                else: hSample = self._algorithm_unitsamples(hExpect, (
-                    'hidden', ))
+                # calculate hsample from hexpect
+                # in first sampling step init hsample with h_data
+                if j == 0:
+                    hsample = self._algorithm_unitsamples(
+                        hdata, ('hidden', ))
+                else:
+                    hsample = self._algorithm_unitsamples(
+                        hexpect, ('hidden', ))
 
-                # calculate vExpect from hSample
-                vExpect = self._algorithm_unitexpect(
-                    hSample, ('hidden', 'visible'))
+                # calculate vexpect from hsample
+                vexpect = self._algorithm_unitexpect(
+                    hsample, ('hidden', 'visible'))
 
-                # calculate hExpect from vSample
-                # in last sampling step use vExpect
-                # instead of vSample to reduce noise
-                if j + 1 == k: hExpect = self._algorithm_unitexpect(
-                    vExpect, ('visible', 'hidden'))
-                else: hExpect = self._algorithm_unitsamples(vExpect,
+                # calculate hexpect from vsample
+                # in last sampling step use vexpect
+                # instead of vsample to reduce noise
+                if j + 1 == k: hexpect = self._algorithm_unitexpect(
+                    vexpect, ('visible', 'hidden'))
+                else: hexpect = self._algorithm_unitsamples(vexpect,
                     ('visible', 'hidden'), expect_last = True)
 
-            vModel += vExpect / m
-            hModel += hExpect / m
+            vmodel += vexpect / m
+            hmodel += hexpect / m
 
-        return data, hData, vModel, hModel
+        return data, hdata, vmodel, hmodel
 
     def _algorithm_cd_update(self, data, tracker):
         """Update system parameters."""
