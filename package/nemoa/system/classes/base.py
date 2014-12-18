@@ -1290,48 +1290,6 @@ class System(nemoa.common.classes.ClassesBaseClass):
         return model_out.var(axis = 0)
 
     @nemoa.common.decorators.attributes(
-        name     = 'correlation',
-        category = ('system', 'units', 'evaluation'),
-        args     = 'all',
-        retfmt   = 'scalar',
-        formater = lambda val: '%.3f' % (val),
-        plot     = 'diagram'
-    )
-    def _algorithm_unitcorrelation(self, data, mapping = None,
-        block = None):
-        """Correlation of reconstructed unit values.
-
-        Args:
-            data: 2-tuple of numpy arrays containing source and target
-                data corresponding to the first and the last layer in
-                the mapping
-            mapping: n-tuple of strings containing the mapping
-                from source unit layer (first argument of tuple)
-                to target unit layer (last argument of tuple)
-            block: list of string containing labels of units in the
-                input layer that are blocked by setting the values to
-                their means
-
-        Returns:
-            Numpy array with reconstructed correlation of units.
-
-        """
-
-        if mapping == None: mapping = self._get_mapping()
-        if block == None:
-            model_out = self._algorithm_unitexpect(data, mapping)
-        else:
-            data_in_copy = numpy.copy(data)
-            for i in block:
-                data_in_copy[:,i] = numpy.mean(data_in_copy[:,i])
-            model_out = self._algorithm_unitexpect(
-                data_in_copy, mapping)
-
-        M = numpy.corrcoef(numpy.hstack(data).T)
-
-        return True
-
-    @nemoa.common.decorators.attributes(
         name     = 'expect',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -1644,7 +1602,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
         plot     = 'heatmap',
         formater = lambda val: '%.3f' % (val)
     )
-    def _algorithm_unitcorrelation(self, data, mapping = None, **kwargs):
+    def _algorithm_correlation(self, data, mapping = None, **kwargs):
         """Data correlation between source and target units.
 
         Undirected data based relation describing the 'linearity'
@@ -1662,26 +1620,69 @@ class System(nemoa.common.classes.ClassesBaseClass):
 
         """
 
-        if not mapping: mapping = self._get_mapping()
-        in_labels = self._get_units(layer = mapping[0])
-        out_labels = self._get_units(layer = mapping[-1])
+        # Todo: allow correlation between hidden units
 
         # calculate symmetric correlation matrix
-        M = numpy.corrcoef(numpy.hstack(data).T)
-        u_list = in_labels + out_labels
+        corr = numpy.corrcoef(numpy.hstack(data).T)
 
         # create asymmetric output matrix
-        R = numpy.zeros(shape = (len(in_labels), len(out_labels)))
-        for i, u1 in enumerate(in_labels):
-            k = u_list.index(u1)
-            for j, u2 in enumerate(out_labels):
-                l = u_list.index(u2)
-                R[i, j] = M[k, l]
+        mapping = self._get_mapping()
+        srcunits = self._get_units(layer = mapping[0])
+        tgtunits = self._get_units(layer = mapping[-1])
+        units = srcunits + tgtunits
+        relation = numpy.zeros(shape = (len(srcunits), len(tgtunits)))
+        for i, u1 in enumerate(srcunits):
+            k = units.index(u1)
+            for j, u2 in enumerate(tgtunits):
+                l = units.index(u2)
+                relation[i, j] = corr[k, l]
 
-        return R
+        return relation
+
+    #@nemoa.common.decorators.attributes(
+        #name     = 'correlation',
+        #category = ('system', 'units', 'evaluation'),
+        #args     = 'all',
+        #retfmt   = 'scalar',
+        #formater = lambda val: '%.3f' % (val),
+        #plot     = 'diagram'
+    #)
+    #def _algorithm_unitcorrelation(self, data, mapping = None,
+        #block = None):
+        #"""Correlation of reconstructed unit values.
+
+        #Args:
+            #data: 2-tuple of numpy arrays containing source and target
+                #data corresponding to the first and the last layer in
+                #the mapping
+            #mapping: n-tuple of strings containing the mapping
+                #from source unit layer (first argument of tuple)
+                #to target unit layer (last argument of tuple)
+            #block: list of string containing labels of units in the
+                #input layer that are blocked by setting the values to
+                #their means
+
+        #Returns:
+            #Numpy array with reconstructed correlation of units.
+
+        #"""
+
+        #if mapping == None: mapping = self._get_mapping()
+        #if block == None:
+            #model_out = self._algorithm_unitexpect(data, mapping)
+        #else:
+            #data_in_copy = numpy.copy(data)
+            #for i in block:
+                #data_in_copy[:,i] = numpy.mean(data_in_copy[:,i])
+            #model_out = self._algorithm_unitexpect(
+                #data_in_copy, mapping)
+
+        #M = numpy.corrcoef(numpy.hstack(data).T)
+
+        #return True
 
     @nemoa.common.decorators.attributes(
-        name     = 'capacity',
+        name     = 'weightsumproduct',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
         signed   = True,
@@ -1691,11 +1692,11 @@ class System(nemoa.common.classes.ClassesBaseClass):
         plot     = 'heatmap',
         formater = lambda val: '%.3f' % (val)
     )
-    def _algorithm_unitcapacity(self, data, mapping = None, **kwargs):
-        """Network Capacity from source to target units.
+    def _algorithm_weightsumproduct(self, data, mapping = None, **kwargs):
+        """Weight sum product from source to target units.
 
-        Directed graph based relation describing the 'network capacity'
-        between units (variables).
+        Directed graph based relation describing the matrix product from
+        source to target units (variables).
 
         Args:
             data: 2-tuple with numpy arrays: input data and output data
@@ -1705,11 +1706,11 @@ class System(nemoa.common.classes.ClassesBaseClass):
 
         Returns:
             Numpy array of shape (source, target) containing pairwise
-            network capacity from source to target units.
+            weight sum product from source to target units.
 
         """
 
-        if mapping == None: mapping = self._get_mapping()
+        if not mapping: mapping = self._get_mapping()
 
         # calculate product of weight matrices
         for i in range(1, len(mapping))[::-1]:
@@ -1731,7 +1732,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
         plot     = 'heatmap',
         formater = lambda val: '%.3f' % (val)
     )
-    def _algorithm_unitknockout(self, data, mapping = None, **kwargs):
+    def _algorithm_knockout(self, data, mapping = None, **kwargs):
         """Knockout effect from source to target units.
 
         Directed data manipulation based relation describing the
@@ -1782,6 +1783,51 @@ class System(nemoa.common.classes.ClassesBaseClass):
         return R
 
     @nemoa.common.decorators.attributes(
+        name     = 'cooperation',
+        category = ('system', 'relation', 'evaluation'),
+        directed = True,
+        signed   = False,
+        normal   = False,
+        args     = 'all',
+        retfmt   = 'scalar',
+        plot     = 'heatmap',
+        formater = lambda val: '%.3f' % (val)
+    )
+    def _algorithm_cooperation(self, data, *args, **kwargs):
+
+        if not mapping: mapping = self._get_mapping()
+        srcunits = self._get_units(layer = mapping[0])
+        tgtunits = self._get_units(layer = mapping[-1])
+
+        # prepare cooperation matrix
+        coop = numpy.zeros((len(srcunits), len(srcunits)))
+
+        # calculate unit values without manipulation
+        default = self._algorithm_induction(data, *args, **kwargs)
+
+        # calculate unit values with knockout
+        for sid, sunit in enumerate(srcunits):
+
+            # modify unit and calculate unit values
+            datamanip = numpy.copy(data)
+            datamanip[:, sid] = 3.0
+            manip = self._evaluate_units(datamanip, *args, **kwargs)
+
+            numpy.sqrt(numpy.absulute(manip - default).sum(axis = 1))
+
+            ## store difference in knockout matrix
+            #for out_id, out_unit in enumerate(out_labels):
+                #R[in_id, out_id] = \
+                    #knockout[out_unit] - default[out_unit]
+
+        pass
+
+        #return R
+
+
+        #return self._algorithm_induction(data, *args, **kwargs)
+
+    @nemoa.common.decorators.attributes(
         name     = 'induction',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -1792,9 +1838,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
         plot     = 'heatmap',
         formater = lambda val: '%.3f' % (val)
     )
-    def _algorithm_unitinduction(self, data, mapping = None,
-        points = 10, amplify = 1., gauge = 0.25, contrast = 20.0,
-        **kwargs):
+    def _algorithm_induction(self, data, mapping = None, points = 10,
+        amplify = 1., gauge = 0.25, contrast = 20.0, **kwargs):
         """Induced deviation from source to target units.
 
         Directed data manipulation based relation describing the induced

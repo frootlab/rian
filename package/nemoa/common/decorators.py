@@ -5,6 +5,7 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 def attributes(**attr):
+    """Generic attribute decorator for methods."""
     def wrapper(method):
         def wrapped(self, *args, **kwargs):
             return method(self, *args, **kwargs)

@@ -66,3 +66,55 @@
 12/14/2014 16:37:04 ERROR File "./package/nemoa/network/classes/__init__.py", line 17, in new->   configuration is not valid.""")
 12/14/2014 16:37:04 ERROR File "./package/nemoa/__init__.py", line 29, in log->   return nemoa.common.log.log(*args, **kwargs)
 12/14/2014 16:37:04 ERROR File "./package/nemoa/common/log.py", line 174, in log->   for line in traceback.format_stack():
+12/18/2014 22:16:34 ERROR nemoa.log -> could not plot heatmap: relation matrix is not valid.
+12/18/2014 22:16:34 ERROR File "/usr/bin/ipython", line 5, in <module>->   start_ipython()
+12/18/2014 22:16:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 120, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+12/18/2014 22:16:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 565, in launch_instance->   app.start()
+12/18/2014 22:16:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 371, in start->   self.shell.mainloop()
+12/18/2014 22:16:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 443, in mainloop->   self.interact(display_banner=display_banner)
+12/18/2014 22:16:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 567, in interact->   self.run_cell(source_raw, store_history=True)
+12/18/2014 22:16:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2741, in run_cell->   interactivity=interactivity, compiler=compiler)
+12/18/2014 22:16:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2833, in run_ast_nodes->   if self.run_code(code):
+12/18/2014 22:16:34 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2883, in run_code->   exec(code_obj, self.user_global_ns, self.user_ns)
+12/18/2014 22:16:34 ERROR File "<ipython-input-8-23510ae9319b>", line 1, in <module>->   model.show('heatmap', relation = 'correlation')
+12/18/2014 22:16:34 ERROR File "./package/nemoa/model/classes/base.py", line 418, in show->   return nemoa.model.show(self, *args, **kwargs)
+12/18/2014 22:16:34 ERROR File "./package/nemoa/model/__init__.py", line 42, in show->   return nemoa.model.exports.show(*args, **kwargs)
+12/18/2014 22:16:34 ERROR File "./package/nemoa/model/exports/__init__.py", line 92, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+12/18/2014 22:16:34 ERROR File "./package/nemoa/model/exports/image.py", line 124, in show->   if plot.create(model):
+12/18/2014 22:16:34 ERROR File "./package/nemoa/model/exports/image.py", line 342, in create->   relation matrix is not valid.""")
+12/18/2014 22:16:34 ERROR File "./package/nemoa/__init__.py", line 31, in log->   return nemoa.common.log.log(*args, **kwargs)
+12/18/2014 22:16:34 ERROR File "./package/nemoa/common/log.py", line 174, in log->   for line in traceback.format_stack():
+12/18/2014 22:16:46 ERROR nemoa.log -> could not plot model 'multiplication-32-dbn': plot type 'induction' is not supported.
+12/18/2014 22:16:46 ERROR File "/usr/bin/ipython", line 5, in <module>->   start_ipython()
+12/18/2014 22:16:46 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 120, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+12/18/2014 22:16:46 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 565, in launch_instance->   app.start()
+12/18/2014 22:16:46 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 371, in start->   self.shell.mainloop()
+12/18/2014 22:16:46 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 443, in mainloop->   self.interact(display_banner=display_banner)
+12/18/2014 22:16:46 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 567, in interact->   self.run_cell(source_raw, store_history=True)
+12/18/2014 22:16:46 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2741, in run_cell->   interactivity=interactivity, compiler=compiler)
+12/18/2014 22:16:46 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2833, in run_ast_nodes->   if self.run_code(code):
+12/18/2014 22:16:46 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2883, in run_code->   exec(code_obj, self.user_global_ns, self.user_ns)
+12/18/2014 22:16:46 ERROR File "<ipython-input-9-3a1efb1c6b37>", line 1, in <module>->   model.show('induction', relation = 'correlation')
+12/18/2014 22:16:46 ERROR File "./package/nemoa/model/classes/base.py", line 418, in show->   return nemoa.model.show(self, *args, **kwargs)
+12/18/2014 22:16:46 ERROR File "./package/nemoa/model/__init__.py", line 42, in show->   return nemoa.model.exports.show(*args, **kwargs)
+12/18/2014 22:16:46 ERROR File "./package/nemoa/model/exports/__init__.py", line 92, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+12/18/2014 22:16:46 ERROR File "./package/nemoa/model/exports/image.py", line 94, in show->   plot type '%s' is not supported.""" % (model.name, plot))
+12/18/2014 22:16:46 ERROR File "./package/nemoa/__init__.py", line 31, in log->   return nemoa.common.log.log(*args, **kwargs)
+12/18/2014 22:16:46 ERROR File "./package/nemoa/common/log.py", line 174, in log->   for line in traceback.format_stack():
+12/18/2014 22:16:50 ERROR nemoa.log -> could not plot model 'multiplication-32-dbn': plot type 'induction' is not supported.
+12/18/2014 22:16:50 ERROR File "/usr/bin/ipython", line 5, in <module>->   start_ipython()
+12/18/2014 22:16:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/__init__.py", line 120, in start_ipython->   return launch_new_instance(argv=argv, **kwargs)
+12/18/2014 22:16:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/config/application.py", line 565, in launch_instance->   app.start()
+12/18/2014 22:16:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/ipapp.py", line 371, in start->   self.shell.mainloop()
+12/18/2014 22:16:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 443, in mainloop->   self.interact(display_banner=display_banner)
+12/18/2014 22:16:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/terminal/interactiveshell.py", line 567, in interact->   self.run_cell(source_raw, store_history=True)
+12/18/2014 22:16:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2741, in run_cell->   interactivity=interactivity, compiler=compiler)
+12/18/2014 22:16:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2833, in run_ast_nodes->   if self.run_code(code):
+12/18/2014 22:16:50 ERROR File "/usr/lib/python2.7/dist-packages/IPython/core/interactiveshell.py", line 2883, in run_code->   exec(code_obj, self.user_global_ns, self.user_ns)
+12/18/2014 22:16:50 ERROR File "<ipython-input-10-370ebd8148c6>", line 1, in <module>->   model.show('induction')
+12/18/2014 22:16:50 ERROR File "./package/nemoa/model/classes/base.py", line 418, in show->   return nemoa.model.show(self, *args, **kwargs)
+12/18/2014 22:16:50 ERROR File "./package/nemoa/model/__init__.py", line 42, in show->   return nemoa.model.exports.show(*args, **kwargs)
+12/18/2014 22:16:50 ERROR File "./package/nemoa/model/exports/__init__.py", line 92, in show->   return nemoa.model.exports.image.show(model, *args, **kwargs)
+12/18/2014 22:16:50 ERROR File "./package/nemoa/model/exports/image.py", line 94, in show->   plot type '%s' is not supported.""" % (model.name, plot))
+12/18/2014 22:16:50 ERROR File "./package/nemoa/__init__.py", line 31, in log->   return nemoa.common.log.log(*args, **kwargs)
+12/18/2014 22:16:50 ERROR File "./package/nemoa/common/log.py", line 174, in log->   for line in traceback.format_stack():
