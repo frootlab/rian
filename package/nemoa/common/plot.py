@@ -220,6 +220,7 @@ def layergraph(graph, edge_curvature = 1.0, **kwargs):
 
     # (optional) sort nodes
     if kwargs['node_sort']:
+        # start with first layer which is not input
         for layer, tgt_nodes in enumerate(nodes):
             if layer == 0: continue
             src_nodes = nodes[layer - 1]
@@ -236,22 +237,30 @@ def layergraph(graph, edge_curvature = 1.0, **kwargs):
                             weight = graph.edge[
                                 src_node][tgt_node]['weight']
                         elif (tgt_node, src_node) in graph.edges():
+                            print 'hi'
                             weight = graph.edge[
                                 tgt_node][src_node]['weight']
-                        else:
-                            weight = 0.
-                        if weight:
-                            distance = numpy.abs(
-                                (tgt_size + 1.) / (tgt_pos + .5)
-                                - (src_size + 1.) / (src_id + .5))
-                            cost[tgt_pos, tgt_id] += weight * distance
+                        else: continue
+
+                        print src_node, tgt_node, weight
+
+                        # add cost from src node to tgt node
+                        # if tgt node has given pos
+                        distance = numpy.absolute(
+                            (tgt_pos + .5) / (tgt_size + 1.)
+                            - (src_id + .5) / (src_size + 1.))
+
+                        cost[tgt_pos, tgt_id] += weight * distance
 
             # create selection order of target nodes sorted by savings
             selectorder = []
-            savings = numpy.amin(cost, axis = 0) \
-                - numpy.amax(cost, axis = 0)
+            maxcost = numpy.amax(cost, axis = 0)
+            mincost = numpy.amin(cost, axis = 0)
+            savings = maxcost - mincost
+
             for tgt_id, tgt_node in enumerate(tgt_nodes):
                 selectorder.append((savings[tgt_id], tgt_id))
+
             sortedselect = [src_node[1] for src_node in \
                 sorted(selectorder, key = lambda x: x[0])]
 

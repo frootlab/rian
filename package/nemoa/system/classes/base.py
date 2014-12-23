@@ -903,6 +903,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
         # evaluate system
         algorithms = self._get_algorithms(attribute = 'name',
             category = ('system', 'evaluation')).values()
+
         if args[0] in algorithms:
             return self._evaluate_system(data, *args, **kwargs)
 
@@ -1115,10 +1116,10 @@ class System(nemoa.common.classes.ClassesBaseClass):
         algorithm = algorithms[func]
 
         # prepare (non keyword) arguments for evaluation
-        if algorithm['args'] == 'none': evalargs = []
-        elif algorithm['args'] == 'input': evalargs = [data[0]]
-        elif algorithm['args'] == 'output': evalargs = [data[1]]
-        elif algorithm['args'] == 'all': evalargs = [data]
+        if algorithm['args'] == 'none': eargs = []
+        elif algorithm['args'] == 'input': eargs = [data[0]]
+        elif algorithm['args'] == 'output': eargs = [data[1]]
+        elif algorithm['args'] == 'all': eargs = [data]
 
         # prepare keyword arguments for evaluation
         if 'transform' in kwargs.keys() \
@@ -1131,15 +1132,16 @@ class System(nemoa.common.classes.ClassesBaseClass):
             retfmt = kwargs['format']
             del kwargs['format']
         else: retfmt = 'dict'
-        evalkwargs = kwargs.copy()
-        if not 'mapping' in evalkwargs.keys() \
-            or evalkwargs['mapping'] == None:
-            evalkwargs['mapping'] = self._get_mapping()
+        ekwargs = kwargs.copy()
+        if not 'mapping' in ekwargs.keys() \
+            or ekwargs['mapping'] == None:
+            ekwargs['mapping'] = self._get_mapping()
 
         # perform evaluation
-        try: values = algorithm['reference'](*evalargs, **evalkwargs)
-        except: return nemoa.log('error', """
-            could not evaluate system unit relations""")
+        values = algorithm['reference'](*eargs, **ekwargs)
+        #try: values = algorithm['reference'](*eargs, **ekwargs)
+        #except: return nemoa.log('error', """
+            #could not evaluate system unit relations""")
 
         # create formated return values as matrix or dict
         # (for scalar relation evaluations)
@@ -1160,8 +1162,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
             if retfmt == 'array':
                 retval = values
             elif retfmt == 'dict':
-                src = self._get_units(layer = evalkwargs['mapping'][0])
-                tgt = self._get_units(layer = evalkwargs['mapping'][-1])
+                src = self._get_units(layer = ekwargs['mapping'][0])
+                tgt = self._get_units(layer = ekwargs['mapping'][-1])
                 retval = nemoa.common.dict.fromarray(values, (src, tgt))
                 if not evalstat: return retval
 
@@ -1696,7 +1698,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
         """Weight sum product from source to target units.
 
         Directed graph based relation describing the matrix product from
-        source to target units (variables).
+        source to target units (variables) given by mapping.
 
         Args:
             data: 2-tuple with numpy arrays: input data and output data
@@ -1706,7 +1708,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
 
         Returns:
             Numpy array of shape (source, target) containing pairwise
-            weight sum product from source to target units.
+            weight sum products from source to target units.
 
         """
 
@@ -1714,12 +1716,12 @@ class System(nemoa.common.classes.ClassesBaseClass):
 
         # calculate product of weight matrices
         for i in range(1, len(mapping))[::-1]:
-            weights = self._units[mapping[i-1]].links(
-                {'name': mapping[i]})['W']
-            if i == len(mapping) - 1: R = weights.copy()
-            else: R = numpy.dot(R.copy(), weights)
+            weights = self._units[mapping[i - 1]].links(
+                {'layer': mapping[i]})['W']
+            if i == len(mapping) - 1: wsp = weights.copy()
+            else: wsp = numpy.dot(wsp.copy(), weights)
 
-        return R.T
+        return wsp.T
 
     @nemoa.common.decorators.attributes(
         name     = 'knockout',
@@ -1783,7 +1785,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
         return R
 
     @nemoa.common.decorators.attributes(
-        name     = 'cooperation',
+        name     = 'coinduction',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
         signed   = False,
@@ -1793,39 +1795,63 @@ class System(nemoa.common.classes.ClassesBaseClass):
         plot     = 'heatmap',
         formater = lambda val: '%.3f' % (val)
     )
-    def _algorithm_cooperation(self, data, *args, **kwargs):
+    def _algorithm_coinduction(self, data, *args, **kwargs):
+        """Coinduced deviation from source to target units."""
 
-        if not mapping: mapping = self._get_mapping()
+        # Todo: Open Problem:
+        #       Normalization of CoInduction
+        # Ideas:
+        #       - Combine CoInduction with common distribution
+        #         of induced values
+        #       - Take a closer look to extreme Values
+
+        # Todo: Proove:
+        # CoInduction <=> Common distribution in 'deep' latent variables
+
+        # algorithmic default parameters
+        gauge = 0.1 # setting gauge lower than induction default
+                    # to increase sensitivity
+
+        mapping = self._get_mapping()
         srcunits = self._get_units(layer = mapping[0])
         tgtunits = self._get_units(layer = mapping[-1])
 
         # prepare cooperation matrix
         coop = numpy.zeros((len(srcunits), len(srcunits)))
 
-        # calculate unit values without manipulation
-        default = self._algorithm_induction(data, *args, **kwargs)
+        # create keawords for induction measurement
 
-        # calculate unit values with knockout
+        if not 'gauge' in kwargs: kwargs['gauge'] = gauge
+
+        # calculate induction without manipulation
+        ind = self._algorithm_induction(data, *args, **kwargs)
+        norm = numpy.sqrt((ind ** 2).sum(axis = 1))
+
+        # calculate induction with manipulation
         for sid, sunit in enumerate(srcunits):
 
-            # modify unit and calculate unit values
-            datamanip = numpy.copy(data)
-            datamanip[:, sid] = 3.0
-            manip = self._evaluate_units(datamanip, *args, **kwargs)
+            # manipulate source unit values and calculate induction
+            datamp = [numpy.copy(data[0]), data[1]]
+            datamp[0][:, sid] = 10.0
+            indmp = self._algorithm_induction(datamp, *args, **kwargs)
 
-            numpy.sqrt(numpy.absulute(manip - default).sum(axis = 1))
+            print 'manipulation of', sunit
+            vals = [-2., -1., -0.5, 0., 0.5, 1., 2.]
+            maniparr = numpy.zeros(shape = (len(vals), data[0].shape[1]))
+            for vid, val in enumerate(vals):
+                datamod = [numpy.copy(data[0]), data[1]]
+                datamod[0][:, sid] = val #+ datamod[0][:, sid].mean()
+                indmod = self._algorithm_induction(datamod, *args, **kwargs)
+                maniparr[vid, :] = numpy.sqrt(((indmod - ind) ** 2).sum(axis = 1))
+            manipvar = maniparr.var(axis = 0)
+            #manipvar /= numpy.amax(manipvar)
+            manipnorm = numpy.amax(manipvar)
+            print manipvar / manipnorm
 
-            ## store difference in knockout matrix
-            #for out_id, out_unit in enumerate(out_labels):
-                #R[in_id, out_id] = \
-                    #knockout[out_unit] - default[out_unit]
+            coop[:,sid] = \
+                numpy.sqrt(((indmp - ind) ** 2).sum(axis = 1))
 
-        pass
-
-        #return R
-
-
-        #return self._algorithm_induction(data, *args, **kwargs)
+        return coop
 
     @nemoa.common.decorators.attributes(
         name     = 'induction',
@@ -1873,21 +1899,31 @@ class System(nemoa.common.classes.ClassesBaseClass):
         if not mapping: mapping = self._get_mapping()
         inputs = self._get_units(layer = mapping[0])
         outputs = self._get_units(layer = mapping[-1])
+        sdata = data[0]
+        tdata = data[1]
         R = numpy.zeros((len(inputs), len(outputs)))
 
         # get indices of representatives
-        r_ids = [int((i + 0.5) * int(float(data[0].shape[0])
+        r_ids = [int((i + 0.5) * int(float(sdata.shape[0])
             / points)) for i in xrange(points)]
 
         for inid, inunit in enumerate(inputs):
-            i_curve = numpy.take(numpy.sort(data[0][:, inid]), r_ids)
+            try:
+                i_curve = numpy.take(numpy.sort(sdata[:, inid]), r_ids)
+            except:
+                print 'ok1', sdata
+                print 'ok2', sdata[:, inid]
+                print 'ok3', numpy.sort(sdata[:, inid])
+                print r_ids
+                print numpy.take(numpy.sort(sdata[:, inid]), r_ids)
+
             i_curve = amplify * i_curve
 
             # create output matrix for each output
-            C = {outunit: numpy.zeros((data[0].shape[0], points)) \
+            C = {outunit: numpy.zeros((sdata.shape[0], points)) \
                 for outunit in outputs}
             for p_id in xrange(points):
-                i_data  = data[0].copy()
+                i_data  = sdata.copy()
                 i_data[:, inid] = i_curve[p_id]
                 o_expect = self._evaluate_units((i_data, data[1]),
                     func = 'expect', mapping = mapping)
@@ -1898,9 +1934,9 @@ class System(nemoa.common.classes.ClassesBaseClass):
             for outid, outunit in enumerate(outputs):
 
                 # calculate norm by mean over part of data
-                bound = int((1. - gauge) * data[0].shape[0])
+                bound = int((1. - gauge) * sdata.shape[0])
                 subset = numpy.sort(C[outunit].std(axis = 1))[bound:]
-                norm = subset.mean() / data[1][:, outid].std()
+                norm = subset.mean() / tdata[:, outid].std()
 
                 # calculate influence
                 R[inid, outid] = norm
