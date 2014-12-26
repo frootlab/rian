@@ -8,7 +8,7 @@ in complex data as graphical presentations or statistical values.
 
 """
 
-__version__    = '0.4.259'
+__version__    = '0.4.260'
 __status__     = 'Development'
 __author__     = 'Patrick Michl'
 __email__      = 'patrick.michl@gmail.com'

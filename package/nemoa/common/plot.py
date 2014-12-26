@@ -237,15 +237,12 @@ def layergraph(graph, edge_curvature = 1.0, **kwargs):
                             weight = graph.edge[
                                 src_node][tgt_node]['weight']
                         elif (tgt_node, src_node) in graph.edges():
-                            print 'hi'
                             weight = graph.edge[
                                 tgt_node][src_node]['weight']
                         else: continue
 
-                        print src_node, tgt_node, weight
-
                         # add cost from src node to tgt node
-                        # if tgt node has given pos
+                        # by calculating distances in one dimension
                         distance = numpy.absolute(
                             (tgt_pos + .5) / (tgt_size + 1.)
                             - (src_id + .5) / (src_size + 1.))

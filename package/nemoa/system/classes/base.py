@@ -1812,6 +1812,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
         gauge = 0.1 # setting gauge lower than induction default
                     # to increase sensitivity
 
+
         mapping = self._get_mapping()
         srcunits = self._get_units(layer = mapping[0])
         tgtunits = self._get_units(layer = mapping[-1])
@@ -1846,6 +1847,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
             manipvar = maniparr.var(axis = 0)
             #manipvar /= numpy.amax(manipvar)
             manipnorm = numpy.amax(manipvar)
+            print manipvar * 1000.
             print manipvar / manipnorm
 
             coop[:,sid] = \
