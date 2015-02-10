@@ -35,6 +35,48 @@ class DBN(nemoa.system.classes.ann.ANN):
         (1) "Reducing the dimensionality of data with neural networks",
             G. E. Hinton, R. R. Salakhutdinov, Science, 2006
 
+    Attributes:
+        about (str): Short description of the content of the resource.
+            Hint: Read- & writeable wrapping attribute to get('about')
+                and set('about', str).
+        author (str): A person, an organization, or a service that is
+            responsible for the creation of the content of the resource.
+            Hint: Read- & writeable wrapping attribute to get('author')
+                and set('author', str).
+        branch (str): Name of a duplicate of the original resource.
+            Hint: Read- & writeable wrapping attribute to get('branch')
+                and set('branch', str).
+        edges (list of str): List of all edges in the network.
+            Hint: Readonly wrapping attribute to get('edges')
+        email (str): Email address to a person, an organization, or a
+            service that is responsible for the content of the resource.
+            Hint: Read- & writeable wrapping attribute to get('email')
+                and set('email', str).
+        fullname (str): String concatenation of name, branch and
+            version. Branch and version are only conatenated if they
+            exist.
+            Hint: Readonly wrapping attribute to get('fullname')
+        layers (list of str): List of all layers in the network.
+            Hint: Readonly wrapping attribute to get('layers')
+        license (str): Namereference to a legal document giving official
+            permission to do something with the resource.
+            Hint: Read- & writeable wrapping attribute to get('license')
+                and set('license', str).
+        name (str): Name of the resource.
+            Hint: Read- & writeable wrapping attribute to get('name')
+                and set('name', str).
+        nodes (list of str): List of all nodes in the network.
+            Hint: Readonly wrapping attribute to get('nodes')
+        path (str):
+            Hint: Read- & writeable wrapping attribute to get('path')
+                and set('path', str).
+        type (str): String concatenation of module name and class name
+            of the instance.
+            Hint: Readonly wrapping attribute to get('type')
+        version (int): Versionnumber of the resource.
+            Hint: Read- & writeable wrapping attribute to get('version')
+                and set('version', int).
+
     """
 
     _default = {

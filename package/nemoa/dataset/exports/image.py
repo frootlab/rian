@@ -122,8 +122,7 @@ class Heatmap:
         'interpolation': 'nearest' }
 
     def __init__(self, **kwargs):
-        self.settings = self.default.copy()
-        nemoa.common.dict.merge(kwargs, self.settings)
+        self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
     def create(self, dataset):
 
@@ -158,8 +157,7 @@ class Histogram:
         'linewidth': 0.5 }
 
     def __init__(self, **kwargs):
-        self.settings = self.default.copy()
-        nemoa.common.dict.merge(kwargs, self.settings)
+        self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
     def create(self, dataset):
 

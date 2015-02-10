@@ -1210,7 +1210,8 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
 
         # update configuration dictionary
         if not config: return True
-        nemoa.common.dict.merge(copy.deepcopy(config), self._config)
+        self._config = nemoa.common.dict.merge(config, self._config)
+
         # Todo: reconfigure!?
         self._tables = {}
 
@@ -1228,7 +1229,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         """
 
         if not tables: return True
-        nemoa.common.dict.merge(copy.deepcopy(tables), self._tables)
+        self._tables = nemoa.common.dict.merge(tables, self._tables)
 
         return True
 

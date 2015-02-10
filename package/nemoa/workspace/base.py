@@ -4,13 +4,13 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+import glob
+import imp
 import nemoa
 import os
-import imp
-import glob
 
 class Workspace:
-    """Nemoa workspace."""
+    """Nemoa workspace class."""
 
     _config = None
     _attr_meta = {'name': 'r', 'about': 'rw', 'path': 'r', 'base': 'r'}
@@ -47,6 +47,7 @@ class Workspace:
 
     def load(self, workspace, base = 'user'):
         """import workspace and update paths and logfile."""
+
         self._config['name'] = workspace
         self._config['base'] = base
         return nemoa.workspace.load(workspace, base = base)
@@ -194,6 +195,8 @@ class Config:
         return self._config['workspace']
 
     def _get_base(self):
+        """Return base paths."""
+
         return self._config['workspace_base']
 
     def name(self):

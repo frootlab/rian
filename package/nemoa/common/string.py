@@ -6,6 +6,7 @@ __license__ = 'GPLv3'
 
 def split_kwargs(string):
     """Return tuple with function name and function parameters."""
+
     if not '(' in string: return string, {}
     name = string.split('(')[0]
     args = asdict(string.lstrip(name).strip()[1:-1])
@@ -22,10 +23,12 @@ def astype(string, type = None):
 
 def aslist(string, delim = ','):
     """Return list from given string."""
+
     return [item.strip() for item in string.split(delim)]
 
 def asdict(string, delim = ','):
     """Return dictionary from given string in ini format."""
+
     if string.strip() == '': return {}
 
     import pyparsing
@@ -71,6 +74,7 @@ def asdict(string, delim = ','):
 
 def labelfomat(string):
     """Return TeX style unit String used for plots."""
+
     text = string.rstrip(''.join([str(x) for x in xrange(0, 10)]))
     try:
         label = '$%s_{%d}$' % (text, int(string.lstrip(text)))

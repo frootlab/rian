@@ -634,8 +634,8 @@ class Network(nemoa.common.classes.ClassesBaseClass):
         if not hasattr(self, '_config') or not self._config:
             self._config = self._default.copy()
         if config:
-            config_copy = copy.deepcopy(config)
-            nemoa.common.dict.merge(config_copy, self._config)
+            self._config = nemoa.common.dict.merge(config, self._config)
+
             # reconfigure graph
             self._configure_graph()
 
@@ -656,8 +656,7 @@ class Network(nemoa.common.classes.ClassesBaseClass):
         if not graph: return True
 
         # merge graph
-        graph_copy = self._get_graph()
-        nemoa.common.dict.merge(graph, graph_copy)
+        graph_copy = nemoa.common.dict.merge(graph, self._get_graph())
 
         # create networkx graph instance
         object_type = graph['graph']['params']['networkx']
@@ -681,6 +680,7 @@ class Network(nemoa.common.classes.ClassesBaseClass):
         return algorithms[name](self._graph, *args, **kwargs)
 
     def initialize(self, system = None):
+
         if not system: return False
         if not nemoa.common.type.issystem(system):
             return nemoa.log('error', """could not update network:
@@ -690,21 +690,24 @@ class Network(nemoa.common.classes.ClassesBaseClass):
         for edge in self._graph.edges():
             params = system.get('link', edge)
             if not params: continue
-            nemoa.common.dict.merge(
-                params, self._graph[edge[0]][edge[1]]['params'])
-            self._graph[edge[0]][edge[1]]['weight'] \
-                = float(params['weight'])
+            edge_dict = self._graph[edge[0]][edge[1]]
+            edge_dict['params'] = nemoa.common.dict.merge(params,
+                edge_dict['params'])
+            edge_dict['weight'] = float(params['weight'])
 
         return True
 
     def save(self, *args, **kwargs):
         """Export network to file."""
+
         return nemoa.network.save(self, *args, **kwargs)
 
     def show(self, *args, **kwargs):
         """Show network as image."""
+
         return nemoa.network.show(self, *args, **kwargs)
 
     def copy(self, *args, **kwargs):
         """Create copy of network."""
+
         return nemoa.network.copy(self, *args, **kwargs)

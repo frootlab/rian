@@ -36,8 +36,7 @@ class Ini:
     default = {}
 
     def __init__(self, **kwargs):
-        self.settings = self.default.copy()
-        nemoa.common.dict.merge(kwargs, self.settings)
+        self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
     def load(self, path):
         """Return network configuration as dictionary.

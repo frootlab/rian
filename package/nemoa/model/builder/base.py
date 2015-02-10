@@ -31,8 +31,7 @@ class AutoEncoder:
         'system': 'dbn' }
 
     def __init__(self, dataset = None, **kwargs):
-        self.settings = self.default.copy()
-        nemoa.common.dict.merge(kwargs, self.settings)
+        self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
         if nemoa.common.type.isdataset(dataset):
             self.settings['dataset'] = dataset
@@ -63,8 +62,7 @@ class Model:
         'optimize': False }
 
     def __init__(self, **kwargs):
-        self.settings = self.default.copy()
-        nemoa.common.dict.merge(kwargs, self.settings)
+        self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
     def build(self):
 

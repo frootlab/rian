@@ -39,8 +39,7 @@ class Csv:
     default = { 'delimiter': ',' }
 
     def __init__(self, **kwargs):
-        self.settings = self.default.copy()
-        nemoa.common.dict.merge(kwargs, self.settings)
+        self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
     def load(self, path):
         """Get dataset configuration and dataset tables.

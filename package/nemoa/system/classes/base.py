@@ -663,8 +663,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
         if not hasattr(self, '_config') or not self._config:
             self._config = self._default.copy()
         if config:
-            config_copy = copy.deepcopy(config)
-            nemoa.common.dict.merge(config_copy, self._config)
+            self._config = nemoa.common.dict.merge(config, self._config)
 
         # reset consistency check
         self._config['check'] = {
@@ -681,7 +680,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
 
         # get system parameters from dict
         if params:
-            nemoa.common.dict.merge(copy.deepcopy(params), self._params)
+            self._params = nemoa.common.dict.merge(params, self._params)
 
             # create instances of units and links
             retval &= self._set_params_create_units()
@@ -732,7 +731,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
                 links[(src_lid, tgt_lid)]['A'][src_sid, tgt_sid] = 1.0
 
             params = {'units': units, 'links': links}
-            nemoa.common.dict.merge(params, self._params)
+            self._params = nemoa.common.dict.merge(params, self._params)
 
             # create instances of units and links
             retval &= self._set_params_create_units()
@@ -1993,9 +1992,10 @@ class System(nemoa.common.classes.ClassesBaseClass):
                 """ % (schedule['name'], self._get_type()))
 
         # merge default, current and given optimization schedule
-        config = self._default['optimize'].copy()
-        nemoa.common.dict.merge(self._config['optimize'], config)
-        nemoa.common.dict.merge(schedule[self._get_type()], config)
+        config = nemoa.common.dict.merge(self._config['optimize'],
+            self._default['optimize'])
+        config = nemoa.common.dict.merge(schedule[self._get_type()],
+            config)
         self._config['optimize'] = config
 
         # check dataset

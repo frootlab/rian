@@ -172,8 +172,7 @@ class Graph:
         'nexus_border_color': 'lb1-font' }
 
     def __init__(self, **kwargs):
-        self.settings = self.default.copy()
-        nemoa.common.dict.merge(kwargs, self.settings)
+        self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
     def create(self, model):
 
@@ -328,8 +327,7 @@ class Heatmap:
         'format': 'array' }
 
     def __init__(self, **kwargs):
-        self.settings = self.default.copy()
-        nemoa.common.dict.merge(kwargs, self.settings)
+        self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
     def create(self, model):
 
@@ -369,8 +367,7 @@ class Histogram:
         'linewidth': 0.5 }
 
     def __init__(self, **kwargs):
-        self.settings = self.default.copy()
-        nemoa.common.dict.merge(kwargs, self.settings)
+        self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
     def create(self, model):
 

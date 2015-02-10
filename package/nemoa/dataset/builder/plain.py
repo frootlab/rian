@@ -24,32 +24,46 @@ def build(type = None, *args, **kwargs):
     return False
 
 class Rules:
-    """Build rule based manipulated dataset from building parameters."""
+    """Build dataset based on manipulation rules.
+
+    Example:
+        dataset = nemoa.dataset.create('rules',
+            name = 'example',
+            columns = ['i1', 'i2', 'i3', 'i4', 'o1', 'o2'],
+            initialize = 'gauss + bernoulli', sdev = 0.1, abin = 0.5,
+            rules = [
+                ('o1', 'i1 + i2'),
+                ('o2', 'i3 + i4')],
+            normalize = 'gauss',
+            samples = 10000)
+
+    """
 
     settings = None
     default = {
         'name': 'data',
         'columns': ['i1', 'i2', 'i3', 'i4', 'o1', 'o2'],
-        'rules': {},
-        # example:
-        #'rules': {
-            #'o1': '%i1% + %i2%',
-            #'o2': '%i3% + %i4%' },
-        'normalize': 'gauss',
         'rowlabel': 'r%i',
-        'samples': 1000,
-        'abin': 0.0,
-        'sdev': 1.0 }
+        'samples': 10000,
+        'initialize': 'gauss + bernoulli',
+        'sdev': .1,
+        'abin': .5,
+        'bla': {'key': 'val'},
+        'rules': [
+            ('o1', 'i1 + i2'),
+            ('o2', 'i3 + i4')],
+        'normalize': ''}
 
     def __init__(self, **kwargs):
-        self.settings = self.default.copy()
-        nemoa.common.dict.merge(kwargs, self.settings)
+        self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
     def build(self):
 
+        print self.settings['bla']
+
         # create dataset configuration
-        columns = self.settings['columns']
         name = self.settings['name']
+        cols = self.settings['columns']
         rowsize = self.settings['samples']
         config = {
             'name': name,
@@ -58,55 +72,82 @@ class Rules:
             'colmapping': {},
             'colfilter': { '*': ['*:*'] },
             'rowfilter': { '*': ['*:*'], name: [name + ':*'] } }
-        for column in columns:
-            config['colmapping'][column] = column
-            config['columns'] += (('', column), )
+        for col in cols:
+            config['colmapping'][col] = col
+            config['columns'] += (('', col), )
         config['table'] = {name: config.copy()}
         config['table'][name]['fraction'] = 1.
 
-        # create array with random entries
+        # initialize dataset with random values
         dtype = numpy.dtype({
-            'names': ('label',) + tuple(columns),
-            'formats': ('<U12',) + ('<f8',) * len(columns) })
+            'names': ('label',) + tuple(cols),
+            'formats': ('<U12',) + ('<f8',) * len(cols) })
         data = numpy.recarray((rowsize, ), dtype)
         rowlabels = [self.settings['rowlabel'] % (i + 1) \
             for i in range(rowsize)]
         data['label'] = rowlabels
-        for column in columns:
-
-            if self.settings['sdev'] > 0.:
-                gauss = numpy.random.normal(0, self.settings['sdev'],
-                    size = rowsize)
-            else:
-                gauss = 0.
-
-            if self.settings['abin'] > 0.:
-                bernoulli = self.settings['abin'] * 2.0 \
-                    * numpy.random.randint(2, size = rowsize) - 0.5
-            else:
-                bernoulli = 0.
-
-            data[column] = gauss + bernoulli
-
-        # manipulate array data
-        rules = self.settings['rules'].copy()
-        for key, val in rules.iteritems():
-            if not key in columns: continue
-            for column in columns:
-                val = val.replace(
-                    '%' + column + '%', "data['%s']" % (column))
-            rules[key] = val
-        for key, val in rules.iteritems():
-            try: column = eval(val)
+        initialize = self.settings['initialize']
+        for col in cols:
+            if isinstance(initialize, basestring):
+                initrule = initialize
+            elif isinstance(initialize, dict):
+                if not col in initialize:
+                    nemoa.log('warning', """could not initialize '%s':
+                        init rule not found.""" % (col))
+                    continue
+                if not isinstance(initialize[col], basestring):
+                    nemoa.log('warning', """could not initialize '%s':
+                        init rule not valid.""" % (col))
+                    continue
+                initrule = initialize[col]
+            if 'gauss' in initrule:
+                sdev = self.settings['sdev']
+                if sdev > 0.:
+                    gauss = numpy.random.normal(0., sdev, rowsize)
+                else:
+                    gauss = numpy.zeros(rowsize)
+            if 'bernoulli' in initrule:
+                abin = self.settings['abin']
+                bernoulli = numpy.random.binomial(1, abin, rowsize)
+            try: values = eval(initrule)
             except:
-                nemoa.log('warning', 'could not interpret "%s".'
-                    % (self.settings['rules'][key]))
+                nemoa.log('warning', """could not initialize '%s':
+                    init rule "%s" is not valid.""" % (col, initrule))
                 continue
-            data[key] = column
+            data[col] = values
 
-        # normalize data (gauss)
-        for column in columns:
-            data[column] = (data[column] - data[column].mean()) \
-                / data[column].std()
+        # evaluate manipulation rules
+        for col, rule in self.settings['rules']:
+            if not col in cols: continue
+            for key in cols:
+                if not key in rule: continue
+                rule = rule.replace(key, "data['%s']" % (key))
+            random = {}
+            for key in ['gauss', 'bernoulli']:
+                if not key in rule: continue
+                if key == 'gauss':
+                    sdev = self.settings['sdev']
+                    if sdev > 0.:
+                        rvalues = numpy.random.normal(0., sdev, rowsize)
+                    else:
+                        rvalues = numpy.zeros(rowsize)
+                if key == 'bernoulli':
+                    abin = self.settings['abin']
+                    rvalues = numpy.random.binomial(1, abin, rowsize)
+                random[key] = rvalues
+                rule.replace(key, "random['%s']" % (key))
+            try: values = eval(rule)
+            except:
+                nemoa.log('warning', """could not evaluate manipulation
+                    rule "%s".""" % (rule))
+                continue
+            data[col] = values
+
+        # normalize data
+        norm = self.settings['normalize']
+        if norm == 'gauss':
+            for col in cols:
+                data[col] = (data[col] - data[col].mean()) \
+                    / data[col].std()
 
         return { 'config': config, 'tables': { name: data } }

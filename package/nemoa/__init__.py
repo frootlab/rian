@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
 """nemoa deep data analysis and visualization.
 
-Nemoa is a python package for deep data analysis and visualization.
-By utilizing deep artificial neural networks, combinatorial and
-statistical methods are used to uncover hidden dependency structures
-in complex data as graphical presentations or statistical values.
+Nemoa is a python package for network model based deep data analysis
+and visualization. By utilizing deep artificial neural networks,
+combinatorial and statistical methods are used to uncover hidden
+dependency structures in complex data as graphical presentations
+or statistical values.
 
 """
 
-__version__    = '0.4.261'
+__version__    = '0.4.262'
 __status__     = 'Development'
 __author__     = 'Patrick Michl'
 __email__      = 'patrick.michl@gmail.com'
 __license__    = 'GPLv3'
-__copyright__  = 'Copyright 2013-2014, Patrick Michl'
+__copyright__  = 'Copyright 2013-2015, Patrick Michl'
 __maintainer__ = 'Patrick Michl'
 __credits__    = ['Rainer Koenig', 'Marcus Oswald', 'Anna Dieckmann',
                   'Tobias Bauer', 'Alexandra Poos', 'Rebecca Krauss',

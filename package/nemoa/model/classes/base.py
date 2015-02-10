@@ -276,8 +276,7 @@ class Model(nemoa.common.classes.ClassesBaseClass):
         if not hasattr(self, '_config') or not self._config:
             self._config = self._default.copy()
         if config:
-            config_copy = copy.deepcopy(config)
-            nemoa.common.dict.merge(config_copy, self._config)
+            self._config = nemoa.common.dict.merge(config, self._config)
         return True
 
     def _set_dataset(self, dataset):

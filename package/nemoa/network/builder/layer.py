@@ -28,22 +28,36 @@ def build(type = None, *args, **kwargs):
     return False
 
 class AutoEncoder:
-    """Build autoencoder network from dataset."""
+    """Build autoencoder network from given columns or dataset.
+
+    Example:
+
+        network = nemoa.network.create('autoencoder',
+            columns = ['i1', 'i2', 'o1'],
+            shape = [6, 3, 6])
+
+    """
 
     settings = None
     default = { 'name': 'autoencoder' }
 
     def __init__(self, dataset = None, *args, **kwargs):
-        self.settings = self.default.copy()
-        nemoa.common.dict.merge(kwargs, self.settings)
+        self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
-        if nemoa.common.type.isdataset(dataset):
+        # columns
+        if 'columns' in self.settings:
+            columns = self.settings['columns']
+        elif nemoa.common.type.isdataset(dataset):
             columns = dataset.columns
-            self.settings['inputs'] = columns
-            self.settings['outputs'] = columns
-            if not 'shape' in self.settings:
-                size = len(columns)
-                self.settings['shape'] = [2 * size, size, 2 * size]
+        else:
+            columns = ['i1', 'i2', 'i3', 'i4', 'o1', 'o2']
+        self.settings['inputs'] = columns
+        self.settings['outputs'] = columns
+
+        # shape
+        if not 'shape' in self.settings:
+            size = len(columns)
+            self.settings['shape'] = [2 * size, size, 2 * size]
 
     def build(self):
         return MultiLayer(**self.settings).build()
@@ -62,8 +76,7 @@ class MultiLayer:
         'labelformat': 'generic:string' }
 
     def __init__(self, **kwargs):
-        self.settings = self.default.copy()
-        nemoa.common.dict.merge(kwargs, self.settings)
+        self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
     def build(self):
         name = self.settings['name']
@@ -139,8 +152,7 @@ class Factor:
         'labelencapsulate': False }
 
     def __init__(self, **kwargs):
-        self.settings = self.default.copy()
-        nemoa.common.dict.merge(kwargs, self.settings)
+        self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
     def build(self):
         network_name = self.settings['name']

@@ -124,8 +124,7 @@ class Graph:
         'edge_curvature': 1.0 }
 
     def __init__(self, **kwargs):
-        self.settings = self.default.copy()
-        nemoa.common.dict.merge(kwargs, self.settings)
+        self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
     def create(self, network):
 
