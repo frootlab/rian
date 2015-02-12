@@ -3,4 +3,5 @@
 *.ini~
 *.txt~
 *.pdf
+*.log
 .gitignore~
