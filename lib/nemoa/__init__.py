@@ -9,7 +9,7 @@ or statistical values.
 
 """
 
-__version__     = '0.4.265'
+__version__     = '0.4.266'
 __status__      = 'Development'
 __description__ = 'Deep data analysis and visualization'
 __url__         = 'https://github.com/fishroot/nemoa'

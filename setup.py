@@ -79,12 +79,15 @@ pkg = {
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4' ] }
+        'Programming Language :: Python :: 3.4' ],
+    'entry_points': {
+        'console_scripts': ['nemoa = nemoa.scripts.console:main'] } }
 
-# update package variables
+# prepare dynamic package variables
 srcfile = (pkg['libdir'], pkg['name'], '__init__.py')
 for key, val in getvars(srcfile).items(): pkg[key] = val
 pkg['long_description'] = getfile(pkg['descfile'])
+pkg['package_dir'] = { '': pkg['libdir'] }
 pkg['packages'] = setuptools.find_packages(pkg['libdir'])
 
 # run setup from setuptools
@@ -97,10 +100,11 @@ setuptools.setup(
     author_email     = pkg['email'],
     license          = pkg['license'],
     keywords         = pkg['keywords'],
-    package_dir      = {'': pkg['libdir']},
+    package_dir      = pkg['package_dir'],
     packages         = pkg['packages'],
     classifiers      = pkg['classifiers'],
     long_description = pkg['long_description'],
     install_requires = pkg['install_requires'],
     extras_require   = pkg['extras_require'],
+    entry_points     = pkg['entry_points'],
     zip_safe         = False )

@@ -5,16 +5,12 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import sys
-
-def main(argv):
+def main():
 
     import getopt
-    import os
+    import sys
 
-    curpath = os.path.abspath(os.path.dirname(__file__))
-    libpath = curpath + os.path.sep + 'lib'
-    sys.path.append(libpath)
+    argv = sys.argv[1:]
 
     def print_scripts(workspace):
         """Print list of scripts to standard output."""
@@ -35,7 +31,7 @@ def main(argv):
     def print_usage():
         """Print script usage to standard output."""
 
-        print """Usage: %s [-w <workspace> [-s <script> [-a <arguments>]]] [-h] [-i] [-l] [-v]
+        print """Usage: nemoa [-w <workspace> [-s <script> [-a <arguments>]]] [-h] [-i] [-l] [-v]
 
         -h --help                 Print this
         -i --interactive          Start nemoa in iPython interactive shell
@@ -44,7 +40,7 @@ def main(argv):
         -s --script               Open workspace and execute script
         -a --arguments            Arguments passed to script
         -v --version              Print version
-        """ % (os.path.basename(__file__))
+        """
 
         return True
 
@@ -77,9 +73,12 @@ def main(argv):
 
         try:
             import IPython
+            import os
+            
             os.system('cls' if os.name=='nt' else 'clear')
             nemoa.log('set', mode = 'shell')
             IPython.embed(banner1 = 'nemoa ' + nemoa.version() + '\n')
+            
         except:
             return nemoa.log('error',
                 """could not start interactive nemoa shell:
@@ -135,4 +134,4 @@ def main(argv):
             run_script(workspace, script, arguments)
 
 if __name__ == "__main__":
-   main(sys.argv[1:])
+   main()
