@@ -17,171 +17,10 @@ def basename(path):
 
     import os
 
-    filename = os.path.basename(path)
+    filename = os.path.basename(normpath(path))
     filebasename = os.path.splitext(filename)[0].rstrip('.')
 
     return filebasename
-
-
-
-def cwd():
-    """Get path of current working directory.
-
-    Returns:
-        String containing path of current working directory.
-
-    """
-    
-    import os
-    
-    return os.getcwd() + os.sep
-
-def directory(path):
-    """Get directory path of file.
-
-    Args:
-        path (string): path to file
-
-    Returns:
-        String containing normalized directory path of file.
-
-    """
-
-    import os
-
-    if isinstance(path, (tuple, list)):
-        path = os.path.sep.join(path)
-
-    path = os.path.expanduser(path)
-    path = os.path.expandvars(path)
-    path = os.path.abspath(path)
-    path = os.path.normpath(path)
-
-    return os.path.dirname(path)
-
-def fileext(path):
-    """Get extension of file.
-
-    Args:
-        path (string): path to file
-
-    Returns:
-        String containing extension of file.
-
-    """
-
-    import os
-
-    filename = os.path.basename(path)
-    file_ext = os.path.splitext(filename)[1].lstrip('.')
-
-    return file_ext
-
-def home():
-    """Get path to current users home directory.
-    
-    Returns:
-        String containing path of home directory.
-    
-    """
-    
-    import os
-    
-    return os.path.expanduser('~')
-
-def joinpath(directory, name, extension):
-    """Get path of file.
-
-    Args:
-        directory (string): file directory
-        name (string): file basename
-        extension (string): file extension
-
-    Returns:
-        String containing path of file.
-
-    """
-
-    import os
-
-    path = '%s%s%s.%s' % (directory, os.sep, name, extension)
-    path = os.path.expanduser(path)
-    path = os.path.expandvars(path)
-    path = os.path.abspath(path)
-    path = os.path.normpath(path)
-
-    return path
-
-def special(name):
-    """Get paths to special directories.
-    
-    Args:
-        name (string):
-
-    Returns:
-        String containing path of special directory or dictionary
-        containing all platform specific special directories that
-        are implemented.
-
-    """
-
-    def _special_folders_linux(name):
-        
-        return True
-
-    def _special_folders_windows(name):
-        """
-        
-        Args:
-            name (string):
-        
-        """
-
-        try:
-            import winshell
-        except:
-            return False
-
-        if name in ['Application Data', 'userdata']:
-            return winshell.application_data()
-        elif name == 'Bookmarks':
-            return winshell.bookmarks()
-        elif name in ['Common Application Data', 'shareddata']:
-            return winshell.application_data(True)
-        elif name == 'Common Bookmarks':
-            return winshell.bookmarks(True)
-        elif name == 'Common Desktop':
-            return winshell.desktop(True)
-        elif name == 'Common Programs':
-            return winshell.programs(True)
-        elif name == 'Common Start Menu':
-            return winshell.start_menu(True)
-        elif name == 'Common Startup':
-            return winshell.startup(True)
-        elif name == 'Desktop':
-            return winshell.desktop()
-        elif name == 'My Documents':
-            return winshell.my_documents()
-        elif name == 'Programs':
-            return winshell.programs()
-        elif name == 'Recent':
-            return winshell.recent()
-        elif name == 'SendTo':
-            return winshell.sendto()
-        elif name == 'Start Menu':
-            return winshell.start_menu()
-        elif name == 'Startup':
-            return winshell.startup()
-
-        return False
-    
-    import platform
-    ostype = platform.system().lower()
-
-    if ostype == 'linux': return _special_folders_linux(name)
-    if ostype == 'windows': return _special_folders_windows(name)
-
-    return False
 
 def copytree(src, tgt):
     
@@ -207,3 +46,168 @@ def copytree(src, tgt):
             print('Directory not copied. Error: %s' % e)
     
     return True
+
+def cwd():
+    """Get path of current working directory.
+
+    Returns:
+        String containing path of current working directory.
+
+    """
+    
+    import os
+    
+    return os.getcwd() + os.path.sep
+
+def directory(path):
+    """Get directory path of file or directory.
+
+    Args:
+        path (string): path to file
+
+    Returns:
+        String containing normalized directory path of file.
+
+    """
+
+    import os
+
+    return os.path.dirname(normpath(path))
+
+def fileext(path):
+    """Get extension of file.
+
+    Args:
+        path (string): path to file
+
+    Returns:
+        String containing extension of file.
+
+    """
+
+    import os
+
+    filename = os.path.basename(normpath(path))
+    ext = os.path.splitext(filename)[1].lstrip('.')
+
+    return ext
+
+def gethome():
+    """Get path to current users home directory.
+    
+    Returns:
+        String containing path of home directory.
+    
+    """
+    
+    import os
+    
+    return os.path.expanduser('~')
+
+def getstorage(name, *args, **kwargs):
+    """Get paths to storage directories.
+    
+    This function maps generic names of storage directory to platform
+    specific paths which allows platform independent usage of storage
+    directories. This is a wrapper function to the module 'appdirs'.
+    For details and usage see:
+    
+        http://github.com/ActiveState/appdirs
+    
+    Args:
+        name (string): Storage path name: String describing storage
+            directory. Allowed values are:
+            
+            'user_cache_dir' -- User specific application cache
+            'user_config_dir' -- User specific application configuration
+            'user_data_dir' -- User specific application data
+            'user_log_dir' -- User specific application logging
+            'site_config_dir' -- Shared application configuration
+            'site_data_dir' -- Shared application configuration
+        
+        *args: Arguments passed to appdirs
+        **kwargs: Keyword Arguments passed to appdirs
+
+    Returns:
+        String containing path of storage directory or False if
+        storage path name is not supported.
+
+    """
+
+    import appdirs
+
+    if name == 'user_cache_dir':
+        return appdirs.user_cache_dir(*args, **kwargs)
+    elif name == 'user_config_dir':
+        return appdirs.user_config_dir(*args, **kwargs)
+    elif name == 'user_data_dir':
+        return appdirs.user_data_dir(*args, **kwargs)
+    elif name == 'user_log_dir':
+        return appdirs.user_log_dir(*args, **kwargs)
+    elif name == 'site_config_dir':
+        return appdirs.site_config_dir(*args, **kwargs)
+    elif name == 'site_data_dir':
+        return appdirs.site_data_dir(*args, **kwargs)
+
+    return False
+
+def joinpath(directory, name, extension):
+    """Get path of file.
+
+    Args:
+        directory (string): file directory
+        name (string): file basename
+        extension (string): file extension
+
+    Returns:
+        String containing path of file.
+
+    """
+
+    import os
+
+    path = '%s%s%s.%s' % (directory, os.sep, name, extension)
+    path = os.path.expanduser(path)
+    path = os.path.expandvars(path)
+    path = os.path.normpath(path)
+
+    return path
+
+def normpath(path):
+    """Get normalized path.
+
+    Args:
+        path (string or tuple): path to file or directory
+
+    Returns:
+        String containing normalized path.
+
+    """
+
+    import os
+
+    if isinstance(path, (list, tuple)):
+        
+        # flatten tuple of tuples etc. (to flat list)
+        ltype = type(path)
+        path = list(path)
+        i = 0
+        while i < len(path):
+            while isinstance(path[i], (list, tuple)):
+                if not path[i]:
+                    path.pop(i)
+                    i -= 1
+                    break
+                else:
+                    path[i:i + 1] = path[i]
+            i += 1
+        path = ltype(path)
+        
+        # join path list using os path seperators
+        path = os.path.sep.join(path)
+
+    path = os.path.expanduser(path)
+    path = os.path.expandvars(path)
+    path = os.path.normpath(path)
+
+    return path

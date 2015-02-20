@@ -65,7 +65,11 @@ def setup_libs():
         'descfile': 'DESCRIPTION.rst',
         'libdir': 'lib',
         'keywords': 'dataanalysis classification dbn rbm',
-        'install_requires': ['numpy', 'networkx', 'matplotlib'],
+        'install_requires': [
+            'appdirs',
+            'networkx',
+            'numpy',
+            'matplotlib'],
         'extras_require': {
             'systemsbiology': ['rpy2'],
             'test': ['unittest'] },
@@ -81,7 +85,8 @@ def setup_libs():
             'Programming Language :: Python :: 3.3',
             'Programming Language :: Python :: 3.4' ],
         'entry_points': {
-            'console_scripts': ['nemoa = nemoa.scripts.console:main'] }}
+            'console_scripts': [
+                'nemoa = nemoa.scripts.console:main'] }}
 
     # prepare dynamic package variables
     srcfile = (pkg['libdir'], pkg['name'], '__init__.py')
@@ -116,8 +121,9 @@ def copy_user_data():
     import nemoa.common.ospath
     
     src_base = getpath(('data', 'user'))
-    tgt_base = nemoa.common.ospath.special('userdata')
-    tgt_base = getpath((tgt_base, 'nemoa', 'workspaces'))
+    tgt_base = nemoa.common.ospath.getstorage(
+        'user_data_dir', appname = 'nemoa', appauthor = 'fishroot')
+    tgt_base = getpath((tgt_base, 'workspaces'))
     
     nemoa.common.ospath.copytree(src_base, tgt_base)
     
@@ -128,8 +134,9 @@ def copy_shared_data():
     import nemoa.common.ospath
     
     src_base = getpath(('data', 'shared'))
-    tgt_base = nemoa.common.ospath.special('shareddata')
-    tgt_base = getpath((tgt_base, 'nemoa', 'workspaces'))
+    tgt_base = nemoa.common.ospath.getstorage(
+        'site_data_dir', appname = 'nemoa', appauthor = 'fishroot')
+    tgt_base = getpath((tgt_base, 'workspaces'))
     
     nemoa.common.ospath.copytree(src_base, tgt_base)
     
