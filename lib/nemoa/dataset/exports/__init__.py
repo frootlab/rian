@@ -56,7 +56,7 @@ def save(dataset, path = None, filetype = None, workspace = None,
 
     # get directory, filename and fileextension
     if isinstance(workspace, basestring) and not workspace == 'None':
-        directory = nemoa.workspace.path('datasets',
+        directory = nemoa.path('datasets',
             workspace = workspace, base = base)
     elif isinstance(path, basestring):
         directory = nemoa.common.ospath.directory(path)

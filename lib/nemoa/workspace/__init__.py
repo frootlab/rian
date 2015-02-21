@@ -10,7 +10,7 @@ _shared = {}
 
 def configure():
     """Create and link new configuration instance."""
-    _shared['config'] = nemoa.workspace.base.Config()
+    _shared['config'] = nemoa.common.classes.Config()
     return True
 
 def get(*args, **kwargs):

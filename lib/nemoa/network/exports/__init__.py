@@ -56,7 +56,7 @@ def save(network, path = None, filetype = None, workspace = None,
 
     # get directory, filename and fileextension
     if isinstance(workspace, basestring) and not workspace == 'None':
-        directory = nemoa.workspace.path('networks',
+        directory = nemoa.path('networks',
             workspace = workspace, base = base)
     elif isinstance(path, basestring):
         directory = nemoa.common.ospath.directory(path)

@@ -22,8 +22,9 @@ def getheader(path):
     """
 
     # check file
-    if not os.path.isfile(path): return nemoa.log('error',
-        "could not get csv header: file '%s' does not exist." % (path))
+    if not os.path.isfile(path):
+        return nemoa.log('error', """could not get csv header:
+            file '%s' does not exist.""" % path)
 
     # scan csvfile for header
     header = ''
@@ -32,7 +33,8 @@ def getheader(path):
 
             # check exclusion criteria
             stripped_line = line.lstrip(' ')
-            if stripped_line == '\n': continue
+            if stripped_line in ['\n', '\r\n']:
+                continue
             if stripped_line.startswith('#'):
                 header += stripped_line[1:]
                 continue
@@ -60,9 +62,9 @@ def getdelim(path, delimiters = [',', ';', '\t', ' '],
     """
 
     # check file
-    if not os.path.isfile(path): return nemoa.log('error',
-        "could not determine delimiter: file '%s' does not exist."
-        % (path))
+    if not os.path.isfile(path):
+        return nemoa.log('error', """could not determine delimiter:
+            file '%s' does not exist.""" % path)
 
     delimiter = None
     with open(path, 'rb') as csvfile:
@@ -71,13 +73,17 @@ def getdelim(path, delimiters = [',', ';', '\t', ' '],
         for line in csvfile:
 
             # check termination criteria
-            if not delimiter == None: break
-            if lines > maxprobesize: break
+            if not delimiter == None:
+                break
+            if lines > maxprobesize:
+                break
 
             # check exclusion criteria
             stripped_line = line.lstrip(' ')
-            if stripped_line.startswith('#'): continue
-            if stripped_line == '\n': continue
+            if stripped_line.startswith('#'):
+                continue
+            if stripped_line  in ['\n', '\r\n']:
+                continue
 
             # increase probe
             probe += line
@@ -85,13 +91,15 @@ def getdelim(path, delimiters = [',', ';', '\t', ' '],
 
             # try to detect delimiter of probe
             if lines > minprobesize:
-                try: dialect = csv.Sniffer().sniff(probe, delimiters)
-                except: continue
+                try:
+                    dialect = csv.Sniffer().sniff(probe, delimiters)
+                except:
+                    continue
                 delimiter = dialect.delimiter
 
     if delimiter == None:
         return nemoa.log('warning', """could not determine delimiter
-            of csv file '%s'!""" % (path))
+            of csv file '%s'!""" % path)
 
     return delimiter
 
@@ -109,13 +117,16 @@ def getlabels(path, delimiter = None):
     """
 
     # check file
-    if not os.path.isfile(path): return nemoa.log('error',
-        "could not get csv labels: file '%s' does not exist." % (path))
+    if not os.path.isfile(path):
+        return nemoa.log('error', """could not get csv labels:
+            file '%s' does not exist.""" % path)
 
     # get delimiter
-    if not delimiter: delimiter = getdelim(path)
-    if not delimiter: return nemoa.log('error',
-        'could not get column labels: unknown delimiter.')
+    if not delimiter:
+        delimiter = getdelim(path)
+    if not delimiter:
+        return nemoa.log('error', """could not get column labels:
+            unknown delimiter in file '%s'.""" % path)
 
     # get first and second non comment and non empty line
     first = None
@@ -125,17 +136,20 @@ def getlabels(path, delimiter = None):
 
             # check exclusion criteria
             stripped_line = line.lstrip(' ')
-            if stripped_line.startswith('#'): continue
-            if stripped_line == '\n': continue
+            if stripped_line.startswith('#'):
+                continue
+            if stripped_line  in ['\n', '\r\n']:
+                continue
 
             if first == None:
                 first = line
             elif second == None:
                 second = line
                 break
+
     if first == None or second == None:
         return nemoa.log('error', """could not get column labels:
-            file '%s' is not valid.""" % (path))
+            file '%s' is not valid.""" % path)
 
     if first.count(delimiter) == second.count(delimiter):
         csvtype = 'default'
@@ -143,7 +157,7 @@ def getlabels(path, delimiter = None):
         csvtype == 'r-table'
     else:
         return nemoa.log('error', """could not get column labels:
-            file '%s' is not valid.""" % (path))
+            file '%s' is not valid.""" % path)
 
     col_labels = first.split(delimiter)
     col_labels = [col.strip('\"\'\n\r\t ') for col in col_labels]
@@ -166,14 +180,16 @@ def getlabelcolumn(path, delimiter = None):
     """
 
     # check file
-    if not os.path.isfile(path): return nemoa.log('error',
-        """could not get csv row label column id:
-        file '%s' does not exist.""" % (path))
+    if not os.path.isfile(path):
+        return nemoa.log('error', """could not get csv row label column
+            id: file '%s' does not exist.""" % path)
 
     # get delimiter
-    if not delimiter: delimiter = getdelim(path)
-    if not delimiter: return nemoa.log('error',
-        "could not get csv row label column id: unknown delimiter.")
+    if not delimiter:
+        delimiter = getdelim(path)
+    if not delimiter:
+        return nemoa.log('error', """could not get csv row label column
+            id: unknown delimiter.""")
 
     # get first and second non comment and non empty line
     first = None
@@ -183,14 +199,17 @@ def getlabelcolumn(path, delimiter = None):
 
             # check exclusion criteria
             stripped_line = line.lstrip(' ')
-            if stripped_line.startswith('#'): continue
-            if stripped_line == '\n': continue
+            if stripped_line.startswith('#'):
+                continue
+            if stripped_line in ['\n', '\r\n']:
+                continue
 
             if first == None:
                 first = line
             elif second == None:
                 second = line
                 break
+                
     if first == None or second == None:
         return nemoa.log('error', """could not get csv row label column
             id: file '%s' is not valid.""" % (path))
@@ -229,13 +248,16 @@ def load(path, delimiter = None, labels = None, usecols = None,
     """
 
     # check file
-    if not os.path.isfile(path): return nemoa.log('error',
-        "could not get csv data: file '%s' does not exist." % (path))
+    if not os.path.isfile(path):
+        return nemoa.log('error', """could not get csv data:
+            file '%s' does not exist.""" % path)
 
     # get delimiter
-    if not delimiter: delimiter = getdelim(path)
-    if not delimiter: return nemoa.log('error',
-        "could not get data from csv file: unknown delimiter.")
+    if not delimiter:
+        delimiter = getdelim(path)
+    if not delimiter:
+        return nemoa.log('error', """could not get data from csv file:
+            unknown delimiter.""")
 
     # get labels
     if labels:
@@ -279,7 +301,7 @@ def load(path, delimiter = None, labels = None, usecols = None,
             if stripped_line.startswith('#'):
                 skiprows += 1
                 continue
-            if stripped_line == '\n':
+            if stripped_line in ['\n', '\r\n']:
                 skiprows += 1
                 continue
             break
@@ -295,6 +317,7 @@ def load(path, delimiter = None, labels = None, usecols = None,
     return data
 
 def dump(path, data, header = None, labels = None, delimiter = ','):
+    """ """
 
     if isinstance(header, str):
         header = '# %s\n\n' % (header.replace('\n', '\n# '))

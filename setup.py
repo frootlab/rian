@@ -116,13 +116,28 @@ def setup_libs():
 
     return True
 
-def copy_user_data():
+def copy_user_config():
+    """ """
     
     import nemoa.common.ospath
     
     src_base = getpath(('data', 'user'))
     tgt_base = nemoa.common.ospath.getstorage(
-        'user_data_dir', appname = 'nemoa', appauthor = 'fishroot')
+        'user_config_dir', appname = 'nemoa', appauthor = 'Froot')
+    tgt_base = getpath((tgt_base, 'workspaces'))
+    
+    nemoa.common.ospath.copytree(src_base, tgt_base)
+    
+    return True
+
+def copy_user_data():
+    """ """
+    
+    import nemoa.common.ospath
+    
+    src_base = getpath(('data', 'user'))
+    tgt_base = nemoa.common.ospath.getstorage(
+        'user_data_dir', appname = 'nemoa', appauthor = 'Froot')
     tgt_base = getpath((tgt_base, 'workspaces'))
     
     nemoa.common.ospath.copytree(src_base, tgt_base)
@@ -130,12 +145,13 @@ def copy_user_data():
     return True
 
 def copy_shared_data():
+    """ """
     
     import nemoa.common.ospath
     
     src_base = getpath(('data', 'shared'))
     tgt_base = nemoa.common.ospath.getstorage(
-        'site_data_dir', appname = 'nemoa', appauthor = 'fishroot')
+        'site_data_dir', appname = 'nemoa', appauthor = 'Froot')
     tgt_base = getpath((tgt_base, 'workspaces'))
     
     nemoa.common.ospath.copytree(src_base, tgt_base)
@@ -148,6 +164,7 @@ def create_shortcuts():
 
 if __name__ == '__main__':
     setup_libs()
+    #copy_user_config()
     copy_user_data()
     copy_shared_data()
     create_shortcuts()

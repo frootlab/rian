@@ -966,10 +966,11 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
 
         """
 
-        if table == None: return copy.deepcopy(self._tables)
+        if table == None:
+            return copy.deepcopy(self._tables)
 
         # check table name
-        if not isinstance(table, str) \
+        if not isinstance(table, basestring) \
             or not table in self._tables.keys() \
             or not isinstance(self._tables[table], numpy.ndarray):
             return nemoa.log('error', """could not retrieve table:

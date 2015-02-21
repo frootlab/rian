@@ -40,7 +40,7 @@ def build(type, *args, **kwargs):
     if not network: return {}
 
     # update path
-    basepath = nemoa.workspace.path('networks')
+    basepath = nemoa.path('networks')
     if not basepath: basepath = nemoa.common.ospath.cwd()
     network['config']['path'] = \
         basepath + network['config']['name'] + '.npz'

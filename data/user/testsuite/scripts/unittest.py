@@ -16,7 +16,7 @@ class NemoaTestCase(unittest.TestCase):
         self.workspace = _WORKSPACE
 
     def test_list_workspaces(self):
-        workspaces = nemoa.list()
+        workspaces = nemoa.list('workspace')
         test = isinstance(workspaces, list)
         self.assertTrue(test)
 

@@ -9,7 +9,7 @@ or statistical values.
 
 """
 
-__version__     = '0.4.268'
+__version__     = '0.4.269'
 __status__      = 'Development'
 __description__ = 'Deep data analysis and visualization'
 __url__         = 'https://github.com/fishroot/nemoa'
@@ -29,6 +29,26 @@ import nemoa.network
 import nemoa.system
 import nemoa.workspace
 
+_shared = {}
+
+def get(*args, **kwargs):
+    """Return information about given object."""
+    if not 'config' in _shared:
+        _shared['config'] = nemoa.common.classes.Config()
+    return _shared['config'].get(*args, **kwargs)
+
+def list(*args, **kwargs):
+    """Return list of given objects."""
+    if not 'config' in _shared:
+        _shared['config'] = nemoa.common.classes.Config()
+    return _shared['config'].list(*args, **kwargs)
+
+def load(*args, **kwargs):
+    """Import workspace configuration."""
+    if not 'config' in _shared:
+        _shared['config'] = nemoa.common.classes.Config()
+    return _shared['config'].load(*args, **kwargs)
+
 def log(*args, **kwargs):
     """Log errors, warnings, notes etc. to console and logfiles."""
     return nemoa.common.log.log(*args, **kwargs)
@@ -41,14 +61,16 @@ def open(workspace, **kwargs):
     """Open and return workspace instance."""
     return nemoa.workspace.open(workspace, **kwargs)
 
+def path(*args, **kwargs):
+    """Return path to given object."""
+    if not 'config' in _shared:
+        _shared['config'] = nemoa.common.classes.Config()
+    return _shared['config'].path(*args, **kwargs)
+
 def version():
     """Return version as string."""
     return __version__
 
-def welcome():
-    """Print welcome message to standard output."""
-    return log('header', 'nemoa ' + __version__)
-
-def list():
+def workspaces():
     """Return list of workspaces."""
-    return nemoa.workspace.list('workspace')
+    return list(type = 'workspace')

@@ -59,7 +59,7 @@ def main():
         import nemoa
 
         nemoa.log('set', mode = 'silent')
-        workspaces = nemoa.list()
+        workspaces = nemoa.list('workspace')
         print 'Workspaces:\n'
         for workspace in workspaces: print '    %s' % (workspace)
         print

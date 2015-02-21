@@ -36,7 +36,7 @@ def load(path, filetype = None, workspace = None, base = 'user',
 
     # get path
     if workspace or not os.path.isfile(path):
-        config = nemoa.workspace.get('system', name = path,
+        config = nemoa.get('system', name = path,
             workspace = workspace, base = base)
         if not isinstance(config, dict):
             nemoa.log('error', """could not import system:
