@@ -5,16 +5,41 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+def copytree(src, tgt):
+
+    import glob
+    import os
+    import shutil
+
+    for srcsdir in glob.glob(os.path.join(src, '*')):
+        tgtsdir = os.path.join(tgt, os.path.basename(srcsdir))
+
+        if os.path.exists(tgtsdir):
+            shutil.rmtree(tgtsdir)
+
+        try:
+            shutil.copytree(srcsdir, tgtsdir)
+
+        # directories are the same
+        except shutil.Error as e:
+            print('Directory not copied. Error: %s' % e)
+
+        # any error saying that the directory doesn't exist
+        except OSError as e:
+            print('Directory not copied. Error: %s' % e)
+
+    return True
+
 def getfile(filepath = None):
     """Get the content from a file."""
 
     import codecs
-    
+
     path = getpath(filepath)
-    
+
     with codecs.open(path, encoding = 'utf-8') as file_handler:
         content = file_handler.read()
-    
+
     return content
 
 def getpath(filepath = None):
@@ -53,10 +78,10 @@ def getvars(filepath = None):
         key = str(match.group(1))
         val = str(match.group(2))
         variables[key] = val
-    
+
     return variables
 
-def setup_libs():
+def setuplibs():
 
     import setuptools
 
@@ -116,55 +141,24 @@ def setup_libs():
 
     return True
 
-def copy_user_config():
-    """ """
-    
-    import nemoa.common.ospath
-    
-    src_base = getpath(('data', 'user'))
-    tgt_base = nemoa.common.ospath.getstorage(
-        'user_config_dir', appname = 'nemoa', appauthor = 'Froot')
-    tgt_base = getpath((tgt_base, 'workspaces'))
-    
-    nemoa.common.ospath.copytree(src_base, tgt_base)
-    
-    return True
+def setupdata():
 
-def copy_user_data():
-    """ """
-    
-    import nemoa.common.ospath
-    
-    src_base = getpath(('data', 'user'))
-    tgt_base = nemoa.common.ospath.getstorage(
-        'user_data_dir', appname = 'nemoa', appauthor = 'Froot')
-    tgt_base = getpath((tgt_base, 'workspaces'))
-    
-    nemoa.common.ospath.copytree(src_base, tgt_base)
-    
-    return True
+    import appdirs
 
-def copy_shared_data():
-    """ """
-    
-    import nemoa.common.ospath
-    
-    src_base = getpath(('data', 'shared'))
-    tgt_base = nemoa.common.ospath.getstorage(
-        'site_data_dir', appname = 'nemoa', appauthor = 'Froot')
-    tgt_base = getpath((tgt_base, 'workspaces'))
-    
-    nemoa.common.ospath.copytree(src_base, tgt_base)
-    
-    return True
+    # copy user workspaces
+    user_src_base = getpath(('data', 'user'))
+    user_tgt_base = appdirs.user_data_dir(
+        appname = 'nemoa', appauthor = 'Froot')
+    user_tgt_base = getpath((user_tgt_base, 'workspaces'))
+    copytree(user_src_base, user_tgt_base)
 
-def create_shortcuts():
-    
-    return True
+    # copy site workspaces (common workspaces)
+    site_src_base = getpath(('data', 'shared'))
+    site_tgt_base = appdirs.site_data_dir(
+        appname = 'nemoa', appauthor = 'Froot')
+    site_tgt_base = getpath((site_tgt_base, 'workspaces'))
+    copytree(site_src_base, site_tgt_base)
 
 if __name__ == '__main__':
-    setup_libs()
-    #copy_user_config()
-    copy_user_data()
-    copy_shared_data()
-    create_shortcuts()
+    setuplibs()
+    setupdata()
