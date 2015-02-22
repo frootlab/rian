@@ -4,7 +4,6 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import glob
 import imp
 import nemoa
 import os
@@ -20,8 +19,9 @@ class Workspace:
 
         self._config = {}
 
-        if workspace:
-            self.load(workspace, base = base)
+        if workspace and nemoa.load(workspace, base = base):
+            self._config['name'] = workspace
+            self._config['base'] = base
 
     def __getattr__(self, key):
         """Attribute wrapper to getter methods."""
@@ -44,17 +44,6 @@ class Workspace:
                 "attribute '%s' is not writeable." % (key))
 
         self.__dict__[key] = val
-
-    #def load(self, workspace, base = None):
-        #"""Import workspace and update paths and logfile."""
-
-        #if nemoa.load(workspace, base = base):
-            #self._config['name'] = workspace
-            #self._config['base'] = base
-            #return True
-
-        #return nemoa.log('error', """could not load workspace:
-            #no workspace '%s' could be found.""" % (workspace))
 
     def _get_meta(self, key):
         """Get meta information like 'name' or 'path'."""
@@ -127,7 +116,8 @@ class Workspace:
         """Execute script."""
 
         config = nemoa.get('script', name)
-        if not config: return False
+        if not config:
+            return False
         if not os.path.isfile(config['path']):
             return nemoa.log('error', """could not run script '%s':
                 file '%s' not found.""" % (name, config['path']))
