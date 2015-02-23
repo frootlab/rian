@@ -101,7 +101,7 @@ def install():
             'Programming Language :: Python :: 3.4' ],
         'entry_points': {
             'console_scripts': [
-                'nemoa = nemoa.scripts.console:main'] }}
+                'nemoa = nemoa.common.scripts:console'] }}
 
     # prepare dynamic package variables
     srcfile = (pkg['libdir'], pkg['name'], '__init__.py')
@@ -183,7 +183,7 @@ if __name__ == '__main__':
 
     import sys
 
-    if sys.argv[1] == 'postinstall':
+    if len(sys.argv) > 1 and sys.argv[1] == 'postinstall':
         postinstall()
     else:
         install()

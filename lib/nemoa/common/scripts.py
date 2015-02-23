@@ -5,7 +5,7 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-def main():
+def console():
 
     import getopt
     import sys
@@ -59,7 +59,7 @@ def main():
         import nemoa
 
         nemoa.log('set', mode = 'silent')
-        workspaces = nemoa.list('workspace')
+        workspaces = nemoa.list('workspaces', base = 'user')
         print 'Workspaces:\n'
         for workspace in workspaces: print '    %s' % (workspace)
         print
@@ -74,11 +74,11 @@ def main():
         try:
             import IPython
             import os
-            
+
             os.system('cls' if os.name=='nt' else 'clear')
             nemoa.log('set', mode = 'shell')
             IPython.embed(banner1 = 'nemoa ' + nemoa.version() + '\n')
-            
+
         except:
             return nemoa.log('error',
                 """could not start interactive nemoa shell:
@@ -134,4 +134,4 @@ def main():
             run_script(workspace, script, arguments)
 
 if __name__ == "__main__":
-   main()
+   console()

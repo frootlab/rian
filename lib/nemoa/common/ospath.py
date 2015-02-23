@@ -23,7 +23,7 @@ def basename(path):
     return filebasename
 
 def copytree(src, tgt):
-    
+
     import glob
     import os
     import shutil
@@ -40,24 +40,13 @@ def copytree(src, tgt):
         # directories are the same
         except shutil.Error as e:
             print('Directory not copied. Error: %s' % e)
-            
+
         # any error saying that the directory doesn't exist
         except OSError as e:
             print('Directory not copied. Error: %s' % e)
-    
+
     return True
 
-def cwd():
-    """Get path of current working directory.
-
-    Returns:
-        String containing path of current working directory.
-
-    """
-    
-    import os
-    
-    return os.getcwd() + os.path.sep
 
 def directory(path):
     """Get directory path of file or directory.
@@ -92,39 +81,51 @@ def fileext(path):
 
     return ext
 
+def getcwd():
+    """Get path of current working directory.
+
+    Returns:
+        String containing path of current working directory.
+
+    """
+
+    import os
+
+    return os.getcwd() + os.path.sep
+
 def gethome():
     """Get path to current users home directory.
-    
+
     Returns:
         String containing path of home directory.
-    
+
     """
-    
+
     import os
-    
+
     return os.path.expanduser('~')
 
 def getstorage(name, *args, **kwargs):
     """Get paths to storage directories.
-    
+
     This function maps generic names of storage directory to platform
     specific paths which allows platform independent usage of storage
     directories. This is a wrapper function to the module 'appdirs'.
     For details and usage see:
-    
+
         http://github.com/ActiveState/appdirs
-    
+
     Args:
         name (string): Storage path name: String describing storage
             directory. Allowed values are:
-            
+
             'user_cache_dir' -- User specific application cache
             'user_config_dir' -- User specific application configuration
             'user_data_dir' -- User specific application data
             'user_log_dir' -- User specific application logging
             'site_config_dir' -- Shared application configuration
             'site_data_dir' -- Shared application configuration
-        
+
         *args: Arguments passed to appdirs
         **kwargs: Keyword Arguments passed to appdirs
 
@@ -177,7 +178,7 @@ def normpath(path):
     """Get normalized path.
 
     Args:
-        path (string or tuple): path to file or directory
+        path (string or tuple / list): path to file or directory
 
     Returns:
         String containing normalized path.
@@ -187,7 +188,7 @@ def normpath(path):
     import os
 
     if isinstance(path, (list, tuple)):
-        
+
         # flatten tuple of tuples etc. (to flat list)
         ltype = type(path)
         path = list(path)
@@ -202,7 +203,7 @@ def normpath(path):
                     path[i:i + 1] = path[i]
             i += 1
         path = ltype(path)
-        
+
         # join path list using os path seperators
         path = os.path.sep.join(path)
 

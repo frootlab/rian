@@ -41,7 +41,7 @@ def build(type = 'model', *args, **kwargs):
 
     # update path
     basepath = nemoa.path('models')
-    if not basepath: basepath = nemoa.common.ospath.cwd()
+    if not basepath: basepath = nemoa.common.ospath.getcwd()
     model['config']['path'] = \
         basepath + model['config']['name'] + '.npz'
 

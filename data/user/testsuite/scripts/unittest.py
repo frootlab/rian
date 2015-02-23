@@ -16,8 +16,9 @@ class NemoaTestCase(unittest.TestCase):
         self.workspace = _WORKSPACE
 
     def test_list_workspaces(self):
-        workspaces = nemoa.list('workspace')
-        test = isinstance(workspaces, list)
+        workspaces = nemoa.list('workspaces')
+        test = 'user' in workspaces \
+            and 'testsuite' in workspaces['user']
         self.assertTrue(test)
 
     def test_dataset_import_csv(self):

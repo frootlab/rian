@@ -35,14 +35,15 @@ def build(type, *args, **kwargs):
     module_name = types(type)[0]
 
     if module_name == 'layer':
-        network = nemoa.network.builder.layer.build(type, *args, **kwargs)
+        network = nemoa.network.builder.layer.build(type, *args,
+            **kwargs)
 
     if not network: return {}
 
     # update path
-    basepath = nemoa.path('networks')
-    if not basepath: basepath = nemoa.common.ospath.cwd()
+    path = nemoa.path('networks') or nemoa.common.ospath.getcwd()
+    filename = '%s.npz' % network['config']['name']
     network['config']['path'] = \
-        basepath + network['config']['name'] + '.npz'
+        nemoa.common.ospath.normpath(path, filename)
 
     return network

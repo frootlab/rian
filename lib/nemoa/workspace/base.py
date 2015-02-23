@@ -65,30 +65,22 @@ class Workspace:
 
         """
 
-        if 'about' in self._config: return self._config['about']
-
-        return None
+        return self._config.get('about', None)
 
     def _get_base(self):
         """Get workspace base."""
 
-        if 'base' in self._config: return self._config['base']
-
-        return None
+        return self._config.get('base', None)
 
     def _get_name(self):
         """Get name."""
 
-        if 'name' in self._config: return self._config['name']
-
-        return None
+        return self._config.get('name', None)
 
     def _get_path(self):
         """Get path."""
 
-        if 'path' in self._config: return self._config['path']
-
-        return None
+        return self._config.get('path', None)
 
     def _set_meta(self, key, *args, **kwargs):
         """Set meta information like 'name' or 'path'."""
