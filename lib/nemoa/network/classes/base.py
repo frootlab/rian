@@ -337,7 +337,7 @@ class Network(nemoa.common.classes.ClassesBaseClass):
         if key == 'config': return self._get_config(*args, **kwargs)
         if key == 'graph': return self._get_graph(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % (key))
+        return nemoa.log('warning', "unknown key '%s'" % key) or None
 
     def _get_algorithms(self, category = None, attribute = None):
         """Get algorithms provided by network."""
@@ -591,7 +591,7 @@ class Network(nemoa.common.classes.ClassesBaseClass):
         if key == 'config': return self._set_config(*args, **kwargs)
         if key == 'graph': return self._set_graph(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % (key))
+        return nemoa.log('warning', "unknown key '%s'" % key) or None
 
     def _set_copy(self, config = None, graph = None):
         """Set configuration and graph of network.

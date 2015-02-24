@@ -124,7 +124,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
         if key == 'config': return self._get_config(*args, **kwargs)
         if key == 'params': return self._get_params(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % (key))
+        return nemoa.log('warning', "unknown key '%s'" % key) or None
 
     def _get_algorithms(self, category = None, attribute = None):
         """Get algorithms provided by system."""
@@ -572,7 +572,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
         if key == 'config': return self._set_config(*args, **kwargs)
         if key == 'params': return self._set_params(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % (key))
+        return nemoa.log('warning', "unknown key '%s'" % key) or None
 
     def _set_links(self, links = None, initialize = True):
         """Create link configuration from units."""

@@ -15,21 +15,25 @@ class NemoaTestCase(unittest.TestCase):
         nemoa.log('set', mode = 'silent')
         self.workspace = _WORKSPACE
 
-    def test_list_workspaces(self):
-        workspaces = nemoa.list('workspaces')
-        test = 'user' in workspaces \
-            and 'testsuite' in workspaces['user']
+    def test_nemoa_list_bases(self):
+        bases = nemoa.list('bases')
+        test = 'user' in bases
         self.assertTrue(test)
 
-    def test_dataset_import_csv(self):
+    def test_nemoa_list_workspaces(self):
+        workspaces = nemoa.list('workspaces')
+        test = 'testsuite' in workspaces
+        self.assertTrue(test)
+
+    def test_nemoa_dataset_import_csv(self):
         test = nemoa.common.type.isdataset(nemoa.dataset.open('sinus'))
         self.assertTrue(test)
 
-    def test_dataset_import_tab(self):
+    def test_nemoa_dataset_import_tab(self):
         test = nemoa.common.type.isdataset(nemoa.dataset.open('linear'))
         self.assertTrue(test)
 
-    def test_dataset_create_rules(self):
+    def test_nemoa_dataset_create_rules(self):
         dataset = nemoa.dataset.create('rules',
             name = 'example',
             columns = ['i1', 'i2', 'i3', 'i4', 'o1', 'o2'],
@@ -42,45 +46,45 @@ class NemoaTestCase(unittest.TestCase):
         test = nemoa.common.type.isdataset(dataset)
         self.assertTrue(test)
 
-    def test_network_import_ini(self):
+    def test_nemoa_network_import_ini(self):
         test = nemoa.common.type.isnetwork(nemoa.network.open('deep'))
         self.assertTrue(test)
     
-    def test_network_create_autoencoder(self):
+    def test_nemoa_network_create_autoencoder(self):
         network = nemoa.network.create('autoencoder',
             columns = ['i1', 'i2', 'o1'],
             shape = [6, 3, 6])
         test = nemoa.common.type.isnetwork(network)
         self.assertTrue(test)
 
-    def test_system_import_ini(self):
+    def test_nemoa_system_import_ini(self):
         test = nemoa.common.type.issystem(nemoa.system.open('dbn'))
         self.assertTrue(test)
 
-    def test_model_import_npz(self):
+    def test_nemoa_model_import_npz(self):
         test = nemoa.common.type.ismodel(nemoa.model.open('test'))
         self.assertTrue(test)
 
-    def test_model_create_ann(self):
+    def test_nemoa_model_create_ann(self):
         model = nemoa.model.create(
             dataset = 'linear', network = 'shallow', system = 'ann')
         test = nemoa.common.type.ismodel(model)
         self.assertTrue(test)
 
-    def test_model_create_dbn(self):
+    def test_nemoa_model_create_dbn(self):
         model = nemoa.model.create(
             dataset = 'linear', network = 'deep', system = 'dbn')
         test = nemoa.common.type.ismodel(model)
         self.assertTrue(test)
 
-    def test_model_algorithm_shallow_ann(self):
+    def test_nemoa_model_algorithm_shallow_ann(self):
         model = nemoa.model.create(
             dataset = 'linear', network = 'shallow', system = 'ann')
         model.optimize()
         test = model.evaluate('system', 'error') < 0.1
         self.assertTrue(test)
 
-    def test_model_algorithm_deep_dbn(self):
+    def test_nemoa_model_algorithm_deep_dbn(self):
         model = nemoa.model.create(
             dataset = 'linear', network = 'deep', system = 'dbn')
         model.optimize()

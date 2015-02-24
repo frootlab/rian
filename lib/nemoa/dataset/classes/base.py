@@ -596,7 +596,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         if key == 'config': return self._get_config(*args, **kwargs)
         if key == 'tables': return self._get_table(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % (key))
+        return nemoa.log('warning', "unknown key '%s'" % key) or None
 
     def _get_algorithms(self, category = None, attribute = None):
         """Get algorithms provided by dataset."""
@@ -1097,7 +1097,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         if key == 'config': return self._set_config(*args, **kwargs)
         if key == 'tables': return self._set_tables(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % (key))
+        return nemoa.log('warning', "unknown key '%s'" % key) or None
 
     def _set_columns(self, columns, mapping):
         """Set external column names.

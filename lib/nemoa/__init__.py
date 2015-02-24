@@ -9,7 +9,7 @@ or statistical values.
 
 """
 
-__version__     = '0.4.273'
+__version__     = '0.4.274'
 __status__      = 'Development'
 __description__ = 'Deep data analysis and visualization'
 __url__         = 'https://github.com/fishroot/nemoa'
@@ -31,6 +31,10 @@ import nemoa.workspace
 
 _shared = {}
 
+def about(*args, **kwargs):
+    """Get meta information."""
+    return get('about', *args, **kwargs)
+
 def get(*args, **kwargs):
     """Get nemoa environment / module variables."""
     if not 'config' in _shared:
@@ -39,9 +43,7 @@ def get(*args, **kwargs):
 
 def list(*args, **kwargs):
     """Return list of given objects."""
-    if not 'config' in _shared:
-        _shared['config'] = nemoa.common.classes.Config()
-    return _shared['config'].list(*args, **kwargs)
+    return get('list', *args, **kwargs)
 
 def load(*args, **kwargs):
     """Import workspace configuration."""
@@ -58,10 +60,8 @@ def open(workspace, **kwargs):
     return nemoa.workspace.open(workspace, **kwargs)
 
 def path(*args, **kwargs):
-    """Return path to given object."""
-    if not 'config' in _shared:
-        _shared['config'] = nemoa.common.classes.Config()
-    return _shared['config'].path(*args, **kwargs)
+    """Return path to given object type or object."""
+    return get('path', *args, **kwargs)
 
 def set(*args, **kwargs):
     """Set nemoa environment / module variables."""
@@ -72,7 +72,3 @@ def set(*args, **kwargs):
 def version():
     """Return version as string."""
     return __version__
-
-def workspaces():
-    """Return list of workspaces."""
-    return list(type = 'workspace')

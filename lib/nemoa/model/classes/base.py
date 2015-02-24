@@ -166,7 +166,7 @@ class Model(nemoa.common.classes.ClassesBaseClass):
         if key == 'network': return self.network.get(*args, **kwargs)
         if key == 'system': return self.system.get(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % (key))
+        return nemoa.log('warning', "unknown key '%s'" % key) or None
 
     def _get_algorithms(self, *args, **kwargs):
         """Get algorithms provided by model."""
@@ -243,7 +243,7 @@ class Model(nemoa.common.classes.ClassesBaseClass):
         if key == 'copy': return self._set_copy(*args, **kwargs)
         if key == 'config': return self._set_config(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % (key))
+        return nemoa.log('warning', "unknown key '%s'" % key) or None
 
     def _set_copy(self, config = None, dataset = None, network = None,
         system = None):

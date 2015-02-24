@@ -53,7 +53,7 @@ class Workspace:
         if key == 'name': return self._get_name()
         if key == 'path': return self._get_path()
 
-        return nemoa.log('warning', "unknown key '%s'" % (key))
+        return nemoa.log('warning', "unknown key '%s'" % key) or None
 
     def _get_about(self):
         """Get description.
@@ -87,7 +87,7 @@ class Workspace:
 
         if key == 'about': return self._set_about(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % (key))
+        return nemoa.log('warning', "unknown key '%s'" % key) or None
 
     def _set_about(self, val):
         """Set description."""
@@ -98,10 +98,10 @@ class Workspace:
 
         return True
 
-    def list(self, type = None):
+    def list(self, type):
         """Return a list of known objects."""
 
-        return nemoa.list(type = type,
+        return nemoa.list(type,
             workspace = self._get_name(), base = self._get_base())
 
     def execute(self, name = None, *args, **kwargs):
