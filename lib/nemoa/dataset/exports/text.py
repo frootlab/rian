@@ -20,7 +20,7 @@ def save(dataset, path, filetype, **kwargs):
     # test if filetype is supported
     if not filetype in filetypes():
         return nemoa.log('error', """could not export dataset:
-            filetype '%s' is not supported.""" % (filetype))
+            filetype '%s' is not supported.""" % filetype)
 
     # create path if not available
     if not os.path.exists(os.path.dirname(path)):

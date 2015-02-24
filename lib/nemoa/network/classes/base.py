@@ -61,16 +61,6 @@ class Network(nemoa.common.classes.ClassesBaseClass):
     _default = { 'name': None }
     _attr    = { 'nodes': 'r', 'edges': 'r', 'layers': 'r' }
 
-    def __setattr__(self, key, val):
-        """Attribute wrapper to method set(key, val)."""
-
-        if key in self._attr:
-            if 'w' in self._attr[key]: return self.set(key, val)
-            return nemoa.log('warning',
-                "attribute '%s' can not be changed directly.")
-
-        self.__dict__[key] = val
-
     def configure(self, dataset = None):
         """Configure network to dataset."""
 

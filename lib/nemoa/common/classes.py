@@ -198,14 +198,32 @@ class ClassesBaseClass:
     def _get_path(self):
         """Get filepath.
 
-        Path to a file containing or referencing the resource.
+        Path to a potential file containing or referencing the resource.
 
         Returns:
-            Basestring containg the path of the resource.
+            Basestring containing the (potential) path of the resource.
 
         """
 
-        return self._config.get('path', None)
+        return self._config.get('path', self._get_path_default())
+
+    def _get_path_default(self):
+        """Get default filepath.
+
+        Path to a potential file containing or referencing the resource.
+
+        Returns:
+            Basestring containing the potential path of the resource.
+
+        """
+
+        module = self.__module__.split('.')[1]
+        fileext = nemoa.get('default', 'filetype', module)
+        path = nemoa.path(module + 's') or nemoa.common.ospath.getcwd()
+        filename = '%s.%s' % (nemoa.common.ospath.get_clean_filename(
+            self._get_fullname()), fileext)
+
+        return nemoa.common.ospath.get_norm_path(path, filename)
 
     def _get_type(self):
         """Get instance type, using module name and class name.
@@ -394,6 +412,13 @@ class Config:
             'scripts':  ('%workspace%', 'scripts'),
             'cache':    ('%workspace%', 'cache'),
             'logfile':  ('%workspace%', 'nemoa.log') },
+        'default': {
+            'filetype': {
+                'dataset': 'csv',
+                'network': 'graphml',
+                'system': 'npz',
+                'model': 'npz',
+                'script': 'py' }},
         'register': { # objects register
             'dataset': {},
             'network': {},
@@ -506,6 +531,7 @@ class Config:
         if key == 'workspace': return self._get_workspace()
         if key == 'workspaces':
             return self._get_workspaces(*args, **kwargs)
+        if key == 'default': return self._get_default(*args, **kwargs)
 
         # object configuration
         if key in self._config['register']:
@@ -532,6 +558,30 @@ class Config:
                 bases.append(base)
 
         return sorted(bases)
+
+    def _get_default(self, key = None, *args, **kwargs):
+        """Get """
+        
+        import copy
+        
+        if not key: return copy.deepcopy(self._config['default'])
+        elif not key in self._config['default']:
+            return nemoa.log('error', """could not get default value:
+                key '%s' is not valid.""" % key)
+        retval = self._config['default'][key]
+        parent = key
+        while args:
+            if not isinstance(args[0], basestring) \
+                or not args[0] in retval:
+                return nemoa.log('error', """could not get default
+                    value: '%s' does not contain key '%s'.""" %
+                    (parent, args[0]))
+            parent = args[0]
+            retval = retval[args[0]]
+            args = args[1:]
+        
+        if isinstance(retval, dict): return copy.deepcopy(retval)
+        return retval
 
     def _get_objconfig(self, type, name = None,
         workspace = None, base = 'user'):
@@ -649,16 +699,16 @@ class Config:
 
         import os
 
-        path = nemoa.common.ospath.normpath(path)
+        path = nemoa.common.ospath.get_norm_path(path)
 
         # expand nemoa environment variables
         replace = {
             'workspace': self._config['workspace_name'],
             'base': self._config['workspace_base'] }
         for key, val in self._config['path'].iteritems():
-            replace[key] = nemoa.common.ospath.normpath(val)
+            replace[key] = nemoa.common.ospath.get_norm_path(val)
         for key, val in self._config['basepath'].iteritems():
-            replace[key] = nemoa.common.ospath.normpath(val)
+            replace[key] = nemoa.common.ospath.get_norm_path(val)
         for key in ['user_cache_dir', 'user_config_dir',
             'user_data_dir', 'user_log_dir', 'site_config_dir',
             'site_data_dir']:

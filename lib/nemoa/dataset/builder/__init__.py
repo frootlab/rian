@@ -37,12 +37,4 @@ def build(type, *args, **kwargs):
         dataset = nemoa.dataset.builder.plain.build(
             type, *args, **kwargs)
 
-    if not dataset: return {}
-
-    # update path
-    basepath = nemoa.path('datasets')
-    if not basepath: basepath = nemoa.common.ospath.getcwd()
-    dataset['config']['path'] = \
-        basepath + dataset['config']['name'] + '.csv'
-
-    return dataset
+    return dataset or {}

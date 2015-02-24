@@ -104,7 +104,7 @@ def parse(parser, structure = None):
                 if not re_key.match(key): continue
                 val = parser.get(section, key)
                 section_dict[key] = \
-                    nemoa.common.string.astype(val, fmt)
+                    nemoa.common.text.astype(val, fmt)
 
         config[section] = section_dict
 

@@ -129,7 +129,7 @@ class RBM(nemoa.system.classes.ann.ANN):
                 invalid dataset instance given.""")
         if not dataset._algorithm_test_binary():
             return nemoa.log('error', """dataset '%s' is not valid:
-                RBMs expect binary data.""" % (dataset.name))
+                RBMs expect binary data.""" % dataset.name)
         return True
 
     @nemoa.common.decorators.attributes(
@@ -148,10 +148,10 @@ class RBM(nemoa.system.classes.ann.ANN):
             if config['con_module'] == 'klpt':
                 config['con_klpt_enable'] =  True
                 about = """Kullback-Leibler penalty (expectation
-                    value %.2f)""" % (config['con_klpt_expect'])
+                    value %.2f)""" % config['con_klpt_expect']
                 found = True
             if found:
-                nemoa.log('note', 'using restriction: %s' % (about))
+                nemoa.log('note', 'using restriction: %s' % about)
 
         # set enable flags for denoising extensions
         config['den_corr_enable'] = False
@@ -173,10 +173,10 @@ class RBM(nemoa.system.classes.ann.ANN):
             if config['acc_module'].lower() == 'vmra':
                 config['acc_vmra_enable'] = True
                 about = """variance maximizing rate adaption (tail
-                    length %i)""" % (config['acc_vmra_length'])
+                    length %i)""" % config['acc_vmra_length']
                 found = True
             if found:
-                nemoa.log('note', 'using acceleration: %s' % (about))
+                nemoa.log('note', 'using acceleration: %s' % about)
 
         # set enable flags for globalization extensions
         config['gen_rasa_enable'] =  False

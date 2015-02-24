@@ -48,7 +48,6 @@ class Rules:
         'initialize': 'gauss + bernoulli',
         'sdev': .1,
         'abin': .5,
-        'bla': {'key': 'val'},
         'rules': [
             ('o1', 'i1 + i2'),
             ('o2', 'i3 + i4')],
@@ -58,8 +57,6 @@ class Rules:
         self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
     def build(self):
-
-        print self.settings['bla']
 
         # create dataset configuration
         name = self.settings['name']
@@ -93,11 +90,11 @@ class Rules:
             elif isinstance(initialize, dict):
                 if not col in initialize:
                     nemoa.log('warning', """could not initialize '%s':
-                        init rule not found.""" % (col))
+                        init rule not found.""" % col)
                     continue
                 if not isinstance(initialize[col], basestring):
                     nemoa.log('warning', """could not initialize '%s':
-                        init rule not valid.""" % (col))
+                        init rule not valid.""" % col)
                     continue
                 initrule = initialize[col]
             if 'gauss' in initrule:
@@ -135,11 +132,11 @@ class Rules:
                     abin = self.settings['abin']
                     rvalues = numpy.random.binomial(1, abin, rowsize)
                 random[key] = rvalues
-                rule.replace(key, "random['%s']" % (key))
+                rule.replace(key, "random['%s']" % key)
             try: values = eval(rule)
             except:
                 nemoa.log('warning', """could not evaluate manipulation
-                    rule "%s".""" % (rule))
+                    rule "%s".""" % rule)
                 continue
             data[col] = values
 

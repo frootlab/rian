@@ -29,8 +29,28 @@ class NemoaTestCase(unittest.TestCase):
         test = nemoa.common.type.isdataset(nemoa.dataset.open('linear'))
         self.assertTrue(test)
 
+    def test_dataset_create_rules(self):
+        dataset = nemoa.dataset.create('rules',
+            name = 'example',
+            columns = ['i1', 'i2', 'i3', 'i4', 'o1', 'o2'],
+            initialize = 'gauss + bernoulli', sdev = 0.1, abin = 0.5,
+            rules = [
+                ('o1', 'i1 + i2'),
+                ('o2', 'i3 + i4')],
+            normalize = 'gauss',
+            samples = 10000)
+        test = nemoa.common.type.isdataset(dataset)
+        self.assertTrue(test)
+
     def test_network_import_ini(self):
         test = nemoa.common.type.isnetwork(nemoa.network.open('deep'))
+        self.assertTrue(test)
+    
+    def test_network_create_autoencoder(self):
+        network = nemoa.network.create('autoencoder',
+            columns = ['i1', 'i2', 'o1'],
+            shape = [6, 3, 6])
+        test = nemoa.common.type.isnetwork(network)
         self.assertTrue(test)
 
     def test_system_import_ini(self):

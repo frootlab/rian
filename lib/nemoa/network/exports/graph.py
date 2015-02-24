@@ -22,7 +22,7 @@ def save(network, path, filetype, **kwargs):
     # test if filetype is supported
     if not filetype in filetypes():
         return nemoa.log('error', """could not export graph:
-            filetype '%s' is not supported.""" % (filetype))
+            filetype '%s' is not supported.""" % filetype)
 
     # create path if not available
     if not os.path.exists(os.path.dirname(path)):
@@ -70,7 +70,7 @@ def _graph_encode(graph, coding = None):
         return graph
 
     return nemoa.log('error', """could not encode graph parameters:
-        unsupported coding '%s'.""" % (coding))
+        unsupported coding '%s'.""" % coding)
 
 class Gml:
     """Export network to GML file."""

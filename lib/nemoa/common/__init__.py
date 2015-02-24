@@ -18,5 +18,5 @@ import nemoa.common.ospath
 import nemoa.common.ostype
 import nemoa.common.plot
 import nemoa.common.recarray
-import nemoa.common.string
+import nemoa.common.text
 import nemoa.common.type

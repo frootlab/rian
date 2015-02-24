@@ -29,7 +29,7 @@ def build(type, *args, **kwargs):
     # test if type is supported
     if not type in types().keys():
         nemoa.log('error', """could not build network:
-            type '%s' is not supported.""" % (type))
+            type '%s' is not supported.""" % type)
         return {}
 
     module_name = types(type)[0]
@@ -38,12 +38,4 @@ def build(type, *args, **kwargs):
         network = nemoa.network.builder.layer.build(type, *args,
             **kwargs)
 
-    if not network: return {}
-
-    # update path
-    path = nemoa.path('networks') or nemoa.common.ospath.getcwd()
-    filename = '%s.npz' % network['config']['name']
-    network['config']['path'] = \
-        nemoa.common.ospath.normpath(path, filename)
-
-    return network
+    return network or {}

@@ -23,7 +23,7 @@ def load(path, **kwargs):
     # test if filetype is supported
     if not filetype in filetypes():
         return nemoa.log('error', """could not import dataset:
-            filetype '%s' is not supported.""" % (filetype))
+            filetype '%s' is not supported.""" % filetype)
 
     if filetype == 'csv':
         return Csv(**kwargs).load(path)

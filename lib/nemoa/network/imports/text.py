@@ -22,7 +22,7 @@ def load(path, **kwargs):
     # test if filetype is supported
     if not filetype in filetypes():
         return nemoa.log('error', """could not import graph:
-            filetype '%s' is not supported.""" % (filetype))
+            filetype '%s' is not supported.""" % filetype)
 
     if filetype in ['ini', 'txt']:
         return Ini(**kwargs).load(path)
@@ -53,7 +53,7 @@ class Ini:
             or not 'network' in network \
             or not 'type' in network['network']:
             return nemoa.log('error', """could not import network:
-                configuration file '%s' is not valid.""" % (path))
+                configuration file '%s' is not valid.""" % path)
 
         if network['network']['type'] in \
             ['layer.MultiLayer', 'layer.Shallow', 'layer.Factor']:
@@ -94,7 +94,7 @@ class Ini:
         # layers
         if not 'layers' in config:
             return nemoa.log('warning', """file '%s' does not
-                contain parameter 'layers'.""" % (path))
+                contain parameter 'layers'.""" % path)
         config['layer'] = config['layers']
         del config['layers']
 
@@ -147,7 +147,7 @@ class Ini:
                 list_file = nemoa.workspace._expand_path(file_str)
                 if not os.path.exists(list_file):
                     return nemoa.log('error', """listfile '%s'
-                        does not exists!""" % (list_file))
+                        does not exists!""" % list_file)
                 with open(list_file, 'r') as list_file:
                     fileLines = list_file.readlines()
                 node_list = [node.strip() for node in fileLines]

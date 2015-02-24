@@ -48,7 +48,7 @@ def save(model, path = None, filetype = None, plot = None, **kwargs):
 
     # get information about relation
     if plot.settings['show_title']:
-        rel_id = nemoa.common.string.split_kwargs(
+        rel_id = nemoa.common.text.split_kwargs(
             plot.settings['relation'])[0]
         rel_dict = model.system.get('algorithm', rel_id,
             category = ('system', 'relation', 'evaluation'))
@@ -107,7 +107,7 @@ def show(model, plot = None, *args, **kwargs):
 
     # get information about relation
     if plot.settings['show_title']:
-        rel_id = nemoa.common.string.split_kwargs(
+        rel_id = nemoa.common.text.split_kwargs(
             plot.settings['relation'])[0]
         rel_dict = model.system.get('algorithm', rel_id,
             category = ('system', 'relation', 'evaluation'))
@@ -189,10 +189,10 @@ class Graph:
             statistics = self.settings['statistics'],
             transform = self.settings['transform'])
         if not isinstance(W, dict):
-            return nemoa.log('error',
-                """could not create relation graph: invalid weight
-                relation '%s'!""" % (self.settings['relation']))
-        relname = nemoa.common.string.split_kwargs(
+            return nemoa.log('error', """could not create relation
+                graph: invalid weight relation
+                '%s'!""" % self.settings['relation'])
+        relname = nemoa.common.text.split_kwargs(
             self.settings['relation'])[0]
         rel_about = model.system.get('algorithm', relname,
             category = ('system', 'relation', 'evaluation'))
@@ -207,18 +207,18 @@ class Graph:
             measure = self.settings['measure'],
             statistics = self.settings['statistics'])
         if not isinstance(F, dict):
-            return nemoa.log('error',
-                """could not create relation graph: invalid filter
-                relation '%s'!""" % (self.settings['filter']))
+            return nemoa.log('error', """could not create relation
+                graph: invalid filter relation
+                '%s'!""" % self.settings['filter'])
 
         # create filter mask from filter relation (parameter: 'cutoff')
         # and update list of edges
         bound = self.settings['cutoff'] * F['std']
         edges = [edge for edge in edges if not -bound < F[edge] < bound]
         if len(edges) == 0:
-            return nemoa.log('warning',
-                """could not create relation graph: no relation passed
-                filter (threshold = %.2f)!""" % (bound))
+            return nemoa.log('warning', """could not create relation
+                graph: no relation passed filter
+                (threshold = %.2f)!""" % bound)
 
         # calculate edge signs from 'sign' relation
         # default: use the same relation, as used for weights
@@ -272,7 +272,7 @@ class Graph:
 
             if not 'label' in graph.node[src]:
                 node = model.network.get('node', edge[0])
-                label = nemoa.common.string.labelfomat(
+                label = nemoa.common.text.labelfomat(
                     node['params']['label'])
                 graph.node[src]['label'] = label
                 graph.node[src]['layer'] = node['params']['layer']
@@ -287,7 +287,7 @@ class Graph:
 
             if not 'label' in graph.node[tgt]:
                 node = model.network.get('node', edge[1])
-                label = nemoa.common.string.labelfomat(
+                label = nemoa.common.text.labelfomat(
                     node['params']['label'])
                 graph.node[tgt]['label'] = label
                 graph.node[tgt]['layer'] = node['params']['layer']
@@ -385,9 +385,10 @@ class Histogram:
             measure = self.settings['measure'],
             statistics = self.settings['statistics'],
             transform = self.settings['transform'])
-        if not isinstance(R, dict): return nemoa.log('error', """
-            could not create relation histogram:
-            invalid relation '%s'!""" % (self.settings['relation']))
+        if not isinstance(R, dict):
+            return nemoa.log('error', """could not create relation
+                histogram: invalid relation
+                '%s'!""" % self.settings['relation'])
 
         # create data array
         data = numpy.array([R[edge] for edge in edges])

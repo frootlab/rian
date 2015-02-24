@@ -25,7 +25,7 @@ def load(path, **kwargs):
     # test if filetype is supported
     if not filetype in filetypes():
         return nemoa.log('error', """could not import graph:
-            filetype '%s' is not supported.""" % (filetype))
+            filetype '%s' is not supported.""" % filetype)
 
     if filetype == 'gml':
         return Gml(**kwargs).load(path)
@@ -63,7 +63,7 @@ def _graph_decode(graph):
 
     else:
         nemoa.log('error', """could not decode graph parameters:
-            unsupported coding '%s'.""" % (coding))
+            unsupported coding '%s'.""" % coding)
 
     return {}
 

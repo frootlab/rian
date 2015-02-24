@@ -40,7 +40,7 @@ def sumnorm(data, norm = 'S', axis = 0):
     if n == 'RSSE': return numpy.sqrt(numpy.sum(data ** 2, axis = axis))
 
     return nemoa.log('warning', """could not calculate normed sum:
-        unsupported norm '%s'""" % (norm))
+        unsupported norm '%s'""" % norm)
 
 def meannorm(data, norm = 'M', axis = 0):
     """Mean of data.
@@ -75,7 +75,7 @@ def meannorm(data, norm = 'M', axis = 0):
     if n == 'RMSE': return numpy.sqrt(numpy.mean(data ** 2, axis = axis))
 
     return nemoa.log('error', """could not calculate normed mean:
-        unsupported norm '%s'""" % (norm))
+        unsupported norm '%s'""" % norm)
 
 def devnorm(data, norm = 'SD', axis = 0):
     """Deviation of data.
@@ -107,4 +107,4 @@ def devnorm(data, norm = 'SD', axis = 0):
     if n == 'SDSE': return numpy.std(data ** 2, axis = axis)
 
     return nemoa.log('error', """could not calculate normed deviation:
-        unsupported deviation norm '%s'""" % (norm))
+        unsupported deviation norm '%s'""" % norm)

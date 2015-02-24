@@ -136,12 +136,12 @@ class gene:
 
             # get listvector
             nemoa.log("""sending command to R:
-                x <- org.Hs.eg%s""" % (output_format.upper()))
+                x <- org.Hs.eg%s""" % output_format.upper())
             try:
                 self.robjects.r('x <- org.Hs.eg%s' % (output_format.upper()))
             except:
                 return nemoa.log('error', """output format '%s'
-                    is not supported by 'org.Hs.eg.db'""" % (output_format))
+                    is not supported by 'org.Hs.eg.db'""" % output_format)
 
             nemoa.log("""sending command to R:
                 mapped_genes <- mappedkeys(x)""")
@@ -174,7 +174,7 @@ class gene:
                     % (input_format.upper()))
             except:
                 nemoa.log('error', """input format '%s' is not
-                    supported by 'org.Hs.eg.db'""" % (input_format))
+                    supported by 'org.Hs.eg.db'""" % input_format)
                 return [], list
 
             nemoa.log("""sending command to R:

@@ -17,7 +17,7 @@ def basename(path):
 
     import os
 
-    filename = os.path.basename(normpath(path))
+    filename = os.path.basename(get_norm_path(path))
     filebasename = os.path.splitext(filename)[0].rstrip('.')
 
     return filebasename
@@ -61,7 +61,7 @@ def directory(path):
 
     import os
 
-    return os.path.dirname(normpath(path))
+    return os.path.dirname(get_norm_path(path))
 
 def fileext(path):
     """Get extension of file.
@@ -76,7 +76,7 @@ def fileext(path):
 
     import os
 
-    filename = os.path.basename(normpath(path))
+    filename = os.path.basename(get_norm_path(path))
     ext = os.path.splitext(filename)[1].lstrip('.')
 
     return ext
@@ -174,11 +174,69 @@ def joinpath(directory, name, extension):
 
     return path
 
-def normpath(path):
+def get_valid_filename_encode(arg):
+    
+    import base64
+    
+    return base64.urlsafe_b64encode(arg)
+
+def get_valid_filename_decode(string):
+
+    import base64
+    
+    return base64.urlsafe_b64decode(string)
+
+def get_clean_filename(text):
+    
+    import string
+    
+    valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+    filename = ''.join(char for char in text if char in valid_chars)
+    filename = filename.replace(' ', '_')
+
+    return filename
+
+def get_valid_path(*args):
+    """Get valid path.
+
+    Args:
+        args (tuplee): tree of tuples, lists and basestrings describing
+            path to file or directory
+
+    Returns:
+        String containing valid path.
+
+    """
+
+    import os
+
+    # flatten tuple of tuples etc. to flat path list
+    # and join list using os path seperators
+    path = args
+    if isinstance(path, (list, tuple)):
+        path = list(path)
+        char = 0
+        while char < len(path):
+            while isinstance(path[char], (list, tuple)):
+                if not path[char]:
+                    path.pop(char)
+                    char -= 1
+                    break
+                else:
+                    path[char:char + 1] = path[char]
+            char += 1
+        try:
+            path = os.path.sep.join(list(path))
+        except UnicodeDecodeError:
+            return None
+
+    return path
+
+def get_norm_path(*args):
     """Get normalized path.
 
     Args:
-        path (string or tuple / list): path to file or directory
+        args:
 
     Returns:
         String containing normalized path.
@@ -187,26 +245,9 @@ def normpath(path):
 
     import os
 
-    if isinstance(path, (list, tuple)):
-
-        # flatten tuple of tuples etc. (to flat list)
-        ltype = type(path)
-        path = list(path)
-        i = 0
-        while i < len(path):
-            while isinstance(path[i], (list, tuple)):
-                if not path[i]:
-                    path.pop(i)
-                    i -= 1
-                    break
-                else:
-                    path[i:i + 1] = path[i]
-            i += 1
-        path = ltype(path)
-
-        # join path list using os path seperators
-        path = os.path.sep.join(path)
-
+    path = get_valid_path(*args)
+    if not path: return None
+    
     path = os.path.expanduser(path)
     path = os.path.expandvars(path)
     path = os.path.normpath(path)
