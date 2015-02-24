@@ -145,6 +145,8 @@ def getstorage(name, *args, **kwargs):
         return appdirs.user_data_dir(*args, **kwargs)
     elif name == 'user_log_dir':
         return appdirs.user_log_dir(*args, **kwargs)
+    elif name == 'user_cwd':
+        return getcwd()
     elif name == 'site_config_dir':
         return appdirs.site_config_dir(*args, **kwargs)
     elif name == 'site_data_dir':

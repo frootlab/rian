@@ -47,9 +47,7 @@ def list(*args, **kwargs):
 
 def load(*args, **kwargs):
     """Import workspace configuration."""
-    if not 'config' in _shared:
-        _shared['config'] = nemoa.common.classes.Config()
-    return _shared['config'].load(*args, **kwargs)
+    return set('workspace', *args, **kwargs)
 
 def log(*args, **kwargs):
     """Log errors, warnings, notes etc. to console and logfiles."""
