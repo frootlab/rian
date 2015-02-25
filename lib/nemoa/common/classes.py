@@ -679,7 +679,10 @@ class Config:
     def _get_path(self, key = None, *args, **kwargs):
         """Get path of given object or object type."""
 
-        if key == 'basepath': return self._get_basepath(*args, **kwargs)
+        if key == 'basepath':
+            return self._get_basepath(*args, **kwargs)
+        if key == 'expand':
+            return self._get_path_expand(args, **kwargs)
 
         name = kwargs.get('name', None) \
             or (args[0] if len(args) > 0 else None)
@@ -756,7 +759,7 @@ class Config:
         update = True
         while update:
             update = False
-            for key, val in replace.iteritems():
+            for key, val in replace.items():
                 if not '%' + key + '%' in path:
                     continue
                 try:
@@ -770,16 +773,14 @@ class Config:
             os.makedirs(os.path.dirname(path))
 
         # (optional) check path
-        if check and not os.path.exists(path):
-            return nemoa.log('warning',
-                "directory '%s' does not exist!" % (path)) or None
+        if check and not os.path.exists(path): return None
 
         return path
 
     def _get_workspace(self):
         """Get name of current workspace."""
 
-        return self._config['current'].get('workspace', None)
+        return self._config['current'].get('workspace', '')
 
     def set(self, key = None, *args, **kwargs):
         """Set configuration parameters and env vars."""

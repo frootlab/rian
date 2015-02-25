@@ -90,6 +90,10 @@ class NemoaTestCase(unittest.TestCase):
         test = isinstance(filetype, basestring)
         self.assertTrue(test)
 
+    def test_nemoa_config_get_workspace(self):
+        test = isinstance(nemoa.get('workspace'), basestring)
+        self.assertTrue(test)
+
     def test_nemoa_config_get_default_filetype_model(self):
         filetype = nemoa.get('default', 'filetype', 'model')
         test = isinstance(filetype, basestring)
@@ -100,17 +104,159 @@ class NemoaTestCase(unittest.TestCase):
         test = isinstance(filetype, basestring)
         self.assertTrue(test)
 
-
-
-
     def test_nemoa_config_list_bases(self):
-        bases = nemoa.list('bases')
-        test = 'user' in bases
+        test = 'user' in nemoa.list('bases')
         self.assertTrue(test)
 
     def test_nemoa_config_list_workspaces(self):
-        workspaces = nemoa.list('workspaces')
-        test = isinstance(workspaces, dict) and 'user' in workspaces
+        worktree = nemoa.list('workspaces')
+        test = isinstance(worktree, dict) \
+            and 'user' in worktree \
+            and 'common' in worktree \
+            and 'cwd' in worktree
+        self.assertTrue(test)
+
+    def test_nemoa_config_list_workspaces_common(self):
+        workspaces = nemoa.list('workspaces', base = 'common')
+        test = isinstance(workspaces, list)
+        self.assertTrue(test)
+
+    def test_nemoa_config_list_workspaces_user(self):
+        workspaces = nemoa.list('workspaces', base = 'user')
+        test = isinstance(workspaces, list) \
+            and 'testsuite' in workspaces
+        self.assertTrue(test)
+
+    def test_nemoa_config_list_datasets(self):
+        datasets = nemoa.list('datasets')
+        test = isinstance(datasets, list) \
+            and 'linear' in datasets \
+            and 'logistic' in datasets \
+            and 'sinus' in datasets
+        self.assertTrue(test)
+
+    def test_nemoa_config_list_networks(self):
+        networks = nemoa.list('networks')
+        test = isinstance(networks, list) \
+            and 'deep' in networks \
+            and 'shallow' in networks
+        self.assertTrue(test)
+
+    def test_nemoa_config_list_systems(self):
+        systems = nemoa.list('systems')
+        test = isinstance(systems, list) \
+            and 'ann' in systems \
+            and 'dbn' in systems \
+            and 'grbm' in systems \
+            and 'rbm' in systems
+        self.assertTrue(test)
+        
+    def test_nemoa_config_list_models(self):
+        models = nemoa.list('models')
+        test = isinstance(models, list) and 'test' in models
+        self.assertTrue(test)
+        
+    def test_nemoa_config_list_scripts(self):
+        scripts = nemoa.list('scripts')
+        test = isinstance(scripts, list) and 'unittest' in scripts
+        self.assertTrue(test)
+
+    def test_nemoa_config_path_basepath(self):
+        test = isinstance(nemoa.path('basepath'), basestring)
+        self.assertTrue(test)
+
+    def test_nemoa_config_path_baseconf(self):
+        test = isinstance(nemoa.path('baseconf'), basestring)
+        self.assertTrue(test)
+
+    def test_nemoa_config_path_datasets(self):
+        test = isinstance(nemoa.path('datasets'), basestring)
+        self.assertTrue(test)
+        
+    def test_nemoa_config_path_networks(self):
+        test = isinstance(nemoa.path('networks'), basestring)
+        self.assertTrue(test)
+
+    def test_nemoa_config_path_systems(self):
+        test = isinstance(nemoa.path('systems'), basestring)
+        self.assertTrue(test)
+
+    def test_nemoa_config_path_models(self):
+        test = isinstance(nemoa.path('models'), basestring)
+        self.assertTrue(test)
+
+    def test_nemoa_config_path_scripts(self):
+        test = isinstance(nemoa.path('scripts'), basestring)
+        self.assertTrue(test)
+
+    def test_nemoa_config_path_cache(self):
+        test = isinstance(nemoa.path('cache'), basestring)
+        self.assertTrue(test)
+
+    def test_nemoa_config_path_inifile(self):
+        test = isinstance(nemoa.path('inifile'), basestring)
+        self.assertTrue(test)
+
+    def test_nemoa_config_path_logfile(self):
+        test = isinstance(nemoa.path('logfile'), basestring)
+        self.assertTrue(test)
+
+    def test_nemoa_config_path_dataset(self):
+        objtype = 'dataset'
+        names = nemoa.list(objtype + 's')
+        test = True
+        for name in names:
+            path = nemoa.path(objtype, name)
+            test &= isinstance(path, basestring)
+            if not test: break
+        self.assertTrue(test)
+
+    def test_nemoa_config_path_network(self):
+        objtype = 'network'
+        names = nemoa.list(objtype + 's')
+        test = True
+        for name in names:
+            path = nemoa.path(objtype, name)
+            test &= isinstance(path, basestring)
+            if not test: break
+        self.assertTrue(test)
+        
+    def test_nemoa_config_path_system(self):
+        objtype = 'system'
+        names = nemoa.list(objtype + 's')
+        test = True
+        for name in names:
+            path = nemoa.path(objtype, name)
+            test &= isinstance(path, basestring)
+            if not test: break
+        self.assertTrue(test)
+        
+    def test_nemoa_config_path_model(self):
+        objtype = 'model'
+        names = nemoa.list(objtype + 's')
+        test = True
+        for name in names:
+            path = nemoa.path(objtype, name)
+            test &= isinstance(path, basestring)
+            if not test: break
+        self.assertTrue(test)
+
+    def test_nemoa_config_path_script(self):
+        objtype = 'script'
+        names = nemoa.list(objtype + 's')
+        test = True
+        for name in names:
+            path = nemoa.path(objtype, name)
+            test &= isinstance(path, basestring)
+            if not test: break
+        self.assertTrue(test)
+
+    def test_nemoa_config_path_expand(self):
+        valid = nemoa.path('expand', '%basepath%', '%workspace%',
+            check = True)
+        invalid = nemoa.path('expand', '%basepath%', '%workspace%',
+            'invalid_path_name', check = True)
+        test = valid and not invalid
         self.assertTrue(test)
 
     def test_nemoa_dataset_import_csv(self):
@@ -183,7 +329,7 @@ def main(workspace, args, **kwargs):
     _WORKSPACE = workspace
     suite = unittest.TestLoader().loadTestsFromTestCase(NemoaTestCase)
 
-    nemoa.log('info', 'testing nemoa ' + nemoa.version())
+    nemoa.log('testing nemoa ' + nemoa.about('version'))
     unittest.TextTestRunner(verbosity = 2).run(suite)
 
     return True
