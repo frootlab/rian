@@ -1846,6 +1846,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
             manipvar = maniparr.var(axis = 0)
             #manipvar /= numpy.amax(manipvar)
             manipnorm = numpy.amax(manipvar)
+            # 2do
             print manipvar * 1000.
             print manipvar / manipnorm
 
@@ -1911,7 +1912,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
         for inid, inunit in enumerate(inputs):
             try:
                 i_curve = numpy.take(numpy.sort(sdata[:, inid]), r_ids)
-            except:
+            except: # 2Do
                 print 'ok1', sdata
                 print 'ok2', sdata[:, inid]
                 print 'ok3', numpy.sort(sdata[:, inid])

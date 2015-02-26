@@ -559,9 +559,13 @@ class Config:
         if key == 'workspaces':
             return self._get_list_workspaces(*args, **kwargs)
         if key in [rkey + 's' for rkey in self._config['register']]:
-            if 'attribute' in kwargs: del(kwargs['attribute'])
-            return self._get_objconfigs(key[:-1], *args,
-                attribute = 'name', **kwargs)
+            if not 'base' in kwargs:
+                kwargs['base'] = self._get_base()
+            if not 'workspace' in kwargs:
+                kwargs['workspace'] = self._get_workspace()
+            if not 'attribute' in kwargs:
+                kwargs['attribute'] = 'name'
+            return self._get_objconfigs(key[:-1], *args, **kwargs)
 
         return nemoa.log('warning', "unknown key '%s'" % key) or None
 
