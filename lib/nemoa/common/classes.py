@@ -53,6 +53,7 @@ class ClassesBaseClass:
 
     def __init__(self, *args, **kwargs):
         """Import object configuration and content from dictionary."""
+        
         self._set_copy(**kwargs)
 
     def __getattr__(self, key):
@@ -100,7 +101,7 @@ class ClassesBaseClass:
         if key == 'version':  return self._get_version()
 
         return nemoa.log('warning', "%s instance has no attribute '%r'"
-            % (self.__class__.__name__, key))
+            % (self.__class__.__name__, key)) or None
 
     def _get_about(self):
         """Get a short description of the content of the resource.
@@ -543,14 +544,26 @@ class Config:
     def _get_list(self, key = None, *args, **kwargs):
         """Get list. """
 
-        if key == 'bases': return self._get_list_bases(*args, **kwargs)
+        if key == None:
+            retval = {}
+            workspace = self._get_workspace()
+            base = self._get_base()
+            for key in self._config['register']:
+                keys = key + 's'
+                objlist = self._get_list(keys,
+                    workspace = workspace, base = base)
+                retval[keys] = objlist
+            return retval
+        if key == 'bases':
+            return self._get_list_bases(*args, **kwargs)
         if key == 'workspaces':
             return self._get_list_workspaces(*args, **kwargs)
         if key in [rkey + 's' for rkey in self._config['register']]:
             if 'attribute' in kwargs: del(kwargs['attribute'])
             return self._get_objconfigs(key[:-1], *args,
                 attribute = 'name', **kwargs)
-        return None
+
+        return nemoa.log('warning', "unknown key '%s'" % key) or None
 
     def _get_list_bases(self, workspace = None):
         """Get list of searchpaths containing given workspace name."""
@@ -681,48 +694,57 @@ class Config:
 
         if key == 'basepath':
             return self._get_basepath(*args, **kwargs)
-        if key == 'expand':
-            return self._get_path_expand(args, **kwargs)
 
-        name = kwargs.get('name', None) \
-            or (args[0] if len(args) > 0 else None)
-        workspace = kwargs.get('workspace', None) \
-            or (args[1] if len(args) > 1 else None)
-        base = kwargs.get('base', None) \
-            or (args[2] if len(args) > 2 else None)
-        chdir = not workspace == self._get_workspace() \
-            or not base == self._get_base()
-        
-        # (optional) load workspace of given object
+        # change current workspace if necessary
+        chdir = False
+        workspace = self._get_workspace()
+        base = None
+        if 'workspace' in kwargs:
+            workspace = kwargs['workspace']
+            del kwargs['workspace']
+            if not workspace == self._get_workspace(): chdir = True
+        if 'base' in kwargs:
+            base = kwargs['base']
+            del kwargs['base']
+            if not base == self._get_base(): chdir = True
         if chdir:
-            cworkspace = self._get_workspace()
-            cbase = self._get_base()
-            if not self._set_workspace(workspace, base = base):
-                return nemoa.log('warning', """could not get path:
-                    workspace '%s' does not exist."""
-                    % workspace) or None
+            current = self._config.get('workspace', None)
+            self._set_workspace(workspace, base = base)
 
         # get path
         if key == None:
             import copy
             path = copy.deepcopy(self._config['current']['path'])
+        elif key == 'expand':
+            if 'workspace' in kwargs: del kwargs['workspace']
+            if 'base' in kwargs: del kwargs['base']
+            path = self._get_path_expand(*args, **kwargs)
         elif key in self._config['current']['path']:
             path = self._config['current']['path'][key]
         elif key in self._config['register']:
+            name = kwargs.get('name', None) \
+                or (args[0] if len(args) > 0 else None)
             path = self._get_objconfig(objtype = key, name = name,
                 attribute = 'path')
         else:
-            nemoa.log('warning', """could not get path:
-                path identifier '%s' is not valid.""" % key)
-            path = None
+            path = nemoa.log('warning', """could not get path:
+                path identifier '%s' is not valid.""" % key) or None
 
-        # (optional) load current workspace
+        # change to previous workspace if necessary
         if chdir:
-            self._set_workspace(cworkspace, base = cbase)
+            if current:
+                print 'hi'
+                
+                nemoa.test = current
+                
+                self._set_workspace(current.get('name'),
+                    base = current.get('base'))
+            else:
+                self._set_workspace(None)
 
         return path or None
 
-    def _get_path_expand(self, path, check = False, create = False):
+    def _get_path_expand(self, *args, **kwargs):
         """Get expanded path.
 
         Args:
@@ -737,7 +759,9 @@ class Config:
 
         import os
 
-        path = nemoa.common.ospath.get_norm_path(path)
+        path = nemoa.common.ospath.get_norm_path(args)
+        check = kwargs.get('check', False)
+        create = kwargs.get('create', False)
 
         # expand nemoa environment variables
         base = self._get_base()
@@ -781,10 +805,56 @@ class Config:
         """Get name of current workspace."""
 
         return self._config['current'].get('workspace', '')
+    
+    def run(self, script = None, *args, **kwargs):
 
-    def set(self, key = None, *args, **kwargs):
+        import imp
+        import os
+
+        retval = True
+
+        # change current workspace if necessary
+        chdir = False
+        workspace = self._get_workspace()
+        base = None
+        if 'workspace' in kwargs:
+            workspace = kwargs['workspace']
+            del kwargs['workspace']
+            if not workspace == self._get_workspace(): chdir = True
+        if 'base' in kwargs:
+            base = kwargs['base']
+            del kwargs['base']
+            if not base == self._get_base(): chdir = True
+        if chdir:
+            current = self._config.get('workspace', None)
+            self._set_workspace(workspace, base = base)
+
+        # get configuration and run script
+        config = self.get('script', name = script, *args, **kwargs)
+        if not isinstance(config, dict) or not 'path' in config:
+            retval = nemoa.log('warning', """could not run script '%s':
+                invalid configuration.""" % script)
+        elif not os.path.isfile(config['path']):
+            retval = nemoa.log('warning', """could not run script '%s':
+                file '%s' not found.""" % (script, config['path']))
+        else:
+            module = imp.load_source('script', config['path'])
+            module.main(self._config['workspace'], *args, **kwargs)
+        
+        # change to previous workspace if necessary
+        if chdir:
+            if current:
+                self._set_workspace(current.get('name'),
+                    base = current.get('base'))
+            else:
+                self._set_workspace(None)
+        
+        return retval
+    
+    def set(self, key, *args, **kwargs):
         """Set configuration parameters and env vars."""
 
+        # 2do: set(workspace = '', base = '')
         if key == 'workspace':
             return self._set_workspace(*args, **kwargs)
 
@@ -794,26 +864,33 @@ class Config:
         refresh = False, scandir = True, setlog = True):
         """Set workspace."""
 
-        if not workspace: return True
+        if not workspace:
+            nemoa.log('init', logfile = None)
+            self._config['workspace'] = None
+            self._config['current']['path'] = {}
+            self._config['current']['workspace'] = None
+            self._config['current']['base'] = None
+            return True
         if workspace == self._get_workspace() and not refresh:
+            # 2do: do not ignore base
             return True
         if not base:
             bases = self._get_list_bases(workspace)
             if not bases:
-                return nemoa.log('error', """could not open workspace
+                return nemoa.log('warning', """could not open workspace
                     '%s': workspace could not be found
-                    in any searchpath.""" % workspace)
+                    in any searchpath.""" % workspace) or None
             if len(bases) > 1:
-                return nemoa.log('error', """could not open workspace
+                return nemoa.log('warning', """could not open workspace
                     '%s': workspace found in different searchpaths:
-                    %s.""" % (workspace, ', '.join(bases)))
+                    %s.""" % (workspace, ', '.join(bases))) or None
             base = bases[0]
         elif not workspace in self._get_list_workspaces(base = base):
             basepath = self._get_path_expand(
                 self._config['default']['basepath'][base])
-            return nemoa.log('error', """could not open workspace
+            return nemoa.log('warning', """could not open workspace
                 '%s': workspace could not be found in searchpath
-                '%s'.""" % (workspace, basepath))
+                '%s'.""" % (workspace, basepath)) or None
 
         # set current workspace name and workspace base name
         self._config['current']['workspace'] = workspace
@@ -830,32 +907,41 @@ class Config:
                 self._config['current']['path']['logfile'])
             nemoa.log('init', logfile = logpath)
 
+        # open workspace
+        self._config['workspace'] = \
+            nemoa.workspace.open(workspace, base = base)
+
         # (optional) scan workspace folder for objects / files
         if scandir:
             self._set_workspace_scandir()
 
         return True
 
-    def _set_workspace_scandir(self, workspace = None, base = None):
+    def _set_workspace_scandir(self, *args, **kwargs):
         """Scan workspace for files."""
 
         import glob
 
-        # change current workspace
-        if workspace:
-            cur_workspace = self._get_workspace()
-            cur_workspace_base = self._get_base()
-            if not self._set_workspace(workspace, base = base,
-                setlog = False, scandir = False):
-                return False
-        else:
-            cur_workspace = None
-            cur_workspace_base = None
-            workspace = self._get_workspace()
+        # change current workspace if necessary
+        chdir = False
+        workspace = self._get_workspace()
+        base = None
+        if 'workspace' in kwargs:
+            workspace = kwargs['workspace']
+            del kwargs['workspace']
+            if not workspace == self._get_workspace(): chdir = True
+        if 'base' in kwargs:
+            base = kwargs['base']
+            del kwargs['base']
+            if not base == self._get_base(): chdir = True
+        if chdir:
+            current = self._config.get('workspace', None)
+            self._set_workspace(workspace, base = base)
 
+        # scan workspace for objects
         for objtype in self._config['register'].keys():
             filemask = self._get_path_expand(
-                (self._config['current']['path'][objtype + 's'], '*.*'))
+                self._config['current']['path'][objtype + 's'], '*.*')
             if objtype == 'dataset':
                 filetypes = nemoa.dataset.imports.filetypes()
             elif objtype == 'network':
@@ -870,27 +956,30 @@ class Config:
             # scan for files
             for path in glob.iglob(filemask):
                 filetype = nemoa.common.ospath.fileext(path)
-                if not filetype in filetypes:
-                    continue
-                name = nemoa.common.ospath.basename(path)
-                workspace = self._get_workspace()
-                base = self._get_base()
-                fullname = '%s.%s.%s' % (base, workspace, name)
+                if not filetype in filetypes: continue
+                iname = nemoa.common.ospath.basename(path)
+                iworkspace = self._get_workspace()
+                ibase = self._get_base()
+                fullname = '%s.%s.%s' % (ibase, iworkspace, iname)
+                
                 if fullname in self._config['register'][objtype]:
                     continue
 
                 # add configuration to object tree
                 self._config['register'][objtype][fullname] = {
-                    'name': name,
+                    'name': iname,
                     'type': objtype,
                     'path': path,
-                    'workspace': workspace,
-                    'base': base,
+                    'workspace': iworkspace,
+                    'base': ibase,
                     'fullname': fullname }
 
-        # change current workspace and update paths
-        if workspace and not workspace == cur_workspace:
-            self._set_workspace(cur_workspace,
-                base = cur_workspace_base)
+        # change to previous workspace if necessary
+        if chdir:
+            if current:
+                self._set_workspace(current.get('name'),
+                    base = current.get('base'))
+            else:
+                self._set_workspace(None)
 
         return True

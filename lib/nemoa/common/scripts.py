@@ -18,12 +18,10 @@ def console():
         import nemoa
 
         nemoa.log('set', mode = 'silent')
-        workspace = nemoa.open(workspace)
-        name = workspace.name
-        scriptlist = workspace.list(type = 'script')
-        scripts = [script['name'] for script in scriptlist]
-        print 'Scripts in workspace %s:\n' % (name)
-        for script in scripts: print '    %s' % (script)
+        if not nemoa.open(workspace): return False
+        print 'Scripts in workspace %s:\n' % (nemoa.get('workspace'))
+        for script in nemoa.list('scripts'):
+            print '    %s' % (script)
         print
 
         return True
@@ -49,7 +47,7 @@ def console():
 
         import nemoa
 
-        print 'nemoa ' + nemoa.version()
+        print 'nemoa ' + nemoa.__version__
 
         return True
 
@@ -69,20 +67,19 @@ def console():
     def run_interactive():
         """Run nemoa in interactive ipython shell."""
 
-        import nemoa
-
         try:
             import IPython
-            import os
-
-            os.system('cls' if os.name=='nt' else 'clear')
-            nemoa.log('set', mode = 'shell')
-            IPython.embed(banner1 = 'nemoa ' + nemoa.version() + '\n')
-
-        except:
+        except ImportError:
             return nemoa.log('error',
                 """could not start interactive nemoa shell:
                 you have to install ipython.""")
+
+        import nemoa
+        import os
+
+        os.system('cls' if os.name == 'nt' else 'clear')
+        nemoa.log('set', mode = 'shell')
+        IPython.embed(banner1 = 'nemoa %s\n' % nemoa.__version__)
 
         return True
 
@@ -91,7 +88,7 @@ def console():
 
         import nemoa
 
-        return nemoa.open(workspace).execute(script, *args)
+        return nemoa.open(workspace) and nemoa.run(script, *args)
 
     workspace = ''
     script = ''
@@ -131,7 +128,8 @@ def console():
             print_usage()
             print_scripts(workspace)
         else:
-            run_script(workspace, script, arguments)
+            if arguments: run_script(workspace, script, arguments)
+            else: run_script(workspace, script)
 
 if __name__ == "__main__":
    console()

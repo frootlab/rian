@@ -29,17 +29,20 @@ def filetypes(filetype = None):
 
     return False
 
-def load(path, filetype = None, workspace = None, base = 'user',
-    **kwargs):
+def load(path, filetype = None, **kwargs):
     """Import dataset dictionary from file or workspace."""
 
     import os
 
-    # get path
-    if workspace or not os.path.isfile(path):
+    # get path (if necessary)
+    if 'workspace' in kwargs or not os.path.isfile(path):
         name = path
-        path = nemoa.path('dataset', name,
-            workspace = workspace, base = base)
+        pathkwargs = {}
+        if 'workspace' in kwargs:
+            pathkwargs['workspace'] = kwargs.pop('workspace')
+        if 'base' in kwargs:
+            pathkwargs['base'] = kwargs.pop('base')
+        path = nemoa.path('dataset', name, **pathkwargs)
         if not os.path.isfile(path):
             return nemoa.log('error', """could not import dataset:
                 file '%s' does not exist.""" % path) or {}

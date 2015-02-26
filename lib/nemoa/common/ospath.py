@@ -23,29 +23,36 @@ def basename(path):
     return filebasename
 
 def copytree(src, tgt):
+    """Copy sub directories from given source to target.
+    
+    Args:
+        src (string): path to source directory
+        tgt (string): path to target directory
+        
+    Returns:
+        True if and only if no error occured.
+    
+    """
 
     import glob
     import os
     import shutil
 
+    retval = True
     for srcsdir in glob.glob(os.path.join(src, '*')):
         tgtsdir = os.path.join(tgt, basename(srcsdir))
 
-        if os.path.exists(tgtsdir):
-            shutil.rmtree(tgtsdir)
-
+        if os.path.exists(tgtsdir): shutil.rmtree(tgtsdir)
         try:
             shutil.copytree(srcsdir, tgtsdir)
+        except shutil.Error as error:
+            print('could not copy directory: %s' % error)
+            retval = False
+        except OSError as error:
+            print('could not copy directory: %s' % error)
+            retval = False
 
-        # directories are the same
-        except shutil.Error as e:
-            print('Directory not copied. Error: %s' % e)
-
-        # any error saying that the directory doesn't exist
-        except OSError as e:
-            print('Directory not copied. Error: %s' % e)
-
-    return True
+    return retval
 
 
 def directory(path):
@@ -176,19 +183,8 @@ def joinpath(directory, name, extension):
 
     return path
 
-def get_valid_filename_encode(arg):
-    
-    import base64
-    
-    return base64.urlsafe_b64encode(arg)
-
-def get_valid_filename_decode(string):
-
-    import base64
-    
-    return base64.urlsafe_b64decode(string)
-
 def get_clean_filename(text):
+    """Get cleaned filename."""
     
     import string
     

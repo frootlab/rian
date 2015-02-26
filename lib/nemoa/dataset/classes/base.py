@@ -1207,7 +1207,10 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         """
 
         # initialize configuration dictionary
-        if not self._config: self._config = self._default.copy()
+        # 2Do: use dict.merge
+        import copy
+        if not self._config:
+            self._config = copy.deepcopy(self._default)
 
         # update configuration dictionary
         if not config: return True

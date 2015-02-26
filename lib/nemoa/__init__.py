@@ -9,7 +9,7 @@ or statistical values.
 
 """
 
-__version__     = '0.4.275'
+__version__     = '0.4.277'
 __status__      = 'Development'
 __description__ = 'Deep data analysis and visualization'
 __url__         = 'https://github.com/fishroot/nemoa'
@@ -20,7 +20,7 @@ __email__       = 'patrick.michl@gmail.com'
 __maintainer__  = 'Patrick Michl'
 __credits__     = ['Rainer Koenig', 'Marcus Oswald', 'Anna Dieckmann',
                    'Tobias Bauer', 'Alexandra Poos', 'Rebecca Krauss',
-                   'Sebastian Michl']
+                   'Michael Scherer', 'Sebastian Michl']
 
 import nemoa.common
 import nemoa.dataset
@@ -35,38 +35,37 @@ def about(*args, **kwargs):
     """Get meta information."""
     return get('about', *args, **kwargs)
 
-def get(*args, **kwargs):
-    """Get nemoa environment / module variables."""
+def config():
+    """Get configuration instance."""
     if not 'config' in _shared:
         _shared['config'] = nemoa.common.classes.Config()
-    return _shared['config'].get(*args, **kwargs)
+    return _shared['config']
+
+def get(*args, **kwargs):
+    """Get value from configuration instance."""
+    return config().get(*args, **kwargs)
 
 def list(*args, **kwargs):
     """Return list of given objects."""
     return get('list', *args, **kwargs)
 
-def load(*args, **kwargs):
-    """Import workspace configuration."""
-    return set('workspace', *args, **kwargs)
-
 def log(*args, **kwargs):
     """Log errors, warnings, notes etc. to console and logfiles."""
     return nemoa.common.log.log(*args, **kwargs)
 
-def open(workspace, **kwargs):
-    """Open and return workspace instance."""
-    return nemoa.workspace.open(workspace, **kwargs)
+def open(*args, **kwargs):
+    """Open workspace instance from file in search path."""
+    return set('workspace', *args, **kwargs)
 
 def path(*args, **kwargs):
     """Return path to given object type or object."""
     return get('path', *args, **kwargs)
 
-def set(*args, **kwargs):
-    """Set nemoa environment / module variables."""
-    if not 'config' in _shared:
-        _shared['config'] = nemoa.common.classes.Config()
-    return _shared['config'].set(*args, **kwargs)
+def run(*args, **kwargs):
+    """Run script."""
+    return config().run(*args, **kwargs)
 
-def version():
-    """Return version as string."""
-    return __version__
+def set(*args, **kwargs):
+    """Set value in configuration instance."""
+    return config().set(*args, **kwargs)
+

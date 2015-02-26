@@ -11,17 +11,9 @@ import os
 class Workspace:
     """Nemoa workspace class."""
 
-    _config = None
+    _config    = None
+    _default   = {}
     _attr_meta = {'name': 'r', 'about': 'rw', 'path': 'r', 'base': 'r'}
-
-    def __init__(self, workspace = None, base = None):
-        """Initialize shared configuration."""
-
-        self._config = {}
-
-        if workspace and nemoa.load(workspace, base = base):
-            self._config['name'] = workspace
-            self._config['base'] = base
 
     def __getattr__(self, key):
         """Attribute wrapper to getter methods."""
@@ -44,6 +36,19 @@ class Workspace:
                 "attribute '%s' is not writeable." % (key))
 
         self.__dict__[key] = val
+
+    def __init__(self, *args, **kwargs):
+        """Import object configuration and content from dictionary."""
+
+        self._set_copy(**kwargs)
+
+    def get(self, key = 'name', *args, **kwargs):
+        """Get meta data of workspace."""
+
+        # meta information
+        if key in self._attr_meta: return self._get_meta(key)
+
+        return nemoa.log('warning', "unknown key '%s'" % key) or None
 
     def _get_meta(self, key):
         """Get meta information like 'name' or 'path'."""
@@ -82,6 +87,19 @@ class Workspace:
 
         return self._config.get('path', None)
 
+    def set(self, key = None, *args, **kwargs):
+        """Set meta data of workspace."""
+
+        # set meta information
+        if key in self._attr_meta:
+            return self._set_meta(key, *args, **kwargs)
+
+        # import workspace configuration configuration and dataset tables
+        if key == 'copy': return self._set_copy(*args, **kwargs)
+        if key == 'config': return self._set_config(*args, **kwargs)
+
+        return nemoa.log('warning', "unknown key '%s'" % key) or None
+
     def _set_meta(self, key, *args, **kwargs):
         """Set meta information like 'name' or 'path'."""
 
@@ -98,21 +116,45 @@ class Workspace:
 
         return True
 
+    def _set_copy(self, config = None):
+        """Set workspace configuration and dataset tables.
+
+        Args:
+            config (dict or None, optional): workspace configuration
+
+        Returns:
+            Bool which is True if and only if no error occured.
+
+        """
+
+        retval = True
+
+        if config: retval &= self._set_config(config)
+
+        return retval
+
+    def _set_config(self, config = None):
+        """Set configuration of workspace.
+
+        Args:
+            config (dict or None, optional): workspace configuration
+
+        Returns:
+            Bool which is True if and only if no error occured.
+
+        """
+
+        # initialize configuration dictionary
+        if not self._config: self._config = self._default.copy()
+
+        # update configuration dictionary
+        if not config: return True
+        self._config = nemoa.common.dict.merge(config, self._config)
+
+        return True
+
     def list(self, type):
         """Return a list of known objects."""
 
         return nemoa.list(type,
             workspace = self._get_name(), base = self._get_base())
-
-    def execute(self, name = None, *args, **kwargs):
-        """Execute script."""
-
-        config = nemoa.get('script', name)
-        if not config:
-            return False
-        if not os.path.isfile(config['path']):
-            return nemoa.log('error', """could not run script '%s':
-                file '%s' not found.""" % (name, config['path']))
-
-        module = imp.load_source('script', config['path'])
-        return module.main(self, *args, **kwargs)

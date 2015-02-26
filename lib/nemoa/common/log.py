@@ -41,7 +41,8 @@ def log(*args, **kwargs):
 
         # initialize file logger, remove all previous handlers
         # and set up file handler
-        if not 'logfile' in kwargs.keys(): return True
+        if not 'logfile' in kwargs or not kwargs['logfile']:
+            return True
         logfile = kwargs['logfile']
 
         if not os.path.exists(os.path.dirname(logfile)):

@@ -90,10 +90,6 @@ class NemoaTestCase(unittest.TestCase):
         test = isinstance(filetype, basestring)
         self.assertTrue(test)
 
-    def test_nemoa_config_get_workspace(self):
-        test = isinstance(nemoa.get('workspace'), basestring)
-        self.assertTrue(test)
-
     def test_nemoa_config_get_default_filetype_model(self):
         filetype = nemoa.get('default', 'filetype', 'model')
         test = isinstance(filetype, basestring)
@@ -102,6 +98,10 @@ class NemoaTestCase(unittest.TestCase):
     def test_nemoa_config_get_default_filetype_script(self):
         filetype = nemoa.get('default', 'filetype', 'script')
         test = isinstance(filetype, basestring)
+        self.assertTrue(test)
+
+    def test_nemoa_config_get_workspace(self):
+        test = isinstance(nemoa.get('workspace'), basestring)
         self.assertTrue(test)
 
     def test_nemoa_config_list_bases(self):
@@ -325,11 +325,11 @@ class NemoaTestCase(unittest.TestCase):
         test = model.evaluate('system', 'error') < 0.5
         self.assertTrue(test)
 
-def main(workspace, args, **kwargs):
+def main(workspace, *args, **kwargs):
     _WORKSPACE = workspace
     suite = unittest.TestLoader().loadTestsFromTestCase(NemoaTestCase)
 
-    nemoa.log('testing nemoa ' + nemoa.about('version'))
+    nemoa.log('testing nemoa ' + nemoa.__version__)
     unittest.TextTestRunner(verbosity = 2).run(suite)
 
     return True
