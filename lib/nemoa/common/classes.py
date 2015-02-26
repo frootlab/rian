@@ -733,10 +733,6 @@ class Config:
         # change to previous workspace if necessary
         if chdir:
             if current:
-                print 'hi'
-                
-                nemoa.test = current
-                
                 self._set_workspace(current.get('name'),
                     base = current.get('base'))
             else:

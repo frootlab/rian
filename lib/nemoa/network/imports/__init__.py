@@ -49,8 +49,11 @@ def load(path, filetype = None, **kwargs):
         if 'base' in kwargs:
             pathkwargs['base'] = kwargs.pop('base')
         path = nemoa.path('network', name, **pathkwargs)
+        if not path:
+            return nemoa.log('warning', """could not import network:
+                invalid network name.""") or {}
         if not os.path.isfile(path):
-            return nemoa.log('error', """could not import network:
+            return nemoa.log('warning', """could not import network:
                 file '%s' does not exist.""" % path) or {}
 
     # get filetype (from file extension if not given)

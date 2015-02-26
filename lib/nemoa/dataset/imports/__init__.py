@@ -43,8 +43,11 @@ def load(path, filetype = None, **kwargs):
         if 'base' in kwargs:
             pathkwargs['base'] = kwargs.pop('base')
         path = nemoa.path('dataset', name, **pathkwargs)
+        if not path:
+            return nemoa.log('warning', """could not import dataset:
+                invalid dataset name.""") or {}
         if not os.path.isfile(path):
-            return nemoa.log('error', """could not import dataset:
+            return nemoa.log('warning', """could not import dataset:
                 file '%s' does not exist.""" % path) or {}
 
     # get filtype from file extension if not given

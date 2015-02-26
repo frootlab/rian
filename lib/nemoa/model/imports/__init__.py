@@ -37,8 +37,11 @@ def load(path, filetype = None, **kwargs):
         if 'base' in kwargs:
             pathkwargs['base'] = kwargs.pop('base')
         path = nemoa.path('model', name, **pathkwargs)
+        if not path:
+            return nemoa.log('warning', """could not import model:
+                invalid model name.""") or {}
         if not os.path.isfile(path):
-            return nemoa.log('error', """could not import model:
+            return nemoa.log('warning', """could not import model:
                 file '%s' does not exist.""" % path) or {}
 
     # get filtype from file extension if not given
