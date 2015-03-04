@@ -10,7 +10,6 @@ import nemoa.common.console
 import nemoa.common.csvfile
 import nemoa.common.dict
 import nemoa.common.inifile
-import nemoa.common.log
 import nemoa.common.math
 import nemoa.common.module
 import nemoa.common.ndarray
