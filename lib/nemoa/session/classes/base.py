@@ -11,13 +11,13 @@ class Session:
 
     _config = None
     _default = {
-        'log': {
-            'mode': 'exec',
-            'indent': 0 },
         'current': {
             'workspace': None,
             'base': None,
-            'path': {} },
+            'mode': 'exec',
+            'path': {},
+            'shell': {
+                'indent': 0 }},
         'default': {
             'basepath': {
                 'cwd': '%user_cwd%',
@@ -56,7 +56,7 @@ class Session:
         self._config = nemoa.common.dict.merge(kwargs, self._default)
 
         # enable error handling
-        self.log('init')
+        self._set_workspace_reset()
 
         # update basepaths from user configuration
         configfile = self._config['default']['path']['baseconf']
@@ -95,8 +95,9 @@ class Session:
         if key == 'base': return self._get_base()
         if key == 'default': return self._get_default(*args, **kwargs)
         if key == 'list': return self._get_list(*args, **kwargs)
-        #if key == 'mode': return self._get_mode(*args, **kwargs)
+        if key == 'mode': return self._get_mode(*args, **kwargs)
         if key == 'path': return self._get_path(*args, **kwargs)
+        if key == 'shell': return self._get_shell(*args, **kwargs)
         if key == 'workspace': return self._get_workspace()
 
         if key in self._config['register']:
@@ -228,6 +229,10 @@ class Session:
             workspaces.append(os.path.basename(subdir))
 
         return sorted(workspaces)
+
+    def _get_mode(self):
+        """Get current session mode."""
+        return self._config['current'].get('mode', 'exec')
 
     def _get_objconfig(self, objtype, name = None,
         workspace = None, base = 'user', attribute = None):
@@ -420,27 +425,35 @@ class Session:
 
         return path
 
+    def _get_shell(self, key = None, *args, **kwargs):
+        """Get shell parameters."""
+
+        if key == 'indent': return self._get_shell_indent()
+
+        return None
+
+    def _get_shell_indent(self):
+        """Get shell indent."""
+        return self._config['current'].get(
+            'shell', {}).get('indent', 0)
+
     def _get_workspace(self):
         """Get name of current workspace."""
-        return self._config['current'].get('workspace', '')
+        return self._config['current'].get('workspace', None)
 
     def log(self, key = None, *args, **kwargs):
         """Log message."""
 
         if not key: return True
 
-        if key == 'init': return self._log_init(*args, **kwargs)
-        if key == 'set': return self._log_set(*args, **kwargs)
-        if key == 'get': return self._log_get(*args, **kwargs)
-
         import inspect
         import logging
         import platform
         import traceback
 
-        indent = self._config['log']['indent']
+        indent = self._get_shell_indent()
         toplevel = (indent == 0)
-        mode = self._config['log']['mode']
+        mode = self._get_mode()
 
         # get arguments
         if len(args) == 0:
@@ -457,7 +470,7 @@ class Session:
                 'yellow': '',
                 'red': '',
                 'green': '',
-                'default': ''}
+                'default': '' }
         else:
             color = {
                 'blue': '\033[94m',
@@ -553,82 +566,8 @@ class Session:
             file_log.info(file_msg)
             return True
 
-        return self.log('warning', "unknown logging command '%s'!" % (cmd))
-
-    def _log_init(self, *args, **kwargs):
-        """ """
-
-        import os
-        import logging
-
-        # initialize null logger, remove all previous handlers
-        # and set up null handler
-        logger_null = logging.getLogger(__name__ + '.null')
-        for h in logger_null.handlers: logger_null.removeHandler(h)
-        if hasattr(logging, 'NullHandler'):
-            null_handler = logging.NullHandler()
-            logger_null.addHandler(null_handler)
-
-        # initialize console logger, remove all previous handlers
-        # and set up console handler
-        logger_console = logging.getLogger(__name__ + '.tty')
-        logger_console.setLevel(logging.INFO)
-        for h in logger_console.handlers:
-            logger_console.removeHandler(h)
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(
-            logging.Formatter(fmt = '%(message)s'))
-        logger_console.addHandler(console_handler)
-
-        # initialize file logger, remove all previous handlers
-        # and set up file handler
-        if not 'logfile' in kwargs or not kwargs['logfile']:
-            return True
-        logfile = kwargs['logfile']
-
-        if not os.path.exists(os.path.dirname(logfile)):
-            os.makedirs(os.path.dirname(logfile))
-        logger_file = logging.getLogger(__name__ + '.file')
-        logger_file.setLevel(logging.INFO)
-        for h in logger_file.handlers: logger_file.removeHandler(h)
-        file_handler = logging.FileHandler(logfile)
-        file_handler.setFormatter(logging.Formatter(
-            fmt = '%(asctime)s %(levelname)s %(message)s',
-            datefmt = '%m/%d/%Y %H:%M:%S'))
-        logger_file.addHandler(file_handler)
-
-        return True
-
-    def _log_set(self, *args, **kwargs):
-        """ """
-        
-        # set logging mode
-        if 'mode' in kwargs and kwargs['mode'] \
-            in ['debug', 'exec', 'shell', 'silent']:
-            self._config['log']['mode'] = kwargs['mode']
-
-        # set indent
-        if 'indent' in kwargs:
-            if isinstance(kwargs['indent'], int):
-                self._config['log']['indent'] = kwargs['indent']
-            elif isinstance(kwargs['indent'], str) \
-                and kwargs['indent'][0] in ['+', '-']:
-                size = int(kwargs['indent'][1:])
-                self._config['log']['indent'] += size \
-                    if kwargs['indent'][0] == '+' else -size
-                    
-        return True
-
-    def _log_get(self, *args, **kwargs):
-        """ """
-            
-        # return global logging parameters.
-        if len(args) == 0:
-            return self._config['log']
-        if len(args) == 1 and args[0] in self._config['log'].keys():
-            return self._config['log'][args[0]]
-
-        return False
+        return self.log('warning', "unknown logging command '%s'!"
+            % (cmd))
 
     def run(self, script = None, *args, **kwargs):
         """ """
@@ -680,25 +619,57 @@ class Session:
         """Set configuration parameters and env vars."""
 
         # 2do: set(workspace = '', base = '')
+        if key == 'shell': return self._set_shell(*args, **kwargs)
+        if key == 'mode': return self._set_mode(*args, **kwargs)
         if key == 'workspace':
             return self._set_workspace(*args, **kwargs)
 
         return nemoa.log('warning', "unknown key '%s'" % key) or None
 
+    def _set_shell(self, *args, **kwargs):
+        """Set shell parameters."""
+
+        if 'indent' in kwargs:
+            return self._set_shell_indent(kwargs['indent'])
+
+        return None
+
+    def _set_shell_indent(self, indent):
+        """Set shell indent."""
+
+        if isinstance(indent, int):
+            self._config['current']['shell']['indent'] = indent
+            return True
+
+        if isinstance(indent, basestring) and indent[0] in ['+', '-']:
+            self._config['current']['shell']['indent'] += int(indent)
+            return True
+
+        return None
+
+    def _set_mode(self, mode = None, *args, **kwargs):
+        """Set session mode."""
+
+        if not mode in ['debug', 'exec', 'shell', 'silent']:
+            return None
+
+        self._config['current']['mode'] = mode
+
+        return True
+
     def _set_workspace(self, workspace, base = None,
-        refresh = False, scandir = True, setlog = True):
+        update = False, scandir = True, logging = True):
         """Set workspace."""
 
-        if not workspace:
-            nemoa.log('init', logfile = None)
-            self._config['workspace'] = None
-            self._config['current']['path'] = {}
-            self._config['current']['workspace'] = None
-            self._config['current']['base'] = None
-            return True
-        if workspace == self._get_workspace() and not refresh:
-            # 2do: do not ignore base
-            return True
+        # reset workspace if given workspace is None
+        if not workspace: return self._set_workspace_reset()
+
+        # return if workspace did not change
+        oldworkspace = (workspace == self._get_workspace())
+        oldbase = (base == None or base == self._get_workspace())
+        if oldworkspace and oldbase and not update: return True
+
+        # detect base if base is not given
         if not base:
             bases = self._get_list_bases(workspace)
             if not bases:
@@ -710,7 +681,9 @@ class Session:
                     '%s': workspace found in different searchpaths:
                     %s.""" % (workspace, ', '.join(bases))) or None
             base = bases[0]
-        elif not workspace in self._get_list_workspaces(base = base):
+        
+        # test if base and workspace are valid
+        if not workspace in self._get_list_workspaces(base = base):
             basepath = self._get_path_expand(
                 self._config['default']['basepath'][base])
             return nemoa.log('warning', """could not open workspace
@@ -726,28 +699,86 @@ class Session:
             self._config['current']['path'][key] = \
                 self._get_path_expand(val)
 
-        # (optional) initialise logfile of new workspace
-        if setlog:
-            logpath = self._get_path_expand(
-                self._config['current']['path']['logfile'])
-            nemoa.log('init', logfile = logpath)
+        retval = True
+
+        # (optional) init logfile of new workspace
+        if retval and logging: retval &= self._set_workspace_logging()
 
         # open workspace
-        self._config['workspace'] = \
-            nemoa.workspace.open(workspace, base = base)
+        if retval:
+            instance = nemoa.workspace.open(workspace, base = base)
+            retval &= bool(instance)
+            if instance: self._config['workspace'] = instance
 
         # (optional) scan workspace folder for objects / files
-        if scandir:
-            self._set_workspace_scandir()
+        if retval and scandir: retval &= self._set_workspace_scandir()
+
+        return retval
+
+    def _set_workspace_logging(self):
+        """Update console and fileloggers."""
+
+        import os
+        import logging
+
+        # initialize null logger, remove all previous handlers
+        # and set up null handler
+        logger_null = logging.getLogger(__name__ + '.null')
+        for h in logger_null.handlers: logger_null.removeHandler(h)
+        if hasattr(logging, 'NullHandler'):
+            null_handler = logging.NullHandler()
+            logger_null.addHandler(null_handler)
+
+        # initialize console logger, remove all previous handlers
+        # and set up console handler
+        logger_console = logging.getLogger(__name__ + '.tty')
+        logger_console.setLevel(logging.INFO)
+        for h in logger_console.handlers:
+            logger_console.removeHandler(h)
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(
+            logging.Formatter(fmt = '%(message)s'))
+        logger_console.addHandler(console_handler)
+
+        # initialize file logger, remove all previous handlers
+        # and set up file handler
+        logfile = self._config['current']['path'].get('logfile', None)
+        if logfile:
+            logfile = self._get_path_expand(logfile)
+            if not os.path.exists(os.path.dirname(logfile)):
+                os.makedirs(os.path.dirname(logfile))
+            logger_file = logging.getLogger(__name__ + '.file')
+            logger_file.setLevel(logging.INFO)
+            for h in logger_file.handlers: logger_file.removeHandler(h)
+            file_handler = logging.FileHandler(logfile)
+            file_handler.setFormatter(logging.Formatter(
+                fmt = '%(asctime)s %(levelname)s %(message)s',
+                datefmt = '%m/%d/%Y %H:%M:%S'))
+            logger_file.addHandler(file_handler)
 
         return True
+
+    def _set_workspace_reset(self):
+        """ """
+        
+        import copy
+        
+        retval = True
+        
+        self._config['current'] = \
+            copy.deepcopy(self._default['current'])
+        self._config['workspace'] = None
+        
+        retval &= self._set_workspace_logging()
+        
+        return retval
 
     def _set_workspace_scandir(self, *args, **kwargs):
         """Scan workspace for files."""
 
         import glob
 
-        # change current workspace if necessary
+        # change current workspace (if necessary)
         chdir = False
         workspace = self._get_workspace()
         base = None
@@ -765,8 +796,8 @@ class Session:
 
         # scan workspace for objects
         for objtype in self._config['register'].keys():
-            filemask = self._get_path_expand(
-                self._config['current']['path'][objtype + 's'], '*.*')
+            dirmask = self._config['current']['path'][objtype + 's']
+            filemask = self._get_path_expand(dirmask, '*.*')
             if objtype == 'dataset':
                 filetypes = nemoa.dataset.imports.filetypes()
             elif objtype == 'network':
@@ -779,25 +810,25 @@ class Session:
                 filetypes = ['py']
 
             # scan for files
-            for path in glob.iglob(filemask):
-                filetype = nemoa.common.ospath.fileext(path)
+            objregister = self._config['register'][objtype]
+            for filepath in glob.iglob(filemask):
+                filetype = nemoa.common.ospath.fileext(filepath)
                 if not filetype in filetypes: continue
-                iname = nemoa.common.ospath.basename(path)
-                iworkspace = self._get_workspace()
-                ibase = self._get_base()
-                fullname = '%s.%s.%s' % (ibase, iworkspace, iname)
+                basename = nemoa.common.ospath.basename(filepath)
+                filespace = self._get_workspace()
+                filebase = self._get_base()
+                fullname = '%s.%s.%s' % (filebase, filespace, basename)
                 
-                if fullname in self._config['register'][objtype]:
-                    continue
+                if fullname in objregister: continue
 
-                # add configuration to object tree
-                self._config['register'][objtype][fullname] = {
-                    'name': iname,
+                # register object configuration
+                objregister[fullname] = {
+                    'base': filebase,
+                    'fullname': fullname,
+                    'name': basename,
+                    'path': filepath,
                     'type': objtype,
-                    'path': path,
-                    'workspace': iworkspace,
-                    'base': ibase,
-                    'fullname': fullname }
+                    'workspace': filespace }
 
         # change to previous workspace if necessary
         if chdir:

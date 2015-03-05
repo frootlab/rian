@@ -70,7 +70,7 @@ class Network(nemoa.common.classes.ClassesBaseClass):
             no valid dataset instance given:""")
 
         nemoa.log("configure network: '%s'" % (self._config['name']))
-        nemoa.log('set', indent = '+1')
+        nemoa.set('shell', indent = '+1')
 
         # configure network to dataset
         groups = dataset.get('colgroups')
@@ -81,7 +81,8 @@ class Network(nemoa.common.classes.ClassesBaseClass):
                 self._configure_graph(
                     nodelist = {'layer': group, 'list': groups[group]})
 
-        nemoa.log('set', indent = '-1')
+        nemoa.set('shell', indent = '-1')
+
         return True
 
     def _configure_graph(self, nodelist = None, edgelist = None):

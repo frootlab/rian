@@ -17,7 +17,7 @@ def console():
 
         import nemoa
 
-        nemoa.log('set', mode = 'silent')
+        nemoa.set('mode', 'silent')
         if not nemoa.open(workspace): return False
         print 'Scripts in workspace %s:\n' % (nemoa.get('workspace'))
         for script in nemoa.list('scripts'):
@@ -56,7 +56,7 @@ def console():
 
         import nemoa
 
-        nemoa.log('set', mode = 'silent')
+        nemoa.set('mode', 'silent')
         workspaces = nemoa.list('workspaces', base = 'user')
         print 'Workspaces:\n'
         for workspace in workspaces: print '    %s' % (workspace)
@@ -78,7 +78,7 @@ def console():
         import os
 
         os.system('cls' if os.name == 'nt' else 'clear')
-        nemoa.log('set', mode = 'shell')
+        nemoa.set('mode', 'shell')
         IPython.embed(banner1 = 'nemoa %s\n' % nemoa.__version__)
 
         return True

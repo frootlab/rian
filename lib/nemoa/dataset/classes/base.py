@@ -241,7 +241,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         """
 
         nemoa.log('preprocessing data')
-        nemoa.log('set', indent = '+1')
+        nemoa.set('shell', indent = '+1')
 
         stratify = None
         normalize = None
@@ -270,7 +270,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         if normalize: retval &= self._initialize_normalize(normalize)
         if transform: retval &= self._initialize_transform(transform)
 
-        nemoa.log('set', indent = '-1')
+        nemoa.set('shell', indent = '-1')
 
         return retval
 
@@ -510,7 +510,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
 
         nemoa.log("transform data using system '%s'." % (system.name))
 
-        nemoa.log('set', indent = '+1')
+        nemoa.set('shell', indent = '+1')
         if mapping == None: mapping = system.mapping
 
         source_columns = system.get('units', layer = mapping[0])
@@ -563,7 +563,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
             colmapping[column] = column
 
         self._set_columns(target_columns, colmapping)
-        nemoa.log('set', indent = '-1')
+        nemoa.set('shell', indent = '-1')
         return True
 
     def get(self, key = 'name', *args, **kwargs):

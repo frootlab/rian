@@ -12,7 +12,7 @@ _WORKSPACE = None
 class NemoaTestCase(unittest.TestCase):
 
     def setUp(self):
-        nemoa.log('set', mode = 'silent')
+        nemoa.set('mode', 'silent')
         self.workspace = _WORKSPACE
 
     def test_nemoa_config_about(self):
