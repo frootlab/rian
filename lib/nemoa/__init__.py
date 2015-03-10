@@ -9,7 +9,7 @@ or statistical values.
 
 """
 
-__version__     = '0.4.283'
+__version__     = '0.4.284'
 __status__      = 'Development'
 __description__ = 'Deep data analysis and visualization'
 __url__         = 'https://github.com/fishroot/nemoa'
@@ -30,15 +30,13 @@ import nemoa.session
 import nemoa.system
 import nemoa.workspace
 
-__session__ = {}
-
 def about(*args, **kwargs):
     """Get meta information."""
     return get('about', *args, **kwargs)
 
 def get(*args, **kwargs):
     """Get value from configuration instance."""
-    return config().get(*args, **kwargs)
+    return nemoa.session.get(*args, **kwargs)
 
 def list(*args, **kwargs):
     """Return list of given objects."""
@@ -46,7 +44,7 @@ def list(*args, **kwargs):
 
 def log(*args, **kwargs):
     """Log errors, warnings, notes etc. to console and logfiles."""
-    return config().log(*args, **kwargs)
+    return nemoa.session.log(*args, **kwargs)
 
 def open(*args, **kwargs):
     """Open workspace instance from file in search path."""
@@ -58,14 +56,8 @@ def path(*args, **kwargs):
 
 def run(*args, **kwargs):
     """Run python script in nemoa."""
-    return config().run(*args, **kwargs)
-
-def config():
-    """Return session instance."""
-    if not 'manager' in __session__:
-        __session__['manager'] = nemoa.session.new()
-    return __session__['manager']
+    return nemoa.session.run(*args, **kwargs)
 
 def set(*args, **kwargs):
     """Set value in configuration instance."""
-    return config().set(*args, **kwargs)
+    return nemoa.session.set(*args, **kwargs)

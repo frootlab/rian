@@ -570,7 +570,7 @@ class Session:
             % (cmd))
 
     def run(self, script = None, *args, **kwargs):
-        """ """
+        """Run python script."""
 
         import imp
         import os
