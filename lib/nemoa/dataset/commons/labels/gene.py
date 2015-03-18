@@ -53,11 +53,11 @@ class gene:
         filter = False, quiet = True):
         """Return list with converted gene labels using R/bioconductor"""
 
-        if self.robjects == None:
+        if not self.robjects:
             nemoa.log('error', """annotation: you have to install
                 python package 'rpy2'""")
             return [], list
-        if output_format == None or output_format == 'default':
+        if not output_format or output_format == 'default':
             output_format = self.default
         if input_format == output_format:
             return list, []

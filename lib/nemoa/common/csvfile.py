@@ -73,16 +73,12 @@ def getdelim(path, delimiters = [',', ';', '\t', ' '],
         for line in csvfile:
 
             # check termination criteria
-            if not delimiter == None:
-                break
-            if lines > maxprobesize:
+            if bool(delimiter) or lines > maxprobesize:
                 break
 
             # check exclusion criteria
-            stripped_line = line.lstrip(' ')
-            if stripped_line.startswith('#'):
-                continue
-            if stripped_line  in ['\n', '\r\n']:
+            sline = line.lstrip(' ')
+            if sline.startswith('#') or sline in ['\n', '\r\n']:
                 continue
 
             # increase probe
@@ -97,7 +93,7 @@ def getdelim(path, delimiters = [',', ';', '\t', ' '],
                     continue
                 delimiter = dialect.delimiter
 
-    if delimiter == None:
+    if not delimiter:
         return nemoa.log('warning', """could not determine delimiter
             of csv file '%s'!""" % path)
 
@@ -147,7 +143,7 @@ def getlabels(path, delimiter = None):
                 second = line
                 break
 
-    if first == None or second == None:
+    if not first or not second:
         return nemoa.log('error', """could not get column labels:
             file '%s' is not valid.""" % path)
 
@@ -198,15 +194,12 @@ def getlabelcolumn(path, delimiter = None):
         for line in csvfile:
 
             # check exclusion criteria
-            stripped_line = line.lstrip(' ')
-            if stripped_line.startswith('#'):
-                continue
-            if stripped_line in ['\n', '\r\n']:
+            sline = line.lstrip(' ')
+            if sline.startswith('#') or sline in ['\n', '\r\n']:
                 continue
 
-            if first == None:
-                first = line
-            elif second == None:
+            if not first: first = line
+            elif not second:
                 second = line
                 break
                 
@@ -214,14 +207,11 @@ def getlabelcolumn(path, delimiter = None):
         return nemoa.log('error', """could not get csv row label column
             id: file '%s' is not valid.""" % (path))
 
-    col_values = second.split(delimiter)
-    col_values = [col.strip('\"\' \n') for col in col_values]
-
-    for col_id, value in enumerate(col_values):
-        try:
-            float(value)
-        except ValueError:
-            return col_id
+    colvals = second.split(delimiter)
+    colvals = [col.strip('\"\' \n') for col in colvals]
+    for colid, colval in enumerate(colvals):
+        try: float(colval)
+        except ValueError: return colid
 
     return False
 

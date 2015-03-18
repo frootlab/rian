@@ -4,7 +4,6 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import copy
 import nemoa
 import numpy
 
@@ -231,7 +230,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         return True
 
     def initialize(self, system = None):
-        """Initialize data / data preprocessing.
+        """Initialize tables and data preprocessing.
 
         Stratification, normalization and transformation of tables.
 
@@ -241,7 +240,6 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         """
 
         nemoa.log('preprocessing data')
-        nemoa.set('shell', indent = '+1')
 
         stratify = None
         normalize = None
@@ -269,8 +267,6 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         if stratify: retval &= self._initialize_stratify(stratify)
         if normalize: retval &= self._initialize_normalize(normalize)
         if transform: retval &= self._initialize_transform(transform)
-
-        nemoa.set('shell', indent = '-1')
 
         return retval
 
@@ -503,6 +499,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
 
     def _initialize_transform_system(self, system = None,
         mapping = None, func = 'expect'):
+        """ """
 
         if not nemoa.common.type.issystem(system):
             return nemoa.log('error', """could not transform data
@@ -510,7 +507,6 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
 
         nemoa.log("transform data using system '%s'." % (system.name))
 
-        nemoa.set('shell', indent = '+1')
         if mapping == None: mapping = system.mapping
 
         source_columns = system.get('units', layer = mapping[0])
@@ -557,14 +553,10 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
             # set record array
             self._tables[table] = new_rec_array
 
-        # create column mapping
-        colmapping = {}
-        for column in target_columns:
-            colmapping[column] = column
+        # create trivial column mapping
+        colmapping = { col: col for col in target_columns }
 
-        self._set_columns(target_columns, colmapping)
-        nemoa.set('shell', indent = '-1')
-        return True
+        return self._set_columns(target_columns, colmapping)
 
     def get(self, key = 'name', *args, **kwargs):
         """Get meta information and content."""
@@ -687,6 +679,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         return map(mapper, columns)
 
     def _get_colgroups(self):
+        """Get grouped lists of columns."""
         groups = {}
         for group, label in self._config['columns']:
             if not group: continue
@@ -695,15 +688,16 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         return groups
 
     def _get_colfilter(self, name):
-        if not name in self._config['colfilter']:
-            nemoa.log('warning', "unknown column filter '" + name + "'!")
-            return []
-        return self._config['colfilter'][name]
+        """Get column filter by name."""
+        return self._config['colfilter'].get(name, nemoa.log('warning',
+            "unknown column filter: '%s'." % name) or [])
 
     def _get_colfilters(self):
+        """Get list of column filters."""
         return self._config['colfilter'].keys()
 
     def _get_rows(self):
+        """Get list of row names."""
         row_names = []
         for table in self._tables.keys():
             labels = self._tables[table]['label'].tolist()
@@ -711,6 +705,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         return row_names
 
     def _get_rowgroups(self):
+        """Get list of tables."""
         return self._tables.keys()
 
     def _get_rowfilter(self, name):
@@ -720,6 +715,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         return self._config['rowfilter'][name]
 
     def _get_rowfilters(self):
+        """Get list of row filters."""
         return self._config['rowfilter'].keys()
 
     def _get_data(self, size = 0, rows = '*', cols = '*',
@@ -767,7 +763,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         # stratify and filter data
         src_stack = ()
         for table in self._tables.iterkeys():
-            # Todo: fix size: size + 1 -> size
+            # 2do: fix size: size + 1 -> size
             if size > 0:
                 src_data = self._get_table(table = table,
                     rows = rows, size = size + 1, labels = True)
@@ -907,9 +903,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         """
 
         if not isinstance(type, basestring): return data
-
-        if type.lower() == 'none':
-            return data
+        if type.lower() == 'none': return data
 
         # gaussian noise model
         elif type.lower() == 'gauss':
@@ -967,6 +961,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         """
 
         if table == None:
+            import copy
             return copy.deepcopy(self._tables)
 
         # check table name
@@ -1055,12 +1050,14 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         if key == 'tables': return self._get_tables(*args, **kwargs)
 
         return nemoa.log('error', """could not get dataset copy:
-            unknown key '%s'.""" % (key))
+            unknown key '%s'.""" % key) or None
 
     def _get_config(self, key = None, *args, **kwargs):
         """Get configuration or configuration value."""
 
-        if key == None: return copy.deepcopy(self._config)
+        if key == None:
+            import copy
+            return copy.deepcopy(self._config)
 
         if isinstance(key, str) and key in self._config.keys():
             if isinstance(self._config[key], dict):
@@ -1068,18 +1065,20 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
             return self._config[key]
 
         return nemoa.log('error', """could not get configuration:
-            unknown key '%s'.""" % (key))
+            unknown key '%s'.""" % key) or None
 
     def _get_tables(self, key = None):
         """Get dataset tables."""
 
-        if key == None: return copy.deepcopy(self._tables)
+        if key == None:
+            import copy
+            return copy.deepcopy(self._tables)
 
         if isinstance(key, str) and key in self._tables.keys():
             return self._tables[key]
 
         return nemoa.log('error', """could not get table:
-            unknown tables name '%s'.""" % (key))
+            unknown tables name '%s'.""" % key) or None
 
     def set(self, key = None, *args, **kwargs):
         """Set meta information, parameters and data of dataset."""
@@ -1208,8 +1207,8 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
 
         # initialize configuration dictionary
         # 2Do: use dict.merge
-        import copy
         if not self._config:
+            import copy
             self._config = copy.deepcopy(self._default)
 
         # update configuration dictionary

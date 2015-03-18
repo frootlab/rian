@@ -16,7 +16,7 @@ def filetypes(filetype = None):
     for key, val in archive_types.items():
         type_dict[key] = ('archive', val)
 
-    if filetype == None:
+    if not filetype:
         return {key: val[1] for key, val in type_dict.items()}
     if filetype in type_dict:
         return type_dict[filetype]

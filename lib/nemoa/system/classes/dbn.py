@@ -141,111 +141,99 @@ class DBN(nemoa.system.classes.ann.ANN):
     def _algorithm_dbn_pretraining(self, dataset, schedule, tracker):
         """Pretraining model using Restricted Boltzmann Machines."""
 
-        def _copy_attributes(from_dict, to_dict):
-            for attrib in from_dict.keys():
-
-                # keep name and visibility of layers
-                if attrib in ['id', 'layer', 'layer_id', 'visible',
-                    'class']:
-                    continue
-
-                to_dict[attrib] = from_dict[attrib]
-            return True
-
         if not 'units' in self._params:
             return nemoa.log('error', """could not configure subsystems:
-                no layers have been defined!""")
+                no layers have been defined!""") or None
 
-        # create and configure subsystems
-        subsystems = []
-
-        # create backup of dataset values (before transformation)
+        # create backup of dataset (before transformation)
         dataset_backup = dataset.get('copy')
-
-        all_visible = self._params['units'][0]['id'] \
-            + self._params['units'][-1]['id']
-
         cid = (len(self._units) - 1) / 2
-
         rbmparams = { 'units': [], 'links': [] }
-        params = self._params.copy()
+
+        import copy
+        params = copy.deepcopy(self._params)
 
         for lid in xrange(cid):
 
             src = self._params['units'][lid]
+            srcnodes = src['id'] + self._params['units'][-1]['id'] \
+                if src['visible'] else src['id']
             tgt = self._params['units'][lid + 1]
+            tgtnodes = tgt['id']
             links = self._params['links'][(lid, lid + 1)]
-
-            # create network of subsystem
-            name = '%s ↔ %s' % (src['layer'], tgt['layer'])
-            visible_nodes = all_visible if src['visible'] else src['id']
-            network = nemoa.network.create('factor', name = name,
-                visible_nodes = visible_nodes,
-                visible_type = src['class'],
-                hidden_nodes = tgt['id'],
-                hidden_type = tgt['class'])
-
-            # create subsystem and configure with network
-            config = { 'name': name, 'type': None }
-            if src['class'] == 'gauss':
-                if tgt['class'] == 'sigmoid':
-                    config['type'] = 'rbm.GRBM'
-            elif src['class'] == 'sigmoid':
-                if tgt['class'] == 'sigmoid':
-                    config['type'] = 'rbm.RBM'
-            if not config['type']:
+            linkclass = (src['class'], tgt['class'])
+            name = '%s <-> %s' % (src['layer'], tgt['layer'])
+            systype = {
+                ('gauss', 'sigmoid'): 'rbm.GRBM',
+                ('sigmoid', 'sigmoid'): 'rbm.RBM' }.get(
+                    linkclass, None)
+            if not systype:
                 return nemoa.log('error', """could not create
-                    rbm: unsupported pair of unit classes '%s ↔ %s'"""
-                    % (src['class'], tgt['class']))
+                    rbm: unsupported pair of unit classes '%s <-> %s'"""
+                    % linkclass) or None
 
-            system = nemoa.system.new(config = config)
+            # create subsystem
+            system = nemoa.system.new(config = {
+                'name': name, 'type': systype,
+                'init': { 'ignore_units': ['visible'] if lid else [] }})
+
+            # create subnetwork and configure subsystem with network
+            network = nemoa.network.create('factor', name = name,
+                visible_nodes = srcnodes, visible_type = src['class'],
+                hidden_nodes = tgtnodes, hidden_type = tgt['class'])
             system.configure(network)
 
-            # add system to list of subsystems
-            subsystems.append(system)
-
-            # link rbm parameters
-            # in first layer link visible, links and hidden
-            # in other layers only link links and hidden
-            links['init'] = system._params['links'][(0, 1)]
-            if lid == 0: src['init'] = system._units['visible'].params
-            tgt['init'] = system._units['hidden'].params
-
-            if lid: ignore_units = ['visible']
-            else: ignore_units = []
-            system._config['init']['ignore_units'] = ignore_units
-            system._config['optimize']['ignore_units'] = ignore_units
-
-            # transform dataset with previous system / fix lower stack
+            # transform dataset with previous system and initialize
+            # subsystem with dataset
             if lid:
-                prev_sys = subsystems[lid - 1]
-                visible_layer = prev_sys._params['units'][0]['layer']
-                hidden_layer = prev_sys._params['units'][1]['layer']
-                mapping = (visible_layer, hidden_layer)
-
+                vlayer = prevsys._params['units'][0]['layer']
+                hlayer = prevsys._params['units'][1]['layer']
                 dataset._initialize_transform_system(
-                    system = prev_sys, mapping = mapping,
+                    system = prevsys, mapping = (vlayer, hlayer),
                     func = 'expect')
+            dataset.set('colfilter', visible = srcnodes)
+            #system.initialize(dataset)
 
-            # add / update dataset group 'visible'
-            visible_columns = system.get('units', layer = 'visible')
-            dataset.set('colfilter', visible = visible_columns)
+            # create model
+            model = nemoa.model.new(
+                config = {'type': 'base.Model', 'name': name},
+                dataset = dataset, network = network, system = system)
 
-            # initialize system parameters
-            system.initialize(dataset)
-
+            # copy parameters from perantal subsystems hidden units
+            # to current subsystems visible units
             if lid:
-                _copy_attributes(rbmparams['units'][-1],
-                    system._params['units'][0])
+                dsrc = rbmparams['units'][-1]
+                dtgt = model.system._params['units'][0]
+                lkeep = ['id', 'layer', 'layer_id', 'visible', 'class']
+                lcopy = [key for key in dsrc.keys() if not key in lkeep]
+                for key in lcopy: dtgt[key] = dsrc[key]
 
-            # optimize system parameter
-            system.optimize(dataset, schedule)
+            # reference parameters of current subsystem
+            # in first layer reference visible, links and hidden
+            # in other layers only reference links and hidden
+            links['init'] = model.system._params['links'][(0, 1)]
+            if lid == 0:
+                src['init'] = model.system._units['visible'].params
+            tgt['init'] = model.system._units['hidden'].params
+
+            # update current optimization schedule from given schedule
+            #ddef = model.system._default['optimize']
+            #dcur = model.system._config['optimize']
+            #darg = schedule[model.system.type]
+            #config = nemoa.common.dict.merge(dcur, ddef)
+            #config = nemoa.common.dict.merge(darg, config)
+            #config['ignore_units'] = ['visible'] if lid else []
+            #system._config['optimize'] = config
+
+            model.optimize(schedule)
 
             if not lid:
                 rbmparams['units'].append(
-                    system.get('layer', 'visible'))
-            rbmparams['links'].append(system._params['links'][(0, 1)])
-            rbmparams['units'].append(system.get('layer', 'hidden'))
+                    model.system.get('layer', 'visible'))
+            rbmparams['links'].append(model.system._params['links'][(0, 1)])
+            rbmparams['units'].append(model.system.get('layer', 'hidden'))
+
+            prevsys = model.system
 
         # reset data to initial state (before transformation)
         dataset.set('copy', **dataset_backup)
@@ -296,7 +284,7 @@ class DBN(nemoa.system.classes.ann.ANN):
         del units[central_lid]['init']
 
         # remove output units from input layer, and vice versa
-        nemoa.log('cleanup unit and linkage parameter arrays')
+        nemoa.log('cleanup unit and linkage parameter arrays.')
         mapping = self._get_mapping()
         self._remove_units(mapping[0], outputs)
         self._remove_units(mapping[-1], inputs)
@@ -309,7 +297,10 @@ class DBN(nemoa.system.classes.ann.ANN):
         # optimize system parameters
         force = self._config['optimize']['meta_algorithm']
         self._config['optimize']['meta_algorithm'] = None
-        self.optimize(dataset, schedule)
+        algorithm = self._config['optimize']['algorithm']
+        optimizer = self._get_algorithm(algorithm,
+            category = ('system', 'optimization'))
+        optimizer['reference'](dataset, schedule, tracker)
         self._config['optimize']['meta_algorithm'] = force
 
         return True

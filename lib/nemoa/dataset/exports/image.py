@@ -17,7 +17,7 @@ def filetypes():
 def show(dataset, plot = None, **kwargs):
 
     # get class for plotting from attribute 'plot'
-    if plot == None: plot = 'histogram'
+    if not plot: plot = 'histogram'
     class_name = plot.lower().title()
     module_name = save.__module__
     try:
@@ -64,7 +64,7 @@ def save(dataset, path = None, filetype = None, plot = None, **kwargs):
             (filetype))
 
     # get class for plotting from attribute 'plot'
-    if plot == None: plot = 'histogram'
+    if not plot: plot = 'histogram'
     class_name = plot.lower().title()
     module_name = save.__module__
     try:

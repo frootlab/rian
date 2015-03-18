@@ -120,27 +120,8 @@ class Model(nemoa.common.classes.ClassesBaseClass):
         return retval
 
     def optimize(self, *args, **kwargs):
-        """Optimize system parameters."""
-
-        if not nemoa.common.type.isdataset(self.dataset):
-            return nemoa.log('error', """could not optimize model:
-                dataset is not valid.""")
-        if not nemoa.common.type.isnetwork(self.network):
-            return nemoa.log('error', """could not optimize model:
-                network is not valid.""")
-        if not nemoa.common.type.issystem(self.system):
-            return nemoa.log('error', """could not optimize model:
-                system is not valid.""")
-
-        retval = True
-
-        # optimize system paramaters
-        retval &= self.system.optimize(
-            dataset = self.dataset, *args, **kwargs)
-        # update network parameters from system parameters
-        retval &= self.network.initialize(self.system)
-
-        return retval
+        """Optimize model."""
+        return nemoa.model.optimize(self, *args, **kwargs)
 
     def get(self, key = 'name', *args, **kwargs):
         """Get meta information and content."""

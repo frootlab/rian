@@ -24,7 +24,7 @@ def save(model, path = None, filetype = None, plot = None, **kwargs):
             (filetype))
 
     # get class for plotting from attribute 'plot'
-    if plot == None: plot = 'graph'
+    if not plot: plot = 'graph'
     class_name = plot.lower().title()
     module_name = save.__module__
     try:
@@ -83,7 +83,7 @@ def save(model, path = None, filetype = None, plot = None, **kwargs):
 def show(model, plot = None, *args, **kwargs):
 
     # get class for plotting from attribute 'plot'
-    if plot == None: plot = 'graph'
+    if not plot: plot = 'graph'
     class_name = plot.lower().title()
     module_name = save.__module__
     try:
@@ -222,7 +222,7 @@ class Graph:
 
         # calculate edge signs from 'sign' relation
         # default: use the same relation, as used for weights
-        if self.settings['sign'] == None \
+        if not self.settings['sign'] \
             or self.settings['sign'] == self.settings['relation']:
             SR = W
         else:

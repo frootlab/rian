@@ -931,8 +931,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
         algorithms = self._get_algorithms(
             category = ('system', 'evaluation'))
         if not func in algorithms.keys(): return nemoa.log('error',
-            """could not evaluate system:
-            unknown algorithm name '%s'.""" % (func))
+            """could not evaluate system: unknown algorithm
+            '%s'.""" % (func))
         algorithm = algorithms[func]
 
         # prepare (non keyword) arguments for evaluation function
@@ -1639,48 +1639,6 @@ class System(nemoa.common.classes.ClassesBaseClass):
                 relation[i, j] = corr[k, l]
 
         return relation
-
-    #@nemoa.common.decorators.attributes(
-        #name     = 'correlation',
-        #category = ('system', 'units', 'evaluation'),
-        #args     = 'all',
-        #retfmt   = 'scalar',
-        #formater = lambda val: '%.3f' % (val),
-        #plot     = 'diagram'
-    #)
-    #def _algorithm_unitcorrelation(self, data, mapping = None,
-        #block = None):
-        #"""Correlation of reconstructed unit values.
-
-        #Args:
-            #data: 2-tuple of numpy arrays containing source and target
-                #data corresponding to the first and the last layer in
-                #the mapping
-            #mapping: n-tuple of strings containing the mapping
-                #from source unit layer (first argument of tuple)
-                #to target unit layer (last argument of tuple)
-            #block: list of string containing labels of units in the
-                #input layer that are blocked by setting the values to
-                #their means
-
-        #Returns:
-            #Numpy array with reconstructed correlation of units.
-
-        #"""
-
-        #if mapping == None: mapping = self._get_mapping()
-        #if block == None:
-            #model_out = self._algorithm_unitexpect(data, mapping)
-        #else:
-            #data_in_copy = numpy.copy(data)
-            #for i in block:
-                #data_in_copy[:,i] = numpy.mean(data_in_copy[:,i])
-            #model_out = self._algorithm_unitexpect(
-                #data_in_copy, mapping)
-
-        #M = numpy.corrcoef(numpy.hstack(data).T)
-
-        #return True
 
     @nemoa.common.decorators.attributes(
         name     = 'weightsumproduct',

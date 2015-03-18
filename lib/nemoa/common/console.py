@@ -87,7 +87,7 @@ class _GetchUnix:
         self._buffer['handler'].start()
 
     def _is_running(self):
-        return not self._buffer == None
+        return bool(self._buffer)
 
     def stop(self):
         import termios

@@ -24,21 +24,21 @@ def convert(list, input, output = None, filter = False):
     elif ':' in input:
         input_class  = input.lower().split(':')[0].strip()
         input_format = input.lower().split(':')[1].strip()
-    else: return nemoa.log('warning',
-        'could not convert list: unknown input format "' + input + '"!')
+    else: return nemoa.log('warning', """could not convert list:
+        unknown input format '%s'.""" % input)
 
     # 'output'
     if output in generic_types:
         output_class  = 'generic'
         output_format = output
-    elif output == None:
+    elif not output:
         output_class  = input_class
         output_format = None
     elif ':' in input:
         output_class  = output.lower().split(':')[0].strip()
         output_format = output.lower().split(':')[1].strip()
-    else: return nemoa.log('warning',
-        'could not convert list: unknown output format "' + output + '"!')
+    else: return nemoa.log('warning', """could not convert list:
+        unknown output format '%s'.""" % output)
 
     # 'input' vs 'output'
     if input_class != output_class:

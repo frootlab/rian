@@ -18,7 +18,7 @@ def filetypes():
 def show(network, plot = None, **kwargs):
 
     # get class for plotting from attribute 'plot'
-    if plot == None: plot = 'graph'
+    if not plot: plot = 'graph'
     class_name = plot.lower().title()
     module_name = save.__module__
     try:
@@ -65,7 +65,7 @@ def save(network, path = None, filetype = None, plot = None, **kwargs):
             (filetype))
 
     # get class for plotting from attribute 'plot'
-    if plot == None: plot = 'graph'
+    if not plot: plot = 'graph'
     class_name = plot.lower().title()
     module_name = save.__module__
     try:

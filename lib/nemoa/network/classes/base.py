@@ -70,7 +70,6 @@ class Network(nemoa.common.classes.ClassesBaseClass):
             no valid dataset instance given:""")
 
         nemoa.log("configure network: '%s'" % (self._config['name']))
-        nemoa.set('shell', indent = '+1')
 
         # configure network to dataset
         groups = dataset.get('colgroups')
@@ -80,8 +79,6 @@ class Network(nemoa.common.classes.ClassesBaseClass):
                 or not (groups[group] == self._config['nodes'][group]):
                 self._configure_graph(
                     nodelist = {'layer': group, 'list': groups[group]})
-
-        nemoa.set('shell', indent = '-1')
 
         return True
 
@@ -690,15 +687,12 @@ class Network(nemoa.common.classes.ClassesBaseClass):
 
     def save(self, *args, **kwargs):
         """Export network to file."""
-
         return nemoa.network.save(self, *args, **kwargs)
 
     def show(self, *args, **kwargs):
         """Show network as image."""
-
         return nemoa.network.show(self, *args, **kwargs)
 
     def copy(self, *args, **kwargs):
         """Create copy of network."""
-
         return nemoa.network.copy(self, *args, **kwargs)

@@ -56,7 +56,7 @@ def getmethods(classname, prefix = '', removeprefix = True,
         if isinstance(methods[name].__doc__, basestring):
             methoddict[name]['about'] = \
                 methods[name].__doc__.split('\n', 1)[0].strip(' .')
-    if attribute == None: return methoddict
+    if not attribute: return methoddict
 
     # create dictionary only with given attribute
     methoddictattrib = {}

@@ -281,17 +281,11 @@ class ANN(nemoa.system.classes.base.System):
     def _algorithm_bprop(self, dataset, schedule, tracker):
         """Optimize parameters using backpropagation of error."""
 
-        cnf = self._config['optimize']
-        mapping = self._get_mapping()
-
         # update parameters
         while tracker.update():
 
-            # Get data (sample from minibatches)
-            if tracker.get('epoch') \
-                % cnf['minibatch_update_interval'] == 0:
-                data = self._get_training_data(dataset,
-                    cols = (mapping[0], mapping[-1]))
+            # get training data (sample from minibatches)
+            data = tracker.get('data', 'training')
             # forward pass (compute estimations from given input)
             values = self._algorithm_bprop_forward(data[0])
             # backward pass (compute deltas from given output)
@@ -332,24 +326,19 @@ class ANN(nemoa.system.classes.base.System):
 
         """
 
-        cnf = self._config['optimize']
-        mapping = self._get_mapping()
-
         # update parameters
         while tracker.update():
 
-            # Get data (sample from minibatches)
-            if epoch % cnf['minibatch_update_interval'] == 0:
-                data = self._get_training_data(dataset,
-                    cols = (mapping[0], mapping[-1]))
-            # Forward pass (Compute value estimations from given input)
-            out = self._algorithm_bprop_forward(data[0])
-            # Backward pass (Compute deltas from BPROP)
-            delta = self._algorithm_bprop_backward(data[1], out)
-            # Compute updates
-            updates = self._algorithm_rprop_get_updates(out, delta,
+            # get training data (sample from minibatches)
+            data = tracker.get('data', 'training')
+            # forward pass (compute estimations from given input)
+            values = self._algorithm_bprop_forward(data[0])
+            # backward pass (compute deltas from given output)
+            delta = self._algorithm_bprop_backward(data[1], values)
+            # compute parameter updates
+            updates = self._algorithm_rprop_get_updates(values, delta,
                 tracker)
-            # Update parameters
+            # update parameters
             self._algorithm_update_params(updates)
 
         return True
@@ -373,9 +362,9 @@ class ANN(nemoa.system.classes.base.System):
             return update
 
         # RProp parameters
-        accel = (0.5, 1., 1.2)
-        init_rate = 0.001
-        min_factor = 0.000001
+        accel = (.5, 1., 1.2)
+        init_rate = .001
+        min_factor = .000001
         max_factor = 50.
 
         layers = self._get_mapping()

@@ -10,16 +10,7 @@ import importlib
 def new(*args, **kwargs):
     """Return model instance."""
 
-    if not kwargs:
-        kwargs = {'config': {'type': 'base.Model'}}
-
-    if not 'config' in kwargs \
-        or not 'type' in kwargs['config'] \
-        or not len(kwargs['config']['type'].split('.')) == 2:
-        return nemoa.log('error', """could not create model:
-            configuration is not valid.""")
-
-    type = kwargs['config']['type']
+    type = kwargs.get('config', {}).get('type', 'base.Model')
     module_name = 'nemoa.model.classes.' + type.split('.')[0]
     class_name = type.split('.')[1]
 

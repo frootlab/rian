@@ -49,7 +49,7 @@ class ClassesBaseClass:
         'fullname': 'r', 'type': 'r', 'about': 'rw',
         'name': 'rw', 'branch': 'rw', 'version': 'rw',
         'author': 'rw', 'email': 'rw', 'license': 'rw',
-        'path': 'rw'}
+        'path': 'rw' }
 
     def __init__(self, *args, **kwargs):
         """Import object configuration and content from dictionary."""
