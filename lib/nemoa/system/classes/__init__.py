@@ -19,16 +19,16 @@ def new(*args, **kwargs):
         return nemoa.log('error', """could not create system:
             configuration is not valid.""")
 
-    type = kwargs['config']['type']
-    module_name = 'nemoa.system.classes.' + type.split('.')[0]
-    class_name = type.split('.')[1]
+    stype = kwargs['config']['type']
+    mname = 'nemoa.system.classes.' + stype.split('.')[0]
+    cname = stype.split('.')[1]
 
     try:
-        module = importlib.import_module(module_name)
-        if not hasattr(module, class_name): raise ImportError()
-        system = getattr(module, class_name)(**kwargs)
+        module = importlib.import_module(mname)
+        if not hasattr(module, cname): raise ImportError()
+        system = getattr(module, cname)(**kwargs)
     except ImportError:
         return nemoa.log('error', """could not create system:
-            unknown system type '%s'.""" % (type))
+            unknown system type '%s'.""" % stype) or None
 
     return system

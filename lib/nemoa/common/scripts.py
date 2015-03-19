@@ -19,9 +19,9 @@ def console():
 
         nemoa.set('mode', 'silent')
         if not nemoa.open(workspace): return False
-        print 'Scripts in workspace %s:\n' % (nemoa.get('workspace'))
+        print('Scripts in workspace %s:\n' % (nemoa.get('workspace')))
         for script in nemoa.list('scripts'):
-            print '    %s' % (script)
+            print('    %s' % (script))
         print
 
         return True
@@ -29,7 +29,7 @@ def console():
     def print_usage():
         """Print script usage to standard output."""
 
-        print """Usage: nemoa [-w <workspace> [-s <script> [-a <arguments>]]] [-h] [-i] [-l] [-v]
+        print("""Usage: nemoa [-w <workspace> [-s <script> [-a <arguments>]]] [-h] [-i] [-l] [-v]
 
         -h --help                 Print this
         -i --interactive          Start nemoa in iPython interactive shell
@@ -38,7 +38,7 @@ def console():
         -s --script               Open workspace and execute script
         -a --arguments            Arguments passed to script
         -v --version              Print version
-        """
+        """)
 
         return True
 
@@ -47,7 +47,7 @@ def console():
 
         import nemoa
 
-        print 'nemoa ' + nemoa.__version__
+        print('nemoa ' + nemoa.__version__)
 
         return True
 
@@ -59,7 +59,7 @@ def console():
         nemoa.set('mode', 'silent')
         workspaces = nemoa.list('workspaces', base = 'user')
         print 'Workspaces:\n'
-        for workspace in workspaces: print '    %s' % (workspace)
+        for workspace in workspaces: print('    %s' % (workspace))
         print
 
         return True

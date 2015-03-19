@@ -1769,7 +1769,6 @@ class System(nemoa.common.classes.ClassesBaseClass):
         gauge = 0.1 # setting gauge lower than induction default
                     # to increase sensitivity
 
-
         mapping = self._get_mapping()
         srcunits = self._get_units(layer = mapping[0])
         tgtunits = self._get_units(layer = mapping[-1])
@@ -1793,7 +1792,7 @@ class System(nemoa.common.classes.ClassesBaseClass):
             datamp[0][:, sid] = 10.0
             indmp = self._algorithm_induction(datamp, *args, **kwargs)
 
-            print 'manipulation of', sunit
+            print('manipulation of', sunit)
             vals = [-2., -1., -0.5, 0., 0.5, 1., 2.]
             maniparr = numpy.zeros(shape = (len(vals), data[0].shape[1]))
             for vid, val in enumerate(vals):
@@ -1805,8 +1804,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
             #manipvar /= numpy.amax(manipvar)
             manipnorm = numpy.amax(manipvar)
             # 2do
-            print manipvar * 1000.
-            print manipvar / manipnorm
+            print(manipvar * 1000.)
+            print(manipvar / manipnorm)
 
             coop[:,sid] = \
                 numpy.sqrt(((indmp - ind) ** 2).sum(axis = 1))
@@ -1871,11 +1870,11 @@ class System(nemoa.common.classes.ClassesBaseClass):
             try:
                 i_curve = numpy.take(numpy.sort(sdata[:, inid]), r_ids)
             except: # 2Do
-                print 'ok1', sdata
-                print 'ok2', sdata[:, inid]
-                print 'ok3', numpy.sort(sdata[:, inid])
-                print r_ids
-                print numpy.take(numpy.sort(sdata[:, inid]), r_ids)
+                print('ok1', sdata)
+                print('ok2', sdata[:, inid])
+                print('ok3', numpy.sort(sdata[:, inid]))
+                print(r_ids)
+                print(numpy.take(numpy.sort(sdata[:, inid]), r_ids))
 
             i_curve = amplify * i_curve
 

@@ -139,9 +139,9 @@ class Session:
 
     def _get_default(self, key = None, *args, **kwargs):
         """Get default value."""
-        
+
         import copy
-        
+
         if not key: return copy.deepcopy(self._config['default'])
         elif not key in self._config['default']:
             return nemoa.log('error', """could not get default value:
@@ -157,7 +157,7 @@ class Session:
             parent = args[0]
             retval = retval[args[0]]
             args = args[1:]
-        
+
         if isinstance(retval, dict): return copy.deepcopy(retval)
         return retval
 
@@ -375,10 +375,10 @@ class Session:
             path (string or tuple or list):
             check (bool):
             create (bool):
-        
+
         Returns:
             String containing expanded path.
-        
+
         """
 
         import os
@@ -604,7 +604,7 @@ class Session:
         else:
             module = imp.load_source('script', config['path'])
             module.main(self._config['workspace'], *args, **kwargs)
-        
+
         # change to previous workspace if necessary
         if chdir:
             if current:
@@ -612,9 +612,9 @@ class Session:
                     base = current.get('base'))
             else:
                 self._set_workspace(None)
-        
+
         return retval
-    
+
     def set(self, key, *args, **kwargs):
         """Set configuration parameters and env vars."""
 
@@ -681,7 +681,7 @@ class Session:
                     '%s': workspace found in different searchpaths:
                     %s.""" % (workspace, ', '.join(bases))) or None
             base = bases[0]
-        
+
         # test if base and workspace are valid
         if not workspace in self._get_list_workspaces(base = base):
             basepath = self._get_path_expand(
@@ -760,17 +760,17 @@ class Session:
 
     def _set_workspace_reset(self):
         """ """
-        
+
         import copy
-        
+
         retval = True
-        
+
         self._config['current'] = \
             copy.deepcopy(self._default['current'])
         self._config['workspace'] = None
-        
+
         retval &= self._set_workspace_logging()
-        
+
         return retval
 
     def _set_workspace_scandir(self, *args, **kwargs):
@@ -818,7 +818,7 @@ class Session:
                 filespace = self._get_workspace()
                 filebase = self._get_base()
                 fullname = '%s.%s.%s' % (filebase, filespace, basename)
-                
+
                 if fullname in objregister: continue
 
                 # register object configuration

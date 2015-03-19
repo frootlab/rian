@@ -902,6 +902,10 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
 
         """
 
+        if isinstance(data, tuple):
+            return tuple([self._get_data_corrupt(table)
+                for table in list(data)])
+
         if not isinstance(type, basestring): return data
         if type.lower() == 'none': return data
 

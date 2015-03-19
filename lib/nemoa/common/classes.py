@@ -53,7 +53,7 @@ class ClassesBaseClass:
 
     def __init__(self, *args, **kwargs):
         """Import object configuration and content from dictionary."""
-        
+
         self._set_copy(**kwargs)
 
     def __getattr__(self, key):
@@ -62,11 +62,11 @@ class ClassesBaseClass:
         if key in self._attr_meta:
             if 'r' in self._attr_meta[key]: return self._get_meta(key)
             return nemoa.log('warning',
-                "attribute '%s' is not readable." % (key))
+                "attribute '%r' is not readable." % key)
         if key in self._attr:
             if 'r' in self._attr[key]: return self.get(key)
             return nemoa.log('warning',
-                "attribute '%s' is not readable." % (key))
+                "attribute '%r' is not readable." % key)
 
         raise AttributeError("%s instance has no attribute '%r'"
             % (self.__class__.__name__, key))
@@ -78,16 +78,21 @@ class ClassesBaseClass:
             if 'w' in self._attr_meta[key]:
                 return self._set_meta(key, val)
             return nemoa.log('warning',
-                "attribute '%s' is not writeable." % (key))
+                "attribute '%r' is not writeable." % key)
         if key in self._attr:
             if 'w' in self._attr[key]: return self.set(key, val)
             return nemoa.log('warning',
-                "attribute '%s' is not writeable." % (key))
+                "attribute '%r' is not writeable." % key)
 
         self.__dict__[key] = val
 
     def _get_meta(self, key):
-        """Get meta information like 'author' or 'version'."""
+        """Get meta information like 'author' or 'version'.
+
+        Returns:
+            Value of requested attribute.
+
+        """
 
         if key == 'about':    return self._get_about()
         if key == 'author':   return self._get_author()
@@ -100,7 +105,7 @@ class ClassesBaseClass:
         if key == 'type':     return self._get_type()
         if key == 'version':  return self._get_version()
 
-        return nemoa.log('warning', "%s instance has no attribute '%r'"
+        return nemoa.log('warning', "%s instance has no attribute '%r'."
             % (self.__class__.__name__, key)) or None
 
     def _get_about(self):
@@ -167,7 +172,7 @@ class ClassesBaseClass:
         """
 
         l = [self._get_name(), self._get_branch(), self._get_version()]
-        return '.'.join([str(item) for item in l if item])
+        return '.'.join([str(i) for i in l if i])
 
     def _get_license(self):
         """Get the license of the resource.
@@ -239,6 +244,7 @@ class ClassesBaseClass:
 
         mname = self.__module__.split('.')[-1]
         cname = self.__class__.__name__
+
         return mname + '.' + cname
 
     def _get_version(self):
@@ -254,7 +260,12 @@ class ClassesBaseClass:
         return self._config.get('version', None)
 
     def _set_meta(self, key, *args, **kwargs):
-        """Set meta information like 'author' or 'version'."""
+        """Set meta information like 'author' or 'version'.
+
+        Returns:
+            Boolean value which is True on success, else False.
+
+        """
 
         if key == 'about':   return self._set_about(*args, **kwargs)
         if key == 'author':  return self._set_author(*args, **kwargs)
@@ -265,7 +276,7 @@ class ClassesBaseClass:
         if key == 'path':    return self._set_path(*args, **kwargs)
         if key == 'version': return self._set_version(*args, **kwargs)
 
-        return nemoa.log('warning', "%s instance has no attribute '%r'"
+        return nemoa.log('warning', "%s instance has no attribute '%r'."
             % (self.__class__.__name__, key))
 
     def _set_about(self, val):

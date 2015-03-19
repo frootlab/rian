@@ -120,7 +120,7 @@ class Model(nemoa.common.classes.ClassesBaseClass):
         return retval
 
     def optimize(self, *args, **kwargs):
-        """Optimize model."""
+        """Optimize model parameters."""
         return nemoa.model.optimize(self, *args, **kwargs)
 
     def get(self, key = 'name', *args, **kwargs):

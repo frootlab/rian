@@ -142,7 +142,7 @@ def postinstall():
         import os
         import shutil
 
-        print 'copying %s -> %s' % (src, tgt)
+        print('copying %s -> %s' % (src, tgt))
 
         for srcsdir in glob.glob(os.path.join(src, '*')):
             tgtsdir = os.path.join(tgt, os.path.basename(srcsdir))
@@ -163,7 +163,7 @@ def postinstall():
 
         return True
 
-    print 'running postinstall'
+    print('running postinstall')
 
     # copy user workspaces
     user_src_base = getpath(('data', 'user'))

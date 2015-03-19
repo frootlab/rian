@@ -20,11 +20,11 @@ class Optimizer:
 
     def get(self, key, *args, **kwargs):
 
-        ## algorithms
-        #if key == 'algorithm':
-            #return self._get_algorithm(*args, **kwargs)
-        #if key == 'algorithms': return self._get_algorithms(
-            #attribute = 'about', *args, **kwargs)
+        # algorithms
+        if key == 'algorithm':
+            return self._get_algorithm(*args, **kwargs)
+        if key == 'algorithms': return self._get_algorithms(
+            attribute = 'about', *args, **kwargs)
 
         if key == 'data': return self._get_data(*args, **kwargs)
         if key == 'epoch': return self._get_epoch()
@@ -34,63 +34,59 @@ class Optimizer:
         if not key in self._state.keys(): return False
         return self._state[key]
 
-    #def _get_algorithms(self, category = None, attribute = None):
-        #"""Get algorithms provided by optimizer."""
+    def _get_algorithms(self, category = None, attribute = None):
+        """Get algorithms provided by optimizer."""
 
-        ## get unstructured dictionary of all algorithms by prefix
-        #unstructured = nemoa.common.module.getmethods(self,
-            #prefix = '_algorithm_')
+        # get unstructured dictionary of all algorithms by prefix
+        unstructured = nemoa.common.module.getmethods(self,
+            prefix = '_')
 
-        ## filter algorithms by supported keys and given category
-        #for ukey, udata in unstructured.items():
-            #if not isinstance(udata, dict):
-                #del unstructured[ukey]
-                #continue
-            #if attribute and not attribute in udata.keys():
-                #del unstructured[ukey]
-                #continue
-            #if not 'name' in udata.keys():
-                #del unstructured[ukey]
-                #continue
-            #if not 'category' in udata.keys():
-                #del unstructured[ukey]
-                #continue
-            #if category and not udata['category'] == category:
-                #del unstructured[ukey]
+        # filter algorithms by supported keys and given category
+        for ukey, udata in unstructured.items():
+            if not isinstance(udata, dict):
+                del unstructured[ukey]
+                continue
+            if attribute and not attribute in udata.keys():
+                del unstructured[ukey]
+                continue
+            if not 'name' in udata.keys():
+                del unstructured[ukey]
+                continue
+            if not 'category' in udata.keys():
+                del unstructured[ukey]
+                continue
+            if category and not udata['category'] == category:
+                del unstructured[ukey]
 
-        ## create flat structure id category is given
-        #structured = {}
-        #if category:
-            #for ukey, udata in unstructured.iteritems():
-                #if attribute: structured[udata['name']] = \
-                    #udata[attribute]
-                #else: structured[udata['name']] = udata
-            #return structured
+        # create flat structure id category is given
+        structured = {}
+        if category:
+            for ukey, udata in unstructured.iteritems():
+                if attribute: structured[udata['name']] = \
+                    udata[attribute]
+                else: structured[udata['name']] = udata
+            return structured
 
-        ## create tree structure if category is not given
-        #categories = {
-            #('system', 'evaluation'): None,
-            #('system', 'units', 'evaluation'): 'units',
-            #('system', 'links', 'evaluation'): 'links',
-            #('system', 'relation', 'evaluation'): 'relation' }
-        #for ukey, udata in unstructured.iteritems():
-            #if not udata['category'] in categories.keys(): continue
-            #ckey = categories[udata['category']]
-            #if ckey == None:
-                #if attribute: structured[udata['name']] = \
-                    #udata[attribute]
-                #else: structured[udata['name']] = udata
-            #else:
-                #if not ckey in structured.keys(): structured[ckey] = {}
-                #if attribute: structured[ckey][udata['name']] = \
-                    #udata[attribute]
-                #else: structured[ckey][udata['name']] = udata
+        # create tree structure if category is not given
+        categories = {'optimization': None }
+        for ukey, udata in unstructured.iteritems():
+            if not udata['category'] in categories.keys(): continue
+            ckey = categories[udata['category']]
+            if ckey == None:
+                if attribute: structured[udata['name']] = \
+                    udata[attribute]
+                else: structured[udata['name']] = udata
+            else:
+                if not ckey in structured.keys(): structured[ckey] = {}
+                if attribute: structured[ckey][udata['name']] = \
+                    udata[attribute]
+                else: structured[ckey][udata['name']] = udata
 
-        #return structured
+        return structured
 
-    #def _get_algorithm(self, key, *args, **kwargs):
-        #"""Get algorithm provided by optimizer."""
-        #return self._get_algorithms(*args, **kwargs).get(key, None)
+    def _get_algorithm(self, key, *args, **kwargs):
+        """Get algorithm provided by optimizer."""
+        return self._get_algorithms(*args, **kwargs).get(key, None)
 
     def _get_data(self, key, *args, **kwargs):
         """Get data for training or evaluation.
@@ -134,8 +130,7 @@ class Optimizer:
         return data or None
 
     def _get_evaluation_algorithm(self):
-        config = self.model.system._config['optimize']
-        name = config['tracker_eval_function']
+        name = self._config['tracker_eval_function']
         return self.model.system.get('algorithm', name)
 
     def _get_evaluation_value(self):
@@ -154,7 +149,7 @@ class Optimizer:
 
         data = self._state.get('training_data', None)
         epoch = self._get_epoch()
-        interval = self._get_schedule('minibatch_update_interval')
+        interval = self._config.get('minibatch_update_interval', 1)
 
         # get training data from dataset
         if not data or epoch % interval == 0:
@@ -162,12 +157,11 @@ class Optimizer:
             dataset = self.model.dataset
             mapping = system._get_mapping()
             cols = (mapping[0], mapping[-1])
-            schedule = system._config['optimize']
-            size = schedule.get('minibatch_size', 0)
-            if schedule.get('den_corr_enable', None):
-                noisetype = schedule.get('den_corr_type', None)
-                noisefactor = schedule.get('den_corr_factor', 0.)
-                noise = (noisetype, noisefactor)
+            size = self._config.get('minibatch_size', 0)
+            if 'den_corr_enable' in self._config:
+                ntype = self._config.get('den_corr_type', None)
+                nfactor = self._config.get('den_corr_factor', 0.)
+                noise = (ntype, nfactor)
             else:
                 noise = (None, 0.)
             data = dataset.get('data', cols = cols,
@@ -187,7 +181,7 @@ class Optimizer:
         return self._state.get('epoch', 0)
 
     def _get_progress(self):
-        """Get current progress in percentage.
+        """Get current optimization progress in percentage.
 
         Returns:
             Float containing current progress in percentage.
@@ -195,63 +189,148 @@ class Optimizer:
         """
 
         return float(self._state['epoch']) \
-            / float(self._state['schedule']['updates'])
+            / float(self._config['updates'])
 
     def _get_model(self):
         """Get model instance."""
         return self._state.get('model', None)
 
+    def _get_compatibility(self, model):
+        """Get compatibility of optimizer to given model instance.
+
+        Args:
+            model: nemoa model instance
+
+        Returns:
+            True if optimizer is compatible to given model, else False.
+
+        """
+
+        # test type of model instance and subclasses
+        if not nemoa.common.type.ismodel(model): return False
+        if not nemoa.common.type.isdataset(model.dataset): return False
+        if not nemoa.common.type.isnetwork(model.network): return False
+        if not nemoa.common.type.issystem(model.system): return False
+
+        # check dataset
+        if (not 'check_dataset' in model.system._default['init']
+            or model.system._default['init']['check_dataset'] == True) \
+            and not model.system._check_dataset(model.dataset):
+            return None
+
+        return True
+
     def _get_schedule(self, key):
-        """Get value from current training schedule."""
-        return self.model.system._config['optimize'].get(
-            key, None)
+        """Get schedule by name."""
+        if not 'schedules' in self.model.system._config: return {}
+        return self.model.system._config['schedules'].get(key, {})
+
+    def optimize(self, config = None, *args, **kwargs):
+        """ """
+
+        if not self._set_config(config): return None
+        if not self._set_state_reset(): return None
+
+        # get name of optimization algorithm
+        algtype = None
+        name = self._config.get('meta_algorithm', None)
+        if name:
+            if not algtype: algtype = 'meta'
+        else:
+            name = self._config.get('algorithm', None)
+            if name:
+                if not algtype: algtype = 'normal'
+            else:
+                return nemoa.log('error', """could not optimize '%s'
+                    (%s): no optimization algorithm has been set."""
+                    % (self.model.name, self.model.type)) or None
+
+        # get instance of optimization algorithm
+        algorithm = self._get_algorithm(name, category = 'optimization')
+        if not algorithm:
+            return nemoa.log('error', """could not optimize '%s' (%s):
+                unsupported optimization algorithm '%s'."""
+                % (self.model.name, self.model.type, name)) or None
+
+        # start optimization
+        if algtype == 'normal':
+            nemoa.log('note', "optimize '%s' (%s) using algorithm %s."
+                % (self.model.name, self.model.type, algorithm['name']))
+
+        # 2Do try / except &
+        algorithm['reference']()
+        return self.model.network.initialize(self.model.system)
 
     def set(self, key, *args, **kwargs):
+        """ """
 
         if key == 'model': return self._set_model(*args, **kwargs)
+        if key == 'config': return self._set_config(*args, **kwargs)
+        if key == 'state': return self._set_state(*args, **kwargs)
 
-        found = True
-        for key in kwargs.keys():
-            if key in self._state.keys():
-                self._state[key] = kwargs[key]
-            else: found = False
+        return nemoa.log('warning', "unknown key '%s'" % key) or None
 
-        return found
+    def _set_config(self, config = None):
+        """Set optimizer configuration from dictionary."""
+
+        if not isinstance(config, dict):
+            if not config: key = 'default'
+            elif isinstance(config, basestring): key = config
+            else:
+                return nemoa.log('warning', """could not configure
+                    optimization: invalid configuration.""") or None
+            if not self.model:
+                return nemoa.log('warning', """could not configure
+                    optimization: no model given.""") or None
+            system = self.model.system
+            schedules = system._config.get('schedules', {})
+            config = schedules.get(key, {}).get(system.type, {})
+
+        self._config = nemoa.common.dict.merge(config, self._default)
+
+        return True
 
     def _set_model(self, model):
         """Set model."""
 
-        if not nemoa.common.type.ismodel(model):
-            return nemoa.log('warning',
-                'could not configure optimizer: model is not valid!')
+        if not self._get_compatibility(model):
+            return nemoa.log('warning', """Could not initialize
+                optimizer to model: optimizer is not compatible to
+                model.""") or None
 
+        # update time and config
         self.model = model
 
-        # update time and schedule
+        # initialize evaluation data
+        self._get_evaluation_data()
+
+        return True
+
+    def _set_state(self, key, *args, **kwargs):
+
+        if key == 'reset': return self._set_state_reset()
+
+        return self._state.get(key, nemoa.log('warning', """unknown
+            attribute '%s'.""" % key) or None)
+
+    def _set_state_reset(self):
+        """ """
+
         now = time.time()
-        schedule = model.system._config['optimize']
         self._state = {
             'epoch': 0,
             'evaluation_data': None,
-            'schedule': model.system._config['optimize'],
             'training_data': None,
             'optimum': {},
             'continue': True,
-            'obj_enable': schedule['tracker_obj_tracking_enable'],
-            'obj_init_wait': schedule['tracker_obj_init_wait'],
             'obj_values': None,
             'obj_opt_value': None,
             'key_events': True,
             'key_events_started': False,
-            'eval_enable': schedule['tracker_eval_enable'],
             'eval_prev_time': now,
             'eval_values': None,
-            'estim_enable': schedule['tracker_estimate_time'],
             'estim_started': False,
             'estim_start_time': now }
-
-        # update evaluation data
-        self._get_evaluation_data()
 
         return True
 
@@ -274,25 +353,26 @@ class Optimizer:
         return True
 
     def _update_time_estimation(self):
-        if not self._state['estim_enable']: return True
+        """ """
+        if not self._config['tracker_estimate_time']: return True
 
         if not self._state['estim_started']:
             nemoa.log("""estimating time for calculation of %i
-                updates.""" % (self._state['schedule']['updates']))
+                updates.""" % (self._config['updates']))
             self._state['estim_started'] = True
             self._state['estim_start_time'] = time.time()
             return True
 
         now = time.time()
         runtime = now - self._state['estim_start_time']
-        if runtime > self._state['schedule']['tracker_estimate_time_wait']:
+        if runtime > self._config['tracker_estimate_time_wait']:
             estim = (runtime / (self._state['epoch'] + 1)
-                * self._state['schedule']['updates'])
+                * self._config['updates'])
             estim_str = time.strftime('%H:%M',
                 time.localtime(now + estim))
             nemoa.log('note', 'estimation: %ds (finishing time: %s)'
                 % (estim, estim_str))
-            self._state['estim_enable'] = False
+            self._config['tracker_estimate_time'] = False
             return True
 
         return True
@@ -301,13 +381,16 @@ class Optimizer:
         """Update epoch and check termination criterions."""
 
         self._state['epoch'] += 1
-        if self._state['epoch'] == self._state['schedule']['updates']:
+        if self._state['epoch'] == self._config['updates']:
             self._state['continue'] = False
 
         if self._state['key_events']: self._update_keypress()
-        if self._state['estim_enable']: self._update_time_estimation()
-        if self._state['obj_enable']: self._update_objective_function()
-        if self._state['eval_enable']: self._update_evaluation()
+        if self._config.get('tracker_estimate_time', False):
+            self._update_time_estimation()
+        if self._config.get('tracker_obj_tracking_enable', False):
+            self._update_objective_function()
+        if self._config.get('tracker_eval_enable', False):
+            self._update_evaluation()
 
         if not self._state['continue']:
             nemoa.common.console.stopgetch()
@@ -337,11 +420,11 @@ class Optimizer:
 
             # check update interval
             if not not (self._state['epoch'] \
-                % self._state['schedule']['tracker_obj_update_interval'] == 0):
+                % self._config['tracker_obj_update_interval'] == 0):
                 return True
 
         # calculate objective function and add value to array
-        func = self._state['schedule']['tracker_obj_function']
+        func = self._config['tracker_obj_function']
         data = self._get_evaluation_data()
         value = self.model.system.evaluate(
             data = data, func = func)
@@ -353,7 +436,7 @@ class Optimizer:
             numpy.array([[progr, value]])))
 
         # (optional) check for new optimum
-        if self._state['schedule']['tracker_obj_keep_optimum']:
+        if self._config['tracker_obj_keep_optimum']:
 
             # init optimum with first value
             if self._state['obj_opt_value'] == None:
@@ -365,7 +448,7 @@ class Optimizer:
 
             # allways check last optimum
             if self._state['continue'] \
-                and progr < self._state['schedule']['tracker_obj_init_wait']:
+                and progr < self._config['tracker_obj_init_wait']:
                 return True
 
             type_of_optimum = self.model.system.get(
@@ -396,18 +479,17 @@ class Optimizer:
     def _update_evaluation(self):
         """Calculate evaluation function of system."""
 
-        cfg = self.model.system._config['optimize']
         now = time.time()
 
         if not self._state['continue']:
             func = self._get_evaluation_algorithm()
             value = self._get_evaluation_value()
-            self._state['eval_enable'] = False
+            self._config['tracker_eval_enable'] = False
             return nemoa.log('note', 'found optimum with: %s = %s' % (
                 func['name'], func['formater'](value)))
 
         if ((now - self._state['eval_prev_time']) \
-            > cfg['tracker_eval_time_interval']):
+            > self._config['tracker_eval_time_interval']):
             func = self._get_evaluation_algorithm()
             value = self._get_evaluation_value()
             progress = self._get_progress()
@@ -426,203 +508,6 @@ class Optimizer:
                     numpy.array([[progress, value]])))
 
             return nemoa.log('note', 'finished %.1f%%: %s = %s' % (
-                progress, func['name'], func['formater'](value)))
+                progress * 100., func['name'], func['formater'](value)))
 
         return False
-
-
-    #@nemoa.common.decorators.attributes(
-        #name     = 'dbn',
-        #category = ('system', 'optimization'),
-        #netcheck = lambda net: net._is_compatible_dbn()
-    #)
-    #def _algorithm_dbn(self, schedule):
-        #"""Optimize system parameters."""
-
-        ## get configuration dictionary for optimization
-        #config = self.model.system._config['optimize']
-
-        ## (optional) pretraining of system parameters
-        ## perform forward optimization of ann using
-        ## restricted boltzmann machines as subsystems
-        #if config['pretraining']:
-            #self._algorithm_dbn_pretraining(schedule)
-
-        ## (optional) finetuning of system parameters
-        ## perform backward optimization of ann
-        ## using backpropagation of error
-        #if config['finetuning']:
-            #self._algorithm_dbn_finetuning(schedule)
-
-        #return True
-
-    #def _algorithm_dbn_pretraining(self, schedule):
-        #"""Pretraining model using Restricted Boltzmann Machines."""
-
-        #config = self.model.system._config
-        #params = self.model.system._params
-
-        #if not 'units' in params:
-            #return nemoa.log('error', """could not configure subsystems:
-                #no layers have been defined!""") or None
-
-        ## create backup of dataset (before transformation)
-        #dataset_backup = dataset.get('copy')
-
-        #cid = (len(self._units) - 1) / 2
-        #rbmparams = { 'units': [], 'links': [] }
-
-        #import copy
-        #params = copy.deepcopy(self._params)
-
-        #for lid in xrange(cid):
-
-            #src = self._params['units'][lid]
-            #srcnodes = src['id'] + self._params['units'][-1]['id'] \
-                #if src['visible'] else src['id']
-            #tgt = self._params['units'][lid + 1]
-            #tgtnodes = tgt['id']
-            #links = self._params['links'][(lid, lid + 1)]
-            #linkclass = (src['class'], tgt['class'])
-            #name = '%s <-> %s' % (src['layer'], tgt['layer'])
-            #systype = {
-                #('gauss', 'sigmoid'): 'rbm.GRBM',
-                #('sigmoid', 'sigmoid'): 'rbm.RBM' }.get(
-                    #linkclass, None)
-            #if not systype:
-                #return nemoa.log('error', """could not create
-                    #rbm: unsupported pair of unit classes '%s <-> %s'"""
-                    #% linkclass) or None
-
-            ## create subsystem
-            #system = nemoa.system.new(config = {
-                #'name': name, 'type': systype,
-                #'init': { 'ignore_units': ['visible'] if lid else [] }})
-
-            ## create subnetwork and configure subsystem with network
-            #network = nemoa.network.create('factor', name = name,
-                #visible_nodes = srcnodes, visible_type = src['class'],
-                #hidden_nodes = tgtnodes, hidden_type = tgt['class'])
-            #system.configure(network)
-
-            ## transform dataset with previous system and initialize
-            ## subsystem with dataset
-            #if lid:
-                #vlayer = prevsys._params['units'][0]['layer']
-                #hlayer = prevsys._params['units'][1]['layer']
-                #dataset._initialize_transform_system(
-                    #system = prevsys, mapping = (vlayer, hlayer),
-                    #func = 'expect')
-            #dataset.set('colfilter', visible = srcnodes)
-            #system.initialize(dataset)
-
-            ## copy parameters from perantal subsystems hidden units
-            ## to current subsystems visible units
-            #if lid:
-                #dsrc = rbmparams['units'][-1]
-                #dtgt = system._params['units'][0]
-                #lkeep = ['id', 'layer', 'layer_id', 'visible', 'class']
-                #lcopy = [key for key in dsrc.keys() if not key in lkeep]
-                #for key in lcopy: dtgt[key] = dsrc[key]
-
-            ## reference parameters of current subsystem
-            ## in first layer reference visible, links and hidden
-            ## in other layers only reference links and hidden
-            #links['init'] = system._params['links'][(0, 1)]
-            #if lid == 0: src['init'] = system._units['visible'].params
-            #tgt['init'] = system._units['hidden'].params
-
-            ## update current optimization schedule from given schedule
-            #ddef = system._default['optimize']
-            #dcur = system._config['optimize']
-            #darg = schedule[system.type]
-            #config = nemoa.common.dict.merge(dcur, ddef)
-            #config = nemoa.common.dict.merge(darg, config)
-            #config['ignore_units'] = ['visible'] if lid else []
-            #system._config['optimize'] = config
-
-            ## optimize current subsystem
-            #algorithm = system._config['optimize']['algorithm']
-            #optimizer = system._get_algorithm(algorithm,
-                #category = ('system', 'optimization'))
-            #optimizer['reference'](dataset, schedule, tracker)
-
-            #if not lid:
-                #rbmparams['units'].append(
-                    #system.get('layer', 'visible'))
-            #rbmparams['links'].append(system._params['links'][(0, 1)])
-            #rbmparams['units'].append(system.get('layer', 'hidden'))
-
-            #prevsys = system
-
-        ## reset data to initial state (before transformation)
-        #dataset.set('copy', **dataset_backup)
-
-        ## keep original inputs and outputs
-        #mapping = self._get_mapping()
-        #inputs = self._units[mapping[0]].params['id']
-        #outputs = self._units[mapping[-1]].params['id']
-
-        ## initialize ann with rbm optimized parameters
-        #units = self._params['units']
-        #links = self._params['links']
-        #central_lid = (len(units) - 1) / 2
-
-        ## initialize units and links until central unit layer
-        #for id in xrange(central_lid):
-
-            ## copy unit parameters
-            #for attrib in units[id]['init'].keys():
-                ## keep name and visibility of layers
-                #if attrib in ['layer', 'layer_id', 'visible', 'class']:
-                    #continue
-                ## keep labels of hidden layers
-                #if attrib == 'id' and not units[id]['visible']:
-                    #continue
-                #units[id][attrib] = units[id]['init'][attrib]
-                #units[-(id + 1)][attrib] = units[id][attrib]
-            #del units[id]['init']
-
-            ## copy link parameters and transpose numpy arrays
-            #for attrib in links[(id, id + 1)]['init'].keys():
-                #if attrib in ['source', 'target']:
-                    #continue
-                #links[(id, id + 1)][attrib] = \
-                    #links[(id, id + 1)]['init'][attrib]
-                #links[(len(units) - id - 2,
-                    #len(units) - id - 1)][attrib] = \
-                    #links[(id, id + 1)]['init'][attrib].T
-            #del links[(id, id + 1)]['init']
-
-        ## initialize central unit layer
-        #for attrib in units[central_lid]['init'].keys():
-            ## keep name and visibility of layers
-            #if attrib in ['id', 'layer', 'layer_id', 'visible',
-                #'class']: continue
-            #units[central_lid][attrib] = \
-                #units[central_lid]['init'][attrib]
-        #del units[central_lid]['init']
-
-        ## remove output units from input layer, and vice versa
-        #nemoa.log('cleanup unit and linkage parameter arrays.')
-        #mapping = self._get_mapping()
-        #self._remove_units(mapping[0], outputs)
-        #self._remove_units(mapping[-1], inputs)
-
-        #return True
-
-    #def _algorithm_dbn_finetuning(self, dataset, schedule, tracker):
-        #"""Finetuning model using backpropagation of error."""
-
-        ## optimize system parameters
-        #force = self._config['optimize']['meta_algorithm']
-        #self._config['optimize']['meta_algorithm'] = None
-        #algorithm = self._config['optimize']['algorithm']
-        #optimizer = self._get_algorithm(algorithm,
-            #category = ('system', 'optimization'))
-        #optimizer['reference'](dataset, schedule, tracker)
-        #self._config['optimize']['meta_algorithm'] = force
-
-        #return True
-
-
