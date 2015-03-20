@@ -276,7 +276,7 @@ class ANN(nemoa.system.classes.base.System):
 
         # set mapping from input layer to output layer (if not set)
         if mapping == None: mapping = self._get_mapping()
-        data = self._algorithm_unitexpect(data, mapping)
+        data = self._get_unitexpect(data, mapping)
         return self._units[mapping[-1]].energy(data)
 
     @nemoa.common.decorators.attributes(
@@ -303,10 +303,10 @@ class ANN(nemoa.system.classes.base.System):
                 ann._algorithm_links_energy""")
         elif len(mapping) == 2:
             sdata = data
-            tdata = self._algorithm_unitvalues(sdata, mapping)
+            tdata = self._get_unitvalues(sdata, mapping)
         else:
-            sdata = self._algorithm_unitexpect(data, mapping[0:-1])
-            tdata = self._algorithm_unitvalues(sdata, mapping[-2:])
+            sdata = self._get_unitexpect(data, mapping[0:-1])
+            tdata = self._get_unitvalues(sdata, mapping[-2:])
 
         sid = self._get_mapping().index(mapping[-2])
         tid = self._get_mapping().index(mapping[-1])

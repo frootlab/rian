@@ -118,7 +118,7 @@ class Rules:
             if not col in cols: continue
             for key in cols:
                 if not key in rule: continue
-                rule = rule.replace(key, "data['%s']" % (key))
+                rule = rule.replace(key, "data['%s']" % key)
             random = {}
             for key in ['gauss', 'bernoulli']:
                 if not key in rule: continue

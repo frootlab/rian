@@ -179,7 +179,7 @@ class Model(nemoa.common.classes.ClassesBaseClass):
         if key == 'system': return self._get_system(*args, **kwargs)
 
         return nemoa.log('error', """could not get copy of
-            configuration: unknown section '%s'.""" % (key))
+            configuration: unknown section '%s'.""" % key)
 
     def _get_config(self, key = None, *args, **kwargs):
         """Get configuration or configuration value."""
@@ -192,22 +192,31 @@ class Model(nemoa.common.classes.ClassesBaseClass):
             return self._config[key]
 
         return nemoa.log('error', """could not get configuration:
-            unknown key '%s'.""" % (key))
+            unknown key '%s'.""" % key)
 
     def _get_dataset(self, type = 'dict'):
+        """ """
 
         if type == 'dataset': return self.dataset.copy()
         if type == 'dict': return self.dataset.get('copy')
 
+        return nemoa.log("warning', 'unknown type '%s'." % type) or None
+
     def _get_network(self, type = 'dict'):
+        """ """
 
         if type == 'network': return self.network.copy()
         if type == 'dict': return self.network.get('copy')
 
+        return nemoa.log("warning', 'unknown type '%s'." % type) or None
+
     def _get_system(self, type = 'dict'):
+        """ """
 
         if type == 'dataset': return self.system.copy()
         if type == 'dict': return self.system.get('copy')
+
+        return nemoa.log("warning', 'unknown type '%s'." % type) or None
 
     def set(self, key = None, *args, **kwargs):
         """Set meta information and parameters of model."""
@@ -280,13 +289,13 @@ class Model(nemoa.common.classes.ClassesBaseClass):
             self.dataset = dataset
             return True
 
-        if not isinstance(dataset, dict):
-            return False
+        if not isinstance(dataset, dict): return False
 
         if nemoa.common.type.isdataset(self.dataset):
             return self.dataset.set('copy', **dataset)
 
         self.dataset = nemoa.dataset.new(**dataset)
+
         return True
 
     def _set_network(self, network):
@@ -309,13 +318,13 @@ class Model(nemoa.common.classes.ClassesBaseClass):
             self.network = network
             return True
 
-        if not isinstance(network, dict):
-            return False
+        if not isinstance(network, dict): return False
 
         if nemoa.common.type.isnetwork(self.network):
             return self.network.set('copy', **network)
 
         self.network = nemoa.network.new(**network)
+
         return True
 
     def _set_system(self, system):
@@ -338,13 +347,13 @@ class Model(nemoa.common.classes.ClassesBaseClass):
             self.system = system
             return True
 
-        if not isinstance(system, dict):
-            return False
+        if not isinstance(system, dict): return False
 
         if nemoa.common.type.issystem(self.system):
             return self.system.set('copy', **system)
 
         self.system = nemoa.system.new(**system)
+
         return True
 
     def evaluate(self, key = None, *args, **kwargs):

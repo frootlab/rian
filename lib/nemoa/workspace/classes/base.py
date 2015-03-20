@@ -33,7 +33,7 @@ class Workspace:
             if 'w' in self._attr_meta[key]:
                 return self._set_meta(key, val)
             return nemoa.log('warning',
-                "attribute '%s' is not writeable." % (key))
+                "attribute '%s' is not writeable." % key)
 
         self.__dict__[key] = val
 

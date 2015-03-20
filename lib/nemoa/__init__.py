@@ -9,7 +9,7 @@ or statistical values.
 
 """
 
-__version__     = '0.5.0pre3'
+__version__     = '0.5.0pre4'
 __status__      = 'Development'
 __description__ = 'Deep data analysis and visualization'
 __url__         = 'https://github.com/fishroot/nemoa'
@@ -51,11 +51,11 @@ def open(*args, **kwargs):
     return set('workspace', *args, **kwargs)
 
 def path(*args, **kwargs):
-    """Return path to given object type or object."""
+    """Get path to given object type or object."""
     return get('path', *args, **kwargs)
 
 def run(*args, **kwargs):
-    """Run python script in nemoa."""
+    """Run nemoa python script."""
     return nemoa.session.run(*args, **kwargs)
 
 def set(*args, **kwargs):

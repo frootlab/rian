@@ -220,11 +220,11 @@ class RBM(nemoa.model.optimizer.ann.ANN):
         k = config['update_cd_sampling_steps']
         m = config['update_cd_sampling_iterations']
 
-        hdata = system._algorithm_unitexpect(data, ('visible', 'hidden'))
+        hdata = system._get_unitexpect(data, ('visible', 'hidden'))
         if k == 1 and m == 1:
-            vmodel = system._algorithm_unitsamples(hdata,
+            vmodel = system._get_unitsamples(hdata,
                 ('hidden', 'visible'), expect_last = True)
-            hmodel = system._algorithm_unitexpect(vmodel,
+            hmodel = system._get_unitexpect(vmodel,
                 ('visible', 'hidden'))
             return data, hdata, vmodel, hmodel
 
@@ -236,24 +236,24 @@ class RBM(nemoa.model.optimizer.ann.ANN):
                 # calculate hsample from hexpect
                 # in first sampling step init hsample with h_data
                 if j == 0:
-                    hsample = system._algorithm_unitsamples(
+                    hsample = system._get_unitsamples(
                         hdata, ('hidden', ))
                 else:
-                    hsample = system._algorithm_unitsamples(
+                    hsample = system._get_unitsamples(
                         hexpect, ('hidden', ))
 
                 # calculate vexpect from hsample
-                vexpect = system._algorithm_unitexpect(
+                vexpect = system._get_unitexpect(
                     hsample, ('hidden', 'visible'))
 
                 # calculate hexpect from vsample
                 # in last sampling step use vexpect
                 # instead of vsample to reduce noise
                 if j + 1 == k:
-                    hexpect = system._algorithm_unitexpect(
+                    hexpect = system._get_unitexpect(
                         vexpect, ('visible', 'hidden'))
                 else:
-                    hexpect = system._algorithm_unitsamples(vexpect,
+                    hexpect = system._get_unitsamples(vexpect,
                         ('visible', 'hidden'), expect_last = True)
 
             vmodel += vexpect / m

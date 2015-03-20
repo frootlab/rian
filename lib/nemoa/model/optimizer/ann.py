@@ -75,7 +75,7 @@ class ANN(nemoa.model.optimizer.base.Optimizer):
             if lid == 0:
                 values[layer] = data
                 continue
-            values[layer] = self.model.system._algorithm_unitexpect(
+            values[layer] = self.model.system._get_unitexpect(
                 values[mapping[lid - 1]], mapping[lid - 1:lid + 1])
 
         return values

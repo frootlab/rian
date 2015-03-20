@@ -74,12 +74,13 @@ def console():
                 """could not start interactive nemoa shell:
                 you have to install ipython.""")
 
-        import nemoa
         import os
-
         os.system('cls' if os.name == 'nt' else 'clear')
-        nemoa.set('mode', 'shell')
-        IPython.embed(banner1 = 'nemoa %s\n' % nemoa.__version__)
+
+        from nemoa import about, get, list, set, open, path, run
+        set('mode', 'shell')
+
+        IPython.embed(banner1 = 'nemoa %s\n' % about('version'))
 
         return True
 

@@ -549,7 +549,7 @@ class Network(nemoa.common.classes.ClassesBaseClass):
         if key == 'graph': return self._get_graph(*args, **kwargs)
 
         return nemoa.log('error', """could not get network copy:
-            unknown key '%s'.""" % (key))
+            unknown key '%s'.""" % key)
 
     def _get_config(self, key = None, *args, **kwargs):
         """Get configuration or configuration value."""
@@ -562,7 +562,7 @@ class Network(nemoa.common.classes.ClassesBaseClass):
             return self._config[key]
 
         return nemoa.log('error', """could not get configuration:
-            unknown key '%s'.""" % (key))
+            unknown key '%s'.""" % key)
 
     def _get_graph(self, type = 'dict'):
         """Get graph as dictionary or networkx graph."""

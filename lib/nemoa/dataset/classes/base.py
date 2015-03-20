@@ -524,13 +524,13 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
 
             # transform data
             if func == 'expect':
-                trans_array = system._algorithm_unitexpect(
+                trans_array = system._get_unitexpect(
                     data_array, mapping)
             elif func == 'value':
-                trans_array = system._algorithm_unitvalues(
+                trans_array = system._get_unitvalues(
                     data_array, mapping)
             elif func == 'sample':
-                trans_array = system._algorithm_unitsamples(
+                trans_array = system._get_unitsamples(
                     data_array, mapping)
 
             # create empty record array
@@ -1255,7 +1255,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         category = ('dataset', 'relation', 'evaluation'),
         formater = lambda val: '%.3f' % (val)
     )
-    def _algorithm_correlation(self, cols = '*'):
+    def _get_correlation(self, cols = '*'):
         """Calculate correlation coefficients between columns."""
 
         # get numpy array with test data
