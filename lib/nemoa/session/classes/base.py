@@ -459,8 +459,10 @@ class Session:
         if len(args) == 0:
             msg = key
             key = 'info'
-        if len(args) == 1:
+        elif len(args) == 1:
             msg = args[0]
+
+        if not msg: return True
 
         # define colors (platform dependent workaround)
         systype = platform.system().lower()
@@ -493,7 +495,8 @@ class Session:
         while '  ' in msg: msg = msg.replace('  ', ' ')
 
         if mode == 'shell':
-            pre = color['blue'] + '> ' + color['default']
+            #pre = color['blue'] + '> ' + color['default']
+            pre = ''
             tty_msg = msg
         else:
             pre = ''

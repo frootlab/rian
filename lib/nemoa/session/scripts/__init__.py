@@ -5,7 +5,7 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-def console():
+def startsession():
 
     import getopt
     import sys
@@ -77,10 +77,13 @@ def console():
         import os
         os.system('cls' if os.name == 'nt' else 'clear')
 
-        from nemoa import about, get, list, set, open, path, run
-        set('mode', 'shell')
+        import nemoa
+        nemoa.set('mode', 'shell')
 
-        IPython.embed(banner1 = 'nemoa %s\n' % about('version'))
+        from nemoa.session.scripts.console \
+            import about, get, list, open, path, run, set
+
+        IPython.embed(banner1 = 'nemoa %s\n' % nemoa.__version__)
 
         return True
 
@@ -117,7 +120,7 @@ def console():
         elif opt in ['-s', '--script']: script = arg
         elif opt in ['-a', '--arguments']: arguments = arg
 
-    if mode == 'showhelp': print_usage()
+    if   mode == 'showhelp': print_usage()
     elif mode == 'showversion': print_version()
     elif mode == 'showworkspaces': print_workspaces()
     elif mode == 'runinteractive': run_interactive()
@@ -133,4 +136,4 @@ def console():
             else: run_script(workspace, script)
 
 if __name__ == "__main__":
-   console()
+   startsession()

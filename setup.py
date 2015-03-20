@@ -101,14 +101,14 @@ def install():
             'Programming Language :: Python :: 3.4' ],
         'entry_points': {
             'console_scripts': [
-                'nemoa = nemoa.common.scripts:console'] }}
+                'nemoa = nemoa.session.scripts:startsession'] }}
 
     # prepare dynamic package variables
     srcfile = (pkg['libdir'], pkg['name'], '__init__.py')
     for key, val in getvars(srcfile).items(): pkg[key] = val
     pkg['long_description'] = getfile(pkg['descfile'])
     pkg['package_dir'] = { '': pkg['libdir'] }
-    pkg['cmdclass'] = {'install': NemoCustomInstall}
+    pkg['cmdclass'] = { 'install': NemoCustomInstall }
     pkg['packages'] = setuptools.find_packages(pkg['libdir'])
 
     # run setup from setuptools
