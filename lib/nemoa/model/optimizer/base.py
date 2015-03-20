@@ -158,9 +158,9 @@ class Optimizer:
             mapping = system._get_mapping()
             cols = (mapping[0], mapping[-1])
             size = self._config.get('minibatch_size', 0)
-            if 'den_corr_enable' in self._config:
-                ntype = self._config.get('den_corr_type', None)
-                nfactor = self._config.get('den_corr_factor', 0.)
+            if 'noise_enable' in self._config:
+                ntype = self._config.get('noise_type', None)
+                nfactor = self._config.get('noise_factor', 0.)
                 noise = (ntype, nfactor)
             else:
                 noise = (None, 0.)

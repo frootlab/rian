@@ -21,7 +21,7 @@ class DBN(nemoa.model.optimizer.ann.ANN):
         'updates': 10000,
         'pretraining': True,
         'finetuning': True,
-        'den_corr_enable': False,
+        'noise_enable': False,
         'minibatch_size': 100,
         'minibatch_update_interval': 10,
         'schedule': None,
@@ -43,28 +43,24 @@ class DBN(nemoa.model.optimizer.ann.ANN):
         'ignore_units': [] }
 
     @nemoa.common.decorators.attributes(
-        name     = 'dbn',
-        category = 'optimization',
-        netcheck = lambda net: net._is_compatible_dbn()
-    )
-    def _algorithm_dbn(self):
+        name = 'dbn', category = 'optimization',
+        netcheck = lambda net: net._is_compatible_dbn())
+    def _dbn(self):
         """Optimize system parameters."""
 
         # (optional) pretraining of system parameters
         # perform forward optimization of ann using
         # restricted boltzmann machines as subsystems
-        if self._config['pretraining']:
-            self._algorithm_dbn_pretraining()
+        if self._config['pretraining']: self._dbn_pretraining()
 
         # (optional) finetuning of system parameters
         # perform backward optimization of ann
         # using backpropagation of error
-        if self._config['finetuning']:
-            self._algorithm_dbn_finetuning()
+        if self._config['finetuning']: self._dbn_finetuning()
 
         return True
 
-    def _algorithm_dbn_pretraining(self):
+    def _dbn_pretraining(self):
         """Pretraining model using Restricted Boltzmann Machines."""
 
         system = self.model.system
@@ -79,10 +75,6 @@ class DBN(nemoa.model.optimizer.ann.ANN):
         dataset_backup = dataset.get('copy')
         cid = (len(system._units) - 1) / 2
         rbmparams = { 'units': [], 'links': [] }
-
-        # 2Do for roleback
-        #import copy
-        #params = copy.deepcopy(system._params)
 
         for lid in xrange(cid):
 
@@ -218,7 +210,7 @@ class DBN(nemoa.model.optimizer.ann.ANN):
 
         return True
 
-    def _algorithm_dbn_finetuning(self):
+    def _dbn_finetuning(self):
         """Finetuning model using backpropagation of error."""
 
         # optimize system parameters

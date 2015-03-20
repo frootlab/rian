@@ -90,7 +90,7 @@ class ANN(nemoa.system.classes.base.System):
         'optimize': {
             'ignore_units': [],
             'algorithm': 'bprop',
-            'den_corr_enable': False,
+            'noise_enable': False,
             'minibatch_size': 100,
             'minibatch_update_interval': 10,
             'updates': 10000,
@@ -189,234 +189,41 @@ class ANN(nemoa.system.classes.base.System):
 
         return True
 
-    def _get_weights_from_layers(self, source, target):
-        """Return ..."""
+    #def _get_weights_from_layers(self, source, target):
+        #"""Return ..."""
 
-        srcname = source['name']
-        tgtname = target['name']
+        #srcname = source['name']
+        #tgtname = target['name']
 
-        if self._config['optimize']['adjacency_enable']:
-            if tgtname in self._links[srcname]['target']:
-                return self._links[srcname]['target'][tgtname]['W'] \
-                    * self._links[srcname]['target'][tgtname]['A']
-            elif srcname in self._links[tgtname]['target']:
-                return (self._links[tgtname]['target'][srcname]['W'] \
-                    * self._links[srcname]['target'][tgtname]['A']).T
-        else:
-            if tgtname in self._links[srcname]['target']:
-                return self._links[srcname]['target'][tgtname]['W']
-            elif srcname in self._links[tgtname]['target']:
-                return self._links[tgtname]['target'][srcname]['W'].T
+        #if self._config['optimize']['adjacency_enable']:
+            #if tgtname in self._links[srcname]['target']:
+                #return self._links[srcname]['target'][tgtname]['W'] \
+                    #* self._links[srcname]['target'][tgtname]['A']
+            #elif srcname in self._links[tgtname]['target']:
+                #return (self._links[tgtname]['target'][srcname]['W'] \
+                    #* self._links[srcname]['target'][tgtname]['A']).T
+        #else:
+            #if tgtname in self._links[srcname]['target']:
+                #return self._links[srcname]['target'][tgtname]['W']
+            #elif srcname in self._links[tgtname]['target']:
+                #return self._links[tgtname]['target'][srcname]['W'].T
 
-        return nemoa.log('error', """Could not get links:
-            Layer '%s' and layer '%s' are not connected.
-            """ % (srcname, tgtname))
+        #return nemoa.log('error', """Could not get links:
+            #Layer '%s' and layer '%s' are not connected.
+            #""" % (srcname, tgtname))
 
-    def _algorithm_bprop_forward(self, data):
-        """Backpropagation of error forward pass.
+    #def _algorithm_update_params(self, updates):
+        #"""Update parameters from dictionary."""
 
-        Compute (most) estimated values for all layers, from given data
-        on input layer.
+        #layers = self._get_mapping()
+        #for id, layer in enumerate(layers[:-1]):
+            #src = layer
+            #tgt = layers[id + 1]
+            #self._params['links'][(id, id + 1)]['W'] += \
+                #updates['links'][(src, tgt)]['W']
+            #self._units[tgt].update(updates['units'][tgt])
 
-        Returns:
-            Dictionary with layers names as keys and expectation values
-            of (the units of) the layers as values, stored in numpy
-            arrays.
-
-        """
-
-        mapping = self._get_mapping()
-        values = {}
-        for lid, layer in enumerate(mapping):
-            if lid == 0:
-                values[layer] = data
-                continue
-            values[layer] = self._algorithm_unitexpect(
-                values[mapping[lid - 1]], mapping[lid - 1:lid + 1])
-
-        return values
-
-    def _algorithm_bprop_backward(self, outputData, out):
-        """Backpropagation of error backward pass.
-
-        Returns:
-            Weight delta from backpropagation of error.
-
-        """
-
-        layers = self._get_mapping()
-        delta = {}
-        for id in range(len(layers) - 1)[::-1]:
-            src = layers[id]
-            tgt = layers[id + 1]
-            if id == len(layers) - 2:
-                delta[(src, tgt)] = out[tgt] - outputData
-                continue
-            in_data = self._units[tgt].params['bias'] \
-                + numpy.dot(out[src],
-                self._params['links'][(id, id + 1)]['W'])
-            grad = self._units[tgt].grad(in_data)
-            delta[(src, tgt)] = numpy.dot(delta[(tgt, layers[id + 2])],
-                self._params['links'][(id + 1, id + 2)]['W'].T) * grad
-
-        return delta
-
-    def _algorithm_update_params(self, updates):
-        """Update parameters from dictionary."""
-
-        layers = self._get_mapping()
-        for id, layer in enumerate(layers[:-1]):
-            src = layer
-            tgt = layers[id + 1]
-            self._params['links'][(id, id + 1)]['W'] += \
-                updates['links'][(src, tgt)]['W']
-            self._units[tgt].update(updates['units'][tgt])
-
-        return True
-
-    @nemoa.common.decorators.attributes(
-        name     = 'bprop',
-        category = ('system', 'optimization')
-    )
-    def _algorithm_bprop(self, dataset, schedule, tracker):
-        """Optimize parameters using backpropagation of error."""
-
-        # update parameters
-        while tracker.update():
-
-            # get training data (sample from minibatches)
-            data = tracker.get('data', 'training')
-            # forward pass (compute estimations from given input)
-            values = self._algorithm_bprop_forward(data[0])
-            # backward pass (compute deltas from given output)
-            delta = self._algorithm_bprop_backward(data[1], values)
-            # compute parameter updates
-            updates = self._algorithm_bprop_update(values, delta)
-            # update parameters
-            self._algorithm_update_params(updates)
-
-        return True
-
-    def _algorithm_bprop_update(self, out, delta, rate = 0.1):
-        """Compute parameter update directions from weight deltas."""
-
-        layers = self._get_mapping()
-        links = {}
-        units = {}
-        for id, src in enumerate(layers[:-1]):
-            tgt = layers[id + 1]
-            updu = self._units[tgt].get_updates_delta(delta[src, tgt])
-            updl = nemoa.system.commons.links.Links.get_updates_delta(
-                out[src], delta[src, tgt])
-            units[tgt] = {key: rate * updu[key]
-                for key in updu.iterkeys()}
-            links[(src, tgt)] = {key: rate * updl[key]
-                for key in updl.iterkeys()}
-
-        return {'units': units, 'links': links}
-
-    @nemoa.common.decorators.attributes(
-        name     = 'rprop',
-        category = ('system', 'optimization')
-    )
-    def _algorithm_rprop(self, dataset, schedule, tracker):
-        """Optimize parameters using resiliant backpropagation (RPROP).
-
-        resiliant backpropagation ...
-
-        """
-
-        # update parameters
-        while tracker.update():
-
-            # get training data (sample from minibatches)
-            data = tracker.get('data', 'training')
-            # forward pass (compute estimations from given input)
-            values = self._algorithm_bprop_forward(data[0])
-            # backward pass (compute deltas from given output)
-            delta = self._algorithm_bprop_backward(data[1], values)
-            # compute parameter updates
-            updates = self._algorithm_rprop_get_updates(values, delta,
-                tracker)
-            # update parameters
-            self._algorithm_update_params(updates)
-
-        return True
-
-    def _algorithm_rprop_get_updates(self, out, delta, tracker):
-
-        def _get_dict(dict, val): return {key: val * numpy.ones(
-            shape = dict[key].shape) for key in dict.keys()}
-
-        def _get_update(prevGrad, prev_update, grad, accel, min_factor,
-            max_factor):
-            update = {}
-            for key in grad.keys():
-                sign = numpy.sign(grad[key])
-                a = numpy.sign(prevGrad[key]) * sign
-                magnitude = numpy.maximum(numpy.minimum(
-                    prev_update[key] \
-                    * (accel[0] * (a == -1) + accel[1] * (a == 0)
-                    + accel[2] * (a == 1)), max_factor), min_factor)
-                update[key] = magnitude * sign
-            return update
-
-        # RProp parameters
-        accel = (.5, 1., 1.2)
-        init_rate = .001
-        min_factor = .000001
-        max_factor = 50.
-
-        layers = self._get_mapping()
-
-        # compute gradient from delta rule
-        grad = {'units': {}, 'links': {}}
-        for id, src in enumerate(layers[:-1]):
-            tgt = layers[id + 1]
-            grad['units'][tgt] = \
-                self._units[tgt].get_updates_delta(delta[src, tgt])
-            grad['links'][(src, tgt)] = \
-                nemoa.system.commons.links.Links.get_updates_delta(
-                out[src], delta[src, tgt])
-
-        # get previous gradients and updates
-        prev = tracker.read('rprop')
-        if not prev:
-            prev = {
-                'gradient': grad,
-                'update': {'units': {}, 'links': {}}}
-            for id, src in enumerate(layers[:-1]):
-                tgt = layers[id + 1]
-                prev['update']['units'][tgt] = \
-                    _get_dict(grad['units'][tgt], init_rate)
-                prev['update']['links'][(src, tgt)] = \
-                    _get_dict(grad['links'][(src, tgt)], init_rate)
-        prev_gradient = prev['gradient']
-        prev_update = prev['update']
-
-        # compute updates
-        update = {'units': {}, 'links': {}}
-        for id, src in enumerate(layers[:-1]):
-            tgt = layers[id + 1]
-
-            # calculate current rates for units
-            update['units'][tgt] = _get_update(
-                prev_gradient['units'][tgt],
-                prev_update['units'][tgt],
-                grad['units'][tgt],
-                accel, min_factor, max_factor)
-
-            # calculate current rates for links
-            update['links'][(src, tgt)] = _get_update(
-                prev_gradient['links'][(src, tgt)],
-                prev_update['links'][(src, tgt)],
-                grad['links'][(src, tgt)],
-                accel, min_factor, max_factor)
-
-        # save updates to store
-        tracker.write('rprop', gradient = grad, update = update)
-
-        return update
+        #return True
 
     @nemoa.common.decorators.attributes(
         name     = 'energy',

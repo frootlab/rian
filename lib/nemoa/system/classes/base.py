@@ -498,24 +498,6 @@ class System(nemoa.common.classes.ClassesBaseClass):
         return mapping[sid:tid + 1] if sid <= tid \
             else mapping[tid:sid + 1][::-1]
 
-    def _get_eval_data(self, dataset):
-        """Get data for evaluation."""
-
-        mapping = self._get_mapping()
-
-        return dataset.get('data', cols = (mapping[0], mapping[-1]))
-
-    def _get_training_data(self, dataset, **kwargs):
-        """Get data for optimization."""
-
-        config = self._config['optimize']
-        kwargs['size'] = config['minibatch_size']
-        if config['den_corr_enable']:
-            kwargs['noise'] = (config['den_corr_type'],
-                config['den_corr_factor'])
-
-        return dataset.get('data', **kwargs)
-
     def _get_copy(self, key = None, *args, **kwargs):
         """Get system copy as dictionary."""
 
@@ -1927,59 +1909,3 @@ class System(nemoa.common.classes.ClassesBaseClass):
     def copy(self, *args, **kwargs):
         """Create copy of system."""
         return nemoa.system.copy(self, *args, **kwargs)
-
-    def optimize(self, dataset, schedule = None):
-        """Optimize system parameters to dataset."""
-
-        # get optimization schedule
-        if not isinstance(schedule, dict):
-            if schedule == None: key = 'default'
-            elif isinstance(schedule, basestring): key = schedule
-            else:
-                return nemoa.log('error', """could not optimize model:
-                    optimization schedule is not valid.""")
-            if key in self._config['schedules']:
-                schedule = self._config['schedules'][key].copy()
-            else:
-                schedule = {}
-
-        # check if optimization schedule supports current system
-        if not self._get_type() in schedule:
-            return nemoa.log('error', """could not optimize model:
-                optimization schedule '%s' does not support system '%s'.
-                """ % (schedule['name'], self._get_type()))
-
-        # merge default, current and given optimization schedule
-        config = nemoa.common.dict.merge(self._config['optimize'],
-            self._default['optimize'])
-        config = nemoa.common.dict.merge(schedule[self._get_type()],
-            config)
-        self._config['optimize'] = config
-
-        # check dataset
-        if (not 'check_dataset' in self._default['init']
-            or self._default['init']['check_dataset'] == True) \
-            and not self._check_dataset(dataset):
-            return False
-
-        # initialize tracker
-        tracker = nemoa.system.commons.tracker.Tracker(self)
-        tracker.set(data = self._get_eval_data(dataset))
-
-        # get optimization algorithm
-        if 'meta_algorithm' in config and config['meta_algorithm']:
-            algorithm = config['meta_algorithm'].lower()
-        else:
-            algorithm = config['algorithm'].lower()
-        optimizer = self._get_algorithm(algorithm,
-            category = ('system', 'optimization'))
-        if optimizer: nemoa.log('note',
-            "optimize '%s' (%s) using algorithm %s." % \
-            (self._get_name(), self._get_type(), optimizer['name']))
-        else: return nemoa.log('error',
-            """could not optimize '%s' (%s):
-            unsupported optimization algorithm '%s'."""
-            % (self._get_name(), self._get_type(), algorithm))
-
-        # optimize system parameters
-        return optimizer['reference'](dataset, schedule, tracker)

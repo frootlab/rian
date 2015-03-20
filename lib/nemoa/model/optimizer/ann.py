@@ -13,13 +13,18 @@ class ANN(nemoa.model.optimizer.base.Optimizer):
     _default = {
         'algorithm': 'bprop',
         'updates': 10000,
-        'den_corr_enable': False,
+        'noise_enable': False,
         'minibatch_size': 100,
         'minibatch_update_interval': 10,
         'schedule': None,
         'visible': None,
         'hidden': None,
         'adjacency_enable': False,
+        'bprop_rate': .1,
+        'rprop_accel': (.5, 1., 1.2),
+        'rprop_init_rate': .001,
+        'rprop_min_factor': .000001,
+        'rprop_max_factor': 50.,
         'tracker_estimate_time': False,
         'tracker_estimate_time_wait': 15.,
         'tracker_obj_tracking_enable': True,
@@ -33,31 +38,29 @@ class ANN(nemoa.model.optimizer.base.Optimizer):
         'ignore_units': [] }
 
     @nemoa.common.decorators.attributes(
-        name     = 'bprop',
-        category = 'optimization'
-    )
-    def _algorithm_bprop(self):
+        name = 'bprop', category = 'optimization')
+    def _bprop(self):
         """Optimize parameters using backpropagation of error."""
 
         while self.update():
             # get training data (sample from stratified minibatches)
             data = self._get_data_training()
             # forward pass (compute estimations from given input)
-            values = self._algorithm_bprop_forward(data[0])
+            values = self._bprop_forward(data[0])
             # backward pass (compute deltas to given output)
-            deltas = self._algorithm_bprop_backward(data[1], values)
+            deltas = self._bprop_backward(data[1], values)
             # compute parameter updates
-            updates = self._algorithm_bprop_updates(values, deltas)
+            updates = self._bprop_get_updates(values, deltas)
             # update parameters
-            self._algorithm_update_params(updates)
+            self._bprop_update(updates)
 
         return True
 
-    def _algorithm_bprop_forward(self, data):
+    def _bprop_forward(self, data):
         """Backpropagation of error forward pass.
 
-        Compute (most) estimated values for all layers, from given data
-        on input layer.
+        Compute expectation values for all layers, from given data
+        on input layer using current system parameters.
 
         Returns:
             Dictionary with layers names as keys and expectation values
@@ -77,7 +80,7 @@ class ANN(nemoa.model.optimizer.base.Optimizer):
 
         return values
 
-    def _algorithm_bprop_backward(self, tgtdata, out):
+    def _bprop_backward(self, tgtdata, values):
         """Backpropagation of error backward pass.
 
         Returns:
@@ -93,18 +96,18 @@ class ANN(nemoa.model.optimizer.base.Optimizer):
             src = layers[id]
             tgt = layers[id + 1]
             if id == len(layers) - 2:
-                delta[(src, tgt)] = out[tgt] - tgtdata
+                delta[(src, tgt)] = values[tgt] - tgtdata
                 continue
-            in_data = system._units[tgt].params['bias'] \
-                + numpy.dot(out[src],
+            srcdata = system._units[tgt].params['bias'] \
+                + numpy.dot(values[src],
                 system._params['links'][(id, id + 1)]['W'])
-            grad = system._units[tgt].grad(in_data)
+            grad = system._units[tgt].grad(srcdata)
             delta[(src, tgt)] = numpy.dot(delta[(tgt, layers[id + 2])],
                 system._params['links'][(id + 1, id + 2)]['W'].T) * grad
 
         return delta
 
-    def _algorithm_update_params(self, updates):
+    def _bprop_update(self, updates):
         """Update parameters from dictionary."""
 
         system = self.model.system
@@ -119,10 +122,12 @@ class ANN(nemoa.model.optimizer.base.Optimizer):
 
         return True
 
-    def _algorithm_bprop_updates(self, out, delta, rate = 0.1):
+    def _bprop_get_updates(self, out, delta):
         """Compute parameter update directions from weight deltas."""
 
         system = self.model.system
+
+        rate = self._config.get('bprop_rate', .1)
 
         layers = system._get_mapping()
         links = {}
@@ -140,10 +145,8 @@ class ANN(nemoa.model.optimizer.base.Optimizer):
         return { 'units': units, 'links': links }
 
     @nemoa.common.decorators.attributes(
-        name     = 'rprop',
-        category = 'optimization'
-    )
-    def _algorithm_rprop(self):
+        name = 'rprop', category = 'optimization')
+    def _rprop(self):
         """Optimize parameters using resiliant backpropagation (RPROP).
 
         resiliant backpropagation ...
@@ -151,19 +154,19 @@ class ANN(nemoa.model.optimizer.base.Optimizer):
         """
 
         while self.update():
-            data = self._get_training_data()
+            data = self._get_data_training()
             # forward pass (compute estimations from given input)
-            values = self._algorithm_bprop_forward(data[0])
+            values = self._bprop_forward(data[0])
             # backward pass (compute deltas to given output)
-            deltas = self._algorithm_bprop_backward(data[1], values)
+            deltas = self._bprop_backward(data[1], values)
             # compute parameter updates
-            updates = self._algorithm_rprop_updates(values, deltas)
+            updates = self._rprop_get_updates(values, deltas)
             # update parameters
-            self._algorithm_update_params(updates)
+            self._bprop_update(updates)
 
         return True
 
-    def _algorithm_rprop_updates(self, out, delta):
+    def _rprop_get_updates(self, out, delta):
         """ """
 
         def _get_dict(dict, val): return {key: val * numpy.ones(
@@ -183,10 +186,10 @@ class ANN(nemoa.model.optimizer.base.Optimizer):
             return update
 
         # RProp parameters
-        accel = (.5, 1., 1.2)
-        init_rate = .001
-        min_factor = .000001
-        max_factor = 50.
+        accel = self._config.get('rprop_accel', (.5, 1., 1.2))
+        init_rate = self._config.get('rprop_init_rate', .001)
+        min_factor = self._config.get('rprop_min_factor', .000001)
+        max_factor = self._config.get('rprop_max_factor', 50.)
 
         system = self.model.system
         layers = system._get_mapping()
