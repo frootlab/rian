@@ -12,8 +12,12 @@ _WORKSPACE = None
 class NemoaTestCase(unittest.TestCase):
 
     def setUp(self):
+        self.mode = nemoa.get('mode')
         nemoa.set('mode', 'silent')
         self.workspace = _WORKSPACE
+
+    def tearDown(self):
+        nemoa.set('mode', self.mode)
 
     def test_nemoa_config_about(self):
         test = isinstance(nemoa.about(), basestring)
@@ -150,12 +154,12 @@ class NemoaTestCase(unittest.TestCase):
             and 'grbm' in systems \
             and 'rbm' in systems
         self.assertTrue(test)
-        
+
     def test_nemoa_config_list_models(self):
         models = nemoa.list('models')
         test = isinstance(models, list) and 'test' in models
         self.assertTrue(test)
-        
+
     def test_nemoa_config_list_scripts(self):
         scripts = nemoa.list('scripts')
         test = isinstance(scripts, list) and 'unittest' in scripts
@@ -172,7 +176,7 @@ class NemoaTestCase(unittest.TestCase):
     def test_nemoa_config_path_datasets(self):
         test = isinstance(nemoa.path('datasets'), basestring)
         self.assertTrue(test)
-        
+
     def test_nemoa_config_path_networks(self):
         test = isinstance(nemoa.path('networks'), basestring)
         self.assertTrue(test)
@@ -220,7 +224,7 @@ class NemoaTestCase(unittest.TestCase):
             test &= isinstance(path, basestring)
             if not test: break
         self.assertTrue(test)
-        
+
     def test_nemoa_config_path_system(self):
         objtype = 'system'
         names = nemoa.list(objtype + 's')
@@ -230,7 +234,7 @@ class NemoaTestCase(unittest.TestCase):
             test &= isinstance(path, basestring)
             if not test: break
         self.assertTrue(test)
-        
+
     def test_nemoa_config_path_model(self):
         objtype = 'model'
         names = nemoa.list(objtype + 's')
@@ -283,7 +287,7 @@ class NemoaTestCase(unittest.TestCase):
     def test_nemoa_network_import_ini(self):
         test = nemoa.common.type.isnetwork(nemoa.network.open('deep'))
         self.assertTrue(test)
-    
+
     def test_nemoa_network_create_autoencoder(self):
         network = nemoa.network.create('autoencoder',
             columns = ['i1', 'i2', 'o1'],
@@ -311,24 +315,9 @@ class NemoaTestCase(unittest.TestCase):
         test = nemoa.common.type.ismodel(model)
         self.assertTrue(test)
 
-    def test_nemoa_model_algorithm_shallow_ann(self):
-        model = nemoa.model.create(
-            dataset = 'linear', network = 'shallow', system = 'ann')
-        model.optimize()
-        test = model.evaluate('system', 'error') < 0.1
-        self.assertTrue(test)
-
-    def test_nemoa_model_algorithm_deep_dbn(self):
-        model = nemoa.model.create(
-            dataset = 'linear', network = 'deep', system = 'dbn')
-        model.optimize()
-        test = model.evaluate('system', 'error') < 0.5
-        self.assertTrue(test)
-
 def main(workspace, *args, **kwargs):
     _WORKSPACE = workspace
     suite = unittest.TestLoader().loadTestsFromTestCase(NemoaTestCase)
-
     nemoa.log('testing nemoa ' + nemoa.__version__)
     unittest.TextTestRunner(verbosity = 2).run(suite)
 
