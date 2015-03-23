@@ -32,25 +32,20 @@ def list(*args, **kwargs):
 
     return None
 
-def open(*args, **kwargs):
+def open(key = None, *args, **kwargs):
     """Wrapping function to nemoa.open()."""
-    if not args:
-        return None
-    if len(args) == 1:
-        nemoa.open(args[0])
-        return None
-    if len(args) == 2:
-        if args[0] == 'workspace':
-            nemoa.open(args[1])
-            return None
-        if args[0] == 'model':
-            return nemoa.model.open(args[1], **kwargs)
-        if args[0] == 'dataset':
-            return nemoa.dataset.open(args[1], **kwargs)
-        if args[0] == 'network':
-            return nemoa.network.open(args[1], **kwargs)
-        if args[0] == 'system':
-            return nemoa.system.open(args[1], **kwargs)
+    if not key: return None
+    if not args: nemoa.open(key)
+    elif len(args) == 1:
+        if key == 'model':
+            return nemoa.model.open(args[0], **kwargs)
+        if key == 'dataset':
+            return nemoa.dataset.open(args[0], **kwargs)
+        if key == 'network':
+            return nemoa.network.open(args[0], **kwargs)
+        if key == 'system':
+            return nemoa.system.open(args[0], **kwargs)
+        if key == 'workspace': nemoa.open(args[0])
     return None
 
 def path(*args, **kwargs):

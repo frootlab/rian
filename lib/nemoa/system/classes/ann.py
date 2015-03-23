@@ -86,22 +86,7 @@ class ANN(nemoa.system.classes.base.System):
         'init': {
             'check_dataset': False,
             'ignore_units': [],
-            'w_sigma': 0.5 },
-        'optimize': {
-            'ignore_units': [],
-            'algorithm': 'bprop',
-            'noise_enable': False,
-            'minibatch_size': 100,
-            'minibatch_update_interval': 10,
-            'updates': 10000,
-            'schedule': None,
-            'visible': None,
-            'hidden': None,
-            'adjacency_enable': False,
-            'tracker_obj_function': 'error',
-            'tracker_eval_time_interval': 10. ,
-            'tracker_estimate_time': True,
-            'tracker_estimate_time_wait': 15. }}
+            'w_sigma': 0.5 }}
 
     def _configure_test(self, params):
         """Check if system parameter dictionary is valid. """
@@ -188,42 +173,6 @@ class ANN(nemoa.system.classes.base.System):
                 if not attr in params['links'][id].keys(): return False
 
         return True
-
-    #def _get_weights_from_layers(self, source, target):
-        #"""Return ..."""
-
-        #srcname = source['name']
-        #tgtname = target['name']
-
-        #if self._config['optimize']['adjacency_enable']:
-            #if tgtname in self._links[srcname]['target']:
-                #return self._links[srcname]['target'][tgtname]['W'] \
-                    #* self._links[srcname]['target'][tgtname]['A']
-            #elif srcname in self._links[tgtname]['target']:
-                #return (self._links[tgtname]['target'][srcname]['W'] \
-                    #* self._links[srcname]['target'][tgtname]['A']).T
-        #else:
-            #if tgtname in self._links[srcname]['target']:
-                #return self._links[srcname]['target'][tgtname]['W']
-            #elif srcname in self._links[tgtname]['target']:
-                #return self._links[tgtname]['target'][srcname]['W'].T
-
-        #return nemoa.log('error', """Could not get links:
-            #Layer '%s' and layer '%s' are not connected.
-            #""" % (srcname, tgtname))
-
-    #def _algorithm_update_params(self, updates):
-        #"""Update parameters from dictionary."""
-
-        #layers = self._get_mapping()
-        #for id, layer in enumerate(layers[:-1]):
-            #src = layer
-            #tgt = layers[id + 1]
-            #self._params['links'][(id, id + 1)]['W'] += \
-                #updates['links'][(src, tgt)]['W']
-            #self._units[tgt].update(updates['units'][tgt])
-
-        #return True
 
     @nemoa.common.decorators.attributes(
         name     = 'energy',

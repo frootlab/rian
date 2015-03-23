@@ -131,10 +131,8 @@ class Network(nemoa.common.classes.ClassesBaseClass):
             edges[edge_layer] = edges_filtered
 
         # clear or create new instance of networkx directed graph
-        if self._graph == None:
-            self._graph = networkx.DiGraph()
-        else:
-            self._graph.clear()
+        if self._graph == None: self._graph = networkx.DiGraph()
+        else: self._graph.clear()
 
         # add configuration as graph attributes
         self._graph.graph['params'] = self._config
@@ -143,7 +141,6 @@ class Network(nemoa.common.classes.ClassesBaseClass):
         self._graph.graph['params']['networkx'] = {
             'module': self._graph.__module__,
             'class': self._graph.__class__.__name__ }
-
 
         # add nodes to graph
         order = 0

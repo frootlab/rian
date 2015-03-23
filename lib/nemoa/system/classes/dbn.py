@@ -90,25 +90,7 @@ class DBN(nemoa.system.classes.ann.ANN):
         'init': {
             'check_dataset': False,
             'ignore_units': [],
-            'w_sigma': 0.5 },
-        'optimize': {
-            'ignore_units': [],
-            'meta_algorithm': 'dbn',
-            'pretraining': True,
-            'finetuning': True,
-            'algorithm': 'bprop',
-            'noise_enable': False,
-            'minibatch_size': 100,
-            'minibatch_update_interval': 10,
-            'updates': 10000,
-            'schedule': None,
-            'visible': None,
-            'hidden': None,
-            'adjacency_enable': False,
-            'tracker_obj_function': 'error',
-            'tracker_eval_time_interval': 10. ,
-            'tracker_estimate_time': True,
-            'tracker_estimate_time_wait': 15. }}
+            'w_sigma': 0.5 }}
 
     def _check_network(self, network):
         return network._is_compatible_dbn()
