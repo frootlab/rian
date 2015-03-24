@@ -247,10 +247,10 @@ class Optimizer:
 
         return self.model.system._config['schedules'].get(key, {})
 
-    def optimize(self, config = None, *args, **kwargs):
+    def optimize(self, config = None, **kwargs):
         """ """
 
-        if not self._set_config(config): return None
+        if not self._set_config(config, **kwargs): return None
         if not self._set_state_reset(): return None
 
         # get name of optimization algorithm
@@ -274,7 +274,7 @@ class Optimizer:
 
             # start key events
             if not self._state['key_events_started']:
-                nemoa.log('note', """press 'h' for help.""")
+                nemoa.log('note', "press 'h' for help or 'q' to quit.")
                 self._state['key_events_started'] = True
                 nemoa.set('shell', 'buffmode', 'key')
 
@@ -296,7 +296,7 @@ class Optimizer:
 
         return nemoa.log('warning', "unknown key '%s'" % key) or None
 
-    def _set_config(self, config = None):
+    def _set_config(self, config = None, **kwargs):
         """Set optimizer configuration from dictionary."""
 
         if not isinstance(config, dict):
@@ -313,6 +313,7 @@ class Optimizer:
             config = schedules.get(key, {}).get(system.type, {})
 
         self._config = nemoa.common.dict.merge(config, self._default)
+        self._config = nemoa.common.dict.merge(kwargs, self._config)
 
         return True
 
@@ -427,9 +428,18 @@ class Optimizer:
         """Check Keyboard."""
 
         char = nemoa.get('shell', 'inkey')
-        if char == 'q':
-            progr = 100. * self._get_progress()
-            nemoa.log('note', 'aborting optimization at %.1f%%' % progr)
+        if not char: return True
+
+        if char == 'e':
+            pass
+        elif char == 'h':
+            nemoa.log('note', "Keyboard Shortcuts")
+            nemoa.log('note', "'e' -- calculate evaluation function")
+            nemoa.log('note', "'h' -- show this")
+            nemoa.log('note', "'q' -- quit optimization")
+            nemoa.log('note', "'t' -- estimate finishing time")
+        elif char == 'q':
+            nemoa.log('note', 'aborting optimization')
             self._state['continue'] = False
         elif char == 't':
             ftime = self._get_estimate_time()

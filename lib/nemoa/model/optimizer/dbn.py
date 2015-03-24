@@ -17,29 +17,13 @@ class DBN(nemoa.model.optimizer.ann.ANN):
 
     _default = {
         'algorithm': 'dbn',
-        'updates': 10000,
         'pretraining': True,
-        'finetuning': 'bprop',
-        'noise_enable': False,
-        'minibatch_size': 100,
-        'minibatch_update_interval': 10,
+        'finetuning': True,
         'schedule': None,
         'visible': None,
         'hidden': None,
-        'adjacency_enable': False,
         'schedule_rbm.rbm': 'default',
-        'schedule_rbm.grbm': 'default',
-        'tracker_estimate_time': False,
-        'tracker_estimate_time_wait': 15.,
-        'tracker_obj_tracking_enable': True,
-        'tracker_obj_init_wait': 0.01,
-        'tracker_obj_function': 'accuracy',
-        'tracker_obj_keep_optimum': True,
-        'tracker_obj_update_interval': 100,
-        'tracker_eval_enable': True,
-        'tracker_eval_function': 'accuracy',
-        'tracker_eval_time_interval': 10.,
-        'ignore_units': [] }
+        'schedule_rbm.grbm': 'default' }
 
     @nemoa.common.decorators.attributes(
         name     = 'dbn',
@@ -51,10 +35,14 @@ class DBN(nemoa.model.optimizer.ann.ANN):
     def _dbn(self):
         """Deep belief network optimization."""
 
-        if self._config['pretraining']: self._dbn_pretraining()
-        if self._config['finetuning']: self._dbn_finetuning()
+        retval = True
 
-        return True
+        if retval and self._config['pretraining']:
+            retval &= self.optimize(algorithm = 'pretraining')
+        if retval and self._config['finetuning']:
+            retval &= self.optimize(algorithm = 'finetuning')
+
+        return retval
 
     @nemoa.common.decorators.attributes(
         name     = 'pretraining',
