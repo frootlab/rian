@@ -9,7 +9,7 @@ or statistical values.
 
 """
 
-__version__     = '0.5.0pre14'
+__version__     = '0.5.0pre15'
 __status__      = 'Development'
 __description__ = 'Deep data analysis and visualization'
 __url__         = 'https://github.com/fishroot/nemoa'
@@ -33,6 +33,10 @@ import nemoa.workspace
 def about(*args, **kwargs):
     """Get meta information."""
     return get('about', *args, **kwargs)
+
+def close(*args, **kwargs):
+    """Close current workspace instance."""
+    return set('workspace', None)
 
 def get(*args, **kwargs):
     """Get value from configuration instance."""

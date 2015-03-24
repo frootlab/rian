@@ -21,12 +21,21 @@ def main():
         nemoa.log('note', nemoa.about(*args, **kwargs))
         return None
 
+    def close(*args, **kwargs):
+        """Close current workspace."""
+        nemoa.close()
+        return None
+
     def create(type = None, *args, **kwargs):
         """ """
-        if type == 'model': return nemoa.model.create(*args, **kwargs)
-        if type == 'network': return nemoa.model.network(*args, **kwargs)
-        if type == 'dataset': return nemoa.model.dataset(*args, **kwargs)
-        if type == 'system': return nemoa.model.system(*args, **kwargs)
+        if type == 'model':
+            return nemoa.model.create(*args, **kwargs)
+        if type == 'network':
+            return nemoa.model.network(*args, **kwargs)
+        if type == 'dataset':
+            return nemoa.model.dataset(*args, **kwargs)
+        if type == 'system':
+            return nemoa.model.system(*args, **kwargs)
         return None
 
     def get(*args, **kwargs):
@@ -67,9 +76,10 @@ def main():
 
     def optimize(*args, **kwargs):
         # create thread
-        import nemoa.common.threads
+        #import nemoa.common.threads
         function = nemoa.model.optimizer.optimize
-        return nemoa.common.threads.thread(function, *args, **kwargs)
+        #return nemoa.common.threads.thread(function, *args, **kwargs)
+        return function(*args, **kwargs)
 
     def path(*args, **kwargs):
         """Wrapping function to nemoa.path()."""
