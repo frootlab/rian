@@ -9,6 +9,10 @@ def thread(function, *args, **kwargs):
 
     import threading
 
-    return threading.Thread(
+    thread = threading.Thread(
         target = (lambda f, args, kwargs: f(*args, **kwargs)),
         args = (function, args, kwargs))
+    thread.daemon = True
+    thread.start()
+
+    return thread

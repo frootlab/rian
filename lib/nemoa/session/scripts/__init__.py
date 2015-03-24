@@ -5,7 +5,7 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-def startsession():
+def main():
 
     import getopt
     import sys
@@ -33,6 +33,7 @@ def startsession():
 
         -h --help                 Print this
         -i --interactive          Start nemoa in iPython interactive shell
+        -g --gui
         -l --list                 List workspaces
         -w --workspace            List scripts in workspace
         -s --script               Open workspace and execute script
@@ -64,34 +65,19 @@ def startsession():
 
         return True
 
-    def run_interactive():
+    def run_ipython():
         """Run nemoa in interactive ipython shell."""
+        import nemoa.session.scripts.console
+        return nemoa.session.scripts.console.main()
 
-        try:
-            import IPython
-        except ImportError:
-            return nemoa.log('error',
-                """could not start interactive nemoa shell:
-                you have to install ipython.""")
-
-        import os
-        os.system('cls' if os.name == 'nt' else 'clear')
-
-        import nemoa
-        nemoa.set('mode', 'shell')
-
-        from nemoa.session.scripts.console \
-            import about, get, create, list, open, path, run, set, show
-
-        IPython.embed(banner1 = 'nemoa %s\n' % nemoa.__version__)
-
-        return True
+    def run_pyside():
+        """Run nemoa with qt gui."""
+        import nemoa.session.scripts.qtgui
+        return nemoa.session.scripts.qtgui.main()
 
     def run_script(workspace, script, *args):
         """Run nemoa python script in workspace."""
-
         import nemoa
-
         return nemoa.open(workspace) and nemoa.run(script, *args)
 
     workspace = ''
@@ -101,7 +87,7 @@ def startsession():
 
     # get arguments
     try:
-        opts, args = getopt.getopt(argv, "hvilw:s:a:",
+        opts, args = getopt.getopt(argv, "hgvilw:s:a:",
             ["workspace=", "script=", "arguments="])
     except getopt.GetoptError:
         print_usage()
@@ -114,8 +100,9 @@ def startsession():
     for opt, arg in opts:
         if opt in ['-h', '--help']: mode = 'showhelp'
         elif opt in ['-v', '--version']: mode = 'showversion'
-        elif opt in ['-i', '--interactive']: mode = 'runinteractive'
+        elif opt in ['-i', '--interactive']: mode = 'ipython'
         elif opt in ['-l', '--list']: mode = 'showworkspaces'
+        elif opt in ['-g', '--qt']: mode = 'pyside'
         elif opt in ['-w', '--workspace']: workspace = arg
         elif opt in ['-s', '--script']: script = arg
         elif opt in ['-a', '--arguments']: arguments = arg
@@ -123,7 +110,8 @@ def startsession():
     if   mode == 'showhelp': print_usage()
     elif mode == 'showversion': print_version()
     elif mode == 'showworkspaces': print_workspaces()
-    elif mode == 'runinteractive': run_interactive()
+    elif mode == 'ipython': run_ipython()
+    elif mode == 'pyside': run_pyside()
     elif mode == 'runscript':
         if not workspace:
             print_usage()
@@ -136,4 +124,4 @@ def startsession():
             else: run_script(workspace, script)
 
 if __name__ == "__main__":
-   startsession()
+   main()

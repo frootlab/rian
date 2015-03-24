@@ -101,7 +101,7 @@ def install():
             'Programming Language :: Python :: 3.4' ],
         'entry_points': {
             'console_scripts': [
-                'nemoa = nemoa.session.scripts:startsession'] }}
+                'nemoa = nemoa.session.scripts:main'] }}
 
     # prepare dynamic package variables
     srcfile = (pkg['libdir'], pkg['name'], '__init__.py')
