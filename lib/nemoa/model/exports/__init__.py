@@ -89,4 +89,12 @@ def save(model, path = None, filetype = None, workspace = None,
     return False
 
 def show(model, *args, **kwargs):
+    """ """
+
+    #import nemoa.common.threads
+
+    #function = nemoa.model.exports.image.show
+    #thread = nemoa.common.threads.thread(function, model,
+        #*args, **kwargs)
+
     return nemoa.model.exports.image.show(model, *args, **kwargs)
