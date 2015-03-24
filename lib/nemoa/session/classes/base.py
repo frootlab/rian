@@ -494,8 +494,14 @@ class Session:
             if __name__ + '.file' in loggers \
             else logging.getLogger(__name__ + '.null')
 
+        # todo: depending on mode
         # format message
-        msg = msg.strip().replace('\n', '')
+        if isinstance(msg, basestring):
+            msg = msg.strip().replace('\n', ' ')
+        elif isinstance(msg, list):
+            msg = ', '.join(msg).strip().replace('\n', ' ')
+        else:
+            msg = '[could not format message]'
         while '  ' in msg: msg = msg.replace('  ', ' ')
 
         # create file message

@@ -19,12 +19,60 @@ def main():
     from PySide import QtGui
     import sys
 
-    class Example(PySide.QtGui.QMainWindow):
+    class MainWindow(PySide.QtGui.QMainWindow):
 
         def __init__(self):
-            super(Example, self).__init__()
+            super(MainWindow, self).__init__()
+
+            self.createActions()
+            self.createMenus()
 
             self.initUI()
+
+        def createActions(self):
+            self.actNewFile = QtGui.QAction(
+                "&New", self,
+                shortcut = "Ctrl+N",
+                statusTip = "Create new Workspace",
+                triggered = self.menuNewFile)
+            self.actOpenFile = QtGui.QAction(
+                QtGui.QIcon('open.png'), '&Open', self,
+                shortcut = "Ctrl+O",
+                statusTip = "Open Workspace",
+                triggered = self.menuOpenFile)
+            self.actPrintFile = QtGui.QAction(
+                "&Print", self,
+                shortcut = QtGui.QKeySequence.Print,
+                statusTip = "Print the document",
+                triggered = self.menuPrintFile)
+            self.actSaveFile = QtGui.QAction(
+                '&Save', self,
+                shortcut = "Ctrl+S",
+                statusTip = "Save Workspace",
+                triggered = self.menuSaveFile)
+            self.actExit = QtGui.QAction(
+                "E&xit", self,
+                shortcut = "Ctrl+X",
+                statusTip = "Quit nemoa",
+                triggered = self.close)
+            self.actAbout = QtGui.QAction(
+                "About", self,
+                triggered = self.menuAbout)
+
+        def createMenus(self):
+            self.fileMenu = self.menuBar().addMenu("&File")
+            self.fileMenu.addAction(self.actNewFile)
+            self.fileMenu.addAction(self.actOpenFile)
+            self.fileMenu.addAction(self.actSaveFile)
+            self.fileMenu.addAction(self.actPrintFile)
+            self.fileMenu.addSeparator()
+            self.fileMenu.addAction(self.actExit)
+
+            self.itemMenu = self.menuBar().addMenu("&Item")
+            self.itemMenu.addSeparator()
+
+            self.aboutMenu = self.menuBar().addMenu("&Help")
+            self.aboutMenu.addAction(self.actAbout)
 
         def initUI(self):
 
@@ -32,27 +80,42 @@ def main():
             self.setCentralWidget(self.textEdit)
             self.statusBar()
 
-            openFile = QtGui.QAction(QtGui.QIcon('open.png'), 'Open', self)
-            openFile.setShortcut('Ctrl+O')
-            openFile.setStatusTip('Open Workspace')
-            openFile.triggered.connect(self.getOpenWorkspace)
-
-            menubar = self.menuBar()
-            fileMenu = menubar.addMenu('&File')
-            fileMenu.addAction(openFile)
-
             self.setGeometry(300, 300, 350, 300)
             self.setWindowTitle('Nemoa')
             self.show()
 
-        def getOpenWorkspace(self):
+        def menuAbout(self):
+            amail = nemoa.about('email')
+            aversion = nemoa.about('version')
+            acopyright = nemoa.about('copyright')
+            adesc = nemoa.about('description').replace('\n', '<br>')
+            acredits = '</i>, <i>'.join(nemoa.about('credits'))
+            alicense = nemoa.about('license')
 
+            text = ("""
+                <h1>nemoa</h1>
+                <b>version</b> %s<br>
+                <i>%s</i>
+                <h3>Copyright</h3>
+                %s <a href = "mailto:%s">&lt;%s&gt;</a>
+                <h3>License</h3>
+                This software may be used under the terms of the
+                %s as published by the
+                <a href="https://gnu.org/licenses/gpl.html">
+                Free Software Foundation</a>.
+                <h3>Credits</h3>
+                <i>%s</i>
+                """ % (aversion, adesc, acopyright, amail, amail,
+                alicense, acredits)).replace('                ', '')
+
+            QtGui.QMessageBox.about(self, "About Nemoa", text)
+
+        def menuOpenFile(self):
             path = nemoa.path('basepath', 'user')
             options = QtGui.QFileDialog.DontResolveSymlinks \
                 | QtGui.QFileDialog.ShowDirsOnly
             directory = QtGui.QFileDialog.getExistingDirectory(self,
-                "test",
-                path, options)
+                "test", path, options)
             if not directory: return False
             name = nemoa.common.ospath.basename(directory)
             if not nemoa.open(name): return False
@@ -63,9 +126,18 @@ def main():
                 text += '%s: %s\n' % (key, ', '.join(val))
             self.textEdit.setText(text)
 
+        def menuPrintFile(self):
+            pass
+
+        def menuNewFile(self):
+            pass
+
+        def menuSaveFile(self):
+            pass
+
     nemoa.set('mode', 'silent')
     app = QtGui.QApplication(sys.argv)
-    ex = Example()
+    ex = MainWindow()
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
