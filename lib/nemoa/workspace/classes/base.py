@@ -48,7 +48,7 @@ class Workspace:
         # meta information
         if key in self._attr_meta: return self._get_meta(key)
 
-        return nemoa.log('warning', "unknown key '%s'" % key) or None
+        return nemoa.log('warning', "unknown key '%s'" % key)
 
     def _get_meta(self, key):
         """Get meta information like 'name' or 'path'."""
@@ -58,7 +58,7 @@ class Workspace:
         if key == 'name': return self._get_name()
         if key == 'path': return self._get_path()
 
-        return nemoa.log('warning', "unknown key '%s'" % key) or None
+        return nemoa.log('warning', "unknown key '%s'" % key)
 
     def _get_about(self):
         """Get description.
@@ -98,14 +98,14 @@ class Workspace:
         if key == 'copy': return self._set_copy(*args, **kwargs)
         if key == 'config': return self._set_config(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key) or None
+        return nemoa.log('warning', "unknown key '%s'" % key)
 
     def _set_meta(self, key, *args, **kwargs):
         """Set meta information like 'name' or 'path'."""
 
         if key == 'about': return self._set_about(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key) or None
+        return nemoa.log('warning', "unknown key '%s'" % key)
 
     def _set_about(self, val):
         """Set description."""

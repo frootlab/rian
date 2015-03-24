@@ -16,11 +16,10 @@ class DBN(nemoa.model.optimizer.ann.ANN):
     """Deep Belief Network (DBN) Optimizer."""
 
     _default = {
-        'meta_algorithm': 'dbn',
-        'algorithm': 'bprop',
+        'algorithm': 'dbn',
         'updates': 10000,
         'pretraining': True,
-        'finetuning': True,
+        'finetuning': 'bprop',
         'noise_enable': False,
         'minibatch_size': 100,
         'minibatch_update_interval': 10,
@@ -43,25 +42,37 @@ class DBN(nemoa.model.optimizer.ann.ANN):
         'ignore_units': [] }
 
     @nemoa.common.decorators.attributes(
-        name = 'dbn', category = 'optimization',
-        netcheck = lambda net: net._is_compatible_dbn())
+        name     = 'dbn',
+        longname = 'deep belief network optimization',
+        category = 'optimization',
+        type     = 'metaalgorithm',
+        syscheck = lambda net: net._is_compatible_dbn())
+
     def _dbn(self):
-        """Optimize system parameters."""
+        """Deep belief network optimization."""
 
-        # (optional) pretraining of system parameters
-        # perform forward optimization of ann using
-        # restricted boltzmann machines as subsystems
         if self._config['pretraining']: self._dbn_pretraining()
-
-        # (optional) finetuning of system parameters
-        # perform backward optimization of ann
-        # using backpropagation of error
         if self._config['finetuning']: self._dbn_finetuning()
 
         return True
 
+    @nemoa.common.decorators.attributes(
+        name     = 'pretraining',
+        longname = 'deep belief network pretraining',
+        category = 'optimization',
+        type     = 'metaalgorithm',
+        syscheck = None)
+
     def _dbn_pretraining(self):
-        """Pretraining model using Restricted Boltzmann Machines."""
+        """Deep belief network pretraining.
+
+        Deep belief network pretraining is a meta algorithm that wraps
+        unittype specific optimization schedules, intended to perform
+        system local optimization from outer layers to inner layers.
+        The default optimization schedules uses restricted boltzmann
+        machines and contrastive divergency optimization.
+
+        """
 
         system = self.model.system
         config = self._config
@@ -83,9 +94,11 @@ class DBN(nemoa.model.optimizer.ann.ANN):
                 if src['visible'] else src['id']
             tgt = system._params['units'][lid + 1]
             tgtnodes = tgt['id']
+            cpy = system._params['units'][-(lid + 1)]
             links = system._params['links'][(lid, lid + 1)]
             linkclass = (src['class'], tgt['class'])
-            name = '%s <-> %s' % (src['layer'], tgt['layer'])
+            name = '%s <-> %s <-> %s' % (src['layer'], tgt['layer'],
+                cpy['layer'])
             systype = {
                 ('gauss', 'sigmoid'): 'rbm.GRBM',
                 ('sigmoid', 'sigmoid'): 'rbm.RBM' }.get(
@@ -210,13 +223,31 @@ class DBN(nemoa.model.optimizer.ann.ANN):
 
         return True
 
+    @nemoa.common.decorators.attributes(
+        name     = 'finetuning',
+        longname = 'deep belief network finetuning',
+        category = 'optimization',
+        type     = 'metaalgorithm',
+        syscheck = None)
+
     def _dbn_finetuning(self):
-        """Finetuning model using backpropagation of error."""
+        """Deep belief network finetuning.
 
-        # optimize system parameters
-        algorithm = self._config['algorithm']
-        optimizer = self._get_algorithm(algorithm,
-            category = 'optimization')
-        optimizer['reference']()
+        Deep belief network Finetuning is a meta algorithm that wraps an
+        arbitrary optimization schedule, intended to perform system
+        global optimization. The default optimization schedule uses
+        backpropagation of error.
 
-        return True
+        """
+
+        schedulename = 'default'
+        sysname = self._config.get('finetuning', 'ann.ANN')
+        schedule = self._get_schedule('default') or {}
+        config = schedule.get(sysname, {})
+        algorithm = config.get('algorithm', None)
+
+        if algorithm == 'dbn':
+            return nemoa.log('warning', """could not finetune model:
+                recursion detected.""")
+
+        return self.optimize(config = config)

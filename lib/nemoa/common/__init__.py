@@ -6,7 +6,6 @@ __license__ = 'GPLv3'
 
 import nemoa.common.classes
 import nemoa.common.decorators
-import nemoa.common.console
 import nemoa.common.csvfile
 import nemoa.common.dict
 import nemoa.common.inifile

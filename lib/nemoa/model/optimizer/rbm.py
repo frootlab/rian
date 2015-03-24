@@ -70,7 +70,12 @@ class RBM(nemoa.model.optimizer.ann.ANN):
         'ignore_units': [] }
 
     @nemoa.common.decorators.attributes(
-        name = 'cd', category = 'optimization')
+        name     = 'cd',
+        longname = 'contrastive divergency',
+        category = 'optimization',
+        type     = 'algorithm',
+        syscheck = None)
+
     def _cdiv(self):
         """Contrastive Divergency parameter optimization."""
 
@@ -262,6 +267,7 @@ class RBM(nemoa.model.optimizer.ann.ANN):
         return data, hdata, vmodel, hmodel
 
     def _cdiv_delta_visible(self, sampling):
+        """ """
 
         system = self.model.system
         config = self._config

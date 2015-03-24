@@ -9,6 +9,7 @@ import nemoa
 class Session:
     """Session Manager."""
 
+    _buffer = {}
     _config = None
     _default = {
         'current': {
@@ -17,7 +18,7 @@ class Session:
             'mode': 'exec',
             'path': {},
             'shell': {
-                'indent': 0 }},
+                'buffmode': 'line' }},
         'default': {
             'basepath': {
                 'cwd': '%user_cwd%',
@@ -103,7 +104,7 @@ class Session:
         if key in self._config['register']:
             return self._get_objconfig(key, *args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key) or None
+        return nemoa.log('warning', "unknown key '%s'" % key)
 
     def _get_about(self, key = 'about', *args, **kwargs):
         """Get nemoa meta information."""
@@ -120,7 +121,7 @@ class Session:
         if key == 'maintainer': return nemoa.__maintainer__
         if key == 'credits': return nemoa.__credits__
 
-        return nemoa.log('warning', "unknown key '%s'" % key) or None
+        return nemoa.log('warning', "unknown key '%s'" % key)
 
     def _get_base(self):
         """Get name of current workspace search path."""
@@ -187,7 +188,7 @@ class Session:
                 kwargs['attribute'] = 'name'
             return self._get_objconfigs(key[:-1], *args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key) or None
+        return nemoa.log('warning', "unknown key '%s'" % key)
 
     def _get_list_bases(self, workspace = None):
         """Get list of searchpaths containing given workspace name."""
@@ -229,6 +230,23 @@ class Session:
             workspaces.append(os.path.basename(subdir))
 
         return sorted(workspaces)
+
+    def _get_shell(self, key = None, *args, **kwargs):
+        """Get shell attribute."""
+
+        if key == 'inkey': return self._get_shell_inkey()
+        if key == 'buffmode': return self._get_shell_buffmode()
+
+        return nemoa.log('warning', "unknown key '%s'" % key)
+
+    def _get_shell_inkey(self):
+        """Get current key buffer."""
+        inkey = self._buffer.get('inkey', None)
+        return inkey.get() if inkey else None
+
+    def _get_shell_buffmode(self):
+        """Get current mode for keyboard buffering."""
+        return self._config['current']['shell'].get('buffmode', 'line')
 
     def _get_mode(self):
         """Get current session mode."""
@@ -425,18 +443,6 @@ class Session:
 
         return path
 
-    def _get_shell(self, key = None, *args, **kwargs):
-        """Get shell parameters."""
-
-        if key == 'indent': return self._get_shell_indent()
-
-        return None
-
-    def _get_shell_indent(self):
-        """Get shell indent."""
-        return self._config['current'].get(
-            'shell', {}).get('indent', 0)
-
     def _get_workspace(self):
         """Get name of current workspace."""
         return self._config['current'].get('workspace', None)
@@ -451,8 +457,6 @@ class Session:
         import platform
         import traceback
 
-        indent = self._get_shell_indent()
-        toplevel = (indent == 0)
         mode = self._get_mode()
 
         # get arguments
@@ -494,14 +498,6 @@ class Session:
         msg = msg.strip().replace('\n', '')
         while '  ' in msg: msg = msg.replace('  ', ' ')
 
-        if mode == 'shell':
-            #pre = color['blue'] + '> ' + color['default']
-            pre = ''
-            tty_msg = msg
-        else:
-            pre = ''
-            tty_msg = '  ' * indent + msg
-
         # create file message
         clr_stack = inspect.stack()[1]
         clr_method = clr_stack[3]
@@ -514,63 +510,60 @@ class Session:
             if mode == 'debug': file_log.info(file_msg)
             if mode == 'silent': return True
             if mode == 'shell': return True
-            else:
-                if toplevel: tty_log.info(
-                    color['blue'] + tty_msg + color['default'])
-                else: tty_log.info(tty_msg)
-            return True
+            else: tty_log.info(msg)
+            return None
 
         if key == 'note':
             if mode == 'debug': file_log.info(file_msg)
             if mode == 'silent': return True
-            if not toplevel or mode == 'shell': tty_log.info(pre + tty_msg)
-            else: tty_log.info(color['blue'] + tty_msg + color['default'])
-            return True
+            if mode == 'shell': tty_log.info(msg)
+            else: tty_log.info(color['blue'] + msg + color['default'])
+            return None
 
         if key == 'header':
             if mode == 'debug': file_log.info(file_msg)
             if mode == 'silent': return True
-            if mode == 'shell' and not toplevel: return True
-            tty_log.info(color['green'] + tty_msg + color['default'])
-            return True
+            if mode == 'shell': return True
+            tty_log.info(color['green'] + msg + color['default'])
+            return None
 
         if key == 'warning':
             if not mode == 'silent':
-                tty_log.warning(pre + color['yellow'] \
-                    + tty_msg + color['default'])
+                tty_log.warning(color['yellow'] \
+                    + msg + color['default'])
             file_log.warning(file_msg)
-            return False
+            return None
 
         if key == 'error':
-            tty_log.error(pre + color['yellow'] + tty_msg
+            tty_log.error(color['yellow'] + msg
                 + ' (see logfile for debug info)' + color['default'])
             file_log.error(file_msg)
             for line in traceback.format_stack():
                 msg = line.strip().replace(
                     '\n', '-> ').replace('  ', ' ').strip()
                 file_log.error(msg)
-            return False
+            return None
 
         if key == 'critical':
-            tty_log.critical(pre + color['yellow'] \
-                + tty_msg + color['default'])
+            tty_log.critical(color['yellow'] \
+                + msg + color['default'])
             file_log.critical(file_msg)
-            return False
+            return None
 
         if key == 'debuginfo':
             if mode == 'debug': file_log.error(file_msg)
-            return False
+            return None
 
         if key == 'console':
-            tty_log.info(pre + tty_msg)
-            return True
+            tty_log.info(msg)
+            return None
 
         if key == 'logfile':
             file_log.info(file_msg)
-            return True
+            return None
 
-        return self.log('warning', "unknown logging command '%s'!"
-            % (cmd))
+        return self.log('warning',
+            "unknown logging type '%s'!" % cmd) or False
 
     def run(self, script = None, *args, **kwargs):
         """Run python script."""
@@ -621,34 +614,37 @@ class Session:
     def set(self, key, *args, **kwargs):
         """Set configuration parameters and env vars."""
 
-        # 2do: set(workspace = '', base = '')
         if key == 'shell': return self._set_shell(*args, **kwargs)
         if key == 'mode': return self._set_mode(*args, **kwargs)
         if key == 'workspace':
             return self._set_workspace(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key) or None
+        return nemoa.log('warning', "unknown key '%s'" % key)
 
-    def _set_shell(self, *args, **kwargs):
-        """Set shell parameters."""
+    def _set_shell(self, key, *args, **kwargs):
+        """Set current shell attributes."""
 
-        if 'indent' in kwargs:
-            return self._set_shell_indent(kwargs['indent'])
+        if key == 'buffmode':
+            return self._set_shell_buffmode(*args, **kwargs)
 
-        return None
+        return nemoa.log('warning', "unknown key '%s'" % key)
 
-    def _set_shell_indent(self, indent):
-        """Set shell indent."""
+    def _set_shell_buffmode(self, mode = 'line'):
+        """Set current key buffer mode."""
 
-        if isinstance(indent, int):
-            self._config['current']['shell']['indent'] = indent
+        curmode = self._get_shell_buffmode()
+        if mode == curmode: return True
+        if curmode == 'line' and mode == 'key':
+            if not self._buffer.get('inkey', None):
+                import nemoa.session.commons.console as console
+                self._buffer['inkey'] = console.Getch()
+            self._buffer['inkey'].start()
             return True
-
-        if isinstance(indent, basestring) and indent[0] in ['+', '-']:
-            self._config['current']['shell']['indent'] += int(indent)
+        if curmode == 'key' and mode == 'line':
+            self._buffer['inkey'].stop()
+            del self._buffer['inkey']
             return True
-
-        return None
+        return False
 
     def _set_mode(self, mode = None, *args, **kwargs):
         """Set session mode."""

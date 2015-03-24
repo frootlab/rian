@@ -130,12 +130,18 @@ class Optimizer:
         return data or None
 
     def _get_evaluation_algorithm(self):
+        """ """
+
         name = self._config['tracker_eval_function']
+
         return self.model.system.get('algorithm', name)
 
     def _get_evaluation_value(self):
+        """ """
+
         data = self._get_evaluation_data()
         func = self._get_evaluation_algorithm()['name']
+
         return self.model.system.evaluate(data = data, func = func)
 
     def _get_data_training(self, *args, **kwargs):
@@ -180,6 +186,20 @@ class Optimizer:
 
         return self._state.get('epoch', 0)
 
+    def _get_estimate_time(self):
+
+        import time
+
+        now = time.time()
+        runtime = now - self._state['estim_start_time']
+        estim = (runtime / (self._state['epoch'] + 1)
+            * self._config['updates'])
+        estim_str = time.strftime('%H:%M',
+            time.localtime(now + estim))
+
+        return estim_str
+
+
     def _get_progress(self):
         """Get current optimization progress in percentage.
 
@@ -222,7 +242,9 @@ class Optimizer:
 
     def _get_schedule(self, key):
         """Get schedule by name."""
+
         if not 'schedules' in self.model.system._config: return {}
+
         return self.model.system._config['schedules'].get(key, {})
 
     def optimize(self, config = None, *args, **kwargs):
@@ -232,34 +254,38 @@ class Optimizer:
         if not self._set_state_reset(): return None
 
         # get name of optimization algorithm
-        algtype = None
-        name = self._config.get('meta_algorithm', None)
-        if name:
-            if not algtype: algtype = 'meta'
-        else:
-            name = self._config.get('algorithm', None)
-            if name:
-                if not algtype: algtype = 'normal'
-            else:
-                return nemoa.log('error', """could not optimize '%s'
-                    (%s): no optimization algorithm has been set."""
-                    % (self.model.name, self.model.type)) or None
+        name = self._config.get('algorithm', None)
+        if not name:
+            return nemoa.log('error', """could not optimize '%s'
+                (%s): no optimization algorithm has been set."""
+                % (self.model.name, self.model.system.type)) or None
 
         # get instance of optimization algorithm
         algorithm = self._get_algorithm(name, category = 'optimization')
         if not algorithm:
-            return nemoa.log('error', """could not optimize '%s' (%s):
+            return nemoa.log('error', """could not optimize '%s':
                 unsupported optimization algorithm '%s'."""
-                % (self.model.name, self.model.type, name)) or None
+                % (self.model.name, name)) or None
 
         # start optimization
-        if algtype == 'normal':
-            nemoa.log('note', "optimize '%s' (%s) using algorithm %s."
-                % (self.model.name, self.model.type, algorithm['name']))
+        if algorithm.get('type', None) == 'algorithm':
+            nemoa.log('note', "optimize '%s' (%s) using %s."
+                % (self.model.name, self.model.system.type, name))
 
-        # 2Do try / except &
-        algorithm['reference']()
-        return self.model.network.initialize(self.model.system)
+            # start key events
+            if not self._state['key_events_started']:
+                nemoa.log('note', """press 'h' for help.""")
+                self._state['key_events_started'] = True
+                nemoa.set('shell', 'buffmode', 'key')
+
+        # 2Do retval, try / except etc.
+        optimizer = algorithm.get('reference', None)
+        if not optimizer: return None
+
+        retval = optimizer()
+        retval &= self.model.network.initialize(self.model.system)
+
+        return retval
 
     def set(self, key, *args, **kwargs):
         """ """
@@ -352,30 +378,30 @@ class Optimizer:
         self._store[key][id] = kwargs
         return True
 
-    def _update_time_estimation(self):
-        """ """
-        if not self._config['tracker_estimate_time']: return True
+    #def _update_time_estimation(self):
+        #""" """
+        #if not self._config['tracker_estimate_time']: return True
 
-        if not self._state['estim_started']:
-            nemoa.log("""estimating time for calculation of %i
-                updates.""" % (self._config['updates']))
-            self._state['estim_started'] = True
-            self._state['estim_start_time'] = time.time()
-            return True
+        #if not self._state['estim_started']:
+            #nemoa.log("""estimating time for calculation of %i
+                #updates.""" % (self._config['updates']))
+            #self._state['estim_started'] = True
+            #self._state['estim_start_time'] = time.time()
+            #return True
 
-        now = time.time()
-        runtime = now - self._state['estim_start_time']
-        if runtime > self._config['tracker_estimate_time_wait']:
-            estim = (runtime / (self._state['epoch'] + 1)
-                * self._config['updates'])
-            estim_str = time.strftime('%H:%M',
-                time.localtime(now + estim))
-            nemoa.log('note', 'estimation: %ds (finishing time: %s)'
-                % (estim, estim_str))
-            self._config['tracker_estimate_time'] = False
-            return True
+        #now = time.time()
+        #runtime = now - self._state['estim_start_time']
+        #if runtime > self._config['tracker_estimate_time_wait']:
+            #estim = (runtime / (self._state['epoch'] + 1)
+                #* self._config['updates'])
+            #estim_str = time.strftime('%H:%M',
+                #time.localtime(now + estim))
+            #nemoa.log('note', 'estimation: %ds (finishing time: %s)'
+                #% (estim, estim_str))
+            #self._config['tracker_estimate_time'] = False
+            #return True
 
-        return True
+        #return True
 
     def update(self):
         """Update epoch and check termination criterions."""
@@ -385,30 +411,29 @@ class Optimizer:
             self._state['continue'] = False
 
         if self._state['key_events']: self._update_keypress()
-        if self._config.get('tracker_estimate_time', False):
-            self._update_time_estimation()
+        #if self._config.get('tracker_estimate_time', False):
+            #self._update_time_estimation()
         if self._config.get('tracker_obj_tracking_enable', False):
             self._update_objective_function()
         if self._config.get('tracker_eval_enable', False):
             self._update_evaluation()
 
         if not self._state['continue']:
-            nemoa.common.console.stopgetch()
+            nemoa.set('shell', 'buffmode', 'line')
 
         return self._state['continue']
 
     def _update_keypress(self):
         """Check Keyboard."""
-        if not self._state['key_events_started']:
-            nemoa.log('note', """press 'q' if you want to abort
-                the optimization""")
-            self._state['key_events_started'] = True
 
-        char = nemoa.common.console.getch()
-        if isinstance(char, str):
-            if char == 'q':
-                nemoa.log('note', '... aborting optimization')
-                self._state['continue'] = False
+        char = nemoa.get('shell', 'inkey')
+        if char == 'q':
+            progr = 100. * self._get_progress()
+            nemoa.log('note', 'aborting optimization at %.1f%%' % progr)
+            self._state['continue'] = False
+        elif char == 't':
+            ftime = self._get_estimate_time()
+            nemoa.log('note', 'estimated finishing time %s' % ftime)
 
         return True
 

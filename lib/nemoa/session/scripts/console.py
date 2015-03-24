@@ -12,6 +12,14 @@ def about(*args, **kwargs):
     nemoa.log('note', nemoa.about(*args, **kwargs))
     return None
 
+def create(type = None, *args, **kwargs):
+    """ """
+    if type == 'model': return nemoa.model.create(*args, **kwargs)
+    if type == 'network': return nemoa.model.network(*args, **kwargs)
+    if type == 'dataset': return nemoa.model.dataset(*args, **kwargs)
+    if type == 'system': return nemoa.model.system(*args, **kwargs)
+    return None
+
 def get(*args, **kwargs):
     """Wrapping function to nemoa.get()."""
     nemoa.log('note', nemoa.get(*args, **kwargs))
@@ -57,6 +65,10 @@ def run(*args, **kwargs):
     """Wrapping function to nemoa.run()."""
     nemoa.run(*args, **kwargs)
     return None
+
+def show(*args, **kwargs):
+    """ """
+    return open(*args, **kwargs).show()
 
 def set(*args, **kwargs):
     """Wrapping function to nemoa.set()."""

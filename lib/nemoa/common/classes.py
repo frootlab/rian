@@ -106,7 +106,7 @@ class ClassesBaseClass:
         if key == 'version':  return self._get_version()
 
         return nemoa.log('warning', "%s instance has no attribute '%r'."
-            % (self.__class__.__name__, key)) or None
+            % (self.__class__.__name__, key))
 
     def _get_about(self):
         """Get a short description of the content of the resource.

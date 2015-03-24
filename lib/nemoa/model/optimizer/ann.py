@@ -38,7 +38,12 @@ class ANN(nemoa.model.optimizer.base.Optimizer):
         'ignore_units': [] }
 
     @nemoa.common.decorators.attributes(
-        name = 'bprop', category = 'optimization')
+        name     = 'bprop',
+        longname = 'backpropagation of error',
+        category = 'optimization',
+        type     = 'algorithm',
+        syscheck = None)
+
     def _bprop(self):
         """Optimize parameters using backpropagation of error."""
 
@@ -145,11 +150,18 @@ class ANN(nemoa.model.optimizer.base.Optimizer):
         return { 'units': units, 'links': links }
 
     @nemoa.common.decorators.attributes(
-        name = 'rprop', category = 'optimization')
+        name     = 'rprop',
+        longname = 'resiliant backpropagation of error',
+        category = 'optimization',
+        type     = 'algorithm',
+        syscheck = None)
+
     def _rprop(self):
         """Optimize parameters using resiliant backpropagation (RPROP).
 
         resiliant backpropagation ...
+
+        2Do: self._config['resilience'] = True; return self._bprob()
 
         """
 

@@ -81,7 +81,7 @@ def startsession():
         nemoa.set('mode', 'shell')
 
         from nemoa.session.scripts.console \
-            import about, get, list, open, path, run, set
+            import about, get, create, list, open, path, run, set, show
 
         IPython.embed(banner1 = 'nemoa %s\n' % nemoa.__version__)
 
