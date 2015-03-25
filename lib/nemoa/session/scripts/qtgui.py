@@ -38,8 +38,8 @@ def main():
 
             self.textEdit.document().contentsChanged.connect(self.documentWasModified)
 
-            self.updateWindowTitle()
             self.setUnifiedTitleAndToolBarOnMac(True)
+            self.updateChangeFile()
 
         def documentWasModified(self):
             self.setWindowModified(self.textEdit.document().isModified())
@@ -151,15 +151,58 @@ def main():
 
         def createDockWindows(self):
 
+            dock = QtGui.QDockWidget("Resource", self)
+            dock.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea \
+                | QtCore.Qt.RightDockWidgetArea)
+            widget = QtGui.QWidget(dock)
+            self.amountLabel = QtGui.QLabel('Amount')
+            self.amountLabel2 = QtGui.QLabel('bla')
+            self.checkbox1 = QtGui.QCheckBox("Checkbox1")
+            self.checkbox2 = QtGui.QCheckBox("Checkbox2")
+            self.listTest = QtGui.QListWidget()
+            self.treeWidget = QtGui.QTreeWidget(widget)
+
+            self.treeWidget.setColumnCount( 1 )
+            self.treeWidget.setHeaderLabels( ('objects', ) )
+            self.treeWidget.itemDoubleClicked.connect(self.doShowObject)
+
+            ## Add Items:
+            #self.treeWidget.resizeColumnToContents(0)
+            #self.treeWidget.addTopLevelItems(itemList)
+            #model = QtGui.QFileSystemModel()
+            #model.setRootPath( QtCore.QDir.currentPath() )
+            #self.treeWidget.setModel(model)
+
+            self.button1 = QtGui.QPushButton("Show")
+            self.button1.clicked.connect(self.doShowObject)
+            self.button2 = QtGui.QPushButton("Edit")
+            self.button3 = QtGui.QPushButton("New")
+            self.button4 = QtGui.QPushButton("Import")
+            self.button5 = QtGui.QPushButton("Export")
+            self.button6 = QtGui.QPushButton("Delete")
+            grid = QtGui.QGridLayout()
+            grid.setSpacing(0)
+            grid.setContentsMargins(0, 0, 0, 0)
+            grid.addWidget(self.button1, 1, 0)
+            grid.addWidget(self.button2, 1, 1)
+            grid.addWidget(self.button3, 1, 2)
+            grid.addWidget(self.button4, 1, 3)
+            grid.addWidget(self.button5, 1, 4)
+            grid.addWidget(self.button6, 1, 5)
+            grid.addWidget(self.treeWidget, 0, 0, 1, -1)
+            self.setLayout(grid)
+            widget.setLayout(grid)
+            dock.setWidget(widget)
+            self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+
             dock = QtGui.QDockWidget("Datasets", self)
             dock.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea \
                 | QtCore.Qt.RightDockWidgetArea)
             self.dockDatasetList = QtGui.QListWidget(dock)
             self.dockDatasetList.setDragEnabled(True)
             #self.dockDatasetList.setAcceptDrops(True)
-            #self.dockDatasetList.setIconSize(QtCore.QSize(72, 72))
-            #self.dockDatasetList.setAlternatingRowColors(True)
-            self.dockDatasetList.currentTextChanged.connect(self.insertCustomer)
+            self.dockDatasetList.setIconSize(QtCore.QSize(32, 32))
+            self.dockDatasetList.setAlternatingRowColors(True)
             dock.setWidget(self.dockDatasetList)
             self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
             self.viewMenu.addAction(dock.toggleViewAction())
@@ -170,6 +213,8 @@ def main():
             self.dockNetworkList = QtGui.QListWidget(dock)
             self.dockNetworkList.setDragEnabled(True)
             #self.dockNetworkList.setAlternatingRowColors(True)
+            self.dockNetworkList.setIconSize(QtCore.QSize(32, 32))
+            self.dockNetworkList.setAlternatingRowColors(True)
             self.dockNetworkList.currentTextChanged.connect(
                 self.dockNetworkListChanged)
             dock.setWidget(self.dockNetworkList)
@@ -182,50 +227,22 @@ def main():
             self.dockSystemList = QtGui.QListWidget(dock)
             self.dockSystemList.setDragEnabled(True)
             #self.dockSystemList.setAlternatingRowColors(True)
-            self.dockSystemList.currentTextChanged.connect(self.insertCustomer)
+            self.dockSystemList.setIconSize(QtCore.QSize(32, 32))
+            self.dockSystemList.setAlternatingRowColors(True)
             dock.setWidget(self.dockSystemList)
             self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
             self.viewMenu.addAction(dock.toggleViewAction())
 
         def dockNetworkListChanged(self, name):
             if not name: return None
-            network = nemoa.network.open(name)
-            network.show()
 
-        def insertCustomer(self, customer):
-            if not customer:
-                return
-            print customer
-            customerList = customer.split(', ')
-            document = self.textEdit.document()
-            cursor = document.find('NAME')
-            if not cursor.isNull():
-                cursor.beginEditBlock()
-                cursor.insertText(customerList[0])
-                oldcursor = cursor
-                cursor = document.find('ADDRESS')
-                if not cursor.isNull():
-                    for i in customerList[1:]:
-                        cursor.insertBlock()
-                        cursor.insertText(i)
-                    cursor.endEditBlock()
-                else:
-                    oldcursor.endEditBlock()
 
-        def addParagraph(self, paragraph):
-            if not paragraph:
-                return
-            document = self.textEdit.document()
-            cursor = document.find("Yours sincerely,")
-            if cursor.isNull():
-                return
-            cursor.beginEditBlock()
-            cursor.movePosition(QtGui.QTextCursor.PreviousBlock,
-                    QtGui.QTextCursor.MoveAnchor, 2)
-            cursor.insertBlock()
-            cursor.insertText(paragraph)
-            cursor.insertBlock()
-            cursor.endEditBlock()
+        def doShowObject(self, *args, **kwargs):
+            print self.treeWidget.currentItem()
+            print 'hi'
+
+            #network = nemoa.network.open(name)
+            #network.show()
 
         def readSettings(self):
             settings = QtCore.QSettings("Froot", "Nemoa")
@@ -270,18 +287,40 @@ def main():
                 "<a href='https://gnu.org/licenses/gpl.html'>"
                 "Free Software Foundation</a>."
                 "<h3>Credits</h3>"
-                "<i>%s</i>" % (aversion, adesc, acopyright, amail, amail,
-                alicense, acredits))
+                "<i>%s</i>" % (aversion, adesc, acopyright, amail,
+                amail, alicense, acredits))
 
             QtGui.QMessageBox.about(self, "About Nemoa", text)
 
         def updateChangeFile(self):
 
-            text = ''
-            for key, val in nemoa.list().items():
-                if not val: continue
-                text += '%s: %s\n' % (key, ', '.join(val))
-            self.textEdit.setText(text)
+            #text = ''
+            #for key, val in nemoa.list().items():
+                #if not val: continue
+                #text += '%s: %s\n' % (key, ', '.join(val))
+            #self.textEdit.setText(text)
+
+            self.updateResourcesDock()
+            self.updateWindowTitle()
+
+        def updateResourcesDock(self):
+
+            self.treeWidget.clear()
+            self.treeWidget.setDragEnabled(True)
+            objectList = ['models', 'datasets', 'networks', 'systems', 'scripts']
+            itemList = []
+            for topItem in objectList:
+                knownlist = nemoa.list(topItem)
+                topLevelItem = QtGui.QTreeWidgetItem(topItem)
+                topLevelItem.setText(0, topItem.title())
+                topLevelItem.setIcon(0, QtGui.QIcon(":/images/nemoa_logo.png"))
+                self.treeWidget.addTopLevelItem(topLevelItem)
+                if not knownlist:
+                    topLevelItem.setDisabled(True)
+                    continue
+                for childItem in knownlist:
+                    child = QtGui.QTreeWidgetItem(topLevelItem)
+                    child.setText(0, childItem.title())
 
             self.dockDatasetList.clear()
             self.dockDatasetList.addItems(nemoa.list('datasets'))
@@ -289,9 +328,6 @@ def main():
             self.dockNetworkList.addItems(nemoa.list('networks'))
             self.dockSystemList.clear()
             self.dockSystemList.addItems(nemoa.list('systems'))
-
-            #self.dockSystemList.item(0).setIcon(QtGui.QIcon(':/images/new.png'))
-            self.updateWindowTitle()
 
         def menuCloseFile(self):
             nemoa.close()
