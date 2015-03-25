@@ -18,6 +18,7 @@ def main():
 
     from PySide import QtGui, QtCore
     import sys
+    import qtgui_rc
 
     class MainWindow(PySide.QtGui.QMainWindow):
 
@@ -29,7 +30,9 @@ def main():
 
             self.createActions()
             self.createMenus()
+            self.createToolBars()
             self.createStatusBar()
+            self.createDockWindows()
 
             self.readSettings()
 
@@ -64,41 +67,54 @@ def main():
             return True
 
         def createActions(self):
+            iconGet = self.style().standardIcon
+
             self.actNewFile = QtGui.QAction(
-                QtGui.QIcon(':/images/new.png'), "&New", self,
+                QtGui.QIcon(':/images/nemoa_logo.png'),
+                "&New", self,
                 shortcut = "Ctrl+N",
                 statusTip = "Create a new workspace",
                 triggered = self.menuNewFile)
+
             self.actOpenFile = QtGui.QAction(
-                QtGui.QIcon(':/images/open.png'), '&Open...', self,
+                iconGet(QtGui.QStyle.SP_FileDialogNewFolder),
+                '&Open...', self,
                 shortcut = "Ctrl+O",
                 statusTip = "Open an existing workspace",
                 triggered = self.menuOpenFile)
+
             self.actSaveFile = QtGui.QAction(
-                QtGui.QIcon(':/images/save.png'), '&Save', self,
+                QtGui.QIcon.fromTheme('document-save'),
+                #iconGet(QtGui.QStyle.SP_DialogSaveButton),
+                '&Save', self,
                 shortcut = "Ctrl+S",
                 statusTip = "Save the workspace to disk",
                 triggered = self.menuSaveFile)
-            self.actSaveFile = QtGui.QAction(
-                '&Save as...', self,
+
+            self.actSaveAsFile = QtGui.QAction(
+                'Save as...', self,
                 statusTip = "Save the workspace under a new name",
                 triggered = self.menuSaveFile)
+
             #2do only show ...
             self.actPrintFile = QtGui.QAction(
                 "&Print", self,
                 shortcut = QtGui.QKeySequence.Print,
                 statusTip = "Print the document",
                 triggered = self.menuPrintFile)
+
             self.actCloseFile = QtGui.QAction(
                 "Close", self,
                 shortcut = "Ctrl+W",
                 statusTip = "Close current workspace",
                 triggered = self.menuCloseFile)
+
             self.actExit = QtGui.QAction(
                 "Exit", self,
                 shortcut = "Ctrl+Q",
                 statusTip = "Exit the application",
                 triggered = self.close)
+
             self.actAbout = QtGui.QAction(
                 "About", self,
                 triggered = self.menuAbout)
@@ -108,16 +124,108 @@ def main():
             self.fileMenu.addAction(self.actNewFile)
             self.fileMenu.addAction(self.actOpenFile)
             self.fileMenu.addAction(self.actSaveFile)
+            self.fileMenu.addAction(self.actSaveAsFile)
             self.fileMenu.addAction(self.actPrintFile)
             self.fileMenu.addSeparator()
             self.fileMenu.addAction(self.actCloseFile)
             self.fileMenu.addAction(self.actExit)
+
+            self.viewMenu = self.menuBar().addMenu("&View")
 
             self.aboutMenu = self.menuBar().addMenu("&Help")
             self.aboutMenu.addAction(self.actAbout)
 
         def createStatusBar(self):
             self.statusBar().showMessage("Ready")
+
+        def createToolBars(self):
+            self.fileToolBar = self.addToolBar("File")
+            self.fileToolBar.addAction(self.actNewFile)
+            self.fileToolBar.addAction(self.actOpenFile)
+            self.fileToolBar.addAction(self.actSaveFile)
+
+            #self.editToolBar = self.addToolBar("Edit")
+            #self.editToolBar.addAction(self.cutAct)
+            #self.editToolBar.addAction(self.copyAct)
+            #self.editToolBar.addAction(self.pasteAct)
+
+        def createDockWindows(self):
+
+            dock = QtGui.QDockWidget("Datasets", self)
+            dock.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea \
+                | QtCore.Qt.RightDockWidgetArea)
+            self.dockDatasetList = QtGui.QListWidget(dock)
+            self.dockDatasetList.setDragEnabled(True)
+            #self.dockDatasetList.setAcceptDrops(True)
+            #self.dockDatasetList.setIconSize(QtCore.QSize(72, 72))
+            #self.dockDatasetList.setAlternatingRowColors(True)
+            self.dockDatasetList.currentTextChanged.connect(self.insertCustomer)
+            dock.setWidget(self.dockDatasetList)
+            self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+            self.viewMenu.addAction(dock.toggleViewAction())
+
+            dock = QtGui.QDockWidget("Networks", self)
+            dock.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea \
+                | QtCore.Qt.RightDockWidgetArea)
+            self.dockNetworkList = QtGui.QListWidget(dock)
+            self.dockNetworkList.setDragEnabled(True)
+            #self.dockNetworkList.setAlternatingRowColors(True)
+            self.dockNetworkList.currentTextChanged.connect(
+                self.dockNetworkListChanged)
+            dock.setWidget(self.dockNetworkList)
+            self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+            self.viewMenu.addAction(dock.toggleViewAction())
+
+            dock = QtGui.QDockWidget("Systems", self)
+            dock.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea \
+                | QtCore.Qt.RightDockWidgetArea)
+            self.dockSystemList = QtGui.QListWidget(dock)
+            self.dockSystemList.setDragEnabled(True)
+            #self.dockSystemList.setAlternatingRowColors(True)
+            self.dockSystemList.currentTextChanged.connect(self.insertCustomer)
+            dock.setWidget(self.dockSystemList)
+            self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+            self.viewMenu.addAction(dock.toggleViewAction())
+
+        def dockNetworkListChanged(self, name):
+            if not name: return None
+            network = nemoa.network.open(name)
+            network.show()
+
+        def insertCustomer(self, customer):
+            if not customer:
+                return
+            print customer
+            customerList = customer.split(', ')
+            document = self.textEdit.document()
+            cursor = document.find('NAME')
+            if not cursor.isNull():
+                cursor.beginEditBlock()
+                cursor.insertText(customerList[0])
+                oldcursor = cursor
+                cursor = document.find('ADDRESS')
+                if not cursor.isNull():
+                    for i in customerList[1:]:
+                        cursor.insertBlock()
+                        cursor.insertText(i)
+                    cursor.endEditBlock()
+                else:
+                    oldcursor.endEditBlock()
+
+        def addParagraph(self, paragraph):
+            if not paragraph:
+                return
+            document = self.textEdit.document()
+            cursor = document.find("Yours sincerely,")
+            if cursor.isNull():
+                return
+            cursor.beginEditBlock()
+            cursor.movePosition(QtGui.QTextCursor.PreviousBlock,
+                    QtGui.QTextCursor.MoveAnchor, 2)
+            cursor.insertBlock()
+            cursor.insertText(paragraph)
+            cursor.insertBlock()
+            cursor.endEditBlock()
 
         def readSettings(self):
             settings = QtCore.QSettings("Froot", "Nemoa")
@@ -167,10 +275,27 @@ def main():
 
             QtGui.QMessageBox.about(self, "About Nemoa", text)
 
+        def updateChangeFile(self):
+
+            text = ''
+            for key, val in nemoa.list().items():
+                if not val: continue
+                text += '%s: %s\n' % (key, ', '.join(val))
+            self.textEdit.setText(text)
+
+            self.dockDatasetList.clear()
+            self.dockDatasetList.addItems(nemoa.list('datasets'))
+            self.dockNetworkList.clear()
+            self.dockNetworkList.addItems(nemoa.list('networks'))
+            self.dockSystemList.clear()
+            self.dockSystemList.addItems(nemoa.list('systems'))
+
+            #self.dockSystemList.item(0).setIcon(QtGui.QIcon(':/images/new.png'))
+            self.updateWindowTitle()
+
         def menuCloseFile(self):
             nemoa.close()
-            self.updateWindowTitle()
-            self.textEdit.setText('')
+            self.updateChangeFile()
 
         def menuOpenFile(self):
             path = nemoa.path('basepath', 'user')
@@ -181,12 +306,7 @@ def main():
             if not directory: return False
             name = nemoa.common.ospath.basename(directory)
             if not nemoa.open(name): return False
-            self.updateWindowTitle()
-            text = ''
-            for key, val in nemoa.list().items():
-                if not val: continue
-                text += '%s: %s\n' % (key, ', '.join(val))
-            self.textEdit.setText(text)
+            self.updateChangeFile()
 
         def menuPrintFile(self):
             pass
