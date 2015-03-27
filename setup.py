@@ -34,7 +34,6 @@ def install():
             setuptools.command.install.install.run(self)
 
             # run post installation script
-            import os
             import subprocess
             import sys
 
@@ -86,6 +85,7 @@ def install():
             'numpy',
             'matplotlib'],
         'extras_require': {
+            'gui': ['pyside'],
             'systemsbiology': ['rpy2'],
             'test': ['unittest'] },
         'classifiers': [
@@ -111,7 +111,7 @@ def install():
     pkg['cmdclass'] = { 'install': NemoCustomInstall }
     pkg['packages'] = setuptools.find_packages(pkg['libdir'])
 
-    # run setup from setuptools
+    # install nemoa lib
     setuptools.setup(
         name             = pkg['name'],
         version          = pkg['version'],

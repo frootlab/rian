@@ -29,17 +29,24 @@ def main():
     def print_usage():
         """Print script usage to standard output."""
 
-        print("""Usage: nemoa [-w <workspace> [-s <script> [-a <arguments>]]] [-h] [-i] [-l] [-v]
-
-        -h --help                 Print this
-        -i --interactive          Start nemoa in iPython interactive shell
-        -g --gui
-        -l --list                 List workspaces
-        -w --workspace            List scripts in workspace
-        -s --script               Open workspace and execute script
-        -a --arguments            Arguments passed to script
-        -v --version              Print version
-        """)
+        print("Usage: nemoa [options]\n\n"
+            "Options:\n\n"
+            "    -h --help         "
+            "      Print this\n"
+            "    -g --gui          "
+            "      Start nemoa QT user interface\n"
+            "    -i --interactive  "
+            "      Start nemoa interactive shell\n"
+            "    -l --list         "
+            "      List workspaces\n"
+            "    -w --workspace    "
+            "      List scripts in workspace\n"
+            "    -s --script       "
+            "      Open workspace and execute script\n"
+            "    -a --arguments    "
+            "      Arguments passed to script\n"
+            "    -v --version      "
+            "      Print version")
 
         return True
 
@@ -65,25 +72,29 @@ def main():
 
         return True
 
-    def run_ipython():
-        """Run nemoa in interactive ipython shell."""
-        import nemoa.session.scripts.console
-        return nemoa.session.scripts.console.main()
-
-    def run_pyside():
-        """Run nemoa with qt gui."""
-        import nemoa.session.scripts.qtgui
-        return nemoa.session.scripts.qtgui.main()
+    def run_gui():
+        """Run nemoa qt user interface."""
+        try:
+            import nemoagui
+        except ImportError:
+            return nemoa.log('warning',
+                'could not find package nemoagui.')
+        return nemoagui.start()
 
     def run_script(workspace, script, *args):
-        """Run nemoa python script in workspace."""
+        """Run nemoa python script."""
         import nemoa
         return nemoa.open(workspace) and nemoa.run(script, *args)
+
+    def run_shell():
+        """Run nemoa interactive shell."""
+        import nemoa.session.scripts.console
+        return nemoa.session.scripts.console.main()
 
     workspace = ''
     script = ''
     arguments = ''
-    mode = 'runscript'
+    mode = 'script'
 
     # get arguments
     try:
@@ -100,9 +111,9 @@ def main():
     for opt, arg in opts:
         if opt in ['-h', '--help']: mode = 'showhelp'
         elif opt in ['-v', '--version']: mode = 'showversion'
-        elif opt in ['-i', '--interactive']: mode = 'ipython'
+        elif opt in ['-i', '--interactive']: mode = 'shell'
         elif opt in ['-l', '--list']: mode = 'showworkspaces'
-        elif opt in ['-g', '--qt']: mode = 'pyside'
+        elif opt in ['-g', '--gui']: mode = 'gui'
         elif opt in ['-w', '--workspace']: workspace = arg
         elif opt in ['-s', '--script']: script = arg
         elif opt in ['-a', '--arguments']: arguments = arg
@@ -110,9 +121,9 @@ def main():
     if   mode == 'showhelp': print_usage()
     elif mode == 'showversion': print_version()
     elif mode == 'showworkspaces': print_workspaces()
-    elif mode == 'ipython': run_ipython()
-    elif mode == 'pyside': run_pyside()
-    elif mode == 'runscript':
+    elif mode == 'shell': run_shell()
+    elif mode == 'gui': run_gui()
+    elif mode == 'script':
         if not workspace:
             print_usage()
             print_workspaces()
