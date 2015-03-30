@@ -9,7 +9,7 @@ or statistical values.
 
 """
 
-__version__     = '0.5.0pre15'
+__version__     = '0.5.0pre17'
 __status__      = 'Development'
 __description__ = 'Deep data analysis and visualization'
 __url__         = 'https://github.com/fishroot/nemoa'
@@ -38,6 +38,10 @@ def close(*args, **kwargs):
     """Close current workspace instance."""
     return set('workspace', None)
 
+def create(*args, **kwargs):
+    """Create new object instance from building script."""
+    return nemoa.session.create(*args, **kwargs)
+
 def get(*args, **kwargs):
     """Get value from configuration instance."""
     return nemoa.session.get(*args, **kwargs)
@@ -51,15 +55,15 @@ def log(*args, **kwargs):
     return nemoa.session.log(*args, **kwargs)
 
 def open(*args, **kwargs):
-    """Open workspace instance from file in search path."""
-    return set('workspace', *args, **kwargs)
+    """Open object instance in current session."""
+    return nemoa.session.open(*args, **kwargs)
 
 def path(*args, **kwargs):
     """Get path to given object type or object."""
     return get('path', *args, **kwargs)
 
 def run(*args, **kwargs):
-    """Run nemoa python script."""
+    """Run nemoa python script in current session."""
     return nemoa.session.run(*args, **kwargs)
 
 def set(*args, **kwargs):

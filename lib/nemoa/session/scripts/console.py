@@ -17,26 +17,18 @@ def main():
             you have to install ipython.""")
 
     def about(*args, **kwargs):
-        """Wrapping function to nemoa.about()."""
+        """Get meta information."""
         nemoa.log('note', nemoa.about(*args, **kwargs))
         return None
 
     def close(*args, **kwargs):
-        """Close current workspace."""
+        """Close current workspace instance."""
         nemoa.close()
         return None
 
-    def create(type = None, *args, **kwargs):
-        """ """
-        if type == 'model':
-            return nemoa.model.create(*args, **kwargs)
-        if type == 'network':
-            return nemoa.model.network(*args, **kwargs)
-        if type == 'dataset':
-            return nemoa.model.dataset(*args, **kwargs)
-        if type == 'system':
-            return nemoa.model.system(*args, **kwargs)
-        return None
+    def create(*args, **kwargs):
+        """Create object instance from building script."""
+        return nemoa.create(*args, **kwargs)
 
     def get(*args, **kwargs):
         """Wrapping function to nemoa.get()."""
@@ -55,31 +47,15 @@ def main():
                     nemoa.log('note', '%s: %s' % (key, val))
         elif hasattr(retval, '__iter__'):
             nemoa.log('note', ', '.join(retval))
-
         return None
 
-    def open(key = None, *args, **kwargs):
-        """Wrapping function to nemoa.open()."""
-        if not key: return None
-        if not args: nemoa.open(key)
-        elif len(args) == 1:
-            if key == 'model':
-                return nemoa.model.open(args[0], **kwargs)
-            if key == 'dataset':
-                return nemoa.dataset.open(args[0], **kwargs)
-            if key == 'network':
-                return nemoa.network.open(args[0], **kwargs)
-            if key == 'system':
-                return nemoa.system.open(args[0], **kwargs)
-            if key == 'workspace': nemoa.open(args[0])
-        return None
+    def open(*args, **kwargs):
+        """Open object in current session."""
+        return nemoa.open(*args, **kwargs)
 
     def optimize(*args, **kwargs):
-        # create thread
-        #import nemoa.common.threads
-        function = nemoa.model.optimizer.optimize
-        #return nemoa.common.threads.thread(function, *args, **kwargs)
-        return function(*args, **kwargs)
+        """Optimize model."""
+        return nemoa.model.optimizer.optimize(*args, **kwargs)
 
     def path(*args, **kwargs):
         """Wrapping function to nemoa.path()."""
@@ -93,7 +69,8 @@ def main():
 
     def show(*args, **kwargs):
         """ """
-        return open(*args, **kwargs).show()
+        open(*args, **kwargs).show()
+        return None
 
     def set(*args, **kwargs):
         """Wrapping function to nemoa.set()."""

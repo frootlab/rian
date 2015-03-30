@@ -89,6 +89,18 @@ class Session:
             for workspace in self._get_list_workspaces(base = 'common'):
                 self._set_workspace_scandir(workspace, base = 'common')
 
+    def create(self, key = None, *args, **kwargs):
+        """Open object in current session."""
+        if key == 'model':
+            return nemoa.model.create(*args, **kwargs)
+        if key == 'network':
+            return nemoa.network.create(*args, **kwargs)
+        if key == 'dataset':
+            return nemoa.dataset.create(*args, **kwargs)
+        if key == 'system':
+            return nemoa.system.create(*args, **kwargs)
+        return None
+
     def get(self, key = 'workspace', *args, **kwargs):
         """Get meta information and content."""
 
@@ -844,3 +856,21 @@ class Session:
                 self._set_workspace(None)
 
         return True
+
+    def open(self, key = None, *args, **kwargs):
+        """Open object in current session."""
+        if not key: return None
+        if not args:
+            return self._set_workspace(key)
+        elif len(args) == 1:
+            if key == 'workspace':
+                return self._set_workspace(args[0])
+            if key == 'model':
+                return nemoa.model.open(args[0], **kwargs)
+            if key == 'dataset':
+                return nemoa.dataset.open(args[0], **kwargs)
+            if key == 'network':
+                return nemoa.network.open(args[0], **kwargs)
+            if key == 'system':
+                return nemoa.system.open(args[0], **kwargs)
+        return None

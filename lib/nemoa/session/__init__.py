@@ -5,6 +5,9 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+def create(*args, **kwargs):
+    """Create new object instance from building script."""
+
 def get(*args, **kwargs):
     """Get meta information and content from current session."""
     return instance().get(*args, **kwargs)
@@ -22,6 +25,10 @@ def new(*args, **kwargs):
     """Create session instance from session dictionary."""
     import nemoa.session.classes
     return nemoa.session.classes.new(*args, **kwargs)
+
+def open(*args, **kwargs):
+    """Open object in current session."""
+    return instance().open(*args, **kwargs)
 
 def run(*args, **kwargs):
     """Run script in current session."""
