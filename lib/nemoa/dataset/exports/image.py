@@ -137,7 +137,8 @@ class Heatmap:
         self.settings['units'] = (columns, columns)
 
         # create plot
-        return nemoa.common.plot.heatmap(R, **self.settings)
+        from nemoa.common.plot import heatmap as plotheatmap
+        return plotheatmap(R, **self.settings)
 
 class Histogram:
 
@@ -165,5 +166,6 @@ class Histogram:
         data = dataset.get('data').flatten()
 
         # create plot
-        return nemoa.common.plot.histogram(data, **self.settings)
+        from nemoa.common.plot import histogram as plothistogram
+        return plothistogram(data, **self.settings)
 

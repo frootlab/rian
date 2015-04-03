@@ -295,7 +295,8 @@ class Graph:
             for n in graphs[i].nodes(): graph.node[n]['complex'] = i
 
         # create plot
-        return nemoa.common.plot.graph(graph, **self.settings)
+        from nemoa.common.plot import graph as plotgraph
+        return plotgraph(graph, **self.settings)
 
 class Heatmap:
 
@@ -331,7 +332,8 @@ class Heatmap:
                 relation matrix is not valid.""")
 
         # create plot
-        return nemoa.common.plot.heatmap(relation, **self.settings)
+        from nemoa.common.plot import heatmap as plotheatmap
+        return plotheatmap(relation, **self.settings)
 
 class Histogram:
 
@@ -384,4 +386,5 @@ class Histogram:
         data = numpy.array([R[edge] for edge in edges])
 
         # create plot
-        return nemoa.common.plot.histogram(data, **self.settings)
+        from nemoa.common.plot import histogram as plothistogram
+        return plothistogram(data, **self.settings)

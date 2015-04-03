@@ -1013,8 +1013,9 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
                 type = numpy.recarray, dtype = dtype)
 
             if labels:
-                table_colsel = nemoa.common.recarray.insert(array,
-                    self._tables[table], ['label'])
+                from nemoa.dataset.commons.recarray import insert
+                table_colsel = insert(array, self._tables[table],
+                    ['label'])
             else:
                 table_colsel = array
 

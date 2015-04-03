@@ -382,7 +382,8 @@ class System(nemoa.common.classes.ClassesBaseClass):
         else:
             link_norm_max = numpy.amax(numpy.abs(layer_adjacency
                 * layer_weights)) * adjacency_sum / weight_sum
-            link_intensity = nemoa.common.math.intensify(
+            from nemoa.system.commons.math import intensify
+            link_intensity = intensify(
                 link_norm_weight, factor = 10.,
                 bound = 0.7 * link_norm_max)
 
