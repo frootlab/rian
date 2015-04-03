@@ -4,21 +4,18 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.system.classes
-import nemoa.system.commons
-import nemoa.system.imports
-import nemoa.system.exports
-
 def copy(system, *args, **kwargs):
     """Create copy of system instance."""
     return new(**system.get('copy'))
 
 def load(*args, **kwargs):
     """Import system dictionary from file."""
+    import nemoa.system.imports
     return nemoa.system.imports.load(*args, **kwargs)
 
 def new(*args, **kwargs):
     """Create system instance from system dictionary."""
+    import nemoa.system.classes
     return nemoa.system.classes.new(*args, **kwargs)
 
 def open(*args, **kwargs):
@@ -27,4 +24,5 @@ def open(*args, **kwargs):
 
 def save(*args, **kwargs):
     """Export system instance to file."""
+    import nemoa.system.exports
     return nemoa.system.exports.save(*args, **kwargs)

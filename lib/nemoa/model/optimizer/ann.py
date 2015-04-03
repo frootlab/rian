@@ -7,6 +7,7 @@ __license__ = 'GPLv3'
 
 import nemoa.model.optimizer.base
 import numpy
+import nemoa.system.commons.links as linkclasses
 
 class ANN(nemoa.model.optimizer.base.Optimizer):
 
@@ -140,7 +141,7 @@ class ANN(nemoa.model.optimizer.base.Optimizer):
         for id, src in enumerate(layers[:-1]):
             tgt = layers[id + 1]
             updu = system._units[tgt].get_updates_delta(delta[src, tgt])
-            updl = nemoa.system.commons.links.Links.get_updates_delta(
+            updl = linkclasses.Links.get_updates_delta(
                 out[src], delta[src, tgt])
             units[tgt] = {key: rate * updu[key]
                 for key in updu.iterkeys()}
@@ -213,7 +214,7 @@ class ANN(nemoa.model.optimizer.base.Optimizer):
             grad['units'][tgt] = \
                 system._units[tgt].get_updates_delta(delta[src, tgt])
             grad['links'][(src, tgt)] = \
-                nemoa.system.commons.links.Links.get_updates_delta(
+                linkclasses.Links.get_updates_delta(
                 out[src], delta[src, tgt])
 
         # get previous gradients and updates

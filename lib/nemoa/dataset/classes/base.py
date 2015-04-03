@@ -7,6 +7,8 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
+from nemoa.dataset.commons.labels import convert
+
 class Dataset(nemoa.common.classes.ClassesBaseClass):
     """Dataset base class.
 
@@ -91,8 +93,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
                     network.get('node', node)['params']['label'])
 
             # convert node labels to standard label format
-            conv, lost = nemoa.dataset.commons.labels.convert(
-                node_labels, input = labelformat)
+            conv, lost = convert(node_labels, input = labelformat)
             nodes_conv[layer] = conv
             nodes_lost += [conv[i] for i in lost]
             nodes_count += len(nodes_conv[layer])
@@ -125,8 +126,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
                     source_labelformat = 'generic:string'
 
                 columns_conv, columns_lost = \
-                    nemoa.dataset.commons.labels.convert(
-                    source_columns, input = source_labelformat)
+                    convert(source_columns, input = source_labelformat)
 
                 table_config['columns_orig'] = source_columns
                 table_config['columns_conv'] = columns_conv

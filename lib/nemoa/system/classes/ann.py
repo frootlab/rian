@@ -20,6 +20,9 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
+import nemoa.system.commons.units as unitclasses
+import nemoa.system.commons.links as linkclasses
+
 class ANN(nemoa.system.classes.base.System):
     """Artificial Neuronal Network (ANN).
 
@@ -112,10 +115,10 @@ class ANN(nemoa.system.classes.base.System):
 
             # test unit class
             if layer['class'] == 'gauss' \
-                and not nemoa.system.commons.units.Gauss.check(layer):
+                and not unitclasses.Gauss.check(layer):
                 return False
             elif layer['class'] == 'sigmoid' \
-                and not nemoa.system.commons.units.Sigmoid.check(layer):
+                and not unitclasses.Sigmoid.check(layer):
                 return False
 
         return True
@@ -141,9 +144,9 @@ class ANN(nemoa.system.classes.base.System):
 
         # delete units from unit parameter arrays
         if layer['class'] == 'gauss':
-            nemoa.system.commons.units.Gauss.remove(layer, select)
+            unitclasses.Gauss.remove(layer, select)
         elif layer['class'] == 'sigmoid':
-            nemoa.system.commons.units.Sigmoid.remove(layer, select)
+            unitclasses.Sigmoid.remove(layer, select)
 
         # delete units from link parameter arrays
         links = self._links[layer['layer']]
@@ -264,9 +267,9 @@ class ANN(nemoa.system.classes.base.System):
 
         if (sid, tid) in self._params['links']:
             links = self._params['links'][(sid, tid)]
-            return nemoa.system.commons.links.Links.energy(
+            return linkclasses.Links.energy(
                 sdata, tdata, src, tgt, links)
         elif (tid, sid) in self._params['links']:
             links = self._params['links'][(tid, sid)]
-            return nemoa.system.commons.links.Links.energy(
+            return linkclasses.Links.energy(
                 tdata, sdata, tgt, src, links)

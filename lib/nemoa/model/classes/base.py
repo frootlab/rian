@@ -356,47 +356,9 @@ class Model(nemoa.common.classes.ClassesBaseClass):
 
         return True
 
-    def evaluate(self, key = None, *args, **kwargs):
+    def evaluate(self, *args, **kwargs):
         """Evaluate model."""
-
-        if not key: key = 'system'
-
-        # evaluate dataset
-        if key == 'dataset':
-            return self.dataset.evaluate(*args, **kwargs)
-        if key == 'network':
-            return self.network.evaluate(*args, **kwargs)
-        if key == 'system':
-            # get data for system evaluation
-            if 'data' in kwargs.keys():
-                # get data from keyword argument
-                data = kwargs['data']
-                del kwargs['data']
-            else:
-                # fetch data from dataset using parameters:
-                # 'preprocessing', 'statistics'
-                if 'preprocessing' in kwargs.keys():
-                    preprocessing = kwargs['preprocessing']
-                    del kwargs['preprocessing']
-                else: preprocessing = {}
-                if not isinstance(preprocessing, dict):
-                    preprocessing = {}
-                if preprocessing:
-                    dataset_backup = self.dataset.get('copy')
-                    self.dataset.preprocess(preprocessing)
-                if 'statistics' in kwargs.keys():
-                    statistics = kwargs['statistics']
-                    del kwargs['statistics']
-                else: statistics = 0
-                cols = self.system.get('layers', visible = True)
-                data = self.dataset.get('data',
-                    size = statistics, cols = tuple(cols))
-                if preprocessing:
-                    self.dataset.set('copy', dataset_backup)
-
-            return self.system.evaluate(data, *args, **kwargs)
-
-        return nemoa.log('warning', 'could not evaluate model')
+        return nemoa.model.evaluate(self, *args, **kwargs)
 
     def save(self, *args, **kwargs):
         """Export model to file."""
