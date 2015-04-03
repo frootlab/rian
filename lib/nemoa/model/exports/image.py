@@ -50,7 +50,10 @@ def save(model, path = None, filetype = None, plot = None, **kwargs):
     if plot.settings['show_title']:
         rel_id = nemoa.common.text.split_kwargs(
             plot.settings['relation'])[0]
-        plot.settings['title'] = rel_id.title()
+        rel_dict = model.system.get('algorithm', rel_id,
+            category = ('system', 'relation', 'evaluation'))
+        rel_name = rel_dict['name']
+        plot.settings['title'] = rel_name.title()
 
     # common matplotlib settings
     matplotlib.rc('font', family = 'sans-serif')
@@ -106,7 +109,10 @@ def show(model, plot = None, *args, **kwargs):
     if plot.settings['show_title']:
         rel_id = nemoa.common.text.split_kwargs(
             plot.settings['relation'])[0]
-        plot.settings['title'] = rel_id.title()
+        rel_dict = model.system.get('algorithm', rel_id,
+            category = ('system', 'relation', 'evaluation'))
+        rel_name = rel_dict['name']
+        plot.settings['title'] = rel_name.title()
 
     # common matplotlib settings
     matplotlib.rc('font', family = 'sans-serif')
@@ -176,7 +182,8 @@ class Graph:
             if not o == i]
 
         # calculate edge weights from 'weight' relation
-        W = model.evaluate('relation', self.settings['relation'],
+        W = model.evaluate('system', 'relations',
+            self.settings['relation'],
             preprocessing = self.settings['preprocessing'],
             measure = self.settings['measure'],
             statistics = self.settings['statistics'],
@@ -187,14 +194,15 @@ class Graph:
                 '%s'!""" % self.settings['relation'])
         relname = nemoa.common.text.split_kwargs(
             self.settings['relation'])[0]
-        relabout = nemoa.model.evaluation.new(model).get('algorithm',
-            relname, category = 'relation')
+        rel_about = model.system.get('algorithm', relname,
+            category = ('system', 'relation', 'evaluation'))
 
         # calculate edge filter from 'filter' relation
         # default: use the same relation, as used for weights
         if not self.settings['filter'] or self.settings['filter'] == \
             self.settings['relation']: F = W
-        else: F = model.evaluate('relation', self.settings['filter'],
+        else: F = model.evaluate('system', 'relations',
+            self.settings['filter'],
             preprocessing = self.settings['preprocessing'],
             measure = self.settings['measure'],
             statistics = self.settings['statistics'])
@@ -218,7 +226,8 @@ class Graph:
             or self.settings['sign'] == self.settings['relation']:
             SR = W
         else:
-            SR = model.evaluate('relation', self.settings['sign'],
+            SR = model.evaluate('system', 'relations',
+                self.settings['sign'],
                 preprocessing = self.settings['preprocessing'],
                 measure = self.settings['measure'],
                 statistics = self.settings['statistics'])
@@ -229,11 +238,11 @@ class Graph:
         S = {edge: 2. * (float(SR[edge] > 0.) - 0.5) for edge in edges}
 
         # create graph and set name
-        graph = networkx.DiGraph(name = relname)
+        graph = networkx.DiGraph(name = rel_about['name'])
 
         # add edges and edge attributes to graph
         if self.settings['normalize_weights'] in [None, 'auto']:
-            normalize = not relabout['normal']
+            normalize = not rel_about['normal']
         elif self.settings['normalize_weights'] in [True, False]:
             normalize = self.settings['normalize_weights']
         else: return nemoa.log('error',
@@ -323,7 +332,7 @@ class Heatmap:
     def create(self, model):
 
         # calculate relation
-        relation = model.evaluate('relation',
+        relation = model.evaluate('system', 'relations',
             self.settings['relation'], **self.settings)
 
         if not isinstance(relation, numpy.ndarray):
@@ -370,7 +379,8 @@ class Histogram:
                 edges.append((i, o))
 
         # calculate relation
-        R = model.evaluate('relation', self.settings['relation'],
+        R = model.evaluate('system', 'relations',
+            self.settings['relation'],
             preprocessing = self.settings['preprocessing'],
             measure = self.settings['measure'],
             statistics = self.settings['statistics'],

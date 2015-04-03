@@ -3,3 +3,5 @@
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
+
+import nemoa.dataset.commons.labels

@@ -179,25 +179,25 @@ class RBM(nemoa.model.optimizer.ann.ANN):
         system = self.model.system
         config = self._config
 
-        store = self.read('vmra') or {}
+        store = self.read('vmra')
         var = numpy.var(system._params['links'][(0, 1)]['W'])
-        if not 'wvar' in store: wvar = numpy.array([var])
-        else: wvar = numpy.append([var], store['wvar'])
+        if not 'wVar' in store: wVar = numpy.array([var])
+        else: wVar = numpy.append([var], store['wVar'])
 
         length = config['acc_vmra_length']
-        if wvar.shape[0] > length:
+        if wVar.shape[0] > length:
 
-            wvar = wvar[:length]
+            wVar = wVar[:length]
             A = numpy.array([numpy.arange(0, length),
                 numpy.ones(length)])
-            grad = - numpy.linalg.lstsq(A.T, wvar)[0][0]
+            grad = - numpy.linalg.lstsq(A.T, wVar)[0][0]
             delw = config['acc_vmra_factor'] * grad
 
             config['update_rate'] = min(max(delw,
                 config['acc_vmra_min_rate']),
                 config['acc_vmra_max_rate'])
 
-        self.write('vmra', wvar = wvar)
+        self.write('vmra', wVar = wVar)
         return True
 
     def _cdiv_sampling(self, data):

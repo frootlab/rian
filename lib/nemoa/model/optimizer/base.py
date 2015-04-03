@@ -10,15 +10,15 @@ import time
 
 class Optimizer:
 
-    _config = None
-    _buffer = {}
+    _config = None # linked nemoa system optimization configuration
+    _state = {}    # dictionary for tracking variables
+    _store = {}    # dictionary for storage of optimization parameters
 
     def __init__(self, model = None, *args, **kwargs):
         """Configure tracker to given nemoa system instance."""
         if model: self._set_model(model)
 
     def get(self, key, *args, **kwargs):
-        """ """
 
         # algorithms
         if key == 'algorithm':
@@ -28,27 +28,61 @@ class Optimizer:
 
         if key == 'data': return self._get_data(*args, **kwargs)
         if key == 'epoch': return self._get_epoch()
-        if key == 'estimatetime': return self._get_estimatetime()
         if key == 'progress': return self._get_progress()
         if key == 'model': return self._get_model()
 
-        if not key in self._buffer.keys(): return False
-        return self._buffer[key]
+        if not key in self._state.keys(): return False
+        return self._state[key]
 
     def _get_algorithms(self, category = None, attribute = None):
-        """Get optimization algorithms."""
+        """Get algorithms provided by optimizer."""
 
-        algorithms = self._buffer['algorithms'].get(attribute, None)
-        if not algorithms:
-            from nemoa.common.module import getmethods
-            algorithms = getmethods(self, renamekey = 'name',
-                grouping = 'category', attribute = attribute)
-            self._buffer['algorithms'][attribute] = algorithms
+        # get unstructured dictionary of all algorithms by prefix
+        unstructured = nemoa.common.module.getmethods(self,
+            prefix = '_')
+
+        # filter algorithms by supported keys and given category
+        for ukey, udata in unstructured.items():
+            if not isinstance(udata, dict):
+                del unstructured[ukey]
+                continue
+            if attribute and not attribute in udata.keys():
+                del unstructured[ukey]
+                continue
+            if not 'name' in udata.keys():
+                del unstructured[ukey]
+                continue
+            if not 'category' in udata.keys():
+                del unstructured[ukey]
+                continue
+            if category and not udata['category'] == category:
+                del unstructured[ukey]
+
+        # create flat structure id category is given
+        structured = {}
         if category:
-            if not category in algorithms: return {}
-            algorithms = algorithms[category]
+            for ukey, udata in unstructured.iteritems():
+                if attribute: structured[udata['name']] = \
+                    udata[attribute]
+                else: structured[udata['name']] = udata
+            return structured
 
-        return algorithms
+        # create tree structure if category is not given
+        categories = {'optimization': None }
+        for ukey, udata in unstructured.iteritems():
+            if not udata['category'] in categories.keys(): continue
+            ckey = categories[udata['category']]
+            if ckey == None:
+                if attribute: structured[udata['name']] = \
+                    udata[attribute]
+                else: structured[udata['name']] = udata
+            else:
+                if not ckey in structured.keys(): structured[ckey] = {}
+                if attribute: structured[ckey][udata['name']] = \
+                    udata[attribute]
+                else: structured[ckey][udata['name']] = udata
+
+        return structured
 
     def _get_algorithm(self, key, *args, **kwargs):
         """Get algorithm provided by optimizer."""
@@ -66,70 +100,49 @@ class Optimizer:
 
         """
 
-        #if key == 'evaluation':
-            #return self._get_evaluation_data(*args, **kwargs)
+        if key == 'evaluation':
+            return self._get_evaluation_data(*args, **kwargs)
         if key == 'training':
             return self._get_data_training(*args, **kwargs)
 
         return nemoa.log('warning', "unknown key '%s'" % key) or None
 
-    #def _get_evaluation_data(self):
-        #"""Get evaluation data.
+    def _get_evaluation_data(self):
+        """Get evaluation data.
 
-        #Returns:
-            #Tuple of numpy arrays containing evaluation data or None
-            #if evaluation data could not be retrieved from dataset.
+        Returns:
+            Tuple of numpy arrays containing evaluation data or None
+            if evaluation data could not be retrieved from dataset.
 
-        #"""
+        """
 
-        #data = self._buffer.get('evaluation_data', None)
+        data = self._state.get('evaluation_data', None)
 
-        ## get evaluation data from dataset
-        #if not data:
-            #system = self.model.system
-            #dataset = self.model.dataset
-            #mapping = system._get_mapping()
-            #cols = (mapping[0], mapping[-1])
-            #data = dataset.get('data', cols = cols)
-            #if data: self._buffer['evaluation_data'] = data
+        # get evaluation data from dataset
+        if not data:
+            system = self.model.system
+            dataset = self.model.dataset
+            mapping = system._get_mapping()
+            cols = (mapping[0], mapping[-1])
+            data = dataset.get('data', cols = cols)
+            if data: self._state['evaluation_data'] = data
 
-        #return data or None
+        return data or None
 
-    def _get_evaluation_algorithm(self, key = None):
+    def _get_evaluation_algorithm(self):
         """ """
 
-        algorithm = self._buffer.get('evaluation_algorithm', None)
-        if not algorithm:
-            name = self._config['tracker_eval_function']
-            algorithm = self.evaluation.get('algorithm', name,
-                category = 'model')
-            self._buffer['evaluation_algorithm'] = algorithm
-        if key: return algorithm.get(key, None)
-        return algorithm
+        name = self._config['tracker_eval_function']
+
+        return self.model.system.get('algorithm', name)
 
     def _get_evaluation_value(self):
         """ """
 
-        algorithm = self._get_evaluation_algorithm('name')
-        return self.evaluation.evaluate(algorithm)
+        data = self._get_evaluation_data()
+        func = self._get_evaluation_algorithm()['name']
 
-    def _get_objective_algorithm(self, key = None):
-        """ """
-
-        algorithm = self._buffer.get('objective_algorithm', None)
-        if not algorithm:
-            name = self._config['tracker_obj_function']
-            algorithm = self.evaluation.get('algorithm', name,
-                category = 'model')
-            self._buffer['objective_algorithm'] = algorithm
-        if key: return algorithm.get(key, None)
-        return algorithm
-
-    def _get_objective_value(self):
-        """ """
-
-        algorithm = self._get_objective_algorithm('name')
-        return self.evaluation.evaluate(algorithm)
+        return self.model.system.evaluate(data = data, func = func)
 
     def _get_data_training(self, *args, **kwargs):
         """Get training data.
@@ -140,7 +153,7 @@ class Optimizer:
 
         """
 
-        data = self._buffer.get('training_data', None)
+        data = self._state.get('training_data', None)
         epoch = self._get_epoch()
         interval = self._config.get('minibatch_update_interval', 1)
 
@@ -159,7 +172,7 @@ class Optimizer:
                 noise = (None, 0.)
             data = dataset.get('data', cols = cols,
                 size = size, noise = noise)
-            if data: self._buffer['training_data'] = data
+            if data: self._state['training_data'] = data
 
         return data or None
 
@@ -171,15 +184,15 @@ class Optimizer:
 
         """
 
-        return self._buffer.get('epoch', 0)
+        return self._state.get('epoch', 0)
 
-    def _get_estimatetime(self):
-        """ """
+    def _get_estimate_time(self):
+
+        import time
 
         now = time.time()
-
-        runtime = now - self._buffer['estim_start_time']
-        estim = (runtime / (self._buffer['epoch'] + 1)
+        runtime = now - self._state['estim_start_time']
+        estim = (runtime / (self._state['epoch'] + 1)
             * self._config['updates'])
         estim_str = time.strftime('%H:%M',
             time.localtime(now + estim))
@@ -195,12 +208,12 @@ class Optimizer:
 
         """
 
-        return float(self._buffer['epoch']) \
+        return float(self._state['epoch']) \
             / float(self._config['updates'])
 
     def _get_model(self):
         """Get model instance."""
-        return self._buffer.get('model', None)
+        return self._state.get('model', None)
 
     def _get_compatibility(self, model):
         """Get compatibility of optimizer to given model instance.
@@ -223,7 +236,7 @@ class Optimizer:
         if (not 'check_dataset' in model.system._default['init']
             or model.system._default['init']['check_dataset'] == True) \
             and not model.system._check_dataset(model.dataset):
-            return False
+            return None
 
         return True
 
@@ -238,7 +251,7 @@ class Optimizer:
         """ """
 
         if not self._set_config(config, **kwargs): return None
-        if not self._set_buffer_reset(): return None
+        if not self._set_state_reset(): return None
 
         # get name of optimization algorithm
         name = self._config.get('algorithm', None)
@@ -260,9 +273,9 @@ class Optimizer:
                 % (self.model.name, self.model.system.type, name))
 
             # start key events
-            if not self._buffer['key_events_started']:
+            if not self._state['key_events_started']:
                 nemoa.log('note', "press 'h' for help or 'q' to quit.")
-                self._buffer['key_events_started'] = True
+                self._state['key_events_started'] = True
                 nemoa.set('shell', 'buffmode', 'key')
 
         # 2Do retval, try / except etc.
@@ -279,9 +292,9 @@ class Optimizer:
 
         if key == 'model': return self._set_model(*args, **kwargs)
         if key == 'config': return self._set_config(*args, **kwargs)
-        if key == 'buffer': return self._set_buffer(*args, **kwargs)
+        if key == 'state': return self._set_state(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key)
+        return nemoa.log('warning', "unknown key '%s'" % key) or None
 
     def _set_config(self, config = None, **kwargs):
         """Set optimizer configuration from dictionary."""
@@ -307,36 +320,31 @@ class Optimizer:
     def _set_model(self, model):
         """Set model."""
 
-        import nemoa.model.evaluation
-
         if not self._get_compatibility(model):
             return nemoa.log('warning', """Could not initialize
                 optimizer to model: optimizer is not compatible to
                 model.""") or None
 
+        # update time and config
         self.model = model
-        self.evaluation = nemoa.model.evaluation.new(model)
 
         # initialize evaluation data
-        #self._get_evaluation_data()
+        self._get_evaluation_data()
 
         return True
 
-    def _set_buffer(self, key, value = None):
+    def _set_state(self, key, *args, **kwargs):
 
-        if key == 'reset': return self._set_buffer_reset()
-        if key in self._buffer:
-            self._buffer[key] = value
-            return True
+        if key == 'reset': return self._set_state_reset()
 
-        return nemoa.log('warning', "unknown key '%s'" % key)
+        return self._state.get(key, nemoa.log('warning', """unknown
+            attribute '%s'.""" % key) or None)
 
-    def _set_buffer_reset(self):
+    def _set_state_reset(self):
         """ """
 
         now = time.time()
-
-        self._buffer = {
+        self._state = {
             'epoch': 0,
             'evaluation_data': None,
             'training_data': None,
@@ -349,58 +357,72 @@ class Optimizer:
             'eval_prev_time': now,
             'eval_values': None,
             'estim_started': False,
-            'estim_start_time': now,
-            'store': {},
-            'algorithms': {} }
+            'estim_start_time': now }
 
         return True
 
     def read(self, key, id = -1):
-        """Read value from queue."""
-
-        if not key in self._buffer['store']:
-            return nemoa.log('warning', """could not read from store:
-                unknown key '%s'.""" % key) or None
-        queue = self._buffer['store'][key]
-        if len(queue) < abs(id):
-            return nemoa.log('warning', """could not read from store:
-                invaid id '%s' in key '%s'.""" % (id, key)) or None
-
-        return queue[id]
+        if not key in self._store.keys():
+            self._store[key] = []
+        elif len(self._store[key]) >= abs(id):
+            return self._store[key][id]
+        return {}
 
     def write(self, key, id = -1, append = False, **kwargs):
-        """Write value to queue."""
-
-        if not key in self._buffer['store']:
-            self._buffer['store'][key] = []
-        queue = self._buffer['store'][key]
-        if len(queue) == (abs(id) - 1) or append == True:
-            queue.append(kwargs)
+        if not key in self._store.keys():
+            self._store[key] = []
+        if len(self._store[key]) == (abs(id) - 1) or append == True:
+            self._store[key].append(kwargs)
             return True
-        if len(queue) < id:
-            return nemoa.log('warning',
-                'could not write to store, wrong index.')
-        queue[id] = kwargs
-
+        if len(self._store[key]) < id: return nemoa.log('error',
+            'could not write to store, wrong index!')
+        self._store[key][id] = kwargs
         return True
+
+    #def _update_time_estimation(self):
+        #""" """
+        #if not self._config['tracker_estimate_time']: return True
+
+        #if not self._state['estim_started']:
+            #nemoa.log("""estimating time for calculation of %i
+                #updates.""" % (self._config['updates']))
+            #self._state['estim_started'] = True
+            #self._state['estim_start_time'] = time.time()
+            #return True
+
+        #now = time.time()
+        #runtime = now - self._state['estim_start_time']
+        #if runtime > self._config['tracker_estimate_time_wait']:
+            #estim = (runtime / (self._state['epoch'] + 1)
+                #* self._config['updates'])
+            #estim_str = time.strftime('%H:%M',
+                #time.localtime(now + estim))
+            #nemoa.log('note', 'estimation: %ds (finishing time: %s)'
+                #% (estim, estim_str))
+            #self._config['tracker_estimate_time'] = False
+            #return True
+
+        #return True
 
     def update(self):
         """Update epoch and check termination criterions."""
 
-        self._buffer['epoch'] += 1
-        if self._buffer['epoch'] == self._config['updates']:
-            self._buffer['continue'] = False
+        self._state['epoch'] += 1
+        if self._state['epoch'] == self._config['updates']:
+            self._state['continue'] = False
 
-        if self._buffer['key_events']: self._update_keypress()
+        if self._state['key_events']: self._update_keypress()
+        #if self._config.get('tracker_estimate_time', False):
+            #self._update_time_estimation()
         if self._config.get('tracker_obj_tracking_enable', False):
             self._update_objective_function()
         if self._config.get('tracker_eval_enable', False):
             self._update_evaluation()
 
-        if not self._buffer['continue']:
+        if not self._state['continue']:
             nemoa.set('shell', 'buffmode', 'line')
 
-        return self._buffer['continue']
+        return self._state['continue']
 
     def _update_keypress(self):
         """Check Keyboard."""
@@ -418,9 +440,9 @@ class Optimizer:
             nemoa.log('note', "'t' -- estimate finishing time")
         elif char == 'q':
             nemoa.log('note', 'aborting optimization')
-            self._buffer['continue'] = False
+            self._state['continue'] = False
         elif char == 't':
-            ftime = self._get_estimatetime()
+            ftime = self._get_estimate_time()
             nemoa.log('note', 'estimated finishing time %s' % ftime)
 
         return True
@@ -429,45 +451,46 @@ class Optimizer:
         """Calculate objective function of system."""
 
         # check 'continue' flag
-        if self._buffer['continue']:
+        if self._state['continue']:
 
             # check update interval
-            if not not (self._buffer['epoch'] \
+            if not not (self._state['epoch'] \
                 % self._config['tracker_obj_update_interval'] == 0):
                 return True
 
         # calculate objective function and add value to array
-        value = self._get_objective_value()
+        func = self._config['tracker_obj_function']
+        data = self._get_evaluation_data()
+        value = self.model.system.evaluate(
+            data = data, func = func)
         progr = self._get_progress()
-        if not isinstance(self._buffer['obj_values'], numpy.ndarray):
-            self._buffer['obj_values'] = numpy.array([[progr, value]])
-        else: self._buffer['obj_values'] = \
-            numpy.vstack((self._buffer['obj_values'], \
+        if not isinstance(self._state['obj_values'], numpy.ndarray):
+            self._state['obj_values'] = numpy.array([[progr, value]])
+        else: self._state['obj_values'] = \
+            numpy.vstack((self._state['obj_values'], \
             numpy.array([[progr, value]])))
 
         # (optional) check for new optimum
         if self._config['tracker_obj_keep_optimum']:
 
             # init optimum with first value
-            if self._buffer['obj_opt_value'] == None:
-                self._buffer['obj_opt_value'] = value
-                self._buffer['optimum'] = \
+            if self._state['obj_opt_value'] == None:
+                self._state['obj_opt_value'] = value
+                self._state['optimum'] = \
                     {'params': self.model.system.get(
                     'copy', 'params')}
                 return True
 
             # allways check last optimum
-            if self._buffer['continue'] \
+            if self._state['continue'] \
                 and progr < self._config['tracker_obj_init_wait']:
                 return True
 
-            #type_of_optimum = self.model.system.get(
-                #'algorithm', func,
-                #category = ('system', 'evaluation'),
-                #attribute = 'optimum')
-
-            type_of_optimum = self._get_objective_algorithm('optimum')
-            current_optimum = self._buffer['obj_opt_value']
+            type_of_optimum = self.model.system.get(
+                'algorithm', func,
+                category = ('system', 'evaluation'),
+                attribute = 'optimum')
+            current_optimum = self._state['obj_opt_value']
 
             if type_of_optimum == 'min' and value < current_optimum:
                 new_optimum = True
@@ -477,14 +500,14 @@ class Optimizer:
                 new_optimum = False
 
             if new_optimum:
-                self._buffer['obj_opt_value'] = value
-                self._buffer['optimum'] = { 'params':
+                self._state['obj_opt_value'] = value
+                self._state['optimum'] = { 'params':
                     self.model.system.get('copy', 'params') }
 
             # set system parameters to optimum on last update
-            if not self._buffer['continue']:
+            if not self._state['continue']:
                 return self.model.system.set('copy',
-                    **self._buffer['optimum'])
+                    **self._state['optimum'])
 
         return True
 
@@ -493,30 +516,30 @@ class Optimizer:
 
         now = time.time()
 
-        if not self._buffer['continue']:
+        if not self._state['continue']:
             func = self._get_evaluation_algorithm()
             value = self._get_evaluation_value()
             self._config['tracker_eval_enable'] = False
             return nemoa.log('note', 'found optimum with: %s = %s' % (
                 func['name'], func['formater'](value)))
 
-        if ((now - self._buffer['eval_prev_time']) \
+        if ((now - self._state['eval_prev_time']) \
             > self._config['tracker_eval_time_interval']):
             func = self._get_evaluation_algorithm()
             value = self._get_evaluation_value()
             progress = self._get_progress()
 
             # update time of last evaluation
-            self._buffer['eval_prev_time'] = now
+            self._state['eval_prev_time'] = now
 
             # add evaluation to array
-            if not isinstance(self._buffer['eval_values'],
+            if not isinstance(self._state['eval_values'],
                 numpy.ndarray):
-                self._buffer['eval_values'] = \
+                self._state['eval_values'] = \
                     numpy.array([[progress, value]])
             else:
-                self._buffer['eval_values'] = \
-                    numpy.vstack((self._buffer['eval_values'], \
+                self._state['eval_values'] = \
+                    numpy.vstack((self._state['eval_values'], \
                     numpy.array([[progress, value]])))
 
             return nemoa.log('note', 'finished %.1f%%: %s = %s' % (

@@ -816,25 +816,21 @@ class Session:
             dirmask = self._config['current']['path'][objtype + 's']
             filemask = self._get_path_expand(dirmask, '*.*')
             if objtype == 'dataset':
-                from nemoa.dataset.imports import filetypes
-                types = filetypes()
+                filetypes = nemoa.dataset.imports.filetypes()
             elif objtype == 'network':
-                from nemoa.network.imports import filetypes
-                types = filetypes()
+                filetypes = nemoa.network.imports.filetypes()
             elif objtype == 'system':
-                from nemoa.system.imports import filetypes
-                types = filetypes()
+                filetypes = nemoa.system.imports.filetypes()
             elif objtype == 'model':
-                from nemoa.model.imports import filetypes
-                types = filetypes()
+                filetypes = nemoa.model.imports.filetypes()
             elif objtype == 'script':
-                types = ['py']
+                filetypes = ['py']
 
             # scan for files
             objregister = self._config['register'][objtype]
             for filepath in glob.iglob(filemask):
                 filetype = nemoa.common.ospath.fileext(filepath)
-                if not filetype in types: continue
+                if not filetype in filetypes: continue
                 basename = nemoa.common.ospath.basename(filepath)
                 filespace = self._get_workspace()
                 filebase = self._get_base()

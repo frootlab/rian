@@ -5,9 +5,9 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
-
 def main():
+
+    import nemoa
 
     try:
         import IPython
@@ -55,8 +55,7 @@ def main():
 
     def optimize(*args, **kwargs):
         """Optimize model."""
-        from nemoa.model.optimizer import run
-        return run(*args, **kwargs)
+        return nemoa.model.optimizer.optimize(*args, **kwargs)
 
     def path(*args, **kwargs):
         """Wrapping function to nemoa.path()."""

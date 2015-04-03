@@ -4,17 +4,11 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+import importlib
 import nemoa
 
 def optimize(model, *args, **kwargs):
     """Optimize model."""
-
-    return new(model).optimize(*args, **kwargs)
-
-def new(model, *args, **kwargs):
-    """Get model optimizer instance."""
-
-    import importlib
 
     # get type of system
     stype = model.system.type
@@ -29,5 +23,8 @@ def new(model, *args, **kwargs):
         return nemoa.log('error', """could not create optimizer:
             unknown system type '%s'.""" % stype)
 
-    # create optimizer instance run optimization
-    return getattr(module, cname)(model)
+    # create optimizer instance
+    optimizer = getattr(module, cname)(model)
+
+    # run optimizer
+    return optimizer.optimize(*args, **kwargs)
