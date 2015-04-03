@@ -6,28 +6,26 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-def optimize(model, *args, **kwargs):
-    """Optimize model."""
-
-    return new(model).optimize(*args, **kwargs)
+def evaluate(model, *args, **kwargs):
+    """Evaluate model."""
+    return new(model).evaluate(*args, **kwargs)
 
 def new(model, *args, **kwargs):
-    """Get model optimizer instance."""
+    """Get model evaluation instance."""
 
     import importlib
 
     # get type of system
     stype = model.system.type
-    mname = 'nemoa.model.optimizer.' + stype.split('.')[0]
+    mname = 'nemoa.model.evaluation.' + stype.split('.')[0]
     cname = stype.split('.')[1]
 
-    # import module for optimizer module
+    # import module for evaluation
     try:
         module = importlib.import_module(mname)
         if not hasattr(module, cname): raise ImportError()
     except ImportError:
-        return nemoa.log('error', """could not create optimizer:
+        return nemoa.log('error', """could not evaluate model:
             unknown system type '%s'.""" % stype)
 
-    # create optimizer instance run optimization
     return getattr(module, cname)(model)

@@ -6,6 +6,7 @@ __license__ = 'GPLv3'
 
 import nemoa.model.builder
 import nemoa.model.classes
+import nemoa.model.evaluation
 import nemoa.model.exports
 import nemoa.model.imports
 import nemoa.model.optimizer
@@ -21,6 +22,10 @@ def copy(model, *args, **kwargs):
 def create(*args, **kwargs):
     """Create model instance from building script."""
     return new(**build(*args, **kwargs))
+
+def evaluate(*args, **kwargs):
+    """Evaluate model instance."""
+    return nemoa.model.evaluation.evaluate(*args, **kwargs)
 
 def load(*args, **kwargs):
     """Import model dictionary from file."""

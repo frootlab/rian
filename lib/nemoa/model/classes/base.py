@@ -398,6 +398,10 @@ class Model(nemoa.common.classes.ClassesBaseClass):
 
         return nemoa.log('warning', 'could not evaluate model')
 
+    #def evaluate(self, *args, **kwargs):
+        #"""Evaluate model."""
+        #return nemoa.model.evaluate(self, *args, **kwargs)
+
     def save(self, *args, **kwargs):
         """Export model to file."""
         return nemoa.model.save(self, *args, **kwargs)
