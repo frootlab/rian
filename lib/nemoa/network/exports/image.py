@@ -164,5 +164,4 @@ class Graph:
                     ' $' + ('%.2g' % (graph.edge[u][v]['weight'])) + '$'
 
         # plot model
-        from nemoa.common.plot import layergraph as plotlayergraph
-        return plotlayergraph(graph, **self.settings)
+        return nemoa.common.plot.layergraph(graph, **self.settings)

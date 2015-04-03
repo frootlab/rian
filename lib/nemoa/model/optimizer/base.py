@@ -358,7 +358,9 @@ class Optimizer:
     def read(self, key, id = -1):
         """Read value from queue."""
 
-        if not key in self._buffer['store']: return None
+        if not key in self._buffer['store']:
+            return nemoa.log('warning', """could not read from store:
+                unknown key '%s'.""" % key) or None
         queue = self._buffer['store'][key]
         if len(queue) < abs(id):
             return nemoa.log('warning', """could not read from store:

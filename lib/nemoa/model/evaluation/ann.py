@@ -627,50 +627,62 @@ class ANN(Evaluation):
         """
 
         if not mapping: mapping = self.model.system._get_mapping()
-        iunits = self.model.system._get_units(layer = mapping[0])
-        ounits = self.model.system._get_units(layer = mapping[-1])
-        R = numpy.zeros((len(iunits), len(ounits)))
+        inputs = self.model.system._get_units(layer = mapping[0])
+        outputs = self.model.system._get_units(layer = mapping[-1])
+        sdata = data[0]
+        tdata = data[1]
+        R = numpy.zeros((len(inputs), len(outputs)))
 
         # get indices of representatives
-        rids = [int((i + 0.5) * int(float(data[0].shape[0])
+        r_ids = [int((i + 0.5) * int(float(sdata.shape[0])
             / points)) for i in xrange(points)]
 
-        for iid, iunit in enumerate(iunits):
-            icurve = amplify * numpy.take(
-                numpy.sort(data[0][:, iid]), rids)
+        for inid, inunit in enumerate(inputs):
+            try:
+                i_curve = numpy.take(numpy.sort(sdata[:, inid]), r_ids)
+            except: # 2Do
+                print('ok1', sdata)
+                print('ok2', sdata[:, inid])
+                print('ok3', numpy.sort(sdata[:, inid]))
+                print(r_ids)
+                print(numpy.take(numpy.sort(sdata[:, inid]), r_ids))
+
+            i_curve = amplify * i_curve
 
             # create output matrix for each output
-            C = {ounit: numpy.zeros((data[0].shape[0], points)) \
-                for ounit in ounits}
-            for pid in xrange(points):
-                idata  = data[0].copy()
-                idata[:, iid] = icurve[pid]
-                oexpect = self.unitexpect(idata, mapping = mapping)
-                for tid, ounit in enumerate(ounits):
-                    C[ounit][:, pid] = oexpect[:, tid]
+            C = {outunit: numpy.zeros((sdata.shape[0], points)) \
+                for outunit in outputs}
+            for p_id in xrange(points):
+                i_data  = sdata.copy()
+                i_data[:, inid] = i_curve[p_id]
+                o_expect = self.unitexpect(i_data, mapping = mapping)
+                for tid, outunit in enumerate(outputs):
+                    C[outunit][:, p_id] = o_expect[:, tid]
 
             # calculate mean of standard deviations of outputs
-            for oid, ounit in enumerate(ounits):
+            for outid, outunit in enumerate(outputs):
 
                 # calculate norm by mean over part of data
-                bound = int((1. - gauge) * data[0].shape[0])
-                subset = numpy.sort(C[ounit].std(axis = 1))[bound:]
-                norm = subset.mean() / data[1][:, oid].std()
+                bound = int((1. - gauge) * sdata.shape[0])
+                subset = numpy.sort(C[outunit].std(axis = 1))[bound:]
+                norm = subset.mean() / tdata[:, outid].std()
 
                 # calculate influence
-                R[iid, oid] = norm
+                R[inid, outid] = norm
 
         # amplify contrast of induction
         A = R.copy()
-        for iid, iunit in enumerate(iunits):
-            for oid, ounit in enumerate(ounits):
-                if ':' in ounit: inlabel = ounit.split(':')[1]
-                else: inlabel = ounit
-                if ':' in iunit: outlabel = iunit.split(':')[1]
-                else: outlabel = iunit
-                if inlabel == outlabel: A[iid, oid] = 0.0
+        for inid, inunit in enumerate(inputs):
+            for outid, outunit in enumerate(outputs):
+                if ':' in outunit: inlabel = outunit.split(':')[1]
+                else: inlabel = outunit
+                if ':' in inunit: outlabel = inunit.split(':')[1]
+                else: outlabel = inunit
+                if inlabel == outlabel: A[inid, outid] = 0.0
         bound = numpy.amax(A)
 
-        from nemoa.system.commons.math import intensify
-        return intensify(R, factor = contrast, bound = bound)
+        R = nemoa.common.math.intensify(R, factor = contrast,
+            bound = bound)
+
+        return R
 
