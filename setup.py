@@ -78,7 +78,7 @@ def install():
         'name': 'nemoa',
         'descfile': 'DESCRIPTION.rst',
         'libdir': 'lib',
-        'keywords': 'dataanalysis classification dbn rbm',
+        'keywords': 'dataanalysis deeplearning dbn dbm rbm',
         'install_requires': [
             'appdirs',
             'networkx',
