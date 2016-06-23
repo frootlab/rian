@@ -9,18 +9,18 @@ or statistical values.
 
 """
 
-__version__     = '0.5.0pre17'
+__version__     = '0.5.0rc18'
 __status__      = 'Development'
 __description__ = 'Deep data analysis and visualization'
 __url__         = 'https://github.com/fishroot/nemoa'
 __license__     = 'GPLv3'
-__copyright__   = 'Copyright 2013-2015, Patrick Michl'
+__copyright__   = 'Copyright 2013-2016, Patrick Michl'
 __author__      = 'Patrick Michl'
 __email__       = 'patrick.michl@gmail.com'
 __maintainer__  = 'Patrick Michl'
-__credits__     = ['Rainer Koenig', 'Marcus Oswald', 'Anna Dieckmann',
-                   'Tobias Bauer', 'Alexandra Poos', 'Rebecca Krauss',
-                   'Michael Scherer', 'Sebastian Michl']
+__credits__     = ['Willi Jäger', 'Rainer Koenig', 'Marcus Oswald',
+                   'Anna Dieckmann', 'Tobias Bauer', 'Alexandra Poos',
+                   'Rebecca Krauss', 'Sebastian Michl']
 
 import nemoa.common
 import nemoa.dataset
