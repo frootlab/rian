@@ -1035,7 +1035,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         if size == 0 or size == None: return data
         fraction = self._config['table'][table]['fraction']
         rowsel = numpy.random.randint(data.size,
-            size = round(fraction * size))
+            size = int(round(fraction * size)))
 
         return numpy.take(data, rowsel)
 
