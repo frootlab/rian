@@ -725,10 +725,9 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         Args:
             size (int, optional): size of data (number of samples)
                 default: value 0 returns all samples unstratified
-            rows (str, optional): name of row filter used to select rows
+            rows (str, optional): name of row select filter
                 default: '*' selects all rows
-            cols (str, optional): name of column filter used to
-                select columns.
+            cols (str, optional): name of column select filter
                 default: '*' selects all columns
             noise (2-tuple, optional): noise model and noise strength
                 first entry of tuple (string): name of noise model
@@ -760,18 +759,17 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
             return nemoa.log('error', """could not get data:
                 invalid argument 'size'.""")
 
-        # stratify and filter data
+        # get stratified and filtered data
         src_stack = ()
         for table in self._tables.iterkeys():
-            # 2do: fix size: size + 1 -> size
             if size > 0:
                 src_data = self._get_table(table = table,
                     rows = rows, size = size + 1, labels = True)
             else:
                 src_data = self._get_table(table = table,
                     rows = rows, labels = True)
-            if src_data == False or src_data.size == 0: continue
-            src_stack += (src_data, )
+            if hasattr(src_data, 'size') and src_data.size > 0:
+				src_stack += (src_data, )
         if not src_stack:
             return nemoa.log('error', """could not get data:
                 no valid data sources found!""")
@@ -1103,20 +1101,18 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         return nemoa.log('warning', "unknown key '%s'" % key) or None
 
     def _set_columns(self, columns, mapping):
-        """Set external column names.
+        """Set virtual columns.
 
-        Nemoa datasets differ between internal column names (colnames)
-        and external column names (columns). The internal column names
-        correspond to the real column names of the numpy structured
-        arrays. The external column names provide an additional layer.
-        These column names are mapped to internal column names when
-        accessing tables, which allows to provide identical columns to
-        different column names, for example used by autoencoders.
+        Nemoa datasets differ between real columns (colnames) and
+        virtual columns (columns). The real columns correspond to the
+        columns of numpy structured arrays, whereas the virtual columns
+        provide an additional layer, that allows to adress identical
+        colmuns bydifferent names, as i.e. used for the opzimization of
+        autoencoders.
 
         Args:
-            columns (list of 2-tuples): list of external column names
-            mapping (dict): mapping from external columns to internal
-                colnames.
+            columns (list of 2-tuples): list of virtual column names
+            mapping (dict): mapping from virtual to real columns
 
         Returns:
             bool: True if no error occured.
@@ -1269,7 +1265,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         formater = lambda val: '%.3f' % (val)
     )
     def _algorithm_test_binary(self, cols = '*'):
-        """Test if dataset contains only binary values.
+        """Test if dataset strictly contains binary values.
 
         Args:
             cols (str, optional): column filter used to select columns
@@ -1317,11 +1313,11 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
             Boolean value which is True if the following conditions are
             satisfied:
             (1) The mean value of every selected column over a given
-                number of random selected samples has a distance to mu
-                which is lower than delta.
+                number of random selected samples has an absolute
+                difference to mu, which is lower than delta.
             (2) The standard deviation of every selected column over a
-                given number of random selected samples has a distance
-                to sigma which is lower than delta.
+                given number of random selected samples has an absolute
+                difference to sigma, which is lower than delta.
 
         """
 
@@ -1332,15 +1328,15 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
         mean = data.mean(axis = 0)
         if numpy.any(numpy.abs(mu - mean) > delta):
             return nemoa.log('warning',
-                """dataset does not contain gauss normalized data:
-                mean value is %.3f!""" % (mean))
+                """dataset contains columns with not gauss normalized
+                expectation values!""")
 
         # test standard deviations of columns
         sdev = data.std(axis = 0)
         if numpy.any(numpy.abs(sigma - sdev) > delta):
             return nemoa.log('warning',
-                """dataset does not contain gauss normalized data:
-                standard deviation is %.3f!""" % (sdev))
+                """dataset contains columns with not gauss normalized
+                standard deviations!""")
 
         return True
 
