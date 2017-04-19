@@ -15,6 +15,7 @@ class gene:
     def __init__(self):
 
         stdout = sys.stdout
+
         try:
             sys.stdout = NullDevice()
             import rpy2.robjects
@@ -22,204 +23,165 @@ class gene:
             sys.stdout = stdout
         except:
             sys.stdout = stdout
-            nemoa.log('error', "could not import python package rpy2!")
+            nemoa.log('error',
+                "could not import python package 'rpy2'!")
 
-    def _install(self, packages = [], quiet = True):
+    def _exec_rcmd(self, rcmd = None):
+        if not rcmd: return True
 
-        # evaluate bioconductor R script
-        base = self.robjects.packages.importr('base')
-        base.source("http://bioconductor.org/biocLite.R")
-        bioclite = self.robjects.globalenv['biocLite']
+        nemoa.log('debuginfo', 'passing command to R: %s' % rcmd)
+        sysstout = sys.stdout
+        try:
+            sys.stdout = NullDevice()
+            self.robjects.r(rcmd)
+            sys.stdout = sysstout
+        except:
+            sys.stdout = sysstout
+            nemoa.log('error', """could not execute
+                R command '%s' (see logfile)""" % rcmd)
+            nemoa.log('debuginfo', sys.exc_info()[0])
+            return False
 
-        # install bioconductor packages
-        if packages == []:
-            r_command = "biocLite()"
-            nemoa.log("sending command to R: " + r_command)
-            try:
-                self.robjects.r(r_command)
-            except:
-                nemoa.log('error', "an error occured!")
+        return True
+
+    def _exec_cmdlist(self, cmdlist = []):
+        for rcmd in cmdlist:
+            if not self._exec_rcmd(rcmd): return False
+        return True
+
+    def _load_pkg(self, pkg = 'org.Hs.eg.db'):
+        if not self._exec_rcmd("library('%s')" % pkg) and not (
+            self._install_pkg(pkg) and
+            self._exec_rcmd("library('%s')" % pkg)): return False
+        return True
+
+    def _install_pkg(self, pkg = None):
+        if not pkg:
+            nemoa.log('note', """trying to install
+            bioconductor base""")
         else:
-            for package in packages:
-                r_command = "biocLite('%s')" % (package)
-                nemoa.log("sending command to R: " + r_command)
-                try:
-                    self.robjects.r(r_command)
-                except:
-                    sys.stdout = stdout
-                    nemoa.log('error', "an error occured!")
+           nemoa.log('note', """trying to install
+               bioconductor package: '%s'""" % pkg)
 
-    def convert_list(self, list, input_format, output_format,
-        filter = False, quiet = True):
+        # try to evaluate the remote R script biocLite()
+        bioclite = "https://bioconductor.org/biocLite.R"
+        sysstout = sys.stdout
+        try:
+            sys.stdout = NullDevice()
+            from rpy2.robjects.packages import importr
+            base = importr('base')
+            base.source(bioclite)
+            base.require('biocLite')
+            sys.stdout = sysstout
+        except:
+            sys.stdout = sysstout
+            return nemoa.log('error', """could not evaluate remote R
+                script: '%s'""" % bioclite)
+
+        # try to install bioconductor packages with biocLite()
+        if not pkg: return self._exec_rcmd("biocLite()")
+        return self._exec_rcmd("biocLite('%s')" % pkg)
+
+    def convert_list(self, inlist, infmt, outfmt, filter = False,
+        unique = True):
         """Return list with converted gene labels using R/bioconductor"""
 
+        if not outfmt or outfmt == 'default': outfmt = self.default
+        if infmt == outfmt: return inlist, []
         if not self.robjects:
-            nemoa.log('error', """annotation: you have to install
-                python package 'rpy2'""")
-            return [], list
-        if not output_format or output_format == 'default':
-            output_format = self.default
-        if input_format == output_format:
-            return list, []
+            nemoa.log('error', """could not convert gene labels:
+                python package 'rpy2' is not installed!""")
+            return inlist, range(len(inlist))
 
         # make local copy of list
-        list = list[:]
+        inlist = list(inlist)[:]
 
-        # convert using annotation packages in bioconductor
-        annotation_packages = [
+        # convert using various AnnotationDBI packages from Bioconductor
+        if infmt in [
             'hgu95a', 'hgu95av2', 'hgu95b', 'hgu95c', 'hgu95d',
             'hgu95e', 'hgu133a', 'hgu133a2', 'hgu133b', 'hgu133plus2',
             'hthgu133a', 'hgug4100a', 'hgug4101a', 'hgug4110b',
-            'hgug4111a', 'hgug4112a', 'hguqiagenv3'
-        ]
+            'hgug4111a', 'hgug4112a', 'hguqiagenv3' ]:
 
-        original_stdout = sys.stdout
-        if input_format in annotation_packages:
-
-            package_name = input_format + '.db'
-
-            # load bioconductor annotation package
-            nemoa.log("sending command to R: library('%s')"
-                % (package_name))
-            try:
-                sys.stdout = NullDevice()
-                self.robjects.r.library(package_name)
-                sys.stdout = original_stdout
-            except:
-                sys.stdout = original_stdout
-                nemoa.log('warning', """could not find R/bioconductor
-                    package: '%s'""" % (package_name))
-                nemoa.log('warning', "trying to install ...")
-                self._install([package_name])
+            # load package
+            if not self._load_pkg(infmt + '.db'):
+                return inlist, range(len(inlist))
 
             # get listvector
-            nemoa.log("sending command to R: x <- %s%s"
-                % (input_format, output_format.upper()))
-            try:
-                sys.stdout = NullDevice()
-                self.robjects.r('x <- %s%s'
-                    % (input_format, output_format.upper()))
-                sys.stdout = original_stdout
-            except:
-                sys.stdout = original_stdout
-                nemoa.log('error', """output format '%s' is not
-                    supported by '%s.db'""" % (output_format,
-                    input_format))
-                return [], list
+            if not self._exec_cmdlist([
+                "x <- %s%s" % (infmt, outfmt.upper()),
+                "mapped_genes <- mappedkeys(x)",
+                "listmap <- as.list(x[mapped_genes])" ]):
+                return inlist, range(len(inlist))
 
-            nemoa.log("""sending command to R:
-                mapped_genes <- mappedkeys(x)""")
-            self.robjects.r('mapped_genes <- mappedkeys(x)')
-            nemoa.log("""sending command to R:
-                listmap <- as.list(x[mapped_genes])""")
-            self.robjects.r('listmap <- as.list(x[mapped_genes])')
+            # strip leading 'X' for column select
+            slist = [a.lstrip('X') for a in inlist]
 
-            # prepare search list
-            searchList = []
-            for a in list:
-                if a[0] == 'X':
-                    a = a[1:]
-                searchList.append(a)
+        elif infmt == 'entrezid':
 
-        elif input_format == 'entrezid':
             # load bioconductor annotation package
-            nemoa.log("sending command to R: library('org.Hs.eg.db')")
-            try:
-                sys.stdout = NullDevice()
-                self.robjects.r.library("org.Hs.eg.db")
-                sys.stdout = original_stdout
-            except:
-                sys.stdout = original_stdout
-                nemoa.log('error', """you have to install the
-                    R/bioconductor package: 'org.Hs.eg.db'""")
-                return [], list
+            if not self._load_pkg('org.Hs.eg.db'):
+                return inlist, range(len(inlist))
 
             # get listvector
-            nemoa.log("""sending command to R:
-                x <- org.Hs.eg%s""" % output_format.upper())
-            try:
-                self.robjects.r('x <- org.Hs.eg%s' % (output_format.upper()))
-            except:
-                return nemoa.log('error', """output format '%s'
-                    is not supported by 'org.Hs.eg.db'""" % output_format)
+            if not self._exec_cmdlist([
+                "x <- org.Hs.eg%s" % (outfmt.upper()),
+                "mapped_genes <- mappedkeys(x)",
+                "listmap <- as.list(x[mapped_genes])" ]):
+                return inlist, range(len(inlist))
 
-            nemoa.log("""sending command to R:
-                mapped_genes <- mappedkeys(x)""")
-            self.robjects.r('mapped_genes <- mappedkeys(x)')
-            nemoa.log("""sending command to R:
-                listmap <- as.list(x[mapped_genes])""")
-            self.robjects.r('listmap <- as.list(x[mapped_genes])')
+            # pass list for column select
+            slist = inlist
 
-            # prepare search list
-            searchList = list
+        elif outfmt == 'entrezid':
 
-        elif output_format == 'entrezid':
             # load bioconductor annotation package
-            nemoa.log("sending command to R: library('org.Hs.eg.db')")
-            try:
-                sys.stdout = NullDevice()
-                self.robjects.r.library("org.Hs.eg.db")
-                sys.stdout = original_stdout
-            except:
-                sys.stdout = original_stdout
-                nemoa.log('error', """you have to install the
-                    R/bioconductor package: 'org.Hs.eg.db'""")
-                return [], list
+            if not self._load_pkg('org.Hs.eg.db'):
+                return inlist, range(len(inlist))
 
             # get listvector
-            nemoa.log("sending command to R: x <- org.Hs.eg%s2EG"
-                % (input_format.upper()))
-            try:
-                self.robjects.r('x <- org.Hs.eg%s2EG'
-                    % (input_format.upper()))
-            except:
-                nemoa.log('error', """input format '%s' is not
-                    supported by 'org.Hs.eg.db'""" % input_format)
-                return [], list
+            if not self._exec_cmdlist([
+                "x <- org.Hs.eg%s2EG" % (infmt.upper()),
+                "mapped_genes <- mappedkeys(x)",
+                "listmap <- as.list(x[mapped_genes])" ]):
+                return inlist, range(len(inlist))
 
-            nemoa.log("""sending command to R:
-                mapped_genes <- mappedkeys(x)""")
-            self.robjects.r('mapped_genes <- mappedkeys(x)')
-            nemoa.log("""sending command to R:
-                listmap <- as.list(x[mapped_genes])""")
-            self.robjects.r('listmap <- as.list(x[mapped_genes])')
-
-            # prepare search list
-            searchList = list
+            # pass list for column select
+            slist = inlist
 
         else:
             nemoa.log('error', """conversion from '%s' to '%s' is not
-                supported""" % (input_format, output_format))
-            return [], list
+                supported""" % (infmt, outfmt))
+            return inlist, []
 
         # search listvector
-        blackList = []
-        nemoa.log("""sending command to R (for each column):
+        blist = []
+        nemoa.log('debuginfo', """passing command to R (per column):
             sym <- listmap['COLUMNNAME']; sym <- unlist(sym)""")
-        for i, label in enumerate(searchList):
+        sysstout = sys.stdout
+        sys.stdout = NullDevice()
+        for id, label in enumerate(slist):
             label = label.strip(' ,\n\t\"')
-            try:
-                self.robjects.r("sym <- listmap['%s']" % (label))
-                self.robjects.r("sym <- unlist(sym)")
-                list[i] = self.robjects.globalenv["sym"][0]
-            except:
-                try:
-                    self.robjects.r("sym <- listmap['%s']"
-                        % (label.lstrip('X')))
-                    self.robjects.r("sym <- unlist(sym)")
-                    list[i] = self.robjects.globalenv["sym"][0]
-                except:
-                    blackList.append(i)
+            self.robjects.r("sym <- listmap['%s']" % (label))
+            rselect = self.robjects.r("sym <- unlist(sym)")
+            if not hasattr(rselect, '__getitem__'):
+                blist.append(id)
+            elif unique and rselect[0] in inlist[:id-1]:
+                blist.append(id)
+                n = 2
+                while "%s-%i" % (rselect[0], n) in inlist[:id-1]: n += 1
+                inlist[id] = "%s-%i" % (rselect[0], n)
+            else:
+                inlist[id] = rselect[0]
+        sys.stdout = sysstout
 
         # filter results
         if filter:
-            list = [item for item in list
-                if list.index(item) not in blackList]
+            inlist = [item for item in inlist
+                if inlist.index(item) not in blist]
 
-        return list, blackList
+        return inlist, blist
 
 class NullDevice():
-    def write(self, s):
-        pass
-    def flush(self, s):
-        pass
+    def write(self, s): pass
+    def flush(self, s): pass

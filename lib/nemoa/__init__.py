@@ -9,7 +9,7 @@ or statistical values.
 
 """
 
-__version__     = '0.5.2'
+__version__     = '0.5.3'
 __status__      = 'Development'
 __description__ = 'Deep data analysis and visualization'
 __url__         = 'https://github.com/fishroot/nemoa'
@@ -19,8 +19,7 @@ __author__      = 'Patrick Michl'
 __email__       = 'patrick.michl@gmail.com'
 __maintainer__  = 'Patrick Michl'
 __credits__     = ['Willi Jäger', 'Rainer Koenig', 'Marcus Oswald',
-                   'Anna Dieckmann', 'Tobias Bauer', 'Alexandra Poos',
-                   'Rebecca Krauss', 'Sebastian Michl']
+                   'Anna Dieckmann', 'Tobias Bauer', 'Alexandra Poos']
 
 import nemoa.common
 import nemoa.dataset
@@ -31,7 +30,7 @@ import nemoa.system
 import nemoa.workspace
 
 def about(*args, **kwargs):
-    """Get meta information."""
+    """Get meta information about current instance."""
     return get('about', *args, **kwargs)
 
 def close(*args, **kwargs):

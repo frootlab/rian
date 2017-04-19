@@ -460,7 +460,7 @@ class Session:
         return self._config['current'].get('workspace', None)
 
     def log(self, key = None, *args, **kwargs):
-        """Log message."""
+        """Log message to file and console output."""
 
         if not key: return True
 
@@ -517,11 +517,11 @@ class Session:
         while '  ' in msg: msg = msg.replace('  ', ' ')
 
         # create file message
-        clr_stack = inspect.stack()[1]
+        clr_stack  = inspect.stack()[1]
         clr_method = clr_stack[3]
         clr_module = inspect.getmodule(clr_stack[0]).__name__
-        clr_name = clr_module + '.' + clr_method
-        file_msg = clr_name + ' -> ' + msg.strip()
+        clr_name   = clr_module + '.' + clr_method
+        file_msg   = clr_name + ' -> ' + msg.strip()
 
         # create logging records (depending on loglevels)
         if key == 'info':

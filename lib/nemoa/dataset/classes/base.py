@@ -93,6 +93,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
             # convert node labels to standard label format
             conv, lost = nemoa.dataset.commons.labels.convert(
                 node_labels, input = labelformat)
+
             nodes_conv[layer] = conv
             nodes_lost += [conv[i] for i in lost]
             nodes_count += len(nodes_conv[layer])
@@ -131,6 +132,8 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
                 table_config['columns_orig'] = source_columns
                 table_config['columns_conv'] = columns_conv
                 table_config['columns_lost'] = columns_lost
+
+            self._test = table_config
 
             # convert table columns
             self._tables[table].dtype.names = \
@@ -769,7 +772,7 @@ class Dataset(nemoa.common.classes.ClassesBaseClass):
                 src_data = self._get_table(table = table,
                     rows = rows, labels = True)
             if hasattr(src_data, 'size') and src_data.size > 0:
-				src_stack += (src_data, )
+                src_stack += (src_data, )
         if not src_stack:
             return nemoa.log('error', """could not get data:
                 no valid data sources found!""")
