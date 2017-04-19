@@ -124,7 +124,7 @@ def graph(graph, **kwargs):
         node_size_scale * node_size_max / n_count)
     n_radius = numpy.sqrt(n_size) / 480.
     f_size = font_size_max * numpy.sqrt(n_size / node_size_max)
-    node_font_size_max = f_size * 0.9
+    n_fontmax = f_size * 0.9
     line_width = 2. / n_count
     edge_line_width = edge_size_scale / numpy.sqrt(n_count)
 
@@ -137,7 +137,7 @@ def graph(graph, **kwargs):
         if '_' in cl_label: len_label = len('_'.split(cl_label)[0]) \
             + 0.5 * len('_'.split(cl_label)[0])
         else: len_label = len(cl_label)
-        node_font_size = node_font_size_max / numpy.sqrt(len_label)
+        node_font_size = n_fontmax / numpy.sqrt(len_label)
 
         # set colors (backcolor and facecolor)
         backcolor = COLOR[attr['color']]
@@ -201,13 +201,14 @@ def graph(graph, **kwargs):
 
 def layergraph(graph, edge_curvature = 1.0, **kwargs):
 
-    node_size_max = 800.     # maximum node size
-    node_size_scale = 1.85   # node size scale factor
-    font_size_max = 18.      # maximum font size
-    edge_line_width_max = 4. # maximum edge linewidth
-    edge_arr_scale = 8.      # edge arrow size scale factor
+    node_size_max   = 1000.  # maximum node size
+    node_size_scale = 3.7    # node size scale factor
+    font_size_max   = 18.    # maximum font size
+    font_size_scale = 0.95   # ration fon size to node
+    edge_size_scale = 1.5    # edge size scale factor
+    edge_arr_scale  = 6.     # edge arrow size scale factor
 
-    # create node stack (list with lists of nodes)
+    # create node stack (list of node lists)
     layers = graph.graph['params']['layer']
     count = {layer: 0 for layer in layers}
     for node in graph.nodes():
@@ -275,7 +276,7 @@ def layergraph(graph, edge_curvature = 1.0, **kwargs):
     # calculate sizes
     n_len = max([len(layer) for layer in nodes])
     l_len = len(nodes)
-    scale = min(240. / n_len, 150. / l_len, 35.)
+    scale = min(240. / float(n_len), 150. / float(l_len), 35.)
     graph_caption_pos = -0.0025 * scale
 
     # calculate node positions for layer graph layout
@@ -283,8 +284,8 @@ def layergraph(graph, edge_curvature = 1.0, **kwargs):
     pos_cap = {}
     for l_id, layer in enumerate(nodes):
         for n_id, node in enumerate(layer):
-            n_pos = (n_id + 0.5) / len(layer)
-            l_pos = 1. - l_id / (len(nodes) - 1.)
+            n_pos = (float(n_id) + 0.5) / len(layer)
+            l_pos = 1. - float(l_id) / (len(nodes) - 1.)
             pos[node] = {
                 'down': (n_pos, l_pos),
                 'up': (n_pos, 1. - l_pos),
@@ -301,14 +302,15 @@ def layergraph(graph, edge_curvature = 1.0, **kwargs):
     matplotlib.pyplot.axes().set_aspect('equal', 'box')
 
     # calculate sizes of nodes, fonts and lines depending on graph size
-    n_count = float(len(graph))
-    n_size = max(node_size_max,
-        node_size_scale * node_size_max / n_count)
-    n_radius = numpy.sqrt(n_size) / 600.
-    f_size = font_size_max * numpy.sqrt(n_size / node_size_max)
-    node_font_size_max = f_size * 0.9
-    line_width = 5. / n_count
-    edge_line_width = edge_line_width_max / n_count
+    n_count   = float(len(graph))
+    n_density = float(max(n_len, l_len))
+    n_scale   = min(1., node_size_scale / n_density)
+    n_size    = node_size_max * n_scale
+    n_radius  = numpy.sqrt(n_size) / 600.
+    n_fontmax = font_size_max * \
+        numpy.sqrt(n_scale) * font_size_scale
+    line_width = 2. / n_density
+    edge_line_width = edge_size_scale / numpy.sqrt(n_count)
 
     # draw nodes
     for layer in nodes:
@@ -331,13 +333,8 @@ def layergraph(graph, edge_curvature = 1.0, **kwargs):
                     'border': COLOR['lg2-border'] }
             }[is_visible]
 
-            # calculate node fontsize depending on label
-            cl_label = label.replace('{', '').replace('}', '')
-            if '_' in cl_label:
-                len_label = len('_'.split(cl_label)[0]) \
-                    + 0.5 * len('_'.split(cl_label)[0])
-            else: len_label = len(cl_label)
-            node_font_size = node_font_size_max / numpy.sqrt(len_label)
+            # calculate node fontsize
+            node_font_size = n_fontmax / numpy.sqrt(len(label_str))
 
             # set colors (backcolor and facecolor)
             backcolor = color['bg']
@@ -400,7 +397,7 @@ def layergraph(graph, edge_curvature = 1.0, **kwargs):
 
         if (u, v) in seen:
             rad = seen.get((u, v))
-            rad = -(rad + float(numpy.sign(rad)) * 0.2)
+            rad = -(rad + float(numpy.sign(rad)) * .2)
 
         arrow = matplotlib.patches.FancyArrowPatch(
             posA = n1.center,

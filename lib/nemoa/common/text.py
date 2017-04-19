@@ -75,9 +75,8 @@ def asdict(string, delim = ','):
 def labelfomat(string):
     """Return TeX style unit String used for plots."""
 
-    text = string.rstrip(''.join([str(x) for x in xrange(0, 10)]))
-    try:
-        label = '$%s_{%d}$' % (text, int(string.lstrip(text)))
-    except:
-        label = '$%s$' % (text)
-    return label
+    lstr = string.rstrip('1234567890')
+    if len(lstr) == len(string): return '$\\mathrm{%s}$' % (string)
+    rnum = int(string[len(lstr):])
+    lstr = lstr.strip('_')
+    return '$\\mathrm{%s}_{%i}$' % (lstr, rnum)
