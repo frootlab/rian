@@ -213,7 +213,7 @@ class Model(nemoa.common.classes.ClassesBaseClass):
     def _get_system(self, type = 'dict'):
         """ """
 
-        if type == 'dataset': return self.system.copy()
+        if type == 'system': return self.system.copy()
         if type == 'dict': return self.system.get('copy')
 
         return nemoa.log("warning', 'unknown type '%s'." % type) or None

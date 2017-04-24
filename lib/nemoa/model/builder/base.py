@@ -22,7 +22,7 @@ def build(type = None, *args, **kwargs):
     return False
 
 class AutoEncoder:
-    """Build deep AutoEncoder from dataset and network parameters."""
+    """Build AutoEncoder from dataset and network parameters."""
 
     settings = None
     default = {
