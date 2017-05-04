@@ -87,11 +87,11 @@ class Model(nemoa.common.classes.ClassesBaseClass):
         retval = True
 
         # configure dataset columns to network
-        retval &= self.dataset.configure(self.network)
+        retval &= bool(self.dataset.configure(self.network))
         # configure network to restrict nodes to found columns
-        retval &= self.network.configure(self.dataset)
+        retval &= bool(self.network.configure(self.dataset))
         # configure system to nodes in network
-        retval &= self.system.configure(self.network)
+        retval &= bool(self.system.configure(self.network))
 
         return retval
 
@@ -111,11 +111,11 @@ class Model(nemoa.common.classes.ClassesBaseClass):
         retval = True
 
         # initialize dataset to system including normalization
-        retval &= self.dataset.initialize(self.system)
+        retval &= bool(self.dataset.initialize(self.system))
         # initialize system parameters by using statistics from dataset
-        retval &= self.system.initialize(self.dataset)
+        retval &= bool(self.system.initialize(self.dataset))
         # initialize network parameters with system parameters
-        retval &= self.network.initialize(self.system)
+        retval &= bool(self.network.initialize(self.system))
 
         return retval
 

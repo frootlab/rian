@@ -14,6 +14,11 @@ def intensify(x, factor = 10., bound = 1.):
         / numpy.abs(logistic(1.5 * factor * bound)
         + logistic(0.5 * factor * bound) - 1.)
 
+def softstep(x, factor = 10., bound = 1.):
+    """Return softstep function."""
+    return numpy.tanh(intensify(x, factor = factor, bound = bound)) \
+        / numpy.tanh(bound)
+
 def sigmoid(x):
     """Return standard logistic function."""
     return logistic(x)

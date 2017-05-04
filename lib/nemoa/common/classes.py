@@ -10,9 +10,9 @@ class ClassesBaseClass:
     """Base Class for content specific classes.
 
     Content specific classes like Dataset, Network, System or Model
-    share common properties like metadata about author and license.
-    This Base Class is intended to provide a common interface and
-    implementation of those common properties.
+    share common metadata attributes like author and license.
+    This Base Class is intended to provide a unified interface to
+    access those attributes.
 
     Attributes:
         about (str): Short description of the content of the resource.
@@ -57,7 +57,7 @@ class ClassesBaseClass:
         self._set_copy(**kwargs)
 
     def __getattr__(self, key):
-        """Attribute wrapper to getter methods."""
+        """Attribute wrapper for getter methods."""
 
         if key in self._attr_meta:
             if 'r' in self._attr_meta[key]: return self._get_meta(key)
@@ -87,7 +87,7 @@ class ClassesBaseClass:
         self.__dict__[key] = val
 
     def _get_meta(self, key):
-        """Get meta information like 'author' or 'version'.
+        """Get metadata like 'author' or 'version'.
 
         Returns:
             Value of requested attribute.
