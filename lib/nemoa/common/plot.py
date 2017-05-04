@@ -243,35 +243,31 @@ def layergraph(graph, **kwargs):
     font_size_scale  = .95    # ration fon size to node
     edge_arr_scale   = 6.     # edge arrow size scale factor
 
-    # default values for plot attributes
-    default = {
-        'node_sort_enabled': True,
-        'node_scale': 1.0,
-        'node_color_enabled': True,
+    # set default settings for kwargs
+    kwargs = nemoa.common.dict.merge(kwargs, {
+        'node_sort_enabled':    True,
+        'node_sort_attribute':  'weight',
+        'node_scale':           1.0,
+        'node_color_enabled':   True,
         'node_color_attribute': 'visible',
-        'node_bg_color': {
-            True: 'light periwinkle',
-            False: 'light grey' },
-        'node_font_color': {
-            True: 'black',
-            False: 'black' },
-        'node_border_color': {
-            True: 'twilight blue',
-            False: 'black' },
-        'edge_width_enabled': True,
+        'node_bg_color': {      True: 'light periwinkle',
+                                False: 'light grey' },
+        'node_font_color': {    True: 'black',
+                                False: 'black' },
+        'node_border_color': {  True: 'twilight blue',
+                                False: 'black' },
+        'edge_width_enabled':   True,
         'edge_width_attribute': 'weight',
-        'edge_scale': 1.0,                   # edge width scale factor
-        'edge_color_enabled': False,
+        'edge_scale':           1.0,
+        'edge_color_enabled':   True,
         'edge_color_attribute': 'weight',
-        'edge_color_positive': 'green',
-        'edge_color_negative': 'red',
-        'edge_curvature': 1.0,
-        'edge_arrow_style': '-|>',
-        'graph_direction': 'right' }
+        'edge_color_positive':  'green',
+        'edge_color_negative':  'red',
+        'edge_curvature':       1.0,
+        'edge_arrow_style':     '-|>',
+        'graph_direction':      'right' })
 
-    kwargs = nemoa.common.dict.merge(kwargs, default)
-
-    # create node stack (list of node lists)
+    # create list of node lists
     layers = graph.graph['params']['layer']
     count = {layer: 0 for layer in layers}
     for node in graph.nodes():
@@ -282,37 +278,32 @@ def layergraph(graph, **kwargs):
         nid = graph.node[node]['params']['layer_sub_id']
         nodes[lid][nid] = node
 
-    # sort nodes
+    # sort nodes by attribute
     if bool(kwargs['node_sort_enabled']):
-
-        # start with first non-input layer
-        for layer, tgt_nodes in enumerate(nodes):
-            if layer == 0: continue
-            src_nodes = nodes[layer - 1]
-            src_size = len(src_nodes)
-            tgt_size = len(tgt_nodes)
+        for lid, tlay in enumerate(nodes[1:], 1):
+            slay = nodes[lid - 1]
+            slen = len(slay)
+            tlen = len(tlay)
 
             # calculate cost matrix for positions of target nodes
-            cost = numpy.zeros((tgt_size, tgt_size))
+            cost = numpy.zeros((tlen, tlen))
+            for tid, tnode in enumerate(tlay):
+                for sid, snode in enumerate(slay):
+                    if (snode, tnode) in graph.edges():
+                        weight = graph.edge[snode][tnode]['weight']
+                    elif (tnode, snode) in graph.edges():
+                        weight = graph.edge[tnode][snode]['weight']
+                    else: continue
 
-            for tgt_id, tgt_node in enumerate(tgt_nodes):
-                for tgt_pos in range(tgt_size):
-                    for src_id, src_node in enumerate(src_nodes):
-                        if (src_node, tgt_node) in graph.edges():
-                            weight = graph.edge[
-                                src_node][tgt_node]['weight']
-                        elif (tgt_node, src_node) in graph.edges():
-                            weight = graph.edge[
-                                tgt_node][src_node]['weight']
-                        else: continue
+                    for tpos in range(tlen):
 
                         # add cost from src node to tgt node
                         # by calculating distances in one dimension
                         distance = numpy.absolute(
-                            (tgt_pos + .5) / (tgt_size + 1.)
-                            - (src_id + .5) / (src_size + 1.))
+                            (tpos + .5) / (tlen + 1.)
+                            - (sid + .5) / (slen + 1.))
 
-                        cost[tgt_pos, tgt_id] += weight * distance
+                        cost[tpos, tid] += weight * distance
 
             # create selection order of target nodes sorted by savings
             selectorder = []
@@ -320,22 +311,22 @@ def layergraph(graph, **kwargs):
             mincost = numpy.amin(cost, axis = 0)
             savings = maxcost - mincost
 
-            for tgt_id, tgt_node in enumerate(tgt_nodes):
-                selectorder.append((savings[tgt_id], tgt_id))
+            for tid, tnode in enumerate(tlay):
+                selectorder.append((savings[tid], tid))
 
-            sortedselect = [src_node[1] for src_node in \
+            sortedselect = [snode[1] for snode in \
                 sorted(selectorder, key = lambda x: x[0])]
 
             # calculate optimal positions in selection order
             max_cost = numpy.amax(cost)
-            new_tgt_nodes = [''] * tgt_size
-            for tgt_id in sortedselect:
-                optpos = numpy.argmin(cost[:, tgt_id])
-                new_tgt_nodes[optpos] = tgt_nodes[tgt_id]
-                cost[:, tgt_id] = max_cost + 1.
-                cost[optpos, :] = max_cost + 1.
+            newlayer = [''] * tlen
+            for tid in sortedselect:
+                oid = numpy.argmin(cost[:, tid])
+                newlayer[oid] = tlay[tid]
+                cost[:, tid] = max_cost + 1.
+                cost[oid, :] = max_cost + 1.
 
-            nodes[layer] = new_tgt_nodes
+            nodes[lid] = newlayer
 
     # calculate sizes
     n_len = max([len(layer) for layer in nodes])
