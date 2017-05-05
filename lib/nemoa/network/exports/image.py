@@ -118,10 +118,8 @@ class Graph:
         'node_sort': True,
         'edge_caption': None,
         'edge_weight': 'intensity',
-        'edge_sign_normalize': True,
-        'edge_threshold': 0.25,
-        'edge_scale': 1.5,
-        'edge_curvature': 1.0 }
+        'edge_threshold': 0.75,
+        'edge_sign_normalize': True }
 
     def __init__(self, **kwargs):
         self.settings = nemoa.common.dict.merge(kwargs, self.default)
@@ -143,7 +141,7 @@ class Graph:
 
             # (optional) threshold weights
             if self.settings['edge_threshold'] > 0.:
-                if not numpy.abs(edge['weight']) \
+                if not numpy.absolute(edge['weight']) \
                     > self.settings['edge_threshold']:
                     graph.remove_edge(u, v)
 

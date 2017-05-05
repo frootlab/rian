@@ -72,7 +72,8 @@ def meannorm(data, norm = 'M', axis = 0):
     # Mean of Squared Errors (MSE)
     if n == 'MSE': return numpy.mean(data ** 2, axis = axis)
     # Root Mean of Squared Errors (RMSE) / L2-Norm
-    if n == 'RMSE': return numpy.sqrt(numpy.mean(data ** 2, axis = axis))
+    if n == 'RMSE':
+        return numpy.sqrt(numpy.mean(data ** 2, axis = axis))
 
     return nemoa.log('error', """could not calculate normed mean:
         unsupported norm '%s'""" % norm)

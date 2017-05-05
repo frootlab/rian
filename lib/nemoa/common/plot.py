@@ -4,10 +4,10 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import matplotlib
-import nemoa
-import networkx
-import numpy
+#import matplotlib
+#import nemoa
+#import networkx
+#import numpy
 
 def color(*args):
     """Convert color name of XKCD color name survey to RGBA tuple.
@@ -20,12 +20,15 @@ def color(*args):
 
     """
 
+    import matplotlib.colors
+
     if len(args) == 0:
         clist = matplotlib.colors.get_named_colors_mapping().keys()
-        return [cname[5:].title() \
-            for cname in clist if cname[:5] == 'xkcd:']
-    if args[0] == 'alpha':
-        return (0., 0., 0., 0.)
+        return sorted([cname[5:].title() \
+            for cname in clist if cname[:5] == 'xkcd:'])
+
+    if args[0] == 'alpha': return (0., 0., 0., 0.)
+
     rgba = None
     for cname in args:
         try:
@@ -36,6 +39,11 @@ def color(*args):
     return rgba
 
 def heatmap(array, **kwargs):
+
+    import matplotlib.pyplot
+    import matplotlib.cm
+    import nemoa.common.text
+    import numpy
 
     # create figure object
     fig = matplotlib.pyplot.figure()
@@ -76,6 +84,8 @@ def heatmap(array, **kwargs):
 
 def histogram(array, **kwargs):
 
+    import matplotlib.pyplot
+
     # create figure object
     fig = matplotlib.pyplot.figure()
     fig.patch.set_facecolor(kwargs['bg_color'])
@@ -94,6 +104,11 @@ def histogram(array, **kwargs):
     return True
 
 def graph(graph, **kwargs):
+
+    import matplotlib.pyplot
+    import matplotlib.patches
+    import networkx
+    import numpy
 
     node_size_max = 800.     # maximum node size
     node_size_scale = 1.85   # node size scale factor
@@ -208,18 +223,19 @@ def layergraph(graph, **kwargs):
         graph: nemoa graph instance from nemoa network instance
 
     Kwargs:
-        edge_color_enabled (bool): flag for colored edges
+        edge_attribute (string): name of edge attribute, that
+            determines the edge colors by its sign and the edge width
+            by its absolute value.
+            default: 'weight'
+        edge_color (bool): flag for colored edges
             True: edge colors are determined by the sign of a given
                 edge attribute defined by the keyword argument
-                'edge_color_attribute'
+                'edge_attribute'
             False: edges are black
-        edge_color_attribute (string): name of edge attribute, that
-            determines the edge colors by its sign.
-            default: 'weight'
-        edge_color_positive (string): name of color for edges with
+        edge_poscolor (string): name of color for edges with
             positive signed attribute. For a full list of specified
             color names see nemoa.common.plot.color()
-        edge_color_negative (string): name of color for edges with
+        edge_negcolor (string): name of color for edges with
             negative signed attribute. For a full list of specified
             color names see nemoa.common.plot.color()
         edge_curvature (float): value within the intervall [-1, 1],
@@ -228,44 +244,50 @@ def layergraph(graph, **kwargs):
         graph_direction (string): string within the list ['up', 'down',
             'left', 'right'], that dermines the plot direction of the
             graph. 'up' means, the first layer is at the bottom.
-        edge_arrow_style (string):  '-', '<-', '<->', '->',
+        edge_style (string):  '-', '<-', '<->', '->',
             '<|-', '<|-|>', '-|>', '|-', '|-|', '-|'
-
 
     Returns:
         Boolen value which is True if no error occured.
 
     """
 
+    import nemoa.common.dict
+    import nemoa.common.text
+    import nemoa.common.math
+    import matplotlib.pyplot
+    import matplotlib.patches
+    import numpy
+    import networkx
+
     node_size_max    = 1000.  # maximum node size
     node_size_scale  = 3.7    # node size scale factor
-    font_size_max    = 18.    # maximum font size
-    font_size_scale  = .95    # ration fon size to node
-    edge_arr_scale   = 6.     # edge arrow size scale factor
 
     # set default settings for kwargs
     kwargs = nemoa.common.dict.merge(kwargs, {
-        'node_sort_enabled':    True,
-        'node_sort_attribute':  'weight',
+        'node_style':           'o',
+        'node_attribute':       'visible',
+        'node_sort':            True,
         'node_scale':           1.0,
-        'node_color_enabled':   True,
-        'node_color_attribute': 'visible',
-        'node_bg_color': {      True: 'light periwinkle',
-                                False: 'light grey' },
-        'node_font_color': {    True: 'black',
-                                False: 'black' },
-        'node_border_color': {  True: 'twilight blue',
-                                False: 'black' },
-        'edge_width_enabled':   True,
-        'edge_width_attribute': 'weight',
+        'node_fontsize':        16.0,
+        'node_color':           True,
+        'edge_style':           '-|>',
+        'edge_attribute':       'weight',
+        'edge_threshold':       0.75,
         'edge_scale':           1.0,
-        'edge_color_enabled':   True,
-        'edge_color_attribute': 'weight',
-        'edge_color_positive':  'green',
-        'edge_color_negative':  'red',
+        'edge_arrow_scale':     12.0,
+        'edge_width_enabled':   True,
+        'edge_color':           False,
+        'edge_poscolor':        'green',
+        'edge_negcolor':        'red',
         'edge_curvature':       1.0,
-        'edge_arrow_style':     '-|>',
-        'graph_direction':      'right' })
+        'graph_direction':      'right',
+        'node_bgcolor': {       True: 'marine blue',
+                                False: 'light grey' },
+        'node_fontcolor': {     True: 'white',
+                                False: 'dark grey' },
+        'node_bordercolor': {   True: 'dark navy',
+                                False: 'grey' }})
 
     # create list of node lists
     layers = graph.graph['params']['layer']
@@ -277,56 +299,55 @@ def layergraph(graph, **kwargs):
         lid = graph.node[node]['params']['layer_id']
         nid = graph.node[node]['params']['layer_sub_id']
         nodes[lid][nid] = node
+    
+    # get dictionary with edges
+    edges = {(u, v): data for (u, v, data) in graph.edges(data = True)}
 
     # sort nodes by attribute
-    if bool(kwargs['node_sort_enabled']):
-        for lid, tlay in enumerate(nodes[1:], 1):
-            slay = nodes[lid - 1]
-            slen = len(slay)
-            tlen = len(tlay)
+    if bool(kwargs['node_sort']):
+        attr = kwargs['edge_attribute']
+
+        for lid, tgt in enumerate(nodes[1:], 1):
+            src = nodes[lid - 1]
+            slen = len(src)
+            tlen = len(tgt)
 
             # calculate cost matrix for positions of target nodes
+            # by sum of weighted distances
             cost = numpy.zeros((tlen, tlen))
-            for tid, tnode in enumerate(tlay):
-                for sid, snode in enumerate(slay):
-                    if (snode, tnode) in graph.edges():
-                        weight = graph.edge[snode][tnode]['weight']
-                    elif (tnode, snode) in graph.edges():
-                        weight = graph.edge[tnode][snode]['weight']
-                    else: continue
-
+            for sid, u in enumerate(src):
+                for tid, v in enumerate(tgt):
+                    data = edges.get((u, v))
+                    if data == None: data = edges.get((v, u))
+                    if not isinstance(data, dict): continue
+                    val = data.get(attr)
+                    if not isinstance(val, float): continue
+                    absval = numpy.absolute(val)
+                    if absval < kwargs['edge_threshold']: continue
+                    weight = absval
                     for tpos in range(tlen):
-
-                        # add cost from src node to tgt node
-                        # by calculating distances in one dimension
-                        distance = numpy.absolute(
-                            (tpos + .5) / (tlen + 1.)
+                        dist = numpy.absolute(
+                            (tpos + .5) / (tlen + 1.) \
                             - (sid + .5) / (slen + 1.))
-
-                        cost[tpos, tid] += weight * distance
+                        cost[tpos, tid] += dist * absval
 
             # create selection order of target nodes sorted by savings
-            selectorder = []
-            maxcost = numpy.amax(cost, axis = 0)
-            mincost = numpy.amin(cost, axis = 0)
-            savings = maxcost - mincost
-
-            for tid, tnode in enumerate(tlay):
-                selectorder.append((savings[tid], tid))
-
-            sortedselect = [snode[1] for snode in \
-                sorted(selectorder, key = lambda x: x[0])]
+            cmax  = numpy.amax(cost, axis = 0)
+            cmin  = numpy.amin(cost, axis = 0)
+            cdiff = cmax - cmin
+            ctpls = [(cdiff[i], i) for i in range(tlen)]
+            stpls = sorted(ctpls, key = lambda x: x[0], reverse = True)
+            slist = [n[1] for n in stpls]
 
             # calculate optimal positions in selection order
-            max_cost = numpy.amax(cost)
-            newlayer = [''] * tlen
-            for tid in sortedselect:
+            maxcost = numpy.amax(cost)
+            sort = [''] * tlen
+            for tid in slist:
                 oid = numpy.argmin(cost[:, tid])
-                newlayer[oid] = tlay[tid]
-                cost[:, tid] = max_cost + 1.
-                cost[oid, :] = max_cost + 1.
-
-            nodes[lid] = newlayer
+                sort[oid] = tgt[tid]
+                cost[:, tid] = maxcost + 1.
+                cost[oid, :] = maxcost + 1.
+            nodes[lid] = sort
 
     # calculate sizes
     n_len = max([len(layer) for layer in nodes])
@@ -345,10 +366,11 @@ def layergraph(graph, **kwargs):
                 'up': (n_pos, 1. - l_pos), 'down': (n_pos, l_pos),
                 'left': (l_pos, n_pos), 'right': (1. - l_pos, n_pos)
                 }[kwargs['graph_direction']]
-            pos_cap[node] = (pos[node][0],
-                pos[node][1] + graph_caption_pos)
+            pos_cap[node] = (pos[node][0], pos[node][1]) # + graph_caption_pos)
 
     # create figure object
+    matplotlib.pyplot.rc('text', usetex = True)
+    matplotlib.pyplot.rc('font', family = 'serif')
     fig = matplotlib.pyplot.figure()
     fig.patch.set_facecolor(kwargs['bg_color'])
     ax = fig.add_subplot(111)
@@ -360,8 +382,7 @@ def layergraph(graph, **kwargs):
     n_scale   = min(1., node_size_scale / n_density)
     n_size    = node_size_max * n_scale
     n_radius  = numpy.sqrt(n_size) / 600.
-    n_fontmax = font_size_max * \
-        numpy.sqrt(n_scale) * font_size_scale
+    n_fontmax = kwargs['node_fontsize'] * numpy.sqrt(n_scale)
     line_width = 2. / n_density
 
     # draw nodes
@@ -370,42 +391,43 @@ def layergraph(graph, **kwargs):
             attr = graph.node[node]
             
             # get colors
-            if bool(kwargs['node_color_enabled']) \
-                and kwargs['node_color_attribute'] in attr['params']:
-                key = attr['params'][kwargs['node_color_attribute']]
-                if key in kwargs['node_bg_color']:
-                    node_bg_color = kwargs['node_bg_color'][key]
-                else: node_bg_color = 'white'
-                if key in kwargs['node_font_color']:
-                    node_font_color = kwargs['node_font_color'][key]
-                else: node_font_color = 'black'
-                if key in kwargs['node_border_color']:
-                    node_border_color = kwargs['node_border_color'][key]
-                else: node_boder_color = 'black'
+            if bool(kwargs['node_color']) \
+                and kwargs['node_attribute'] in attr['params']:
+                key = attr['params'][kwargs['node_attribute']]
+                if key in kwargs['node_bgcolor']:
+                    node_bgcolor = kwargs['node_bgcolor'][key]
+                else: node_bgcolor = 'white'
+                if key in kwargs['node_fontcolor']:
+                    node_fontcolor = kwargs['node_fontcolor'][key]
+                else: node_fontcolor = 'black'
+                if key in kwargs['node_bordercolor']:
+                    node_bordercolor = kwargs['node_bordercolor'][key]
+                else: node_bordercolor = 'black'
             else:
-                node_bg_color = 'white'
-                node_font_color = 'black'
-                node_border_color = 'black'
-
-            # determine label and fontsize
-            label_str = attr['params']['label']
-            node_label = nemoa.common.text.labelfomat(label_str)
-            node_font_size = n_fontmax / numpy.sqrt(len(label_str))
+                node_bgcolor = 'white'
+                node_fontcolor = 'black'
+                node_bordercolor = 'black'
 
             # draw node
             node_obj = networkx.draw_networkx_nodes(graph, pos,
                 nodelist    = [node],
                 linewidths  = line_width,
                 node_size   = n_size * kwargs['node_scale'],
-                node_shape  = 'o',
-                node_color  = color(node_bg_color, 'white'))
-            node_obj.set_edgecolor(color(node_border_color, 'black'))
+                node_shape  = kwargs['node_style'],
+                node_color  = color(node_bgcolor, 'white'))
+            node_obj.set_edgecolor(color(node_bordercolor, 'black'))
+
+
+            # determine label and fontsize
+            label_str = attr['params']['label']
+            node_label = nemoa.common.text.labelfomat(label_str)
+            node_font_size = n_fontmax / len(label_str.rstrip('1234567890'))
 
             # draw node label
             networkx.draw_networkx_labels(graph, pos,
                 labels      = {node: node_label},
                 font_size   = node_font_size,
-                font_color  = color(node_font_color, 'black'),
+                font_color  = color(node_fontcolor, 'black'),
                 font_weight = 'normal')
 
             # patch node for edges
@@ -416,48 +438,46 @@ def layergraph(graph, **kwargs):
 
     # draw edges
     seen = {}
-    for (u, v) in graph.edges():
+    attr = kwargs['edge_attribute']
+    val = 1.
+    weight = 1.
+    for (u, v) in edges.keys():
 
-        # calculate edge curvature
+        # get value of edge attribute
+        if bool(attr):
+            data = edges.get((u, v))
+            if not isinstance(data, dict): continue
+            val = data.get(attr)
+            if not isinstance(val, float): continue
+            absval = numpy.absolute(val)
+            if absval < kwargs['edge_threshold']: continue
+            weight = nemoa.common.math.softstep(absval)
+
+        # calculate edge curvature from node positions
         if (u, v) in seen:
             rad = seen.get((u, v))
             rad = -(rad + float(numpy.sign(rad)) * .2)
-        else:
-            rad = 0.5 * kwargs['edge_curvature']
-            if kwargs['graph_direction'] == 'right':
-                rad *= (pos[u][1] - pos[v][1]) * (pos[v][0] - pos[u][0])
-            elif kwargs['graph_direction'] == 'left':
-                rad *= (pos[v][1] - pos[u][1]) * (pos[u][0] - pos[v][0])
-            elif kwargs['graph_direction'] == 'up':
-                rad *= (pos[v][1] - pos[u][1]) * (pos[v][0] - pos[u][0])
-            elif kwargs['graph_direction'] == 'down':
-                rad *= (pos[u][1] - pos[v][1]) * (pos[u][0] - pos[v][0])
-            else: rad = .0
+        elif kwargs['graph_direction'] in ['top', 'down']:
+            rad = 0.5 * kwargs['edge_curvature'] \
+                * (pos[u][1] - pos[v][1]) * (pos[u][0] - pos[v][0])
+        elif kwargs['graph_direction'] in ['right', 'left']:
+            rad = -0.5 * kwargs['edge_curvature'] \
+                * (pos[u][1] - pos[v][1]) * (pos[u][0] - pos[v][0])
+        else: rad = .0
         seen[(u, v)] = rad
 
-        # calculate edge width from attribute
-        if not bool(kwargs['edge_width_enabled']) \
-            or not bool(kwargs['edge_width_attribute']):
+        # calculate edge width from edge attribute
+        if not bool(kwargs['edge_width_enabled']):
             edge_width = line_width * kwargs['edge_scale']
-        elif not kwargs['edge_width_attribute'] in graph.edge[u][v]:
-            edge_width = 0.0
-        else:
-            # normalization with softstep between [-1.3, 1.3]
-            wattr = graph.edge[u][v][kwargs['edge_width_attribute']]
-            if not isinstance(wattr, float): edge_width = 0.0
-            else: edge_width = nemoa.common.math.softstep(wattr) \
-                * line_width * kwargs['edge_scale']
+        else: edge_width = weight * line_width * kwargs['edge_scale']
+
+        # calculate edge arrow scale from edge width
+        edge_arrow_scale = kwargs['edge_arrow_scale'] * edge_width
 
         # get edge color from attribute
-        if not bool(kwargs['edge_color_enabled']) \
-            or not bool(kwargs['edge_color_attribute']):
-            edge_color = 'black'
-        elif not kwargs['edge_color_attribute'] in graph.edge[u][v]:
-            edge_color = 'alpha'
-        else:
-            cattr = graph.edge[u][v][kwargs['edge_color_attribute']]
-            if cattr > 0: edge_color = kwargs['edge_color_positive']
-            else : edge_color = kwargs['edge_color_negative']
+        if not bool(kwargs['edge_color']): edge_color = 'black'
+        elif val > 0: edge_color = kwargs['edge_poscolor']
+        else: edge_color = kwargs['edge_negcolor']
 
         # draw edge
         nodeA = graph.node[u]['patch']
@@ -467,11 +487,12 @@ def layergraph(graph, **kwargs):
             posB            = nodeB.center,
             patchA          = nodeA,
             patchB          = nodeB,
-            arrowstyle      = kwargs['edge_arrow_style'],
+            arrowstyle      = kwargs['edge_style'],
             connectionstyle = 'arc3,rad=%s' % rad,
-            mutation_scale  = edge_arr_scale,
+            mutation_scale  = edge_arrow_scale,
             linewidth       = edge_width,
-            color           = color(edge_color, 'black'))
+            color           = color(edge_color, 'black'),
+            alpha           = min(weight, 1.0))
         ax.add_patch(arrow)
 
     return True
