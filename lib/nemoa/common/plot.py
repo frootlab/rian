@@ -245,7 +245,8 @@ def layergraph(graph, **kwargs):
             'left', 'right'], that dermines the plot direction of the
             graph. 'up' means, the first layer is at the bottom.
         edge_style (string):  '-', '<-', '<->', '->',
-            '<|-', '<|-|>', '-|>', '|-', '|-|', '-|'
+            '<|-', '<|-|>', '-|>', '|-', '|-|', '-|',
+            ']-', ']-[', '-[', 'fancy', 'simple', 'wedge'
 
     Returns:
         Boolen value which is True if no error occured.
@@ -260,13 +261,25 @@ def layergraph(graph, **kwargs):
     import numpy
     import networkx
 
-    node_size_max    = 1000.  # maximum node size
-    node_size_scale  = 3.7    # node size scale factor
-
-    # set default settings for kwargs
+    # default settings
     kwargs = nemoa.common.dict.merge(kwargs, {
+        'graph_direction':      'right',
+        'figure_padding':       (0.1, 0.1, 0.1, 0.1),
+        'figure_size':          (6.4, 4.8), # (11.69,8.27) for A4
+                                            # (16.53,11.69) for A3
         'node_style':           'o',
-        'node_attribute':       'visible',
+        'node_groupby':         'visible',
+        'node_groups': {
+            True: {
+                'label': 'Observable',
+                'bg_color': 'marine blue',
+                'font_color': 'white',
+                'border_color': 'dark navy'},
+            False: {
+                'label': 'Latent',
+                'bg_color': 'light grey',
+                'font_color': 'dark grey',
+                'border_color': 'grey'} },
         'node_sort':            True,
         'node_scale':           1.0,
         'node_fontsize':        16.0,
@@ -280,40 +293,47 @@ def layergraph(graph, **kwargs):
         'edge_color':           False,
         'edge_poscolor':        'green',
         'edge_negcolor':        'red',
-        'edge_curvature':       1.0,
-        'graph_direction':      'right',
-        'node_bgcolor': {       True: 'marine blue',
-                                False: 'light grey' },
-        'node_fontcolor': {     True: 'white',
-                                False: 'dark grey' },
-        'node_bordercolor': {   True: 'dark navy',
-                                False: 'grey' }})
+        'edge_curvature':       1.0 })
 
-    # create list of node lists
-    layers = graph.graph['params']['layer']
-    count = {layer: 0 for layer in layers}
-    for node in graph.nodes():
-        count[graph.node[node]['params']['layer']] += 1
-    nodes = [range(count[layer]) for layer in layers]
-    for node in graph.nodes():
-        lid = graph.node[node]['params']['layer_id']
-        nid = graph.node[node]['params']['layer_sub_id']
-        nodes[lid][nid] = node
-    
-    # get dictionary with edges
+    # get dictionaries for nodes and edges
+    nodes = {n: data for (n, data) in graph.nodes(data = True)}
     edges = {(u, v): data for (u, v, data) in graph.edges(data = True)}
 
-    # sort nodes by attribute
+    # group nodes
+    groups = {None: []}
+    attr = kwargs['node_groupby']
+    for node, data in nodes.iteritems():
+        if not isinstance(data, dict) \
+            or not 'params' in data or not attr in data['params']:
+            groups[None].append(node)
+            continue
+        if not data['params'][attr] in groups:
+            groups[data['params'][attr]] = []
+        groups[data['params'][attr]].append(node)
+
+    # create node stack as list of lists
+    layers = graph.graph['params']['layer']
+    count = {layer: 0 for layer in layers}
+    for node, data in nodes.items():
+        count[data['params']['layer']] += 1
+    stack = [range(count[layer]) for layer in layers]
+    for node, data in nodes.items():
+        lid = data['params']['layer_id']
+        nid = data['params']['layer_sub_id']
+        stack[lid][nid] = node
+
+    # sort node stack by attribute
     if bool(kwargs['node_sort']):
         attr = kwargs['edge_attribute']
 
-        for lid, tgt in enumerate(nodes[1:], 1):
-            src = nodes[lid - 1]
+        for lid, tgt in enumerate(stack[1:], 1):
+            src  = stack[lid - 1]
             slen = len(src)
             tlen = len(tgt)
 
-            # calculate cost matrix for positions of target nodes
+            # calculate cost matrix for positions
             # by sum of weighted distances
+
             cost = numpy.zeros((tlen, tlen))
             for sid, u in enumerate(src):
                 for tid, v in enumerate(tgt):
@@ -324,115 +344,123 @@ def layergraph(graph, **kwargs):
                     if not isinstance(val, float): continue
                     absval = numpy.absolute(val)
                     if absval < kwargs['edge_threshold']: continue
-                    weight = absval
-                    for tpos in range(tlen):
+                    weight = nemoa.common.math.softstep(absval)
+                    for pid in range(tlen):
                         dist = numpy.absolute(
-                            (tpos + .5) / (tlen + 1.) \
+                            (pid + .5) / (tlen + 1.) \
                             - (sid + .5) / (slen + 1.))
-                        cost[tpos, tid] += dist * absval
+                        cost[pid, tid] += dist * weight
 
-            # create selection order of target nodes sorted by savings
-            cmax  = numpy.amax(cost, axis = 0)
-            cmin  = numpy.amin(cost, axis = 0)
-            cdiff = cmax - cmin
-            ctpls = [(cdiff[i], i) for i in range(tlen)]
-            stpls = sorted(ctpls, key = lambda x: x[0], reverse = True)
-            slist = [n[1] for n in stpls]
+            # choose (node, position) pair with maximum savings
+            # thereby penalize large distances by power two
+            # repeat until all nodes have positions
 
-            # calculate optimal positions in selection order
-            maxcost = numpy.amax(cost)
-            sort = [''] * tlen
-            for tid in slist:
-                oid = numpy.argmin(cost[:, tid])
-                sort[oid] = tgt[tid]
-                cost[:, tid] = maxcost + 1.
-                cost[oid, :] = maxcost + 1.
-            nodes[lid] = sort
+            nsel = range(tlen) # node select list
+            psel = range(tlen) # position select list
+            sort = [None] * tlen 
+            for n in range(tlen):
+                cmax = numpy.amax(cost[psel][:, nsel], axis = 0)
+                cmin = numpy.amin(cost[psel][:, nsel], axis = 0)
+                diff = cmax ** 2 - cmin ** 2
+                nid  = nsel[numpy.argmax(diff)]
+                pid  = psel[numpy.argmin(cost[psel][:, nid])]
+                sort[pid] = tgt[nid]
+                nsel.remove(nid)
+                psel.remove(pid)
+            stack[lid] = sort
 
-    # calculate sizes
-    n_len = max([len(layer) for layer in nodes])
-    l_len = len(nodes)
-    scale = min(240. / float(n_len), 150. / float(l_len), 35.)
-    graph_caption_pos = -0.0025 * scale
+    # create figure object
+    fig = matplotlib.pyplot.figure(figsize = kwargs['figure_size'])
+    fig.patch.set_facecolor(kwargs['bg_color'])
+    figsize = fig.get_size_inches() * fig.dpi
+    ax = fig.add_subplot(111)
+    ax.set_autoscale_on(False)
+    ax.set_xlim(0., figsize[0])
+    ax.set_ylim(0., figsize[1])
+    ax.set_aspect('equal', 'box')
+    ax.axis('off')
 
     # calculate node positions for layered graph layout
     pos = {}
-    pos_cap = {}
-    for l_id, layer in enumerate(nodes):
-        for n_id, node in enumerate(layer):
-            n_pos = (float(n_id) + 0.5) / len(layer)
-            l_pos = 1. - float(l_id) / (len(nodes) - 1.)
-            pos[node] = {
-                'up': (n_pos, 1. - l_pos), 'down': (n_pos, l_pos),
-                'left': (l_pos, n_pos), 'right': (1. - l_pos, n_pos)
-                }[kwargs['graph_direction']]
-            pos_cap[node] = (pos[node][0], pos[node][1]) # + graph_caption_pos)
+    assign  = {'right': 0, 'up': 1, 'left': 2, 'down': 3}
+    align   = assign.get(kwargs['graph_direction'], 0)
+    padding = kwargs['figure_padding']
+    xscale  = 1. / (len(stack) - 1)
+    yscale  = [1. / len(l) for l in stack]
+    rotate  = lambda (x, y), i: \
+        [(x, y), (y, x), (1. - x, y), (y, 1. - x)][i % 4]
+    constr  = lambda (x, y), (u, r, d, l): \
+        (l + x - x * l - x * r, d + y - y * u - y * d)
+    resize  = lambda (x, y), (a, b): (x * a, y * b)
+    for lid, layer in enumerate(stack):
+        for nid, node in enumerate(layer):
+            x = lid * xscale
+            y = (nid + 0.5) * yscale[lid]
+            pos[node] = resize(constr(rotate(
+                (x, y), align), padding), figsize)
 
-    # create figure object
-    matplotlib.pyplot.rc('text', usetex = True)
-    matplotlib.pyplot.rc('font', family = 'serif')
-    fig = matplotlib.pyplot.figure()
-    fig.patch.set_facecolor(kwargs['bg_color'])
-    ax = fig.add_subplot(111)
-    ax.axis('off')
-    matplotlib.pyplot.axes().set_aspect('equal', 'box')
+    # calculate minimal distance between nodes
+    euclidd = lambda (a, b), (c, d): \
+        numpy.sqrt((a - c) ** 2 + (b - d) ** 2)
+    mindist = numpy.amin([euclidd(pos[u], pos[v]) \
+        for u in pos for v in pos if not u == v])
 
-    # calculate sizes of nodes, fonts and lines depending on graph size
-    n_density = float(max(n_len, l_len))
-    n_scale   = min(1., node_size_scale / n_density)
-    n_size    = node_size_max * n_scale
-    n_radius  = numpy.sqrt(n_size) / 600.
-    n_fontmax = kwargs['node_fontsize'] * numpy.sqrt(n_scale)
-    line_width = 2. / n_density
+    # calculate node size and radius from minimal distance
+    scale = 1.6 * kwargs.get('node_scale', 1.0) * mindist
+    node_size = 0.0558 * scale ** 2
+    line_width = 0.0030 * scale
+    fontsize = 0.0075 * scale * kwargs.get('node_fontsize', 16.0)
+    nradius = 23 * (0.01 * scale - 0.2)
 
     # draw nodes
-    for layer in nodes:
-        for node in layer:
-            attr = graph.node[node]
-            
-            # get colors
-            if bool(kwargs['node_color']) \
-                and kwargs['node_attribute'] in attr['params']:
-                key = attr['params'][kwargs['node_attribute']]
-                if key in kwargs['node_bgcolor']:
-                    node_bgcolor = kwargs['node_bgcolor'][key]
-                else: node_bgcolor = 'white'
-                if key in kwargs['node_fontcolor']:
-                    node_fontcolor = kwargs['node_fontcolor'][key]
-                else: node_fontcolor = 'black'
-                if key in kwargs['node_bordercolor']:
-                    node_bordercolor = kwargs['node_bordercolor'][key]
-                else: node_bordercolor = 'black'
-            else:
-                node_bgcolor = 'white'
-                node_fontcolor = 'black'
-                node_bordercolor = 'black'
+    for group in sorted(groups):
+        if group == None: continue
 
-            # draw node
-            node_obj = networkx.draw_networkx_nodes(graph, pos,
-                nodelist    = [node],
-                linewidths  = line_width,
-                node_size   = n_size * kwargs['node_scale'],
-                node_shape  = kwargs['node_style'],
-                node_color  = color(node_bgcolor, 'white'))
-            node_obj.set_edgecolor(color(node_bordercolor, 'black'))
+        # get group layout
+        layout = kwargs['node_groups'].get(group, {})
+        if 'label' in layout: group_label = layout['label']
+        elif isinstance(group, bool):
+            group_label = str(kwargs['node_groupby']).title()
+            if not group: group_label = 'not ' + group_label
+        elif group == None: group_label = 'Unknown'
+        else: group_label = str(group).title()
+        if not 'bg_color' in layout: bg_color = color('white')
+        else: bg_color = color(layout['bg_color'], 'white')
+        if not 'font_color' in layout: font_color = color('black')
+        else: font_color = color(layout['font_color'], 'black')
+        if not 'border_color' in layout: border_color = color('black')
+        else: border_color = color(layout['border_color'], 'black')
+        nodes_in_group = groups[group]
 
+        # draw nodes in group
+        node_obj = networkx.draw_networkx_nodes(graph, pos,
+            nodelist   = nodes_in_group,
+            linewidths = line_width,
+            node_size  = node_size,
+            node_shape = kwargs['node_style'],
+            node_color = bg_color,
+            label      = group_label)
+        node_obj.set_edgecolor(border_color)
+
+        # draw node labels
+        for node in nodes_in_group:
 
             # determine label and fontsize
-            label_str = attr['params']['label']
+            label_str = nodes[node]['params']['label']
             node_label = nemoa.common.text.labelfomat(label_str)
-            node_font_size = n_fontmax / len(label_str.rstrip('1234567890'))
+            node_font_size = fontsize / len(label_str.rstrip('1234567890'))
+            # 2do
 
             # draw node label
             networkx.draw_networkx_labels(graph, pos,
                 labels      = {node: node_label},
                 font_size   = node_font_size,
-                font_color  = color(node_fontcolor, 'black'),
+                font_color  = font_color,
                 font_weight = 'normal')
 
             # patch node for edges
             c = matplotlib.patches.Circle(pos[node],
-                radius = n_radius, alpha = 0.)
+                radius = nradius, alpha = 0.)
             ax.add_patch(c)
             graph.node[node]['patch'] = c
 
@@ -458,18 +486,22 @@ def layergraph(graph, **kwargs):
             rad = seen.get((u, v))
             rad = -(rad + float(numpy.sign(rad)) * .2)
         elif kwargs['graph_direction'] in ['top', 'down']:
-            rad = 0.5 * kwargs['edge_curvature'] \
-                * (pos[u][1] - pos[v][1]) * (pos[u][0] - pos[v][0])
+            rad = 2.0 * kwargs['edge_curvature'] \
+                * (pos[u][1] - pos[v][1]) * (pos[u][0] - pos[v][0]) \
+                / figsize[0] / figsize[1]
         elif kwargs['graph_direction'] in ['right', 'left']:
-            rad = -0.5 * kwargs['edge_curvature'] \
-                * (pos[u][1] - pos[v][1]) * (pos[u][0] - pos[v][0])
+            rad = -2.0 * kwargs['edge_curvature'] \
+                * (pos[u][1] - pos[v][1]) * (pos[u][0] - pos[v][0]) \
+                / figsize[0] / figsize[1]
         else: rad = .0
         seen[(u, v)] = rad
 
         # calculate edge width from edge attribute
         if not bool(kwargs['edge_width_enabled']):
-            edge_width = line_width * kwargs['edge_scale']
-        else: edge_width = weight * line_width * kwargs['edge_scale']
+            edge_width = line_width * 2.2 * kwargs['edge_scale']
+        else:
+            edge_width = weight * 2.2 \
+                * line_width * kwargs['edge_scale']
 
         # calculate edge arrow scale from edge width
         edge_arrow_scale = kwargs['edge_arrow_scale'] * edge_width

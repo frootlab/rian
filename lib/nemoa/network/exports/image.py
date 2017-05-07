@@ -32,6 +32,7 @@ def show(network, plot = None, **kwargs):
     plot = getattr(module, class_name)(**kwargs)
 
     # common matplotlib settings
+    matplotlib.rc('text', usetex = plot.settings['usetex'])
     matplotlib.rc('font', family = 'sans-serif')
 
     # close previous figures
@@ -47,6 +48,11 @@ def show(network, plot = None, **kwargs):
                 title = plot.settings['title']
             else: title = '' # Todo: self._get_title(model)
             matplotlib.pyplot.title(title, fontsize = 11.)
+
+        # (optional) draw legend
+        if plot.settings['show_legend']:
+            matplotlib.pyplot.legend(numpoints = 1,
+                loc = 'lower center', ncol = 4, borderaxespad = 0. )
 
         # output
         matplotlib.pyplot.show()
@@ -79,6 +85,7 @@ def save(network, path = None, filetype = None, plot = None, **kwargs):
     plot = getattr(module, class_name)(**kwargs)
 
     # common matplotlib settings
+    matplotlib.rc('text', usetex = plot.settings['usetex'])
     matplotlib.rc('font', family = 'sans-serif')
 
     # close previous figures
@@ -95,6 +102,11 @@ def save(network, path = None, filetype = None, plot = None, **kwargs):
             else: title = '' # Todo: self._get_title(model)
             matplotlib.pyplot.title(title, fontsize = 11.)
 
+        # (optional) draw legend
+        if plot.settings['show_legend']:
+            matplotlib.pyplot.legend(numpoints = 1,
+                loc = 'lower center', ncol = 4, borderaxespad = 0. )
+
         # output
         matplotlib.pyplot.savefig(path, dpi = plot.settings['dpi'])
 
@@ -109,7 +121,9 @@ class Graph:
     default = {
         'fileformat': 'pdf',
         'dpi': 300,
+        'usetex': False,
         'show_title': False,
+        'show_legend': False,
         'title': None,
         'bg_color': 'none',
         'graph_caption': 'accuracy',
