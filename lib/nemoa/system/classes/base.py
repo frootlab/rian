@@ -8,7 +8,7 @@ import nemoa
 import numpy
 import copy
 
-class System(nemoa.common.classes.ClassesBaseClass):
+class System(nemoa.common.classes.Metadata):
     """System base class.
 
     Attributes:

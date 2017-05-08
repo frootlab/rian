@@ -6,13 +6,13 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-class ClassesBaseClass:
-    """Base Class for content specific classes.
+class Metadata:
+    """Base class for classes with metadata.
 
-    Content specific classes like Dataset, Network, System or Model
-    share common metadata attributes like author and license.
-    This Base Class is intended to provide a unified interface to
-    access those attributes.
+    Classes like Dataset, Network, System or Model share common
+    descriptive metadata like author and license, as well as
+    administrative metadata like branch and version. This base class is
+    intended to provide a unified interface to access those attributes.
 
     Attributes:
         about (str): Short description of the content of the resource.
@@ -46,10 +46,9 @@ class ClassesBaseClass:
     """
 
     _attr_meta = {
-        'fullname': 'r', 'type': 'r', 'about': 'rw',
-        'name': 'rw', 'branch': 'rw', 'version': 'rw',
-        'author': 'rw', 'email': 'rw', 'license': 'rw',
-        'path': 'rw' }
+        'author': 'rw', 'email': 'rw', 'license': 'rw', 'about': 'rw',
+        'fullname': 'r', 'name': 'rw', 'branch': 'rw', 'version': 'rw',
+        'type': 'r', 'path': 'rw' }
 
     def __init__(self, *args, **kwargs):
         """Import object configuration and content from dictionary."""

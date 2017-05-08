@@ -8,6 +8,7 @@ import nemoa.common.classes
 import nemoa.common.decorators
 import nemoa.common.csvfile
 import nemoa.common.dict
+import nemoa.common.graph
 import nemoa.common.inifile
 import nemoa.common.math
 import nemoa.common.module

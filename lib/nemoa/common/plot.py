@@ -295,79 +295,12 @@ def layergraph(graph, **kwargs):
         'edge_negcolor':        'red',
         'edge_curvature':       1.0 })
 
-    # get dictionaries for nodes and edges
-    nodes = {n: data for (n, data) in graph.nodes(data = True)}
-    edges = {(u, v): data for (u, v, data) in graph.edges(data = True)}
-
-    # group nodes
-    groups = {None: []}
-    attr = kwargs['node_groupby']
-    for node, data in nodes.iteritems():
-        if not isinstance(data, dict) \
-            or not 'params' in data or not attr in data['params']:
-            groups[None].append(node)
-            continue
-        if not data['params'][attr] in groups:
-            groups[data['params'][attr]] = []
-        groups[data['params'][attr]].append(node)
-
-    # create node stack as list of lists
-    layers = graph.graph['params']['layer']
-    count = {layer: 0 for layer in layers}
-    for node, data in nodes.items():
-        count[data['params']['layer']] += 1
-    stack = [range(count[layer]) for layer in layers]
-    for node, data in nodes.items():
-        lid = data['params']['layer_id']
-        nid = data['params']['layer_sub_id']
-        stack[lid][nid] = node
-
-    # sort node stack by attribute
-    if bool(kwargs['node_sort']):
-        attr = kwargs['edge_attribute']
-
-        for lid, tgt in enumerate(stack[1:], 1):
-            src  = stack[lid - 1]
-            slen = len(src)
-            tlen = len(tgt)
-
-            # calculate cost matrix for positions
-            # by sum of weighted distances
-
-            cost = numpy.zeros((tlen, tlen))
-            for sid, u in enumerate(src):
-                for tid, v in enumerate(tgt):
-                    data = edges.get((u, v))
-                    if data == None: data = edges.get((v, u))
-                    if not isinstance(data, dict): continue
-                    val = data.get(attr)
-                    if not isinstance(val, float): continue
-                    absval = numpy.absolute(val)
-                    if absval < kwargs['edge_threshold']: continue
-                    weight = nemoa.common.math.softstep(absval)
-                    for pid in range(tlen):
-                        dist = numpy.absolute(
-                            (pid + .5) / (tlen + 1.) \
-                            - (sid + .5) / (slen + 1.))
-                        cost[pid, tid] += dist * weight
-
-            # choose (node, position) pair with maximum savings
-            # thereby penalize large distances by power two
-            # repeat until all nodes have positions
-
-            nsel = range(tlen) # node select list
-            psel = range(tlen) # position select list
-            sort = [None] * tlen 
-            for n in range(tlen):
-                cmax = numpy.amax(cost[psel][:, nsel], axis = 0)
-                cmin = numpy.amin(cost[psel][:, nsel], axis = 0)
-                diff = cmax ** 2 - cmin ** 2
-                nid  = nsel[numpy.argmax(diff)]
-                pid  = psel[numpy.argmin(cost[psel][:, nid])]
-                sort[pid] = tgt[nid]
-                nsel.remove(nid)
-                psel.remove(pid)
-            stack[lid] = sort
+    # get position layout
+    pos = nemoa.common.graph.get_layer_layout(graph,
+        minimize = kwargs.get('edge_attribute') \
+            if kwargs.get('node_sort') else None, 
+        threshold = kwargs.get('edge_threshold'),
+        transform = nemoa.common.math.softstep)
 
     # create figure object
     fig = matplotlib.pyplot.figure(figsize = kwargs['figure_size'])
@@ -380,39 +313,44 @@ def layergraph(graph, **kwargs):
     ax.set_aspect('equal', 'box')
     ax.axis('off')
 
-    # calculate node positions for layered graph layout
-    pos = {}
+    # adjust positions figure size, graph direction and padding
     assign  = {'right': 0, 'up': 1, 'left': 2, 'down': 3}
     align   = assign.get(kwargs['graph_direction'], 0)
     padding = kwargs['figure_padding']
-    xscale  = 1. / (len(stack) - 1)
-    yscale  = [1. / len(l) for l in stack]
     rotate  = lambda (x, y), i: \
         [(x, y), (y, x), (1. - x, y), (y, 1. - x)][i % 4]
     constr  = lambda (x, y), (u, r, d, l): \
         (l + x - x * l - x * r, d + y - y * u - y * d)
     resize  = lambda (x, y), (a, b): (x * a, y * b)
-    for lid, layer in enumerate(stack):
-        for nid, node in enumerate(layer):
-            x = lid * xscale
-            y = (nid + 0.5) * yscale[lid]
-            pos[node] = resize(constr(rotate(
-                (x, y), align), padding), figsize)
+    for node in pos: pos[node] = resize(constr(rotate(
+        pos[node], align), padding), figsize)
 
     # calculate minimal distance between nodes
+    # to calculate node size, nude radius and font size
     euclidd = lambda (a, b), (c, d): \
         numpy.sqrt((a - c) ** 2 + (b - d) ** 2)
     mindist = numpy.amin([euclidd(pos[u], pos[v]) \
         for u in pos for v in pos if not u == v])
+    scale = kwargs.get('node_scale', 1.0) * mindist
+    node_size = 0.0558 * (1.6 * scale) ** 2
+    line_width = 0.0030 * 1.6 * scale
+    fontsize = 0.0075 * 1.6 * scale * kwargs.get('node_fontsize', 16.0)
+    nradius = 23 * (0.01 * 1.6 * scale - 0.2)
 
-    # calculate node size and radius from minimal distance
-    scale = 1.6 * kwargs.get('node_scale', 1.0) * mindist
-    node_size = 0.0558 * scale ** 2
-    line_width = 0.0030 * scale
-    fontsize = 0.0075 * scale * kwargs.get('node_fontsize', 16.0)
-    nradius = 23 * (0.01 * scale - 0.2)
+    # get groups
+    groups = {None: []}
+    attr = kwargs['node_groupby']
+    nodes = {n: data for (n, data) in graph.nodes(data = True)}
+    for node, data in nodes.iteritems():
+        if not isinstance(data, dict) \
+            or not 'params' in data or not attr in data['params']:
+            groups[None].append(node)
+            continue
+        if not data['params'][attr] in groups:
+            groups[data['params'][attr]] = []
+        groups[data['params'][attr]].append(node)
 
-    # draw nodes
+    # draw nodes, labeled by groups
     for group in sorted(groups):
         if group == None: continue
 
@@ -456,6 +394,7 @@ def layergraph(graph, **kwargs):
                 labels      = {node: node_label},
                 font_size   = node_font_size,
                 font_color  = font_color,
+                font_family = 'sans-serif',
                 font_weight = 'normal')
 
             # patch node for edges
@@ -469,6 +408,7 @@ def layergraph(graph, **kwargs):
     attr = kwargs['edge_attribute']
     val = 1.
     weight = 1.
+    edges = {(u, v): data for (u, v, data) in graph.edges(data = True)}
     for (u, v) in edges.keys():
 
         # get value of edge attribute
@@ -477,9 +417,8 @@ def layergraph(graph, **kwargs):
             if not isinstance(data, dict): continue
             val = data.get(attr)
             if not isinstance(val, float): continue
-            absval = numpy.absolute(val)
-            if absval < kwargs['edge_threshold']: continue
-            weight = nemoa.common.math.softstep(absval)
+            weight = numpy.absolute(val)
+            if weight < kwargs['edge_threshold']: continue
 
         # calculate edge curvature from node positions
         if (u, v) in seen:
