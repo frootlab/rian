@@ -125,6 +125,7 @@ class Graph:
         'show_title': False,
         'show_legend': False,
         'title': None,
+        'layout': 'multilayer',
         'bg_color': 'none',
         'graph_caption': 'accuracy',
         'graph_direction': 'right',

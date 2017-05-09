@@ -253,16 +253,25 @@ def layergraph(graph, **kwargs):
 
     """
 
+    try: import numpy
+    except ImportError: raise ImportError(
+        "layergraph() requires numpy: https://scipy.org/")
+    try: import networkx
+    except ImportError: raise ImportError(
+        "layergraph() requires networkx: https://networkx.github.io/")
+    try:
+        import matplotlib.pyplot
+        import matplotlib.patches
+    except ImportError: raise ImportError(
+        "layergraph() requires matplotlib: https://matplotlib.org/")
+
     import nemoa.common.dict
     import nemoa.common.text
     import nemoa.common.math
-    import matplotlib.pyplot
-    import matplotlib.patches
-    import numpy
-    import networkx
 
     # default settings
     kwargs = nemoa.common.dict.merge(kwargs, {
+        'layout':               'random',
         'graph_direction':      'right',
         'figure_padding':       (0.1, 0.1, 0.1, 0.1),
         'figure_size':          (6.4, 4.8), # (11.69,8.27) for A4
@@ -295,16 +304,9 @@ def layergraph(graph, **kwargs):
         'edge_negcolor':        'red',
         'edge_curvature':       1.0 })
 
-    # get position layout
-    pos = nemoa.common.graph.get_layer_layout(graph,
-        minimize = kwargs.get('edge_attribute') \
-            if kwargs.get('node_sort') else None, 
-        threshold = kwargs.get('edge_threshold'),
-        transform = nemoa.common.math.softstep)
-
     # create figure object
-    fig = matplotlib.pyplot.figure(figsize = kwargs['figure_size'])
-    fig.patch.set_facecolor(kwargs['bg_color'])
+    fig = matplotlib.pyplot.figure(figsize = kwargs.get('figure_size'))
+    fig.patch.set_facecolor(kwargs.get('bg_color'))
     figsize = fig.get_size_inches() * fig.dpi
     ax = fig.add_subplot(111)
     ax.set_autoscale_on(False)
@@ -313,29 +315,42 @@ def layergraph(graph, **kwargs):
     ax.set_aspect('equal', 'box')
     ax.axis('off')
 
-    # adjust positions figure size, graph direction and padding
-    assign  = {'right': 0, 'up': 1, 'left': 2, 'down': 3}
-    align   = assign.get(kwargs['graph_direction'], 0)
-    padding = kwargs['figure_padding']
-    rotate  = lambda (x, y), i: \
-        [(x, y), (y, x), (1. - x, y), (y, 1. - x)][i % 4]
-    constr  = lambda (x, y), (u, r, d, l): \
-        (l + x - x * l - x * r, d + y - y * u - y * d)
-    resize  = lambda (x, y), (a, b): (x * a, y * b)
-    for node in pos: pos[node] = resize(constr(rotate(
-        pos[node], align), padding), figsize)
+    # get node positions in box [0, 1] x [0, 1]
+    # Todo: allow layouts from pygraphviz_layout
+    layout = kwargs.get('layout', 'spring').lower()
+    if layout == 'spring': pos = networkx.spring_layout(graph)
+    elif layout == 'multilayer':
+        pos = nemoa.common.graph.nx_multilayer_layout(graph,
+            minimize = kwargs.get('edge_attribute') \
+                if kwargs.get('node_sort') else None, 
+            threshold = kwargs.get('edge_threshold'),
+            transform = nemoa.common.math.softstep)
+    elif layout == 'random':
+        pos = networkx.random_layout(graph)
+    elif layout == 'circular':
+        pos = networkx.circular_layout(graph)
+    elif layout == 'shell':
+        pos = networkx.shell_layout(graph)
+    elif layout == 'spectral':
+        pos = networkx.spectral_layout(graph)
+    elif layout == 'fruchterman_reingold':
+        pos = network.fruchterman_reingold_layout(graph)
+    else: pos = networkx.spring_layout(graph)
 
-    # calculate minimal distance between nodes
-    # to calculate node size, nude radius and font size
-    euclidd = lambda (a, b), (c, d): \
-        numpy.sqrt((a - c) ** 2 + (b - d) ** 2)
-    mindist = numpy.amin([euclidd(pos[u], pos[v]) \
-        for u in pos for v in pos if not u == v])
-    scale = kwargs.get('node_scale', 1.0) * mindist
-    node_size = 0.0558 * (1.6 * scale) ** 2
-    line_width = 0.0030 * 1.6 * scale
-    fontsize = 0.0075 * 1.6 * scale * kwargs.get('node_fontsize', 16.0)
-    nradius = 23 * (0.01 * 1.6 * scale - 0.2)
+    # rescale node positions to figure size and padding
+    angle = {'right': 0, 'up': 90, 'left': 180, 'down': 270}.get(
+        kwargs.get('graph_direction', 'right'), 0)
+    pos = nemoa.common.graph.nx_rescale_layout(pos,
+        xscale = (0., figsize[0]), yscale = (0., figsize[1]),
+        padding = kwargs.get('figure_padding'), rotate = angle)
+
+    # calculate scaling of nodes and edges from node positions
+    scale = nemoa.common.graph.nx_get_scaling(pos) \
+        * kwargs.get('node_scale', 1.0)
+    node_size = 0.0558 * scale ** 2
+    line_width = 0.0030 * scale
+    fontsize = 0.0075 * scale * kwargs.get('node_fontsize', 16.0)
+    nradius = 23 * (0.01 * scale - 0.2)
 
     # get groups
     groups = {None: []}
@@ -463,7 +478,7 @@ def layergraph(graph, **kwargs):
             mutation_scale  = edge_arrow_scale,
             linewidth       = edge_width,
             color           = color(edge_color, 'black'),
-            alpha           = min(weight, 1.0))
+            alpha           = numpy.amin([weight, 1.0]) )
         ax.add_patch(arrow)
 
     return True
