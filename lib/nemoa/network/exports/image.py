@@ -41,18 +41,19 @@ def show(network, plot = None, **kwargs):
     # create plot
     if plot.create(network):
 
-        # (optional) draw title
-        if plot.settings['show_title']:
-            if 'title' in plot.settings \
-                and isinstance(plot.settings['title'], str):
-                title = plot.settings['title']
-            else: title = '' # Todo: self._get_title(model)
-            matplotlib.pyplot.title(title, fontsize = 11.)
+        ## (optional) draw title
+        #if plot.settings['show_title']:
+            #if 'title' in plot.settings \
+                #and isinstance(plot.settings['title'], str):
+                #title = plot.settings['title']
+            #else:
+                #title = network.fullname.title()
+            #matplotlib.pyplot.title(title, fontsize = 11.)
 
-        # (optional) draw legend
-        if plot.settings['show_legend']:
-            matplotlib.pyplot.legend(numpoints = 1,
-                loc = 'lower center', ncol = 4, borderaxespad = 0. )
+        ## (optional) draw legend
+        #if plot.settings['show_legend']:
+            #matplotlib.pyplot.legend(numpoints = 1,
+                #loc = 'lower left', ncol = 4, borderaxespad = 0. )
 
         # output
         matplotlib.pyplot.show()
@@ -94,18 +95,18 @@ def save(network, path = None, filetype = None, plot = None, **kwargs):
     # create plot
     if plot.create(network):
 
-        # (optional) draw title
-        if plot.settings['show_title']:
-            if 'title' in plot.settings \
-                and isinstance(plot.settings['title'], str):
-                title = plot.settings['title']
-            else: title = '' # Todo: self._get_title(model)
-            matplotlib.pyplot.title(title, fontsize = 11.)
+        ## (optional) draw title
+        #if plot.settings['show_title']:
+            #if 'title' in plot.settings \
+                #and isinstance(plot.settings['title'], str):
+                #title = plot.settings['title']
+            #else: title = '' # Todo: self._get_title(model)
+            #matplotlib.pyplot.title(title, fontsize = 11.)
 
-        # (optional) draw legend
-        if plot.settings['show_legend']:
-            matplotlib.pyplot.legend(numpoints = 1,
-                loc = 'lower center', ncol = 4, borderaxespad = 0. )
+        ## (optional) draw legend
+        #if plot.settings['show_legend']:
+            #matplotlib.pyplot.legend(numpoints = 1,
+                #loc = 'lower center', ncol = 4, borderaxespad = 0. )
 
         # output
         matplotlib.pyplot.savefig(path, dpi = plot.settings['dpi'])
@@ -126,14 +127,15 @@ class Graph:
         'show_legend': False,
         'title': None,
         'layout': 'multilayer',
+        'layout_params': {},
         'bg_color': 'none',
         'graph_caption': 'accuracy',
-        'graph_direction': 'right',
+        'direction': 'right',
         'node_caption': 'accuracy',
-        'node_sort': True,
         'edge_caption': None,
         'edge_weight': 'intensity',
-        'edge_threshold': 0.75,
+        'edge_threshold': 0.0,
+        'edge_transform': 'softstep',
         'edge_sign_normalize': True }
 
     def __init__(self, **kwargs):
@@ -145,20 +147,33 @@ class Graph:
         graph = network.get('graph', type = 'graph')
 
         # update edge weights
-        for (u, v) in graph.edges():
-            edge = graph.edge[u][v]
+        edgeattr  = self.settings.get('edge_weight', 'weight')
+        normalize = self.settings.get('edge_normalize', None)
+        threshold = self.settings.get('edge_threshold', None)
+        transform = self.settings.get('edge_transform', None)
 
-            weightparam = self.settings['edge_weight']
-            if  weightparam in edge['params']:
-                edge['weight'] = edge['params'][weightparam]
-            else:
-                edge['weight'] = 1.
+        if bool(normalize):
+            max_weight = 0.0
+            for (u, v) in graph.edges():
+                weight = graph.edge[u][v]['params'].get(edgeattr, 0.)
+                if weight > max_weight: max_weight = weight
+        
+        for (u, v) in graph.edges():
+            weight = graph.edge[u][v]['params'].get(edgeattr, 0.)
 
             # (optional) threshold weights
-            if self.settings['edge_threshold'] > 0.:
-                if not numpy.absolute(edge['weight']) \
-                    > self.settings['edge_threshold']:
-                    graph.remove_edge(u, v)
+            if bool(threshold) and threshold > numpy.absolute(weight):
+                graph.remove_edge(u, v)
+                continue
+
+            # (optional) normalize weights
+            if bool(normalize): weight /= max_weight
+
+            # (optional) transform weights
+            if transform == 'softstep':
+                weight = nemoa.common.math.softstep(weight)
+
+            graph.edge[u][v]['weight'] = weight
 
         # (optional) normalize edge signs
         if self.settings['edge_sign_normalize']:
@@ -175,6 +190,18 @@ class Graph:
             for (u, v) in graph.edges():
                 graph.edge[u][v]['caption'] = \
                     ' $' + ('%.2g' % (graph.edge[u][v]['weight'])) + '$'
+
+        # prepare parameters
+        if self.settings.get('title') == None:
+            self.settings['title'] = network.fullname.title()
+
+        # prepare graph layout specific parameters
+        layout = self.settings.get('layout', None)
+        if layout == 'multilayer':
+            self.settings['layout_params'] = nemoa.common.dict.merge(
+                self.settings['layout_params'], {
+                'minimize': 'weight',
+                'direction': self.settings.get('direction', 'right') })
 
         # plot model
         return nemoa.common.plot.layergraph(graph, **self.settings)

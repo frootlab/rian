@@ -4,8 +4,52 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-def nx_multilayer_layout(graph, minimize = 'weight', threshold = 0.0,
-    transform = None):
+def nx_get_layout(graph, layout = 'spring', scale = None,
+    padding = None, **kwargs):
+    """Calculate positions of nodes, depending on graph layout.
+
+    Args:
+        graph: networkx graph instance
+    
+    Kwargs:
+        layout (string):
+        scale (tuple or None):
+
+    """
+
+    try: import networkx as nx
+    except ImportError: raise ImportError(
+        "nx_layout() requires networkx: https://networkx.github.io/")
+
+    # Todo: allow layouts from pygraphviz_layout
+    
+    if layout == 'spring':
+        pos = nx.spring_layout(graph, **kwargs)
+    elif layout == 'multilayer':
+        pos = nx_get_multilayer_layout(graph, **kwargs)
+    elif layout == 'random':
+        pos = nx.random_layout(graph, **kwargs)
+    elif layout == 'circular':
+        pos = nx.circular_layout(graph, **kwargs)
+    elif layout == 'shell':
+        pos = nx.shell_layout(graph, **kwargs)
+    elif layout == 'spectral':
+        pos = nx.spectral_layout(graph, **kwargs)
+    elif layout == 'fruchterman_reingold':
+        pos = nx.fruchterman_reingold_layout(graph, **kwargs)
+    else:
+        raise ValueError("nx_layout() invalid layout.")
+        return None
+
+    if isinstance(scale, type(None)): return pos
+
+    # rescale node positions to figure size and padding
+    pos = nx_rescale_layout(pos, scale = scale, padding = padding)
+ 
+    return pos
+
+def nx_get_multilayer_layout(graph, direction = 'right',
+    minimize = 'weight'):
     """Calculate positions for layer layout of multilayer graphs.
 
     Args:
@@ -13,18 +57,15 @@ def nx_multilayer_layout(graph, minimize = 'weight', threshold = 0.0,
 
     """
 
-    try: import numpy
+    try: import numpy as np
     except ImportError: raise ImportError(
-        "nx_multilayer_layout() requires numpy: https://scipy.org/")
-    try: import networkx
-    except ImportError: raise ImportError(
-        "nx_multilayer_layout() requires networkx: https://networkx.github.io/")
+        "nx_get_multilayer_layout() requires numpy: https://scipy.org/")
 
     assert nx_is_multilayer(graph), \
-        "nx_multilayer_layout() requires networkx multilayer graph"
+        "nx_get_multilayer_layout() requires networkx multilayer graph"
 
     if len(graph) == 0: return {}
-    if len(graph) == 1: return { graph.nodes()[0]: (0.5, 0.5)}
+    if len(graph) == 1: return { graph.nodes()[0]: (0.5, 0.5) }
 
     # create node stack as list of lists
     layers = graph.graph['params']['layer']
@@ -37,7 +78,8 @@ def nx_multilayer_layout(graph, minimize = 'weight', threshold = 0.0,
         n = data['params']['layer_sub_id']
         stack[l][n] = node
 
-    # sort node stack by attribute
+    # sort node stack to minimize the euclidean distances
+    # of connected nodes
     if isinstance(minimize, str):
         edges = {(u, v): data \
             for (u, v, data) in graph.edges(data = True)}
@@ -48,7 +90,7 @@ def nx_multilayer_layout(graph, minimize = 'weight', threshold = 0.0,
             tlen = len(tgt)
 
             # calculate cost matrix for positions by weights
-            cost = numpy.zeros((tlen, tlen))
+            cost = np.zeros((tlen, tlen))
             for sid, u in enumerate(src):
                 for tid, v in enumerate(tgt):
                     data = edges.get((u, v))
@@ -56,12 +98,9 @@ def nx_multilayer_layout(graph, minimize = 'weight', threshold = 0.0,
                     if not isinstance(data, dict): continue
                     value = data.get(minimize)
                     if not isinstance(value, float): continue
-                    weight = numpy.absolute(value)
-                    if weight < threshold: continue
-                    if type(transform) == 'function':
-                        weight = transform(weight)
+                    weight = np.absolute(value)
                     for pid in range(tlen):
-                        dist = numpy.absolute(
+                        dist = np.absolute(
                             (pid + .5) / (tlen + 1.) \
                             - (sid + .5) / (slen + 1.))
                         cost[pid, tid] += dist * weight
@@ -73,25 +112,66 @@ def nx_multilayer_layout(graph, minimize = 'weight', threshold = 0.0,
             psel = range(tlen) # position select list
             sort = [None] * tlen 
             for i in range(tlen):
-                cmax = numpy.amax(cost[psel][:, nsel], axis = 0)
-                cmin = numpy.amin(cost[psel][:, nsel], axis = 0)
+                cmax = np.amax(cost[psel][:, nsel], axis = 0)
+                cmin = np.amin(cost[psel][:, nsel], axis = 0)
                 diff = cmax ** 2 - cmin ** 2
-                nid  = nsel[numpy.argmax(diff)]
-                pid  = psel[numpy.argmin(cost[psel][:, nid])]
+                nid  = nsel[np.argmax(diff)]
+                pid  = psel[np.argmin(cost[psel][:, nid])]
                 sort[pid] = tgt[nid]
                 nsel.remove(nid)
                 psel.remove(pid)
             stack[lid] = sort
 
     # calculate node positions in box [0, 1] x [0, 1]
+    orientate = lambda (x, y), d: {'right': (x, y), 'up': (y, x),
+        'left': (1. - x,  y), 'down': (y, 1. - x)}.get(d, (x, y))
     pos = {}
     for l, layer in enumerate(stack):
         for n, node in enumerate(layer):
             x = float(l) / (len(stack) - 1)
             y = (float(n) + 0.5) / len(layer)
-            pos[node] = (x, y)
+            pos[node] = orientate((x, y), direction)
 
     return pos
+
+def nx_get_normsizes(pos):
+    """Calculate normal sizes for given node positions.
+
+    Args:
+        graph: networkx graph instance
+
+    """
+
+    try: import numpy as np
+    except ImportError: raise ImportError(
+        "nx_get_normsizes() requires numpy: https://scipy.org/")
+
+    # calculate norm scaling
+    scale = nx_get_normscale(pos)
+    
+    return {
+        'node_size':   0.0558 * scale ** 2,
+        'node_radius': 23. * (0.01 * scale - 0.2),
+        'line_width':  0.0030 * scale,
+        'font_size':  0.1200 * scale }
+
+def nx_get_groups(graph, param = None):
+
+    # get groups
+    groups = {None: []}
+    for node, data in graph.nodes(data = True):
+        if not isinstance(data, dict) \
+            or not 'params' in data \
+            or not param in data['params']:
+            groups[None].append(node)
+            continue
+        group = data['params'].get(param)
+        if not group in groups:
+            groups[group] = [node]
+            continue
+        groups[group].append(node)
+    
+    return groups
 
 def nx_is_multilayer(graph):
     """Test if graph is multilayer graph.
@@ -110,45 +190,38 @@ def nx_is_multilayer(graph):
 
     return retval
 
-def nx_get_scaling(pos):
+def nx_get_normscale(pos):
     """Calculate scaling.
 
     Args:
-        pos:
+        pos: dictionary with node positions
 
     """
 
-    try: import numpy
+    try: import numpy as np
     except ImportError: raise ImportError(
-        "nx_get_scaling() requires numpy: https://scipy.org/")
+        "nx_get_normscale() requires numpy: https://scipy.org/")
 
-    # calculate euclidean distances of node positions
-    dist = lambda (ux, uy), (vx, vy): \
-        numpy.sqrt((ux - vx) ** 2 + (uy - vy) ** 2)
-    #darr = numpy.zeros((len(pos), len(pos)))
-    dseq = []
+    # calculate euclidean distances between node positions
+    euklid = lambda (a, b), (c, d): np.sqrt((a - c) ** 2 + (b - d) ** 2)
+    dlist = []
     for i, u in enumerate(pos.keys()):
         for j, v in enumerate(pos.keys()[i + 1:], i + 1):
-            dseq.append(dist(pos[u], pos[v]))
-            #d = dist(pos[u], pos[v])
-            #darr[i, j] = darr[j, i] = d
-            #dseq.append(d)
-    darr = numpy.array(dseq)
+            dlist.append(euklid(pos[u], pos[v]))
+    darr = np.array(dlist)
 
-    # calculate maximal scaling factor from minimal node distance
-    maxscale = 2.32 * numpy.amin(darr)
-
-    # calculate minimal scaling factor from average node distance
-    minscale = 0.2 * numpy.mean(darr)
+    # calculate maximal scaling factor from minimal node distance and
+    # minimal scaling factor from average node distance
+    maxscale = 2.32 * np.amin(darr)
+    minscale = 0.2 * np.mean(darr)
 
     return (minscale + maxscale) / 2
 
-def nx_rescale_layout(pos, xscale = (0., 1.), yscale = (0., 1.),
-        padding = (0., 0., 0., 0.), rotate = 0.):
+def nx_rescale_layout(pos, scale = None, padding = None, rotate = 0.):
     """Rescale node positions.
 
     Args:
-        pos:
+        pos: dictionary with node positions
     
     Kwargs:
         xscale:
@@ -158,31 +231,27 @@ def nx_rescale_layout(pos, xscale = (0., 1.), yscale = (0., 1.),
 
     """
 
-    try: import numpy
+    try: import numpy as np
     except ImportError: raise ImportError(
         "nx_rescale_layout() requires numpy: https://scipy.org/")
 
-    nodes = pos.keys()
-    data = numpy.array([[x, y] for x, y in pos.values()])
-    size = numpy.array([xscale, yscale])
+    data = np.array([(x, y) for x, y in pos.values()])
 
     # rotate positions around its center a by given rotation angle
     if bool(rotate):
-        theta = numpy.radians(rotate)
-        cos, sin = numpy.cos(theta), numpy.sin(theta)
-        R = numpy.array([[cos, -sin], [sin, cos]])
+        theta = np.radians(rotate)
+        cos, sin = np.cos(theta), np.sin(theta)
+        R = np.array([[cos, -sin], [sin, cos]])
         mean = data.mean(axis = 0)
-        data = numpy.dot(data - mean, R.T) + mean
+        data = np.dot(data - mean, R.T) + mean
 
-    # rescale position to box [0, 1] x [0, 1] with padding [u, r, d, l]
-    dmin, dmax = numpy.amin(data, axis = 0), numpy.amax(data, axis = 0)
-    u, r, d, l = padding
-    pmin, pmax = numpy.array([l, d]), 1. - numpy.array([r, u])
-    data = (pmax - pmin) * (data - dmin) / (dmax - dmin) + pmin
+    # rescale positions with padding [u, r, d, l]
+    if not isinstance(scale, type(None)):
+        dmin, dmax = np.amin(data, axis = 0), np.amax(data, axis = 0)
+        if isinstance(padding, type(None)): u, r, d, l = 0., 0., 0., 0.
+        else: u, r, d, l = padding
+        pmin, pmax = np.array([l, d]), 1. - np.array([r, u])
+        data = (pmax - pmin) * (data - dmin) / (dmax - dmin) + pmin
+        data = np.array(scale) * data
 
-    # rescale box to given xscale and yscale
-    sarr = numpy.array([xscale, yscale]).T
-    smin, smax = sarr[0], sarr[1]
-    data = (smax - smin) * data + smin
-
-    return {node: tuple(data[i]) for i, node in enumerate(nodes)}
+    return {node: tuple(data[i]) for i, node in enumerate(pos.keys())}

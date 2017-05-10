@@ -114,7 +114,6 @@ def graph(graph, **kwargs):
     node_size_scale = 1.85   # node size scale factor
     font_size_max = 18.      # maximum font size
     edge_size_scale = 4.     # edge size scale factor
-    edge_normalize = True
     edge_arr_scale = 8.      # edge arrow size scale factor
     edge_radius = 0.15       # edge radius for fancy edges
 
@@ -182,12 +181,6 @@ def graph(graph, **kwargs):
         graph.node[node]['patch'] = c
 
     # draw edges
-    if edge_normalize:
-        max_weight = 0.0
-        for (u, v, attr) in graph.edges(data = True):
-            if max_weight > attr['weight']: continue
-            max_weight = attr['weight']
-        edge_line_width /= max_weight
     seen = {}
     for (u, v, attr) in graph.edges(data = True):
         n1 = graph.node[u]['patch']
@@ -241,7 +234,7 @@ def layergraph(graph, **kwargs):
         edge_curvature (float): value within the intervall [-1, 1],
             that determines the curvature of the edges.
             Thereby 1 equals max convexity and -1 max concavity.
-        graph_direction (string): string within the list ['up', 'down',
+        direction (string): string within the list ['up', 'down',
             'left', 'right'], that dermines the plot direction of the
             graph. 'up' means, the first layer is at the bottom.
         edge_style (string):  '-', '<-', '<->', '->',
@@ -253,10 +246,12 @@ def layergraph(graph, **kwargs):
 
     """
 
-    try: import numpy
+    try:
+        import numpy
     except ImportError: raise ImportError(
         "layergraph() requires numpy: https://scipy.org/")
-    try: import networkx
+    try:
+        import networkx as nx
     except ImportError: raise ImportError(
         "layergraph() requires networkx: https://networkx.github.io/")
     try:
@@ -264,15 +259,22 @@ def layergraph(graph, **kwargs):
         import matplotlib.patches
     except ImportError: raise ImportError(
         "layergraph() requires matplotlib: https://matplotlib.org/")
-
-    import nemoa.common.dict
-    import nemoa.common.text
-    import nemoa.common.math
+    try:
+        import nemoa.common.graph as nmgraph
+        import nemoa.common.dict as nmdict
+        import nemoa.common.text as nmtext
+    except ImportError: raise ImportError(
+        "layergraph() requires nemoa: https://github.com/fishroot/nemoa/")
 
     # default settings
-    kwargs = nemoa.common.dict.merge(kwargs, {
-        'layout':               'random',
-        'graph_direction':      'right',
+    kwargs = nmdict.merge(kwargs, {
+        'layout':               'multilayer',
+        'layout_params':        {},
+        'show_legend':          False
+        'legend_fontsize':      9.0,
+        'show_title':           False,
+        'title_fontsize':       16.,
+        'direction':            'right',
         'figure_padding':       (0.1, 0.1, 0.1, 0.1),
         'figure_size':          (6.4, 4.8), # (11.69,8.27) for A4
                                             # (16.53,11.69) for A3
@@ -280,22 +282,18 @@ def layergraph(graph, **kwargs):
         'node_groupby':         'visible',
         'node_groups': {
             True: {
-                'label': 'Observable',
+                'label': 'Observable Variable',
                 'bg_color': 'marine blue',
                 'font_color': 'white',
                 'border_color': 'dark navy'},
             False: {
-                'label': 'Latent',
+                'label': 'Latent Variable',
                 'bg_color': 'light grey',
                 'font_color': 'dark grey',
                 'border_color': 'grey'} },
-        'node_sort':            True,
-        'node_scale':           1.0,
-        'node_fontsize':        16.0,
         'node_color':           True,
         'edge_style':           '-|>',
         'edge_attribute':       'weight',
-        'edge_threshold':       0.75,
         'edge_scale':           1.0,
         'edge_arrow_scale':     12.0,
         'edge_width_enabled':   True,
@@ -315,55 +313,24 @@ def layergraph(graph, **kwargs):
     ax.set_aspect('equal', 'box')
     ax.axis('off')
 
-    # get node positions in box [0, 1] x [0, 1]
-    # Todo: allow layouts from pygraphviz_layout
-    layout = kwargs.get('layout', 'spring').lower()
-    if layout == 'spring': pos = networkx.spring_layout(graph)
-    elif layout == 'multilayer':
-        pos = nemoa.common.graph.nx_multilayer_layout(graph,
-            minimize = kwargs.get('edge_attribute') \
-                if kwargs.get('node_sort') else None, 
-            threshold = kwargs.get('edge_threshold'),
-            transform = nemoa.common.math.softstep)
-    elif layout == 'random':
-        pos = networkx.random_layout(graph)
-    elif layout == 'circular':
-        pos = networkx.circular_layout(graph)
-    elif layout == 'shell':
-        pos = networkx.shell_layout(graph)
-    elif layout == 'spectral':
-        pos = networkx.spectral_layout(graph)
-    elif layout == 'fruchterman_reingold':
-        pos = network.fruchterman_reingold_layout(graph)
-    else: pos = networkx.spring_layout(graph)
+    # get node positions
+    pos = nmgraph.nx_get_layout(graph,
+        layout = kwargs.get('layout', 'spring').lower(),
+        scale = figsize,
+        padding = kwargs.get('figure_padding', None),
+        **kwargs.get('layout_params', {}))
 
-    # rescale node positions to figure size and padding
-    angle = {'right': 0, 'up': 90, 'left': 180, 'down': 270}.get(
-        kwargs.get('graph_direction', 'right'), 0)
-    pos = nemoa.common.graph.nx_rescale_layout(pos,
-        xscale = (0., figsize[0]), yscale = (0., figsize[1]),
-        padding = kwargs.get('figure_padding'), rotate = angle)
+    # get normal sizes with respect to node positions
+    sizes = nmgraph.nx_get_normsizes(pos)
+    node_size = sizes.get('node_size', None)
+    node_radius = sizes.get('node_radius', None)
+    line_width = sizes.get('line_width', None)
+    font_size = sizes.get('font_size', None)
 
-    # calculate scaling of nodes and edges from node positions
-    scale = nemoa.common.graph.nx_get_scaling(pos) \
-        * kwargs.get('node_scale', 1.0)
-    node_size = 0.0558 * scale ** 2
-    line_width = 0.0030 * scale
-    fontsize = 0.0075 * scale * kwargs.get('node_fontsize', 16.0)
-    nradius = 23 * (0.01 * scale - 0.2)
-
-    # get groups
-    groups = {None: []}
-    attr = kwargs['node_groupby']
-    nodes = {n: data for (n, data) in graph.nodes(data = True)}
-    for node, data in nodes.iteritems():
-        if not isinstance(data, dict) \
-            or not 'params' in data or not attr in data['params']:
-            groups[None].append(node)
-            continue
-        if not data['params'][attr] in groups:
-            groups[data['params'][attr]] = []
-        groups[data['params'][attr]].append(node)
+    # get nodes and groups
+    nodes = {n: data for n, data in graph.nodes(data = True)}
+    groups = nmgraph.nx_get_groups(graph,
+        param = kwargs.get('node_groupby', None))
 
     # draw nodes, labeled by groups
     for group in sorted(groups):
@@ -386,7 +353,7 @@ def layergraph(graph, **kwargs):
         nodes_in_group = groups[group]
 
         # draw nodes in group
-        node_obj = networkx.draw_networkx_nodes(graph, pos,
+        node_obj = nx.draw_networkx_nodes(graph, pos,
             nodelist   = nodes_in_group,
             linewidths = line_width,
             node_size  = node_size,
@@ -400,21 +367,20 @@ def layergraph(graph, **kwargs):
 
             # determine label and fontsize
             label_str = nodes[node]['params']['label']
-            node_label = nemoa.common.text.labelfomat(label_str)
-            node_font_size = fontsize / len(label_str.rstrip('1234567890'))
-            # 2do
+            node_label = nmtext.labelfomat(label_str)
+            node_label_size = len(label_str.rstrip('1234567890'))
 
             # draw node label
-            networkx.draw_networkx_labels(graph, pos,
+            nx.draw_networkx_labels(graph, pos,
                 labels      = {node: node_label},
-                font_size   = node_font_size,
+                font_size   = font_size / node_label_size,
                 font_color  = font_color,
                 font_family = 'sans-serif',
                 font_weight = 'normal')
 
             # patch node for edges
-            c = matplotlib.patches.Circle(pos[node],
-                radius = nradius, alpha = 0.)
+            c = matplotlib.patches.Circle(pos.get(node),
+                radius = node_radius, alpha = 0.)
             ax.add_patch(c)
             graph.node[node]['patch'] = c
 
@@ -433,17 +399,16 @@ def layergraph(graph, **kwargs):
             val = data.get(attr)
             if not isinstance(val, float): continue
             weight = numpy.absolute(val)
-            if weight < kwargs['edge_threshold']: continue
 
         # calculate edge curvature from node positions
         if (u, v) in seen:
             rad = seen.get((u, v))
             rad = -(rad + float(numpy.sign(rad)) * .2)
-        elif kwargs['graph_direction'] in ['top', 'down']:
+        elif kwargs['direction'] in ['top', 'down']:
             rad = 2.0 * kwargs['edge_curvature'] \
                 * (pos[u][1] - pos[v][1]) * (pos[u][0] - pos[v][0]) \
                 / figsize[0] / figsize[1]
-        elif kwargs['graph_direction'] in ['right', 'left']:
+        elif kwargs['direction'] in ['right', 'left']:
             rad = -2.0 * kwargs['edge_curvature'] \
                 * (pos[u][1] - pos[v][1]) * (pos[u][0] - pos[v][0]) \
                 / figsize[0] / figsize[1]
@@ -480,5 +445,23 @@ def layergraph(graph, **kwargs):
             color           = color(edge_color, 'black'),
             alpha           = numpy.amin([weight, 1.0]) )
         ax.add_patch(arrow)
+
+    # (optional) draw legend
+    if bool(kwargs.get('show_legend', False)):
+        legend_fontsize = kwargs.get('legend_fontsize', 9.)
+        ax.legend(
+            numpoints      = 1,
+            loc            = 'lower left',
+            ncol           = 4,
+            borderaxespad  = 0.,
+            bbox_to_anchor = (0., -0.1),
+            fontsize       = legend_fontsize,
+            markerscale    = 0.6 * legend_fontsize / font_size)
+
+    # (optional) draw title
+    if bool(kwargs.get('show_title', False)):
+        title_fontsize = kwargs.get('title_fontsize', 16.)
+        matplotlib.pyplot.title(kwargs.get('title', 'Unknown'),
+            fontsize = title_fontsize)
 
     return True
