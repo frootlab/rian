@@ -153,24 +153,38 @@ def nx_get_normsizes(pos):
         'node_size':   0.0558 * scale ** 2,
         'node_radius': 23. * (0.01 * scale - 0.2),
         'line_width':  0.0030 * scale,
-        'font_size':  0.1200 * scale }
+        'edge_width':  0.0066 * scale,
+        'font_size':   0.1200 * scale }
 
-def nx_get_groups(graph, param = None):
+def nx_get_groups(graph, attribute = None, param = None):
 
-    # get groups
+    if attribute == None and param == None:
+        attribute = 'group'
+
     groups = {None: []}
+
     for node, data in graph.nodes(data = True):
-        if not isinstance(data, dict) \
-            or not 'params' in data \
-            or not param in data['params']:
+        if not isinstance(data, dict):
             groups[None].append(node)
             continue
-        group = data['params'].get(param)
+        elif not attribute == None and not attribute in data:
+            groups[None].append(node)
+            continue
+        elif not param == None \
+            and not ('params' in data and param in data['params']):
+            groups[None].append(node)
+            continue
+        if not attribute == None and param == None:
+            group = data.get(attribute)
+        elif attribute == None and not param == None:
+            group = data['params'].get(param)
+        else:
+            group = (data.get(attribute), data['params'].get(param))
         if not group in groups:
             groups[group] = [node]
             continue
         groups[group].append(node)
-    
+
     return groups
 
 def nx_is_multilayer(graph):

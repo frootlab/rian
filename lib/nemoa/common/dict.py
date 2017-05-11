@@ -46,6 +46,15 @@ def merge(d1, d2, new = True):
 
     return d2
 
+def section(d, string):
+    """Crop dictionary to keys, that start with an initial string."""
+    
+    if not isinstance(string, str): return {}
+    i = len(string)
+
+    return {k[i:]: v for k, v in d.items() \
+        if isinstance(k, str) and k[:i] == string}
+
 def strkeys(d):
     """Recursively convert dictionary keys to string."""
 

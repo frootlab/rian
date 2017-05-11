@@ -40,13 +40,13 @@ def color(*args):
 
 def heatmap(array, **kwargs):
 
-    import matplotlib.pyplot
+    import matplotlib.pyplot as plt
     import matplotlib.cm
     import nemoa.common.text
     import numpy
 
     # create figure object
-    fig = matplotlib.pyplot.figure()
+    fig = plt.figure()
     fig.patch.set_facecolor(kwargs['bg_color'])
     ax = fig.add_subplot(111)
     ax.grid(True)
@@ -69,10 +69,10 @@ def heatmap(array, **kwargs):
         x_labels.append(nemoa.common.text.labelfomat(label))
     fontsize = min(max_font_size, \
         400. / float(max(len(x_labels), len(y_labels))))
-    matplotlib.pyplot.xticks(
+    plt.xticks(
         numpy.arange(len(x_labels)) + 0.5,
         tuple(x_labels), fontsize = fontsize, rotation = 65)
-    matplotlib.pyplot.yticks(
+    plt.yticks(
         len(y_labels) - numpy.arange(len(y_labels)) - 0.5,
         tuple(y_labels), fontsize = fontsize)
 
@@ -84,10 +84,10 @@ def heatmap(array, **kwargs):
 
 def histogram(array, **kwargs):
 
-    import matplotlib.pyplot
+    import matplotlib.pyplot as plt
 
     # create figure object
-    fig = matplotlib.pyplot.figure()
+    fig = plt.figure()
     fig.patch.set_facecolor(kwargs['bg_color'])
     ax = fig.add_subplot(111)
     ax.grid(True)
@@ -105,7 +105,7 @@ def histogram(array, **kwargs):
 
 def graph(graph, **kwargs):
 
-    import matplotlib.pyplot
+    import matplotlib.pyplot as plt
     import matplotlib.patches
     import networkx
     import numpy
@@ -118,11 +118,11 @@ def graph(graph, **kwargs):
     edge_radius = 0.15       # edge radius for fancy edges
 
     # create figure object
-    fig = matplotlib.pyplot.figure()
+    fig = plt.figure()
     fig.patch.set_facecolor(kwargs['bg_color'])
     ax = fig.add_subplot(111)
     ax.axis('off')
-    matplotlib.pyplot.axes().set_aspect('equal', 'box')
+    plt.axes().set_aspect('equal', 'box')
 
     # calculate positions
     # Todo: allow layouts from pygraphviz_layout
@@ -209,13 +209,32 @@ def graph(graph, **kwargs):
 
     return True
 
-def layergraph(graph, **kwargs):
+def layergraph(graph,
+        graph_layout       = 'multilayer',
+        show_legend        = False,
+        legend_fontsize    = 9.0,
+        title              = None,
+        show_title         = False,
+        title_fontsize     = 16.,
+        direction          = 'right',
+        figure_padding     = (0.1, 0.1, 0.1, 0.1),
+        figure_size        = (6.4, 4.8),
+        dpi                = None,
+        bg_color           = 'none',
+        node_style         = 'o',
+        edge_style         = '-|>',
+        edge_arrow_scale   = 12.0,
+        edge_width_enabled = True,
+        edge_curvature     = 1.0,
+        **kwargs):
     """Plot graph with layered layout.
 
     Args:
         graph: nemoa graph instance from nemoa network instance
 
     Kwargs:
+        figure_size (tuple): # (11.69,8.27) for A4
+                                            # (16.53,11.69) for A3
         edge_attribute (string): name of edge attribute, that
             determines the edge colors by its sign and the edge width
             by its absolute value.
@@ -246,65 +265,24 @@ def layergraph(graph, **kwargs):
 
     """
 
-    try:
-        import numpy
+    try: import numpy
     except ImportError: raise ImportError(
         "layergraph() requires numpy: https://scipy.org/")
-    try:
-        import networkx as nx
+    try: import networkx as nx
     except ImportError: raise ImportError(
         "layergraph() requires networkx: https://networkx.github.io/")
     try:
-        import matplotlib.pyplot
-        import matplotlib.patches
+        import matplotlib
+        import matplotlib.pyplot as plt
     except ImportError: raise ImportError(
         "layergraph() requires matplotlib: https://matplotlib.org/")
-    try:
-        import nemoa.common.graph as nmgraph
-        import nemoa.common.dict as nmdict
-        import nemoa.common.text as nmtext
-    except ImportError: raise ImportError(
-        "layergraph() requires nemoa: https://github.com/fishroot/nemoa/")
-
-    # default settings
-    kwargs = nmdict.merge(kwargs, {
-        'layout':               'multilayer',
-        'layout_params':        {},
-        'show_legend':          False
-        'legend_fontsize':      9.0,
-        'show_title':           False,
-        'title_fontsize':       16.,
-        'direction':            'right',
-        'figure_padding':       (0.1, 0.1, 0.1, 0.1),
-        'figure_size':          (6.4, 4.8), # (11.69,8.27) for A4
-                                            # (16.53,11.69) for A3
-        'node_style':           'o',
-        'node_groupby':         'visible',
-        'node_groups': {
-            True: {
-                'label': 'Observable Variable',
-                'bg_color': 'marine blue',
-                'font_color': 'white',
-                'border_color': 'dark navy'},
-            False: {
-                'label': 'Latent Variable',
-                'bg_color': 'light grey',
-                'font_color': 'dark grey',
-                'border_color': 'grey'} },
-        'node_color':           True,
-        'edge_style':           '-|>',
-        'edge_attribute':       'weight',
-        'edge_scale':           1.0,
-        'edge_arrow_scale':     12.0,
-        'edge_width_enabled':   True,
-        'edge_color':           False,
-        'edge_poscolor':        'green',
-        'edge_negcolor':        'red',
-        'edge_curvature':       1.0 })
+    import nemoa.common.graph as nmgraph
+    import nemoa.common.text as nmtext
+    import nemoa.common.dict as nmdict
 
     # create figure object
-    fig = matplotlib.pyplot.figure(figsize = kwargs.get('figure_size'))
-    fig.patch.set_facecolor(kwargs.get('bg_color'))
+    fig = plt.figure(figsize = figure_size, dpi = dpi)
+    fig.patch.set_facecolor(bg_color)
     figsize = fig.get_size_inches() * fig.dpi
     ax = fig.add_subplot(111)
     ax.set_autoscale_on(False)
@@ -314,121 +292,85 @@ def layergraph(graph, **kwargs):
     ax.axis('off')
 
     # get node positions
-    pos = nmgraph.nx_get_layout(graph,
-        layout = kwargs.get('layout', 'spring').lower(),
-        scale = figsize,
-        padding = kwargs.get('figure_padding', None),
-        **kwargs.get('layout_params', {}))
+    layout_params = nmdict.section(kwargs, 'graph_layout_')
+    pos = nmgraph.nx_get_layout(graph, layout = graph_layout,
+        scale = figsize, padding = figure_padding, **layout_params)
 
     # get normal sizes with respect to node positions
-    sizes = nmgraph.nx_get_normsizes(pos)
-    node_size = sizes.get('node_size', None)
+    sizes       = nmgraph.nx_get_normsizes(pos)
+    node_size   = sizes.get('node_size', None)
     node_radius = sizes.get('node_radius', None)
-    line_width = sizes.get('line_width', None)
-    font_size = sizes.get('font_size', None)
+    line_width  = sizes.get('line_width', None)
+    edge_width  = sizes.get('edge_width', None)
+    font_size   = sizes.get('font_size', None)
 
     # get nodes and groups
-    nodes = {n: data for n, data in graph.nodes(data = True)}
-    groups = nmgraph.nx_get_groups(graph,
-        param = kwargs.get('node_groupby', None))
+    groups = nmgraph.nx_get_groups(graph, attribute = 'group')
 
     # draw nodes, labeled by groups
-    for group in sorted(groups):
-        if group == None: continue
-
-        # get group layout
-        layout = kwargs['node_groups'].get(group, {})
-        if 'label' in layout: group_label = layout['label']
-        elif isinstance(group, bool):
-            group_label = str(kwargs['node_groupby']).title()
-            if not group: group_label = 'not ' + group_label
-        elif group == None: group_label = 'Unknown'
-        else: group_label = str(group).title()
-        if not 'bg_color' in layout: bg_color = color('white')
-        else: bg_color = color(layout['bg_color'], 'white')
-        if not 'font_color' in layout: font_color = color('black')
-        else: font_color = color(layout['font_color'], 'black')
-        if not 'border_color' in layout: border_color = color('black')
-        else: border_color = color(layout['border_color'], 'black')
-        nodes_in_group = groups[group]
+    for group in sorted(groups.keys()):
+        gnodes = groups.get(group)
+        if len(gnodes) == 0: continue
+        refnode = graph.node.get(gnodes[0])
 
         # draw nodes in group
         node_obj = nx.draw_networkx_nodes(graph, pos,
-            nodelist   = nodes_in_group,
+            nodelist   = gnodes,
             linewidths = line_width,
             node_size  = node_size,
-            node_shape = kwargs['node_style'],
-            node_color = bg_color,
-            label      = group_label)
-        node_obj.set_edgecolor(border_color)
+            node_shape = node_style,
+            node_color = color(refnode.get('color'), 'white'),
+            label      = refnode.get('group', str(group)))
+        node_obj.set_edgecolor(
+            color(refnode.get('border_color'), 'black'))
 
-        # draw node labels
-        for node in nodes_in_group:
+    # draw node labels
+    for node, data in graph.nodes(data = True):
 
-            # determine label and fontsize
-            label_str = nodes[node]['params']['label']
-            node_label = nmtext.labelfomat(label_str)
-            node_label_size = len(label_str.rstrip('1234567890'))
+        # determine label, fontsize and color
+        node_label = data.get('label', str(node).title())
+        node_label_format = nmtext.labelfomat(node_label)
+        node_label_size = len(node_label.rstrip('1234567890'))
+        font_color = color(data.get('font_color'), 'black')
 
-            # draw node label
-            nx.draw_networkx_labels(graph, pos,
-                labels      = {node: node_label},
-                font_size   = font_size / node_label_size,
-                font_color  = font_color,
-                font_family = 'sans-serif',
-                font_weight = 'normal')
+        # draw node label
+        nx.draw_networkx_labels(graph, pos,
+            labels      = {node: node_label_format},
+            font_size   = font_size / node_label_size,
+            font_color  = font_color,
+            font_family = 'sans-serif',
+            font_weight = 'normal')
 
-            # patch node for edges
-            c = matplotlib.patches.Circle(pos.get(node),
-                radius = node_radius, alpha = 0.)
-            ax.add_patch(c)
-            graph.node[node]['patch'] = c
+        # patch node for edges
+        circle = matplotlib.patches.Circle(pos.get(node), alpha = 0.,
+            radius = node_radius)
+        ax.add_patch(circle)
+        graph.node[node]['patch'] = circle
 
     # draw edges
     seen = {}
-    attr = kwargs['edge_attribute']
-    val = 1.
-    weight = 1.
-    edges = {(u, v): data for (u, v, data) in graph.edges(data = True)}
-    for (u, v) in edges.keys():
-
-        # get value of edge attribute
-        if bool(attr):
-            data = edges.get((u, v))
-            if not isinstance(data, dict): continue
-            val = data.get(attr)
-            if not isinstance(val, float): continue
-            weight = numpy.absolute(val)
+    for u, v, data in graph.edges(data = True):
+        weight = data.get('weight', 1.0)
 
         # calculate edge curvature from node positions
         if (u, v) in seen:
             rad = seen.get((u, v))
             rad = -(rad + float(numpy.sign(rad)) * .2)
-        elif kwargs['direction'] in ['top', 'down']:
-            rad = 2.0 * kwargs['edge_curvature'] \
+        elif direction in ['top', 'down']:
+            rad = 2.0 * edge_curvature \
                 * (pos[u][1] - pos[v][1]) * (pos[u][0] - pos[v][0]) \
                 / figsize[0] / figsize[1]
-        elif kwargs['direction'] in ['right', 'left']:
-            rad = -2.0 * kwargs['edge_curvature'] \
+        elif direction in ['right', 'left']:
+            rad = -2.0 * edge_curvature \
                 * (pos[u][1] - pos[v][1]) * (pos[u][0] - pos[v][0]) \
                 / figsize[0] / figsize[1]
         else: rad = .0
         seen[(u, v)] = rad
 
-        # calculate edge width from edge attribute
-        if not bool(kwargs['edge_width_enabled']):
-            edge_width = line_width * 2.2 * kwargs['edge_scale']
-        else:
-            edge_width = weight * 2.2 \
-                * line_width * kwargs['edge_scale']
-
-        # calculate edge arrow scale from edge width
-        edge_arrow_scale = kwargs['edge_arrow_scale'] * edge_width
-
-        # get edge color from attribute
-        if not bool(kwargs['edge_color']): edge_color = 'black'
-        elif val > 0: edge_color = kwargs['edge_poscolor']
-        else: edge_color = kwargs['edge_negcolor']
+        # calculate line width and alpha value from edge weight
+        if not edge_width_enabled: linewidth = edge_width
+        else: linewidth = numpy.absolute(weight) * edge_width
+        alpha = numpy.amin([numpy.absolute(weight), 1.0])
 
         # draw edge
         nodeA = graph.node[u]['patch']
@@ -438,17 +380,16 @@ def layergraph(graph, **kwargs):
             posB            = nodeB.center,
             patchA          = nodeA,
             patchB          = nodeB,
-            arrowstyle      = kwargs['edge_style'],
+            arrowstyle      = edge_style,
             connectionstyle = 'arc3,rad=%s' % rad,
-            mutation_scale  = edge_arrow_scale,
-            linewidth       = edge_width,
-            color           = color(edge_color, 'black'),
-            alpha           = numpy.amin([weight, 1.0]) )
+            mutation_scale  = linewidth * edge_arrow_scale,
+            linewidth       = linewidth,
+            color           = color(data.get('color'), 'black'),
+            alpha           = alpha )
         ax.add_patch(arrow)
 
     # (optional) draw legend
-    if bool(kwargs.get('show_legend', False)):
-        legend_fontsize = kwargs.get('legend_fontsize', 9.)
+    if show_legend:
         ax.legend(
             numpoints      = 1,
             loc            = 'lower left',
@@ -459,9 +400,8 @@ def layergraph(graph, **kwargs):
             markerscale    = 0.6 * legend_fontsize / font_size)
 
     # (optional) draw title
-    if bool(kwargs.get('show_title', False)):
-        title_fontsize = kwargs.get('title_fontsize', 16.)
-        matplotlib.pyplot.title(kwargs.get('title', 'Unknown'),
-            fontsize = title_fontsize)
+    if show_title:
+        if title == None: title = 'Unknown'
+        plt.title(title, fontsize = title_fontsize)
 
     return True
