@@ -38,6 +38,9 @@ def color(*args):
             continue
     return rgba
 
+def configure(**kwargs):
+    return False
+
 def heatmap(array, **kwargs):
 
     import matplotlib.pyplot as plt
@@ -103,134 +106,134 @@ def histogram(array, **kwargs):
 
     return True
 
-def graph(graph, **kwargs):
+#def graph(graph, **kwargs):
 
-    import matplotlib.pyplot as plt
-    import matplotlib.patches
-    import networkx
-    import numpy
+    #import matplotlib.pyplot as plt
+    #import matplotlib.patches
+    #import networkx
+    #import numpy
 
-    node_size_max = 800.     # maximum node size
-    node_size_scale = 1.85   # node size scale factor
-    font_size_max = 18.      # maximum font size
-    edge_size_scale = 4.     # edge size scale factor
-    edge_arr_scale = 8.      # edge arrow size scale factor
-    edge_radius = 0.15       # edge radius for fancy edges
+    #node_size_max = 800.     # maximum node size
+    #node_size_scale = 1.85   # node size scale factor
+    #font_size_max = 18.      # maximum font size
+    #edge_size_scale = 4.     # edge size scale factor
+    #edge_arr_scale = 8.      # edge arrow size scale factor
+    #edge_radius = 0.15       # edge radius for fancy edges
 
-    # create figure object
-    fig = plt.figure()
-    fig.patch.set_facecolor(kwargs['bg_color'])
-    ax = fig.add_subplot(111)
-    ax.axis('off')
-    plt.axes().set_aspect('equal', 'box')
+    ## create figure object
+    #fig = plt.figure()
+    #fig.patch.set_facecolor(kwargs['bg_color'])
+    #ax = fig.add_subplot(111)
+    #ax.axis('off')
+    #plt.axes().set_aspect('equal', 'box')
 
-    # calculate positions
-    # Todo: allow layouts from pygraphviz_layout
-    layout = kwargs['layout'].lower()
-    if layout == 'random': pos = networkx.random_layout(graph)
-    elif layout == 'circular': pos = networkx.circular_layout(graph)
-    elif layout == 'shell': pos = networkx.shell_layout(graph)
-    elif layout == 'spring': pos = networkx.spring_layout(graph)
-    elif layout == 'spectral': pos = networkx.spectral_layout(graph)
-    else: pos = networkx.spring_layout(graph)
+    ## calculate positions
+    ## Todo: allow layouts from pygraphviz_layout
+    #layout = kwargs['layout'].lower()
+    #if layout == 'random': pos = networkx.random_layout(graph)
+    #elif layout == 'circular': pos = networkx.circular_layout(graph)
+    #elif layout == 'shell': pos = networkx.shell_layout(graph)
+    #elif layout == 'spring': pos = networkx.spring_layout(graph)
+    #elif layout == 'spectral': pos = networkx.spectral_layout(graph)
+    #else: pos = networkx.spring_layout(graph)
 
-    # calculate sizes of nodes, fonts and lines depending on graph size
-    n_count = float(len(graph))
-    n_size = max(node_size_max,
-        node_size_scale * node_size_max / n_count)
-    n_radius = numpy.sqrt(n_size) / 480.
-    f_size = font_size_max * numpy.sqrt(n_size / node_size_max)
-    n_fontmax = f_size * 0.9
-    line_width = 2. / n_count
-    edge_line_width = edge_size_scale / numpy.sqrt(n_count)
+    ## calculate sizes of nodes, fonts and lines depending on graph size
+    #n_count = float(len(graph))
+    #n_size = max(node_size_max,
+        #node_size_scale * node_size_max / n_count)
+    #n_radius = numpy.sqrt(n_size) / 480.
+    #f_size = font_size_max * numpy.sqrt(n_size / node_size_max)
+    #n_fontmax = f_size * 0.9
+    #line_width = 2. / n_count
+    #edge_line_width = edge_size_scale / numpy.sqrt(n_count)
 
-    # draw nodes
-    for node, attr in graph.nodes(data = True):
-        label = attr['label']
+    ## draw nodes
+    #for node, attr in graph.nodes(data = True):
+        #label = attr['label']
 
-        # calculate node fontsize depending on label
-        cl_label = label.replace('{', '').replace('}', '')
-        if '_' in cl_label: len_label = len('_'.split(cl_label)[0]) \
-            + 0.5 * len('_'.split(cl_label)[0])
-        else: len_label = len(cl_label)
-        node_font_size = n_fontmax / numpy.sqrt(len_label)
+        ## calculate node fontsize depending on label
+        #cl_label = label.replace('{', '').replace('}', '')
+        #if '_' in cl_label: len_label = len('_'.split(cl_label)[0]) \
+            #+ 0.5 * len('_'.split(cl_label)[0])
+        #else: len_label = len(cl_label)
+        #node_font_size = n_fontmax / numpy.sqrt(len_label)
 
-        # set colors (backcolor and facecolor)
-        backcolor = color(attr['color'])
-        facecolor = color('black')
+        ## set colors (backcolor and facecolor)
+        #backcolor = color(attr['color'])
+        #facecolor = color('black')
 
-        # draw node
-        networkx.draw_networkx_nodes(graph, pos,
-            node_size = n_size,
-            linewidths = line_width,
-            nodelist = [node],
-            node_shape = 'o',
-            node_color = backcolor)
+        ## draw node
+        #networkx.draw_networkx_nodes(graph, pos,
+            #node_size = n_size,
+            #linewidths = line_width,
+            #nodelist = [node],
+            #node_shape = 'o',
+            #node_color = backcolor)
 
-        # draw node label
-        networkx.draw_networkx_labels(graph, pos,
-            font_size = node_font_size,
-            labels = {node: label},
-            font_color = facecolor,
-            font_weight = 'normal')
+        ## draw node label
+        #networkx.draw_networkx_labels(graph, pos,
+            #font_size = node_font_size,
+            #labels = {node: label},
+            #font_color = facecolor,
+            #font_weight = 'normal')
 
-        # patch node for edges
-        c = matplotlib.patches.Circle(pos[node],
-            radius = n_radius, alpha = 0.)
-        ax.add_patch(c)
-        graph.node[node]['patch'] = c
+        ## patch node for edges
+        #c = matplotlib.patches.Circle(pos[node],
+            #radius = n_radius, alpha = 0.)
+        #ax.add_patch(c)
+        #graph.node[node]['patch'] = c
 
-    # draw edges
-    seen = {}
-    for (u, v, attr) in graph.edges(data = True):
-        n1 = graph.node[u]['patch']
-        n2 = graph.node[v]['patch']
-        rad = edge_radius
-        linewidth = edge_line_width * attr['weight']
-        linecolor = list(color(attr['color']))
+    ## draw edges
+    #seen = {}
+    #for (u, v, attr) in graph.edges(data = True):
+        #n1 = graph.node[u]['patch']
+        #n2 = graph.node[v]['patch']
+        #rad = edge_radius
+        #linewidth = edge_line_width * attr['weight']
+        #linecolor = list(color(attr['color']))
 
-        if (u, v) in seen:
-            rad = seen.get((u, v))
-            rad = -(rad + float(numpy.sign(rad)) * 0.2)
+        #if (u, v) in seen:
+            #rad = seen.get((u, v))
+            #rad = -(rad + float(numpy.sign(rad)) * 0.2)
 
-        arrow = matplotlib.patches.FancyArrowPatch(
-            posA = n1.center,
-            posB = n2.center,
-            patchA = n1,
-            patchB = n2,
-            arrowstyle = '-|>',
-            connectionstyle = 'arc3,rad=%s' % rad,
-            mutation_scale = edge_arr_scale,
-            linewidth = linewidth,
-            color = linecolor)
+        #arrow = matplotlib.patches.FancyArrowPatch(
+            #posA = n1.center,
+            #posB = n2.center,
+            #patchA = n1,
+            #patchB = n2,
+            #arrowstyle = '-|>',
+            #connectionstyle = 'arc3,rad=%s' % rad,
+            #mutation_scale = edge_arr_scale,
+            #linewidth = linewidth,
+            #color = linecolor)
 
-        seen[(u, v)] = rad
-        ax.add_patch(arrow)
+        #seen[(u, v)] = rad
+        #ax.add_patch(arrow)
 
-    return True
+    #return True
 
-def layergraph(graph,
-        graph_layout       = 'multilayer',
-        show_legend        = False,
-        legend_fontsize    = 9.0,
-        title              = None,
-        show_title         = False,
-        title_fontsize     = 16.,
-        direction          = 'right',
-        figure_padding     = (0.1, 0.1, 0.1, 0.1),
+def graph(graph,
         figure_size        = (6.4, 4.8),
         dpi                = None,
+        figure_padding     = (0.1, 0.1, 0.1, 0.1),
         bg_color           = 'none',
+        usetex             = False,
+        show_title         = False,
+        title              = None,
+        title_fontsize     = 14.,
+        show_legend        = False,
+        legend_fontsize    = 9.0,
+        graph_layout       = 'multilayer',
+        direction          = 'right',
         node_style         = 'o',
         edge_style         = '-|>',
-        edge_arrow_scale   = 12.0,
         edge_width_enabled = True,
         edge_curvature     = 1.0,
         **kwargs):
-    """Plot graph with layered layout.
+    """Plot graph.
 
     Args:
-        graph: nemoa graph instance from nemoa network instance
+        graph: networkx graph instance
 
     Kwargs:
         figure_size (tuple): # (11.69,8.27) for A4
@@ -267,25 +270,44 @@ def layergraph(graph,
 
     try: import numpy
     except ImportError: raise ImportError(
-        "layergraph() requires numpy: https://scipy.org/")
+        "nemoa.common.plot.graph() requires numpy: "
+        "https://scipy.org")
     try: import networkx as nx
     except ImportError: raise ImportError(
-        "layergraph() requires networkx: https://networkx.github.io/")
+        "nemoa.common.plot.graph() requires networkx: "
+        "https://networkx.github.io")
     try:
         import matplotlib
         import matplotlib.pyplot as plt
     except ImportError: raise ImportError(
-        "layergraph() requires matplotlib: https://matplotlib.org/")
+        "nemoa.common.plot.graph() requires matplotlib: "
+        "https://matplotlib.org")
     import nemoa.common.graph as nmgraph
     import nemoa.common.text as nmtext
     import nemoa.common.dict as nmdict
 
-    # create figure object
-    fig = plt.figure(figsize = figure_size, dpi = dpi)
-    fig.patch.set_facecolor(bg_color)
-    figsize = fig.get_size_inches() * fig.dpi
+    # find (disconected) complexes in graph
+    graphs = list(nx.connected_component_subgraphs(
+        graph.to_undirected()))
+    if len(graphs) > 1:
+        nemoa.log('note', '%i complexes found' % (len(graphs)))
+    for i in xrange(len(graphs)):
+        for n in graphs[i].nodes(): graph.node[n]['complex'] = i
+
+    # common matplotlib settings
+    matplotlib.rc('text', usetex = usetex)
+    matplotlib.rc('font', family = 'sans-serif')
+
+    # close previous figures and create figure object
+    plt.close('all')
+    fig = plt.figure(
+        figsize   = figure_size,
+        dpi       = dpi,
+        facecolor = bg_color)
+    #fig.patch.set_facecolor(bg_color)
     ax = fig.add_subplot(111)
     ax.set_autoscale_on(False)
+    figsize = fig.get_size_inches() * fig.dpi
     ax.set_xlim(0., figsize[0])
     ax.set_ylim(0., figsize[1])
     ax.set_aspect('equal', 'box')
@@ -382,7 +404,7 @@ def layergraph(graph,
             patchB          = nodeB,
             arrowstyle      = edge_style,
             connectionstyle = 'arc3,rad=%s' % rad,
-            mutation_scale  = linewidth * edge_arrow_scale,
+            mutation_scale  = linewidth * 12.,
             linewidth       = linewidth,
             color           = color(data.get('color'), 'black'),
             alpha           = alpha )

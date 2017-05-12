@@ -144,32 +144,41 @@ class Graph:
     settings = None
     default = {
         'fileformat': 'pdf',
-        'dpi': 300,
-        'show_title': True,
-        'title': None,
+        'figure_size': (6.4, 4.8),
+        'dpi': None,
         'bg_color': 'none',
-        'graph_caption': True,
+        'usetex': False,
+        'show_title': False,
+        'title': None,
+        'title_fontsize': 14.0,
+        'show_legend': False,
+        'legend_fontsize': 9.0,
+        'graph_layout': 'spring',
+        'node_groups': {
+            'source': {
+                'color': 'marine blue',
+                'font_color': 'white',
+                'border_color': 'dark navy'},
+            'target': {
+                'color': 'light grey',
+                'font_color': 'dark grey',
+                'border_color': 'grey'},
+            'nexus': {
+                'color': 'light grey',
+                'font_color': 'dark grey',
+                'border_color': 'grey'} },
+        #'graph_caption': True,
         'units': (None, None),
         'relation': 'induction',
         'preprocessing': None,
         'measure': 'error',
         'statistics': 10000,
         'transform': '',
-        'normalize_weights': 'auto',
+        'edge_normalize': 'auto',
         'sign': None,
         'filter': None,
         'cutoff': 0.5,
-        'node_caption': 'accuracy',
-        'layout': 'spring',
-        'source_bg_color': 'lb1-bg',
-        'source_font_color': 'lb1-font',
-        'source_border_color': 'lb1-font',
-        'target_bg_color': 'lb1-bg',
-        'target_font_color': 'lb1-font',
-        'target_border_color': 'lb1-font',
-        'nexus_bg_color': 'lb1-bg',
-        'nexus_font_color': 'lb1-font',
-        'nexus_border_color': 'lb1-font' }
+        'node_caption': 'accuracy' }
 
     def __init__(self, **kwargs):
         self.settings = nemoa.common.dict.merge(kwargs, self.default)
@@ -216,9 +225,9 @@ class Graph:
         bound = self.settings['cutoff'] * F['std']
         edges = [edge for edge in edges if not -bound < F[edge] < bound]
         if len(edges) == 0:
-            return nemoa.log('warning', """could not create relation
-                graph: no relation passed filter
-                (threshold = %.2f)!""" % bound)
+            return nemoa.log('warning',
+                "could not create relation graph:"
+                "no relation passed threshold (%.2f)!" % bound)
 
         # calculate edge signs from 'sign' relation
         # default: use the same relation, as used for weights
@@ -233,75 +242,65 @@ class Graph:
                 statistics = self.settings['statistics'])
         if not isinstance(SR, dict):
             return nemoa.log('error',
-                """could not create relation graph:
-                invalid sign relation!""")
+                "could not create relation graph: "
+                "invalid sign relation!")
         S = {edge: 2. * (float(SR[edge] > 0.) - 0.5) for edge in edges}
 
-        # create graph and set name
+        # create graph and set attributes
         graph = networkx.DiGraph(name = rel_about['name'])
 
         # add edges and edge attributes to graph
-        if self.settings['normalize_weights'] in [None, 'auto']:
+        if self.settings['edge_normalize'] in [None, 'auto']:
             normalize = not rel_about['normal']
-        elif self.settings['normalize_weights'] in [True, False]:
-            normalize = self.settings['normalize_weights']
+        elif self.settings['edge_normalize'] in [True, False]:
+            normalize = self.settings['edge_normalize']
         else: return nemoa.log('error',
-            """could not create relation graph:
-            invalid value for parameter 'normalize_weights'!""")
+            "could not create relation graph: "
+            "invalid value for parameter 'edge_normalize'!""")
 
-        srclabels = []
-        for src in units[0]:
-            if ':' in src: srclabels.append(src.split(':')[1])
-            else: srclabels.append(src)
-        tgtlabels = []
-        for tgt in units[1]:
-            if ':' in tgt: tgtlabels.append(tgt.split(':')[1])
-            else: tgtlabels.append(tgt)
+        # add edges with attributes
+        for (u, v) in edges:
+            if u == v: continue
+            weight = numpy.absolute(W[(u, v)] / W['std'] \
+                if normalize else W[(u, v)])
+            color = {1: 'green', 0: 'black', -1: 'red'}[S[(u, v)]]
+            graph.add_edge(u, v, weight = weight, color = color)
 
-        for edge in edges:
-            src, tgt = edge
-            if ':' in src: src = src.split(':')[1]
-            if ':' in tgt: tgt = tgt.split(':')[1]
-            # prevent loop edges
-            if src == tgt: continue
+        # normalize weights (optional)
+        if normalize:
+            mean = numpy.mean([data.get('weight', 0.) \
+                for (u, v, data) in graph.edges(data = True)])
+            for (u, v, data) in graph.edges(data = True):
+                graph.edge[u][v]['weight'] = data['weight'] / mean
 
-            weight = abs(W[edge] / W['std'] if normalize else W[edge])
-            color = {1: 'green', 0: 'black', -1: 'red'}[S[edge]]
+        # update node attributes
+        for n in graph.nodes():
+            attr = model.network.get('node', n)
+            params = attr.get('params', {})
+            group = None
+            issrc, istgt = n in units[0], n in units[1]
+            if issrc and istgt: group = 'nexus'
+            elif issrc and not istgt: group = 'source'
+            elif not issrc and istgt: group = 'target'
+            else: group = None
+            graph.node[n].update({
+                'label': params.get('label'),
+                'layer': params.get('layer'),
+                'group': params.get('layer'),
+                'type':  group})
+            layout = self.settings['node_groups'].get(group, {})
+            graph.node[n].update(layout)
 
-            graph.add_edge(src, tgt, weight = weight, color = color)
-
-            if not 'label' in graph.node[src]:
-                node = model.network.get('node', edge[0])
-                label = nemoa.common.text.labelfomat(
-                    node['params']['label'])
-                graph.node[src]['label'] = label
-                graph.node[src]['layer'] = node['params']['layer']
-                if src in tgtlabels:
-                    graph.node[src]['type'] = 'source'
-                    graph.node[src]['color'] \
-                        = self.settings['source_bg_color']
-                else:
-                    graph.node[src]['type'] = 'nexus'
-                    graph.node[src]['color'] \
-                        = self.settings['nexus_bg_color']
-
-            if not 'label' in graph.node[tgt]:
-                node = model.network.get('node', edge[1])
-                label = nemoa.common.text.labelfomat(
-                    node['params']['label'])
-                graph.node[tgt]['label'] = label
-                graph.node[tgt]['layer'] = node['params']['layer']
-                graph.node[tgt]['type'] = 'target'
-                graph.node[tgt]['color'] \
-                        = self.settings['target_bg_color']
-
-        # find (disconected) complexes in graph
-        graphs = list(networkx.connected_component_subgraphs(
-            graph.to_undirected()))
-        if len(graphs) > 1:
-            nemoa.log('note', '%i complexes found' % (len(graphs)))
-        for i in xrange(len(graphs)):
-            for n in graphs[i].nodes(): graph.node[n]['complex'] = i
+        # graph layout specific attributes
+        graph_layout = self.settings.get('graph_layout', None)
+        if graph_layout == 'multilayer':
+            for node in graph.nodes():
+                attr = model.network.get('node', node)
+                params = attr.get('params', {})
+                graph.node[node].update({
+                    'layer': params.get('layer'),
+                    'layer_id': params.get('layer_id'),
+                    'layer_sub_id': params.get('layer_sub_id')})
 
         # create plot
         return nemoa.common.plot.graph(graph, **self.settings)

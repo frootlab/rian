@@ -68,15 +68,29 @@ def nx_get_multilayer_layout(graph, direction = 'right',
     if len(graph) == 1: return { graph.nodes()[0]: (0.5, 0.5) }
 
     # create node stack as list of lists
-    layers = graph.graph['params']['layer']
-    nodes  = {n: data for (n, data) in graph.nodes(data = True)}
-    count  = {layer: 0 for layer in layers}
-    for data in nodes.values(): count[data['params']['layer']] += 1
-    stack = [range(count[layer]) for layer in layers]
-    for node, data in nodes.items():
-        l = data['params']['layer_id']
-        n = data['params']['layer_sub_id']
-        stack[l][n] = node
+    # sorted by the node attributes layer_id and layer_sub_id
+    sort = {}
+    for node, data in graph.nodes(data = True):
+        l = (data.get('layer'), data.get('layer_id'))
+        n = (node, data.get('layer_sub_id'))
+        if not l in sort: sort[l] = [n]
+        else: sort[l].append(n)
+    stack = []
+    layers = []
+    for (layer, lid) in sorted(sort.keys(), key = lambda x: x[1]):
+        stack.append([node for (node, nid) in \
+            sorted(sort.get((layer, lid), []), key = lambda x: x[1])])
+        layers.append(layer)
+
+    
+    #nodes  = {n: data for (n, data) in graph.nodes(data = True)}
+    #count  = {layer: 0 for layer in layers}
+    #for data in nodes.values(): count[data['layer']] += 1
+    #stack = [range(count[layer]) for layer in layers]
+    #print stack
+    #for node, data in nodes.items():
+        #print node, data
+        #stack[data['layer_id']][data['layer_sub_id']] = node
 
     # sort node stack to minimize the euclidean distances
     # of connected nodes

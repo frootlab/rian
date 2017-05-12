@@ -342,12 +342,11 @@ class Network(nemoa.common.classes.Metadata):
     def _get_algorithm(self, algorithm = None, *args, **kwargs):
         """Get algorithm."""
         algorithms = self._get_algorithms(*args, **kwargs)
-        if not algorithm in algorithms: return None
-        return algorithms[algorithm]
+        return algorithms.get(algorithm, None)
 
     def _get_node(self, node):
         """Return network information of single node."""
-        return self._graph.node[node]
+        return self._graph.node.get(node, None)
 
     def _get_nodes(self, groupby = None, **kwargs):
         """Get nodes of network.

@@ -94,14 +94,17 @@ class Graph:
     settings = None
     default = {
         'fileformat': 'pdf',
+        'figure_size': (6.4, 4.8),
         'dpi': None,
+        'bg_color': 'none',
         'usetex': False,
         'show_title': False,
-        'show_legend': False,
         'title': None,
+        'title_fontsize': 14.0,
+        'show_legend': False,
+        'legend_fontsize': 9.0,
         'graph_layout': 'multilayer',
-        'graph_caption': 'accuracy',
-        'bg_color': 'none',
+        #'graph_caption': 'accuracy',
         'direction': 'right',
         'node_caption': 'accuracy',
         'node_groupby': 'visible',
@@ -142,12 +145,10 @@ class Graph:
         threshold = self.settings.get('edge_threshold', None)
         transform = self.settings.get('edge_transform', None)
 
-        # calculate maximum weight for normalization (optional)
+        # calculate mean weight for normalization (optional)
         if bool(normalize):
-            max_weight = 0.0
-            for (u, v) in graph.edges():
-                weight = graph.edge[u][v]['params'].get(edgeattr, 0.)
-                if weight > max_weight: max_weight = weight
+            mean = numpy.mean([data['params'].get(edgeattr, 0.) \
+                for (u, v, data) in graph.edges(data = True)])
 
         for (u, v) in graph.edges():
             weight = graph.edge[u][v]['params'].get(edgeattr, 0.)
@@ -170,7 +171,7 @@ class Graph:
                 graph.edge[u][v]['caption'] = caption
 
             # normalize weights (optional)
-            if bool(normalize): weight /= max_weight
+            if bool(normalize): weight /= mean
 
             # transform weights (optional)
             if transform == 'softstep': weight = nmmath.softstep(weight)
@@ -202,26 +203,27 @@ class Graph:
             color = layout.get('color', 'white')
             font_color = layout.get('font_color', 'black')
             border_color = layout.get('border_color', 'black')
-            for node in groups[group]:
-                node_label = nodes[node]['params'].get('label', str(node))
-                graph.node[node]['label'] = node_label
-                graph.node[node]['color'] = color
-                graph.node[node]['group'] = group_label
-                graph.node[node]['font_color'] = font_color
-                graph.node[node]['border_color'] = border_color
+            for node in groups.get(group, []):
+                node_params = nodes[node].get('params')
+                graph.node[node].update({
+                    'label': node_params.get('label', str(node)),
+                    'color': color,
+                    'group': group_label,
+                    'font_color': font_color,
+                    'border_color': border_color })
 
         # prepare parameters
         if self.settings.get('title') == None:
             self.settings['title'] = network.fullname.title()
 
-        # prepare graph layout specific parameters
+        # graph layout specific attributes and parameters
         graph_layout = self.settings.get('graph_layout', None)
         if graph_layout == 'multilayer':
-            if not 'graph_layout_minimize' in self.settings:
-                self.settings['graph_layout_minimize'] = 'weight'
-            if not 'graph_layout_minimize' in self.settings:
-                self.settings['graph_layout_direction'] = \
-                    self.settings.get('direction', 'right')
+            for node, data in graph.nodes(data = True):
+                graph.node[node].update({
+                    'layer': data['params'].get('layer'),
+                    'layer_id': data['params'].get('layer_id'),
+                    'layer_sub_id': data['params'].get('layer_sub_id')})
 
         # plot graph
-        return nmplot.layergraph(graph, **self.settings)
+        return nmplot.graph(graph, **self.settings)
