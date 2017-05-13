@@ -154,19 +154,23 @@ class Graph:
         'show_legend': False,
         'legend_fontsize': 9.0,
         'graph_layout': 'spring',
-        'node_groups': {
+        'node_layouts': {
             'source': {
                 'color': 'marine blue',
                 'font_color': 'white',
                 'border_color': 'dark navy'},
-            'target': {
+            'sink': {
                 'color': 'light grey',
                 'font_color': 'dark grey',
                 'border_color': 'grey'},
-            'nexus': {
+            'isolated': {
                 'color': 'light grey',
                 'font_color': 'dark grey',
-                'border_color': 'grey'} },
+                'border_color': 'grey'},
+            'transit': {
+                'color': 'marine blue',
+                'font_color': 'white',
+                'border_color': 'dark navy'} },
         #'graph_caption': True,
         'units': (None, None),
         'relation': 'induction',
@@ -186,24 +190,22 @@ class Graph:
     def create(self, model):
 
         # get units and edges
-        units = self.settings['units']
+        units = self.settings.get('units')
         edges = [(i, o) for i in units[0] for o in units[1]
             if not o == i]
 
         # calculate edge weights from 'weight' relation
-        W = model.evaluate('system', 'relations',
-            self.settings['relation'],
+        relarg = self.settings.get('relation', '')
+        rel_name = nemoa.common.text.split_kwargs(relarg)[0]
+        W = model.evaluate('system', 'relations', rel_name,
             preprocessing = self.settings['preprocessing'],
             measure = self.settings['measure'],
             statistics = self.settings['statistics'],
             transform = self.settings['transform'])
-        if not isinstance(W, dict):
-            return nemoa.log('error', """could not create relation
-                graph: invalid weight relation
-                '%s'!""" % self.settings['relation'])
-        relname = nemoa.common.text.split_kwargs(
-            self.settings['relation'])[0]
-        rel_about = model.system.get('algorithm', relname,
+        if not isinstance(W, dict): return nemoa.log('error',
+            "could not create relation graph: "
+            "invalid weight relation '%s'" % rel_name)
+        rel_about = model.system.get('algorithm', rel_name,
             category = ('system', 'relation', 'evaluation'))
 
         # calculate edge filter from 'filter' relation
@@ -224,47 +226,76 @@ class Graph:
         # and update list of edges
         bound = self.settings['cutoff'] * F['std']
         edges = [edge for edge in edges if not -bound < F[edge] < bound]
-        if len(edges) == 0:
-            return nemoa.log('warning',
-                "could not create relation graph:"
-                "no relation passed threshold (%.2f)!" % bound)
+        if len(edges) == 0: return nemoa.log('warning',
+            "could not create relation graph:"
+            "no relation passed threshold (%.2f)!" % bound)
 
         # calculate edge signs from 'sign' relation
         # default: use the same relation, as used for weights
-        if not self.settings['sign'] \
-            or self.settings['sign'] == self.settings['relation']:
-            SR = W
+        rel_sign_name = self.settings.get('sign')
+        if rel_sign_name == None:
+            rel_sign_name = rel_name
+            rel_sign_about = rel_about
         else:
-            SR = model.evaluate('system', 'relations',
-                self.settings['sign'],
+            rel_sign_about = model.system.get(
+                'algorithm', rel_sign_name,
+                category = ('system', 'relation', 'evaluation'))
+        signed = rel_sign_about.get('signed', False)
+        if signed:
+            if rel_sign_name == rel_name: sr = W
+            else: sr = model.evaluate('system', 'relations',
+                rel_sign_name,
                 preprocessing = self.settings['preprocessing'],
                 measure = self.settings['measure'],
                 statistics = self.settings['statistics'])
-        if not isinstance(SR, dict):
-            return nemoa.log('error',
+            if not isinstance(sr, dict): return nemoa.log('error',
                 "could not create relation graph: "
                 "invalid sign relation!")
-        S = {edge: 2. * (float(SR[edge] > 0.) - 0.5) for edge in edges}
+            S = {edge: 2. * (float(sr[edge] > 0.) - 0.5) \
+                for edge in edges}
 
         # create graph and set attributes
-        graph = networkx.DiGraph(name = rel_about['name'])
+        graph = networkx.DiGraph(name = rel_about.get('name'))
 
         # add edges and edge attributes to graph
         if self.settings['edge_normalize'] in [None, 'auto']:
-            normalize = not rel_about['normal']
+            normalize = not rel_about.get('normal')
         elif self.settings['edge_normalize'] in [True, False]:
             normalize = self.settings['edge_normalize']
         else: return nemoa.log('error',
             "could not create relation graph: "
-            "invalid value for parameter 'edge_normalize'!""")
+            "invalid value for parameter 'edge_normalize'")
+
+        # add nodes with attributes
+        nodes = units[0] + units[1]
+        for node in nodes:
+            attr = model.network.get('node', node)
+            if attr == None: continue
+            params = attr.get('params', {})
+            graph.add_node(node,
+                label = params.get('label'),
+                group = params.get('layer'))
+            issrc, istgt = node in units[0], node in units[1]
+            if issrc and istgt: node_type = 'transit'
+            elif issrc and not istgt: node_type = 'source'
+            elif not issrc and istgt: node_type = 'sink'
+            else: node_type = 'isolated'
+            layout = self.settings['node_layouts'].get(node_type, {})
+            print layout
+            graph.node[node].update(layout)
 
         # add edges with attributes
         for (u, v) in edges:
             if u == v: continue
-            weight = numpy.absolute(W[(u, v)] / W['std'] \
-                if normalize else W[(u, v)])
-            color = {1: 'green', 0: 'black', -1: 'red'}[S[(u, v)]]
-            graph.add_edge(u, v, weight = weight, color = color)
+            value = W[(u, v)]
+            weight = numpy.absolute(value / W['std'] \
+                if normalize else value)
+            if signed: color = \
+                {1: 'green', 0: 'black', -1: 'red'}[S.get((u, v))]
+            else: color = 'black'
+            graph.add_edge(u, v,
+                weight = weight,
+                color = color)
 
         # normalize weights (optional)
         if normalize:
@@ -273,27 +304,9 @@ class Graph:
             for (u, v, data) in graph.edges(data = True):
                 graph.edge[u][v]['weight'] = data['weight'] / mean
 
-        # update node attributes
-        for n in graph.nodes():
-            attr = model.network.get('node', n)
-            params = attr.get('params', {})
-            group = None
-            issrc, istgt = n in units[0], n in units[1]
-            if issrc and istgt: group = 'nexus'
-            elif issrc and not istgt: group = 'source'
-            elif not issrc and istgt: group = 'target'
-            else: group = None
-            graph.node[n].update({
-                'label': params.get('label'),
-                'layer': params.get('layer'),
-                'group': params.get('layer'),
-                'type':  group})
-            layout = self.settings['node_groups'].get(group, {})
-            graph.node[n].update(layout)
-
         # graph layout specific attributes
         graph_layout = self.settings.get('graph_layout', None)
-        if graph_layout == 'multilayer':
+        if graph_layout == 'layer':
             for node in graph.nodes():
                 attr = model.network.get('node', node)
                 params = attr.get('params', {})

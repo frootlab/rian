@@ -103,7 +103,7 @@ class Graph:
         'title_fontsize': 14.0,
         'show_legend': False,
         'legend_fontsize': 9.0,
-        'graph_layout': 'multilayer',
+        'graph_layout': 'layer',
         #'graph_caption': 'accuracy',
         'direction': 'right',
         'node_caption': 'accuracy',
@@ -191,7 +191,7 @@ class Graph:
         # create node attributes 'group', 'caption',
         # 'color', 'font_color', 'border_color'
         groupby = self.settings.get('node_groupby', None)
-        groups = nmgraph.nx_get_groups(graph, param = groupby)
+        groups = nmgraph.get_groups(graph, param = groupby)
         nodes = {n: data for n, data in graph.nodes(data = True)}
         for group in sorted(groups.keys()):
             if group == None: continue
@@ -218,12 +218,13 @@ class Graph:
 
         # graph layout specific attributes and parameters
         graph_layout = self.settings.get('graph_layout', None)
-        if graph_layout == 'multilayer':
+        if graph_layout == 'layer':
             for node, data in graph.nodes(data = True):
+                params = data.get('params', {})
                 graph.node[node].update({
-                    'layer': data['params'].get('layer'),
-                    'layer_id': data['params'].get('layer_id'),
-                    'layer_sub_id': data['params'].get('layer_sub_id')})
+                    'layer': params.get('layer'),
+                    'layer_id': params.get('layer_id'),
+                    'layer_sub_id': params.get('layer_sub_id')})
 
         # plot graph
         return nmplot.graph(graph, **self.settings)

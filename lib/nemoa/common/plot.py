@@ -4,12 +4,7 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-#import matplotlib
-#import nemoa
-#import networkx
-#import numpy
-
-def color(*args):
+def get_color(*args):
     """Convert color name of XKCD color name survey to RGBA tuple.
 
     Args:
@@ -20,33 +15,31 @@ def color(*args):
 
     """
 
-    import matplotlib.colors
+    try: import matplotlib.colors as colors
+    except ImportError: raise ImportError(
+        "nemoa.common.plot.get_color() requires matplotlib: "
+        "https://matplotlib.org")
 
     if len(args) == 0:
-        clist = matplotlib.colors.get_named_colors_mapping().keys()
+        clist = colors.get_named_colors_mapping().keys()
         return sorted([cname[5:].title() \
             for cname in clist if cname[:5] == 'xkcd:'])
 
-    if args[0] == 'alpha': return (0., 0., 0., 0.)
-
-    rgba = None
+    rgb = None
     for cname in args:
         try:
-            rgba = matplotlib.colors.to_rgba('xkcd:%s' % cname)
+            rgb = colors.to_rgb('xkcd:%s' % cname)
             break
         except ValueError:
             continue
-    return rgba
-
-def configure(**kwargs):
-    return False
+    return rgb
 
 def heatmap(array, **kwargs):
 
     import matplotlib.pyplot as plt
     import matplotlib.cm
     import nemoa.common.text
-    import numpy
+    import numpy as np
 
     # create figure object
     fig = plt.figure()
@@ -73,10 +66,10 @@ def heatmap(array, **kwargs):
     fontsize = min(max_font_size, \
         400. / float(max(len(x_labels), len(y_labels))))
     plt.xticks(
-        numpy.arange(len(x_labels)) + 0.5,
+        np.arange(len(x_labels)) + 0.5,
         tuple(x_labels), fontsize = fontsize, rotation = 65)
     plt.yticks(
-        len(y_labels) - numpy.arange(len(y_labels)) - 0.5,
+        len(y_labels) - np.arange(len(y_labels)) - 0.5,
         tuple(y_labels), fontsize = fontsize)
 
     # create colorbar
@@ -106,130 +99,24 @@ def histogram(array, **kwargs):
 
     return True
 
-#def graph(graph, **kwargs):
-
-    #import matplotlib.pyplot as plt
-    #import matplotlib.patches
-    #import networkx
-    #import numpy
-
-    #node_size_max = 800.     # maximum node size
-    #node_size_scale = 1.85   # node size scale factor
-    #font_size_max = 18.      # maximum font size
-    #edge_size_scale = 4.     # edge size scale factor
-    #edge_arr_scale = 8.      # edge arrow size scale factor
-    #edge_radius = 0.15       # edge radius for fancy edges
-
-    ## create figure object
-    #fig = plt.figure()
-    #fig.patch.set_facecolor(kwargs['bg_color'])
-    #ax = fig.add_subplot(111)
-    #ax.axis('off')
-    #plt.axes().set_aspect('equal', 'box')
-
-    ## calculate positions
-    ## Todo: allow layouts from pygraphviz_layout
-    #layout = kwargs['layout'].lower()
-    #if layout == 'random': pos = networkx.random_layout(graph)
-    #elif layout == 'circular': pos = networkx.circular_layout(graph)
-    #elif layout == 'shell': pos = networkx.shell_layout(graph)
-    #elif layout == 'spring': pos = networkx.spring_layout(graph)
-    #elif layout == 'spectral': pos = networkx.spectral_layout(graph)
-    #else: pos = networkx.spring_layout(graph)
-
-    ## calculate sizes of nodes, fonts and lines depending on graph size
-    #n_count = float(len(graph))
-    #n_size = max(node_size_max,
-        #node_size_scale * node_size_max / n_count)
-    #n_radius = numpy.sqrt(n_size) / 480.
-    #f_size = font_size_max * numpy.sqrt(n_size / node_size_max)
-    #n_fontmax = f_size * 0.9
-    #line_width = 2. / n_count
-    #edge_line_width = edge_size_scale / numpy.sqrt(n_count)
-
-    ## draw nodes
-    #for node, attr in graph.nodes(data = True):
-        #label = attr['label']
-
-        ## calculate node fontsize depending on label
-        #cl_label = label.replace('{', '').replace('}', '')
-        #if '_' in cl_label: len_label = len('_'.split(cl_label)[0]) \
-            #+ 0.5 * len('_'.split(cl_label)[0])
-        #else: len_label = len(cl_label)
-        #node_font_size = n_fontmax / numpy.sqrt(len_label)
-
-        ## set colors (backcolor and facecolor)
-        #backcolor = color(attr['color'])
-        #facecolor = color('black')
-
-        ## draw node
-        #networkx.draw_networkx_nodes(graph, pos,
-            #node_size = n_size,
-            #linewidths = line_width,
-            #nodelist = [node],
-            #node_shape = 'o',
-            #node_color = backcolor)
-
-        ## draw node label
-        #networkx.draw_networkx_labels(graph, pos,
-            #font_size = node_font_size,
-            #labels = {node: label},
-            #font_color = facecolor,
-            #font_weight = 'normal')
-
-        ## patch node for edges
-        #c = matplotlib.patches.Circle(pos[node],
-            #radius = n_radius, alpha = 0.)
-        #ax.add_patch(c)
-        #graph.node[node]['patch'] = c
-
-    ## draw edges
-    #seen = {}
-    #for (u, v, attr) in graph.edges(data = True):
-        #n1 = graph.node[u]['patch']
-        #n2 = graph.node[v]['patch']
-        #rad = edge_radius
-        #linewidth = edge_line_width * attr['weight']
-        #linecolor = list(color(attr['color']))
-
-        #if (u, v) in seen:
-            #rad = seen.get((u, v))
-            #rad = -(rad + float(numpy.sign(rad)) * 0.2)
-
-        #arrow = matplotlib.patches.FancyArrowPatch(
-            #posA = n1.center,
-            #posB = n2.center,
-            #patchA = n1,
-            #patchB = n2,
-            #arrowstyle = '-|>',
-            #connectionstyle = 'arc3,rad=%s' % rad,
-            #mutation_scale = edge_arr_scale,
-            #linewidth = linewidth,
-            #color = linecolor)
-
-        #seen[(u, v)] = rad
-        #ax.add_patch(arrow)
-
-    #return True
-
 def graph(graph,
-        figure_size        = (6.4, 4.8),
-        dpi                = None,
-        figure_padding     = (0.1, 0.1, 0.1, 0.1),
-        bg_color           = 'none',
-        usetex             = False,
-        show_title         = False,
-        title              = None,
-        title_fontsize     = 14.,
-        show_legend        = False,
-        legend_fontsize    = 9.0,
-        graph_layout       = 'multilayer',
-        direction          = 'right',
-        node_style         = 'o',
-        edge_style         = '-|>',
-        edge_width_enabled = True,
-        edge_curvature     = 1.0,
-        **kwargs):
+    figure_size        = (6.4, 4.8),
+    dpi                = None,
+    figure_padding     = (0.1, 0.1, 0.1, 0.1),
+    bg_color           = 'none',
+    usetex             = False,
+    show_title         = False,
+    title              = None,
+    title_fontsize     = 14.,
+    show_legend        = False,
+    legend_fontsize    = 9.0,
+    graph_layout       = 'layer',
+    direction          = 'right',
+    node_style         = 'o',
+    edge_style         = '-|>',
+    edge_width_enabled = True,
+    edge_curvature     = 1.0,
+    **kwargs):
     """Plot graph.
 
     Args:
@@ -249,10 +136,10 @@ def graph(graph,
             False: edges are black
         edge_poscolor (string): name of color for edges with
             positive signed attribute. For a full list of specified
-            color names see nemoa.common.plot.color()
+            color names see nemoa.common.plot.get_color()
         edge_negcolor (string): name of color for edges with
             negative signed attribute. For a full list of specified
-            color names see nemoa.common.plot.color()
+            color names see nemoa.common.plot.get_color()
         edge_curvature (float): value within the intervall [-1, 1],
             that determines the curvature of the edges.
             Thereby 1 equals max convexity and -1 max concavity.
@@ -268,31 +155,26 @@ def graph(graph,
 
     """
 
-    try: import numpy
-    except ImportError: raise ImportError(
-        "nemoa.common.plot.graph() requires numpy: "
-        "https://scipy.org")
-    try: import networkx as nx
-    except ImportError: raise ImportError(
-        "nemoa.common.plot.graph() requires networkx: "
-        "https://networkx.github.io")
     try:
         import matplotlib
         import matplotlib.pyplot as plt
     except ImportError: raise ImportError(
         "nemoa.common.plot.graph() requires matplotlib: "
         "https://matplotlib.org")
+
+    try: import numpy as np
+    except ImportError: raise ImportError(
+        "nemoa.common.plot.graph() requires numpy: "
+        "https://scipy.org")
+
+    try: import networkx as nx
+    except ImportError: raise ImportError(
+        "nemoa.common.plot.graph() requires networkx: "
+        "https://networkx.github.io")
+
     import nemoa.common.graph as nmgraph
     import nemoa.common.text as nmtext
     import nemoa.common.dict as nmdict
-
-    # find (disconected) complexes in graph
-    graphs = list(nx.connected_component_subgraphs(
-        graph.to_undirected()))
-    if len(graphs) > 1:
-        nemoa.log('note', '%i complexes found' % (len(graphs)))
-    for i in xrange(len(graphs)):
-        for n in graphs[i].nodes(): graph.node[n]['complex'] = i
 
     # common matplotlib settings
     matplotlib.rc('text', usetex = usetex)
@@ -300,11 +182,8 @@ def graph(graph,
 
     # close previous figures and create figure object
     plt.close('all')
-    fig = plt.figure(
-        figsize   = figure_size,
-        dpi       = dpi,
-        facecolor = bg_color)
-    #fig.patch.set_facecolor(bg_color)
+    fig = plt.figure(figsize = figure_size,
+        dpi = dpi, facecolor = bg_color)
     ax = fig.add_subplot(111)
     ax.set_autoscale_on(False)
     figsize = fig.get_size_inches() * fig.dpi
@@ -313,13 +192,12 @@ def graph(graph,
     ax.set_aspect('equal', 'box')
     ax.axis('off')
 
-    # get node positions
-    layout_params = nmdict.section(kwargs, 'graph_layout_')
-    pos = nmgraph.nx_get_layout(graph, layout = graph_layout,
-        scale = figsize, padding = figure_padding, **layout_params)
-
-    # get normal sizes with respect to node positions
-    sizes       = nmgraph.nx_get_normsizes(pos)
+    # get node positions and sizes
+    graph_layout_params = nmdict.section(kwargs, 'graph_layout_')
+    pos = nmgraph.get_layout(graph, layout = graph_layout,
+        size = figsize, padding = figure_padding,
+        **graph_layout_params)
+    sizes       = nmgraph.get_layout_normsize(pos)
     node_size   = sizes.get('node_size', None)
     node_radius = sizes.get('node_radius', None)
     line_width  = sizes.get('line_width', None)
@@ -327,7 +205,7 @@ def graph(graph,
     font_size   = sizes.get('font_size', None)
 
     # get nodes and groups
-    groups = nmgraph.nx_get_groups(graph, attribute = 'group')
+    groups = nmgraph.get_groups(graph, attribute = 'group')
 
     # draw nodes, labeled by groups
     for group in sorted(groups.keys()):
@@ -341,10 +219,10 @@ def graph(graph,
             linewidths = line_width,
             node_size  = node_size,
             node_shape = node_style,
-            node_color = color(refnode.get('color'), 'white'),
+            node_color = get_color(refnode.get('color'), 'white'),
             label      = refnode.get('group', str(group)))
         node_obj.set_edgecolor(
-            color(refnode.get('border_color'), 'black'))
+            get_color(refnode.get('border_color'), 'black'))
 
     # draw node labels
     for node, data in graph.nodes(data = True):
@@ -353,7 +231,7 @@ def graph(graph,
         node_label = data.get('label', str(node).title())
         node_label_format = nmtext.labelfomat(node_label)
         node_label_size = len(node_label.rstrip('1234567890'))
-        font_color = color(data.get('font_color'), 'black')
+        font_color = get_color(data.get('font_color'), 'black')
 
         # draw node label
         nx.draw_networkx_labels(graph, pos,
@@ -371,28 +249,31 @@ def graph(graph,
 
     # draw edges
     seen = {}
-    for u, v, data in graph.edges(data = True):
+    for (u, v, data) in graph.edges(data = True):
         weight = data.get('weight', 1.0)
 
         # calculate edge curvature from node positions
         if (u, v) in seen:
             rad = seen.get((u, v))
-            rad = -(rad + float(numpy.sign(rad)) * .2)
-        elif direction in ['top', 'down']:
-            rad = 2.0 * edge_curvature \
-                * (pos[u][1] - pos[v][1]) * (pos[u][0] - pos[v][0]) \
-                / figsize[0] / figsize[1]
-        elif direction in ['right', 'left']:
-            rad = -2.0 * edge_curvature \
-                * (pos[u][1] - pos[v][1]) * (pos[u][0] - pos[v][0]) \
-                / figsize[0] / figsize[1]
-        else: rad = .0
+            rad = -(rad + float(np.sign(rad)) * .2)
+        else:
+            vec = (np.array(pos[v]) - np.array(pos[u])) \
+                / np.array(figsize)
+            euklid = lambda x: np.sqrt(np.sum(x ** 2))
+            if graph_layout == 'layer':
+                gdir = graph_layout_params.get('direction', 'right')
+                if gdir in ['left', 'right']:
+                    rad = - euklid(vec[1]) * np.sign(vec[1]) / 2.
+                elif gdir in ['up', 'down']:
+                    rad = - euklid(vec[0]) * np.sign(vec[0]) / 2.
+                else: rad = 0.
+            else: rad = - euklid(vec) * np.sign(np.sum(vec)) / 2.
         seen[(u, v)] = rad
 
         # calculate line width and alpha value from edge weight
         if not edge_width_enabled: linewidth = edge_width
-        else: linewidth = numpy.absolute(weight) * edge_width
-        alpha = numpy.amin([numpy.absolute(weight), 1.0])
+        else: linewidth = np.absolute(weight) * edge_width
+        alpha = np.amin([np.absolute(weight), 1.0])
 
         # draw edge
         nodeA = graph.node[u]['patch']
@@ -406,7 +287,7 @@ def graph(graph,
             connectionstyle = 'arc3,rad=%s' % rad,
             mutation_scale  = linewidth * 12.,
             linewidth       = linewidth,
-            color           = color(data.get('color'), 'black'),
+            color           = get_color(data.get('color'), 'black'),
             alpha           = alpha )
         ax.add_patch(arrow)
 

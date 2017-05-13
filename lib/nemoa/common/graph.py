@@ -4,29 +4,30 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-def nx_get_layout(graph, layout = 'spring', scale = None,
-    padding = None, **kwargs):
+def get_layout(graph, layout = 'spring',
+    size = None, padding = None, rotate = None, **kwargs):
     """Calculate positions of nodes, depending on graph layout.
 
     Args:
         graph: networkx graph instance
-    
+
     Kwargs:
         layout (string):
-        scale (tuple or None):
+        size (tuple):
 
     """
 
     try: import networkx as nx
     except ImportError: raise ImportError(
-        "nx_layout() requires networkx: https://networkx.github.io/")
+        "nemoa.common.graph.layout() requires networkx: "
+        "https://networkx.github.io")
 
     # Todo: allow layouts from pygraphviz_layout
-    
+
     if layout == 'spring':
         pos = nx.spring_layout(graph, **kwargs)
-    elif layout == 'multilayer':
-        pos = nx_get_multilayer_layout(graph, **kwargs)
+    elif layout == 'layer':
+        pos = get_layer_layout(graph, **kwargs)
     elif layout == 'random':
         pos = nx.random_layout(graph, **kwargs)
     elif layout == 'circular':
@@ -37,20 +38,20 @@ def nx_get_layout(graph, layout = 'spring', scale = None,
         pos = nx.spectral_layout(graph, **kwargs)
     elif layout == 'fruchterman_reingold':
         pos = nx.fruchterman_reingold_layout(graph, **kwargs)
-    else:
-        raise ValueError("nx_layout() invalid layout.")
-        return None
+    else: raise ValueError(
+        "nemoa.common.graph.layout(): "
+        "'%s' is not a valid graph layout." % layout)
 
-    if isinstance(scale, type(None)): return pos
+    # rescale node positions to given figure size, padding
+    # and rotation angle
+    pos = rescale_layout(pos, size = size, padding = padding,
+        rotate = rotate)
 
-    # rescale node positions to figure size and padding
-    pos = nx_rescale_layout(pos, scale = scale, padding = padding)
- 
     return pos
 
-def nx_get_multilayer_layout(graph, direction = 'right',
+def get_layer_layout(graph, direction = 'right',
     minimize = 'weight'):
-    """Calculate positions for layer layout of multilayer graphs.
+    """Calculate node positions for layer layout.
 
     Args:
         graph: networkx graph instance
@@ -59,10 +60,12 @@ def nx_get_multilayer_layout(graph, direction = 'right',
 
     try: import numpy as np
     except ImportError: raise ImportError(
-        "nx_get_multilayer_layout() requires numpy: https://scipy.org/")
+        "nemoa.common.graph.get_layer_layout() requires numpy: "
+        "https://scipy.org")
 
-    assert nx_is_multilayer(graph), \
-        "nx_get_multilayer_layout() requires networkx multilayer graph"
+    assert is_layered(graph), (
+        "nemoa.common.graph.get_layer_layout(): "
+        "graph is not layered.")
 
     if len(graph) == 0: return {}
     if len(graph) == 1: return { graph.nodes()[0]: (0.5, 0.5) }
@@ -81,16 +84,6 @@ def nx_get_multilayer_layout(graph, direction = 'right',
         stack.append([node for (node, nid) in \
             sorted(sort.get((layer, lid), []), key = lambda x: x[1])])
         layers.append(layer)
-
-    
-    #nodes  = {n: data for (n, data) in graph.nodes(data = True)}
-    #count  = {layer: 0 for layer in layers}
-    #for data in nodes.values(): count[data['layer']] += 1
-    #stack = [range(count[layer]) for layer in layers]
-    #print stack
-    #for node, data in nodes.items():
-        #print node, data
-        #stack[data['layer_id']][data['layer_sub_id']] = node
 
     # sort node stack to minimize the euclidean distances
     # of connected nodes
@@ -124,7 +117,7 @@ def nx_get_multilayer_layout(graph, direction = 'right',
             # repeat until all nodes have positions
             nsel = range(tlen) # node select list
             psel = range(tlen) # position select list
-            sort = [None] * tlen 
+            sort = [None] * tlen
             for i in range(tlen):
                 cmax = np.amax(cost[psel][:, nsel], axis = 0)
                 cmin = np.amin(cost[psel][:, nsel], axis = 0)
@@ -148,7 +141,7 @@ def nx_get_multilayer_layout(graph, direction = 'right',
 
     return pos
 
-def nx_get_normsizes(pos):
+def get_layout_normsize(pos):
     """Calculate normal sizes for given node positions.
 
     Args:
@@ -158,11 +151,12 @@ def nx_get_normsizes(pos):
 
     try: import numpy as np
     except ImportError: raise ImportError(
-        "nx_get_normsizes() requires numpy: https://scipy.org/")
+        "nemoa.common.graph.layout_normsizes() requires numpy: "
+        "https://scipy.org")
 
     # calculate norm scaling
-    scale = nx_get_normscale(pos)
-    
+    scale = get_layout_normscale(pos)
+
     return {
         'node_size':   0.0558 * scale ** 2,
         'node_radius': 23. * (0.01 * scale - 0.2),
@@ -170,7 +164,28 @@ def nx_get_normsizes(pos):
         'edge_width':  0.0066 * scale,
         'font_size':   0.1200 * scale }
 
-def nx_get_groups(graph, attribute = None, param = None):
+def get_subgraphs(graph):
+
+    # Todo
+
+    try: import networkx as nx
+    except ImportError: raise ImportError(
+        "nemoa.common.graph.subgraphs() requires networkx: "
+        "https://networkx.github.io")
+
+    import nemoa
+
+    # find (disconected) complexes in graph
+    graphs = list(nx.connected_component_subgraphs(
+        graph.to_undirected()))
+    if len(graphs) > 1:
+        nemoa.log('note', '%i complexes found' % (len(graphs)))
+    for i in xrange(len(graphs)):
+        for n in graphs[i].nodes(): graph.node[n]['complex'] = i
+
+    return True
+
+def get_groups(graph, attribute = None, param = None):
 
     if attribute == None and param == None:
         attribute = 'group'
@@ -201,24 +216,20 @@ def nx_get_groups(graph, attribute = None, param = None):
 
     return groups
 
-def nx_is_multilayer(graph):
-    """Test if graph is multilayer graph.
+def is_layered(graph):
+    """Test if graph nodes contain layer attributes.
 
     Args:
         graph: networkx graph instance
-    
+
     """
 
-    retval = True
+    require = {'layer', 'layer_id', 'layer_sub_id'}
+    for node, data in graph.nodes(data = True):
+        if require > set(data): return False
+    return True
 
-    # todo    
-
-    # test type(graph)
-    # print graph.graph['params']['layer']
-
-    return retval
-
-def nx_get_normscale(pos):
+def get_layout_normscale(pos):
     """Calculate scaling.
 
     Args:
@@ -228,40 +239,52 @@ def nx_get_normscale(pos):
 
     try: import numpy as np
     except ImportError: raise ImportError(
-        "nx_get_normscale() requires numpy: https://scipy.org/")
+        "nemoa.common.graph.get_layout_normscale() requires numpy: "
+        "https://scipy.org")
 
     # calculate euclidean distances between node positions
-    euklid = lambda (a, b), (c, d): np.sqrt((a - c) ** 2 + (b - d) ** 2)
+    euklid = lambda x: np.sqrt(np.sum(x ** 2))
     dlist = []
     for i, u in enumerate(pos.keys()):
         for j, v in enumerate(pos.keys()[i + 1:], i + 1):
-            dlist.append(euklid(pos[u], pos[v]))
+            pu, pv = np.array(pos[u]), np.array(pos[v])
+            dlist.append(euklid(pu - pv))
     darr = np.array(dlist)
 
-    # calculate maximal scaling factor from minimal node distance and
-    # minimal scaling factor from average node distance
+    # calculate maximal scaling factor for non overlapping nodes
+    # by minimal euklidean distance between node positions
     maxscale = 2.32 * np.amin(darr)
-    minscale = 0.2 * np.mean(darr)
 
-    return (minscale + maxscale) / 2
+    # calculate minimal scaling factor
+    # by average euklidean distance between node positions
+    minscale = 0.20 * np.mean(darr)
 
-def nx_rescale_layout(pos, scale = None, padding = None, rotate = 0.):
+    # if some nodes are exceptional close
+    # the overlapping of those nodes is not avoided
+    if minscale > maxscale: return minscale
+
+    return minscale * (2. - minscale / maxscale)
+
+def rescale_layout(pos, size = None, padding = None, rotate = 0.):
     """Rescale node positions.
 
     Args:
         pos: dictionary with node positions
-    
+
     Kwargs:
-        xscale:
-        yscale:
-        padding:
-        rotate:
+        size (tuple): size in pixel (x, y)
+            default is None, which means no rescale
+        padding (tuple): padding in percentage (up, down, left, right)
+            default is None, which means no padding
+        rotate (float): rotation angle in degrees
+            default is 0. which mean no rotation
 
     """
 
     try: import numpy as np
     except ImportError: raise ImportError(
-        "nx_rescale_layout() requires numpy: https://scipy.org/")
+        "nemoa.common.graph.rescale_layout() requires numpy: "
+        "https://scipy.org")
 
     data = np.array([(x, y) for x, y in pos.values()])
 
@@ -274,12 +297,12 @@ def nx_rescale_layout(pos, scale = None, padding = None, rotate = 0.):
         data = np.dot(data - mean, R.T) + mean
 
     # rescale positions with padding [u, r, d, l]
-    if not isinstance(scale, type(None)):
+    if not isinstance(size, type(None)):
         dmin, dmax = np.amin(data, axis = 0), np.amax(data, axis = 0)
         if isinstance(padding, type(None)): u, r, d, l = 0., 0., 0., 0.
         else: u, r, d, l = padding
         pmin, pmax = np.array([l, d]), 1. - np.array([r, u])
         data = (pmax - pmin) * (data - dmin) / (dmax - dmin) + pmin
-        data = np.array(scale) * data
+        data = np.array(size) * data
 
     return {node: tuple(data[i]) for i, node in enumerate(pos.keys())}
