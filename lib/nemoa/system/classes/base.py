@@ -1797,8 +1797,8 @@ class System(nemoa.common.classes.Metadata):
                 variables are:
                     M: for the relation matrix as numpy array with shape
                         (source, target)
-                    C: for the standard correlation matrix s numpy array
-                        with shape (source, target)
+                    C: for the correlation matrix as numpy array with
+                        shape (source, target)
                 Example: 'M**2 - C'
             format: string describing format of return values
                 'array': return values as numpy array

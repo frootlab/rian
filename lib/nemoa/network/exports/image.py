@@ -104,21 +104,9 @@ class Graph:
         'show_legend': False,
         'legend_fontsize': 9.0,
         'graph_layout': 'layer',
-        #'graph_caption': 'accuracy',
         'direction': 'right',
         'node_caption': 'accuracy',
-        'node_groupby': 'visible',
-        'node_groups': {
-            True: {
-                'label': 'Observable Variables',
-                'color': 'marine blue',
-                'font_color': 'white',
-                'border_color': 'dark navy'},
-            False: {
-                'label': 'Latent Variables',
-                'color': 'light grey',
-                'font_color': 'dark grey',
-                'border_color': 'grey'} },
+        'node_groupby': None,
         'node_color': True,
         'edge_color': False,
         'edge_caption': None,
@@ -188,43 +176,63 @@ class Graph:
                     for (u, v) in graph.edges():
                         graph.edge[u][v]['weight'] *= -1
 
-        # create node attributes 'group', 'caption',
-        # 'color', 'font_color', 'border_color'
-        groupby = self.settings.get('node_groupby', None)
-        groups = nmgraph.get_groups(graph, param = groupby)
         nodes = {n: data for n, data in graph.nodes(data = True)}
+
+        # copy node attributes 'label' and 'visible' from unit params
+        for node, data in graph.nodes(data = True):
+            params = data.get('params', {})
+            data.update({
+                'label': params.get('label', str(node)),
+                'visible': params.get('visible', True),
+                'layer': params.get('layer', None),
+                'layer_id': params.get('layer_id', None),
+                'layer_sub_id': params.get('layer_sub_id', None)})
+
+        # update node attribute 'group'
+        groupby = self.settings.get('node_groupby', None)
+        if not groupby == None:
+            for node, data in graph.nodes(data = True):
+                node_params = data.get('params', {})
+                data['group'] = node_params.get(groupby)
+        else:
+            is_layer = nmgraph.is_layered(graph)
+            is_directed = nmgraph.is_directed(graph)
+            if is_layer and not is_directed:
+                for node, data in graph.nodes(data = True):
+                    gid = int(data.get('visible', True))
+                    data['group'] = {0: 'latent', 1: 'observable'}[gid]
+            elif is_layer and is_directed:
+                layers = nmgraph.get_layers(graph)
+                ilayer, olayer = layers[0], layers[-1]
+                for node, data in graph.nodes(data = True):
+                    gid = int(node in ilayer) \
+                        + 2 * int(node in olayer)
+                    data['group'] = {0: 'latent', 1: 'source',
+                        2: 'sink', 3: 'transit'}[gid]
+            else:
+                for node, data in graph.nodes(data = True):
+                    gid = int(data.get('visible', True))
+                    data['group'] = {0: 'latent', 1: 'observable'}[gid]
+
+        # update node attributes for layout
+        groups = nmgraph.get_groups(graph, attribute = 'group')
         for group in sorted(groups.keys()):
             if group == None: continue
-            layout = self.settings['node_groups'].get(group, {})
+            layout = nmgraph.get_node_layout(group)
             group_label = layout.get('label', {
                 True: str(groupby).title(),
                 False: 'not ' + str(groupby).title()}[group] \
                 if isinstance(group, bool) else str(group).title())
-            color = layout.get('color', 'white')
-            font_color = layout.get('font_color', 'black')
-            border_color = layout.get('border_color', 'black')
             for node in groups.get(group, []):
                 node_params = nodes[node].get('params')
                 graph.node[node].update({
                     'label': node_params.get('label', str(node)),
-                    'color': color,
-                    'group': group_label,
-                    'font_color': font_color,
-                    'border_color': border_color })
+                    'group': group_label })
+                graph.node[node].update(layout)
 
         # prepare parameters
         if self.settings.get('title') == None:
             self.settings['title'] = network.fullname.title()
-
-        # graph layout specific attributes and parameters
-        graph_layout = self.settings.get('graph_layout', None)
-        if graph_layout == 'layer':
-            for node, data in graph.nodes(data = True):
-                params = data.get('params', {})
-                graph.node[node].update({
-                    'layer': params.get('layer'),
-                    'layer_id': params.get('layer_id'),
-                    'layer_sub_id': params.get('layer_sub_id')})
 
         # plot graph
         return nmplot.graph(graph, **self.settings)

@@ -154,23 +154,6 @@ class Graph:
         'show_legend': False,
         'legend_fontsize': 9.0,
         'graph_layout': 'spring',
-        'node_layouts': {
-            'source': {
-                'color': 'marine blue',
-                'font_color': 'white',
-                'border_color': 'dark navy'},
-            'sink': {
-                'color': 'light grey',
-                'font_color': 'dark grey',
-                'border_color': 'grey'},
-            'isolated': {
-                'color': 'light grey',
-                'font_color': 'dark grey',
-                'border_color': 'grey'},
-            'transit': {
-                'color': 'marine blue',
-                'font_color': 'white',
-                'border_color': 'dark navy'} },
         #'graph_caption': True,
         'units': (None, None),
         'relation': 'induction',
@@ -280,8 +263,7 @@ class Graph:
             elif issrc and not istgt: node_type = 'source'
             elif not issrc and istgt: node_type = 'sink'
             else: node_type = 'isolated'
-            layout = self.settings['node_layouts'].get(node_type, {})
-            print layout
+            layout = nemoa.common.graph.get_node_layout(node_type)
             graph.node[node].update(layout)
 
         # add edges with attributes

@@ -49,6 +49,22 @@ def get_layout(graph, layout = 'spring',
 
     return pos
 
+def get_layers(graph):
+
+    # create node stack as list of lists
+    # sorted by the node attributes layer_id and layer_sub_id
+    sort = {}
+    for node, data in graph.nodes(data = True):
+        l = (data.get('layer'), data.get('layer_id'))
+        n = (node, data.get('layer_sub_id'))
+        if not l in sort: sort[l] = [n]
+        else: sort[l].append(n)
+    layers = []
+    for (layer, lid) in sorted(sort.keys(), key = lambda x: x[1]):
+        layers.append([node for (node, nid) in \
+            sorted(sort.get((layer, lid), []), key = lambda x: x[1])])
+    return layers
+
 def get_layer_layout(graph, direction = 'right',
     minimize = 'weight'):
     """Calculate node positions for layer layout.
@@ -70,20 +86,8 @@ def get_layer_layout(graph, direction = 'right',
     if len(graph) == 0: return {}
     if len(graph) == 1: return { graph.nodes()[0]: (0.5, 0.5) }
 
-    # create node stack as list of lists
-    # sorted by the node attributes layer_id and layer_sub_id
-    sort = {}
-    for node, data in graph.nodes(data = True):
-        l = (data.get('layer'), data.get('layer_id'))
-        n = (node, data.get('layer_sub_id'))
-        if not l in sort: sort[l] = [n]
-        else: sort[l].append(n)
-    stack = []
-    layers = []
-    for (layer, lid) in sorted(sort.keys(), key = lambda x: x[1]):
-        stack.append([node for (node, nid) in \
-            sorted(sort.get((layer, lid), []), key = lambda x: x[1])])
-        layers.append(layer)
+    # get list of node lists, sorted by layer (list of lists)
+    stack = get_layers(graph)
 
     # sort node stack to minimize the euclidean distances
     # of connected nodes
@@ -216,6 +220,51 @@ def get_groups(graph, attribute = None, param = None):
 
     return groups
 
+def get_node_layout(ntype):
+
+    layouts = {
+        'dark blue': {
+            'color': 'marine blue',
+            'font_color': 'white',
+            'border_color': 'dark navy'},
+        'light grey': {
+            'color': 'light grey',
+            'font_color': 'dark grey',
+            'border_color': 'grey'},
+        'dark grey': {
+            'color': 'dark grey',
+            'font_color': 'white',
+            'border_color': 'black' }}
+
+    nlayouts = {
+        'observable': layouts['dark blue'],
+        'latent': layouts['light grey'],
+        'source': layouts['dark blue'],
+        'sink': layouts['dark grey'],
+        'target': layouts['dark grey'],
+        'transit': layouts['dark blue'],
+        'isolated': layouts['dark blue'] }
+
+    return nlayouts.get(ntype, None)
+
+def is_directed(graph):
+    """Test if layered graph is directed.
+
+    Args:
+        graph: networkx graph instance
+
+    """
+
+    if is_layered(graph):
+        layers = get_layers(graph)
+        if len(layers) == 1: return False
+        i = graph.node.get(layers[0][0], {}).get('visible', True)
+        o = graph.node.get(layers[-1][0], {}).get('visible', True)
+        if i and o: return True
+        return False
+
+    return None
+
 def is_layered(graph):
     """Test if graph nodes contain layer attributes.
 
@@ -224,9 +273,11 @@ def is_layered(graph):
 
     """
 
-    require = {'layer', 'layer_id', 'layer_sub_id'}
+    require = ['layer', 'layer_id', 'layer_sub_id']
     for node, data in graph.nodes(data = True):
-        if require > set(data): return False
+        for key in require:
+            if not key in data: return False
+
     return True
 
 def get_layout_normscale(pos):
