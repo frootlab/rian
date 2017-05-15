@@ -253,21 +253,17 @@ def graph(graph,
         weight = data.get('weight', 1.0)
 
         # calculate edge curvature from node positions
+        # parameter rad describes the height in the normalized triangle
         if (u, v) in seen:
             rad = seen.get((u, v))
             rad = -(rad + float(np.sign(rad)) * .2)
         else:
             vec = (np.array(pos[v]) - np.array(pos[u])) \
                 / np.array(figsize)
-            euklid = lambda x: np.sqrt(np.sum(x ** 2))
+            rad = vec[0] * vec[1] / np.sqrt(np.sum(vec ** 2))
             if graph_layout == 'layer':
                 gdir = graph_layout_params.get('direction', 'right')
-                if gdir in ['left', 'right']:
-                    rad = - euklid(vec[1]) * np.sign(vec[1]) / 2.
-                elif gdir in ['up', 'down']:
-                    rad = - euklid(vec[0]) * np.sign(vec[0]) / 2.
-                else: rad = 0.
-            else: rad = - euklid(vec) * np.sign(np.sum(vec)) / 2.
+                if gdir in ['left', 'right']: rad *= -1
         seen[(u, v)] = rad
 
         # calculate line width and alpha value from edge weight
