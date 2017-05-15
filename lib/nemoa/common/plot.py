@@ -294,11 +294,14 @@ def graph(graph,
 
     # (optional) draw legend
     if show_legend:
+        num_groups = np.sum([1 for g in groups.values() \
+            if isinstance(g, list) and len(g) > 0])
         ax.legend(
             numpoints      = 1,
             loc            = 'lower center',
-            ncol           = 4,
+            ncol           = num_groups,
             borderaxespad  = 0.,
+            framealpha     = 0.,
             bbox_to_anchor = (0.5, -0.1),
             fontsize       = legend_fontsize,
             markerscale    = 0.6 * legend_fontsize / font_size)
