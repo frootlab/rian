@@ -236,16 +236,34 @@ def get_node_layout(ntype):
             'font_color': 'white',
             'border_color': 'black' }}
 
-    nlayouts = {
-        'observable': layouts['dark blue'],
-        'latent': layouts['light grey'],
-        'source': layouts['dark blue'],
-        'sink': layouts['dark grey'],
-        'target': layouts['dark grey'],
-        'transit': layouts['dark blue'],
-        'isolated': layouts['dark blue'] }
+    types = {
+        'observable': {
+            'description': 'Observable',
+            'groupid': 0,
+            'layout': 'dark blue' },
+        'source': {
+            'description': 'Source',
+            'groupid': 1,
+            'layout': 'dark blue' },
+        'latent': {
+            'description': 'Latent',
+            'groupid': 2,
+            'layout': 'light grey' },
+        'target': {
+            'description': 'Target',
+            'groupid': 3,
+            'layout': 'dark grey' },
+        'isolated': {
+            'description': 'Isolated',
+            'groupid': 4,
+            'layout': 'dark grey' } }
+    
+    t = types.get(ntype, {})
+    layout = layouts.get(t.get('layout', None), {})
+    layout['description'] = t.get('description', 'Unknown')
+    layout['groupid'] = t.get('groupid', 'none')
 
-    return nlayouts.get(ntype, None)
+    return layout
 
 def is_directed(graph):
     """Test if layered graph is directed.

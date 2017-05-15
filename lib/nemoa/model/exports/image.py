@@ -153,8 +153,7 @@ class Graph:
         'title_fontsize': 14.0,
         'show_legend': False,
         'legend_fontsize': 9.0,
-        'graph_layout': 'spring',
-        #'graph_caption': True,
+        'graph_layout': 'layer',
         'units': (None, None),
         'relation': 'induction',
         'preprocessing': None,
@@ -171,6 +170,8 @@ class Graph:
         self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
     def create(self, model):
+
+        import nemoa.common.graph as nmgraph
 
         # get units and edges
         units = self.settings.get('units')
@@ -261,9 +262,9 @@ class Graph:
             issrc, istgt = node in units[0], node in units[1]
             if issrc and istgt: node_type = 'transit'
             elif issrc and not istgt: node_type = 'source'
-            elif not issrc and istgt: node_type = 'sink'
+            elif not issrc and istgt: node_type = 'target'
             else: node_type = 'isolated'
-            layout = nemoa.common.graph.get_node_layout(node_type)
+            layout = nmgraph.get_node_layout(node_type)
             graph.node[node].update(layout)
 
         # add edges with attributes

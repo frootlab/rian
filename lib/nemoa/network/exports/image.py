@@ -208,7 +208,7 @@ class Graph:
                     gid = int(node in ilayer) \
                         + 2 * int(node in olayer)
                     data['group'] = {0: 'latent', 1: 'source',
-                        2: 'sink', 3: 'transit'}[gid]
+                        2: 'target', 3: 'transit'}[gid]
             else:
                 for node, data in graph.nodes(data = True):
                     gid = int(data.get('visible', True))

@@ -204,14 +204,19 @@ def graph(graph,
     edge_width  = sizes.get('edge_width', None)
     font_size   = sizes.get('font_size', None)
 
-    # get nodes and groups
+    # get nodes and groups sorted by node attribute group_id
     groups = nmgraph.get_groups(graph, attribute = 'group')
+    sorted_groups = sorted(groups.keys(), key = \
+        lambda g: None if not isinstance(g, list) or len(g) == 0 \
+        else graph.node.get(g[0], {}).get('group_id', 'none'))
 
     # draw nodes, labeled by groups
-    for group in sorted(groups.keys()):
-        gnodes = groups.get(group)
+    for group in sorted_groups:
+        gnodes = groups.get(group, [])
         if len(gnodes) == 0: continue
         refnode = graph.node.get(gnodes[0])
+        label = refnode.get('description') \
+            or refnode.get('group') or str(group)
 
         # draw nodes in group
         node_obj = nx.draw_networkx_nodes(graph, pos,
@@ -220,7 +225,7 @@ def graph(graph,
             node_size  = node_size,
             node_shape = node_style,
             node_color = get_color(refnode.get('color'), 'white'),
-            label      = refnode.get('group', str(group)))
+            label      = label)
         node_obj.set_edgecolor(
             get_color(refnode.get('border_color'), 'black'))
 
@@ -258,9 +263,9 @@ def graph(graph,
             rad = seen.get((u, v))
             rad = -(rad + float(np.sign(rad)) * .2)
         else:
-            vec = (np.array(pos[v]) - np.array(pos[u])) \
-                / np.array(figsize)
-            rad = vec[0] * vec[1] / np.sqrt(np.sum(vec ** 2))
+            scale = 1. / np.amax(np.array(figsize))
+            vec = scale * (np.array(pos[v]) - np.array(pos[u]))
+            rad = vec[0] * vec[1] / np.sqrt(2 * np.sum(vec ** 2))
             if graph_layout == 'layer':
                 gdir = graph_layout_params.get('direction', 'right')
                 if gdir in ['left', 'right']: rad *= -1
@@ -291,10 +296,10 @@ def graph(graph,
     if show_legend:
         ax.legend(
             numpoints      = 1,
-            loc            = 'lower left',
+            loc            = 'lower center',
             ncol           = 4,
             borderaxespad  = 0.,
-            bbox_to_anchor = (0., -0.1),
+            bbox_to_anchor = (0.5, -0.1),
             fontsize       = legend_fontsize,
             markerscale    = 0.6 * legend_fontsize / font_size)
 
