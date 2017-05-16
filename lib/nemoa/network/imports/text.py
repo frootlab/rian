@@ -68,6 +68,7 @@ class Ini:
         structure = {
             'network': {
                 'name': 'str',
+                'description': 'str',
                 'branch': 'str',
                 'version': 'str',
                 'about': 'str',
@@ -75,12 +76,15 @@ class Ini:
                 'email': 'str',
                 'license': 'str',
                 'type': 'str',
-                'labelformat': 'str',
-                'layers': 'list'},
+                'layers': 'list',
+                'directed': 'bool',
+                'labelformat': 'str'},
             'layer [0-9a-zA-Z]*': {
+                'name': 'str',
                 'function': 'str',
                 'distribution': 'str',
                 'type': 'str',
+                'visible': 'bool',
                 'file': 'str',
                 'nodes': 'list',
                 'size': 'int' },
@@ -102,6 +106,10 @@ class Ini:
         if not 'name' in config:
             config['name'] = nemoa.common.ospath.basename(path)
 
+        # directed
+        if not 'directed' in config:
+            config['directed'] = True
+
         # node labelformat
         if not 'labelformat' in config:
             config['labelformat'] = 'generic:string'
@@ -122,28 +130,35 @@ class Ini:
                     network: file '%s' does not contain information
                     about layer '%s'.""" % (path, layer))
 
+            sec_data = ini_dict[layer_section]
             config['layers'][layer] = {}
-            config['layers'][layer]['visible'] = \
-                layer_id in visible_layer_ids
+            lay_data = config['layers'][layer]
+
+            # get name of layer
+            lay_data['name'] = sec_data.get('name')
+
+            # get visibility (observable, latent) of nodes in layer
+            if 'visible' in sec_data:
+                lay_data['visible'] = sec_data['visible']
+            else:
+                lay_data['visible'] = layer_id in visible_layer_ids
 
             # get type of layer nodes
-            if 'type' in ini_dict[layer_section]:
-                config['layers'][layer]['type'] = \
-                    ini_dict[layer_section]['type']
+            if 'type' in sec_data:
+                lay_data['type'] = sec_data.get('type')
 
             # get function of layer nodes
-            if 'function' in ini_dict[layer_section]:
-                config['layers'][layer]['function'] = \
-                    ini_dict[layer_section]['function']
+            if 'function' in sec_data:
+                lay_data['function'] = sec_data.get('function')
 
             # get distribution of layer nodes
-            if 'distribution' in ini_dict[layer_section]:
-                config['layers'][layer]['distribution'] = \
-                    ini_dict[layer_section]['distribution']
+            if 'distribution' in sec_data:
+                lay_data['distribution'] = sec_data.get('distribution')
 
             # get nodes of layer from given list file ('file')
-            if 'file' in ini_dict[layer_section]:
-                file_str = ini_dict[layer_section]['file']
+            # or from list ('nodes') or from given layer size ('size')
+            if 'file' in sec_data:
+                file_str = sec_data['file']
                 list_file = nemoa.workspace._expand_path(file_str)
                 if not os.path.exists(list_file):
                     return nemoa.log('error', """listfile '%s'
@@ -151,17 +166,11 @@ class Ini:
                 with open(list_file, 'r') as list_file:
                     fileLines = list_file.readlines()
                 node_list = [node.strip() for node in fileLines]
-
-            # get nodes of layer from given list ('nodes')
-            elif 'nodes' in ini_dict[layer_section]:
-                node_list = ini_dict[layer_section]['nodes']
-
-            # get nodes of layer from given layer size ('size')
-            elif 'size' in ini_dict[layer_section]:
-                layer_size = ini_dict[layer_section]['size']
-                node_list = []
-                for n in xrange(1, layer_size + 1):
-                    node_list.append('n%s' % (n))
+            elif 'nodes' in sec_data:
+                node_list = sec_data['nodes']
+            elif 'size' in sec_data:
+                node_list = ['n%s' % (n) \
+                    for n in range(1, sec_data['size'] + 1)]
             else:
                 return nemoa.log('warning', """could not import layer
                     network: layer '%s' does not contain valid node

@@ -139,19 +139,19 @@ def show(model, plot = None, *args, **kwargs):
 
     return True
 
-class Graph:
+class Graph(nemoa.common.classes.Plot):
 
     settings = None
     default = {
         'fileformat': 'pdf',
-        'figure_size': (6.4, 4.8),
+        'figure_size': (10., 6.),
         'dpi': None,
         'bg_color': 'none',
         'usetex': False,
-        'show_title': False,
+        'show_title': True,
         'title': None,
         'title_fontsize': 14.0,
-        'show_legend': False,
+        'show_legend': True,
         'legend_fontsize': 9.0,
         'graph_layout': 'layer',
         'units': (None, None),
@@ -165,9 +165,6 @@ class Graph:
         'filter': None,
         'cutoff': 0.5,
         'node_caption': 'accuracy' }
-
-    def __init__(self, **kwargs):
-        self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
     def create(self, model):
 
@@ -276,9 +273,7 @@ class Graph:
             if signed: color = \
                 {1: 'green', 0: 'black', -1: 'red'}[S.get((u, v))]
             else: color = 'black'
-            graph.add_edge(u, v,
-                weight = weight,
-                color = color)
+            graph.add_edge(u, v, weight = weight, color = color)
 
         # normalize weights (optional)
         if normalize:

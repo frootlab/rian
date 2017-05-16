@@ -402,3 +402,30 @@ class Metadata:
             "attribute 'version' requires datatype 'int'.")
         self._config['version'] = val
         return True
+
+# Todo
+class Plot:
+    """Base class interface for matplotlib plots.
+
+    Export classes like Histogram, Heatmap or Graph share a common
+    interface to matplotlib, as well as certain plotting attributes.
+    This base class is intended to provide a unified interface to access
+    matplotlib and those attributes.
+
+    Attributes:
+
+    """
+
+    def __init__(self, *args, **kwargs):
+
+        import matplotlib
+
+        self.settings = nemoa.common.dict.merge(kwargs, self.default)
+
+        # close previous figures
+        matplotlib.pyplot.close('all')
+
+        # common matplotlib settings
+        matplotlib.rc('text', usetex = \
+            self.settings.get('usetex', False))
+        matplotlib.rc('font', family = 'sans-serif')

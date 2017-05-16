@@ -25,18 +25,11 @@ def show(network, plot = None, **kwargs):
         module = importlib.import_module(module_name)
         if not hasattr(module, class_name):raise ImportError()
     except ImportError:
-        return nemoa.log('error', """could not plot network '%s':
+        return nemoa.log('error', """could not plot graph '%s':
             plot type '%s' is not supported.""" % (network.name, plot))
 
-    # create plot of network
+    # create plot instance
     plot = getattr(module, class_name)(**kwargs)
-
-    # common matplotlib settings
-    matplotlib.rc('text', usetex = plot.settings['usetex'])
-    matplotlib.rc('font', family = 'sans-serif')
-
-    # close previous figures
-    matplotlib.pyplot.close('all')
 
     # create plot
     if plot.create(network):
@@ -68,15 +61,8 @@ def save(network, path = None, filetype = None, plot = None, **kwargs):
         return nemoa.log('error', """could not plot network '%s':
             plot type '%s' is not supported.""" % (network.name, plot))
 
-    # create plot of network
+    # create plot instance
     plot = getattr(module, class_name)(**kwargs)
-
-    # common matplotlib settings
-    matplotlib.rc('text', usetex = plot.settings['usetex'])
-    matplotlib.rc('font', family = 'sans-serif')
-
-    # close previous figures
-    matplotlib.pyplot.close('all')
 
     # create plot
     if plot.create(network):
@@ -89,34 +75,30 @@ def save(network, path = None, filetype = None, plot = None, **kwargs):
 
     return path
 
-class Graph:
+class Graph(nemoa.common.classes.Plot):
 
     settings = None
     default = {
         'fileformat': 'pdf',
-        'figure_size': (6.4, 4.8),
+        'figure_size': (10., 6.),
         'dpi': None,
         'bg_color': 'none',
         'usetex': False,
-        'show_title': False,
+        'show_title': True,
         'title': None,
         'title_fontsize': 14.0,
-        'show_legend': False,
+        'show_legend': True,
         'legend_fontsize': 9.0,
         'graph_layout': 'layer',
-        'direction': 'right',
         'node_caption': 'accuracy',
         'node_groupby': None,
         'node_color': True,
         'edge_color': False,
         'edge_caption': None,
         'edge_weight': 'intensity',
-        'edge_threshold': 0.0,
+        'edge_threshold': 0.,
         'edge_transform': 'softstep',
         'edge_sign_normalize': True }
-
-    def __init__(self, **kwargs):
-        self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
     def create(self, network):
 
@@ -127,19 +109,29 @@ class Graph:
         # copy graph from system structure of model
         graph = network.get('graph', type = 'graph')
 
+        # copy graph attributes from graph 'params'
+        params = graph.graph.get('params', {})
+        if 'directed' in params:
+            graph.graph['directed'] = params['directed']
+
         # create edge attribute 'weight'
-        edgeattr  = self.settings.get('edge_weight', 'weight')
+        edgeattr = self.settings.get('edge_weight', None)
         normalize = self.settings.get('edge_normalize', None)
         threshold = self.settings.get('edge_threshold', None)
         transform = self.settings.get('edge_transform', None)
 
         # calculate mean weight for normalization (optional)
         if bool(normalize):
-            mean = numpy.mean([data['params'].get(edgeattr, 0.) \
-                for (u, v, data) in graph.edges(data = True)])
+            absmean = numpy.absolute(numpy.mean(
+                [data['params'].get(edgeattr, 0.) \
+                for (u, v, data) in graph.edges(data = True)]))
+            if absmean == 0.: normalize = None
 
-        for (u, v) in graph.edges():
-            weight = graph.edge[u][v]['params'].get(edgeattr, 0.)
+        for (u, v, data) in graph.edges(data = True):
+            weight = data['params'].get(edgeattr, None)
+            if weight == None:
+                if 'weight' in data: data.pop('weight')
+                continue
 
             # threshold weights (optional)
             if bool(threshold) and threshold > numpy.absolute(weight):
@@ -159,10 +151,11 @@ class Graph:
                 graph.edge[u][v]['caption'] = caption
 
             # normalize weights (optional)
-            if bool(normalize): weight /= mean
+            if bool(normalize): weight /= absmean
 
             # transform weights (optional)
-            if transform == 'softstep': weight = nmmath.softstep(weight)
+            if transform == 'softstep':
+                weight = nmmath.softstep(weight)
 
             graph.edge[u][v]['weight'] = weight
 
@@ -170,11 +163,13 @@ class Graph:
         if self.settings['edge_sign_normalize']:
             number_of_layers = len(graph.graph['params']['layer'])
             if number_of_layers % 2 == 1:
-                sign_sum = sum([numpy.sign(graph.edge[u][v]['weight'])
+                sign_sum = numpy.sum(
+                    [numpy.sign(graph.edge[u][v].get('weight', 0))
                     for (u, v) in graph.edges()])
                 if sign_sum < 0:
                     for (u, v) in graph.edges():
-                        graph.edge[u][v]['weight'] *= -1
+                        if 'weight' in graph.edge[u][v]:
+                            graph.edge[u][v]['weight'] *= -1
 
         nodes = {n: data for n, data in graph.nodes(data = True)}
 
@@ -220,8 +215,8 @@ class Graph:
             if group == None: continue
             layout = nmgraph.get_node_layout(group)
             group_label = layout.get('label', {
-                True: str(groupby).title(),
-                False: 'not ' + str(groupby).title()}[group] \
+                True: str(groupby),
+                False: 'not ' + str(groupby)}[group] \
                 if isinstance(group, bool) else str(group).title())
             for node in groups.get(group, []):
                 node_params = nodes[node].get('params')
@@ -232,7 +227,7 @@ class Graph:
 
         # prepare parameters
         if self.settings.get('title') == None:
-            self.settings['title'] = network.fullname.title()
+            self.settings['title'] = network.fullname
 
         # plot graph
         return nmplot.graph(graph, **self.settings)

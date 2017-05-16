@@ -23,6 +23,7 @@ def get_layout(graph, layout = 'spring',
         "https://networkx.github.io")
 
     # Todo: allow layouts from pygraphviz_layout
+    # Todo: determine layout by graph type if layout is None
 
     if layout == 'spring':
         pos = nx.spring_layout(graph, **kwargs)
@@ -65,8 +66,7 @@ def get_layers(graph):
             sorted(sort.get((layer, lid), []), key = lambda x: x[1])])
     return layers
 
-def get_layer_layout(graph, direction = 'right',
-    minimize = 'weight'):
+def get_layer_layout(graph, direction = 'down', minimize = 'weight'):
     """Calculate node positions for layer layout.
 
     Args:
@@ -266,7 +266,7 @@ def get_node_layout(ntype):
     return layout
 
 def is_directed(graph):
-    """Test if layered graph is directed.
+    """Determine if layered graph is directed.
 
     Args:
         graph: networkx graph instance
@@ -274,10 +274,12 @@ def is_directed(graph):
     """
 
     if is_layered(graph):
+        decl = graph.graph.get('directed')
+        if isinstance(decl, bool): return decl
         layers = get_layers(graph)
         if len(layers) == 1: return False
-        i = graph.node.get(layers[0][0], {}).get('visible', True)
-        o = graph.node.get(layers[-1][0], {}).get('visible', True)
+        i = graph.node.get(layers[0][0], {}).get('visible', False)
+        o = graph.node.get(layers[-1][0], {}).get('visible', False)
         if i and o: return True
         return False
 

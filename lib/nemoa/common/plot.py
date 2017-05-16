@@ -120,7 +120,7 @@ def histogram(array, **kwargs):
 def graph(graph,
     figure_size        = (6.4, 4.8),
     dpi                = None,
-    figure_padding     = (0.1, 0.1, 0.1, 0.1),
+    padding            = (0.1, 0.1, 0.1, 0.1),
     bg_color           = 'none',
     usetex             = False,
     show_title         = False,
@@ -130,7 +130,6 @@ def graph(graph,
     legend_fontsize    = 9.0,
     graph_layout       = 'layer',
     node_style         = 'o',
-    edge_style         = '-|>',
     edge_width_enabled = True,
     edge_curvature     = 1.0,
     **kwargs):
@@ -208,10 +207,9 @@ def graph(graph,
     ax.axis('off')
 
     # get node positions and sizes
-    graph_layout_params = nmdict.section(kwargs, 'graph_layout_')
+    layout_params = nmdict.section(kwargs, 'graph_')
     pos = nmgraph.get_layout(graph, layout = graph_layout,
-        size = figsize, padding = figure_padding,
-        **graph_layout_params)
+        size = figsize, padding = padding, **layout_params)
     sizes       = nmgraph.get_layout_normsize(pos)
     node_size   = sizes.get('node_size', None)
     node_radius = sizes.get('node_radius', None)
@@ -269,9 +267,12 @@ def graph(graph,
 
     # draw edges
     seen = {}
+    if nmgraph.is_directed(graph): default_edge_style = '-|>' 
+    else: default_edge_style = '-'
+
     for (u, v, data) in graph.edges(data = True):
-        weight = data.get('weight', 1.0)
-        print u, v
+        weight = data.get('weight')
+        if weight == 0.: continue
 
         # calculate edge curvature from node positions
         # parameter rad describes the height in the normalized triangle
@@ -283,14 +284,23 @@ def graph(graph,
             vec = scale * (np.array(pos[v]) - np.array(pos[u]))
             rad = vec[0] * vec[1] / np.sqrt(2 * np.sum(vec ** 2))
             if graph_layout == 'layer':
-                gdir = graph_layout_params.get('direction', 'right')
+                gdir = layout_params.get('direction', 'down')
                 if gdir in ['left', 'right']: rad *= -1
         seen[(u, v)] = rad
 
-        # calculate line width and alpha value from edge weight
-        if not edge_width_enabled: linewidth = edge_width
-        else: linewidth = np.absolute(weight) * edge_width
-        alpha = np.amin([np.absolute(weight), 1.0])
+        # determine style of edge from edge weight
+        if weight == None:
+            linestyle = '-'
+            linewidth = 0.5 * edge_width
+            alpha = 0.5
+        elif not edge_width_enabled:
+            linestyle = '-'
+            linewidth = edge_width
+            alpha = np.amin([np.absolute(weight), 1.0])
+        else:
+            linestyle = '-'
+            linewidth = np.absolute(weight) * edge_width
+            alpha = np.amin([np.absolute(weight), 1.0])
 
         # draw edge
         nodeA = graph.node[u]['patch']
@@ -300,10 +310,11 @@ def graph(graph,
             posB            = nodeB.center,
             patchA          = nodeA,
             patchB          = nodeB,
-            arrowstyle      = edge_style,
+            arrowstyle      = default_edge_style,
             connectionstyle = 'arc3,rad=%s' % rad,
             mutation_scale  = linewidth * 12.,
             linewidth       = linewidth,
+            linestyle       = linestyle,
             color           = get_color(data.get('color'), 'black'),
             alpha           = alpha )
         ax.add_patch(arrow)

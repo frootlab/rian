@@ -375,8 +375,7 @@ class System(nemoa.common.classes.Metadata):
             link_norm_weight = link_weight * adjacency_sum / weight_sum
 
         # calculate intensified weight of link (per link layer)
-        if link_norm_weight == 0.0:
-            link_intensity = 0.0
+        if link_norm_weight == 0.0: link_intensity = 0.0
         else:
             link_norm_max = numpy.amax(numpy.abs(layer_adjacency
                 * layer_weights)) * adjacency_sum / weight_sum
