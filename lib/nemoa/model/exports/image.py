@@ -5,23 +5,21 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import importlib
-import matplotlib.pyplot
 import nemoa
 import networkx
 import numpy
 import os
 
 def filetypes():
-    """Get supported image filetypes for model export."""
-    return matplotlib.pyplot.gcf().canvas.get_supported_filetypes()
+    """Get supported image filetypes."""
+    return nemoa.common.plot.filetypes()
 
 def save(model, path = None, filetype = None, plot = None, **kwargs):
 
-    # test if filetype is supported by matplotlib
+    # test if filetype is supported
     if not filetype in filetypes():
         return nemoa.log('error', """could not create plot:
-            filetype '%s' is not supported by matplotlib.""" %
-            (filetype))
+            filetype '%s' is not supported""" % filetype)
 
     # get class for plotting from attribute 'plot'
     if not plot: plot = 'graph'
@@ -55,28 +53,10 @@ def save(model, path = None, filetype = None, plot = None, **kwargs):
         rel_name = rel_dict['name']
         plot.settings['title'] = rel_name.title()
 
-    # common matplotlib settings
-    matplotlib.rc('font', family = 'sans-serif')
-
-    # close previous figures
-    matplotlib.pyplot.close('all')
-
     # create plot
-    if plot.create(model):
+    if plot.create(model): plot.save(path)
 
-        # (optional) draw title
-        if plot.settings['show_title']:
-            if 'title' in plot.settings \
-                and isinstance(plot.settings['title'], str):
-                title = plot.settings['title']
-            else: title = '' # Todo: self._get_title(model)
-            matplotlib.pyplot.title(title, fontsize = 11.)
-
-        # output
-        matplotlib.pyplot.savefig(path, dpi = plot.settings['dpi'])
-
-    # clear figures and release memory
-    matplotlib.pyplot.clf()
+    plot.release()
 
     return path
 
@@ -114,43 +94,17 @@ def show(model, plot = None, *args, **kwargs):
         rel_name = rel_dict['name']
         plot.settings['title'] = rel_name.title()
 
-    # common matplotlib settings
-    matplotlib.rc('font', family = 'sans-serif')
-
-    # close previous figures
-    matplotlib.pyplot.close('all')
-
-    # create plot
-    if plot.create(model):
-
-        # (optional) draw title
-        if plot.settings['show_title']:
-            if 'title' in plot.settings \
-                and isinstance(plot.settings['title'], str):
-                title = plot.settings['title']
-            else: title = '' # Todo: self._get_title(model)
-            matplotlib.pyplot.title(title, fontsize = 11.)
-
-        # output
-        matplotlib.pyplot.show()
+    # create and show plot
+    if plot.create(model): plot.show()
 
     # clear figures and release memory
-    matplotlib.pyplot.clf()
+    plot.release()
 
     return True
 
 class Graph(nemoa.common.classes.Plot):
 
-    settings = None
-    default = {
-        'fileformat': 'pdf',
-        'figure_size': (10., 6.),
-        'dpi': None,
-        'bg_color': 'none',
-        'usetex': False,
-        'show_title': True,
-        'title': None,
-        'title_fontsize': 14.0,
+    settings = {
         'show_legend': True,
         'legend_fontsize': 9.0,
         'graph_layout': 'layer',
@@ -238,6 +192,9 @@ class Graph(nemoa.common.classes.Plot):
         # create graph and set attributes
         graph = networkx.DiGraph(name = rel_about.get('name'))
 
+        # graph is directed if and only if relation is directed
+        graph.graph['directed'] = rel_about.get('directed')
+
         # add edges and edge attributes to graph
         if self.settings['edge_normalize'] in [None, 'auto']:
             normalize = not rel_about.get('normal')
@@ -273,7 +230,8 @@ class Graph(nemoa.common.classes.Plot):
             if signed: color = \
                 {1: 'green', 0: 'black', -1: 'red'}[S.get((u, v))]
             else: color = 'black'
-            graph.add_edge(u, v, weight = weight, color = color)
+            graph.add_edge(u, v, weight = weight, color = color,
+                visible = True)
 
         # normalize weights (optional)
         if normalize:
@@ -296,15 +254,9 @@ class Graph(nemoa.common.classes.Plot):
         # create plot
         return nemoa.common.plot.graph(graph, **self.settings)
 
-class Heatmap:
+class Heatmap(nemoa.common.classes.Plot):
 
-    settings = None
-    default = {
-        'fileformat': 'pdf',
-        'dpi': 300,
-        'show_title': True,
-        'title': None,
-        'bg_color': 'none',
+    settings = {
         'path': ('system', 'relations'),
         'units': (None, None),
         'relation': 'correlation',
@@ -315,9 +267,6 @@ class Heatmap:
         'layer': None,
         'interpolation': 'nearest',
         'format': 'array' }
-
-    def __init__(self, **kwargs):
-        self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
     def create(self, model):
 
@@ -332,15 +281,9 @@ class Heatmap:
         # create plot
         return nemoa.common.plot.heatmap(relation, **self.settings)
 
-class Histogram:
+class Histogram(nemoa.common.classes.Plot):
 
-    settings = None
-    default = {
-        'fileformat': 'pdf',
-        'dpi': 300,
-        'show_title': True,
-        'title': None,
-        'bg_color': 'none',
+    settings = {
         'path': ('system', 'relations'),
         'graph_caption': True,
         'units': (None, None),
@@ -355,9 +298,6 @@ class Histogram:
         'edgecolor': 'black',
         'histtype': 'bar',
         'linewidth': 0.5 }
-
-    def __init__(self, **kwargs):
-        self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
     def create(self, model):
 

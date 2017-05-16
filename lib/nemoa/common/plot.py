@@ -52,23 +52,39 @@ def get_label_width(string):
     rstr = str(int(string[len(lstr):]))
     return len(lstr) + 0.7 * len(rstr)
 
-def heatmap(array, **kwargs):
+def filetypes():
 
-    import matplotlib.pyplot as plt
+    try: import matplotlib.pyplot as plt
+    except ImportError: raise ImportError(
+        "nemoa.common.plot.filetypes() requires matplotlib: "
+        "https://matplotlib.org")
+
+    return plt.gcf().canvas.get_supported_filetypes()
+
+def heatmap(array,
+    title          = None,
+    show_title     = True,
+    title_fontsize = None,
+    interpolation  = None,
+    **kwargs):
+
+    try: import matplotlib.pyplot as plt
+    except ImportError: raise ImportError(
+        "nemoa.common.plot.filetypes() requires matplotlib: "
+        "https://matplotlib.org")
+
     import matplotlib.cm
     import nemoa.common.text
     import numpy as np
 
     # create figure object
-    fig = plt.figure()
-    fig.patch.set_facecolor(kwargs['bg_color'])
+    fig = plt.gcf()
     ax = fig.add_subplot(111)
     ax.grid(True)
 
     # create heatmap
-    cax = ax.imshow(array,
-        cmap = matplotlib.cm.hot_r,
-        interpolation = kwargs['interpolation'],
+    cax = ax.imshow(array, cmap = matplotlib.cm.hot_r,
+        interpolation = interpolation,
         extent = (0, array.shape[1], 0, array.shape[0]))
 
     # create labels for axis
@@ -94,35 +110,48 @@ def heatmap(array, **kwargs):
     cbar = fig.colorbar(cax)
     for tick in cbar.ax.get_yticklabels(): tick.set_fontsize(9)
 
+    # (optional) draw title
+    if show_title:
+        if title == None: title = 'Unknown'
+        plt.title(title, fontsize = title_fontsize)
+
     return True
 
-def histogram(array, **kwargs):
+def histogram(array,
+    title          = None,
+    show_title     = True,
+    title_fontsize = None,
+    bins           = 100,
+    facecolor      = 'none',
+    histtype       = None,
+    linewidth      = None,
+    edgecolor      = None,
+    **kwargs):
 
-    import matplotlib.pyplot as plt
+    try: import matplotlib.pyplot as plt
+    except ImportError: raise ImportError(
+        "nemoa.common.plot.filetypes() requires matplotlib: "
+        "https://matplotlib.org")
 
     # create figure object
-    fig = plt.figure()
-    fig.patch.set_facecolor(kwargs['bg_color'])
+    fig = plt.gcf()
     ax = fig.add_subplot(111)
     ax.grid(True)
 
     # create histogram
-    cax = ax.hist(array,
-        normed = False,
-        bins = kwargs['bins'],
-        facecolor = kwargs['facecolor'],
-        histtype = kwargs['histtype'],
-        linewidth = kwargs['linewidth'],
-        edgecolor = kwargs['edgecolor'])
+    cax = ax.hist(array, normed = False, bins = bins,
+        facecolor = facecolor, histtype = histtype,
+        linewidth = linewidth, edgecolor = edgecolor)
+
+    # (optional) draw title
+    if show_title:
+        if title == None: title = 'Unknown'
+        plt.title(title, fontsize = title_fontsize)
 
     return True
 
 def graph(graph,
-    figure_size        = (6.4, 4.8),
-    dpi                = None,
     padding            = (0.1, 0.1, 0.1, 0.1),
-    bg_color           = 'none',
-    usetex             = False,
     show_title         = False,
     title              = None,
     title_fontsize     = 14.,
@@ -190,14 +219,8 @@ def graph(graph,
     import nemoa.common.graph as nmgraph
     import nemoa.common.dict as nmdict
 
-    # common matplotlib settings
-    matplotlib.rc('text', usetex = usetex)
-    matplotlib.rc('font', family = 'sans-serif')
-
     # close previous figures and create figure object
-    plt.close('all')
-    fig = plt.figure(figsize = figure_size,
-        dpi = dpi, facecolor = bg_color)
+    fig = plt.gcf()
     ax = fig.add_subplot(111)
     ax.set_autoscale_on(False)
     figsize = fig.get_size_inches() * fig.dpi

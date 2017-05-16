@@ -8,11 +8,10 @@ import nemoa
 import numpy
 import os
 import importlib
-import matplotlib.pyplot
 
 def filetypes():
-    """Get supported image filetypes for dataset export."""
-    return matplotlib.pyplot.gcf().canvas.get_supported_filetypes()
+    """Get supported image filetypes."""
+    return nemoa.common.plot.filetypes()
 
 def show(dataset, plot = None, **kwargs):
 
@@ -27,40 +26,18 @@ def show(dataset, plot = None, **kwargs):
         return nemoa.log('error', """could not plot dataset '%s':
             plot type '%s' is not supported.""" % (dataset.name, plot))
 
-    # create plot of dataset
+    # create and show plot
     plot = getattr(module, class_name)(**kwargs)
-
-    # common matplotlib settings
-    matplotlib.rc('font', family = 'sans-serif')
-
-    # close previous figures
-    matplotlib.pyplot.close('all')
-
-    # create plot
-    if plot.create(dataset):
-
-        # (optional) draw title
-        if plot.settings['show_title']:
-            if 'title' in plot.settings \
-                and isinstance(plot.settings['title'], str):
-                title = plot.settings['title']
-            else: title = '' # Todo: self._get_title(model)
-            matplotlib.pyplot.title(title, fontsize = 11.)
-
-        # output
-        matplotlib.pyplot.show()
-
-    # clear figures and release memory
-    matplotlib.pyplot.clf()
-
+    if plot.create(dataset): plot.show()
+    plot.release()
     return True
 
 def save(dataset, path = None, filetype = None, plot = None, **kwargs):
 
-    # test if filetype is supported by matplotlib
+    # test if filetype is supported
     if not filetype in filetypes():
         return nemoa.log('error', """could not create plot:
-            filetype '%s' is not supported by matplotlib.""" %
+            filetype '%s' is not supported.""" %
             (filetype))
 
     # get class for plotting from attribute 'plot'
@@ -74,42 +51,20 @@ def save(dataset, path = None, filetype = None, plot = None, **kwargs):
         return nemoa.log('error', """could not plot dataset '%s':
             plot type '%s' is not supported.""" % (dataset.name, plot))
 
-    # create plot of dataset
+    # create and save plot
     plot = getattr(module, class_name)(**kwargs)
-
-    # common matplotlib settings
-    matplotlib.rc('font', family = 'sans-serif')
-
-    # close previous figures
-    matplotlib.pyplot.close('all')
-
-    # create plot
-    if plot.create(dataset):
-
-        # (optional) draw title
-        if plot.settings['show_title']:
-            if 'title' in plot.settings \
-                and isinstance(plot.settings['title'], str):
-                title = plot.settings['title']
-            else: title = '' # Todo: self._get_title(model)
-            matplotlib.pyplot.title(title, fontsize = 11.)
-
-        # output
-        matplotlib.pyplot.savefig(path, dpi = plot.settings['dpi'])
-
-    # clear figures and release memory
-    matplotlib.pyplot.clf()
-
+    if plot.create(dataset): plot.save(path)
+    plot.release()
     return path
 
-class Heatmap:
+class Heatmap(nemoa.common.classes.Plot):
 
-    settings = None
-    default = {
+    settings = {
         'fileformat': 'pdf',
-        'dpi': 300,
-        'show_title': True,
+        'dpi': None,
         'title': None,
+        'show_title': True,
+        'title_fontsize': 14,
         'bg_color': 'none',
         'path': ('system', 'relations'),
         'units': (None, None),
@@ -120,9 +75,6 @@ class Heatmap:
         'transform': '',
         'layer': None,
         'interpolation': 'nearest' }
-
-    def __init__(self, **kwargs):
-        self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
     def create(self, dataset):
 
@@ -139,15 +91,9 @@ class Heatmap:
         # create plot
         return nemoa.common.plot.heatmap(R, **self.settings)
 
-class Histogram:
+class Histogram(nemoa.common.classes.Plot):
 
-    settings = None
-    default = {
-        'fileformat': 'pdf',
-        'dpi': 300,
-        'show_title': True,
-        'title': None,
-        'bg_color': 'none',
+    settings = {
         'path': ('dataset', ),
         'units': (None, None),
         'bins': 120,
@@ -156,9 +102,6 @@ class Histogram:
         'histtype': 'bar',
         'linewidth': 0.5 }
 
-    def __init__(self, **kwargs):
-        self.settings = nemoa.common.dict.merge(kwargs, self.default)
-
     def create(self, dataset):
 
         # create data (numpy 1-d array)
@@ -166,4 +109,3 @@ class Histogram:
 
         # create plot
         return nemoa.common.plot.histogram(data, **self.settings)
-

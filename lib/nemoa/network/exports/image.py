@@ -9,11 +9,10 @@ import numpy
 import networkx
 import os
 import importlib
-import matplotlib.pyplot
 
 def filetypes():
-    """Get supported image filetypes for network export."""
-    return matplotlib.pyplot.gcf().canvas.get_supported_filetypes()
+    """Get supported image filetypes."""
+    return nemoa.common.plot.filetypes()
 
 def show(network, plot = None, **kwargs):
 
@@ -32,23 +31,18 @@ def show(network, plot = None, **kwargs):
     plot = getattr(module, class_name)(**kwargs)
 
     # create plot
-    if plot.create(network):
+    if plot.create(network): plot.show()
 
-        # output
-        matplotlib.pyplot.show()
-
-    # clear figures and release memory
-    matplotlib.pyplot.clf()
+    plot.release()
 
     return True
 
 def save(network, path = None, filetype = None, plot = None, **kwargs):
 
-    # test if filetype is supported by matplotlib
+    # test if filetype is supported
     if not filetype in filetypes():
         return nemoa.log('error', """could not create plot:
-            filetype '%s' is not supported by matplotlib.""" %
-            (filetype))
+            filetype '%s' is not supported.""" % filetype)
 
     # get class for plotting from attribute 'plot'
     if not plot: plot = 'graph'
@@ -64,29 +58,17 @@ def save(network, path = None, filetype = None, plot = None, **kwargs):
     # create plot instance
     plot = getattr(module, class_name)(**kwargs)
 
-    # create plot
-    if plot.create(network):
-
-        # output
-        matplotlib.pyplot.savefig(path, dpi = plot.settings['dpi'])
+    # create plot and save to file
+    if plot.create(network): plot.save(path)
 
     # clear figures and release memory
-    matplotlib.pyplot.clf()
+    plot.release()
 
     return path
 
 class Graph(nemoa.common.classes.Plot):
 
-    settings = None
-    default = {
-        'fileformat': 'pdf',
-        'figure_size': (10., 6.),
-        'dpi': None,
-        'bg_color': 'none',
-        'usetex': False,
-        'show_title': True,
-        'title': None,
-        'title_fontsize': 14.0,
+    settings = {
         'show_legend': True,
         'legend_fontsize': 9.0,
         'graph_layout': 'layer',

@@ -416,16 +416,51 @@ class Plot:
 
     """
 
+    default = {
+        'fileformat': 'pdf',
+        'figure_size': (10., 6.),
+        'dpi': None,
+        'bg_color': 'none',
+        'usetex': False,
+        'title': None,
+        'show_title': True,
+        'title_fontsize': 14.0}
+
+    settings = None
+    figure = None
+
     def __init__(self, *args, **kwargs):
 
         import matplotlib
+        import matplotlib.pyplot as plt
 
-        self.settings = nemoa.common.dict.merge(kwargs, self.default)
+        # merge settings from defaults, settings and kwargs
+        settings = self.default.copy()
+        settings = nemoa.common.dict.merge(self.settings, settings)
+        self.settings = nemoa.common.dict.merge(kwargs, settings)
 
         # close previous figures
-        matplotlib.pyplot.close('all')
+        plt.close('all')
 
         # common matplotlib settings
         matplotlib.rc('text', usetex = \
             self.settings.get('usetex', False))
         matplotlib.rc('font', family = 'sans-serif')
+
+        # create figure
+        self.figure = matplotlib.pyplot.figure(
+            figsize   = self.settings.get('figure_size'),
+            dpi       = self.settings.get('dpi'),
+            facecolor = self.settings.get('bg_color'))
+
+    def show(self):
+        import matplotlib.pyplot as plt
+        return plt.show()
+
+    def save(self, path, *args, **kwargs):
+        return self.figure.savefig(path,
+            dpi = self.settings.get('dpi'), **kwargs)
+
+    def release(self):
+        import matplotlib.pyplot as plt
+        return plt.clf()
