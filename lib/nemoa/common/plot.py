@@ -34,6 +34,24 @@ def get_color(*args):
             continue
     return rgb
 
+def get_label(string):
+    """Return formated node label as used for plots."""
+
+    lstr = string.rstrip('1234567890')
+    if len(lstr) == len(string): return '${%s}$' % (string)
+    rnum = int(string[len(lstr):])
+    lstr = lstr.strip('_')
+    return '${%s}_{%i}$' % (lstr, rnum)
+
+def get_label_width(string):
+    """Return estimated width for formated node labels."""
+
+    lstr = string.rstrip('1234567890')
+    if len(lstr) == len(string): return len(string)
+    lstr = lstr.strip('_')
+    rstr = str(int(string[len(lstr):]))
+    return len(lstr) + 0.7 * len(rstr)
+
 def heatmap(array, **kwargs):
 
     import matplotlib.pyplot as plt
@@ -58,11 +76,11 @@ def heatmap(array, **kwargs):
     y_labels = []
     for label in kwargs['units'][0]:
         if ':' in label: label = label.split(':', 1)[1]
-        y_labels.append(nemoa.common.text.labelfomat(label))
+        y_labels.append(get_label(label))
     x_labels = []
     for label in kwargs['units'][1]:
         if ':' in label: label = label.split(':', 1)[1]
-        x_labels.append(nemoa.common.text.labelfomat(label))
+        x_labels.append(get_label(label))
     fontsize = min(max_font_size, \
         400. / float(max(len(x_labels), len(y_labels))))
     plt.xticks(
@@ -111,7 +129,6 @@ def graph(graph,
     show_legend        = False,
     legend_fontsize    = 9.0,
     graph_layout       = 'layer',
-    direction          = 'right',
     node_style         = 'o',
     edge_style         = '-|>',
     edge_width_enabled = True,
@@ -123,16 +140,15 @@ def graph(graph,
         graph: networkx graph instance
 
     Kwargs:
-        figure_size (tuple): # (11.69,8.27) for A4
-                                            # (16.53,11.69) for A3
+        figure_size (tuple): figure size in inches
+            (11.69,8.27) for A4, (16.53,11.69) for A3
         edge_attribute (string): name of edge attribute, that
             determines the edge colors by its sign and the edge width
             by its absolute value.
             default: 'weight'
         edge_color (bool): flag for colored edges
-            True: edge colors are determined by the sign of a given
-                edge attribute defined by the keyword argument
-                'edge_attribute'
+            True: edge colors are determined by the sign of the
+                attribute 'weight'
             False: edges are black
         edge_poscolor (string): name of color for edges with
             positive signed attribute. For a full list of specified
@@ -173,7 +189,6 @@ def graph(graph,
         "https://networkx.github.io")
 
     import nemoa.common.graph as nmgraph
-    import nemoa.common.text as nmtext
     import nemoa.common.dict as nmdict
 
     # common matplotlib settings
@@ -234,8 +249,8 @@ def graph(graph,
 
         # determine label, fontsize and color
         node_label = data.get('label', str(node).title())
-        node_label_format = nmtext.labelfomat(node_label)
-        node_label_size = len(node_label.rstrip('1234567890'))
+        node_label_format = get_label(node_label)
+        node_label_size = np.sqrt(get_label_width(node_label))
         font_color = get_color(data.get('font_color'), 'black')
 
         # draw node label
@@ -256,6 +271,7 @@ def graph(graph,
     seen = {}
     for (u, v, data) in graph.edges(data = True):
         weight = data.get('weight', 1.0)
+        print u, v
 
         # calculate edge curvature from node positions
         # parameter rad describes the height in the normalized triangle
