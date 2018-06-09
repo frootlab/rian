@@ -13,11 +13,11 @@ def types(type = None):
 
     # get supported base models
     types = nemoa.model.builder.base.types()
-    for key, val in types.items():
+    for key, val in list(types.items()):
         type_dict[key] = ('base', val)
 
     if type == None:
-        return {key: val[1] for key, val in type_dict.items()}
+        return {key: val[1] for key, val in list(type_dict.items())}
     if type in type_dict:
         return type_dict[type]
 
@@ -27,7 +27,7 @@ def build(type = 'model', *args, **kwargs):
     """Build model from parameters, datasets, etc. ."""
 
     # test if type is supported
-    if not type in types().keys():
+    if not type in list(types().keys()):
         nemoa.log('error', """could not build model:
             type '%s' is not supported.""" % (type))
         return {}

@@ -46,10 +46,10 @@ def copytree(src, tgt):
         try:
             shutil.copytree(srcsdir, tgtsdir)
         except shutil.Error as error:
-            print('could not copy directory: %s' % error)
+            print(('could not copy directory: %s' % error))
             retval = False
         except OSError as error:
-            print('could not copy directory: %s' % error)
+            print(('could not copy directory: %s' % error))
             retval = False
 
     return retval

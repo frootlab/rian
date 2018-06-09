@@ -21,7 +21,7 @@ def get_color(*args):
         "https://matplotlib.org")
 
     if len(args) == 0:
-        clist = colors.get_named_colors_mapping().keys()
+        clist = list(colors.get_named_colors_mapping().keys())
         return sorted([cname[5:].title() \
             for cname in clist if cname[:5] == 'xkcd:'])
 
@@ -242,9 +242,9 @@ def graph(graph,
 
     # get nodes and groups sorted by node attribute group_id
     groups = nmgraph.get_groups(graph, attribute = 'group')
-    sorted_groups = sorted(groups.keys(), key = \
-        lambda g: None if not isinstance(g, list) or len(g) == 0 \
-        else graph.node.get(g[0], {}).get('group_id', 'none'))
+    sorted_groups = sorted(list(groups.keys()), key = \
+        lambda g: 0 if not isinstance(g, list) or len(g) == 0 \
+        else graph.node.get(g[0], {}).get('group_id', 0))
 
     # draw nodes, labeled by groups
     for group in sorted_groups:
@@ -290,7 +290,7 @@ def graph(graph,
 
     # draw edges
     seen = {}
-    if nmgraph.is_directed(graph): default_edge_style = '-|>' 
+    if nmgraph.is_directed(graph): default_edge_style = '-|>'
     else: default_edge_style = '-'
 
     for (u, v, data) in graph.edges(data = True):
@@ -344,7 +344,7 @@ def graph(graph,
 
     # (optional) draw legend
     if show_legend:
-        num_groups = np.sum([1 for g in groups.values() \
+        num_groups = np.sum([1 for g in list(groups.values()) \
             if isinstance(g, list) and len(g) > 0])
         ax.legend(
             numpoints      = 1,

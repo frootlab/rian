@@ -187,13 +187,13 @@ class Dataset(nemoa.common.classes.Metadata):
                 'notusecols': columns_lost }
 
         # intersect converted table column names
-        inter_col_labels = col_labels[col_labels.keys()[0]]['conv']
+        inter_col_labels = col_labels[list(col_labels.keys())[0]]['conv']
         for table in col_labels:
-            list = col_labels[table]['conv']
-            black_list = [list[i] for i in \
+            conv_list = col_labels[table]['conv']
+            black_list = [conv_list[i] for i in \
                 col_labels[table]['notusecols']]
             inter_col_labels = [val for val in inter_col_labels \
-                if val in list and not val in black_list]
+                if val in conv_list and not val in black_list]
 
         # search network nodes in dataset columns and create
         # dictionary for column mapping from columns to table column
@@ -226,7 +226,7 @@ class Dataset(nemoa.common.classes.Metadata):
         self._config['colfilter'] = colfilter
 
         # add '*' and table names as row filters
-        tables = self._tables.keys()
+        tables = list(self._tables.keys())
         rowfilter = {key: [key + ':*'] for key in tables + ['*']}
         self._config['rowfilter'] = rowfilter
 
@@ -373,7 +373,7 @@ class Dataset(nemoa.common.classes.Metadata):
 
         """
 
-        tables = self._tables.keys()
+        tables = list(self._tables.keys())
         columns = self._get_colnames()
 
         # get data for calculation of mean value and standard deviation
@@ -408,7 +408,7 @@ class Dataset(nemoa.common.classes.Metadata):
 
         """
 
-        tables = self._tables.keys()
+        tables = list(self._tables.keys())
         columns = self._get_colnames()
 
         # get data for calculation of mean value and standard deviation
@@ -427,7 +427,7 @@ class Dataset(nemoa.common.classes.Metadata):
             quantile[col] = scol[lrid:urid].mean()
 
         # iterative normalize tables and columns
-        for table in self._tables.keys():
+        for table in list(self._tables.keys()):
             for column in self._tables[table].dtype.names[1:]:
                 mean = data[column].mean()
                 self._tables[table][column] = \
@@ -522,7 +522,8 @@ class Dataset(nemoa.common.classes.Metadata):
             # get data, mapping and transformation function
             data = self._tables[table]
             data = self._get_table(table, cols = source_columns)
-            data_array = data.view('<f8').reshape(data.size,
+            # 2Do: do not create copy of data but view!
+            data_array = data.copy().view('<f8').reshape(data.size,
                 len(source_columns))
 
             # transform data
@@ -542,7 +543,7 @@ class Dataset(nemoa.common.classes.Metadata):
             col_formats = ('<U12',) + tuple(['<f8' \
                 for x in target_columns])
             new_rec_array = numpy.recarray((num_rows,),
-                dtype = zip(col_names, col_formats))
+                dtype = list(zip(col_names, col_formats)))
 
             # set values in record array
             new_rec_array['label'] = self._tables[table]['label']
@@ -679,7 +680,7 @@ class Dataset(nemoa.common.classes.Metadata):
         mapping = self._config['colmapping']
         mapper = lambda column: mapping[column]
 
-        return map(mapper, columns)
+        return list(map(mapper, columns))
 
     def _get_colgroups(self):
         """Get grouped lists of columns."""
@@ -697,19 +698,19 @@ class Dataset(nemoa.common.classes.Metadata):
 
     def _get_colfilters(self):
         """Get list of column filters."""
-        return self._config['colfilter'].keys()
+        return list(self._config['colfilter'].keys())
 
     def _get_rows(self):
         """Get list of row names."""
         row_names = []
-        for table in self._tables.keys():
+        for table in list(self._tables.keys()):
             labels = self._tables[table]['label'].tolist()
             row_names += ['%s:%s' % (table, name) for name in labels]
         return row_names
 
     def _get_rowgroups(self):
         """Get list of tables."""
-        return self._tables.keys()
+        return list(self._tables.keys())
 
     def _get_rowfilter(self, name):
         if not name in self._config['rowfilter']:
@@ -719,7 +720,7 @@ class Dataset(nemoa.common.classes.Metadata):
 
     def _get_rowfilters(self):
         """Get list of row filters."""
-        return self._config['rowfilter'].keys()
+        return list(self._config['rowfilter'].keys())
 
     def _get_data(self, size = 0, rows = '*', cols = '*',
         noise = (None, 0.), output = 'array'):
@@ -764,7 +765,7 @@ class Dataset(nemoa.common.classes.Metadata):
 
         # get stratified and filtered data
         src_stack = ()
-        for table in self._tables.iterkeys():
+        for table in self._tables.keys():
             if size > 0:
                 src_data = self._get_table(table = table,
                     rows = rows, size = size + 1, labels = True)
@@ -822,7 +823,7 @@ class Dataset(nemoa.common.classes.Metadata):
         """
 
         # get columns from column filter or from list
-        if isinstance(cols, basestring):
+        if isinstance(cols, str):
             columns = self._get_columns(cols)
         elif isinstance(cols, list):
             columns = cols
@@ -846,13 +847,13 @@ class Dataset(nemoa.common.classes.Metadata):
             return nemoa.log('error', """could not retrieve data:
                 invalid 'format' argument!""")
 
-        # get unique colnames
+        # check for identical column names
         if len(set(colnames)) == len(colnames):
             ucolnames = colnames
         else:
             redcols = sorted(set(colnames),
                 key = colnames.index)
-            counter = dict(zip(redcols, [0] * len(redcols)))
+            counter = dict(list(zip(redcols, [0] * len(redcols))))
             ucolnames = []
             for col in colnames:
                 counter[col] += 1
@@ -865,7 +866,8 @@ class Dataset(nemoa.common.classes.Metadata):
             if fmt_str == 'recarray':
                 rettuple += (data[['label'] + ucolnames], )
             elif fmt_str == 'array':
-                rettuple += (data[ucolnames].view('<f8').reshape(
+                # 2Do: do not create copy of data but view!
+                rettuple += (data[ucolnames].copy().view('<f8').reshape(
                     data.size, len(ucolnames)), )
             elif fmt_str == 'cols':
                 rettuple += (ucolnames, )
@@ -907,7 +909,7 @@ class Dataset(nemoa.common.classes.Metadata):
             return tuple([self._get_data_corrupt(table)
                 for table in list(data)])
 
-        if not isinstance(type, basestring): return data
+        if not isinstance(type, str): return data
         if type.lower() == 'none': return data
 
         # gaussian noise model
@@ -970,8 +972,8 @@ class Dataset(nemoa.common.classes.Metadata):
             return copy.deepcopy(self._tables)
 
         # check table name
-        if not isinstance(table, basestring) \
-            or not table in self._tables.keys() \
+        if not isinstance(table, str) \
+            or not table in list(self._tables.keys()) \
             or not isinstance(self._tables[table], numpy.ndarray):
             return nemoa.log('error', """could not retrieve table:
                 invalid table name: '%s'.""" % (table))
@@ -1002,7 +1004,7 @@ class Dataset(nemoa.common.classes.Metadata):
             redfmt = [col[1] for col in redrec.dtype.descr]
             select = [redcols.index(col) for col in datacols]
             names = []
-            counter = dict(zip(redcols, [0] * len(redcols)))
+            counter = dict(list(zip(redcols, [0] * len(redcols))))
             for col in datacols:
                 counter[col] += 1
                 if counter[col] == 1: names.append(col)
@@ -1064,7 +1066,7 @@ class Dataset(nemoa.common.classes.Metadata):
             import copy
             return copy.deepcopy(self._config)
 
-        if isinstance(key, str) and key in self._config.keys():
+        if isinstance(key, str) and key in list(self._config.keys()):
             if isinstance(self._config[key], dict):
                 return self._config[key].copy()
             return self._config[key]
@@ -1079,7 +1081,7 @@ class Dataset(nemoa.common.classes.Metadata):
             import copy
             return copy.deepcopy(self._tables)
 
-        if isinstance(key, str) and key in self._tables.keys():
+        if isinstance(key, str) and key in list(self._tables.keys()):
             return self._tables[key]
 
         return nemoa.log('error', """could not get table:
@@ -1134,14 +1136,14 @@ class Dataset(nemoa.common.classes.Metadata):
 
         # assert validity of external columns in 'mapping'
         for column in columns:
-            if not column in mapping.keys():
+            if not column in list(mapping.keys()):
                 return nemoa.log('error', """could not set columns:
                     column '%s' can not be mapped to table column."""
                     % (column))
 
         # assert validity of internal columns in 'mapping'
         for column in list(set(mapping.values())):
-            for table in self._tables.iterkeys():
+            for table in self._tables.keys():
                 if column in self._tables[table].dtype.names:
                     continue
                 return nemoa.log('error', """could not set columns:
@@ -1161,7 +1163,7 @@ class Dataset(nemoa.common.classes.Metadata):
     def _set_colfilter(self, **kwargs):
         col_names = self._get_columns()
 
-        for col_filter_name in kwargs.keys():
+        for col_filter_name in list(kwargs.keys()):
             col_filter_cols = kwargs[col_filter_name]
 
             # test column names of new column filter
@@ -1243,7 +1245,7 @@ class Dataset(nemoa.common.classes.Metadata):
         """Evaluate dataset."""
 
         algorithms = self._get_algorithms(attribute = 'reference')
-        if not name in algorithms.keys():
+        if not name in list(algorithms.keys()):
             return nemoa.log('error', """could not evaluate dataset:
                 unknown algorithm name '%s'.""" % (name))
 

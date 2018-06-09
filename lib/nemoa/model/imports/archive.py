@@ -26,7 +26,8 @@ class Npz:
         self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
     def load(self, path):
-        copy = numpy.load(path)
+        copy = numpy.load(path, encoding = 'latin1')
+
         return {
             'config': copy['config'].item(),
             'dataset': copy['dataset'].item(),

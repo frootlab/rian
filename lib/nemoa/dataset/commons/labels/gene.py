@@ -91,7 +91,7 @@ class gene:
         if not self.robjects:
             nemoa.log('error', """could not convert gene labels:
                 python package 'rpy2' is not installed!""")
-            return inlist, range(len(inlist))
+            return inlist, list(range(len(inlist)))
 
         # make local copy of list
         inlist = list(inlist)[:]
@@ -105,14 +105,14 @@ class gene:
 
             # load package
             if not self._load_pkg(infmt + '.db'):
-                return inlist, range(len(inlist))
+                return inlist, list(range(len(inlist)))
 
             # get listvector
             if not self._exec_cmdlist([
                 "x <- %s%s" % (infmt, outfmt.upper()),
                 "mapped_genes <- mappedkeys(x)",
                 "listmap <- as.list(x[mapped_genes])" ]):
-                return inlist, range(len(inlist))
+                return inlist, list(range(len(inlist)))
 
             # strip leading 'X' for column select
             slist = [a.lstrip('X') for a in inlist]
@@ -121,14 +121,14 @@ class gene:
 
             # load bioconductor annotation package
             if not self._load_pkg('org.Hs.eg.db'):
-                return inlist, range(len(inlist))
+                return inlist, list(range(len(inlist)))
 
             # get listvector
             if not self._exec_cmdlist([
                 "x <- org.Hs.eg%s" % (outfmt.upper()),
                 "mapped_genes <- mappedkeys(x)",
                 "listmap <- as.list(x[mapped_genes])" ]):
-                return inlist, range(len(inlist))
+                return inlist, list(range(len(inlist)))
 
             # pass list for column select
             slist = inlist
@@ -137,14 +137,14 @@ class gene:
 
             # load bioconductor annotation package
             if not self._load_pkg('org.Hs.eg.db'):
-                return inlist, range(len(inlist))
+                return inlist, list(range(len(inlist)))
 
             # get listvector
             if not self._exec_cmdlist([
                 "x <- org.Hs.eg%s2EG" % (infmt.upper()),
                 "mapped_genes <- mappedkeys(x)",
                 "listmap <- as.list(x[mapped_genes])" ]):
-                return inlist, range(len(inlist))
+                return inlist, list(range(len(inlist)))
 
             # pass list for column select
             slist = inlist

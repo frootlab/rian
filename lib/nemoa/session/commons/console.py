@@ -50,7 +50,7 @@ class GetchUnix:
         import sys
         import threading
         import time
-        import Queue
+        import queue
         import termios
 
         fd = sys.stdin.fileno()
@@ -62,7 +62,7 @@ class GetchUnix:
         termios.tcsetattr(fd, termios.TCSAFLUSH, newterm)
 
         self.queue = {
-            'stdin': Queue.Queue(),
+            'stdin': queue.Queue(),
             'runsignal': True,
             'time': time.time(),
             'curterm': curterm,

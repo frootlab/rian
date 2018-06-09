@@ -67,7 +67,7 @@ def getdelim(path, delimiters = [',', ';', '\t', ' '],
             file '%s' does not exist.""" % path)
 
     delimiter = None
-    with open(path, 'rb') as csvfile:
+    with open(path, 'r') as csvfile:
         lines = 1
         probe = ''
         for line in csvfile:
@@ -202,7 +202,7 @@ def getlabelcolumn(path, delimiter = None):
             elif not second:
                 second = line
                 break
-                
+
     if first == None or second == None:
         return nemoa.log('error', """could not get csv row label column
             id: file '%s' is not valid.""" % (path))

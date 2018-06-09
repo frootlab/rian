@@ -143,9 +143,9 @@ class ANN(nemoa.model.optimizer.base.Optimizer):
             updl = nemoa.system.commons.links.Links.get_updates_delta(
                 out[src], delta[src, tgt])
             units[tgt] = {key: rate * updu[key]
-                for key in updu.iterkeys()}
+                for key in updu.keys()}
             links[(src, tgt)] = {key: rate * updl[key]
-                for key in updl.iterkeys()}
+                for key in updl.keys()}
 
         return { 'units': units, 'links': links }
 
@@ -182,12 +182,12 @@ class ANN(nemoa.model.optimizer.base.Optimizer):
         """ """
 
         def _get_dict(dict, val): return {key: val * numpy.ones(
-            shape = dict[key].shape) for key in dict.keys()}
+            shape = dict[key].shape) for key in list(dict.keys())}
 
         def _get_update(prevGrad, prev_update, grad, accel, min_factor,
             max_factor):
             update = {}
-            for key in grad.keys():
+            for key in list(grad.keys()):
                 sign = numpy.sign(grad[key])
                 a = numpy.sign(prevGrad[key]) * sign
                 magnitude = numpy.maximum(numpy.minimum(

@@ -32,7 +32,7 @@ class Optimizer:
         if key == 'progress': return self._get_progress()
         if key == 'model': return self._get_model()
 
-        if not key in self._buffer.keys(): return False
+        if not key in list(self._buffer.keys()): return False
         return self._buffer[key]
 
     def _get_algorithms(self, category = None, attribute = None):
@@ -288,7 +288,7 @@ class Optimizer:
 
         if not isinstance(config, dict):
             if not config: key = 'default'
-            elif isinstance(config, basestring): key = config
+            elif isinstance(config, str): key = config
             else:
                 return nemoa.log('warning', """could not configure
                     optimization: invalid configuration.""") or None

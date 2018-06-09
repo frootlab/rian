@@ -85,14 +85,14 @@ class Rules:
         data['label'] = rowlabels
         initialize = self.settings['initialize']
         for col in cols:
-            if isinstance(initialize, basestring):
+            if isinstance(initialize, str):
                 initrule = initialize
             elif isinstance(initialize, dict):
                 if not col in initialize:
                     nemoa.log('warning', """could not initialize '%s':
                         init rule not found.""" % col)
                     continue
-                if not isinstance(initialize[col], basestring):
+                if not isinstance(initialize[col], str):
                     nemoa.log('warning', """could not initialize '%s':
                         init rule not valid.""" % col)
                     continue

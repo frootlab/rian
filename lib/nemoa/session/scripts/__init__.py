@@ -19,10 +19,10 @@ def main():
 
         nemoa.set('mode', 'silent')
         if not nemoa.open(workspace): return False
-        print('Scripts in workspace %s:\n' % (nemoa.get('workspace')))
+        print(('Scripts in workspace %s:\n' % (nemoa.get('workspace'))))
         for script in nemoa.list('scripts'):
-            print('    %s' % (script))
-        print
+            print(('    %s' % (script)))
+        print()
 
         return True
 
@@ -55,7 +55,7 @@ def main():
 
         import nemoa
 
-        print('nemoa ' + nemoa.__version__)
+        print(('nemoa ' + nemoa.__version__))
 
         return True
 
@@ -66,9 +66,9 @@ def main():
 
         nemoa.set('mode', 'silent')
         workspaces = nemoa.list('workspaces', base = 'user')
-        print 'Workspaces:\n'
-        for workspace in workspaces: print('    %s' % (workspace))
-        print
+        print('Workspaces:\n')
+        for workspace in workspaces: print(('    %s' % (workspace)))
+        print()
 
         return True
 

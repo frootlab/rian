@@ -39,7 +39,7 @@ def merge(d1, d2, new = True):
         import copy
         d2 = copy.deepcopy(d2)
 
-    for k1, v1 in d1.iteritems():
+    for k1, v1 in d1.items():
         if not k1 in d2: d2[k1] = v1
         elif isinstance(v1, dict): merge(v1, d2[k1], new = False)
         else: d2[k1] = v1
@@ -52,7 +52,7 @@ def section(d, string):
     if not isinstance(string, str): return {}
     i = len(string)
 
-    return {k[i:]: v for k, v in d.items() \
+    return {k[i:]: v for k, v in list(d.items()) \
         if isinstance(k, str) and k[:i] == string}
 
 def strkeys(d):
@@ -60,7 +60,7 @@ def strkeys(d):
 
     if not isinstance(d, dict): return d
     dnew = {}
-    for key, val in d.items():
+    for key, val in list(d.items()):
         if not isinstance(key, tuple): keynew = str(key)
         else: keynew = tuple([str(token) for token in key])
         dnew[keynew] = strkeys(val)
@@ -73,7 +73,7 @@ def sumjoin(*args):
     dsum = {}
     for d in args:
         if not isinstance(d, dict): continue
-        for key, val in d.iteritems():
+        for key, val in d.items():
             if key in dsum:
                 if not type(dsum[key]) == type(val): continue
                 dsum[key] += val

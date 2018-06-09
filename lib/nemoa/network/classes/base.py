@@ -119,7 +119,7 @@ class Network(nemoa.common.classes.Metadata):
         # filter edges to valid nodes
         nodes = self._config['nodes']
         edges = self._config['edges']
-        for i in xrange(len(layers) - 1):
+        for i in range(len(layers) - 1):
             src_layer = layers[i]
             tgt_layer = layers[i + 1]
             edge_layer = (src_layer, tgt_layer)
@@ -170,7 +170,7 @@ class Network(nemoa.common.classes.Metadata):
 
         # add edges to graph
         edge_order = 0
-        for layer_id in xrange(len(layers) - 1):
+        for layer_id in range(len(layers) - 1):
             src_layer = layers[layer_id]
             tgt_layer = layers[layer_id + 1]
             edge_layer = (src_layer, tgt_layer)
@@ -272,7 +272,7 @@ class Network(nemoa.common.classes.Metadata):
         # test if the hidden layers are symmetric
         layers = self._get_layers()
         size = len(layers)
-        for lid in xrange(1, (size - 1) / 2):
+        for lid in range(1, (size - 1) / 2):
             symmetric = len(self._get_layer(layers[lid])['nodes']) \
                 == len(self._get_layer(layers[-lid-1])['nodes'])
             if not symmetric: return nemoa.log('error',
@@ -414,12 +414,10 @@ class Network(nemoa.common.classes.Metadata):
         if not isinstance(edge, tuple):
             return nemoa.log('error', """could not get edge:
                 edge '%s' is unkown.""" % (edge))
-        src_node, tgt_node = edge
-        if not src_node in self._graph.edge \
-            or not tgt_node in self._graph.edge[src_node]:
+        if not edge in self._graph.edges:
             return nemoa.log('error', """could not get edge:
-                edge ('%s', '%s') is unkown.""" % (src_node, tgt_node))
-        return self._graph.edge[src_node][tgt_node]
+                edge ('%s', '%s') is unkown.""" % edge)
+        return self._graph.edges[edge]
 
     def _get_edges(self, groupby = None, **kwargs):
         """Get edges of network.
@@ -466,8 +464,7 @@ class Network(nemoa.common.classes.Metadata):
         # group edges by given attribute
         grouping_values = []
         for edge in edges:
-            src, tgt = edge
-            edge_params = self._graph.edge[src][tgt]['params']
+            edge_params = self._graph.edges[edge]['params']
             if not groupby in edge_params:
                 return nemoa.log('error', """could not get edges:
                     unknown edge attribute '%s'.""" % (groupby))
@@ -478,8 +475,7 @@ class Network(nemoa.common.classes.Metadata):
         for grouping_value in grouping_values:
             group = []
             for edge in edges:
-                src, tgt = edge
-                if self._graph.edge[src][tgt]['params'][groupby] \
+                if self._graph.edges[edge]['params'][groupby] \
                     == grouping_value:
                     group.append(edge)
             grouped_edges.append(group)
@@ -552,7 +548,7 @@ class Network(nemoa.common.classes.Metadata):
 
         if key == None: return copy.deepcopy(self._config)
 
-        if isinstance(key, str) and key in self._config.keys():
+        if isinstance(key, str) and key in list(self._config.keys()):
             if isinstance(self._config[key], dict):
                 return self._config[key].copy()
             return self._config[key]
@@ -649,7 +645,7 @@ class Network(nemoa.common.classes.Metadata):
             graph_copy['edges'])
         self._graph.graph = graph_copy['graph']
         for node, attr in graph_copy['nodes']:
-            self._graph.node[node] = attr
+            self._graph.node[node].update(attr)
 
         return True
 
@@ -657,7 +653,7 @@ class Network(nemoa.common.classes.Metadata):
         """Evaluate network."""
 
         algorithms = self._get_algorithms(attribute = 'reference')
-        if not name in algorithms.keys():
+        if not name in list(algorithms.keys()):
             return nemoa.log('error', """could not evaluate network:
                 unknown networkx algorithm name '%s'.""" % (name))
 

@@ -14,7 +14,7 @@ def getpath(filepath = None):
 
     if not filepath:
         return here
-    elif isinstance(filepath, basestring):
+    elif isinstance(filepath, str):
         return os.path.join(here, filepath)
     elif isinstance(filepath, (tuple, list)):
         return os.path.join(here, os.path.sep.join(filepath))
@@ -78,7 +78,7 @@ def install():
         'name': 'nemoa',
         'descfile': 'DESCRIPTION.rst',
         'libdir': 'lib',
-        'keywords': 'dataanalysis deeplearning dbn dbm rbm',
+        'keywords': 'dataanalysis deeplearning ann rbm dbn dbm',
         'install_requires': [
             'appdirs',
             'networkx',
@@ -94,19 +94,18 @@ def install():
             'Topic :: Scientific/Engineering',
             'Operating System :: OS Independent',
             'License :: OSI Approved :: GPLv3',
-            'Programming Language :: Python :: 2',
-            'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3',
             'Programming Language :: Python :: 3.3',
             'Programming Language :: Python :: 3.4',
-            'Programming Language :: Python :: 3.5'],
+            'Programming Language :: Python :: 3.5',
+			'Programming Language :: Python :: 3.6'],
         'entry_points': {
             'console_scripts': [
                 'nemoa = nemoa.session.scripts:main'] }}
 
     # prepare dynamic package variables
     srcfile = (pkg['libdir'], pkg['name'], '__init__.py')
-    for key, val in getvars(srcfile).items(): pkg[key] = val
+    for key, val in list(getvars(srcfile).items()): pkg[key] = val
     pkg['long_description'] = getfile(pkg['descfile'])
     pkg['package_dir'] = { '': pkg['libdir'] }
     pkg['cmdclass'] = { 'install': NemoCustomInstall }
@@ -143,7 +142,7 @@ def postinstall():
         import os
         import shutil
 
-        print('copying %s -> %s' % (src, tgt))
+        print(('copying %s -> %s' % (src, tgt)))
 
         for srcsdir in glob.glob(os.path.join(src, '*')):
             tgtsdir = os.path.join(tgt, os.path.basename(srcsdir))
@@ -156,11 +155,11 @@ def postinstall():
 
             # directories are the same
             except shutil.Error as e:
-                print('directory not copied. Error: %s' % e)
+                print(('directory not copied. Error: %s' % e))
 
             # any error saying that the directory doesn't exist
             except OSError as e:
-                print('directory not copied. Error: %s' % e)
+                print(('directory not copied. Error: %s' % e))
 
         return True
 

@@ -98,17 +98,17 @@ class ANN(nemoa.system.classes.base.System):
         """Check if system unit parameter dictionary is valid. """
 
         if not isinstance(params, dict) \
-            or not 'units' in params.keys() \
+            or not 'units' in list(params.keys()) \
             or not isinstance(params['units'], list): return False
 
-        for layer_id in xrange(len(params['units'])):
+        for layer_id in range(len(params['units'])):
 
             # test parameter dictionary
             layer = params['units'][layer_id]
 
             if not isinstance(layer, dict): return False
             for key in ['id', 'layer', 'layer_id', 'visible', 'class']:
-                if not key in layer.keys(): return False
+                if not key in list(layer.keys()): return False
 
             # test unit class
             if layer['class'] == 'gauss' \
@@ -123,7 +123,7 @@ class ANN(nemoa.system.classes.base.System):
     def _remove_units(self, layer = None, label = []):
         """Remove units from parameter space. """
 
-        if not layer == None and not layer in self._units.keys():
+        if not layer == None and not layer in list(self._units.keys()):
             return nemoa.log('error', """could not remove units:
                 unknown layer '%s'""" % (layer))
 
@@ -148,12 +148,12 @@ class ANN(nemoa.system.classes.base.System):
         # delete units from link parameter arrays
         links = self._links[layer['layer']]
 
-        for src in links['source'].keys():
+        for src in list(links['source'].keys()):
             links['source'][src]['A'] = \
                 links['source'][src]['A'][:, select]
             links['source'][src]['W'] = \
                 links['source'][src]['W'][:, select]
-        for tgt in links['target'].keys():
+        for tgt in list(links['target'].keys()):
             links['target'][tgt]['A'] = \
                 links['target'][tgt]['A'][select, :]
             links['target'][tgt]['W'] = \
@@ -165,12 +165,12 @@ class ANN(nemoa.system.classes.base.System):
         """Check if system link parameter dictionary is valid."""
 
         if not isinstance(params, dict) \
-            or not 'links' in params.keys() \
+            or not 'links' in list(params.keys()) \
             or not isinstance(params['links'], dict): return False
-        for id in params['links'].keys():
+        for id in list(params['links'].keys()):
             if not isinstance(params['links'][id], dict): return False
             for attr in ['A', 'W', 'source', 'target']:
-                if not attr in params['links'][id].keys(): return False
+                if not attr in list(params['links'][id].keys()): return False
 
         return True
 
@@ -188,12 +188,12 @@ class ANN(nemoa.system.classes.base.System):
         energy = 0.
 
         # sum local unit energies
-        for i in xrange(1, len(mapping) + 1):
+        for i in range(1, len(mapping) + 1):
             energy += self._algorithm_units_energy(data[0],
                 mapping = tuple(mapping[:i])).sum(axis = 1)
 
         # sum local link energies
-        for i in xrange(1, len(mapping)):
+        for i in range(1, len(mapping)):
             energy += self._algorithm_links_energy(data[0],
                 mapping = tuple(mapping[:i + 1])).sum(axis = (1, 2))
 

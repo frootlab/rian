@@ -13,11 +13,11 @@ def filetypes(filetype = None):
 
     # get supported text filetypes
     text_types = nemoa.workspace.imports.text.filetypes()
-    for key, val in text_types.items():
+    for key, val in list(text_types.items()):
         type_dict[key] = ('text', val)
 
     if filetype == None:
-        return {key: val[1] for key, val in type_dict.items()}
+        return {key: val[1] for key, val in list(type_dict.items())}
     if filetype in type_dict:
         return type_dict[filetype]
 

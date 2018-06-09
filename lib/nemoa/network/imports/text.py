@@ -184,7 +184,7 @@ class Ini:
                     config['nodes'][layer].append(node)
 
         # parse '[binding *]' sections and add edges to network dict
-        for i in xrange(len(config['layer']) - 1):
+        for i in range(len(config['layer']) - 1):
             src_layer = config['layer'][i]
             tgt_layer = config['layer'][i + 1]
 
@@ -219,7 +219,7 @@ class Ini:
                     config['edges'][edge_layer].append(edge)
 
         # check network binding
-        for i in xrange(len(config['layer']) - 1):
+        for i in range(len(config['layer']) - 1):
             src_layer = config['layer'][i]
             tgt_layer = config['layer'][i + 1]
 

@@ -238,7 +238,7 @@ class Graph(nemoa.common.classes.Plot):
             mean = numpy.mean([data.get('weight', 0.) \
                 for (u, v, data) in graph.edges(data = True)])
             for (u, v, data) in graph.edges(data = True):
-                graph.edge[u][v]['weight'] = data['weight'] / mean
+                graph.edges[u, v]['weight'] = data['weight'] / mean
 
         # graph layout specific attributes
         graph_layout = self.settings.get('graph_layout', None)

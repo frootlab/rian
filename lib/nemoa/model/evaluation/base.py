@@ -31,7 +31,7 @@ class Evaluation:
         if key == 'data': return self._get_data(*args, **kwargs)
         if key == 'model': return self._get_model()
 
-        if not key in self._buffer.keys(): return False
+        if not key in list(self._buffer.keys()): return False
         return self._buffer[key]
 
     def _get_algorithms(self, category = None, attribute = None):
@@ -188,7 +188,7 @@ class Evaluation:
                     for uid, unit in enumerate(units)}
             elif retfmt == 'scalar':
                 units = getunits(layer = kwargs['mapping'][-1])
-                return dict(zip(units, retval))
+                return dict(list(zip(units, retval)))
         elif category == 'links':
             if retfmt == 'scalar':
                 src = getunits(layer = kwargs['mapping'][0])

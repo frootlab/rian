@@ -13,11 +13,11 @@ def filetypes(filetype = None):
 
     # get supported archive filetypes
     archive_types = nemoa.model.imports.archive.filetypes()
-    for key, val in archive_types.items():
+    for key, val in list(archive_types.items()):
         type_dict[key] = ('archive', val)
 
     if filetype == None:
-        return {key: val[1] for key, val in type_dict.items()}
+        return {key: val[1] for key, val in list(type_dict.items())}
     if filetype in type_dict:
         return type_dict[filetype]
 

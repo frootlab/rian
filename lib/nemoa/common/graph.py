@@ -61,7 +61,7 @@ def get_layers(graph):
         if not l in sort: sort[l] = [n]
         else: sort[l].append(n)
     layers = []
-    for (layer, lid) in sorted(sort.keys(), key = lambda x: x[1]):
+    for (layer, lid) in sorted(list(sort.keys()), key = lambda x: x[1]):
         layers.append([node for (node, nid) in \
             sorted(sort.get((layer, lid), []), key = lambda x: x[1])])
     return layers
@@ -119,8 +119,8 @@ def get_layer_layout(graph, direction = 'down', minimize = 'weight'):
             # choose (node, position) pair with maximum savings
             # thereby penalize large distances by power two
             # repeat until all nodes have positions
-            nsel = range(tlen) # node select list
-            psel = range(tlen) # position select list
+            nsel = list(range(tlen)) # node select list
+            psel = list(range(tlen)) # position select list
             sort = [None] * tlen
             for i in range(tlen):
                 cmax = np.amax(cost[psel][:, nsel], axis = 0)
@@ -134,13 +134,16 @@ def get_layer_layout(graph, direction = 'down', minimize = 'weight'):
             stack[lid] = sort
 
     # calculate node positions in box [0, 1] x [0, 1]
-    orientate = lambda (x, y), d: {'right': (x, y), 'up': (y, x),
-        'left': (1. - x,  y), 'down': (y, 1. - x)}.get(d, (x, y))
+    orientate = lambda p, d: {
+        'right': (p[0], p[1]),
+        'up': (p[1], p[0]),
+        'left': (1. - p[0],  p[1]),
+        'down': (p[1], 1. - p[0])}.get(d)
     pos = {}
     for l, layer in enumerate(stack):
         for n, node in enumerate(layer):
             x = float(l) / (len(stack) - 1)
-            y = (float(n) + 0.5) / len(layer)
+            y = (float(n) + .5) / len(layer)
             pos[node] = orientate((x, y), direction)
 
     return pos
@@ -184,7 +187,7 @@ def get_subgraphs(graph):
         graph.to_undirected()))
     if len(graphs) > 1:
         nemoa.log('note', '%i complexes found' % (len(graphs)))
-    for i in xrange(len(graphs)):
+    for i in range(len(graphs)):
         for n in graphs[i].nodes(): graph.node[n]['complex'] = i
 
     return True
@@ -194,18 +197,18 @@ def get_groups(graph, attribute = None, param = None):
     if attribute == None and param == None:
         attribute = 'group'
 
-    groups = {None: []}
+    groups = {'': []}
 
     for node, data in graph.nodes(data = True):
         if not isinstance(data, dict):
-            groups[None].append(node)
+            groups[''].append(node)
             continue
         elif not attribute == None and not attribute in data:
-            groups[None].append(node)
+            groups[''].append(node)
             continue
         elif not param == None \
             and not ('params' in data and param in data['params']):
-            groups[None].append(node)
+            groups[''].append(node)
             continue
         if not attribute == None and param == None:
             group = data.get(attribute)
@@ -257,7 +260,7 @@ def get_node_layout(ntype):
             'description': 'Isolated',
             'groupid': 4,
             'layout': 'dark grey' } }
-    
+
     t = types.get(ntype, {})
     layout = layouts.get(t.get('layout', None), {})
     layout['description'] = t.get('description', 'Unknown')
@@ -317,7 +320,7 @@ def get_layout_normscale(pos):
     euklid = lambda x: np.sqrt(np.sum(x ** 2))
     dlist = []
     for i, u in enumerate(pos.keys()):
-        for j, v in enumerate(pos.keys()[i + 1:], i + 1):
+        for j, v in enumerate(list(pos.keys())[i + 1:], i + 1):
             pu, pv = np.array(pos[u]), np.array(pos[v])
             dlist.append(euklid(pu - pv))
     darr = np.array(dlist)
@@ -357,7 +360,7 @@ def rescale_layout(pos, size = None, padding = None, rotate = 0.):
         "nemoa.common.graph.rescale_layout() requires numpy: "
         "https://scipy.org")
 
-    data = np.array([(x, y) for x, y in pos.values()])
+    data = np.array([(x, y) for x, y in list(pos.values())])
 
     # rotate positions around its center a by given rotation angle
     if bool(rotate):
@@ -367,7 +370,7 @@ def rescale_layout(pos, size = None, padding = None, rotate = 0.):
         mean = data.mean(axis = 0)
         data = np.dot(data - mean, R.T) + mean
 
-    # rescale positions with padding [u, r, d, l]
+    # rescale positions with padding [up, right, down, left]
     if not isinstance(size, type(None)):
         dmin, dmax = np.amin(data, axis = 0), np.amax(data, axis = 0)
         if isinstance(padding, type(None)): u, r, d, l = 0., 0., 0., 0.

@@ -110,7 +110,7 @@ class Workspace:
     def _set_about(self, val):
         """Set description."""
 
-        if not isinstance(val, basestring): return nemoa.log('warning',
+        if not isinstance(val, str): return nemoa.log('warning',
             "attribute 'about' requires datatype 'basestring'.")
         self._config['about'] = val
 

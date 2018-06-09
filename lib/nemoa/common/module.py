@@ -12,7 +12,7 @@ def getfunctions(modulename, prefix = '', removeprefix = True,
 
     functions = dict(inspect.getmembers(modulename, inspect.isfunction))
     if prefix:
-        for key in functions.keys():
+        for key in list(functions.keys()):
             if key.startswith(prefix) and not key == prefix:
                 if removeprefix:
                     functions[key[len(prefix):]] = functions[key]
@@ -21,8 +21,8 @@ def getfunctions(modulename, prefix = '', removeprefix = True,
             del functions[key]
     if attribute == 'reference': return functions
     if attribute == 'about':
-        for key in functions.keys():
-            if isinstance(functions[key].__doc__, basestring):
+        for key in list(functions.keys()):
+            if isinstance(functions[key].__doc__, str):
                 functions[key] = \
                     functions[key].__doc__.split('\n', 1)[0].strip(' .')
             else:
@@ -51,7 +51,7 @@ def getmethods(instance, attribute = None, grouping = None,
     # get references from module inspection and filter prefix
     methods = dict(inspect.getmembers(instance, inspect.ismethod))
     if prefix:
-        for name in methods.keys():
+        for name in list(methods.keys()):
             if not name.startswith(prefix) or name == prefix:
                 del methods[name]
                 continue
@@ -62,13 +62,13 @@ def getmethods(instance, attribute = None, grouping = None,
 
     # get attributes from references
     methoddict = {}
-    for name, method in methods.iteritems():
+    for name, method in methods.items():
         methoddict[name] = { 'reference': method, 'about': '' }
 
         # copy method attributes and docstring to dictionary
         for attr in method.__dict__:
             methoddict[name][attr] = method.__dict__[attr]
-        if isinstance(method.__doc__, basestring):
+        if isinstance(method.__doc__, str):
             methoddict[name]['about'] = \
                 method.__doc__.split('\n', 1)[0].strip(' .')
 
@@ -84,7 +84,7 @@ def getmethods(instance, attribute = None, grouping = None,
     # (optional) group methods, rename key and reduce to attribute
     if grouping:
         grouped = {}
-        for ukey, udata in methods.iteritems():
+        for ukey, udata in methods.items():
             group = udata[grouping]
             key = udata[renamekey] if renamekey else ukey
             if not group in grouped: grouped[group] = {}
@@ -94,7 +94,7 @@ def getmethods(instance, attribute = None, grouping = None,
         methods = grouped
     elif renamekey:
         renamend = {}
-        for ukey, udata in methods.iteritems():
+        for ukey, udata in methods.items():
             key = udata[renamekey]
             if key in renamend: continue
             if attribute: renamend[key] = udata[attribute]

@@ -190,7 +190,7 @@ class RBM(nemoa.model.optimizer.ann.ANN):
             wvar = wvar[:length]
             A = numpy.array([numpy.arange(0, length),
                 numpy.ones(length)])
-            grad = - numpy.linalg.lstsq(A.T, wvar)[0][0]
+            grad = - numpy.linalg.lstsq(A.T, wvar, rcond = None)[0][0]
             delw = config['acc_vmra_factor'] * grad
 
             config['update_rate'] = min(max(delw,
@@ -235,8 +235,8 @@ class RBM(nemoa.model.optimizer.ann.ANN):
 
         vmodel = numpy.zeros(shape = data.shape)
         hmodel = numpy.zeros(shape = hdata.shape)
-        for i in xrange(m):
-            for j in xrange(k):
+        for i in range(m):
+            for j in range(k):
 
                 # calculate hsample from hexpect
                 # in first sampling step init hsample with h_data

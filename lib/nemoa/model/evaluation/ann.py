@@ -563,7 +563,7 @@ class ANN(Evaluation):
             datamp[0][:, sid] = 10.0
             indmp = self._get_induction(datamp, *args, **kwargs)
 
-            print('manipulation of', sunit)
+            print(('manipulation of', sunit))
             vals = [-2., -1., -0.5, 0., 0.5, 1., 2.]
             maniparr = numpy.zeros(shape = (len(vals), data[0].shape[1]))
             for vid, val in enumerate(vals):
@@ -575,8 +575,8 @@ class ANN(Evaluation):
             #manipvar /= numpy.amax(manipvar)
             manipnorm = numpy.amax(manipvar)
             # 2do
-            print(manipvar * 1000.)
-            print(manipvar / manipnorm)
+            print((manipvar * 1000.))
+            print((manipvar / manipnorm))
 
             coop[:,sid] = \
                 numpy.sqrt(((indmp - ind) ** 2).sum(axis = 1))
@@ -633,7 +633,7 @@ class ANN(Evaluation):
 
         # get indices of representatives
         rids = [int((i + 0.5) * int(float(data[0].shape[0])
-            / points)) for i in xrange(points)]
+            / points)) for i in range(points)]
 
         for iid, iunit in enumerate(iunits):
             icurve = amplify * numpy.take(
@@ -642,7 +642,7 @@ class ANN(Evaluation):
             # create output matrix for each output
             C = {ounit: numpy.zeros((data[0].shape[0], points)) \
                 for ounit in ounits}
-            for pid in xrange(points):
+            for pid in range(points):
                 idata  = data[0].copy()
                 idata[:, iid] = icurve[pid]
                 oexpect = self.unitexpect(idata, mapping = mapping)
@@ -688,12 +688,12 @@ class ANN(Evaluation):
         energy = 0.
 
         # sum local unit energies
-        for i in xrange(1, len(mapping) + 1):
+        for i in range(1, len(mapping) + 1):
             energy += self.unitenergy(data[0],
                 mapping = tuple(mapping[:i])).sum(axis = 1)
 
         # sum local link energies
-        for i in xrange(1, len(mapping)):
+        for i in range(1, len(mapping)):
             energy += self.linksenergy(data[0],
                 mapping = tuple(mapping[:i + 1])).sum(axis = (1, 2))
 

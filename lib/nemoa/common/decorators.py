@@ -9,7 +9,7 @@ def attributes(**attr):
     def wrapper(method):
         def wrapped(self, *args, **kwargs):
             return method(self, *args, **kwargs)
-        for key, val in attr.iteritems():
+        for key, val in attr.items():
             setattr(wrapped, key, val)
         wrapped.__doc__ = method.__doc__
         return wrapped

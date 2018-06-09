@@ -112,7 +112,7 @@ class MultiLayer:
 
         # edges
         edges = {}
-        for lid in xrange(0, len(layers) - 1):
+        for lid in range(0, len(layers) - 1):
             srclayer = layers[lid]
             tgtlayer = layers[lid + 1]
             srcnodes = nodes[srclayer]

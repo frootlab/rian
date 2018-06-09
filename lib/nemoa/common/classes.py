@@ -288,7 +288,7 @@ class Metadata:
 
         """
 
-        if not isinstance(val, basestring): return nemoa.log('warning',
+        if not isinstance(val, str): return nemoa.log('warning',
             "attribute 'about' requires datatype 'basestring'.")
         self._config['about'] = val
         return True
@@ -304,7 +304,7 @@ class Metadata:
 
         """
 
-        if not isinstance(val, basestring): return nemoa.log('warning',
+        if not isinstance(val, str): return nemoa.log('warning',
             "attribute 'author' requires datatype 'basestring'.")
         self._config['author'] = val
         return True
@@ -319,7 +319,7 @@ class Metadata:
 
         """
 
-        if not isinstance(val, basestring): return nemoa.log('warning',
+        if not isinstance(val, str): return nemoa.log('warning',
             "attribute 'branch' requires datatype 'basestring'.")
         self._config['branch'] = val
         return True
@@ -335,7 +335,7 @@ class Metadata:
 
         """
 
-        if not isinstance(val, basestring): return nemoa.log('warning',
+        if not isinstance(val, str): return nemoa.log('warning',
             "attribute 'email' requires datatype 'basestring'.")
         self._config['email'] = val
         return True
@@ -351,7 +351,7 @@ class Metadata:
 
         """
 
-        if not isinstance(val, basestring): return nemoa.log('warning',
+        if not isinstance(val, str): return nemoa.log('warning',
             "attribute 'license' requires datatype 'basestring'.")
         self._config['license'] = val
         return True
@@ -368,7 +368,7 @@ class Metadata:
 
         """
 
-        if not isinstance(val, basestring): return nemoa.log('warning',
+        if not isinstance(val, str): return nemoa.log('warning',
             "attribute 'name' requires datatype 'basestring'.")
         self._config['name'] = val
         return True
@@ -383,7 +383,7 @@ class Metadata:
 
         """
 
-        if not isinstance(val, basestring): return nemoa.log('warning',
+        if not isinstance(val, str): return nemoa.log('warning',
             "attribute 'path' requires datatype 'basestring'.")
         self._config['path'] = val
         return True

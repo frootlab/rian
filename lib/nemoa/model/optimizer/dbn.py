@@ -72,10 +72,11 @@ class DBN(nemoa.model.optimizer.ann.ANN):
         # create backup of dataset (before transformation)
         dataset = self.model.dataset
         dataset_backup = dataset.get('copy')
-        cid = (len(system._units) - 1) / 2
-        rbmparams = { 'units': [], 'links': [] }
 
-        for lid in xrange(cid):
+        # create layerwise subsystems for RBM pretraining
+        cid = int((len(system._units) - 1) / 2)
+        rbmparams = { 'units': [], 'links': [] }
+        for lid in range(cid):
 
             src = system._params['units'][lid]
             srcnodes = src['id'] + system._params['units'][-1]['id'] \
@@ -129,7 +130,7 @@ class DBN(nemoa.model.optimizer.ann.ANN):
                 dsrc = rbmparams['units'][-1]
                 dtgt = model.system._params['units'][0]
                 lkeep = ['id', 'layer', 'layer_id', 'visible', 'class']
-                lcopy = [key for key in dsrc.keys() if not key in lkeep]
+                lcopy = [key for key in list(dsrc.keys()) if not key in lkeep]
                 for key in lcopy: dtgt[key] = dsrc[key]
 
             # reference parameters of current subsystem
@@ -167,13 +168,13 @@ class DBN(nemoa.model.optimizer.ann.ANN):
         # initialize ann with rbm optimized parameters
         units = system._params['units']
         links = system._params['links']
-        central_lid = (len(units) - 1) / 2
 
         # initialize units and links until central unit layer
-        for id in xrange(central_lid):
+        cid = int((len(units) - 1) / 2)
+        for id in range(cid):
 
             # copy unit parameters
-            for attrib in units[id]['init'].keys():
+            for attrib in list(units[id]['init'].keys()):
                 # keep name and visibility of layers
                 if attrib in ['layer', 'layer_id', 'visible', 'class']:
                     continue
@@ -185,7 +186,7 @@ class DBN(nemoa.model.optimizer.ann.ANN):
             del units[id]['init']
 
             # copy link parameters and transpose numpy arrays
-            for attrib in links[(id, id + 1)]['init'].keys():
+            for attrib in list(links[(id, id + 1)]['init'].keys()):
                 if attrib in ['source', 'target']:
                     continue
                 links[(id, id + 1)][attrib] = \
@@ -196,13 +197,13 @@ class DBN(nemoa.model.optimizer.ann.ANN):
             del links[(id, id + 1)]['init']
 
         # initialize central unit layer
-        for attrib in units[central_lid]['init'].keys():
+        for attrib in list(units[cid]['init'].keys()):
             # keep name and visibility of layers
             if attrib in ['id', 'layer', 'layer_id', 'visible',
                 'class']: continue
-            units[central_lid][attrib] = \
-                units[central_lid]['init'][attrib]
-        del units[central_lid]['init']
+            units[cid][attrib] = \
+                units[cid]['init'][attrib]
+        del units[cid]['init']
 
         # remove output units from input layer, and vice versa
         nemoa.log('cleanup unit and linkage parameter arrays.')

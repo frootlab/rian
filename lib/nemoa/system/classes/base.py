@@ -133,17 +133,17 @@ class System(nemoa.common.classes.Metadata):
         unstructured = nemoa.common.module.getmethods(self, prefix = '')
 
         # filter algorithms by supported keys and given category
-        for ukey, udata in unstructured.items():
+        for ukey, udata in list(unstructured.items()):
             if not isinstance(udata, dict):
                 del unstructured[ukey]
                 continue
-            if attribute and not attribute in udata.keys():
+            if attribute and not attribute in list(udata.keys()):
                 del unstructured[ukey]
                 continue
-            if not 'name' in udata.keys():
+            if not 'name' in list(udata.keys()):
                 del unstructured[ukey]
                 continue
-            if not 'category' in udata.keys():
+            if not 'category' in list(udata.keys()):
                 del unstructured[ukey]
                 continue
             if category and not udata['category'] == category:
@@ -152,7 +152,7 @@ class System(nemoa.common.classes.Metadata):
         # create flat structure id category is given
         structured = {}
         if category:
-            for ukey, udata in unstructured.iteritems():
+            for ukey, udata in unstructured.items():
                 if attribute: structured[udata['name']] = \
                     udata[attribute]
                 else: structured[udata['name']] = udata
@@ -164,15 +164,15 @@ class System(nemoa.common.classes.Metadata):
             ('system', 'units', 'evaluation'): 'units',
             ('system', 'links', 'evaluation'): 'links',
             ('system', 'relation', 'evaluation'): 'relation' }
-        for ukey, udata in unstructured.iteritems():
-            if not udata['category'] in categories.keys(): continue
+        for ukey, udata in unstructured.items():
+            if not udata['category'] in list(categories.keys()): continue
             ckey = categories[udata['category']]
             if ckey == None:
                 if attribute: structured[udata['name']] = \
                     udata[attribute]
                 else: structured[udata['name']] = udata
             else:
-                if not ckey in structured.keys(): structured[ckey] = {}
+                if not ckey in list(structured.keys()): structured[ckey] = {}
                 if attribute: structured[ckey][udata['name']] = \
                     udata[attribute]
                 else: structured[ckey][udata['name']] = udata
@@ -190,7 +190,7 @@ class System(nemoa.common.classes.Metadata):
 
         # get layer of unit
         layer_ids = []
-        for i in xrange(len(self._params['units'])):
+        for i in range(len(self._params['units'])):
             if unit in self._params['units'][i]['id']:
                 layer_ids.append(i)
         if len(layer_ids) == 0: return nemoa.log('error',
@@ -205,7 +205,7 @@ class System(nemoa.common.classes.Metadata):
         layer_size = len(layer_units)
         layer_unit_id = layer_units.index(unit)
         unit_params = { 'layer_sub_id': layer_unit_id }
-        for param in layer_params.keys():
+        for param in list(layer_params.keys()):
             layer_param_array = \
                 numpy.array(layer_params[param]).flatten()
             if layer_param_array.size == 1:
@@ -251,7 +251,7 @@ class System(nemoa.common.classes.Metadata):
         units = []
         for layer in self._params['units']:
             valid = True
-            for key in kwargs.keys():
+            for key in list(kwargs.keys()):
                 if not layer[key] == kwargs[key]:
                     valid = False
                     break
@@ -265,7 +265,7 @@ class System(nemoa.common.classes.Metadata):
             units_params[unit] = self._get_unit(unit)
         grouping_values = []
         for unit in units:
-            if not groupby in units_params[unit].keys():
+            if not groupby in list(units_params[unit].keys()):
                 return nemoa.log('error', """could not get units:
                     unknown parameter '%s'.""" % (groupby))
             grouping_value = units_params[unit][groupby]
@@ -302,8 +302,8 @@ class System(nemoa.common.classes.Metadata):
             return []
 
         filter_list = []
-        for key in kwargs.keys():
-            if key in self._params['units'][0].keys():
+        for key in list(kwargs.keys()):
+            if key in list(self._params['units'][0].keys()):
                 filter_list.append((key, kwargs[key]))
 
         layers = []
@@ -318,7 +318,7 @@ class System(nemoa.common.classes.Metadata):
         return layers
 
     def _get_layer(self, layer):
-        if not layer in self._units.keys():
+        if not layer in list(self._units.keys()):
             return nemoa.log('error', """could not get layer:
                 layers '%s' is unkown.""" % (layer))
         return self._units[layer].params
@@ -351,7 +351,7 @@ class System(nemoa.common.classes.Metadata):
 
         # get link parameters
         link_params = {}
-        for param in link_layer_params.keys():
+        for param in list(link_layer_params.keys()):
             layer_param_array = \
                 numpy.array(link_layer_params[param])
             if layer_param_array.size == 1:
@@ -431,7 +431,7 @@ class System(nemoa.common.classes.Metadata):
         links = []
         links_params = {}
 
-        for layer_id in xrange(len(layers) - 1):
+        for layer_id in range(len(layers) - 1):
             src_layer = layers[layer_id]
             src_units = self._params['units'][layer_id]['id']
             tgt_layer = layers[layer_id + 1]
@@ -445,7 +445,7 @@ class System(nemoa.common.classes.Metadata):
                     link_params = self._get_link(link)
                     if not link_params['A']: continue
                     valid = True
-                    for key in kwargs.keys():
+                    for key in list(kwargs.keys()):
                         if not link_params[key] == kwargs[key]:
                             valid = False
                             break
@@ -457,7 +457,7 @@ class System(nemoa.common.classes.Metadata):
         # group links by given attribute
         grouping_values = []
         for link in links:
-            if not groupby in links_params[link].keys():
+            if not groupby in list(links_params[link].keys()):
                 return nemoa.log('error', """could not get links:
                     unknown link attribute '%s'.""" % (groupby))
             grouping_value = links_params[link][groupby]
@@ -514,7 +514,7 @@ class System(nemoa.common.classes.Metadata):
 
         if key == None: return copy.deepcopy(self._config)
 
-        if isinstance(key, str) and key in self._config.keys():
+        if isinstance(key, str) and key in list(self._config.keys()):
             if isinstance(self._config[key], dict):
                 return self._config[key].copy()
             return self._config[key]
@@ -529,7 +529,7 @@ class System(nemoa.common.classes.Metadata):
 
         if key == None: return copy.deepcopy(self._params)
 
-        if isinstance(key, str) and key in self._params.keys():
+        if isinstance(key, str) and key in list(self._params.keys()):
             if isinstance(self._params[key], dict):
                 return copy.deepcopy(self._params[key])
             return self._params[key]
@@ -675,7 +675,7 @@ class System(nemoa.common.classes.Metadata):
         if len(mapping) == 2: return self._units[mapping[1]].expect(
             in_data, self._units[mapping[0]].params)
         outData = numpy.copy(in_data)
-        for id in xrange(len(mapping) - 1):
+        for id in range(len(mapping) - 1):
             outData = self._units[mapping[id + 1]].expect(
                 outData, self._units[mapping[id]].params)
 
@@ -734,7 +734,7 @@ class System(nemoa.common.classes.Metadata):
                     self._units[mapping[1]].expect(in_data,
                     self._units[mapping[0]].params))
             data = numpy.copy(in_data)
-            for id in xrange(len(mapping) - 1):
+            for id in range(len(mapping) - 1):
                 data = self._units[mapping[id + 1]].get_values(
                     self._units[mapping[id + 1]].expect(data,
                     self._units[mapping[id]].params))
@@ -791,7 +791,7 @@ class System(nemoa.common.classes.Metadata):
                 return self._units[mapping[1]].get_samples_from_input(
                     data, self._units[mapping[0]].params)
             data = numpy.copy(data)
-            for id in xrange(len(mapping) - 1):
+            for id in range(len(mapping) - 1):
                 data = \
                     self._units[mapping[id + 1]].get_samples_from_input(
                     data, self._units[mapping[id]].params)
@@ -1144,7 +1144,7 @@ class System(nemoa.common.classes.Metadata):
             datamp[0][:, sid] = 10.0
             indmp = self._get_induction(datamp, *args, **kwargs)
 
-            print('manipulation of', sunit)
+            print(('manipulation of', sunit))
             vals = [-2., -1., -0.5, 0., 0.5, 1., 2.]
             maniparr = numpy.zeros(shape = (len(vals), data[0].shape[1]))
             for vid, val in enumerate(vals):
@@ -1156,8 +1156,8 @@ class System(nemoa.common.classes.Metadata):
             #manipvar /= numpy.amax(manipvar)
             manipnorm = numpy.amax(manipvar)
             # 2do
-            print(manipvar * 1000.)
-            print(manipvar / manipnorm)
+            print((manipvar * 1000.))
+            print((manipvar / manipnorm))
 
             coop[:,sid] = \
                 numpy.sqrt(((indmp - ind) ** 2).sum(axis = 1))
@@ -1216,24 +1216,24 @@ class System(nemoa.common.classes.Metadata):
 
         # get indices of representatives
         r_ids = [int((i + 0.5) * int(float(sdata.shape[0])
-            / points)) for i in xrange(points)]
+            / points)) for i in range(points)]
 
         for inid, inunit in enumerate(inputs):
             try:
                 i_curve = numpy.take(numpy.sort(sdata[:, inid]), r_ids)
             except: # 2Do
-                print('ok1', sdata)
-                print('ok2', sdata[:, inid])
-                print('ok3', numpy.sort(sdata[:, inid]))
+                print(('ok1', sdata))
+                print(('ok2', sdata[:, inid]))
+                print(('ok3', numpy.sort(sdata[:, inid])))
                 print(r_ids)
-                print(numpy.take(numpy.sort(sdata[:, inid]), r_ids))
+                print((numpy.take(numpy.sort(sdata[:, inid]), r_ids)))
 
             i_curve = amplify * i_curve
 
             # create output matrix for each output
             C = {outunit: numpy.zeros((sdata.shape[0], points)) \
                 for outunit in outputs}
-            for p_id in xrange(points):
+            for p_id in range(points):
                 i_data  = sdata.copy()
                 i_data[:, inid] = i_curve[p_id]
                 o_expect = self._evaluate_units((i_data, data[1]),
@@ -1298,7 +1298,7 @@ class System(nemoa.common.classes.Metadata):
         if not initialize: return self._set_params_create_links()
 
         # initialize adjacency matrices with default values
-        for lid in xrange(len(self._params['units']) - 1):
+        for lid in range(len(self._params['units']) - 1):
             src_name = self._params['units'][lid]['layer']
             src_list = self._units[src_name].params['id']
             tgt_name = self._params['units'][lid + 1]['layer']
@@ -1417,7 +1417,7 @@ class System(nemoa.common.classes.Metadata):
 
             # get link layers and link params
             links = {}
-            for lid in xrange(len(units) - 1):
+            for lid in range(len(units) - 1):
                 src = units[lid]['layer']
                 src_list = units[lid]['id']
                 tgt = units[lid + 1]['layer']
@@ -1431,7 +1431,7 @@ class System(nemoa.common.classes.Metadata):
             for link in network.edges:
                 src, tgt = link
                 found = False
-                for lid in xrange(len(units) - 1):
+                for lid in range(len(units) - 1):
                     if src in units[lid]['id']:
                         src_lid = lid
                         src_sid = units[lid]['id'].index(src)
@@ -1469,7 +1469,7 @@ class System(nemoa.common.classes.Metadata):
         # create instances of unit classes
         # and link units params to local params dict
         self._units = {}
-        for layer_id in xrange(len(self._params['units'])):
+        for layer_id in range(len(self._params['units'])):
             layer_params = self._params['units'][layer_id]
             layer_class = layer_params['class']
             layer_name = layer_params['layer']
@@ -1490,9 +1490,9 @@ class System(nemoa.common.classes.Metadata):
     def _set_params_create_links(self):
 
         self._links = {units: {'source': {}, 'target': {}}
-            for units in self._units.keys()}
+            for units in list(self._units.keys())}
 
-        for link_layer_id in self._params['links'].keys():
+        for link_layer_id in list(self._params['links'].keys()):
             link_params = self._params['links'][link_layer_id]
 
             src = link_params['source']
@@ -1524,7 +1524,7 @@ class System(nemoa.common.classes.Metadata):
             return nemoa.log('error', """could not initilize units:
             invalid dataset argument given!""")
 
-        for layer in self._units.keys():
+        for layer in list(self._units.keys()):
             if dataset == None:
                 data = None
             elif not self._units[layer].params['visible']:
@@ -1613,8 +1613,8 @@ class System(nemoa.common.classes.Metadata):
             return self._evaluate_relation(data, *args[1:], **kwargs)
 
         # evaluate system
-        algorithms = self._get_algorithms(attribute = 'name',
-            category = ('system', 'evaluation')).values()
+        algorithms = list(self._get_algorithms(attribute = 'name',
+            category = ('system', 'evaluation')).values())
 
         if args[0] in algorithms:
             return self._evaluate_system(data, *args, **kwargs)
@@ -1643,7 +1643,7 @@ class System(nemoa.common.classes.Metadata):
         # get evaluation algorithms
         algorithms = self._get_algorithms(
             category = ('system', 'evaluation'))
-        if not func in algorithms.keys(): return nemoa.log('error',
+        if not func in list(algorithms.keys()): return nemoa.log('error',
             """could not evaluate system: unknown algorithm
             '%s'.""" % (func))
         algorithm = algorithms[func]
@@ -1657,7 +1657,7 @@ class System(nemoa.common.classes.Metadata):
 
         # prepare keyword arguments for evaluation function
         evalkwargs = kwargs.copy()
-        if not 'mapping' in evalkwargs.keys() \
+        if not 'mapping' in list(evalkwargs.keys()) \
             or evalkwargs['mapping'] == None:
             evalkwargs['mapping'] = self._get_mapping()
 
@@ -1691,7 +1691,7 @@ class System(nemoa.common.classes.Metadata):
         # get evaluation algorithms
         algorithms = self._get_algorithms(
             category = ('system', 'units', 'evaluation'))
-        if not func in algorithms.keys(): return nemoa.log('error',
+        if not func in list(algorithms.keys()): return nemoa.log('error',
             """could not evaluate system units:
             unknown algorithm name '%s'.""" % (func))
         algorithm = algorithms[func]
@@ -1706,7 +1706,7 @@ class System(nemoa.common.classes.Metadata):
         evalkwargs = kwargs.copy()
         if isinstance(units, str):
             evalkwargs['mapping'] = self._get_mapping(tgt = units)
-        elif not 'mapping' in evalkwargs.keys() \
+        elif not 'mapping' in list(evalkwargs.keys()) \
             or evalkwargs['mapping'] == None:
             evalkwargs['mapping'] = self._get_mapping()
 
@@ -1746,7 +1746,7 @@ class System(nemoa.common.classes.Metadata):
         # get evaluation algorithms
         algorithms = self._get_algorithms(
             category = ('system', 'links', 'evaluation'))
-        if not func in algorithms.keys(): return nemoa.log('error',
+        if not func in list(algorithms.keys()): return nemoa.log('error',
             """could not evaluate system links:
             unknown algorithm name '%s'.""" % (func))
         algorithm = algorithms[func]
@@ -1761,7 +1761,7 @@ class System(nemoa.common.classes.Metadata):
         evalkwargs = kwargs.copy()
         if isinstance(units, str):
             evalkwargs['mapping'] = self._get_mapping(tgt = units)
-        elif not 'mapping' in evalkwargs.keys() \
+        elif not 'mapping' in list(evalkwargs.keys()) \
             or evalkwargs['mapping'] == None:
             evalkwargs['mapping'] = self._get_mapping()
 
@@ -1822,7 +1822,7 @@ class System(nemoa.common.classes.Metadata):
         # get evaluation algorithms
         algorithms = self._get_algorithms(
             category = ('system', 'relation', 'evaluation'))
-        if not func in algorithms.keys(): return nemoa.log('error',
+        if not func in list(algorithms.keys()): return nemoa.log('error',
             """could not evaluate system unit relation:
             unknown algorithm name '%s'.""" % (func))
         algorithm = algorithms[func]
@@ -1834,18 +1834,18 @@ class System(nemoa.common.classes.Metadata):
         elif algorithm['args'] == 'all': eargs = [data]
 
         # prepare keyword arguments for evaluation
-        if 'transform' in kwargs.keys() \
+        if 'transform' in list(kwargs.keys()) \
             and isinstance(kwargs['transform'], str):
             transform = kwargs['transform']
             del kwargs['transform']
         else: transform = ''
-        if 'format' in kwargs.keys() \
+        if 'format' in list(kwargs.keys()) \
             and isinstance(kwargs['format'], str):
             retfmt = kwargs['format']
             del kwargs['format']
         else: retfmt = 'dict'
         ekwargs = kwargs.copy()
-        if not 'mapping' in ekwargs.keys() \
+        if not 'mapping' in list(ekwargs.keys()) \
             or ekwargs['mapping'] == None:
             ekwargs['mapping'] = self._get_mapping()
 

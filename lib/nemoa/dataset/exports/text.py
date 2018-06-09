@@ -50,7 +50,7 @@ class Csv:
             'license', 'filetype', 'application', 'preprocessing',
             'type', 'labelformat']
         config = {}
-        for key, val in dataset.get('config').iteritems():
+        for key, val in dataset.get('config').items():
             if key in keys: config[key] = val
 
         # prepare CSV parameters and write CSV file

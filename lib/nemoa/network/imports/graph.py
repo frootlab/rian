@@ -53,10 +53,9 @@ def _graph_decode(graph):
             graph.node[node]['params'] = nemoa.common.compress.loads(
                 graph.node[node]['params'], encode = 'base64')
 
-        for src, tgt in graph.edges():
-            graph.edge[src][tgt]['params'] = \
-                nemoa.common.compress.loads(
-                graph.edge[src][tgt]['params'], encode = 'base64')
+        for edge in graph.edges():
+            graph.edges[edge]['params'] = nemoa.common.compress.loads(
+                graph.edges[edge]['params'], encode = 'base64')
 
         graph.graph['coding'] == 'none'
         return graph

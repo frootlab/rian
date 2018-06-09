@@ -13,11 +13,11 @@ def filetypes(filetype = None):
 
     # get supported archive filetypes
     archive_types = nemoa.system.exports.archive.filetypes()
-    for key, val in archive_types.items():
+    for key, val in list(archive_types.items()):
         type_dict[key] = ('archive', val)
 
     if not filetype:
-        return {key: val[1] for key, val in type_dict.items()}
+        return {key: val[1] for key, val in list(type_dict.items())}
     if filetype in type_dict:
         return type_dict[filetype]
 
@@ -43,20 +43,20 @@ def save(system, path = None, filetype = None, workspace = None,
             system is not valid.""")
 
     # get directory, filename and fileextension
-    if isinstance(workspace, basestring) and not workspace == 'None':
+    if isinstance(workspace, str) and not workspace == 'None':
         directory = nemoa.path('systems',
             workspace = workspace, base = base)
-    elif isinstance(path, basestring):
+    elif isinstance(path, str):
         directory = nemoa.common.ospath.directory(path)
     else:
         directory = nemoa.common.ospath.directory(system.path)
-    if isinstance(path, basestring):
+    if isinstance(path, str):
         name = nemoa.common.ospath.basename(path)
     else:
         name = system.fullname
-    if isinstance(filetype, basestring):
+    if isinstance(filetype, str):
         fileext = filetype
-    elif isinstance(path, basestring):
+    elif isinstance(path, str):
         fileext = nemoa.common.ospath.fileext(path)
         if not fileext:
             fileext = nemoa.common.ospath.fileext(system.path)
@@ -67,7 +67,7 @@ def save(system, path = None, filetype = None, workspace = None,
     # get filetype from file extension if not given
     # and test if filetype is supported
     if not filetype: filetype = fileext.lower()
-    if not filetype in filetypes().keys():
+    if not filetype in list(filetypes().keys()):
         return nemoa.log('error', """could not export system:
             filetype '%s' is not supported.""" % (filetype))
 

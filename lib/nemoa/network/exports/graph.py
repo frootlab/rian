@@ -60,10 +60,9 @@ def _graph_encode(graph, coding = None):
                 graph.node[node]['params'], encode = 'base64')
 
         # encode edges 'params' dictionaries to base64
-        for src, tgt in graph.edges():
-            graph.edge[src][tgt]['params'] \
-                = nemoa.common.compress.dumps(
-                graph.edge[src][tgt]['params'], encode = 'base64')
+        for edge in graph.edges():
+            graph.edges[edge]['params'] = nemoa.common.compress.dumps(
+                graph.edges[edge]['params'], encode = 'base64')
 
         # set flag for graph parameter coding
         graph.graph['coding'] = 'base64'

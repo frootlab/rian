@@ -122,15 +122,15 @@ class Graph(nemoa.common.classes.Plot):
 
             # create edge attribute 'color' (optional)
             if self.settings.get('edge_color', False):
-                if weight > 0: graph.edge[u][v]['color'] = \
+                if weight > 0.: graph.edges[u, v]['color'] = \
                     self.settings.get('edge_poscolor', 'green')
-                else: graph.edge[u][v]['color'] = \
+                else: graph.edges[u, v]['color'] = \
                     self.settings.get('edge_negcolor', 'red')
 
             # create edge attribute 'caption' (optional)
             if self.settings['edge_caption']:
                 caption = ' $' + ('%.2g' % (weight)) + '$'
-                graph.edge[u][v]['caption'] = caption
+                graph.edges[u, v]['caption'] = caption
 
             # normalize weights (optional)
             if bool(normalize): weight /= absmean
@@ -139,19 +139,19 @@ class Graph(nemoa.common.classes.Plot):
             if transform == 'softstep':
                 weight = nmmath.softstep(weight)
 
-            graph.edge[u][v]['weight'] = weight
+            graph.edges[u, v]['weight'] = weight
 
         # normalize signs of weights (optional)
         if self.settings['edge_sign_normalize']:
             number_of_layers = len(graph.graph['params']['layer'])
             if number_of_layers % 2 == 1:
                 sign_sum = numpy.sum(
-                    [numpy.sign(graph.edge[u][v].get('weight', 0))
-                    for (u, v) in graph.edges()])
-                if sign_sum < 0:
-                    for (u, v) in graph.edges():
-                        if 'weight' in graph.edge[u][v]:
-                            graph.edge[u][v]['weight'] *= -1
+                    [numpy.sign(graph.edges[edge].get('weight', 0.))
+                    for edge in graph.edges()])
+                if sign_sum < 0.:
+                    for edge in graph.edges():
+                        if 'weight' in graph.edges[edge]:
+                            graph.edges[edge]['weight'] *= -1
 
         nodes = {n: data for n, data in graph.nodes(data = True)}
 
@@ -194,7 +194,7 @@ class Graph(nemoa.common.classes.Plot):
         # update node attributes for layout
         groups = nmgraph.get_groups(graph, attribute = 'group')
         for group in sorted(groups.keys()):
-            if group == None: continue
+            if group == '': continue
             layout = nmgraph.get_node_layout(group)
             group_label = layout.get('label', {
                 True: str(groupby),

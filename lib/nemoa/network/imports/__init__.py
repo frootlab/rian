@@ -15,21 +15,21 @@ def filetypes(filetype = None):
 
     # get supported archive filetypes
     archive_types = nemoa.network.imports.archive.filetypes()
-    for key, val in archive_types.items():
+    for key, val in list(archive_types.items()):
         type_dict[key] = ('archive', val)
 
     # get supported graph description filetypes
     graph_types = nemoa.network.imports.graph.filetypes()
-    for key, val in graph_types.items():
+    for key, val in list(graph_types.items()):
         type_dict[key] = ('graph', val)
 
     # get supported text filetypes
     text_types = nemoa.network.imports.text.filetypes()
-    for key, val in text_types.items():
+    for key, val in list(text_types.items()):
         type_dict[key] = ('text', val)
 
     if filetype == None:
-        return {key: val[1] for key, val in type_dict.items()}
+        return {key: val[1] for key, val in list(type_dict.items())}
     if filetype in type_dict:
         return type_dict[filetype]
 

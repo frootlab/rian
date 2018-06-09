@@ -74,13 +74,13 @@ class Session:
                     'logfile': 'str' }})
 
             if 'folders' in ini_dict:
-                for key, val in ini_dict['folders'].iteritems():
+                for key, val in ini_dict['folders'].items():
                     path = self._get_path_expand(val)
                     if path:
                         self._config['default']['basepath'][key] = path
 
             if 'files' in ini_dict:
-                for key, val in ini_dict['files'].iteritems():
+                for key, val in ini_dict['files'].items():
                     path = self._get_path_expand(val)
                     if path: self._config['current']['path'][key] = path
 
@@ -162,7 +162,7 @@ class Session:
         retval = self._config['default'][key]
         parent = key
         while args:
-            if not isinstance(args[0], basestring) \
+            if not isinstance(args[0], str) \
                 or not args[0] in retval:
                 return nemoa.log('error', """could not get default
                     value: '%s' does not contain key '%s'.""" %
@@ -271,7 +271,7 @@ class Session:
         if not objtype in self._config['register']:
             return nemoa.log('warning', """could not get configuration:
                 object class '%s' is not supported.""" % objtype)
-        if not isinstance(name, basestring):
+        if not isinstance(name, str):
             return nemoa.log('warning', """could not get %s:
                 name of object is not valid.""" % objtype)
 
@@ -307,7 +307,7 @@ class Session:
                 """ % (objtype, name, base, workspace))
 
         if not attribute: return config
-        elif not isinstance(attribute, basestring):
+        elif not isinstance(attribute, str):
             return nemoa.log('warning', """could not get configuration:
                 attribute is not vlid.""")
         elif not attribute in config:
@@ -332,9 +332,9 @@ class Session:
 
         # create dictionary
         objlist = []
-        for key in self._config['register'].keys():
+        for key in list(self._config['register'].keys()):
             if objtype and not key == objtype: continue
-            for obj in self._config['register'][key].itervalues():
+            for obj in self._config['register'][key].values():
                 if base and not base == obj['base']:
                     continue
                 if workspace and not workspace == obj['workspace']:
@@ -424,9 +424,9 @@ class Session:
             'base': self._get_base(),
             'basepath': nemoa.common.ospath.get_norm_path(
                 self._config['default']['basepath'][base]) }
-        for key, val in self._config['default']['basepath'].iteritems():
+        for key, val in self._config['default']['basepath'].items():
             replace[key] = nemoa.common.ospath.get_norm_path(val)
-        for key, val in self._config['current']['path'].iteritems():
+        for key, val in self._config['current']['path'].items():
             replace[key] = nemoa.common.ospath.get_norm_path(val)
         for key in ['user_cache_dir', 'user_config_dir',
             'user_data_dir', 'user_log_dir', 'user_cwd',
@@ -437,7 +437,7 @@ class Session:
         update = True
         while update:
             update = False
-            for key, val in replace.items():
+            for key, val in list(replace.items()):
                 if not '%' + key + '%' in path:
                     continue
                 try:
@@ -498,7 +498,7 @@ class Session:
                 'default': '\033[0m' }
 
         # get loggers
-        loggers = logging.Logger.manager.loggerDict.keys()
+        loggers = list(logging.Logger.manager.loggerDict.keys())
         tty_log = logging.getLogger(__name__ + '.tty') \
             if __name__ + '.tty' in loggers \
             else logging.getLogger(__name__ + '.null')
@@ -508,7 +508,7 @@ class Session:
 
         # todo: depending on mode
         # format message
-        if isinstance(msg, basestring):
+        if isinstance(msg, str):
             msg = msg.strip().replace('\n', ' ')
         elif isinstance(msg, list):
             msg = ', '.join(msg).strip().replace('\n', ' ')
@@ -712,7 +712,7 @@ class Session:
         self._config['current']['base'] = base
 
         # update paths from default path structure
-        for key, val in self._config['default']['path'].items():
+        for key, val in list(self._config['default']['path'].items()):
             self._config['current']['path'][key] = \
                 self._get_path_expand(val)
 
@@ -812,7 +812,7 @@ class Session:
             self._set_workspace(workspace, base = base)
 
         # scan workspace for objects
-        for objtype in self._config['register'].keys():
+        for objtype in list(self._config['register'].keys()):
             dirmask = self._config['current']['path'][objtype + 's']
             filemask = self._get_path_expand(dirmask, '*.*')
             if objtype == 'dataset':

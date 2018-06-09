@@ -186,7 +186,7 @@ class Model(nemoa.common.classes.Metadata):
 
         if key == None: return copy.deepcopy(self._config)
 
-        if isinstance(key, str) and key in self._config.keys():
+        if isinstance(key, str) and key in list(self._config.keys()):
             if isinstance(self._config[key], dict):
                 return self._config[key].copy()
             return self._config[key]
@@ -368,14 +368,14 @@ class Model(nemoa.common.classes.Metadata):
             return self.network.evaluate(*args, **kwargs)
         if key == 'system':
             # get data for system evaluation
-            if 'data' in kwargs.keys():
+            if 'data' in list(kwargs.keys()):
                 # get data from keyword argument
                 data = kwargs['data']
                 del kwargs['data']
             else:
                 # fetch data from dataset using parameters:
                 # 'preprocessing', 'statistics'
-                if 'preprocessing' in kwargs.keys():
+                if 'preprocessing' in list(kwargs.keys()):
                     preprocessing = kwargs['preprocessing']
                     del kwargs['preprocessing']
                 else: preprocessing = {}
@@ -384,7 +384,7 @@ class Model(nemoa.common.classes.Metadata):
                 if preprocessing:
                     dataset_backup = self.dataset.get('copy')
                     self.dataset.preprocess(preprocessing)
-                if 'statistics' in kwargs.keys():
+                if 'statistics' in list(kwargs.keys()):
                     statistics = kwargs['statistics']
                     del kwargs['statistics']
                 else: statistics = 0
