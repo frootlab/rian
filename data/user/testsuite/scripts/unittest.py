@@ -17,6 +17,9 @@ def main(workspace, *args, **kwargs):
     suite = unittest.TestSuite()
 
     # add tests to the test suite
+    try: import nemoa.workspace.__test__
+    except ImportError: pass
+    else: suite.addTests(loader.loadTestsFromModule(nemoa.workspace.__test__))
     try: import nemoa.session.__test__
     except ImportError: pass
     else: suite.addTests(loader.loadTestsFromModule(nemoa.session.__test__))

@@ -139,13 +139,12 @@ def histogram(array,
     ax.grid(True)
 
     # create histogram
-    cax = ax.hist(array, normed = False, bins = bins,
+    cax = ax.hist(array, bins = bins,
         facecolor = facecolor, histtype = histtype,
         linewidth = linewidth, edgecolor = edgecolor)
 
-    # (optional) draw title
-    if show_title:
-        if title == None: title = 'Unknown'
+    # (optional) plot title
+    if show_title and isinstance(title, str):
         plt.title(title, fontsize = title_fontsize)
 
     return True

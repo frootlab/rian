@@ -1253,10 +1253,10 @@ class Dataset(nemoa.common.classes.Metadata):
 
     @nemoa.common.decorators.attributes(
         name     = 'correlation',
-        category = ('dataset', 'relation', 'evaluation'),
+        category = ('dataset', 'evaluation'),
         formater = lambda val: '%.3f' % (val)
     )
-    def _get_correlation(self, cols = '*'):
+    def _algorithm_correlation(self, cols = '*'):
         """Calculate correlation coefficients between columns."""
 
         # get numpy array with test data
@@ -1265,7 +1265,7 @@ class Dataset(nemoa.common.classes.Metadata):
         return numpy.corrcoef(data.T)
 
     @nemoa.common.decorators.attributes(
-        name     = 'correlation',
+        name     = 'test_binary',
         category = ('dataset', 'evaluation'),
         formater = lambda val: '%.3f' % (val)
     )
@@ -1292,7 +1292,7 @@ class Dataset(nemoa.common.classes.Metadata):
         return True
 
     @nemoa.common.decorators.attributes(
-        name = 'correlation',
+        name = 'test_gauss',
         category = ('dataset', 'evaluation'),
         formater = lambda val: '%.3f' % (val)
     )

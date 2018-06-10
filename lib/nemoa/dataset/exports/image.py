@@ -94,6 +94,7 @@ class Heatmap(nemoa.common.classes.Plot):
 class Histogram(nemoa.common.classes.Plot):
 
     settings = {
+        'title': None,
         'path': ('dataset', ),
         'units': (None, None),
         'bins': 120,
@@ -103,6 +104,9 @@ class Histogram(nemoa.common.classes.Plot):
         'linewidth': 0.5 }
 
     def create(self, dataset):
+
+        # update settings from dataset
+        self.settings['title'] = dataset.name
 
         # create data (numpy 1-d array)
         data = dataset.get('data').flatten()
