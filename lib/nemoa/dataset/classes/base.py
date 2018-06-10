@@ -1252,17 +1252,85 @@ class Dataset(nemoa.common.classes.Metadata):
         return algorithms[name](*args, **kwargs)
 
     @nemoa.common.decorators.attributes(
+        name     = 'covariance',
+        category = ('dataset', 'evaluation'),
+        formater = lambda val: '%.3f' % (val)
+    )
+    def _algorithm_covariance(self, cols = '*'):
+        """Calculate covariance matrix between given columns."""
+
+        # get numpy array with test data
+        data = self._get_data(cols = cols)
+
+        return numpy.cov(data.T)
+
+    @nemoa.common.decorators.attributes(
         name     = 'correlation',
         category = ('dataset', 'evaluation'),
         formater = lambda val: '%.3f' % (val)
     )
     def _algorithm_correlation(self, cols = '*'):
-        """Calculate correlation coefficients between columns."""
+        """Calculate correlation matrix between given columns."""
 
         # get numpy array with test data
         data = self._get_data(cols = cols)
 
         return numpy.corrcoef(data.T)
+
+    @nemoa.common.decorators.attributes(
+        name     = 'lcorrelation',
+        category = ('dataset', 'evaluation'),
+        formater = lambda val: '%.3f' % (val)
+    )
+    def _algorithm_lcorrelation(self, cols = '*', dim = 2):
+        """Calculate L-Correlation matrix between given columns."""
+
+        # get numpy array with dimensionality reduced test data
+        data = self._algorithm_pca(cols = cols, dim = dim)
+
+        return numpy.corrcoef(data.T)
+
+    @nemoa.common.decorators.attributes(
+        name     = 'pca',
+        category = ('dataset', 'evaluation'),
+        formater = lambda val: '%.3f' % (val)
+    )
+    def _algorithm_pca(self, cols = '*', dim = 2, embed = True):
+        """Calculate projection to principal compoenents."""
+
+        # get numpy array with test data
+        data = self._get_data(cols = cols)
+
+        # get dimension of data
+        datadim = data.shape[1]
+        if dim > datadim: dim = datadim
+
+        # calculate covariance matrix
+        cov = numpy.cov(data.T)
+
+        # calculate eigenvectors and eigenvalues
+        eigvals, eigvecs = numpy.linalg.eig(cov)
+
+        # sort eigenvectors by absolute eigenvalues
+        eigpairs = [(numpy.abs(eigvals[i]), eigvecs[:, i])
+            for i in range(len(eigvals))]
+        eigpairs.sort(key = lambda x: x[0], reverse = True)
+
+        # calculate projection and inverse transformation
+        vec = lambda i: eigpairs[i][1] if i < dim else numpy.zeros(datadim)
+        if embed:
+            proj = numpy.hstack(
+                [vec(i).reshape(datadim, 1) for i in range(datadim)])
+            trans = numpy.hstack(
+                [eigpairs[i][1].reshape(datadim, 1) for i in range(datadim)])
+            itrans = numpy.linalg.inv(trans)
+            pcadata = numpy.dot(numpy.dot(data, proj), itrans)
+        else:
+            proj = numpy.hstack(
+                [vec(i).reshape(datadim, 1) for i in range(dim)])
+            pcadata = numpy.dot(data, proj)
+
+        return pcadata
 
     @nemoa.common.decorators.attributes(
         name     = 'test_binary',
