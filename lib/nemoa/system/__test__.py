@@ -5,18 +5,11 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa
-import unittest
 
-class TestSuite(unittest.TestCase):
+class TestSuite(nemoa.common.unittest.TestSuite):
 
-    def setUp(self):
-        self.mode = nemoa.get('mode')
-        nemoa.set('mode', 'silent')
-
-    def tearDown(self):
-        nemoa.set('mode', self.mode)
-
-    def test_nemoa_system_import_ini(self):
-        system = nemoa.system.open('dbn', workspace = 'testsuite')
-        test = nemoa.common.type.issystem(system)
-        self.assertTrue(test)
+    def test_system_import(self):
+        with self.subTest(filetype = "ini"):
+            system = nemoa.system.open('dbn', workspace = 'testsuite')
+            test = nemoa.common.type.issystem(system)
+            self.assertTrue(test)

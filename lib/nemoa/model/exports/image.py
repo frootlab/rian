@@ -39,19 +39,19 @@ def save(model, path = None, filetype = None, plot = None, **kwargs):
     mapping = model.system.mapping
     in_units = model.system.get('units', layer = mapping[0])
     out_units = model.system.get('units', layer = mapping[-1])
-    if not isinstance(plot.settings['units'], tuple) \
-        or not isinstance(plot.settings['units'][0], list) \
-        or not isinstance(plot.settings['units'][1], list):
-        plot.settings['units'] = (in_units, out_units)
+    if not isinstance(plot._config['units'], tuple) \
+        or not isinstance(plot._config['units'][0], list) \
+        or not isinstance(plot._config['units'][1], list):
+        plot._config['units'] = (in_units, out_units)
 
     # get information about relation
-    if plot.settings['show_title']:
+    if plot._config['show_title']:
         rel_id = nemoa.common.text.split_kwargs(
-            plot.settings['relation'])[0]
+            plot._config['relation'])[0]
         rel_dict = model.system.get('algorithm', rel_id,
             category = ('system', 'relation', 'evaluation'))
         rel_name = rel_dict['name']
-        plot.settings['title'] = rel_name.title()
+        plot._config['title'] = rel_name.title()
 
     # create plot
     if plot.create(model): plot.save(path)
@@ -80,19 +80,25 @@ def show(model, plot = None, *args, **kwargs):
     mapping = model.system.mapping
     in_units = model.system.get('units', layer = mapping[0])
     out_units = model.system.get('units', layer = mapping[-1])
-    if not isinstance(plot.settings['units'], tuple) \
-        or not isinstance(plot.settings['units'][0], list) \
-        or not isinstance(plot.settings['units'][1], list):
-        plot.settings['units'] = (in_units, out_units)
+    if not isinstance(plot._config.get('units', None), tuple) \
+        or not isinstance(plot._config['units'][0], list) \
+        or not isinstance(plot._config['units'][1], list):
+        plot._config['units'] = (in_units, out_units)
+        plot._eval['units'] = (in_units, out_units)
 
     # get information about relation
-    if plot.settings['show_title']:
-        rel_id = nemoa.common.text.split_kwargs(
-            plot.settings['relation'])[0]
+    if plot._config['show_title']:
+        if isinstance(plot._config.get('relation', None), str):
+            relation = plot._config.get('relation')
+        elif isinstance(plot._eval.get('relation', None), str):
+            relation = plot._eval.get('relation')
+        else:
+            relation = 'correlation'
+        rel_id = nemoa.common.text.split_kwargs(relation)[0]
         rel_dict = model.system.get('algorithm', rel_id,
             category = ('system', 'relation', 'evaluation'))
         rel_name = rel_dict['name']
-        plot.settings['title'] = rel_name.title()
+        plot._config['title'] = rel_name.title()
 
     # create and show plot
     if plot.create(model): plot.show()
@@ -102,7 +108,7 @@ def show(model, plot = None, *args, **kwargs):
 
     return True
 
-class Graph(nemoa.common.classes.Plot):
+class Graph(nemoa.common.plot.Plot):
 
     settings = {
         'show_legend': True,
@@ -119,6 +125,8 @@ class Graph(nemoa.common.classes.Plot):
         'filter': None,
         'cutoff': 0.5,
         'node_caption': 'accuracy' }
+
+    _eval = {}
 
     def create(self, model):
 
@@ -254,74 +262,129 @@ class Graph(nemoa.common.classes.Plot):
         # create plot
         return nemoa.common.plot.graph(graph, **self.settings)
 
-class Heatmap(nemoa.common.classes.Plot):
+class Heatmap(nemoa.common.plot.Heatmap):
 
-    settings = {
-        'path': ('system', 'relations'),
+    _eval = {
         'units': (None, None),
         'relation': 'correlation',
         'preprocessing': None,
         'measure': 'error',
         'statistics': 10000,
         'transform': '',
-        'layer': None,
-        'interpolation': 'nearest',
-        'format': 'array' }
+    }
 
     def create(self, model):
 
-        # calculate relation
-        relation = model.evaluate('system', 'relations',
-            self.settings['relation'], **self.settings)
+        # update evaluation dictionary
+        for key in self._eval.keys():
+            if key in self._config.keys():
+                self._eval[key] = self._config[key]
 
-        if not isinstance(relation, numpy.ndarray):
-            return nemoa.log('error', """could not plot heatmap:
-                relation matrix is not valid.""")
-
-        # create plot
-        return nemoa.common.plot.heatmap(relation, **self.settings)
-
-class Histogram(nemoa.common.classes.Plot):
-
-    settings = {
-        'path': ('system', 'relations'),
-        'graph_caption': True,
-        'units': (None, None),
-        'relation': 'correlation',
-        'preprocessing': None,
-        'measure': 'error',
-        'statistics': 10000,
-        'transform': '',
-        'layer': None,
-        'bins': 50,
-        'facecolor': 'lightgrey',
-        'edgecolor': 'black',
-        'histtype': 'bar',
-        'linewidth': 0.5 }
-
-    def create(self, model):
-
-        # get units and edges
-        units = self.settings['units']
-        edges = []
+        # get observables from model
+        if not isinstance(self._eval.get('units', None), tuple) \
+            or not isinstance(self._eval['units'][0], list) \
+            or not isinstance(self._eval['units'][1], list):
+            mapping = model.system.mapping
+            iunits = model.system.get('units', layer = mapping[0])
+            ounits = model.system.get('units', layer = mapping[-1])
+            self._eval['units'] = (iunits, ounits)
+        units = self._eval['units']
+        pairs = []
         for i in units[0]:
-            for o in [u for u in units[1] if not u == i]:
-                edges.append((i, o))
+            for o in [u for u in units[1] if u != i]:
+                pairs.append((i, o))
 
-        # calculate relation
+        # update y-labels from model inputs and x-labels from model outputs
+        self._config['y_labels'] = units[0]
+        self._config['x_labels'] = units[1]
+
+        # evaluate relations
         R = model.evaluate('system', 'relations',
-            self.settings['relation'],
-            preprocessing = self.settings['preprocessing'],
-            measure = self.settings['measure'],
-            statistics = self.settings['statistics'],
-            transform = self.settings['transform'])
+            self._eval['relation'],
+            preprocessing = self._eval['preprocessing'],
+            measure = self._eval['measure'],
+            statistics = self._eval['statistics'],
+            transform = self._eval['transform'])
         if not isinstance(R, dict):
-            return nemoa.log('error', """could not create relation
-                histogram: invalid relation
-                '%s'!""" % self.settings['relation'])
+            return nemoa.log('error', "could not create histogram: "
+                "invalid relation '%s'!" % self._eval['relation'])
 
-        # create data array
-        data = numpy.array([R[edge] for edge in edges])
+        # convert relation dictionary to matrix
+        matrix = numpy.zeros((len(units[0]), len(units[1])))
+        for ni, i in enumerate(units[0]):
+            for no, o in enumerate(units[1]):
+                matrix[ni, no] = R[(i, o)]
+
+        # update title by evaluated relation
+        if self._config['show_title']:
+            rel_id = nemoa.common.text.split_kwargs(self._eval['relation'])[0]
+            rel_dict = model.system.get('algorithm', rel_id,
+                category = ('system', 'relation', 'evaluation'))
+            rel_name = rel_dict['name']
+            self._config['title'] = rel_name.title()
 
         # create plot
-        return nemoa.common.plot.histogram(data, **self.settings)
+        return self.plot(matrix)
+
+class Histogram(nemoa.common.plot.Histogram):
+
+    _eval = {
+        'evaluation': 'correlation',
+        'units': (None, None),
+        'preprocessing': None,
+        'measure': 'error',
+        'statistics': 10000,
+        'transform': '',
+    }
+
+    def create(self, model):
+
+        # update evaluation dictionary
+        for key in self._eval.keys():
+            if key in self._config.keys():
+                self._eval[key] = self._config[key]
+
+        # get information about evaluation algorithm
+        rel_id = nemoa.common.text.split_kwargs(self._eval['evaluation'])[0]
+        rel_dict = model.system.get('algorithm', rel_id,
+            category = ('system', 'relation', 'evaluation'))
+
+        # update title by evaluation name
+        if self._config['show_title'] \
+            and not isinstance(self._config['title'], str):
+            self._config['title'] = rel_dict.get('name').title()
+
+        # get observables from model
+        if not isinstance(self._eval.get('units', None), tuple) \
+            or not isinstance(self._eval['units'][0], list) \
+            or not isinstance(self._eval['units'][1], list):
+            mapping = model.system.mapping
+            iunits = model.system.get('units', layer = mapping[0])
+            ounits = model.system.get('units', layer = mapping[-1])
+            self._eval['units'] = (iunits, ounits)
+        units = self._eval['units']
+        pairs = []
+        for i in units[0]:
+            for o in [u for u in units[1] if u != i]:
+                pairs.append((i, o))
+
+        # update y-labels from model inputs and x-labels from model outputs
+        self._config['y_labels'] = units[0]
+        self._config['x_labels'] = units[1]
+
+        # apply evaluation
+        R = model.evaluate('system', 'relations',
+            self._eval['evaluation'],
+            preprocessing = self._eval['preprocessing'],
+            measure = self._eval['measure'],
+            statistics = self._eval['statistics'],
+            transform = self._eval['transform'])
+        if not isinstance(R, dict):
+            return nemoa.log('error', "could not create histogram: "
+                "invalid evaluation '%s'!" % self._eval['evaluation'])
+
+        # convert evaluation dictionary to data array
+        data = numpy.array([R[pair] for pair in pairs])
+
+        # create plot
+        return self.plot(data)

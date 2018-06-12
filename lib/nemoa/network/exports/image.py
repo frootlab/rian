@@ -66,7 +66,7 @@ def save(network, path = None, filetype = None, plot = None, **kwargs):
 
     return path
 
-class Graph(nemoa.common.classes.Plot):
+class Graph(nemoa.common.plot.Plot):
 
     settings = {
         'show_legend': True,

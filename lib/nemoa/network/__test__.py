@@ -5,25 +5,19 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa
-import unittest
 
-class TestSuite(unittest.TestCase):
+class TestSuite(nemoa.common.unittest.TestSuite):
 
-    def setUp(self):
-        self.mode = nemoa.get('mode')
-        nemoa.set('mode', 'silent')
+    def test_network_import(self):
+        with self.subTest(filetype = 'ini'):
+            network = nemoa.network.open('deep', workspace = 'testsuite')
+            test = nemoa.common.type.isnetwork(network)
+            self.assertTrue(test)
 
-    def tearDown(self):
-        nemoa.set('mode', self.mode)
-
-    def test_nemoa_network_import_ini(self):
-        network = nemoa.network.open('deep', workspace = 'testsuite')
-        test = nemoa.common.type.isnetwork(network)
-        self.assertTrue(test)
-
-    def test_nemoa_network_create_autoencoder(self):
-        network = nemoa.network.create('autoencoder',
-            columns = ['i1', 'i2', 'o1'],
-            shape = [6, 3, 6])
-        test = nemoa.common.type.isnetwork(network)
-        self.assertTrue(test)
+    def test_network_create(self):
+        with self.subTest(create = 'autoencoder'):
+            network = nemoa.network.create('autoencoder',
+                columns = ['i1', 'i2', 'o1'],
+                shape = [6, 3, 6])
+            test = nemoa.common.type.isnetwork(network)
+            self.assertTrue(test)

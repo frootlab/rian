@@ -82,13 +82,13 @@ class Evaluation:
         return self._buffer.get('model', None)
 
     def _get_compatibility(self, model):
-        """Get compatibility of optimizer to given model instance.
+        """Get compatibility of transformation to given model instance.
 
         Args:
             model: nemoa model instance
 
         Returns:
-            True if optimizer is compatible to given model, else False.
+            True if transformation is compatible with given model, else False.
 
         """
 

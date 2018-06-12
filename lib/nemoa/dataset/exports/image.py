@@ -48,8 +48,9 @@ def save(dataset, path = None, filetype = None, plot = None, **kwargs):
         module = importlib.import_module(module_name)
         if not hasattr(module, class_name):raise ImportError()
     except ImportError:
-        return nemoa.log('error', """could not plot dataset '%s':
-            plot type '%s' is not supported.""" % (dataset.name, plot))
+        return nemoa.log('error',
+            "could not plot dataset '%s': "
+            "plot type '%s' is not supported." % (dataset.name, plot))
 
     # create and save plot
     plot = getattr(module, class_name)(**kwargs)
@@ -57,59 +58,36 @@ def save(dataset, path = None, filetype = None, plot = None, **kwargs):
     plot.release()
     return path
 
-class Heatmap(nemoa.common.classes.Plot):
-
-    settings = {
-        'fileformat': 'pdf',
-        'dpi': None,
-        'title': None,
-        'show_title': True,
-        'title_fontsize': 14,
-        'bg_color': 'none',
-        'path': ('system', 'relations'),
-        'units': (None, None),
-        'relation': 'correlation',
-        'preprocessing': None,
-        'measure': 'error',
-        'statistics': 10000,
-        'transform': '',
-        'layer': None,
-        'interpolation': 'nearest' }
+class Heatmap(nemoa.common.plot.Heatmap):
 
     def create(self, dataset):
 
-        # calculate relation
-        R = dataset.evaluate(self.settings['relation'])
+        # calculate matrix for heatmap
+        relation = self._config.get('relation', 'correlation')
+        matrix = dataset.evaluate(relation)
 
-        if not isinstance(R, numpy.ndarray): return nemoa.log('error',
-            'could not plot heatmap: relation matrix is not valid!')
+        # update x and y labels from dataset
+        cols = dataset.get('columns')
+        self._config['x_labels'] = cols
+        self._config['y_labels'] = cols
 
-        # Todo: ugly workaround
-        columns = dataset.get('columns')
-        self.settings['units'] = (columns, columns)
+        # update title from dataset
+        if not isinstance(self._config.get('title'), str):
+            self._config['title'] = dataset.name
 
         # create plot
-        return nemoa.common.plot.heatmap(R, **self.settings)
+        return self.plot(matrix)
 
-class Histogram(nemoa.common.classes.Plot):
-
-    settings = {
-        'title': None,
-        'path': ('dataset', ),
-        'units': (None, None),
-        'bins': 120,
-        'facecolor': 'lightgrey',
-        'edgecolor': 'black',
-        'histtype': 'bar',
-        'linewidth': 0.5 }
+class Histogram(nemoa.common.plot.Histogram):
 
     def create(self, dataset):
 
-        # update settings from dataset
-        self.settings['title'] = dataset.name
-
-        # create data (numpy 1-d array)
+        # get flat data
         data = dataset.get('data').flatten()
 
+        # update title from dataset
+        if not isinstance(self._config.get('title'), str):
+            self._config['title'] = dataset.name
+
         # create plot
-        return nemoa.common.plot.histogram(data, **self.settings)
+        return self.plot(data)

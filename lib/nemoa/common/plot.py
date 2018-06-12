@@ -4,6 +4,177 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+import nemoa
+import numpy
+
+# Todo
+class Plot:
+    """Base class for matplotlib plots.
+
+    Export classes like Histogram, Heatmap or Graph share a common
+    interface to matplotlib, as well as certain plotting attributes.
+    This base class is intended to provide a unified interface to access
+    matplotlib and those attributes.
+
+    Attributes:
+
+    """
+
+    _config = None
+    _plt = None
+    _default = {
+        'fileformat': 'pdf',
+        'figure_size': (10., 6.),
+        'dpi': None,
+        'bg_color': 'none',
+        'usetex': False,
+        'font_family': 'sans-serif',
+        'style': 'seaborn-white',
+        'title': None,
+        'show_title': True,
+        'title_fontsize': 14.0}
+
+    figure = None
+
+    def __init__(self, *args, **kwargs):
+
+        try: import matplotlib
+        except ImportError: raise ImportError(
+            "nemoa.common.plot.Plot() requires matplotlib: "
+            "https://matplotlib.org")
+
+        # merge settings from defaults, settings and kwargs
+        default = self._default.copy()
+        self._config = nemoa.common.dict.merge(self._config, default)
+        self._config = nemoa.common.dict.merge(kwargs, self._config)
+
+        # update global matplotlib settings
+        matplotlib.rc('text', usetex = \
+            self._config.get('usetex'))
+        matplotlib.rc('font', family = \
+            self._config.get('font_family'))
+
+        # link matplotlib.pyplot
+        import matplotlib.pyplot as plt
+        self._plt = plt
+
+        # close previous figures
+        self._plt.close('all')
+
+        # update plot settings
+        self._plt.style.use(
+            self._config.get('style'))
+
+        # create figure
+        self._figure = self._plt.figure(
+            figsize   = self._config.get('figure_size'),
+            dpi       = self._config.get('dpi'),
+            facecolor = self._config.get('bg_color'))
+
+    def _plot_title(self):
+        if not self._config.get('show_title'): return False
+        if self._config.get('title') == None: title = 'Unknown'
+        self._plt.title(self._config.get('title'),
+            fontsize = self._config.get('title_fontsize'))
+        return True
+
+    def show(self):
+        return self._plt.show()
+
+    def save(self, path, *args, **kwargs):
+        return self._figure.savefig(path,
+            dpi = self._config.get('dpi'), **kwargs)
+
+    def release(self):
+        return self._plt.clf()
+
+class Heatmap(Plot):
+
+    _config = {
+        'interpolation': 'nearest' }
+
+    def plot(self, array):
+
+        import matplotlib.cm
+        import numpy
+
+        # create subplot
+        ax = self._figure.add_subplot(111)
+        ax.grid(True)
+
+        # create heatmap
+        cax = ax.imshow(array, cmap = matplotlib.cm.hot_r,
+            interpolation = self._config.get('interpolation'),
+            extent = (0, array.shape[1], 0, array.shape[0]))
+
+        # create labels for axis
+        max_font_size = 12.
+        x_labels = []
+        for label in self._config['x_labels']:
+            if ':' in label: label = label.split(':', 1)[1]
+            x_labels.append(get_label(label))
+        y_labels = []
+        for label in self._config['y_labels']:
+            if ':' in label: label = label.split(':', 1)[1]
+            y_labels.append(get_label(label))
+        fontsize = min(max_font_size, \
+            400. / float(max(len(x_labels), len(y_labels))))
+        self._plt.xticks(
+            numpy.arange(len(x_labels)) + 0.5,
+            tuple(x_labels), fontsize = fontsize, rotation = 65)
+        self._plt.yticks(
+            len(y_labels) - numpy.arange(len(y_labels)) - 0.5,
+            tuple(y_labels), fontsize = fontsize)
+
+        # create colorbar
+        cbar = self._figure.colorbar(cax)
+        for tick in cbar.ax.get_yticklabels():
+            tick.set_fontsize(9)
+
+        # (optional) plot title
+        self._plot_title()
+
+        return True
+
+class Histogram(Plot):
+
+    _config = {
+        'bins': 100,
+        'facecolor': 'lightgrey',
+        'edgecolor': 'black',
+        'histtype': 'bar',
+        'linewidth': 0.5 }
+
+    def create(self, dataset):
+
+        # update settings from dataset
+        self.settings['title'] = dataset.name
+
+        # create flat data
+        data = dataset.get('data').flatten()
+
+        # create plot
+        return nemoa.common.plot.histogram(data, **self.settings)
+
+    def plot(self, array):
+
+        # create subplot
+        ax = self._figure.add_subplot(111)
+        ax.grid(True)
+
+        # create histogram
+        cax = ax.hist(array,
+            bins      = self._config.get('bins'),
+            facecolor = self._config.get('facecolor'),
+            histtype  = self._config.get('histtype'),
+            linewidth = self._config.get('linewidth'),
+            edgecolor = self._config.get('edgecolor'))
+
+        # (optional) plot title
+        self._plot_title()
+
+        return True
+
 def get_color(*args):
     """Convert color name of XKCD color name survey to RGBA tuple.
 
@@ -60,94 +231,6 @@ def filetypes():
         "https://matplotlib.org")
 
     return plt.gcf().canvas.get_supported_filetypes()
-
-def heatmap(array,
-    title          = None,
-    show_title     = True,
-    title_fontsize = None,
-    interpolation  = None,
-    **kwargs):
-
-    try: import matplotlib.pyplot as plt
-    except ImportError: raise ImportError(
-        "nemoa.common.plot.filetypes() requires matplotlib: "
-        "https://matplotlib.org")
-
-    import matplotlib.cm
-    import nemoa.common.text
-    import numpy as np
-
-    # create figure object
-    fig = plt.gcf()
-    ax = fig.add_subplot(111)
-    ax.grid(True)
-
-    # create heatmap
-    cax = ax.imshow(array, cmap = matplotlib.cm.hot_r,
-        interpolation = interpolation,
-        extent = (0, array.shape[1], 0, array.shape[0]))
-
-    # create labels for axis
-    max_font_size = 12.
-    y_labels = []
-    for label in kwargs['units'][0]:
-        if ':' in label: label = label.split(':', 1)[1]
-        y_labels.append(get_label(label))
-    x_labels = []
-    for label in kwargs['units'][1]:
-        if ':' in label: label = label.split(':', 1)[1]
-        x_labels.append(get_label(label))
-    fontsize = min(max_font_size, \
-        400. / float(max(len(x_labels), len(y_labels))))
-    plt.xticks(
-        np.arange(len(x_labels)) + 0.5,
-        tuple(x_labels), fontsize = fontsize, rotation = 65)
-    plt.yticks(
-        len(y_labels) - np.arange(len(y_labels)) - 0.5,
-        tuple(y_labels), fontsize = fontsize)
-
-    # create colorbar
-    cbar = fig.colorbar(cax)
-    for tick in cbar.ax.get_yticklabels(): tick.set_fontsize(9)
-
-    # (optional) draw title
-    if show_title:
-        if title == None: title = 'Unknown'
-        plt.title(title, fontsize = title_fontsize)
-
-    return True
-
-def histogram(array,
-    title          = None,
-    show_title     = True,
-    title_fontsize = None,
-    bins           = 100,
-    facecolor      = 'none',
-    histtype       = None,
-    linewidth      = None,
-    edgecolor      = None,
-    **kwargs):
-
-    try: import matplotlib.pyplot as plt
-    except ImportError: raise ImportError(
-        "nemoa.common.plot.filetypes() requires matplotlib: "
-        "https://matplotlib.org")
-
-    # create figure object
-    fig = plt.gcf()
-    ax = fig.add_subplot(111)
-    ax.grid(True)
-
-    # create histogram
-    cax = ax.hist(array, bins = bins,
-        facecolor = facecolor, histtype = histtype,
-        linewidth = linewidth, edgecolor = edgecolor)
-
-    # (optional) plot title
-    if show_title and isinstance(title, str):
-        plt.title(title, fontsize = title_fontsize)
-
-    return True
 
 def graph(graph,
     padding            = (0.1, 0.1, 0.1, 0.1),

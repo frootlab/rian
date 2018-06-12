@@ -9,7 +9,7 @@ import nemoa.model.classes
 import nemoa.model.evaluation
 import nemoa.model.exports
 import nemoa.model.imports
-import nemoa.model.optimizer
+import nemoa.model.morphisms
 
 def build(*args, **kwargs):
     """Create model dictionary from building script."""
@@ -41,7 +41,7 @@ def open(*args, **kwargs):
 
 def optimize(*args, **kwargs):
     """Optimize model instance."""
-    return nemoa.model.optimizer.optimize(*args, **kwargs)
+    return nemoa.model.morphisms.optimize(*args, **kwargs)
 
 def save(*args, **kwargs):
     """Export model instance to file."""

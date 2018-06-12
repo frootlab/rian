@@ -10,9 +10,9 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.model.optimizer.ann
+import nemoa.model.morphisms.ann
 
-class DBN(nemoa.model.optimizer.ann.ANN):
+class DBN(nemoa.model.morphisms.ann.ANN):
     """Deep Belief Network (DBN) Optimizer."""
 
     _default = {

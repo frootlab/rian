@@ -51,7 +51,7 @@ class Optimizer:
         return algorithms
 
     def _get_algorithm(self, key, *args, **kwargs):
-        """Get algorithm provided by optimizer."""
+        """Get algorithm provided by transformation."""
         return self._get_algorithms(*args, **kwargs).get(key, None)
 
     def _get_data(self, key, *args, **kwargs):
@@ -203,13 +203,13 @@ class Optimizer:
         return self._buffer.get('model', None)
 
     def _get_compatibility(self, model):
-        """Get compatibility of optimizer to given model instance.
+        """Test compatibility of transformation with model instance.
 
         Args:
             model: nemoa model instance
 
         Returns:
-            True if optimizer is compatible to given model, else False.
+            True if transformation is compatible with model, else False.
 
         """
 
@@ -266,10 +266,10 @@ class Optimizer:
                 nemoa.set('shell', 'buffmode', 'key')
 
         # 2Do retval, try / except etc.
-        optimizer = algorithm.get('reference', None)
-        if not optimizer: return None
+        transformation = algorithm.get('reference', None)
+        if not transformation: return None
 
-        retval = optimizer()
+        retval = transformation()
         retval &= self.model.network.initialize(self.model.system)
 
         return retval
@@ -284,17 +284,17 @@ class Optimizer:
         return nemoa.log('warning', "unknown key '%s'" % key)
 
     def _set_config(self, config = None, **kwargs):
-        """Set optimizer configuration from dictionary."""
+        """Set configuration for transformation from dictionary."""
 
         if not isinstance(config, dict):
             if not config: key = 'default'
             elif isinstance(config, str): key = config
             else:
                 return nemoa.log('warning', """could not configure
-                    optimization: invalid configuration.""") or None
+                    transformation: invalid configuration.""") or None
             if not self.model:
                 return nemoa.log('warning', """could not configure
-                    optimization: no model given.""") or None
+                    transformation: no model given.""") or None
             system = self.model.system
             schedules = system._config.get('schedules', {})
             config = schedules.get(key, {}).get(system.type, {})
@@ -310,8 +310,8 @@ class Optimizer:
         import nemoa.model.evaluation
 
         if not self._get_compatibility(model):
-            return nemoa.log('warning', """Could not initialize
-                optimizer to model: optimizer is not compatible to
+            return nemoa.log('warning', """Could not apply
+                transformation: transformation is not compatible with
                 model.""") or None
 
         self.model = model

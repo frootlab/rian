@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-"""Restricted Boltzmann Machine optimizers."""
+"""Restricted Boltzmann Machine Morphisms."""
 
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.model.optimizer.ann
+import nemoa.model.morphisms.ann
 import numpy
 
-class RBM(nemoa.model.optimizer.ann.ANN):
+class RBM(nemoa.model.morphisms.ann.ANN):
     """Restricted Boltzmann Machine (RBM) Optimizer.
 
     Restricted Boltzmann Machines (1) are energy based undirected

@@ -55,7 +55,7 @@ def main():
 
     def optimize(*args, **kwargs):
         """Optimize model."""
-        return nemoa.model.optimizer.optimize(*args, **kwargs)
+        return nemoa.model.morphisms.optimize(*args, **kwargs)
 
     def path(*args, **kwargs):
         """Wrapping function to nemoa.path()."""
