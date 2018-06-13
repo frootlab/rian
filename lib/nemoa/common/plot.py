@@ -20,8 +20,6 @@ class Plot:
 
     """
 
-    _config = None
-    _plt = None
     _default = {
         'fileformat': 'pdf',
         'figure_size': (10., 6.),
@@ -33,8 +31,11 @@ class Plot:
         'title': None,
         'show_title': True,
         'title_fontsize': 14.0}
+    _config = {}
+    _plt = None
+    _figure = None
 
-    figure = None
+    figure = None # 2do
 
     def __init__(self, *args, **kwargs):
 
@@ -44,8 +45,7 @@ class Plot:
             "https://matplotlib.org")
 
         # merge settings from defaults, settings and kwargs
-        default = self._default.copy()
-        self._config = nemoa.common.dict.merge(self._config, default)
+        self._config = nemoa.common.dict.merge(self._config, self._default)
         self._config = nemoa.common.dict.merge(kwargs, self._config)
 
         # update global matplotlib settings

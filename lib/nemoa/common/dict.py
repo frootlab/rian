@@ -25,9 +25,13 @@ def fromarray(array, axes):
     return d
 
 def merge(d1, d2, new = True):
-    """Recursively merge dictionaries (merge d1 over d2).
+    """Recursively right merge dictionaries.
 
     Args:
+        d1 (dict): source dictionary
+        d2 (dict): target dictionary
+
+    Kwargs:
         new (bool): a new dictionary is created if new is True
 
     Returns:
@@ -35,20 +39,27 @@ def merge(d1, d2, new = True):
 
     """
 
+    # check types of arguments
+    if not type(d1) is dict: raise TypeError(
+        'first argument is required to be of type dict.')
+    if not type(d2) is dict: raise TypeError(
+        'second argument is required to be of type dict.')
+
     if new:
         import copy
         d2 = copy.deepcopy(d2)
 
     for k1, v1 in d1.items():
         if not k1 in d2: d2[k1] = v1
-        elif isinstance(v1, dict): merge(v1, d2[k1], new = False)
+        elif isinstance(v1, dict):
+            merge(v1, d2[k1], new = False)
         else: d2[k1] = v1
 
     return d2
 
 def section(d, string):
     """Crop dictionary to keys, that start with an initial string."""
-    
+
     if not isinstance(string, str): return {}
     i = len(string)
 
