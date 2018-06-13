@@ -39,7 +39,7 @@ def main():
         """Wrapping function to nemoa.list()."""
         retval = nemoa.list(*args, **kwargs)
         if isinstance(retval, dict):
-            for key, val in list(retval.items()):
+            for key, val in retval.items():
                 if not val: continue
                 if hasattr(val, '__iter__'):
                     nemoa.log('note', '%s: %s' % (key, ', '.join(val)))
