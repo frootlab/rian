@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import inspect
 
 def getfunctions(modulename, prefix = '', removeprefix = True,
-    attribute = 'reference'):
+    attribute = None):
     """ """
 
     functions = dict(inspect.getmembers(modulename, inspect.isfunction))
@@ -19,15 +19,28 @@ def getfunctions(modulename, prefix = '', removeprefix = True,
                     del functions[key]
                     continue
             del functions[key]
-    if attribute == 'reference': return functions
+
+    if attribute is None:
+        for key in list(functions.keys()):
+            if isinstance(functions[key].__doc__, str):
+                about = functions[key].__doc__.split('\n', 1)[0].strip(' .')
+            else: about = ''
+            functions[key] = {
+                'name': key, 'about': about,
+                'reference': functions[key]}
+        return functions
+
+    if attribute == 'reference':
+        return functions
+
     if attribute == 'about':
         for key in list(functions.keys()):
             if isinstance(functions[key].__doc__, str):
-                functions[key] = \
-                    functions[key].__doc__.split('\n', 1)[0].strip(' .')
-            else:
-                functions[key] = ''
+                about = functions[key].__doc__.split('\n', 1)[0].strip(' .')
+            else: about = ''
+            functions[key] = about
         return functions
+
     return False
 
 def getmethods(instance, attribute = None, grouping = None,
