@@ -24,14 +24,14 @@ def basename(path):
 
 def copytree(src, tgt):
     """Copy sub directories from given source to target.
-    
+
     Args:
         src (string): path to source directory
         tgt (string): path to target directory
-        
+
     Returns:
         True if and only if no error occured.
-    
+
     """
 
     import glob
@@ -126,12 +126,12 @@ def getstorage(name, *args, **kwargs):
         name (string): Storage path name: String describing storage
             directory. Allowed values are:
 
-            'user_cache_dir' -- User specific application cache
-            'user_config_dir' -- User specific application configuration
-            'user_data_dir' -- User specific application data
-            'user_log_dir' -- User specific application logging
-            'site_config_dir' -- Shared application configuration
-            'site_data_dir' -- Shared application configuration
+            'user_cache_dir' -- User specific cache directory
+            'user_config_dir' -- User specific configuration directory
+            'user_data_dir' -- User specific data directory
+            'user_log_dir' -- User specific logging directory
+            'site_config_dir' -- Site specific configuration directory
+            'site_data_dir' -- Site specific data directory
 
         *args: Arguments passed to appdirs
         **kwargs: Keyword Arguments passed to appdirs
@@ -185,9 +185,9 @@ def joinpath(directory, name, extension):
 
 def get_clean_filename(text):
     """Get cleaned filename."""
-    
+
     import string
-    
+
     valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
     filename = ''.join(char for char in text if char in valid_chars)
     filename = filename.replace(' ', '_')
@@ -245,7 +245,7 @@ def get_norm_path(*args):
 
     path = get_valid_path(*args)
     if not path: return None
-    
+
     path = os.path.expanduser(path)
     path = os.path.expandvars(path)
     path = os.path.normpath(path)

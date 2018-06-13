@@ -13,7 +13,7 @@ def new(*args, **kwargs):
     """Create workspace instance from workspace dictionary."""
     import nemoa.workspace.classes
     return nemoa.workspace.classes.new(*args, **kwargs)
-    
+
 def open(*args, **kwargs):
     """Import workspace instance from file."""
     return new(**load(*args, **kwargs))

@@ -23,7 +23,7 @@ class Session:
             'basepath': {
                 'cwd': '%user_cwd%',
                 'user': ('%user_data_dir%', 'workspaces'),
-                'common': ('%site_data_dir%', 'workspaces') },
+                'site': ('%site_data_dir%', 'workspaces') },
             'filetype': {
                 'dataset': 'csv',
                 'network': 'graphml',
@@ -49,7 +49,7 @@ class Session:
             'script': {},
             'system': {} }}
 
-    def __init__(self, shared = True, **kwargs):
+    def __init__(self, site = True, **kwargs):
         """ """
 
         import os
@@ -69,7 +69,7 @@ class Session:
                 'folders': {
                     'user': 'str',
                     'cache': 'str',
-                    'common': 'str' },
+                    'site': 'str' },
                 'files': {
                     'logfile': 'str' }})
 
@@ -84,10 +84,10 @@ class Session:
                     path = self._get_path_expand(val)
                     if path: self._config['current']['path'][key] = path
 
-        # import shared resources
-        if shared:
-            for workspace in self._get_list_workspaces(base = 'common'):
-                self._set_workspace_scandir(workspace, base = 'common')
+        # # import site resources
+        # if site:
+        #     for workspace in self._get_list_workspaces(base = 'site'):
+        #         self._set_workspace_scandir(workspace, base = 'site')
 
     def create(self, key = None, *args, **kwargs):
         """Open object in current session."""
@@ -679,33 +679,38 @@ class Session:
         """Set workspace."""
 
         # reset workspace if given workspace is None
-        if not workspace: return self._set_workspace_reset()
+        if workspace == None:
+            return self._set_workspace_reset()
 
         # return if workspace did not change
-        oldworkspace = (workspace == self._get_workspace())
-        oldbase = (base == None or base == self._get_workspace())
-        if oldworkspace and oldbase and not update: return True
+        cur_workspace = self._get_workspace()
+        cur_base = self._get_base()
+        if workspace == cur_workspace \
+            and base in [None, cur_base]: return True
 
         # detect base if base is not given
-        if not base:
+        if base == None:
             bases = self._get_list_bases(workspace)
             if not bases:
-                return nemoa.log('warning', """could not open workspace
-                    '%s': workspace could not be found
-                    in any searchpath.""" % workspace) or None
+                return nemoa.log('warning',
+                    "could not open workspace '%s': "
+                    "workspace could not be found "
+                    "in any searchpath." % workspace) or None
             if len(bases) > 1:
-                return nemoa.log('warning', """could not open workspace
-                    '%s': workspace found in different searchpaths:
-                    %s.""" % (workspace, ', '.join(bases))) or None
+                return nemoa.log('warning',
+                    "could not open workspace '%s': "
+                    "workspace been found in different searchpaths: "
+                    "%s." % (workspace, ', '.join(bases))) or None
             base = bases[0]
 
         # test if base and workspace are valid
         if not workspace in self._get_list_workspaces(base = base):
             basepath = self._get_path_expand(
                 self._config['default']['basepath'][base])
-            return nemoa.log('warning', """could not open workspace
-                '%s': workspace could not be found in searchpath
-                '%s'.""" % (workspace, basepath)) or None
+            return nemoa.log('warning',
+                "could not open workspace '%s': "
+                "workspace could not be found in searchpath "
+                "'%s'." % (workspace, basepath)) or None
 
         # set current workspace name and workspace base name
         self._config['current']['workspace'] = workspace
@@ -718,8 +723,9 @@ class Session:
 
         retval = True
 
-        # (optional) init logfile of new workspace
-        if retval and logging: retval &= self._set_workspace_logging()
+        # (optional) use logfile of new workspace
+        if retval and logging:
+            retval &= self._set_workspace_logging()
 
         # open workspace
         if retval:
@@ -728,7 +734,8 @@ class Session:
             if instance: self._config['workspace'] = instance
 
         # (optional) scan workspace folder for objects / files
-        if retval and scandir: retval &= self._set_workspace_scandir()
+        if retval and scandir:
+            retval &= self._set_workspace_scandir()
 
         return retval
 
@@ -795,21 +802,19 @@ class Session:
 
         import glob
 
-        # change current workspace (if necessary)
-        chdir = False
-        workspace = self._get_workspace()
-        base = None
-        if 'workspace' in kwargs:
-            workspace = kwargs['workspace']
-            del kwargs['workspace']
-            if not workspace == self._get_workspace(): chdir = True
-        if 'base' in kwargs:
-            base = kwargs['base']
-            del kwargs['base']
-            if not base == self._get_base(): chdir = True
-        if chdir:
-            current = self._config.get('workspace', None)
-            self._set_workspace(workspace, base = base)
+        # change current base and workspace (if necessary)
+        cur_workspace = self._get_workspace()
+        cur_base = self._get_base()
+
+        if len(args) > 0: workspace = args[0]
+        else: workspace = cur_workspace
+        if 'base' in kwargs: base = kwargs.pop('base')
+        else: base = cur_base
+
+        if (base, workspace) != (cur_base, cur_workspace):
+            chdir = self._set_workspace(workspace, base = base)
+        else:
+            chdir = False
 
         # scan workspace for objects
         for objtype in list(self._config['register'].keys()):

@@ -27,7 +27,7 @@ def install():
     import setuptools
     import setuptools.command.install
 
-    class NemoCustomInstall(setuptools.command.install.install):
+    class NemoaCustomInstall(setuptools.command.install.install):
         """Customized setuptools install command."""
 
         def run(self):
@@ -108,7 +108,7 @@ def install():
     for key, val in list(getvars(srcfile).items()): pkg[key] = val
     pkg['long_description'] = getfile(pkg['descfile'])
     pkg['package_dir'] = { '': pkg['libdir'] }
-    pkg['cmdclass'] = { 'install': NemoCustomInstall }
+    pkg['cmdclass'] = { 'install': NemoaCustomInstall }
     pkg['packages'] = setuptools.find_packages(pkg['libdir'])
 
     # install nemoa lib
@@ -165,17 +165,20 @@ def postinstall():
 
     print('running postinstall')
 
+    appname = 'nemoa'
+    appauthor = 'Froot'
+
     # copy user workspaces
     user_src_base = getpath(('data', 'user'))
     user_tgt_base = appdirs.user_data_dir(
-        appname = 'nemoa', appauthor = 'Froot')
+        appname = appname, appauthor = appauthor)
     user_tgt_base = getpath((user_tgt_base, 'workspaces'))
     copytree(user_src_base, user_tgt_base)
 
-    # copy site workspaces (common workspaces)
-    site_src_base = getpath(('data', 'shared'))
+    # copy site workspaces
+    site_src_base = getpath(('data', 'site'))
     site_tgt_base = appdirs.site_data_dir(
-        appname = 'nemoa', appauthor = 'Froot')
+        appname = appname, appauthor = appauthor)
     site_tgt_base = getpath((site_tgt_base, 'workspaces'))
     copytree(site_src_base, site_tgt_base)
 
