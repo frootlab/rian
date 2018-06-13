@@ -181,7 +181,7 @@ class ANN(nemoa.system.classes.base.System):
         formater = lambda val: '%.3f' % (val),
         optimum  = 'min'
     )
-    def _algorithm_energy(self, data, *args, **kwargs):
+    def _get_energy(self, data, *args, **kwargs):
         """Sum of local link and unit energies."""
 
         mapping = list(self._get_mapping())
@@ -189,26 +189,26 @@ class ANN(nemoa.system.classes.base.System):
 
         # sum local unit energies
         for i in range(1, len(mapping) + 1):
-            energy += self._algorithm_units_energy(data[0],
+            energy += self._get_units_energy(data[0],
                 mapping = tuple(mapping[:i])).sum(axis = 1)
 
         # sum local link energies
         for i in range(1, len(mapping)):
-            energy += self._algorithm_links_energy(data[0],
+            energy += self._get_links_energy(data[0],
                 mapping = tuple(mapping[:i + 1])).sum(axis = (1, 2))
 
         # calculate (pseudo) energy of system
         return numpy.log(1. + numpy.exp(-energy).sum())
 
     @nemoa.common.decorators.attributes(
-        name     = 'energy',
+        name     = 'units_energy',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
         retfmt   = 'scalar',
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram'
     )
-    def _algorithm_units_energy(self, data, mapping = None):
+    def _get_units_energy(self, data, mapping = None):
         """Unit energies of target units.
 
         Args:
@@ -229,14 +229,14 @@ class ANN(nemoa.system.classes.base.System):
         return self._units[mapping[-1]].energy(data)
 
     @nemoa.common.decorators.attributes(
-        name     = 'energy',
+        name     = 'links_energy',
         category = ('system', 'links', 'evaluation'),
         args     = 'input',
         retfmt   = 'scalar',
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram'
     )
-    def _algorithm_links_energy(self, data, mapping = None, **kwargs):
+    def _get_links_energy(self, data, mapping = None, **kwargs):
         """Return link energies of a layer.
 
         Args:
@@ -249,7 +249,7 @@ class ANN(nemoa.system.classes.base.System):
         if len(mapping) == 1:
             # TODO
             return nemoa.log('error', """sorry: bad implementation of
-                ann._algorithm_links_energy""")
+                ann._get_links_energy""")
         elif len(mapping) == 2:
             sdata = data
             tdata = self._get_unitvalues(sdata, mapping)

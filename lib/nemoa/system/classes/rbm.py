@@ -96,7 +96,7 @@ class RBM(nemoa.system.classes.ann.ANN):
         if not nemoa.common.type.isdataset(dataset):
             return nemoa.log('error', """could not test dataset:
                 invalid dataset instance given.""")
-        if not dataset._algorithm_test_binary():
+        if not dataset._get_test_binary():
             return nemoa.log('error', """dataset '%s' is not valid:
                 RBMs expect binary data.""" % dataset.name)
         return True

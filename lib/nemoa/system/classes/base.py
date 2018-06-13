@@ -126,33 +126,24 @@ class System(nemoa.common.classes.Metadata):
 
         return nemoa.log('warning', "unknown key '%s'" % key) or None
 
-    def _get_algorithms(self, category = None, attribute = None):
+    def _get_algorithms(self, category = None, attribute = None, tree = False):
         """Get algorithms provided by system."""
 
-        # get unstructured dictionary of all algorithms by prefix
-        unstructured = nemoa.common.module.getmethods(self, prefix = '')
+        # get dictionary with all methods
+        # with prefix '_get_' and attribute 'name'
+        methods = nemoa.common.module.getmethods(self,
+            prefix = '_get_', attribute = 'name')
 
-        # filter algorithms by supported keys and given category
-        for ukey, udata in list(unstructured.items()):
-            if not isinstance(udata, dict):
-                del unstructured[ukey]
-                continue
-            if attribute and not attribute in list(udata.keys()):
-                del unstructured[ukey]
-                continue
-            if not 'name' in list(udata.keys()):
-                del unstructured[ukey]
-                continue
-            if not 'category' in list(udata.keys()):
-                del unstructured[ukey]
-                continue
-            if category and not udata['category'] == category:
-                del unstructured[ukey]
+        # filter algorithms by given category
+        if not category == None:
+            for key, val in list(methods.items()):
+                if val.get('category', None) != category:
+                    del methods[key]
 
-        # create flat structure id category is given
+        # create flat structure if category is given or tree is False
         structured = {}
-        if category:
-            for ukey, udata in unstructured.items():
+        if category or not tree:
+            for ukey, udata in methods.items():
                 if attribute: structured[udata['name']] = \
                     udata[attribute]
                 else: structured[udata['name']] = udata
@@ -164,7 +155,7 @@ class System(nemoa.common.classes.Metadata):
             ('system', 'units', 'evaluation'): 'units',
             ('system', 'links', 'evaluation'): 'links',
             ('system', 'relation', 'evaluation'): 'relation' }
-        for ukey, udata in unstructured.items():
+        for ukey, udata in methods.items():
             if not udata['category'] in list(categories.keys()): continue
             ckey = categories[udata['category']]
             if ckey == None:
@@ -571,14 +562,14 @@ class System(nemoa.common.classes.Metadata):
         return numpy.mean(self._get_unitprecision(*args, **kwargs))
 
     @nemoa.common.decorators.attributes(
-        name     = 'mean',
+        name     = 'units_mean',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
         retfmt   = 'scalar',
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram'
     )
-    def _get_unitmean(self, data, mapping = None, block = None):
+    def _get_units_mean(self, data, mapping = None, block = None):
         """Mean values of reconstructed target units.
 
         Args:
@@ -609,14 +600,14 @@ class System(nemoa.common.classes.Metadata):
         return model_out.mean(axis = 0)
 
     @nemoa.common.decorators.attributes(
-        name     = 'variance',
+        name     = 'units_variance',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
         retfmt   = 'scalar',
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram'
     )
-    def _get_unitvariance(self, data, mapping = None, block = None):
+    def _get_units_variance(self, data, mapping = None, block = None):
         """Return variance of reconstructed unit values.
 
         Args:
@@ -642,7 +633,7 @@ class System(nemoa.common.classes.Metadata):
         return model_out.var(axis = 0)
 
     @nemoa.common.decorators.attributes(
-        name     = 'expect',
+        name     = 'units_expect',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
         retfmt   = 'vector',
@@ -683,7 +674,7 @@ class System(nemoa.common.classes.Metadata):
 
 
     @nemoa.common.decorators.attributes(
-        name     = 'values',
+        name     = 'units_values',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
         retfmt   = 'vector',
@@ -741,7 +732,7 @@ class System(nemoa.common.classes.Metadata):
             return data
 
     @nemoa.common.decorators.attributes(
-        name     = 'samples',
+        name     = 'units_samples',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
         retfmt   = 'vector',
@@ -798,7 +789,7 @@ class System(nemoa.common.classes.Metadata):
             return data
 
     @nemoa.common.decorators.attributes(
-        name     = 'residuals',
+        name     = 'units_residuals',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
         retfmt   = 'vector',
@@ -841,7 +832,7 @@ class System(nemoa.common.classes.Metadata):
         return d_tgt - m_out
 
     @nemoa.common.decorators.attributes(
-        name     = 'error',
+        name     = 'units_error',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
         retfmt   = 'scalar',
@@ -875,7 +866,7 @@ class System(nemoa.common.classes.Metadata):
         return error
 
     @nemoa.common.decorators.attributes(
-        name     = 'accuracy',
+        name     = 'units_accuracy',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
         retfmt   = 'scalar',
@@ -910,7 +901,7 @@ class System(nemoa.common.classes.Metadata):
         return 1. - normres / normdat
 
     @nemoa.common.decorators.attributes(
-        name     = 'precision',
+        name     = 'units_precision',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
         retfmt   = 'scalar',
@@ -1863,7 +1854,8 @@ class System(nemoa.common.classes.Metadata):
                 M = values
                 # todo: calc real relation
                 if 'C' in transform:
-                    C = self._algorithm_unitcorrelation(data)
+                    # TODO -> will lead to error
+                    C = self._get_units_correlation(data)
                 try:
                     T = eval(transform)
                     values = T

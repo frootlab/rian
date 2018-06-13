@@ -22,7 +22,7 @@ class TestSuite(nemoa.common.unittest.TestSuite):
             self.assertTrue(test)
         with self.subTest(state = 'optimize shallow ann'):
             model.optimize()
-            test = model.evaluate('system', 'error') < 0.1
+            test = model.error < 0.1
             self.assertTrue(test)
 
     def test_model_dbn(self):
@@ -33,5 +33,5 @@ class TestSuite(nemoa.common.unittest.TestSuite):
             self.assertTrue(test)
         with self.subTest(state = 'optimize dbn'):
             model.optimize()
-            test = model.evaluate('system', 'error') < 0.5
+            test = model.error < 0.5
             self.assertTrue(test)

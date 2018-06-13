@@ -729,14 +729,14 @@ class ANN(Evaluation):
         return self.model.system._units[mapping[-1]].energy(data)
 
     @nemoa.common.decorators.attributes(
-        name     = 'energy',
-        category = 'links',
+        name     = 'links_energy',
+        category = ('system', 'links', 'evaluation'),
         args     = 'input',
         retfmt   = 'scalar',
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram'
     )
-    def _algorithm_links_energy(self, data, mapping = None, **kwargs):
+    def _get_links_energy(self, data, mapping = None, **kwargs):
         """Return link energies of a layer.
 
         Args:

@@ -594,10 +594,49 @@ class Dataset(nemoa.common.classes.Metadata):
 
         return nemoa.log('warning', "unknown key '%s'" % key) or None
 
-    def _get_algorithms(self, category = None, attribute = None):
+    def _get_algorithms(self, category = None, attribute = None, tree = False):
         """Get algorithms provided by dataset."""
-        return nemoa.common.module.getmethods(self,
-            prefix = '_algorithm_', attribute = attribute)
+
+        # get dictionary with all methods
+        # with prefix '_get_' and attribute 'name'
+        methods = nemoa.common.module.getmethods(self,
+            prefix = '_get_', attribute = 'name')
+
+        # filter algorithms by given category
+        if not category == None:
+            for key, val in list(methods.items()):
+                if val.get('category', None) != category:
+                    del methods[key]
+
+        # create flat structure if category is given or tree is False
+        structured = {}
+        if category or not tree:
+            for ukey, udata in methods.items():
+                if attribute: structured[udata['name']] = \
+                    udata[attribute]
+                else: structured[udata['name']] = udata
+            return structured
+
+        # create tree structure if category is not given
+        categories = {
+            ('dataset', 'evaluation'): None,
+            ('dataset', 'transformation'): None,
+            ('dataset', 'columns', 'evaluation'): 'columns',
+            ('dataset', 'rows', 'evaluation'): 'rows' }
+        for ukey, udata in methods.items():
+            if not udata['category'] in list(categories.keys()): continue
+            ckey = categories[udata['category']]
+            if ckey == None:
+                if attribute: structured[udata['name']] = \
+                    udata[attribute]
+                else: structured[udata['name']] = udata
+            else:
+                if not ckey in list(structured.keys()): structured[ckey] = {}
+                if attribute: structured[ckey][udata['name']] = \
+                    udata[attribute]
+                else: structured[ckey][udata['name']] = udata
+
+        return structured
 
     def _get_algorithm(self, algorithm = None, *args, **kwargs):
         """Get algorithm."""
@@ -1253,10 +1292,13 @@ class Dataset(nemoa.common.classes.Metadata):
 
     @nemoa.common.decorators.attributes(
         name     = 'covariance',
-        category = ('dataset', 'evaluation'),
-        formater = lambda val: '%.3f' % (val)
+        category = ('dataset', 'columns', 'evaluation'),
+        args     = '',
+        retfmt   = 'array',
+        formater = lambda val: '%.3f' % (val),
+        plot     = 'heatmap'
     )
-    def _algorithm_covariance(self, cols = '*'):
+    def _get_covariance(self, cols = '*'):
         """Calculate covariance matrix between given columns."""
 
         # get numpy array with test data
@@ -1266,10 +1308,13 @@ class Dataset(nemoa.common.classes.Metadata):
 
     @nemoa.common.decorators.attributes(
         name     = 'correlation',
-        category = ('dataset', 'evaluation'),
-        formater = lambda val: '%.3f' % (val)
+        category = ('dataset', 'columns', 'evaluation'),
+        args     = '',
+        retfmt   = 'array',
+        formater = lambda val: '%.3f' % (val),
+        plot     = 'heatmap'
     )
-    def _algorithm_correlation(self, cols = '*'):
+    def _get_correlation(self, cols = '*'):
         """Calculate correlation matrix between given columns."""
 
         # get numpy array with test data
@@ -1279,24 +1324,30 @@ class Dataset(nemoa.common.classes.Metadata):
 
     @nemoa.common.decorators.attributes(
         name     = 'lcorrelation',
-        category = ('dataset', 'evaluation'),
-        formater = lambda val: '%.3f' % (val)
+        category = ('dataset', 'columns', 'evaluation'),
+        args     = '',
+        retfmt   = 'array',
+        formater = lambda val: '%.3f' % (val),
+        plot     = 'heatmap'
     )
-    def _algorithm_lcorrelation(self, cols = '*', dim = 2):
+    def _get_lcorrelation(self, cols = '*', dim = 2):
         """Calculate L-Correlation matrix between given columns."""
 
         # get numpy array with dimensionality reduced test data
-        data = self._algorithm_pca(cols = cols, dim = dim)
+        data = self._get_pcadata(cols = cols, dim = dim)
 
         return numpy.corrcoef(data.T)
 
     @nemoa.common.decorators.attributes(
         name     = 'pca',
-        category = ('dataset', 'evaluation'),
-        formater = lambda val: '%.3f' % (val)
+        category = ('dataset', 'transformation'),
+        args     = '',
+        retfmt   = 'array',
+        formater = lambda val: '%.3f' % (val),
+        plot     = 'histogram'
     )
-    def _algorithm_pca(self, cols = '*', dim = 2, embed = True):
-        """Calculate projection to principal compoenents."""
+    def _get_pcadata(self, cols = '*', dim = 2, embed = True):
+        """Calculate projection to principal components."""
 
         # get numpy array with test data
         data = self._get_data(cols = cols)
@@ -1335,9 +1386,12 @@ class Dataset(nemoa.common.classes.Metadata):
     @nemoa.common.decorators.attributes(
         name     = 'test_binary',
         category = ('dataset', 'evaluation'),
-        formater = lambda val: '%.3f' % (val)
+        args     = '',
+        retfmt   = 'scalar',
+        formater = lambda val: '%.3f' % (val),
+        plot     = 'none'
     )
-    def _algorithm_test_binary(self, cols = '*'):
+    def _get_test_binary(self, cols = '*'):
         """Test if dataset strictly contains binary values.
 
         Args:
@@ -1362,9 +1416,12 @@ class Dataset(nemoa.common.classes.Metadata):
     @nemoa.common.decorators.attributes(
         name = 'test_gauss',
         category = ('dataset', 'evaluation'),
-        formater = lambda val: '%.3f' % (val)
+        args     = '',
+        retfmt   = 'scalar',
+        formater = lambda val: '%.3f' % (val),
+        plot     = 'none'
     )
-    def _algorithm_test_gauss(self, cols = '*', mu = 0., sigma = 1.,
+    def _get_test_gauss(self, cols = '*', mu = 0., sigma = 1.,
         delta = .05):
         """Test if dataset contains gauss normalized data per columns.
 
