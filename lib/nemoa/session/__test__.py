@@ -88,17 +88,17 @@ class TestSuite(nemoa.common.unittest.TestSuite):
             worktree = nemoa.list('workspaces')
             test = isinstance(worktree, dict) \
                 and 'user' in worktree \
-                and 'common' in worktree \
+                and 'site' in worktree \
                 and 'cwd' in worktree
             self.assertTrue(test)
-        with self.subTest(cmd = "nemoa.list('workspaces', base = 'common')"):
-            workspaces = nemoa.list('workspaces', base = 'common')
-            test = isinstance(workspaces, list)
+        with self.subTest(cmd = "nemoa.list('workspaces', base = 'site')"):
+            workspaces = nemoa.list('workspaces', base = 'site')
+            test = isinstance(workspaces, list) \
+                and 'testsuite' in workspaces
             self.assertTrue(test)
         with self.subTest(cmd = "nemoa.list('workspaces', base = 'user')"):
             workspaces = nemoa.list('workspaces', base = 'user')
-            test = isinstance(workspaces, list) \
-                and 'testsuite' in workspaces
+            test = isinstance(workspaces, list)
             self.assertTrue(test)
         with self.subTest(cmd = "nemoa.list('datasets')"):
             datasets = nemoa.list('datasets')
