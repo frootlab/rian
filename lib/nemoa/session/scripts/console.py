@@ -13,8 +13,8 @@ def main():
         import IPython
     except ImportError:
         return nemoa.log('error',
-            """could not execute interactive nemoa shell:
-            you have to install ipython.""")
+            "could not execute interactive nemoa shell: "
+            "ipython is required.")
 
     def about(*args, **kwargs):
         """Get meta information."""

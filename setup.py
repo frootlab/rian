@@ -86,8 +86,7 @@ def install():
             'matplotlib'],
         'extras_require': {
             'gui': ['pyside'],
-            'systemsbiology': ['rpy2'],
-            'test': ['unittest'] },
+            'systemsbiology': ['rpy2'] },
         'classifiers': [
             'Development Status :: 3 - Alpha',
             'Intended Audience :: Science/Research',
