@@ -127,7 +127,7 @@ class TestSuite(nemoa.common.unittest.TestSuite):
             self.assertTrue(test)
         with self.subTest(cmd = "nemoa.list('scripts')"):
             scripts = nemoa.list('scripts')
-            test = isinstance(scripts, list) and 'unittest' in scripts
+            test = isinstance(scripts, list)
             self.assertTrue(test)
 
     def test_session_path(self):

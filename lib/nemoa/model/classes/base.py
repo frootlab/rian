@@ -151,17 +151,29 @@ class Model(nemoa.common.classes.Metadata):
 
     def _get_algorithms(self, *args, **kwargs):
         """Get algorithms provided by model."""
-        structured = {
-            'dataset': self.dataset.get('algorithms', *args, **kwargs),
-            'network': self.network.get('algorithms', *args, **kwargs),
-            'system': self.system.get('algorithms', *args, **kwargs) }
-        return structured
 
-    def _get_algorithm(self, algorithm = None, *args, **kwargs):
+        return {
+            'dataset': self.dataset._get_algorithms(*args, **kwargs),
+            'network': self.network._get_algorithms(*args, **kwargs),
+            'system': self.system._get_algorithms(*args, **kwargs) }
+
+    def _get_algorithm(self, *args, **kwargs):
         """Get algorithm."""
-        algorithms = self._get_algorithms(*args, **kwargs)
-        if not algorithm in algorithms: return None
-        return algorithms[algorithm]
+
+        # search algorithm
+        found = [self.dataset._get_algorithm(*args, **kwargs),
+            self.network._get_algorithm(*args, **kwargs),
+            self.system._get_algorithm(*args, **kwargs)]
+
+        # filter results
+        found = [x for x in found if x is not None]
+
+        if len(found) == 0: return None
+        if len(found) > 1: return nemoa.log('error',
+            "algorithm with name '%s' is not unique: "
+            "use keyword argument 'category'." % (args[0]))
+
+        return found[0]
 
     def _get_copy(self, key = None, *args, **kwargs):
         """Get model copy as dictionary."""
