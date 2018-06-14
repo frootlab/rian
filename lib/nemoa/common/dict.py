@@ -7,37 +7,49 @@ __license__ = 'GPLv3'
 def asarray(d, axes):
     """Return 2-dimensional numpy array from dictionary."""
 
-    array = numpy.zeros(shape = (len(axes[0]), len(axes[1])))
+    import numpy
+
+    a = numpy.zeros(shape = (len(axes[0]), len(axes[1])))
     for i, x in enumerate(axes[0]):
         for j, y in enumerate(axes[1]):
-            array[i, j] = d[(x, y)] if (x, y) in dict else 0.
+            a[i, j] = d[(x, y)] if (x, y) in d else 0.
 
     return array
 
-def fromarray(array, axes):
+def fromarray(a, axes):
     """Return dictionary from 2-dimensional numpy array."""
 
     d = {}
     for i, x in enumerate(axes[0]):
         for j, y in enumerate(axes[1]):
-            d[(x, y)] = array[i, j]
+            d[(x, y)] = a[i, j]
 
     return d
 
-def merge(d1, d2, new = True):
+def merge(*args, new = True):
     """Recursively right merge dictionaries.
 
     Args:
-        d1 (dict): source dictionary
+        d1 (dict): dictionary
         d2 (dict): target dictionary
+        ...
 
     Kwargs:
         new (bool): a new dictionary is created if new is True
 
     Returns:
-        Dictionary containing right merge from d1 and d2.
+        Dictionary containing right merge of dictionaries.
 
     """
+
+    # recursively right merge
+    if len(args) < 2: raise TypeError(
+        'at least two arguments are required.')
+    elif len(args) > 2:
+        d1, d2 = args[0], merge(*args[1:], new = new)
+        new = False
+    else:
+        d1, d2 = args[0], args[1]
 
     # check types of arguments
     if not type(d1) is dict: raise TypeError(
@@ -45,6 +57,7 @@ def merge(d1, d2, new = True):
     if not type(d2) is dict: raise TypeError(
         'second argument is required to be of type dict.')
 
+    # create new dictionary
     if new:
         import copy
         d2 = copy.deepcopy(d2)

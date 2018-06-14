@@ -245,9 +245,9 @@ class Evaluation:
     def _set_config(self, config = None, **kwargs):
         """Set evaluation configuration from dictionary."""
 
-        if not config: config = {}
-        self._config = nemoa.common.dict.merge(config, self._default)
-        self._config = nemoa.common.dict.merge(kwargs, self._config)
+        if not isinstance(config, dict): config = {}
+        self._config = \
+            nemoa.common.dict.merge(kwargs, config, self._default)
 
         return True
 

@@ -44,9 +44,9 @@ class Plot:
             "nemoa.common.plot.Plot() requires matplotlib: "
             "https://matplotlib.org")
 
-        # merge settings from defaults, settings and kwargs
-        self._config = nemoa.common.dict.merge(self._config, self._default)
-        self._config = nemoa.common.dict.merge(kwargs, self._config)
+        # merge config from defaults, current config and kwargs
+        self._config = nemoa.common.dict.merge(
+            kwargs, self._config, self._default)
 
         # update global matplotlib settings
         matplotlib.rc('text', usetex = \

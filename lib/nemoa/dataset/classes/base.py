@@ -1250,14 +1250,10 @@ class Dataset(nemoa.common.classes.Metadata):
         """
 
         # initialize configuration dictionary
-        # 2Do: use dict.merge
-        if not self._config:
-            import copy
-            self._config = copy.deepcopy(self._default)
-
-        # update configuration dictionary
-        if not config: return True
-        self._config = nemoa.common.dict.merge(config, self._config)
+        if not isinstance(self._config, dict): self._config = {}
+        if not isinstance(config, dict): config = {}
+        self._config = \
+            nemoa.common.dict.merge(config, self._config, self._default)
 
         # Todo: reconfigure!?
         self._tables = {}

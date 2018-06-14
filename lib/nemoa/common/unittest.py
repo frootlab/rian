@@ -15,6 +15,4 @@ class TestSuite(unittest.TestCase):
         nemoa.set('mode', 'silent')
 
     def tearDown(self):
-        if nemoa.get('workspace') != self.workspace:
-            nemoa.open(self.workspace)
         nemoa.set('mode', self.mode)

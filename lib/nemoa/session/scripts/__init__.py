@@ -110,7 +110,15 @@ def main():
         loader = unittest.TestLoader()
         suite  = unittest.TestSuite()
 
+        # open workspace 'testsuite'
+        workspace = nemoa.get('workspace')
+        nemoa.open('testsuite', base = 'site')
+
         # add tests to the test suite
+        try: import nemoa.common.__test__
+        except ImportError: pass
+        else: suite.addTests(
+            loader.loadTestsFromModule(nemoa.common.__test__))
         try: import nemoa.workspace.__test__
         except ImportError: pass
         else: suite.addTests(
@@ -142,6 +150,9 @@ def main():
         # run testsuite
         nemoa.log('testing nemoa ' + nemoa.__version__)
         result = runner.run(suite)
+
+        # open previous workspace
+        if nemoa.get('workspace') != workspace: nemoa.open(workspace)
 
         return result
 
