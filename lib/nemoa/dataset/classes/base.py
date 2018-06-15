@@ -497,8 +497,9 @@ class Dataset(nemoa.common.classes.Metadata):
                         ).astype(float)
             return True
 
-        return nemoa.log('error', """could not transform data:
-            unknown transformation '%s'!""" % (transformation))
+        return nemoa.log('error',
+            "could not transform data: "
+            "unsupported transformation '%s'." % (transformation))
 
     def _initialize_transform_system(self, system = None,
         mapping = None, func = 'expect'):
@@ -764,9 +765,6 @@ class Dataset(nemoa.common.classes.Metadata):
     @nemoa.common.decorators.algorithm(
         name     = 'sample',
         category = ('dataset', 'evaluation'),
-        args     = '',
-        retfmt   = 'array',
-        formater = lambda val: '%.3f' % (val),
         plot     = 'histogram'
     )
     def _get_data(self, size = 0, rows = '*', cols = '*',

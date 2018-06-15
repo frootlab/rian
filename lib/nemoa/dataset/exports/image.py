@@ -84,16 +84,18 @@ class Heatmap(nemoa.common.plot.Heatmap):
         array  = dataset.evaluate(fname, **kwargs)
 
         # check return value
-        # 2DO
+        cols  = dataset.get('columns')
+        shape = (len(cols), len(cols))
+        if not isinstance(array, numpy.ndarray) or not array.shape == shape:
+            return nemoa.log('warning',
+                "representation of '%s' as heatmap "
+                "is not supported." % (fname))
 
-        # update x and y labels from dataset
-        cols = dataset.get('columns')
+        # update axes labels and title
         self._config['x_labels'] = cols
         self._config['y_labels'] = cols
-
-        # update title from dataset
-        if not isinstance(self._config.get('title'), str):
-            self._config['title'] = dataset.name
+        if not isinstance(self._config.get('title', None), str):
+            self._config['title'] = fname.title()
 
         # create plot
         return self.plot(array)
@@ -102,12 +104,25 @@ class Histogram(nemoa.common.plot.Histogram):
 
     def create(self, dataset):
 
+        # evaluate function
+        fname  = self._config.get('func', 'correlation')
+        fdict  = dataset.get('algorithm', fname)
+        func   = fdict.get('func', None) or fdict.get('reference', None)
+        kwargs = nemoa.common.module.get_func_kwargs(func, self._config)
+        array  = dataset.evaluate(fname, **kwargs)
+
+        # check return value
+        if not isinstance(array, numpy.ndarray):
+            return nemoa.log('warning',
+                "representation of '%s' as histogram "
+                "is not supported." % (fname))
+
         # get flat data
-        data = dataset.get('data').flatten()
+        data = array.flatten()
 
         # update title from dataset
-        if not isinstance(self._config.get('title'), str):
-            self._config['title'] = dataset.name
+        if not isinstance(self._config.get('title', None), str):
+            self._config['title'] = fname.title()
 
         # create plot
         return self.plot(data)
