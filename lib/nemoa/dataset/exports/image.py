@@ -95,7 +95,7 @@ class Heatmap(nemoa.common.plot.Heatmap):
         self._config['x_labels'] = cols
         self._config['y_labels'] = cols
         if not isinstance(self._config.get('title', None), str):
-            self._config['title'] = fname.title()
+            self._config['title'] = fdict.get('title', fname.title())
 
         # create plot
         return self.plot(array)
@@ -122,7 +122,7 @@ class Histogram(nemoa.common.plot.Histogram):
 
         # update title from dataset
         if not isinstance(self._config.get('title', None), str):
-            self._config['title'] = fname.title()
+            self._config['title'] = fdict.get('title', fname.title())
 
         # create plot
         return self.plot(data)

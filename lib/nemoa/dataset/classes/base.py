@@ -764,6 +764,7 @@ class Dataset(nemoa.common.classes.Metadata):
 
     @nemoa.common.decorators.algorithm(
         name     = 'sample',
+        title    = 'Sample Values',
         category = ('dataset', 'evaluation'),
         plot     = 'histogram'
     )
@@ -1294,6 +1295,7 @@ class Dataset(nemoa.common.classes.Metadata):
 
     @nemoa.common.decorators.algorithm(
         name     = 'covariance',
+        title    = 'Covariance',
         category = ('dataset', 'columns', 'evaluation'),
         args     = '',
         retfmt   = 'array',
@@ -1310,6 +1312,7 @@ class Dataset(nemoa.common.classes.Metadata):
 
     @nemoa.common.decorators.algorithm(
         name     = 'correlation',
+        title    = 'Pearson Correlation',
         category = ('dataset', 'columns', 'evaluation'),
         args     = '',
         retfmt   = 'array',
@@ -1325,30 +1328,44 @@ class Dataset(nemoa.common.classes.Metadata):
         return numpy.corrcoef(data.T)
 
     @nemoa.common.decorators.algorithm(
-        name     = 'lcorrelation',
+        name     = 'kcorrelation',
+        title    = 'k-Correlation',
         category = ('dataset', 'columns', 'evaluation'),
         args     = '',
         retfmt   = 'array',
         formater = lambda val: '%.3f' % (val),
         plot     = 'heatmap'
     )
-    def _get_lcorrelation(self, cols = '*', dim = 2):
-        """Calculate L-Correlation matrix between given columns."""
+    def _get_kcorrelation(self, cols: str = '*', k: int = 2):
+        """Calculate k-Correlation matrix between given columns.
+
+        Kwargs:
+            cols (str, optional): name of column select filter
+                default: '*' selects all columns
+            k (int, optional): number of principal components, which is used
+                for dimensionality reduction
+                default: 2
+
+        Returns:
+            Numpy.ndarray containing k-Correlation coefficients.
+
+        """
 
         # get numpy array with dimensionality reduced test data
-        data = self._get_pcadata(cols = cols, dim = dim)
+        sample = self._get_sample_pca(cols = cols, k = k)
 
-        return numpy.corrcoef(data.T)
+        return numpy.corrcoef(sample.T)
 
     @nemoa.common.decorators.algorithm(
         name     = 'pca',
+        title    = 'PCA Sample Values',
         category = ('dataset', 'transformation'),
         args     = '',
         retfmt   = 'array',
         formater = lambda val: '%.3f' % (val),
         plot     = 'histogram'
     )
-    def _get_pcadata(self, cols = '*', dim = 2, embed = True):
+    def _get_sample_pca(self, cols = '*', k: int = 2, embed: bool = True):
         """Calculate projection to principal components."""
 
         # get numpy array with test data
@@ -1356,7 +1373,7 @@ class Dataset(nemoa.common.classes.Metadata):
 
         # get dimension of data
         datadim = data.shape[1]
-        if dim > datadim: dim = datadim
+        if k > datadim: k = datadim
 
         # calculate covariance matrix
         cov = numpy.cov(data.T)
@@ -1370,23 +1387,24 @@ class Dataset(nemoa.common.classes.Metadata):
         eigpairs.sort(key = lambda x: x[0], reverse = True)
 
         # calculate projection and inverse transformation
-        vec = lambda i: eigpairs[i][1] if i < dim else numpy.zeros(datadim)
+        vec = lambda i: eigpairs[i][1] if i < k else numpy.zeros(datadim)
         if embed:
             proj = numpy.hstack(
                 [vec(i).reshape(datadim, 1) for i in range(datadim)])
             trans = numpy.hstack(
                 [eigpairs[i][1].reshape(datadim, 1) for i in range(datadim)])
             itrans = numpy.linalg.inv(trans)
-            pcadata = numpy.dot(numpy.dot(data, proj), itrans)
+            sample_pca = numpy.dot(numpy.dot(data, proj), itrans)
         else:
             proj = numpy.hstack(
-                [vec(i).reshape(datadim, 1) for i in range(dim)])
-            pcadata = numpy.dot(data, proj)
+                [vec(i).reshape(datadim, 1) for i in range(k)])
+            sample_pca = numpy.dot(data, proj)
 
-        return pcadata
+        return sample_pca
 
     @nemoa.common.decorators.algorithm(
         name     = 'test_binary',
+        title    = None,
         category = ('dataset', 'evaluation'),
         args     = '',
         retfmt   = 'scalar',
@@ -1416,7 +1434,8 @@ class Dataset(nemoa.common.classes.Metadata):
         return True
 
     @nemoa.common.decorators.algorithm(
-        name = 'test_gauss',
+        name     = 'test_gauss',
+        title    = None,
         category = ('dataset', 'evaluation'),
         args     = '',
         retfmt   = 'scalar',

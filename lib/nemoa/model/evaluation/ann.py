@@ -24,6 +24,7 @@ class ANN(Evaluation):
 
     @nemoa.common.decorators.algorithm(
         name     = 'error',
+        title    = 'Average Reconstruction Error',
         category = 'model',
         args     = 'all',
         formater = lambda val: '%.3f' % (val),
@@ -35,6 +36,7 @@ class ANN(Evaluation):
 
     @nemoa.common.decorators.algorithm(
         name     = 'accuracy',
+        title    = 'Average Reconstruction Accuracy',
         category = 'model',
         args     = 'all',
         formater = lambda val: '%.1f%%' % (val * 100.),
@@ -46,6 +48,7 @@ class ANN(Evaluation):
 
     @nemoa.common.decorators.algorithm(
         name     = 'precision',
+        title    = 'Average Reconstruction Pricision',
         category = 'model',
         args     = 'all',
         formater = lambda val: '%.1f%%' % (val * 100.),
@@ -57,6 +60,7 @@ class ANN(Evaluation):
 
     @nemoa.common.decorators.algorithm(
         name     = 'mean',
+        title    = 'Average Target Reconstruction Values',
         category = 'units',
         args     = 'input',
         retfmt   = 'scalar',
