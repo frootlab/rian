@@ -25,7 +25,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
         'schedule_rbm.rbm': 'default',
         'schedule_rbm.grbm': 'default' }
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'dbn',
         longname = 'deep belief network optimization',
         category = 'optimization',
@@ -44,7 +44,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
 
         return retval
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'pretraining',
         longname = 'deep belief network pretraining',
         category = 'optimization',
@@ -212,7 +212,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
 
         return True
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'finetuning',
         longname = 'deep belief network finetuning',
         category = 'optimization',

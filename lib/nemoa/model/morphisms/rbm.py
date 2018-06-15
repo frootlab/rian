@@ -69,7 +69,7 @@ class RBM(nemoa.model.morphisms.ann.ANN):
         'tracker_eval_time_interval': 10.,
         'ignore_units': [] }
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'cd',
         longname = 'contrastive divergency',
         category = 'optimization',

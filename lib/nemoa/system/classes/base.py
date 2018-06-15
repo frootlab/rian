@@ -528,7 +528,7 @@ class System(nemoa.common.classes.Metadata):
         return nemoa.log('error', """could not get parameters:
             unknown key '%s'.""" % key)
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'error',
         category = ('system', 'evaluation'),
         args     = 'all',
@@ -539,7 +539,7 @@ class System(nemoa.common.classes.Metadata):
         """Mean data reconstruction error of output units."""
         return numpy.mean(self._get_uniterror(*args, **kwargs))
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'accuracy',
         category = ('system', 'evaluation'),
         args     = 'all',
@@ -550,7 +550,7 @@ class System(nemoa.common.classes.Metadata):
         """Mean data reconstruction accuracy of output units."""
         return numpy.mean(self._get_unitaccuracy(*args, **kwargs))
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'precision',
         category = ('system', 'evaluation'),
         args     = 'all',
@@ -561,7 +561,7 @@ class System(nemoa.common.classes.Metadata):
         """Mean data reconstruction precision of output units."""
         return numpy.mean(self._get_unitprecision(*args, **kwargs))
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'units_mean',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -599,7 +599,7 @@ class System(nemoa.common.classes.Metadata):
 
         return model_out.mean(axis = 0)
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'units_variance',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -632,7 +632,7 @@ class System(nemoa.common.classes.Metadata):
 
         return model_out.var(axis = 0)
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'units_expect',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -673,7 +673,7 @@ class System(nemoa.common.classes.Metadata):
         return outData
 
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'units_values',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -731,7 +731,7 @@ class System(nemoa.common.classes.Metadata):
                     self._units[mapping[id]].params))
             return data
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'units_samples',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -788,7 +788,7 @@ class System(nemoa.common.classes.Metadata):
                     data, self._units[mapping[id]].params)
             return data
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'units_residuals',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -831,7 +831,7 @@ class System(nemoa.common.classes.Metadata):
         # calculate residuals
         return d_tgt - m_out
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'units_error',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -865,7 +865,7 @@ class System(nemoa.common.classes.Metadata):
 
         return error
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'units_accuracy',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -900,7 +900,7 @@ class System(nemoa.common.classes.Metadata):
 
         return 1. - normres / normdat
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'units_precision',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -935,7 +935,7 @@ class System(nemoa.common.classes.Metadata):
 
         return 1. - devres / devdat
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'correlation',
         category = ('system', 'relation', 'evaluation'),
         directed = False,
@@ -983,7 +983,7 @@ class System(nemoa.common.classes.Metadata):
 
         return relation
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'weightsumproduct',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -1023,7 +1023,7 @@ class System(nemoa.common.classes.Metadata):
 
         return wsp.T
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'knockout',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -1084,7 +1084,7 @@ class System(nemoa.common.classes.Metadata):
 
         return R
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'coinduction',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -1155,7 +1155,7 @@ class System(nemoa.common.classes.Metadata):
 
         return coop
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'induction',
         category = ('system', 'relation', 'evaluation'),
         directed = True,

@@ -22,7 +22,7 @@ from nemoa.model.evaluation.base import Evaluation
 
 class ANN(Evaluation):
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'error',
         category = 'model',
         args     = 'all',
@@ -33,7 +33,7 @@ class ANN(Evaluation):
         """Mean data reconstruction error of output units."""
         return numpy.mean(self.uniterror(*args, **kwargs))
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'accuracy',
         category = 'model',
         args     = 'all',
@@ -44,7 +44,7 @@ class ANN(Evaluation):
         """Mean data reconstruction accuracy of output units."""
         return numpy.mean(self.unitaccuracy(*args, **kwargs))
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'precision',
         category = 'model',
         args     = 'all',
@@ -55,7 +55,7 @@ class ANN(Evaluation):
         """Mean data reconstruction precision of output units."""
         return numpy.mean(self.unitprecision(*args, **kwargs))
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'mean',
         category = 'units',
         args     = 'input',
@@ -93,7 +93,7 @@ class ANN(Evaluation):
 
         return model_out.mean(axis = 0)
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'variance',
         category = 'units',
         args     = 'input',
@@ -126,7 +126,7 @@ class ANN(Evaluation):
 
         return model_out.var(axis = 0)
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'expect',
         category = 'units',
         args     = 'input',
@@ -154,7 +154,7 @@ class ANN(Evaluation):
 
         return self.model.system._get_unitexpect(*args, **kwargs)
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'values',
         category = 'units',
         args     = 'input',
@@ -184,7 +184,7 @@ class ANN(Evaluation):
 
         return self.model.system._get_unitvalues(*args, **kwargs)
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'samples',
         category = 'units',
         args     = 'input',
@@ -214,7 +214,7 @@ class ANN(Evaluation):
 
         return self.model.system._get_unitsamples(*args, **kwargs)
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'residuals',
         category = 'units',
         args     = 'all',
@@ -257,7 +257,7 @@ class ANN(Evaluation):
         # calculate residuals
         return d_tgt - m_out
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'error',
         category = 'units',
         args     = 'all',
@@ -291,7 +291,7 @@ class ANN(Evaluation):
 
         return error
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'accuracy',
         category = 'units',
         args     = 'all',
@@ -326,7 +326,7 @@ class ANN(Evaluation):
 
         return 1. - normres / normdat
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'precision',
         category = 'units',
         args     = 'all',
@@ -361,7 +361,7 @@ class ANN(Evaluation):
 
         return 1. - devres / devdat
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'correlation',
         category = 'relation',
         directed = False,
@@ -409,7 +409,7 @@ class ANN(Evaluation):
 
         return relation
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'connectionweight',
         category = 'relation',
         directed = True,
@@ -449,7 +449,7 @@ class ANN(Evaluation):
 
         return wsp.T
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'knockout',
         category = 'relation',
         directed = True,
@@ -512,7 +512,7 @@ class ANN(Evaluation):
 
         return R
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'coinduction',
         category = 'relation',
         directed = True,
@@ -583,7 +583,7 @@ class ANN(Evaluation):
 
         return coop
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'induction',
         category = 'relation',
         directed = True,
@@ -674,7 +674,7 @@ class ANN(Evaluation):
         intensify = nemoa.system.commons.math.intensify
         return intensify(R, factor = contrast, bound = bound)
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'energy',
         category = 'model',
         args     = 'all',
@@ -700,7 +700,7 @@ class ANN(Evaluation):
         # calculate (pseudo) energy of system
         return numpy.log(1. + numpy.exp(-energy).sum())
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'energy',
         category = 'units',
         args     = 'input',
@@ -728,7 +728,7 @@ class ANN(Evaluation):
         data = self.unitexpect(data, mapping)
         return self.model.system._units[mapping[-1]].energy(data)
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'links_energy',
         category = ('system', 'links', 'evaluation'),
         args     = 'input',

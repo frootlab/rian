@@ -73,7 +73,7 @@ def getmethods(instance, attribute = None, grouping = None,
     if not grouping and not renamekey and attribute == 'reference':
         return methods
 
-    # get attributes from references
+    # get attributes from decorators
     methoddict = {}
     for name, method in methods.items():
         methoddict[name] = { 'reference': method, 'about': '' }
@@ -85,7 +85,7 @@ def getmethods(instance, attribute = None, grouping = None,
             methoddict[name]['about'] = \
                 method.__doc__.split('\n', 1)[0].strip(' .')
 
-        # filter methods by necessary attributes
+        # filter methods by required attributes
         if renamekey and not renamekey in methoddict[name]:
             del methoddict[name]
         elif attribute and not attribute in methoddict[name]:
@@ -115,3 +115,14 @@ def getmethods(instance, attribute = None, grouping = None,
         methods = renamend
 
     return methods
+
+def get_func_kwargs(func, d: dict = None):
+    """Get the keyword arguments of a function."""
+
+    all = inspect.signature(func).parameters
+    l = [key for key, val in all.items() if '=' in str(val)]
+
+    if d is None: return l
+
+    kwargs = {key: d.get(key) for key in l if key in d}
+    return kwargs

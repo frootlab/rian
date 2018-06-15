@@ -761,6 +761,14 @@ class Dataset(nemoa.common.classes.Metadata):
         """Get list of row filters."""
         return list(self._config['rowfilter'].keys())
 
+    @nemoa.common.decorators.algorithm(
+        name     = 'sample',
+        category = ('dataset', 'evaluation'),
+        args     = '',
+        retfmt   = 'array',
+        formater = lambda val: '%.3f' % (val),
+        plot     = 'histogram'
+    )
     def _get_data(self, size = 0, rows = '*', cols = '*',
         noise = (None, 0.), output = 'array'):
         """Return a given number of stratified samples.
@@ -1286,7 +1294,7 @@ class Dataset(nemoa.common.classes.Metadata):
 
         return algorithms[name](*args, **kwargs)
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'covariance',
         category = ('dataset', 'columns', 'evaluation'),
         args     = '',
@@ -1302,7 +1310,7 @@ class Dataset(nemoa.common.classes.Metadata):
 
         return numpy.cov(data.T)
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'correlation',
         category = ('dataset', 'columns', 'evaluation'),
         args     = '',
@@ -1318,7 +1326,7 @@ class Dataset(nemoa.common.classes.Metadata):
 
         return numpy.corrcoef(data.T)
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'lcorrelation',
         category = ('dataset', 'columns', 'evaluation'),
         args     = '',
@@ -1334,7 +1342,7 @@ class Dataset(nemoa.common.classes.Metadata):
 
         return numpy.corrcoef(data.T)
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'pca',
         category = ('dataset', 'transformation'),
         args     = '',
@@ -1379,7 +1387,7 @@ class Dataset(nemoa.common.classes.Metadata):
 
         return pcadata
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name     = 'test_binary',
         category = ('dataset', 'evaluation'),
         args     = '',
@@ -1409,7 +1417,7 @@ class Dataset(nemoa.common.classes.Metadata):
 
         return True
 
-    @nemoa.common.decorators.attributes(
+    @nemoa.common.decorators.algorithm(
         name = 'test_gauss',
         category = ('dataset', 'evaluation'),
         args     = '',
