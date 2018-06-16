@@ -91,11 +91,17 @@ class Heatmap(nemoa.common.plot.Heatmap):
                 "representation of '%s' as heatmap "
                 "is not supported." % (fname))
 
-        # update axes labels and title
+        # update axes labels
         self._config['x_labels'] = cols
         self._config['y_labels'] = cols
+
+        # update title
         if not isinstance(self._config.get('title', None), str):
-            self._config['title'] = fdict.get('title', fname.title())
+            if self._config.get('usetex', False):
+                self._config['title'] = fdict.get('title_tex', None) \
+                    or fdict.get('title', fname.title())
+            else:
+                self._config['title'] = fdict.get('title', fname.title())
 
         # create plot
         return self.plot(array)
@@ -120,9 +126,13 @@ class Histogram(nemoa.common.plot.Histogram):
         # get flat data
         data = array.flatten()
 
-        # update title from dataset
+        # update title
         if not isinstance(self._config.get('title', None), str):
-            self._config['title'] = fdict.get('title', fname.title())
+            if self._config.get('usetex', False):
+                self._config['title'] = fdict.get('title_tex', None) \
+                    or fdict.get('title', fname.title())
+            else:
+                self._config['title'] = fdict.get('title', fname.title())
 
         # create plot
         return self.plot(data)

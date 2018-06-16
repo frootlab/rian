@@ -1328,13 +1328,11 @@ class Dataset(nemoa.common.classes.Metadata):
         return numpy.corrcoef(data.T)
 
     @nemoa.common.decorators.algorithm(
-        name     = 'kcorrelation',
-        title    = 'k-Correlation',
-        category = ('dataset', 'columns', 'evaluation'),
-        args     = '',
-        retfmt   = 'array',
-        formater = lambda val: '%.3f' % (val),
-        plot     = 'heatmap'
+        name      = 'kcorrelation',
+        title     = 'k-Correlation',
+        title_tex = '$k$-Correlation',
+        category  = ('dataset', 'columns', 'evaluation'),
+        plot      = 'heatmap'
     )
     def _get_kcorrelation(self, cols: str = '*', k: int = 2):
         """Calculate k-Correlation matrix between given columns.

@@ -7,7 +7,6 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-# Todo
 class Plot:
     """Base class for matplotlib plots.
 
@@ -31,6 +30,7 @@ class Plot:
         'title': None,
         'show_title': True,
         'title_fontsize': 14.0}
+
     _config = {}
     _plt = None
     _figure = None
@@ -145,16 +145,16 @@ class Histogram(Plot):
         'histtype': 'bar',
         'linewidth': 0.5 }
 
-    def create(self, dataset):
-
-        # update settings from dataset
-        self.settings['title'] = dataset.name
-
-        # create flat data
-        data = dataset.get('data').flatten()
-
-        # create plot
-        return nemoa.common.plot.histogram(data, **self.settings)
+    # def create(self, dataset):
+    #
+    #     # update settings from dataset
+    #     self.settings['title'] = dataset.name
+    #
+    #     # create flat data
+    #     data = dataset.get('data').flatten()
+    #
+    #     # create plot
+    #     return nemoa.common.plot.histogram(data, **self.settings)
 
     def plot(self, array):
 
@@ -169,6 +169,225 @@ class Histogram(Plot):
             histtype  = self._config.get('histtype'),
             linewidth = self._config.get('linewidth'),
             edgecolor = self._config.get('edgecolor'))
+
+        # (optional) plot title
+        self._plot_title()
+
+        return True
+
+class Graph(Plot):
+
+    _config = {
+        'padding':            (0.1, 0.1, 0.1, 0.1),
+        'show_legend':        False,
+        'legend_fontsize':    9.0,
+        'graph_layout':       'layer',
+        'graph_direction':    'right',
+        'node_style':         'o',
+        'edge_width_enabled': True,
+        'edge_curvature':     1.0}
+
+    def plot(self, graph):
+        """Plot graph.
+
+        Args:
+            graph: networkx graph instance
+
+        Kwargs:
+            figure_size (tuple): figure size in inches
+                (11.69,8.27) for A4, (16.53,11.69) for A3
+            edge_attribute (string): name of edge attribute, that
+                determines the edge colors by its sign and the edge width
+                by its absolute value.
+                default: 'weight'
+            edge_color (bool): flag for colored edges
+                True: edge colors are determined by the sign of the
+                    attribute 'weight'
+                False: edges are black
+            edge_poscolor (string): name of color for edges with
+                positive signed attribute. For a full list of specified
+                color names see nemoa.common.plot.get_color()
+            edge_negcolor (string): name of color for edges with
+                negative signed attribute. For a full list of specified
+                color names see nemoa.common.plot.get_color()
+            edge_curvature (float): value within the intervall [-1, 1],
+                that determines the curvature of the edges.
+                Thereby 1 equals max convexity and -1 max concavity.
+            direction (string): string within the list ['up', 'down',
+                'left', 'right'], that dermines the plot direction of the
+                graph. 'up' means, the first layer is at the bottom.
+            edge_style (string):  '-', '<-', '<->', '->',
+                '<|-', '<|-|>', '-|>', '|-', '|-|', '-|',
+                ']-', ']-[', '-[', 'fancy', 'simple', 'wedge'
+
+        Returns:
+            Boolen value which is True if no error occured.
+
+        """
+
+        try:
+            import matplotlib
+            import matplotlib.pyplot as plt
+        except ImportError: raise ImportError(
+            "nemoa.common.plot.Graph.plot() requires matplotlib: "
+            "https://matplotlib.org")
+
+        try: import numpy as np
+        except ImportError: raise ImportError(
+            "nemoa.common.plot.Graph.plot() requires numpy: "
+            "https://scipy.org")
+
+        try: import networkx as nx
+        except ImportError: raise ImportError(
+            "nemoa.common.plot.Graph.plot() requires networkx: "
+            "https://networkx.github.io")
+
+        import nemoa.common.graph as nmgraph
+        import nemoa.common.dict as nmdict
+
+        # close previous figures and create figure object
+        fig = plt.gcf()
+        ax = fig.add_subplot(111)
+        ax.set_autoscale_on(False)
+        figsize = fig.get_size_inches() * fig.dpi
+        ax.set_xlim(0., figsize[0])
+        ax.set_ylim(0., figsize[1])
+        ax.set_aspect('equal', 'box')
+        ax.axis('off')
+
+        # get node positions and sizes
+        layout_params = nmdict.section(self._config, 'graph_')
+        del layout_params['layout']
+
+        pos = nmgraph.get_layout(graph,
+            layout  = self._config['graph_layout'],
+            size    = figsize,
+            padding = self._config['padding'],
+            **layout_params)
+
+        sizes       = nmgraph.get_layout_normsize(pos)
+        node_size   = sizes.get('node_size', None)
+        node_radius = sizes.get('node_radius', None)
+        line_width  = sizes.get('line_width', None)
+        edge_width  = sizes.get('edge_width', None)
+        font_size   = sizes.get('font_size', None)
+
+        # get nodes and groups sorted by node attribute group_id
+        groups = nmgraph.get_groups(graph, attribute = 'group')
+        sorted_groups = sorted(list(groups.keys()), key = \
+            lambda g: 0 if not isinstance(g, list) or len(g) == 0 \
+            else graph.node.get(g[0], {}).get('group_id', 0))
+
+        # draw nodes, labeled by groups
+        for group in sorted_groups:
+            gnodes = groups.get(group, [])
+            if len(gnodes) == 0: continue
+            refnode = graph.node.get(gnodes[0])
+            label = refnode.get('description') \
+                or refnode.get('group') or str(group)
+
+            # draw nodes in group
+            node_obj = nx.draw_networkx_nodes(graph, pos,
+                nodelist   = gnodes,
+                linewidths = line_width,
+                node_size  = node_size,
+                node_shape = self._config['node_style'],
+                node_color = get_color(refnode.get('color'), 'white'),
+                label      = label)
+            node_obj.set_edgecolor(
+                get_color(refnode.get('border_color'), 'black'))
+
+        # draw node labels
+        for node, data in graph.nodes(data = True):
+
+            # determine label, fontsize and color
+            node_label = data.get('label', str(node).title())
+            node_label_format = get_label(node_label)
+            node_label_size = np.sqrt(get_label_width(node_label))
+            font_color = get_color(data.get('font_color'), 'black')
+
+            # draw node label
+            nx.draw_networkx_labels(graph, pos,
+                labels      = {node: node_label_format},
+                font_size   = font_size / node_label_size,
+                font_color  = font_color,
+                font_family = 'sans-serif',
+                font_weight = 'normal')
+
+            # patch node for edges
+            circle = matplotlib.patches.Circle(pos.get(node), alpha = 0.,
+                radius = node_radius)
+            ax.add_patch(circle)
+            graph.node[node]['patch'] = circle
+
+        # draw edges
+        seen = {}
+        if nmgraph.is_directed(graph): default_edge_style = '-|>'
+        else: default_edge_style = '-'
+
+        for (u, v, data) in graph.edges(data = True):
+            weight = data.get('weight')
+            if weight == 0.: continue
+
+            # calculate edge curvature from node positions
+            # parameter rad describes the height in the normalized triangle
+            if (u, v) in seen:
+                rad = seen.get((u, v))
+                rad = -(rad + float(np.sign(rad)) * .2)
+            else:
+                scale = 1. / np.amax(np.array(figsize))
+                vec = scale * (np.array(pos[v]) - np.array(pos[u]))
+                rad = vec[0] * vec[1] / np.sqrt(2 * np.sum(vec ** 2))
+                if self._config['graph_layout'] == 'layer':
+                    gdir = self._config['graph_direction']
+                    if gdir in ['left', 'right']: rad *= -1
+            seen[(u, v)] = rad
+
+            # determine style of edge from edge weight
+            if weight == None:
+                linestyle = '-'
+                linewidth = 0.5 * edge_width
+                alpha = 0.5
+            elif not self._config['edge_width_enabled']:
+                linestyle = '-'
+                linewidth = edge_width
+                alpha = np.amin([np.absolute(weight), 1.0])
+            else:
+                linestyle = '-'
+                linewidth = np.absolute(weight) * edge_width
+                alpha = np.amin([np.absolute(weight), 1.0])
+
+            # draw edge
+            nodeA = graph.node[u]['patch']
+            nodeB = graph.node[v]['patch']
+            arrow = matplotlib.patches.FancyArrowPatch(
+                posA            = nodeA.center,
+                posB            = nodeB.center,
+                patchA          = nodeA,
+                patchB          = nodeB,
+                arrowstyle      = default_edge_style,
+                connectionstyle = 'arc3,rad=%s' % rad,
+                mutation_scale  = linewidth * 12.,
+                linewidth       = linewidth,
+                linestyle       = linestyle,
+                color           = get_color(data.get('color'), 'black'),
+                alpha           = alpha )
+            ax.add_patch(arrow)
+
+        # (optional) draw legend
+        if self._config['show_legend']:
+            num_groups = np.sum([1 for g in list(groups.values()) \
+                if isinstance(g, list) and len(g) > 0])
+            markerscale = 0.6 * self._config['legend_fontsize'] / font_size
+            ax.legend(
+                numpoints      = 1,
+                loc            = 'lower center',
+                ncol           = num_groups,
+                borderaxespad  = 0.,
+                framealpha     = 0.,
+                bbox_to_anchor = (0.5, -0.1),
+                fontsize       = self._config['legend_fontsize'],
+                markerscale    = markerscale)
 
         # (optional) plot title
         self._plot_title()
@@ -232,215 +451,215 @@ def filetypes():
 
     return plt.gcf().canvas.get_supported_filetypes()
 
-def graph(graph,
-    padding            = (0.1, 0.1, 0.1, 0.1),
-    show_title         = False,
-    title              = None,
-    title_fontsize     = 14.,
-    show_legend        = False,
-    legend_fontsize    = 9.0,
-    graph_layout       = 'layer',
-    node_style         = 'o',
-    edge_width_enabled = True,
-    edge_curvature     = 1.0,
-    **kwargs):
-    """Plot graph.
-
-    Args:
-        graph: networkx graph instance
-
-    Kwargs:
-        figure_size (tuple): figure size in inches
-            (11.69,8.27) for A4, (16.53,11.69) for A3
-        edge_attribute (string): name of edge attribute, that
-            determines the edge colors by its sign and the edge width
-            by its absolute value.
-            default: 'weight'
-        edge_color (bool): flag for colored edges
-            True: edge colors are determined by the sign of the
-                attribute 'weight'
-            False: edges are black
-        edge_poscolor (string): name of color for edges with
-            positive signed attribute. For a full list of specified
-            color names see nemoa.common.plot.get_color()
-        edge_negcolor (string): name of color for edges with
-            negative signed attribute. For a full list of specified
-            color names see nemoa.common.plot.get_color()
-        edge_curvature (float): value within the intervall [-1, 1],
-            that determines the curvature of the edges.
-            Thereby 1 equals max convexity and -1 max concavity.
-        direction (string): string within the list ['up', 'down',
-            'left', 'right'], that dermines the plot direction of the
-            graph. 'up' means, the first layer is at the bottom.
-        edge_style (string):  '-', '<-', '<->', '->',
-            '<|-', '<|-|>', '-|>', '|-', '|-|', '-|',
-            ']-', ']-[', '-[', 'fancy', 'simple', 'wedge'
-
-    Returns:
-        Boolen value which is True if no error occured.
-
-    """
-
-    try:
-        import matplotlib
-        import matplotlib.pyplot as plt
-    except ImportError: raise ImportError(
-        "nemoa.common.plot.graph() requires matplotlib: "
-        "https://matplotlib.org")
-
-    try: import numpy as np
-    except ImportError: raise ImportError(
-        "nemoa.common.plot.graph() requires numpy: "
-        "https://scipy.org")
-
-    try: import networkx as nx
-    except ImportError: raise ImportError(
-        "nemoa.common.plot.graph() requires networkx: "
-        "https://networkx.github.io")
-
-    import nemoa.common.graph as nmgraph
-    import nemoa.common.dict as nmdict
-
-    # close previous figures and create figure object
-    fig = plt.gcf()
-    ax = fig.add_subplot(111)
-    ax.set_autoscale_on(False)
-    figsize = fig.get_size_inches() * fig.dpi
-    ax.set_xlim(0., figsize[0])
-    ax.set_ylim(0., figsize[1])
-    ax.set_aspect('equal', 'box')
-    ax.axis('off')
-
-    # get node positions and sizes
-    layout_params = nmdict.section(kwargs, 'graph_')
-    pos = nmgraph.get_layout(graph, layout = graph_layout,
-        size = figsize, padding = padding, **layout_params)
-    sizes       = nmgraph.get_layout_normsize(pos)
-    node_size   = sizes.get('node_size', None)
-    node_radius = sizes.get('node_radius', None)
-    line_width  = sizes.get('line_width', None)
-    edge_width  = sizes.get('edge_width', None)
-    font_size   = sizes.get('font_size', None)
-
-    # get nodes and groups sorted by node attribute group_id
-    groups = nmgraph.get_groups(graph, attribute = 'group')
-    sorted_groups = sorted(list(groups.keys()), key = \
-        lambda g: 0 if not isinstance(g, list) or len(g) == 0 \
-        else graph.node.get(g[0], {}).get('group_id', 0))
-
-    # draw nodes, labeled by groups
-    for group in sorted_groups:
-        gnodes = groups.get(group, [])
-        if len(gnodes) == 0: continue
-        refnode = graph.node.get(gnodes[0])
-        label = refnode.get('description') \
-            or refnode.get('group') or str(group)
-
-        # draw nodes in group
-        node_obj = nx.draw_networkx_nodes(graph, pos,
-            nodelist   = gnodes,
-            linewidths = line_width,
-            node_size  = node_size,
-            node_shape = node_style,
-            node_color = get_color(refnode.get('color'), 'white'),
-            label      = label)
-        node_obj.set_edgecolor(
-            get_color(refnode.get('border_color'), 'black'))
-
-    # draw node labels
-    for node, data in graph.nodes(data = True):
-
-        # determine label, fontsize and color
-        node_label = data.get('label', str(node).title())
-        node_label_format = get_label(node_label)
-        node_label_size = np.sqrt(get_label_width(node_label))
-        font_color = get_color(data.get('font_color'), 'black')
-
-        # draw node label
-        nx.draw_networkx_labels(graph, pos,
-            labels      = {node: node_label_format},
-            font_size   = font_size / node_label_size,
-            font_color  = font_color,
-            font_family = 'sans-serif',
-            font_weight = 'normal')
-
-        # patch node for edges
-        circle = matplotlib.patches.Circle(pos.get(node), alpha = 0.,
-            radius = node_radius)
-        ax.add_patch(circle)
-        graph.node[node]['patch'] = circle
-
-    # draw edges
-    seen = {}
-    if nmgraph.is_directed(graph): default_edge_style = '-|>'
-    else: default_edge_style = '-'
-
-    for (u, v, data) in graph.edges(data = True):
-        weight = data.get('weight')
-        if weight == 0.: continue
-
-        # calculate edge curvature from node positions
-        # parameter rad describes the height in the normalized triangle
-        if (u, v) in seen:
-            rad = seen.get((u, v))
-            rad = -(rad + float(np.sign(rad)) * .2)
-        else:
-            scale = 1. / np.amax(np.array(figsize))
-            vec = scale * (np.array(pos[v]) - np.array(pos[u]))
-            rad = vec[0] * vec[1] / np.sqrt(2 * np.sum(vec ** 2))
-            if graph_layout == 'layer':
-                gdir = layout_params.get('direction', 'down')
-                if gdir in ['left', 'right']: rad *= -1
-        seen[(u, v)] = rad
-
-        # determine style of edge from edge weight
-        if weight == None:
-            linestyle = '-'
-            linewidth = 0.5 * edge_width
-            alpha = 0.5
-        elif not edge_width_enabled:
-            linestyle = '-'
-            linewidth = edge_width
-            alpha = np.amin([np.absolute(weight), 1.0])
-        else:
-            linestyle = '-'
-            linewidth = np.absolute(weight) * edge_width
-            alpha = np.amin([np.absolute(weight), 1.0])
-
-        # draw edge
-        nodeA = graph.node[u]['patch']
-        nodeB = graph.node[v]['patch']
-        arrow = matplotlib.patches.FancyArrowPatch(
-            posA            = nodeA.center,
-            posB            = nodeB.center,
-            patchA          = nodeA,
-            patchB          = nodeB,
-            arrowstyle      = default_edge_style,
-            connectionstyle = 'arc3,rad=%s' % rad,
-            mutation_scale  = linewidth * 12.,
-            linewidth       = linewidth,
-            linestyle       = linestyle,
-            color           = get_color(data.get('color'), 'black'),
-            alpha           = alpha )
-        ax.add_patch(arrow)
-
-    # (optional) draw legend
-    if show_legend:
-        num_groups = np.sum([1 for g in list(groups.values()) \
-            if isinstance(g, list) and len(g) > 0])
-        ax.legend(
-            numpoints      = 1,
-            loc            = 'lower center',
-            ncol           = num_groups,
-            borderaxespad  = 0.,
-            framealpha     = 0.,
-            bbox_to_anchor = (0.5, -0.1),
-            fontsize       = legend_fontsize,
-            markerscale    = 0.6 * legend_fontsize / font_size)
-
-    # (optional) draw title
-    if show_title:
-        if title == None: title = 'Unknown'
-        plt.title(title, fontsize = title_fontsize)
-
-    return True
+# def graph(graph,
+#     padding            = (0.1, 0.1, 0.1, 0.1),
+#     show_title         = False,
+#     title              = None,
+#     title_fontsize     = 14.,
+#     show_legend        = False,
+#     legend_fontsize    = 9.0,
+#     graph_layout       = 'layer',
+#     node_style         = 'o',
+#     edge_width_enabled = True,
+#     edge_curvature     = 1.0,
+#     **kwargs):
+#     """Plot graph.
+#
+#     Args:
+#         graph: networkx graph instance
+#
+#     Kwargs:
+#         figure_size (tuple): figure size in inches
+#             (11.69,8.27) for A4, (16.53,11.69) for A3
+#         edge_attribute (string): name of edge attribute, that
+#             determines the edge colors by its sign and the edge width
+#             by its absolute value.
+#             default: 'weight'
+#         edge_color (bool): flag for colored edges
+#             True: edge colors are determined by the sign of the
+#                 attribute 'weight'
+#             False: edges are black
+#         edge_poscolor (string): name of color for edges with
+#             positive signed attribute. For a full list of specified
+#             color names see nemoa.common.plot.get_color()
+#         edge_negcolor (string): name of color for edges with
+#             negative signed attribute. For a full list of specified
+#             color names see nemoa.common.plot.get_color()
+#         edge_curvature (float): value within the intervall [-1, 1],
+#             that determines the curvature of the edges.
+#             Thereby 1 equals max convexity and -1 max concavity.
+#         direction (string): string within the list ['up', 'down',
+#             'left', 'right'], that dermines the plot direction of the
+#             graph. 'up' means, the first layer is at the bottom.
+#         edge_style (string):  '-', '<-', '<->', '->',
+#             '<|-', '<|-|>', '-|>', '|-', '|-|', '-|',
+#             ']-', ']-[', '-[', 'fancy', 'simple', 'wedge'
+#
+#     Returns:
+#         Boolen value which is True if no error occured.
+#
+#     """
+#
+#     try:
+#         import matplotlib
+#         import matplotlib.pyplot as plt
+#     except ImportError: raise ImportError(
+#         "nemoa.common.plot.graph() requires matplotlib: "
+#         "https://matplotlib.org")
+#
+#     try: import numpy as np
+#     except ImportError: raise ImportError(
+#         "nemoa.common.plot.graph() requires numpy: "
+#         "https://scipy.org")
+#
+#     try: import networkx as nx
+#     except ImportError: raise ImportError(
+#         "nemoa.common.plot.graph() requires networkx: "
+#         "https://networkx.github.io")
+#
+#     import nemoa.common.graph as nmgraph
+#     import nemoa.common.dict as nmdict
+#
+#     # close previous figures and create figure object
+#     fig = plt.gcf()
+#     ax = fig.add_subplot(111)
+#     ax.set_autoscale_on(False)
+#     figsize = fig.get_size_inches() * fig.dpi
+#     ax.set_xlim(0., figsize[0])
+#     ax.set_ylim(0., figsize[1])
+#     ax.set_aspect('equal', 'box')
+#     ax.axis('off')
+#
+#     # get node positions and sizes
+#     layout_params = nmdict.section(kwargs, 'graph_')
+#     pos = nmgraph.get_layout(graph, layout = graph_layout,
+#         size = figsize, padding = padding, **layout_params)
+#     sizes       = nmgraph.get_layout_normsize(pos)
+#     node_size   = sizes.get('node_size', None)
+#     node_radius = sizes.get('node_radius', None)
+#     line_width  = sizes.get('line_width', None)
+#     edge_width  = sizes.get('edge_width', None)
+#     font_size   = sizes.get('font_size', None)
+#
+#     # get nodes and groups sorted by node attribute group_id
+#     groups = nmgraph.get_groups(graph, attribute = 'group')
+#     sorted_groups = sorted(list(groups.keys()), key = \
+#         lambda g: 0 if not isinstance(g, list) or len(g) == 0 \
+#         else graph.node.get(g[0], {}).get('group_id', 0))
+#
+#     # draw nodes, labeled by groups
+#     for group in sorted_groups:
+#         gnodes = groups.get(group, [])
+#         if len(gnodes) == 0: continue
+#         refnode = graph.node.get(gnodes[0])
+#         label = refnode.get('description') \
+#             or refnode.get('group') or str(group)
+#
+#         # draw nodes in group
+#         node_obj = nx.draw_networkx_nodes(graph, pos,
+#             nodelist   = gnodes,
+#             linewidths = line_width,
+#             node_size  = node_size,
+#             node_shape = node_style,
+#             node_color = get_color(refnode.get('color'), 'white'),
+#             label      = label)
+#         node_obj.set_edgecolor(
+#             get_color(refnode.get('border_color'), 'black'))
+#
+#     # draw node labels
+#     for node, data in graph.nodes(data = True):
+#
+#         # determine label, fontsize and color
+#         node_label = data.get('label', str(node).title())
+#         node_label_format = get_label(node_label)
+#         node_label_size = np.sqrt(get_label_width(node_label))
+#         font_color = get_color(data.get('font_color'), 'black')
+#
+#         # draw node label
+#         nx.draw_networkx_labels(graph, pos,
+#             labels      = {node: node_label_format},
+#             font_size   = font_size / node_label_size,
+#             font_color  = font_color,
+#             font_family = 'sans-serif',
+#             font_weight = 'normal')
+#
+#         # patch node for edges
+#         circle = matplotlib.patches.Circle(pos.get(node), alpha = 0.,
+#             radius = node_radius)
+#         ax.add_patch(circle)
+#         graph.node[node]['patch'] = circle
+#
+#     # draw edges
+#     seen = {}
+#     if nmgraph.is_directed(graph): default_edge_style = '-|>'
+#     else: default_edge_style = '-'
+#
+#     for (u, v, data) in graph.edges(data = True):
+#         weight = data.get('weight')
+#         if weight == 0.: continue
+#
+#         # calculate edge curvature from node positions
+#         # parameter rad describes the height in the normalized triangle
+#         if (u, v) in seen:
+#             rad = seen.get((u, v))
+#             rad = -(rad + float(np.sign(rad)) * .2)
+#         else:
+#             scale = 1. / np.amax(np.array(figsize))
+#             vec = scale * (np.array(pos[v]) - np.array(pos[u]))
+#             rad = vec[0] * vec[1] / np.sqrt(2 * np.sum(vec ** 2))
+#             if graph_layout == 'layer':
+#                 gdir = layout_params.get('direction', 'down')
+#                 if gdir in ['left', 'right']: rad *= -1
+#         seen[(u, v)] = rad
+#
+#         # determine style of edge from edge weight
+#         if weight == None:
+#             linestyle = '-'
+#             linewidth = 0.5 * edge_width
+#             alpha = 0.5
+#         elif not edge_width_enabled:
+#             linestyle = '-'
+#             linewidth = edge_width
+#             alpha = np.amin([np.absolute(weight), 1.0])
+#         else:
+#             linestyle = '-'
+#             linewidth = np.absolute(weight) * edge_width
+#             alpha = np.amin([np.absolute(weight), 1.0])
+#
+#         # draw edge
+#         nodeA = graph.node[u]['patch']
+#         nodeB = graph.node[v]['patch']
+#         arrow = matplotlib.patches.FancyArrowPatch(
+#             posA            = nodeA.center,
+#             posB            = nodeB.center,
+#             patchA          = nodeA,
+#             patchB          = nodeB,
+#             arrowstyle      = default_edge_style,
+#             connectionstyle = 'arc3,rad=%s' % rad,
+#             mutation_scale  = linewidth * 12.,
+#             linewidth       = linewidth,
+#             linestyle       = linestyle,
+#             color           = get_color(data.get('color'), 'black'),
+#             alpha           = alpha )
+#         ax.add_patch(arrow)
+#
+#     # (optional) draw legend
+#     if show_legend:
+#         num_groups = np.sum([1 for g in list(groups.values()) \
+#             if isinstance(g, list) and len(g) > 0])
+#         ax.legend(
+#             numpoints      = 1,
+#             loc            = 'lower center',
+#             ncol           = num_groups,
+#             borderaxespad  = 0.,
+#             framealpha     = 0.,
+#             bbox_to_anchor = (0.5, -0.1),
+#             fontsize       = legend_fontsize,
+#             markerscale    = 0.6 * legend_fontsize / font_size)
+#
+#     # (optional) draw title
+#     if show_title:
+#         if title == None: title = 'Unknown'
+#         plt.title(title, fontsize = title_fontsize)
+#
+#     return True
