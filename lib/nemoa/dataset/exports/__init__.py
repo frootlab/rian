@@ -84,14 +84,14 @@ def save(dataset, path = None, filetype = None, workspace = None,
             filetype '%s' is not supported.""" % (filetype))
 
     # export to file
-    module_name = filetypes(filetype)[0]
-    if module_name == 'text':
+    mname = filetypes(filetype)[0]
+    if mname == 'text':
         return nemoa.dataset.exports.text.save(
             dataset, path, filetype, **kwargs)
-    if module_name == 'archive':
+    if mname == 'archive':
         return nemoa.dataset.exports.archive.save(
             dataset, path, filetype, **kwargs)
-    if module_name == 'image':
+    if mname == 'image':
         return nemoa.dataset.exports.image.save(
             dataset, path, filetype, **kwargs)
 

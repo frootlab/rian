@@ -30,19 +30,6 @@ def show(network, plot = None, **kwargs):
             "could not plot graph '%s': "
             "plot type '%s' is not supported." % (network.name, plot))
 
-    # class_name = plot.lower().title()
-    # module_name = save.__module__
-    # try:
-    #     module = importlib.import_module(module_name)
-    #     if not hasattr(module, class_name):raise ImportError()
-    # except ImportError:
-    #     return nemoa.log('error', """could not plot graph '%s':
-    #         plot type '%s' is not supported.""" % (network.name, plot))
-    #
-    # # create plot instance
-    # plot = getattr(module, class_name)(**kwargs)
-    # if plot.create(network): plot.show()
-
     # create and show plot
     plot = getattr(module, cname)(**kwargs)
     if plot.create(network): plot.show()

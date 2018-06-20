@@ -6,15 +6,14 @@ __license__ = 'GPLv3'
 
 import nemoa
 import numpy
-import os
-import importlib
 
 def filetypes():
     """Get supported image filetypes."""
     return nemoa.common.plot.filetypes()
 
-def show(dataset, func = None, plot = None, **kwargs):
-    """ """
+def get_plot(dataset, func = None, plot = None, **kwargs):
+
+    import importlib
 
     # get evaluation function
     fname = func or 'sample'
@@ -39,38 +38,39 @@ def show(dataset, func = None, plot = None, **kwargs):
             "could not plot dataset '%s': "
             "plot type '%s' is not supported." % (dataset.name, plot))
 
-    # create and show plot
+    # create plot
     plot = getattr(module, cname)(func = fname, **kwargs)
-    if plot.create(dataset): plot.show()
+    if plot.create(dataset): return plot
 
     plot.release()
+    return None
+
+def show(dataset, *args, **kwargs):
+    """ """
+
+    # create plot
+    plot = get_plot(dataset, *args, **kwargs)
+    if plot == None: return None
+
+    plot.show()
+    plot.release()
+
     return True
 
-def save(dataset, path = None, filetype = None, plot = None, **kwargs):
+def save(dataset, path = None, filetype = None, *args, **kwargs):
 
     # test if filetype is supported
-    if not filetype in filetypes():
-        return nemoa.log('error', """could not create plot:
-            filetype '%s' is not supported.""" %
-            (filetype))
+    if not filetype in filetypes(): return nemoa.log('error',
+        "could not export plot: "
+        "filetype '%s' is not supported." % (filetype))
 
-    # get class for plotting from attribute 'plot'
-    if not plot: plot = 'histogram'
-    class_name = plot.lower().title()
-    module_name = save.__module__
-    try:
-        module = importlib.import_module(module_name)
-        if not hasattr(module, class_name):raise ImportError()
-    except ImportError:
-        return nemoa.log('error',
-            "could not plot dataset '%s': "
-            "plot type '%s' is not supported." % (dataset.name, plot))
+    plot = get_plot(dataset, *args, **kwargs)
+    if plot == None: return None
 
-    # create and save plot
-    plot = getattr(module, class_name)(**kwargs)
-    if plot.create(dataset): plot.save(path)
+    plot.save(path)
     plot.release()
-    return path
+
+    return True
 
 class Heatmap(nemoa.common.plot.Heatmap):
 

@@ -3,13 +3,12 @@
 
 Nemoa is a python package for network based modeling, deep data analysis
 and data visualization. By utilizing deep artificial neural networks,
-combinatorial and statistical methods are used to uncover hidden
-dependency structures in complex data by graphical representations
-or statistical values.
+combinatorial and statistical methods are used to uncover statistical
+dependency structures within complex and natural data samples.
 
 """
 
-__version__     = '0.5.39'
+__version__     = '0.5.40'
 __status__      = 'Development'
 __description__ = 'Network-based Modeling and deep Data Analysis'
 __url__         = 'https://fishroot.github.io/nemoa'

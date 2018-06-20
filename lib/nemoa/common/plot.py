@@ -59,23 +59,28 @@ class Plot:
         self._plt = plt
 
         # close previous figures
-        self._plt.close('all')
+        plt.close('all')
 
         # update plot settings
-        self._plt.style.use(
-            self._config.get('style'))
+        plt.style.use(self._config.get('style'))
 
         # create figure
-        self._figure = self._plt.figure(
+        self._figure = plt.figure(
             figsize   = self._config.get('figure_size'),
             dpi       = self._config.get('dpi'),
             facecolor = self._config.get('bg_color'))
 
-    def _plot_title(self):
-        if not self._config.get('show_title'): return False
-        if self._config.get('title') == None: title = 'Unknown'
-        self._plt.title(self._config.get('title'),
-            fontsize = self._config.get('title_fontsize'))
+    def __del__(self):
+        self._figure.clear()
+
+    def plot_title(self):
+        if not self._config.get('show_title'):
+            return False
+
+        title = self._config.get('title') or 'Unknown'
+        fontsize = self._config.get('title_fontsize')
+
+        self._plt.title(title, fontsize = fontsize)
         return True
 
     def show(self):
@@ -86,7 +91,7 @@ class Plot:
             dpi = self._config.get('dpi'), **kwargs)
 
     def release(self):
-        return self._plt.clf()
+        return self._figure.clear()
 
 class Heatmap(Plot):
 
@@ -132,7 +137,7 @@ class Heatmap(Plot):
             tick.set_fontsize(9)
 
         # (optional) plot title
-        self._plot_title()
+        self.plot_title()
 
         return True
 
@@ -144,17 +149,6 @@ class Histogram(Plot):
         'edgecolor': 'black',
         'histtype': 'bar',
         'linewidth': 0.5 }
-
-    # def create(self, dataset):
-    #
-    #     # update settings from dataset
-    #     self.settings['title'] = dataset.name
-    #
-    #     # create flat data
-    #     data = dataset.get('data').flatten()
-    #
-    #     # create plot
-    #     return nemoa.common.plot.histogram(data, **self.settings)
 
     def plot(self, array):
 
@@ -171,7 +165,7 @@ class Histogram(Plot):
             edgecolor = self._config.get('edgecolor'))
 
         # (optional) plot title
-        self._plot_title()
+        self.plot_title()
 
         return True
 
@@ -390,7 +384,7 @@ class Graph(Plot):
                 markerscale    = markerscale)
 
         # (optional) plot title
-        self._plot_title()
+        self.plot_title()
 
         return True
 
