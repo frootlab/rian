@@ -33,14 +33,14 @@ class TestSuite(nemoa.common.unittest.TestSuite):
         with self.subTest(evaluate = "correlation"):
             evaluate = dataset.evaluate('correlation')[0][4]
             self.assertEqual(numpy.around(evaluate, 3), 0.538)
-        with self.subTest(evaluate = "pca", embed = False):
-            evaluate = dataset.evaluate('pca', embed = False)[0][0]
+        with self.subTest(evaluate = "pca-sample", embed = False):
+            evaluate = dataset.evaluate('pca-sample', embed = False)[0][0]
             self.assertEqual(numpy.around(evaluate, 3), -3.466)
-        with self.subTest(evaluate = "pca", embed = True):
-            evaluate = dataset.evaluate('pca', embed = True)[0][0]
+        with self.subTest(evaluate = "pca-sample", embed = True):
+            evaluate = dataset.evaluate('pca-sample', embed = True)[0][0]
             self.assertEqual(numpy.around(evaluate, 3), -1.693)
-        with self.subTest(evaluate = "kcorrelation"):
-            evaluate = dataset.evaluate('kcorrelation')[0][2]
+        with self.subTest(evaluate = "k-correlation"):
+            evaluate = dataset.evaluate('k-correlation')[0][2]
             self.assertEqual(numpy.around(evaluate, 3), 0.141)
 
     def test_dataset_create(self):

@@ -144,3 +144,36 @@ class Histogram(nemoa.common.plot.Histogram):
 
         # create plot
         return self.plot(data)
+
+class Scatter2D(nemoa.common.plot.Scatter2D):
+
+    def create(self, dataset):
+
+        # set plot defaults
+        self.set_default({
+            'func': 'correlation',
+            'pca': True })
+
+        # evaluate function
+        fname  = self._config.get('func')
+        fdict  = dataset.get('algorithm', fname)
+        func   = fdict.get('func', None) or fdict.get('reference', None)
+        kwargs = nemoa.common.module.get_func_kwargs(func, self._config)
+        array  = dataset.evaluate(fname, **kwargs)
+
+        # check return value
+        if not isinstance(array, numpy.ndarray):
+            return nemoa.log('warning',
+                "representation of '%s' as 2d scatter plot "
+                "is not supported." % fname)
+
+        # update title
+        if not isinstance(self._config.get('title', None), str):
+            if self._config.get('usetex', False):
+                self._config['title'] = fdict.get('title_tex', None) \
+                    or fdict.get('title', fname.title())
+            else:
+                self._config['title'] = fdict.get('title', fname.title())
+
+        # create plot
+        return self.plot(array)

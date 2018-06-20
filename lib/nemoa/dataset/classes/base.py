@@ -762,12 +762,6 @@ class Dataset(nemoa.common.classes.Metadata):
         """Get list of row filters."""
         return list(self._config['rowfilter'].keys())
 
-    @nemoa.common.decorators.algorithm(
-        name     = 'sample',
-        title    = 'Sample Values',
-        category = ('dataset', 'evaluation'),
-        plot     = 'histogram'
-    )
     def _get_data(self, size = 0, rows = '*', cols = '*',
         noise = (None, 0.), output = 'array'):
         """Return a given number of stratified samples.
@@ -990,6 +984,40 @@ class Dataset(nemoa.common.classes.Metadata):
 
         else: return nemoa.log('error', """could not corrupt data:
             unkown noise model '%s'.""" % (type))
+
+    def _get_data_pca(self, data, k: int = 2, embed: bool = True):
+        """Calculate projection to principal components."""
+
+        # get dimension of data
+        datadim = data.shape[1]
+        if k > datadim: k = datadim
+
+        # calculate covariance matrix
+        cov = numpy.cov(data.T)
+
+        # calculate eigenvectors and eigenvalues
+        eigvals, eigvecs = numpy.linalg.eig(cov)
+
+        # sort eigenvectors by absolute eigenvalues
+        eigpairs = [(numpy.abs(eigvals[i]), eigvecs[:, i])
+            for i in range(len(eigvals))]
+        eigpairs.sort(key = lambda x: x[0], reverse = True)
+
+        # calculate projection and inverse transformation
+        vec = lambda i: eigpairs[i][1] if i < k else numpy.zeros(datadim)
+        if embed:
+            proj = numpy.hstack(
+                [vec(i).reshape(datadim, 1) for i in range(datadim)])
+            trans = numpy.hstack(
+                [eigpairs[i][1].reshape(datadim, 1) for i in range(datadim)])
+            itrans = numpy.linalg.inv(trans)
+            data_pca = numpy.dot(numpy.dot(data, proj), itrans)
+        else:
+            proj = numpy.hstack(
+                [vec(i).reshape(datadim, 1) for i in range(k)])
+            data_pca = numpy.dot(data, proj)
+
+        return data_pca
 
     def _get_table(self, table = None, cols = '*', rows = '*',
         size = 0, labels = False):
@@ -1294,41 +1322,132 @@ class Dataset(nemoa.common.classes.Metadata):
         return algorithms[name](*args, **kwargs)
 
     @nemoa.common.decorators.algorithm(
+        name     = 'sample',
+        title    = 'Sample Values',
+        category = ('dataset', 'evaluation'),
+        plot     = 'histogram'
+    )
+    def _get_sample(self, *args, **kwargs):
+        """Return a given number of stratified samples."""
+
+        return self._get_data(*args, **kwargs)
+
+    @nemoa.common.decorators.algorithm(
         name     = 'covariance',
         title    = 'Covariance',
         category = ('dataset', 'columns', 'evaluation'),
-        args     = '',
-        retfmt   = 'array',
-        formater = lambda val: '%.3f' % (val),
         plot     = 'heatmap'
     )
-    def _get_covariance(self, cols = '*'):
-        """Calculate covariance matrix between given columns."""
+    def _get_covariance(self, cols: str = '*'):
+        """Calculate covariance matrix between given columns.
+
+        Kwargs:
+            cols (str, optional): name of column select filter
+                default: '*' selects all columns
+
+        Returns:
+            Numpy.ndarray containing covariance matrix.
+
+        """
 
         # get numpy array with test data
         data = self._get_data(cols = cols)
 
-        return numpy.cov(data.T)
+        # calculate matrix with covariance coefficients
+        C = numpy.cov(data.T)
+
+        return C
 
     @nemoa.common.decorators.algorithm(
         name     = 'correlation',
         title    = 'Pearson Correlation',
         category = ('dataset', 'columns', 'evaluation'),
-        args     = '',
-        retfmt   = 'array',
-        formater = lambda val: '%.3f' % (val),
         plot     = 'heatmap'
     )
-    def _get_correlation(self, cols = '*'):
-        """Calculate correlation matrix between given columns."""
+    def _get_correlation(self, cols: str = '*'):
+        """Calculate correlation matrix between given columns.
+
+        Kwargs:
+            cols (str, optional): name of column select filter
+                default: '*' selects all columns
+
+        Returns:
+            Numpy.ndarray containing correlation coeffinient matrix.
+
+        """
 
         # get numpy array with test data
         data = self._get_data(cols = cols)
 
-        return numpy.corrcoef(data.T)
+        # calculate matrix with correlation coefficients
+        C = numpy.corrcoef(data.T)
+
+        return C
 
     @nemoa.common.decorators.algorithm(
-        name      = 'kcorrelation',
+        name     = 'pca-sample',
+        title    = 'PCA Sample Values',
+        category = ('dataset', 'evaluation'),
+        plot     = 'histogram'
+    )
+    def _get_pcasample(self, cols = '*', k: int = 2, embed: bool = True):
+        """Calculate projection to principal components.
+
+        Kwargs:
+            cols (str, optional): name of column select filter
+                default: '*' selects all columns
+            k (int, optional): number of principal components, which is used
+                for dimensionality reduction
+                default: 2
+
+        Returns:
+            Numpy.ndarray containing dimensionality reduced sample.
+
+        """
+
+        # get numpy array with test data
+        data = self._get_data(cols = cols)
+
+        # calculate numpy array with dimensionality reduced test data
+        pca_data = self._get_data_pca(data, k = k, embed = embed)
+
+        return pca_data
+
+    @nemoa.common.decorators.algorithm(
+        name      = 'k-covariance',
+        title     = 'k-Covariance',
+        title_tex = '$k$-Covariance',
+        category  = ('dataset', 'columns', 'evaluation'),
+        plot      = 'heatmap'
+    )
+    def _get_kcovariance(self, cols: str = '*', k: int = 2):
+        """Calculate k-Covariance matrix between given columns.
+
+        Kwargs:
+            cols (str, optional): name of column select filter
+                default: '*' selects all columns
+            k (int, optional): number of principal components, which is used
+                for dimensionality reduction
+                default: 2
+
+        Returns:
+            Numpy.ndarray containing k-Covariance coefficients.
+
+        """
+
+        # get numpy array with test data
+        data = self._get_data(cols = cols)
+
+        # calculate numpy array with dimensionality reduced test data
+        pca_data = self._get_data_pca(data, k = k, embed = True)
+
+        # calculate matrix with covariance coefficients
+        C = numpy.cov(pca_data.T)
+
+        return C
+
+    @nemoa.common.decorators.algorithm(
+        name      = 'k-correlation',
         title     = 'k-Correlation',
         title_tex = '$k$-Correlation',
         category  = ('dataset', 'columns', 'evaluation'),
@@ -1340,7 +1459,7 @@ class Dataset(nemoa.common.classes.Metadata):
         Kwargs:
             cols (str, optional): name of column select filter
                 default: '*' selects all columns
-            k (int, optional): number of principal components, which is used
+            k (int, optional): number of principal components, which are used
                 for dimensionality reduction
                 default: 2
 
@@ -1349,67 +1468,24 @@ class Dataset(nemoa.common.classes.Metadata):
 
         """
 
-        # get numpy array with dimensionality reduced test data
-        sample = self._get_sample_pca(cols = cols, k = k)
-
-        return numpy.corrcoef(sample.T)
-
-    @nemoa.common.decorators.algorithm(
-        name     = 'pca',
-        title    = 'PCA Sample Values',
-        category = ('dataset', 'transformation'),
-        args     = '',
-        retfmt   = 'array',
-        formater = lambda val: '%.3f' % (val),
-        plot     = 'histogram'
-    )
-    def _get_sample_pca(self, cols = '*', k: int = 2, embed: bool = True):
-        """Calculate projection to principal components."""
-
         # get numpy array with test data
         data = self._get_data(cols = cols)
 
-        # get dimension of data
-        datadim = data.shape[1]
-        if k > datadim: k = datadim
+        # calculate numpy array with dimensionality reduced test data
+        pca_data = self._get_data_pca(data, k = k, embed = True)
 
-        # calculate covariance matrix
-        cov = numpy.cov(data.T)
+        # calculate matrix with correlation coefficients
+        C = numpy.corrcoef(pca_data.T)
 
-        # calculate eigenvectors and eigenvalues
-        eigvals, eigvecs = numpy.linalg.eig(cov)
-
-        # sort eigenvectors by absolute eigenvalues
-        eigpairs = [(numpy.abs(eigvals[i]), eigvecs[:, i])
-            for i in range(len(eigvals))]
-        eigpairs.sort(key = lambda x: x[0], reverse = True)
-
-        # calculate projection and inverse transformation
-        vec = lambda i: eigpairs[i][1] if i < k else numpy.zeros(datadim)
-        if embed:
-            proj = numpy.hstack(
-                [vec(i).reshape(datadim, 1) for i in range(datadim)])
-            trans = numpy.hstack(
-                [eigpairs[i][1].reshape(datadim, 1) for i in range(datadim)])
-            itrans = numpy.linalg.inv(trans)
-            sample_pca = numpy.dot(numpy.dot(data, proj), itrans)
-        else:
-            proj = numpy.hstack(
-                [vec(i).reshape(datadim, 1) for i in range(k)])
-            sample_pca = numpy.dot(data, proj)
-
-        return sample_pca
+        return C
 
     @nemoa.common.decorators.algorithm(
         name     = 'test_binary',
         title    = None,
         category = ('dataset', 'evaluation'),
-        args     = '',
-        retfmt   = 'scalar',
-        formater = lambda val: '%.3f' % (val),
         plot     = 'none'
     )
-    def _get_test_binary(self, cols = '*'):
+    def _get_test_binary(self, cols: str = '*'):
         """Test if dataset strictly contains binary values.
 
         Args:
@@ -1435,13 +1511,10 @@ class Dataset(nemoa.common.classes.Metadata):
         name     = 'test_gauss',
         title    = None,
         category = ('dataset', 'evaluation'),
-        args     = '',
-        retfmt   = 'scalar',
-        formater = lambda val: '%.3f' % (val),
         plot     = 'none'
     )
-    def _get_test_gauss(self, cols = '*', mu = 0., sigma = 1.,
-        delta = .05):
+    def _get_test_gauss(self, cols: str = '*', mu: float = 0.0,
+        sigma: float = 1.0, delta: float = 0.05):
         """Test if dataset contains gauss normalized data per columns.
 
         Args:
