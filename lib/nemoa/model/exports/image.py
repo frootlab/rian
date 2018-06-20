@@ -76,7 +76,7 @@ def show(model, plot = None, *args, **kwargs):
     # create plot of model
     plot = getattr(module, class_name)(*args, **kwargs)
 
-    # assert units
+    # update units
     mapping = model.system.mapping
     in_units = model.system.get('units', layer = mapping[0])
     out_units = model.system.get('units', layer = mapping[-1])
@@ -84,14 +84,11 @@ def show(model, plot = None, *args, **kwargs):
         or not isinstance(plot._config['units'][0], list) \
         or not isinstance(plot._config['units'][1], list):
         plot._config['units'] = (in_units, out_units)
-        plot._eval['units'] = (in_units, out_units)
 
     # get information about relation
     if plot._config['show_title']:
         if isinstance(plot._config.get('relation', None), str):
             relation = plot._config.get('relation')
-        elif isinstance(plot._eval.get('relation', None), str):
-            relation = plot._eval.get('relation')
         else:
             relation = 'correlation'
         rel_id = nemoa.common.text.split_kwargs(relation)[0]
@@ -108,43 +105,42 @@ def show(model, plot = None, *args, **kwargs):
 
     return True
 
-class Graph(nemoa.common.plot.Plot):
-
-    settings = {
-        'show_legend': True,
-        'legend_fontsize': 9.0,
-        'graph_layout': 'layer',
-        'units': (None, None),
-        'relation': 'induction',
-        'preprocessing': None,
-        'measure': 'error',
-        'statistics': 10000,
-        'transform': '',
-        'edge_normalize': 'auto',
-        'sign': None,
-        'filter': None,
-        'cutoff': 0.5,
-        'node_caption': 'accuracy' }
-
-    _eval = {}
+class Graph(nemoa.common.plot.Graph):
 
     def create(self, model):
 
         import nemoa.common.graph as nmgraph
 
+        # set plot defaults
+        self.set_default({
+            'show_legend': True,
+            'legend_fontsize': 9.0,
+            'graph_layout': 'layer',
+            'units': (None, None),
+            'relation': 'induction',
+            'preprocessing': None,
+            'measure': 'error',
+            'statistics': 10000,
+            'transform': '',
+            'edge_normalize': 'auto',
+            'sign': None,
+            'filter': None,
+            'cutoff': 0.5,
+            'node_caption': 'accuracy' })
+
         # get units and edges
-        units = self.settings.get('units')
+        units = self._config.get('units')
         edges = [(i, o) for i in units[0] for o in units[1]
             if not o == i]
 
         # calculate edge weights from 'weight' relation
-        relarg = self.settings.get('relation', '')
+        relarg = self._config.get('relation', '')
         rel_name = nemoa.common.text.split_kwargs(relarg)[0]
         W = model.evaluate('system', 'relations', rel_name,
-            preprocessing = self.settings['preprocessing'],
-            measure = self.settings['measure'],
-            statistics = self.settings['statistics'],
-            transform = self.settings['transform'])
+            preprocessing = self._config['preprocessing'],
+            measure = self._config['measure'],
+            statistics = self._config['statistics'],
+            transform = self._config['transform'])
         if not isinstance(W, dict): return nemoa.log('error',
             "could not create relation graph: "
             "invalid weight relation '%s'" % rel_name)
@@ -153,21 +149,21 @@ class Graph(nemoa.common.plot.Plot):
 
         # calculate edge filter from 'filter' relation
         # default: use the same relation, as used for weights
-        if not self.settings['filter'] or self.settings['filter'] == \
-            self.settings['relation']: F = W
+        if not self._config['filter'] or self._config['filter'] == \
+            self._config['relation']: F = W
         else: F = model.evaluate('system', 'relations',
-            self.settings['filter'],
-            preprocessing = self.settings['preprocessing'],
-            measure = self.settings['measure'],
-            statistics = self.settings['statistics'])
+            self._config['filter'],
+            preprocessing = self._config['preprocessing'],
+            measure = self._config['measure'],
+            statistics = self._config['statistics'])
         if not isinstance(F, dict):
-            return nemoa.log('error', """could not create relation
-                graph: invalid filter relation
-                '%s'!""" % self.settings['filter'])
+            return nemoa.log('error',
+                "could not create relation graph: "
+                "invalid filter relation '%s'!" % self._config['filter'])
 
         # create filter mask from filter relation (parameter: 'cutoff')
         # and update list of edges
-        bound = self.settings['cutoff'] * F['std']
+        bound = self._config['cutoff'] * F['std']
         edges = [edge for edge in edges if not -bound < F[edge] < bound]
         if len(edges) == 0: return nemoa.log('warning',
             "could not create relation graph:"
@@ -175,7 +171,7 @@ class Graph(nemoa.common.plot.Plot):
 
         # calculate edge signs from 'sign' relation
         # default: use the same relation, as used for weights
-        rel_sign_name = self.settings.get('sign')
+        rel_sign_name = self._config.get('sign')
         if rel_sign_name == None:
             rel_sign_name = rel_name
             rel_sign_about = rel_about
@@ -188,9 +184,9 @@ class Graph(nemoa.common.plot.Plot):
             if rel_sign_name == rel_name: sr = W
             else: sr = model.evaluate('system', 'relations',
                 rel_sign_name,
-                preprocessing = self.settings['preprocessing'],
-                measure = self.settings['measure'],
-                statistics = self.settings['statistics'])
+                preprocessing = self._config['preprocessing'],
+                measure = self._config['measure'],
+                statistics = self._config['statistics'])
             if not isinstance(sr, dict): return nemoa.log('error',
                 "could not create relation graph: "
                 "invalid sign relation!")
@@ -204,10 +200,10 @@ class Graph(nemoa.common.plot.Plot):
         graph.graph['directed'] = rel_about.get('directed')
 
         # add edges and edge attributes to graph
-        if self.settings['edge_normalize'] in [None, 'auto']:
+        if self._config['edge_normalize'] in [None, 'auto']:
             normalize = not rel_about.get('normal')
-        elif self.settings['edge_normalize'] in [True, False]:
-            normalize = self.settings['edge_normalize']
+        elif self._config['edge_normalize'] in [True, False]:
+            normalize = self._config['edge_normalize']
         else: return nemoa.log('error',
             "could not create relation graph: "
             "invalid value for parameter 'edge_normalize'")
@@ -249,7 +245,7 @@ class Graph(nemoa.common.plot.Plot):
                 graph.edges[u, v]['weight'] = data['weight'] / mean
 
         # graph layout specific attributes
-        graph_layout = self.settings.get('graph_layout', None)
+        graph_layout = self._config.get('graph_layout', None)
         if graph_layout == 'layer':
             for node in graph.nodes():
                 attr = model.network.get('node', node)
@@ -260,35 +256,30 @@ class Graph(nemoa.common.plot.Plot):
                     'layer_sub_id': params.get('layer_sub_id')})
 
         # create plot
-        return nemoa.common.plot.graph(graph, **self.settings)
+        return self.plot(graph)
 
 class Heatmap(nemoa.common.plot.Heatmap):
 
-    _eval = {
-        'units': (None, None),
-        'relation': 'correlation',
-        'preprocessing': None,
-        'measure': 'error',
-        'statistics': 10000,
-        'transform': '',
-    }
-
     def create(self, model):
 
-        # update evaluation dictionary
-        for key in self._eval.keys():
-            if key in self._config.keys():
-                self._eval[key] = self._config[key]
+        # set plot defaults
+        self.set_default({
+            'units': (None, None),
+            'relation': 'correlation',
+            'preprocessing': None,
+            'measure': 'error',
+            'statistics': 10000,
+            'transform': '' })
 
         # get observables from model
-        if not isinstance(self._eval.get('units', None), tuple) \
-            or not isinstance(self._eval['units'][0], list) \
-            or not isinstance(self._eval['units'][1], list):
+        if not isinstance(self._config.get('units', None), tuple) \
+            or not isinstance(self._config['units'][0], list) \
+            or not isinstance(self._config['units'][1], list):
             mapping = model.system.mapping
             iunits = model.system.get('units', layer = mapping[0])
             ounits = model.system.get('units', layer = mapping[-1])
-            self._eval['units'] = (iunits, ounits)
-        units = self._eval['units']
+            self._config['units'] = (iunits, ounits)
+        units = self._config['units']
         pairs = []
         for i in units[0]:
             for o in [u for u in units[1] if u != i]:
@@ -300,14 +291,15 @@ class Heatmap(nemoa.common.plot.Heatmap):
 
         # evaluate relations
         R = model.evaluate('system', 'relations',
-            self._eval['relation'],
-            preprocessing = self._eval['preprocessing'],
-            measure = self._eval['measure'],
-            statistics = self._eval['statistics'],
-            transform = self._eval['transform'])
+            self._config['relation'],
+            preprocessing = self._config['preprocessing'],
+            measure = self._config['measure'],
+            statistics = self._config['statistics'],
+            transform = self._config['transform'])
         if not isinstance(R, dict):
-            return nemoa.log('error', "could not create histogram: "
-                "invalid relation '%s'!" % self._eval['relation'])
+            return nemoa.log('error',
+                "could not create histogram: "
+                "invalid relation '%s'!" % self._config['relation'])
 
         # convert relation dictionary to matrix
         matrix = numpy.zeros((len(units[0]), len(units[1])))
@@ -317,7 +309,8 @@ class Heatmap(nemoa.common.plot.Heatmap):
 
         # update title by evaluated relation
         if self._config['show_title']:
-            rel_id = nemoa.common.text.split_kwargs(self._eval['relation'])[0]
+            rel_id = nemoa.common.text.split_kwargs(
+                self._config['relation'])[0]
             rel_dict = model.system.get('algorithm', rel_id,
                 category = ('system', 'relation', 'evaluation'))
             rel_name = rel_dict['name']
@@ -328,24 +321,20 @@ class Heatmap(nemoa.common.plot.Heatmap):
 
 class Histogram(nemoa.common.plot.Histogram):
 
-    _eval = {
-        'evaluation': 'correlation',
-        'units': (None, None),
-        'preprocessing': None,
-        'measure': 'error',
-        'statistics': 10000,
-        'transform': '',
-    }
-
     def create(self, model):
 
-        # update evaluation dictionary
-        for key in self._eval.keys():
-            if key in self._config.keys():
-                self._eval[key] = self._config[key]
+        # set plot defaults
+        self.set_default({
+            'evaluation': 'correlation',
+            'units': (None, None),
+            'preprocessing': None,
+            'measure': 'error',
+            'statistics': 10000,
+            'transform': '' })
 
         # get information about evaluation algorithm
-        rel_id = nemoa.common.text.split_kwargs(self._eval['evaluation'])[0]
+        rel_id = nemoa.common.text.split_kwargs(
+            self._config['evaluation'])[0]
         rel_dict = model.system.get('algorithm', rel_id,
             category = ('system', 'relation', 'evaluation'))
 
@@ -355,14 +344,14 @@ class Histogram(nemoa.common.plot.Histogram):
             self._config['title'] = rel_dict.get('name').title()
 
         # get observables from model
-        if not isinstance(self._eval.get('units', None), tuple) \
-            or not isinstance(self._eval['units'][0], list) \
-            or not isinstance(self._eval['units'][1], list):
+        if not isinstance(self._config.get('units', None), tuple) \
+            or not isinstance(self._config['units'][0], list) \
+            or not isinstance(self._config['units'][1], list):
             mapping = model.system.mapping
             iunits = model.system.get('units', layer = mapping[0])
             ounits = model.system.get('units', layer = mapping[-1])
-            self._eval['units'] = (iunits, ounits)
-        units = self._eval['units']
+            self._config['units'] = (iunits, ounits)
+        units = self._config['units']
         pairs = []
         for i in units[0]:
             for o in [u for u in units[1] if u != i]:
@@ -374,14 +363,15 @@ class Histogram(nemoa.common.plot.Histogram):
 
         # apply evaluation
         R = model.evaluate('system', 'relations',
-            self._eval['evaluation'],
-            preprocessing = self._eval['preprocessing'],
-            measure = self._eval['measure'],
-            statistics = self._eval['statistics'],
-            transform = self._eval['transform'])
+            self._config['evaluation'],
+            preprocessing = self._config['preprocessing'],
+            measure = self._config['measure'],
+            statistics = self._config['statistics'],
+            transform = self._config['transform'])
         if not isinstance(R, dict):
-            return nemoa.log('error', "could not create histogram: "
-                "invalid evaluation '%s'!" % self._eval['evaluation'])
+            return nemoa.log('error',
+                "could not create histogram: "
+                "invalid evaluation '%s'!" % self._config['evaluation'])
 
         # convert evaluation dictionary to data array
         data = numpy.array([R[pair] for pair in pairs])

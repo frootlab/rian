@@ -76,8 +76,12 @@ class Heatmap(nemoa.common.plot.Heatmap):
 
     def create(self, dataset):
 
+        # set plot defaults
+        self.set_default({
+            'func': 'correlation' })
+
         # evaluate function
-        fname  = self._config.get('func', 'correlation')
+        fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
         kwargs = nemoa.common.module.get_func_kwargs(func, self._config)
@@ -89,7 +93,7 @@ class Heatmap(nemoa.common.plot.Heatmap):
         if not isinstance(array, numpy.ndarray) or not array.shape == shape:
             return nemoa.log('warning',
                 "representation of '%s' as heatmap "
-                "is not supported." % (fname))
+                "is not supported." % fname)
 
         # update axes labels
         self._config['x_labels'] = cols
@@ -110,8 +114,12 @@ class Histogram(nemoa.common.plot.Histogram):
 
     def create(self, dataset):
 
+        # set plot defaults
+        self.set_default({
+            'func': 'correlation' })
+
         # evaluate function
-        fname  = self._config.get('func', 'correlation')
+        fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
         kwargs = nemoa.common.module.get_func_kwargs(func, self._config)

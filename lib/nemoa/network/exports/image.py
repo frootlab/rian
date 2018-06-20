@@ -7,7 +7,6 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 import networkx
-import os
 import importlib
 
 def filetypes():
@@ -74,8 +73,8 @@ class Graph(nemoa.common.plot.Graph):
         import nemoa.common.plot  as nmplot
         import nemoa.common.math  as nmmath
 
-        # graph plot defaults
-        settings = {
+        # set plot defaults
+        self.set_default({
             'show_legend': True,
             'legend_fontsize': 9.0,
             'graph_layout': 'layer',
@@ -87,10 +86,7 @@ class Graph(nemoa.common.plot.Graph):
             'edge_weight': 'intensity',
             'edge_threshold': 0.,
             'edge_transform': 'softstep',
-            'edge_sign_normalize': True }
-
-        # merge self._config over defaults
-        self._config = nemoa.common.dict.merge(self._config, settings)
+            'edge_sign_normalize': True  })
 
         # copy graph from system structure of model
         graph = network.get('graph', type = 'graph')

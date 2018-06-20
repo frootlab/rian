@@ -73,6 +73,14 @@ class Plot:
     def __del__(self):
         self._figure.clear()
 
+    def set_default(self, default: dict = {}):
+        """Set default values. """
+
+        # merge self._config over defaults
+        self._config = nemoa.common.dict.merge(self._config, default)
+
+        return True
+
     def plot_title(self):
         if not self._config.get('show_title'):
             return False
