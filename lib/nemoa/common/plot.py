@@ -32,6 +32,7 @@ class Plot:
         'title_fontsize': 14.0}
 
     _config = {}
+    _kwargs = {}
 
     _plt = None
     _fig = None
@@ -45,6 +46,7 @@ class Plot:
             "https://matplotlib.org")
 
         # merge config from defaults, current config and kwargs
+        self._kwargs = kwargs
         self._config = nemoa.common.dict.merge(
             kwargs, self._config, self._default)
 
@@ -73,14 +75,15 @@ class Plot:
         # create subplot (matplotlib.axes.Axes)
         self._axes = self._fig.add_subplot(111)
 
-    def __del__(self):
-        self._fig.clear()
+    # def __del__(self):
+    #     self._fig.clear()
 
-    def set_default(self, default: dict = {}):
+    def set_default(self, config: dict = {}):
         """Set default values. """
 
         # merge self._config over defaults
-        self._config = nemoa.common.dict.merge(self._config, default)
+        self._config = nemoa.common.dict.merge(
+            self._kwargs, config, self._config)
 
         return True
 

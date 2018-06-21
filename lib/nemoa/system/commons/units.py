@@ -276,7 +276,7 @@ class Gauss(UnitsBaseClass):
         return { 'bias': updBias, 'lvar': updLVar }
 
     def get_updates_delta(self, delta):
-        # Todo: calculate update for lvar
+        # 2do: calculate update for lvar
 
         shape = (1, len(self.params['id']))
         bias = - numpy.mean(delta, axis = 0).reshape(shape)

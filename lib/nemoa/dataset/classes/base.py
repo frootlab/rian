@@ -83,8 +83,8 @@ class Dataset(nemoa.common.classes.Metadata):
             nodes = network.get('nodes', layer = layer)
 
             # get node labels from layer
-            # Todo: network.get('nodelabel', node = node)
-            # Todo: network.get('nodelabels', layer = layer)
+            # 2do: network.get('nodelabel', node = node)
+            # 2do: network.get('nodelabels', layer = layer)
             node_labels = []
             for node in nodes:
                 node_labels.append(
@@ -208,7 +208,7 @@ class Dataset(nemoa.common.classes.Metadata):
                 found = True
 
                 # add column (use network label and layer)
-                # Todo: network.get('nodelabel', node = node)
+                # 2do: network.get('nodelabel', node = node)
                 node = network.get('nodes', layer = layer)[id]
                 label = network.get('node', node)['params']['label']
                 colid = layer + ':' + label
@@ -666,7 +666,7 @@ class Dataset(nemoa.common.classes.Metadata):
         """
 
         if isinstance(filter, list):
-            # Todo: test for existing columns
+            # 2do: test for existing columns
             return filter
 
         if filter == '*':
@@ -1305,7 +1305,7 @@ class Dataset(nemoa.common.classes.Metadata):
         self._config = \
             nemoa.common.dict.merge(config, self._config, self._default)
 
-        # Todo: reconfigure!?
+        # 2do: reconfigure!?
         self._tables = {}
 
         return True

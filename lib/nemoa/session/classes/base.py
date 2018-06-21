@@ -506,7 +506,7 @@ class Session:
             if __name__ + '.file' in loggers \
             else logging.getLogger(__name__ + '.null')
 
-        # todo: depending on mode
+        # 2do: depending on mode
         # format message
         if isinstance(msg, str):
             msg = msg.strip().replace('\n', ' ')

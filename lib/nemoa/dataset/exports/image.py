@@ -177,3 +177,57 @@ class Scatter2D(nemoa.common.plot.Scatter2D):
 
         # create plot
         return self.plot(array)
+
+class Graph(nemoa.common.plot.Graph):
+
+    def create(self, dataset):
+
+        try: import networkx
+        except ImportError: raise ImportError(
+            "nemoa.dataset.exports.image.Graph() requires networkx: "
+            "https://networkx.github.io")
+
+        import nemoa.common.graph as nmgraph
+
+        # set plot defaults
+        self.set_default({
+            'func': 'correlation',
+            'graph_layout': 'spring',
+            'node_style': 'o',
+            'edge_width_enabled': True,
+            'edge_curvature': 1.0,
+            'show_legend': False })
+
+        # evaluate function
+        fname  = self._config.get('func')
+        fdict  = dataset.get('algorithm', fname)
+        func   = fdict.get('func', None) or fdict.get('reference', None)
+        kwargs = nemoa.common.module.get_func_kwargs(func, self._config)
+        array  = dataset.evaluate(fname, **kwargs)
+
+        # check if evaluation yields valid relation
+        cols  = dataset.get('columns')
+        shape = (len(cols), len(cols))
+        if not isinstance(array, numpy.ndarray) or not array.shape == shape:
+            return nemoa.log('warning',
+                "representation of '%s' as graph "
+                "is not supported." % fname)
+
+        # create networkx graph object
+        graph = networkx.DiGraph(name = fname)
+
+        # graph is directed if and only if relation is symmetric
+        graph.graph['directed'] = numpy.allclose(array, array.T)
+
+        # add nodes with attributes
+        nodes = dataset.get('columns')
+        for node in nodes:
+            graph.add_node(node, label = node)
+
+        # add edges with weights
+        for i, u in enumerate(nodes):
+            for j, v in enumerate(nodes):
+                graph.add_edge(u, v, weight = array[i, j], visible = True)
+
+        # create plot
+        return self.plot(graph)

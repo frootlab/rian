@@ -964,7 +964,7 @@ class System(nemoa.common.classes.Metadata):
 
         """
 
-        # Todo: allow correlation between hidden units
+        # 2do: allow correlation between hidden units
 
         # calculate symmetric correlation matrix
         corr = numpy.corrcoef(numpy.hstack(data).T)
@@ -1098,14 +1098,14 @@ class System(nemoa.common.classes.Metadata):
     def _get_coinduction(self, data, *args, **kwargs):
         """Coinduced deviation from source to target units."""
 
-        # Todo: Open Problem:
+        # 2do: Open Problem:
         #       Normalization of CoInduction
         # Ideas:
         #       - Combine CoInduction with common distribution
         #         of induced values
         #       - Take a closer look to extreme Values
 
-        # Todo: Proove:
+        # 2do: Proove:
         # CoInduction <=> Common distribution in 'deep' latent variables
 
         # algorithmic default parameters
@@ -1852,7 +1852,7 @@ class System(nemoa.common.classes.Metadata):
             # (optional) transform relation using 'transform' string
             if transform:
                 M = values
-                # todo: calc real relation
+                # 2do: calc real relation
                 if 'C' in transform:
                     # TODO -> will lead to error
                     C = self._get_units_correlation(data)

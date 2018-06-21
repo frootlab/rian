@@ -5,7 +5,7 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 def get_layout(graph, layout = 'spring',
-    size = None, padding = None, rotate = None, **kwargs):
+    size = None, padding = None, rotate = None, direction = 'right', **kwargs):
     """Calculate positions of nodes, depending on graph layout.
 
     Args:
@@ -22,13 +22,13 @@ def get_layout(graph, layout = 'spring',
         "nemoa.common.graph.layout() requires networkx: "
         "https://networkx.github.io")
 
-    # Todo: allow layouts from pygraphviz_layout
-    # Todo: determine layout by graph type if layout is None
+    # 2do: allow layouts from pygraphviz_layout
+    # 2do: determine layout by graph type if layout is None
 
     if layout == 'spring':
         pos = nx.spring_layout(graph, **kwargs)
     elif layout == 'layer':
-        pos = get_layer_layout(graph, **kwargs)
+        pos = get_layer_layout(graph, direction = direction, **kwargs)
     elif layout == 'random':
         pos = nx.random_layout(graph, **kwargs)
     elif layout == 'circular':
@@ -66,7 +66,7 @@ def get_layers(graph):
             sorted(sort.get((layer, lid), []), key = lambda x: x[1])])
     return layers
 
-def get_layer_layout(graph, direction = 'down', minimize = 'weight'):
+def get_layer_layout(graph, direction = 'right', minimize = 'weight'):
     """Calculate node positions for layer layout.
 
     Args:

@@ -297,7 +297,7 @@ def load(path, delimiter = None, labels = None, usecols = None,
             break
 
     try:
-        # Todo: use genfromtxt to allow missing values
+        # 2do: use genfromtxt to allow missing values
         data = numpy.loadtxt(path, skiprows = skiprows,
             delimiter = delimiter, usecols = usecols, dtype = dtype)
     except:

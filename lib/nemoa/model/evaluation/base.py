@@ -142,17 +142,6 @@ class Evaluation:
             return nemoa.log('warning',
                 "could not evaluate %s: invalid algorithm." % category)
 
-        #preprocessing = kwargs.pop('preprocessing', None)
-        #statistics = kwargs.pop('statistics', 0)
-        #if preprocessing:
-            #datasetbackup = self.model.dataset.get('copy')
-            #self.model.dataset.preprocess(preprocessing)
-        #cols = self.model.system.get('layers', visible = True)
-        #data = self.model.dataset.get('data',
-            #size = statistics, cols = tuple(cols))
-        #if preprocessing:
-            #self.model.dataset.set('copy', datasetbackup)
-
         data = kwargs.pop('data', self._get_data())
 
         getmapping = self.model.system._get_mapping
@@ -200,7 +189,7 @@ class Evaluation:
                 # (optional) transform relation using 'transform' string
                 if transform:
                     M = retval
-                    # todo: calc real relation
+                    # 2do: calc real relation
                     if 'C' in transform:
                         C = self.model.system._get_unitcorrelation(data)
                     try:
@@ -266,20 +255,3 @@ class Evaluation:
         self._get_data()
 
         return True
-
-    #def _update_evaluation(self):
-        #"""Calculate evaluation function of system."""
-
-        #func = self._get_evaluation_algorithm()
-        #value = self._get_evaluation_value()
-        #progress = self._get_progress()
-
-        ## add evaluation value to array
-        #if not isinstance(self._buffer['values'], numpy.ndarray):
-            #self._buffer['values'] = numpy.array([[progress, value]])
-        #else:
-            #self._buffer['values'] = \
-                #numpy.vstack((self._buffer['values'], \
-                #numpy.array([[progress, value]])))
-
-        #return

@@ -394,7 +394,7 @@ class ANN(Evaluation):
 
         """
 
-        # Todo: allow correlation between hidden units
+        # 2do: allow correlation between hidden units
 
         # calculate symmetric correlation matrix
         corr = numpy.corrcoef(numpy.hstack(data).T)
@@ -530,14 +530,14 @@ class ANN(Evaluation):
     def coinduction(self, data, *args, **kwargs):
         """Coinduced deviation from source to target units."""
 
-        # Todo: Open Problem:
+        # 2do: Open Problem:
         #       Normalization of CoInduction
         # Ideas:
         #       - Combine CoInduction with common distribution
         #         of induced values
         #       - Take a closer look to extreme Values
 
-        # Todo: Proove:
+        # 2do: Proove:
         # CoInduction <=> Common distribution in 'deep' latent variables
 
         # algorithmic default parameters

@@ -8,7 +8,7 @@ dependency structures within complex and natural data samples.
 
 """
 
-__version__     = '0.5.43'
+__version__     = '0.5.44'
 __status__      = 'Development'
 __description__ = 'Network-based Modeling and deep Data Analysis'
 __url__         = 'https://fishroot.github.io/nemoa'
@@ -18,7 +18,7 @@ __author__      = 'Patrick Michl'
 __email__       = 'patrick.michl@gmail.com'
 __maintainer__  = 'Patrick Michl'
 __credits__     = ['Willi Jäger', 'Rainer Koenig', 'Marcus Oswald',
-                   'Anna Dieckmann', 'Tobias Bauer', 'Alexandra Poos']
+                   'Alexandra Poos', 'Anna Dieckmann', 'Tobias Bauer']
 
 import nemoa.common
 import nemoa.dataset
