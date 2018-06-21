@@ -30,8 +30,8 @@ class DBN(nemoa.model.morphisms.ann.ANN):
         longname = 'deep belief network optimization',
         category = 'optimization',
         type     = 'metaalgorithm',
-        syscheck = lambda net: net._is_compatible_dbn())
-
+        syscheck = lambda net: net._is_compatible_dbn()
+    )
     def _dbn(self):
         """Deep belief network optimization."""
 
@@ -144,12 +144,14 @@ class DBN(nemoa.model.morphisms.ann.ANN):
             # optimize model
             schedule = self._get_schedule(self._config.get(
                 'schedule_%s' % systype.lower(), 'default'))
-            if systype in schedule: model.optimize(schedule[systype])
-            else: model.optimize()
 
-            if not lid:
-                rbmparams['units'].append(
-                    model.system.get('layer', 'visible'))
+            if systype in schedule:
+                model.optimize(schedule[systype])
+            else:
+                model.optimize()
+
+            if not lid: rbmparams['units'].append(
+                model.system.get('layer', 'visible'))
             rbmparams['links'].append(
                 model.system._params['links'][(0, 1)])
             rbmparams['units'].append(

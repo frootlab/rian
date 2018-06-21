@@ -580,13 +580,13 @@ class Dataset(nemoa.common.classes.Metadata):
         if key == 'colgroups': return self._get_colgroups()
         if key == 'colfilter': return self._get_colfilter(*args, **kwargs)
         if key == 'colfilters': return self._get_colfilters()
+        if key == 'data': return self._get_data(*args, **kwargs)
         if key == 'rows': return self._get_rows(*args, **kwargs)
         if key == 'rowgroups': return self._get_rowgroups(*args, **kwargs)
         if key == 'rowfilter': return self._get_rowfilter(*args, **kwargs)
         if key == 'rowfilters': return self._get_rowfilters()
-        if key == 'value': return self._get_value(*args, **kwargs)
         if key == 'table': return self._get_table(*args, **kwargs)
-        if key == 'data': return self._get_data(*args, **kwargs)
+        if key == 'value': return self._get_value(*args, **kwargs)
 
         # direct access
         if key == 'copy': return self._get_copy(*args, **kwargs)
@@ -800,8 +800,9 @@ class Dataset(nemoa.common.classes.Metadata):
         """
 
         if not isinstance(size, int) or size < 0:
-            return nemoa.log('error', """could not get data:
-                invalid argument 'size'.""")
+            return nemoa.log('error',
+                "could not get data: "
+                "argument 'size' is required to be of type 'int'.")
 
         # get stratified and filtered data
         src_stack = ()
@@ -814,9 +815,11 @@ class Dataset(nemoa.common.classes.Metadata):
                     rows = rows, labels = True)
             if hasattr(src_data, 'size') and src_data.size > 0:
                 src_stack += (src_data, )
+
         if not src_stack:
-            return nemoa.log('error', """could not get data:
-                no valid data sources found!""")
+            return nemoa.log('error',
+                "could not get data: "
+                "no valid data sources found!")
         data = numpy.concatenate(src_stack)
 
         # (optional) shuffle data and correct size
@@ -838,8 +841,9 @@ class Dataset(nemoa.common.classes.Metadata):
                 cols = self._get_columns(col_filter),
                 output = output) for col_filter in cols])
         else:
-            return nemoa.log('error', """could not get data:
-                invalid argument for columns!""")
+            return nemoa.log('error',
+                "could not get data: "
+                "invalid argument for columns!")
 
         # Corrupt data (optional)
         return self._get_data_corrupt(fmt_data, \
@@ -1049,8 +1053,9 @@ class Dataset(nemoa.common.classes.Metadata):
         if not isinstance(table, str) \
             or not table in list(self._tables.keys()) \
             or not isinstance(self._tables[table], numpy.ndarray):
-            return nemoa.log('error', """could not retrieve table:
-                invalid table name: '%s'.""" % (table))
+            return nemoa.log('error',
+                "could not retrieve data: "
+                "invalid table name: '%s'." % table)
 
         # get column names from column filter
         columns = self._get_columns(cols)
@@ -1060,17 +1065,27 @@ class Dataset(nemoa.common.classes.Metadata):
         # get row names from filter
         if isinstance(rows, str):
             if not rows in self._config['rowfilter']:
-                return nemoa.log('error', """could not retrieve
-                    data: invalid row filter: '%s'!""" % (rows))
+                return nemoa.log('error',
+                    "could not retrieve data: "
+                    "invalid row filter '%s'!" % rows)
             rowfilter = self._config['rowfilter'][rows]
         elif isinstance(rows, list):
-            # Todo: filter list to valid row names
+            # 2do: filter list to valid row names
             rowfilter = rows
 
         # test for not unique column names and create dublicates
         if len(set(colnames)) == len(colnames):
-            table_colsel = self._tables[table][colnames]
+
+            # 2do: multi-field indexing recarrays
+            # changes from Numpy 1.14 to Numpy 1.15
+            # https://docs.scipy.org/doc/numpy/user/basics.rec.html
+
+            with numpy.warnings.catch_warnings():
+                numpy.warnings.filterwarnings('ignore')
+                table_colsel = self._tables[table][colnames]
+
         else:
+
             if labels: datacols = colnames[1:]
             else: datacols = colnames
             redcols = sorted(set(datacols), key = datacols.index)

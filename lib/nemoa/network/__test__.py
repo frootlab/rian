@@ -17,7 +17,13 @@ class TestSuite(nemoa.common.unittest.TestSuite):
     def test_network_create(self):
         with self.subTest(create = 'autoencoder'):
             network = nemoa.network.create('autoencoder',
-                columns = ['i1', 'i2', 'o1'],
+                columns = ['v1', 'v2', 'v3'],
                 shape = [6, 3, 6])
+            test = nemoa.common.type.isnetwork(network)
+            self.assertTrue(test)
+        with self.subTest(create = 'factor'):
+            network = nemoa.network.create('factor',
+                visible_nodes = ['v1', 'v2', 'v3'], visible_type = 'gauss',
+                hidden_nodes = ['h1', 'h2'], hidden_type = 'sigmoid')
             test = nemoa.common.type.isnetwork(network)
             self.assertTrue(test)

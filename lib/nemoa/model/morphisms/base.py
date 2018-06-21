@@ -157,8 +157,10 @@ class Optimizer:
                 noise = (ntype, nfactor)
             else:
                 noise = (None, 0.)
+
             data = dataset.get('data', cols = cols,
                 size = size, noise = noise)
+
             if data: self._buffer['training_data'] = data
 
         return data or None
