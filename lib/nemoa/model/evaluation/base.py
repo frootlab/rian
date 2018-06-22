@@ -220,8 +220,9 @@ class Evaluation:
                     retval['std'] = numpy.std(array)
                     return retval
 
-        return nemoa.log('warning', """could not evaluate system units:
-            unknown return format '%s'.""" % retfmt)
+        return nemoa.log('warning',
+            "could not evaluate system units: "
+            "unknown return format '%s'." % retfmt)
 
     def set(self, key, *args, **kwargs):
         """ """

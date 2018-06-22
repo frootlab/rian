@@ -67,6 +67,7 @@ class Model(nemoa.common.classes.Metadata):
     dataset  = None
     network  = None
     system   = None
+
     _config  = None
     _default = {}
     _attr    = { 'error': 'r', 'accuracy': 'r', 'precision': 'r' }
@@ -75,14 +76,14 @@ class Model(nemoa.common.classes.Metadata):
         """Configure model."""
 
         if not nemoa.common.type.isdataset(self.dataset):
-            return nemoa.log('error', """could not configure model:
-                dataset is not valid.""")
+            return nemoa.log('error',
+                "could not configure model: dataset is not valid.")
         if not nemoa.common.type.isnetwork(self.network):
-            return nemoa.log('error', """could not configure model:
-                network is not valid.""")
+            return nemoa.log('error',
+                "could not configure model: network is not valid.")
         if not nemoa.common.type.issystem(self.system):
-            return nemoa.log('error', """could not configure model:
-                system is not valid.""")
+            return nemoa.log('error',
+                "could not configure model: system is not valid.")
 
         retval = True
 
@@ -409,10 +410,6 @@ class Model(nemoa.common.classes.Metadata):
             return self.system.evaluate(data, *args, **kwargs)
 
         return nemoa.log('warning', 'could not evaluate model')
-
-    #def evaluate(self, *args, **kwargs):
-        #"""Evaluate model."""
-        #return nemoa.model.evaluate(self, *args, **kwargs)
 
     def save(self, *args, **kwargs):
         """Export model to file."""

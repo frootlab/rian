@@ -88,7 +88,7 @@ class Graph(nemoa.common.plot.Graph):
             'edge_transform': 'softstep',
             'edge_sign_normalize': True  })
 
-        # copy graph from system structure of model
+        # copy graph from model graph
         graph = network.get('graph', type = 'graph')
 
         # copy graph attributes from graph 'params'

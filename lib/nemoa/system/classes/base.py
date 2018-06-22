@@ -533,8 +533,8 @@ class System(nemoa.common.classes.Metadata):
         category = ('system', 'evaluation'),
         args     = 'all',
         formater = lambda val: '%.3f' % (val),
-        optimum  = 'min'
-    )
+        optimum  = 'min' )
+
     def _get_error(self, *args, **kwargs):
         """Mean data reconstruction error of output units."""
         return numpy.mean(self._get_uniterror(*args, **kwargs))
@@ -544,8 +544,8 @@ class System(nemoa.common.classes.Metadata):
         category = ('system', 'evaluation'),
         args     = 'all',
         formater = lambda val: '%.1f%%' % (val * 100.),
-        optimum  = 'max'
-    )
+        optimum  = 'max' )
+
     def _get_accuracy(self, *args, **kwargs):
         """Mean data reconstruction accuracy of output units."""
         return numpy.mean(self._get_unitaccuracy(*args, **kwargs))
@@ -555,8 +555,8 @@ class System(nemoa.common.classes.Metadata):
         category = ('system', 'evaluation'),
         args     = 'all',
         formater = lambda val: '%.1f%%' % (val * 100.),
-        optimum  = 'max'
-    )
+        optimum  = 'max' )
+
     def _get_precision(self, *args, **kwargs):
         """Mean data reconstruction precision of output units."""
         return numpy.mean(self._get_unitprecision(*args, **kwargs))
@@ -567,8 +567,8 @@ class System(nemoa.common.classes.Metadata):
         args     = 'input',
         retfmt   = 'scalar',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'diagram'
-    )
+        plot     = 'diagram' )
+
     def _get_units_mean(self, data, mapping = None, block = None):
         """Mean values of reconstructed target units.
 
@@ -605,8 +605,8 @@ class System(nemoa.common.classes.Metadata):
         args     = 'input',
         retfmt   = 'scalar',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'diagram'
-    )
+        plot     = 'diagram' )
+
     def _get_units_variance(self, data, mapping = None, block = None):
         """Return variance of reconstructed unit values.
 
@@ -638,8 +638,8 @@ class System(nemoa.common.classes.Metadata):
         args     = 'input',
         retfmt   = 'vector',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'histogram'
-    )
+        plot     = 'histogram' )
+
     def _get_unitexpect(self, data, mapping = None, block = None):
         """Expectation values of target units.
 
@@ -665,12 +665,12 @@ class System(nemoa.common.classes.Metadata):
             for i in block: in_data[:,i] = numpy.mean(in_data[:,i])
         if len(mapping) == 2: return self._units[mapping[1]].expect(
             in_data, self._units[mapping[0]].params)
-        outData = numpy.copy(in_data)
+        out_data = numpy.copy(in_data)
         for id in range(len(mapping) - 1):
-            outData = self._units[mapping[id + 1]].expect(
-                outData, self._units[mapping[id]].params)
+            out_data = self._units[mapping[id + 1]].expect(
+                out_data, self._units[mapping[id]].params)
 
-        return outData
+        return out_data
 
 
     @nemoa.common.decorators.algorithm(
@@ -679,8 +679,8 @@ class System(nemoa.common.classes.Metadata):
         args     = 'input',
         retfmt   = 'vector',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'histogram'
-    )
+        plot     = 'histogram' )
+
     def _get_unitvalues(self, data, mapping = None, block = None,
         expect_last = False):
         """Unit maximum likelihood values of target units.
@@ -737,8 +737,8 @@ class System(nemoa.common.classes.Metadata):
         args     = 'input',
         retfmt   = 'vector',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'histogram'
-    )
+        plot     = 'histogram' )
+
     def _get_unitsamples(self, data, mapping = None,
         block = None, expect_last = False):
         """Sampled unit values of target units.
@@ -871,8 +871,8 @@ class System(nemoa.common.classes.Metadata):
         args     = 'all',
         retfmt   = 'scalar',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'diagram'
-    )
+        plot     = 'diagram' )
+
     def _get_unitaccuracy(self, data, norm = 'MSE', **kwargs):
         """Unit reconstruction accuracy.
 
@@ -906,8 +906,8 @@ class System(nemoa.common.classes.Metadata):
         args     = 'all',
         retfmt   = 'scalar',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'diagram'
-    )
+        plot     = 'diagram' )
+
     def _get_unitprecision(self, data, norm = 'SD', **kwargs):
         """Unit reconstruction precision.
 
@@ -944,8 +944,8 @@ class System(nemoa.common.classes.Metadata):
         args     = 'all',
         retfmt   = 'scalar',
         plot     = 'heatmap',
-        formater = lambda val: '%.3f' % (val)
-    )
+        formater = lambda val: '%.3f' % (val) )
+
     def _get_correlation(self, data, mapping = None, **kwargs):
         """Data correlation between source and target units.
 
@@ -967,21 +967,21 @@ class System(nemoa.common.classes.Metadata):
         # 2do: allow correlation between hidden units
 
         # calculate symmetric correlation matrix
-        corr = numpy.corrcoef(numpy.hstack(data).T)
+        C = numpy.corrcoef(numpy.hstack(data).T)
 
         # create asymmetric output matrix
         mapping = self._get_mapping()
-        srcunits = self._get_units(layer = mapping[0])
-        tgtunits = self._get_units(layer = mapping[-1])
-        units = srcunits + tgtunits
-        relation = numpy.zeros(shape = (len(srcunits), len(tgtunits)))
-        for i, u1 in enumerate(srcunits):
-            k = units.index(u1)
-            for j, u2 in enumerate(tgtunits):
-                l = units.index(u2)
-                relation[i, j] = corr[k, l]
+        src = self._get_units(layer = mapping[0])
+        tgt = self._get_units(layer = mapping[-1])
+        units = src + tgt
+        R = numpy.zeros(shape = (len(src), len(tgt)))
+        for i, u in enumerate(src):
+            k = units.index(u)
+            for j, v in enumerate(tgt):
+                l = units.index(v)
+                R[i, j] = C[k, l]
 
-        return relation
+        return R
 
     @nemoa.common.decorators.algorithm(
         name     = 'weightsumproduct',
@@ -992,8 +992,8 @@ class System(nemoa.common.classes.Metadata):
         args     = 'all',
         retfmt   = 'scalar',
         plot     = 'heatmap',
-        formater = lambda val: '%.3f' % (val)
-    )
+        formater = lambda val: '%.3f' % (val) )
+
     def _get_weightsumproduct(self, data, mapping = None, **kwargs):
         """Weight sum product from source to target units.
 
@@ -1212,23 +1212,22 @@ class System(nemoa.common.classes.Metadata):
         for inid, inunit in enumerate(inputs):
             try:
                 i_curve = numpy.take(numpy.sort(sdata[:, inid]), r_ids)
-            except: # 2Do
-                print(('ok1', sdata))
-                print(('ok2', sdata[:, inid]))
-                print(('ok3', numpy.sort(sdata[:, inid])))
-                print(r_ids)
-                print((numpy.take(numpy.sort(sdata[:, inid]), r_ids)))
-
+            except: # 2Do:
+                return nemoa.log('error',
+                    "could not evaluate induction: unknown error")
             i_curve = amplify * i_curve
 
             # create output matrix for each output
             C = {outunit: numpy.zeros((sdata.shape[0], points)) \
                 for outunit in outputs}
+
             for p_id in range(points):
                 i_data  = sdata.copy()
                 i_data[:, inid] = i_curve[p_id]
+
                 o_expect = self._evaluate_units((i_data, data[1]),
-                    func = 'expect', mapping = mapping)
+                    func = 'units_expect', mapping = mapping)
+
                 for outunit in outputs:
                     C[outunit][:, p_id] = o_expect[outunit]
 
@@ -1655,7 +1654,7 @@ class System(nemoa.common.classes.Metadata):
         # evaluate system
         return algorithm['reference'](*evalargs, **evalkwargs)
 
-    def _evaluate_units(self, data, func = 'accuracy', units = None,
+    def _evaluate_units(self, data, func = 'units_accuracy', units = None,
         **kwargs):
         """Evaluation of target units.
 
@@ -1677,24 +1676,22 @@ class System(nemoa.common.classes.Metadata):
 
         # check if data is valid
         if not isinstance(data, tuple): return nemoa.log('error',
-            'could not evaluate system units: invalid data.')
+            "could not evaluate system units: invalid data.")
 
         # get evaluation algorithms
         algorithms = self._get_algorithms(
             category = ('system', 'units', 'evaluation'))
         if not func in list(algorithms.keys()): return nemoa.log('error',
-            """could not evaluate system units:
-            unknown algorithm name '%s'.""" % (func))
+            "could not evaluate system units: "
+            "unknown algorithm name '%s'." % func)
+
         algorithm = algorithms[func]
 
-        # prepare (non keyword) arguments for evaluation
-        if algorithm['args'] == 'none': evalargs = []
-        elif algorithm['args'] == 'input': evalargs = [data[0]]
-        elif algorithm['args'] == 'output': evalargs = [data[1]]
-        elif algorithm['args'] == 'all': evalargs = [data]
-
-        # prepare keyword arguments for evaluation
+        # prepare arguments for evaluation
+        evalargs = {'input': [data[0]], 'output': [data[1]],
+            'none': [], 'all': [data]}[algorithm.get('args', 'none')]
         evalkwargs = kwargs.copy()
+
         if isinstance(units, str):
             evalkwargs['mapping'] = self._get_mapping(tgt = units)
         elif not 'mapping' in list(evalkwargs.keys()) \
@@ -1711,8 +1708,10 @@ class System(nemoa.common.classes.Metadata):
             values[:, uid] for uid, unit in enumerate(labels)}
         elif algorithm['retfmt'] == 'scalar': return {unit:
             values[uid] for uid, unit in enumerate(labels)}
-        return nemoa.log('warning', """could not evaluate system units:
-            unknown return format '%s'.""" % (algorithm['retfmt']))
+
+        return nemoa.log('warning',
+            "could not evaluate system units: "
+            "unknown return format '%s'." % algorithm['retfmt'])
 
     def _evaluate_links(self, data, func = 'energy', **kwargs):
         """Evaluate system links respective to data.

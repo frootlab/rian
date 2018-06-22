@@ -128,10 +128,16 @@ class Graph(nemoa.common.plot.Graph):
             'cutoff': 0.5,
             'node_caption': 'accuracy' })
 
-        # get units and edges
+        # get observables from model
         units = self._config.get('units')
-        edges = [(i, o) for i in units[0] for o in units[1]
-            if not o == i]
+        if not isinstance(units, tuple) \
+            or not isinstance(units[0], list) \
+            or not isinstance(units[1], list):
+            mapping = model.system.mapping
+            src = model.system.get('units', layer = mapping[0])
+            tgt = model.system.get('units', layer = mapping[-1])
+            units = (src, tgt)
+        edges = [(u, v) for u in units[0] for v in units[1] if v != u]
 
         # calculate edge weights from 'weight' relation
         relarg = self._config.get('relation', '')
@@ -156,17 +162,16 @@ class Graph(nemoa.common.plot.Graph):
             preprocessing = self._config['preprocessing'],
             measure = self._config['measure'],
             statistics = self._config['statistics'])
-        if not isinstance(F, dict):
-            return nemoa.log('error',
-                "could not create relation graph: "
-                "invalid filter relation '%s'!" % self._config['filter'])
+        if not isinstance(F, dict): return nemoa.log('error',
+            "could not create relation graph: "
+            "invalid filter relation '%s'!" % self._config['filter'])
 
         # create filter mask from filter relation (parameter: 'cutoff')
         # and update list of edges
         bound = self._config['cutoff'] * F['std']
         edges = [edge for edge in edges if not -bound < F[edge] < bound]
         if len(edges) == 0: return nemoa.log('warning',
-            "could not create relation graph:"
+            "could not create relation graph: "
             "no relation passed threshold (%.2f)!" % bound)
 
         # calculate edge signs from 'sign' relation
@@ -206,7 +211,7 @@ class Graph(nemoa.common.plot.Graph):
             normalize = self._config['edge_normalize']
         else: return nemoa.log('error',
             "could not create relation graph: "
-            "invalid value for parameter 'edge_normalize'")
+            "invalid value for parameter 'edge_normalize'!")
 
         # add nodes with attributes
         nodes = units[0] + units[1]
