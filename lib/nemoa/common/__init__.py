@@ -5,6 +5,7 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa.common.classes
+import nemoa.common.compress
 import nemoa.common.decorators
 import nemoa.common.csvfile
 import nemoa.common.dict
