@@ -77,6 +77,7 @@ class GetchUnix:
             target = stream, args = (self.queue, ))
         self.queue['handler'].daemon = True
         self.queue['handler'].start()
+
         return True
 
     def stop(self):
@@ -88,6 +89,7 @@ class GetchUnix:
         self.queue['runsignal'] = False
 
         del self.__dict__['queue']
+
         return True
 
 class GetchWindows:
@@ -98,7 +100,7 @@ class GetchWindows:
 
     def get(self):
         import msvcrt
-        if msvcrt.kbhit(): return msvcrt.getch()
+        if msvcrt.kbhit(): return str(msvcrt.getch(), 'utf-8')
         return ''
 
     def start(self):

@@ -528,13 +528,13 @@ class System(nemoa.common.classes.Metadata):
         return nemoa.log('error', """could not get parameters:
             unknown key '%s'.""" % key)
 
-    @nemoa.common.decorators.algorithm(
+    @nemoa.common.decorators.objective(
         name     = 'error',
         category = ('system', 'evaluation'),
         args     = 'all',
         formater = lambda val: '%.3f' % (val),
-        optimum  = 'min' )
-
+        optimum  = 'min'
+    )
     def _get_error(self, *args, **kwargs):
         """Mean data reconstruction error of output units."""
         return numpy.mean(self._get_uniterror(*args, **kwargs))

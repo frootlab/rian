@@ -22,7 +22,7 @@ from nemoa.model.evaluation.base import Evaluation
 
 class ANN(Evaluation):
 
-    @nemoa.common.decorators.algorithm(
+    @nemoa.common.decorators.objective(
         name     = 'error',
         title    = 'Average Reconstruction Error',
         category = 'model',
@@ -34,7 +34,7 @@ class ANN(Evaluation):
         """Mean data reconstruction error of output units."""
         return numpy.mean(self.uniterror(*args, **kwargs))
 
-    @nemoa.common.decorators.algorithm(
+    @nemoa.common.decorators.objective(
         name     = 'accuracy',
         title    = 'Average Reconstruction Accuracy',
         category = 'model',
@@ -46,7 +46,7 @@ class ANN(Evaluation):
         """Mean data reconstruction accuracy of output units."""
         return numpy.mean(self.unitaccuracy(*args, **kwargs))
 
-    @nemoa.common.decorators.algorithm(
+    @nemoa.common.decorators.objective(
         name     = 'precision',
         title    = 'Average Reconstruction Pricision',
         category = 'model',

@@ -25,7 +25,8 @@ def new(model, *args, **kwargs):
         module = importlib.import_module(mname)
         if not hasattr(module, cname): raise ImportError()
     except ImportError:
-        return nemoa.log('error', """could not evaluate model:
-            unknown system type '%s'.""" % stype)
+        return nemoa.log('error',
+            "could not evaluate model: "
+            "unknown system type '%s'." % stype)
 
     return getattr(module, cname)(model)

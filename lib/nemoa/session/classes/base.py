@@ -84,11 +84,6 @@ class Session:
                     path = self._get_path_expand(val)
                     if path: self._config['current']['path'][key] = path
 
-        # # import site resources
-        # if site:
-        #     for workspace in self._get_list_workspaces(base = 'site'):
-        #         self._set_workspace_scandir(workspace, base = 'site')
-
     def create(self, key = None, *args, **kwargs):
         """Open object in current session."""
         if key == 'model':
@@ -462,7 +457,7 @@ class Session:
     def log(self, key = None, *args, **kwargs):
         """Log message to file and console output."""
 
-        if not key: return True
+        if key is None: return True
 
         import inspect
         import logging
@@ -651,13 +646,16 @@ class Session:
         """Set current key buffer mode."""
 
         curmode = self._get_shell_buffmode()
+
         if mode == curmode: return True
+
         if curmode == 'line' and mode == 'key':
             if not self._buffer.get('inkey', None):
-                import nemoa.session.commons.console as console
+                import nemoa.common.console as console
                 self._buffer['inkey'] = console.Getch()
             self._buffer['inkey'].start()
             return True
+
         if curmode == 'key' and mode == 'line':
             self._buffer['inkey'].stop()
             del self._buffer['inkey']

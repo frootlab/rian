@@ -215,9 +215,9 @@ class Dataset(nemoa.common.classes.Metadata):
                 columns.append(colid)
                 mapping[colid] = column
 
-            if not found:
-                return nemoa.log('error', """no node from network layer
-                    '%s' could be found in dataset tables.""" % (layer))
+            if not found: return nemoa.log('error',
+                "no node from network layer '%s' "
+                "could be found in dataset tables." % layer)
 
         self._set_columns(columns, mapping)
 
@@ -273,7 +273,7 @@ class Dataset(nemoa.common.classes.Metadata):
 
         return retval
 
-    def _initialize_stratify(self, stratification = 'hierarchical',
+    def _initialize_stratify(self, stratification: str = 'hierarchical',
         *args, **kwargs):
         """Update sampling fractions for stratified sampling.
 
@@ -304,7 +304,7 @@ class Dataset(nemoa.common.classes.Metadata):
         """
 
         nemoa.log("update sampling fractions using stratification '%s'."
-            % (stratification))
+            % stratification)
 
         # hierarchical sampling fractions
         if stratification.lower() == 'hierarchical':
@@ -328,11 +328,11 @@ class Dataset(nemoa.common.classes.Metadata):
                 self._config['tables'][table]['fraction'] = fraction
             return True
 
-        return nemoa.log('error', """could not update sampling
-            fractions: stratification '%s' is not supported.""" %
-            (stratification))
+        return nemoa.log('error',
+            "could not update sampling fractions: "
+            "stratification '%s' is not supported." % stratification)
 
-    def _initialize_normalize(self, distribution = 'gauss',
+    def _initialize_normalize(self, distribution: str = 'gauss',
         *args, **kwargs):
         """Normalize data to a given distribution.
 
@@ -358,8 +358,8 @@ class Dataset(nemoa.common.classes.Metadata):
 
         return False
 
-    def _initialize_normalize_gauss(self, mu = 0., sigma = 1.,
-        size = 100000):
+    def _initialize_normalize_gauss(self, mu: float = 0.0, sigma: float = 1.0,
+        size: int = 100000):
         """Gauss normalization of tables.
 
         Args:
@@ -395,7 +395,8 @@ class Dataset(nemoa.common.classes.Metadata):
 
         return True
 
-    def _initialize_normalize_bernoulli(self, p = 0.5, size = 100000):
+    def _initialize_normalize_bernoulli(self, p: float = 0.5,
+        size: int = 100000):
         """Bernoulli normalization of tables.
 
         Args:
@@ -436,7 +437,7 @@ class Dataset(nemoa.common.classes.Metadata):
 
         return True
 
-    def _initialize_transform(self, transformation = 'system',
+    def _initialize_transform(self, transformation: str = 'system',
         *args, **kwargs):
         """Transform data in tables.
 
@@ -499,17 +500,18 @@ class Dataset(nemoa.common.classes.Metadata):
 
         return nemoa.log('error',
             "could not transform data: "
-            "unsupported transformation '%s'." % (transformation))
+            "unsupported transformation '%s'." % transformation)
 
     def _initialize_transform_system(self, system = None,
-        mapping = None, func = 'expect'):
+        mapping = None, func: str = 'expect'):
         """ """
 
         if not nemoa.common.type.issystem(system):
-            return nemoa.log('error', """could not transform data
-                using system: invalid system.""")
+            return nemoa.log('error',
+                "could not transform data by model: "
+                "invalid model.")
 
-        nemoa.log("transform data using system '%s'." % (system.name))
+        nemoa.log("transform data using model '%s'." % system.name)
 
         if mapping == None: mapping = system.mapping
 
@@ -523,6 +525,7 @@ class Dataset(nemoa.common.classes.Metadata):
             # get data, mapping and transformation function
             data = self._tables[table]
             data = self._get_table(table, cols = source_columns)
+
             # 2Do: do not create copy of data but view!
             data_array = data.copy().view('<f8').reshape(data.size,
                 len(source_columns))
@@ -563,15 +566,14 @@ class Dataset(nemoa.common.classes.Metadata):
 
         return self._set_columns(target_columns, colmapping)
 
-    def get(self, key = 'name', *args, **kwargs):
+    def get(self, key: str = 'name', *args, **kwargs):
         """Get meta information and content."""
 
         # meta information
         if key in self._attr_meta: return self._get_meta(key)
 
         # algorithms
-        if key == 'algorithm':
-            return self._get_algorithm(*args, **kwargs)
+        if key == 'algorithm': return self._get_algorithm(*args, **kwargs)
         if key == 'algorithms': return self._get_algorithms(
             attribute = 'about', *args, **kwargs)
 

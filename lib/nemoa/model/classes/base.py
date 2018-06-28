@@ -141,6 +141,9 @@ class Model(nemoa.common.classes.Metadata):
         if key == 'accuracy': return self.evaluate('system', 'accuracy')
         if key == 'precision': return self.evaluate('system', 'precision')
 
+        # data access
+        if key == 'sample': return self._get_sample(*args, **kwargs)
+
         # direct access
         if key == 'copy': return self._get_copy(*args, **kwargs)
         if key == 'config': return self._get_config(*args, **kwargs)
@@ -148,7 +151,7 @@ class Model(nemoa.common.classes.Metadata):
         if key == 'network': return self.network.get(*args, **kwargs)
         if key == 'system': return self.system.get(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key) or None
+        return nemoa.log('warning', "unknown key '%s'." % key) or None
 
     def _get_algorithms(self, *args, **kwargs):
         """Get algorithms provided by model."""
@@ -172,7 +175,7 @@ class Model(nemoa.common.classes.Metadata):
         if len(found) == 0: return None
         if len(found) > 1: return nemoa.log('error',
             "algorithm with name '%s' is not unique: "
-            "use keyword argument 'category'." % (args[0]))
+            "use keyword argument 'category'." % args[0])
 
         return found[0]
 
@@ -191,8 +194,9 @@ class Model(nemoa.common.classes.Metadata):
         if key == 'network': return self._get_network(*args, **kwargs)
         if key == 'system': return self._get_system(*args, **kwargs)
 
-        return nemoa.log('error', """could not get copy of
-            configuration: unknown section '%s'.""" % key)
+        return nemoa.log('error',
+            "could not get copy of configuration: "
+            "unknown section '%s'." % key)
 
     def _get_config(self, key = None, *args, **kwargs):
         """Get configuration or configuration value."""
@@ -213,7 +217,8 @@ class Model(nemoa.common.classes.Metadata):
         if type == 'dataset': return self.dataset.copy()
         if type == 'dict': return self.dataset.get('copy')
 
-        return nemoa.log("warning', 'unknown type '%s'." % type) or None
+        return nemoa.log("warning",
+            "could not get dataset: unknown type '%s'." % type) or None
 
     def _get_network(self, type = 'dict'):
         """ """
@@ -221,15 +226,43 @@ class Model(nemoa.common.classes.Metadata):
         if type == 'network': return self.network.copy()
         if type == 'dict': return self.network.get('copy')
 
-        return nemoa.log("warning', 'unknown type '%s'." % type) or None
+        return nemoa.log("warning",
+            "could not get network: unknown type '%s'." % type) or None
 
-    def _get_system(self, type = 'dict'):
+    def _get_system(self, type: str = 'dict'):
         """ """
 
         if type == 'system': return self.system.copy()
         if type == 'dict': return self.system.get('copy')
 
-        return nemoa.log("warning', 'unknown type '%s'." % type) or None
+        return nemoa.log("warning",
+            "could not get system: unknown type '%s'." % type) or None
+
+    def _get_sample(self, *args, **kwargs):
+        """ """
+
+        # fetch data from dataset using parameters:
+        # 'preprocessing', 'statistics'
+        if 'preprocessing' in list(kwargs.keys()):
+            preprocessing = kwargs['preprocessing']
+            del kwargs['preprocessing']
+        else: preprocessing = {}
+        if not isinstance(preprocessing, dict):
+            preprocessing = {}
+        if preprocessing:
+            dataset_backup = self.dataset.get('copy')
+            self.dataset.preprocess(preprocessing)
+        if 'statistics' in list(kwargs.keys()):
+            statistics = kwargs['statistics']
+            del kwargs['statistics']
+        else: statistics = 0
+        cols = self.system.get('layers', visible = True)
+        data = self.dataset.get('data',
+            size = statistics, cols = tuple(cols))
+        if preprocessing:
+            self.dataset.set('copy', dataset_backup)
+
+        return data
 
     def set(self, key = None, *args, **kwargs):
         """Set meta information and parameters of model."""
@@ -246,7 +279,7 @@ class Model(nemoa.common.classes.Metadata):
         if key == 'copy': return self._set_copy(*args, **kwargs)
         if key == 'config': return self._set_config(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key) or None
+        return nemoa.log('warning', "unknown key '%s'." % key) or None
 
     def _set_copy(self, config = None, dataset = None, network = None,
         system = None):
@@ -372,6 +405,14 @@ class Model(nemoa.common.classes.Metadata):
     def evaluate(self, key = None, *args, **kwargs):
         """Evaluate model."""
 
+        # 2do: evaluate('correlation', *args, **kwargs)
+        # 1. get algorithm 'correlation' as func
+        # 2a. for datasets -> func(dataset, *args, **kwargs)
+        # 2b. for networks -> func(network, *args, **kwargs)
+        # 2c. for models ->  func(model, *args, **kwargs)
+
+
+
         if not key: key = 'system'
 
         # evaluate dataset
@@ -380,36 +421,21 @@ class Model(nemoa.common.classes.Metadata):
         if key == 'network':
             return self.network.evaluate(*args, **kwargs)
         if key == 'system':
+
             # get data for system evaluation
             if 'data' in list(kwargs.keys()):
                 # get data from keyword argument
-                data = kwargs['data']
-                del kwargs['data']
+                data = kwargs.pop('data')
             else:
-                # fetch data from dataset using parameters:
-                # 'preprocessing', 'statistics'
-                if 'preprocessing' in list(kwargs.keys()):
-                    preprocessing = kwargs['preprocessing']
-                    del kwargs['preprocessing']
-                else: preprocessing = {}
-                if not isinstance(preprocessing, dict):
-                    preprocessing = {}
-                if preprocessing:
-                    dataset_backup = self.dataset.get('copy')
-                    self.dataset.preprocess(preprocessing)
-                if 'statistics' in list(kwargs.keys()):
-                    statistics = kwargs['statistics']
-                    del kwargs['statistics']
-                else: statistics = 0
-                cols = self.system.get('layers', visible = True)
-                data = self.dataset.get('data',
-                    size = statistics, cols = tuple(cols))
-                if preprocessing:
-                    self.dataset.set('copy', dataset_backup)
+                data = self._get_sample(*args, **kwargs)
+                kwargs.pop('preprocessing', None)
+                kwargs.pop('statistics', None)
 
             return self.system.evaluate(data, *args, **kwargs)
 
-        return nemoa.log('warning', 'could not evaluate model')
+        return nemoa.log('warning',
+            "could not evaluate model: "
+            "evaluation key '%s' is not supported." % key)
 
     def save(self, *args, **kwargs):
         """Export model to file."""

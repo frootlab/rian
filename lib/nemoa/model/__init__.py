@@ -4,6 +4,7 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+import nemoa.model.analysis
 import nemoa.model.builder
 import nemoa.model.classes
 import nemoa.model.evaluation
@@ -26,6 +27,10 @@ def create(*args, **kwargs):
 def evaluate(*args, **kwargs):
     """Evaluate model instance."""
     return nemoa.model.evaluation.evaluate(*args, **kwargs)
+
+def evaluate_new(*args, **kwargs):
+    """Evaluate model instance."""
+    return nemoa.model.analysis.evaluate(*args, **kwargs)
 
 def load(*args, **kwargs):
     """Import model dictionary from file."""
