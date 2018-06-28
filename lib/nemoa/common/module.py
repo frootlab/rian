@@ -4,51 +4,186 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import inspect
+import types
 
-def getfunctions(modulename, prefix = '', removeprefix = True,
-    attribute = None):
-    """ """
+def getcurname(traceback: int = 1):
+    """Get name of module, which calles this function."""
 
-    functions = dict(inspect.getmembers(modulename, inspect.isfunction))
-    if prefix:
-        for key in list(functions.keys()):
-            if key.startswith(prefix) and not key == prefix:
-                if removeprefix:
-                    functions[key[len(prefix):]] = functions[key]
-                    del functions[key]
-                    continue
-            del functions[key]
+    import inspect
 
-    if attribute is None:
-        for key in list(functions.keys()):
-            if isinstance(functions[key].__doc__, str):
-                about = functions[key].__doc__.split('\n', 1)[0].strip(' .')
-            else: about = ''
-            functions[key] = {
-                'name': key, 'about': about,
-                'reference': functions[key]}
-        return functions
+    caller = inspect.currentframe()
 
-    if attribute == 'reference':
-        return functions
+    for i in range(traceback):
+        if caller is None: break
+        caller = caller.f_back
 
-    if attribute == 'about':
-        for key in list(functions.keys()):
-            if isinstance(functions[key].__doc__, str):
-                about = functions[key].__doc__.split('\n', 1)[0].strip(' .')
-            else: about = ''
-            functions[key] = about
-        return functions
+    if caller is None: return ''
+    mname = caller.f_globals['__name__']
 
-    return False
+    return mname
 
-def getmethods(instance, attribute = None, grouping = None,
-    prefix = '', removeprefix = True, renamekey = None):
-    """Get the methods of an instance.
+def getsubmodules(minst: types.ModuleType = None, recursive: bool = False):
+    """Get list with submodule names.
+
+    Kwargs:
+        minst (ModuleType, optional): Module instance to search for submodules
+            default: Use current module, which called this function
+        recursive (bool, optional): Search recursively within submodules
+            default: Do not search recursively
+
+    Returns:
+        List with submodule names.
+
+    """
+
+    if minst is None: minst = getmodule(getcurname(2))
+    elif not isinstance(minst, types.ModuleType): raise TypeError(
+        'First argument is required to be of ModuleType')
+
+    # check if module is a package or a file
+    if not hasattr(minst, '__path__'): return []
+
+    import pkgutil
+
+    mpref = minst.__name__ + '.'
+    mpath = minst.__path__
+
+    mlist = []
+    for path, name, ispkg in pkgutil.iter_modules(mpath):
+        mlist += [mpref + name]
+        if not ispkg or not recursive: continue
+        mlist += getsubmodules(getmodule(mpref + name), recursive = True)
+
+    return mlist
+
+def getmodule(mname: str):
+    """Get module instance for a given qualified module name."""
+
+    import importlib
+
+    minst = importlib.import_module(mname)
+
+    return minst
+
+def getfunctions(minst: types.ModuleType = None, details: bool = False,
+    **kwargs):
+    """Return list of function names within given module instance."""
+
+    if minst is None: minst = getmodule(getcurname(2))
+    elif not isinstance(minst, types.ModuleType): raise TypeError(
+        "First argument is required to be of ModuleType")
+
+    import inspect
+
+    funcs = inspect.getmembers(minst, inspect.isfunction)
+    pref = minst.__name__ + '.'
+
+    if not details and len(kwargs) == 0:
+        return [pref + name for name, ref in funcs]
+
+    # create dictionary with function attributes
+    if len(funcs) == 0: return {}
+    fdetails = {}
+    for name, ref in funcs:
+        # set default attributes
+        fdict = {'name': name, 'about': getfuncdesc(ref), 'reference': ref }
+        # update attributes
+        for key, val in ref.__dict__.items():
+            fdict[key] = val
+        # filter entry by attributes
+        passed = True
+        for key, val in kwargs.items():
+            if key in fdict.keys() and fdict[key] == val: continue
+            passed = False
+            break
+        if passed: fdetails[pref + name] = fdict
+
+    if details: return fdetails
+
+    return fdetails.keys()
+
+def searchfunctions(minst: types.ModuleType = None, details: bool = False,
+    recursive = True, **kwargs):
+    """Recursively search for functions within submodules."""
+
+    if minst is None: minst = getmodule(getcurname(2))
+    elif not isinstance(minst, types.ModuleType): raise TypeError(
+        "First argument is required to be of ModuleType")
+
+    mnames = getsubmodules(minst, recursive = recursive)
+
+    # create list with qualified function names
+    if not details:
+        funcs = []
+        for mname in mnames:
+            funcs += getfunctions(getmodule(mname), details = False, **kwargs)
+        return funcs
+
+    # create dictionary with function attributes
+    funcs = {}
+    for mname in mnames:
+        fdict = getfunctions(getmodule(mname), details = True, **kwargs)
+        for key, val in fdict.items():
+            funcs[key] = val
+
+    return funcs
+
+def getfunction(fname: str):
+    """Return function instance for given full function name."""
+
+    minst = getmodule('.'.join(fname.split('.')[:-1]))
+    finst = getattr(minst, fname.split('.')[-1])
+
+    return finst
+
+def getfuncdesc(finst: types.FunctionType):
+    """Get short description of a given function instance."""
+
+    if finst.__doc__ is None: return ""
+    return finst.__doc__.split('\n', 1)[0].strip(' .')
+
+def getfunckwargs(finst: types.FunctionType, d: dict = None):
+    """Get the keyword arguments of a given function instance."""
+
+    if not isinstance(finst, types.FunctionType): raise TypeError(
+        'First argument is required to be an instance of FunctionType')
+
+    import inspect
+
+    all = inspect.signature(finst).parameters
+    l = [key for key, val in all.items() if '=' in str(val)]
+
+    if d is None: return l
+
+    kwargs = {key: d.get(key) for key in l if key in d}
+
+    return kwargs
+
+def getfuncdoc(finst: types.FunctionType):
+    """Get the keyword arguments of a given function instance."""
+
+    if not isinstance(finst, types.FunctionType): raise TypeError(
+        'First argument is required to be an instance of FunctionType')
+
+    import inspect
+
+    all = inspect.signature(finst).parameters
+    l = [key for key, val in all.items() if '=' in str(val)]
+
+    if d is None: return l
+
+    kwargs = {key: d.get(key) for key in l if key in d}
+
+    return kwargs
+
+def getmethods(cinst: type, attribute = None, grouping = None,
+    prefix: str = '', removeprefix: bool = True, renamekey = None):
+    """Get the methods of a given class instance.
 
     Args:
-        instance: instance of arbitrary class
+        cinst: instance of class
+
+    Kwargs:
         prefix (string): only methods with given prefix are returned.
         removeprefix (bool): remove prefix in dictionary keys if True.
         renamekey (string):
@@ -61,8 +196,10 @@ def getmethods(instance, attribute = None, grouping = None,
 
     """
 
+    import inspect
+
     # get references from module inspection and filter prefix
-    methods = dict(inspect.getmembers(instance, inspect.ismethod))
+    methods = dict(inspect.getmembers(cinst, inspect.ismethod))
     if prefix:
         for name in list(methods.keys()):
             if not name.startswith(prefix) or name == prefix:
@@ -115,14 +252,3 @@ def getmethods(instance, attribute = None, grouping = None,
         methods = renamend
 
     return methods
-
-def get_func_kwargs(func, d: dict = None):
-    """Get the keyword arguments of a function."""
-
-    all = inspect.signature(func).parameters
-    l = [key for key, val in all.items() if '=' in str(val)]
-
-    if d is None: return l
-
-    kwargs = {key: d.get(key) for key in l if key in d}
-    return kwargs

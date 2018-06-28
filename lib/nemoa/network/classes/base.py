@@ -336,8 +336,11 @@ class Network(nemoa.common.classes.Metadata):
 
     def _get_algorithms(self, category = None, attribute = None):
         """Get algorithms provided by network."""
-        return nemoa.common.module.getfunctions(
-            networkx.algorithms, prefix = '', attribute = attribute)
+
+        from nemoa.common.module import getfunctions
+        funcs = getfunctions(networkx.algorithms, details = True)
+        if attribute is None: return funcs
+        return {key: val.get(attribute, None) for key, val in funcs.items()}
 
     def _get_algorithm(self, algorithm = None, *args, **kwargs):
         """Get algorithm."""
