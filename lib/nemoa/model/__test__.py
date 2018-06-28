@@ -6,24 +6,15 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-class TestSuite(nemoa.common.unittest.TestSuite):
+from nemoa.common.unittest import TestSuite as NmTestSuite
+
+class TestSuite(NmTestSuite):
 
     def test_model_import(self):
         with self.subTest(filetype = 'npz'):
             model = nemoa.model.open('test', workspace = 'testsuite')
             test = nemoa.common.type.ismodel(model)
             self.assertTrue(test)
-
-    # def test_model_analysis(self):
-    #     with self.subTest(step = 'get algorithms'):
-    #         algos = nemoa.model.analysis.algorithms()
-    #         test = isinstance(algos, dict)
-    #         self.assertTrue(test)
-    #
-    #     with self.subTest(step = 'import model'):
-    #         model = nemoa.model.open('test', workspace = 'testsuite')
-    #         test = nemoa.common.type.ismodel(model)
-    #         self.assertTrue(test)
 
     def test_model_ann(self):
         with self.subTest(step = 'create shallow ann'):

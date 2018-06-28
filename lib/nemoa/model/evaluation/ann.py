@@ -290,8 +290,10 @@ class ANN(Evaluation):
 
         """
 
+        from nemoa.common.ndarray import meannorm
+
         res = self.unitresiduals(data, **kwargs)
-        error = nemoa.common.ndarray.meannorm(res, norm = norm)
+        error = meannorm(res, norm = norm)
 
         return error
 
@@ -324,9 +326,11 @@ class ANN(Evaluation):
 
         """
 
+        from nemoa.common.ndarray import meannorm
+
         res = self.unitresiduals(data, **kwargs)
-        normres = nemoa.common.ndarray.meannorm(res, norm = norm)
-        normdat = nemoa.common.ndarray.meannorm(data[1], norm = norm)
+        normres = meannorm(res, norm = norm)
+        normdat = meannorm(data[1], norm = norm)
 
         return 1. - normres / normdat
 
@@ -359,9 +363,11 @@ class ANN(Evaluation):
 
         """
 
+        from nemoa.common.ndarray import devnorm
+
         res = self.unitresiduals(data, **kwargs)
-        devres = nemoa.common.ndarray.devnorm(res, norm = norm)
-        devdat = nemoa.common.ndarray.devnorm(data[1], norm = norm)
+        devres = devnorm(res, norm = norm)
+        devdat = devnorm(data[1], norm = norm)
 
         return 1. - devres / devdat
 

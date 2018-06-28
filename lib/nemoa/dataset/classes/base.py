@@ -7,7 +7,9 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-class Dataset(nemoa.common.classes.Metadata):
+from nemoa.common.classes import Metadata
+
+class Dataset(Metadata):
     """Dataset base class.
 
     Attributes:
@@ -602,8 +604,8 @@ class Dataset(nemoa.common.classes.Metadata):
 
         # get dictionary with all methods
         # with prefix '_get_' and attribute 'name'
-        methods = nemoa.common.module.getmethods(self,
-            prefix = '_get_', attribute = 'name')
+        from nemoa.common.module import get_methods
+        methods = get_methods(self, prefix = '_get_', attribute = 'name')
 
         # filter algorithms by given category
         if not category == None:

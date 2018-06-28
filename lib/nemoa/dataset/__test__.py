@@ -7,7 +7,9 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-class TestSuite(nemoa.common.unittest.TestSuite):
+from nemoa.common.unittest import TestSuite as NmTestSuite
+
+class TestSuite(NmTestSuite):
 
     def test_dataset_import(self):
         with self.subTest(filetype = "csv"):

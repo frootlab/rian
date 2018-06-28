@@ -8,7 +8,9 @@ import nemoa
 import copy
 import os
 
-class Model(nemoa.common.classes.Metadata):
+from nemoa.common.classes import Metadata
+
+class Model(Metadata):
     """Model base class.
 
     Attributes:

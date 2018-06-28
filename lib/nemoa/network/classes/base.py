@@ -9,7 +9,9 @@ import networkx
 import copy
 import importlib
 
-class Network(nemoa.common.classes.Metadata):
+from nemoa.common.classes import Metadata
+
+class Network(Metadata):
     """Network base class.
 
     Attributes:
@@ -337,8 +339,8 @@ class Network(nemoa.common.classes.Metadata):
     def _get_algorithms(self, category = None, attribute = None):
         """Get algorithms provided by network."""
 
-        from nemoa.common.module import getfunctions
-        funcs = getfunctions(networkx.algorithms, details = True)
+        from nemoa.common.module import get_functions
+        funcs = get_functions(networkx.algorithms, details = True)
         if attribute is None: return funcs
         return {key: val.get(attribute, None) for key, val in funcs.items()}
 

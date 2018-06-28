@@ -8,7 +8,9 @@ import nemoa
 import numpy
 import copy
 
-class System(nemoa.common.classes.Metadata):
+from nemoa.common.classes import Metadata
+
+class System(Metadata):
     """System base class.
 
     Attributes:
@@ -129,10 +131,11 @@ class System(nemoa.common.classes.Metadata):
     def _get_algorithms(self, category = None, attribute = None, tree = False):
         """Get algorithms provided by system."""
 
+        from nemoa.common.module import get_methods
+
         # get dictionary with all methods
         # with prefix '_get_' and attribute 'name'
-        methods = nemoa.common.module.getmethods(self,
-            prefix = '_get_', attribute = 'name')
+        methods = get_methods(self, prefix = '_get_', attribute = 'name')
 
         # filter algorithms by given category
         if not category == None:
@@ -860,8 +863,10 @@ class System(nemoa.common.classes.Metadata):
 
         """
 
+        from nemoa.common.ndarray import meannorm
+
         res = self._get_unitresiduals(data, **kwargs)
-        error = nemoa.common.ndarray.meannorm(res, norm = norm)
+        error = meannorm(res, norm = norm)
 
         return error
 
@@ -894,9 +899,11 @@ class System(nemoa.common.classes.Metadata):
 
         """
 
+        from nemoa.common.ndarray import meannorm
+
         res = self._get_unitresiduals(data, **kwargs)
-        normres = nemoa.common.ndarray.meannorm(res, norm = norm)
-        normdat = nemoa.common.ndarray.meannorm(data[1], norm = norm)
+        normres = meannorm(res, norm = norm)
+        normdat = meannorm(data[1], norm = norm)
 
         return 1. - normres / normdat
 
@@ -929,9 +936,11 @@ class System(nemoa.common.classes.Metadata):
 
         """
 
+        from nemoa.common.ndarray import devnorm
+
         res = self._get_unitresiduals(data, **kwargs)
-        devres = nemoa.common.ndarray.devnorm(res, norm = norm)
-        devdat = nemoa.common.ndarray.devnorm(data[1], norm = norm)
+        devres = devnorm(res, norm = norm)
+        devdat = devnorm(data[1], norm = norm)
 
         return 1. - devres / devdat
 

@@ -6,7 +6,9 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-class TestSuite(nemoa.common.unittest.TestSuite):
+from nemoa.common.unittest import TestSuite as NmTestSuite
+
+class TestSuite(NmTestSuite):
 
     def test_workspace_open(self):
         nemoa.open('testsuite')

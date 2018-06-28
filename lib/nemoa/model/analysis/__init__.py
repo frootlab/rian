@@ -7,11 +7,11 @@ __license__ = 'GPLv3'
 import nemoa
 
 def algorithms():
-    from nemoa.common.module import getsubmodules, getmodule, getfunctions
+    from nemoa.common.module import get_submodules, get_module, get_functions
     flist = []
-    for mname in getsubmodules():
-        minst = getmodule(mname)
-        flist = getfunctions(minst)
+    for mname in get_submodules():
+        minst = get_module(mname)
+        flist = get_functions(minst)
     print(mlist)
 
     return True

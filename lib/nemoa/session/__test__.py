@@ -6,7 +6,9 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-class TestSuite(nemoa.common.unittest.TestSuite):
+from nemoa.common.unittest import TestSuite as NmTestSuite
+
+class TestSuite(NmTestSuite):
 
     def test_session_about(self):
         with self.subTest(cmd = "nemoa.about()"):

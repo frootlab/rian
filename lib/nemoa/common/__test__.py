@@ -6,43 +6,51 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-class TestSuite(nemoa.common.unittest.TestSuite):
+from nemoa.common.unittest import TestSuite as NmTestSuite
+
+class TestSuite(NmTestSuite):
 
     def test_common_module(self):
         """Test functions in nemoa.common.module."""
 
-        with self.subTest(function = "getcurname"):
-            from nemoa.common.module import getcurname
-            test = getcurname() == 'nemoa.common.__test__'
+        with self.subTest(function = "get_curname"):
+            from nemoa.common.module import get_curname
+            test = get_curname() == 'nemoa.common.__test__'
             self.assertTrue(test)
-        with self.subTest(function = "getsubmodules"):
-            from nemoa.common.module import getsubmodules
-            mlist = getsubmodules(nemoa.common)
+        with self.subTest(function = "get_submodules"):
+            from nemoa.common.module import get_submodules
+            mlist = get_submodules(nemoa.common)
             test = 'nemoa.common.module' in mlist
             self.assertTrue(test)
-        with self.subTest(function = "getmodule"):
-            from nemoa.common.module import getmodule
-            minst = getmodule('nemoa.common.module')
+        with self.subTest(function = "get_module"):
+            from nemoa.common.module import get_module
+            minst = get_module('nemoa.common.module')
             test = hasattr(minst, '__name__') \
                 and minst.__name__ == 'nemoa.common.module'
             self.assertTrue(test)
-        with self.subTest(function = "getfunctions"):
-            from nemoa.common.module import getfunctions
-            funcs = getfunctions(minst)
-            fname = 'nemoa.common.module.getfunctions'
+        with self.subTest(function = "get_functions"):
+            from nemoa.common.module import get_functions
+            funcs = get_functions(minst)
+            fname = 'nemoa.common.module.get_functions'
             test = fname in funcs
-            test &= len(getfunctions(minst, name = 'getfunctions')) == 1
-            test &= len(getfunctions(minst, name = '')) == 0
-            self.assertTrue(test)
-        with self.subTest(function = "getfunction"):
-            from nemoa.common.module import getfunction
-            finst = getfunction(fname)
+            test &= len(get_functions(minst, name = 'get_functions')) == 1
+            test &= len(get_functions(minst, name = '')) == 0
+        with self.subTest(function = "get_function"):
+            from nemoa.common.module import get_function
+            finst = get_function(fname)
             test = type(finst).__name__ == 'function'
             self.assertTrue(test)
-        with self.subTest(function = "getfunckwargs"):
-            from nemoa.common.module import getfunckwargs
-            fargs = getfunckwargs(finst)
+        with self.subTest(function = "get_kwargs"):
+            from nemoa.common.module import get_kwargs
+            fargs = get_kwargs(finst)
             test = 'details' in fargs
+            self.assertTrue(test)
+            self.assertTrue(test)
+        with self.subTest(function = "search_functions"):
+            from nemoa.common.module import search_functions
+            funcs = search_functions(get_module('nemoa.common'),
+                name = 'search_functions')
+            test = len(funcs) == 1
             self.assertTrue(test)
 
     def test_common_dict(self):

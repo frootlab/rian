@@ -38,6 +38,8 @@ def load(path, **kwargs):
 
 def _graph_decode(graph):
 
+    from nemoa.common.compress import loads
+
     # no decoding
     if not 'coding' in graph.graph \
         or not graph.graph['coding'] \
@@ -46,15 +48,15 @@ def _graph_decode(graph):
 
     # base64 decoding
     elif graph.graph['coding'] == 'base64':
-        graph.graph['params'] = nemoa.common.compress.loads(
+        graph.graph['params'] = loads(
             graph.graph['params'], encode = 'base64')
 
         for node in graph.nodes():
-            graph.node[node]['params'] = nemoa.common.compress.loads(
+            graph.node[node]['params'] = loads(
                 graph.node[node]['params'], encode = 'base64')
 
         for edge in graph.edges():
-            graph.edges[edge]['params'] = nemoa.common.compress.loads(
+            graph.edges[edge]['params'] = loads(
                 graph.edges[edge]['params'], encode = 'base64')
 
         graph.graph['coding'] == 'none'

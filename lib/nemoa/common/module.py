@@ -6,7 +6,7 @@ __license__ = 'GPLv3'
 
 import types
 
-def getcurname(traceback: int = 1):
+def get_curname(traceback: int = 1):
     """Get name of module, which calles this function."""
 
     import inspect
@@ -22,7 +22,7 @@ def getcurname(traceback: int = 1):
 
     return mname
 
-def getsubmodules(minst: types.ModuleType = None, recursive: bool = False):
+def get_submodules(minst: types.ModuleType = None, recursive: bool = False):
     """Get list with submodule names.
 
     Kwargs:
@@ -36,7 +36,7 @@ def getsubmodules(minst: types.ModuleType = None, recursive: bool = False):
 
     """
 
-    if minst is None: minst = getmodule(getcurname(2))
+    if minst is None: minst = get_module(get_curname(2))
     elif not isinstance(minst, types.ModuleType): raise TypeError(
         'First argument is required to be of ModuleType')
 
@@ -52,24 +52,27 @@ def getsubmodules(minst: types.ModuleType = None, recursive: bool = False):
     for path, name, ispkg in pkgutil.iter_modules(mpath):
         mlist += [mpref + name]
         if not ispkg or not recursive: continue
-        mlist += getsubmodules(getmodule(mpref + name), recursive = True)
+        mlist += get_submodules(get_module(mpref + name), recursive = True)
 
     return mlist
 
-def getmodule(mname: str):
+def get_module(mname: str):
     """Get module instance for a given qualified module name."""
 
     import importlib
 
-    minst = importlib.import_module(mname)
+    try:
+        minst = importlib.import_module(mname)
+    except ModuleNotFoundError:
+        return None
 
     return minst
 
-def getfunctions(minst: types.ModuleType = None, details: bool = False,
+def get_functions(minst: types.ModuleType = None, details: bool = False,
     **kwargs):
     """Return list of function names within given module instance."""
 
-    if minst is None: minst = getmodule(getcurname(2))
+    if minst is None: minst = get_module(get_curname(2))
     elif not isinstance(minst, types.ModuleType): raise TypeError(
         "First argument is required to be of ModuleType")
 
@@ -86,7 +89,7 @@ def getfunctions(minst: types.ModuleType = None, details: bool = False,
     fdetails = {}
     for name, ref in funcs:
         # set default attributes
-        fdict = {'name': name, 'about': getfuncdesc(ref), 'reference': ref }
+        fdict = {'name': name, 'about': get_shortdoc(ref), 'reference': ref }
         # update attributes
         for key, val in ref.__dict__.items():
             fdict[key] = val
@@ -102,47 +105,52 @@ def getfunctions(minst: types.ModuleType = None, details: bool = False,
 
     return fdetails.keys()
 
-def searchfunctions(minst: types.ModuleType = None, details: bool = False,
+def search_functions(minst: types.ModuleType = None, details: bool = False,
     recursive = True, **kwargs):
     """Recursively search for functions within submodules."""
 
-    if minst is None: minst = getmodule(getcurname(2))
+    if minst is None: minst = get_module(get_curname(2))
     elif not isinstance(minst, types.ModuleType): raise TypeError(
         "First argument is required to be of ModuleType")
 
-    mnames = getsubmodules(minst, recursive = recursive)
+    mnames = get_submodules(minst, recursive = recursive)
 
     # create list with qualified function names
     if not details:
         funcs = []
         for mname in mnames:
-            funcs += getfunctions(getmodule(mname), details = False, **kwargs)
+            subinst = get_module(mname)
+            if subinst is None: continue
+            funcs += get_functions(subinst, details = False, **kwargs)
         return funcs
 
     # create dictionary with function attributes
     funcs = {}
     for mname in mnames:
-        fdict = getfunctions(getmodule(mname), details = True, **kwargs)
+        subinst = get_module(mname)
+        if subinst is None: continue
+        fdict = get_functions(subinst, details = True, **kwargs)
         for key, val in fdict.items():
             funcs[key] = val
 
     return funcs
 
-def getfunction(fname: str):
+def get_function(fname: str):
     """Return function instance for given full function name."""
 
-    minst = getmodule('.'.join(fname.split('.')[:-1]))
+    minst = get_module('.'.join(fname.split('.')[:-1]))
+    if minst is None: return None
     finst = getattr(minst, fname.split('.')[-1])
 
     return finst
 
-def getfuncdesc(finst: types.FunctionType):
+def get_shortdoc(finst: types.FunctionType):
     """Get short description of a given function instance."""
 
     if finst.__doc__ is None: return ""
     return finst.__doc__.split('\n', 1)[0].strip(' .')
 
-def getfunckwargs(finst: types.FunctionType, d: dict = None):
+def get_kwargs(finst: types.FunctionType, d: dict = None):
     """Get the keyword arguments of a given function instance."""
 
     if not isinstance(finst, types.FunctionType): raise TypeError(
@@ -159,24 +167,7 @@ def getfunckwargs(finst: types.FunctionType, d: dict = None):
 
     return kwargs
 
-def getfuncdoc(finst: types.FunctionType):
-    """Get the keyword arguments of a given function instance."""
-
-    if not isinstance(finst, types.FunctionType): raise TypeError(
-        'First argument is required to be an instance of FunctionType')
-
-    import inspect
-
-    all = inspect.signature(finst).parameters
-    l = [key for key, val in all.items() if '=' in str(val)]
-
-    if d is None: return l
-
-    kwargs = {key: d.get(key) for key in l if key in d}
-
-    return kwargs
-
-def getmethods(cinst: type, attribute = None, grouping = None,
+def get_methods(cinst: type, attribute = None, grouping = None,
     prefix: str = '', removeprefix: bool = True, renamekey = None):
     """Get the methods of a given class instance.
 
