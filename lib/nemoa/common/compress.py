@@ -29,11 +29,11 @@ def load(f, *args, **kwargs):
 
     return loads(pickle.load(open(f, 'rb')), *args, **kwargs)
 
-def loads(string, encode = 'base64'):
+def loads(s, encode = 'base64'):
     """Decode and decompress string to dictionary."""
 
-    if encode == 'base64': decoded = base64.b64decode(string)
-    else: decoded = string
+    if encode == 'base64': decoded = base64.b64decode(s)
+    else: decoded = s
 
     decompressed = zlib.decompress(decoded)
 

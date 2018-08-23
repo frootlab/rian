@@ -11,8 +11,6 @@ from nemoa.common.unittest import TestSuite as NmTestSuite
 class TestSuite(NmTestSuite):
 
     def test_common_module(self):
-        """Test functions in nemoa.common.module."""
-
         with self.subTest(function = "get_curname"):
             from nemoa.common.module import get_curname
             test = get_curname() == 'nemoa.common.__test__'

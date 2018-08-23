@@ -111,6 +111,8 @@ class System(Metadata):
             return self._get_algorithm(*args, **kwargs)
         if key == 'algorithms': return self._get_algorithms(
             attribute = 'about', *args, **kwargs)
+        if key == 'algorithms_new': return self._get_algorithms_new(
+            attribute = 'about', *args, **kwargs)
 
         # content
         if key == 'unit': return self._get_unit(*args, **kwargs)
@@ -172,6 +174,22 @@ class System(Metadata):
                 else: structured[ckey][udata['name']] = udata
 
         return structured
+
+    def _get_algorithms_new(self, *args, **kwargs):
+        """Get list of all available algorithms for system."""
+
+        ctest = lambda s: '.'.join(s.split('.')[:2]) == 'nemoa.system'
+        clist = [obj.__name__ for obj in self.__class__.__mro__
+            if ctest(obj.__module__)]
+
+        subset = lambda a, b: frozenset(a) <= frozenset(b)
+        inters = lambda a, b: bool(frozenset(a) & frozenset(b))
+
+        from nemoa.common.module import search_functions
+        import nemoa.model.analysis as minst
+
+        return search_functions(minst = minst, filters = \
+            {'tags': subset, 'classes': inters}, classes = clist)
 
     def _get_algorithm(self, algorithm = None, *args, **kwargs):
         """Get algorithm."""

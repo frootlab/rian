@@ -137,6 +137,8 @@ class Model(Metadata):
             return self._get_algorithm(*args, **kwargs)
         if key == 'algorithms': return self._get_algorithms(
             attribute = 'about', *args, **kwargs)
+        if key == 'algorithms_new': return self._get_algorithms_new(
+            attribute = 'about', *args, **kwargs)
 
         # model evaluation
         if key == 'error': return self.evaluate('system', 'error')
@@ -156,6 +158,14 @@ class Model(Metadata):
         return nemoa.log('warning', "unknown key '%s'." % key) or None
 
     def _get_algorithms(self, *args, **kwargs):
+        """Get algorithms provided by model."""
+
+        return {
+            'dataset': self.dataset._get_algorithms(*args, **kwargs),
+            'network': self.network._get_algorithms(*args, **kwargs),
+            'system': self.system._get_algorithms(*args, **kwargs) }
+
+    def _get_algorithms_new(self, *args, **kwargs):
         """Get algorithms provided by model."""
 
         return {

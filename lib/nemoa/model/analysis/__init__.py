@@ -6,39 +6,7 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-def algorithms():
-    from nemoa.common.module import get_submodules, get_module, get_functions
-    flist = []
-    for mname in get_submodules():
-        minst = get_module(mname)
-        flist = get_functions(minst)
-    print(mlist)
-
-    return True
-
-def evaluate(model, *args, **kwargs):
-    """Evaluate model."""
-    return new(model).evaluate(*args, **kwargs)
-
-def new(model, *args, **kwargs):
-    """Get model evaluation instance."""
-
-    import importlib
-
-    # get type of system
-    stype = model.system.type
-    mname = 'nemoa.model.evaluation.' + stype.split('.')[0]
-    cname = stype.split('.')[1]
-
-    print('hi! - this is model.evaluation.__init__')
-
-    # import module for evaluation
-    try:
-        module = importlib.import_module(mname)
-        if not hasattr(module, cname): raise ImportError()
-    except ImportError:
-        return nemoa.log('error',
-            "could not evaluate model: "
-            "unknown system type '%s'." % stype)
-
-    return getattr(module, cname)(model)
+def algorithms(**kwargs):
+    from nemoa.common.module import search_functions
+    subset = lambda a, b: frozenset(a) <= frozenset(b)
+    return search_functions(filters = {'tags': subset}, **kwargs)

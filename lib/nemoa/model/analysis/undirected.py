@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Deep Beliefe Network (DBN) Evaluation.
+"""Undirected graphical model analysis.
 
 This module includes various implementations for quantifying structural
-and statistical values of whole deep beliefe networks and parts of
-it. These methods include:
+and statistical values for the evaluation of undirected graphical models.
+These methods include:
 
     (a) data based methods like data manipulation tests
     (b) graphical methods on weighted graphs
@@ -29,9 +29,3 @@ import numpy
 def modelerror(model, *args, **kwargs):
     """Mean data reconstruction error of output units."""
     return numpy.mean(uniterror(model, *args, **kwargs))
-
-
-from nemoa.model.evaluation.ann import ANN as EvalationOfANN
-
-class DBN(EvalationOfANN):
-    pass
