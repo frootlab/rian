@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Undirected graphical model analysis.
+"""Markov random field analysis.
 
 This module includes various implementations for quantifying structural
 and statistical values for the evaluation of undirected graphical models.

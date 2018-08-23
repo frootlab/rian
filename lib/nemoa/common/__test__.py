@@ -44,10 +44,10 @@ class TestSuite(NmTestSuite):
             test = 'details' in fargs
             self.assertTrue(test)
             self.assertTrue(test)
-        with self.subTest(function = "search_functions"):
-            from nemoa.common.module import search_functions
-            funcs = search_functions(get_module('nemoa.common'),
-                name = 'search_functions')
+        with self.subTest(function = "locate_functions"):
+            from nemoa.common.module import locate_functions
+            funcs = locate_functions(get_module('nemoa.common'),
+                name = 'locate_functions')
             test = len(funcs) == 1
             self.assertTrue(test)
 

@@ -98,8 +98,8 @@ def get_functions(minst: types.ModuleType = None, details: bool = False,
         List with full qualified function names.
 
     Example:
-        included = lambda a, b: frozenset(a) <= frozenset(b)
-        get_functions(filters = {'tags': included}, tags = ['fast', 'stable'])
+        all = lambda a, b: frozenset(a) <= frozenset(b)
+        get_functions(filters = {'tags': all}, tags = ['fast', 'stable'])
 
     """
 
@@ -143,8 +143,8 @@ def get_functions(minst: types.ModuleType = None, details: bool = False,
 
     return fdetails.keys()
 
-def search_functions(minst: types.ModuleType = None, details: bool = False,
-    filters: dict = {}, recursive = True, **kwargs):
+def locate_functions(minst: types.ModuleType = None, recursive = True,
+    details: bool = False, filters: dict = {},  **kwargs):
     """Recursively search for functions within submodules."""
 
     if minst is None: minst = get_module(get_curname(-1))
@@ -168,7 +168,8 @@ def search_functions(minst: types.ModuleType = None, details: bool = False,
     for mname in mnames:
         subinst = get_module(mname)
         if subinst is None: continue
-        fdict = get_functions(subinst, details = True, **kwargs)
+        fdict = get_functions(subinst, details = True,
+            filters = filters, **kwargs)
         for key, val in fdict.items():
             funcs[key] = val
 

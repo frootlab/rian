@@ -33,7 +33,7 @@ def objective(name: str, title: str = '', tags: list = [], classes: list = [],
 
 def sampler(name: str, title: str = '', tags: list = [], classes: list = [],
     plot: str = 'histogram', **attr):
-    """Attribute decorator for sampler."""
+    """Attribute decorator for sampling functions."""
 
     def wrapper(method):
         def wrapped(self, *args, **kwargs):
@@ -58,7 +58,7 @@ def sampler(name: str, title: str = '', tags: list = [], classes: list = [],
 
 def statistics(name: str, title: str = '', tags: list = [], classes: list = [],
     plot: str = 'histogram', **attr):
-    """Attribute decorator for sample statistics."""
+    """Attribute decorator for sample statistical functions."""
 
     def wrapper(method):
         def wrapped(self, *args, **kwargs):

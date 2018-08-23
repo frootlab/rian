@@ -138,7 +138,7 @@ class Model(Metadata):
         if key == 'algorithms': return self._get_algorithms(
             attribute = 'about', *args, **kwargs)
         if key == 'algorithms_new': return self._get_algorithms_new(
-            attribute = 'about', *args, **kwargs)
+            *args, **kwargs)
 
         # model evaluation
         if key == 'error': return self.evaluate('system', 'error')
@@ -171,7 +171,7 @@ class Model(Metadata):
         return {
             'dataset': self.dataset._get_algorithms(*args, **kwargs),
             'network': self.network._get_algorithms(*args, **kwargs),
-            'system': self.system._get_algorithms(*args, **kwargs) }
+            'system': self.system._get_algorithms_new(*args, **kwargs) }
 
     def _get_algorithm(self, *args, **kwargs):
         """Get algorithm."""

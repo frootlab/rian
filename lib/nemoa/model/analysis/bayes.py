@@ -2,10 +2,10 @@
 """Bayesian network analysis.
 
 This module includes various functions for the analysis of directed graphical
-models (Bayesian networks), like linear models (LM) and feedforward neural
-networks (ANN).
+models, known as Bayesian networks. These models include linear models (LM),
+feedforward neural networks (ANN).
 
-These functions include:
+The supported analysis functions are:
 
     (1) Sampler: Matrix valued statistical inference functions
         Returns numpy arrays of shape (d, n), where n is the number of

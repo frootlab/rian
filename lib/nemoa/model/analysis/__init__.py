@@ -7,6 +7,8 @@ __license__ = 'GPLv3'
 import nemoa
 
 def algorithms(**kwargs):
-    from nemoa.common.module import search_functions
-    subset = lambda a, b: frozenset(a) <= frozenset(b)
-    return search_functions(filters = {'tags': subset}, **kwargs)
+    from nemoa.common.module import locate_functions
+    all = lambda a, b: frozenset(a) <= frozenset(b)
+    any = lambda a, b: bool(frozenset(a) & frozenset(b))
+    filters = {'tags': all, 'classes': any}
+    return locate_functions(filters = filters, **kwargs)
