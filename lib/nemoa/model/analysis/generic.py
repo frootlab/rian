@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Hybrid graphical model analysis.
+"""Propabilistic Graphical Model (PGM) analysis.
 
-This module includes various functions for the analysis of hybrid graphical
-models, where some dependencies are directed and some others are undirected.
-These models include Chain Graph Models [1].
-
-[1] Drton (2009), "Discrete chain graph models"
+This module includes generic functions for the analysis of probabilistic
+graphical models.
 
 The supported categories of analysis functions are:
 

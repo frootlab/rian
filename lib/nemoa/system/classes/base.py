@@ -621,8 +621,8 @@ class System(Metadata):
         args     = 'input',
         retfmt   = 'scalar',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'diagram' )
-
+        plot     = 'diagram'
+    )
     def _get_units_variance(self, data, mapping = None, block = None):
         """Return variance of reconstructed unit values.
 
@@ -643,8 +643,7 @@ class System(Metadata):
             data_in_copy = numpy.copy(data)
             for i in block:
                 data_in_copy[:,i] = numpy.mean(data_in_copy[:,i])
-            model_out = self._get_unitexpect(
-                data_in_copy, mapping)
+            model_out = self._get_unitexpect(data_in_copy, mapping)
 
         return model_out.var(axis = 0)
 
@@ -654,8 +653,8 @@ class System(Metadata):
         args     = 'input',
         retfmt   = 'vector',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'histogram' )
-
+        plot     = 'histogram'
+    )
     def _get_unitexpect(self, data, mapping = None, block = None):
         """Expectation values of target units.
 
