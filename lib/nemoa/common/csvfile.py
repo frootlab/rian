@@ -5,10 +5,10 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import csv
-import nemoa
 import numpy
 import os
-from typing import Optional, Union
+
+from typing import Optional
 
 def getheader(path: str) -> str:
     """Get header from CSV file.
@@ -23,9 +23,9 @@ def getheader(path: str) -> str:
     """
 
     # check file
-    if not os.path.isfile(path):
-        return nemoa.log('error', """could not get csv header:
-            file '%s' does not exist.""" % path)
+    if not os.path.isfile(path): raise OSError(
+        "could not get csv header: "
+        "file '%s' does not exist." % path)
 
     # scan csvfile for header
     header = ''
@@ -49,12 +49,14 @@ def getdelim(path: str, delimiters: list = [',', ';', '\t', ' '],
 
     Args:
         path (string): file path to CSV file.
+
+    Kwargs:
         delimiters (list, optional): list of strings containing
             delimiter candidates to search for.
         minprobe (integer, optional): minimum number of non comment,
-            non empty lines used to detect csv delimiter.
+            non empty lines used to detect CSV delimiter.
         maxprobe (integer, optional): maximum number of non comment,
-            non empty lines used to detect csv delimiter.
+            non empty lines used to detect CSV delimiter.
 
     Returns:
         String containing delimiter of CSV file or False if delimiter
@@ -63,9 +65,9 @@ def getdelim(path: str, delimiters: list = [',', ';', '\t', ' '],
     """
 
     # check file
-    if not os.path.isfile(path):
-        return nemoa.log('error', """could not determine delimiter:
-            file '%s' does not exist.""" % path)
+    if not os.path.isfile(path): raise OSError(
+        "could not determine csv delimiter: "
+        "file '%s' does not exist." % path)
 
     delimiter = None
     with open(path, 'r') as csvfile:
@@ -92,9 +94,9 @@ def getdelim(path: str, delimiters: list = [',', ';', '\t', ' '],
                     continue
                 delimiter = dialect.delimiter
 
-    if not delimiter:
-        return nemoa.log('warning', """could not determine delimiter
-            of csv file '%s'!""" % path)
+    if not delimiter: raise TypeError(
+        "could not determine csv delimiter: "
+        "file '%s' is not valid." % path)
 
     return delimiter
 
@@ -103,6 +105,8 @@ def getlabels(path: str, delimiter: Optional[str] = None) -> list:
 
     Args:
         path (string): file path to CSV file.
+
+    Kwargs:
         delimiter (string, optional): string containing CSV delimiter.
 
     Returns:
@@ -112,16 +116,15 @@ def getlabels(path: str, delimiter: Optional[str] = None) -> list:
     """
 
     # check file
-    if not os.path.isfile(path):
-        return nemoa.log('error', """could not get csv labels:
-            file '%s' does not exist.""" % path)
+    if not os.path.isfile(path): raise TypeError(
+        "could not get csv column labels: "
+        "file '%s' does not exist." % path)
 
     # get delimiter
-    if not delimiter:
-        delimiter = getdelim(path)
-    if not delimiter:
-        return nemoa.log('error', """could not get column labels:
-            unknown delimiter in file '%s'.""" % path)
+    if not delimiter: delimiter = getdelim(path)
+    if not delimiter: raise TypeError(
+        "could not get csv column labels: "
+        "the delimiter in file '%s' is not supported." % path)
 
     # get first and second non comment and non empty line
     first = None
@@ -139,17 +142,17 @@ def getlabels(path: str, delimiter: Optional[str] = None) -> list:
                 second = line
                 break
 
-    if not first or not second:
-        return nemoa.log('error', "could not get column labels:"
-            "file '%s' is not valid." % path)
+    if not first or not second: raise TypeError(
+        "could not get csv column labels: "
+        "file '%s' is not valid." % path)
 
     if first.count(delimiter) == second.count(delimiter):
         csvtype = 'default'
     elif first.count(delimiter) == second.count(delimiter) - 1:
         csvtype == 'r-table'
-    else:
-        return nemoa.log('error', """could not get column labels:
-            file '%s' is not valid.""" % path)
+    else: raise TypeError(
+        "could not get csv column labels: "
+        "file '%s' is not valid." % path)
 
     col_labels = first.split(delimiter)
     col_labels = [col.strip('\"\'\n\r\t ') for col in col_labels]
@@ -163,6 +166,8 @@ def getlabelcolumn(path: str, delimiter: Optional[str] = None) -> int:
 
     Args:
         path (string): file path to CSV file.
+
+    Kwargs:
         delimiter (string, optional): string containing CSV delimiter.
 
     Returns:
@@ -172,16 +177,15 @@ def getlabelcolumn(path: str, delimiter: Optional[str] = None) -> int:
     """
 
     # check file
-    if not os.path.isfile(path):
-        return nemoa.log('error', """could not get csv row label column
-            id: file '%s' does not exist.""" % path)
+    if not os.path.isfile(path): raise OSError(
+        "could not get csv row label column id: "
+        "file '%s' does not exist." % path)
 
     # get delimiter
-    if not delimiter:
-        delimiter = getdelim(path)
-    if not delimiter:
-        return nemoa.log('error', """could not get csv row label column
-            id: unknown delimiter.""")
+    if not delimiter: delimiter = getdelim(path)
+    if not delimiter: raise TypeError(
+        "could not get csv row label column id: "
+        "the delimiter in file '%s' is not supported." % path)
 
     # get first and second non comment and non empty line
     first = None
@@ -199,9 +203,9 @@ def getlabelcolumn(path: str, delimiter: Optional[str] = None) -> int:
                 second = line
                 break
 
-    if first == None or second == None:
-        return nemoa.log('error', """could not get csv row label column
-            id: file '%s' is not valid.""" % (path))
+    if first == None or second == None: raise TypeError(
+        "could not get csv row label column id: "
+        "file '%s' is not valid." % path)
 
     colvals = second.split(delimiter)
     colvals = [col.strip('\"\' \n') for col in colvals]
@@ -214,10 +218,12 @@ def getlabelcolumn(path: str, delimiter: Optional[str] = None) -> int:
 def load(path: str, delimiter: Optional[str] = None,
     labels: Optional[list] = None, usecols: Optional[tuple] = None,
     rowlabelcol: Optional[int] = None) -> Optional[numpy.ndarray]:
-    """Import data from CSV file.
+    """Load numpy array from CSV file.
 
     Args:
         path (string): file path to CSV file.
+
+    Kwargs:
         delimiter (string, optional): string containing CSV delimiter.
             If not given, the CSV delimiter is detected from CSV file.
         labels (list, optional): list of strings containing CSV labels.
@@ -235,25 +241,27 @@ def load(path: str, delimiter: Optional[str] = None,
     """
 
     # check file
-    if not os.path.isfile(path):
-        return nemoa.log('error', """could not get csv data:
-            file '%s' does not exist.""" % path)
+    if not os.path.isfile(path): raise OSError(
+        "could not get data from csv file: "
+        "file '%s' does not exist." % path)
 
     # get delimiter
     if not delimiter: delimiter = getdelim(path)
-    if not delimiter:
-        return nemoa.log('error', """could not get data from csv file:
-            unknown delimiter.""")
+    if not delimiter: raise TypeError(
+        "could not get data from csv file: "
+        "the delimiter in file '%s' is not supported." % path)
 
     # get labels
     if labels:
-        if not usecols: return nemoa.log('error',
-            "could not get data from csv file: usecols are not given.")
+        if not usecols: raise TypeError(
+            "could not get data from csv file: "
+            "keyword argument 'usecols' is not given.")
     else:
         labels = getlabels(path, delimiter = delimiter)
         usecols = tuple(range(len(labels)))
-    if not labels: return nemoa.log('error',
-        "could not get data from csv file: unknown labels.")
+    if not labels: raise TypeError(
+        "could not get data from csv file: "
+        "keyword argument 'usecols' is not valid.")
 
     # get row label column id
     if rowlabelcol == None:
@@ -292,12 +300,8 @@ def load(path: str, delimiter: Optional[str] = None,
                 continue
             break
 
-    try:
-        # 2do: use genfromtxt to allow missing values
-        data = numpy.loadtxt(path, skiprows = skiprows,
-            delimiter = delimiter, usecols = usecols, dtype = dtype)
-    except:
-        return nemoa.log('error', "could not import data from CSV file.")
+    data = numpy.loadtxt(path, skiprows = skiprows,
+        delimiter = delimiter, usecols = usecols, dtype = dtype)
 
     return data
 
