@@ -4,20 +4,20 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-def asarray(d, axes):
-    """Return 2-dimensional numpy array from dictionary."""
+import numpy
 
-    import numpy
+def dict_to_array(d: dict, axes: tuple, na = 0.) -> numpy.ndarray:
+    """Convert dictionary to 2d numpy ndarray."""
 
-    a = numpy.zeros(shape = (len(axes[0]), len(axes[1])))
+    a = numpy.empty(shape = (len(axes[0]), len(axes[1])))
     for i, x in enumerate(axes[0]):
         for j, y in enumerate(axes[1]):
-            a[i, j] = d[(x, y)] if (x, y) in d else 0.
+            a[i, j] = d[(x, y)] if (x, y) in d else na
 
-    return array
+    return a
 
-def fromarray(a, axes):
-    """Return dictionary from 2-dimensional numpy array."""
+def array_to_dict(a: numpy.ndarray, axes: tuple) -> dict:
+    """Convert 2d numpy ndarray to dictionary."""
 
     d = {}
     for i, x in enumerate(axes[0]):
@@ -26,7 +26,7 @@ def fromarray(a, axes):
 
     return d
 
-def merge(*args, new = True):
+def merge(*args, new: bool = True) -> dict:
     """Recursively right merge dictionaries.
 
     Args:
@@ -35,7 +35,7 @@ def merge(*args, new = True):
         ...
 
     Kwargs:
-        new (bool): a new dictionary is created if new is True
+        new (bool, optional): a new dictionary is created if new is True
 
     Returns:
         Dictionary containing right merge of dictionaries.
@@ -70,19 +70,27 @@ def merge(*args, new = True):
 
     return d2
 
-def section(d, string):
+def section(d: dict, s: str) -> dict:
     """Crop dictionary to keys, that start with an initial string."""
 
-    if not isinstance(string, str): return {}
-    i = len(string)
+    # check types of arguments
+    if not type(d) is dict: raise TypeError(
+        'first argument is required to be of type dict.')
+    if not type(s) is str: raise TypeError(
+        'second argument is required to be of type string.')
+
+    i = len(s)
 
     return {k[i:]: v for k, v in list(d.items()) \
-        if isinstance(k, str) and k[:i] == string}
+        if isinstance(k, str) and k[:i] == s}
 
-def strkeys(d):
+def strkeys(d: dict) -> dict:
     """Recursively convert dictionary keys to string."""
 
-    if not isinstance(d, dict): return d
+    # check types of arguments
+    if not type(d) is dict: raise TypeError(
+        'first argument is required to be of type dict.')
+
     dnew = {}
     for key, val in list(d.items()):
         if not isinstance(key, tuple): keynew = str(key)
@@ -91,12 +99,12 @@ def strkeys(d):
 
     return dnew
 
-def sumjoin(*args):
+def sumjoin(*args) -> dict:
     """Sum values of common keys in differnet dictionaries."""
 
     dsum = {}
     for d in args:
-        if not isinstance(d, dict): continue
+        if not type(d) is dict: continue
         for key, val in d.items():
             if key in dsum:
                 if not type(dsum[key]) == type(val): continue

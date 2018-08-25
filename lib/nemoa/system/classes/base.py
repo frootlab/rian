@@ -1888,7 +1888,7 @@ class System(Metadata):
             elif retfmt == 'dict':
                 src = self._get_units(layer = ekwargs['mapping'][0])
                 tgt = self._get_units(layer = ekwargs['mapping'][-1])
-                retval = nemoa.common.dict.fromarray(values, (src, tgt))
+                retval = nemoa.common.dict.array_to_dict(values, (src, tgt))
                 if not evalstat: return retval
 
                 # (optional) add statistics

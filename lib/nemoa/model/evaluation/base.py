@@ -182,7 +182,7 @@ class Evaluation:
             if retfmt == 'scalar':
                 src = getunits(layer = kwargs['mapping'][0])
                 tgt = getunits(layer = kwargs['mapping'][-1])
-                return nemoa.common.dict.fromarray(retval, (src, tgt))
+                return nemoa.common.dict.array_to_dict(retval, (src, tgt))
         elif category == 'relation':
             if algorithm['retfmt'] == 'scalar':
 
@@ -203,7 +203,7 @@ class Evaluation:
                 if rettype == 'dict':
                     src = getunits(layer = kwargs['mapping'][0])
                     tgt = getunits(layer = kwargs['mapping'][-1])
-                    retval = nemoa.common.dict.fromarray(retval, (src, tgt))
+                    retval = nemoa.common.dict.array_to_dict(retval, (src, tgt))
                     if not evalstat: return retval
 
                     # (optional) add statistics
