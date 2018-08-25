@@ -10,6 +10,35 @@ from nemoa.common.unittest import TestSuite as NmTestSuite
 
 class TestSuite(NmTestSuite):
 
+    def test_common_compress(self):
+        import nemoa.common.compress
+        import os
+        import tempfile
+
+        d = {True: 'a', 2: {None: 0.5}}
+        s = b'eNprYK4tZNDoiGBkYGBILGT0ZqotZPJzt3/AAAbFpXoAgyIHVQ=='
+        f = tempfile.NamedTemporaryFile().name
+
+        with self.subTest(function = "dumps"):
+            func = nemoa.common.compress.dumps
+            test = func(d) == s
+            self.assertTrue(test)
+        with self.subTest(function = "loads"):
+            func = nemoa.common.compress.loads
+            test = func(s) == d
+            self.assertTrue(test)
+        with self.subTest(function = "dump"):
+            func = nemoa.common.compress.dump
+            func(d, f)
+            test = os.path.exists(f)
+            self.assertTrue(test)
+        with self.subTest(function = "load"):
+            func = nemoa.common.compress.load
+            test = func(f) == d
+            self.assertTrue(test)
+
+        if os.path.exists(f): os.remove(f)
+
     def test_common_module(self):
         with self.subTest(function = "get_curname"):
             from nemoa.common.module import get_curname

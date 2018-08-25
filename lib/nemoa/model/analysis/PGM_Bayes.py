@@ -43,18 +43,18 @@ from nemoa.common.decorators import sampler
     title   = 'Forward Sampling',
     classes = ['LM', 'ANN']
 )
-def get_forward_sample(model, *args, **kwargs):
-    """Forward sampled values of target observables.
+def draw_forward_sample(model, *args, **kwargs):
+    """Forward sampling from source to target observables.
 
     Args:
-        data: numpy ndarray containing data of the source observables within the
-            first layer in mapping
+        data: numpy ndarray of shape (d, s) containing data of the source
+            observables within the first layer in mapping
 
     Kwargs:
-        mapping: n-tuple of strings that consecutively identify the layers
-            within the mapping from the source observable layer (first argument)
-            to the target observable layer (last argument).
-        block: list of strings containing labels of source observables, which
+        mapping (tuple of strings, optional): labels of model layers,
+            starting with the layer, that comprises the source observables, and
+            finishing with the layer, that comprises the target observables.
+        block (list of strings, optional): labels of source observables, which
             are 'ignored' by replacing their values by their means and therefore
             do not contribute to the variance of the sampled target values.
         mode (int, optional): Sampling mode:
@@ -64,11 +64,11 @@ def get_forward_sample(model, *args, **kwargs):
             1: Monte Carlo sampling of target observables:
                Returns consecutively forward sampled random realizations of
                target observables, as required for probabilistic learning
-            2: Mean Field propagation of target observables:
+            2: Forward expectation of target observables:
                Returns consecutively forward sampled expectations of
-               target observables, as required for mean field propagation
-        expect_last (bool, optional): return Mean Field propagation for the last
-            sampling step instead of relizations to reduce noise in
+               target observables
+        expect_last (bool, optional): return expectation for the last
+            sampling step instead of relizations to reduce variance in
             probabilistic learning.
 
     Returns:
@@ -79,12 +79,9 @@ def get_forward_sample(model, *args, **kwargs):
 
     mode = kwargs.pop('mode', 0)
 
-    if mode == 0:
-        return model.system._get_unitvalues(*args, **kwargs)
-    elif mode == 1:
-        return model.system._get_unitsamples(*args, **kwargs)
-    elif mode == 2:
-        return model.system._get_unitexpect(*args, **kwargs)
+    if mode == 0: return model.system._get_unitvalues(*args, **kwargs)
+    elif mode == 1: return model.system._get_unitsamples(*args, **kwargs)
+    elif mode == 2: return model.system._get_unitexpect(*args, **kwargs)
 
     return None
 

@@ -8,33 +8,31 @@ import base64
 import pickle
 import zlib
 
-def dump(d, f, *args, **kwargs):
+def dump(d: dict, f: str, *args, **kwargs) -> None:
     """Compress and encode dictionary to file."""
 
     return pickle.dump(dumps(d, *args, **kwargs), file = open(f, 'wb'))
 
-def dumps(d, level = 9, encode = 'base64'):
+def dumps(d: dict, level: int = 9, encode: str = 'base64') -> str:
     """Compress and encode dictionary to string."""
 
-    string = pickle.dumps(d)
-    compressed = zlib.compress(string, level)
+    s = pickle.dumps(d)
+    compressed = zlib.compress(s, level)
 
     if encode == 'base64': encoded = base64.b64encode(compressed)
     else: encoded = compressed
 
     return encoded
 
-def load(f, *args, **kwargs):
+def load(f: str, *args, **kwargs) -> dict:
     """Decode and decompress file to dictionary."""
 
     return loads(pickle.load(open(f, 'rb')), *args, **kwargs)
 
-def loads(s, encode = 'base64'):
+def loads(s: str, encode: str = 'base64') -> dict:
     """Decode and decompress string to dictionary."""
 
-    if encode == 'base64': decoded = base64.b64decode(s)
-    else: decoded = s
+    if encode == 'base64': decode = base64.b64decode(s)
+    else: decode = s
 
-    decompressed = zlib.decompress(decoded)
-
-    return pickle.loads(string_decompress)
+    return pickle.loads(zlib.decompress(decode))
