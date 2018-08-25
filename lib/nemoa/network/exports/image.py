@@ -69,7 +69,9 @@ class Graph(nemoa.common.plot.Graph):
 
     def create(self, network):
 
-        import nemoa.common.graph as nmgraph
+        from nemoa.common.graph import is_layered, is_directed, \
+            get_layers, get_groups, get_node_layout
+
         import nemoa.common.plot  as nmplot
         import nemoa.common.math  as nmmath
 
@@ -172,14 +174,14 @@ class Graph(nemoa.common.plot.Graph):
                 node_params = data.get('params', {})
                 data['group'] = node_params.get(groupby)
         else:
-            is_layer = nmgraph.is_layered(graph)
-            is_directed = nmgraph.is_directed(graph)
+            is_layer = is_layered(graph)
+            is_directed = is_directed(graph)
             if is_layer and not is_directed:
                 for node, data in graph.nodes(data = True):
                     gid = int(data.get('visible', True))
                     data['group'] = {0: 'latent', 1: 'observable'}[gid]
             elif is_layer and is_directed:
-                layers = nmgraph.get_layers(graph)
+                layers = get_layers(graph)
                 ilayer, olayer = layers[0], layers[-1]
                 for node, data in graph.nodes(data = True):
                     gid = int(node in ilayer) \
@@ -192,10 +194,10 @@ class Graph(nemoa.common.plot.Graph):
                     data['group'] = {0: 'latent', 1: 'observable'}[gid]
 
         # update node attributes for layout
-        groups = nmgraph.get_groups(graph, attribute = 'group')
+        groups = get_groups(graph, attribute = 'group')
         for group in sorted(groups.keys()):
             if group == '': continue
-            layout = nmgraph.get_node_layout(group)
+            layout = get_node_layout(group)
             group_label = layout.get('label', {
                 True: str(groupby),
                 False: 'not ' + str(groupby)}[group] \

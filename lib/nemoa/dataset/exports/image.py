@@ -193,7 +193,6 @@ class Graph(nemoa.common.plot.Graph):
             "nemoa.dataset.exports.image.Graph() requires networkx: "
             "https://networkx.github.io")
 
-        import nemoa.common.graph as nmgraph
         from nemoa.common.module import get_kwargs
 
         # set plot defaults
@@ -221,20 +220,20 @@ class Graph(nemoa.common.plot.Graph):
                 "is not supported." % fname)
 
         # create networkx graph object
-        graph = networkx.DiGraph(name = fname)
+        G = networkx.DiGraph(name = fname)
 
-        # graph is directed if and only if relation is symmetric
-        graph.graph['directed'] = numpy.allclose(array, array.T)
+        # graph is directed if and only if relation is unsymmetric
+        G.graph['directed'] = not numpy.allclose(array, array.T)
 
         # add nodes with attributes
         nodes = dataset.get('columns')
         for node in nodes:
-            graph.add_node(node, label = node)
+            G.add_node(node, label = node)
 
         # add edges with weights
         for i, u in enumerate(nodes):
             for j, v in enumerate(nodes):
-                graph.add_edge(u, v, weight = array[i, j], visible = True)
+                G.add_edge(u, v, weight = array[i, j], visible = True)
 
         # create plot
-        return self.plot(graph)
+        return self.plot(G)

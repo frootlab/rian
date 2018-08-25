@@ -109,7 +109,7 @@ class Graph(nemoa.common.plot.Graph):
 
     def create(self, model):
 
-        import nemoa.common.graph as nmgraph
+        from nemoa.common.graph import get_node_layout
 
         # set plot defaults
         self.set_default({
@@ -227,7 +227,7 @@ class Graph(nemoa.common.plot.Graph):
             elif issrc and not istgt: node_type = 'source'
             elif not issrc and istgt: node_type = 'target'
             else: node_type = 'isolated'
-            layout = nmgraph.get_node_layout(node_type)
+            layout = get_node_layout(node_type)
             graph.node[node].update(layout)
 
         # add edges with attributes

@@ -315,8 +315,9 @@ class Graph(Plot):
             "nemoa.common.plot.Graph.plot() requires networkx: "
             "https://networkx.github.io")
 
-        import nemoa.common.graph as nmgraph
-        from nemoa.common.dict import section as dict_section
+        from nemoa.common.dict import section
+        from nemoa.common.graph import get_layout, get_layout_normsize, \
+            get_groups, is_directed
 
         # adjust size of subplot
         fig = self._fig
@@ -329,16 +330,16 @@ class Graph(Plot):
         ax.axis('off')
 
         # get node positions and sizes
-        layout_params = dict_section(self._config, 'graph_')
+        layout_params = section(self._config, 'graph_')
         del layout_params['layout']
 
-        pos = nmgraph.get_layout(graph,
+        pos = get_layout(graph,
             layout  = self._config['graph_layout'],
             size    = figsize,
             padding = self._config['padding'],
             **layout_params)
 
-        sizes       = nmgraph.get_layout_normsize(pos)
+        sizes       = get_layout_normsize(pos)
         node_size   = sizes.get('node_size', None)
         node_radius = sizes.get('node_radius', None)
         line_width  = sizes.get('line_width', None)
@@ -346,7 +347,7 @@ class Graph(Plot):
         font_size   = sizes.get('font_size', None)
 
         # get nodes and groups sorted by node attribute group_id
-        groups = nmgraph.get_groups(graph, attribute = 'group')
+        groups = get_groups(graph, attribute = 'group')
         sorted_groups = sorted(list(groups.keys()), key = \
             lambda g: 0 if not isinstance(g, list) or len(g) == 0 \
             else graph.node.get(g[0], {}).get('group_id', 0))
@@ -395,7 +396,7 @@ class Graph(Plot):
 
         # draw edges
         seen = {}
-        if nmgraph.is_directed(graph): default_edge_style = '-|>'
+        if is_directed(graph): default_edge_style = '-|>'
         else: default_edge_style = '-'
 
         for (u, v, data) in graph.edges(data = True):
