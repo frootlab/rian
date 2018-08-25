@@ -53,8 +53,9 @@ class Session:
         """ """
 
         import os
+        from nemoa.common.dict import merge
 
-        self._config = nemoa.common.dict.merge(kwargs, self._default)
+        self._config = merge(kwargs, self._default)
 
         # enable error handling
         self._set_workspace_reset()

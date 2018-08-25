@@ -320,11 +320,12 @@ class Model(Metadata):
     def _set_config(self, config = None):
         """Set configuration from dictionary."""
 
+        from nemoa.common.dict import merge
+
         # initialize or update configuration dictionary
         if not hasattr(self, '_config') or not self._config:
             self._config = self._default.copy()
-        if config:
-            self._config = nemoa.common.dict.merge(config, self._config)
+        if config: self._config = merge(config, self._config)
         return True
 
     def _set_dataset(self, dataset):

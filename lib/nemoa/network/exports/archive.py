@@ -31,7 +31,8 @@ class Npz:
     default = { 'compress': True }
 
     def __init__(self, **kwargs):
-        self.settings = nemoa.common.dict.merge(kwargs, self.default)
+        from nemoa.common.dict import merge
+        self.settings = merge(kwargs, self.default)
 
     def save(self, copy, path):
 

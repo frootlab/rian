@@ -42,7 +42,8 @@ class AutoEncoder:
     default = { 'name': 'autoencoder' }
 
     def __init__(self, dataset = None, *args, **kwargs):
-        self.settings = nemoa.common.dict.merge(kwargs, self.default)
+        from nemoa.common.dict import merge
+        self.settings = merge(kwargs, self.default)
 
         # columns
         if 'columns' in self.settings:
@@ -76,7 +77,8 @@ class MultiLayer:
         'labelformat': 'generic:string' }
 
     def __init__(self, **kwargs):
-        self.settings = nemoa.common.dict.merge(kwargs, self.default)
+        from nemoa.common.dict import merge
+        self.settings = merge(kwargs, self.default)
 
     def build(self):
         name = self.settings['name']
@@ -152,7 +154,8 @@ class Factor:
         'labelencapsulate': False }
 
     def __init__(self, **kwargs):
-        self.settings = nemoa.common.dict.merge(kwargs, self.default)
+        from nemoa.common.dict import merge
+        self.settings = merge(kwargs, self.default)
 
     def build(self):
         network_name = self.settings['name']

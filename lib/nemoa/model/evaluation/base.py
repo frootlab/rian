@@ -182,7 +182,8 @@ class Evaluation:
             if retfmt == 'scalar':
                 src = getunits(layer = kwargs['mapping'][0])
                 tgt = getunits(layer = kwargs['mapping'][-1])
-                return nemoa.common.dict.array_to_dict(retval, (src, tgt))
+                from nemoa.common.dict import array_to_dict
+                return array_to_dict(retval, (src, tgt))
         elif category == 'relation':
             if algorithm['retfmt'] == 'scalar':
 
@@ -203,7 +204,8 @@ class Evaluation:
                 if rettype == 'dict':
                     src = getunits(layer = kwargs['mapping'][0])
                     tgt = getunits(layer = kwargs['mapping'][-1])
-                    retval = nemoa.common.dict.array_to_dict(retval, (src, tgt))
+                    from nemoa.common.dict import array_to_dict
+                    retval = array_to_dict(retval, (src, tgt))
                     if not evalstat: return retval
 
                     # (optional) add statistics
@@ -235,9 +237,9 @@ class Evaluation:
     def _set_config(self, config = None, **kwargs):
         """Set evaluation configuration from dictionary."""
 
+        from nemoa.common.dict import merge
         if not isinstance(config, dict): config = {}
-        self._config = \
-            nemoa.common.dict.merge(kwargs, config, self._default)
+        self._config = merge(kwargs, config, self._default)
 
         return True
 

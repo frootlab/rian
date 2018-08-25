@@ -1303,11 +1303,12 @@ class Dataset(Metadata):
 
         """
 
+        from nemoa.common.dict import merge
+
         # initialize configuration dictionary
         if not isinstance(self._config, dict): self._config = {}
         if not isinstance(config, dict): config = {}
-        self._config = \
-            nemoa.common.dict.merge(config, self._config, self._default)
+        self._config = merge(config, self._config, self._default)
 
         # 2do: reconfigure!?
         self._tables = {}
@@ -1326,7 +1327,9 @@ class Dataset(Metadata):
         """
 
         if not tables: return True
-        self._tables = nemoa.common.dict.merge(tables, self._tables)
+
+        from nemoa.common.dict import merge
+        self._tables = merge(tables, self._tables)
 
         return True
 

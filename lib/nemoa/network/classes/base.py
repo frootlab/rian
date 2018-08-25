@@ -619,7 +619,8 @@ class Network(Metadata):
         if not hasattr(self, '_config') or not self._config:
             self._config = self._default.copy()
         if config:
-            self._config = nemoa.common.dict.merge(config, self._config)
+            from nemoa.common.dict import merge
+            self._config = merge(config, self._config)
 
             # reconfigure graph
             self._configure_graph()
@@ -641,7 +642,8 @@ class Network(Metadata):
         if not graph: return True
 
         # merge graph
-        graph_copy = nemoa.common.dict.merge(graph, self._get_graph())
+        from nemoa.common.dict import merge
+        graph_copy = merge(graph, self._get_graph())
 
         # create networkx graph instance
         object_type = graph['graph']['params']['networkx']
@@ -672,12 +674,12 @@ class Network(Metadata):
                 system is invalid.""")
 
         # get edge parameters from system links
+        from nemoa.common.dict import merge
         for edge in self._graph.edges():
             params = system.get('link', edge)
             if not params: continue
             edge_dict = self._graph[edge[0]][edge[1]]
-            edge_dict['params'] = nemoa.common.dict.merge(params,
-                edge_dict['params'])
+            edge_dict['params'] = merge(params, edge_dict['params'])
             edge_dict['weight'] = float(params['weight'])
 
         return True

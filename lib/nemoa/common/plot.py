@@ -45,10 +45,11 @@ class Plot:
             "nemoa.common.plot.Plot() requires matplotlib: "
             "https://matplotlib.org")
 
+        from nemoa.common.dict import merge
+
         # merge config from defaults, current config and kwargs
         self._kwargs = kwargs
-        self._config = nemoa.common.dict.merge(
-            kwargs, self._config, self._default)
+        self._config = merge(kwargs, self._config, self._default)
 
         # update global matplotlib settings
         matplotlib.rc('text', usetex = \
@@ -81,9 +82,8 @@ class Plot:
     def set_default(self, config: dict = {}):
         """Set default values. """
 
-        # merge self._config over defaults
-        self._config = nemoa.common.dict.merge(
-            self._kwargs, config, self._config)
+        from nemoa.common.dict import merge
+        self._config = merge(self._kwargs, config, self._config)
 
         return True
 
@@ -316,6 +316,7 @@ class Graph(Plot):
             "https://networkx.github.io")
 
         import nemoa.common.graph as nmgraph
+        from nemoa.common.dict import section as dict_section
 
         # adjust size of subplot
         fig = self._fig
@@ -328,7 +329,7 @@ class Graph(Plot):
         ax.axis('off')
 
         # get node positions and sizes
-        layout_params = nemoa.common.dict.section(self._config, 'graph_')
+        layout_params = dict_section(self._config, 'graph_')
         del layout_params['layout']
 
         pos = nmgraph.get_layout(graph,

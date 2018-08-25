@@ -294,17 +294,19 @@ class Optimizer:
             if not config: key = 'default'
             elif isinstance(config, str): key = config
             else:
-                return nemoa.log('warning', """could not configure
-                    transformation: invalid configuration.""") or None
+                return nemoa.log('warning',
+                    "could not configure transformation: "
+                    "invalid configuration.") or None
             if not self.model:
-                return nemoa.log('warning', """could not configure
-                    transformation: no model given.""") or None
+                return nemoa.log('warning',
+                    "could not configure transformation: "
+                    "no model given.") or None
             system = self.model.system
             schedules = system._config.get('schedules', {})
             config = schedules.get(key, {}).get(system.type, {})
 
-        self._config = nemoa.common.dict.merge(config, self._default)
-        self._config = nemoa.common.dict.merge(kwargs, self._config)
+        from nemoa.common.dict import merge
+        self._config = merge(kwargs, config, self._default)
 
         return True
 

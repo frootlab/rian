@@ -1387,7 +1387,8 @@ class System(Metadata):
         if not hasattr(self, '_config') or not self._config:
             self._config = self._default.copy()
         if config:
-            self._config = nemoa.common.dict.merge(config, self._config)
+            from nemoa.common.dict import merge
+            self._config = merge(config, self._config)
 
         # reset consistency check
         self._config['check'] = {
@@ -1404,7 +1405,8 @@ class System(Metadata):
 
         # get system parameters from dict
         if params:
-            self._params = nemoa.common.dict.merge(params, self._params)
+            from nemoa.common.dict import merge
+            self._params = merge(params, self._params)
 
             # create instances of units and links
             retval &= self._set_params_create_units()
@@ -1455,7 +1457,8 @@ class System(Metadata):
                 links[(src_lid, tgt_lid)]['A'][src_sid, tgt_sid] = 1.0
 
             params = {'units': units, 'links': links}
-            self._params = nemoa.common.dict.merge(params, self._params)
+            from nemoa.common.dict import merge
+            self._params = merge(params, self._params)
 
             # create instances of units and links
             retval &= self._set_params_create_units()
@@ -1888,7 +1891,8 @@ class System(Metadata):
             elif retfmt == 'dict':
                 src = self._get_units(layer = ekwargs['mapping'][0])
                 tgt = self._get_units(layer = ekwargs['mapping'][-1])
-                retval = nemoa.common.dict.array_to_dict(values, (src, tgt))
+                from nemoa.common.dict import array_to_dict
+                retval = array_to_dict(values, (src, tgt))
                 if not evalstat: return retval
 
                 # (optional) add statistics

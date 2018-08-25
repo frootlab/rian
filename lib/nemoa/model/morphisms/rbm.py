@@ -279,12 +279,11 @@ class RBM(nemoa.model.morphisms.ann.ANN):
             deltas.append(self._cdiv_delta_visible_klpt(*sampling))
         if config['gen_rasa_enable']:
             deltas.append(self._cdiv_delta_visible_rasa())
-        delta = nemoa.common.dict.sumjoin(*deltas)
 
-        return delta
+        from nemoa.common.dict import sumjoin
+        return sumjoin(*deltas)
 
-    def _cdiv_delta_visible_cd(self, vdata, hdata, vmodel, hmodel,
-        **kwargs):
+    def _cdiv_delta_visible_cd(self, vdata, hdata, vmodel, hmodel, **kwargs):
         """Constrastive divergency gradients of visible units.
 
         Returns:
@@ -301,8 +300,7 @@ class RBM(nemoa.model.morphisms.ann.ANN):
 
         return { 'bias': r * d }
 
-    def _cdiv_delta_visible_klpt(self, vdata, hdata, vmodel,
-        hmodel):
+    def _cdiv_delta_visible_klpt(self, vdata, hdata, vmodel, hmodel):
         """ """
 
         return {}
@@ -333,19 +331,16 @@ class RBM(nemoa.model.morphisms.ann.ANN):
 
         deltas = []
         if config['algorithm'] == 'cd':
-            deltas.append(self._cdiv_delta_hidden_cd(
-                *sampling))
+            deltas.append(self._cdiv_delta_hidden_cd(*sampling))
         if config['con_klpt_enable']:
-            deltas.append(self._cdiv_delta_hidden_klpt(
-                *sampling))
+            deltas.append(self._cdiv_delta_hidden_klpt(*sampling))
         if config['gen_rasa_enable']:
             deltas.append(self._cdiv_delta_hidden_rasa())
-        delta = nemoa.common.dict.sumjoin(*deltas)
 
-        return delta
+        from nemoa.common.dict import sumjoin
+        return sumjoin(*deltas)
 
-    def _cdiv_delta_hidden_cd(self, vdata, hdata, vmodel,
-        hmodel, **kwargs):
+    def _cdiv_delta_hidden_cd(self, vdata, hdata, vmodel, hmodel, **kwargs):
         """Constrastive divergency gradients of hidden units.
 
         Returns:
@@ -363,8 +358,7 @@ class RBM(nemoa.model.morphisms.ann.ANN):
 
         return { 'bias': r * d }
 
-    def _cdiv_delta_hidden_klpt(self, vdata, hdata, vmodel,
-        hmodel):
+    def _cdiv_delta_hidden_klpt(self, vdata, hdata, vmodel, hmodel):
         """Kullback-Leibler penalty gradients of hidden units.
 
         Returns:
@@ -417,16 +411,14 @@ class RBM(nemoa.model.morphisms.ann.ANN):
         if config['algorithm'] == 'cd':
             deltas.append(self._cdiv_delta_links_cd(*sampling))
         if config['con_klpt_enable']:
-            deltas.append(self._cdiv_delta_links_klpt(
-                *sampling))
+            deltas.append(self._cdiv_delta_links_klpt(*sampling))
         if config['gen_rasa_enable']:
             deltas.append(self._cdiv_delta_links_rasa(deltas))
-        delta = nemoa.common.dict.sumjoin(*deltas)
 
-        return delta
+        from nemoa.common.dict import sumjoin
+        return sumjoin(*deltas)
 
-    def _cdiv_delta_links_cd(self, vdata, hdata, vmodel, hmodel,
-        **kwargs):
+    def _cdiv_delta_links_cd(self, vdata, hdata, vmodel, hmodel, **kwargs):
         """Constrastive divergency gradients of links.
 
         Returns:
