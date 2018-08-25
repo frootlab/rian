@@ -5,8 +5,12 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import csv
-import numpy
 import os
+
+try: import numpy
+except ImportError: raise ImportError(
+    "nemoa.common.csvfile requires numpy: "
+    "https://scipy.org")
 
 from typing import Optional
 

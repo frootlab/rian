@@ -4,7 +4,10 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import numpy
+try: import numpy
+except ImportError: raise ImportError(
+    "nemoa.common.dict requires numpy: "
+    "https://scipy.org")
 
 from typing import Optional
 
