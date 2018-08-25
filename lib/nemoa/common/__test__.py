@@ -80,9 +80,49 @@ class TestSuite(NmTestSuite):
             test = isinstance(rval, numpy.ndarray) \
                 and (rval['col1'] == data['col1']).any() \
                 and (rval['col2'] == data['col2']).any()
-            self.assertTrue(True)
+            self.assertTrue(test)
 
         if os.path.exists(f): os.remove(f)
+
+    def test_common_dict(self):
+        import nemoa.common.dict
+        import numpy
+
+        d = {('a', 'b'): 1.}
+        a = numpy.array([[0., 1.], [0., 0.]])
+        axes = [['a', 'b'], ['a', 'b']]
+        na = 0.
+
+        with self.subTest(function = "dict_to_array"):
+            func = nemoa.common.dict.dict_to_array
+            rval = func(d, axes = axes, na = na)
+            test = (rval == a).any()
+            self.assertTrue(test)
+        with self.subTest(function = "array_to_dict"):
+            func = nemoa.common.dict.array_to_dict
+            rval = func(a, axes = axes, na = na)
+            test = rval == d
+            self.assertTrue(test)
+        with self.subTest(function = "merge"):
+            func = nemoa.common.dict.merge
+            rval = func({'a': 1}, {'a': 2, 'b': 2}, {'c': 3})
+            test = rval == {'a': 1, 'b': 2, 'c': 3}
+            self.assertTrue(test)
+        with self.subTest(function = "section"):
+            func = nemoa.common.dict.section
+            rval = func({'a1': 1, 'a2': 2, 'b1': 3}, 'a')
+            test = rval == {'1': 1, '2': 2}
+            self.assertTrue(test)
+        with self.subTest(function = "strkeys"):
+            func = nemoa.common.dict.strkeys
+            rval = func({(1, 2): 3, None: {True: False}})
+            test = rval == {('1', '2'): 3, 'None': {'True': False}}
+            self.assertTrue(test)
+        with self.subTest(function = "sumjoin"):
+            func = nemoa.common.dict.sumjoin
+            rval = func({'a': 1}, {'a': 2, 'b': 3})
+            test = rval == {'a': 3, 'b': 3}
+            self.assertTrue(test)
 
     def test_common_module(self):
         with self.subTest(function = "get_curname"):
@@ -123,11 +163,4 @@ class TestSuite(NmTestSuite):
             funcs = locate_functions(get_module('nemoa.common'),
                 name = 'locate_functions')
             test = len(funcs) == 1
-            self.assertTrue(test)
-
-    def test_common_dict(self):
-        with self.subTest(function = "merge"):
-            d1, d2, d3 = {'a': 1}, {'a': 2, 'b': 2}, {'c': 3}
-            test = nemoa.common.dict.merge(d1, d2, d3)['a'] == 1
-            test &= len(d3) == 1
             self.assertTrue(test)

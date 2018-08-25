@@ -6,7 +6,9 @@ __license__ = 'GPLv3'
 
 import numpy
 
-def dict_to_array(d: dict, axes: tuple, na = 0.) -> numpy.ndarray:
+from typing import Optional
+
+def dict_to_array(d: dict, axes: tuple, na: float = 0.) -> numpy.ndarray:
     """Convert dictionary to 2d numpy ndarray."""
 
     a = numpy.empty(shape = (len(axes[0]), len(axes[1])))
@@ -16,12 +18,14 @@ def dict_to_array(d: dict, axes: tuple, na = 0.) -> numpy.ndarray:
 
     return a
 
-def array_to_dict(a: numpy.ndarray, axes: tuple) -> dict:
+def array_to_dict(a: numpy.ndarray, axes: tuple,
+    na: Optional[float] = None) -> dict:
     """Convert 2d numpy ndarray to dictionary."""
 
     d = {}
     for i, x in enumerate(axes[0]):
         for j, y in enumerate(axes[1]):
+            if not na == None and a[i, j] == na: continue
             d[(x, y)] = a[i, j]
 
     return d
@@ -87,9 +91,7 @@ def section(d: dict, s: str) -> dict:
 def strkeys(d: dict) -> dict:
     """Recursively convert dictionary keys to string."""
 
-    # check types of arguments
-    if not type(d) is dict: raise TypeError(
-        'first argument is required to be of type dict.')
+    if not type(d) is dict: return d
 
     dnew = {}
     for key, val in list(d.items()):
