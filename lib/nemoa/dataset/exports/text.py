@@ -44,6 +44,8 @@ class Csv:
 
     def save(self, dataset, path):
 
+        from nemoa.common.csvfile import dump as save_csvfile
+
         # create the configuration which is included in the CSV file
         # as header as a subset of the dataset configuration
         keys = ['name', 'branch', 'version', 'about', 'author', 'email',
@@ -58,8 +60,7 @@ class Csv:
         delimiter = self.settings['delimiter']
         cols, data = dataset.get('data', output = ('cols', 'recarray'))
 
-        return nemoa.common.csvfile.dump(path, data,
-            header = header,
+        return save_csvfile(path, data, header = header,
             delimiter = delimiter, labels = [''] + cols)
 
 class Tsv(Csv):

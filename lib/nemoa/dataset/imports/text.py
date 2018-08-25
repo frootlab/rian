@@ -50,8 +50,11 @@ class Csv:
 
         """
 
+        from nemoa.common.csvfile import getheader as get_csvheader
+        from nemoa.common.csvfile import load as load_csvfile
+
         # get config from csv header
-        header = nemoa.common.csvfile.getheader(path)
+        header = get_csvheader(path)
 
         structure = {
             'name': 'str',
@@ -82,7 +85,7 @@ class Csv:
         config['colfilter'] = {'*': ['*:*']}
         config['rowfilter'] = {'*': ['*:*'], name: [name + ':*']}
 
-        data = nemoa.common.csvfile.load(path)
+        data = load_csvfile(path)
 
         config['table'] = {name: config.copy()}
         config['table'][name]['fraction'] = 1.0
