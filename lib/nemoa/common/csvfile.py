@@ -8,8 +8,9 @@ import csv
 import nemoa
 import numpy
 import os
+from typing import Optional, Union
 
-def getheader(path):
+def getheader(path: str) -> str:
     """Get header from CSV file.
 
     Args:
@@ -42,17 +43,17 @@ def getheader(path):
 
     return header
 
-def getdelim(path, delimiters = [',', ';', '\t', ' '],
-    minprobesize = 3, maxprobesize = 100):
+def getdelim(path: str, delimiters: list = [',', ';', '\t', ' '],
+    minprobe: int = 3, maxprobe: int = 100) -> str:
     """Get delimiter from CSV file.
 
     Args:
         path (string): file path to CSV file.
         delimiters (list, optional): list of strings containing
             delimiter candidates to search for.
-        minprobesize (integer, optional): minimum number of non comment,
+        minprobe (integer, optional): minimum number of non comment,
             non empty lines used to detect csv delimiter.
-        maxprobesize (integer, optional): maximum number of non comment,
+        maxprobe (integer, optional): maximum number of non comment,
             non empty lines used to detect csv delimiter.
 
     Returns:
@@ -73,20 +74,18 @@ def getdelim(path, delimiters = [',', ';', '\t', ' '],
         for line in csvfile:
 
             # check termination criteria
-            if bool(delimiter) or lines > maxprobesize:
-                break
+            if bool(delimiter) or lines > maxprobe: break
 
             # check exclusion criteria
             sline = line.lstrip(' ')
-            if sline.startswith('#') or sline in ['\n', '\r\n']:
-                continue
+            if sline.startswith('#') or sline in ['\n', '\r\n']: continue
 
             # increase probe
             probe += line
             lines += 1
 
             # try to detect delimiter of probe
-            if lines > minprobesize:
+            if lines > minprobe:
                 try:
                     dialect = csv.Sniffer().sniff(probe, delimiters)
                 except:
@@ -99,7 +98,7 @@ def getdelim(path, delimiters = [',', ';', '\t', ' '],
 
     return delimiter
 
-def getlabels(path, delimiter = None):
+def getlabels(path: str, delimiter: Optional[str] = None) -> list:
     """Get (column) labels from CSV file.
 
     Args:
@@ -132,20 +131,17 @@ def getlabels(path, delimiter = None):
 
             # check exclusion criteria
             stripped_line = line.lstrip(' ')
-            if stripped_line.startswith('#'):
-                continue
-            if stripped_line  in ['\n', '\r\n']:
-                continue
+            if stripped_line.startswith('#'): continue
+            if stripped_line  in ['\n', '\r\n']: continue
 
-            if first == None:
-                first = line
+            if first == None: first = line
             elif second == None:
                 second = line
                 break
 
     if not first or not second:
-        return nemoa.log('error', """could not get column labels:
-            file '%s' is not valid.""" % path)
+        return nemoa.log('error', "could not get column labels:"
+            "file '%s' is not valid." % path)
 
     if first.count(delimiter) == second.count(delimiter):
         csvtype = 'default'
@@ -162,7 +158,7 @@ def getlabels(path, delimiter = None):
     if csvtype == 'r_table': return ['label'] + col_labels
     return []
 
-def getlabelcolumn(path, delimiter = None):
+def getlabelcolumn(path: str, delimiter: Optional[str] = None) -> int:
     """Get column id for column containing row labels from CSV file.
 
     Args:
@@ -215,8 +211,9 @@ def getlabelcolumn(path, delimiter = None):
 
     return False
 
-def load(path, delimiter = None, labels = None, usecols = None,
-    rowlabelcol = None):
+def load(path: str, delimiter: Optional[str] = None,
+    labels: Optional[list] = None, usecols: Optional[tuple] = None,
+    rowlabelcol: Optional[int] = None) -> Optional[numpy.ndarray]:
     """Import data from CSV file.
 
     Args:
@@ -232,7 +229,7 @@ def load(path, delimiter = None, labels = None, usecols = None,
             rowlabels. If not given, first column of strings is used.
 
     Returns:
-        Numpy record array containing data from CSV file or False if
+        Numpy ndarray containing data from CSV file, or None if
         data could not be imported.
 
     """
@@ -243,8 +240,7 @@ def load(path, delimiter = None, labels = None, usecols = None,
             file '%s' does not exist.""" % path)
 
     # get delimiter
-    if not delimiter:
-        delimiter = getdelim(path)
+    if not delimiter: delimiter = getdelim(path)
     if not delimiter:
         return nemoa.log('error', """could not get data from csv file:
             unknown delimiter.""")
@@ -259,7 +255,7 @@ def load(path, delimiter = None, labels = None, usecols = None,
     if not labels: return nemoa.log('error',
         "could not get data from csv file: unknown labels.")
 
-    # get row label coumn id
+    # get row label column id
     if rowlabelcol == None:
         rowlabelcol = getlabelcolumn(path, delimiter = delimiter)
 
@@ -301,20 +297,18 @@ def load(path, delimiter = None, labels = None, usecols = None,
         data = numpy.loadtxt(path, skiprows = skiprows,
             delimiter = delimiter, usecols = usecols, dtype = dtype)
     except:
-        return nemoa.log('error', """could not import data from CSV
-            file.""")
+        return nemoa.log('error', "could not import data from CSV file.")
 
     return data
 
-def dump(path, data, header = None, labels = None, delimiter = ','):
+def dump(path: str, data: numpy.ndarray, header: Optional[str] = None,
+    labels: Optional[list] = None, delimiter: str = ',') -> bool:
     """ """
 
     if isinstance(header, str):
         header = '# %s\n\n' % (header.replace('\n', '\n# '))
-        if isinstance(labels, list):
-            header += delimiter.join(labels)
-    elif isinstance(labels, list):
-        header = delimiter.join(labels)
+        if isinstance(labels, list): header += delimiter.join(labels)
+    elif isinstance(labels, list): header = delimiter.join(labels)
 
     fmt = delimiter.join(['%s'] + ['%10.10f'] * (len(data[0]) - 1))
     numpy.savetxt(path, data, fmt = fmt, header = header, comments = '')
