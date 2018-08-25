@@ -37,14 +37,14 @@ class Csv:
     """Export dataset to Comma Separated Values."""
 
     settings = None
-    default = { 'delimiter': ',' }
+    default = { 'delim': ',' }
 
     def __init__(self, **kwargs):
         self.settings = nemoa.common.dict.merge(kwargs, self.default)
 
     def save(self, dataset, path):
 
-        from nemoa.common.csvfile import dump as save_csvfile
+        from nemoa.common.csvfile import save as save_csvfile
 
         # create the configuration which is included in the CSV file
         # as header as a subset of the dataset configuration
@@ -57,13 +57,13 @@ class Csv:
 
         # prepare CSV parameters and write CSV file
         header = nemoa.common.inifile.dumps(config).strip('\n')
-        delimiter = self.settings['delimiter']
+        delim = self.settings['delim']
         cols, data = dataset.get('data', output = ('cols', 'recarray'))
 
         return save_csvfile(path, data, header = header,
-            delimiter = delimiter, labels = [''] + cols)
+            delim = delim, labels = [''] + cols)
 
 class Tsv(Csv):
     """Export dataset to Tab Separated Values."""
 
-    default = { 'delimiter': '\t' }
+    default = { 'delim': '\t' }

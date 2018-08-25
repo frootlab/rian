@@ -36,7 +36,7 @@ class Csv:
     """Import dataset from Comma Separated Values."""
 
     settings = None
-    default = { 'delimiter': ',' }
+    default = { 'delim': ',' }
 
     def __init__(self, **kwargs):
         self.settings = nemoa.common.dict.merge(kwargs, self.default)
@@ -50,7 +50,7 @@ class Csv:
 
         """
 
-        from nemoa.common.csvfile import getheader as get_csvheader
+        from nemoa.common.csvfile import get_header as get_csvheader
         from nemoa.common.csvfile import load as load_csvfile
 
         # get config from csv header
@@ -106,4 +106,4 @@ class Csv:
 class Tsv(Csv):
     """Export dataset to Tab Separated Values."""
 
-    default = { 'delimiter': '\t' }
+    default = { 'delim': '\t' }

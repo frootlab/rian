@@ -39,6 +39,51 @@ class TestSuite(NmTestSuite):
 
         if os.path.exists(f): os.remove(f)
 
+    def test_common_csvfile(self):
+        import nemoa.common.csvfile
+        import numpy
+        import os
+        import tempfile
+
+        f = tempfile.NamedTemporaryFile().name + '.csv'
+        header = '-*- coding: utf-8 -*-'
+        data = numpy.array(
+            [("row1", 1.1, 1.2), ("row2", 2.1, 2.2), ("row3", 3.1, 3.2)],
+            dtype=[('label', 'U8'), ('col1', 'f8'), ('col2', 'f8')])
+        delim = ','
+        labels = ["", "col1", "col2"]
+
+        with self.subTest(function = "save"):
+            func = nemoa.common.csvfile.save
+            test = func(f, data, header = header,
+                labels = labels, delim = delim)
+            self.assertTrue(test)
+        with self.subTest(function = "get_header"):
+            func = nemoa.common.csvfile.get_header
+            test = func(f) == header
+            self.assertTrue(test)
+        with self.subTest(function = "get_delim"):
+            func = nemoa.common.csvfile.get_delim
+            test = func(f) == delim
+            self.assertTrue(test)
+        with self.subTest(function = "get_labels"):
+            func = nemoa.common.csvfile.get_labels
+            test = func(f) == labels
+            self.assertTrue(test)
+        with self.subTest(function = "get_labelcolumn"):
+            func = nemoa.common.csvfile.get_labelcolumn
+            test = func(f) == 0
+            self.assertTrue(test)
+        with self.subTest(function = "load"):
+            func = nemoa.common.csvfile.load
+            rval = func(f)
+            test = isinstance(rval, numpy.ndarray) \
+                and (rval['col1'] == data['col1']).any() \
+                and (rval['col2'] == data['col2']).any()
+            self.assertTrue(True)
+
+        if os.path.exists(f): os.remove(f)
+
     def test_common_module(self):
         with self.subTest(function = "get_curname"):
             from nemoa.common.module import get_curname

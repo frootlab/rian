@@ -10,7 +10,7 @@ import os
 
 from typing import Optional
 
-def getheader(path: str) -> str:
+def get_header(path: str) -> str:
     """Get header from CSV file.
 
     Args:
@@ -34,16 +34,18 @@ def getheader(path: str) -> str:
 
             # check exclusion criteria
             stripped_line = line.lstrip(' ')
-            if stripped_line in ['\n', '\r\n']:
-                continue
+            if stripped_line in ['\n', '\r\n']: continue
             if stripped_line.startswith('#'):
-                header += stripped_line[1:]
+                header += stripped_line[1:].lstrip()
                 continue
             break
 
+    # strip header
+    header = header.strip()
+
     return header
 
-def getdelim(path: str, delimiters: list = [',', ';', '\t', ' '],
+def get_delim(path: str, delims: list = [',', ';', '\t', ' '],
     minprobe: int = 3, maxprobe: int = 100) -> str:
     """Get delimiter from CSV file.
 
@@ -51,8 +53,8 @@ def getdelim(path: str, delimiters: list = [',', ';', '\t', ' '],
         path (string): file path to CSV file.
 
     Kwargs:
-        delimiters (list, optional): list of strings containing
-            delimiter candidates to search for.
+        delims (list, optional): list of strings containing delimiter
+            candidates to search for.
         minprobe (integer, optional): minimum number of non comment,
             non empty lines used to detect CSV delimiter.
         maxprobe (integer, optional): maximum number of non comment,
@@ -69,14 +71,14 @@ def getdelim(path: str, delimiters: list = [',', ';', '\t', ' '],
         "could not determine csv delimiter: "
         "file '%s' does not exist." % path)
 
-    delimiter = None
+    delim = None
     with open(path, 'r') as csvfile:
         lines = 1
         probe = ''
         for line in csvfile:
 
             # check termination criteria
-            if bool(delimiter) or lines > maxprobe: break
+            if bool(delim) or lines > maxprobe: break
 
             # check exclusion criteria
             sline = line.lstrip(' ')
@@ -89,25 +91,25 @@ def getdelim(path: str, delimiters: list = [',', ';', '\t', ' '],
             # try to detect delimiter of probe
             if lines > minprobe:
                 try:
-                    dialect = csv.Sniffer().sniff(probe, delimiters)
+                    dialect = csv.Sniffer().sniff(probe, delims)
                 except:
                     continue
-                delimiter = dialect.delimiter
+                delim = dialect.delimiter
 
-    if not delimiter: raise TypeError(
-        "could not determine csv delimiter: "
+    if not delim: raise TypeError(
+        "could not determine CSV delimiter: "
         "file '%s' is not valid." % path)
 
-    return delimiter
+    return delim
 
-def getlabels(path: str, delimiter: Optional[str] = None) -> list:
+def get_labels(path: str, delim: Optional[str] = None) -> list:
     """Get (column) labels from CSV file.
 
     Args:
         path (string): file path to CSV file.
 
     Kwargs:
-        delimiter (string, optional): string containing CSV delimiter.
+        delim (string, optional): string containing CSV delimiter.
 
     Returns:
         List of strings containing column labels from first non comment,
@@ -121,8 +123,8 @@ def getlabels(path: str, delimiter: Optional[str] = None) -> list:
         "file '%s' does not exist." % path)
 
     # get delimiter
-    if not delimiter: delimiter = getdelim(path)
-    if not delimiter: raise TypeError(
+    if not delim: delim = get_delim(path)
+    if not delim: raise TypeError(
         "could not get csv column labels: "
         "the delimiter in file '%s' is not supported." % path)
 
@@ -146,29 +148,30 @@ def getlabels(path: str, delimiter: Optional[str] = None) -> list:
         "could not get csv column labels: "
         "file '%s' is not valid." % path)
 
-    if first.count(delimiter) == second.count(delimiter):
+    if first.count(delim) == second.count(delim):
         csvtype = 'default'
-    elif first.count(delimiter) == second.count(delimiter) - 1:
+    elif first.count(delim) == second.count(delim) - 1:
         csvtype == 'r-table'
     else: raise TypeError(
         "could not get csv column labels: "
         "file '%s' is not valid." % path)
 
-    col_labels = first.split(delimiter)
+    col_labels = first.split(delim)
     col_labels = [col.strip('\"\'\n\r\t ') for col in col_labels]
 
     if csvtype == 'default': return col_labels
     if csvtype == 'r_table': return ['label'] + col_labels
+
     return []
 
-def getlabelcolumn(path: str, delimiter: Optional[str] = None) -> int:
+def get_labelcolumn(path: str, delim: Optional[str] = None) -> int:
     """Get column id for column containing row labels from CSV file.
 
     Args:
         path (string): file path to CSV file.
 
     Kwargs:
-        delimiter (string, optional): string containing CSV delimiter.
+        delim (string, optional): string containing CSV delimiter.
 
     Returns:
         Integer containing first index of CSV data column containing
@@ -182,8 +185,8 @@ def getlabelcolumn(path: str, delimiter: Optional[str] = None) -> int:
         "file '%s' does not exist." % path)
 
     # get delimiter
-    if not delimiter: delimiter = getdelim(path)
-    if not delimiter: raise TypeError(
+    if not delim: delim = get_delim(path)
+    if not delim: raise TypeError(
         "could not get csv row label column id: "
         "the delimiter in file '%s' is not supported." % path)
 
@@ -207,7 +210,7 @@ def getlabelcolumn(path: str, delimiter: Optional[str] = None) -> int:
         "could not get csv row label column id: "
         "file '%s' is not valid." % path)
 
-    colvals = second.split(delimiter)
+    colvals = second.split(delim)
     colvals = [col.strip('\"\' \n') for col in colvals]
     for colid, colval in enumerate(colvals):
         try: float(colval)
@@ -215,7 +218,7 @@ def getlabelcolumn(path: str, delimiter: Optional[str] = None) -> int:
 
     return False
 
-def load(path: str, delimiter: Optional[str] = None,
+def load(path: str, delim: Optional[str] = None,
     labels: Optional[list] = None, usecols: Optional[tuple] = None,
     rowlabelcol: Optional[int] = None) -> Optional[numpy.ndarray]:
     """Load numpy array from CSV file.
@@ -224,7 +227,7 @@ def load(path: str, delimiter: Optional[str] = None,
         path (string): file path to CSV file.
 
     Kwargs:
-        delimiter (string, optional): string containing CSV delimiter.
+        delim (string, optional): string containing CSV delimiter.
             If not given, the CSV delimiter is detected from CSV file.
         labels (list, optional): list of strings containing CSV labels.
             If not given, the CSV labels are detected from CSV file.
@@ -246,8 +249,8 @@ def load(path: str, delimiter: Optional[str] = None,
         "file '%s' does not exist." % path)
 
     # get delimiter
-    if not delimiter: delimiter = getdelim(path)
-    if not delimiter: raise TypeError(
+    if not delim: delim = get_delim(path)
+    if not delim: raise TypeError(
         "could not get data from csv file: "
         "the delimiter in file '%s' is not supported." % path)
 
@@ -257,7 +260,7 @@ def load(path: str, delimiter: Optional[str] = None,
             "could not get data from csv file: "
             "keyword argument 'usecols' is not given.")
     else:
-        labels = getlabels(path, delimiter = delimiter)
+        labels = get_labels(path, delim = delim)
         usecols = tuple(range(len(labels)))
     if not labels: raise TypeError(
         "could not get data from csv file: "
@@ -265,7 +268,7 @@ def load(path: str, delimiter: Optional[str] = None,
 
     # get row label column id
     if rowlabelcol == None:
-        rowlabelcol = getlabelcolumn(path, delimiter = delimiter)
+        rowlabelcol = get_labelcolumn(path, delim = delim)
 
     # get datatype
     if rowlabelcol == None:
@@ -301,20 +304,34 @@ def load(path: str, delimiter: Optional[str] = None,
             break
 
     data = numpy.loadtxt(path, skiprows = skiprows,
-        delimiter = delimiter, usecols = usecols, dtype = dtype)
+        delimiter = delim, usecols = usecols, dtype = dtype)
 
     return data
 
-def dump(path: str, data: numpy.ndarray, header: Optional[str] = None,
-    labels: Optional[list] = None, delimiter: str = ',') -> bool:
-    """ """
+def save(path: str, data: numpy.ndarray, header: Optional[str] = None,
+    labels: Optional[list] = None, delim: str = ',') -> bool:
+    """Save numpy array to CSV file.
+
+    Args:
+        path (string): file path to CSV file.
+        data (numpy ndarray): data
+
+    Kwargs:
+        header (string, optional):
+        labels (list, optional): list of strings containing CSV labels.
+        delim (string, optional):
+
+    Returns:
+        True if no error occured.
+
+    """
 
     if isinstance(header, str):
         header = '# %s\n\n' % (header.replace('\n', '\n# '))
-        if isinstance(labels, list): header += delimiter.join(labels)
-    elif isinstance(labels, list): header = delimiter.join(labels)
+        if isinstance(labels, list): header += delim.join(labels)
+    elif isinstance(labels, list): header = delim.join(labels)
 
-    fmt = delimiter.join(['%s'] + ['%10.10f'] * (len(data[0]) - 1))
+    fmt = delim.join(['%s'] + ['%10.10f'] * (len(data[0]) - 1))
     numpy.savetxt(path, data, fmt = fmt, header = header, comments = '')
 
     return True
