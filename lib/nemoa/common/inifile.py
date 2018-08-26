@@ -4,8 +4,6 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
-
 from configparser import ConfigParser
 from typing import Optional
 
@@ -66,7 +64,8 @@ def loads(s: str, structure: Optional[dict] = None,
 
 def parse(parser: ConfigParser, structure: Optional[dict] = None) -> dict:
 
-    import re
+    from re import compile
+    from nemoa.common.text import astype
 
     # parse sections and create config dictionary
     d = {}
@@ -81,7 +80,7 @@ def parse(parser: ConfigParser, structure: Optional[dict] = None) -> dict:
 
     regex_sec = {}
     for key in list(structure.keys()):
-        regex_sec[key] = re.compile('\A' + key)
+        regex_sec[key] = compile('\A' + key)
 
     for sec in parser.sections():
 
@@ -98,11 +97,11 @@ def parse(parser: ConfigParser, structure: Optional[dict] = None) -> dict:
 
         # use regular expression to match keys
         for regex_key, fmt in structure[sec_regex].items():
-            re_key = re.compile(regex_key)
+            re_key = compile(regex_key)
             for key in parser.options(sec):
                 if not re_key.match(key): continue
                 val = parser.get(sec, key)
-                sec_dict[key] = nemoa.common.text.astype(val, fmt)
+                sec_dict[key] = astype(val, fmt)
 
         d[sec] = sec_dict
 
