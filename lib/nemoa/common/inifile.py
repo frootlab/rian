@@ -4,48 +4,47 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import configparser
-import io
 import nemoa
-import os
-import re
 
-def dumps(dictionary, nosection = True):
+from configparser import ConfigParser
+from typing import Optional
 
-    if nosection:
-        dictionary = dictionary.copy()
-        dictionary = {'root': dictionary}
+def dumps(d: dict, nosection: bool = True) -> str:
 
-    parser = configparser.ConfigParser()
-    for section in dictionary:
-        if not isinstance(dictionary[section], dict): continue
-        parser.add_section(section)
-        for key, val in list(dictionary[section].items()):
-            parser.set(section, key, val)
+    from io import BytesIO
 
-    with io.BytesIO() as strbuffer:
+    if nosection: d = {'root': d.copy()}
+
+    parser = ConfigParser()
+    for sec in d:
+        if not isinstance(d[sec], dict): continue
+        parser.add_section(sec)
+        for key, val in list(d[sec].items()):
+            parser.set(sec, key, val)
+
+    with BytesIO() as strbuffer:
         parser.write(strbuffer)
-        string = strbuffer.getvalue()
+        s = strbuffer.getvalue()
 
-    if nosection:
-        string = string.replace('[root]\n', '')
+    if nosection: s = s.replace('[root]\n', '')
 
-    return string
+    return s
 
-def load(path, structure = None):
+def load(f: str, structure: Optional[dict] = None) -> dict:
 
     # get config file parser
-    parser = configparser.ConfigParser()
+    parser = ConfigParser()
     parser.optionxform = str
-    parser.read(path)
+    parser.read(f)
 
     # parse sections and create config dictionary
-    return parse(parser, structure)
+    return parse(parser, structure = structure)
 
-def loads(string, structure = None, nosection = False):
+def loads(s: str, structure: Optional[dict] = None,
+    nosection: bool = False) -> dict:
 
     # format string
-    lines = string.split('\n')
+    lines = s.split('\n')
     for lid, line in enumerate(lines):
         lines[lid] = line.strip(' ')
     if nosection:
@@ -53,58 +52,58 @@ def loads(string, structure = None, nosection = False):
         if isinstance(structure, dict):
             structure = structure.copy()
             structure = {'root': structure}
-    else:
-        configstr = '\n'.join(lines)
+    else: configstr = '\n'.join(lines)
 
     # get config parser
-    parser = configparser.ConfigParser()
+    parser = ConfigParser()
     parser.read_string(configstr)
 
     # parse sections and create config dictionary
-    config = parse(parser, structure)
+    d = parse(parser, structure)
 
-    if nosection: return config['root']
-    return config
+    if nosection: return d['root']
+    return d
 
-def parse(parser, structure = None):
+def parse(parser: ConfigParser, structure: Optional[dict] = None) -> dict:
+
+    import re
 
     # parse sections and create config dictionary
-    config = {}
+    d = {}
 
     if not isinstance(structure, dict):
-        for section in parser.sections():
-            config[section] = {}
-            for key in parser.options(section):
-                config[section][key] = parser.get(section, key)
+        for sec in parser.sections():
+            d[sec] = {}
+            for key in parser.options(sec):
+                d[sec][key] = parser.get(sec, key)
 
-        return config
+        return d
 
-    regex_section = {}
+    regex_sec = {}
     for key in list(structure.keys()):
-        regex_section[key] = re.compile('\A' + key)
+        regex_sec[key] = re.compile('\A' + key)
 
-    for section in parser.sections():
+    for sec in parser.sections():
 
         # use regular expression to match sections
-        section_regex = None
+        sec_regex = None
         for key in list(structure.keys()):
-            regex_match = regex_section[key].match(section)
+            regex_match = regex_sec[key].match(sec)
             if not regex_match: continue
-            section_regex = key
+            sec_regex = key
             break
-        if not section_regex: continue
-        section_name = regex_match.group()
-        section_dict = {}
+        if not sec_regex: continue
+        sec_name = regex_match.group()
+        sec_dict = {}
 
         # use regular expression to match keys
-        for regex_key, fmt in structure[section_regex].items():
+        for regex_key, fmt in structure[sec_regex].items():
             re_key = re.compile(regex_key)
-            for key in parser.options(section):
+            for key in parser.options(sec):
                 if not re_key.match(key): continue
-                val = parser.get(section, key)
-                section_dict[key] = \
-                    nemoa.common.text.astype(val, fmt)
+                val = parser.get(sec, key)
+                sec_dict[key] = nemoa.common.text.astype(val, fmt)
 
-        config[section] = section_dict
+        d[sec] = sec_dict
 
-    return config
+    return d
