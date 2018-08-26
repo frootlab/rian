@@ -53,6 +53,7 @@ class Csv:
 
         from nemoa.common.csvfile import get_header as get_csvheader
         from nemoa.common.csvfile import load as load_csvfile
+        from nemoa.common.inifile import loads as loads_inifile
 
         # get config from csv header
         header = get_csvheader(path)
@@ -71,8 +72,7 @@ class Csv:
             'type': 'str',
             'labelformat': 'str' }
 
-        config = nemoa.common.inifile.loads(header, nosection = True,
-            structure = structure)
+        config = loads_inifile(header, nosection = True, structure = structure)
 
         if 'name' in config:
             name = config['name']

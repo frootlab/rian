@@ -46,6 +46,7 @@ class Csv:
     def save(self, dataset, path):
 
         from nemoa.common.csvfile import save as save_csvfile
+        from nemoa.common.inifile import dumps
 
         # create the configuration which is included in the CSV file
         # as header as a subset of the dataset configuration
@@ -57,7 +58,7 @@ class Csv:
             if key in keys: config[key] = val
 
         # prepare CSV parameters and write CSV file
-        header = nemoa.common.inifile.dumps(config).strip('\n')
+        header = dumps(config).strip('\n')
         delim = self.settings['delim']
         cols, data = dataset.get('data', output = ('cols', 'recarray'))
 

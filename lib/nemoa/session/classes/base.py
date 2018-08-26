@@ -54,6 +54,7 @@ class Session:
 
         import os
         from nemoa.common.dict import merge
+        from nemoa.common.inifile import load as load_inifile
 
         self._config = merge(kwargs, self._default)
 
@@ -65,8 +66,7 @@ class Session:
         configfile = self._get_path_expand(configfile)
 
         if os.path.exists(configfile):
-            ini_dict = nemoa.common.inifile.load(
-                configfile, {
+            ini_dict = load_inifile(configfile, {
                 'folders': {
                     'user': 'str',
                     'cache': 'str',
