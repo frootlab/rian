@@ -18,7 +18,7 @@ from networkx.classes.digraph import DiGraph
 from typing import Optional
 
 def get_layout(G: DiGraph, layout: str = 'spring',
-    size: Optional[tuple] = None, padding: Optional[tuple] = None,
+    size: Optional[tuple] = None, padding: tuple = (0., 0., 0., 0.),
     rotate: float = 0.0, **kwargs) -> dict:
     """Calculate positions of nodes, depending on graph layout.
 
@@ -28,10 +28,11 @@ def get_layout(G: DiGraph, layout: str = 'spring',
     Kwargs:
         layout (string, optional): graph layout name
             default is "spring"
-        size (tuple, optional): size in pixel (x, y)
+        size (2-tuple, optional): size in pixel (x, y)
             default is None, which means no rescale
-        padding (tuple, optional): padding in percentage (up, down, left, right)
-            default is None, which means no padding
+        padding (4-tuple, optional): padding in percentage
+            in format (up, down, left, right)
+            default is (0., 0., 0., 0.), which means no padding
         rotate (float, optional): rotation angle in degrees
             default is 0.0, which means no rotation
 
@@ -63,15 +64,16 @@ def get_layout(G: DiGraph, layout: str = 'spring',
 
     # rescale node positions to given figure size, padding
     # and rotation angle
-    pos = rescale_layout(pos, size = size, padding = padding, rotate = rotate)
+    pos = rescale_layout(pos,
+        size = size, padding = padding, rotate = rotate)
 
     return pos
 
 def get_layers(G: DiGraph) -> list:
     """Return list of layers in DiGraph."""
 
-    # create node stack as list of lists
-    # sorted by the node attributes layer_id and layer_sub_id
+    # create list of lists
+    # sorted by the node attributes "layer_id" and "layer_sub_id"
     sort = {}
     for node, data in G.nodes(data = True):
         l = (data.get('layer'), data.get('layer_id'))
@@ -85,6 +87,38 @@ def get_layers(G: DiGraph) -> list:
             sorted(sort.get((layer, lid), []), key = lambda x: x[1])])
 
     return layers
+
+def get_groups(G: DiGraph, attribute: Optional[str] = None,
+    param: Optional[str] = None) -> dict:
+    """Return dictinary with grouped lists of nodes."""
+
+    if attribute == None and param == None: attribute = 'group'
+
+    groups = {'': []}
+
+    for node, data in G.nodes(data = True):
+        if not isinstance(data, dict):
+            groups[''].append(node)
+            continue
+        elif not attribute == None and not attribute in data:
+            groups[''].append(node)
+            continue
+        elif not param == None \
+            and not ('params' in data and param in data['params']):
+            groups[''].append(node)
+            continue
+        if not attribute == None and param == None:
+            group = data.get(attribute)
+        elif attribute == None and not param == None:
+            group = data['params'].get(param)
+        else:
+            group = (data.get(attribute), data['params'].get(param))
+        if not group in groups:
+            groups[group] = [node]
+            continue
+        groups[group].append(node)
+
+    return groups
 
 def get_layer_layout(G: DiGraph, direction: str = 'right',
     minimize: str = 'weight') -> dict:
@@ -179,7 +213,7 @@ def get_layout_normsize(pos: dict) -> dict:
     """
 
     # calculate norm scaling
-    scale = get_layout_normscale(pos)
+    scale = get_scaling_factor(pos)
 
     return {
         'node_size':   0.0558 * scale ** 2,
@@ -188,52 +222,8 @@ def get_layout_normsize(pos: dict) -> dict:
         'edge_width':  0.0066 * scale,
         'font_size':   0.1200 * scale }
 
-def get_subgraphs(G: DiGraph) -> None:
-
-    import nemoa
-
-    # find (disconected) complexes in graph
-    graphs = list(networkx.connected_component_subgraphs(G.to_undirected()))
-    if len(graphs) > 1:
-        nemoa.log('note', '%i complexes found' % (len(graphs)))
-    for i in range(len(graphs)):
-        for n in graphs[i].nodes(): G.node[n]['complex'] = i
-
-    return True
-
-def get_groups(G: DiGraph, attribute: Optional[str] = None,
-    param: Optional[str] = None) -> dict:
-
-    if attribute == None and param == None:
-        attribute = 'group'
-
-    groups = {'': []}
-
-    for node, data in G.nodes(data = True):
-        if not isinstance(data, dict):
-            groups[''].append(node)
-            continue
-        elif not attribute == None and not attribute in data:
-            groups[''].append(node)
-            continue
-        elif not param == None \
-            and not ('params' in data and param in data['params']):
-            groups[''].append(node)
-            continue
-        if not attribute == None and param == None:
-            group = data.get(attribute)
-        elif attribute == None and not param == None:
-            group = data['params'].get(param)
-        else:
-            group = (data.get(attribute), data['params'].get(param))
-        if not group in groups:
-            groups[group] = [node]
-            continue
-        groups[group].append(node)
-
-    return groups
-
 def get_node_layout(ntype: str) -> dict:
+    """ """
 
     layouts = {
         'dark blue': { 'color': 'marine blue', 'font_color': 'white',
@@ -288,7 +278,12 @@ def is_layered(G: DiGraph) -> bool:
     Args:
         G: networkx graph instance
 
+    Return:
+        bool which is True if the graph nodes contain layer attributes.
+
     """
+
+    # 2do: test by edge structure and not by node attributes
 
     require = ['layer', 'layer_id', 'layer_sub_id']
     for node, data in G.nodes(data = True):
@@ -297,71 +292,80 @@ def is_layered(G: DiGraph) -> bool:
 
     return True
 
-def get_layout_normscale(pos: dict) -> float:
-    """Calculate scaling.
+def get_scaling_factor(pos: dict) -> float:
+    """Calculate normalized scaling factor for given node positions.
 
     Args:
         pos: dictionary with node positions
 
+    Return:
+        float containing a normalized scaling factor
+
     """
 
     # calculate euclidean distances between node positions
-    euklid = lambda x: numpy.sqrt(numpy.sum(x ** 2))
-    dlist = []
+    norm = lambda x: numpy.sqrt(numpy.sum(x ** 2))
+    dist = lambda u, v: norm(numpy.array(pos[u]) - numpy.array(pos[v]))
+    dl = []
     for i, u in enumerate(pos.keys()):
         for j, v in enumerate(list(pos.keys())[i + 1:], i + 1):
-            pu, pv = numpy.array(pos[u]), numpy.array(pos[v])
-            dlist.append(euklid(pu - pv))
-    darr = numpy.array(dlist)
+            dl.append(dist(u, v))
+    da = numpy.array(dl)
 
     # calculate maximal scaling factor for non overlapping nodes
     # by minimal euklidean distance between node positions
-    maxscale = 2.32 * numpy.amin(darr)
+    smax = 2.32 * numpy.amin(da)
 
     # calculate minimal scaling factor
     # by average euklidean distance between node positions
-    minscale = 0.20 * numpy.mean(darr)
+    smin = 0.20 * numpy.mean(da)
 
     # if some nodes are exceptional close
     # the overlapping of those nodes is not avoided
-    if minscale > maxscale: return minscale
+    scale = smin if smin > smax else smin * (2. - smin / smax)
 
-    return minscale * (2. - minscale / maxscale)
+    return scale
 
 def rescale_layout(pos: dict, size: Optional[tuple] = None,
-    padding: Optional[tuple] = None, rotate: float = 0.0) -> dict:
+    padding: tuple = (0., 0., 0., 0.), rotate: float = 0.) -> dict:
     """Rescale node positions.
 
     Args:
         pos (dict): dictionary with node positions
 
     Kwargs:
-        size (tuple, optional): size in pixel (x, y)
+        size (2-tuple, optional): size in pixel (x, y)
             default is None, which means no rescale
-        padding (tuple, optional): padding in percentage (up, down, left, right)
-            default is None, which means no padding
+        padding (4-tuple, optional): padding in percentage
+            in format (up, down, left, right)
+            default is (0., 0., 0., 0.), which means no padding
         rotate (float, optional): rotation angle in degrees
             default is 0.0, which means no rotation
 
+    Return:
+        dictionary containing rescaled node positions.
+
     """
 
-    data = numpy.array([(x, y) for x, y in list(pos.values())])
+    # create numpy array with positions
+    a = numpy.array([(x, y) for x, y in list(pos.values())])
 
-    # rotate positions around its center a by given rotation angle
+    # rotate positions around its center by a given rotation angle
     if bool(rotate):
         theta = numpy.radians(rotate)
         cos, sin = numpy.cos(theta), numpy.sin(theta)
         R = numpy.array([[cos, -sin], [sin, cos]])
-        mean = data.mean(axis = 0)
-        data = numpy.dot(data - mean, R.T) + mean
+        mean = a.mean(axis = 0)
+        a = numpy.dot(a - mean, R.T) + mean
 
-    # rescale positions with padding [up, right, down, left]
+    # rescale positions with padding
     if not isinstance(size, type(None)):
-        dmin, dmax = numpy.amin(data, axis = 0), numpy.amax(data, axis = 0)
-        if isinstance(padding, type(None)): u, r, d, l = 0., 0., 0., 0.
-        else: u, r, d, l = padding
+        dmin, dmax = numpy.amin(a, axis = 0), numpy.amax(a, axis = 0)
+        u, r, d, l = padding
         pmin, pmax = numpy.array([l, d]), 1. - numpy.array([r, u])
-        data = (pmax - pmin) * (data - dmin) / (dmax - dmin) + pmin
-        data = numpy.array(size) * data
+        a = (pmax - pmin) * (a - dmin) / (dmax - dmin) + pmin
+        a = numpy.array(size) * a
 
-    return {node: tuple(data[i]) for i, node in enumerate(pos.keys())}
+    pos = {node: tuple(a[i]) for i, node in enumerate(pos.keys())}
+
+    return pos

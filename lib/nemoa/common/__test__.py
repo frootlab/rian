@@ -12,6 +12,7 @@ class TestSuite(NmTestSuite):
 
     def test_common_compress(self):
         import nemoa.common.compress
+
         import os
         import tempfile
 
@@ -41,6 +42,7 @@ class TestSuite(NmTestSuite):
 
     def test_common_csvfile(self):
         import nemoa.common.csvfile
+
         import numpy
         import os
         import tempfile
@@ -86,6 +88,7 @@ class TestSuite(NmTestSuite):
 
     def test_common_dict(self):
         import nemoa.common.dict
+
         import numpy
 
         d = {('a', 'b'): 1.}
@@ -124,43 +127,111 @@ class TestSuite(NmTestSuite):
             test = rval == {'a': 3, 'b': 3}
             self.assertTrue(test)
 
+    def test_common_graph(self):
+        import nemoa.common.graph
+
+        import networkx
+
+        l1 = [(1, 3), (1, 4), (2, 3), (2, 4)]
+        G1 = networkx.DiGraph(l1, directed = True)
+        networkx.set_node_attributes(G1, {
+            1: {'layer': 'i', 'layer_id': 0 , 'layer_sub_id': 0},
+            2: {'layer': 'i', 'layer_id': 0 , 'layer_sub_id': 1},
+            3: {'layer': 'o', 'layer_id': 1 , 'layer_sub_id': 0},
+            4: {'layer': 'o', 'layer_id': 1 , 'layer_sub_id': 1} })
+        networkx.set_edge_attributes(G1, {
+            (1, 3): {'weight': 0.1}, (1, 4): {'weight': 0.9},
+            (2, 3): {'weight': 0.9}, (2, 4): {'weight': 0.1} })
+        pos1 = {1: (.0, .25), 2: (.0, .75), 4: (1., .25), 3: (1., .75)}
+        pos2 = {1: (.25, 1.), 2: (.75, 1.), 4: (.25, .0), 3: (.75, .0)}
+        pos3 = {1: (4., 2.), 2: (4., 16.), 4: (32., 2.), 3: (32., 16.)}
+        l2 = [(1, 2), (2, 3), (3, 4), (4, 1)]
+        G2 = networkx.DiGraph(l2)
+
+        with self.subTest(function = "is_directed"):
+            func = nemoa.common.graph.is_directed
+            test = func(G1) and not func(G2)
+            self.assertTrue(test)
+        with self.subTest(function = "is_layered"):
+            func = nemoa.common.graph.is_layered
+            test = func(G1) and not func(G2)
+            self.assertTrue(test)
+        with self.subTest(function = "get_layers"):
+            func = nemoa.common.graph.get_layers
+            test = func(G1) == [[1, 2], [3, 4]]
+            self.assertTrue(test)
+        with self.subTest(function = "get_groups"):
+            func = nemoa.common.graph.get_groups
+            test = func(G1, attribute = 'layer') \
+                == {'': [], 'i': [1, 2], 'o': [3, 4]}
+            self.assertTrue(test)
+        with self.subTest(function = "get_layer_layout"):
+            func = nemoa.common.graph.get_layer_layout
+            test = func(G1, direction = 'right') == pos1 \
+                and func(G1, direction = 'down') == pos2
+            self.assertTrue(test)
+        with self.subTest(function = "rescale_layout"):
+            func = nemoa.common.graph.rescale_layout
+            test = func(pos1, size = (40, 20), \
+                padding = (.2, .2, .1, .1)) == pos3
+            self.assertTrue(test)
+        with self.subTest(function = "get_scaling_factor"):
+            func = nemoa.common.graph.get_scaling_factor
+            test = int(func(pos3)) == 9
+            self.assertTrue(test)
+        with self.subTest(function = "get_layout_normsize"):
+            func = nemoa.common.graph.get_layout_normsize
+            test = int(func(pos3).get('node_size', 0.)) == 4
+            self.assertTrue(test)
+        with self.subTest(function = "get_node_layout"):
+            func = nemoa.common.graph.get_node_layout
+            test = isinstance(func('observable').get('color', None), str)
+            self.assertTrue(test)
+        with self.subTest(function = "get_layout"):
+            func = nemoa.common.graph.get_layout
+            test = func(G1).keys() == func(G2).keys()
+            test = test and func(G1, 'layer', direction = 'right') == pos1
+            test = test and func(G1, 'layer', direction = 'down') == pos2
+            self.assertTrue(test)
+
     def test_common_module(self):
+        import nemoa.common.module
+
         with self.subTest(function = "get_curname"):
-            from nemoa.common.module import get_curname
-            test = get_curname() == 'nemoa.common.__test__'
+            func = nemoa.common.module.get_curname
+            test = func() == 'nemoa.common.__test__'
             self.assertTrue(test)
         with self.subTest(function = "get_submodules"):
-            from nemoa.common.module import get_submodules
-            mlist = get_submodules(nemoa.common)
-            test = 'nemoa.common.module' in mlist
+            func = nemoa.common.module.get_submodules
+            test = 'nemoa.common.module' in func(nemoa.common)
             self.assertTrue(test)
         with self.subTest(function = "get_module"):
-            from nemoa.common.module import get_module
-            minst = get_module('nemoa.common.module')
+            func = nemoa.common.module.get_module
+            minst = func('nemoa.common.module')
             test = hasattr(minst, '__name__') \
                 and minst.__name__ == 'nemoa.common.module'
             self.assertTrue(test)
         with self.subTest(function = "get_functions"):
-            from nemoa.common.module import get_functions
-            funcs = get_functions(minst)
+            func = nemoa.common.module.get_functions
+            funcs = func(minst)
             fname = 'nemoa.common.module.get_functions'
             test = fname in funcs
-            test &= len(get_functions(minst, name = 'get_functions')) == 1
-            test &= len(get_functions(minst, name = '')) == 0
+            test &= len(func(minst, name = 'get_functions')) == 1
+            test &= len(func(minst, name = '')) == 0
+            self.assertTrue(test)
         with self.subTest(function = "get_function"):
-            from nemoa.common.module import get_function
-            finst = get_function(fname)
+            func = nemoa.common.module.get_function
+            finst = func(fname)
             test = type(finst).__name__ == 'function'
             self.assertTrue(test)
         with self.subTest(function = "get_kwargs"):
-            from nemoa.common.module import get_kwargs
-            fargs = get_kwargs(finst)
+            func = nemoa.common.module.get_kwargs
+            fargs = func(finst)
             test = 'details' in fargs
             self.assertTrue(test)
-            self.assertTrue(test)
         with self.subTest(function = "locate_functions"):
-            from nemoa.common.module import locate_functions
-            funcs = locate_functions(get_module('nemoa.common'),
-                name = 'locate_functions')
+            func = nemoa.common.module.locate_functions
+            minst = nemoa.common.module.get_module('nemoa.common')
+            funcs = func(minst, name = 'locate_functions')
             test = len(funcs) == 1
             self.assertTrue(test)
