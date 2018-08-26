@@ -45,7 +45,7 @@ class Csv:
 
     def save(self, dataset, path):
 
-        from nemoa.common.csvfile import save as save_csvfile
+        from nemoa.common.csvfile import save as save_csv
         from nemoa.common.inifile import dumps
 
         # create the configuration which is included in the CSV file
@@ -58,12 +58,12 @@ class Csv:
             if key in keys: config[key] = val
 
         # prepare CSV parameters and write CSV file
-        header = dumps(config).strip('\n')
+        header = dumps(config, flat = True).strip('\n')
         delim = self.settings['delim']
         cols, data = dataset.get('data', output = ('cols', 'recarray'))
 
-        return save_csvfile(path, data, header = header,
-            delim = delim, labels = [''] + cols)
+        return save_csv(path, data, header = header, delim = delim,
+            labels = [''] + cols)
 
 class Tsv(Csv):
     """Export dataset to Tab Separated Values."""

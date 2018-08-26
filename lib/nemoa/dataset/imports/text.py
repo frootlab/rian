@@ -72,10 +72,9 @@ class Csv:
             'type': 'str',
             'labelformat': 'str' }
 
-        config = loads_inifile(header, nosection = True, structure = structure)
+        config = loads_inifile(header, flat = True, structure = structure)
 
-        if 'name' in config:
-            name = config['name']
+        if 'name' in config: name = config['name']
         else:
             name = nemoa.common.ospath.basename(path)
             config['name'] = name
