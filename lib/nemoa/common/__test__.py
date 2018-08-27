@@ -10,64 +10,6 @@ from nemoa.common.unittest import TestSuite as NmTestSuite
 
 class TestSuite(NmTestSuite):
 
-    def test_common_iozip(self):
-        from nemoa.common import iozip
-
-        import os
-        import tempfile
-
-        d = {True: 'a', 2: {None: 0.5}}
-        s = b'eNprYK4tZNDoiGBkYGBILGT0ZqotZPJzt3/AAAbFpXoAgyIHVQ=='
-        f = tempfile.NamedTemporaryFile().name
-
-        with self.subTest(function = "dumps"):
-            self.assertTrue(iozip.dumps(d) == s)
-        with self.subTest(function = "loads"):
-            self.assertTrue(iozip.loads(s) == d)
-        with self.subTest(function = "dump"):
-            iozip.dump(d, f)
-            self.assertTrue(os.path.exists(f))
-        with self.subTest(function = "load"):
-            self.assertTrue(iozip.load(f) == d)
-
-        if os.path.exists(f): os.remove(f)
-
-    def test_common_iocsv(self):
-        from nemoa.common import iocsv
-
-        import numpy
-        import os
-        import tempfile
-
-        f = tempfile.NamedTemporaryFile().name + '.csv'
-
-        header = '-*- coding: utf-8 -*-'
-        data = numpy.array(
-            [("row1", 1.1, 1.2), ("row2", 2.1, 2.2), ("row3", 3.1, 3.2)],
-            dtype=[('label', 'U8'), ('col1', 'f8'), ('col2', 'f8')])
-        delim = ','
-        labels = ["", "col1", "col2"]
-
-        with self.subTest(function = "save"):
-            self.assertTrue(iocsv.save(f, data, header = header,
-                labels = labels, delim = delim))
-        with self.subTest(function = "get_header"):
-            self.assertTrue(iocsv.get_header(f) == header)
-        with self.subTest(function = "get_delim"):
-            self.assertTrue(iocsv.get_delim(f) == delim)
-        with self.subTest(function = "get_labels"):
-            self.assertTrue(iocsv.get_labels(f) == labels)
-        with self.subTest(function = "get_labelcolumn"):
-            self.assertTrue(iocsv.get_labelcolumn(f) == 0)
-        with self.subTest(function = "load"):
-            rval = iocsv.load(f)
-            test = isinstance(rval, numpy.ndarray) \
-                and (rval['col1'] == data['col1']).any() \
-                and (rval['col2'] == data['col2']).any()
-            self.assertTrue(test)
-
-        if os.path.exists(f): os.remove(f)
-
     def test_common_dict(self):
         import nemoa.common.dict
 
@@ -162,6 +104,42 @@ class TestSuite(NmTestSuite):
             test = graph.get_layout(G, 'layer', direction = 'right') == pos1
             self.assertTrue(test)
 
+    def test_common_iocsv(self):
+        from nemoa.common import iocsv
+
+        import numpy
+        import os
+        import tempfile
+
+        f = tempfile.NamedTemporaryFile().name + '.csv'
+
+        header = '-*- coding: utf-8 -*-'
+        data = numpy.array(
+            [("row1", 1.1, 1.2), ("row2", 2.1, 2.2), ("row3", 3.1, 3.2)],
+            dtype=[('label', 'U8'), ('col1', 'f8'), ('col2', 'f8')])
+        delim = ','
+        labels = ["", "col1", "col2"]
+
+        with self.subTest(function = "save"):
+            self.assertTrue(iocsv.save(f, data, header = header,
+                labels = labels, delim = delim))
+        with self.subTest(function = "get_header"):
+            self.assertTrue(iocsv.get_header(f) == header)
+        with self.subTest(function = "get_delim"):
+            self.assertTrue(iocsv.get_delim(f) == delim)
+        with self.subTest(function = "get_labels"):
+            self.assertTrue(iocsv.get_labels(f) == labels)
+        with self.subTest(function = "get_labelcolumn"):
+            self.assertTrue(iocsv.get_labelcolumn(f) == 0)
+        with self.subTest(function = "load"):
+            rval = iocsv.load(f)
+            test = isinstance(rval, numpy.ndarray) \
+                and (rval['col1'] == data['col1']).any() \
+                and (rval['col2'] == data['col2']).any()
+            self.assertTrue(test)
+
+        if os.path.exists(f): os.remove(f)
+
     def test_common_ioini(self):
         from nemoa.common import ioini
 
@@ -188,6 +166,28 @@ class TestSuite(NmTestSuite):
             self.assertTrue(ioini.load(f, structure = struct) == d)
         with self.subTest(function = "header"):
             self.assertTrue(ioini.header(f) == header)
+
+        if os.path.exists(f): os.remove(f)
+
+    def test_common_iozip(self):
+        from nemoa.common import iozip
+
+        import os
+        import tempfile
+
+        d = {True: 'a', 2: {None: 0.5}}
+        s = b'eNprYK4tZNDoiGBkYGBILGT0ZqotZPJzt3/AAAbFpXoAgyIHVQ=='
+        f = tempfile.NamedTemporaryFile().name
+
+        with self.subTest(function = "dumps"):
+            self.assertTrue(iozip.dumps(d) == s)
+        with self.subTest(function = "loads"):
+            self.assertTrue(iozip.loads(s) == d)
+        with self.subTest(function = "dump"):
+            iozip.dump(d, f)
+            self.assertTrue(os.path.exists(f))
+        with self.subTest(function = "load"):
+            self.assertTrue(iozip.load(f) == d)
 
         if os.path.exists(f): os.remove(f)
 

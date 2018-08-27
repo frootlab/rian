@@ -180,7 +180,7 @@ class Sigmoid(UnitsBaseClass):
 
         value = numpy.dot(delta, wout)
         bias = self.params['bias']
-        backdelta = value * calculus.dsigmoid((bias + numpy.dot(data, win)))
+        backdelta = value * calculus.dlogistic((bias + numpy.dot(data, win)))
 
         return backdelta
 
