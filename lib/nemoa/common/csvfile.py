@@ -28,8 +28,8 @@ def get_header(path: str) -> str:
 
     # check file
     if not os.path.isfile(path): raise OSError(
-        "could not get csv header: "
-        "file '%s' does not exist." % path)
+        "could not get CSV header: "
+        f"file '{path}' does not exist.")
 
     # scan csvfile for header
     header = ''

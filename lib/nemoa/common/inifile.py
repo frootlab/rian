@@ -128,6 +128,40 @@ def load(f: str, structure: Optional[dict] = None) -> dict:
 
     return d
 
+def header(f: str) -> str:
+    """Get header from INI file.
+
+    Args:
+        f (str): Fully qualified file path to INI file.
+
+    Returns:
+        String containing header of INI file or empty string if header
+        could not be detected.
+
+    """
+
+    import os
+
+    # check file
+    if not os.path.isfile(f): raise OSError(
+        "could not get INI header: "
+        f"file '{f}' does not exist.")
+
+    # scan INI file for header
+    s = ''
+    with open(f, 'r') as h:
+        for line in [l.lstrip(' ') for l in h]:
+            if len(line) == 0: continue
+            if line.startswith('#'):
+                s += line[1:].lstrip()
+                continue
+            break
+
+    # strip header
+    s = s.strip()
+
+    return s
+
 def loads(s: str, structure: Optional[dict] = None,
     flat: Optional[bool] = None) -> dict:
     """Import configuration dictionary from INI formated string

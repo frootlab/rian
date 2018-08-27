@@ -40,6 +40,7 @@ class TestSuite(NmTestSuite):
         import tempfile
 
         f = tempfile.NamedTemporaryFile().name + '.csv'
+
         header = '-*- coding: utf-8 -*-'
         data = numpy.array(
             [("row1", 1.1, 1.2), ("row2", 2.1, 2.2), ("row3", 3.1, 3.2)],
@@ -171,19 +172,22 @@ class TestSuite(NmTestSuite):
         d = {'n': {'a': 's', 'b': True, 'c': 1 },
             'l1': {'a': 1}, 'l2': {'a': 2} }
         struct = { 'n': {'a': 'str', 'b': 'bool', 'c': 'int' },
-            'l[0-9]*': {'a': 'int' } }
-        s = "[n]\na = s\nb = True\nc = 1\n\n" \
-            "[l1]\na = 1\n\n[l2]\na = 2\n\n"
+            'l[0-9]*': {'a': 'int' }}
+        header = '-*- coding: utf-8 -*-'
+        s = ("# -*- coding: utf-8 -*-\n\n"
+            "[n]\na = s\nb = True\nc = 1\n\n"
+            "[l1]\na = 1\n\n[l2]\na = 2\n\n")
 
         with self.subTest(function = "dumps"):
-            self.assertTrue(inifile.dumps(d) == s)
+            self.assertTrue(inifile.dumps(d, header = header) == s)
         with self.subTest(function = "loads"):
             self.assertTrue(inifile.loads(s, structure = struct) == d)
-
+        with self.subTest(function = "save"):
+            self.assertTrue(inifile.save(d, f, header = header))
         with self.subTest(function = "load"):
-            self.assertTrue(True)
-        with self.subTest(function = "parse"):
-            self.assertTrue(True)
+            self.assertTrue(inifile.load(f, structure = struct) == d)
+        with self.subTest(function = "header"):
+            self.assertTrue(inifile.header(f) == header)
 
         if os.path.exists(f): os.remove(f)
 
