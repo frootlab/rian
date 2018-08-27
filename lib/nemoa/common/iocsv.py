@@ -9,10 +9,128 @@ import os
 
 try: import numpy
 except ImportError: raise ImportError(
-    "nemoa.common.csvfile requires numpy: "
+    "nemoa.common.iocsv requires numpy: "
     "https://scipy.org")
 
 from typing import Optional
+
+def load(path: str, delim: Optional[str] = None,
+    labels: Optional[list] = None, usecols: Optional[tuple] = None,
+    rowlabelcol: Optional[int] = None) -> Optional[numpy.ndarray]:
+    """Load numpy ndarray from CSV file.
+
+    Args:
+        path (string): file path to CSV file.
+
+    Kwargs:
+        delim (string, optional): string containing CSV delimiter.
+            If not given, the CSV delimiter is detected from CSV file.
+        labels (list, optional): list of strings containing CSV labels.
+            If not given, the CSV labels are detected from CSV file.
+        usecols (tuple of integers, optional): indices if columns
+            which are imported from CSV file. If not given, all columns
+            are used.
+        rowlabelcol (int, optional): index of column that contains
+            rowlabels. If not given, first column of strings is used.
+
+    Returns:
+        Numpy ndarray containing data from CSV file, or None if
+        data could not be imported.
+
+    """
+
+    # check file
+    if not os.path.isfile(path): raise OSError(
+        "could not get data from csv file: "
+        "file '%s' does not exist." % path)
+
+    # get delimiter
+    if not delim: delim = get_delim(path)
+    if not delim: raise TypeError(
+        "could not get data from csv file: "
+        "the delimiter in file '%s' is not supported." % path)
+
+    # get labels
+    if labels:
+        if not usecols: raise TypeError(
+            "could not get data from csv file: "
+            "keyword argument 'usecols' is not given.")
+    else:
+        labels = get_labels(path, delim = delim)
+        usecols = tuple(range(len(labels)))
+    if not labels: raise TypeError(
+        "could not get data from csv file: "
+        "keyword argument 'usecols' is not valid.")
+
+    # get row label column id
+    if rowlabelcol == None:
+        rowlabelcol = get_labelcolumn(path, delim = delim)
+
+    # get datatype
+    if rowlabelcol == None:
+        formats = ('<f8',) * len(usecols)
+    elif rowlabelcol not in usecols:
+        float_count = len(usecols)
+        usecols = (rowlabelcol, ) + usecols
+        labels = ('label',) + labels
+        formats = ('<U12',) + ('<f8',) * float_count
+    else:
+        float_count = len(usecols) - 1
+        rowlabelcollabel = labels[usecols.index(rowlabelcol)]
+        usecols = (rowlabelcol, ) + tuple(col for col in usecols
+            if not col == rowlabelcol)
+        labels = ('label',) + tuple(col for col in labels
+            if not col == rowlabelcollabel)
+        formats = ('<U12',) + ('<f8',) * float_count
+    dtype = {'names': labels, 'formats': formats}
+
+    # count rows to skip
+    skiprows = 1
+    with open(path, 'r') as csvfile:
+        for line in csvfile:
+
+            # check exclusion criteria
+            stripped_line = line.lstrip(' ')
+            if stripped_line.startswith('#'):
+                skiprows += 1
+                continue
+            if stripped_line in ['\n', '\r\n']:
+                skiprows += 1
+                continue
+            break
+
+    data = numpy.loadtxt(path, skiprows = skiprows,
+        delimiter = delim, usecols = usecols, dtype = dtype)
+
+    return data
+
+def save(path: str, data: numpy.ndarray, header: Optional[str] = None,
+    labels: Optional[list] = None, delim: str = ',') -> bool:
+    """Save numpy array to CSV file.
+
+    Args:
+        path (string): file path to CSV file.
+        data (numpy ndarray): data
+
+    Kwargs:
+        header (string, optional):
+        labels (list, optional): list of strings containing CSV labels.
+        delim (string, optional):
+
+    Returns:
+        True if no error occured.
+
+    """
+
+    if isinstance(header, str):
+        header = '# %s\n\n' % (header.replace('\n', '\n# '))
+        if isinstance(labels, list): header += delim.join(labels)
+    elif isinstance(labels, list): header = delim.join(labels)
+
+    fmt = delim.join(['%s'] + ['%10.10f'] * (len(data[0]) - 1))
+    numpy.savetxt(path, data, fmt = fmt, header = header, comments = '')
+
+    return True
 
 def get_header(path: str) -> str:
     """Get header from CSV file.
@@ -186,13 +304,13 @@ def get_labelcolumn(path: str, delim: Optional[str] = None) -> int:
     # check file
     if not os.path.isfile(path): raise OSError(
         "could not get csv row label column id: "
-        "file '%s' does not exist." % path)
+        f"file '{path}' does not exist.")
 
     # get delimiter
     if not delim: delim = get_delim(path)
     if not delim: raise TypeError(
         "could not get csv row label column id: "
-        "the delimiter in file '%s' is not supported." % path)
+        f"the delimiter in file '{path}' is not supported.")
 
     # get first and second non comment and non empty line
     first = None
@@ -221,121 +339,3 @@ def get_labelcolumn(path: str, delim: Optional[str] = None) -> int:
         except ValueError: return colid
 
     return False
-
-def load(path: str, delim: Optional[str] = None,
-    labels: Optional[list] = None, usecols: Optional[tuple] = None,
-    rowlabelcol: Optional[int] = None) -> Optional[numpy.ndarray]:
-    """Load numpy array from CSV file.
-
-    Args:
-        path (string): file path to CSV file.
-
-    Kwargs:
-        delim (string, optional): string containing CSV delimiter.
-            If not given, the CSV delimiter is detected from CSV file.
-        labels (list, optional): list of strings containing CSV labels.
-            If not given, the CSV labels are detected from CSV file.
-        usecols (tuple of integers, optional): indices if columns
-            which are imported from CSV file. If not given, all columns
-            are used.
-        rowlabelcol (int, optional): index of column that contains
-            rowlabels. If not given, first column of strings is used.
-
-    Returns:
-        Numpy ndarray containing data from CSV file, or None if
-        data could not be imported.
-
-    """
-
-    # check file
-    if not os.path.isfile(path): raise OSError(
-        "could not get data from csv file: "
-        "file '%s' does not exist." % path)
-
-    # get delimiter
-    if not delim: delim = get_delim(path)
-    if not delim: raise TypeError(
-        "could not get data from csv file: "
-        "the delimiter in file '%s' is not supported." % path)
-
-    # get labels
-    if labels:
-        if not usecols: raise TypeError(
-            "could not get data from csv file: "
-            "keyword argument 'usecols' is not given.")
-    else:
-        labels = get_labels(path, delim = delim)
-        usecols = tuple(range(len(labels)))
-    if not labels: raise TypeError(
-        "could not get data from csv file: "
-        "keyword argument 'usecols' is not valid.")
-
-    # get row label column id
-    if rowlabelcol == None:
-        rowlabelcol = get_labelcolumn(path, delim = delim)
-
-    # get datatype
-    if rowlabelcol == None:
-        formats = ('<f8',) * len(usecols)
-    elif rowlabelcol not in usecols:
-        float_count = len(usecols)
-        usecols = (rowlabelcol, ) + usecols
-        labels = ('label',) + labels
-        formats = ('<U12',) + ('<f8',) * float_count
-    else:
-        float_count = len(usecols) - 1
-        rowlabelcollabel = labels[usecols.index(rowlabelcol)]
-        usecols = (rowlabelcol, ) + tuple(col for col in usecols
-            if not col == rowlabelcol)
-        labels = ('label',) + tuple(col for col in labels
-            if not col == rowlabelcollabel)
-        formats = ('<U12',) + ('<f8',) * float_count
-    dtype = {'names': labels, 'formats': formats}
-
-    # count rows to skip
-    skiprows = 1
-    with open(path, 'r') as csvfile:
-        for line in csvfile:
-
-            # check exclusion criteria
-            stripped_line = line.lstrip(' ')
-            if stripped_line.startswith('#'):
-                skiprows += 1
-                continue
-            if stripped_line in ['\n', '\r\n']:
-                skiprows += 1
-                continue
-            break
-
-    data = numpy.loadtxt(path, skiprows = skiprows,
-        delimiter = delim, usecols = usecols, dtype = dtype)
-
-    return data
-
-def save(path: str, data: numpy.ndarray, header: Optional[str] = None,
-    labels: Optional[list] = None, delim: str = ',') -> bool:
-    """Save numpy array to CSV file.
-
-    Args:
-        path (string): file path to CSV file.
-        data (numpy ndarray): data
-
-    Kwargs:
-        header (string, optional):
-        labels (list, optional): list of strings containing CSV labels.
-        delim (string, optional):
-
-    Returns:
-        True if no error occured.
-
-    """
-
-    if isinstance(header, str):
-        header = '# %s\n\n' % (header.replace('\n', '\n# '))
-        if isinstance(labels, list): header += delim.join(labels)
-    elif isinstance(labels, list): header = delim.join(labels)
-
-    fmt = delim.join(['%s'] + ['%10.10f'] * (len(data[0]) - 1))
-    numpy.savetxt(path, data, fmt = fmt, header = header, comments = '')
-
-    return True

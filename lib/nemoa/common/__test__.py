@@ -10,8 +10,8 @@ from nemoa.common.unittest import TestSuite as NmTestSuite
 
 class TestSuite(NmTestSuite):
 
-    def test_common_compress(self):
-        from nemoa.common import compress
+    def test_common_iozip(self):
+        from nemoa.common import iozip
 
         import os
         import tempfile
@@ -21,19 +21,19 @@ class TestSuite(NmTestSuite):
         f = tempfile.NamedTemporaryFile().name
 
         with self.subTest(function = "dumps"):
-            self.assertTrue(compress.dumps(d) == s)
+            self.assertTrue(iozip.dumps(d) == s)
         with self.subTest(function = "loads"):
-            self.assertTrue(compress.loads(s) == d)
+            self.assertTrue(iozip.loads(s) == d)
         with self.subTest(function = "dump"):
-            compress.dump(d, f)
+            iozip.dump(d, f)
             self.assertTrue(os.path.exists(f))
         with self.subTest(function = "load"):
-            self.assertTrue(compress.load(f) == d)
+            self.assertTrue(iozip.load(f) == d)
 
         if os.path.exists(f): os.remove(f)
 
-    def test_common_csvfile(self):
-        from nemoa.common import csvfile
+    def test_common_iocsv(self):
+        from nemoa.common import iocsv
 
         import numpy
         import os
@@ -49,18 +49,18 @@ class TestSuite(NmTestSuite):
         labels = ["", "col1", "col2"]
 
         with self.subTest(function = "save"):
-            self.assertTrue(csvfile.save(f, data, header = header,
+            self.assertTrue(iocsv.save(f, data, header = header,
                 labels = labels, delim = delim))
         with self.subTest(function = "get_header"):
-            self.assertTrue(csvfile.get_header(f) == header)
+            self.assertTrue(iocsv.get_header(f) == header)
         with self.subTest(function = "get_delim"):
-            self.assertTrue(csvfile.get_delim(f) == delim)
+            self.assertTrue(iocsv.get_delim(f) == delim)
         with self.subTest(function = "get_labels"):
-            self.assertTrue(csvfile.get_labels(f) == labels)
+            self.assertTrue(iocsv.get_labels(f) == labels)
         with self.subTest(function = "get_labelcolumn"):
-            self.assertTrue(csvfile.get_labelcolumn(f) == 0)
+            self.assertTrue(iocsv.get_labelcolumn(f) == 0)
         with self.subTest(function = "load"):
-            rval = csvfile.load(f)
+            rval = iocsv.load(f)
             test = isinstance(rval, numpy.ndarray) \
                 and (rval['col1'] == data['col1']).any() \
                 and (rval['col2'] == data['col2']).any()
@@ -162,8 +162,8 @@ class TestSuite(NmTestSuite):
             test = graph.get_layout(G, 'layer', direction = 'right') == pos1
             self.assertTrue(test)
 
-    def test_common_inifile(self):
-        from nemoa.common import inifile
+    def test_common_ioini(self):
+        from nemoa.common import ioini
 
         import os
         import tempfile
@@ -179,15 +179,15 @@ class TestSuite(NmTestSuite):
             "[l1]\na = 1\n\n[l2]\na = 2\n\n")
 
         with self.subTest(function = "dumps"):
-            self.assertTrue(inifile.dumps(d, header = header) == s)
+            self.assertTrue(ioini.dumps(d, header = header) == s)
         with self.subTest(function = "loads"):
-            self.assertTrue(inifile.loads(s, structure = struct) == d)
+            self.assertTrue(ioini.loads(s, structure = struct) == d)
         with self.subTest(function = "save"):
-            self.assertTrue(inifile.save(d, f, header = header))
+            self.assertTrue(ioini.save(d, f, header = header))
         with self.subTest(function = "load"):
-            self.assertTrue(inifile.load(f, structure = struct) == d)
+            self.assertTrue(ioini.load(f, structure = struct) == d)
         with self.subTest(function = "header"):
-            self.assertTrue(inifile.header(f) == header)
+            self.assertTrue(ioini.header(f) == header)
 
         if os.path.exists(f): os.remove(f)
 

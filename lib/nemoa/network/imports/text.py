@@ -48,10 +48,10 @@ class Ini:
 
         """
 
-        from nemoa.common import inifile
+        from nemoa.common import ioini
 
         structure = {'network': { 'type': 'str' }}
-        network = inifile.load(path, structure)
+        network = ioini.load(path, structure)
         if not network \
             or not 'network' in network \
             or not 'type' in network['network']:
@@ -67,6 +67,8 @@ class Ini:
             "type '%s'." % (path, network['network']['type']))
 
     def _parse_layer_network(self, path):
+
+        from nemoa.common import ioini
 
         structure = {
             'network': {
@@ -94,9 +96,7 @@ class Ini:
             'binding [0-9a-zA-Z]*-[0-9a-zA-Z]*': {
                 '[0-9a-zA-Z]*': 'list' }}
 
-        from nemoa.common.inifile import load as load_inifile
-
-        ini_dict = load_inifile(path, structure = structure)
+        ini_dict = ioini.load(path, structure = structure)
         config = ini_dict['network'].copy()
 
         # layers

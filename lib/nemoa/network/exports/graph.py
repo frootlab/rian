@@ -43,7 +43,7 @@ def save(network, path, filetype, **kwargs):
 def _graph_encode(graph, coding = None):
     """Encode graph parameters."""
 
-    from nemoa.common.compress import dumps
+    from nemoa.common import iozip
 
     # no encoding
     if not isinstance(coding, str) or coding.lower() == 'none':
@@ -53,17 +53,17 @@ def _graph_encode(graph, coding = None):
     elif coding.lower() == 'base64':
 
         # encode graph 'params' dictionary to base64
-        graph.graph['params'] = dumps(
+        graph.graph['params'] = iozip.dumps(
             graph.graph['params'], encode = 'base64')
 
         # encode nodes 'params' dictionaries to base64
         for node in graph.nodes():
-            graph.node[node]['params'] = dumps(
+            graph.node[node]['params'] = iozip.dumps(
                 graph.node[node]['params'], encode = 'base64')
 
         # encode edges 'params' dictionaries to base64
         for edge in graph.edges():
-            graph.edges[edge]['params'] = dumps(
+            graph.edges[edge]['params'] = iozip.dumps(
                 graph.edges[edge]['params'], encode = 'base64')
 
         # set flag for graph parameter coding

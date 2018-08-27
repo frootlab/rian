@@ -47,7 +47,7 @@ class Ini:
 
         """
 
-        from nemoa.common.inifile import load as load_inifile
+        from nemoa.common import ioini
 
         structure = {
             'workspace': {
@@ -62,7 +62,7 @@ class Ini:
                 'models': 'str',
                 'scripts': 'str' }}
 
-        config = load_inifile(path, structure)
+        config = ioini.load(path, structure)
         config['type'] = 'base.Workspace'
 
         return { 'config': config }

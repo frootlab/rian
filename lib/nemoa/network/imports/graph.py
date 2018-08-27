@@ -38,7 +38,7 @@ def load(path, **kwargs):
 
 def _graph_decode(graph):
 
-    from nemoa.common.compress import loads
+    from nemoa.common import iozip
 
     # no decoding
     if not 'coding' in graph.graph \
@@ -48,23 +48,24 @@ def _graph_decode(graph):
 
     # base64 decoding
     elif graph.graph['coding'] == 'base64':
-        graph.graph['params'] = loads(
+        graph.graph['params'] = iozip.loads(
             graph.graph['params'], encode = 'base64')
 
         for node in graph.nodes():
-            graph.node[node]['params'] = loads(
+            graph.node[node]['params'] = iozip.loads(
                 graph.node[node]['params'], encode = 'base64')
 
         for edge in graph.edges():
-            graph.edges[edge]['params'] = loads(
+            graph.edges[edge]['params'] = iozip.loads(
                 graph.edges[edge]['params'], encode = 'base64')
 
         graph.graph['coding'] == 'none'
         return graph
 
     else:
-        nemoa.log('error', """could not decode graph parameters:
-            unsupported coding '%s'.""" % coding)
+        nemoa.log('error',
+            "could not decode graph parameters: "
+            f"unsupported coding '{coding}'.")
 
     return {}
 

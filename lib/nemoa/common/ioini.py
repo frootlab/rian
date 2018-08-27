@@ -7,59 +7,36 @@ __license__ = 'GPLv3'
 from configparser import ConfigParser
 from typing import Optional
 
-def dumps(d: dict, flat: Optional[bool] = None,
-    header: Optional[str] = None) -> str:
-    """Convert configuration dictionary to INI formated string.
+def load(f: str, structure: Optional[dict] = None) -> dict:
+    """Import configuration dictionary from INI file.
 
     Args:
-        d (dict): dictionary containing configuration
+        f (str): full qualified path to INI File
 
     Kwargs:
-        flat (bool, optional): Determines if the desired INI format structure
-            contains sections or not. By default sections are used, if the
-            dictionary contains subdictionaries.
-        header (str, optional): The Header string is written in the INI format
-            string as an initial comment. By default no header is written.
+        structure (dict, optional): Dictionary, that determines the structure
+            of the configuration dictionary. If "structure" is None the INI File
+            is completely imported and all values are interpreted as strings.
+            If "structure" is a dictionary, only those sections and keys are
+            imported, that match the structure dictionary. Thereby the sections
+            and keys can be given as regular expressions to allow equally
+            structured sections. Moreover the values are imported as the types,
+            that are given in the structure dictionary, e.g. 'str', 'int' etc.
 
     Return:
-        String with INI File Structure
+        Structured configuration dictionary
 
     """
 
-    from io import StringIO
-
-    # if the usage of sections is not explicitely given, use sections if
-    # the dictionary contains subdictionaries
-    if flat == None:
-        flat = True
-        for key, val in d.items():
-            if not type(val) is dict: continue
-            flat = False
-
-    # if no sections are to be used create a temporary [root] section
-    if flat: d = {'root': d.copy()}
-
-    # succesively pass (key, value) pairs to INI parser
+    # get configuration from INI File
     parser = ConfigParser()
-    for sec in d.keys():
-        if not isinstance(d[sec], dict): continue
-        parser.add_section(str(sec))
-        for key, val in d[sec].items():
-            parser.set(str(sec), str(key), str(val))
+    parser.optionxform = str
+    parser.read(f)
 
-    # retrieve INI formated string from INI parser
-    with StringIO() as buffer:
-        parser.write(buffer)
-        s = buffer.getvalue()
+    # parse sections and create configuration dictionary
+    d = parse(parser, structure = structure)
 
-    # if no section are to be used remove [root] section from string
-    if flat: s = s.replace('[root]\n', '')
-
-    # if header is given, write header as comment before string
-    if isinstance(header, str):
-        s = '\n'.join(['# ' + l for l in header.split('\n')]) + '\n\n' + s
-
-    return s
+    return d
 
 def save(d: dict, f: str, flat: Optional[bool] = None,
     header: Optional[str] = None) -> bool:
@@ -96,71 +73,6 @@ def save(d: dict, f: str, flat: Optional[bool] = None,
             f"file '{f}' can not be written.")
 
     return True
-
-def load(f: str, structure: Optional[dict] = None) -> dict:
-    """Import configuration dictionary from INI file.
-
-    Args:
-        f (str): full qualified path to INI File
-
-    Kwargs:
-        structure (dict, optional): Dictionary, that determines the structure
-            of the configuration dictionary. If "structure" is None the INI File
-            is completely imported and all values are interpreted as strings.
-            If "structure" is a dictionary, only those sections and keys are
-            imported, that match the structure dictionary. Thereby the sections
-            and keys can be given as regular expressions to allow equally
-            structured sections. Moreover the values are imported as the types,
-            that are given in the structure dictionary, e.g. 'str', 'int' etc.
-
-    Return:
-        Structured configuration dictionary
-
-    """
-
-    # get configuration from INI File
-    parser = ConfigParser()
-    parser.optionxform = str
-    parser.read(f)
-
-    # parse sections and create configuration dictionary
-    d = parse(parser, structure = structure)
-
-    return d
-
-def header(f: str) -> str:
-    """Get header from INI file.
-
-    Args:
-        f (str): Fully qualified file path to INI file.
-
-    Returns:
-        String containing header of INI file or empty string if header
-        could not be detected.
-
-    """
-
-    import os
-
-    # check file
-    if not os.path.isfile(f): raise OSError(
-        "could not get INI header: "
-        f"file '{f}' does not exist.")
-
-    # scan INI file for header
-    s = ''
-    with open(f, 'r') as h:
-        for line in [l.lstrip(' ') for l in h]:
-            if len(line) == 0: continue
-            if line.startswith('#'):
-                s += line[1:].lstrip()
-                continue
-            break
-
-    # strip header
-    s = s.strip()
-
-    return s
 
 def loads(s: str, structure: Optional[dict] = None,
     flat: Optional[bool] = None) -> dict:
@@ -216,6 +128,95 @@ def loads(s: str, structure: Optional[dict] = None,
     if flat: d = d.get('root')
 
     return d
+
+def dumps(d: dict, flat: Optional[bool] = None,
+    header: Optional[str] = None) -> str:
+    """Convert configuration dictionary to INI formated string.
+
+    Args:
+        d (dict): dictionary containing configuration
+
+    Kwargs:
+        flat (bool, optional): Determines if the desired INI format structure
+            contains sections or not. By default sections are used, if the
+            dictionary contains subdictionaries.
+        header (str, optional): The Header string is written in the INI format
+            string as an initial comment. By default no header is written.
+
+    Return:
+        String with INI File Structure
+
+    """
+
+    from io import StringIO
+
+    # if the usage of sections is not explicitely given, use sections if
+    # the dictionary contains subdictionaries
+    if flat == None:
+        flat = True
+        for key, val in d.items():
+            if not type(val) is dict: continue
+            flat = False
+
+    # if no sections are to be used create a temporary [root] section
+    if flat: d = {'root': d.copy()}
+
+    # succesively pass (key, value) pairs to INI parser
+    parser = ConfigParser()
+    for sec in d.keys():
+        if not isinstance(d[sec], dict): continue
+        parser.add_section(str(sec))
+        for key, val in d[sec].items():
+            parser.set(str(sec), str(key), str(val))
+
+    # retrieve INI formated string from INI parser
+    with StringIO() as buffer:
+        parser.write(buffer)
+        s = buffer.getvalue()
+
+    # if no section are to be used remove [root] section from string
+    if flat: s = s.replace('[root]\n', '')
+
+    # if header is given, write header as comment before string
+    if isinstance(header, str):
+        h = '\n'.join(['# ' + l.strip() for l in header.split('\n')])
+        s = h + '\n\n' + s
+
+    return s
+
+def header(f: str) -> str:
+    """Get header from INI file.
+
+    Args:
+        f (str): Fully qualified file path to INI file.
+
+    Returns:
+        String containing header of INI file or empty string if header
+        could not be detected.
+
+    """
+
+    import os
+
+    # check file
+    if not os.path.isfile(f): raise OSError(
+        "could not get INI header: "
+        f"file '{f}' does not exist.")
+
+    # scan INI file for header
+    s = ''
+    with open(f, 'r') as h:
+        for line in [l.lstrip(' ') for l in h]:
+            if len(line) == 0: continue
+            if line.startswith('#'):
+                s += line[1:].lstrip()
+                continue
+            break
+
+    # strip header
+    s = s.strip()
+
+    return s
 
 def parse(parser: ConfigParser, structure: Optional[dict] = None) -> dict:
     """Import configuration dictionary from INI formated string

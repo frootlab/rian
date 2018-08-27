@@ -12,24 +12,57 @@ def split_kwargs(string):
     args = asdict(string.lstrip(name).strip()[1:-1])
     return name, args
 
-def astype(string, type = None):
-    if type == 'bool': return string.lower().strip() == 'true'
-    if type == 'str': return string.strip().replace('\n', '')
-    if type == 'int': return int(string)
-    if type == 'float': return float(string)
-    if type == 'list': return aslist(string)
-    if type == 'dict': return asdict(string)
-    return string
+def astype(s, type = None):
+    """ """
 
-def aslist(string, delim = ','):
+    if type == 'bool': return s.lower().strip() == 'true'
+    if type == 'str': return s.strip().replace('\n', '')
+    if type == 'int': return int(s)
+    if type == 'float': return float(s)
+    if type == 'list': return aslist(s)
+    if type == 'tuple': return aslist(s)
+    if type == 'dict': return asdict(s)
+
+    return None
+
+def aslist(s, delim = ','):
     """Return list from given string."""
 
-    return [item.strip() for item in string.split(delim)]
+    if len(s.strip()) == 0: return []
+    l = None
+
+    # try python internal syntax grammar
+    if delim == ',':
+        try: l = list(eval(s))
+        except: pass
+    if isinstance(l, list): return l
+
+    # split string by delimiter
+    l = [item.strip() for item in s.split(delim)]
+
+    return l
+
+def astuple(s, delim = ','):
+    """Return tuple from given string."""
+
+    if len(s.strip()) == 0: return []
+    t = None
+
+    # try python internal syntax grammar
+    if delim == ',':
+        try: t = tuple(eval(s))
+        except: pass
+    if isinstance(t, tuple): return t
+
+    # split string by delimiter
+    t = tuple([item.strip() for item in s.split(delim)])
+
+    return t
 
 def asdict(string, delim = ','):
     """Return dictionary from given string in ini format."""
 
-    if string.strip() == '': return {}
+    if len(string.strip()) == 0: return {}
 
     import pyparsing
 

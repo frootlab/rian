@@ -51,10 +51,10 @@ class Csv:
 
         """
 
-        from nemoa.common import csvfile, inifile
+        from nemoa.common import iocsv, ioini
 
         # get config from csv header
-        header = csvfile.get_header(path)
+        header = iocsv.get_header(path)
 
         structure = {
             'name': 'str',
@@ -70,7 +70,7 @@ class Csv:
             'type': 'str',
             'labelformat': 'str' }
 
-        config = inifile.loads(header, flat = True, structure = structure)
+        config = ioini.loads(header, flat = True, structure = structure)
 
         if 'name' in config: name = config['name']
         else:
@@ -83,7 +83,7 @@ class Csv:
         config['colfilter'] = {'*': ['*:*']}
         config['rowfilter'] = {'*': ['*:*'], name: [name + ':*']}
 
-        data = csvfile.load(path)
+        data = iocsv.load(path)
 
         config['table'] = {name: config.copy()}
         config['table'][name]['fraction'] = 1.0
