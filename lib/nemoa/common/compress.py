@@ -11,7 +11,9 @@ import zlib
 def dump(d: dict, f: str, *args, **kwargs) -> None:
     """Compress and encode dictionary to file."""
 
-    return pickle.dump(dumps(d, *args, **kwargs), file = open(f, 'wb'))
+    s = dumps(d, *args, **kwargs)
+
+    return pickle.dump(s, file = open(f, 'wb'))
 
 def dumps(d: dict, level: int = 9, encode: str = 'base64') -> str:
     """Compress and encode dictionary to string."""

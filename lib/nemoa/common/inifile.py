@@ -7,7 +7,8 @@ __license__ = 'GPLv3'
 from configparser import ConfigParser
 from typing import Optional
 
-def dumps(d: dict, flat: bool = False) -> str:
+def dumps(d: dict, flat: Optional[bool] = None,
+    header: Optional[str] = None) -> str:
     """Convert configuration dictionary to INI formated string.
 
     Args:
@@ -15,7 +16,10 @@ def dumps(d: dict, flat: bool = False) -> str:
 
     Kwargs:
         flat (bool, optional): Determines if the desired INI format structure
-            contains sections or not. By default sections are used.
+            contains sections or not. By default sections are used, if the
+            dictionary contains subdictionaries.
+        header (str, optional): The Header string is written in the INI format
+            string as an initial comment. By default no header is written.
 
     Return:
         String with INI File Structure
@@ -23,6 +27,14 @@ def dumps(d: dict, flat: bool = False) -> str:
     """
 
     from io import StringIO
+
+    # if the usage of sections is not explicitely given, use sections if
+    # the dictionary contains subdictionaries
+    if flat == None:
+        flat = True
+        for key, val in d.items():
+            if not type(val) is dict: continue
+            flat = False
 
     # if no sections are to be used create a temporary [root] section
     if flat: d = {'root': d.copy()}
@@ -43,6 +55,10 @@ def dumps(d: dict, flat: bool = False) -> str:
     # if no section are to be used remove [root] section from string
     if flat: s = s.replace('[root]\n', '')
 
+    # if header is given, write header as comment before string
+    if isinstance(header, str):
+        s = '\n'.join(['# ' + l for l in header.split('\n')]) + '\n\n' + s
+
     return s
 
 def load(f: str, structure: Optional[dict] = None) -> dict:
@@ -54,11 +70,12 @@ def load(f: str, structure: Optional[dict] = None) -> dict:
     Kwargs:
         structure (dict, optional): Dictionary, that determines the structure
             of the configuration dictionary. If "structure" is None the INI File
-            is completely imported. If "structure" however is a dictionary, only
-            those sections, keys and values are imported, that match it.
-            Thereby the sections and keys can be given as regular expressions,
-            e.g. to allow equally structured sections, and the values determine
-            validity by types in string format: 'str', 'int' etc.
+            is completely imported and all values are interpreted as strings.
+            If "structure" is a dictionary, only those sections and keys are
+            imported, that match the structure dictionary. Thereby the sections
+            and keys can be given as regular expressions to allow equally
+            structured sections. Moreover the values are imported as the types,
+            that are given in the structure dictionary, e.g. 'str', 'int' etc.
 
     Return:
         Structured configuration dictionary
@@ -76,7 +93,7 @@ def load(f: str, structure: Optional[dict] = None) -> dict:
     return d
 
 def loads(s: str, structure: Optional[dict] = None,
-    flat: bool = False) -> dict:
+    flat: Optional[bool] = None) -> dict:
     """Import configuration dictionary from INI formated string
 
     Args:
@@ -85,18 +102,30 @@ def loads(s: str, structure: Optional[dict] = None,
     Kwargs:
         structure (dict, optional): Dictionary, that determines the structure
             of the configuration dictionary. If "structure" is None the INI File
-            is completely imported. If "structure" however is a dictionary, only
-            those sections, keys and values are imported, that match it.
-            Thereby the sections and keys can be given as regular expressions,
-            e.g. to allow equally structured sections, and the values determine
-            validity by types in string format: 'str', 'int' etc.
+            is completely imported and all values are interpreted as strings.
+            If "structure" is a dictionary, only those sections and keys are
+            imported, that match the structure dictionary. Thereby the sections
+            and keys can be given as regular expressions to allow equally
+            structured sections. Moreover the values are imported as the types,
+            that are given in the structure dictionary, e.g. 'str', 'int' etc.
         flat (bool, optional): Determines if the desired INI format structure
-            contains sections or not. By default sections are used.
+            contains sections or not. By default sections are used, if the
+            first non empty, non comment line in the string identifies a
+            section.
 
     Return:
         Structured configuration dictionary
 
     """
+
+    # if the usage of sections is not explicitely given, search for sections
+    # in the given string
+    if flat == None:
+        flat = True
+        for line in [l.lstrip(' ') for l in s.split('\n')]:
+            if len(line) == 0 or line.startswith('#'): continue
+            flat = not line.startswith('[')
+            break
 
     # if no sections are to be used create a temporary [root] section
     # and embed the structure dictionary within a 'root' key
@@ -128,11 +157,12 @@ def parse(parser: ConfigParser, structure: Optional[dict] = None) -> dict:
     Kwargs:
         structure (dict, optional): Dictionary, that determines the structure
             of the configuration dictionary. If "structure" is None the INI File
-            is completely imported. If "structure" however is a dictionary, only
-            those sections, keys and values are imported, that match it.
-            Thereby the sections and keys can be given as regular expressions,
-            e.g. to allow equally structured sections, and the values determine
-            validity by types in string format: 'str', 'int' etc.
+            is completely imported and all values are interpreted as strings.
+            If "structure" is a dictionary, only those sections and keys are
+            imported, that match the structure dictionary. Thereby the sections
+            and keys can be given as regular expressions to allow equally
+            structured sections. Moreover the values are imported as the types,
+            that are given in the structure dictionary, e.g. 'str', 'int' etc.
 
     Return:
         Structured configuration dictionary
@@ -157,12 +187,10 @@ def parse(parser: ConfigParser, structure: Optional[dict] = None) -> dict:
         # use regular expression to match sections
         rsec = None
         for key in structure.keys():
-            match = rsecs[key].match(sec)
-            if not match: continue
+            if not rsecs[key].match(sec): continue
             rsec = key
             break
         if not rsec: continue
-        ssec = match.group()
 
         # use regular expression to match keys
         dsec = {}
