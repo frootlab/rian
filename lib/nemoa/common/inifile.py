@@ -61,6 +61,42 @@ def dumps(d: dict, flat: Optional[bool] = None,
 
     return s
 
+def save(d: dict, f: str, flat: Optional[bool] = None,
+    header: Optional[str] = None) -> bool:
+    """Save configuration dictionary to INI file.
+
+    Args:
+        f (str): full qualified path to writeable file
+        d (dict): dictionary containing configuration
+
+    Kwargs:
+        flat (bool, optional): Determines if the desired INI format structure
+            contains sections or not. By default sections are used, if the
+            dictionary contains subdictionaries.
+        header (str, optional): The Header string is written in the INI file
+            as an initial comment. By default no header is written.
+
+    Return:
+        Bool which is True if no error occured.
+
+    """
+
+    # Convert configuration dictionary to INI formated string
+    try:
+        s = dumps(d, flat = flat, header = header)
+    except:
+        raise TypeError("could not save dictionary to INI file: "
+            "dictionary is not valid.")
+
+    # write string to file
+    try:
+        with open(f, 'w') as h: h.write(s)
+    except IOError:
+        raise IOError("could not save dictionary to INI file: "
+            f"file '{f}' can not be written.")
+
+    return True
+
 def load(f: str, structure: Optional[dict] = None) -> dict:
     """Import configuration dictionary from INI file.
 
