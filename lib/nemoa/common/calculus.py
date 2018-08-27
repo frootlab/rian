@@ -24,7 +24,7 @@ def sigmoid(x):
     return logistic(x)
 
 def dsigmoid(x):
-    """Return derivation of standard logistic function."""
+    """Return derivative of standard logistic function."""
     return dlogistic(x)
 
 def logistic(x):
@@ -32,7 +32,7 @@ def logistic(x):
     return 1. / (1. + numpy.exp(-x))
 
 def dlogistic(x):
-    """Return derivation of standard logistic function."""
+    """Return derivative of standard logistic function."""
     return ((1. / (1. + numpy.exp(-x)))
         * (1. - 1. / (1. + numpy.exp(-x))))
 
@@ -41,10 +41,10 @@ def tanh(x):
     return numpy.tanh(x)
 
 def dtanh(x):
-    """Return derivation of standard hyperbolic tangens function."""
+    """Return derivative of standard hyperbolic tangens function."""
     return 1. - numpy.tanh(x) ** 2
 
-def tanheff(x):
+def tanh_lecun(x):
     """Return hyperbolic tangens function, proposed in paper:
     'Efficient BackProp' by LeCun, Bottou, Orr, Müller"""
     return 1.7159 * numpy.tanh(0.6666 * x)

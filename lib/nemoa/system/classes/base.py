@@ -9,6 +9,7 @@ import numpy
 import copy
 
 from nemoa.common.classes import Metadata
+from nemoa.common import calculus
 
 class System(Metadata):
     """System base class.
@@ -386,8 +387,7 @@ class System(Metadata):
         else:
             link_norm_max = numpy.amax(numpy.abs(layer_adjacency
                 * layer_weights)) * adjacency_sum / weight_sum
-            link_intensity = nemoa.common.math.intensify(
-                link_norm_weight, factor = 10.,
+            link_intensity = calculus.intensify(link_norm_weight, factor = 10.,
                 bound = 0.7 * link_norm_max)
 
         link_params['layer'] = (src_layer, tgt_layer)
@@ -1274,8 +1274,7 @@ class System(Metadata):
                 if inlabel == outlabel: A[inid, outid] = 0.0
         bound = numpy.amax(A)
 
-        R = nemoa.common.math.intensify(R, factor = contrast,
-            bound = bound)
+        R = calculus.intensify(R, factor = contrast, bound = bound)
 
         return R
 

@@ -7,6 +7,8 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
+from nemoa.common import calculus
+
 class UnitsBaseClass:
     """Base Class for Unit Layer.
 
@@ -141,9 +143,8 @@ class Sigmoid(UnitsBaseClass):
         calculated from a sigmoid input layer. """
 
         bias = self.params['bias']
-        sigmoid = nemoa.common.math.sigmoid
 
-        return sigmoid(bias + numpy.dot(data, weights))
+        return calculus.sigmoid(bias + numpy.dot(data, weights))
 
     def expect_from_gauss_layer(self, data, source, weights):
         """Return expected values of a sigmoid output layer
@@ -151,9 +152,8 @@ class Sigmoid(UnitsBaseClass):
 
         bias = self.params['bias']
         sdev = numpy.sqrt(numpy.exp(source['lvar']))
-        sigmoid = nemoa.common.math.sigmoid
 
-        return sigmoid(bias + numpy.dot(data / sdev, weights))
+        return calculus.sigmoid(bias + numpy.dot(data / sdev, weights))
 
     def get_param_updates(self, data, model, weights):
         """Return parameter updates of a sigmoidal output layer
@@ -180,8 +180,7 @@ class Sigmoid(UnitsBaseClass):
 
         value = numpy.dot(delta, wout)
         bias = self.params['bias']
-        dsigmoid = nemoa.common.math.dsigmoid
-        backdelta = value * dsigmoid((bias + numpy.dot(data, win)))
+        backdelta = value * calculus.dsigmoid((bias + numpy.dot(data, win)))
 
         return backdelta
 
