@@ -387,8 +387,8 @@ class System(Metadata):
         else:
             link_norm_max = numpy.amax(numpy.abs(layer_adjacency
                 * layer_weights)) * adjacency_sum / weight_sum
-            link_intensity = calculus.intensify(link_norm_weight, factor = 10.,
-                bound = 0.7 * link_norm_max)
+            link_intensity = calculus.intensify(link_norm_weight,
+                scale = 0.7 * link_norm_max, sigma = 10.)
 
         link_params['layer'] = (src_layer, tgt_layer)
         link_params['layer_sub_id'] = (src_id, tgt_id)
@@ -1274,7 +1274,7 @@ class System(Metadata):
                 if inlabel == outlabel: A[inid, outid] = 0.0
         bound = numpy.amax(A)
 
-        R = calculus.intensify(R, factor = contrast, bound = bound)
+        R = calculus.intensify(R, scale = bound, sigma = contrast)
 
         return R
 

@@ -32,6 +32,8 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
+from nemoa.common import calculus
+
 #
 # (1) Sampler for Bayesian Networks
 #
@@ -661,5 +663,4 @@ def induction(model, data, mapping = None, points = 10,
             if inlabel == outlabel: A[iid, oid] = 0.0
     bound = numpy.amax(A)
 
-    intensify = nemoa.system.commons.math.intensify
-    return intensify(R, factor = contrast, bound = bound)
+    return calculus.intensify(R, sigma = contrast, scale = bound)

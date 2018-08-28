@@ -10,17 +10,17 @@ from typing import Union, Optional
 ArrayLike = Union[numpy.ndarray, numpy.matrix, float, int]
 
 #
-# Sigmoid functions
+# Sigmoid / Soft Step Functions
 #
 
 def sigmoid(x: ArrayLike, func: Optional[str] = None) -> ArrayLike:
-    """Calculate sigmoid function."""
+    """Calculate sigmoid functions."""
     if isinstance(func, type(None)): return logistic(x)
-    elif func == 'logistic': return logistic(x)
-    elif func == 'tanh': return tanh(x)
-    elif func == 'atan': return atan(x)
-    elif func == 'tanh_lecun': return tanh_lecun(x)
-    raise ValueError(f"sigmoid function {func} is not supported.")
+    if func == 'logistic': return logistic(x)
+    if func == 'tanh': return tanh(x)
+    if func == 'atan': return atan(x)
+    if func == 'tanh_lecun': return tanh_lecun(x)
+    raise ValueError(f"function {func} is not supported.")
 
 def logistic(x: ArrayLike) -> ArrayLike:
     """Return standard logistic function."""
@@ -40,16 +40,81 @@ def atan(x: ArrayLike) -> ArrayLike:
     return numpy.arctan(x)
 
 #
-# Bell functions
+# Multiple Soft Step Functions
+#
+
+def intensify(x: ArrayLike, scale: float = 1., sigma: float = 10.) -> ArrayLike:
+    """Calulate intensify function.
+
+    Args:
+        x (ArrayLike):
+
+    Kwargs:
+        scale (float): scaling parameter
+        sigma (float): sharpness parameter
+
+    """
+
+    sigma = max(sigma, .000001)
+
+    return numpy.abs(x) * (logistic(sigma * (x + .5 * scale))
+        + logistic(sigma * (x - .5 * scale)) - 1.) \
+        / numpy.abs(logistic(1.5 * sigma * scale)
+        + logistic(.5 * sigma * scale) - 1.)
+
+def softstep(x: ArrayLike, scale: float = 1., sigma: float = 10.) -> ArrayLike:
+    """Calulate softstep function.
+
+    Args:
+        x (ArrayLike):
+
+    Kwargs:
+        scale (float): scaling parameter
+        sigma (float): sharpness parameter
+
+    """
+    norm = numpy.tanh(scale)
+    return numpy.tanh(intensify(x, scale = scale, sigma = sigma)) / norm
+
+def multilogistic(x: ArrayLike, scale: float = 1.,
+    sigma: float = 10.) -> ArrayLike:
+    """Calulate muliple logistic function
+
+    Args:
+        x (ArrayLike):
+
+    Kwargs:
+        scale (float): scaling parameter
+        sigma (float): sharpness parameter
+
+    [1] https://math.stackexchange.com/questions/\
+        2529531/multiple-soft-step-function
+
+    """
+
+    # the multilogistic function approximates the identity function, if ether
+    # the scaling or the sharpness parameter goes to zero
+    if scale == 0. or sigma == 0.: return x
+
+    xs = x / scale
+    xsf = numpy.floor(xs)
+    r = 2. * (xs - xsf) - 1.
+    m = 2. / logistic(sigma) - 1.
+    f = scale * (xsf + 1. / m * (logistic(sigma * r) - .5) + .5)
+
+    return f
+
+#
+# Bell Shaped Functions
 #
 
 def dsigmoid(x: ArrayLike, func: Optional[str] = None) -> ArrayLike:
-    """Calculate derivative of sigmoid function."""
+    """Calculate derivative of sigmoid functions."""
     if isinstance(func, type(None)): return dlogistic(x)
-    elif func == 'dlogistic': return dlogistic(x)
-    elif func == 'dtanh': return dtanh(x)
-    elif func == 'datan': return datan(x)
-    raise ValueError(f"bell function {func} is not supported.")
+    if func == 'dlogistic': return dlogistic(x)
+    if func == 'dtanh': return dtanh(x)
+    if func == 'datan': return datan(x)
+    raise ValueError(f"function {func} is not supported.")
 
 def dlogistic(x: ArrayLike) -> ArrayLike:
     """Return derivative of standard logistic function."""
@@ -62,22 +127,3 @@ def dtanh(x: ArrayLike) -> ArrayLike:
 def datan(x: ArrayLike) -> ArrayLike:
     """Return derivative of trigonometric inverse tangent function."""
     return 1. / (1 + x ** 2)
-
-#
-# Double sigmoid functions
-#
-
-def intensify(x: ArrayLike, factor: float = 10.,
-    bound: float = 1.) -> ArrayLike:
-    """Return intensify function."""
-    factor = max(factor, 0.000001)
-    return numpy.abs(x) * (logistic(factor * (x + 0.5 * bound))
-        + logistic(factor * (x - 0.5 * bound)) - 1.) \
-        / numpy.abs(logistic(1.5 * factor * bound)
-        + logistic(0.5 * factor * bound) - 1.)
-
-def softstep(x: ArrayLike, factor: float = 10.,
-    bound: float = 1.) -> ArrayLike:
-    """Return softstep function."""
-    return numpy.tanh(intensify(x, factor = factor, bound = bound)) \
-        / numpy.tanh(bound)
