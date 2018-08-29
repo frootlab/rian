@@ -28,7 +28,7 @@ def filetypes(filetype = None):
     for key, val in list(text_types.items()):
         type_dict[key] = ('text', val)
 
-    if filetype == None:
+    if filetype is None:
         return {key: val[1] for key, val in list(type_dict.items())}
     if filetype in type_dict:
         return type_dict[filetype]
@@ -58,11 +58,9 @@ def load(path, filetype = None, **kwargs):
 
     # get filetype (from file extension if not given)
     # and check if filetype is supported
-    if not filetype:
-        filetype = nemoa.common.ospath.fileext(path).lower()
-    if not filetype in filetypes():
-        return nemoa.log('error', """could not import network:
-            filetype '%s' is not supported.""" % filetype)
+    if not filetype: filetype = nemoa.common.ospath.fileext(path).lower()
+    if filetype not in filetypes():
+        return nemoa.log('error', f"filetype '{filetype}' is not supported")
 
     # import, check and update dictionary
     mname = filetypes(filetype)[0]
@@ -82,4 +80,3 @@ def load(path, filetype = None, **kwargs):
     network['config']['path'] = path
 
     return network
-

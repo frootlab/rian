@@ -98,7 +98,7 @@ def unitenergy(model, data, mapping = None):
     """
 
     # set mapping from input layer to output layer (if not set)
-    if mapping == None: mapping = model.system._get_mapping()
+    if mapping is None: mapping = model.system._get_mapping()
     data = unitexpect(model, data, mapping)
     return model.system._units[mapping[-1]].energy(data)
 

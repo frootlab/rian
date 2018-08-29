@@ -19,7 +19,7 @@ def load(path, **kwargs):
     filetype = nemoa.common.ospath.fileext(path).lower()
 
     # test if filetype is supported
-    if not filetype in filetypes():
+    if filetype not in filetypes():
         return nemoa.log('error', """could not import graph:
             filetype '%s' is not supported.""" % filetype)
 

@@ -21,14 +21,11 @@ def load(path, **kwargs):
     filetype = nemoa.common.ospath.fileext(path).lower()
 
     # test if filetype is supported
-    if not filetype in filetypes():
-        return nemoa.log('error', """could not import dataset:
-            filetype '%s' is not supported.""" % filetype)
+    if filetype not in filetypes():
+        return nemoa.log('error', f"filetype '{filetype}' is not supported")
 
-    if filetype == 'csv':
-        return Csv(**kwargs).load(path)
-    if filetype in ['tsv', 'tab']:
-        return Tsv(**kwargs).load(path)
+    if filetype == 'csv': return Csv(**kwargs).load(path)
+    if filetype in ['tsv', 'tab']: return Tsv(**kwargs).load(path)
 
     return False
 
@@ -76,8 +73,7 @@ class Csv:
         else:
             name = nemoa.common.ospath.basename(path)
             config['name'] = name
-        if not 'type' in config:
-            config['type'] = 'base.Dataset'
+        if 'type' not in config: config['type'] = 'base.Dataset'
 
         # add column and row filters
         config['colfilter'] = {'*': ['*:*']}

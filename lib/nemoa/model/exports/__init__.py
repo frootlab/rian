@@ -24,10 +24,9 @@ def filetypes(filetype = None):
 
     if not filetype:
         return {key: val[1] for key, val in list(type_dict.items())}
-    if filetype in type_dict:
-        return type_dict[filetype]
+    if filetype in type_dict: return type_dict[filetype]
 
-    return False
+    return {}
 
 def save(model, path = None, filetype = None, workspace = None,
     base = 'user', **kwargs):
@@ -35,11 +34,13 @@ def save(model, path = None, filetype = None, workspace = None,
 
     Args:
         model (object): nemoa model instance
+
+    Kwargs:
         path (str, optional): path of export file
         filetype (str, optional): filetype of export file
         workspace (str, optional): workspace to use for file export
 
-    Returns:
+    Return:
         Boolean value which is True if file export was successful
 
     """
@@ -73,9 +74,8 @@ def save(model, path = None, filetype = None, workspace = None,
     # get filetype from file extension if not given
     # and test if filetype is supported
     if not filetype: filetype = fileext.lower()
-    if not filetype in list(filetypes().keys()):
-        return nemoa.log('error', """could not export model:
-            filetype '%s' is not supported.""" % (filetype))
+    if filetype not in filetypes():
+        return nemoa.log('error', f"filetype '{filetype}' is not supported")
 
     # export to file
     module_name = filetypes(filetype)[0]

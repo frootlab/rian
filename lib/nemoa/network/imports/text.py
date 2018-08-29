@@ -20,12 +20,10 @@ def load(path, **kwargs):
     filetype = nemoa.common.ospath.fileext(path).lower()
 
     # test if filetype is supported
-    if not filetype in filetypes():
-        return nemoa.log('error', """could not import graph:
-            filetype '%s' is not supported.""" % filetype)
+    if filetype not in filetypes():
+        return nemoa.log('error', f"filetype '{filetype}' is not supported")
 
-    if filetype in ['ini', 'txt']:
-        return Ini(**kwargs).load(path)
+    if filetype in ['ini', 'txt']:  return Ini(**kwargs).load(path)
 
     return False
 
@@ -100,23 +98,21 @@ class Ini:
         config = ini_dict['network'].copy()
 
         # layers
-        if not 'layers' in config:
+        if 'layers' not in config:
             return nemoa.log('warning', """file '%s' does not
                 contain parameter 'layers'.""" % path)
         config['layer'] = config['layers']
         del config['layers']
 
         # name
-        if not 'name' in config:
+        if 'name' not in config:
             config['name'] = nemoa.common.ospath.basename(path)
 
         # directed
-        if not 'directed' in config:
-            config['directed'] = True
+        if 'directed' not in config: config['directed'] = True
 
         # node labelformat
-        if not 'labelformat' in config:
-            config['labelformat'] = 'generic:string'
+        if 'labelformat' not in config: config['labelformat'] = 'generic:string'
 
         # init network dictionary
         config['nodes'] = {}
@@ -129,7 +125,7 @@ class Ini:
         for layer_id, layer in enumerate(config['layer']):
 
             layer_section = 'layer ' + layer
-            if not layer_section in ini_dict:
+            if layer_section not in ini_dict:
                 return nemoa.log('warning', """could not import layer
                     network: file '%s' does not contain information
                     about layer '%s'.""" % (path, layer))
@@ -184,7 +180,7 @@ class Ini:
             for node in node_list:
                 node = node.strip()
                 if node == '': continue
-                if not node in config['nodes'][layer]:
+                if node not in config['nodes'][layer]:
                     config['nodes'][layer].append(node)
 
         # parse '[binding *]' sections and add edges to network dict
@@ -197,7 +193,7 @@ class Ini:
             edge_section = 'binding %s-%s' % (src_layer, tgt_layer)
 
             # create full binding between two layers if not specified
-            if not edge_section in ini_dict:
+            if edge_section not in ini_dict:
                 for src_node in config['nodes'][src_layer]:
                     for tgt_node in config['nodes'][tgt_layer]:
                         edge = (src_node, tgt_node)
@@ -207,19 +203,14 @@ class Ini:
             # get edges from '[binding *]' section
             for src_node in ini_dict[edge_section]:
                 src_node = src_node.strip()
-                if src_node == '':
-                    continue
-                if not src_node in config['nodes'][src_layer]:
-                    continue
+                if src_node == '': continue
+                if src_node not in config['nodes'][src_layer]: continue
                 for tgt_node in ini_dict[edge_section][src_node]:
                     tgt_node = tgt_node.strip()
-                    if tgt_node == '':
-                        continue
-                    if not tgt_node in config['nodes'][tgt_layer]:
-                        continue
+                    if tgt_node == '': continue
+                    if tgt_node not in config['nodes'][tgt_layer]: continue
                     edge = (src_node, tgt_node)
-                    if edge in config['edges'][edge_layer]:
-                        continue
+                    if edge in config['edges'][edge_layer]: continue
                     config['edges'][edge_layer].append(edge)
 
         # check network binding

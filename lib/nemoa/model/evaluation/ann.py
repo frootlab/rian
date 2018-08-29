@@ -87,8 +87,8 @@ class ANN(Evaluation):
 
         """
 
-        if mapping == None: mapping = self.model.system._get_mapping()
-        if block == None:
+        if mapping is None: mapping = self.model.system._get_mapping()
+        if block is None:
             model_out = self.unitexpect(data[0], mapping)
         else:
             data_in_copy = numpy.copy(data)
@@ -120,9 +120,8 @@ class ANN(Evaluation):
                 that are blocked by setting the values to their means
         """
 
-        if mapping == None: mapping = self.model.system._get_mapping()
-        if block == None:
-            model_out = self.unitexpect(data, mapping)
+        if mapping is None: mapping = self.model.system._get_mapping()
+        if block is None: model_out = self.unitexpect(data, mapping)
         else:
             data_in_copy = numpy.copy(data)
             for i in block:
@@ -250,7 +249,7 @@ class ANN(Evaluation):
         d_src, d_tgt = data
 
         # set mapping: inLayer to outLayer (if not set)
-        if mapping == None: mapping = self.model.system._get_mapping()
+        if mapping is None: mapping = self.model.system._get_mapping()
 
         # set unit values to mean (optional)
         if isinstance(block, list):
@@ -503,8 +502,7 @@ class ANN(Evaluation):
         R = numpy.zeros((len(in_labels), len(out_labels)))
 
         # calculate unit values without knockout
-        if not 'measure' in kwargs: measure = 'error'
-        else: measure = kwargs['measure']
+        measure = kwargs.get('measure', 'error')
         default = self.evaluate(algorithm = measure,
             category = 'units', mapping = mapping)
 
@@ -561,7 +559,7 @@ class ANN(Evaluation):
 
         # create keawords for induction measurement
 
-        if not 'gauge' in kwargs: kwargs['gauge'] = gauge
+        if 'gauge' not in kwargs: kwargs['gauge'] = gauge
 
         # calculate induction without manipulation
         ind = self._get_induction(data, *args, **kwargs)
@@ -683,7 +681,7 @@ class ANN(Evaluation):
                 if inlabel == outlabel: A[iid, oid] = 0.0
         bound = numpy.amax(A)
 
-        return calculus.intensify(R, scale = bound, sigma = contrast)
+        return calculus.dialogistic(R, scale = bound, sigma = contrast)
 
     @nemoa.common.decorators.algorithm(
         name     = 'energy',
@@ -735,7 +733,7 @@ class ANN(Evaluation):
         """
 
         # set mapping from input layer to output layer (if not set)
-        if mapping == None: mapping = self.model.system._get_mapping()
+        if mapping is None: mapping = self.model.system._get_mapping()
         data = self.unitexpect(data, mapping)
         return self.model.system._units[mapping[-1]].energy(data)
 

@@ -17,9 +17,8 @@ def save(network, path, filetype, **kwargs):
     """Export network to archive file."""
 
     # test if filetype is supported
-    if not filetype in filetypes():
-        return nemoa.log('error', """could not export network:
-            filetype '%s' is not supported.""" % (filetype))
+    if filetype not in filetypes():
+        return nemoa.log('error', f"filetype '{filetype}' is not supported")
 
     copy = network.get('copy')
     return Npz(**kwargs).save(copy, path)

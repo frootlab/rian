@@ -206,7 +206,7 @@ class Dataset(Metadata):
 
             found = False
             for id, column in enumerate(nodes_conv[layer]):
-                if not column in inter_col_labels: continue
+                if column not in inter_col_labels: continue
                 found = True
 
                 # add column (use network label and layer)
@@ -515,7 +515,7 @@ class Dataset(Metadata):
 
         nemoa.log("transform data using model '%s'." % system.name)
 
-        if mapping == None: mapping = system.mapping
+        if mapping is None: mapping = system.mapping
 
         source_columns = system.get('units', layer = mapping[0])
         target_columns = system.get('units', layer = mapping[-1])
@@ -608,7 +608,7 @@ class Dataset(Metadata):
         methods = get_methods(self, prefix = '_get_', attribute = 'name')
 
         # filter algorithms by given category
-        if not category == None:
+        if category is not None:
             for key, val in list(methods.items()):
                 if val.get('category', None) != category:
                     del methods[key]
@@ -629,14 +629,14 @@ class Dataset(Metadata):
             ('dataset', 'columns', 'evaluation'): 'columns',
             ('dataset', 'rows', 'evaluation'): 'rows' }
         for ukey, udata in methods.items():
-            if not udata['category'] in list(categories.keys()): continue
+            if udata['category'] not in categories: continue
             ckey = categories[udata['category']]
-            if ckey == None:
+            if ckey is None:
                 if attribute: structured[udata['name']] = \
                     udata[attribute]
                 else: structured[udata['name']] = udata
             else:
-                if not ckey in list(structured.keys()): structured[ckey] = {}
+                if ckey not in structured: structured[ckey] = {}
                 if attribute: structured[ckey][udata['name']] = \
                     udata[attribute]
                 else: structured[ckey][udata['name']] = udata
@@ -646,7 +646,7 @@ class Dataset(Metadata):
     def _get_algorithm(self, algorithm = None, *args, **kwargs):
         """Get algorithm."""
         algorithms = self._get_algorithms(*args, **kwargs)
-        if not algorithm in algorithms: return None
+        if algorithm not in algorithms: return None
         return algorithms[algorithm]
 
     def _get_columns(self, filter = '*'):
@@ -719,7 +719,7 @@ class Dataset(Metadata):
 
         """
 
-        if columns == None: columns = self._get_columns()
+        if columns is None: columns = self._get_columns()
 
         mapping = self._config['colmapping']
         mapper = lambda column: mapping[column]
@@ -731,7 +731,7 @@ class Dataset(Metadata):
         groups = {}
         for group, label in self._config['columns']:
             if not group: continue
-            if not group in groups: groups[group] = []
+            if group not in groups: groups[group] = []
             groups[group].append(label)
         return groups
 
@@ -757,7 +757,7 @@ class Dataset(Metadata):
         return list(self._tables.keys())
 
     def _get_rowfilter(self, name):
-        if not name in self._config['rowfilter']:
+        if name not in self._config['rowfilter']:
             nemoa.log('warning', "unknown row filter '" + name + "'!")
             return []
         return self._config['rowfilter'][name]
@@ -1049,7 +1049,7 @@ class Dataset(Metadata):
 
         """
 
-        if table == None:
+        if table is None:
             import copy
             return copy.deepcopy(self._tables)
 
@@ -1068,10 +1068,8 @@ class Dataset(Metadata):
 
         # get row names from filter
         if isinstance(rows, str):
-            if not rows in self._config['rowfilter']:
-                return nemoa.log('error',
-                    "could not retrieve data: "
-                    "invalid row filter '%s'!" % rows)
+            if rows not in self._config['rowfilter']:
+                return nemoa.log('error', "invalid row filter '%s'!" % rows)
             rowfilter = self._config['rowfilter'][rows]
         elif isinstance(rows, list):
             # 2do: filter list to valid row names
@@ -1128,7 +1126,7 @@ class Dataset(Metadata):
             data = numpy.take(table_colsel, rowsel)
 
         # stratify and return data as numpy record array
-        if size == 0 or size == None: return data
+        if size == 0 or size is None: return data
         fraction = self._config['table'][table]['fraction']
         rowsel = numpy.random.randint(data.size,
             size = int(round(fraction * size)))
@@ -1142,7 +1140,7 @@ class Dataset(Metadata):
     def _get_copy(self, key = None, *args, **kwargs):
         """Get dataset copy as dictionary."""
 
-        if key == None: return {
+        if key is None: return {
             'config': self._get_config(),
             'tables': self._get_tables() }
 
@@ -1155,7 +1153,7 @@ class Dataset(Metadata):
     def _get_config(self, key = None, *args, **kwargs):
         """Get configuration or configuration value."""
 
-        if key == None:
+        if key is None:
             import copy
             return copy.deepcopy(self._config)
 
@@ -1170,7 +1168,7 @@ class Dataset(Metadata):
     def _get_tables(self, key = None):
         """Get dataset tables."""
 
-        if key == None:
+        if key is None:
             import copy
             return copy.deepcopy(self._tables)
 
@@ -1229,19 +1227,16 @@ class Dataset(Metadata):
 
         # assert validity of external columns in 'mapping'
         for column in columns:
-            if not column in list(mapping.keys()):
-                return nemoa.log('error', """could not set columns:
-                    column '%s' can not be mapped to table column."""
-                    % (column))
+            if column not in mapping: return nemoa.log('error',
+                f"column '{column}' can not be mapped")
 
         # assert validity of internal columns in 'mapping'
         for column in list(set(mapping.values())):
             for table in self._tables.keys():
                 if column in self._tables[table].dtype.names:
                     continue
-                return nemoa.log('error', """could not set columns:
-                    table '%s' has no column '%s'."""
-                    % (table, column))
+                return nemoa.log('error',
+                    "table '{table}' has no column '{column}'")
 
         # set 'columns' and 'colmapping'
         self._config['colmapping'] = mapping.copy()
@@ -1262,7 +1257,7 @@ class Dataset(Metadata):
             # test column names of new column filter
             valid = True
             for col_name in col_filter_cols:
-                if not col_name in col_names:
+                if col_name not in col_names:
                     valid = False
                     break
             if not valid: continue
@@ -1337,9 +1332,8 @@ class Dataset(Metadata):
         """Evaluate dataset."""
 
         algorithms = self._get_algorithms(attribute = 'reference')
-        if not name in list(algorithms.keys()):
-            return nemoa.log('error', """could not evaluate dataset:
-                unknown algorithm name '%s'.""" % (name))
+        if name not in list(algorithms.keys()):
+            return nemoa.log('error', f"algorithm '{name}' is not supported")
 
         return algorithms[name](*args, **kwargs)
 

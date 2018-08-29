@@ -31,14 +31,14 @@ class Evaluation:
         if key == 'data': return self._get_data(*args, **kwargs)
         if key == 'model': return self._get_model()
 
-        if not key in list(self._buffer.keys()): return False
-        return self._buffer[key]
+        if key in self._buffer: return self._buffer[key]
+
+        return False
 
     def _get_algorithms(self, category = None, attribute = None):
         """Get evaluation algorithms."""
 
-        if not 'algorithms' in self._buffer:
-            self._buffer['algorithms'] = {}
+        if 'algorithms' not in self._buffer: self._buffer['algorithms'] = {}
         algorithms = self._buffer['algorithms'].get(attribute, None)
         if not algorithms:
             from nemoa.common.module import get_methods
@@ -46,7 +46,7 @@ class Evaluation:
                 grouping = 'category', attribute = attribute)
             self._buffer['algorithms'][attribute] = algorithms
         if category:
-            if not category in algorithms: return {}
+            if category not in algorithms: return {}
             algorithms = algorithms[category]
 
         return algorithms
@@ -117,30 +117,25 @@ class Evaluation:
         if key in ['units', 'links', 'relation']:
             category = key
             args = list(args)
-            algorithm = kwargs.pop('algorithm', \
-                args.pop(0) if args else None)
+            algname = kwargs.pop('algorithm', args.pop(0) if args else None)
             args = tuple(args)
         else:
-            algorithm = key
+            algname = key
             args = list(args)
-            category = kwargs.pop('category', \
-                args.pop(0) if args else None)
+            category = kwargs.pop('category', args.pop(0) if args else None)
             args = tuple(args)
 
-        if not category:
-            category = 'model'
-        if not algorithm:
-            algorithm = {
-                'model': 'accuracy',
-                'units': 'accuracy',
-                'links': 'energy',
-                'relation': 'correlation' }.get(category, None)
+        if not category: category = 'model'
+        if not algname: algname = {
+            'model': 'accuracy',
+            'units': 'accuracy',
+            'links': 'energy',
+            'relation': 'correlation' }.get(category, None)
 
-        algorithm = self._get_algorithm(algorithm, category = category)
+        algorithm = self._get_algorithm(algname, category = category)
 
-        if not algorithm:
-            return nemoa.log('warning',
-                "could not evaluate %s: invalid algorithm." % category)
+        if not algorithm: return nemoa.log('warning',
+            f"could not evaluate {category}: invalid algorithm {algname}.")
 
         data = kwargs.pop('data', self._get_data())
 
@@ -160,7 +155,7 @@ class Evaluation:
             and kwargs.get('units', None):
             kwargs['mapping'] = \
                 getmapping(tgt = kwargs.pop('units'))
-        if not kwargs.get('mapping', None):
+        if kwargs.get('mapping', None) is not None:
             kwargs['mapping'] = getmapping()
 
         # run evaluation

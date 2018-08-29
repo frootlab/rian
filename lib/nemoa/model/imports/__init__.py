@@ -16,7 +16,7 @@ def filetypes(filetype = None):
     for key, val in list(archive_types.items()):
         type_dict[key] = ('archive', val)
 
-    if filetype == None:
+    if filetype is None:
         return {key: val[1] for key, val in list(type_dict.items())}
     if filetype in type_dict:
         return type_dict[filetype]
@@ -46,11 +46,9 @@ def load(path, filetype = None, **kwargs):
 
     # get filtype from file extension if not given
     # and check if filetype is supported
-    if not filetype:
-        filetype = nemoa.common.ospath.fileext(path).lower()
-    if not filetype in filetypes():
-        return nemoa.log('error', """could not import model:
-            filetype '%s' is not supported.""" % filetype)
+    if not filetype: filetype = nemoa.common.ospath.fileext(path).lower()
+    if filetype not in filetypes():
+        return nemoa.log('error', f"filetype '{filetype}' is not supported")
 
     # import and check dictionary
     mname = filetypes(filetype)[0]

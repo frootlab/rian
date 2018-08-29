@@ -79,9 +79,8 @@ def save(network, path = None, filetype = None, workspace = None,
     # get filetype from file extension if not given
     # and test if filetype is supported
     if not filetype: filetype = fileext.lower()
-    if not filetype in list(filetypes().keys()):
-        return nemoa.log('error', """could not export network:
-            filetype '%s' is not supported.""" % (filetype))
+    if filetype not in filetypes():
+        return nemoa.log('error', f"filetype '{filetype}' is not supported")
 
     # export to file
     module_name = filetypes(filetype)[0]

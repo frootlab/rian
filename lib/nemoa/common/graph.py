@@ -78,7 +78,7 @@ def get_layers(G: DiGraph) -> list:
     for node, data in G.nodes(data = True):
         l = (data.get('layer'), data.get('layer_id'))
         n = (node, data.get('layer_sub_id'))
-        if not l in sort: sort[l] = [n]
+        if l not in sort: sort[l] = [n]
         else: sort[l].append(n)
 
     layers = []
@@ -92,7 +92,7 @@ def get_groups(G: DiGraph, attribute: Optional[str] = None,
     param: Optional[str] = None) -> dict:
     """Return dictinary with grouped lists of nodes."""
 
-    if attribute == None and param == None: attribute = 'group'
+    if attribute is None and param is None: attribute = 'group'
 
     groups = {'': []}
 
@@ -100,20 +100,20 @@ def get_groups(G: DiGraph, attribute: Optional[str] = None,
         if not isinstance(data, dict):
             groups[''].append(node)
             continue
-        elif not attribute == None and not attribute in data:
+        elif attribute is not None and not attribute in data:
             groups[''].append(node)
             continue
-        elif not param == None \
+        elif param is not None \
             and not ('params' in data and param in data['params']):
             groups[''].append(node)
             continue
-        if not attribute == None and param == None:
-            group = data.get(attribute)
-        elif attribute == None and not param == None:
-            group = data['params'].get(param)
+        if attribute is not None and param is None:
+            group = data[attribute]
+        elif attribute is None and param is not None:
+            group = data['params'][param]
         else:
-            group = (data.get(attribute), data['params'].get(param))
-        if not group in groups:
+            group = (data[attribute], data['params'][param])
+        if group not in groups:
             groups[group] = [node]
             continue
         groups[group].append(node)
@@ -161,7 +161,7 @@ def get_layer_layout(G: DiGraph, direction: str = 'right',
             for sid, u in enumerate(src):
                 for tid, v in enumerate(tgt):
                     data = edges.get((u, v))
-                    if data == None: data = edges.get((v, u))
+                    if data is None: data = edges.get((v, u))
                     if not isinstance(data, dict): continue
                     value = data.get(minimize)
                     if not isinstance(value, float): continue
@@ -288,7 +288,7 @@ def is_layered(G: DiGraph) -> bool:
     require = ['layer', 'layer_id', 'layer_sub_id']
     for node, data in G.nodes(data = True):
         for key in require:
-            if not key in data: return False
+            if key not in data: return False
 
     return True
 

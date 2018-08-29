@@ -13,9 +13,8 @@ def new(*args, **kwargs):
     if not kwargs:
         kwargs = {'config': {'type': 'base.Workspace'}}
 
-    if not 'config' in kwargs \
-        or not 'type' in kwargs['config'] \
-        or not len(kwargs['config']['type'].split('.')) == 2:
+    if 'config' not in kwargs or 'type' not in kwargs['config'] \
+        or len(kwargs['config']['type'].split('.')) != 2:
         return nemoa.log('error', """could not create workspace:
             configuration is not valid.""")
 

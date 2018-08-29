@@ -181,7 +181,7 @@ class RBM(nemoa.model.morphisms.ann.ANN):
 
         store = self.read('vmra') or {}
         var = numpy.var(system._params['links'][(0, 1)]['W'])
-        if not 'wvar' in store: wvar = numpy.array([var])
+        if 'wvar' not in store: wvar = numpy.array([var])
         else: wvar = numpy.append([var], store['wvar'])
 
         length = config['acc_vmra_length']

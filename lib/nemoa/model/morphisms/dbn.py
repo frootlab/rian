@@ -65,7 +65,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
         system = self.model.system
         config = self._config
 
-        if not 'units' in system._params:
+        if 'units' not in system._params:
             return nemoa.log('error', """could not configure subsystems:
                 no layers have been defined!""") or None
 

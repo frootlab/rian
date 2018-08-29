@@ -39,9 +39,8 @@ def show(network, plot = None, **kwargs):
 def save(network, path = None, filetype = None, plot = None, **kwargs):
 
     # test if filetype is supported
-    if not filetype in filetypes():
-        return nemoa.log('error', """could not create plot:
-            filetype '%s' is not supported.""" % filetype)
+    if filetype not in filetypes():
+        return nemoa.log('error', f"filetype '{filetype}' is not supported")
 
     # get class for plotting from attribute 'plot'
     if not plot: plot = 'graph'
@@ -113,7 +112,7 @@ class Graph(nemoa.common.plot.Graph):
 
         for (u, v, data) in graph.edges(data = True):
             weight = data['params'].get(edgeattr, None)
-            if weight == None:
+            if weight is None:
                 if 'weight' in data: data.pop('weight')
                 continue
 
@@ -169,7 +168,7 @@ class Graph(nemoa.common.plot.Graph):
 
         # update node attribute 'group'
         groupby = self._config.get('node_groupby', None)
-        if not groupby == None:
+        if groupby is not None:
             for node, data in graph.nodes(data = True):
                 node_params = data.get('params', {})
                 data['group'] = node_params.get(groupby)
@@ -210,7 +209,7 @@ class Graph(nemoa.common.plot.Graph):
                 graph.node[node].update(layout)
 
         # prepare parameters
-        if self._config.get('title') == None:
+        if self._config.get('title') is None:
             self._config['title'] = network.fullname
 
         # create plot

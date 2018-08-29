@@ -52,10 +52,8 @@ class Plot:
         self._config = merge(kwargs, self._config, self._default)
 
         # update global matplotlib settings
-        matplotlib.rc('text', usetex = \
-            self._config.get('usetex'))
-        matplotlib.rc('font', family = \
-            self._config.get('font_family'))
+        matplotlib.rc('text', usetex = self._config['usetex'])
+        matplotlib.rc('font', family = self._config['font_family'])
 
         # link matplotlib.pyplot
         import matplotlib.pyplot as plt
@@ -65,13 +63,14 @@ class Plot:
         plt.close('all')
 
         # update plot settings
-        plt.style.use(self._config.get('style'))
+        plt.style.use(self._config['style'])
 
         # create figure
         self._fig = plt.figure(
-            figsize   = self._config.get('figure_size'),
-            dpi       = self._config.get('dpi'),
-            facecolor = self._config.get('bg_color'))
+            figsize   = self._config['figure_size'],
+            dpi       = self._config['dpi'],
+            facecolor = self._config['bg_color']
+        )
 
         # create subplot (matplotlib.axes.Axes)
         self._axes = self._fig.add_subplot(111)
@@ -88,11 +87,10 @@ class Plot:
         return True
 
     def plot_title(self):
-        if not self._config.get('show_title'):
-            return False
+        if not self._config['show_title']: return False
 
-        title = self._config.get('title') or 'Unknown'
-        fontsize = self._config.get('title_fontsize')
+        title = self._config['title'] or 'Unknown'
+        fontsize = self._config['title_fontsize']
 
         self._plt.title(title, fontsize = fontsize)
         return True
@@ -102,7 +100,7 @@ class Plot:
 
     def save(self, path, *args, **kwargs):
         return self._fig.savefig(path,
-            dpi = self._config.get('dpi'), **kwargs)
+            dpi = self._config['dpi'], **kwargs)
 
     def release(self):
         return self._fig.clear()
@@ -111,7 +109,8 @@ class Heatmap(Plot):
 
     _config = {
         'interpolation': 'nearest',
-        'grid': True }
+        'grid': True
+    }
 
     def plot(self, array):
 
@@ -126,13 +125,14 @@ class Heatmap(Plot):
             "https://scipy.org")
 
         # plot grid
-        self._axes.grid(self._config.get('grid'))
+        self._axes.grid(self._config['grid'])
 
         # plot heatmap
         cax = self._axes.imshow(array,
             cmap = matplotlib.cm.hot_r,
-            interpolation = self._config.get('interpolation'),
-            extent = (0, array.shape[1], 0, array.shape[0]) )
+            interpolation = self._config['interpolation'],
+            extent = (0, array.shape[1], 0, array.shape[0])
+        )
 
         # create labels for axis
         max_font_size = 12.
@@ -171,20 +171,22 @@ class Histogram(Plot):
         'edgecolor': 'black',
         'histtype': 'bar',
         'linewidth': 0.5,
-        'grid': True }
+        'grid': True
+    }
 
     def plot(self, array):
 
         # plot grid
-        self._axes.grid(self._config.get('grid'))
+        self._axes.grid(self._config['grid'])
 
         # plot histogram
         cax = self._axes.hist(array,
-            bins      = self._config.get('bins'),
-            facecolor = self._config.get('facecolor'),
-            histtype  = self._config.get('histtype'),
-            linewidth = self._config.get('linewidth'),
-            edgecolor = self._config.get('edgecolor'))
+            bins      = self._config['bins'],
+            facecolor = self._config['facecolor'],
+            histtype  = self._config['histtype'],
+            linewidth = self._config['linewidth'],
+            edgecolor = self._config['edgecolor']
+        )
 
         # (optional) plot title
         self.plot_title()
@@ -195,7 +197,8 @@ class Scatter2D(Plot):
 
     _config = {
         'grid': True,
-        'pca': True }
+        'pca': True
+    }
 
     def _pca2d(self, array):
             """Calculate projection to largest two principal components."""
@@ -226,19 +229,19 @@ class Scatter2D(Plot):
             return parray
 
     def plot(self, array):
+        """ """
 
         # test arguments
         if array.shape[1] != 2:
             if self._config['pca']: array = self._pca2d(array)
             else: raise TypeError(
-                "nemoa.common.plot.Scatter.plot: "
                 "first argument is required to be an array of shape (n, 2)")
 
         x = array[:, 0]
         y = array[:, 1]
 
         # plot grid
-        self._axes.grid(self._config.get('grid'))
+        self._axes.grid(self._config['grid'])
 
         # plot scattered data
         self._axes.scatter(x, y)
@@ -258,7 +261,8 @@ class Graph(Plot):
         'graph_direction': 'right',
         'node_style': 'o',
         'edge_width_enabled': True,
-        'edge_curvature': 1.0 }
+        'edge_curvature': 1.0
+    }
 
     def plot(self, graph):
         """Plot graph.
@@ -357,8 +361,7 @@ class Graph(Plot):
             gnodes = groups.get(group, [])
             if len(gnodes) == 0: continue
             refnode = graph.node.get(gnodes[0])
-            label = refnode.get('description') \
-                or refnode.get('group') or str(group)
+            label = refnode['description'] or refnode['group'] or str(group)
 
             # draw nodes in group
             node_obj = nx.draw_networkx_nodes(graph, pos,
@@ -366,10 +369,10 @@ class Graph(Plot):
                 linewidths = line_width,
                 node_size  = node_size,
                 node_shape = self._config['node_style'],
-                node_color = get_color(refnode.get('color'), 'white'),
+                node_color = get_color(refnode['color'], 'white'),
                 label      = label)
             node_obj.set_edgecolor(
-                get_color(refnode.get('border_color'), 'black'))
+                get_color(refnode['border_color'], 'black'))
 
         # draw node labels
         for node, data in graph.nodes(data = True):
@@ -378,7 +381,7 @@ class Graph(Plot):
             node_label = data.get('label', str(node).title())
             node_label_format = get_texlabel(node_label)
             node_label_size = numpy.sqrt(get_texlabel_width(node_label))
-            font_color = get_color(data.get('font_color'), 'black')
+            font_color = get_color(data['font_color'], 'black')
 
             # draw node label
             nx.draw_networkx_labels(graph, pos,
@@ -400,7 +403,7 @@ class Graph(Plot):
         else: default_edge_style = '-'
 
         for (u, v, data) in graph.edges(data = True):
-            weight = data.get('weight')
+            weight = data['weight']
             if weight == 0.: continue
 
             # calculate edge curvature from node positions
@@ -418,7 +421,7 @@ class Graph(Plot):
             seen[(u, v)] = rad
 
             # determine style of edge from edge weight
-            if weight == None:
+            if weight is None:
                 linestyle = '-'
                 linewidth = 0.5 * edge_width
                 alpha = 0.5
@@ -444,7 +447,7 @@ class Graph(Plot):
                 mutation_scale  = linewidth * 12.,
                 linewidth       = linewidth,
                 linestyle       = linestyle,
-                color           = get_color(data.get('color'), 'black'),
+                color           = get_color(data['color'], 'black'),
                 alpha           = alpha )
             ax.add_patch(arrow)
 

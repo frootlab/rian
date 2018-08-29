@@ -56,7 +56,7 @@ class AutoEncoder:
         self.settings['outputs'] = columns
 
         # shape
-        if not 'shape' in self.settings:
+        if 'shape' not in self.settings:
             size = len(columns)
             self.settings['shape'] = [2 * size, size, 2 * size]
 
@@ -182,14 +182,10 @@ class Factor:
         for v in visible_nodes:
             for h in hidden_nodes:
                 network_edges[edge_layer].append((v, h))
-        if not 'visible' in visible_params:
-            visible_params['visible'] = True
-        if not 'type' in visible_params:
-            visible_params['type'] = visible_type
-        if not 'visible' in hidden_params:
-            hidden_params['visible'] = False
-        if not 'type' in hidden_params:
-            hidden_params['type'] = hidden_type
+        if 'visible' not in visible_params: visible_params['visible'] = True
+        if 'type' not in visible_params: visible_params['type'] = visible_type
+        if 'visible' not in hidden_params: hidden_params['visible'] = False
+        if 'type' not in hidden_params: hidden_params['type'] = hidden_type
 
         # create network configuration
         network_dict = {

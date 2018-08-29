@@ -32,8 +32,9 @@ class Optimizer:
         if key == 'progress': return self._get_progress()
         if key == 'model': return self._get_model()
 
-        if not key in list(self._buffer.keys()): return False
-        return self._buffer[key]
+        if key in self._buffer: return self._buffer[key]
+
+        return False
 
     def _get_algorithms(self, category = None, attribute = None):
         """Get optimization algorithms."""
@@ -47,7 +48,7 @@ class Optimizer:
                 attribute = attribute)
             self._buffer['algorithms'][attribute] = algorithms
         if category:
-            if not category in algorithms: return {}
+            if category not in algorithms: return {}
             algorithms = algorithms[category]
 
         return algorithms
@@ -68,34 +69,10 @@ class Optimizer:
 
         """
 
-        #if key == 'evaluation':
-            #return self._get_evaluation_data(*args, **kwargs)
         if key == 'training':
             return self._get_data_training(*args, **kwargs)
 
         return nemoa.log('warning', "unknown key '%s'" % key) or None
-
-    #def _get_evaluation_data(self):
-        #"""Get evaluation data.
-
-        #Returns:
-            #Tuple of numpy arrays containing evaluation data or None
-            #if evaluation data could not be retrieved from dataset.
-
-        #"""
-
-        #data = self._buffer.get('evaluation_data', None)
-
-        ## get evaluation data from dataset
-        #if not data:
-            #system = self.model.system
-            #dataset = self.model.dataset
-            #mapping = system._get_mapping()
-            #cols = (mapping[0], mapping[-1])
-            #data = dataset.get('data', cols = cols)
-            #if data: self._buffer['evaluation_data'] = data
-
-        #return data or None
 
     def _get_evaluation_algorithm(self, key = None):
         """ """
@@ -234,7 +211,7 @@ class Optimizer:
     def _get_schedule(self, key):
         """Get schedule by name."""
 
-        if not 'schedules' in self.model.system._config: return {}
+        if 'schedules' not in self.model.system._config: return {}
 
         return self.model.system._config['schedules'].get(key, {})
 
@@ -364,7 +341,7 @@ class Optimizer:
     def read(self, key, id = -1):
         """Read value from queue."""
 
-        if not key in self._buffer['store']: return None
+        if key not in self._buffer['store']: return None
         queue = self._buffer['store'][key]
         if len(queue) < abs(id):
             return nemoa.log('warning', """could not read from store:
@@ -375,8 +352,7 @@ class Optimizer:
     def write(self, key, id = -1, append = False, **kwargs):
         """Write value to queue."""
 
-        if not key in self._buffer['store']:
-            self._buffer['store'][key] = []
+        if key not in self._buffer['store']: self._buffer['store'][key] = []
         queue = self._buffer['store'][key]
         if len(queue) == (abs(id) - 1) or append == True:
             queue.append(kwargs)
@@ -436,7 +412,7 @@ class Optimizer:
         if self._buffer['continue']:
 
             # check update interval
-            if not not (self._buffer['epoch'] \
+            if not (self._buffer['epoch'] \
                 % self._config['tracker_obj_update_interval'] == 0):
                 return True
 
@@ -453,7 +429,7 @@ class Optimizer:
         if self._config['tracker_obj_keep_optimum']:
 
             # init optimum with first value
-            if self._buffer['obj_opt_value'] == None:
+            if self._buffer['obj_opt_value'] is None:
                 self._buffer['obj_opt_value'] = value
                 self._buffer['optimum'] = \
                     {'params': self.model.system.get(

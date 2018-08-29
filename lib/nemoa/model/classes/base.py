@@ -194,7 +194,7 @@ class Model(Metadata):
     def _get_copy(self, key = None, *args, **kwargs):
         """Get model copy as dictionary."""
 
-        if key == None: return {
+        if key is None: return {
             'config': self._get_config(),
             'dataset': self._get_dataset(),
             'network': self._get_network(),
@@ -213,7 +213,7 @@ class Model(Metadata):
     def _get_config(self, key = None, *args, **kwargs):
         """Get configuration or configuration value."""
 
-        if key == None: return copy.deepcopy(self._config)
+        if key is None: return copy.deepcopy(self._config)
 
         if isinstance(key, str) and key in list(self._config.keys()):
             if isinstance(self._config[key], dict):

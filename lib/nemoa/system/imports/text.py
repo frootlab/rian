@@ -20,7 +20,7 @@ def load(path, **kwargs):
     filetype = nemoa.common.ospath.fileext(path).lower()
 
     # test if filetype is supported
-    if not filetype in filetypes():
+    if filetype not in filetypes():
         return nemoa.log('error', """could not import graph:
             filetype '%s' is not supported.""" % (filetype))
 
@@ -68,17 +68,17 @@ class Ini:
         config = system['system'].copy()
 
         # update / set name
-        if not 'name' in config:
+        if 'name' not in config:
             config['name'] = nemoa.common.ospath.basename(path)
 
         # update / set optimization schedules
         schedules = {}
         for key in system:
-            if not key[:8].lower() == 'schedule': continue
+            if key[:8].lower() != 'schedule': continue
             name = key[9:]
             schedules[name] = { 'name': name }
             for syskey in system[key]:
-                if not syskey[:6].lower() == 'system': continue
+                if syskey[:6].lower() != 'system': continue
                 systype = syskey[7:]
                 schedules[name][systype] = system[key][syskey].copy()
 

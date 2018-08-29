@@ -4,15 +4,16 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-def split_kwargs(string):
+def split_kwargs(s: str):
     """Return tuple with function name and function parameters."""
 
-    if not '(' in string: return string, {}
-    name = string.split('(')[0]
-    args = asdict(string.lstrip(name).strip()[1:-1])
+    if '(' not in s: return s, {}
+    name = s.split('(')[0]
+    args = asdict(s.lstrip(name).strip()[1:-1])
+
     return name, args
 
-def astype(s, type = None):
+def astype(s: str, type = None):
     """ """
 
     if type == 'bool': return s.lower().strip() == 'true'
@@ -20,18 +21,19 @@ def astype(s, type = None):
     if type == 'int': return int(s)
     if type == 'float': return float(s)
     if type == 'list': return aslist(s)
-    if type == 'tuple': return aslist(s)
+    if type == 'tuple': return astuple(s)
     if type == 'dict': return asdict(s)
 
     return None
 
-def aslist(s, delim = ','):
+def aslist(s: str, delim = ','):
     """Return list from given string."""
 
-    if len(s.strip()) == 0: return []
-    l = None
+    # check if string is valid and not blank
+    if not isinstance(s, str) or not s or not s.strip(): return []
 
     # try python internal syntax grammar
+    l = None
     if delim == ',':
         try: l = list(eval(s))
         except: pass
@@ -42,13 +44,14 @@ def aslist(s, delim = ','):
 
     return l
 
-def astuple(s, delim = ','):
+def astuple(s: str, delim = ','):
     """Return tuple from given string."""
 
-    if len(s.strip()) == 0: return []
-    t = None
+    # check if string is valid and not blank
+    if not isinstance(s, str) or not s or not s.strip(): return ()
 
     # try python internal syntax grammar
+    t = None
     if delim == ',':
         try: t = tuple(eval(s))
         except: pass
@@ -59,17 +62,17 @@ def astuple(s, delim = ','):
 
     return t
 
-def asdict(string, delim = ','):
+def asdict(s: str, delim = ','):
     """Return dictionary from given string in ini format."""
 
-    if len(string.strip()) == 0: return {}
+    # check if string is valid and not blank
+    if not isinstance(s, str) or not s or not s.strip(): return {}
 
     import pyparsing
 
     pp_num = pyparsing.Word(pyparsing.nums + '.')
     pp_str = pyparsing.quotedString
-    pp_bool = pyparsing.Or(
-        pyparsing.Word("True") | pyparsing.Word("False"))
+    pp_bool = pyparsing.Or(pyparsing.Word("True") | pyparsing.Word("False"))
     pp_key = pyparsing.Word(pyparsing.alphas + "_",
         pyparsing.alphanums + "_.")
     pp_val = pyparsing.Or(pp_num | pp_str | pp_bool)
@@ -77,14 +80,14 @@ def asdict(string, delim = ','):
     # try dictionary dialect "<key> = <value>, ..."
     pp_term = pyparsing.Group(pp_key + '=' + pp_val)
     pp_term_lists = pp_term + pyparsing.ZeroOrMore(delim + pp_term)
-    try: list = pp_term_lists.parseString(string.strip('{}'))
+    try: list = pp_term_lists.parseString(s.strip('{}'))
     except: list = None
 
     # try dictionary dialect "'<key>': <value>, ..."
-    if list == None:
+    if list is None:
         pp_term = pyparsing.Group(pp_str + ':' + pp_val)
         pp_term_lists = pp_term + pyparsing.ZeroOrMore(delim + pp_term)
-        try: list = pp_term_lists.parseString(string.strip('{}'))
+        try: list = pp_term_lists.parseString(s.strip('{}'))
         except: return {}
 
     # create dictionary

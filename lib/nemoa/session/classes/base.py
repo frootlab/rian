@@ -138,10 +138,8 @@ class Session:
     def _get_basepath(self, base = None):
         """Get path of given or current workspace search path."""
 
-        if not base:
-            base = self._get_base()
-        elif not base in self._config['default']['basepath']:
-            return None
+        if not base: base = self._get_base()
+        elif base not in self._config['default']['basepath']: return None
         mask = self._config['default']['basepath'][base]
 
         return self._get_path_expand(mask)
@@ -152,9 +150,8 @@ class Session:
         import copy
 
         if not key: return copy.deepcopy(self._config['default'])
-        elif not key in self._config['default']:
-            return nemoa.log('error', """could not get default value:
-                key '%s' is not valid.""" % key)
+        elif key not in self._config['default']:
+            return nemoa.log('error', "key '%s' is not valid." % key)
         retval = self._config['default'][key]
         parent = key
         while args:
@@ -173,7 +170,7 @@ class Session:
     def _get_list(self, key = None, *args, **kwargs):
         """Get list. """
 
-        if key == None:
+        if key is None:
             retval = {}
             workspace = self._get_workspace()
             base = self._get_base()
@@ -188,20 +185,18 @@ class Session:
         if key == 'workspaces':
             return self._get_list_workspaces(*args, **kwargs)
         if key in [rkey + 's' for rkey in self._config['register']]:
-            if not 'base' in kwargs:
-                kwargs['base'] = self._get_base()
-            if not 'workspace' in kwargs:
+            if 'base' not in kwargs: kwargs['base'] = self._get_base()
+            if 'workspace' not in kwargs:
                 kwargs['workspace'] = self._get_workspace()
-            if not 'attribute' in kwargs:
-                kwargs['attribute'] = 'name'
+            if 'attribute' not in kwargs: kwargs['attribute'] = 'name'
             return self._get_objconfigs(key[:-1], *args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key)
+        return nemoa.log('warning', f"unknown key '{key}'")
 
     def _get_list_bases(self, workspace = None):
         """Get list of searchpaths containing given workspace name."""
 
-        if workspace == None:
+        if workspace is None:
             return sorted(self._config['default']['basepath'].keys())
         bases = []
         for base in self._config['default']['basepath']:
@@ -219,7 +214,7 @@ class Session:
                 workspaces[base] = \
                     self._get_list_workspaces(base = base)
             return workspaces
-        elif not base in self._config['default']['basepath']:
+        elif base not in self._config['default']['basepath']:
             return nemoa.log('error', """could not get workspaces:
                 unknown workspace base '%s'.""" % base)
 
@@ -264,7 +259,7 @@ class Session:
         workspace = None, base = 'user', attribute = None):
         """Get configuration of given object as dictionary."""
 
-        if not objtype in self._config['register']:
+        if objtype not in self._config['register']:
             return nemoa.log('warning', """could not get configuration:
                 object class '%s' is not supported.""" % objtype)
         if not isinstance(name, str):
@@ -274,10 +269,10 @@ class Session:
         # (optional) load workspace of given object
         cur_workspace = self._get_workspace()
         cur_base = self._get_base()
-        if workspace == None:
+        if workspace is None:
             workspace = cur_workspace
             base = cur_base
-        elif not workspace == cur_workspace or not base == cur_base:
+        elif workspace != cur_workspace or base != cur_base:
             if not self._set_workspace(workspace, base = base):
                 nemoa.log('warning', """could not get configuration:
                     workspace '%s' does not exist.""" % workspace)
@@ -294,7 +289,7 @@ class Session:
 
         # (optional) load current workspace
         if cur_workspace:
-            if not workspace == cur_workspace or not base == cur_base:
+            if workspace != cur_workspace or base != cur_base:
                 self._set_workspace(cur_workspace, base = cur_base)
 
         if not config:
@@ -306,7 +301,7 @@ class Session:
         elif not isinstance(attribute, str):
             return nemoa.log('warning', """could not get configuration:
                 attribute is not vlid.""")
-        elif not attribute in config:
+        elif attribute not in config:
             return nemoa.log('warning', """could not get configuration:
                 attribute '%s' is not valid.""" % attribute)
 
@@ -323,8 +318,7 @@ class Session:
                     workspace = workspace, base = base)
             return objs
 
-        if objtype:
-            if not objtype in self._config['register']: return False
+        if objtype and objtype not in self._config['register']: return False
 
         # create dictionary
         objlist = []
@@ -356,17 +350,17 @@ class Session:
         if 'workspace' in kwargs:
             workspace = kwargs['workspace']
             del kwargs['workspace']
-            if not workspace == self._get_workspace(): chdir = True
+            if workspace != self._get_workspace(): chdir = True
         if 'base' in kwargs:
             base = kwargs['base']
             del kwargs['base']
-            if not base == self._get_base(): chdir = True
+            if base != self._get_base(): chdir = True
         if chdir:
             current = self._config.get('workspace', None)
             self._set_workspace(workspace, base = base)
 
         # get path
-        if key == None:
+        if key is None:
             import copy
             path = copy.deepcopy(self._config['current']['path'])
         elif key == 'expand':
@@ -434,8 +428,7 @@ class Session:
         while update:
             update = False
             for key, val in list(replace.items()):
-                if not '%' + key + '%' in path:
-                    continue
+                if '%' + key + '%' not in path: continue
                 try:
                     path = path.replace('%' + key + '%', val)
                 except TypeError:
@@ -542,9 +535,8 @@ class Session:
             return None
 
         if key == 'warning':
-            if not mode == 'silent':
-                tty_log.warning(color['yellow'] \
-                    + msg + color['default'])
+            if mode != 'silent':
+                tty_log.warning(color['yellow'] + msg + color['default'])
             file_log.warning(file_msg)
             return None
 
@@ -594,18 +586,18 @@ class Session:
         if 'workspace' in kwargs:
             workspace = kwargs['workspace']
             del kwargs['workspace']
-            if not workspace == self._get_workspace(): chdir = True
+            if workspace != self._get_workspace(): chdir = True
         if 'base' in kwargs:
             base = kwargs['base']
             del kwargs['base']
-            if not base == self._get_base(): chdir = True
+            if base != self._get_base(): chdir = True
         if chdir:
             current = self._config.get('workspace', None)
             self._set_workspace(workspace, base = base)
 
         # get configuration and run script
         config = self.get('script', name = script, *args, **kwargs)
-        if not isinstance(config, dict) or not 'path' in config:
+        if not isinstance(config, dict) or 'path' not in config:
             retval = nemoa.log('warning', """could not run script '%s':
                 invalid configuration.""" % script)
         elif not os.path.isfile(config['path']):
@@ -666,8 +658,7 @@ class Session:
     def _set_mode(self, mode = None, *args, **kwargs):
         """Set session mode."""
 
-        if not mode in ['debug', 'exec', 'shell', 'silent']:
-            return None
+        if mode not in ['debug', 'exec', 'shell', 'silent']: return None
 
         self._config['current']['mode'] = mode
 
@@ -678,7 +669,7 @@ class Session:
         """Set workspace."""
 
         # reset workspace if given workspace is None
-        if workspace == None:
+        if workspace is None:
             return self._set_workspace_reset()
 
         # return if workspace did not change
@@ -688,7 +679,7 @@ class Session:
             and base in [None, cur_base]: return True
 
         # detect base if base is not given
-        if base == None:
+        if base is None:
             bases = self._get_list_bases(workspace)
             if not bases:
                 return nemoa.log('warning',
@@ -703,7 +694,7 @@ class Session:
             base = bases[0]
 
         # test if base and workspace are valid
-        if not workspace in self._get_list_workspaces(base = base):
+        if workspace not in self._get_list_workspaces(base = base):
             basepath = self._get_path_expand(
                 self._config['default']['basepath'][base])
             return nemoa.log('warning',
@@ -834,7 +825,7 @@ class Session:
             objregister = self._config['register'][objtype]
             for filepath in glob.iglob(filemask):
                 filetype = nemoa.common.ospath.fileext(filepath)
-                if not filetype in filetypes: continue
+                if filetype not in filetypes: continue
                 basename = nemoa.common.ospath.basename(filepath)
                 filespace = self._get_workspace()
                 filebase = self._get_base()

@@ -20,9 +20,8 @@ def save(network, path, filetype, **kwargs):
     """Export network to graph description file."""
 
     # test if filetype is supported
-    if not filetype in filetypes():
-        return nemoa.log('error', """could not export graph:
-            filetype '%s' is not supported.""" % filetype)
+    if filetype not in filetypes():
+        return nemoa.log('error', f"filetype '{filetype}' is not supported")
 
     # create path if not available
     if not os.path.exists(os.path.dirname(path)):

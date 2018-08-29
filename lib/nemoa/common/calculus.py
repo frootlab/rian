@@ -10,41 +10,52 @@ from typing import Union, Optional
 ArrayLike = Union[numpy.ndarray, numpy.matrix, float, int]
 
 #
-# Sigmoid / Soft Step Functions
+# Sigmoid functions / Soft Step functions
 #
 
 def sigmoid(x: ArrayLike, func: Optional[str] = None) -> ArrayLike:
     """Calculate sigmoid functions."""
-    if isinstance(func, type(None)): return logistic(x)
+    if func is None: return logistic(x)
     if func == 'logistic': return logistic(x)
     if func == 'tanh': return tanh(x)
     if func == 'atan': return atan(x)
     if func == 'tanh_lecun': return tanh_lecun(x)
     raise ValueError(f"function {func} is not supported.")
 
-def logistic(x: ArrayLike) -> ArrayLike:
+def logistic(x: ArrayLike, approx: Optional[int] = None) -> ArrayLike:
     """Return standard logistic function."""
-    return 1. / (1. + numpy.exp(-x))
+    if approx is None: return 1. / (1. + numpy.exp(-x))
+    if approx == 1: return x / (1. + numpy.abs(x))
+    if approx == 2: return x / numpy.sqrt(1. + x ** 2)
+    raise ValueError(
+        f"approximation flag '{str(approx)}' is not supported.")
 
 def tanh(x: ArrayLike) -> ArrayLike:
-    """Return standard hyperbolic tangens function."""
+    """Return standard hyperbolic tangent function."""
     return numpy.tanh(x)
 
 def tanh_lecun(x: ArrayLike) -> ArrayLike:
-    """Return hyperbolic tangens function, proposed in paper:
-    'Efficient BackProp' by LeCun, Bottou, Orr, Müller"""
+    """Return hyperbolic tangent function.
+
+    Hyperbolic tangent function, which has been proposed to be more efficient
+    in learning Artificial Neural Networks [1].
+
+    [1] "Efficient BackProp", LeCun, Bottou, Orr, Müller
+
+    """
     return 1.7159 * numpy.tanh(0.6666 * x)
 
 def atan(x: ArrayLike) -> ArrayLike:
-    """Return trigonometric inverse tangent."""
+    """Return trigonometric inverse tangent function."""
     return numpy.arctan(x)
 
 #
 # Multiple Soft Step Functions
 #
 
-def intensify(x: ArrayLike, scale: float = 1., sigma: float = 10.) -> ArrayLike:
-    """Calulate intensify function.
+def dialogistic(x: ArrayLike, scale: float = 1.,
+    sigma: float = 10.) -> ArrayLike:
+    """Calulate dialogistic function.
 
     Args:
         x (ArrayLike):
@@ -74,7 +85,7 @@ def softstep(x: ArrayLike, scale: float = 1., sigma: float = 10.) -> ArrayLike:
 
     """
     norm = numpy.tanh(scale)
-    return numpy.tanh(intensify(x, scale = scale, sigma = sigma)) / norm
+    return numpy.tanh(dialogistic(x, scale = scale, sigma = sigma)) / norm
 
 def multilogistic(x: ArrayLike, scale: float = 1.,
     sigma: float = 10.) -> ArrayLike:

@@ -16,7 +16,7 @@ def types(type = None):
     for key, val in list(layer_types.items()):
         type_dict[key] = ('layer', val)
 
-    if type == None:
+    if type is None:
         return {key: val[1] for key, val in list(type_dict.items())}
     if type in type_dict:
         return type_dict[type]
@@ -27,15 +27,13 @@ def build(type, *args, **kwargs):
     """Build network from parameters, datasets, etc. ."""
 
     # test if type is supported
-    if not type in list(types().keys()):
-        nemoa.log('error', """could not build network:
-            type '%s' is not supported.""" % type)
+    if type not in types():
+        nemoa.log('error', f"type '{type}' is not supported")
         return {}
 
     module_name = types(type)[0]
 
     if module_name == 'layer':
-        network = nemoa.network.builder.layer.build(type, *args,
-            **kwargs)
+        network = nemoa.network.builder.layer.build(type, *args, **kwargs)
 
     return network or {}

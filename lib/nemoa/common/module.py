@@ -4,7 +4,7 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import types
+from types import FunctionType, ModuleType
 
 def get_curname(frame: int = 0):
     """Get name of module, which calls this function.
@@ -36,7 +36,7 @@ def get_curname(frame: int = 0):
 
     return mname
 
-def get_submodules(minst: types.ModuleType = None, recursive: bool = False):
+def get_submodules(minst: ModuleType = None, recursive: bool = False):
     """Get list with submodule names.
 
     Kwargs:
@@ -51,7 +51,7 @@ def get_submodules(minst: types.ModuleType = None, recursive: bool = False):
     """
 
     if minst is None: minst = get_module(get_curname(-1))
-    elif not isinstance(minst, types.ModuleType): raise TypeError(
+    elif not isinstance(minst, ModuleType): raise TypeError(
         'First argument is required to be of ModuleType')
 
     # check if module is a package or a file
@@ -82,7 +82,7 @@ def get_module(mname: str):
 
     return minst
 
-def get_functions(minst: types.ModuleType = None, details: bool = False,
+def get_functions(minst: ModuleType = None, details: bool = False,
     filters: dict = {}, **kwargs):
     """Get filtered list of function names within given module instance.
 
@@ -104,15 +104,15 @@ def get_functions(minst: types.ModuleType = None, details: bool = False,
     """
 
     if minst is None: minst = get_module(get_curname(-1))
-    elif not isinstance(minst, types.ModuleType): raise TypeError(
-        "First argument is required to be of ModuleType")
+    elif not isinstance(minst, ModuleType): raise TypeError(
+        "first argument is required to be of ModuleType")
 
     import inspect
 
     funcs = inspect.getmembers(minst, inspect.isfunction)
     pref = minst.__name__ + '.'
 
-    if not details and len(kwargs) == 0:
+    if not details and not kwargs:
         return [pref + name for name, ref in funcs]
 
     # create dictionary with function attributes
@@ -127,7 +127,7 @@ def get_functions(minst: types.ModuleType = None, details: bool = False,
         # filter entry by attributes
         passed = True
         for key, val in kwargs.items():
-            if not key in fdict.keys():
+            if not key in fdict:
                 passed = False
                 break
             if key in filters:
@@ -143,13 +143,13 @@ def get_functions(minst: types.ModuleType = None, details: bool = False,
 
     return fdetails.keys()
 
-def locate_functions(minst: types.ModuleType = None, recursive = True,
+def locate_functions(minst: ModuleType = None, recursive = True,
     details: bool = False, filters: dict = {},  **kwargs):
     """Recursively search for functions within submodules."""
 
     if minst is None: minst = get_module(get_curname(-1))
-    elif not isinstance(minst, types.ModuleType): raise TypeError(
-        "First argument is required to be of ModuleType")
+    elif not isinstance(minst, ModuleType): raise TypeError(
+        "first argument is required to be of ModuleType")
 
     mnames = get_submodules(minst, recursive = recursive)
 
@@ -189,17 +189,17 @@ def get_function(fname: str):
 
     return finst
 
-def get_shortdoc(finst: types.FunctionType):
+def get_shortdoc(finst: FunctionType):
     """Get short description of a given function instance."""
 
     if finst.__doc__ is None: return ""
     return finst.__doc__.split('\n', 1)[0].strip(' .')
 
-def get_kwargs(finst: types.FunctionType, d: dict = None):
+def get_kwargs(finst: FunctionType, d: dict = None):
     """Get the keyword arguments of a given function instance."""
 
-    if not isinstance(finst, types.FunctionType): raise TypeError(
-        'First argument is required to be an instance of FunctionType')
+    if not isinstance(finst, FunctionType): raise TypeError(
+        'first argument is required to be of FunctionType')
 
     import inspect
 
@@ -272,15 +272,15 @@ def get_methods(cinst: type, attribute = None, grouping = None,
 
     # (optional) group methods, rename key and reduce to attribute
     if grouping:
-        grouped = {}
+        groups = {}
         for ukey, udata in methods.items():
             group = udata[grouping]
             key = udata[renamekey] if renamekey else ukey
-            if not group in grouped: grouped[group] = {}
-            if key in grouped[group]: continue
-            if attribute: grouped[group][key] = udata[attribute]
-            else: grouped[group][key] = udata
-        methods = grouped
+            if group not in groups: groups[group] = {}
+            if key in groups[group]: continue
+            if attribute: groups[group][key] = udata[attribute]
+            else: groups[group][key] = udata
+        methods = groups
     elif renamekey:
         renamend = {}
         for ukey, udata in methods.items():

@@ -23,16 +23,12 @@ def load(path, **kwargs):
     filetype = nemoa.common.ospath.fileext(path).lower()
 
     # test if filetype is supported
-    if not filetype in filetypes():
-        return nemoa.log('error', """could not import graph:
-            filetype '%s' is not supported.""" % filetype)
+    if filetype not in filetypes():
+        return nemoa.log('error', f"filetype '{filetype}' is not supported")
 
-    if filetype == 'gml':
-        return Gml(**kwargs).load(path)
-    if filetype in ['graphml', 'xml']:
-        return Graphml(**kwargs).load(path)
-    if filetype == 'dot':
-        return Dot(**kwargs).load(path)
+    if filetype == 'gml': return Gml(**kwargs).load(path)
+    if filetype in ['graphml', 'xml']: return Graphml(**kwargs).load(path)
+    if filetype == 'dot': return Dot(**kwargs).load(path)
 
     return False
 
@@ -41,8 +37,7 @@ def _graph_decode(graph):
     from nemoa.common import iozip
 
     # no decoding
-    if not 'coding' in graph.graph \
-        or not graph.graph['coding'] \
+    if not graph.graph.get('coding', None) \
         or graph.graph['coding'].lower() == 'none':
         return graph
 
@@ -63,9 +58,7 @@ def _graph_decode(graph):
         return graph
 
     else:
-        nemoa.log('error',
-            "could not decode graph parameters: "
-            f"unsupported coding '{coding}'.")
+        nemoa.log('error', f"unsupported coding '{coding}'")
 
     return {}
 

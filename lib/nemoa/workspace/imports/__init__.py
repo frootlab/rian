@@ -16,7 +16,7 @@ def filetypes(filetype = None):
     for key, val in list(text_types.items()):
         type_dict[key] = ('text', val)
 
-    if filetype == None:
+    if filetype is None:
         return {key: val[1] for key, val in list(type_dict.items())}
     if filetype in type_dict:
         return type_dict[filetype]
@@ -41,7 +41,7 @@ def load(arg, base = None, filetype = None, **kwargs):
     # and check if filetype is supported
     if not filetype:
         filetype = nemoa.common.ospath.fileext(path).lower()
-    if not filetype in filetypes():
+    if filetype not in filetypes():
         return nemoa.log('error', """could not import workspace:
             filetype '%s' is not supported.""" % filetype)
 

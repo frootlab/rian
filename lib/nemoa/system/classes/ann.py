@@ -108,7 +108,7 @@ class ANN(nemoa.system.classes.base.System):
 
             if not isinstance(layer, dict): return False
             for key in ['id', 'layer', 'layer_id', 'visible', 'class']:
-                if not key in list(layer.keys()): return False
+                if key not in layer: return False
 
             # test unit class
             if layer['class'] == 'gauss' \
@@ -123,16 +123,15 @@ class ANN(nemoa.system.classes.base.System):
     def _remove_units(self, layer = None, label = []):
         """Remove units from parameter space. """
 
-        if not layer == None and not layer in list(self._units.keys()):
-            return nemoa.log('error', """could not remove units:
-                unknown layer '%s'""" % (layer))
+        if layer is not None and layer not in self._units:
+            return nemoa.log('error', f"layer '{layer}' is not valid")
 
         # search for labeled units in given layer
         layer = self._units[layer].params
         select = []
         labels = []
         for id, unit in enumerate(layer['id']):
-            if not unit in label:
+            if unit not in label:
                 select.append(id)
                 labels.append(unit)
 
@@ -224,7 +223,7 @@ class ANN(nemoa.system.classes.base.System):
         """
 
         # set mapping from input layer to output layer (if not set)
-        if mapping == None: mapping = self._get_mapping()
+        if mapping is None: mapping = self._get_mapping()
         data = self._get_unitexpect(data, mapping)
         return self._units[mapping[-1]].energy(data)
 

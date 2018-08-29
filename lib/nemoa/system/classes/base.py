@@ -141,7 +141,7 @@ class System(Metadata):
         methods = get_methods(self, prefix = '_get_', attribute = 'name')
 
         # filter algorithms by given category
-        if not category == None:
+        if category is not None:
             for key, val in list(methods.items()):
                 if val.get('category', None) != category:
                     del methods[key]
@@ -162,14 +162,14 @@ class System(Metadata):
             ('system', 'links', 'evaluation'): 'links',
             ('system', 'relation', 'evaluation'): 'relation' }
         for ukey, udata in methods.items():
-            if not udata['category'] in list(categories.keys()): continue
+            if udata['category'] not in categories: continue
             ckey = categories[udata['category']]
-            if ckey == None:
+            if ckey is None:
                 if attribute: structured[udata['name']] = \
                     udata[attribute]
                 else: structured[udata['name']] = udata
             else:
-                if not ckey in list(structured.keys()): structured[ckey] = {}
+                if ckey not in structured: structured[ckey] = {}
                 if attribute: structured[ckey][udata['name']] = \
                     udata[attribute]
                 else: structured[ckey][udata['name']] = udata
@@ -190,7 +190,7 @@ class System(Metadata):
     def _get_algorithm(self, algorithm = None, *args, **kwargs):
         """Get algorithm."""
         algorithms = self._get_algorithms(*args, **kwargs)
-        if not algorithm in algorithms: return None
+        if algorithm not in algorithms: return None
         return algorithms[algorithm]
 
     def _get_unit(self, unit):
@@ -260,12 +260,12 @@ class System(Metadata):
         for layer in self._params['units']:
             valid = True
             for key in list(kwargs.keys()):
-                if not layer[key] == kwargs[key]:
+                if layer[key] != kwargs[key]:
                     valid = False
                     break
             if not valid: continue
             units += layer['id']
-        if groupby == None: return units
+        if groupby is None: return units
 
         # group units by given attribute
         units_params = {}
@@ -273,7 +273,7 @@ class System(Metadata):
             units_params[unit] = self._get_unit(unit)
         grouping_values = []
         for unit in units:
-            if not groupby in list(units_params[unit].keys()):
+            if groupby not in list(units_params[unit].keys()):
                 return nemoa.log('error', """could not get units:
                     unknown parameter '%s'.""" % (groupby))
             grouping_value = units_params[unit][groupby]
@@ -318,7 +318,7 @@ class System(Metadata):
         for layer in self._params['units']:
             valid = True
             for key, val in filter_list:
-                if not layer[key] == val:
+                if layer[key] != val:
                     valid = False
                     break
             if valid: layers.append(layer['layer'])
@@ -326,15 +326,13 @@ class System(Metadata):
         return layers
 
     def _get_layer(self, layer):
-        if not layer in list(self._units.keys()):
-            return nemoa.log('error', """could not get layer:
-                layers '%s' is unkown.""" % (layer))
+        if layer not in self._units:
+            return nemoa.log('error', f"layer '{layer}' is not valid")
         return self._units[layer].params
 
     def _get_link(self, link):
         if not isinstance(link, tuple):
-            return nemoa.log('error', """could not get link:
-                link '%s' is unkown.""" % (edge))
+            return nemoa.log('error', f"link '{str(link)}' is not valid")
 
         src, tgt = link
 
@@ -387,7 +385,7 @@ class System(Metadata):
         else:
             link_norm_max = numpy.amax(numpy.abs(layer_adjacency
                 * layer_weights)) * adjacency_sum / weight_sum
-            link_intensity = calculus.intensify(link_norm_weight,
+            link_intensity = calculus.dialogistic(link_norm_weight,
                 scale = 0.7 * link_norm_max, sigma = 10.)
 
         link_params['layer'] = (src_layer, tgt_layer)
@@ -459,16 +457,16 @@ class System(Metadata):
                     if not valid: continue
                     links.append(link)
                     links_params[link] = link_params
-        if groupby == None: return links
+        if groupby is None: return links
 
         # group links by given attribute
         grouping_values = []
         for link in links:
-            if not groupby in list(links_params[link].keys()):
+            if groupby not in links_params[link]:
                 return nemoa.log('error', """could not get links:
                     unknown link attribute '%s'.""" % (groupby))
             grouping_value = links_params[link][groupby]
-            if not grouping_value in grouping_values:
+            if grouping_value not in grouping_values:
                 grouping_values.append(grouping_value)
         grouped_links = []
         for grouping_value in grouping_values:
@@ -506,7 +504,7 @@ class System(Metadata):
     def _get_copy(self, key = None, *args, **kwargs):
         """Get system copy as dictionary."""
 
-        if key == None: return {
+        if key is None: return {
             'config': self._get_config(),
             'params': self._get_params() }
 
@@ -519,7 +517,7 @@ class System(Metadata):
     def _get_config(self, key = None, *args, **kwargs):
         """Get configuration or configuration value."""
 
-        if key == None: return copy.deepcopy(self._config)
+        if key is None: return copy.deepcopy(self._config)
 
         if isinstance(key, str) and key in list(self._config.keys()):
             if isinstance(self._config[key], dict):
@@ -534,7 +532,7 @@ class System(Metadata):
 
         import copy
 
-        if key == None: return copy.deepcopy(self._params)
+        if key is None: return copy.deepcopy(self._params)
 
         if isinstance(key, str) and key in list(self._params.keys()):
             if isinstance(self._params[key], dict):
@@ -603,9 +601,8 @@ class System(Metadata):
 
         """
 
-        if mapping == None: mapping = self._get_mapping()
-        if block == None:
-            model_out = self._get_unitexpect(data[0], mapping)
+        if mapping is None: mapping = self._get_mapping()
+        if block is None: model_out = self._get_unitexpect(data[0], mapping)
         else:
             data_in_copy = numpy.copy(data)
             for i in block:
@@ -636,8 +633,8 @@ class System(Metadata):
                 that are blocked by setting the values to their means
         """
 
-        if mapping == None: mapping = self._get_mapping()
-        if block == None:
+        if mapping is None: mapping = self._get_mapping()
+        if block is None:
             model_out = self._get_unitexpect(data, mapping)
         else:
             data_in_copy = numpy.copy(data)
@@ -673,8 +670,8 @@ class System(Metadata):
 
         """
 
-        if mapping == None: mapping = self._get_mapping()
-        if block == None: in_data = data
+        if mapping is None: mapping = self._get_mapping()
+        if block is None: in_data = data
         else:
             in_data = numpy.copy(data)
             for i in block: in_data[:,i] = numpy.mean(in_data[:,i])
@@ -717,8 +714,8 @@ class System(Metadata):
 
         """
 
-        if mapping == None: mapping = self._get_mapping()
-        if block == None: in_data = data
+        if mapping is None: mapping = self._get_mapping()
+        if block is None: in_data = data
         else:
             in_data = numpy.copy(data)
             for i in block: in_data[:,i] = numpy.mean(in_data[:,i])
@@ -775,8 +772,8 @@ class System(Metadata):
 
         """
 
-        if mapping == None: mapping = self._get_mapping()
-        if block == None: in_data = data
+        if mapping is None: mapping = self._get_mapping()
+        if block is None: in_data = data
         else:
             in_data = numpy.copy(data)
             for i in block: in_data[:,i] = numpy.mean(in_data[:,i])
@@ -833,7 +830,7 @@ class System(Metadata):
         d_src, d_tgt = data
 
         # set mapping: inLayer to outLayer (if not set)
-        if mapping == None: mapping = self._get_mapping()
+        if mapping is None: mapping = self._get_mapping()
 
         # set unit values to mean (optional)
         if isinstance(block, list):
@@ -1086,8 +1083,7 @@ class System(Metadata):
         R = numpy.zeros((len(in_labels), len(out_labels)))
 
         # calculate unit values without knockout
-        if not 'measure' in kwargs: measure = 'error'
-        else: measure = kwargs['measure']
+        measure = kwargs.get('measure', 'error')
         default = self._evaluate_units(data,
             func = measure, mapping = mapping)
 
@@ -1142,7 +1138,7 @@ class System(Metadata):
 
         # create keawords for induction measurement
 
-        if not 'gauge' in kwargs: kwargs['gauge'] = gauge
+        if 'gauge' not in kwargs: kwargs['gauge'] = gauge
 
         # calculate induction without manipulation
         ind = self._get_induction(data, *args, **kwargs)
@@ -1274,7 +1270,7 @@ class System(Metadata):
                 if inlabel == outlabel: A[inid, outid] = 0.0
         bound = numpy.amax(A)
 
-        R = calculus.intensify(R, scale = bound, sigma = contrast)
+        R = calculus.dialogistic(R, scale = bound, sigma = contrast)
 
         return R
 
@@ -1304,7 +1300,7 @@ class System(Metadata):
             return nemoa.log('error', """could not configure links:
                 units have not been configured.""")
 
-        if not 'links' in self._params: self._params['links'] = {}
+        if 'links' not in self._params: self._params['links'] = {}
         if not initialize: return self._set_params_create_links()
 
         # initialize adjacency matrices with default values
@@ -1345,8 +1341,7 @@ class System(Metadata):
                 tgt_sid = tgt_unit['layer_sub_id']
 
                 # set adjacency
-                if not (src_lid, tgt_lid) in self._params['links']:
-                    continue
+                if (src_lid, tgt_lid) not in self._params['links']: continue
                 lnk_dict = self._params['links'][(src_lid, tgt_lid)]
                 lnk_dict['A'][src_sid, tgt_sid] = 1.0
 
@@ -1452,7 +1447,7 @@ class System(Metadata):
                         found = True
                         break
                 if not found: continue
-                if not (src_lid, tgt_lid) in links: continue
+                if (src_lid, tgt_lid) not in links: continue
                 links[(src_lid, tgt_lid)]['A'][src_sid, tgt_sid] = 1.0
 
             params = {'units': units, 'links': links}
@@ -1532,13 +1527,13 @@ class System(Metadata):
 
         """
 
-        if not (dataset == None) and not \
+        if dataset is not None and not \
             nemoa.common.type.isdataset(dataset):
             return nemoa.log('error', """could not initilize units:
             invalid dataset argument given!""")
 
         for layer in list(self._units.keys()):
-            if dataset == None:
+            if dataset is None:
                 data = None
             elif not self._units[layer].params['visible']:
                 data = None
@@ -1568,7 +1563,7 @@ class System(Metadata):
 
         """
 
-        if not(dataset == None) and \
+        if dataset is not None and \
             not nemoa.common.type.isdataset(dataset): return nemoa.log(
             'error', """could not initilize link parameters:
             invalid dataset argument given!""")
@@ -1583,7 +1578,7 @@ class System(Metadata):
                 if 'w_sigma' in self._config['init'] else 1.
             sigma = numpy.ones([x, 1], dtype = float) * alpha / x
 
-            if dataset == None:
+            if dataset is None:
                 random = numpy.random.normal(numpy.zeros((x, y)), sigma)
             elif source in dataset.get('colgroups'):
                 rows = self._config['params']['samples'] \
@@ -1656,9 +1651,8 @@ class System(Metadata):
         # get evaluation algorithms
         algorithms = self._get_algorithms(
             category = ('system', 'evaluation'))
-        if not func in list(algorithms.keys()): return nemoa.log('error',
-            """could not evaluate system: unknown algorithm
-            '%s'.""" % (func))
+        if func not in list(algorithms.keys()): return nemoa.log('error',
+            """could not evaluate system: unknown algorithm '%s'.""" % (func))
         algorithm = algorithms[func]
 
         # prepare (non keyword) arguments for evaluation function
@@ -1670,8 +1664,7 @@ class System(Metadata):
 
         # prepare keyword arguments for evaluation function
         evalkwargs = kwargs.copy()
-        if not 'mapping' in list(evalkwargs.keys()) \
-            or evalkwargs['mapping'] == None:
+        if 'mapping' not in evalkwargs or evalkwargs['mapping'] is None:
             evalkwargs['mapping'] = self._get_mapping()
 
         # evaluate system
@@ -1704,7 +1697,7 @@ class System(Metadata):
         # get evaluation algorithms
         algorithms = self._get_algorithms(
             category = ('system', 'units', 'evaluation'))
-        if not func in list(algorithms.keys()): return nemoa.log('error',
+        if func not in algorithms: return nemoa.log('error',
             "could not evaluate system units: "
             "unknown algorithm name '%s'." % func)
 
@@ -1717,8 +1710,8 @@ class System(Metadata):
 
         if isinstance(units, str):
             evalkwargs['mapping'] = self._get_mapping(tgt = units)
-        elif not 'mapping' in list(evalkwargs.keys()) \
-            or evalkwargs['mapping'] == None:
+        elif 'mapping' not in list(evalkwargs.keys()) \
+            or evalkwargs['mapping'] is None:
             evalkwargs['mapping'] = self._get_mapping()
 
         # evaluate units
@@ -1759,7 +1752,7 @@ class System(Metadata):
         # get evaluation algorithms
         algorithms = self._get_algorithms(
             category = ('system', 'links', 'evaluation'))
-        if not func in list(algorithms.keys()): return nemoa.log('error',
+        if func not in algorithms: return nemoa.log('error',
             """could not evaluate system links:
             unknown algorithm name '%s'.""" % (func))
         algorithm = algorithms[func]
@@ -1774,8 +1767,7 @@ class System(Metadata):
         evalkwargs = kwargs.copy()
         if isinstance(units, str):
             evalkwargs['mapping'] = self._get_mapping(tgt = units)
-        elif not 'mapping' in list(evalkwargs.keys()) \
-            or evalkwargs['mapping'] == None:
+        elif 'mapping' not in evalkwargs or evalkwargs['mapping'] is None:
             evalkwargs['mapping'] = self._get_mapping()
 
         # perform evaluation
@@ -1835,7 +1827,7 @@ class System(Metadata):
         # get evaluation algorithms
         algorithms = self._get_algorithms(
             category = ('system', 'relation', 'evaluation'))
-        if not func in list(algorithms.keys()): return nemoa.log('error',
+        if func not in algorithms: return nemoa.log('error',
             """could not evaluate system unit relation:
             unknown algorithm name '%s'.""" % (func))
         algorithm = algorithms[func]
@@ -1858,8 +1850,7 @@ class System(Metadata):
             del kwargs['format']
         else: retfmt = 'dict'
         ekwargs = kwargs.copy()
-        if not 'mapping' in list(ekwargs.keys()) \
-            or ekwargs['mapping'] == None:
+        if 'mapping' not in ekwargs or ekwargs['mapping'] is None:
             ekwargs['mapping'] = self._get_mapping()
 
         # perform evaluation

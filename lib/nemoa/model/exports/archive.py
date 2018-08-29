@@ -17,9 +17,8 @@ def save(model, path, filetype, **kwargs):
     """Export model to archive file."""
 
     # test if filetype is supported
-    if not filetype in filetypes():
-        return nemoa.log('error', """could not export model:
-            filetype '%s' is not supported.""" % (filetype))
+    if filetype not in filetypes():
+        return nemoa.log('error', f"filetype '{filetype}' is not supported")
 
     copy = model.get('copy')
     return Npz(**kwargs).save(copy, path)

@@ -15,7 +15,7 @@ def types(type = None):
     types = nemoa.dataset.builder.plain.types()
     for key, val in list(types.items()): alltypes[key] = ('plain', val)
 
-    if type == None:
+    if type is None:
         return {key: val[1] for key, val in list(alltypes.items())}
     if type in alltypes:
         return alltypes[type]
@@ -26,7 +26,7 @@ def build(type, *args, **kwargs):
     """Build dataset from building parameters."""
 
     # test if type is supported
-    if not type in list(types().keys()):
+    if type not in types():
         nemoa.log('error', """could not create dataset:
             type '%s' is not supported.""" % (type))
         return {}

@@ -14,7 +14,7 @@ def get(*args, **kwargs):
 
 def instance(*args, **kwargs):
     """Get session instance."""
-    if not 'default' in globals(): globals()['default'] = new()
+    if 'default' not in globals(): globals()['default'] = new()
     return globals()['default']
 
 def log(*args, **kwargs):

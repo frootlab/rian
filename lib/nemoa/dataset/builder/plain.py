@@ -89,7 +89,7 @@ class Rules:
             if isinstance(initialize, str):
                 initrule = initialize
             elif isinstance(initialize, dict):
-                if not col in initialize:
+                if col not in initialize:
                     nemoa.log('warning', """could not initialize '%s':
                         init rule not found.""" % col)
                     continue
@@ -116,13 +116,13 @@ class Rules:
 
         # evaluate manipulation rules
         for col, rule in self.settings['rules']:
-            if not col in cols: continue
+            if col not in cols: continue
             for key in cols:
-                if not key in rule: continue
+                if key not in rule: continue
                 rule = rule.replace(key, "data['%s']" % key)
             random = {}
             for key in ['gauss', 'bernoulli']:
-                if not key in rule: continue
+                if key not in rule: continue
                 if key == 'gauss':
                     sdev = self.settings['sdev']
                     if sdev > 0.:

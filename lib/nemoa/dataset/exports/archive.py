@@ -17,9 +17,8 @@ def save(dataset, path, filetype, **kwargs):
     """Export dataset to archive file."""
 
     # test if filetype is supported
-    if not filetype in filetypes():
-        return nemoa.log('error', """could not export dataset:
-            filetype '%s' is not supported.""" % (filetype))
+    if filetype not in filetypes():
+        return nemoa.log('error', f"filetype '{filetype}' is not supported")
 
     copy = dataset.get('copy')
     return Npz(**kwargs).save(copy, path)

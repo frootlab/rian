@@ -116,7 +116,7 @@ def get_forward_residuals(model, data, mapping = None, block = None):
     d_src, d_tgt = data
 
     # set mapping: src layer to tgt layer (if not set)
-    if mapping == None: mapping = model.system._get_mapping()
+    if mapping is None: mapping = model.system._get_mapping()
 
     # set unit values to mean (optional)
     if isinstance(block, list):
@@ -267,9 +267,8 @@ def get_mean_vector(model, data, mapping = None, block = None):
 
     """
 
-    if mapping == None: mapping = model.system._get_mapping()
-    if block == None:
-        model_out = unit_expect(data[0], mapping)
+    if mapping is None: mapping = model.system._get_mapping()
+    if block is None: model_out = unit_expect(data[0], mapping)
     else:
         data_in_copy = numpy.copy(data)
         for i in block:
@@ -299,9 +298,8 @@ def get_variance_vector(model, data, mapping = None, block = None):
             that are blocked by setting the values to their means
     """
 
-    if mapping == None: mapping = model.system._get_mapping()
-    if block == None:
-        model_out = get_sample_ancestral(data, mapping)
+    if mapping is None: mapping = model.system._get_mapping()
+    if block is None:  model_out = get_sample_ancestral(data, mapping)
     else:
         data_in_copy = numpy.copy(data)
         for i in block:
@@ -663,4 +661,4 @@ def induction(model, data, mapping = None, points = 10,
             if inlabel == outlabel: A[iid, oid] = 0.0
     bound = numpy.amax(A)
 
-    return calculus.intensify(R, sigma = contrast, scale = bound)
+    return calculus.dialogistic(R, sigma = contrast, scale = bound)

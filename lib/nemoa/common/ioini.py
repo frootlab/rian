@@ -102,7 +102,7 @@ def loads(s: str, structure: Optional[dict] = None,
 
     # if the usage of sections is not explicitely given, search for sections
     # in the given string
-    if flat == None:
+    if flat is None:
         flat = True
         for line in [l.lstrip(' ') for l in s.split('\n')]:
             if len(line) == 0 or line.startswith('#'): continue
@@ -152,10 +152,10 @@ def dumps(d: dict, flat: Optional[bool] = None,
 
     # if the usage of sections is not explicitely given, use sections if
     # the dictionary contains subdictionaries
-    if flat == None:
+    if flat is None:
         flat = True
         for key, val in d.items():
-            if not type(val) is dict: continue
+            if not isinstance(val, dict): continue
             flat = False
 
     # if no sections are to be used create a temporary [root] section

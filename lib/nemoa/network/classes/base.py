@@ -77,7 +77,7 @@ class Network(Metadata):
         groups = dataset.get('colgroups')
         changes = []
         for group in groups:
-            if not group in self._config['nodes'] \
+            if group not in self._config['nodes'] \
                 or not (groups[group] == self._config['nodes'][group]):
                 self._configure_graph(
                     nodelist = {'layer': group, 'list': groups[group]})
@@ -98,14 +98,13 @@ class Network(Metadata):
             # count number of new nodes to add to graph
             add_nodes = 0
             for node in nodelist['list']:
-                if not node in self._config['nodes'][nodelist['layer']]:
+                if node not in self._config['nodes'][nodelist['layer']]:
                     add_nodes += 1
 
             # count number of nodes to delete from graph
             del_nodes = 0
             for node in self._config['nodes'][nodelist['layer']]:
-                if not node in nodelist['list']:
-                    del_nodes += 1
+                if node not in nodelist['list']: del_nodes += 1
 
         # add edges from edgelist
         layers = self._config['layer']
@@ -127,13 +126,13 @@ class Network(Metadata):
             edge_layer = (src_layer, tgt_layer)
             edges_filtered = []
             for src_node, tgt_node in edges[edge_layer]:
-                if not src_node in nodes[src_layer]: continue
-                if not tgt_node in nodes[tgt_layer]: continue
+                if not (src_node in nodes[src_layer] \
+                    and tgt_node in nodes[tgt_layer]): continue
                 edges_filtered.append((src_node, tgt_node))
             edges[edge_layer] = edges_filtered
 
         # clear or create new instance of networkx directed graph
-        if self._graph == None: self._graph = networkx.DiGraph()
+        if self._graph is None: self._graph = networkx.DiGraph()
         else: self._graph.clear()
 
         # add configuration as graph attributes
@@ -178,7 +177,7 @@ class Network(Metadata):
             edge_layer = (src_layer, tgt_layer)
 
             for (src_node, tgt_node) in edges[edge_layer]:
-                if not 'labelencapsulate' in self._config \
+                if 'labelencapsulate' not in self._config \
                     or self._config['labelencapsulate'] == True:
                     src_node_name = src_layer + ':' + src_node
                     tgt_node_name = tgt_layer + ':' + tgt_node
@@ -386,24 +385,24 @@ class Network(Metadata):
             if not kwargs == {}:
                 passed = True
                 for key in kwargs:
-                    if not key in attr['params'] \
+                    if key not in attr['params'] \
                         or not kwargs[key] == attr['params'][key]:
                         passed = False
                         break
                 if not passed: continue
             nodes_sort_list[attr['params']['order']] = node
         nodes = [node for node in nodes_sort_list if node]
-        if groupby == None: return nodes
+        if groupby is None: return nodes
 
         # group nodes by given attribute
         grouping_values = []
         for node in nodes:
             node_params = self._graph.node[node]['params']
-            if not groupby in node_params:
+            if groupby not in node_params:
                 return nemoa.log('error', """could not get nodes:
                     unknown node attribute '%s'.""" % (groupby))
             grouping_value = node_params[groupby]
-            if not grouping_value in grouping_values:
+            if grouping_value not in grouping_values:
                 grouping_values.append(grouping_value)
         grouped_nodes = []
         for grouping_value in grouping_values:
@@ -416,12 +415,8 @@ class Network(Metadata):
         return grouped_nodes
 
     def _get_edge(self, edge):
-        if not isinstance(edge, tuple):
-            return nemoa.log('error', """could not get edge:
-                edge '%s' is unkown.""" % (edge))
-        if not edge in self._graph.edges:
-            return nemoa.log('error', """could not get edge:
-                edge ('%s', '%s') is unkown.""" % edge)
+        if edge not in self._graph.edges:
+            return nemoa.log('error', f"edge '{str(edge)}' is not valid")
         return self._graph.edges[edge]
 
     def _get_edges(self, groupby = None, **kwargs):
@@ -457,20 +452,20 @@ class Network(Metadata):
             if not kwargs == {}:
                 passed = True
                 for key in kwargs:
-                    if not key in attr['params'] \
+                    if key not in attr['params'] \
                         or not kwargs[key] == attr['params'][key]:
                         passed = False
                         break
                 if not passed: continue
             edge_sort_list[attr['params']['order']] = (src, tgt)
         edges = [edge for edge in edge_sort_list if edge]
-        if groupby == None: return edges
+        if groupby is None: return edges
 
         # group edges by given attribute
         grouping_values = []
         for edge in edges:
             edge_params = self._graph.edges[edge]['params']
-            if not groupby in edge_params:
+            if groupby not in edge_params:
                 return nemoa.log('error', """could not get edges:
                     unknown edge attribute '%s'.""" % (groupby))
             grouping_value = edge_params[groupby]
@@ -488,7 +483,7 @@ class Network(Metadata):
 
     def _get_layer(self, layer):
         """Return dictionary containing information about a layer."""
-        if not layer in self._config['layers']: return None
+        if layer not in self._config['layers']: return None
         retdict = self._config['layers'][layer]
         retdict['layer'] = layer
         retdict['nodes'] = self._get_nodes(layer = layer)
@@ -519,8 +514,8 @@ class Network(Metadata):
             if not kwargs == {}:
                 passed = True
                 for key in kwargs:
-                    if not key in attr['params'] \
-                        or not kwargs[key] == attr['params'][key]:
+                    if key not in attr['params'] \
+                        or kwargs[key] != attr['params'][key]:
                         passed = False
                         break
                 if not passed: continue
@@ -539,7 +534,7 @@ class Network(Metadata):
     def _get_copy(self, key = None, *args, **kwargs):
         """Get network copy as dictionary."""
 
-        if key == None: return {
+        if key is None: return {
             'config': self._get_config(), 'graph': self._get_graph() }
 
         if key == 'config': return self._get_config(*args, **kwargs)
@@ -551,7 +546,7 @@ class Network(Metadata):
     def _get_config(self, key = None, *args, **kwargs):
         """Get configuration or configuration value."""
 
-        if key == None: return copy.deepcopy(self._config)
+        if key is None: return copy.deepcopy(self._config)
 
         if isinstance(key, str) and key in list(self._config.keys()):
             if isinstance(self._config[key], dict):
@@ -660,7 +655,7 @@ class Network(Metadata):
         """Evaluate network."""
 
         algorithms = self._get_algorithms(attribute = 'reference')
-        if not name in list(algorithms.keys()):
+        if name not in algorithms:
             return nemoa.log('error', """could not evaluate network:
                 unknown networkx algorithm name '%s'.""" % (name))
 

@@ -17,9 +17,8 @@ def filetypes():
 def save(model, path = None, filetype = None, plot = None, **kwargs):
 
     # test if filetype is supported
-    if not filetype in filetypes():
-        return nemoa.log('error', """could not create plot:
-            filetype '%s' is not supported""" % filetype)
+    if filetype not in filetypes():
+        return nemoa.log('error', f"filetype '{filetype}' is not supported")
 
     # get class for plotting from attribute 'plot'
     if not plot: plot = 'graph'
@@ -177,7 +176,7 @@ class Graph(nemoa.common.plot.Graph):
         # calculate edge signs from 'sign' relation
         # default: use the same relation, as used for weights
         rel_sign_name = self._config.get('sign')
-        if rel_sign_name == None:
+        if rel_sign_name is None:
             rel_sign_name = rel_name
             rel_sign_about = rel_about
         else:
@@ -217,7 +216,7 @@ class Graph(nemoa.common.plot.Graph):
         nodes = units[0] + units[1]
         for node in nodes:
             attr = model.network.get('node', node)
-            if attr == None: continue
+            if attr is None: continue
             params = attr.get('params', {})
             graph.add_node(node,
                 label = params.get('label'),

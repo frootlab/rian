@@ -50,7 +50,7 @@ def show(dataset, *args, **kwargs):
 
     # create plot
     plot = get_plot(dataset, *args, **kwargs)
-    if plot == None: return None
+    if plot is None: return None
 
     plot.show()
     plot.release()
@@ -60,12 +60,11 @@ def show(dataset, *args, **kwargs):
 def save(dataset, path = None, filetype = None, *args, **kwargs):
 
     # test if filetype is supported
-    if not filetype in filetypes(): return nemoa.log('error',
-        "could not export plot: "
-        "filetype '%s' is not supported." % (filetype))
+    if filetype not in filetypes():
+        return nemoa.log('error', f"filetype '{filetype}' is not supported")
 
     plot = get_plot(dataset, *args, **kwargs)
-    if plot == None: return None
+    if plot is None: return None
 
     plot.save(path)
     plot.release()
