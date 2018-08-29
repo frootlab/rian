@@ -11,8 +11,7 @@ except ImportError as e: raise ImportError(
 
 try: import numpy
 except ImportError as e: raise ImportError(
-    "nemoa.common.graph requires numpy: "
-    "https://scipy.org") from e
+    "nemoa.common.graph requires numpy: https://scipy.org") from e
 
 from networkx.classes.digraph import DiGraph
 from typing import Optional
@@ -135,7 +134,7 @@ def get_layer_layout(G: DiGraph, direction: str = 'right',
 
     """
 
-    assert is_layered(G), "graph is not layered"
+    if not is_layered(G): raise ValueError("graph is not layered")
 
     if len(G) == 0: return {}
     if len(G) == 1: return { G.nodes()[0]: (0.5, 0.5) }

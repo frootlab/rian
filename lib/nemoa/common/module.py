@@ -21,8 +21,10 @@ def get_curname(frame: int = 0) -> str:
 
     """
 
-    assert isinstance(frame, int), 'First argument is required to be an integer'
-    assert frame <= 0, 'First argument is required to be negative or zero'
+    if not isinstance(frame, int):
+        raise TypeError('first argument is required to be an integer')
+    if not frame <= 0:
+        raise ValueError('first argument is required not to be positive')
 
     import inspect
 
@@ -37,11 +39,24 @@ def get_curname(frame: int = 0) -> str:
 
     return mname
 
-def get_fname(frame: int = 0):
-    """ """
+def get_caller_name(frame: int = 0) -> str:
+    """Get name of the caller, which calls this function.
 
-    assert isinstance(frame, int), 'First argument is required to be an integer'
-    assert frame <= 0, 'First argument is required to be negative or zero'
+    Kwargs:
+        frame (integer, optional): Frame index relative to the current frame
+            in the callstack, which is identified with 0. Negative values
+            consecutively identify previous modules within the callstack.
+            default: 0
+
+    Returns:
+        String with name of the caller.
+
+    """
+
+    if not isinstance(frame, int):
+        raise TypeError('first argument is required to be an integer')
+    if not frame <= 0:
+        raise ValueError('first argument is required not to be positive')
 
     import inspect
 
@@ -49,9 +64,10 @@ def get_fname(frame: int = 0):
     mname = inspect.getmodule(stack[0]).__name__
     fname = stack[3]
 
-    return mname + '.' + fname
+    return '.'.join([mname, fname])
 
-def get_submodules(minst: ModuleType = None, recursive: bool = False):
+def get_submodules(minst: Optional[ModuleType] = None,
+    recursive: bool = False) -> list:
     """Get list with submodule names.
 
     Kwargs:
@@ -85,25 +101,23 @@ def get_submodules(minst: ModuleType = None, recursive: bool = False):
 
     return mlist
 
-def get_submodule(mname: str) -> Optional[ModuleType]:
+def get_submodule(s: str) -> Optional[ModuleType]:
     """Get module instance, by name of current submodule."""
 
-    return get_module('.'.join([get_curname(-1), mname]))
+    return get_module('.'.join([get_curname(-1), s]))
 
-def get_module(mname: str) -> Optional[ModuleType]:
+def get_module(s: str) -> Optional[ModuleType]:
     """Get module instance for a given qualified module name."""
 
     import importlib
 
-    try:
-        minst = importlib.import_module(mname)
-    except ModuleNotFoundError:
-        return None
+    try: minst = importlib.import_module(s)
+    except ModuleNotFoundError: return None
 
     return minst
 
-def get_functions(minst: ModuleType = None, details: bool = False,
-    filters: dict = {}, **kwargs):
+def get_functions(minst: Optional[ModuleType] = None, details: bool = False,
+    filters: dict = {}, **kwargs) -> list:
     """Get filtered list of function names within given module instance.
 
     Kwargs:
@@ -163,7 +177,7 @@ def get_functions(minst: ModuleType = None, details: bool = False,
 
     return fdetails.keys()
 
-def locate_functions(minst: ModuleType = None, recursive = True,
+def locate_functions(minst: Optional[ModuleType] = None, recursive: bool = True,
     details: bool = False, filters: dict = {},  **kwargs):
     """Recursively search for functions within submodules."""
 
@@ -195,7 +209,7 @@ def locate_functions(minst: ModuleType = None, recursive = True,
 
     return funcs
 
-def get_function(fname: str):
+def get_function(fname: str) -> Optional[FunctionType]:
     """Return function instance for a given full qualified function name.
 
     Example:
@@ -232,9 +246,7 @@ def get_kwargs(finst: FunctionType, d: dict = None):
 
     return kwargs
 
-
 # deprecated
-
 def get_methods(cinst: type, attribute = None, grouping = None,
     prefix: str = '', removeprefix: bool = True, renamekey = None):
     """Get the methods of a given class instance.

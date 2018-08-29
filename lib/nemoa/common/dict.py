@@ -5,9 +5,8 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 try: import numpy
-except ImportError: raise ImportError(
-    "nemoa.common.dict requires numpy: "
-    "https://scipy.org")
+except ImportError as e: raise ImportError(
+    "nemoa.common.dict requires numpy: https://scipy.org") from e
 
 from typing import Optional
 

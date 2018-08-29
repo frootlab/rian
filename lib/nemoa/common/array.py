@@ -4,10 +4,12 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import numpy
+try: import numpy
+except ImportError as e: raise ImportError(
+    "nemoa.common.array requires numpy: https://scipy.org") from e
 
 def sumnorm(data, norm = 'S', axis = 0):
-    """Sum of data.
+    """Sum of array.
 
     Calculate sum of data along given axes, using a given norm.
 

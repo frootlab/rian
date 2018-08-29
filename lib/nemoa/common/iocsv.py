@@ -8,9 +8,8 @@ import csv
 import os
 
 try: import numpy
-except ImportError: raise ImportError(
-    "nemoa.common.iocsv requires numpy: "
-    "https://scipy.org")
+except ImportError as e: raise ImportError(
+    "nemoa.common.iocsv requires numpy: https://scipy.org") from e
 
 from typing import Optional
 
@@ -40,19 +39,22 @@ def load(path: str, delim: Optional[str] = None,
     """
 
     # check file
-    assert os.path.isfile(path), f"file '{path}' does not exist"
+    if not os.path.isfile(path):
+        raise ValueError(f"file '{path}' does not exist")
 
     # get delimiter
-    if not delim: delim = get_delim(path)
-    assert delim, f"the delimiter in file '{path}' is not supported"
+    delim = delim or get_delim(path)
+    if not delim:
+        raise ValueError(f"delimiter in file '{path}' is not supported")
 
     # get labels
     if labels:
-        assert usecols, "keyword argument 'usecols' is not given"
+        if not usecols: raise ValueError("argument 'usecols' is not given")
     else:
         labels = get_labels(path, delim = delim)
         usecols = tuple(range(len(labels)))
-    assert labels, "keyword argument 'usecols' is not valid"
+    if not labels:
+        raise ValueError("argument 'usecols' is not valid")
 
     # get row label column id
     if rowlabelcol is None:

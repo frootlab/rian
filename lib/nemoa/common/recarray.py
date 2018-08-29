@@ -4,6 +4,10 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+try: import numpy
+except ImportError as e: raise ImportError(
+    "nemoa.common.recarray requires numpy: https://scipy.org") from e
+
 def insert(data, source, columns = None):
     """Append columns from source to data."""
 

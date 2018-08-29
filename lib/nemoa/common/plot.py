@@ -8,8 +8,7 @@ import nemoa
 
 try: import numpy
 except ImportError as e: raise ImportError(
-    "nemoa.common.plot requires numpy: "
-    "https://scipy.org") from e
+    "nemoa.common.plot requires numpy: https://scipy.org") from e
 
 class Plot:
     """Base class for matplotlib plots.

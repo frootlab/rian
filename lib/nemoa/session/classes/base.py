@@ -471,23 +471,22 @@ class Session:
             if issubclass(obj, Warning): key = 'warning'
             else: key = 'error'
             if mode == 'shell':
-                clr_name = module.get_fname(-5)
-                if clr_name.split('.')[0] == 'IPython':
-                    clr_name = 'IPython'
-            else: clr_name = module.get_fname(-4)
+                clr = module.get_caller_name(-5)
+                if clr.split('.')[0] == 'IPython': clr = 'IPython'
+            else: clr = module.get_caller_name(-4)
             msg = str(args[1])
 
         # test if args are given as an info message
         # in this case the arguments are (msg)
         elif isinstance(obj, str) and len(args) == 1:
             key, msg = 'info', args[0]
-            clr_name = module.get_fname(-3)
+            clr = module.get_caller_name(-3)
 
         # test if args are given as a message of given type
         # in this case the arguments are (type, msg)
         elif isinstance(obj, str) and len(args) == 2:
             key, msg = args[0], args[1]
-            clr_name = module.get_fname(-3)
+            clr = module.get_caller_name(-3)
 
         else: return True
 
@@ -512,7 +511,7 @@ class Session:
         # format message
         while '  ' in msg: msg = msg.replace('  ', ' ')
 
-        file_msg = clr_name + ' -> ' + msg.strip()
+        file_msg = clr + ' -> ' + msg.strip()
 
         # create logging records (depending on loglevels)
         if key == 'info':
@@ -543,8 +542,8 @@ class Session:
             return None
 
         if key == 'error':
-            tty_log.error(
-                clr_name + ': ' + color['yellow'] + msg + color['default'])
+            tty_log.error(f"{clr}: {color['yellow']}{msg}{color['default']}")
+                #clr + ': ' + color['yellow'] + msg + color['default'])
             file_log.error(file_msg)
             for line in traceback.format_stack():
                 msg = line.strip().replace(
