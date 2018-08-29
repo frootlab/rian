@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 from types import FunctionType, ModuleType
 from typing import Optional
 
-def get_curname(frame: int = 0):
+def get_curname(frame: int = 0) -> str:
     """Get name of module, which calls this function.
 
     Kwargs:
@@ -21,8 +21,8 @@ def get_curname(frame: int = 0):
 
     """
 
-    if not isinstance(frame, int) or frame > 0: raise TypeError(
-        'First argument is required to be a negative integer')
+    assert isinstance(frame, int), 'First argument is required to be an integer'
+    assert frame <= 0, 'First argument is required to be negative or zero'
 
     import inspect
 
@@ -36,6 +36,20 @@ def get_curname(frame: int = 0):
     mname = caller.f_globals['__name__']
 
     return mname
+
+def get_fname(frame: int = 0):
+    """ """
+
+    assert isinstance(frame, int), 'First argument is required to be an integer'
+    assert frame <= 0, 'First argument is required to be negative or zero'
+
+    import inspect
+
+    stack = inspect.stack()[abs(frame - 1)]
+    mname = inspect.getmodule(stack[0]).__name__
+    fname = stack[3]
+
+    return mname + '.' + fname
 
 def get_submodules(minst: ModuleType = None, recursive: bool = False):
     """Get list with submodule names.

@@ -457,13 +457,12 @@ class Session:
 
         if not args: return True
 
-        import inspect
         import logging
-        import platform
         import traceback
 
-        from nemoa.common import ostype
+        from nemoa.common import ostype, module
 
+        mode = self._get_mode()
         obj = args[0]
 
         # test if args are given from an exception
@@ -471,40 +470,35 @@ class Session:
         if isinstance(obj, type(Exception)):
             if issubclass(obj, Warning): key = 'warning'
             else: key = 'error'
+            if mode == 'shell':
+                clr_name = module.get_fname(-5)
+                if clr_name.split('.')[0] == 'IPython':
+                    clr_name = 'IPython'
+            else: clr_name = module.get_fname(-4)
             msg = str(args[1])
 
         # test if args are given as an info message
         # in this case the arguments are (msg)
         elif isinstance(obj, str) and len(args) == 1:
             key, msg = 'info', args[0]
+            clr_name = module.get_fname(-3)
 
         # test if args are given as a message of given type
         # in this case the arguments are (type, msg)
         elif isinstance(obj, str) and len(args) == 2:
             key, msg = args[0], args[1]
+            clr_name = module.get_fname(-3)
 
         else: return True
 
-        mode = self._get_mode()
-
         # define colors (platform dependent workaround)
         systype = ostype.systype()
-        # 2do define colors based on shell not on platform
 
-        if False and systype == 'windows':
-            color = {
-                'blue': '',
-                'yellow': '',
-                'red': '',
-                'green': '',
-                'default': '' }
-        else:
-            color = {
-                'blue': '\033[94m',
-                'yellow': '\033[93m',
-                'red': '\033[91m',
-                'green': '\033[92m',
-                'default': '\033[0m' }
+        # 2do define colors based on shell not on platform
+        if systype == 'windows' and mode != 'shell': color = {'blue': '',
+            'yellow': '', 'red': '', 'green': '', 'default': '' }
+        else: color = {'blue': '\033[94m', 'yellow': '\033[93m',
+            'red': '\033[91m', 'green': '\033[92m', 'default': '\033[0m' }
 
         # get loggers
         loggers = list(logging.Logger.manager.loggerDict.keys())
@@ -515,22 +509,10 @@ class Session:
             if __name__ + '.file' in loggers \
             else logging.getLogger(__name__ + '.null')
 
-        # 2do: depending on mode
         # format message
-        # if isinstance(msg, str):
-        #     msg = msg.strip().replace('\n', ' ')
-        # elif isinstance(msg, list):
-        #     msg = ', '.join(msg).strip().replace('\n', ' ')
-        # else:
-        #     msg = '[could not format message]'
         while '  ' in msg: msg = msg.replace('  ', ' ')
 
-        # create file message
-        clr_stack  = inspect.stack()[1]
-        clr_method = clr_stack[3]
-        clr_module = inspect.getmodule(clr_stack[0]).__name__
-        clr_name   = clr_module + '.' + clr_method
-        file_msg   = clr_name + ' -> ' + msg.strip()
+        file_msg = clr_name + ' -> ' + msg.strip()
 
         # create logging records (depending on loglevels)
         if key == 'info':
@@ -561,7 +543,8 @@ class Session:
             return None
 
         if key == 'error':
-            tty_log.error(color['yellow'] + msg + color['default'])
+            tty_log.error(
+                clr_name + ': ' + color['yellow'] + msg + color['default'])
             file_log.error(file_msg)
             for line in traceback.format_stack():
                 msg = line.strip().replace(
@@ -570,8 +553,7 @@ class Session:
             return None
 
         if key == 'critical':
-            tty_log.critical(color['yellow'] \
-                + msg + color['default'])
+            tty_log.critical(color['yellow'] + msg + color['default'])
             file_log.critical(file_msg)
             return None
 
@@ -587,8 +569,7 @@ class Session:
             file_log.info(file_msg)
             return None
 
-        return self.log('warning',
-            "unknown logging type '%s'!" % cmd) or False
+        raise ValueError(f"unknown logging type '{key}'")
 
     def _init_logging(self):
         """Initialize logging and enable exception handling."""
@@ -639,24 +620,11 @@ class Session:
         import sys
 
         # pipe exceptions to nemoa.log
-        def __excepthook(*args, **kwargs):
+        def hook(*args, **kwargs):
             import nemoa
             return nemoa.log(*args, **kwargs)
 
-        sys.__excepthook__ = __excepthook
-
-        # class ValidationError(Exception):
-        #     def __init__(self, msg = ''):
-        #         # Call base class constructor
-        #         super().__init__(msg)
-        #
-        # class ValidationWarning(Warning):
-        #     def __init__(self, msg = ''):
-        #         # Call base class constructor
-        #         super().__init__(msg)
-        #
-        # __builtins__['ValidationError'] = ValidationError
-        # __builtins__['ValidationWarning'] = ValidationWarning
+        sys.__excepthook__ = hook
 
         return True
 
