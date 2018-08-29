@@ -102,7 +102,7 @@ class Dataset(Metadata):
 
         # notify about lost (not convertable) nodes
         if nodes_lost:
-            nemoa.log('error', """%s of %s network nodes could not
+            nemoa.log('warning', """%s of %s network nodes could not
                 be converted!""" % (len(nodes_lost), nodes_count))
             nemoa.log('logfile', ', '.join(nodes_lost))
 
@@ -143,7 +143,7 @@ class Dataset(Metadata):
 
             # notify if any table columns could not be converted
             if columns_lost:
-                nemoa.log('error', """%i of %i table column names
+                nemoa.log('warning', """%i of %i table column names
                     could not be converted.""" %
                     (len(columns_lost), len(columns_conv)))
                 nemoa.log('logfile', ', '.join([columns_conv[i] \
@@ -174,9 +174,9 @@ class Dataset(Metadata):
 
             # notify if any network nodes could not be found
             if num_lost:
-                nemoa.log('error', """%i of %i network nodes
+                nemoa.log('warning', """%i of %i network nodes
                     could not be found in dataset table column names!
-                    (see logfile)""" % (num_lost, num_all))
+                    """ % (num_lost, num_all))
                 for layer in nodes_lost:
                     nemoa.log('logfile', "missing nodes (layer '%s'): "
                         % (layer) + ', '.join(nodes_lost[layer]))
@@ -217,7 +217,7 @@ class Dataset(Metadata):
                 columns.append(colid)
                 mapping[colid] = column
 
-            if not found: return nemoa.log('error',
+            if not found: raise ValueError(
                 "no node from network layer '%s' "
                 "could be found in dataset tables." % layer)
 
@@ -330,7 +330,7 @@ class Dataset(Metadata):
                 self._config['tables'][table]['fraction'] = fraction
             return True
 
-        return nemoa.log('error',
+        raise ValueError(
             "could not update sampling fractions: "
             "stratification '%s' is not supported." % stratification)
 
@@ -500,7 +500,7 @@ class Dataset(Metadata):
                         ).astype(float)
             return True
 
-        return nemoa.log('error',
+        raise ValueError(
             "could not transform data: "
             "unsupported transformation '%s'." % transformation)
 
@@ -509,7 +509,7 @@ class Dataset(Metadata):
         """ """
 
         if not nemoa.common.type.issystem(system):
-            return nemoa.log('error',
+            raise ValueError(
                 "could not transform data by model: "
                 "invalid model.")
 
@@ -597,7 +597,7 @@ class Dataset(Metadata):
         if key == 'config': return self._get_config(*args, **kwargs)
         if key == 'tables': return self._get_table(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key) or None
+        raise KeyError(f"unknown key '{key}'")
 
     def _get_algorithms(self, category = None, attribute = None, tree = False):
         """Get algorithms provided by dataset."""
@@ -696,7 +696,7 @@ class Dataset(Metadata):
                         columns.append(column[1])
             return columns
 
-        return nemoa.log('error', """could not retrive dataset columns:
+        raise ValueError("""could not retrive dataset columns:
             column filter '%s' is not known.""" % (filter))
 
     def _get_colnames(self, columns = None):
@@ -758,8 +758,8 @@ class Dataset(Metadata):
 
     def _get_rowfilter(self, name):
         if name not in self._config['rowfilter']:
-            nemoa.log('warning', "unknown row filter '" + name + "'!")
-            return []
+            raise Warning("unknown row filter '" + name + "'!")
+
         return self._config['rowfilter'][name]
 
     def _get_rowfilters(self):
@@ -804,7 +804,7 @@ class Dataset(Metadata):
         """
 
         if not isinstance(size, int) or size < 0:
-            return nemoa.log('error',
+            raise ValueError(
                 "could not get data: "
                 "argument 'size' is required to be of type 'int'.")
 
@@ -821,7 +821,7 @@ class Dataset(Metadata):
                 src_stack += (src_data, )
 
         if not src_stack:
-            return nemoa.log('error',
+            raise ValueError(
                 "could not get data: "
                 "no valid data sources found!")
         data = numpy.concatenate(src_stack)
@@ -845,7 +845,7 @@ class Dataset(Metadata):
                 cols = self._get_columns(col_filter),
                 output = output) for col_filter in cols])
         else:
-            return nemoa.log('error',
+            raise ValueError(
                 "could not get data: "
                 "invalid argument for columns!")
 
@@ -876,15 +876,15 @@ class Dataset(Metadata):
         elif isinstance(cols, list):
             columns = cols
         else:
-            return nemoa.log('error', """could not retrieve data:
+            raise ValueError("""could not retrieve data:
                 Argument 'cols' is not valid.""")
 
         # assert validity of columns and get column names of tables
         if not len(columns) == len(set(columns)):
-            return nemoa.log('error', """could not retrieve data:
+            raise ValueError("""could not retrieve data:
                 columns are not unique!""")
         if [col for col in columns if col not in self._get_columns()]:
-            return nemoa.log('error', """could not retrieve data:
+            raise ValueError("""could not retrieve data:
                 unknown columns!""")
         colnames = self._get_colnames(columns)
 
@@ -892,7 +892,7 @@ class Dataset(Metadata):
         if isinstance(output, str): fmt_tuple = (output, )
         elif isinstance(output, tuple): fmt_tuple = output
         else:
-            return nemoa.log('error', """could not retrieve data:
+            raise ValueError("""could not retrieve data:
                 invalid 'format' argument!""")
 
         # check for identical column names
@@ -922,7 +922,7 @@ class Dataset(Metadata):
             elif fmt_str == 'rows':
                 rettuple += (data['label'].tolist(), )
             else:
-                return nemoa.log('error', """could not retrieve data:
+                raise ValueError("""could not retrieve data:
                     invalid argument 'cols'.""")
         if isinstance(output, str):
             return rettuple[0]
@@ -990,7 +990,7 @@ class Dataset(Metadata):
 
             return data + noise
 
-        else: return nemoa.log('error', """could not corrupt data:
+        else: raise ValueError("""could not corrupt data:
             unkown noise model '%s'.""" % (type))
 
     def _get_data_pca(self, data, k: int = 2, embed: bool = True):
@@ -1057,7 +1057,7 @@ class Dataset(Metadata):
         if not isinstance(table, str) \
             or not table in list(self._tables.keys()) \
             or not isinstance(self._tables[table], numpy.ndarray):
-            return nemoa.log('error',
+            raise ValueError(
                 "could not retrieve data: "
                 "invalid table name: '%s'." % table)
 
@@ -1069,7 +1069,7 @@ class Dataset(Metadata):
         # get row names from filter
         if isinstance(rows, str):
             if rows not in self._config['rowfilter']:
-                return nemoa.log('error', "invalid row filter '%s'!" % rows)
+                raise ValueError("invalid row filter '%s'!" % rows)
             rowfilter = self._config['rowfilter'][rows]
         elif isinstance(rows, list):
             # 2do: filter list to valid row names
@@ -1147,7 +1147,7 @@ class Dataset(Metadata):
         if key == 'config': return self._get_config(*args, **kwargs)
         if key == 'tables': return self._get_tables(*args, **kwargs)
 
-        return nemoa.log('error', """could not get dataset copy:
+        raise ValueError("""could not get dataset copy:
             unknown key '%s'.""" % key) or None
 
     def _get_config(self, key = None, *args, **kwargs):
@@ -1162,7 +1162,7 @@ class Dataset(Metadata):
                 return self._config[key].copy()
             return self._config[key]
 
-        return nemoa.log('error', """could not get configuration:
+        raise ValueError("""could not get configuration:
             unknown key '%s'.""" % key) or None
 
     def _get_tables(self, key = None):
@@ -1175,7 +1175,7 @@ class Dataset(Metadata):
         if isinstance(key, str) and key in list(self._tables.keys()):
             return self._tables[key]
 
-        return nemoa.log('error', """could not get table:
+        raise ValueError("""could not get table:
             unknown tables name '%s'.""" % key) or None
 
     def set(self, key = None, *args, **kwargs):
@@ -1194,7 +1194,7 @@ class Dataset(Metadata):
         if key == 'config': return self._set_config(*args, **kwargs)
         if key == 'tables': return self._set_tables(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key) or None
+        raise KeyError(f"unknown key '{key}'")
 
     def _set_columns(self, columns, mapping):
         """Set virtual columns.
@@ -1217,17 +1217,17 @@ class Dataset(Metadata):
 
         # assert validity of argument 'columns'
         if not isinstance(columns, list):
-            return nemoa.log('error', """could not set columns:
+            raise ValueError("""could not set columns:
                 columns list is not valid.""")
 
         # assert validity of argument 'mapping'
         if not isinstance(mapping, dict):
-            return nemoa.log('error', """could not set columns:
+            raise ValueError("""could not set columns:
                 mapping dictionary is not valid.""")
 
         # assert validity of external columns in 'mapping'
         for column in columns:
-            if column not in mapping: return nemoa.log('error',
+            if column not in mapping: raise ValueError(
                 f"column '{column}' can not be mapped")
 
         # assert validity of internal columns in 'mapping'
@@ -1235,7 +1235,7 @@ class Dataset(Metadata):
             for table in self._tables.keys():
                 if column in self._tables[table].dtype.names:
                     continue
-                return nemoa.log('error',
+                raise ValueError(
                     "table '{table}' has no column '{column}'")
 
         # set 'columns' and 'colmapping'
@@ -1333,7 +1333,7 @@ class Dataset(Metadata):
 
         algorithms = self._get_algorithms(attribute = 'reference')
         if name not in list(algorithms.keys()):
-            return nemoa.log('error', f"algorithm '{name}' is not supported")
+            raise ValueError(f"algorithm '{name}' is not supported")
 
         return algorithms[name](*args, **kwargs)
 
@@ -1517,11 +1517,10 @@ class Dataset(Metadata):
         # get numpy array with test data
         data = self._get_data(cols = cols)
 
+        # test
         isbinary = ((data == data.astype(bool)).sum() == data.size)
-        if not isbinary: return nemoa.log('warning',
-            'dataset does not contain binary data.')
 
-        return True
+        return isbinary
 
     @nemoa.common.decorators.algorithm(
         name     = 'test_gauss',
@@ -1564,17 +1563,13 @@ class Dataset(Metadata):
 
         # test mean values of columns
         mean = data.mean(axis = 0)
-        if numpy.any(numpy.abs(mu - mean) > delta):
-            return nemoa.log('warning',
-                """dataset contains columns with not gauss normalized
-                expectation values!""")
+        test = numpy.all(numpy.abs(mu - mean) < delta)
+        if not test: return False
 
         # test standard deviations of columns
         sdev = data.std(axis = 0)
-        if numpy.any(numpy.abs(sigma - sdev) > delta):
-            return nemoa.log('warning',
-                """dataset contains columns with not gauss normalized
-                standard deviations!""")
+        test = numpy.all(numpy.abs(sigma - sdev) < delta)
+        if not test: return False
 
         return True
 

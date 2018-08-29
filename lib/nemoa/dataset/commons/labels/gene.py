@@ -21,10 +21,9 @@ class gene:
             import rpy2.robjects
             self.robjects = rpy2.robjects
             sys.stdout = stdout
-        except:
+        except Exception as e:
             sys.stdout = stdout
-            nemoa.log('error',
-                "could not import python package 'rpy2'!")
+            raise ImportError("could not import python package 'rpy2'") from e
 
     def _exec_rcmd(self, rcmd = None):
         if not rcmd: return True
@@ -35,12 +34,10 @@ class gene:
             sys.stdout = NullDevice()
             self.robjects.r(rcmd)
             sys.stdout = sysstout
-        except:
+        except Exception as e:
             sys.stdout = sysstout
-            nemoa.log('error', """could not execute
-                R command '%s' (see logfile)""" % rcmd)
-            nemoa.log('debuginfo', sys.exc_info()[0])
-            return False
+            raise RuntimeError("""could not execute
+                R command '%s' (see logfile)""" % rcmd) from e
 
         return True
 
@@ -57,11 +54,10 @@ class gene:
 
     def _install_pkg(self, pkg = None):
         if not pkg:
-            nemoa.log('note', """trying to install
-            bioconductor base""")
+            nemoa.log('note', "trying to install bioconductor base")
         else:
-           nemoa.log('note', """trying to install
-               bioconductor package: '%s'""" % pkg)
+            nemoa.log('note', "trying to install "
+                "bioconductor package: '{pkg}'")
 
         # try to evaluate the remote R script biocLite()
         bioclite = "https://bioconductor.org/biocLite.R"
@@ -73,10 +69,10 @@ class gene:
             base.source(bioclite)
             base.require('biocLite')
             sys.stdout = sysstout
-        except:
+        except Exception as e:
             sys.stdout = sysstout
-            return nemoa.log('error', """could not evaluate remote R
-                script: '%s'""" % bioclite)
+            raise ValueError("""could not evaluate remote R
+                script: '%s'""" % bioclite) from e
 
         # try to install bioconductor packages with biocLite()
         if not pkg: return self._exec_rcmd("biocLite()")
@@ -89,9 +85,8 @@ class gene:
         if not outfmt or outfmt == 'default': outfmt = self.default
         if infmt == outfmt: return inlist, []
         if not self.robjects:
-            nemoa.log('error', """could not convert gene labels:
+            raise ImportError("""could not convert gene labels:
                 python package 'rpy2' is not installed!""")
-            return inlist, list(range(len(inlist)))
 
         # make local copy of list
         inlist = list(inlist)[:]
@@ -150,9 +145,8 @@ class gene:
             slist = inlist
 
         else:
-            nemoa.log('error', """conversion from '%s' to '%s' is not
+            raise ValueError("""conversion from '%s' to '%s' is not
                 supported""" % (infmt, outfmt))
-            return inlist, []
 
         # search listvector
         blist = []

@@ -36,7 +36,7 @@ def aslist(s: str, delim = ','):
     l = None
     if delim == ',':
         try: l = list(eval(s))
-        except: pass
+        except Exception as e: pass
     if isinstance(l, list): return l
 
     # split string by delimiter
@@ -54,7 +54,7 @@ def astuple(s: str, delim = ','):
     t = None
     if delim == ',':
         try: t = tuple(eval(s))
-        except: pass
+        except Exception: pass
     if isinstance(t, tuple): return t
 
     # split string by delimiter
@@ -81,14 +81,14 @@ def asdict(s: str, delim = ','):
     pp_term = pyparsing.Group(pp_key + '=' + pp_val)
     pp_term_lists = pp_term + pyparsing.ZeroOrMore(delim + pp_term)
     try: list = pp_term_lists.parseString(s.strip('{}'))
-    except: list = None
+    except Exception: list = None
 
     # try dictionary dialect "'<key>': <value>, ..."
     if list is None:
         pp_term = pyparsing.Group(pp_str + ':' + pp_val)
         pp_term_lists = pp_term + pyparsing.ZeroOrMore(delim + pp_term)
         try: list = pp_term_lists.parseString(s.strip('{}'))
-        except: return {}
+        except Exception: return {}
 
     # create dictionary
     dictionary = {}
@@ -97,10 +97,8 @@ def asdict(s: str, delim = ','):
             if item[0] == ',': continue
             dictionary[item] = True
             continue
-        try:
-            key = item[0].strip('\'\"')
-            value = eval(item[2])
-        except: continue
+        try: key, value = item[0].strip('\'\"'), eval(item[2])
+        except Exception: continue
 
         dictionary[key] = value
         if isinstance(dictionary[key], str):

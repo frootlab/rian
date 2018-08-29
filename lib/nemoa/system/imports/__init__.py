@@ -44,10 +44,10 @@ def load(path, filetype = None, **kwargs):
             pathkwargs['base'] = kwargs.pop('base')
         path = nemoa.path('system', name, **pathkwargs)
         if not path:
-            return nemoa.log('warning', """could not import system:
+            raise Warning("""could not import system:
                 invalid system name.""") or {}
         if not os.path.isfile(path):
-            return nemoa.log('warning', """could not import system:
+            raise Warning("""could not import system:
                 file '%s' does not exist.""" % path) or {}
 
     # get filtype from file extension if not given
@@ -55,7 +55,7 @@ def load(path, filetype = None, **kwargs):
     if not filetype:
         filetype = nemoa.common.ospath.fileext(path).lower()
     if filetype not in filetypes():
-        return nemoa.log('error', """could not import system:
+        raise ValueError("""could not import system:
             filetype '%s' is not supported.""" % filetype)
 
     # import and check dictionary
@@ -67,7 +67,7 @@ def load(path, filetype = None, **kwargs):
     else:
         system = None
     if not system:
-        return nemoa.log('error', """could not import system:
+        raise ValueError("""could not import system:
             file '%s' is not valid.""" % path) or {}
 
     # update path

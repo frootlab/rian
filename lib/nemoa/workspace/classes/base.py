@@ -20,7 +20,7 @@ class Workspace:
 
         if key in self._attr_meta:
             if 'r' in self._attr_meta[key]: return self._get_meta(key)
-            return nemoa.log('warning',
+            raise Warning(
                 "attribute '%s' is not readable.")
 
         raise AttributeError('%s instance has no attribute %r'
@@ -32,7 +32,7 @@ class Workspace:
         if key in self._attr_meta:
             if 'w' in self._attr_meta[key]:
                 return self._set_meta(key, val)
-            return nemoa.log('warning',
+            raise Warning(
                 "attribute '%s' is not writeable." % key)
 
         self.__dict__[key] = val
@@ -48,7 +48,7 @@ class Workspace:
         # meta information
         if key in self._attr_meta: return self._get_meta(key)
 
-        return nemoa.log('warning', "unknown key '%s'" % key)
+        raise KeyError(f"unknown key '{key}'")
 
     def _get_meta(self, key):
         """Get meta information like 'name' or 'path'."""
@@ -58,7 +58,7 @@ class Workspace:
         if key == 'name': return self._get_name()
         if key == 'path': return self._get_path()
 
-        return nemoa.log('warning', "unknown key '%s'" % key)
+        raise KeyError(f"unknown key '{key}'")
 
     def _get_about(self):
         """Get description.
@@ -98,19 +98,19 @@ class Workspace:
         if key == 'copy': return self._set_copy(*args, **kwargs)
         if key == 'config': return self._set_config(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key)
+        raise KeyError(f"unknown key '{key}'")
 
     def _set_meta(self, key, *args, **kwargs):
         """Set meta information like 'name' or 'path'."""
 
         if key == 'about': return self._set_about(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key)
+        raise KeyError(f"unknown key '{key}'")
 
     def _set_about(self, val):
         """Set description."""
 
-        if not isinstance(val, str): return nemoa.log('warning',
+        if not isinstance(val, str): raise Warning(
             "attribute 'about' requires datatype 'basestring'.")
         self._config['about'] = val
 

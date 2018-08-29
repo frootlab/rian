@@ -5,7 +5,11 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa
-import numpy
+
+try: import numpy
+except ImportError as e: raise ImportError(
+    "nemoa.common.plot requires numpy: "
+    "https://scipy.org") from e
 
 class Plot:
     """Base class for matplotlib plots.
@@ -308,11 +312,6 @@ class Graph(Plot):
         except ImportError: raise ImportError(
             "nemoa.common.plot.Graph.plot() requires matplotlib: "
             "https://matplotlib.org")
-
-        try: import numpy
-        except ImportError: raise ImportError(
-            "nemoa.common.plot.Graph.plot() requires numpy: "
-            "https://scipy.org")
 
         try: import networkx as nx
         except ImportError: raise ImportError(

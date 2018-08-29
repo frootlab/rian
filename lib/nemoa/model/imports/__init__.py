@@ -38,17 +38,17 @@ def load(path, filetype = None, **kwargs):
             pathkwargs['base'] = kwargs.pop('base')
         path = nemoa.path('model', name, **pathkwargs)
         if not path:
-            return nemoa.log('warning', """could not import model:
+            raise Warning("""could not import model:
                 invalid model name.""") or {}
         if not os.path.isfile(path):
-            return nemoa.log('warning', """could not import model:
+            raise Warning("""could not import model:
                 file '%s' does not exist.""" % path) or {}
 
     # get filtype from file extension if not given
     # and check if filetype is supported
     if not filetype: filetype = nemoa.common.ospath.fileext(path).lower()
     if filetype not in filetypes():
-        return nemoa.log('error', f"filetype '{filetype}' is not supported")
+        raise ValueError(f"filetype '{filetype}' is not supported")
 
     # import and check dictionary
     mname = filetypes(filetype)[0]
@@ -57,7 +57,7 @@ def load(path, filetype = None, **kwargs):
     else:
         model = None
     if not model:
-        return nemoa.log('error', """could not import model:
+        raise ValueError("""could not import model:
             file '%s' is not valid.""" % path) or {}
 
     # update path

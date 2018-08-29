@@ -157,15 +157,15 @@ def get_error_vector(model, data, norm = 'MSE', **kwargs):
         block: list of strings containing labels of source units
             that are blocked by setting the values to their means
         norm: used norm to calculate data reconstuction error from
-            residuals. see nemoa.common.ndarray.meannorm for a list
+            residuals. see nemoa.common.array.meannorm for a list
             of provided norms
 
     """
 
-    from nemoa.common.ndarray import meannorm
+    from nemoa.common import array
 
     res = get_residuals(data, **kwargs)
-    error = meannorm(res, norm = norm)
+    error = array.meannorm(res, norm = norm)
 
     return error
 
@@ -193,16 +193,16 @@ def get_accuracy_vector(model, data, norm = 'MSE', **kwargs):
         block: list of strings containing labels of source units
             that are blocked by setting the values to their means
         norm: used norm to calculate accuracy
-            see nemoa.common.ndarray.meannorm for a list of provided
+            see nemoa.common.array.meannorm for a list of provided
             norms
 
     """
 
-    from nemoa.common.ndarray import meannorm
+    from nemoa.common import array
 
     res = get_residuals(data, **kwargs)
-    normres = meannorm(res, norm = norm)
-    normdat = meannorm(data[1], norm = norm)
+    normres = array.meannorm(res, norm = norm)
+    normdat = array.meannorm(data[1], norm = norm)
 
     return 1. - normres / normdat
 
@@ -230,16 +230,16 @@ def get_precision_vector(model, data, norm = 'SD', **kwargs):
         block: list of strings containing labels of source units
             that are blocked by setting the values to their means
         norm: used norm to calculate deviation for precision
-            see nemoa.common.ndarray.devnorm for a list of provided
+            see nemoa.common.array.devnorm for a list of provided
             norms
 
     """
 
-    from nemoa.common.ndarray import devnorm
+    from nemoa.common import array
 
     res = get_residuals(data, **kwargs)
-    devres = devnorm(res, norm = norm)
-    devdat = devnorm(data[1], norm = norm)
+    devres = array.devnorm(res, norm = norm)
+    devdat = array.devnorm(data[1], norm = norm)
 
     return 1. - devres / devdat
 

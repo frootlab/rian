@@ -21,7 +21,7 @@ def load(path, **kwargs):
 
     # test if filetype is supported
     if filetype not in filetypes():
-        return nemoa.log('error', f"filetype '{filetype}' is not supported")
+        raise ValueError(f"filetype '{filetype}' is not supported")
 
     if filetype in ['ini', 'txt']:  return Ini(**kwargs).load(path)
 
@@ -53,14 +53,14 @@ class Ini:
         if not network \
             or not 'network' in network \
             or not 'type' in network['network']:
-            return nemoa.log('error', "could not import network: "
+            raise ValueError("could not import network: "
                 "configuration file '%s' is not valid." % path)
 
         if network['network']['type'] in \
             ['layer.MultiLayer', 'layer.Shallow', 'layer.Factor']:
             return self._parse_layer_network(path)
 
-        return nemoa.log('error', "could not import network "
+        raise ValueError("could not import network "
             "configuration file '%s' contains unsupported network "
             "type '%s'." % (path, network['network']['type']))
 
@@ -99,7 +99,7 @@ class Ini:
 
         # layers
         if 'layers' not in config:
-            return nemoa.log('warning', """file '%s' does not
+            raise Warning("""file '%s' does not
                 contain parameter 'layers'.""" % path)
         config['layer'] = config['layers']
         del config['layers']
@@ -126,7 +126,7 @@ class Ini:
 
             layer_section = 'layer ' + layer
             if layer_section not in ini_dict:
-                return nemoa.log('warning', """could not import layer
+                raise Warning("""could not import layer
                     network: file '%s' does not contain information
                     about layer '%s'.""" % (path, layer))
 
@@ -161,7 +161,7 @@ class Ini:
                 file_str = sec_data['file']
                 list_file = nemoa.workspace._expand_path(file_str)
                 if not os.path.exists(list_file):
-                    return nemoa.log('error', """listfile '%s'
+                    raise ValueError("""listfile '%s'
                         does not exists!""" % list_file)
                 with open(list_file, 'r') as list_file:
                     fileLines = list_file.readlines()
@@ -172,7 +172,7 @@ class Ini:
                 node_list = ['n%s' % (n) \
                     for n in range(1, sec_data['size'] + 1)]
             else:
-                return nemoa.log('warning', """could not import layer
+                raise Warning("""could not import layer
                     network: layer '%s' does not contain valid node
                     information!""" % (layer))
 
@@ -220,7 +220,7 @@ class Ini:
 
             edge_layer = (src_layer, tgt_layer)
             if config['edges'][edge_layer] == []:
-                return nemoa.log('warning', """layer '%s' and
+                raise Warning("""layer '%s' and
                     layer '%s' are not connected!"""
                     % (src_layer, tgt_layer))
 

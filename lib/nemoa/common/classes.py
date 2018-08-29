@@ -60,12 +60,10 @@ class Metadata:
 
         if key in self._attr_meta:
             if 'r' in self._attr_meta[key]: return self._get_meta(key)
-            return nemoa.log('warning',
-                "attribute '%r' is not readable." % key)
+            raise AttributeError(f"attribute '{key}' is not readable")
         if key in self._attr:
             if 'r' in self._attr[key]: return self.get(key)
-            return nemoa.log('warning',
-                "attribute '%r' is not readable." % key)
+            raise AttributeError(f"attribute '{key}' is not readable")
 
         raise AttributeError("%s instance has no attribute '%r'"
             % (self.__class__.__name__, key))
@@ -76,12 +74,10 @@ class Metadata:
         if key in self._attr_meta:
             if 'w' in self._attr_meta[key]:
                 return self._set_meta(key, val)
-            return nemoa.log('warning',
-                "attribute '%r' is not writeable." % key)
+            raise AttributeError(f"attribute '{key}' is not writeable")
         if key in self._attr:
             if 'w' in self._attr[key]: return self.set(key, val)
-            return nemoa.log('warning',
-                "attribute '%r' is not writeable." % key)
+            raise AttributeError(f"attribute '{key}' is not writeable")
 
         self.__dict__[key] = val
 
@@ -104,7 +100,7 @@ class Metadata:
         if key == 'type':     return self._get_type()
         if key == 'version':  return self._get_version()
 
-        return nemoa.log('warning', "%s instance has no attribute '%r'."
+        raise Warning("%s instance has no attribute '%r'."
             % (self.__class__.__name__, key))
 
     def _get_about(self):
@@ -275,7 +271,7 @@ class Metadata:
         if key == 'path':    return self._set_path(*args, **kwargs)
         if key == 'version': return self._set_version(*args, **kwargs)
 
-        return nemoa.log('warning', "%s instance has no attribute '%r'."
+        raise Warning("%s instance has no attribute '%r'."
             % (self.__class__.__name__, key))
 
     def _set_about(self, val):
@@ -288,8 +284,8 @@ class Metadata:
 
         """
 
-        if not isinstance(val, str): return nemoa.log('warning',
-            "attribute 'about' requires datatype 'basestring'.")
+        if not isinstance(val, str): raise TypeError(
+            "attribute 'about' is required to be of type string")
         self._config['about'] = val
         return True
 
@@ -304,8 +300,8 @@ class Metadata:
 
         """
 
-        if not isinstance(val, str): return nemoa.log('warning',
-            "attribute 'author' requires datatype 'basestring'.")
+        if not isinstance(val, str): raise TypeError(
+            "attribute 'author' is required to be of type string")
         self._config['author'] = val
         return True
 
@@ -319,8 +315,8 @@ class Metadata:
 
         """
 
-        if not isinstance(val, str): return nemoa.log('warning',
-            "attribute 'branch' requires datatype 'basestring'.")
+        if not isinstance(val, str): raise TypeError(
+            "attribute 'branch' is required to be of type string")
         self._config['branch'] = val
         return True
 
@@ -335,8 +331,8 @@ class Metadata:
 
         """
 
-        if not isinstance(val, str): return nemoa.log('warning',
-            "attribute 'email' requires datatype 'basestring'.")
+        if not isinstance(val, str): raise TypeError(
+            "attribute 'email' is required to be of type string")
         self._config['email'] = val
         return True
 
@@ -351,8 +347,8 @@ class Metadata:
 
         """
 
-        if not isinstance(val, str): return nemoa.log('warning',
-            "attribute 'license' requires datatype 'basestring'.")
+        if not isinstance(val, str): raise TypeError(
+            "attribute 'livense' is required to be of type string")
         self._config['license'] = val
         return True
 
@@ -368,8 +364,8 @@ class Metadata:
 
         """
 
-        if not isinstance(val, str): return nemoa.log('warning',
-            "attribute 'name' requires datatype 'basestring'.")
+        if not isinstance(val, str): raise TypeError(
+            "attribute 'name' is required to be of type string")
         self._config['name'] = val
         return True
 
@@ -383,8 +379,8 @@ class Metadata:
 
         """
 
-        if not isinstance(val, str): return nemoa.log('warning',
-            "attribute 'path' requires datatype 'basestring'.")
+        if not isinstance(val, str): raise TypeError(
+            "attribute 'path' is required to be of type string")
         self._config['path'] = val
         return True
 
@@ -398,7 +394,7 @@ class Metadata:
 
         """
 
-        if not isinstance(val, int): return nemoa.log('warning',
-            "attribute 'version' requires datatype 'int'.")
+        if not isinstance(val, int): raise TypeError(
+            "attribute 'version' is required to be of type integer")
         self._config['version'] = val
         return True

@@ -5,6 +5,7 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 from types import FunctionType, ModuleType
+from typing import Optional
 
 def get_curname(frame: int = 0):
     """Get name of module, which calls this function.
@@ -70,7 +71,12 @@ def get_submodules(minst: ModuleType = None, recursive: bool = False):
 
     return mlist
 
-def get_module(mname: str):
+def get_submodule(mname: str) -> Optional[ModuleType]:
+    """Get module instance, by name of current submodule."""
+
+    return get_module('.'.join([get_curname(-1), mname]))
+
+def get_module(mname: str) -> Optional[ModuleType]:
     """Get module instance for a given qualified module name."""
 
     import importlib

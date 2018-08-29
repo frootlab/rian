@@ -53,13 +53,18 @@ class Session:
         """ """
 
         import os
+        import sys
+
         from nemoa.common.dict import merge
         from nemoa.common import ioini
 
         self._config = merge(kwargs, self._default)
 
-        # enable error handling
+        # reset workspace to default values
         self._set_workspace_reset()
+
+        # initialize exception handler
+        self._init_exception_handler()
 
         # update basepaths from user configuration
         configfile = self._config['default']['path']['baseconf']
@@ -112,7 +117,7 @@ class Session:
         if key in self._config['register']:
             return self._get_objconfig(key, *args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key)
+        raise KeyError(f"unknown key '{key}'")
 
     def _get_about(self, key = 'about', *args, **kwargs):
         """Get nemoa meta information."""
@@ -129,7 +134,7 @@ class Session:
         if key == 'maintainer': return nemoa.__maintainer__
         if key == 'credits': return nemoa.__credits__
 
-        return nemoa.log('warning', "unknown key '%s'" % key)
+        raise KeyError(f"unknown key '{key}'")
 
     def _get_base(self):
         """Get name of current workspace search path."""
@@ -151,13 +156,13 @@ class Session:
 
         if not key: return copy.deepcopy(self._config['default'])
         elif key not in self._config['default']:
-            return nemoa.log('error', "key '%s' is not valid." % key)
+            raise ValueError("key '%s' is not valid." % key)
         retval = self._config['default'][key]
         parent = key
         while args:
             if not isinstance(args[0], str) \
                 or not args[0] in retval:
-                return nemoa.log('error', """could not get default
+                raise ValueError("""could not get default
                     value: '%s' does not contain key '%s'.""" %
                     (parent, args[0]))
             parent = args[0]
@@ -191,7 +196,7 @@ class Session:
             if 'attribute' not in kwargs: kwargs['attribute'] = 'name'
             return self._get_objconfigs(key[:-1], *args, **kwargs)
 
-        return nemoa.log('warning', f"unknown key '{key}'")
+        raise Warning(f"unknown key '{key}'")
 
     def _get_list_bases(self, workspace = None):
         """Get list of searchpaths containing given workspace name."""
@@ -215,7 +220,7 @@ class Session:
                     self._get_list_workspaces(base = base)
             return workspaces
         elif base not in self._config['default']['basepath']:
-            return nemoa.log('error', """could not get workspaces:
+            raise ValueError("""could not get workspaces:
                 unknown workspace base '%s'.""" % base)
 
         basepath = self._config['default']['basepath'][base]
@@ -240,7 +245,7 @@ class Session:
         if key == 'inkey': return self._get_shell_inkey()
         if key == 'buffmode': return self._get_shell_buffmode()
 
-        return nemoa.log('warning', "unknown key '%s'" % key)
+        raise KeyError(f"unknown key '{key}'")
 
     def _get_shell_inkey(self):
         """Get current key buffer."""
@@ -260,10 +265,10 @@ class Session:
         """Get configuration of given object as dictionary."""
 
         if objtype not in self._config['register']:
-            return nemoa.log('warning', """could not get configuration:
+            raise Warning("""could not get configuration:
                 object class '%s' is not supported.""" % objtype)
         if not isinstance(name, str):
-            return nemoa.log('warning', """could not get %s:
+            raise Warning("""could not get %s:
                 name of object is not valid.""" % objtype)
 
         # (optional) load workspace of given object
@@ -274,9 +279,8 @@ class Session:
             base = cur_base
         elif workspace != cur_workspace or base != cur_base:
             if not self._set_workspace(workspace, base = base):
-                nemoa.log('warning', """could not get configuration:
+                raise Warning("""could not get configuration:
                     workspace '%s' does not exist.""" % workspace)
-                return  {}
 
         # find object configuration in workspace
         search = [name, '%s.%s.%s' % (base, workspace, name),
@@ -293,16 +297,16 @@ class Session:
                 self._set_workspace(cur_workspace, base = cur_base)
 
         if not config:
-            return nemoa.log('warning', """could not get configuration:
+            raise Warning("""could not get configuration:
                 %s with name '%s' is not found in %s workspace '%s'.
                 """ % (objtype, name, base, workspace))
 
         if not attribute: return config
         elif not isinstance(attribute, str):
-            return nemoa.log('warning', """could not get configuration:
+            raise Warning("""could not get configuration:
                 attribute is not vlid.""")
         elif attribute not in config:
-            return nemoa.log('warning', """could not get configuration:
+            raise Warning("""could not get configuration:
                 attribute '%s' is not valid.""" % attribute)
 
         return config[attribute]
@@ -375,7 +379,7 @@ class Session:
             path = self._get_objconfig(objtype = key, name = name,
                 attribute = 'path')
         else:
-            path = nemoa.log('warning', """could not get path:
+            raise Warning("""could not get path:
                 path identifier '%s' is not valid.""" % key) or None
 
         # change to previous workspace if necessary
@@ -448,30 +452,46 @@ class Session:
         """Get name of current workspace."""
         return self._config['current'].get('workspace', None)
 
-    def log(self, key = None, *args, **kwargs):
+    def log(self, *args, **kwargs):
         """Log message to file and console output."""
 
-        if key is None: return True
+        if not args: return True
 
         import inspect
         import logging
         import platform
         import traceback
 
+        from nemoa.common import ostype
+
+        obj = args[0]
+
+        # test if args are given from an exception
+        # in this case the arguments are (type, value, traceback)
+        if isinstance(obj, type(Exception)):
+            if issubclass(obj, Warning): key = 'warning'
+            else: key = 'error'
+            msg = str(args[1])
+
+        # test if args are given as an info message
+        # in this case the arguments are (msg)
+        elif isinstance(obj, str) and len(args) == 1:
+            key, msg = 'info', args[0]
+
+        # test if args are given as a message of given type
+        # in this case the arguments are (type, msg)
+        elif isinstance(obj, str) and len(args) == 2:
+            key, msg = args[0], args[1]
+
+        else: return True
+
         mode = self._get_mode()
 
-        # get arguments
-        if len(args) == 0:
-            msg = key
-            key = 'info'
-        elif len(args) == 1:
-            msg = args[0]
-
-        if not msg: return True
-
         # define colors (platform dependent workaround)
-        systype = platform.system().lower()
-        if systype == 'windows':
+        systype = ostype.systype()
+        # 2do define colors based on shell not on platform
+
+        if False and systype == 'windows':
             color = {
                 'blue': '',
                 'yellow': '',
@@ -497,12 +517,12 @@ class Session:
 
         # 2do: depending on mode
         # format message
-        if isinstance(msg, str):
-            msg = msg.strip().replace('\n', ' ')
-        elif isinstance(msg, list):
-            msg = ', '.join(msg).strip().replace('\n', ' ')
-        else:
-            msg = '[could not format message]'
+        # if isinstance(msg, str):
+        #     msg = msg.strip().replace('\n', ' ')
+        # elif isinstance(msg, list):
+        #     msg = ', '.join(msg).strip().replace('\n', ' ')
+        # else:
+        #     msg = '[could not format message]'
         while '  ' in msg: msg = msg.replace('  ', ' ')
 
         # create file message
@@ -541,8 +561,7 @@ class Session:
             return None
 
         if key == 'error':
-            tty_log.error(color['yellow'] + msg
-                + ' (see logfile for debug info)' + color['default'])
+            tty_log.error(color['yellow'] + msg + color['default'])
             file_log.error(file_msg)
             for line in traceback.format_stack():
                 msg = line.strip().replace(
@@ -571,6 +590,76 @@ class Session:
         return self.log('warning',
             "unknown logging type '%s'!" % cmd) or False
 
+    def _init_logging(self):
+        """Initialize logging and enable exception handling."""
+
+        import logging
+        import os
+
+        # initialize null logger, remove all previous handlers
+        # and set up null handler
+        logger_null = logging.getLogger(__name__ + '.null')
+        for h in logger_null.handlers: logger_null.removeHandler(h)
+        if hasattr(logging, 'NullHandler'):
+            null_handler = logging.NullHandler()
+            logger_null.addHandler(null_handler)
+
+        # initialize console logger, remove all previous handlers
+        # and set up console handler
+        logger_console = logging.getLogger(__name__ + '.tty')
+        logger_console.setLevel(logging.INFO)
+        for h in logger_console.handlers:
+            logger_console.removeHandler(h)
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(
+            logging.Formatter(fmt = '%(message)s'))
+        logger_console.addHandler(console_handler)
+
+        # initialize file logger, remove all previous handlers
+        # and set up file handler
+        logfile = self._config['current']['path'].get('logfile', None)
+        if logfile:
+            logfile = self._get_path_expand(logfile)
+            if not os.path.exists(os.path.dirname(logfile)):
+                os.makedirs(os.path.dirname(logfile))
+            logger_file = logging.getLogger(__name__ + '.file')
+            logger_file.setLevel(logging.INFO)
+            for h in logger_file.handlers: logger_file.removeHandler(h)
+            file_handler = logging.FileHandler(logfile)
+            file_handler.setFormatter(logging.Formatter(
+                fmt = '%(asctime)s %(levelname)s %(message)s',
+                datefmt = '%m/%d/%Y %H:%M:%S'))
+            logger_file.addHandler(file_handler)
+
+        return True
+
+    def _init_exception_handler(self):
+        """Initialize exception handler."""
+
+        import sys
+
+        # pipe exceptions to nemoa.log
+        def __excepthook(*args, **kwargs):
+            import nemoa
+            return nemoa.log(*args, **kwargs)
+
+        sys.__excepthook__ = __excepthook
+
+        # class ValidationError(Exception):
+        #     def __init__(self, msg = ''):
+        #         # Call base class constructor
+        #         super().__init__(msg)
+        #
+        # class ValidationWarning(Warning):
+        #     def __init__(self, msg = ''):
+        #         # Call base class constructor
+        #         super().__init__(msg)
+        #
+        # __builtins__['ValidationError'] = ValidationError
+        # __builtins__['ValidationWarning'] = ValidationWarning
+
+        return True
+
     def run(self, script = None, *args, **kwargs):
         """Run python script."""
 
@@ -598,10 +687,10 @@ class Session:
         # get configuration and run script
         config = self.get('script', name = script, *args, **kwargs)
         if not isinstance(config, dict) or 'path' not in config:
-            retval = nemoa.log('warning', """could not run script '%s':
+            raise Warning("""could not run script '%s':
                 invalid configuration.""" % script)
         elif not os.path.isfile(config['path']):
-            retval = nemoa.log('warning', """could not run script '%s':
+            raise Warning("""could not run script '%s':
                 file '%s' not found.""" % (script, config['path']))
         else:
             module = imp.load_source('script', config['path'])
@@ -625,7 +714,7 @@ class Session:
         if key == 'workspace':
             return self._set_workspace(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key)
+        raise KeyError(f"unknown key '{key}'")
 
     def _set_shell(self, key, *args, **kwargs):
         """Set current shell attributes."""
@@ -633,7 +722,7 @@ class Session:
         if key == 'buffmode':
             return self._set_shell_buffmode(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key)
+        raise KeyError(f"unknown key '{key}'")
 
     def _set_shell_buffmode(self, mode = 'line'):
         """Set current key buffer mode."""
@@ -682,12 +771,12 @@ class Session:
         if base is None:
             bases = self._get_list_bases(workspace)
             if not bases:
-                return nemoa.log('warning',
+                raise Warning(
                     "could not open workspace '%s': "
                     "workspace could not be found "
                     "in any searchpath." % workspace) or None
             if len(bases) > 1:
-                return nemoa.log('warning',
+                raise Warning(
                     "could not open workspace '%s': "
                     "workspace been found in different searchpaths: "
                     "%s." % (workspace, ', '.join(bases))) or None
@@ -697,7 +786,7 @@ class Session:
         if workspace not in self._get_list_workspaces(base = base):
             basepath = self._get_path_expand(
                 self._config['default']['basepath'][base])
-            return nemoa.log('warning',
+            raise Warning(
                 "could not open workspace '%s': "
                 "workspace could not be found in searchpath "
                 "'%s'." % (workspace, basepath)) or None
@@ -715,7 +804,7 @@ class Session:
 
         # (optional) use logfile of new workspace
         if retval and logging:
-            retval &= self._set_workspace_logging()
+            retval &= self._init_logging()
 
         # open workspace
         if retval:
@@ -729,63 +818,15 @@ class Session:
 
         return retval
 
-    def _set_workspace_logging(self):
-        """Update console and fileloggers."""
-
-        import os
-        import logging
-
-        # initialize null logger, remove all previous handlers
-        # and set up null handler
-        logger_null = logging.getLogger(__name__ + '.null')
-        for h in logger_null.handlers: logger_null.removeHandler(h)
-        if hasattr(logging, 'NullHandler'):
-            null_handler = logging.NullHandler()
-            logger_null.addHandler(null_handler)
-
-        # initialize console logger, remove all previous handlers
-        # and set up console handler
-        logger_console = logging.getLogger(__name__ + '.tty')
-        logger_console.setLevel(logging.INFO)
-        for h in logger_console.handlers:
-            logger_console.removeHandler(h)
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(
-            logging.Formatter(fmt = '%(message)s'))
-        logger_console.addHandler(console_handler)
-
-        # initialize file logger, remove all previous handlers
-        # and set up file handler
-        logfile = self._config['current']['path'].get('logfile', None)
-        if logfile:
-            logfile = self._get_path_expand(logfile)
-            if not os.path.exists(os.path.dirname(logfile)):
-                os.makedirs(os.path.dirname(logfile))
-            logger_file = logging.getLogger(__name__ + '.file')
-            logger_file.setLevel(logging.INFO)
-            for h in logger_file.handlers: logger_file.removeHandler(h)
-            file_handler = logging.FileHandler(logfile)
-            file_handler.setFormatter(logging.Formatter(
-                fmt = '%(asctime)s %(levelname)s %(message)s',
-                datefmt = '%m/%d/%Y %H:%M:%S'))
-            logger_file.addHandler(file_handler)
-
-        return True
-
     def _set_workspace_reset(self):
         """ """
 
         import copy
 
-        retval = True
-
-        self._config['current'] = \
-            copy.deepcopy(self._default['current'])
+        self._config['current'] = copy.deepcopy(self._default['current'])
         self._config['workspace'] = None
 
-        retval &= self._set_workspace_logging()
-
-        return retval
+        return self._init_logging()
 
     def _set_workspace_scandir(self, *args, **kwargs):
         """Scan workspace for files."""
@@ -854,6 +895,7 @@ class Session:
 
     def open(self, key = None, *args, **kwargs):
         """Open object in current session."""
+
         if not key: return None
         if not args:
             return self._set_workspace(key)
@@ -868,4 +910,5 @@ class Session:
                 return nemoa.network.open(args[0], **kwargs)
             if key == 'system':
                 return nemoa.system.open(args[0], **kwargs)
+
         return None

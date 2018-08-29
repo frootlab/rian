@@ -39,7 +39,7 @@ def save(system, path = None, filetype = None, workspace = None,
     """
 
     if not nemoa.common.type.issystem(system):
-        return nemoa.log('error', """could not export system to file:
+        raise ValueError("""could not export system to file:
             system is not valid.""")
 
     # get directory, filename and fileextension
@@ -67,7 +67,7 @@ def save(system, path = None, filetype = None, workspace = None,
     # get filetype from file extension if not given
     # and test if filetype is supported
     if not filetype: filetype = fileext.lower()
-    if filetype not in filetypes(): return nemoa.log('error',
+    if filetype not in filetypes(): raise ValueError(
         f"filetype '{filetype}' is not supported.")
 
     # export to file

@@ -21,7 +21,7 @@ def load(path, **kwargs):
 
     # test if filetype is supported
     if filetype not in filetypes():
-        return nemoa.log('error', """could not import graph:
+        raise ValueError("""could not import graph:
             filetype '%s' is not supported.""" % (filetype))
 
     if filetype in ['ini', 'txt']:
@@ -62,7 +62,7 @@ class Ini:
         if not system \
             or not 'system' in system \
             or not 'type' in system['system']:
-            return nemoa.log('error', """could not import system:
+            raise ValueError("""could not import system:
                 configuration file '%s' is not valid.""" % (path))
 
         config = system['system'].copy()

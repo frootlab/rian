@@ -67,9 +67,8 @@ class Network(Metadata):
         """Configure network to dataset."""
 
         # check if dataset instance is available
-        if not nemoa.common.type.isdataset(dataset): return nemoa.log(
-            'error', """could not configure network:
-            no valid dataset instance given:""")
+        if not nemoa.common.type.isdataset(dataset):
+            raise TypeError("dataset is required to be of type dataset")
 
         nemoa.log("configure network: '%s'" % (self._config['name']))
 
@@ -212,7 +211,7 @@ class Network(Metadata):
         # test if network contains empty layers
         for layer in self._get_layers():
             if not len(self._get_layer(layer)['nodes']) > 0:
-                return nemoa.log('error', """Feedforward networks do
+                raise ValueError("""Feedforward networks do
                     not allow empty layers.""")
 
         # test if and only if the first and the last layer are visible
@@ -220,7 +219,7 @@ class Network(Metadata):
             if not self._get_layer(layer)['visible'] \
                 == (layer in [self._get_layers()[0],
                 self._get_layers()[-1]]):
-                return nemoa.log('error', """The first and the last
+                raise ValueError("""The first and the last
                     layer of a Feedforward network have to be visible,
                     middle layers have to be hidden!""")
 
@@ -242,7 +241,7 @@ class Network(Metadata):
         if not self._is_compatible_lff(): return False
 
         # test if network contains at least three layers
-        if len(self._get_layers()) < 3: return nemoa.log('error',
+        if len(self._get_layers()) < 3: raise ValueError(
             """incompatible network: multilayer networks need at least
             one hidden layer.""")
 
@@ -267,7 +266,7 @@ class Network(Metadata):
 
         # test if the network contains odd number of layers
         if not len(self._get_layers()) % 2 == 1:
-            return nemoa.log('error', """DBNs expect an odd
+            raise ValueError("""DBNs expect an odd
                 number of layers.""")
 
         # test if the hidden layers are symmetric
@@ -276,7 +275,7 @@ class Network(Metadata):
         for lid in range(1, (size - 1) / 2):
             symmetric = len(self._get_layer(layers[lid])['nodes']) \
                 == len(self._get_layer(layers[-lid-1])['nodes'])
-            if not symmetric: return nemoa.log('error',
+            if not symmetric: raise ValueError(
                 """DBNs expect a symmetric number of hidden
                 nodes, related to their central middle layer!""")
 
@@ -303,7 +302,7 @@ class Network(Metadata):
         input_layer = self._get_layer(layers[0])['nodes']
         output_layer = self._get_layer(layers[0])['nodes']
         if not sorted(input_layer) == sorted(output_layer):
-            return nemoa.log('error', """Autoencoders expect
+            raise ValueError("""Autoencoders expect
                 identical input and output nodes""")
 
         return True
@@ -333,7 +332,7 @@ class Network(Metadata):
         if key == 'config': return self._get_config(*args, **kwargs)
         if key == 'graph': return self._get_graph(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key) or None
+        raise KeyError(f"unknown key '{key}'")
 
     def _get_algorithms(self, category = None, attribute = None):
         """Get algorithms provided by network."""
@@ -399,7 +398,7 @@ class Network(Metadata):
         for node in nodes:
             node_params = self._graph.node[node]['params']
             if groupby not in node_params:
-                return nemoa.log('error', """could not get nodes:
+                raise ValueError("""could not get nodes:
                     unknown node attribute '%s'.""" % (groupby))
             grouping_value = node_params[groupby]
             if grouping_value not in grouping_values:
@@ -416,7 +415,7 @@ class Network(Metadata):
 
     def _get_edge(self, edge):
         if edge not in self._graph.edges:
-            return nemoa.log('error', f"edge '{str(edge)}' is not valid")
+            raise ValueError(f"edge '{str(edge)}' is not valid")
         return self._graph.edges[edge]
 
     def _get_edges(self, groupby = None, **kwargs):
@@ -466,7 +465,7 @@ class Network(Metadata):
         for edge in edges:
             edge_params = self._graph.edges[edge]['params']
             if groupby not in edge_params:
-                return nemoa.log('error', """could not get edges:
+                raise ValueError("""could not get edges:
                     unknown edge attribute '%s'.""" % (groupby))
             grouping_value = edge_params[groupby]
             if not grouping_value in grouping_values:
@@ -540,7 +539,7 @@ class Network(Metadata):
         if key == 'config': return self._get_config(*args, **kwargs)
         if key == 'graph': return self._get_graph(*args, **kwargs)
 
-        return nemoa.log('error', """could not get network copy:
+        raise ValueError("""could not get network copy:
             unknown key '%s'.""" % key)
 
     def _get_config(self, key = None, *args, **kwargs):
@@ -553,7 +552,7 @@ class Network(Metadata):
                 return self._config[key].copy()
             return self._config[key]
 
-        return nemoa.log('error', """could not get configuration:
+        raise ValueError("""could not get configuration:
             unknown key '%s'.""" % key)
 
     def _get_graph(self, type = 'dict'):
@@ -581,7 +580,7 @@ class Network(Metadata):
         if key == 'config': return self._set_config(*args, **kwargs)
         if key == 'graph': return self._set_graph(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key) or None
+        raise KeyError(f"unknown key '{key}'")
 
     def _set_copy(self, config = None, graph = None):
         """Set configuration and graph of network.
@@ -656,7 +655,7 @@ class Network(Metadata):
 
         algorithms = self._get_algorithms(attribute = 'reference')
         if name not in algorithms:
-            return nemoa.log('error', """could not evaluate network:
+            raise ValueError("""could not evaluate network:
                 unknown networkx algorithm name '%s'.""" % (name))
 
         return algorithms[name](self._graph, *args, **kwargs)
@@ -665,7 +664,7 @@ class Network(Metadata):
 
         if not system: return False
         if not nemoa.common.type.issystem(system):
-            return nemoa.log('error', """could not update network:
+            raise ValueError("""could not update network:
                 system is invalid.""")
 
         # get edge parameters from system links

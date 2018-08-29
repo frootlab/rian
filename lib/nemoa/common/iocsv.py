@@ -40,27 +40,19 @@ def load(path: str, delim: Optional[str] = None,
     """
 
     # check file
-    if not os.path.isfile(path): raise OSError(
-        "could not get data from csv file: "
-        "file '%s' does not exist." % path)
+    assert os.path.isfile(path), f"file '{path}' does not exist"
 
     # get delimiter
     if not delim: delim = get_delim(path)
-    if not delim: raise TypeError(
-        "could not get data from csv file: "
-        "the delimiter in file '%s' is not supported." % path)
+    assert delim, f"the delimiter in file '{path}' is not supported"
 
     # get labels
     if labels:
-        if not usecols: raise TypeError(
-            "could not get data from csv file: "
-            "keyword argument 'usecols' is not given.")
+        assert usecols, "keyword argument 'usecols' is not given"
     else:
         labels = get_labels(path, delim = delim)
         usecols = tuple(range(len(labels)))
-    if not labels: raise TypeError(
-        "could not get data from csv file: "
-        "keyword argument 'usecols' is not valid.")
+    assert labels, "keyword argument 'usecols' is not valid"
 
     # get row label column id
     if rowlabelcol is None:
@@ -212,10 +204,8 @@ def get_delim(path: str, delims: list = [',', ';', '\t', ' '],
 
             # try to detect delimiter of probe
             if lines > minprobe:
-                try:
-                    dialect = csv.Sniffer().sniff(probe, delims)
-                except:
-                    continue
+                try: dialect = csv.Sniffer().sniff(probe, delims)
+                except Exception as e: continue
                 delim = dialect.delimiter
 
     if not delim: raise TypeError(

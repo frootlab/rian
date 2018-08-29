@@ -18,7 +18,7 @@ def save(system, path, filetype, **kwargs):
 
     # test if filetype is supported
     if filetype not in filetypes():
-        return nemoa.log('error', """could not export system:
+        raise ValueError("""could not export system:
             filetype '%s' is not supported.""" % (filetype))
 
     copy = system.get('copy')

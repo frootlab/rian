@@ -46,7 +46,7 @@ def save(model, path = None, filetype = None, workspace = None,
     """
 
     if not nemoa.common.type.ismodel(model):
-        return nemoa.log('error', """could not export model to file:
+        raise ValueError("""could not export model to file:
             model is not valid.""")
 
     # get directory, filename and fileextension
@@ -75,7 +75,7 @@ def save(model, path = None, filetype = None, workspace = None,
     # and test if filetype is supported
     if not filetype: filetype = fileext.lower()
     if filetype not in filetypes():
-        return nemoa.log('error', f"filetype '{filetype}' is not supported")
+        raise ValueError(f"filetype '{filetype}' is not supported")
 
     # export to file
     module_name = filetypes(filetype)[0]

@@ -19,7 +19,7 @@ def new(*args, **kwargs):
         if not hasattr(module, class_name): raise ImportError()
         model = getattr(module, class_name)(**kwargs)
     except ImportError:
-        return nemoa.log('error', """could not create model:
+        raise ValueError("""could not create model:
             unknown model type '%s'.""" % (type))
 
     return model

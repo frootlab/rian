@@ -22,7 +22,7 @@ def load(path, **kwargs):
 
     # test if filetype is supported
     if filetype not in filetypes():
-        return nemoa.log('error', f"filetype '{filetype}' is not supported")
+        raise ValueError(f"filetype '{filetype}' is not supported")
 
     if filetype == 'csv': return Csv(**kwargs).load(path)
     if filetype in ['tsv', 'tab']: return Tsv(**kwargs).load(path)

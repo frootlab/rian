@@ -4,27 +4,22 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.session.classes.base
-import importlib
-
 def new(*args, **kwargs):
     """Create new session instance."""
 
+    # validate configuration
     if not kwargs: kwargs = {'config': {'type': 'base.Session'}}
+    elif len(kwargs.get('config', {}).get('type', '').split('.')) != 2:
+        raise ValueError("configuration is not valid")
 
-    if len(kwargs.get('config', {}).get('type', '').split('.')) != 2:
-        return nemoa.log('error', "configuration is not valid")
 
-    type = kwargs['config']['type']
-    module_name = 'nemoa.session.classes.' + type.split('.')[0]
-    class_name = type.split('.')[1]
-
+    mname, cname = tuple(kwargs['config']['type'].split('.'))
     try:
-        module = importlib.import_module(module_name)
-        if not hasattr(module, class_name): raise ImportError()
-        session = getattr(module, class_name)(**kwargs)
-    except ImportError:
-        return nemoa.log('error', """could not create session:
-            unknown session type '%s'.""" % (type))
+        from nemoa.common import module
+        minst = module.get_submodule(mname)
+        if not hasattr(minst, cname): raise ImportError()
+        cinst = getattr(minst, cname)(**kwargs)
+    except ImportError as e: raise ValueError(
+        f"session type '{mname}.{cname}' is not valid") from e
 
-    return session
+    return cinst

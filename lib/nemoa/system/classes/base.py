@@ -69,7 +69,7 @@ class System(Metadata):
         """Configure system to network."""
 
         if not nemoa.common.type.isnetwork(network):
-            return nemoa.log('error', """could not configure system:
+            raise ValueError("""could not configure system:
                 network is not valid.""")
 
         return self._set_params(network = network)
@@ -85,7 +85,7 @@ class System(Metadata):
         """
 
         if not nemoa.common.type.isdataset(dataset):
-            return nemoa.log('error', """could not initilize system:
+            raise ValueError("""could not initilize system:
                 dataset is not valid.""")
 
         return self._set_params_init_units(dataset) \
@@ -129,7 +129,7 @@ class System(Metadata):
         if key == 'config': return self._get_config(*args, **kwargs)
         if key == 'params': return self._get_params(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key) or None
+        raise KeyError(f"unknown key '{key}'")
 
     def _get_algorithms(self, category = None, attribute = None, tree = False):
         """Get algorithms provided by system."""
@@ -201,9 +201,9 @@ class System(Metadata):
         for i in range(len(self._params['units'])):
             if unit in self._params['units'][i]['id']:
                 layer_ids.append(i)
-        if len(layer_ids) == 0: return nemoa.log('error',
+        if len(layer_ids) == 0: raise ValueError(
             "could not find unit '%s'." % (unit))
-        if len(layer_ids) > 1: return nemoa.log('error',
+        if len(layer_ids) > 1: raise ValueError(
             "unit name '%s' is not unique." % (unit))
         layer_id = layer_ids[0]
 
@@ -274,7 +274,7 @@ class System(Metadata):
         grouping_values = []
         for unit in units:
             if groupby not in list(units_params[unit].keys()):
-                return nemoa.log('error', """could not get units:
+                raise ValueError("""could not get units:
                     unknown parameter '%s'.""" % (groupby))
             grouping_value = units_params[unit][groupby]
             if not grouping_value in grouping_values:
@@ -327,12 +327,12 @@ class System(Metadata):
 
     def _get_layer(self, layer):
         if layer not in self._units:
-            return nemoa.log('error', f"layer '{layer}' is not valid")
+            raise ValueError(f"layer '{layer}' is not valid")
         return self._units[layer].params
 
     def _get_link(self, link):
         if not isinstance(link, tuple):
-            return nemoa.log('error', f"link '{str(link)}' is not valid")
+            raise ValueError(f"link '{str(link)}' is not valid")
 
         src, tgt = link
 
@@ -463,7 +463,7 @@ class System(Metadata):
         grouping_values = []
         for link in links:
             if groupby not in links_params[link]:
-                return nemoa.log('error', """could not get links:
+                raise ValueError("""could not get links:
                     unknown link attribute '%s'.""" % (groupby))
             grouping_value = links_params[link][groupby]
             if grouping_value not in grouping_values:
@@ -511,7 +511,7 @@ class System(Metadata):
         if key == 'config': return self._get_config(*args, **kwargs)
         if key == 'params': return self._get_params(*args, **kwargs)
 
-        return nemoa.log('error', """could not get system copy:
+        raise ValueError("""could not get system copy:
             unknown key '%s'.""" % key)
 
     def _get_config(self, key = None, *args, **kwargs):
@@ -524,7 +524,7 @@ class System(Metadata):
                 return self._config[key].copy()
             return self._config[key]
 
-        return nemoa.log('error', """could not get configuration:
+        raise ValueError("""could not get configuration:
             unknown key '%s'.""" % key)
 
     def _get_params(self, key = None, *args, **kwargs):
@@ -539,7 +539,7 @@ class System(Metadata):
                 return copy.deepcopy(self._params[key])
             return self._params[key]
 
-        return nemoa.log('error', """could not get parameters:
+        raise ValueError("""could not get parameters:
             unknown key '%s'.""" % key)
 
     @nemoa.common.decorators.objective(
@@ -867,15 +867,15 @@ class System(Metadata):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate data reconstuction error from
-                residuals. see nemoa.common.ndarray.meannorm for a list
+                residuals. see nemoa.common.array.meannorm for a list
                 of provided norms
 
         """
 
-        from nemoa.common.ndarray import meannorm
+        from nemoa.common import array
 
         res = self._get_unitresiduals(data, **kwargs)
-        error = meannorm(res, norm = norm)
+        error = array.meannorm(res, norm = norm)
 
         return error
 
@@ -903,16 +903,16 @@ class System(Metadata):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate accuracy
-                see nemoa.common.ndarray.meannorm for a list of provided
+                see nemoa.common.array.meannorm for a list of provided
                 norms
 
         """
 
-        from nemoa.common.ndarray import meannorm
+        from nemoa.common import array
 
         res = self._get_unitresiduals(data, **kwargs)
-        normres = meannorm(res, norm = norm)
-        normdat = meannorm(data[1], norm = norm)
+        normres = array.meannorm(res, norm = norm)
+        normdat = array.meannorm(data[1], norm = norm)
 
         return 1. - normres / normdat
 
@@ -940,16 +940,16 @@ class System(Metadata):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate deviation for precision
-                see nemoa.common.ndarray.devnorm for a list of provided
+                see nemoa.common.array.devnorm for a list of provided
                 norms
 
         """
 
-        from nemoa.common.ndarray import devnorm
+        from nemoa.common import array
 
         res = self._get_unitresiduals(data, **kwargs)
-        devres = devnorm(res, norm = norm)
-        devdat = devnorm(data[1], norm = norm)
+        devres = array.devnorm(res, norm = norm)
+        devdat = array.devnorm(data[1], norm = norm)
 
         return 1. - devres / devdat
 
@@ -1229,9 +1229,9 @@ class System(Metadata):
         for inid, inunit in enumerate(inputs):
             try:
                 i_curve = numpy.take(numpy.sort(sdata[:, inid]), r_ids)
-            except: # 2Do:
-                return nemoa.log('error',
-                    "could not evaluate induction: unknown error")
+            except Exception as e:
+                raise ValueError(
+                    "could not evaluate induction: unknown error") from e
             i_curve = amplify * i_curve
 
             # create output matrix for each output
@@ -1291,13 +1291,13 @@ class System(Metadata):
         if key == 'config': return self._set_config(*args, **kwargs)
         if key == 'params': return self._set_params(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key) or None
+        raise KeyError(f"unknown key '{key}'")
 
     def _set_links(self, links = None, initialize = True):
         """Create link configuration from units."""
 
         if not self._configure_test_units(self._params):
-            return nemoa.log('error', """could not configure links:
+            raise ValueError("""could not configure links:
                 units have not been configured.""")
 
         if 'links' not in self._params: self._params['links'] = {}
@@ -1350,7 +1350,7 @@ class System(Metadata):
 
     def _set_mapping(self, mapping):
         """Set the layer mapping of the system."""
-        if not isinstance(mapping, tuple): return nemoa.log('warning',
+        if not isinstance(mapping, tuple): raise Warning(
             "attribute 'mapping' requires datatype 'tuple'.")
         self._params['mapping'] = mapping
         return True
@@ -1409,7 +1409,7 @@ class System(Metadata):
         # get system parameters from network
         elif network:
             if not nemoa.common.type.isnetwork(network):
-                return nemoa.log('error', """could not configure system:
+                raise ValueError("""could not configure system:
                     network instance is not valid!""")
 
             # get unit layers and unit params
@@ -1464,7 +1464,7 @@ class System(Metadata):
         # initialize system parameters if dataset is given
         if dataset:
             if not nemoa.common.type.isdataset(dataset):
-                return nemoa.log('error', """could not initialize
+                raise ValueError("""could not initialize
                     system: dataset instance is not valid.""")
 
             retval &= self._set_params_init_units(dataset)
@@ -1489,7 +1489,7 @@ class System(Metadata):
                 self._units[layer_name] \
                     = nemoa.system.commons.units.Gauss(layer_params)
             else:
-                return nemoa.log('error', """could not create system:
+                raise ValueError("""could not create system:
                     unit class '%s' is not supported!"""
                     % (layer_class))
 
@@ -1529,7 +1529,7 @@ class System(Metadata):
 
         if dataset is not None and not \
             nemoa.common.type.isdataset(dataset):
-            return nemoa.log('error', """could not initilize units:
+            raise ValueError("""could not initilize units:
             invalid dataset argument given!""")
 
         for layer in list(self._units.keys()):
@@ -1563,10 +1563,8 @@ class System(Metadata):
 
         """
 
-        if dataset is not None and \
-            not nemoa.common.type.isdataset(dataset): return nemoa.log(
-            'error', """could not initilize link parameters:
-            invalid dataset argument given!""")
+        if dataset is not None and not nemoa.common.type.isdataset(dataset):
+            raise TypeError("dataset is required to be of type dataset")
 
         for links in self._params['links']:
             source = self._params['links'][links]['source']
@@ -1627,7 +1625,7 @@ class System(Metadata):
         if args[0] in algorithms:
             return self._evaluate_system(data, *args, **kwargs)
 
-        return nemoa.log('warning',
+        raise Warning(
             "unsupported system evaluation '%s'." % args[0])
 
     def _evaluate_system(self, data, func = 'accuracy', **kwargs):
@@ -1645,13 +1643,13 @@ class System(Metadata):
         """
 
         # check if data is valid
-        if not isinstance(data, tuple): return nemoa.log('error',
+        if not isinstance(data, tuple): raise ValueError(
             'could not evaluate system: invalid data.')
 
         # get evaluation algorithms
         algorithms = self._get_algorithms(
             category = ('system', 'evaluation'))
-        if func not in list(algorithms.keys()): return nemoa.log('error',
+        if func not in list(algorithms.keys()): raise ValueError(
             """could not evaluate system: unknown algorithm '%s'.""" % (func))
         algorithm = algorithms[func]
 
@@ -1691,13 +1689,13 @@ class System(Metadata):
         """
 
         # check if data is valid
-        if not isinstance(data, tuple): return nemoa.log('error',
+        if not isinstance(data, tuple): raise ValueError(
             "could not evaluate system units: invalid data.")
 
         # get evaluation algorithms
         algorithms = self._get_algorithms(
             category = ('system', 'units', 'evaluation'))
-        if func not in algorithms: return nemoa.log('error',
+        if func not in algorithms: raise ValueError(
             "could not evaluate system units: "
             "unknown algorithm name '%s'." % func)
 
@@ -1715,8 +1713,10 @@ class System(Metadata):
             evalkwargs['mapping'] = self._get_mapping()
 
         # evaluate units
-        try: values = algorithm['reference'](*evalargs, **evalkwargs)
-        except: return nemoa.log('error', 'could not evaluate units')
+        try:
+            values = algorithm['reference'](*evalargs, **evalkwargs)
+        except Exception as e:
+            raise ValueError('could not evaluate units') from e
 
         # create dictionary of target units
         labels = self._get_units(layer = evalkwargs['mapping'][-1])
@@ -1725,7 +1725,7 @@ class System(Metadata):
         elif algorithm['retfmt'] == 'scalar': return {unit:
             values[uid] for uid, unit in enumerate(labels)}
 
-        return nemoa.log('warning',
+        raise Warning(
             "could not evaluate system units: "
             "unknown return format '%s'." % algorithm['retfmt'])
 
@@ -1746,13 +1746,13 @@ class System(Metadata):
         """
 
         # check if data is valid
-        if not isinstance(data, tuple): return nemoa.log('error',
+        if not isinstance(data, tuple): raise ValueError(
             'could not evaluate system links: invalid data.')
 
         # get evaluation algorithms
         algorithms = self._get_algorithms(
             category = ('system', 'links', 'evaluation'))
-        if func not in algorithms: return nemoa.log('error',
+        if func not in algorithms: raise ValueError(
             """could not evaluate system links:
             unknown algorithm name '%s'.""" % (func))
         algorithm = algorithms[func]
@@ -1771,8 +1771,10 @@ class System(Metadata):
             evalkwargs['mapping'] = self._get_mapping()
 
         # perform evaluation
-        try: values = algorithm['reference'](*evalargs, **evalkwargs)
-        except: return nemoa.log('error', 'could not evaluate links')
+        try:
+            values = algorithm['reference'](*evalargs, **evalkwargs)
+        except Exception as e:
+            raise ValueError('could not evaluate links') from e
 
         # create link dictionary
         in_labels = self._get_units(layer = evalkwargs['mapping'][-2])
@@ -1784,7 +1786,7 @@ class System(Metadata):
                     rel_dict[(in_unit, out_unit)] = \
                         values[in_id, out_id]
             return rel_dict
-        return nemoa.log('warning', """could not evaluate system links:
+        raise Warning("""could not evaluate system links:
             unknown return format '%s'.""" % (algorithm['retfmt']))
 
     def _evaluate_relation(self, data, func = 'correlation',
@@ -1821,13 +1823,13 @@ class System(Metadata):
         """
 
         # check if data is valid
-        if not isinstance(data, tuple): return nemoa.log('error',
+        if not isinstance(data, tuple): raise ValueError(
             'could not evaluate system unit relation: invalid data.')
 
         # get evaluation algorithms
         algorithms = self._get_algorithms(
             category = ('system', 'relation', 'evaluation'))
-        if func not in algorithms: return nemoa.log('error',
+        if func not in algorithms: raise ValueError(
             """could not evaluate system unit relation:
             unknown algorithm name '%s'.""" % (func))
         algorithm = algorithms[func]
@@ -1855,9 +1857,6 @@ class System(Metadata):
 
         # perform evaluation
         values = algorithm['reference'](*eargs, **ekwargs)
-        #try: values = algorithm['reference'](*eargs, **ekwargs)
-        #except: return nemoa.log('error', """
-            #could not evaluate system unit relations""")
 
         # create formated return values as matrix or dict
         # (for scalar relation evaluations)
@@ -1872,8 +1871,9 @@ class System(Metadata):
                 try:
                     T = eval(transform)
                     values = T
-                except: return nemoa.log('error',
-                    'could not transform relations: invalid syntax!')
+                except Exception as e:
+                    raise ValueError("could not transform relations: "
+                    "invalid syntax") from e
 
             # create formated return values
             if retfmt == 'array':
@@ -1900,7 +1900,7 @@ class System(Metadata):
 
                 return retval
 
-            else: return nemoa.log('warning',
+            else: raise Warning(
                 'could not perform system unit relation evaluation')
 
             return False

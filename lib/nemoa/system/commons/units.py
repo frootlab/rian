@@ -65,7 +65,7 @@ class UnitsBaseClass:
         elif 'target' in self.target \
             and source['layer'] == self.target['target']:
             return self.target['W'].T
-        else: return nemoa.log('error', """could not get links:
+        else: raise ValueError("""could not get links:
             layers '%s' and '%s' are not connected!"""
             % (source['layer'], self.params['layer']))
 
@@ -77,7 +77,7 @@ class UnitsBaseClass:
         elif 'target' in self.target \
             and source['layer'] == self.target['target']:
             return {'W': self.target['W'].T, 'A': self.target['A'].T}
-        else: return nemoa.log('error', """could not get links:
+        else: raise ValueError("""could not get links:
             layers '%s' and '%s' are not connected!"""
             % (source['name'], self.params['name']))
 
@@ -89,7 +89,7 @@ class UnitsBaseClass:
         elif 'target' in self.target \
             and source['layer'] == self.target['target']:
             return self.target['A'].T
-        else: return nemoa.log('error', """could not get links:
+        else: raise ValueError("""could not get links:
             layers '%s' and '%s' are not connected!"""
             % (source['layer'], self.params['layer']))
 

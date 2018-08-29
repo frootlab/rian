@@ -12,9 +12,32 @@ def main():
     try:
         import IPython
     except ImportError:
-        return nemoa.log('error',
+        raise ValueError(
             "could not execute interactive nemoa shell: "
             "ipython is required.")
+
+    from IPython.core.interactiveshell import InteractiveShell
+
+    def __change(func):
+        from functools import wraps
+        import sys
+
+        @wraps(func)
+        def showtraceback(*args, **kwargs):
+
+            # extract exception type, value and traceback
+            typ, val, tb = sys.exc_info()
+
+            # run the original python hook
+            if issubclass(typ, Exception):
+                return sys.__excepthook__(typ, val, tb)
+            else:
+                # otherwise run the original hook
+                return func(*args, **kwargs)
+
+        return showtraceback
+
+    InteractiveShell.showtraceback = __change(InteractiveShell.showtraceback)
 
     def about(*args, **kwargs):
         """Get meta information."""
@@ -81,9 +104,7 @@ def main():
     os.system('cls' if os.name == 'nt' else 'clear')
     nemoa.set('mode', 'shell')
 
-    IPython.embed(banner1 = 'nemoa %s\n' % nemoa.__version__)
-
-    return True
+    return IPython.embed(banner1 = 'nemoa %s\n' % nemoa.__version__)
 
 if __name__ == '__main__':
     main()

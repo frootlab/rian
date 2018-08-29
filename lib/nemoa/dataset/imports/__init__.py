@@ -44,17 +44,17 @@ def load(path, filetype = None, **kwargs):
             pathkwargs['base'] = kwargs.pop('base')
         path = nemoa.path('dataset', name, **pathkwargs)
         if not path:
-            return nemoa.log('warning', """could not import dataset:
+            raise Warning("""could not import dataset:
                 invalid dataset name.""") or {}
         if not os.path.isfile(path):
-            return nemoa.log('warning', """could not import dataset:
+            raise Warning("""could not import dataset:
                 file '%s' does not exist.""" % path) or {}
 
     # get filtype from file extension if not given
     # and check if filetype is supported
     if not filetype: filetype = nemoa.common.ospath.fileext(path).lower()
     if filetype not in filetypes():
-        return nemoa.log('error', f"filetype '{filetype}' is not supported")
+        raise ValueError(f"filetype '{filetype}' is not supported")
 
     # import and check dictionary
     mname = filetypes(filetype)[0]
@@ -65,7 +65,7 @@ def load(path, filetype = None, **kwargs):
     else:
         dataset = None
     if not dataset:
-        return nemoa.log('error', """could not import dataset:
+        raise ValueError("""could not import dataset:
             file '%s' is not valid.""" % path) or {}
 
     # update path

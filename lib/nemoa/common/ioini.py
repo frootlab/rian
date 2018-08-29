@@ -61,16 +61,14 @@ def save(d: dict, f: str, flat: Optional[bool] = None,
     # Convert configuration dictionary to INI formated string
     try:
         s = dumps(d, flat = flat, header = header)
-    except:
-        raise TypeError("could not save dictionary to INI file: "
-            "dictionary is not valid.")
+    except Exception as e:
+        raise ValueError("dictionary is not valid") from e
 
     # write string to file
     try:
         with open(f, 'w') as h: h.write(s)
-    except IOError:
-        raise IOError("could not save dictionary to INI file: "
-            f"file '{f}' can not be written.")
+    except IOError as e:
+        raise IOError(f"file '{f}' can not be written.") from e
 
     return True
 

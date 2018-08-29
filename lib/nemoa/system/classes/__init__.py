@@ -13,7 +13,7 @@ def new(*args, **kwargs):
     if not kwargs: kwargs = {'config': {'type': 'base.System'}}
 
     if len(kwargs.get('config', {}).get('type', '').split('.')) != 2:
-        return nemoa.log('error', "configuration is not valid")
+        raise ValueError("configuration is not valid")
 
     stype = kwargs['config']['type']
     mname = 'nemoa.system.classes.' + stype.split('.')[0]
@@ -24,7 +24,7 @@ def new(*args, **kwargs):
         if not hasattr(module, cname): raise ImportError()
         system = getattr(module, cname)(**kwargs)
     except ImportError:
-        return nemoa.log('error', """could not create system:
+        raise ValueError("""could not create system:
             unknown system type '%s'.""" % stype) or None
 
     return system

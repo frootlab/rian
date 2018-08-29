@@ -11,5 +11,5 @@ def sysname():
     return platform.node()
 
 def systype():
-    """Name of OS of system"""
+    """Name of OS of system."""
     return platform.system().lower()

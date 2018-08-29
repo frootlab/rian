@@ -72,7 +72,7 @@ class Optimizer:
         if key == 'training':
             return self._get_data_training(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key) or None
+        raise KeyError(f"unknown key '{key}'")
 
     def _get_evaluation_algorithm(self, key = None):
         """ """
@@ -224,14 +224,14 @@ class Optimizer:
         # get name of optimization algorithm
         name = self._config.get('algorithm', None)
         if not name:
-            return nemoa.log('error', """could not optimize '%s'
+            raise ValueError("""could not optimize '%s'
                 (%s): no optimization algorithm has been set."""
                 % (self.model.name, self.model.system.type)) or None
 
         # get instance of optimization algorithm
         algorithm = self._get_algorithm(name, category = 'optimization')
         if not algorithm:
-            return nemoa.log('error', """could not optimize '%s':
+            raise ValueError("""could not optimize '%s':
                 unsupported optimization algorithm '%s'."""
                 % (self.model.name, name)) or None
 
@@ -262,7 +262,7 @@ class Optimizer:
         if key == 'config': return self._set_config(*args, **kwargs)
         if key == 'buffer': return self._set_buffer(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key)
+        raise KeyError(f"unknown key '{key}'")
 
     def _set_config(self, config = None, **kwargs):
         """Set configuration for transformation from dictionary."""
@@ -271,11 +271,11 @@ class Optimizer:
             if not config: key = 'default'
             elif isinstance(config, str): key = config
             else:
-                return nemoa.log('warning',
+                raise Warning(
                     "could not configure transformation: "
                     "invalid configuration.") or None
             if not self.model:
-                return nemoa.log('warning',
+                raise Warning(
                     "could not configure transformation: "
                     "no model given.") or None
             system = self.model.system
@@ -293,7 +293,7 @@ class Optimizer:
         import nemoa.model.evaluation
 
         if not self._get_compatibility(model):
-            return nemoa.log('warning', """Could not apply
+            raise Warning("""Could not apply
                 transformation: transformation is not compatible with
                 model.""") or None
 
@@ -312,7 +312,7 @@ class Optimizer:
             self._buffer[key] = value
             return True
 
-        return nemoa.log('warning', "unknown key '%s'" % key)
+        raise KeyError(f"unknown key '{key}'")
 
     def _set_buffer_reset(self):
         """ """
@@ -344,7 +344,7 @@ class Optimizer:
         if key not in self._buffer['store']: return None
         queue = self._buffer['store'][key]
         if len(queue) < abs(id):
-            return nemoa.log('warning', """could not read from store:
+            raise Warning("""could not read from store:
                 invaid id '%s' in key '%s'.""" % (id, key)) or None
 
         return queue[id]
@@ -358,7 +358,7 @@ class Optimizer:
             queue.append(kwargs)
             return True
         if len(queue) < id:
-            return nemoa.log('warning',
+            raise Warning(
                 'could not write to store, wrong index.')
         queue[id] = kwargs
 

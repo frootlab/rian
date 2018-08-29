@@ -27,9 +27,7 @@ def build(type, *args, **kwargs):
 
     # test if type is supported
     if type not in types():
-        nemoa.log('error', """could not create dataset:
-            type '%s' is not supported.""" % (type))
-        return {}
+        raise ValueError(f"type '{type}' is not supported")
 
     module_name = types(type)[0]
 

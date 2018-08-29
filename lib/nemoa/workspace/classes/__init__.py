@@ -15,7 +15,7 @@ def new(*args, **kwargs):
 
     if 'config' not in kwargs or 'type' not in kwargs['config'] \
         or len(kwargs['config']['type'].split('.')) != 2:
-        return nemoa.log('error', """could not create workspace:
+        raise ValueError("""could not create workspace:
             configuration is not valid.""")
 
     type = kwargs['config']['type']
@@ -27,7 +27,7 @@ def new(*args, **kwargs):
         if not hasattr(module, class_name): raise ImportError()
         workspace = getattr(module, class_name)(**kwargs)
     except ImportError:
-        return nemoa.log('error', """could not create workspace:
+        raise ValueError("""could not create workspace:
             unknown workspace type '%s'.""" % (type))
 
     return workspace

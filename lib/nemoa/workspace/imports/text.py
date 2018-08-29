@@ -20,7 +20,7 @@ def load(path, **kwargs):
 
     # test if filetype is supported
     if filetype not in filetypes():
-        return nemoa.log('error', """could not import graph:
+        raise ValueError("""could not import graph:
             filetype '%s' is not supported.""" % filetype)
 
     if filetype == 'ini':

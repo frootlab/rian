@@ -124,7 +124,7 @@ class ANN(nemoa.system.classes.base.System):
         """Remove units from parameter space. """
 
         if layer is not None and layer not in self._units:
-            return nemoa.log('error', f"layer '{layer}' is not valid")
+            raise ValueError(f"layer '{layer}' is not valid")
 
         # search for labeled units in given layer
         layer = self._units[layer].params
@@ -247,7 +247,7 @@ class ANN(nemoa.system.classes.base.System):
 
         if len(mapping) == 1:
             # TODO
-            return nemoa.log('error', """sorry: bad implementation of
+            raise ValueError("""sorry: bad implementation of
                 ann._get_links_energy""")
         elif len(mapping) == 2:
             sdata = data

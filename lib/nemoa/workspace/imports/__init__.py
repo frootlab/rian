@@ -42,7 +42,7 @@ def load(arg, base = None, filetype = None, **kwargs):
     if not filetype:
         filetype = nemoa.common.ospath.fileext(path).lower()
     if filetype not in filetypes():
-        return nemoa.log('error', """could not import workspace:
+        raise ValueError("""could not import workspace:
             filetype '%s' is not supported.""" % filetype)
 
     # import and check dictionary
@@ -52,7 +52,7 @@ def load(arg, base = None, filetype = None, **kwargs):
     else:
         config = None
     if not config:
-        return nemoa.log('error', """could not import workspace:
+        raise ValueError("""could not import workspace:
             file '%s' is not valid.""" % path) or {}
 
     # update path

@@ -286,15 +286,15 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate data reconstuction error from
-                residuals. see nemoa.common.ndarray.meannorm for a list
+                residuals. see nemoa.common.array.meannorm for a list
                 of provided norms
 
         """
 
-        from nemoa.common.ndarray import meannorm
+        from nemoa.common import array
 
         res = self.unitresiduals(data, **kwargs)
-        error = meannorm(res, norm = norm)
+        error = array.meannorm(res, norm = norm)
 
         return error
 
@@ -322,16 +322,16 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate accuracy
-                see nemoa.common.ndarray.meannorm for a list of provided
+                see nemoa.common.array.meannorm for a list of provided
                 norms
 
         """
 
-        from nemoa.common.ndarray import meannorm
+        from nemoa.common import array
 
         res = self.unitresiduals(data, **kwargs)
-        normres = meannorm(res, norm = norm)
-        normdat = meannorm(data[1], norm = norm)
+        normres = array.meannorm(res, norm = norm)
+        normdat = array.meannorm(data[1], norm = norm)
 
         return 1. - normres / normdat
 
@@ -359,16 +359,16 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate deviation for precision
-                see nemoa.common.ndarray.devnorm for a list of provided
+                see nemoa.common.array.devnorm for a list of provided
                 norms
 
         """
 
-        from nemoa.common.ndarray import devnorm
+        from nemoa.common import array
 
         res = self.unitresiduals(data, **kwargs)
-        devres = devnorm(res, norm = norm)
-        devdat = devnorm(data[1], norm = norm)
+        devres = array.devnorm(res, norm = norm)
+        devdat = array.devnorm(data[1], norm = norm)
 
         return 1. - devres / devdat
 
@@ -757,7 +757,7 @@ class ANN(Evaluation):
 
         if len(mapping) == 1:
             # TODO
-            return nemoa.log('error', """sorry: bad implementation of
+            raise ValueError("""sorry: bad implementation of
                 links_energy""")
         elif len(mapping) == 2:
             sdata = data

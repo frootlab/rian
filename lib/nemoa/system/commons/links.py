@@ -23,7 +23,7 @@ class Links:
                 / numpy.sqrt(numpy.exp(src['lvar'])).T
         elif src['class'] == 'sigmoid':
             M = - links['A'] * links['W']
-        else: return nemoa.log('error', 'unsupported unit class')
+        else: raise ValueError('unsupported unit class')
 
         return numpy.einsum('ij,ik,jk->ijk', dSrc, dTgt, M)
 

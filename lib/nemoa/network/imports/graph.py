@@ -10,11 +10,15 @@ import os
 
 def filetypes():
     """Get supported graph description filetypes for network import."""
-    return {
+
+    d = {
         'gml': 'Graph Modelling Language',
         'graphml': 'Graph Markup Language',
         'xml': 'Graph Markup Language',
-        'dot': 'GraphViz DOT' }
+        'dot': 'GraphViz DOT'
+    }
+
+    return d
 
 def load(path, **kwargs):
     """Import network from graph description file."""
@@ -24,7 +28,7 @@ def load(path, **kwargs):
 
     # test if filetype is supported
     if filetype not in filetypes():
-        return nemoa.log('error', f"filetype '{filetype}' is not supported")
+        raise ValueError(f"filetype '{filetype}' is not supported")
 
     if filetype == 'gml': return Gml(**kwargs).load(path)
     if filetype in ['graphml', 'xml']: return Graphml(**kwargs).load(path)
@@ -32,41 +36,43 @@ def load(path, **kwargs):
 
     return False
 
-def _graph_decode(graph):
+def _graph_decode(G):
+    """ """
 
     from nemoa.common import iozip
 
     # no decoding
-    if not graph.graph.get('coding', None) \
-        or graph.graph['coding'].lower() == 'none':
-        return graph
+    if not G.graph.get('coding', None) or G.graph['coding'].lower() == 'none':
+        return G
 
     # base64 decoding
-    elif graph.graph['coding'] == 'base64':
-        graph.graph['params'] = iozip.loads(
-            graph.graph['params'], encode = 'base64')
+    elif G.graph['coding'] == 'base64':
+        G.graph['params'] = iozip.loads(G.graph['params'], encode = 'base64')
 
-        for node in graph.nodes():
-            graph.node[node]['params'] = iozip.loads(
-                graph.node[node]['params'], encode = 'base64')
+        for node in G.nodes():
+            G.node[node]['params'] = iozip.loads(
+                G.node[node]['params'], encode = 'base64')
 
-        for edge in graph.edges():
-            graph.edges[edge]['params'] = iozip.loads(
-                graph.edges[edge]['params'], encode = 'base64')
+        for edge in G.edges():
+            G.edges[edge]['params'] = iozip.loads(
+                G.edges[edge]['params'], encode = 'base64')
 
-        graph.graph['coding'] == 'none'
+        G.graph['coding'] == 'none'
+
         return graph
 
-    else:
-        nemoa.log('error', f"unsupported coding '{coding}'")
+    raise ValueError(f"unsupported coding '{coding}'")
 
-    return {}
+def _graph_to_dict(G):
+    """ """
 
-def _graph_to_dict(graph):
-    return {
-        'graph': graph.graph,
-        'nodes': graph.nodes(data = True),
-        'edges': networkx.to_dict_of_dicts(graph) }
+    d = {
+        'graph': G.graph,
+        'nodes': G.nodes(data = True),
+        'edges': networkx.to_dict_of_dicts(G)
+    }
+
+    return d
 
 class Graphml:
     """Import network from GraphML file."""
@@ -75,19 +81,21 @@ class Graphml:
     default = {}
 
     def __init__(self, **kwargs):
+        """ """
+
         from nemoa.common.dict import merge
+
         self.settings = merge(kwargs, self.default)
 
     def load(self, path):
-        graph = networkx.read_graphml(path)
-        graph = _graph_decode(graph)
-        graph_dict = _graph_to_dict(graph)
+        """ """
 
         from nemoa.common.dict import strkeys
-        graph_dict = strkeys(graph_dict)
-        return {
-            'config': graph_dict['graph']['params'],
-            'graph': graph_dict }
+
+        G = networkx.read_graphml(path)
+        d = strkeys(_graph_to_dict(_graph_decode(G)))
+
+        return {'config': d['graph']['params'], 'graph': d }
 
 class Gml:
     """Import network from GML file."""
@@ -96,15 +104,18 @@ class Gml:
     default = {}
 
     def __init__(self, **kwargs):
+        """ """
+
         from nemoa.common.dict import merge
+
         self.settings = merge(kwargs, self.default)
 
     def load(self, path):
-        graph = networkx.read_gml(path, relabel = True)
-        graph = _graph_decode(graph)
-        graph_dict = _graph_to_dict(graph)
+        """ """
+
         from nemoa.common.dict import strkeys
-        graph_dict = strkeys(graph_dict)
-        return {
-            'config': graph_dict['graph']['params'],
-            'graph': graph_dict }
+
+        G = networkx.read_gml(path, relabel = True)
+        d = strkeys(_graph_to_dict(_graph_decode(G)))
+
+        return {'config': d['graph']['params'], 'graph': d }

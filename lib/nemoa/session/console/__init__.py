@@ -82,7 +82,7 @@ def main():
         try:
             import nemoagui
         except ImportError:
-            return nemoa.log('warning', 'nemoagui is not installed.')
+            raise Warning('nemoagui is not installed.')
 
         return nemoagui.start()
 
@@ -96,9 +96,9 @@ def main():
     def run_shell():
         """Run nemoa interactive shell."""
 
-        import nemoa.session.scripts.console
+        from nemoa.session.console import shell
 
-        return nemoa.session.scripts.console.main()
+        return shell.main()
 
     def run_unittest():
         """Run unittest."""

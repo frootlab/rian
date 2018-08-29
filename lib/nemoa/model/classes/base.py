@@ -78,13 +78,13 @@ class Model(Metadata):
         """Configure model."""
 
         if not nemoa.common.type.isdataset(self.dataset):
-            return nemoa.log('error',
+            raise ValueError(
                 "could not configure model: dataset is not valid.")
         if not nemoa.common.type.isnetwork(self.network):
-            return nemoa.log('error',
+            raise ValueError(
                 "could not configure model: network is not valid.")
         if not nemoa.common.type.issystem(self.system):
-            return nemoa.log('error',
+            raise ValueError(
                 "could not configure model: system is not valid.")
 
         retval = True
@@ -102,13 +102,13 @@ class Model(Metadata):
         """Initialize model parameters."""
 
         if not nemoa.common.type.isdataset(self.dataset):
-            return nemoa.log('error', """could not initialize model:
+            raise ValueError("""could not initialize model:
                 dataset is not valid.""")
         if not nemoa.common.type.isnetwork(self.network):
-            return nemoa.log('error', """could not initialize model:
+            raise ValueError("""could not initialize model:
                 network is not valid.""")
         if not nemoa.common.type.issystem(self.system):
-            return nemoa.log('error', """could not initialize model:
+            raise ValueError("""could not initialize model:
                 system is not valid.""")
 
         retval = True
@@ -155,7 +155,7 @@ class Model(Metadata):
         if key == 'network': return self.network.get(*args, **kwargs)
         if key == 'system': return self.system.get(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'." % key) or None
+        raise Warning("unknown key '%s'." % key)
 
     def _get_algorithms(self, *args, **kwargs):
         """Get algorithms provided by model."""
@@ -185,7 +185,7 @@ class Model(Metadata):
         found = [x for x in found if x is not None]
 
         if len(found) == 0: return None
-        if len(found) > 1: return nemoa.log('error',
+        if len(found) > 1: raise ValueError(
             "algorithm with name '%s' is not unique: "
             "use keyword argument 'category'." % args[0])
 
@@ -206,7 +206,7 @@ class Model(Metadata):
         if key == 'network': return self._get_network(*args, **kwargs)
         if key == 'system': return self._get_system(*args, **kwargs)
 
-        return nemoa.log('error',
+        raise ValueError(
             "could not get copy of configuration: "
             "unknown section '%s'." % key)
 
@@ -220,7 +220,7 @@ class Model(Metadata):
                 return self._config[key].copy()
             return self._config[key]
 
-        return nemoa.log('error', """could not get configuration:
+        raise ValueError("""could not get configuration:
             unknown key '%s'.""" % key)
 
     def _get_dataset(self, type = 'dict'):
@@ -229,7 +229,7 @@ class Model(Metadata):
         if type == 'dataset': return self.dataset.copy()
         if type == 'dict': return self.dataset.get('copy')
 
-        return nemoa.log("warning",
+        raise Warning(
             "could not get dataset: unknown type '%s'." % type) or None
 
     def _get_network(self, type = 'dict'):
@@ -238,7 +238,7 @@ class Model(Metadata):
         if type == 'network': return self.network.copy()
         if type == 'dict': return self.network.get('copy')
 
-        return nemoa.log("warning",
+        raise Warning(
             "could not get network: unknown type '%s'." % type) or None
 
     def _get_system(self, type: str = 'dict'):
@@ -247,7 +247,7 @@ class Model(Metadata):
         if type == 'system': return self.system.copy()
         if type == 'dict': return self.system.get('copy')
 
-        return nemoa.log("warning",
+        raise Warning(
             "could not get system: unknown type '%s'." % type) or None
 
     def _get_sample(self, *args, **kwargs):
@@ -291,7 +291,7 @@ class Model(Metadata):
         if key == 'copy': return self._set_copy(*args, **kwargs)
         if key == 'config': return self._set_config(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'." % key) or None
+        raise Warning("unknown key '%s'." % key)
 
     def _set_copy(self, config = None, dataset = None, network = None,
         system = None):
@@ -446,7 +446,7 @@ class Model(Metadata):
 
             return self.system.evaluate(data, *args, **kwargs)
 
-        return nemoa.log('warning',
+        raise Warning(
             "could not evaluate model: "
             "evaluation key '%s' is not supported." % key)
 

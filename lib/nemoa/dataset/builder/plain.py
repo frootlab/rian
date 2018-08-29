@@ -90,13 +90,11 @@ class Rules:
                 initrule = initialize
             elif isinstance(initialize, dict):
                 if col not in initialize:
-                    nemoa.log('warning', """could not initialize '%s':
+                    raise Warning("""could not initialize '%s':
                         init rule not found.""" % col)
-                    continue
                 if not isinstance(initialize[col], str):
-                    nemoa.log('warning', """could not initialize '%s':
+                    raise Warning("""could not initialize '%s':
                         init rule not valid.""" % col)
-                    continue
                 initrule = initialize[col]
             if 'gauss' in initrule:
                 sdev = self.settings['sdev']
@@ -108,10 +106,9 @@ class Rules:
                 abin = self.settings['abin']
                 bernoulli = numpy.random.binomial(1, abin, rowsize)
             try: values = eval(initrule)
-            except:
-                nemoa.log('warning', """could not initialize '%s':
-                    init rule "%s" is not valid.""" % (col, initrule))
-                continue
+            except Exception as e:
+                raise ValueError("""could not initialize '%s':
+                    init rule "%s" is not valid.""" % (col, initrule)) from e
             data[col] = values
 
         # evaluate manipulation rules
@@ -135,10 +132,9 @@ class Rules:
                 random[key] = rvalues
                 rule.replace(key, "random['%s']" % key)
             try: values = eval(rule)
-            except:
-                nemoa.log('warning', """could not evaluate manipulation
-                    rule "%s".""" % rule)
-                continue
+            except Exception as e:
+                raise ValueError("""could not evaluate manipulation
+                    rule "%s".""" % rule) from e
             data[col] = values
 
         # normalize data

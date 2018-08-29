@@ -134,7 +134,7 @@ class Evaluation:
 
         algorithm = self._get_algorithm(algname, category = category)
 
-        if not algorithm: return nemoa.log('warning',
+        if not algorithm: raise Warning(
             f"could not evaluate {category}: invalid algorithm {algname}.")
 
         data = kwargs.pop('data', self._get_data())
@@ -191,8 +191,9 @@ class Evaluation:
                     try:
                         T = eval(transform)
                         retval = T
-                    except: return nemoa.log('error',
-                        'could not transform relations: invalid syntax!')
+                    except Exception as e:
+                        raise ValueError("could not transform relations: "
+                            "invalid syntax") from e
 
                 # create formated return values
                 if rettype == 'array': return retval
@@ -217,7 +218,7 @@ class Evaluation:
                     retval['std'] = numpy.std(array)
                     return retval
 
-        return nemoa.log('warning',
+        raise Warning(
             "could not evaluate system units: "
             "unknown return format '%s'." % retfmt)
 
@@ -227,7 +228,7 @@ class Evaluation:
         if key == 'model': return self._set_model(*args, **kwargs)
         if key == 'config': return self._set_config(*args, **kwargs)
 
-        return nemoa.log('warning', "unknown key '%s'" % key) or None
+        raise KeyError(f"unknown key '{key}'")
 
     def _set_config(self, config = None, **kwargs):
         """Set evaluation configuration from dictionary."""
@@ -242,7 +243,7 @@ class Evaluation:
         """Set model."""
 
         if not self._get_compatibility(model):
-            return nemoa.log('warning', """Could not initialize
+            raise Warning("""Could not initialize
                 evluation of model: evaluation is not compatible to
                 model.""") or None
 

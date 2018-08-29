@@ -50,17 +50,17 @@ def load(path, filetype = None, **kwargs):
             pathkwargs['base'] = kwargs.pop('base')
         path = nemoa.path('network', name, **pathkwargs)
         if not path:
-            return nemoa.log('warning', """could not import network:
+            raise Warning("""could not import network:
                 invalid network name.""") or {}
         if not os.path.isfile(path):
-            return nemoa.log('warning', """could not import network:
+            raise Warning("""could not import network:
                 file '%s' does not exist.""" % path) or {}
 
     # get filetype (from file extension if not given)
     # and check if filetype is supported
     if not filetype: filetype = nemoa.common.ospath.fileext(path).lower()
     if filetype not in filetypes():
-        return nemoa.log('error', f"filetype '{filetype}' is not supported")
+        raise ValueError(f"filetype '{filetype}' is not supported")
 
     # import, check and update dictionary
     mname = filetypes(filetype)[0]
@@ -73,7 +73,7 @@ def load(path, filetype = None, **kwargs):
     else:
         network = None
     if not network:
-        return nemoa.log('error', """could not import network:
+        raise ValueError("""could not import network:
             file '%s' is not valid.""" % path) or {}
 
     # update path

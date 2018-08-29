@@ -21,7 +21,7 @@ def save(network, path, filetype, **kwargs):
 
     # test if filetype is supported
     if filetype not in filetypes():
-        return nemoa.log('error', f"filetype '{filetype}' is not supported")
+        raise ValueError(f"filetype '{filetype}' is not supported")
 
     # create path if not available
     if not os.path.exists(os.path.dirname(path)):
@@ -69,7 +69,7 @@ def _graph_encode(graph, coding = None):
         graph.graph['coding'] = 'base64'
         return graph
 
-    return nemoa.log('error', """could not encode graph parameters:
+    raise ValueError("""could not encode graph parameters:
         unsupported coding '%s'.""" % coding)
 
 class Gml:
@@ -130,10 +130,10 @@ class Dot:
         # check library support for dot files
         try:
             module = networkx.drawing.write_dot.__module__
-        except:
-            return nemoa.log('error', """could not export graph:
-                filetype 'dot' needs libraries 'pygraphviz' and
-                'pydot'.""")
+        except Exception as e:
+            raise ValueError("could not export graph: "
+                "filetype 'dot' requires the libraries 'pygraphviz' "
+                "and 'pydot'") from e
 
         # write networkx graph to graphviz dot file
         networkx.write_dot(graph, path)

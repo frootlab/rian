@@ -4,7 +4,6 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
 import numpy
 
 def sumnorm(data, norm = 'S', axis = 0):
@@ -39,7 +38,7 @@ def sumnorm(data, norm = 'S', axis = 0):
     # Root Sum of Squared Errors (RSSE)
     if n == 'RSSE': return numpy.sqrt(numpy.sum(data ** 2, axis = axis))
 
-    return nemoa.log('warning', """could not calculate normed sum:
+    raise Warning("""could not calculate normed sum:
         unsupported norm '%s'""" % norm)
 
 def meannorm(data, norm = 'M', axis = 0):
@@ -75,7 +74,7 @@ def meannorm(data, norm = 'M', axis = 0):
     if n == 'RMSE':
         return numpy.sqrt(numpy.mean(data ** 2, axis = axis))
 
-    return nemoa.log('error', """could not calculate normed mean:
+    raise ValueError("""could not calculate normed mean:
         unsupported norm '%s'""" % norm)
 
 def devnorm(data, norm = 'SD', axis = 0):
@@ -107,5 +106,5 @@ def devnorm(data, norm = 'SD', axis = 0):
     # Standard Deviation of Squared Errors (SDSE)
     if n == 'SDSE': return numpy.std(data ** 2, axis = axis)
 
-    return nemoa.log('error', """could not calculate normed deviation:
+    raise ValueError("""could not calculate normed deviation:
         unsupported deviation norm '%s'""" % norm)

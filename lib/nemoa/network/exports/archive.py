@@ -18,7 +18,7 @@ def save(network, path, filetype, **kwargs):
 
     # test if filetype is supported
     if filetype not in filetypes():
-        return nemoa.log('error', f"filetype '{filetype}' is not supported")
+        raise ValueError(f"filetype '{filetype}' is not supported")
 
     copy = network.get('copy')
     return Npz(**kwargs).save(copy, path)

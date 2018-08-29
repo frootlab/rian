@@ -51,7 +51,7 @@ def save(dataset, path = None, filetype = None, workspace = None,
     """
 
     if not nemoa.common.type.isdataset(dataset):
-        return nemoa.log('error', """could not export dataset to file:
+        raise ValueError("""could not export dataset to file:
             dataset is not valid.""")
 
     # get directory, filename and fileextension
@@ -80,7 +80,7 @@ def save(dataset, path = None, filetype = None, workspace = None,
     # and test if filetype is supported
     if not filetype: filetype = fileext.lower()
     if filetype not in filetypes():
-        return nemoa.log('error', f"filetype '{filetype}' is not supported.")
+        raise ValueError(f"filetype '{filetype}' is not supported.")
 
     # export to file
     mname = filetypes(filetype)[0]

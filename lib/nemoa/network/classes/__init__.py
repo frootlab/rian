@@ -13,7 +13,7 @@ def new(*args, **kwargs):
     if not 'config' in kwargs \
         or not 'type' in kwargs['config'] \
         or not len(kwargs['config']['type'].split('.')) == 2:
-        return nemoa.log('error', """could not create network:
+        raise ValueError("""could not create network:
             configuration is not valid.""")
 
     type = kwargs['config']['type']
@@ -25,7 +25,7 @@ def new(*args, **kwargs):
         if not hasattr(module, class_name): raise ImportError()
         network = getattr(module, class_name)(**kwargs)
     except ImportError:
-        return nemoa.log('error', """could not create network:
+        raise ValueError("""could not create network:
             unknown network type '%s'.""" % (type))
 
     return network

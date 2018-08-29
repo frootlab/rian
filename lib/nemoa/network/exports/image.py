@@ -25,7 +25,7 @@ def show(network, plot = None, **kwargs):
         module = importlib.import_module(mname)
         if not hasattr(module, cname): raise ImportError()
     except ImportError:
-        return nemoa.log('error',
+        raise ValueError(
             "could not plot graph '%s': "
             "plot type '%s' is not supported." % (network.name, plot))
 
@@ -40,7 +40,7 @@ def save(network, path = None, filetype = None, plot = None, **kwargs):
 
     # test if filetype is supported
     if filetype not in filetypes():
-        return nemoa.log('error', f"filetype '{filetype}' is not supported")
+        raise ValueError(f"filetype '{filetype}' is not supported")
 
     # get class for plotting from attribute 'plot'
     if not plot: plot = 'graph'
@@ -50,7 +50,7 @@ def save(network, path = None, filetype = None, plot = None, **kwargs):
         module = importlib.import_module(module_name)
         if not hasattr(module, class_name): raise ImportError()
     except ImportError:
-        return nemoa.log('error', """could not plot network '%s':
+        raise ValueError("""could not plot network '%s':
             plot type '%s' is not supported.""" % (network.name, plot))
 
     # create plot instance

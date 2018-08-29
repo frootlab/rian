@@ -18,7 +18,7 @@ def save(model, path = None, filetype = None, plot = None, **kwargs):
 
     # test if filetype is supported
     if filetype not in filetypes():
-        return nemoa.log('error', f"filetype '{filetype}' is not supported")
+        raise ValueError(f"filetype '{filetype}' is not supported")
 
     # get class for plotting from attribute 'plot'
     if not plot: plot = 'graph'
@@ -28,7 +28,7 @@ def save(model, path = None, filetype = None, plot = None, **kwargs):
         module = importlib.import_module(module_name)
         if not hasattr(module, class_name): raise ImportError()
     except ImportError:
-        return nemoa.log('error', """could not plot model '%s':
+        raise ValueError("""could not plot model '%s':
             plot type '%s' is not supported.""" %  (model.name, plot))
 
     # create plot of model
@@ -69,7 +69,7 @@ def show(model, plot = None, *args, **kwargs):
         module = importlib.import_module(module_name)
         if not hasattr(module, class_name): raise ImportError()
     except ImportError:
-        return nemoa.log('error', """could not plot model '%s':
+        raise ValueError("""could not plot model '%s':
             plot type '%s' is not supported.""" % (model.name, plot))
 
     # create plot of model
@@ -146,7 +146,7 @@ class Graph(nemoa.common.plot.Graph):
             measure = self._config['measure'],
             statistics = self._config['statistics'],
             transform = self._config['transform'])
-        if not isinstance(W, dict): return nemoa.log('error',
+        if not isinstance(W, dict): raise ValueError(
             "could not create relation graph: "
             "invalid weight relation '%s'" % rel_name)
         rel_about = model.system.get('algorithm', rel_name,
@@ -161,7 +161,7 @@ class Graph(nemoa.common.plot.Graph):
             preprocessing = self._config['preprocessing'],
             measure = self._config['measure'],
             statistics = self._config['statistics'])
-        if not isinstance(F, dict): return nemoa.log('error',
+        if not isinstance(F, dict): raise ValueError(
             "could not create relation graph: "
             "invalid filter relation '%s'!" % self._config['filter'])
 
@@ -169,7 +169,7 @@ class Graph(nemoa.common.plot.Graph):
         # and update list of edges
         bound = self._config['cutoff'] * F['std']
         edges = [edge for edge in edges if not -bound < F[edge] < bound]
-        if len(edges) == 0: return nemoa.log('warning',
+        if len(edges) == 0: raise Warning(
             "could not create relation graph: "
             "no relation passed threshold (%.2f)!" % bound)
 
@@ -191,7 +191,7 @@ class Graph(nemoa.common.plot.Graph):
                 preprocessing = self._config['preprocessing'],
                 measure = self._config['measure'],
                 statistics = self._config['statistics'])
-            if not isinstance(sr, dict): return nemoa.log('error',
+            if not isinstance(sr, dict): raise ValueError(
                 "could not create relation graph: "
                 "invalid sign relation!")
             S = {edge: 2. * (float(sr[edge] > 0.) - 0.5) \
@@ -208,7 +208,7 @@ class Graph(nemoa.common.plot.Graph):
             normalize = not rel_about.get('normal')
         elif self._config['edge_normalize'] in [True, False]:
             normalize = self._config['edge_normalize']
-        else: return nemoa.log('error',
+        else: raise ValueError(
             "could not create relation graph: "
             "invalid value for parameter 'edge_normalize'!")
 
@@ -301,7 +301,7 @@ class Heatmap(nemoa.common.plot.Heatmap):
             statistics = self._config['statistics'],
             transform = self._config['transform'])
         if not isinstance(R, dict):
-            return nemoa.log('error',
+            raise ValueError(
                 "could not create histogram: "
                 "invalid relation '%s'!" % self._config['relation'])
 
@@ -373,7 +373,7 @@ class Histogram(nemoa.common.plot.Histogram):
             statistics = self._config['statistics'],
             transform = self._config['transform'])
         if not isinstance(R, dict):
-            return nemoa.log('error',
+            raise ValueError(
                 "could not create histogram: "
                 "invalid evaluation '%s'!" % self._config['evaluation'])
 

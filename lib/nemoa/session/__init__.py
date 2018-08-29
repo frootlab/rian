@@ -23,8 +23,8 @@ def log(*args, **kwargs):
 
 def new(*args, **kwargs):
     """Create session instance from session dictionary."""
-    import nemoa.session.classes
-    return nemoa.session.classes.new(*args, **kwargs)
+    from nemoa.session import classes
+    return classes.new(*args, **kwargs)
 
 def open(*args, **kwargs):
     """Open object in current session."""

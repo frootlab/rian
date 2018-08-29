@@ -14,7 +14,7 @@ def new(*args, **kwargs):
 
     # check validity of configuration
     if len(kwargs.get('config', {}).get('type', '').split('.')) != 2:
-        return nemoa.log('error', "configuration is not valid.")
+        raise ValueError("configuration is not valid.")
 
     mname, cname = tuple(kwargs['config']['type'].split('.'))
 
@@ -23,7 +23,7 @@ def new(*args, **kwargs):
         if not hasattr(module, cname): raise ImportError()
         dataset = getattr(module, cname)(**kwargs)
     except ImportError:
-        return nemoa.log('error', """could not create dataset:
+        raise ValueError("""could not create dataset:
             unknown dataset type '%s'.""" % (type))
 
     return dataset

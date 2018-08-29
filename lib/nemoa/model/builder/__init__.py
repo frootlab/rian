@@ -26,8 +26,7 @@ def build(type = 'model', *args, **kwargs):
 
     # test if type is supported
     if type not in types():
-        nemoa.log('error', f"type '{type}' is not supported")
-        return {}
+        return ValueError(f"type '{type}' is not supported")
 
     module_name = types(type)[0]
 

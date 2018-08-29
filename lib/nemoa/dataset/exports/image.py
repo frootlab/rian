@@ -19,7 +19,7 @@ def get_plot(dataset, func = None, plot = None, **kwargs):
     fname = func or 'sample'
     fdict = dataset.get('algorithm', fname)
     if not isinstance(fdict, dict):
-        return nemoa.log('error',
+        raise ValueError(
             "could not plot dataset '%s': "
             "dataset evaluation function '%s' "
             "is not supported." % (dataset.name, fname))
@@ -34,7 +34,7 @@ def get_plot(dataset, func = None, plot = None, **kwargs):
         module = importlib.import_module(mname)
         if not hasattr(module, cname): raise ImportError()
     except ImportError:
-        return nemoa.log('error',
+        raise ValueError(
             "could not plot dataset '%s': "
             "plot type '%s' is not supported." % (dataset.name, plot))
 
@@ -61,7 +61,7 @@ def save(dataset, path = None, filetype = None, *args, **kwargs):
 
     # test if filetype is supported
     if filetype not in filetypes():
-        return nemoa.log('error', f"filetype '{filetype}' is not supported")
+        raise ValueError(f"filetype '{filetype}' is not supported")
 
     plot = get_plot(dataset, *args, **kwargs)
     if plot is None: return None
@@ -92,7 +92,7 @@ class Heatmap(nemoa.common.plot.Heatmap):
         cols  = dataset.get('columns')
         shape = (len(cols), len(cols))
         if not isinstance(array, numpy.ndarray) or not array.shape == shape:
-            return nemoa.log('warning',
+            raise Warning(
                 "representation of '%s' as heatmap "
                 "is not supported." % fname)
 
@@ -130,7 +130,7 @@ class Histogram(nemoa.common.plot.Histogram):
 
         # check return value
         if not isinstance(array, numpy.ndarray):
-            return nemoa.log('warning',
+            raise Warning(
                 "representation of '%s' as histogram "
                 "is not supported." % (fname))
 
@@ -168,7 +168,7 @@ class Scatter2D(nemoa.common.plot.Scatter2D):
 
         # check return value
         if not isinstance(array, numpy.ndarray):
-            return nemoa.log('warning',
+            raise Warning(
                 "representation of '%s' as 2d scatter plot "
                 "is not supported." % fname)
 
@@ -214,7 +214,7 @@ class Graph(nemoa.common.plot.Graph):
         cols  = dataset.get('columns')
         shape = (len(cols), len(cols))
         if not isinstance(array, numpy.ndarray) or not array.shape == shape:
-            return nemoa.log('warning',
+            raise Warning(
                 "representation of '%s' as graph "
                 "is not supported." % fname)
 

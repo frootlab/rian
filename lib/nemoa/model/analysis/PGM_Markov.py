@@ -122,7 +122,7 @@ def linksenergy(model, data, mapping = None, **kwargs):
 
     if len(mapping) == 1:
         # TODO
-        return nemoa.log('error', """sorry: bad implementation of
+        raise ValueError("""sorry: bad implementation of
             links_energy""")
     elif len(mapping) == 2:
         sdata = data

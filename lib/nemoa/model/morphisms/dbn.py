@@ -66,7 +66,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
         config = self._config
 
         if 'units' not in system._params:
-            return nemoa.log('error', """could not configure subsystems:
+            raise ValueError("""could not configure subsystems:
                 no layers have been defined!""") or None
 
         # create backup of dataset (before transformation)
@@ -93,7 +93,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
                 ('sigmoid', 'sigmoid'): 'rbm.RBM' }.get(
                     linkclass, None)
             if not systype:
-                return nemoa.log('error', """could not create
+                raise ValueError("""could not create
                     rbm: unsupported pair of unit classes '%s <-> %s'"""
                     % linkclass) or None
 
@@ -238,7 +238,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
         algorithm = config.get('algorithm', None)
 
         if algorithm == 'dbn':
-            return nemoa.log('warning', """could not finetune model:
+            raise Warning("""could not finetune model:
                 recursion detected.""")
 
         return self.optimize(config = config)
