@@ -122,7 +122,7 @@ def hill(x: ArrayLike, n: float = 2.) -> ArrayLike:
     """
 
     if n == 2.: return x / numpy.sqrt(1. + x ** 2)
-    return numpy.power(x ** n / 1. + x ** n, 1. / n)
+    return x / numpy.power( 1. + x ** n, 1. / n)
 
 def arctan(x: ArrayLike) -> ArrayLike:
     """Inverse tangent function.
@@ -142,7 +142,7 @@ def arctan(x: ArrayLike) -> ArrayLike:
 # Derivatives of Sigmoid Functions
 #
 
-def d_sigmoid(x: ArrayLike, func: Optional[str] = None) -> ArrayLike:
+def d_sigmoid(x: ArrayLike, func: Optional[str] = None, **kwargs) -> ArrayLike:
     """Derivative of sigmoid function.
 
     Args:
@@ -159,13 +159,13 @@ def d_sigmoid(x: ArrayLike, func: Optional[str] = None) -> ArrayLike:
 
     """
 
-    if isinstance(func, type(None)): return d_logistic(x)
-    if func == 'd_logistic': return d_logistic(x)
-    if func == 'd_elliot': return d_elliot(x)
-    if func == 'd_hill': return d_hill(x)
-    if func == 'd_lecun': return d_lecun(x)
-    if func == 'd_tanh': return d_tanh(x)
-    if func == 'd_arctan': return d_arctan(x)
+    if isinstance(func, type(None)): return d_logistic(x, **kwargs)
+    if func == 'd_logistic': return d_logistic(x, **kwargs)
+    if func == 'd_elliot': return d_elliot(x, **kwargs)
+    if func == 'd_hill': return d_hill(x, **kwargs)
+    if func == 'd_lecun': return d_lecun(x, **kwargs)
+    if func == 'd_tanh': return d_tanh(x, **kwargs)
+    if func == 'd_arctan': return d_arctan(x, **kwargs)
 
     raise ValueError(f"function {func} is not supported")
 
@@ -215,8 +215,8 @@ def d_hill(x: ArrayLike, n: float = 2.) -> ArrayLike:
 
     """
 
-    if n == 2.: return 1. / numpy.power(1. + x^2, 3. / 2.)
-    return numpy.power(1. + x ** n, -(1. + n) / n)
+    if n == 2.: return 1. / numpy.power(1. + x ** 2, 3. / 2.)
+    return 1. / numpy.power(1. + x ** n, (1. + n) / n)
 
 def d_lecun(x: ArrayLike) -> ArrayLike:
     """Derivative of LeCun hyperbolic tangent.
@@ -264,7 +264,7 @@ def d_arctan(x: ArrayLike) -> ArrayLike:
 
     """
 
-    return 1. / (1. + x ** 2)
+    return 1. / (1. + x ** 2.)
 
 #
 # Multistep Sigmoid Functions

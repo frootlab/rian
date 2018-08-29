@@ -10,6 +10,58 @@ from nemoa.common.unittest import TestSuite as NmTestSuite
 
 class TestSuite(NmTestSuite):
 
+    def test_common_calculus(self):
+        from nemoa.common import calculus
+
+        import numpy
+        x = numpy.array([[0.0, 0.5], [1.0, -1.0]])
+        t = lambda x, y: numpy.isclose(x.sum(), y, atol = 1e-3)
+
+        with self.subTest(function = "logistic"):
+            self.assertTrue(t(calculus.logistic(x), 2.122459))
+
+        with self.subTest(function = "tanh"):
+            self.assertTrue(t(calculus.tanh(x), 0.462117))
+
+        with self.subTest(function = "lecun"):
+            self.assertTrue(t(calculus.lecun(x), 0.551632))
+
+        with self.subTest(function = "elliot"):
+            self.assertTrue(t(calculus.elliot(x), 0.333333))
+
+        with self.subTest(function = "hill"):
+            self.assertTrue(t(calculus.hill(x), 0.447213))
+
+        with self.subTest(function = "arctan"):
+            self.assertTrue(t(calculus.arctan(x), 0.463647))
+
+        with self.subTest(function = "d_logistic"):
+            self.assertTrue(t(calculus.d_logistic(x), 0.878227))
+
+        with self.subTest(function = "d_elliot"):
+            self.assertTrue(t(calculus.d_elliot(x), 1.944444))
+
+        with self.subTest(function = "d_hill"):
+            self.assertTrue(t(calculus.d_hill(x), 2.422648))
+
+        with self.subTest(function = "d_lecun"):
+            self.assertTrue(t(calculus.d_lecun(x), 3.680217))
+
+        with self.subTest(function = "d_tanh"):
+            self.assertTrue(t(calculus.d_tanh(x), 2.626396))
+
+        with self.subTest(function = "d_arctan"):
+            self.assertTrue(t(calculus.d_arctan(x), 2.800000))
+
+        with self.subTest(function = "dialogistic"):
+            self.assertTrue(t(calculus.dialogistic(x), 0.251661))
+
+        with self.subTest(function = "softstep"):
+            self.assertTrue(t(calculus.softstep(x), 0.323637))
+
+        with self.subTest(function = "multilogistic"):
+            self.assertTrue(t(calculus.multilogistic(x), 0.500272))
+
     def test_common_dict(self):
         import nemoa.common.dict
 
