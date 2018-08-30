@@ -225,7 +225,7 @@ class Metadata:
         path = nemoa.path(module + 's') or ospath.cwd()
         filename = '%s.%s' % (ospath.clean(self._get_fullname()), fileext)
 
-        return ospath.normalize(path, filename)
+        return ospath.normpath(path, filename)
 
     def _get_type(self):
         """Get instance type, using module name and class name.

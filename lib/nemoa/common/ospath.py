@@ -4,246 +4,219 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-def basename(path):
-    """Get basename of file.
+import os
+
+from typing import Optional, Union, Any
+
+TreeOfStr = Union['TreeOfStr', tuple, list, str]
+
+def basename(path: str) -> str:
+    """Base of filename without filextension.
 
     Args:
-        path (string): path to file
+        path (string): path of file
 
     Returns:
         String containing basename of file.
 
     """
 
-    import os
+    fname = os.path.basename(normpath(path))
+    fbase = os.path.splitext(fname)[0].rstrip('.')
 
-    filename = os.path.basename(normalize(path))
-    filebasename = os.path.splitext(filename)[0].rstrip('.')
+    return fbase
 
-    return filebasename
-
-def copytree(src, tgt):
-    """Copy sub directories from given source to target.
+def copytree(sdir: str, ttdir: str) -> bool:
+    """Copy sub directories from given source directory to target directory.
 
     Args:
-        src (string): path to source directory
-        tgt (string): path to target directory
+        sdir (string): path of source directory
+        tdir (string): path of target directory
 
     Returns:
-        True if and only if no error occured.
+        True if the operation was successful.
 
     """
 
     import glob
-    import os
     import shutil
 
-    retval = True
-    for srcsdir in glob.glob(os.path.join(src, '*')):
-        tgtsdir = os.path.join(tgt, basename(srcsdir))
+    for s in glob.glob(os.path.join(sdirc, '*')):
+        t = os.path.join(tdir, basename(s))
+        if os.path.exists(t): shutil.rmtree(t)
+        try: shutil.copytree(s, t)
+        except Exception as e:
+            raise OSError("Could not copy directory")
 
-        if os.path.exists(tgtsdir): shutil.rmtree(tgtsdir)
-        try:
-            shutil.copytree(srcsdir, tgtsdir)
-        except shutil.Error as error:
-            print(('could not copy directory: %s' % error))
-            retval = False
-        except OSError as error:
-            print(('could not copy directory: %s' % error))
-            retval = False
-
-    return retval
+    return True
 
 
-def dirname(path):
+def dirname(path: str) -> str:
     """Get directory path of file or directory.
 
     Args:
-        path (string): path to file
+        path (string): path to file or directory
 
     Returns:
         String containing normalized directory path of file.
 
     """
 
-    import os
+    return os.path.dirname(normpath(path))
 
-    return os.path.dirname(normalize(path))
-
-def fileext(path):
-    """Get extension of file.
+def fileext(path: str) -> str:
+    """Fileextension of file.
 
     Args:
-        path (string): path to file
+        path (string): path of file
 
     Returns:
-        String containing extension of file.
+        String containing fileextension of file.
 
     """
 
-    import os
+    fname = os.path.basename(normpath(path))
+    fext = os.path.splitext(fname)[1].lstrip('.')
 
-    filename = os.path.basename(normalize(path))
-    ext = os.path.splitext(filename)[1].lstrip('.')
+    return fext
 
-    return ext
-
-def cwd():
-    """Get path of current working directory.
+def cwd() -> str:
+    """Path of current working directory.
 
     Returns:
         String containing path of current working directory.
 
     """
 
-    import os
-
     return os.getcwd() + os.path.sep
 
-def home():
-    """Get path to current users home directory.
+def home() -> str:
+    """Path of current users home directory.
 
     Returns:
         String containing path of home directory.
 
     """
 
-    import os
-
     return os.path.expanduser('~')
 
-def get(name, *args, **kwargs):
-    """Get paths to storage directories.
+def get(key: str, appname: Optional[str] = None,
+    appauthor: Optional[Union[str, bool]] = None, version: Optional[str] = None,
+    **kwargs: Any) -> Optional[str]:
+    """Path of an environmental directory.
 
-    This function maps generic names of storage directory to platform
-    specific paths which allows platform independent usage of storage
-    directories. This is a wrapper function to the module 'appdirs'.
-    For details and usage see:
+    This function returns environmental directories by platform independent
+    keys to allow platform independent storage. This is a wrapper function to
+    the module 'appdirs' [1].
 
-        http://github.com/ActiveState/appdirs
+    [1] http://github.com/ActiveState/appdirs
 
     Args:
-        name (string): Storage path name: String describing storage
-            directory. Allowed values are:
-
-            'user_cache_dir' -- User specific cache directory
-            'user_config_dir' -- User specific configuration directory
-            'user_data_dir' -- User specific data directory
-            'user_log_dir' -- User specific logging directory
+        key (string): Environmental directory key name. Allowed values are:
+            'user_cache_dir' -- Cache directory of user
+            'user_config_dir' -- Configuration directory of user
+            'user_data_dir' -- Data directory of user
+            'user_log_dir' -- Logging directory of user
+            'user_home' -- Home directory of user
+            'user_cwd' -- Current working directory of user
             'site_config_dir' -- Site specific configuration directory
             'site_data_dir' -- Site specific data directory
-
-        *args: Arguments passed to appdirs
-        **kwargs: Keyword Arguments passed to appdirs
+        appname (str, optional): is the name of application.
+            If None, just the system directory is returned.
+        appauthor (str, optional): is the name of the appauthor or distributing
+            body for this application. Typically it is the owning company name.
+            You may pass False to disable it. Only applied in windows.
+        version (str, optional): is an optional version path element to append
+            to the path. You might want to use this if you want multiple
+            versions of your app to be able to run independently. If used, this
+            would typically be "<major>.<minor>".
+            Only applied when appname is present.
+        **kwargs (Any, optional): Optional additional keyword arguments,
+            that depend on the given key. For more information see [1].
 
     Returns:
-        String containing path of storage directory or False if
-        storage path name is not supported.
+        String containing path of environmental directory or None if
+        the key is not supported.
 
     """
 
     import appdirs
 
-    if name == 'user_cache_dir':
-        return appdirs.user_cache_dir(*args, **kwargs)
-    elif name == 'user_config_dir':
-        return appdirs.user_config_dir(*args, **kwargs)
-    elif name == 'user_data_dir':
-        return appdirs.user_data_dir(*args, **kwargs)
-    elif name == 'user_log_dir':
-        return appdirs.user_log_dir(*args, **kwargs)
-    elif name == 'user_cwd': return cwd()
-    elif name == 'site_config_dir':
-        return appdirs.site_config_dir(*args, **kwargs)
-    elif name == 'site_data_dir':
-        return appdirs.site_data_dir(*args, **kwargs)
+    dkey = {'appname': appname, 'appauthor': appauthor, 'version': version}
 
-    return False
+    if key == 'user_cache_dir': return appdirs.user_cache_dir(**dkey, **kwargs)
+    if key == 'user_config_dir':
+        return appdirs.user_config_dir(**dkey, **kwargs)
+    if key == 'user_data_dir': return appdirs.user_data_dir(**dkey, **kwargs)
+    if key == 'user_log_dir': return appdirs.user_log_dir(**dkey, **kwargs)
+    if key == 'user_cwd': return cwd()
+    if key == 'user_home': return home()
+    if key == 'site_config_dir':
+        return appdirs.site_config_dir(**dkey, **kwargs)
+    if key == 'site_data_dir':
+        return appdirs.site_data_dir(**dkey, **kwargs)
 
-def joinpath(directory, name, extension):
-    """Get path of file.
+    return None
 
-    Args:
-        directory (string): file directory
-        name (string): file basename
-        extension (string): file extension
-
-    Returns:
-        String containing path of file.
-
-    """
-
-    import os
-
-    path = '%s%s%s.%s' % (directory, os.sep, name, extension)
-    path = os.path.expanduser(path)
-    path = os.path.expandvars(path)
-    path = os.path.normpath(path)
-
-    return path
-
-def clean(text):
+def clean(fname: str) -> str:
     """Get cleaned filename."""
 
     import string
 
-    valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
-    filename = ''.join(char for char in text if char in valid_chars)
-    filename = filename.replace(' ', '_')
+    valid = "-_.() " + string.ascii_letters + string.digits
+    fname = ''.join(c for c in fname if c in valid).replace(' ', '_')
 
-    return filename
+    return fname
 
-def get_valid_path(*args):
-    """Get valid path.
+def joinpath(*args: TreeOfStr) -> Optional[str]:
+    """Join path.
 
     Args:
-        args (tuplee): tree of tuples, lists and basestrings describing
-            path to file or directory
+        *args (TreeOfStr): Tree of strings which can be joined to a path.
 
     Returns:
         String containing valid path.
 
-    """
+    Examples:
+        >>> joinpath('%user_config_dir%', 'nemoa.ini')
+        [0, 1, 2, 3]
 
-    import os
+    """
 
     # flatten tuple of tuples etc. to flat path list
     # and join list using os path seperators
     path = args
     if isinstance(path, (list, tuple)):
         path = list(path)
-        char = 0
-        while char < len(path):
-            while isinstance(path[char], (list, tuple)):
-                if not path[char]:
-                    path.pop(char)
-                    char -= 1
+        i = 0
+        while i < len(path):
+            while isinstance(path[i], (list, tuple)):
+                if not path[i]:
+                    path.pop(i)
+                    i -= 1
                     break
-                else:
-                    path[char:char + 1] = path[char]
-            char += 1
+                else: path[i:i + 1] = path[i]
+            i += 1
         try:
             path = os.path.sep.join(list(path))
-        except UnicodeDecodeError:
-            return None
+        except Exception as e:
+            raise ValueError("argument 'path' is not valid")
 
     return path
 
-def normalize(*args):
+def normpath(*args: TreeOfStr) -> str:
     """Get normalized path.
 
     Args:
-        args:
+        *args (TreeOfStr): Tree of strings which can be joined to a path.
 
     Returns:
         String containing normalized path.
 
     """
 
-    import os
-
-    path = get_valid_path(*args)
-    if not path: return None
+    path = joinpath(*args)
+    if not path: return ''
 
     path = os.path.expanduser(path)
     path = os.path.expandvars(path)

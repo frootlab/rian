@@ -58,21 +58,16 @@ def save(dataset, path = None, filetype = None, workspace = None,
 
     # get directory, filename and fileextension
     if isinstance(workspace, str) and not workspace == 'None':
-        directory = nemoa.path('datasets',
-            workspace = workspace, base = base)
+        dname = nemoa.path('datasets', workspace = workspace, base = base)
+    elif isinstance(path, str): dname = ospath.dirname(path)
+    else: dname = ospath.dirname(dataset.path)
+    if isinstance(path, str): fbase = ospath.basename(path)
+    else: fbase = dataset.fullname
+    if isinstance(filetype, str): fext = filetype
     elif isinstance(path, str):
-        directory = ospath.dirname(path)
-    else:
-        directory = ospath.dirname(dataset.path)
-    if isinstance(path, str): name = ospath.basename(path)
-    else: name = dataset.fullname
-    if isinstance(filetype, str): fileext = filetype
-    elif isinstance(path, str):
-        fileext = ospath.fileext(path)
-        if not fileext: fileext = ospath.fileext(dataset.path)
-    else:
-        fileext = ospath.fileext(dataset.path)
-    path = ospath.joinpath(directory, name, fileext)
+        fext = ospath.fileext(path) or ospath.fileext(dataset.path)
+    else: fext = ospath.fileext(dataset.path)
+    path = ospath.joinpath(dname, fbase + '.' + fext)
 
     # get filetype from file extension if not given
     # and test if filetype is supported

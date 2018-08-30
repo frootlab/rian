@@ -216,12 +216,10 @@ class Session:
         if not base:
             workspaces = {}
             for base in self._config['default']['basepath']:
-                workspaces[base] = \
-                    self._get_list_workspaces(base = base)
+                workspaces[base] = self._get_list_workspaces(base = base)
             return workspaces
         elif base not in self._config['default']['basepath']:
-            raise ValueError("""could not get workspaces:
-                unknown workspace base '%s'.""" % base)
+            raise ValueError("unknown workspace base '%s'." % base)
 
         import glob
         import os
@@ -234,7 +232,7 @@ class Session:
         fname = self._config['default']['path']['inifile'][-1]
         for subdir in glob.iglob(baseglob):
             if not os.path.isdir(subdir): continue
-            fpath = ospath.get_valid_path(subdir, fname)
+            fpath = ospath.joinpath(subdir, fname)
             if not os.path.isfile(fpath): continue
             workspaces.append(os.path.basename(subdir))
 
@@ -353,12 +351,10 @@ class Session:
         workspace = self._get_workspace()
         base = None
         if 'workspace' in kwargs:
-            workspace = kwargs['workspace']
-            del kwargs['workspace']
+            workspace = kwargs.pop('workspace')
             if workspace != self._get_workspace(): chdir = True
         if 'base' in kwargs:
-            base = kwargs['base']
-            del kwargs['base']
+            base = kwargs.pop('base')
             if base != self._get_base(): chdir = True
         if chdir:
             current = self._config.get('workspace', None)
@@ -388,12 +384,12 @@ class Session:
             if current:
                 self._set_workspace(current.get('name'),
                     base = current.get('base'))
-            else:
-                self._set_workspace(None)
+            else: self._set_workspace(None)
 
         return path or None
 
-    def _get_path_expand(self, *args, **kwargs):
+    def _get_path_expand(self, *args, check: bool = False,
+        create: bool = False):
         """Get expanded path.
 
         Args:
@@ -409,21 +405,19 @@ class Session:
         import os
         from nemoa.common import ospath
 
-        path = ospath.normalize(args)
-        check = kwargs.get('check', False)
-        create = kwargs.get('create', False)
+        path = ospath.normpath(args)
 
         # expand nemoa environment variables
         base = self._get_base()
         replace = {
             'workspace': self._get_workspace(),
             'base': self._get_base(),
-            'basepath': ospath.normalize(
+            'basepath': ospath.normpath(
                 self._config['default']['basepath'][base]) }
         for key, val in self._config['default']['basepath'].items():
-            replace[key] = ospath.normalize(val)
+            replace[key] = ospath.normpath(val)
         for key, val in self._config['current']['path'].items():
-            replace[key] = ospath.normalize(val)
+            replace[key] = ospath.normpath(val)
         for key in ['user_cache_dir', 'user_config_dir',
             'user_data_dir', 'user_log_dir', 'user_cwd',
             'site_config_dir', 'site_data_dir']:
