@@ -20,8 +20,6 @@ def load(path: str, delim: Optional[str] = None,
 
     Args:
         path (string): file path to CSV file.
-
-    Kwargs:
         delim (string, optional): string containing CSV delimiter.
             If not given, the CSV delimiter is detected from CSV file.
         labels (list, optional): list of strings containing CSV labels.
@@ -105,8 +103,6 @@ def save(path: str, data: numpy.ndarray, header: Optional[str] = None,
     Args:
         path (string): file path to CSV file.
         data (numpy ndarray): data
-
-    Kwargs:
         header (string, optional):
         labels (list, optional): list of strings containing CSV labels.
         delim (string, optional):
@@ -167,8 +163,6 @@ def get_delim(path: str, delims: list = [',', ';', '\t', ' '],
 
     Args:
         path (string): file path to CSV file.
-
-    Kwargs:
         delims (list, optional): list of strings containing delimiter
             candidates to search for.
         minprobe (integer, optional): minimum number of non comment,
@@ -220,8 +214,6 @@ def get_labels(path: str, delim: Optional[str] = None) -> list:
 
     Args:
         path (string): file path to CSV file.
-
-    Kwargs:
         delim (string, optional): string containing CSV delimiter.
 
     Returns:
@@ -275,8 +267,6 @@ def get_labelcolumn(path: str, delim: Optional[str] = None) -> int:
 
     Args:
         path (string): file path to CSV file.
-
-    Kwargs:
         delim (string, optional): string containing CSV delimiter.
 
     Returns:

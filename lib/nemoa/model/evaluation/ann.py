@@ -20,7 +20,7 @@ import numpy
 
 from nemoa.model.evaluation.base import Evaluation
 
-from nemoa.common import calculus
+from nemoa.common import calc
 
 class ANN(Evaluation):
 
@@ -681,7 +681,7 @@ class ANN(Evaluation):
                 if inlabel == outlabel: A[iid, oid] = 0.0
         bound = numpy.amax(A)
 
-        return calculus.dialogistic(R, scale = bound, sigma = contrast)
+        return calc.dialogistic(R, scale = bound, sigma = contrast)
 
     @nemoa.common.decorators.algorithm(
         name     = 'energy',

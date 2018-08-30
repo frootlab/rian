@@ -10,7 +10,7 @@ from typing import Optional
 def get_curname(frame: int = 0) -> str:
     """Get name of module, which calls this function.
 
-    Kwargs:
+    Args:
         frame (integer, optional): Frame index relative to the current frame
             in the callstack, which is identified with 0. Negative values
             consecutively identify previous modules within the callstack.
@@ -42,7 +42,7 @@ def get_curname(frame: int = 0) -> str:
 def get_caller_name(frame: int = 0) -> str:
     """Get name of the caller, which calls this function.
 
-    Kwargs:
+    Args:
         frame (integer, optional): Frame index relative to the current frame
             in the callstack, which is identified with 0. Negative values
             consecutively identify previous modules within the callstack.
@@ -70,7 +70,7 @@ def get_submodules(minst: Optional[ModuleType] = None,
     recursive: bool = False) -> list:
     """Get list with submodule names.
 
-    Kwargs:
+    Args:
         minst (ModuleType, optional): Module instance to search for submodules
             default: Use current module, which called this function
         recursive (bool, optional): Search recursively within submodules
@@ -120,7 +120,7 @@ def get_functions(minst: Optional[ModuleType] = None, details: bool = False,
     filters: dict = {}, **kwargs) -> list:
     """Get filtered list of function names within given module instance.
 
-    Kwargs:
+    Args:
         minst (ModuleType, optional): Module instance to search for submodules
             default: Use current module, which called this function
         details (bool, optional):
@@ -253,13 +253,11 @@ def get_methods(cinst: type, attribute = None, grouping = None,
 
     Args:
         cinst: instance of class
-
-    Kwargs:
-        prefix (string): only methods with given prefix are returned.
-        removeprefix (bool): remove prefix in dictionary keys if True.
-        renamekey (string):
-        attribute (string):
-        grouping (string):
+        prefix (string, optional): only methods with given prefix are returned.
+        removeprefix (bool, optional): remove prefix in dictionary keys if True.
+        renamekey (string, optional):
+        attribute (string, optional):
+        grouping (string, optional):
 
     Returns:
         Dictionary containing the methods of an instance including

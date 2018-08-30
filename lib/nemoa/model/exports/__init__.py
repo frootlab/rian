@@ -34,8 +34,6 @@ def save(model, path = None, filetype = None, workspace = None,
 
     Args:
         model (object): nemoa model instance
-
-    Kwargs:
         path (str, optional): path of export file
         filetype (str, optional): filetype of export file
         workspace (str, optional): workspace to use for file export

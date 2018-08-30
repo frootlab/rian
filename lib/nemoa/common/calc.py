@@ -6,7 +6,7 @@ __license__ = 'GPLv3'
 
 try: import numpy
 except ImportError as e: raise ImportError(
-    "nemoa.common.calculus requires numpy: https://scipy.org") from e
+    "nemoa.common.calc requires numpy: https://scipy.org") from e
 
 from typing import Union, Optional
 
@@ -21,8 +21,6 @@ def sigmoid(x: ArrayLike, func: Optional[str] = None, **kwargs) -> ArrayLike:
 
     Args:
         x (ArrayLike): Numerical data arranged in an array-like structure
-
-    Kwargs:
         func (string, optional): Name of sigmoid function
             If not given, the standard logistic function is used.
 
@@ -111,8 +109,6 @@ def hill(x: ArrayLike, n: float = 2.) -> ArrayLike:
 
     Args:
         x (ArrayLike): Numerical data arranged in an array-like structure
-
-    Kwargs:
         n (int, optional): Hill coefficient
 
     Returns:
@@ -147,8 +143,6 @@ def d_sigmoid(x: ArrayLike, func: Optional[str] = None, **kwargs) -> ArrayLike:
 
     Args:
         x (ArrayLike): Numerical data arranged in an array-like structure
-
-    Kwargs:
         func (string, optional): Name of derivative of sigmoid function
             If not given, the derivative of the standard logistic function is
             used.
@@ -205,8 +199,6 @@ def d_hill(x: ArrayLike, n: float = 2.) -> ArrayLike:
 
     Args:
         x (ArrayLike): Numerical data arranged in an array-like structure
-
-    Kwargs:
         n (int, optional): Hill coefficient
 
     Returns:
@@ -276,8 +268,6 @@ def dialogistic(x: ArrayLike, scale: float = 1.,
 
     Args:
         x (ArrayLike): Numerical data arranged in an array-like structure
-
-    Kwargs:
         scale (float, optional): scale parameter, default is 1.
         sigma (float, optional): sharpness parameter, default is 10.
 
@@ -299,8 +289,6 @@ def softstep(x: ArrayLike, scale: float = 1., sigma: float = 10.) -> ArrayLike:
 
     Args:
         x (ArrayLike): Numerical data arranged in an array-like structure
-
-    Kwargs:
         scale (float, optional): scale parameter, default is 1.
         sigma (float, optional): sharpness parameter, default is 10.
 
@@ -323,8 +311,6 @@ def multilogistic(x: ArrayLike, scale: float = 1.,
 
     Args:
         x (ArrayLike): Numerical data arranged in an array-like structure
-
-    Kwargs:
         scale (float, optional): scale parameter, default is 1.
         sigma (float, optional): sharpness parameter, default is 10.
 

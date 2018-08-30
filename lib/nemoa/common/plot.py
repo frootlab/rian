@@ -272,8 +272,6 @@ class Graph(Plot):
 
         Args:
             graph: networkx graph instance
-
-        Kwargs:
             figure_size (tuple): figure size in inches
                 (11.69,8.27) for A4, (16.53,11.69) for A3
             edge_attribute (string): name of edge attribute, that

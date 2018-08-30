@@ -72,7 +72,7 @@ class Graph(nemoa.common.plot.Graph):
             get_layers, get_groups, get_node_layout
 
         import nemoa.common.plot as nmplot
-        from nemoa.common import calculus
+        from nemoa.common import calc
 
         # set plot defaults
         self.set_default({
@@ -138,7 +138,7 @@ class Graph(nemoa.common.plot.Graph):
 
             # transform weights (optional)
             if transform == 'softstep':
-                weight = calculus.softstep(weight)
+                weight = calc.softstep(weight)
 
             graph.edges[u, v]['weight'] = weight
 

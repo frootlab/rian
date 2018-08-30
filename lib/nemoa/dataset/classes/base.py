@@ -1357,7 +1357,7 @@ class Dataset(Metadata):
     def _get_covariance(self, cols: str = '*'):
         """Calculate covariance matrix between given columns.
 
-        Kwargs:
+        Args:
             cols (str, optional): name of column select filter
                 default: '*' selects all columns
 
@@ -1383,7 +1383,7 @@ class Dataset(Metadata):
     def _get_correlation(self, cols: str = '*'):
         """Calculate correlation matrix between given columns.
 
-        Kwargs:
+        Args:
             cols (str, optional): name of column select filter
                 default: '*' selects all columns
 
@@ -1409,7 +1409,7 @@ class Dataset(Metadata):
     def _get_pcasample(self, cols = '*', k: int = 2, embed: bool = True):
         """Calculate projection to principal components.
 
-        Kwargs:
+        Args:
             cols (str, optional): name of column select filter
                 default: '*' selects all columns
             k (int, optional): number of principal components, which is used
@@ -1439,7 +1439,7 @@ class Dataset(Metadata):
     def _get_kcovariance(self, cols: str = '*', k: int = 2):
         """Calculate k-Covariance matrix between given columns.
 
-        Kwargs:
+        Args:
             cols (str, optional): name of column select filter
                 default: '*' selects all columns
             k (int, optional): number of principal components, which is used
@@ -1472,7 +1472,7 @@ class Dataset(Metadata):
     def _get_kcorrelation(self, cols: str = '*', k: int = 2):
         """Calculate k-Correlation matrix between given columns.
 
-        Kwargs:
+        Args:
             cols (str, optional): name of column select filter
                 default: '*' selects all columns
             k (int, optional): number of principal components, which are used

@@ -23,8 +23,6 @@ def get_layout(G: DiGraph, layout: str = 'spring',
 
     Args:
         G: networkx graph instance
-
-    Kwargs:
         layout (string, optional): graph layout name
             default is "spring"
         size (2-tuple, optional): size in pixel (x, y)
@@ -125,8 +123,6 @@ def get_layer_layout(G: DiGraph, direction: str = 'right',
 
     Args:
         G: networkx graph instance
-
-    Kwargs:
         direction (string, optional):
         minimize (string, optional):
 
@@ -329,8 +325,6 @@ def rescale_layout(pos: dict, size: Optional[tuple] = None,
 
     Args:
         pos (dict): dictionary with node positions
-
-    Kwargs:
         size (2-tuple, optional): size in pixel (x, y)
             default is None, which means no rescale
         padding (4-tuple, optional): padding in percentage

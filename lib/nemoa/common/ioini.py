@@ -12,8 +12,6 @@ def load(f: str, structure: Optional[dict] = None) -> dict:
 
     Args:
         f (str): full qualified path to INI File
-
-    Kwargs:
         structure (dict, optional): Dictionary, that determines the structure
             of the configuration dictionary. If "structure" is None the INI File
             is completely imported and all values are interpreted as strings.
@@ -45,8 +43,6 @@ def save(d: dict, f: str, flat: Optional[bool] = None,
     Args:
         f (str): full qualified path to writeable file
         d (dict): dictionary containing configuration
-
-    Kwargs:
         flat (bool, optional): Determines if the desired INI format structure
             contains sections or not. By default sections are used, if the
             dictionary contains subdictionaries.
@@ -78,8 +74,6 @@ def loads(s: str, structure: Optional[dict] = None,
 
     Args:
         s (str): INI formated string, that contains the configuration
-
-    Kwargs:
         structure (dict, optional): Dictionary, that determines the structure
             of the configuration dictionary. If "structure" is None the INI File
             is completely imported and all values are interpreted as strings.
@@ -133,8 +127,6 @@ def dumps(d: dict, flat: Optional[bool] = None,
 
     Args:
         d (dict): dictionary containing configuration
-
-    Kwargs:
         flat (bool, optional): Determines if the desired INI format structure
             contains sections or not. By default sections are used, if the
             dictionary contains subdictionaries.
@@ -222,8 +214,6 @@ def parse(parser: ConfigParser, structure: Optional[dict] = None) -> dict:
     Args:
         parser (ConfigParser): ConfigParser instance that contains an
             unstructured / unfiltered configuration dictionary
-
-    Kwargs:
         structure (dict, optional): Dictionary, that determines the structure
             of the configuration dictionary. If "structure" is None the INI File
             is completely imported and all values are interpreted as strings.

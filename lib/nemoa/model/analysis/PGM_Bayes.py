@@ -32,7 +32,7 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-from nemoa.common import calculus
+from nemoa.common import calc
 
 #
 # (1) Sampler for Bayesian Networks
@@ -51,8 +51,6 @@ def draw_forward_sample(model, *args, **kwargs):
     Args:
         data: numpy ndarray of shape (d, s) containing data of the source
             observables within the first layer in mapping
-
-    Kwargs:
         mapping (tuple of strings, optional): labels of model layers,
             starting with the layer, that comprises the source observables, and
             finishing with the layer, that comprises the target observables.
@@ -99,8 +97,6 @@ def get_forward_residuals(model, data, mapping = None, block = None):
         data: 2-tuple of numpy arrays containing source and target
             data corresponding to the first and the last argument
             of the mapping
-
-    Kwargs:
         mapping: n-tuple of strings containing the mapping
             from source unit layer (first argument of tuple)
             to target unit layer (last argument of tuple)
@@ -661,4 +657,4 @@ def induction(model, data, mapping = None, points = 10,
             if inlabel == outlabel: A[iid, oid] = 0.0
     bound = numpy.amax(A)
 
-    return calculus.dialogistic(R, sigma = contrast, scale = bound)
+    return calc.dialogistic(R, sigma = contrast, scale = bound)

@@ -32,15 +32,11 @@ def array_to_dict(a: numpy.ndarray, axes: tuple,
 
     return d
 
-def merge(*args, new: bool = True) -> dict:
+def merge(*args: dict, new: bool = True) -> dict:
     """Recursively right merge dictionaries.
 
     Args:
-        d1 (dict): dictionary
-        d2 (dict): target dictionary
-        ...
-
-    Kwargs:
+        *args (dict): dictionaries, that are recursively right merged
         new (bool, optional): a new dictionary is created if new is True
 
     Returns:
