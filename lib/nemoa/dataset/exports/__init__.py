@@ -67,7 +67,7 @@ def save(dataset, path = None, filetype = None, workspace = None,
     elif isinstance(path, str):
         fext = ospath.fileext(path) or ospath.fileext(dataset.path)
     else: fext = ospath.fileext(dataset.path)
-    path = ospath.joinpath(dname, fbase + '.' + fext)
+    path = ospath.join(dname, fbase + '.' + fext)
 
     # get filetype from file extension if not given
     # and test if filetype is supported

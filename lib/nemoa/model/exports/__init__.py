@@ -66,7 +66,7 @@ def save(model, path = None, filetype = None, workspace = None,
         if not fileext: fileext = ospath.fileext(model.path)
     else:
         fileext = ospath.fileext(model.path)
-    path = ospath.joinpath(directory, name + '.' + fileext)
+    path = ospath.join(directory, name + '.' + fileext)
 
     # get filetype from file extension if not given
     # and test if filetype is supported

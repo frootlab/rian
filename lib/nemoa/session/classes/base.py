@@ -232,7 +232,7 @@ class Session:
         fname = self._config['default']['path']['inifile'][-1]
         for subdir in glob.iglob(baseglob):
             if not os.path.isdir(subdir): continue
-            fpath = ospath.joinpath(subdir, fname)
+            fpath = ospath.join(subdir, fname)
             if not os.path.isfile(fpath): continue
             workspaces.append(os.path.basename(subdir))
 
@@ -405,35 +405,22 @@ class Session:
         import os
         from nemoa.common import ospath
 
-        path = ospath.normpath(args)
+        path = ospath.join(args)
 
         # expand nemoa environment variables
         base = self._get_base()
-        replace = {
-            'workspace': self._get_workspace(),
-            'base': self._get_base(),
-            'basepath': ospath.normpath(
-                self._config['default']['basepath'][base]) }
-        for key, val in self._config['default']['basepath'].items():
-            replace[key] = ospath.normpath(val)
-        for key, val in self._config['current']['path'].items():
-            replace[key] = ospath.normpath(val)
-        for key in ['user_cache_dir', 'user_config_dir',
-            'user_data_dir', 'user_log_dir', 'user_cwd',
-            'site_config_dir', 'site_data_dir']:
-            replace[key] = ospath.get(key, appname = 'nemoa',
-                appauthor = 'Froot')
+        udict = {
+            'workspace': self._get_workspace() or 'none',
+            'base': self._get_base() or 'none',
+            'basepath': ospath.join(self._config['default']['basepath'][base])
+        }
 
-        update = True
-        while update:
-            update = False
-            for key, val in list(replace.items()):
-                if '%' + key + '%' not in path: continue
-                try:
-                    path = path.replace('%' + key + '%', val)
-                except TypeError:
-                    del replace[key]
-                update = True
+        for key, val in self._config['default']['basepath'].items():
+            udict[key] = ospath.join(val)
+        for key, val in self._config['current']['path'].items():
+            udict[key] = ospath.join(val)
+
+        path = ospath.expand(path, udict = udict)
 
         # (optional) create directory
         if create and not os.path.exists(os.path.dirname(path)):
@@ -468,20 +455,21 @@ class Session:
             else: key = 'error'
             if mode == 'shell':
                 clr = module.get_caller_name(-5)
-                if clr.split('.')[0] == 'IPython': clr = 'IPython'
+                #if clr.split('.')[0] == 'IPython': clr = 'IPython'
             else: clr = module.get_caller_name(-4)
-            msg = str(args[1])
+            msg = str(args[1]).capitalize()
+            etype = obj.__name__
 
         # test if args are given as an info message
         # in this case the arguments are (msg)
         elif isinstance(obj, str) and len(args) == 1:
-            key, msg = 'info', args[0]
+            key, msg = 'info', args[0].capitalize()
             clr = module.get_caller_name(-3)
 
         # test if args are given as a message of given type
         # in this case the arguments are (type, msg)
         elif isinstance(obj, str) and len(args) == 2:
-            key, msg = args[0], args[1]
+            key, msg = args[0], args[1].capitalize()
             clr = module.get_caller_name(-3)
 
         else: return True
@@ -532,13 +520,13 @@ class Session:
             return None
 
         if key == 'warning':
-            if mode != 'silent':
-                tty_log.warning(color['yellow'] + msg + color['default'])
+            if mode != 'silent': tty_log.warning(
+                f"{color['red']}{etype}:{color['default']} {msg}")
             file_log.warning(file_msg)
             return None
 
         if key == 'error':
-            tty_log.error(f"{clr}: {color['yellow']}{msg}{color['default']}")
+            tty_log.error(f"{color['red']}{etype}:{color['default']} {msg}")
                 #clr + ': ' + color['yellow'] + msg + color['default'])
             file_log.error(file_msg)
             for line in traceback.format_stack():

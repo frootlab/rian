@@ -56,7 +56,7 @@ def save(system, path = None, filetype = None, workspace = None,
     elif isinstance(path, str):
         fileext = ospath.fileext(path) or ospath.fileext(system.path)
     else: fileext = ospath.fileext(system.path)
-    path = ospath.joinpath(directory, name + '.' + fileext)
+    path = ospath.join(directory, name + '.' + fileext)
 
     # get filetype from file extension if not given
     # and test if filetype is supported

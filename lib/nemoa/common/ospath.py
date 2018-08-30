@@ -6,27 +6,12 @@ __license__ = 'GPLv3'
 
 import os
 
-from typing import Optional, Union, Any
+from typing import Any, Dict, Optional, Union
 
-TreeOfStr = Union['TreeOfStr', tuple, list, str]
+PathLike = Union['PathLike', tuple, list, str]
+PathLikeDict = Dict[str, PathLike]
 
-def basename(path: str) -> str:
-    """Base of filename without filextension.
-
-    Args:
-        path (string): path of file
-
-    Returns:
-        String containing basename of file.
-
-    """
-
-    fname = os.path.basename(normpath(path))
-    fbase = os.path.splitext(fname)[0].rstrip('.')
-
-    return fbase
-
-def copytree(sdir: str, ttdir: str) -> bool:
+def copytree(sdir: str, tdir: str) -> bool:
     """Copy sub directories from given source directory to target directory.
 
     Args:
@@ -49,36 +34,6 @@ def copytree(sdir: str, ttdir: str) -> bool:
             raise OSError("Could not copy directory")
 
     return True
-
-
-def dirname(path: str) -> str:
-    """Get directory path of file or directory.
-
-    Args:
-        path (string): path to file or directory
-
-    Returns:
-        String containing normalized directory path of file.
-
-    """
-
-    return os.path.dirname(normpath(path))
-
-def fileext(path: str) -> str:
-    """Fileextension of file.
-
-    Args:
-        path (string): path of file
-
-    Returns:
-        String containing fileextension of file.
-
-    """
-
-    fname = os.path.basename(normpath(path))
-    fext = os.path.splitext(fname)[1].lstrip('.')
-
-    return fext
 
 def cwd() -> str:
     """Path of current working directory.
@@ -103,11 +58,11 @@ def home() -> str:
 def get(key: str, appname: Optional[str] = None,
     appauthor: Optional[Union[str, bool]] = None, version: Optional[str] = None,
     **kwargs: Any) -> Optional[str]:
-    """Path of an environmental directory.
+    """Path of environmental directory.
 
     This function returns environmental directories by platform independent
     keys to allow platform independent storage. This is a wrapper function to
-    the module 'appdirs' [1].
+    the package 'appdirs' [1].
 
     [1] http://github.com/ActiveState/appdirs
 
@@ -117,10 +72,10 @@ def get(key: str, appname: Optional[str] = None,
             'user_config_dir' -- Configuration directory of user
             'user_data_dir' -- Data directory of user
             'user_log_dir' -- Logging directory of user
-            'user_home' -- Home directory of user
-            'user_cwd' -- Current working directory of user
             'site_config_dir' -- Site specific configuration directory
             'site_data_dir' -- Site specific data directory
+            'home' -- Home directory of user
+            'cwd' -- Current working directory of user
         appname (str, optional): is the name of application.
             If None, just the system directory is returned.
         appauthor (str, optional): is the name of the appauthor or distributing
@@ -140,7 +95,10 @@ def get(key: str, appname: Optional[str] = None,
 
     """
 
-    import appdirs
+    try: import appdirs
+    except ImportError as e: raise ImportError(
+        "nemoa.common.ospath requires appdirs: "
+        "http://github.com/ActiveState/appdirs") from e
 
     dkey = {'appname': appname, 'appauthor': appauthor, 'version': version}
 
@@ -149,8 +107,8 @@ def get(key: str, appname: Optional[str] = None,
         return appdirs.user_config_dir(**dkey, **kwargs)
     if key == 'user_data_dir': return appdirs.user_data_dir(**dkey, **kwargs)
     if key == 'user_log_dir': return appdirs.user_log_dir(**dkey, **kwargs)
-    if key == 'user_cwd': return cwd()
-    if key == 'user_home': return home()
+    if key == 'cwd': return cwd()
+    if key == 'home': return home()
     if key == 'site_config_dir':
         return appdirs.site_config_dir(**dkey, **kwargs)
     if key == 'site_data_dir':
@@ -158,8 +116,16 @@ def get(key: str, appname: Optional[str] = None,
 
     return None
 
-def clean(fname: str) -> str:
-    """Get cleaned filename."""
+def clear(fname: str) -> str:
+    """Clear filename from invalid characters.
+
+    Args:
+        fname (str):
+
+    Returns:
+        String containing valid path syntax.
+
+    """
 
     import string
 
@@ -168,58 +134,194 @@ def clean(fname: str) -> str:
 
     return fname
 
-def joinpath(*args: TreeOfStr) -> Optional[str]:
-    """Join path.
+def join(*args: PathLike) -> str:
+    """Join and normalize path like structure.
 
     Args:
-        *args (TreeOfStr): Tree of strings which can be joined to a path.
+        *args (PathLike): Path like structure, which is given by a tree of
+            strings, which can be joined to a path.
 
     Returns:
-        String containing valid path.
+        String containing valid path syntax.
 
     Examples:
-        >>> joinpath('%user_config_dir%', 'nemoa.ini')
-        [0, 1, 2, 3]
+        >>> join(('a', ('b', 'c')), 'd')
+        'a\\b\\c\\d'
 
     """
 
-    # flatten tuple of tuples etc. to flat path list
-    # and join list using os path seperators
-    path = args
-    if isinstance(path, (list, tuple)):
-        path = list(path)
+    # flatten tree of strings to list and join list using os path seperators
+    if len(args) == 0: return ''
+    if len(args) == 1 and isinstance(args[0], str): path = args[0]
+    else:
+        l = list(args)
         i = 0
-        while i < len(path):
-            while isinstance(path[i], (list, tuple)):
-                if not path[i]:
-                    path.pop(i)
+        while i < len(l):
+            while isinstance(l[i], (list, tuple)):
+                if not l[i]:
+                    l.pop(i)
                     i -= 1
                     break
-                else: path[i:i + 1] = path[i]
+                else: l[i:i + 1] = l[i]
             i += 1
-        try:
-            path = os.path.sep.join(list(path))
+        try: path = os.path.sep.join(list(l))
         except Exception as e:
-            raise ValueError("argument 'path' is not valid")
-
-    return path
-
-def normpath(*args: TreeOfStr) -> str:
-    """Get normalized path.
-
-    Args:
-        *args (TreeOfStr): Tree of strings which can be joined to a path.
-
-    Returns:
-        String containing normalized path.
-
-    """
-
-    path = joinpath(*args)
+            raise ValueError("Path like tree structure is not valid") from e
     if not path: return ''
 
-    path = os.path.expanduser(path)
-    path = os.path.expandvars(path)
+    # normalize path
     path = os.path.normpath(path)
 
     return path
+
+def expand(*args: PathLike, udict: PathLikeDict = {}, expapp: bool = True,
+    expenv: bool = True) -> str:
+    """Iteratively expand path variables.
+
+    Args:
+        *args (PathLike): Path like structure, which is given by a tree of
+            strings, which can be joined to a path.
+        udict (PathLikeDict, optional): dictionary for user variables.
+            Thereby the keys in the dictionary are encapsulated
+            by the symbol '%'. The user variables may also include references.
+        expapp (bool, optional): determines if application path variables are
+            expanded. For a full list of valid application variables see
+            nemoa.common.ospath.get. Default is True
+        expenv (bool, optional): determines if environmental path variables are
+            expanded. For a full list of valid application variables see
+            nemoa.common.ospath.get. Default is True
+
+    Returns:
+        String containing valid path syntax.
+
+    Examples:
+        >>> .expand('%var1%/c', 'd', udict = {'var1': 'a/%var2%', 'var2': 'b'})
+        'a\\b\\c\\d'
+
+     """
+
+    import sys
+
+    path = join(*args)
+
+    # create dictionary with variables
+    d = udict.copy()
+    for key, val in d.items(): d[key] = join(val)
+    if expapp:
+        dkey = {'appname': 'nemoa', 'appauthor': 'Froot'}
+        for key in ['user_cache_dir', 'user_config_dir', 'user_data_dir',
+            'user_log_dir', 'home', 'cwd', 'site_config_dir', 'site_data_dir']:
+            d[key] = get(key, **dkey)
+
+    # itereratively expand variables in path
+    update = True
+    i = 0
+    limit = sys.getrecursionlimit()
+    while update:
+        update = False
+        for key, val in list(d.items()):
+            if '%' + key + '%' not in path: continue
+            try: path = path.replace('%' + key + '%', val)
+            except TypeError: del d[key]
+            update = True
+        i += 1
+        if i > limit:
+            raise RecursionError('cyclic dependency in variables detected')
+        path = os.path.normpath(path)
+
+    # expand environmental paths
+    if not expenv: return path
+    path = os.path.expanduser(path)
+    path = os.path.expandvars(path)
+
+    return path
+
+def dirname(*args: PathLike) -> str:
+    """Extract directory name from a path like structure.
+
+    Args:
+        *args (PathLike): Path like structure, given by a tree of strings,
+            which can be joined to a path.
+
+    Returns:
+        String containing normalized directory path of file.
+
+    Examples:
+        >>> dirname(('a', ('b', 'c')), 'base.ext')
+        'a\\b\\c'
+
+    """
+
+    path = expand(*args)
+    if os.path.isdir(path): return path
+    name = os.path.dirname(path)
+
+    return name
+
+def filename(*args: PathLike) -> str:
+    """Extract file name from a path like structure.
+
+    Args:
+        *args (PathLike): Path like structure, given by a tree of strings,
+            which can be joined to a path.
+
+    Returns:
+        String containing normalized directory path of file.
+
+    Examples:
+        >>> filename(('a', ('b', 'c')), 'base.ext')
+        'base.ext'
+
+    """
+
+    path = expand(*args)
+    if os.path.isdir(path): return ''
+    name = os.path.filename(path)
+
+    return name
+
+def basename(*args: PathLike) -> str:
+    """Extract file basename from a path like structure.
+
+    Args:
+        *args (PathLike): Path like structure, given by a tree of strings,
+            which can be joined to a path.
+
+    Returns:
+        String containing basename of file.
+
+    Examples:
+        >>> filename(('a', ('b', 'c')), 'base.ext')
+        'base'
+
+    """
+
+    path = expand(*args)
+    if os.path.isdir(path): return ''
+    name = os.path.basename(path)
+    base = os.path.splitext(name)[0].rstrip('.')
+
+    return base
+
+def fileext(*args: PathLike) -> str:
+    """Fileextension of file.
+
+    Args:
+        *args (PathLike): Path like structure, given by a tree of strings,
+            which can be joined to a path.
+
+    Returns:
+        String containing fileextension of file.
+
+    Examples:
+        >>> fileext(('a', ('b', 'c')), 'base.ext')
+        'ext'
+
+    """
+
+    path = expand(*args)
+    if os.path.isdir(path): return ''
+    name = os.path.basename(path)
+    ext = os.path.splitext(name)[1].lstrip('.')
+
+    return ext
