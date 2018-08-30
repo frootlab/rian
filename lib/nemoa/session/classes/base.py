@@ -223,17 +223,18 @@ class Session:
             raise ValueError("""could not get workspaces:
                 unknown workspace base '%s'.""" % base)
 
-        basepath = self._config['default']['basepath'][base]
-        baseglob = self._get_path_expand((basepath, '*'))
-
         import glob
         import os
+        from nemoa.common import ospath
+
+        basepath = self._config['default']['basepath'][base]
+        baseglob = self._get_path_expand((basepath, '*'))
 
         workspaces = []
         fname = self._config['default']['path']['inifile'][-1]
         for subdir in glob.iglob(baseglob):
             if not os.path.isdir(subdir): continue
-            fpath = nemoa.common.ospath.get_valid_path(subdir, fname)
+            fpath = ospath.get_valid_path(subdir, fname)
             if not os.path.isfile(fpath): continue
             workspaces.append(os.path.basename(subdir))
 
@@ -406,8 +407,9 @@ class Session:
         """
 
         import os
+        from nemoa.common import ospath
 
-        path = nemoa.common.ospath.get_norm_path(args)
+        path = ospath.normalize(args)
         check = kwargs.get('check', False)
         create = kwargs.get('create', False)
 
@@ -416,17 +418,17 @@ class Session:
         replace = {
             'workspace': self._get_workspace(),
             'base': self._get_base(),
-            'basepath': nemoa.common.ospath.get_norm_path(
+            'basepath': ospath.normalize(
                 self._config['default']['basepath'][base]) }
         for key, val in self._config['default']['basepath'].items():
-            replace[key] = nemoa.common.ospath.get_norm_path(val)
+            replace[key] = ospath.normalize(val)
         for key, val in self._config['current']['path'].items():
-            replace[key] = nemoa.common.ospath.get_norm_path(val)
+            replace[key] = ospath.normalize(val)
         for key in ['user_cache_dir', 'user_config_dir',
             'user_data_dir', 'user_log_dir', 'user_cwd',
             'site_config_dir', 'site_data_dir']:
-            replace[key] = nemoa.common.ospath.getstorage(
-                key, appname = 'nemoa', appauthor = 'Froot')
+            replace[key] = ospath.get(key, appname = 'nemoa',
+                appauthor = 'Froot')
 
         update = True
         while update:
@@ -799,6 +801,7 @@ class Session:
         """Scan workspace for files."""
 
         import glob
+        from nemoa.common import ospath
 
         # change current base and workspace (if necessary)
         cur_workspace = self._get_workspace()
@@ -832,9 +835,9 @@ class Session:
             # scan for files
             objregister = self._config['register'][objtype]
             for filepath in glob.iglob(filemask):
-                filetype = nemoa.common.ospath.fileext(filepath)
+                filetype = ospath.fileext(filepath)
                 if filetype not in filetypes: continue
-                basename = nemoa.common.ospath.basename(filepath)
+                basename = ospath.basename(filepath)
                 filespace = self._get_workspace()
                 filebase = self._get_base()
                 fullname = '%s.%s.%s' % (filebase, filespace, basename)

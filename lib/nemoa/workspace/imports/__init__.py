@@ -27,6 +27,7 @@ def load(arg, base = None, filetype = None, **kwargs):
     """Import workspace dictionary from file or workspace."""
 
     import os
+    from nemoa.common import ospath
 
     if os.path.isfile(arg):
         path = arg
@@ -39,8 +40,7 @@ def load(arg, base = None, filetype = None, **kwargs):
 
     # get filtype from file extension if not given
     # and check if filetype is supported
-    if not filetype:
-        filetype = nemoa.common.ospath.fileext(path).lower()
+    if not filetype: filetype = ospath.fileext(path).lower()
     if filetype not in filetypes():
         raise ValueError("""could not import workspace:
             filetype '%s' is not supported.""" % filetype)

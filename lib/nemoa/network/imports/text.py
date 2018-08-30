@@ -16,8 +16,10 @@ def filetypes():
 def load(path, **kwargs):
     """Import network from text file."""
 
+    from nemoa.common import ospath
+
     # extract filetype from path
-    filetype = nemoa.common.ospath.fileext(path).lower()
+    filetype = ospath.fileext(path).lower()
 
     # test if filetype is supported
     if filetype not in filetypes():
@@ -66,7 +68,7 @@ class Ini:
 
     def _parse_layer_network(self, path):
 
-        from nemoa.common import ioini
+        from nemoa.common import ioini, ospath
 
         structure = {
             'network': {
@@ -105,8 +107,7 @@ class Ini:
         del config['layers']
 
         # name
-        if 'name' not in config:
-            config['name'] = nemoa.common.ospath.basename(path)
+        if 'name' not in config: config['name'] = ospath.basename(path)
 
         # directed
         if 'directed' not in config: config['directed'] = True

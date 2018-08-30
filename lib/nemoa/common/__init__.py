@@ -5,7 +5,6 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa.common.decorators
-import nemoa.common.ospath
 import nemoa.common.ostype
 import nemoa.common.plot
 import nemoa.common.recarray

@@ -16,8 +16,10 @@ def filetypes():
 def load(path, **kwargs):
     """Import system from text file."""
 
+    from nemoa.common import ospath
+
     # extract filetype from path
-    filetype = nemoa.common.ospath.fileext(path).lower()
+    filetype = ospath.fileext(path).lower()
 
     # test if filetype is supported
     if filetype not in filetypes():
@@ -48,7 +50,7 @@ class Ini:
 
         """
 
-        from nemoa.common import ioini
+        from nemoa.common import ioini, ospath
 
         # import ini file to dictionary, using ini file structure
         # described with regular expressions
@@ -68,8 +70,7 @@ class Ini:
         config = system['system'].copy()
 
         # update / set name
-        if 'name' not in config:
-            config['name'] = nemoa.common.ospath.basename(path)
+        if 'name' not in config: config['name'] = ospath.basename(path)
 
         # update / set optimization schedules
         schedules = {}

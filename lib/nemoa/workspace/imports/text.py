@@ -15,8 +15,10 @@ def filetypes():
 def load(path, **kwargs):
     """Import workspace from text file."""
 
+    from nemoa.common import ospath
+
     # extract filetype from path
-    filetype = nemoa.common.ospath.fileext(path).lower()
+    filetype = ospath.fileext(path).lower()
 
     # test if filetype is supported
     if filetype not in filetypes():

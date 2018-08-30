@@ -54,27 +54,20 @@ def save(network, path = None, filetype = None, workspace = None,
         raise ValueError("""could not export network to file:
             network is not valid.""")
 
+    from nemoa.common import ospath
+
     # get directory, filename and fileextension
     if isinstance(workspace, str) and not workspace == 'None':
-        directory = nemoa.path('networks',
-            workspace = workspace, base = base)
+        directory = nemoa.path('networks', workspace = workspace, base = base)
+    elif isinstance(path, str): directory = ospath.dirname(path)
+    else: directory = ospath.dirname(network.path)
+    if isinstance(path, str): name = ospath.basename(path)
+    else: name = network.fullname
+    if isinstance(filetype, str): fileext = filetype
     elif isinstance(path, str):
-        directory = nemoa.common.ospath.directory(path)
-    else:
-        directory = nemoa.common.ospath.directory(network.path)
-    if isinstance(path, str):
-        name = nemoa.common.ospath.basename(path)
-    else:
-        name = network.fullname
-    if isinstance(filetype, str):
-        fileext = filetype
-    elif isinstance(path, str):
-        fileext = nemoa.common.ospath.fileext(path)
-        if not fileext:
-            fileext = nemoa.common.ospath.fileext(network.path)
-    else:
-        fileext = nemoa.common.ospath.fileext(network.path)
-    path = nemoa.common.ospath.joinpath(directory, name, fileext)
+        fileext = ospath.fileext(path) or ospath.fileext(network.path)
+    else: fileext = ospath.fileext(network.path)
+    path = ospath.joinpath(directory, name, fileext)
 
     # get filetype from file extension if not given
     # and test if filetype is supported

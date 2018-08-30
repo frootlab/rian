@@ -218,13 +218,14 @@ class Metadata:
 
         """
 
+        from nemoa.common import ospath
+
         module = self.__module__.split('.')[1]
         fileext = nemoa.get('default', 'filetype', module)
-        path = nemoa.path(module + 's') or nemoa.common.ospath.getcwd()
-        filename = '%s.%s' % (nemoa.common.ospath.get_clean_filename(
-            self._get_fullname()), fileext)
+        path = nemoa.path(module + 's') or ospath.cwd()
+        filename = '%s.%s' % (ospath.clean(self._get_fullname()), fileext)
 
-        return nemoa.common.ospath.get_norm_path(path, filename)
+        return ospath.normalize(path, filename)
 
     def _get_type(self):
         """Get instance type, using module name and class name.

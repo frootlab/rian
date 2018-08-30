@@ -17,8 +17,10 @@ def filetypes():
 def load(path, **kwargs):
     """Import dataset from text file."""
 
+    from nemoa.common import ospath
+
     # get extract filetype from file extension
-    filetype = nemoa.common.ospath.fileext(path).lower()
+    filetype = ospath.fileext(path).lower()
 
     # test if filetype is supported
     if filetype not in filetypes():
@@ -48,7 +50,7 @@ class Csv:
 
         """
 
-        from nemoa.common import iocsv, ioini
+        from nemoa.common import iocsv, ioini, ospath
 
         # get config from csv header
         header = iocsv.get_header(path)
@@ -71,7 +73,7 @@ class Csv:
 
         if 'name' in config: name = config['name']
         else:
-            name = nemoa.common.ospath.basename(path)
+            name = ospath.basename(path)
             config['name'] = name
         if 'type' not in config: config['type'] = 'base.Dataset'
 

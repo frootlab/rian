@@ -42,27 +42,21 @@ def save(system, path = None, filetype = None, workspace = None,
         raise ValueError("""could not export system to file:
             system is not valid.""")
 
+    from nemoa.common import ospath
+
     # get directory, filename and fileextension
     if isinstance(workspace, str) and not workspace == 'None':
         directory = nemoa.path('systems',
             workspace = workspace, base = base)
+    elif isinstance(path, str): directory = ospath.dirname(path)
+    else: directory = ospath.dirname(system.path)
+    if isinstance(path, str): name = ospath.basename(path)
+    else: name = system.fullname
+    if isinstance(filetype, str): fileext = filetype
     elif isinstance(path, str):
-        directory = nemoa.common.ospath.directory(path)
-    else:
-        directory = nemoa.common.ospath.directory(system.path)
-    if isinstance(path, str):
-        name = nemoa.common.ospath.basename(path)
-    else:
-        name = system.fullname
-    if isinstance(filetype, str):
-        fileext = filetype
-    elif isinstance(path, str):
-        fileext = nemoa.common.ospath.fileext(path)
-        if not fileext:
-            fileext = nemoa.common.ospath.fileext(system.path)
-    else:
-        fileext = nemoa.common.ospath.fileext(system.path)
-    path = nemoa.common.ospath.joinpath(directory, name, fileext)
+        fileext = ospath.fileext(path) or ospath.fileext(system.path)
+    else: fileext = ospath.fileext(system.path)
+    path = ospath.joinpath(directory, name, fileext)
 
     # get filetype from file extension if not given
     # and test if filetype is supported

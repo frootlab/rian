@@ -17,7 +17,7 @@ def basename(path):
 
     import os
 
-    filename = os.path.basename(get_norm_path(path))
+    filename = os.path.basename(normalize(path))
     filebasename = os.path.splitext(filename)[0].rstrip('.')
 
     return filebasename
@@ -55,7 +55,7 @@ def copytree(src, tgt):
     return retval
 
 
-def directory(path):
+def dirname(path):
     """Get directory path of file or directory.
 
     Args:
@@ -68,7 +68,7 @@ def directory(path):
 
     import os
 
-    return os.path.dirname(get_norm_path(path))
+    return os.path.dirname(normalize(path))
 
 def fileext(path):
     """Get extension of file.
@@ -83,12 +83,12 @@ def fileext(path):
 
     import os
 
-    filename = os.path.basename(get_norm_path(path))
+    filename = os.path.basename(normalize(path))
     ext = os.path.splitext(filename)[1].lstrip('.')
 
     return ext
 
-def getcwd():
+def cwd():
     """Get path of current working directory.
 
     Returns:
@@ -100,7 +100,7 @@ def getcwd():
 
     return os.getcwd() + os.path.sep
 
-def gethome():
+def home():
     """Get path to current users home directory.
 
     Returns:
@@ -112,7 +112,7 @@ def gethome():
 
     return os.path.expanduser('~')
 
-def getstorage(name, *args, **kwargs):
+def get(name, *args, **kwargs):
     """Get paths to storage directories.
 
     This function maps generic names of storage directory to platform
@@ -152,8 +152,7 @@ def getstorage(name, *args, **kwargs):
         return appdirs.user_data_dir(*args, **kwargs)
     elif name == 'user_log_dir':
         return appdirs.user_log_dir(*args, **kwargs)
-    elif name == 'user_cwd':
-        return getcwd()
+    elif name == 'user_cwd': return cwd()
     elif name == 'site_config_dir':
         return appdirs.site_config_dir(*args, **kwargs)
     elif name == 'site_data_dir':
@@ -183,7 +182,7 @@ def joinpath(directory, name, extension):
 
     return path
 
-def get_clean_filename(text):
+def clean(text):
     """Get cleaned filename."""
 
     import string
@@ -230,7 +229,7 @@ def get_valid_path(*args):
 
     return path
 
-def get_norm_path(*args):
+def normalize(*args):
     """Get normalized path.
 
     Args:
