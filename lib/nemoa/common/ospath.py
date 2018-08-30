@@ -11,12 +11,18 @@ from typing import Any, Dict, Optional, Union
 PathLike = Union['PathLike', tuple, list, str]
 PathLikeDict = Dict[str, PathLike]
 
-def copytree(sdir: str, tdir: str) -> bool:
-    """Copy sub directories from given source directory to target directory.
+#
+# File operations
+#
+
+def cp(source: PathLike, target: PathLike) -> bool:
+    """Copy sub directories from given source to destination directory.
 
     Args:
-        sdir (string): path of source directory
-        tdir (string): path of target directory
+        source (PathLike): Path like structure, which comprises the
+            path of a source folder
+        target (PathLike): Path like structure, which comprises the
+            path of a destination folder
 
     Returns:
         True if the operation was successful.
@@ -26,14 +32,60 @@ def copytree(sdir: str, tdir: str) -> bool:
     import glob
     import shutil
 
-    for s in glob.glob(os.path.join(sdirc, '*')):
-        t = os.path.join(tdir, basename(s))
+    sdir, ddir = expand(source), expand(target)
+
+    for s in glob.glob(os.path.join(sdir, '*')):
+        t = os.path.join(ddir, basename(s))
         if os.path.exists(t): shutil.rmtree(t)
         try: shutil.copytree(s, t)
         except Exception as e:
-            raise OSError("Could not copy directory")
+            raise OSError("could not copy directory") from e
 
     return True
+
+def mkdir(*args: PathLike) -> bool:
+    """Create directory.
+
+    Args:
+        *args (PathLike): Path like structure, which comprises the path of
+            a new directory
+
+    Returns:
+        True if the directory already exists, or the operation was successful.
+
+    """
+
+    path = expand(*args)
+    if os.path.isdir(path): return True
+
+    try: os.makedirs(path)
+    except Exception as e:
+        raise OSError("could not create directory") from e
+
+    return os.path.isdir(path)
+
+def rmdir(*args: PathLike) -> bool:
+    """Remove directory.
+
+    Args:
+        *args (PathLike): Path like structure, which identifies the path of
+            a directory
+
+    Returns:
+        True if the directory could be deleted
+
+    """
+
+    import shutil
+
+    path = expand(*args)
+    if not os.path.isdir(path): return False
+
+    return shutil.rmtree(path, ignore_errors = True)
+
+#
+# Path information
+#
 
 def cwd() -> str:
     """Path of current working directory.
@@ -213,7 +265,7 @@ def expand(*args: PathLike, udict: PathLikeDict = {}, expapp: bool = True,
             'user_log_dir', 'home', 'cwd', 'site_config_dir', 'site_data_dir']:
             d[key] = get(key, **dkey)
 
-    # itereratively expand variables in path
+    # itereratively expand variables in user dictionary
     update = True
     i = 0
     limit = sys.getrecursionlimit()
@@ -253,6 +305,7 @@ def dirname(*args: PathLike) -> str:
     """
 
     path = expand(*args)
+
     if os.path.isdir(path): return path
     name = os.path.dirname(path)
 
@@ -275,6 +328,7 @@ def filename(*args: PathLike) -> str:
     """
 
     path = expand(*args)
+
     if os.path.isdir(path): return ''
     name = os.path.filename(path)
 
@@ -297,6 +351,7 @@ def basename(*args: PathLike) -> str:
     """
 
     path = expand(*args)
+
     if os.path.isdir(path): return ''
     name = os.path.basename(path)
     base = os.path.splitext(name)[0].rstrip('.')
@@ -320,6 +375,7 @@ def fileext(*args: PathLike) -> str:
     """
 
     path = expand(*args)
+
     if os.path.isdir(path): return ''
     name = os.path.basename(path)
     ext = os.path.splitext(name)[1].lstrip('.')

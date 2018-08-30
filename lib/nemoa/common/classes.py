@@ -100,8 +100,8 @@ class Metadata:
         if key == 'type':     return self._get_type()
         if key == 'version':  return self._get_version()
 
-        raise Warning("%s instance has no attribute '%r'."
-            % (self.__class__.__name__, key))
+        cname = self.__class__.__name__
+        raise Warning(f"{cname} instance has no attribute '{key}'")
 
     def _get_about(self):
         """Get a short description of the content of the resource.
@@ -208,7 +208,7 @@ class Metadata:
 
         return self._config.get('path', self._get_path_default())
 
-    def _get_path_default(self):
+    def _get_path_default(self) -> str:
         """Get default filepath.
 
         Path to a potential file containing or referencing the resource.
@@ -220,12 +220,13 @@ class Metadata:
 
         from nemoa.common import ospath
 
-        module = self.__module__.split('.')[1]
-        fileext = nemoa.get('default', 'filetype', module)
-        path = nemoa.path(module + 's') or ospath.cwd()
-        filename = '%s.%s' % (ospath.clean(self._get_fullname()), fileext)
+        mname = self.__module__.split('.')[1]
+        fext  = nemoa.get('default', 'filetype', mname)
+        dname = nemoa.path(mname + 's') or ospath.cwd()
+        fbase = ospath.clear(self._get_fullname())
+        path  = ospath.join(dname, fbase + '.' + fext)
 
-        return ospath.join(path, filename)
+        return path
 
     def _get_type(self):
         """Get instance type, using module name and class name.
