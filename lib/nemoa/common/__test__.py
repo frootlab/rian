@@ -21,6 +21,22 @@ class TestSuite(NmTestSuite):
             with self.subTest(function = f"path('{key}')"):
                 self.assertTrue(appinfo.path(key))
 
+    def test_common_array(self):
+        from nemoa.common import array
+
+        import numpy
+        a = numpy.array([[.1, -.9], [.3, .2], [-.4, -.9]])
+        t = lambda x, y: numpy.isclose(x.sum(), y, atol = 1e-3)
+
+        with self.subTest(function = "sumnorm"):
+            self.assertTrue(t(array.sumnorm(a), -1.6))
+
+        with self.subTest(function = "meannorm"):
+            self.assertTrue(t(array.meannorm(a), -0.5333))
+
+        with self.subTest(function = "devnorm"):
+            self.assertTrue(t(array.devnorm(a), 0.8129))
+
     def test_common_calc(self):
         from nemoa.common import calc
 
@@ -385,3 +401,14 @@ class TestSuite(NmTestSuite):
 
         with self.subTest(function = "osname"):
             self.assertTrue(sysinfo.osname())
+
+    def test_common_table(self):
+        from nemoa.common import table
+
+        import numpy
+
+        a = numpy.array([(1., 2), (3., 4)], dtype=[('x', float), ('y', int)])
+        b = numpy.array([('a'), ('b')], dtype=[('z', 'U4')])
+
+        with self.subTest(function = "addcols"):
+            self.assertTrue(table.addcols(a, b, 'z')['z'][0] == 'a')

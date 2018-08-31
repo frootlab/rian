@@ -477,7 +477,7 @@ class Session:
         osname = sysinfo.osname()
 
         # 2do define colors based on shell not on platform
-        if osname.casefold() == 'windows'.casefold() and mode != 'shell':
+        if osname.lower() == 'windows' and mode != 'shell':
             color = {'blue': '', 'yellow': '', 'red': '', 'green': '',
                 'default': '' }
         else:
