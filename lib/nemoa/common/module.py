@@ -11,7 +11,7 @@ def get_curname(frame: int = 0) -> str:
     """Get name of module, which calls this function.
 
     Args:
-        frame (integer, optional): Frame index relative to the current frame
+        frame (int, optional): Frame index relative to the current frame
             in the callstack, which is identified with 0. Negative values
             consecutively identify previous modules within the callstack.
             default: 0
@@ -40,10 +40,10 @@ def get_curname(frame: int = 0) -> str:
     return mname
 
 def get_caller_name(frame: int = 0) -> str:
-    """Get name of the caller, which calls this function.
+    """Get name of the callable, which calls this function.
 
     Args:
-        frame (integer, optional): Frame index relative to the current frame
+        frame (int, optional): Frame index relative to the current frame
             in the callstack, which is identified with 0. Negative values
             consecutively identify previous modules within the callstack.
             default: 0

@@ -12,26 +12,24 @@ def getpath(filepath = None):
 
     here = os.path.abspath(os.path.dirname(__file__))
 
-    if not filepath:
-        return here
-    elif isinstance(filepath, str):
-        return os.path.join(here, filepath)
-    elif isinstance(filepath, (tuple, list)):
+    if not filepath: return here
+    if isinstance(filepath, str): return os.path.join(here, filepath)
+    if isinstance(filepath, (tuple, list)):
         return os.path.join(here, os.path.sep.join(filepath))
-    else:
-        raise RuntimeError("Invalid filepath given")
+
+    raise RuntimeError(f"Invalid filepath {str(filepath)}")
 
 def install():
     """Setuptools based installation script."""
 
     import setuptools
-    import setuptools.command.install
+    from setuptools.command.install import install as Install
 
-    class NemoaCustomInstall(setuptools.command.install.install):
+    class NemoaCustomInstall(Install):
         """Customized setuptools install command."""
 
         def run(self):
-            setuptools.command.install.install.run(self)
+            Install.run(self)
 
             # run post installation script
             import subprocess
@@ -94,13 +92,12 @@ def install():
             'Operating System :: OS Independent',
             'License :: OSI Approved :: GPLv3',
             'Programming Language :: Python :: 3',
-            'Programming Language :: Python :: 3.3',
-            'Programming Language :: Python :: 3.4',
             'Programming Language :: Python :: 3.5',
 			'Programming Language :: Python :: 3.6'],
         'entry_points': {
             'console_scripts': [
-                'nemoa = nemoa.session.console:main'] }}
+                'nemoa = nemoa.session.console:main'] }
+    }
 
     # prepare dynamic package variables
     srcfile = (pkg['libdir'], pkg['name'], '__init__.py')
@@ -128,7 +125,8 @@ def install():
         extras_require   = pkg['extras_require'],
         entry_points     = pkg['entry_points'],
         cmdclass         = pkg['cmdclass'],
-        zip_safe         = False )
+        zip_safe         = False
+    )
 
 def postinstall():
     """Post installation script."""

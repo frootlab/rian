@@ -423,8 +423,7 @@ class Session:
         path = ospath.expand(path, udict = udict)
 
         # (optional) create directory
-        if create and not os.path.exists(os.path.dirname(path)):
-            os.makedirs(os.path.dirname(path))
+        if create: ospath.mkdir(path)
 
         # (optional) check path
         if check and not os.path.exists(path): return None
@@ -443,7 +442,7 @@ class Session:
         import logging
         import traceback
 
-        from nemoa.common import ostype, module
+        from nemoa.common import sysinfo, module
 
         mode = self._get_mode()
         obj = args[0]
@@ -475,7 +474,7 @@ class Session:
         else: return True
 
         # define colors (platform dependent workaround)
-        systype = ostype.systype()
+        systype = sysinfo.systype()
 
         # 2do define colors based on shell not on platform
         if systype == 'windows' and mode != 'shell': color = {'blue': '',

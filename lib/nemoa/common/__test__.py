@@ -10,6 +10,17 @@ from nemoa.common.unittest import TestSuite as NmTestSuite
 
 class TestSuite(NmTestSuite):
 
+    def test_common_appinfo(self):
+        from nemoa.common import appinfo
+
+        dapp = {'appname': 'nemoa', 'appauthor': 'Froot'}
+        keys = ['user_cache_dir', 'user_config_dir', 'user_data_dir',
+            'user_log_dir', 'site_config_dir', 'site_data_dir']
+
+        for key in keys:
+            with self.subTest(function = f"path('{key}')"):
+                self.assertTrue(appinfo.path(key))
+
     def test_common_calc(self):
         from nemoa.common import calc
 
@@ -323,23 +334,15 @@ class TestSuite(NmTestSuite):
         import tempfile
         import pathlib
 
-        temp = tempfile.tempdir
-
-        dapp = {'appname': 'nemoa', 'appauthor': 'Froot'}
-        lkey = ['user_cache_dir', 'user_config_dir', 'user_data_dir',
-            'user_log_dir', 'site_config_dir', 'site_data_dir']
         dname = str(pathlib.Path('a', 'b', 'c', 'd'))
         plike = (('a', ('b', 'c')), 'd', 'base.ext')
+        stdir = tempfile.TemporaryDirectory().name
 
         with self.subTest(function = "cwd"):
             self.assertTrue(ospath.cwd())
 
         with self.subTest(function = "home"):
             self.assertTrue(ospath.home())
-
-        for key in lkey:
-            with self.subTest(function = f"get('{key}'')"):
-                self.assertTrue(ospath.get(key, **dapp))
 
         with self.subTest(function = "clear"):
             self.assertTrue(ospath.clear('3/\nE{$5}.e') == '3E5.e')
@@ -366,11 +369,10 @@ class TestSuite(NmTestSuite):
             self.assertTrue(ospath.fileext(*plike) == 'ext')
 
         with self.subTest(function = "mkdir"):
-            dname = tempfile.TemporaryDirectory().name
-            self.assertTrue(ospath.mkdir(dname))
+            self.assertTrue(ospath.mkdir(stdir))
 
         with self.subTest(function = "rmdir"):
-            self.assertTrue(ospath.rmdir(dname))
+            self.assertTrue(ospath.rmdir(stdir))
 
         with self.subTest(function = "cp"):
             self.assertTrue(True)
