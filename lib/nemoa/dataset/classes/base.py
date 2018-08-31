@@ -1102,16 +1102,16 @@ class Dataset(Metadata):
                 else: names.append('%s.%i' % (col, counter[col]))
             formats = [redfmt[cid] for cid in select]
             dtype = numpy.dtype({'names': names, 'formats': formats})
-            array = redrec[redcols].view('<f8').reshape(
+            arr = redrec[redcols].view('<f8').reshape(
                 redrec.size, len(redcols))[:,select].copy().view(
                 type = numpy.recarray, dtype = dtype)
 
             if labels:
-                from nemoa.common import recarray
-                table_colsel = recarray.insert(array,
+                from nemoa.common import array
+                table_colsel = array.insert(arr,
                     self._tables[table], ['label'])
             else:
-                table_colsel = array
+                table_colsel = arr
 
         # row selection
         if '*:*' in rowfilter or source + ':*' in rowfilter:

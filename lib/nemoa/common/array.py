@@ -5,8 +5,12 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 try: import numpy
-except ImportError as e: raise ImportError(
-    "nemoa.common.array requires numpy: https://scipy.org") from e
+except ImportError as E: raise ImportError(
+    "nemoa.common.array requires numpy: https://scipy.org") from E
+
+#
+# numpy ndarray functions
+#
 
 def sumnorm(data, norm = 'S', axis = 0):
     """Sum of array.
@@ -110,3 +114,16 @@ def devnorm(data, norm = 'SD', axis = 0):
 
     raise ValueError("""could not calculate normed deviation:
         unsupported deviation norm '%s'""" % norm)
+
+#
+# numpy recarray functions
+#
+
+def insert(data, source, columns = None):
+    """Append columns from source to data."""
+
+    from numpy.lib import recfunctions
+
+    if not columns: columns = source.dtype.names
+    return recfunctions.rec_append_fields(data, columns,
+        [source[col] for col in columns])
