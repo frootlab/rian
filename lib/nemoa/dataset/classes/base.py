@@ -1087,7 +1087,6 @@ class Dataset(Metadata):
                 table_colsel = self._tables[table][colnames]
 
         else:
-
             if labels: datacols = colnames[1:]
             else: datacols = colnames
             redcols = sorted(set(datacols), key = datacols.index)
@@ -1108,8 +1107,8 @@ class Dataset(Metadata):
 
             if labels:
                 from nemoa.common import array
-                table_colsel = array.insert(arr,
-                    self._tables[table], ['label'])
+                table_colsel = array.add_columns(arr,
+                    self._tables[table], names = ['label'])
             else:
                 table_colsel = arr
 

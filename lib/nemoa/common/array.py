@@ -10,26 +10,26 @@ except ImportError as E: raise ImportError(
 
 from typing import Optional, Tuple, Union
 
-Array = numpy.ndarray
-Table = numpy.recarray
-Axis  = Optional[Union[int, Tuple[int]]]
+ndarray = numpy.ndarray
+recarray = numpy.recarray
+Axis = Optional[Union[int, Tuple[int]]]
 
 #
 # numpy ndarray functions
 #
 
-def sumnorm(a: Array, norm: str = 'S', axis: Axis = 0) -> Array:
+def sumnorm(a: ndarray, norm: str = 'S', axis: Axis = 0) -> ndarray:
     """Sum of array.
 
     Calculate sum of data along given axes, using a given norm.
 
     Args:
-        a (Array): Numpy array containing data
+        a (ndarray): Numpy array containing data
         norm (str, optional): Data mean norm
             'S': Sum of Values
             'SE': Sum of Errors / L1 Norm
             'SSE': Sum of Squared Errors
-            'RSSE': Root Sum of Squared Errors
+            'RSSE': Root Sum of Squared Errors / L2 Norm
         axis (None or int or tuple of ints, optional):
             Axis or axes along which a sum is performed.
 
@@ -54,7 +54,7 @@ def sumnorm(a: Array, norm: str = 'S', axis: Axis = 0) -> Array:
 
     raise ValueError(f"usupported norm '{norm}'")
 
-def meannorm(a: Array, norm: str = 'M', axis: Axis = 0) -> Array:
+def meannorm(a: ndarray, norm: str = 'M', axis: Axis = 0) -> ndarray:
     """Mean of data.
 
     Calculate mean of data along given axes, using a given norm.
@@ -90,13 +90,13 @@ def meannorm(a: Array, norm: str = 'M', axis: Axis = 0) -> Array:
 
     raise ValueError(f"unsupported norm '{norm}'")
 
-def devnorm(a: Array, norm: str = 'SD', axis: Axis = 0) -> Array:
+def devnorm(a: ndarray, norm: str = 'SD', axis: Axis = 0) -> ndarray:
     """Deviation of data.
 
     Calculate deviation of data along given axes, using a given norm.
 
     Args:
-        a (Array): Numpy array containing data
+        a (ndarray): Numpy array containing data
         norm (str, optional): Data deviation norm
             'SD': Standard Deviation of Values
             'SDE': Standard Deviation of Errors
@@ -126,12 +126,30 @@ def devnorm(a: Array, norm: str = 'SD', axis: Axis = 0) -> Array:
 # numpy recarray functions
 #
 
-def insert(t: Table, s: Table, columns: Optional[Tuple[str]] = None) -> Table:
-    """Append columns from source table to target table."""
+def add_columns(base: recarray, data: recarray,
+    names: Optional[Tuple[str]] = None) -> recarray:
+    """Add columns from source recarray to target recarray.
+
+    Wrapper function to numpy.lib.recfunctions.rec_append_fields:
+    https://www.numpy.org/devdocs/user/basics.rec.html
+
+    Args:
+        base (recarray): Numpy record array with table like data
+        data (recarray): Numpy record array storing the fields
+            to add to the base.
+        names (tuple of string or None, optional): String or sequence
+            of strings corresponding to the names of the new fields.
+
+    Returns:
+        Numpy record array containing the base array, as well as the
+        appended columns.
+
+    """
 
     from numpy.lib import recfunctions
 
     if not columns: columns = s.dtype.names
-    r = recfunctions.rec_append_fields(t, columns, [s[c] for c in columns])
+    extended = recfunctions.rec_append_fields(base, names,
+        [data[c] for c in names])
 
-    return r
+    return extended
