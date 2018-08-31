@@ -376,3 +376,12 @@ class TestSuite(NmTestSuite):
 
         with self.subTest(function = "cp"):
             self.assertTrue(True)
+
+    def test_common_sysinfo(self):
+        from nemoa.common import sysinfo
+
+        with self.subTest(function = "hostname"):
+            self.assertTrue(sysinfo.hostname())
+
+        with self.subTest(function = "osname"):
+            self.assertTrue(sysinfo.osname())
