@@ -8,17 +8,23 @@ try: import numpy
 except ImportError as E: raise ImportError(
     "nemoa.common.array requires numpy: https://scipy.org") from E
 
+from typing import Optional, Tuple, Union
+
+Array = numpy.ndarray
+Table = numpy.recarray
+Axis  = Optional[Union[int, Tuple[int]]]
+
 #
 # numpy ndarray functions
 #
 
-def sumnorm(data, norm = 'S', axis = 0):
+def sumnorm(a: Array, norm: str = 'S', axis: Axis = 0) -> Array:
     """Sum of array.
 
     Calculate sum of data along given axes, using a given norm.
 
     Args:
-        data (ndarray): Numpy array containing data
+        a (Array): Numpy array containing data
         norm (str, optional): Data mean norm
             'S': Sum of Values
             'SE': Sum of Errors / L1 Norm
@@ -28,32 +34,33 @@ def sumnorm(data, norm = 'S', axis = 0):
             Axis or axes along which a sum is performed.
 
     Returns:
-        Sum of data as ndarray
-        or False if given norm is not supported.
+        Sum of data as ndarray.
 
     """
 
     n = norm.upper()
 
     # Sum of Values (S)
-    if n == 'S': return numpy.sum(data, axis = axis)
+    if n == 'S': return numpy.sum(a, axis = axis)
+
     # Sum of Errors (SE) / L1-Norm (L1)
-    if n == 'SE': return numpy.sum(numpy.abs(data), axis = axis)
+    if n in ['SE', 'L1']: return numpy.sum(numpy.abs(a), axis = axis)
+
     # Sum of Squared Errors (SSE)
-    if n == 'SSE': return numpy.sum(data ** 2, axis = axis)
-    # Root Sum of Squared Errors (RSSE)
-    if n == 'RSSE': return numpy.sqrt(numpy.sum(data ** 2, axis = axis))
+    if n == 'SSE': return numpy.sum(a ** 2, axis = axis)
 
-    raise Warning("""could not calculate normed sum:
-        unsupported norm '%s'""" % norm)
+    # Root Sum of Squared Errors (RSSE) / L2-Norm (L2)
+    if n in ['RSSE', 'L2']: return numpy.sqrt(numpy.sum(a ** 2, axis = axis))
 
-def meannorm(data, norm = 'M', axis = 0):
+    raise ValueError(f"usupported norm '{norm}'")
+
+def meannorm(a: Array, norm: str = 'M', axis: Axis = 0) -> Array:
     """Mean of data.
 
     Calculate mean of data along given axes, using a given norm.
 
     Args:
-        data (ndarray): Numpy array containing data
+        a (ndarray): Numpy array containing data
         norm (str, optional): Data mean norm
             'M': Arithmetic Mean of Values
             'ME': Mean of Errors
@@ -64,32 +71,32 @@ def meannorm(data, norm = 'M', axis = 0):
 
     Returns:
         Mean of data as ndarray
-        or False if given norm is not supported.
 
     """
 
     n = norm.upper()
 
     # Mean of Values (M)
-    if n == 'M': return numpy.mean(data, axis = axis)
+    if n == 'M': return numpy.mean(a, axis = axis)
+
     # Mean of Errors (ME)
-    if n == 'ME': return numpy.mean(numpy.abs(data), axis = axis)
+    if n == 'ME': return numpy.mean(numpy.abs(a), axis = axis)
+
     # Mean of Squared Errors (MSE)
-    if n == 'MSE': return numpy.mean(data ** 2, axis = axis)
+    if n == 'MSE': return numpy.mean(a ** 2, axis = axis)
+
     # Root Mean of Squared Errors (RMSE) / L2-Norm
-    if n == 'RMSE':
-        return numpy.sqrt(numpy.mean(data ** 2, axis = axis))
+    if n == 'RMSE': return numpy.sqrt(numpy.mean(a ** 2, axis = axis))
 
-    raise ValueError("""could not calculate normed mean:
-        unsupported norm '%s'""" % norm)
+    raise ValueError(f"unsupported norm '{norm}'")
 
-def devnorm(data, norm = 'SD', axis = 0):
+def devnorm(a: Array, norm: str = 'SD', axis: Axis = 0) -> Array:
     """Deviation of data.
 
     Calculate deviation of data along given axes, using a given norm.
 
     Args:
-        data (ndarray): Numpy array containing data
+        a (Array): Numpy array containing data
         norm (str, optional): Data deviation norm
             'SD': Standard Deviation of Values
             'SDE': Standard Deviation of Errors
@@ -99,31 +106,32 @@ def devnorm(data, norm = 'SD', axis = 0):
 
     Returns:
         Deviation of data as ndarray
-        or False if given norm is not supported.
 
     """
 
     n = norm.upper()
 
     # Standard Deviation of Data (SD)
-    if n == 'SD': return numpy.std(data, axis = axis)
-    # Standard Deviation of Errors (SDE)
-    if n == 'SDE': return numpy.std(numpy.abs(data), axis = axis)
-    # Standard Deviation of Squared Errors (SDSE)
-    if n == 'SDSE': return numpy.std(data ** 2, axis = axis)
+    if n == 'SD': return numpy.std(a, axis = axis)
 
-    raise ValueError("""could not calculate normed deviation:
-        unsupported deviation norm '%s'""" % norm)
+    # Standard Deviation of Errors (SDE)
+    if n == 'SDE': return numpy.std(numpy.abs(a), axis = axis)
+
+    # Standard Deviation of Squared Errors (SDSE)
+    if n == 'SDSE': return numpy.std(a ** 2, axis = axis)
+
+    raise ValueError(f"unsupported norm '{norm}'")
 
 #
 # numpy recarray functions
 #
 
-def insert(data, source, columns = None):
-    """Append columns from source to data."""
+def insert(t: Table, s: Table, columns: Optional[Tuple[str]] = None) -> Table:
+    """Append columns from source table to target table."""
 
     from numpy.lib import recfunctions
 
-    if not columns: columns = source.dtype.names
-    return recfunctions.rec_append_fields(data, columns,
-        [source[col] for col in columns])
+    if not columns: columns = s.dtype.names
+    r = recfunctions.rec_append_fields(t, columns, [s[c] for c in columns])
+
+    return r
