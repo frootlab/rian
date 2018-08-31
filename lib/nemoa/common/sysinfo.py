@@ -7,9 +7,29 @@ __license__ = 'GPLv3'
 import platform
 
 def hostname() -> str:
-    """Hostname of system."""
+    """Hostname of the system.
+
+    Wrapper function to platform.node [1]
+    [1] https://docs.python.org/3/library/platform.html
+
+    Returns:
+        Returns the computer’s hostname. An empty string is returned
+        if the value cannot be determined.
+
+    """
+
     return platform.node()
 
 def osname() -> str:
-    """Name of OS of system."""
+    """Name of the Operating System.
+
+    Wrapper function to platform.system [1]
+    [1] https://docs.python.org/3/library/platform.html
+
+    Returns:
+        Returns the OS name, e.g. 'Linux', 'Windows', or 'Java'. An empty
+        string is returned if the value cannot be determined.
+
+    """
+
     return platform.system()
