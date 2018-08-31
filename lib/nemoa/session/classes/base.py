@@ -474,13 +474,15 @@ class Session:
         else: return True
 
         # define colors (platform dependent workaround)
-        systype = sysinfo.systype()
+        osname = sysinfo.osname()
 
         # 2do define colors based on shell not on platform
-        if systype == 'windows' and mode != 'shell': color = {'blue': '',
-            'yellow': '', 'red': '', 'green': '', 'default': '' }
-        else: color = {'blue': '\033[94m', 'yellow': '\033[93m',
-            'red': '\033[91m', 'green': '\033[92m', 'default': '\033[0m' }
+        if osname.casefold() == 'windows'.casefold() and mode != 'shell':
+            color = {'blue': '', 'yellow': '', 'red': '', 'green': '',
+                'default': '' }
+        else:
+            color = {'blue': '\033[94m', 'yellow': '\033[93m',
+                'red': '\033[91m', 'green': '\033[92m', 'default': '\033[0m' }
 
         # get loggers
         loggers = list(logging.Logger.manager.loggerDict.keys())

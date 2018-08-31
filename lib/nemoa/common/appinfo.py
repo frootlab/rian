@@ -69,9 +69,9 @@ def path(key: str, appname: Optional[str] = None,
     """
 
     try: import appdirs
-    except ImportError as e: raise ImportError(
-        "nemoa.common.appinfo requires appdirs: "
-        "http://github.com/ActiveState/appdirs") from e
+    except ImportError as E: raise ImportError(
+        "package appdirs is required: "
+        "https://pypi.org/project/appdirs/") from E
 
     # todo get appname, appauthor and version from functions
     dkey = {'appname': appname or 'nemoa', 'appauthor': appauthor or 'Froot',
