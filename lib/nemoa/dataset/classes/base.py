@@ -1107,7 +1107,8 @@ class Dataset(Metadata):
                 type = numpy.recarray, dtype = dtype)
 
             if labels:
-                table_colsel = nemoa.common.recarray.insert(array,
+                from nemoa.common import recarray
+                table_colsel = recarray.insert(array,
                     self._tables[table], ['label'])
             else:
                 table_colsel = array
