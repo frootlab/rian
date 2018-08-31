@@ -6,10 +6,10 @@ __license__ = 'GPLv3'
 
 import platform
 
-def hostname():
+def hostname() -> str:
     """Hostname of system."""
     return platform.node()
 
-def osname():
+def osname() -> str:
     """Name of OS of system."""
     return platform.system()
