@@ -132,15 +132,13 @@ def expand(*args: PathLike, udict: PathLikeDict = {}, expapp: bool = True,
     path = join(*args)
 
     # create dictionary with variables
-    d = udict.copy()
-    for key, val in d.items(): d[key] = join(val)
+    d = {}
+    if udict:
+        for key, val in udict.items(): d[key] = join(val)
     if expapp:
-        for key in ['user_cache_dir', 'user_config_dir', 'user_data_dir',
-            'user_log_dir', 'home', 'cwd', 'site_config_dir', 'site_data_dir']:
-            d[key] = appinfo.path(key)
+        for key, val in appinfo.path().items(): d[key] = val
     if expenv:
-        d['home'] = home()
-        d['cwd'] = cwd()
+        d['home'], d['cwd'] = home(), cwd()
 
     # itereratively expand variables in user dictionary
     update = True

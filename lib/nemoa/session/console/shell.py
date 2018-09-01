@@ -11,10 +11,8 @@ def main():
 
     try:
         import IPython
-    except ImportError:
-        raise ValueError(
-            "could not execute interactive nemoa shell: "
-            "ipython is required.")
+    except ImportError as E:
+        raise ImportError("IPython is required: https://ipython.org/") from E
 
     from IPython.core.interactiveshell import InteractiveShell
 
@@ -104,7 +102,11 @@ def main():
     os.system('cls' if os.name == 'nt' else 'clear')
     nemoa.set('mode', 'shell')
 
-    return IPython.embed(banner1 = 'nemoa %s\n' % nemoa.__version__)
+    from nemoa.common import appinfo
+    name = appinfo.get('name')
+    version = appinfo.get('version')
+
+    return IPython.embed(banner1 = f"{name} {version}\n")
 
 if __name__ == '__main__':
     main()

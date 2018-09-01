@@ -5,9 +5,6 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-def create(*args, **kwargs):
-    """Create new object instance from building script."""
-
 def get(*args, **kwargs):
     """Get meta information and content from current session."""
     return instance().get(*args, **kwargs)

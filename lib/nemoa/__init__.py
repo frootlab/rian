@@ -17,6 +17,7 @@ __copyright__   = 'Copyright 2013-2018, Patrick Michl'
 __author__      = 'Patrick Michl'
 __email__       = 'patrick.michl@gmail.com'
 __maintainer__  = 'Patrick Michl'
+__company__     = 'Froot'
 __credits__     = ['Willi Jäger', 'Rainer König']
 
 import nemoa.common

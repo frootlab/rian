@@ -6,49 +6,79 @@ __license__ = 'GPLv3'
 
 from typing import Any, Optional, Union
 
-def getvars(filepath = None):
-    """Get all __VARIABLE__ from given file."""
+def get(key: Optional['str'] = None,
+    path: Optional['str'] = None) -> Union[dict, str]:
+    """Get named application variable."""
 
+    if not 'vars' in globals(): _update_vars(path = path)
+
+    d = globals()['vars']
+    if not key: return d.copy()
+    if not isinstance(key, str):
+        raise TypeError(
+            "argument 'key' requires types 'str' or 'None', "
+            f"not '{type(key)}'")
+    if not key in d:
+        raise KeyError(f"key '{key}' is not valid")
+
+    return d[key]
+
+def _update_vars(path: Optional['str'] = None) -> bool:
+    """Update application variable from given file."""
+
+    if not path:
+
+        # use init script of current root module
+        from nemoa.common import module
+        name = module.get_curname().split('.')[0]
+        path = module.get_module(name).__file__
+
+    # read file content
     import io
+    with io.open(path, encoding = 'utf8') as f: content = f.read()
+
+    # parse content for module variables with regular expressions
     import re
+    rkey = """__([a-zA-Z][a-zA-Z0-9]*)__"""
+    rval = """['\"]([^'\"]*)['\"]"""
+    rexp = r"^[ ]*%s[ ]*=[ ]*%s" % (rkey, rval)
+    dvars = {}
+    for match in re.finditer(rexp, content, re.M):
+        dvars[str(match.group(1))] = str(match.group(2))
 
-    # get file content
-    path = getpath(filepath)
-    with io.open(path, encoding = 'utf8') as file_handler:
-        content = file_handler.read()
+    # supplement missing entries
+    if not 'name' in dvars:
 
-    # parse variables with regular expressions
-    key_regex = """__([a-zA-Z][a-zA-Z0-9]*)__"""
-    val_regex = """['\"]([^'\"]*)['\"]"""
-    regex = r"^[ ]*%s[ ]*=[ ]*%s" % (key_regex, val_regex)
-    variables = {}
-    for match in re.finditer(regex, content, re.M):
-        key = str(match.group(1))
-        val = str(match.group(2))
-        variables[key] = val
+        # use name of current root module
+        from nemoa.common import module
+        dvars['name'] = module.get_curname().split('.')[0]
 
-    return variables
+    globals()['vars'] = dvars
 
-def path(key: str, appname: Optional[str] = None,
+    return True
+
+def path(key: Optional[str] = None, appname: Optional[str] = None,
     appauthor: Optional[Union[str, bool]] = None,
     version: Optional[str] = None,
-    **kwargs: Any) -> Optional[str]:
-    """Path of application specific system directory.
+    **kwargs: Any) -> Optional[Union[dict, str]]:
+    """Get named application path.
 
     This function returns application specific system directories by platform
-    independent names to allow platform independent storage. This is a wrapper
-    function to the package 'appdirs' [1].
+    independent names to allow platform independent storage for caching,
+    logging, configuration and permanent data. This is a wrapper function to
+    the package 'appdirs':
 
-    [1] http://github.com/ActiveState/appdirs
+        http://github.com/ActiveState/appdirs
 
     Args:
-        key (string): Environmental directory key. Allowed values are:
-            'user_cache_dir' -- Cache directory of user
-            'user_config_dir' -- Configuration directory of user
-            'user_data_dir' -- Data directory of user
-            'user_log_dir' -- Logging directory of user
-            'site_config_dir' -- Site specific configuration directory
-            'site_data_dir' -- Site specific data directory
+        key (str or None, optional): Environmental directory key.
+            Allowed values are:
+                'user_cache_dir' -- Cache directory of user
+                'user_config_dir' -- Configuration directory of user
+                'user_data_dir' -- Data directory of user
+                'user_log_dir' -- Logging directory of user
+                'site_config_dir' -- Site specific configuration directory
+                'site_data_dir' -- Site specific data directory
         appname (str, optional): is the name of application.
             If None, just the system directory is returned.
         appauthor (str, optional): is the name of the appauthor or distributing
@@ -68,26 +98,44 @@ def path(key: str, appname: Optional[str] = None,
 
     """
 
-    try: import appdirs
-    except ImportError as E: raise ImportError(
-        "package appdirs is required: "
-        "https://pypi.org/project/appdirs/") from E
+    if not 'dirs' in globals():
+        _update_dirs(appname = appname, appauthor = appauthor,
+            version = version, **kwargs)
+    d = globals()['dirs']
+    if not key: return d.copy()
+    if not isinstance(key, str):
+        raise TypeError(
+            "argument 'key' requires types 'str' or 'None', "
+            f"not '{type(key)}'")
+    if not key in d:
+        raise KeyError(f"key '{key}' is not valid")
 
-    # todo get appname, appauthor and version from functions
-    dkey = {'appname': appname or 'nemoa', 'appauthor': appauthor or 'Froot',
-        'version': version}
+    return d[key]
 
-    if key == 'user_cache_dir':
-        return appdirs.user_cache_dir(**dkey, **kwargs)
-    if key == 'user_config_dir':
-        return appdirs.user_config_dir(**dkey, **kwargs)
-    if key == 'user_data_dir':
-        return appdirs.user_data_dir(**dkey, **kwargs)
-    if key == 'user_log_dir':
-        return appdirs.user_log_dir(**dkey, **kwargs)
-    if key == 'site_config_dir':
-        return appdirs.site_config_dir(**dkey, **kwargs)
-    if key == 'site_data_dir':
-        return appdirs.site_data_dir(**dkey, **kwargs)
+def _update_dirs(appname: Optional[str] = None,
+    appauthor: Optional[Union[str, bool]] = None, version: Optional[str] = None,
+    **kwargs: Any) -> bool:
+    """ """
 
-    return None
+    try:
+        from appdirs import AppDirs
+    except ImportError as E:
+        raise ImportError(
+            "package appdirs is required: "
+            "https://pypi.org/project/appdirs/") from E
+
+    app = {
+        'appname': appname or get('name'),
+        'appauthor': appauthor or get('company') or get('author'),
+        'version': version
+    }
+
+    Paths = AppDirs(**app, **kwargs)
+    d = {}
+    keys = ['user_cache_dir', 'user_config_dir', 'user_data_dir',
+        'user_log_dir', 'site_config_dir', 'site_data_dir']
+    for key in keys: d[key] = getattr(Paths, key)
+
+    globals()['dirs'] = d
+
+    return True

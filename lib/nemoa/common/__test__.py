@@ -13,13 +13,17 @@ class TestSuite(NmTestSuite):
     def test_common_appinfo(self):
         from nemoa.common import appinfo
 
-        dapp = {'appname': 'nemoa', 'appauthor': 'Froot'}
-        keys = ['user_cache_dir', 'user_config_dir', 'user_data_dir',
+        dirs = ['user_cache_dir', 'user_config_dir', 'user_data_dir',
             'user_log_dir', 'site_config_dir', 'site_data_dir']
+        vars = ['name', 'author', 'version', 'license']
 
-        for key in keys:
+        for key in dirs:
             with self.subTest(function = f"path('{key}')"):
                 self.assertTrue(appinfo.path(key))
+
+        for key in vars:
+            with self.subTest(function = f"get('{key}')"):
+                self.assertTrue(appinfo.get(key))
 
     def test_common_array(self):
         from nemoa.common import array
