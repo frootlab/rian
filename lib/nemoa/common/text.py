@@ -9,42 +9,70 @@ from typing import Any, Tuple, Optional
 def splitargs(text: str) -> Tuple[str]:
     """Return tuple with function name and function arguments."""
 
-    # check types
+    # Check Argument Types
     if not isinstance(text, str): raise TypeError(
         f"argument 'text' requires to be of type 'str', not '{type(text)}'")
 
-    if '(' not in text: return text, {}
-    name = text.split('(')[0]
-    args = asdict(text.lstrip(name).strip()[1:-1])
+    import ast
 
-    return name, args
+    tree = ast.parse(text)
 
-def astype(text: str, type: Optional[str] = None) -> Any:
+    # get function name
+    func = tree.body[0].value.func.id
+
+    # get list with arguments
+    Args = tree.body[0].value.args
+    args = tuple()
+    for Arg in Args:
+        typ = Arg._fields[0]
+        val = getattr(Arg, typ)
+        args += (val, )
+
+    # get dictionary with keywords
+    KwArgs = tree.body[0].value.keywords
+    kwargs = {}
+    for KwArg in KwArgs:
+        key = KwArg.arg
+        typ = KwArg.value._fields[0]
+        val = getattr(KwArg.value, typ)
+        kwargs[key] = val
+
+    return func, args, kwargs
+
+def astype(text: str, typ: Optional[str] = None) -> Any:
     """ """
 
-    # check types
+    # Check Argument Types
     if not isinstance(text, str): raise TypeError(
         f"argument 'text' requires to be of type 'str', not '{type(text)}'")
 
-    if type == 'bool': return text.lower().strip() == 'true'
-    if type == 'str': return text.strip().replace('\n', '')
-    if type == 'int': return int(text)
-    if type == 'float': return float(text)
-    if type == 'list': return aslist(text)
-    if type == 'tuple': return astuple(text)
-    if type == 'dict': return asdict(text)
+    # Automatic Types
+    if typ == None: return eval(text)
 
-    return None
+    # Basic Types
+    if typ == 'str': return text.strip().replace('\n', '')
+    if typ == 'bool': return text.lower().strip() == 'true'
+    if typ == 'int': return int(text)
+    if typ == 'float': return float(text)
+    if typ == 'complex': return complex(text)
+
+    # Composite Types
+    if typ == 'list': return aslist(text)
+    if typ == 'tuple': return astuple(text)
+    if typ == 'set': return asset(text)
+    if typ == 'dict': return asdict(text)
+
+    raise KeyError(f"type '{typ}' is not supported")
 
 def aslist(text: str, delim: str = ',') -> list:
     """Return list from given string."""
 
-    # check types
+    # Check Argument Types
     if not isinstance(text, str): raise TypeError(
         f"argument 'text' requires to be of type 'str', not '{type(text)}'")
 
-    # check if string is blank
-    if not text or not text.strip(): return []
+    # return empty list if string is blank
+    if not text or not text.strip(): return list()
 
     # try python internal syntax grammar
     l = None
@@ -53,7 +81,7 @@ def aslist(text: str, delim: str = ',') -> list:
         except: pass
     if isinstance(l, list): return l
 
-    # split string by delimiter
+    # use dialect "<value>, ..."
     l = [item.strip() for item in text.split(delim)]
 
     return l
@@ -61,12 +89,12 @@ def aslist(text: str, delim: str = ',') -> list:
 def astuple(text: str, delim: str = ',') -> tuple:
     """Return tuple from given string."""
 
-    # check types
+    # Check Argument Types
     if not isinstance(text, str): raise TypeError(
         f"argument 'text' requires to be of type 'str', not '{type(text)}'")
 
-    # check if string is valid and not blank
-    if not text or not text.strip(): return ()
+    # return empty tuple if string is blank
+    if not text or not text.strip(): return tuple()
 
     # try python internal syntax grammar
     t = None
@@ -75,15 +103,37 @@ def astuple(text: str, delim: str = ',') -> tuple:
         except: pass
     if isinstance(t, tuple): return t
 
-    # split string by delimiter
-    t = tuple([item.strip() for item in text.split(delim)])
+    # use dialect "<value>, ..."
+    l = [item.strip() for item in text.split(delim)]
 
-    return t
+    return tuple(l)
+
+def asset(text: str, delim: str = ',') -> list:
+    """Return set from given string."""
+
+    # Check Argument Types
+    if not isinstance(text, str): raise TypeError(
+        f"argument 'text' requires to be of type 'str', not '{type(text)}'")
+
+    # return empty set if string is blank
+    if not text or not text.strip(): return set()
+
+    # try python internal syntax grammar
+    s = None
+    if delim == ',':
+        try: s = set(eval(text))
+        except: pass
+    if isinstance(s, set): return s
+
+    # use dialect "<value>, ..."
+    l = [item.strip() for item in text.split(delim)]
+
+    return set(l)
 
 def asdict(text: str, delim: str = ',') -> dict:
     """Return dictionary from given string in ini format."""
 
-    # check types
+    # Check Argument Types
     if not isinstance(text, str): raise TypeError(
         f"argument 'text' requires to be of type 'str', not '{type(text)}'")
 
@@ -104,7 +154,7 @@ def asdict(text: str, delim: str = ',') -> dict:
     try: l = Terms.parseString(text.strip('{}'))
     except: l = None
 
-    # try dictionary dialect "<key>: <value>, ..."
+    # try dictionary dialect "'<key>': <value>, ..."
     if not l:
         Term = pp.Group(Str + ':' + Val)
         Terms = Term + pp.ZeroOrMore(delim + Term)

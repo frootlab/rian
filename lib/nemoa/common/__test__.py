@@ -416,3 +416,39 @@ class TestSuite(unittest.TestSuite):
 
         with self.subTest(function = "addcols"):
             self.assertTrue(table.addcols(a, b, 'z')['z'][0] == 'a')
+
+    def test_common_text(self):
+        from nemoa.common import text
+
+        l = [('t', 'str'), (True, 'bool'), (1, 'int'), (.5, 'float'),
+            ((1+1j), 'complex')]
+
+        with self.subTest(function = "splitargs"):
+            test = text.splitargs("f(1., 'a', b = 2)") \
+                == ('f', (1.0, 'a'), {'b': 2})
+            self.assertTrue(test)
+
+        with self.subTest(function = "aslist"):
+            test = text.aslist('a, 2, ()') == ['a', '2', '()'] \
+                and text.aslist('[1, 2, 3]') == [1, 2, 3]
+            self.assertTrue(test)
+
+        with self.subTest(function = "astuple"):
+            test = text.astuple('a, 2, ()') == ('a', '2', '()') \
+                and text.astuple('(1, 2, 3)') == (1, 2, 3)
+            self.assertTrue(test)
+
+        with self.subTest(function = "asset"):
+            test = text.asset('a, 2, ()') == {'a', '2', '()'} \
+                and text.asset('{1, 2, 3}') == {1, 2, 3}
+            self.assertTrue(test)
+
+        with self.subTest(function = "asdict"):
+            test = text.asdict("a = 'b', b = 1") == {'a': 'b', 'b': 1} \
+                and text.asdict("'a': 'b', 'b': 1") == {'a': 'b', 'b': 1}
+            self.assertTrue(test)
+
+        for var, typ in l:
+            with self.subTest(function = f"astype({str(var)}, {typ})"):
+                test = text.astype(str(var), typ) == var
+                self.assertTrue(test)
