@@ -152,7 +152,7 @@ class Network(metadata.BaseClassIP):
                 else:
                     node_name = layer + ':' + node
 
-                # if node is allready known, do not add node
+                # if node is already known, do not add node
                 if node_name in self._graph.nodes(): continue
 
                 # create dictionary with node parameters
