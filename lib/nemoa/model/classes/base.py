@@ -8,9 +8,9 @@ import nemoa
 import copy
 import os
 
-from nemoa.common.classes import Metadata
+from nemoa.common import metadata
 
-class Model(Metadata):
+class Model(metadata.BaseClassIP):
     """Model base class.
 
     Attributes:

@@ -7,9 +7,9 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-from nemoa.common.classes import Metadata
+from nemoa.common import metadata
 
-class Dataset(Metadata):
+class Dataset(metadata.BaseClassIP):
     """Dataset base class.
 
     Attributes:

@@ -8,10 +8,9 @@ import nemoa
 import numpy
 import copy
 
-from nemoa.common.classes import Metadata
-from nemoa.common import calc
+from nemoa.common import calc, metadata
 
-class System(Metadata):
+class System(metadata.BaseClassIP):
     """System base class.
 
     Attributes:

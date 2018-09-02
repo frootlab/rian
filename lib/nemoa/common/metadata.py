@@ -6,11 +6,11 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-class Metadata:
-    """Base class for classes with metadata.
+class BaseClassIP:
+    """Generic metadata base class for resources with intellectual property.
 
-    Classes like Dataset, Network, System or Model share common
-    descriptive metadata like author and license, as well as
+    Resources like datasets, networks, systems or models share common
+    descriptive metadata comprising author and license, as well as
     administrative metadata like branch and version. This base class is
     intended to provide a unified interface to access those attributes.
 
@@ -221,9 +221,9 @@ class Metadata:
         from nemoa.common import ospath
 
         mname = self.__module__.split('.')[1]
-        fext  = nemoa.get('default', 'filetype', mname)
         dname = nemoa.path(mname + 's') or ospath.cwd()
         fbase = ospath.clear(self._get_fullname())
+        fext  = nemoa.get('default', 'filetype', mname)
         path  = ospath.join(dname, fbase + '.' + fext)
 
         return path
