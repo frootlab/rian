@@ -133,11 +133,11 @@ class System(metadata.BaseClassIP):
     def _get_algorithms(self, category = None, attribute = None, tree = False):
         """Get algorithms provided by system."""
 
-        from nemoa.common.module import get_methods
+        from nemoa.common import module
 
         # get dictionary with all methods
         # with prefix '_get_' and attribute 'name'
-        methods = get_methods(self, prefix = '_get_', attribute = 'name')
+        methods = module.get_methods(self, prefix = '_get_', attribute = 'name')
 
         # filter algorithms by given category
         if category is not None:
@@ -159,7 +159,8 @@ class System(metadata.BaseClassIP):
             ('system', 'evaluation'): None,
             ('system', 'units', 'evaluation'): 'units',
             ('system', 'links', 'evaluation'): 'links',
-            ('system', 'relation', 'evaluation'): 'relation' }
+            ('system', 'relation', 'evaluation'): 'relation'
+        }
         for ukey, udata in methods.items():
             if udata['category'] not in categories: continue
             ckey = categories[udata['category']]

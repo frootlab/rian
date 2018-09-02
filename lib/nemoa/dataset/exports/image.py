@@ -75,7 +75,7 @@ class Heatmap(nemoa.common.plot.Heatmap):
 
     def create(self, dataset):
 
-        from nemoa.common.module import get_kwargs
+        from nemoa.common import module
 
         # set plot defaults
         self.set_default({
@@ -85,7 +85,7 @@ class Heatmap(nemoa.common.plot.Heatmap):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwargs = get_kwargs(func, self._config)
+        kwargs = module.get_kwargs(func, self._config)
         array  = dataset.evaluate(fname, **kwargs)
 
         # check return value
@@ -115,7 +115,7 @@ class Histogram(nemoa.common.plot.Histogram):
 
     def create(self, dataset):
 
-        from nemoa.common.module import get_kwargs
+        from nemoa.common import module
 
         # set plot defaults
         self.set_default({
@@ -125,7 +125,7 @@ class Histogram(nemoa.common.plot.Histogram):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwargs = get_kwargs(func, self._config)
+        kwargs = module.get_kwargs(func, self._config)
         array  = dataset.evaluate(fname, **kwargs)
 
         # check return value
@@ -152,7 +152,7 @@ class Scatter2D(nemoa.common.plot.Scatter2D):
 
     def create(self, dataset):
 
-        from nemoa.common.module import get_kwargs
+        from nemoa.common import module
 
         # set plot defaults
         self.set_default({
@@ -163,7 +163,7 @@ class Scatter2D(nemoa.common.plot.Scatter2D):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwargs = get_kwargs(func, self._config)
+        kwargs = module.get_kwargs(func, self._config)
         array  = dataset.evaluate(fname, **kwargs)
 
         # check return value
@@ -192,7 +192,7 @@ class Graph(nemoa.common.plot.Graph):
             "nemoa.dataset.exports.image.Graph() requires networkx: "
             "https://networkx.github.io")
 
-        from nemoa.common.module import get_kwargs
+        from nemoa.common import module
 
         # set plot defaults
         self.set_default({
@@ -207,7 +207,7 @@ class Graph(nemoa.common.plot.Graph):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwargs = get_kwargs(func, self._config)
+        kwargs = module.get_kwargs(func, self._config)
         array  = dataset.evaluate(fname, **kwargs)
 
         # check if evaluation yields valid relation

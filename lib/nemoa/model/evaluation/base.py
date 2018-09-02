@@ -38,11 +38,12 @@ class Evaluation:
     def _get_algorithms(self, category = None, attribute = None):
         """Get evaluation algorithms."""
 
+        from nemoa.common import module
+
         if 'algorithms' not in self._buffer: self._buffer['algorithms'] = {}
         algorithms = self._buffer['algorithms'].get(attribute, None)
         if not algorithms:
-            from nemoa.common.module import get_methods
-            algorithms = get_methods(self, renamekey = 'name',
+            algorithms = module.get_methods(self, renamekey = 'name',
                 grouping = 'category', attribute = attribute)
             self._buffer['algorithms'][attribute] = algorithms
         if category:

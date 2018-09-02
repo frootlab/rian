@@ -6,9 +6,9 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-from nemoa.common.unittest import TestSuite as NmTestSuite
+from nemoa.common import unittest
 
-class TestSuite(NmTestSuite):
+class TestSuite(unittest.TestSuite):
 
     def test_common_appinfo(self):
         from nemoa.common import appinfo
@@ -308,8 +308,8 @@ class TestSuite(NmTestSuite):
     def test_common_module(self):
         from nemoa.common import module
 
-        with self.subTest(function = "get_curname"):
-            test = module.get_curname() == 'nemoa.common.__test__'
+        with self.subTest(function = "curname"):
+            test = module.curname() == 'nemoa.common.__test__'
             self.assertTrue(test)
 
         with self.subTest(function = "get_submodules"):

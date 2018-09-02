@@ -30,7 +30,7 @@ def _update_vars(path: Optional['str'] = None) -> bool:
 
         # use init script of current root module
         from nemoa.common import module
-        name = module.get_curname().split('.')[0]
+        name = module.curname().split('.')[0]
         path = module.get_module(name).__file__
 
     # read file content
@@ -51,7 +51,7 @@ def _update_vars(path: Optional['str'] = None) -> bool:
 
         # use name of current root module
         from nemoa.common import module
-        dvars['name'] = module.get_curname().split('.')[0]
+        dvars['name'] = module.curname().split('.')[0]
 
     globals()['vars'] = dvars
 

@@ -602,10 +602,11 @@ class Dataset(metadata.BaseClassIP):
     def _get_algorithms(self, category = None, attribute = None, tree = False):
         """Get algorithms provided by dataset."""
 
+        from nemoa.common import module
+
         # get dictionary with all methods
         # with prefix '_get_' and attribute 'name'
-        from nemoa.common.module import get_methods
-        methods = get_methods(self, prefix = '_get_', attribute = 'name')
+        methods = module.get_methods(self, prefix = '_get_', attribute = 'name')
 
         # filter algorithms by given category
         if category is not None:
@@ -627,7 +628,8 @@ class Dataset(metadata.BaseClassIP):
             ('dataset', 'evaluation'): None,
             ('dataset', 'transformation'): None,
             ('dataset', 'columns', 'evaluation'): 'columns',
-            ('dataset', 'rows', 'evaluation'): 'rows' }
+            ('dataset', 'rows', 'evaluation'): 'rows'
+        }
         for ukey, udata in methods.items():
             if udata['category'] not in categories: continue
             ckey = categories[udata['category']]

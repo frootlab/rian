@@ -39,11 +39,11 @@ class Optimizer:
     def _get_algorithms(self, category = None, attribute = None):
         """Get optimization algorithms."""
 
-        from nemoa.common.module import get_methods
+        from nemoa.common import module
 
         algorithms = self._buffer['algorithms'].get(attribute, None)
         if not algorithms:
-            algorithms = get_methods(self,
+            algorithms = module.get_methods(self,
                 renamekey = 'name', grouping = 'category',
                 attribute = attribute)
             self._buffer['algorithms'][attribute] = algorithms

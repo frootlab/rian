@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 from types import FunctionType, ModuleType
 from typing import Optional
 
-def get_curname(frame: int = 0) -> str:
+def curname(frame: int = 0) -> str:
     """Get name of module, which calls this function.
 
     Args:
@@ -81,7 +81,7 @@ def get_submodules(minst: Optional[ModuleType] = None,
 
     """
 
-    if minst is None: minst = get_module(get_curname(-1))
+    if minst is None: minst = get_module(curname(-1))
     elif not isinstance(minst, ModuleType): raise TypeError(
         'First argument is required to be of ModuleType')
 
@@ -104,7 +104,7 @@ def get_submodules(minst: Optional[ModuleType] = None,
 def get_submodule(s: str) -> Optional[ModuleType]:
     """Get module instance, by name of current submodule."""
 
-    return get_module('.'.join([get_curname(-1), s]))
+    return get_module('.'.join([curname(-1), s]))
 
 def get_module(s: str) -> Optional[ModuleType]:
     """Get module instance for a given qualified module name."""
@@ -137,7 +137,7 @@ def get_functions(minst: Optional[ModuleType] = None, details: bool = False,
 
     """
 
-    if minst is None: minst = get_module(get_curname(-1))
+    if minst is None: minst = get_module(curname(-1))
     elif not isinstance(minst, ModuleType): raise TypeError(
         "first argument is required to be of ModuleType")
 
@@ -181,7 +181,7 @@ def locate_functions(minst: Optional[ModuleType] = None, recursive: bool = True,
     details: bool = False, filters: dict = {},  **kwargs):
     """Recursively search for functions within submodules."""
 
-    if minst is None: minst = get_module(get_curname(-1))
+    if minst is None: minst = get_module(curname(-1))
     elif not isinstance(minst, ModuleType): raise TypeError(
         "first argument is required to be of ModuleType")
 

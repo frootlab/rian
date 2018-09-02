@@ -337,9 +337,11 @@ class Network(metadata.BaseClassIP):
     def _get_algorithms(self, category = None, attribute = None):
         """Get algorithms provided by network."""
 
-        from nemoa.common.module import get_functions
-        funcs = get_functions(networkx.algorithms, details = True)
+        from nemoa.common import module
+
+        funcs = module.get_functions(networkx.algorithms, details = True)
         if attribute is None: return funcs
+
         return {key: val.get(attribute, None) for key, val in funcs.items()}
 
     def _get_algorithm(self, algorithm = None, *args, **kwargs):
