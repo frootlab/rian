@@ -41,8 +41,8 @@ def save(d: dict, f: str, flat: Optional[bool] = None,
     """Save configuration dictionary to INI file.
 
     Args:
-        f (str): full qualified path to writeable file
         d (dict): dictionary containing configuration
+        f (str): full qualified path to writeable file
         flat (bool, optional): Determines if the desired INI format structure
             contains sections or not. By default sections are used, if the
             dictionary contains subdictionaries.

@@ -10,6 +10,8 @@ import networkx
 import numpy
 import os
 
+from nemoa.common import text
+
 def filetypes():
     """Get supported image filetypes."""
     return nemoa.common.plot.filetypes()
@@ -45,8 +47,7 @@ def save(model, path = None, filetype = None, plot = None, **kwargs):
 
     # get information about relation
     if plot._config['show_title']:
-        rel_id = nemoa.common.text.split_kwargs(
-            plot._config['relation'])[0]
+        rel_id = text.split_kwargs(plot._config['relation'])[0]
         rel_dict = model.system.get('algorithm', rel_id,
             category = ('system', 'relation', 'evaluation'))
         rel_name = rel_dict['name']
@@ -90,7 +91,7 @@ def show(model, plot = None, *args, **kwargs):
             relation = plot._config.get('relation')
         else:
             relation = 'correlation'
-        rel_id = nemoa.common.text.split_kwargs(relation)[0]
+        rel_id = text.split_kwargs(relation)[0]
         rel_dict = model.system.get('algorithm', rel_id,
             category = ('system', 'relation', 'evaluation'))
         rel_name = rel_dict['name']
@@ -140,7 +141,7 @@ class Graph(nemoa.common.plot.Graph):
 
         # calculate edge weights from 'weight' relation
         relarg = self._config.get('relation', '')
-        rel_name = nemoa.common.text.split_kwargs(relarg)[0]
+        rel_name = text.split_kwargs(relarg)[0]
         W = model.evaluate('system', 'relations', rel_name,
             preprocessing = self._config['preprocessing'],
             measure = self._config['measure'],
@@ -313,8 +314,7 @@ class Heatmap(nemoa.common.plot.Heatmap):
 
         # update title by evaluated relation
         if self._config['show_title']:
-            rel_id = nemoa.common.text.split_kwargs(
-                self._config['relation'])[0]
+            rel_id = text.split_kwargs(self._config['relation'])[0]
             rel_dict = model.system.get('algorithm', rel_id,
                 category = ('system', 'relation', 'evaluation'))
             rel_name = rel_dict['name']
@@ -337,8 +337,7 @@ class Histogram(nemoa.common.plot.Histogram):
             'transform': '' })
 
         # get information about evaluation algorithm
-        rel_id = nemoa.common.text.split_kwargs(
-            self._config['evaluation'])[0]
+        rel_id = text.split_kwargs(self._config['evaluation'])[0]
         rel_dict = model.system.get('algorithm', rel_id,
             category = ('system', 'relation', 'evaluation'))
 

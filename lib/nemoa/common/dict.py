@@ -98,7 +98,7 @@ def strkeys(d: dict) -> dict:
 
     return dnew
 
-def sumjoin(*args) -> dict:
+def sumjoin(*args: dict) -> dict:
     """Sum values of common keys in differnet dictionaries."""
 
     dsum = {}
