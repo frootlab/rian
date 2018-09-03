@@ -6,6 +6,8 @@ __license__ = 'GPLv3'
 
 import nemoa
 
+from nemoa.common import classes
+
 def types():
     """Get supported layer network types for network building."""
 
@@ -34,7 +36,7 @@ class AutoEncoder:
         from nemoa.common.dict import merge
         self.settings = merge(kwargs, self.default)
 
-        if nemoa.common.type.isdataset(dataset):
+        if classes.hasbase(dataset, 'dataset'):
             self.settings['dataset'] = dataset
         else:
             self.settings['dataset'] = nemoa.dataset.load(dataset)
@@ -42,7 +44,7 @@ class AutoEncoder:
     def build(self):
 
         # create dataset instance
-        if not nemoa.common.type.isdataset(self.settings['dataset']):
+        if not classes.hasbase(self.settings['dataset'], 'dataset'):
             return {}
 
         # create network instance from dataset instance
@@ -71,7 +73,7 @@ class Model:
         # create model dictionary including dataset, network and system
         model_dict = {}
 
-        if nemoa.common.type.isdataset(self.settings['dataset']):
+        if classes.hasbase(self.settings['dataset'], 'dataset'):
             model_dict['dataset'] = self.settings['dataset']
             dataset_name = self.settings['dataset'].name
         else:
@@ -80,7 +82,7 @@ class Model:
             if not model_dict['dataset']: return {}
             dataset_name = model_dict['dataset']['config']['name']
 
-        if nemoa.common.type.isnetwork(self.settings['network']):
+        if classes.hasbase(self.settings['network'], 'network'):
             model_dict['network'] = self.settings['network']
             network_name = self.settings['network'].name
         else:
@@ -89,7 +91,7 @@ class Model:
             if not model_dict['network']: return {}
             network_name = model_dict['network']['config']['name']
 
-        if nemoa.common.type.issystem(self.settings['system']):
+        if classes.hasbase(self.settings['system'], 'system'):
             model_dict['system'] = self.settings['system']
             system_name = self.settings['system'].name
         else:

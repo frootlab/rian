@@ -8,6 +8,8 @@ import nemoa.dataset.exports.archive
 import nemoa.dataset.exports.image
 import nemoa.dataset.exports.text
 
+from nemoa.common import classes
+
 def filetypes(filetype = None):
     """Get supported dataset export filetypes."""
 
@@ -50,7 +52,7 @@ def save(dataset, path = None, filetype = None, workspace = None,
 
     """
 
-    if not nemoa.common.type.isdataset(dataset):
+    if not classes.hasbase(dataset, 'dataset'):
         raise ValueError("""could not export dataset to file:
             dataset is not valid.""")
 

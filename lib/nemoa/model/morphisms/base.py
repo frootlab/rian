@@ -8,6 +8,8 @@ import nemoa
 import numpy
 import time
 
+from nemoa.common import classes
+
 class Optimizer:
 
     _config = None
@@ -39,13 +41,12 @@ class Optimizer:
     def _get_algorithms(self, category = None, attribute = None):
         """Get optimization algorithms."""
 
-        from nemoa.common import module
+        from nemoa.common import classes
 
         algorithms = self._buffer['algorithms'].get(attribute, None)
         if not algorithms:
-            algorithms = module.get_methods(self,
-                renamekey = 'name', grouping = 'category',
-                attribute = attribute)
+            algorithms = classes.methods(self, renamekey = 'name',
+                grouping = 'category', attribute = attribute)
             self._buffer['algorithms'][attribute] = algorithms
         if category:
             if category not in algorithms: return {}
@@ -195,10 +196,10 @@ class Optimizer:
         """
 
         # test type of model instance and subclasses
-        if not nemoa.common.type.ismodel(model): return False
-        if not nemoa.common.type.isdataset(model.dataset): return False
-        if not nemoa.common.type.isnetwork(model.network): return False
-        if not nemoa.common.type.issystem(model.system): return False
+        if not classes.hasbase(model, 'model'): return False
+        if not classes.hasbase(model.dataset, 'dataset'): return False
+        if not classes.hasbase(model.network, 'network'): return False
+        if not classes.hasbase(model.system, 'system'): return False
 
         # check dataset
         if (not 'check_dataset' in model.system._default['init']

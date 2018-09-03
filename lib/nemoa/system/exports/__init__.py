@@ -38,9 +38,10 @@ def save(system, path = None, filetype = None, workspace = None,
 
     """
 
-    if not nemoa.common.type.issystem(system):
-        raise ValueError("""could not export system to file:
-            system is not valid.""")
+    from nemoa.common import classes
+
+    if not classes.hasbase(system, 'system'):
+        raise ValueError("system is not valid")
 
     from nemoa.common import ospath
 

@@ -6,4 +6,4 @@ __license__ = 'GPLv3'
 
 import nemoa.common.decorators
 import nemoa.common.plot
-import nemoa.common.type
+import nemoa.common.classes

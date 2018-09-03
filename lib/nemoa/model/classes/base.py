@@ -8,7 +8,7 @@ import nemoa
 import copy
 import os
 
-from nemoa.common import metadata
+from nemoa.common import classes, metadata
 
 class Model(metadata.BaseClassIP):
     """Model base class.
@@ -77,15 +77,12 @@ class Model(metadata.BaseClassIP):
     def configure(self):
         """Configure model."""
 
-        if not nemoa.common.type.isdataset(self.dataset):
-            raise ValueError(
-                "could not configure model: dataset is not valid.")
-        if not nemoa.common.type.isnetwork(self.network):
-            raise ValueError(
-                "could not configure model: network is not valid.")
-        if not nemoa.common.type.issystem(self.system):
-            raise ValueError(
-                "could not configure model: system is not valid.")
+        if not classes.hasbase(self.dataset, 'dataset'):
+            raise ValueError("dataset is not valid")
+        if not classes.hasbase(self.network, 'network'):
+            raise ValueError("network is not valid")
+        if not classes.hasbase(self.system, 'system'):
+            raise ValueError("system is not valid")
 
         retval = True
 
@@ -101,15 +98,12 @@ class Model(metadata.BaseClassIP):
     def initialize(self):
         """Initialize model parameters."""
 
-        if not nemoa.common.type.isdataset(self.dataset):
-            raise ValueError("""could not initialize model:
-                dataset is not valid.""")
-        if not nemoa.common.type.isnetwork(self.network):
-            raise ValueError("""could not initialize model:
-                network is not valid.""")
-        if not nemoa.common.type.issystem(self.system):
-            raise ValueError("""could not initialize model:
-                system is not valid.""")
+        if not classes.hasbase(self.dataset, 'dataset'):
+            raise ValueError("dataset is not valid")
+        if not classes.hasbase(self.network, 'network'):
+            raise ValueError("network is not valid")
+        if not classes.hasbase(self.system, 'system'):
+            raise ValueError("system is not valid")
 
         retval = True
 
@@ -124,6 +118,7 @@ class Model(metadata.BaseClassIP):
 
     def optimize(self, *args, **kwargs):
         """Optimize model parameters."""
+
         return nemoa.model.optimize(self, *args, **kwargs)
 
     def get(self, key = 'name', *args, **kwargs):
@@ -344,13 +339,13 @@ class Model(metadata.BaseClassIP):
 
         """
 
-        if nemoa.common.type.isdataset(dataset):
+        if classes.hasbase(dataset, 'dataset'):
             self.dataset = dataset
             return True
 
         if not isinstance(dataset, dict): return False
 
-        if nemoa.common.type.isdataset(self.dataset):
+        if classes.hasbase(self.dataset, 'dataset'):
             return self.dataset.set('copy', **dataset)
 
         self.dataset = nemoa.dataset.new(**dataset)
@@ -373,13 +368,13 @@ class Model(metadata.BaseClassIP):
 
         """
 
-        if nemoa.common.type.isnetwork(network):
+        if classes.hasbase(network, 'network'):
             self.network = network
             return True
 
         if not isinstance(network, dict): return False
 
-        if nemoa.common.type.isnetwork(self.network):
+        if classes.hasbase(self.network, 'network'):
             return self.network.set('copy', **network)
 
         self.network = nemoa.network.new(**network)
@@ -402,13 +397,13 @@ class Model(metadata.BaseClassIP):
 
         """
 
-        if nemoa.common.type.issystem(system):
+        if classes.hasbase(system, 'system'):
             self.system = system
             return True
 
         if not isinstance(system, dict): return False
 
-        if nemoa.common.type.issystem(self.system):
+        if classes.hasbase(self.system, 'system'):
             return self.system.set('copy', **system)
 
         self.system = nemoa.system.new(**system)

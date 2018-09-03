@@ -7,6 +7,8 @@ __license__ = 'GPLv3'
 import nemoa
 import networkx
 
+from nemoa.common import classes
+
 def types():
     """Get supported layer network types for network building."""
 
@@ -46,12 +48,10 @@ class AutoEncoder:
         self.settings = merge(kwargs, self.default)
 
         # columns
-        if 'columns' in self.settings:
-            columns = self.settings['columns']
-        elif nemoa.common.type.isdataset(dataset):
-            columns = dataset.columns
-        else:
-            columns = ['i1', 'i2', 'i3', 'i4', 'o1', 'o2']
+        if 'columns' in self.settings: columns = self.settings['columns']
+        elif classes.hasbase(dataset, 'dataset'): columns = dataset.columns
+        else: columns = ['i1', 'i2', 'i3', 'i4', 'o1', 'o2']
+
         self.settings['inputs'] = columns
         self.settings['outputs'] = columns
 

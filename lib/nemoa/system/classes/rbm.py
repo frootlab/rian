@@ -13,6 +13,8 @@ __license__ = 'GPLv3'
 import nemoa.system.classes.ann
 import numpy
 
+from nemoa.common import classes
+
 class RBM(nemoa.system.classes.ann.ANN):
     """Restricted Boltzmann Machine (RBM).
 
@@ -93,7 +95,7 @@ class RBM(nemoa.system.classes.ann.ANN):
 
     def _check_dataset(self, dataset):
         """Check if dataset contains only binary values."""
-        if not nemoa.common.type.isdataset(dataset):
+        if not classes.hasbase(dataset, 'dataset'):
             raise ValueError("""could not test dataset:
                 invalid dataset instance given.""")
         if not dataset._get_test_binary():
@@ -110,7 +112,7 @@ class GRBM(RBM):
     gaussian units to model data. The hidden layer contains binary
     distributed sigmoidal units to model relations in the data.
 
-    Reference:
+    References:
         (1) "Improved Learning of Gaussian-Bernoulli Restricted
             Boltzmann Machines", KyungHyun Cho, Alexander Ilin and
             Tapani Raiko, ICANN 2011
@@ -174,7 +176,7 @@ class GRBM(RBM):
 
     def _check_dataset(self, dataset):
         """Check if dataset contains gauss normalized values."""
-        if not nemoa.common.type.isdataset(dataset):
+        if not classes.hasbase(dataset, 'dataset'):
             raise ValueError("""could not test dataset:
                 invalid dataset instance given.""")
         if not dataset.evaluate('test_gauss'):

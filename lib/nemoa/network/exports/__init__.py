@@ -50,11 +50,10 @@ def save(network, path = None, filetype = None, workspace = None,
 
     """
 
-    if not nemoa.common.type.isnetwork(network):
-        raise ValueError("""could not export network to file:
-            network is not valid.""")
+    from nemoa.common import classes, ospath
 
-    from nemoa.common import ospath
+    if not classes.hasbase(network, 'network'):
+        raise ValueError("network is not valid")
 
     # get directory, filename and fileextension
     if isinstance(workspace, str) and not workspace == 'None':
