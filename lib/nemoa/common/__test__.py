@@ -153,7 +153,6 @@ class TestSuite(unittest.TestSuite):
             4: {'layer': 'o', 'layer_id': 1 , 'layer_sub_id': 1}
         })
 
-
         networkx.set_edge_attributes(G, {
             (1, 3): {'weight': 0.1}, (1, 4): {'weight': 0.9},
             (2, 3): {'weight': 0.9}, (2, 4): {'weight': 0.1}
