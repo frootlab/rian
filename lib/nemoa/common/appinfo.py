@@ -66,9 +66,7 @@ def path(key: Optional[str] = None, appname: Optional[str] = None,
     This function returns application specific system directories by platform
     independent names to allow platform independent storage for caching,
     logging, configuration and permanent data. This is a wrapper function to
-    the package 'appdirs':
-
-        http://github.com/ActiveState/appdirs
+    the package 'appdirs' [1].
 
     Args:
         key (str or None, optional): Environmental directory key.
@@ -96,6 +94,9 @@ def path(key: Optional[str] = None, appname: Optional[str] = None,
         String containing path of environmental directory or None if
         the key is not supported.
 
+    References:
+        [1] http://github.com/ActiveState/appdirs
+
     """
 
     if not 'dirs' in globals():
@@ -121,7 +122,7 @@ def _update_dirs(appname: Optional[str] = None,
         from appdirs import AppDirs
     except ImportError as E:
         raise ImportError(
-            "package appdirs is required: "
+            "requires package appdirs: "
             "https://pypi.org/project/appdirs/") from E
 
     app = {

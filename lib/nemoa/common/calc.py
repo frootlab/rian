@@ -4,13 +4,14 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-try: import numpy
-except ImportError as e: raise ImportError(
-    "nemoa.common.calc requires numpy: https://scipy.org") from e
+try:
+    import numpy as np
+except ImportError as E:
+    raise ImportError("requires package numpy: "
+        "https://scipy.org") from E
 
 from typing import Union, Optional
-
-ArrayLike = Union[numpy.ndarray, numpy.matrix, float, int]
+ArrayLike = Union[np.ndarray, np.matrix, float, int]
 
 #
 # Sigmoid Functions
@@ -20,8 +21,8 @@ def sigmoid(x: ArrayLike, func: Optional[str] = None, **kwargs) -> ArrayLike:
     """Calculate sigmoid functions.
 
     Args:
-        x (ArrayLike): Numerical data arranged in an array-like structure
-        func (string, optional): Name of sigmoid function
+        x: Numerical data arranged in an array-like structure
+        func: Name of sigmoid function
             If not given, the standard logistic function is used.
 
     Returns:
@@ -44,7 +45,7 @@ def logistic(x: ArrayLike) -> ArrayLike:
     """Calculate standard logistic function.
 
     Args:
-        x (ArrayLike): Numerical data arranged in an array-like structure
+        x: Numerical data arranged in an array-like structure
 
     Returns:
         Array-like structure which contains the evaluation of the standard
@@ -52,13 +53,13 @@ def logistic(x: ArrayLike) -> ArrayLike:
 
     """
 
-    return 1. / (1. + numpy.exp(-x))
+    return 1. / (1. + np.exp(-x))
 
 def tanh(x: ArrayLike) -> ArrayLike:
     """Hyperbolic tangent function.
 
     Args:
-        x (ArrayLike): Numerical data arranged in an array-like structure
+        x: Numerical data arranged in an array-like structure
 
     Returns:
         Array-like structure which contains the evaluation of the hyperbolic
@@ -66,7 +67,7 @@ def tanh(x: ArrayLike) -> ArrayLike:
 
     """
 
-    return numpy.tanh(x)
+    return np.tanh(x)
 
 def lecun(x: ArrayLike) -> ArrayLike:
     """LeCun hyperbolic tangent function.
@@ -74,42 +75,45 @@ def lecun(x: ArrayLike) -> ArrayLike:
     Hyperbolic tangent function, which has been proposed to be more efficient
     in learning Artificial Neural Networks [1].
 
-    [1] Y. LeCun, L. Bottou, G. B. Orr, K. Müller, "Efficient BackProp" (1998)
-
     Args:
-        x (ArrayLike): Numerical data arranged in an array-like structure
+        x: Numerical data arranged in an array-like structure
 
     Returns:
         Array-like structure which contains the evaluation of the LeCun
         hyperbolic tangent function to the given data.
 
+    References:
+        [1] Y. LeCun, L. Bottou, G. B. Orr, K. Müller,
+            "Efficient BackProp" (1998)
+
     """
 
-    return 1.7159 * numpy.tanh(0.6666 * x)
+    return 1.7159 * np.tanh(0.6666 * x)
 
 def elliot(x: ArrayLike) -> ArrayLike:
     """Elliot activation function.
 
-    [1] D.L. Elliott, David L. Elliott, "A better Activation Function for
-        Artificial Neural Networks" (1993)
-
     Args:
-        x (ArrayLike): Numerical data arranged in an array-like structure
+        x: Numerical data arranged in an array-like structure
 
     Returns:
         Array-like structure which contains the evaluation of the Elliot
         activation function to the given data.
 
+    References:
+        [1] D.L. Elliott, David L. Elliott, "A better Activation Function for
+            Artificial Neural Networks" (1993)
+
     """
 
-    return x / (1. + numpy.abs(x))
+    return x / (1. + np.abs(x))
 
 def hill(x: ArrayLike, n: float = 2.) -> ArrayLike:
     """Hill type activation function.
 
     Args:
-        x (ArrayLike): Numerical data arranged in an array-like structure
-        n (int, optional): Hill coefficient
+        x: Numerical data arranged in an array-like structure
+        n: Hill coefficient
 
     Returns:
         Array-like structure which contains the evaluation of the Hill type
@@ -117,14 +121,14 @@ def hill(x: ArrayLike, n: float = 2.) -> ArrayLike:
 
     """
 
-    if n == 2.: return x / numpy.sqrt(1. + x ** 2)
-    return x / numpy.power( 1. + x ** n, 1. / n)
+    if n == 2.: return x / np.sqrt(1. + x ** 2)
+    return x / np.power( 1. + x ** n, 1. / n)
 
 def arctan(x: ArrayLike) -> ArrayLike:
     """Inverse tangent function.
 
     Args:
-        x (ArrayLike): Numerical data arranged in an array-like structure
+        x: Numerical data arranged in an array-like structure
 
     Returns:
         Array-like structure which contains the evaluation of the inverse
@@ -132,7 +136,7 @@ def arctan(x: ArrayLike) -> ArrayLike:
 
     """
 
-    return numpy.arctan(x)
+    return np.arctan(x)
 
 #
 # Derivatives of Sigmoid Functions
@@ -142,8 +146,8 @@ def d_sigmoid(x: ArrayLike, func: Optional[str] = None, **kwargs) -> ArrayLike:
     """Derivative of sigmoid function.
 
     Args:
-        x (ArrayLike): Numerical data arranged in an array-like structure
-        func (string, optional): Name of derivative of sigmoid function
+        x: Numerical data arranged in an array-like structure
+        func: Name of derivative of sigmoid function
             If not given, the derivative of the standard logistic function is
             used.
 
@@ -167,7 +171,7 @@ def d_logistic(x: ArrayLike) -> ArrayLike:
     """Derivative of the standard logistic function.
 
     Args:
-        x (ArrayLike): Numerical data arranged in an array-like structure
+        x: Numerical data arranged in an array-like structure
 
     Returns:
         Array-like structure which contains the evaluation of the derivative of
@@ -175,31 +179,32 @@ def d_logistic(x: ArrayLike) -> ArrayLike:
 
     """
 
-    return ((1. / (1. + numpy.exp(-x))) * (1. - 1. / (1. + numpy.exp(-x))))
+    return ((1. / (1. + np.exp(-x))) * (1. - 1. / (1. + np.exp(-x))))
 
 def d_elliot(x: ArrayLike) -> ArrayLike:
     """Derivative of the Elliot sigmoid function.
 
-    [1] D.L. Elliott, David L. Elliott, "A better Activation Function for
-        Artificial Neural Networks", (1993)
-
     Args:
-        x (ArrayLike): Numerical data arranged in an array-like structure
+        x: Numerical data arranged in an array-like structure
 
     Returns:
         Array-like structure which contains the evaluation of the derivative of
         the Elliot sigmoid function to the given data.
 
+    References:
+        [1] D.L. Elliott, David L. Elliott, "A better Activation Function for
+            Artificial Neural Networks", (1993)
+
     """
 
-    return 1. / (1. + numpy.abs(x)) ** 2
+    return 1. / (1. + np.abs(x)) ** 2
 
 def d_hill(x: ArrayLike, n: float = 2.) -> ArrayLike:
     """Derivative of Hill type activation function.
 
     Args:
-        x (ArrayLike): Numerical data arranged in an array-like structure
-        n (int, optional): Hill coefficient
+        x: Numerical data arranged in an array-like structure
+        n: Hill coefficient
 
     Returns:
         Array-like structure which contains the evaluation of the derivative of
@@ -207,8 +212,8 @@ def d_hill(x: ArrayLike, n: float = 2.) -> ArrayLike:
 
     """
 
-    if n == 2.: return 1. / numpy.power(1. + x ** 2, 3. / 2.)
-    return 1. / numpy.power(1. + x ** n, (1. + n) / n)
+    if n == 2.: return 1. / np.power(1. + x ** 2, 3. / 2.)
+    return 1. / np.power(1. + x ** n, (1. + n) / n)
 
 def d_lecun(x: ArrayLike) -> ArrayLike:
     """Derivative of LeCun hyperbolic tangent.
@@ -216,25 +221,27 @@ def d_lecun(x: ArrayLike) -> ArrayLike:
     Hyperbolic tangent function, which has been proposed to be more efficient
     in learning Artificial Neural Networks [1].
 
-    [1] Y. LeCun, L. Bottou, G. B. Orr, K. Müller, "Efficient BackProp" (1998)
-
     Args:
-        x (ArrayLike): Numerical data arranged in an array-like structure
+        x: Numerical data arranged in an array-like structure
 
     Returns:
         Array-like structure which contains the evaluation of the derivative of
         the LeCun hyperbolic tangent to the given data.
 
+    References:
+        [1] Y. LeCun, L. Bottou, G. B. Orr, K. Müller,
+            "Efficient BackProp" (1998)
+
     """
 
-    return 1.14382 / numpy.cosh(0.6666 * x) ** 2
+    return 1.14382 / np.cosh(0.6666 * x) ** 2
 
 
 def d_tanh(x: ArrayLike) -> ArrayLike:
     """Derivative of hyperbolic tangent function.
 
     Args:
-        x (ArrayLike): Numerical data arranged in an array-like structure
+        x: Numerical data arranged in an array-like structure
 
     Returns:
         Array-like structure which contains the evaluation of the derivative
@@ -242,13 +249,13 @@ def d_tanh(x: ArrayLike) -> ArrayLike:
 
     """
 
-    return 1. - numpy.tanh(x) ** 2
+    return 1. - np.tanh(x) ** 2
 
 def d_arctan(x: ArrayLike) -> ArrayLike:
     """Derivative of inverse tangent function.
 
     Args:
-        x (ArrayLike): Numerical data arranged in an array-like structure
+        x: Numerical data arranged in an array-like structure
 
     Returns:
         Array-like structure which contains the evaluation of the derivative
@@ -267,9 +274,9 @@ def dialogistic(x: ArrayLike, scale: float = 1.,
     """Calulate dialogistic function.
 
     Args:
-        x (ArrayLike): Numerical data arranged in an array-like structure
-        scale (float, optional): scale parameter, default is 1.
-        sigma (float, optional): sharpness parameter, default is 10.
+        x: Numerical data arranged in an array-like structure
+        scale: scale parameter, default is 1.
+        sigma: sharpness parameter, default is 10.
 
     Returns:
         Array-like structure which contains the evaluation of the dialogistic
@@ -279,18 +286,18 @@ def dialogistic(x: ArrayLike, scale: float = 1.,
 
     sigma = max(sigma, .000001)
 
-    return numpy.abs(x) * (logistic(sigma * (x + .5 * scale))
+    return np.abs(x) * (logistic(sigma * (x + .5 * scale))
         + logistic(sigma * (x - .5 * scale)) - 1.) \
-        / numpy.abs(logistic(1.5 * sigma * scale)
+        / np.abs(logistic(1.5 * sigma * scale)
         + logistic(.5 * sigma * scale) - 1.)
 
 def softstep(x: ArrayLike, scale: float = 1., sigma: float = 10.) -> ArrayLike:
     """Calulate softstep function.
 
     Args:
-        x (ArrayLike): Numerical data arranged in an array-like structure
-        scale (float, optional): scale parameter, default is 1.
-        sigma (float, optional): sharpness parameter, default is 10.
+        x: Numerical data arranged in an array-like structure
+        scale: scale parameter, default is 1.
+        sigma: sharpness parameter, default is 10.
 
     Returns:
         Array-like structure which contains the evaluation of the softstep
@@ -298,25 +305,26 @@ def softstep(x: ArrayLike, scale: float = 1., sigma: float = 10.) -> ArrayLike:
 
     """
 
-    norm = numpy.tanh(scale)
+    norm = np.tanh(scale)
 
-    return numpy.tanh(dialogistic(x, scale = scale, sigma = sigma)) / norm
+    return np.tanh(dialogistic(x, scale = scale, sigma = sigma)) / norm
 
 def multilogistic(x: ArrayLike, scale: float = 1.,
     sigma: float = 10.) -> ArrayLike:
     """Muliple logistic function.
 
-    [1] https://math.stackexchange.com/questions/\
-        2529531/multiple-soft-step-function
-
     Args:
-        x (ArrayLike): Numerical data arranged in an array-like structure
-        scale (float, optional): scale parameter, default is 1.
-        sigma (float, optional): sharpness parameter, default is 10.
+        x: Numerical data arranged in an array-like structure
+        scale: scale parameter, default is 1.
+        sigma: sharpness parameter, default is 10.
 
     Returns:
         Array-like structure which contains the evaluation of the multiple
         logistic function to the given data.
+
+    References:
+        [1] https://math.stackexchange.com/questions/\
+            2529531/multiple-soft-step-function
 
     """
 
@@ -325,7 +333,7 @@ def multilogistic(x: ArrayLike, scale: float = 1.,
     if scale == 0. or sigma == 0.: return x
 
     xs = x / scale
-    xsf = numpy.floor(xs)
+    xsf = np.floor(xs)
     r = 2. * (xs - xsf) - 1.
     m = 2. / logistic(sigma) - 1.
 

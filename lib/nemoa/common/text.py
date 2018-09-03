@@ -6,27 +6,37 @@ __license__ = 'GPLv3'
 
 from typing import Any, Tuple, Optional
 
-def splitargs(text: str) -> Tuple[str]:
-    """Return tuple with function name and function arguments."""
+def splitargs(text: str) -> Tuple[str, tuple, dict]:
+    """Split a function call in the function name, its arguments and keywords.
+
+    Args:
+        text: Function call given as valid Python code. Beware: Function
+            definitions are no valid function calls.
+
+    Returns:
+        A tuple consisting of the function name as string, the arguments as
+        tuple and the keywords as dictionary.
+
+    """
 
     # Check Argument Types
     if not isinstance(text, str): raise TypeError(
         f"argument 'text' requires to be of type 'str', not '{type(text)}'")
 
     import ast
-
     tree = ast.parse(text)
 
     # get function name
     func = tree.body[0].value.func.id
 
-    # get list with arguments
+    # get tuple with arguments
     Args = tree.body[0].value.args
-    args = tuple()
+    args = []
     for Arg in Args:
         typ = Arg._fields[0]
         val = getattr(Arg, typ)
-        args += (val, )
+        args.append(val)
+    args = tuple(args)
 
     # get dictionary with keywords
     KwArgs = tree.body[0].value.keywords
@@ -39,106 +49,185 @@ def splitargs(text: str) -> Tuple[str]:
 
     return func, args, kwargs
 
-def astype(text: str, typ: Optional[str] = None) -> Any:
-    """ """
+def astype(text: str, fmt: Optional[str] = None, **kwargs: Any) -> Any:
+    """Convert text into given target format.
+
+    Args:
+        text: String representing the value of a given type in it's respective
+            syntax format. Thereby the standard format corresponds to the
+            representation, which is obtained by an application of the 'str'
+            function. Some types however also accept additional formats, which
+            e.g. appear in the formatting of ini files.
+        fmt: Target format in which the text is converted.
+        **kwargs: Supplementary parameters, that specify the target format
+
+    Returns:
+        Value of the text in given target format.
+
+    """
 
     # Check Argument Types
     if not isinstance(text, str): raise TypeError(
         f"argument 'text' requires to be of type 'str', not '{type(text)}'")
 
-    # Automatic Types
-    if typ == None: return eval(text)
+    # Evaluate text if no format is given
+    if fmt == None: return eval(text)
 
     # Basic Types
-    if typ == 'str': return text.strip().replace('\n', '')
-    if typ == 'bool': return text.lower().strip() == 'true'
-    if typ == 'int': return int(text)
-    if typ == 'float': return float(text)
-    if typ == 'complex': return complex(text)
+    if fmt == 'str': return text.strip().replace('\n', '')
+    if fmt == 'bool': return text.lower().strip() == 'true'
+    if fmt == 'int': return int(text)
+    if fmt == 'float': return float(text)
+    if fmt == 'complex': return complex(text)
 
-    # Composite Types
-    if typ == 'list': return aslist(text)
-    if typ == 'tuple': return astuple(text)
-    if typ == 'set': return asset(text)
-    if typ == 'dict': return asdict(text)
+    # Sequence Types
+    if fmt == 'list': return aslist(text, **kwargs)
+    if fmt == 'tuple': return astuple(text, **kwargs)
+    if fmt == 'set': return asset(text, **kwargs)
+    if fmt == 'dict': return asdict(text, **kwargs)
 
-    raise KeyError(f"type '{typ}' is not supported")
+    raise KeyError(f"type '{fmt}' is not supported")
 
 def aslist(text: str, delim: str = ',') -> list:
-    """Return list from given string."""
+    """Convert text into list.
 
-    # Check Argument Types
+    Args:
+        text: String representing a list. Valid representations are:
+            Python format: Allows elements of arbitrary types:
+                Example: "['a', 'b', 3]"
+            Delimiter separated values (DSV): Allows string elements:
+                Example: "a, b, c"
+        delim: A string, which is used as delimiter for the separatation of the
+            text. This parameter is only used in the DSV format.
+
+    Returns:
+        Value of the text as list.
+
+    """
+
+    # check argument types
     if not isinstance(text, str): raise TypeError(
         f"argument 'text' requires to be of type 'str', not '{type(text)}'")
+    if not isinstance(delim, str): raise TypeError(
+        f"argument 'delim' requires to be of type 'str', not '{type(text)}'")
 
-    # return empty list if string is blank
+    # return empty list if the string is blank
     if not text or not text.strip(): return list()
 
-    # try python internal syntax grammar
+    # python format
     l = None
     if delim == ',':
         try: l = list(eval(text))
         except: pass
     if isinstance(l, list): return l
 
-    # use dialect "<value>, ..."
+    # Delimited String Fromat: "<value>, ..."
     l = [item.strip() for item in text.split(delim)]
 
     return l
 
 def astuple(text: str, delim: str = ',') -> tuple:
-    """Return tuple from given string."""
+    """Convert text into tuple.
 
-    # Check Argument Types
+    Args:
+        text: String representing a tuple. Valid representations are:
+            Python format: Allows elements of arbitrary types:
+                Example: "('a', 'b', 3)"
+            Delimiter separated values (DSV): Allows string elements:
+                Example: "a, b, c"
+        delim: A string, which is used as delimiter for the separatation of the
+            text. This parameter is only used in the DSV format.
+
+    Returns:
+        Value of the text as tuple.
+
+    """
+
+    # check argument types
     if not isinstance(text, str): raise TypeError(
         f"argument 'text' requires to be of type 'str', not '{type(text)}'")
+    if not isinstance(delim, str): raise TypeError(
+        f"argument 'delim' requires to be of type 'str', not '{type(text)}'")
 
-    # return empty tuple if string is blank
+    # return empty tuple if the string is blank
     if not text or not text.strip(): return tuple()
 
-    # try python internal syntax grammar
+    # python format
     t = None
     if delim == ',':
         try: t = tuple(eval(text))
         except: pass
     if isinstance(t, tuple): return t
 
-    # use dialect "<value>, ..."
+    # delimited string format
     l = [item.strip() for item in text.split(delim)]
 
     return tuple(l)
 
 def asset(text: str, delim: str = ',') -> list:
-    """Return set from given string."""
+    """Convert text into set.
 
-    # Check Argument Types
+    Args:
+        text: String representing a set. Valid representations are:
+            Python format: Allows elements of arbitrary types:
+                Example: "{'a', 'b', 3}"
+            Delimiter separated values (DSV): Allows string elements:
+                Example: "a, b, c"
+        delim: A string, which is used as delimiter for the separatation of the
+            text. This parameter is only used in the DSV format.
+
+    Returns:
+        Value of the text as set.
+
+    """
+
+    # check argument types
     if not isinstance(text, str): raise TypeError(
         f"argument 'text' requires to be of type 'str', not '{type(text)}'")
+    if not isinstance(delim, str): raise TypeError(
+        f"argument 'delim' requires to be of type 'str', not '{type(text)}'")
 
-    # return empty set if string is blank
+    # return empty set if the string is blank
     if not text or not text.strip(): return set()
 
-    # try python internal syntax grammar
+    # python format
     s = None
     if delim == ',':
         try: s = set(eval(text))
         except: pass
     if isinstance(s, set): return s
 
-    # use dialect "<value>, ..."
+    # delimited string format
     l = [item.strip() for item in text.split(delim)]
 
     return set(l)
 
 def asdict(text: str, delim: str = ',') -> dict:
-    """Return dictionary from given string in ini format."""
+    """Convert text into dictionary.
 
-    # Check Argument Types
+    Args:
+        text: String representing a dictionary. Valid representations are:
+            Python format: Allows keys and values of arbitrary types:
+                Example: "{'a': 2, 1: True}"
+            Delimiter separated expressions: Allow string keys and values:
+                Example (Variant A): "<key> = <value><delim> ..."
+                Example (Variant B): "'<key>': <value><delim> ..."
+        delim: A string, which is used as delimiter for the separatation of the
+            text. This parameter is only used in the DSV format.
+
+    Returns:
+        Value of the text as dictionary.
+
+    """
+
+    # check argument types
     if not isinstance(text, str): raise TypeError(
         f"argument 'text' requires to be of type 'str', not '{type(text)}'")
+    if not isinstance(delim, str): raise TypeError(
+        f"argument 'delim' requires to be of type 'str', not '{type(text)}'")
 
-    # check if string is blank
-    if not text or not text.strip(): return {}
+    # return empty dict if the string is blank
+    if not text or not text.strip(): return dict()
 
     import pyparsing as pp
 
@@ -148,13 +237,13 @@ def asdict(text: str, delim: str = ',') -> dict:
     Key  = pp.Word(pp.alphas + "_", pp.alphanums + "_.")
     Val  = pp.Or(Num | Str | Bool)
 
-    # try dictionary dialect "<key> = <value>, ..."
+    # try dictionary format "<key> = <value><delim> ..."
     Term = pp.Group(Key + '=' + Val)
     Terms = Term + pp.ZeroOrMore(delim + Term)
     try: l = Terms.parseString(text.strip('{}'))
     except: l = None
 
-    # try dictionary dialect "'<key>': <value>, ..."
+    # try dictionary format "'<key>': <value><delim> ..."
     if not l:
         Term = pp.Group(Str + ':' + Val)
         Terms = Term + pp.ZeroOrMore(delim + Term)

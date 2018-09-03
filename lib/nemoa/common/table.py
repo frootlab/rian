@@ -4,42 +4,44 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-try: import numpy
-except ImportError as E: raise ImportError(
-    "nemoa.common.table requires numpy: https://scipy.org") from E
+try:
+    import numpy as np
+except ImportError as E:
+    raise ImportError("requires package numpy: "
+        "https://scipy.org") from E
 
-from typing import Optional, Tuple
+from typing import Optional, Sequence, Union
+Table = np.recarray
+Cols = Union[str, Sequence[str]]
 
-Table = numpy.recarray
-
-def addcols(base: Table, data: Table,
-    cols: Optional[Tuple[str]] = None) -> Table:
+def addcols(base: Table, data: Table, cols: Optional[Cols] = None) -> Table:
     """Add columns from source table to target table.
 
-    Wrapper function to numpy.lib.recfunctions.rec_append_fields:
-    https://www.numpy.org/devdocs/user/basics.rec.html
+    Wrapper function to numpy's rec_append_fields [1].
 
     Args:
-        base (recarray): Numpy record array with table like data
-        data (recarray): Numpy record array storing the fields
-            to add to the base.
-        cols (tuple of string or None, optional): String or sequence
-            of strings corresponding to the names of the new columns.
+        base: Numpy record array with table like data
+        data: Numpy record array storing the fields to add to the base.
+        cols: String or sequence of strings corresponding to the names of the
+            new columns.
 
     Returns:
         Numpy record array containing the base array, as well as the
         appended columns.
+
+    References:
+        [1] https://www.numpy.org/devdocs/user/basics.rec.html
 
     """
 
     from numpy.lib import recfunctions
 
     if not cols: cols = data.dtype.names
-    if isinstance(cols, (tuple, str)): cols = list(cols)
-    else:
+    if not isinstance(cols, (tuple, str)):
         raise TypeError("cols requires type 'tuple' or 'str', "
-            f"not '{type(names)}'")
+            f"not '{type(cols)}'")
 
+    cols = list(cols) # make cols mutable
     r = recfunctions.rec_append_fields(base, cols, [data[c] for c in cols])
 
     return r

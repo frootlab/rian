@@ -10,11 +10,13 @@ def hostname() -> str:
     """Hostname of the system.
 
     Wrapper function to platform.node [1]
-    [1] https://docs.python.org/3/library/platform.html
 
     Returns:
-        Returns the computer’s hostname. An empty string is returned
-        if the value cannot be determined.
+        Returns the computer’s hostname. If the value cannot be determined,
+        an empty string is returned.
+
+    References:
+        [1] https://docs.python.org/3/library/platform.html
 
     """
 
@@ -27,8 +29,11 @@ def osname() -> str:
     [1] https://docs.python.org/3/library/platform.html
 
     Returns:
-        Returns the OS name, e.g. 'Linux', 'Windows', or 'Java'. An empty
-        string is returned if the value cannot be determined.
+        Returns the OS name, e.g. 'Linux', 'Windows', or 'Java'. If the value
+        cannot be determined, an empty string is returned.
+
+    References:
+        [1] https://docs.python.org/3/library/platform.html
 
     """
 

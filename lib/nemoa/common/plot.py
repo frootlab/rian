@@ -6,9 +6,11 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-try: import numpy
-except ImportError as e: raise ImportError(
-    "nemoa.common.plot requires numpy: https://scipy.org") from e
+try:
+    import numpy as np
+except ImportError as E:
+    raise ImportError("requires package numpy: "
+        "https://scipy.org") from E
 
 class Plot:
     """Base class for matplotlib plots.
@@ -22,7 +24,7 @@ class Plot:
 
     """
 
-    _default = {
+    _default: dict = {
         'fileformat': 'pdf',
         'figure_size': (10.0, 6.0),
         'dpi': None,
@@ -32,10 +34,11 @@ class Plot:
         'style': 'seaborn-white',
         'title': None,
         'show_title': True,
-        'title_fontsize': 14.0}
+        'title_fontsize': 14.0
+    }
 
-    _config = {}
-    _kwargs = {}
+    _config: dict = {}
+    _kwargs: dict = {}
 
     _plt = None
     _fig = None
@@ -122,11 +125,6 @@ class Heatmap(Plot):
             "nemoa.common.plot.Heatmap.plot() requires matplotlib: "
             "https://matplotlib.org")
 
-        try: import numpy
-        except ImportError: raise ImportError(
-            "nemoa.common.plot.Graph.plot() requires numpy: "
-            "https://scipy.org")
-
         # plot grid
         self._axes.grid(self._config['grid'])
 
@@ -150,10 +148,10 @@ class Heatmap(Plot):
         fontsize = min(max_font_size, \
             400. / float(max(len(x_labels), len(y_labels))))
         self._plt.xticks(
-            numpy.arange(len(x_labels)) + 0.5,
+            np.arange(len(x_labels)) + 0.5,
             tuple(x_labels), fontsize = fontsize, rotation = 65)
         self._plt.yticks(
-            len(y_labels) - numpy.arange(len(y_labels)) - 0.5,
+            len(y_labels) - np.arange(len(y_labels)) - 0.5,
             tuple(y_labels), fontsize = fontsize)
 
         # create colorbar
@@ -206,28 +204,26 @@ class Scatter2D(Plot):
     def _pca2d(self, array):
             """Calculate projection to largest two principal components."""
 
-            import numpy
-
             # get dimension of array
             dim = array.shape[1]
 
             # calculate covariance matrix
-            cov = numpy.cov(array.T)
+            cov = np.cov(array.T)
 
             # calculate eigenvectors and eigenvalues
-            vals, vecs = numpy.linalg.eig(cov)
+            vals, vecs = np.linalg.eig(cov)
 
             # sort eigenvectors by absolute eigenvalues
-            pairs = [(numpy.abs(vals[i]), vecs[:, i])
+            pairs = [(np.abs(vals[i]), vecs[:, i])
                 for i in range(len(vals))]
             pairs.sort(key = lambda x: x[0], reverse = True)
 
             # calculate projection matrix
-            proj = numpy.hstack(
+            proj = np.hstack(
                 [pairs[0][1].reshape(dim, 1), pairs[1][1].reshape(dim, 1)])
 
             # calculate projection
-            parray = numpy.dot(array, proj)
+            parray = np.dot(array, proj)
 
             return parray
 
@@ -376,7 +372,7 @@ class Graph(Plot):
             # determine label, fontsize and color
             node_label = data.get('label', str(node).title())
             node_label_format = get_texlabel(node_label)
-            node_label_size = numpy.sqrt(get_texlabel_width(node_label))
+            node_label_size = np.sqrt(get_texlabel_width(node_label))
             font_color = get_color(data['font_color'], 'black')
 
             # draw node label
@@ -406,11 +402,11 @@ class Graph(Plot):
             # parameter rad describes the height in the normalized triangle
             if (u, v) in seen:
                 rad = seen.get((u, v))
-                rad = -(rad + float(numpy.sign(rad)) * .2)
+                rad = -(rad + float(np.sign(rad)) * .2)
             else:
-                scale = 1. / numpy.amax(numpy.array(figsize))
-                vec = scale * (numpy.array(pos[v]) - numpy.array(pos[u]))
-                rad = vec[0] * vec[1] / numpy.sqrt(2 * numpy.sum(vec ** 2))
+                scale = 1. / np.amax(np.array(figsize))
+                vec = scale * (np.array(pos[v]) - np.array(pos[u]))
+                rad = vec[0] * vec[1] / np.sqrt(2 * np.sum(vec ** 2))
                 if self._config['graph_layout'] == 'layer':
                     gdir = self._config['graph_direction']
                     if gdir in ['left', 'right']: rad *= -1
@@ -424,11 +420,11 @@ class Graph(Plot):
             elif not self._config['edge_width_enabled']:
                 linestyle = '-'
                 linewidth = edge_width
-                alpha = numpy.amin([numpy.absolute(weight), 1.0])
+                alpha = np.amin([np.absolute(weight), 1.0])
             else:
                 linestyle = '-'
-                linewidth = numpy.absolute(weight) * edge_width
-                alpha = numpy.amin([numpy.absolute(weight), 1.0])
+                linewidth = np.absolute(weight) * edge_width
+                alpha = np.amin([np.absolute(weight), 1.0])
 
             # draw edge
             nodeA = graph.node[u]['patch']
@@ -449,7 +445,7 @@ class Graph(Plot):
 
         # (optional) draw legend
         if self._config['show_legend']:
-            num_groups = numpy.sum([1 for g in list(groups.values()) \
+            num_groups = np.sum([1 for g in list(groups.values()) \
                 if isinstance(g, list) and len(g) > 0])
             markerscale = 0.6 * self._config['legend_fontsize'] / font_size
             ax.legend(

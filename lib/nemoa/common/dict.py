@@ -4,23 +4,25 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-try: import numpy
-except ImportError as e: raise ImportError(
-    "nemoa.common.dict requires numpy: https://scipy.org") from e
+try:
+    import numpy as np
+except ImportError as E:
+    raise ImportError("requires package numpy: "
+        "https://scipy.org") from E
 
 from typing import Optional
 
-def dict_to_array(d: dict, axes: tuple, na: float = 0.) -> numpy.ndarray:
+def dict_to_array(d: dict, axes: tuple, na: float = 0.) -> np.ndarray:
     """Convert dictionary to 2d numpy ndarray."""
 
-    a = numpy.empty(shape = (len(axes[0]), len(axes[1])))
+    a = np.empty(shape = (len(axes[0]), len(axes[1])))
     for i, x in enumerate(axes[0]):
         for j, y in enumerate(axes[1]):
             a[i, j] = d[(x, y)] if (x, y) in d else na
 
     return a
 
-def array_to_dict(a: numpy.ndarray, axes: tuple,
+def array_to_dict(a: np.ndarray, axes: tuple,
     na: Optional[float] = None) -> dict:
     """Convert 2d numpy ndarray to dictionary."""
 

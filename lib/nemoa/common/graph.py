@@ -4,17 +4,22 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-try: import networkx
-except ImportError as e: raise ImportError(
-    "nemoa.common.graph requires networkx: "
-    "https://networkx.github.io") from e
+try:
+    import networkx as nx
+except ImportError as E:
+    raise ImportError("requires package networkx: "
+        "https://networkx.github.io") from E
 
-try: import numpy
-except ImportError as e: raise ImportError(
-    "nemoa.common.graph requires numpy: https://scipy.org") from e
+try:
+    import numpy as np
+except ImportError as E:
+    raise ImportError("requires package numpy: "
+        "https://scipy.org") from E
 
-from networkx.classes.digraph import DiGraph
+from networkx.classes import digraph
 from typing import Optional
+
+DiGraph = digraph.DiGraph
 
 def get_layout(G: DiGraph, layout: str = 'spring',
     size: Optional[tuple] = None, padding: tuple = (0., 0., 0., 0.),
@@ -23,15 +28,12 @@ def get_layout(G: DiGraph, layout: str = 'spring',
 
     Args:
         G: networkx graph instance
-        layout (string, optional): graph layout name
-            default is "spring"
-        size (2-tuple, optional): size in pixel (x, y)
-            default is None, which means no rescale
-        padding (4-tuple, optional): padding in percentage
-            in format (up, down, left, right)
-            default is (0., 0., 0., 0.), which means no padding
-        rotate (float, optional): rotation angle in degrees
-            default is 0.0, which means no rotation
+        layout: graph layout name. Default is "spring"
+        size: size in pixel (x, y). Default is None, which means no rescale
+        padding: padding in percentage in format (up, down, left, right)
+            Default is (0., 0., 0., 0.), which means no padding
+        rotate: Rotation Angle in degrees. Default is 0.0,
+            which means no rotation
 
     Return:
         dictionary containing node positions for graph layout
@@ -41,28 +43,19 @@ def get_layout(G: DiGraph, layout: str = 'spring',
     # 2do: allow layouts from pygraphviz_layout
     # 2do: determine layout by graph type if layout is None
 
-    if layout == 'spring':
-        pos = networkx.spring_layout(G, **kwargs)
-    elif layout == 'layer':
-        pos = get_layer_layout(G, **kwargs)
-    elif layout == 'random':
-        pos = networkx.random_layout(G, **kwargs)
-    elif layout == 'circular':
-        pos = networkx.circular_layout(G, **kwargs)
-    elif layout == 'shell':
-        pos = networkx.shell_layout(G, **kwargs)
-    elif layout == 'spectral':
-        pos = networkx.spectral_layout(G, **kwargs)
+    if layout == 'spring': pos = nx.spring_layout(G, **kwargs)
+    elif layout == 'layer': pos = get_layer_layout(G, **kwargs)
+    elif layout == 'random': pos = nx.random_layout(G, **kwargs)
+    elif layout == 'circular': pos = nx.circular_layout(G, **kwargs)
+    elif layout == 'shell': pos = nx.shell_layout(G, **kwargs)
+    elif layout == 'spectral': pos = nx.spectral_layout(G, **kwargs)
     elif layout == 'fruchterman_reingold':
-        pos = networkx.fruchterman_reingold_layout(G, **kwargs)
-    else: raise ValueError(
-        "could not get graph layout: "
-        "layout '%s' is not supported." % layout)
+        pos = nx.fruchterman_reingold_layout(G, **kwargs)
+    else: raise TypeError(f"layout '{layout}' is not supported")
 
     # rescale node positions to given figure size, padding
     # and rotation angle
-    pos = rescale_layout(pos,
-        size = size, padding = padding, rotate = rotate)
+    pos = rescale_layout(pos, size = size, padding = padding, rotate = rotate)
 
     return pos
 
@@ -123,8 +116,8 @@ def get_layer_layout(G: DiGraph, direction: str = 'right',
 
     Args:
         G: networkx graph instance
-        direction (string, optional):
-        minimize (string, optional):
+        direction:
+        minimize:
 
     Return:
 
@@ -150,7 +143,7 @@ def get_layer_layout(G: DiGraph, direction: str = 'right',
             tlen = len(tgt)
 
             # calculate cost matrix for positions by weights
-            cost = numpy.zeros((tlen, tlen))
+            cost = np.zeros((tlen, tlen))
             for sid, u in enumerate(src):
                 for tid, v in enumerate(tgt):
                     data = edges.get((u, v))
@@ -158,9 +151,9 @@ def get_layer_layout(G: DiGraph, direction: str = 'right',
                     if not isinstance(data, dict): continue
                     value = data.get(minimize)
                     if not isinstance(value, float): continue
-                    weight = numpy.absolute(value)
+                    weight = np.absolute(value)
                     for pid in range(tlen):
-                        dist = numpy.absolute(
+                        dist = np.absolute(
                             (pid + .5) / (tlen + 1.) \
                             - (sid + .5) / (slen + 1.))
                         cost[pid, tid] += dist * weight
@@ -172,11 +165,11 @@ def get_layer_layout(G: DiGraph, direction: str = 'right',
             psel = list(range(tlen)) # position select list
             sort = [None] * tlen
             for i in range(tlen):
-                cmax = numpy.amax(cost[psel][:, nsel], axis = 0)
-                cmin = numpy.amin(cost[psel][:, nsel], axis = 0)
+                cmax = np.amax(cost[psel][:, nsel], axis = 0)
+                cmin = np.amin(cost[psel][:, nsel], axis = 0)
                 diff = cmax ** 2 - cmin ** 2
-                nid  = nsel[numpy.argmax(diff)]
-                pid  = psel[numpy.argmin(cost[psel][:, nid])]
+                nid  = nsel[np.argmax(diff)]
+                pid  = psel[np.argmin(cost[psel][:, nid])]
                 sort[pid] = tgt[nid]
                 nsel.remove(nid)
                 psel.remove(pid)
@@ -297,21 +290,21 @@ def get_scaling_factor(pos: dict) -> float:
     """
 
     # calculate euclidean distances between node positions
-    norm = lambda x: numpy.sqrt(numpy.sum(x ** 2))
-    dist = lambda u, v: norm(numpy.array(pos[u]) - numpy.array(pos[v]))
+    norm = lambda x: np.sqrt(np.sum(x ** 2))
+    dist = lambda u, v: norm(np.array(pos[u]) - np.array(pos[v]))
     dl = []
     for i, u in enumerate(pos.keys()):
         for j, v in enumerate(list(pos.keys())[i + 1:], i + 1):
             dl.append(dist(u, v))
-    da = numpy.array(dl)
+    da = np.array(dl)
 
     # calculate maximal scaling factor for non overlapping nodes
     # by minimal euklidean distance between node positions
-    smax = 2.32 * numpy.amin(da)
+    smax = 2.32 * np.amin(da)
 
     # calculate minimal scaling factor
     # by average euklidean distance between node positions
-    smin = 0.20 * numpy.mean(da)
+    smin = 0.20 * np.mean(da)
 
     # if some nodes are exceptional close
     # the overlapping of those nodes is not avoided
@@ -324,14 +317,12 @@ def rescale_layout(pos: dict, size: Optional[tuple] = None,
     """Rescale node positions.
 
     Args:
-        pos (dict): dictionary with node positions
-        size (2-tuple, optional): size in pixel (x, y)
-            default is None, which means no rescale
-        padding (4-tuple, optional): padding in percentage
-            in format (up, down, left, right)
-            default is (0., 0., 0., 0.), which means no padding
-        rotate (float, optional): rotation angle in degrees
-            default is 0.0, which means no rotation
+        pos: dictionary with node positions
+        size: size in pixel (x, y). Default is None, which means no rescale
+        padding: padding in percentage in format (up, down, left, right).
+            Default is (0., 0., 0., 0.), which means no padding
+        rotate: Rotation Angle in degrees. Default is 0.0, which means no
+            rotation
 
     Return:
         dictionary containing rescaled node positions.
@@ -339,23 +330,23 @@ def rescale_layout(pos: dict, size: Optional[tuple] = None,
     """
 
     # create numpy array with positions
-    a = numpy.array([(x, y) for x, y in list(pos.values())])
+    a = np.array([(x, y) for x, y in list(pos.values())])
 
     # rotate positions around its center by a given rotation angle
     if bool(rotate):
-        theta = numpy.radians(rotate)
-        cos, sin = numpy.cos(theta), numpy.sin(theta)
-        R = numpy.array([[cos, -sin], [sin, cos]])
+        theta = np.radians(rotate)
+        cos, sin = np.cos(theta), np.sin(theta)
+        R = np.array([[cos, -sin], [sin, cos]])
         mean = a.mean(axis = 0)
-        a = numpy.dot(a - mean, R.T) + mean
+        a = np.dot(a - mean, R.T) + mean
 
     # rescale positions with padding
     if not isinstance(size, type(None)):
-        dmin, dmax = numpy.amin(a, axis = 0), numpy.amax(a, axis = 0)
+        dmin, dmax = np.amin(a, axis = 0), np.amax(a, axis = 0)
         u, r, d, l = padding
-        pmin, pmax = numpy.array([l, d]), 1. - numpy.array([r, u])
+        pmin, pmax = np.array([l, d]), 1. - np.array([r, u])
         a = (pmax - pmin) * (a - dmin) / (dmax - dmin) + pmin
-        a = numpy.array(size) * a
+        a = np.array(size) * a
 
     pos = {node: tuple(a[i]) for i, node in enumerate(pos.keys())}
 

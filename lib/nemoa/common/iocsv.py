@@ -7,15 +7,17 @@ __license__ = 'GPLv3'
 import csv
 import os
 
-try: import numpy
-except ImportError as e: raise ImportError(
-    "nemoa.common.iocsv requires numpy: https://scipy.org") from e
+try:
+    import numpy as np
+except ImportError as E:
+    raise ImportError("requires package numpy: "
+        "https://scipy.org") from E
 
 from typing import Optional
 
 def load(path: str, delim: Optional[str] = None,
     labels: Optional[list] = None, usecols: Optional[tuple] = None,
-    rowlabelcol: Optional[int] = None) -> Optional[numpy.ndarray]:
+    rowlabelcol: Optional[int] = None) -> Optional[np.ndarray]:
     """Load numpy ndarray from CSV file.
 
     Args:
@@ -91,12 +93,12 @@ def load(path: str, delim: Optional[str] = None,
                 continue
             break
 
-    data = numpy.loadtxt(path, skiprows = skiprows,
+    data = np.loadtxt(path, skiprows = skiprows,
         delimiter = delim, usecols = usecols, dtype = dtype)
 
     return data
 
-def save(path: str, data: numpy.ndarray, header: Optional[str] = None,
+def save(path: str, data: np.ndarray, header: Optional[str] = None,
     labels: Optional[list] = None, delim: str = ',') -> bool:
     """Save numpy array to CSV file.
 
@@ -118,7 +120,7 @@ def save(path: str, data: numpy.ndarray, header: Optional[str] = None,
     elif isinstance(labels, list): header = delim.join(labels)
 
     fmt = delim.join(['%s'] + ['%10.10f'] * (len(data[0]) - 1))
-    numpy.savetxt(path, data, fmt = fmt, header = header, comments = '')
+    np.savetxt(path, data, fmt = fmt, header = header, comments = '')
 
     return True
 
