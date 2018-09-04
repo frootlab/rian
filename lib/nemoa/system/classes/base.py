@@ -1380,8 +1380,8 @@ class System(metadata.BaseClassIP):
         if not hasattr(self, '_config') or not self._config:
             self._config = self._default.copy()
         if config:
-            from nemoa.common.dict import merge
-            self._config = merge(config, self._config)
+            from nemoa.common import ndict
+            self._config = ndict.merge(config, self._config)
 
         # reset consistency check
         self._config['check'] = {
@@ -1398,8 +1398,8 @@ class System(metadata.BaseClassIP):
 
         # get system parameters from dict
         if params:
-            from nemoa.common.dict import merge
-            self._params = merge(params, self._params)
+            from nemoa.common import ndict
+            self._params = ndict.merge(params, self._params)
 
             # create instances of units and links
             retval &= self._set_params_create_units()
@@ -1449,8 +1449,8 @@ class System(metadata.BaseClassIP):
                 links[(src_lid, tgt_lid)]['A'][src_sid, tgt_sid] = 1.0
 
             params = {'units': units, 'links': links}
-            from nemoa.common.dict import merge
-            self._params = merge(params, self._params)
+            from nemoa.common import ndict
+            self._params = ndict.merge(params, self._params)
 
             # create instances of units and links
             retval &= self._set_params_create_units()

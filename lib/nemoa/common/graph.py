@@ -4,14 +4,12 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-try:
-    import networkx as nx
+try: import networkx as nx
 except ImportError as E:
     raise ImportError("requires package networkx: "
         "https://networkx.github.io") from E
 
-try:
-    import numpy as np
+try: import numpy as np
 except ImportError as E:
     raise ImportError("requires package numpy: "
         "https://scipy.org") from E

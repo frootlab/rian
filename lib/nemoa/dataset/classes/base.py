@@ -1297,12 +1297,12 @@ class Dataset(metadata.BaseClassIP):
 
         """
 
-        from nemoa.common.dict import merge
+        from nemoa.common import ndict
 
         # initialize configuration dictionary
         if not isinstance(self._config, dict): self._config = {}
         if not isinstance(config, dict): config = {}
-        self._config = merge(config, self._config, self._default)
+        self._config = ndict.merge(config, self._config, self._default)
 
         # 2do: reconfigure!?
         self._tables = {}
@@ -1322,8 +1322,8 @@ class Dataset(metadata.BaseClassIP):
 
         if not tables: return True
 
-        from nemoa.common.dict import merge
-        self._tables = merge(tables, self._tables)
+        from nemoa.common import ndict
+        self._tables = ndict.merge(tables, self._tables)
 
         return True
 

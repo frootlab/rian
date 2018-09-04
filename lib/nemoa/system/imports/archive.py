@@ -23,8 +23,8 @@ class Npz:
     default = {}
 
     def __init__(self, **kwargs):
-        from nemoa.common.dict import merge
-        self.settings = merge(kwargs, self.default)
+        from nemoa.common import ndict
+        self.settings = ndict.merge(kwargs, self.default)
 
     def load(self, path):
         copy = numpy.load(path)

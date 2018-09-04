@@ -118,7 +118,7 @@ def get_module(s: str) -> Optional[Module]:
 
     return minst
 
-def get_functions(minst: Optional[Module] = None, details: bool = False,
+def functions(minst: Optional[Module] = None, details: bool = False,
     filters: dict = {}, **kwargs) -> list:
     """Get filtered list of function names within given module instance.
 
@@ -134,8 +134,8 @@ def get_functions(minst: Optional[Module] = None, details: bool = False,
         List with full qualified function names.
 
     Example:
-        all = lambda a, b: frozenset(a) <= frozenset(b)
-        get_functions(filters = {'tags': all}, tags = ['fast', 'stable'])
+        >>> all = lambda a, b: frozenset(a) <= frozenset(b)
+        >>> functions(filters = {'tags': all}, tags = ['fast', 'stable'])
 
     """
 
@@ -179,7 +179,7 @@ def get_functions(minst: Optional[Module] = None, details: bool = False,
 
     return fdetails.keys()
 
-def locate_functions(minst: Optional[Module] = None, recursive: bool = True,
+def locfuncs(minst: Optional[Module] = None, recursive: bool = True,
     details: bool = False, filters: dict = {},  **kwargs):
     """Recursively search for functions within submodules."""
 
@@ -195,8 +195,8 @@ def locate_functions(minst: Optional[Module] = None, recursive: bool = True,
         for mname in mnames:
             subinst = get_module(mname)
             if subinst is None: continue
-            funcs += get_functions(subinst, details = False,
-                filters = filters, **kwargs)
+            funcs += functions(subinst, details = False, filters = filters,
+                **kwargs)
         return funcs
 
     # create dictionary with function attributes
@@ -204,8 +204,7 @@ def locate_functions(minst: Optional[Module] = None, recursive: bool = True,
     for mname in mnames:
         subinst = get_module(mname)
         if subinst is None: continue
-        fdict = get_functions(subinst, details = True,
-            filters = filters, **kwargs)
+        fdict = functions(subinst, details = True, filters = filters, **kwargs)
         for key, val in fdict.items():
             funcs[key] = val
 

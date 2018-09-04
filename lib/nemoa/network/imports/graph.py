@@ -85,17 +85,17 @@ class Graphml:
     def __init__(self, **kwargs):
         """ """
 
-        from nemoa.common.dict import merge
+        from nemoa.common import ndict
 
-        self.settings = merge(kwargs, self.default)
+        self.settings = ndict.merge(kwargs, self.default)
 
     def load(self, path):
         """ """
 
-        from nemoa.common.dict import strkeys
+        from nemoa.common import ndict
 
         G = networkx.read_graphml(path)
-        d = strkeys(_graph_to_dict(_graph_decode(G)))
+        d = ndict.strkeys(_graph_to_dict(_graph_decode(G)))
 
         return {'config': d['graph']['params'], 'graph': d }
 
@@ -108,16 +108,16 @@ class Gml:
     def __init__(self, **kwargs):
         """ """
 
-        from nemoa.common.dict import merge
+        from nemoa.common import ndict
 
-        self.settings = merge(kwargs, self.default)
+        self.settings = ndict.merge(kwargs, self.default)
 
     def load(self, path):
         """ """
 
-        from nemoa.common.dict import strkeys
+        from nemoa.common import ndict
 
         G = networkx.read_gml(path, relabel = True)
-        d = strkeys(_graph_to_dict(_graph_decode(G)))
+        d = ndict.strkeys(_graph_to_dict(_graph_decode(G)))
 
         return {'config': d['graph']['params'], 'graph': d }

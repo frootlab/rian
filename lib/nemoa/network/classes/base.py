@@ -339,7 +339,7 @@ class Network(metadata.BaseClassIP):
 
         from nemoa.common import module
 
-        funcs = module.get_functions(networkx.algorithms, details = True)
+        funcs = module.functions(networkx.algorithms, details = True)
         if attribute is None: return funcs
 
         return {key: val.get(attribute, None) for key, val in funcs.items()}
@@ -615,8 +615,8 @@ class Network(metadata.BaseClassIP):
         if not hasattr(self, '_config') or not self._config:
             self._config = self._default.copy()
         if config:
-            from nemoa.common.dict import merge
-            self._config = merge(config, self._config)
+            from nemoa.common import ndict
+            self._config = ndict.merge(config, self._config)
 
             # reconfigure graph
             self._configure_graph()
@@ -638,8 +638,8 @@ class Network(metadata.BaseClassIP):
         if not graph: return True
 
         # merge graph
-        from nemoa.common.dict import merge
-        graph_copy = merge(graph, self._get_graph())
+        from nemoa.common import ndict
+        graph_copy = ndict.merge(graph, self._get_graph())
 
         # create networkx graph instance
         object_type = graph['graph']['params']['networkx']
@@ -669,12 +669,12 @@ class Network(metadata.BaseClassIP):
             raise ValueError("system is not valid")
 
         # get edge parameters from system links
-        from nemoa.common.dict import merge
+        from nemoa.common import ndict
         for edge in self._graph.edges():
             params = system.get('link', edge)
             if not params: continue
             edge_dict = self._graph[edge[0]][edge[1]]
-            edge_dict['params'] = merge(params, edge_dict['params'])
+            edge_dict['params'] = ndict.merge(params, edge_dict['params'])
             edge_dict['weight'] = float(params['weight'])
 
         return True

@@ -7,8 +7,7 @@ __license__ = 'GPLv3'
 import csv
 import os
 
-try:
-    import numpy as np
+try: import numpy as np
 except ImportError as E:
     raise ImportError("requires package numpy: "
         "https://scipy.org") from E

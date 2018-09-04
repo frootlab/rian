@@ -54,8 +54,9 @@ class Rules:
         'normalize': ''}
 
     def __init__(self, **kwargs):
-        from nemoa.common.dict import merge
-        self.settings = merge(kwargs, self.default)
+        from nemoa.common import ndict
+
+        self.settings = ndict.merge(kwargs, self.default)
 
     def build(self):
 

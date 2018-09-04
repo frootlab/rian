@@ -4,14 +4,16 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-try:
-    import numpy as np
+# import modules into namespace
+
+try: import numpy as np
 except ImportError as E:
     raise ImportError("requires package numpy: "
         "https://scipy.org") from E
 
-from typing import Union, Optional
+# define additional types
 
+from typing import Union, Optional
 ArrayLike = Union[np.ndarray, np.matrix, float, int]
 
 #

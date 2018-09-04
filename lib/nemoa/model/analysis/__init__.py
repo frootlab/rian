@@ -15,4 +15,4 @@ def algorithms(**kwargs):
     any = lambda a, b: bool(frozenset(a) & frozenset(b))
     filters = {'tags': all, 'classes': any}
 
-    return module.locate_functions(filters = filters, **kwargs)
+    return module.locfuncs(filters = filters, **kwargs)

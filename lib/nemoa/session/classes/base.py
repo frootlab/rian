@@ -55,10 +55,10 @@ class Session:
         import os
         import sys
 
-        from nemoa.common.dict import merge
+        from nemoa.common import ndict
         from nemoa.common import ioini
 
-        self._config = merge(kwargs, self._default)
+        self._config = ndict.merge(kwargs, self._default)
 
         # reset workspace to default values
         self._set_workspace_reset()

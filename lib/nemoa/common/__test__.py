@@ -123,49 +123,41 @@ class TestSuite(unittest.TestSuite):
             self.assertTrue(len(classes.methods(obj, prefix = 'm')) == 1)
 
     def test_common_dict(self):
-        import nemoa.common.dict
+        from nemoa.common import ndict
 
         import numpy as np
 
         with self.subTest(function = "merge"):
-            func = nemoa.common.dict.merge
-            rval = func({'a': 1}, {'a': 2, 'b': 2}, {'c': 3})
-            test = rval == {'a': 1, 'b': 2, 'c': 3}
-            self.assertTrue(test)
+            rval = ndict.merge({'a': 1}, {'a': 2, 'b': 2}, {'c': 3})
+            self.assertTrue(rval == {'a': 1, 'b': 2, 'c': 3})
 
         with self.subTest(function = "section"):
-            func = nemoa.common.dict.section
-            rval = func({'a1': 1, 'a2': 2, 'b1': 3}, 'a')
-            test = rval == {'1': 1, '2': 2}
-            self.assertTrue(test)
+            rval = ndict.section({'a1': 1, 'a2': 2, 'b1': 3}, 'a')
+            self.assertTrue(rval == {'1': 1, '2': 2})
 
         with self.subTest(function = "strkeys"):
-            func = nemoa.common.dict.strkeys
-            rval = func({(1, 2): 3, None: {True: False}})
-            test = rval == {('1', '2'): 3, 'None': {'True': False}}
-            self.assertTrue(test)
+            rval = ndict.strkeys({(1, 2): 3, None: {True: False}})
+            self.assertTrue(rval == {('1', '2'): 3, 'None': {'True': False}})
 
         with self.subTest(function = "sumjoin"):
-            func = nemoa.common.dict.sumjoin
-            rval = func({'a': 1}, {'a': 2, 'b': 3})
-            test = rval == {'a': 3, 'b': 3}
-            self.assertTrue(test)
+            rval = ndict.sumjoin({'a': 1}, {'a': 2, 'b': 3})
+            self.assertTrue(rval == {'a': 3, 'b': 3})
 
     def test_common_graph(self):
         from nemoa.common import graph
 
-        import networkx
+        import networkx as nx
 
         l = [(1, 3), (1, 4), (2, 3), (2, 4)]
-        G = networkx.DiGraph(l, directed = True)
-        networkx.set_node_attributes(G, {
+        G = nx.DiGraph(l, directed = True)
+        nx.set_node_attributes(G, {
             1: {'layer': 'i', 'layer_id': 0 , 'layer_sub_id': 0},
             2: {'layer': 'i', 'layer_id': 0 , 'layer_sub_id': 1},
             3: {'layer': 'o', 'layer_id': 1 , 'layer_sub_id': 0},
             4: {'layer': 'o', 'layer_id': 1 , 'layer_sub_id': 1}
         })
 
-        networkx.set_edge_attributes(G, {
+        nx.set_edge_attributes(G, {
             (1, 3): {'weight': 0.1}, (1, 4): {'weight': 0.9},
             (2, 3): {'weight': 0.9}, (2, 4): {'weight': 0.1}
         })
@@ -337,30 +329,25 @@ class TestSuite(unittest.TestSuite):
                 and minst.__name__ == 'nemoa.common.module'
             self.assertTrue(test)
 
-        with self.subTest(function = "get_functions"):
-            funcs = module.get_functions(minst)
-            fname = 'nemoa.common.module.get_functions'
-            test = fname in funcs
-            test = test and len(module.get_functions(minst,
-                name = 'get_functions')) == 1
-            test = test and len(module.get_functions(minst, name = '')) == 0
+        with self.subTest(function = "functions"):
+            funcs = module.functions(minst)
+            test = 'nemoa.common.module.functions' in funcs \
+                and len(module.functions(minst, name = 'functions')) == 1 \
+                and len(module.functions(minst, name = '')) == 0
             self.assertTrue(test)
 
         with self.subTest(function = "get_function"):
-            finst = module.get_function(fname)
-            test = type(finst).__name__ == 'function'
-            self.assertTrue(test)
+            finst = module.get_function('nemoa.common.module.functions')
+            self.assertTrue(type(finst).__name__ == 'function')
 
         with self.subTest(function = "get_kwargs"):
             fargs = module.get_kwargs(finst)
-            test = 'details' in fargs
-            self.assertTrue(test)
+            self.assertTrue('details' in fargs)
 
-        with self.subTest(function = "locate_functions"):
+        with self.subTest(function = "locfuncs"):
             minst = module.get_module('nemoa.common')
-            funcs = module.locate_functions(minst, name = 'locate_functions')
-            test = len(funcs) == 1
-            self.assertTrue(test)
+            funcs = module.locfuncs(minst, name = 'locfuncs')
+            self.assertTrue(len(funcs) == 1)
 
     def test_common_ospath(self):
         from nemoa.common import ospath

@@ -13,10 +13,6 @@ from typing import Dict, Optional, Sequence, Union
 PathLike = Sequence[Union['PathLike', str]]
 PathLikeDict = Dict[str, PathLike]
 
-#
-# Path Information
-#
-
 def cwd() -> str:
     """Path of current working directory.
 
@@ -123,7 +119,7 @@ def expand(*args: PathLike, udict: PathLikeDict = {}, expapp: bool = True,
         >>> expand('%var1%/c', 'd', udict = {'var1': 'a/%var2%', 'var2': 'b'})
         'a\\b\\c\\d'
 
-     """
+    """
 
     import sys
 
@@ -257,10 +253,6 @@ def fileext(*args: PathLike) -> str:
 
     return ext
 
-#
-# File operations
-#
-
 def cp(source: PathLike, target: PathLike) -> bool:
     """Copy sub directories from given source to destination directory.
 
@@ -284,8 +276,8 @@ def cp(source: PathLike, target: PathLike) -> bool:
         t = os.path.join(ddir, basename(s))
         if os.path.exists(t): shutil.rmtree(t)
         try: shutil.copytree(s, t)
-        except Exception as e:
-            raise OSError("could not copy directory") from e
+        except Exception as E:
+            raise OSError("could not copy directory") from E
 
     return True
 
@@ -305,8 +297,8 @@ def mkdir(*args: PathLike) -> bool:
     if os.path.isdir(path): return True
 
     try: os.makedirs(path)
-    except Exception as e:
-        raise OSError("could not create directory") from e
+    except Exception as E:
+        raise OSError("could not create directory") from E
 
     return os.path.isdir(path)
 

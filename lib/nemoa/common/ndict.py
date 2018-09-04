@@ -10,8 +10,8 @@ def merge(*args: dict, new: bool = True) -> dict:
     """Recursively right merge dictionaries.
 
     Args:
-        *args (dict): dictionaries, that are recursively right merged
-        new (bool, optional): a new dictionary is created if new is True
+        *args: dictionaries, that are recursively right merged
+        new: a new dictionary is created if new is True
 
     Returns:
         Dictionary containing right merge of dictionaries.

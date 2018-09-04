@@ -6,8 +6,7 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-try:
-    import numpy as np
+try: import numpy as np
 except ImportError as E:
     raise ImportError("requires package numpy: "
         "https://scipy.org") from E
@@ -47,15 +46,15 @@ class Plot:
     def __init__(self, *args, **kwargs):
 
         try: import matplotlib
-        except ImportError: raise ImportError(
-            "nemoa.common.plot.Plot() requires matplotlib: "
-            "https://matplotlib.org")
+        except ImportError as E:
+            raise ImportError("requires package matplotlib: "
+                "https://matplotlib.org") from E
 
-        from nemoa.common.dict import merge
+        from nemoa.common import ndict
 
         # merge config from defaults, current config and kwargs
         self._kwargs = kwargs
-        self._config = merge(kwargs, self._config, self._default)
+        self._config = ndict.merge(kwargs, self._config, self._default)
 
         # update global matplotlib settings
         matplotlib.rc('text', usetex = self._config['usetex'])
@@ -87,8 +86,8 @@ class Plot:
     def set_default(self, config: dict = {}):
         """Set default values. """
 
-        from nemoa.common.dict import merge
-        self._config = merge(self._kwargs, config, self._config)
+        from nemoa.common import ndict
+        self._config = ndict.merge(self._kwargs, config, self._config)
 
         return True
 
@@ -311,7 +310,7 @@ class Graph(Plot):
             "nemoa.common.plot.Graph.plot() requires networkx: "
             "https://networkx.github.io")
 
-        from nemoa.common.dict import section
+        from nemoa.common import ndict
         from nemoa.common.graph import get_layout, get_layout_normsize, \
             get_groups, is_directed
 
@@ -326,7 +325,7 @@ class Graph(Plot):
         ax.axis('off')
 
         # get node positions and sizes
-        layout_params = section(self._config, 'graph_')
+        layout_params = ndict.section(self._config, 'graph_')
         del layout_params['layout']
 
         pos = get_layout(graph,

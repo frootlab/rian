@@ -238,9 +238,9 @@ class Evaluation:
     def _set_config(self, config = None, **kwargs):
         """Set evaluation configuration from dictionary."""
 
-        from nemoa.common.dict import merge
+        from nemoa.common import ndict
         if not isinstance(config, dict): config = {}
-        self._config = merge(kwargs, config, self._default)
+        self._config = ndict.merge(kwargs, config, self._default)
 
         return True
 

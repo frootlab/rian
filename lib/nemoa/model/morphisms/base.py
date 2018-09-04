@@ -283,8 +283,8 @@ class Optimizer:
             schedules = system._config.get('schedules', {})
             config = schedules.get(key, {}).get(system.type, {})
 
-        from nemoa.common.dict import merge
-        self._config = merge(kwargs, config, self._default)
+        from nemoa.common import ndict
+        self._config = ndict.merge(kwargs, config, self._default)
 
         return True
 
