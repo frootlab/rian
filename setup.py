@@ -74,7 +74,7 @@ def install():
 
     pkg = {
         'name': 'nemoa',
-        'descfile': 'DESCRIPTION.rst',
+        'descfile': 'README.md',
         'libdir': 'lib',
         'keywords': 'dataanalysis deeplearning ann rbm dbn dbm',
         'install_requires': [
@@ -139,7 +139,7 @@ def postinstall():
         import os
         import shutil
 
-        print(('copying %s -> %s' % (src, tgt)))
+        print(f"copying {src} -> {tgt}")
 
         for srcsdir in glob.glob(os.path.join(src, '*')):
             tgtsdir = os.path.join(tgt, os.path.basename(srcsdir))

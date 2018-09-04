@@ -13,7 +13,7 @@ class TestSuite(unittest.TestCase):
             import nemoa
         except ImportError as E:
             raise ImportError("requires package nemoa: "
-                "https://http://fishroot.github.io/nemoa/") from E
+                "http://fishroot.github.io/nemoa/") from E
 
         self.mode = nemoa.get('mode')
         self.workspace = nemoa.get('workspace')
@@ -24,6 +24,6 @@ class TestSuite(unittest.TestCase):
             import nemoa
         except ImportError as E:
             raise ImportError("requires package nemoa: "
-                "https://http://fishroot.github.io/nemoa/") from E
+                "http://fishroot.github.io/nemoa/") from E
 
         nemoa.set('mode', self.mode)

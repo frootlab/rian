@@ -12,7 +12,6 @@ def new(*args, **kwargs):
     elif len(kwargs.get('config', {}).get('type', '').split('.')) != 2:
         raise ValueError("configuration is not valid")
 
-
     mname, cname = tuple(kwargs['config']['type'].split('.'))
     try:
         from nemoa.common import module

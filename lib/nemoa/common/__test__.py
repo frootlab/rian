@@ -311,8 +311,13 @@ class TestSuite(unittest.TestSuite):
             test = module.curname() == 'nemoa.common.__test__'
             self.assertTrue(test)
 
-        with self.subTest(function = "get_submodules"):
-            test = 'nemoa.common.module' in module.get_submodules(nemoa.common)
+        with self.subTest(function = "callername"):
+            test = module.callername() \
+                == 'nemoa.common.__test__.test_common_module'
+            self.assertTrue(test)
+
+        with self.subTest(function = "submodules"):
+            test = 'nemoa.common.module' in module.submodules(nemoa.common)
             self.assertTrue(test)
 
         with self.subTest(function = "get_module"):

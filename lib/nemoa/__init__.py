@@ -8,17 +8,17 @@ within complex and natural data samples.
 
 """
 
-__version__     = '0.5.102'
-__status__      = 'Development'
-__description__ = 'Network-based Modeling and deep Data Analysis'
-__url__         = 'https://fishroot.github.io/nemoa'
-__license__     = 'GPLv3'
-__copyright__   = 'Copyright 2013-2018, Patrick Michl'
-__author__      = 'Patrick Michl'
-__email__       = 'patrick.michl@gmail.com'
-__maintainer__  = 'Patrick Michl'
-__company__     = 'Froot'
-__credits__     = ['Willi Jäger', 'Rainer König']
+__version__      = '0.5.103'
+__status__       = 'Development'
+__description__  = 'Network-based Modeling and deep Data Analysis'
+__url__          = 'https://fishroot.github.io/nemoa'
+__license__      = 'GPLv3'
+__copyright__    = 'Copyright 2013-2018, Patrick Michl'
+__author__       = 'Patrick Michl'
+__email__        = 'patrick.michl@gmail.com'
+__maintainer__   = 'Patrick Michl'
+__organization__ = 'Froot'
+__credits__      = ['Willi Jäger', 'Rainer König']
 
 import nemoa.common
 import nemoa.dataset

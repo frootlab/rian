@@ -11,9 +11,9 @@ def curname(frame: int = 0) -> str:
     """Get name of module, which calls this function.
 
     Args:
-        frame (int, optional): Frame index relative to the current frame
-            in the callstack, which is identified with 0. Negative values
-            consecutively identify previous modules within the callstack.
+        frame: Frame index relative to the current frame in the callstack,
+            which is identified with 0. Negative values consecutively identify
+            previous modules within the callstack.
             default: 0
 
     Returns:
@@ -22,9 +22,9 @@ def curname(frame: int = 0) -> str:
     """
 
     if not isinstance(frame, int):
-        raise TypeError('first argument is required to be an integer')
-    if not frame <= 0:
-        raise ValueError('first argument is required not to be positive')
+        raise TypeError(f"frame requires type 'int', not '{type(frame)}'")
+    if frame > 0:
+        raise ValueError("frame is required to be zero or negative")
 
     import inspect
 
@@ -39,13 +39,13 @@ def curname(frame: int = 0) -> str:
 
     return mname
 
-def get_caller_name(frame: int = 0) -> str:
+def callername(frame: int = 0) -> str:
     """Get name of the callable, which calls this function.
 
     Args:
-        frame (int, optional): Frame index relative to the current frame
-            in the callstack, which is identified with 0. Negative values
-            consecutively identify previous modules within the callstack.
+        frame: Frame index relative to the current frame in the callstack,
+            which is identified with 0. Negative values consecutively identify
+            previous modules within the callstack.
             default: 0
 
     Returns:
@@ -54,9 +54,9 @@ def get_caller_name(frame: int = 0) -> str:
     """
 
     if not isinstance(frame, int):
-        raise TypeError('first argument is required to be an integer')
-    if not frame <= 0:
-        raise ValueError('first argument is required not to be positive')
+        raise TypeError(f"frame requires type 'int', not '{type(frame)}'")
+    if frame > 0:
+        raise ValueError("frame is required to be zero or negative")
 
     import inspect
 
@@ -66,14 +66,14 @@ def get_caller_name(frame: int = 0) -> str:
 
     return '.'.join([mname, fname])
 
-def get_submodules(minst: Optional[ModuleType] = None,
+def submodules(minst: Optional[ModuleType] = None,
     recursive: bool = False) -> list:
     """Get list with submodule names.
 
     Args:
-        minst (ModuleType, optional): Module instance to search for submodules
+        minst: Module instance to search for submodules
             default: Use current module, which called this function
-        recursive (bool, optional): Search recursively within submodules
+        recursive: Search recursively within submodules
             default: Do not search recursively
 
     Returns:
@@ -82,8 +82,8 @@ def get_submodules(minst: Optional[ModuleType] = None,
     """
 
     if minst is None: minst = get_module(curname(-1))
-    elif not isinstance(minst, ModuleType): raise TypeError(
-        'First argument is required to be of ModuleType')
+    elif not isinstance(minst, ModuleType):
+        raise TypeError('minst is required to be of ModuleType')
 
     # check if module is a package or a file
     if not hasattr(minst, '__path__'): return []
@@ -97,7 +97,7 @@ def get_submodules(minst: Optional[ModuleType] = None,
     for path, name, ispkg in pkgutil.iter_modules(mpath):
         mlist += [mpref + name]
         if not ispkg or not recursive: continue
-        mlist += get_submodules(get_module(mpref + name), recursive = True)
+        mlist += submodules(get_module(mpref + name), recursive = True)
 
     return mlist
 
@@ -121,11 +121,11 @@ def get_functions(minst: Optional[ModuleType] = None, details: bool = False,
     """Get filtered list of function names within given module instance.
 
     Args:
-        minst (ModuleType, optional): Module instance to search for submodules
+        minst: Module instance to search for submodules
             default: Use current module, which called this function
-        details (bool, optional):
+        details:
             default: False
-        filters (dict, optional):
+        filters:
             default: {}
 
     Returns:
@@ -185,7 +185,7 @@ def locate_functions(minst: Optional[ModuleType] = None, recursive: bool = True,
     elif not isinstance(minst, ModuleType): raise TypeError(
         "first argument is required to be of ModuleType")
 
-    mnames = get_submodules(minst, recursive = recursive)
+    mnames = submodules(minst, recursive = recursive)
 
     # create list with qualified function names
     if not details:

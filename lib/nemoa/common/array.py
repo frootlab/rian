@@ -11,6 +11,7 @@ except ImportError as E:
         "https://scipy.org") from E
 
 from typing import Optional, Tuple, Union
+
 ArrayLike = Union[np.ndarray, np.matrix, float, int]
 Axis = Optional[Union[int, Tuple[int]]]
 

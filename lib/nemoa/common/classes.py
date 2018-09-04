@@ -4,6 +4,8 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+from typing import Optional
+
 def hasbase(cinst, cname: str) -> bool:
     """Return true if the class instance has the given name."""
 
@@ -12,21 +14,23 @@ def hasbase(cinst, cname: str) -> bool:
 
     return cname.lower() in bases
 
-def methods(cinst: type, attribute = None, grouping = None,
-    prefix: str = '', removeprefix: bool = True, renamekey = None):
+def methods(cinst: type, attribute: Optional[str] = None,
+    grouping: Optional[str] = None,
+    prefix: str = '', removeprefix: bool = True,
+    renamekey: Optional[str] = None):
     """Get the methods of a given class instance.
 
     Args:
         cinst: instance of class
-        prefix (string, optional): only methods with given prefix are returned.
-        removeprefix (bool, optional): remove prefix in dictionary keys if True.
-        renamekey (string, optional):
-        attribute (string, optional):
-        grouping (string, optional):
+        prefix: only methods with given prefix are returned.
+        removeprefix: remove prefix in dictionary keys if True.
+        renamekey:
+        attribute:
+        grouping:
 
     Returns:
-        Dictionary containing the methods of an instance including
-        their attributes.
+        Dictionary containing all methods of a given class instance, that
+        pass the given filter.
 
     """
 

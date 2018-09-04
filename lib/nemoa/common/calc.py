@@ -11,6 +11,7 @@ except ImportError as E:
         "https://scipy.org") from E
 
 from typing import Union, Optional
+
 ArrayLike = Union[np.ndarray, np.matrix, float, int]
 
 #
