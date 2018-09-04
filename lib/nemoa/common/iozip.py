@@ -8,33 +8,118 @@ import base64
 import pickle
 import zlib
 
-def load(f: str, *args, **kwargs) -> dict:
-    """Decode and decompress file to dictionary."""
+from typing import Any, Optional, Union
 
-    return loads(pickle.load(open(f, 'rb')), *args, **kwargs)
+ByteLike = Union[bytes, bytearray, str]
 
-def dump(d: dict, f: str, *args, **kwargs) -> None:
-    """Compress and encode dictionary to file."""
+def load(path: str, encoding: Optional[str] = 'base64') -> dict:
+    """Decode and decompress file.
 
-    s = dumps(d, *args, **kwargs)
+    Args:
+        path: Fully qualified filepath
+        encoding: Encodings specified in [RFC3548]. Allowed values are:
+            'Base16', 'Base32', 'Base64' and 'Base85'
 
-    return pickle.dump(s, file = open(f, 'wb'))
+    Returns:
+         Reconstituted object specified within the encoded file.
 
-def loads(s: str, encode: str = 'base64') -> dict:
-    """Decode and decompress string to dictionary."""
+    References:
+        [RFC3548] https://tools.ietf.org/html/rfc3548.html
 
-    if encode == 'base64': decode = base64.b64decode(s)
-    else: decode = s
+    """
 
-    return pickle.loads(zlib.decompress(decode))
+    s = pickle.load(open(path, 'rb')) # file to bytes
+    obj = loads(s, encoding = encoding) # bytes to object
 
-def dumps(d: dict, level: int = 9, encode: str = 'base64') -> str:
-    """Compress and encode dictionary to string."""
+    return obj
 
-    s = pickle.dumps(d)
-    compressed = zlib.compress(s, level)
+def dump(obj: object, path: str, encoding: Optional[str] = 'base64',
+    level: int = 6) -> bool:
+    """Compress and encode arbitrary object to file.
 
-    if encode == 'base64': encoded = base64.b64encode(compressed)
-    else: encoded = compressed
+    Args:
+        obj: Arbitrary object
+        path: Fully qualified filepath
+        encoding: Encodings specified in [RFC3548]. Allowed values are:
+            'base16', 'base32', 'base64' and 'base85'
+        level: compression level ranging from 0 to 9. Thereby:
+            0 is no compression
+            1 is fastest and produces the least compression
+            9 is slowest and produces the most compression
 
-    return encoded
+    Returns:
+        True if no exception has been raised.
+
+    References:
+        [RFC3548] https://tools.ietf.org/html/rfc3548.html
+
+    """
+
+    s = dumps(obj, encoding = encoding, level = level) # object to bytes
+    pickle.dump(s, file = open(path, 'wb')) # bytes to file
+
+    return True
+
+def loads(s: ByteLike, encoding: Optional[str] = 'base64') -> Any:
+    """Decode and decompress bytes-like object to object hierarchy.
+
+    Args:
+        s: Encoded bytes-like structure or string
+        encoding: Encodings specified in [RFC3548]. Allowed values are:
+            'Base16', 'Base32', 'Base64' and 'Base85'
+
+    Returns:
+         Reconstituted object specified within the encoded bytes-like
+         object or string.
+
+    References:
+        [RFC3548] https://tools.ietf.org/html/rfc3548.html
+
+    """
+
+    # decode bytes
+    if not encoding: pass
+    elif encoding == 'base64': s = base64.b64decode(s)
+    elif encoding == 'base32': s = base64.b32decode(s)
+    elif encoding == 'base16': s = base64.b16decode(s)
+    elif encoding == 'base85': s = base64.b85decode(s)
+    else: raise ValueError("value of argument 'encoding' is not valid")
+
+    s = zlib.decompress(s) # decompress bytes, level is not required
+    obj = pickle.loads(s) # bytes to object
+
+    return obj
+
+def dumps(obj: object, encoding: Optional[str] = 'base64',
+    level: int = 6) -> bytes:
+    """Compress and encode arbitrary object to bytes.
+
+    Args:
+        obj: Arbitrary object
+        encoding: Encodings specified in [RFC3548]. Allowed values are:
+            'base16', 'base32', 'base64' and 'base85'
+        level: compression level ranging from 0 to 9. Thereby:
+            0 is no compression
+            1 is fastest and produces the least compression
+            9 is slowest and produces the most compression
+
+    Returns:
+        Compressed and encoded byte representation of the object.
+
+    References:
+        [RFC3548] https://tools.ietf.org/html/rfc3548.html
+
+    """
+
+    s = pickle.dumps(obj) # object to bytes
+    s = zlib.compress(s, level) # compress bytes
+
+    # encode bytes
+    if not encoding: pass
+    elif encoding == 'base64': s = base64.b64encode(s)
+    elif encoding == 'base32': s = base64.b32encode(s)
+    elif encoding == 'base16': s = base64.b16encode(s)
+    elif encoding == 'base85': s = base64.b85encode(s)
+    else: raise ValueError("value of argument 'encoding' is not valid")
+
+    return s

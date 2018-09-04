@@ -282,8 +282,8 @@ class TestSuite(unittest.TestSuite):
         import os
         import tempfile
 
-        d = {True: 'a', 2: {None: 0.5}}
-        s = b'eNprYK4tZNDoiGBkYGBILGT0ZqotZPJzt3/AAAbFpXoAgyIHVQ=='
+        d = {True: 'a', 2: {None: .5}}
+        s = b'eJxrYK4tZNDoiGBkYGBILGT0ZqotZPJzt3/AAAbFpXoAgyIHVQ=='
         f = tempfile.NamedTemporaryFile().name
 
         with self.subTest(function = "dumps"):

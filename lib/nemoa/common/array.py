@@ -16,9 +16,9 @@ Array     = np.ndarray
 ArrayLike = Union[Array, np.matrix, float, int]
 Axis      = Optional[Union[int, Sequence[int]]]
 Labels    = Tuple[Sequence[str], Sequence[str]]
-EdgeDict  = Dict[Tuple[str, str], Any]
+DyaDict   = Dict[Tuple[str, str], Any]
 
-def fromdict(d: EdgeDict, labels: Labels, na: float = 0.) -> Array:
+def fromdict(d: DyaDict, labels: Labels, na: float = 0.) -> Array:
     """Convert dictionary to array.
 
     Args:
@@ -45,7 +45,7 @@ def fromdict(d: EdgeDict, labels: Labels, na: float = 0.) -> Array:
 
     return a
 
-def asdict(a: Array, labels: Labels, na: Optional[float] = None) -> EdgeDict:
+def asdict(a: Array, labels: Labels, na: Optional[float] = None) -> DyaDict:
     """Convert array to dictionary.
 
     Args:
