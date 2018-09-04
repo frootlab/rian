@@ -107,6 +107,21 @@ class TestSuite(unittest.TestSuite):
         with self.subTest(function = "multilogistic"):
             self.assertTrue(t(calc.multilogistic(x), 0.500272))
 
+    def test_common_classes(self):
+        from nemoa.common import classes
+
+        class t:
+            def mm(self): pass
+            def nn(self): pass
+
+        obj = t()
+
+        with self.subTest(function = 'hasbase'):
+            self.assertTrue(classes.hasbase(None, 'object'))
+
+        with self.subTest(function = 'methods'):
+            self.assertTrue(len(classes.methods(obj, prefix = 'm')) == 1)
+
     def test_common_dict(self):
         import nemoa.common.dict
 
