@@ -14,7 +14,7 @@ class TestSuite(unittest.TestSuite):
 
         with self.subTest(filetype = 'ini'):
             network = nemoa.network.open('deep', workspace = 'testsuite')
-            self.assertTrue(classes.hasbase(network, 'network'))
+            self.assertTrue(classes.hasbase(network, 'Network'))
 
     def test_network_create(self):
 
@@ -22,10 +22,10 @@ class TestSuite(unittest.TestSuite):
             network = nemoa.network.create('autoencoder',
                 columns = ['v1', 'v2', 'v3'],
                 shape = [6, 3, 6])
-            self.assertTrue(classes.hasbase(network, 'network'))
+            self.assertTrue(classes.hasbase(network, 'Network'))
 
         with self.subTest(create = 'factor'):
             network = nemoa.network.create('factor',
                 visible_nodes = ['v1', 'v2', 'v3'], visible_type = 'gauss',
                 hidden_nodes = ['h1', 'h2'], hidden_type = 'sigmoid')
-            self.assertTrue(classes.hasbase(network, 'network'))
+            self.assertTrue(classes.hasbase(network, 'Network'))

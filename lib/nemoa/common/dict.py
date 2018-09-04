@@ -4,35 +4,7 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-try:
-    import numpy as np
-except ImportError as E:
-    raise ImportError("requires package numpy: "
-        "https://scipy.org") from E
-
 from typing import Optional
-
-def dict_to_array(d: dict, axes: tuple, na: float = 0.) -> np.ndarray:
-    """Convert dictionary to 2d numpy ndarray."""
-
-    a = np.empty(shape = (len(axes[0]), len(axes[1])))
-    for i, x in enumerate(axes[0]):
-        for j, y in enumerate(axes[1]):
-            a[i, j] = d[(x, y)] if (x, y) in d else na
-
-    return a
-
-def array_to_dict(a: np.ndarray, axes: tuple,
-    na: Optional[float] = None) -> dict:
-    """Convert 2d numpy ndarray to dictionary."""
-
-    d = {}
-    for i, x in enumerate(axes[0]):
-        for j, y in enumerate(axes[1]):
-            if not na is None and a[i, j] == na: continue
-            d[(x, y)] = a[i, j]
-
-    return d
 
 def merge(*args: dict, new: bool = True) -> dict:
     """Recursively right merge dictionaries.
@@ -47,18 +19,15 @@ def merge(*args: dict, new: bool = True) -> dict:
     """
 
     # recursive right merge
-    if len(args) < 2: raise TypeError(
-        'at least two arguments are required.')
-    elif len(args) > 2:
-        d1, d2, new = args[0], merge(*args[1:], new = new), False
-    else:
-        d1, d2 = args[0], args[1]
+    if len(args) < 2: raise TypeError('at least two arguments are required')
+    elif len(args) == 2: d1, d2 = args[0], args[1]
+    else: d1, d2, new = args[0], merge(*args[1:], new = new), False
 
     # check types of arguments
     if not isinstance(d1, dict): raise TypeError(
-        'first argument is required to be of type dict.')
+        f"first argument is required to be of type 'dict', not '{type(d1)}'")
     if not isinstance(d2, dict): raise TypeError(
-        'second argument is required to be of type dict.')
+        f"second argument is required to be of type 'dict', not '{type(d2)}'")
 
     # create new dictionary
     if new:

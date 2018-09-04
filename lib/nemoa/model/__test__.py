@@ -14,14 +14,14 @@ class TestSuite(unittest.TestSuite):
 
         with self.subTest(filetype = 'npz'):
             model = nemoa.model.open('test', workspace = 'testsuite')
-            self.assertTrue(classes.hasbase(model, 'model'))
+            self.assertTrue(classes.hasbase(model, 'Model'))
 
     def test_model_ann(self):
 
         with self.subTest(step = 'create shallow ann'):
             model = nemoa.model.create(
                 dataset = 'linear', network = 'shallow', system = 'ann')
-            self.assertTrue(classes.hasbase(model, 'model'))
+            self.assertTrue(classes.hasbase(model, 'Model'))
 
         with self.subTest(step = 'optimize shallow ann'):
             model.optimize()
@@ -33,7 +33,7 @@ class TestSuite(unittest.TestSuite):
         with self.subTest(step = 'create dbn'):
             model = nemoa.model.create(
                 dataset = 'linear', network = 'deep', system = 'dbn')
-            self.assertTrue(classes.hasbase(model, 'model'))
+            self.assertTrue(classes.hasbase(model, 'Model'))
 
         with self.subTest(step = 'optimize dbn'):
             model.optimize()

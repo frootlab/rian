@@ -67,7 +67,7 @@ class System(metadata.BaseClassIP):
     def configure(self, network = None):
         """Configure system to network."""
 
-        if not classes.hasbase(network, 'network'):
+        if not classes.hasbase(network, 'Network'):
             raise ValueError("network is not valid")
 
         return self._set_params(network = network)
@@ -82,7 +82,7 @@ class System(metadata.BaseClassIP):
 
         """
 
-        if not classes.hasbase(dataset, 'dataset'):
+        if not classes.hasbase(dataset, 'Dataset'):
             raise ValueError("""could not initilize system:
                 dataset is not valid.""")
 
@@ -91,12 +91,12 @@ class System(metadata.BaseClassIP):
 
     def _check_network(self, network, *args, **kwargs):
         """Check if network is valid for system."""
-        if not classes.hasbase(network, 'network'): return False
+        if not classes.hasbase(network, 'Network'): return False
         return True
 
     def _check_dataset(self, dataset, *args, **kwargs):
         """Check if network is valid for system."""
-        if not classes.hasbase(dataset, 'dataset'): return False
+        if not classes.hasbase(dataset, 'Dataset'): return False
         return True
 
     def get(self, key = 'name', *args, **kwargs):
@@ -1407,7 +1407,7 @@ class System(metadata.BaseClassIP):
 
         # get system parameters from network
         elif network:
-            if not classes.hasbase(network, 'network'):
+            if not classes.hasbase(network, 'Network'):
                 raise ValueError("network is not valid")
 
             # get unit layers and unit params
@@ -1461,7 +1461,7 @@ class System(metadata.BaseClassIP):
 
         # initialize system parameters if dataset is given
         if dataset:
-            if not classes.hasbase(dataset, 'dataset'):
+            if not classes.hasbase(dataset, 'Dataset'):
                 raise ValueError("""could not initialize
                     system: dataset instance is not valid.""")
 
@@ -1525,7 +1525,7 @@ class System(metadata.BaseClassIP):
 
         """
 
-        if dataset is not None and not classes.hasbase(dataset, 'dataset'):
+        if dataset is not None and not classes.hasbase(dataset, 'Dataset'):
             raise ValueError("invalid dataset argument given")
 
         for layer in list(self._units.keys()):
@@ -1559,7 +1559,7 @@ class System(metadata.BaseClassIP):
 
         """
 
-        if dataset and not classes.hasbase(dataset, 'dataset'):
+        if dataset and not classes.hasbase(dataset, 'Dataset'):
             raise TypeError("dataset is required to be of type dataset")
 
         for links in self._params['links']:
@@ -1875,10 +1875,10 @@ class System(metadata.BaseClassIP):
             if retfmt == 'array':
                 retval = values
             elif retfmt == 'dict':
+                from nemoa.common import array
                 src = self._get_units(layer = ekwargs['mapping'][0])
                 tgt = self._get_units(layer = ekwargs['mapping'][-1])
-                from nemoa.common.dict import array_to_dict
-                retval = array_to_dict(values, (src, tgt))
+                retval = array.asdict(values, (src, tgt))
                 if not evalstat: return retval
 
                 # (optional) add statistics

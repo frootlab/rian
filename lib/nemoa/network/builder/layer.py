@@ -49,7 +49,7 @@ class AutoEncoder:
 
         # columns
         if 'columns' in self.settings: columns = self.settings['columns']
-        elif classes.hasbase(dataset, 'dataset'): columns = dataset.columns
+        elif classes.hasbase(dataset, 'Dataset'): columns = dataset.columns
         else: columns = ['i1', 'i2', 'i3', 'i4', 'o1', 'o2']
 
         self.settings['inputs'] = columns

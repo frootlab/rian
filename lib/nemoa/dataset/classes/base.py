@@ -261,7 +261,7 @@ class Dataset(metadata.BaseClassIP):
                 transform = preprocessing['transform']
 
         # get preprocessing parameters from system
-        if classes.hasbase(system, 'system'):
+        if classes.hasbase(system, 'System'):
             input_layer = system.get('layers')[0]
             distribution = system.get('layer', input_layer)['class']
             if distribution == 'gauss': normalize = 'gauss'
@@ -508,7 +508,7 @@ class Dataset(metadata.BaseClassIP):
         mapping = None, func: str = 'expect'):
         """ """
 
-        if not classes.hasbase(system, 'system'):
+        if not classes.hasbase(system, 'System'):
             raise ValueError("system is not valid")
 
         nemoa.log("transform data using model '%s'." % system.name)

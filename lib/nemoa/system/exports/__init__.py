@@ -40,7 +40,7 @@ def save(system, path = None, filetype = None, workspace = None,
 
     from nemoa.common import classes
 
-    if not classes.hasbase(system, 'system'):
+    if not classes.hasbase(system, 'System'):
         raise ValueError("system is not valid")
 
     from nemoa.common import ospath

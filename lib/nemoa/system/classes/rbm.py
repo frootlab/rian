@@ -95,7 +95,7 @@ class RBM(nemoa.system.classes.ann.ANN):
 
     def _check_dataset(self, dataset):
         """Check if dataset contains only binary values."""
-        if not classes.hasbase(dataset, 'dataset'):
+        if not classes.hasbase(dataset, 'Dataset'):
             raise ValueError("""could not test dataset:
                 invalid dataset instance given.""")
         if not dataset._get_test_binary():
@@ -176,7 +176,7 @@ class GRBM(RBM):
 
     def _check_dataset(self, dataset):
         """Check if dataset contains gauss normalized values."""
-        if not classes.hasbase(dataset, 'dataset'):
+        if not classes.hasbase(dataset, 'Dataset'):
             raise ValueError("""could not test dataset:
                 invalid dataset instance given.""")
         if not dataset.evaluate('test_gauss'):

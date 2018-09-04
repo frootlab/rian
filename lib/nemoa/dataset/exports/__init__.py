@@ -52,7 +52,7 @@ def save(dataset, path = None, filetype = None, workspace = None,
 
     """
 
-    if not classes.hasbase(dataset, 'dataset'):
+    if not classes.hasbase(dataset, 'Dataset'):
         raise ValueError("""could not export dataset to file:
             dataset is not valid.""")
 

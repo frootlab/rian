@@ -4,8 +4,11 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from types import FunctionType, ModuleType
+import types
 from typing import Optional
+
+Function = types.FunctionType
+Module = types.ModuleType
 
 def curname(frame: int = 0) -> str:
     """Get name of module, which calls this function.
@@ -39,7 +42,7 @@ def curname(frame: int = 0) -> str:
 
     return mname
 
-def callername(frame: int = 0) -> str:
+def caller(frame: int = 0) -> str:
     """Get name of the callable, which calls this function.
 
     Args:
@@ -66,8 +69,7 @@ def callername(frame: int = 0) -> str:
 
     return '.'.join([mname, fname])
 
-def submodules(minst: Optional[ModuleType] = None,
-    recursive: bool = False) -> list:
+def submodules(minst: Optional[Module] = None, recursive: bool = False) -> list:
     """Get list with submodule names.
 
     Args:
@@ -82,8 +84,8 @@ def submodules(minst: Optional[ModuleType] = None,
     """
 
     if minst is None: minst = get_module(curname(-1))
-    elif not isinstance(minst, ModuleType):
-        raise TypeError('minst is required to be of ModuleType')
+    elif not isinstance(minst, Module):
+        raise TypeError('minst is required to be a module instance')
 
     # check if module is a package or a file
     if not hasattr(minst, '__path__'): return []
@@ -101,12 +103,12 @@ def submodules(minst: Optional[ModuleType] = None,
 
     return mlist
 
-def get_submodule(s: str) -> Optional[ModuleType]:
+def get_submodule(s: str) -> Optional[Module]:
     """Get module instance, by name of current submodule."""
 
     return get_module('.'.join([curname(-1), s]))
 
-def get_module(s: str) -> Optional[ModuleType]:
+def get_module(s: str) -> Optional[Module]:
     """Get module instance for a given qualified module name."""
 
     import importlib
@@ -116,7 +118,7 @@ def get_module(s: str) -> Optional[ModuleType]:
 
     return minst
 
-def get_functions(minst: Optional[ModuleType] = None, details: bool = False,
+def get_functions(minst: Optional[Module] = None, details: bool = False,
     filters: dict = {}, **kwargs) -> list:
     """Get filtered list of function names within given module instance.
 
@@ -138,8 +140,8 @@ def get_functions(minst: Optional[ModuleType] = None, details: bool = False,
     """
 
     if minst is None: minst = get_module(curname(-1))
-    elif not isinstance(minst, ModuleType): raise TypeError(
-        "first argument is required to be of ModuleType")
+    elif not isinstance(minst, Module): raise TypeError(
+        "first argument is required to be a module instance")
 
     import inspect
 
@@ -177,13 +179,13 @@ def get_functions(minst: Optional[ModuleType] = None, details: bool = False,
 
     return fdetails.keys()
 
-def locate_functions(minst: Optional[ModuleType] = None, recursive: bool = True,
+def locate_functions(minst: Optional[Module] = None, recursive: bool = True,
     details: bool = False, filters: dict = {},  **kwargs):
     """Recursively search for functions within submodules."""
 
     if minst is None: minst = get_module(curname(-1))
-    elif not isinstance(minst, ModuleType): raise TypeError(
-        "first argument is required to be of ModuleType")
+    elif not isinstance(minst, Module): raise TypeError(
+        "first argument is required to be a module instance")
 
     mnames = submodules(minst, recursive = recursive)
 
@@ -209,7 +211,7 @@ def locate_functions(minst: Optional[ModuleType] = None, recursive: bool = True,
 
     return funcs
 
-def get_function(fname: str) -> Optional[FunctionType]:
+def get_function(fname: str) -> Optional[Function]:
     """Return function instance for a given full qualified function name.
 
     Example:
@@ -223,17 +225,17 @@ def get_function(fname: str) -> Optional[FunctionType]:
 
     return finst
 
-def get_shortdoc(finst: FunctionType):
+def get_shortdoc(finst: Function):
     """Get short description of a given function instance."""
 
     if finst.__doc__ is None: return ""
     return finst.__doc__.split('\n', 1)[0].strip(' .')
 
-def get_kwargs(finst: FunctionType, d: dict = None):
+def get_kwargs(finst: Function, d: dict = None):
     """Get the keyword arguments of a given function instance."""
 
-    if not isinstance(finst, FunctionType): raise TypeError(
-        'first argument is required to be of FunctionType')
+    if not isinstance(finst, Function): raise TypeError(
+        'first argument is required to be a function')
 
     import inspect
 

@@ -28,9 +28,22 @@ class TestSuite(unittest.TestSuite):
     def test_common_array(self):
         from nemoa.common import array
 
-        import numpy
-        a = numpy.array([[.1, -.9], [.3, .2], [-.4, -.9]])
-        t = lambda x, y: numpy.isclose(x.sum(), y, atol = 1e-3)
+        import numpy as np
+
+        a = np.array([[.1, -.9], [.3, .2], [-.4, -.9]])
+        b = np.array([[0., 1.], [0., 0.]])
+        t = lambda x, y: np.isclose(x.sum(), y, atol = 1e-3)
+        d = {('a', 'b'): 1.}
+        labels = (['a', 'b'], ['a', 'b'])
+        na = 0.
+
+        with self.subTest(function = "fromdict"):
+            rval = array.fromdict(d, labels = labels, na = na)
+            self.assertTrue((rval == b).any())
+
+        with self.subTest(function = "asdict"):
+            rval = array.asdict(b, labels = labels, na = na)
+            self.assertTrue(rval == d)
 
         with self.subTest(function = "sumnorm"):
             self.assertTrue(t(array.sumnorm(a), -1.6))
@@ -44,9 +57,10 @@ class TestSuite(unittest.TestSuite):
     def test_common_calc(self):
         from nemoa.common import calc
 
-        import numpy
-        x = numpy.array([[0.0, 0.5], [1.0, -1.0]])
-        t = lambda x, y: numpy.isclose(x.sum(), y, atol = 1e-3)
+        import numpy as np
+
+        x = np.array([[0.0, 0.5], [1.0, -1.0]])
+        t = lambda x, y: np.isclose(x.sum(), y, atol = 1e-3)
 
         with self.subTest(function = "logistic"):
             self.assertTrue(t(calc.logistic(x), 2.122459))
@@ -96,24 +110,7 @@ class TestSuite(unittest.TestSuite):
     def test_common_dict(self):
         import nemoa.common.dict
 
-        import numpy
-
-        d = {('a', 'b'): 1.}
-        a = numpy.array([[0., 1.], [0., 0.]])
-        axes = [['a', 'b'], ['a', 'b']]
-        na = 0.
-
-        with self.subTest(function = "dict_to_array"):
-            func = nemoa.common.dict.dict_to_array
-            rval = func(d, axes = axes, na = na)
-            test = (rval == a).any()
-            self.assertTrue(test)
-
-        with self.subTest(function = "array_to_dict"):
-            func = nemoa.common.dict.array_to_dict
-            rval = func(a, axes = axes, na = na)
-            test = rval == d
-            self.assertTrue(test)
+        import numpy as np
 
         with self.subTest(function = "merge"):
             func = nemoa.common.dict.merge
@@ -208,14 +205,14 @@ class TestSuite(unittest.TestSuite):
     def test_common_iocsv(self):
         from nemoa.common import iocsv
 
-        import numpy
+        import numpy as np
         import os
         import tempfile
 
         f = tempfile.NamedTemporaryFile().name + '.csv'
 
         header = '-*- coding: utf-8 -*-'
-        data = numpy.array(
+        data = np.array(
             [("row1", 1.1, 1.2), ("row2", 2.1, 2.2), ("row3", 3.1, 3.2)],
             dtype=[('label', 'U8'), ('col1', 'f8'), ('col2', 'f8')])
         delim = ','
@@ -239,7 +236,7 @@ class TestSuite(unittest.TestSuite):
 
         with self.subTest(function = "load"):
             rval = iocsv.load(f)
-            test = isinstance(rval, numpy.ndarray) \
+            test = isinstance(rval, np.ndarray) \
                 and (rval['col1'] == data['col1']).any() \
                 and (rval['col2'] == data['col2']).any()
             self.assertTrue(test)
@@ -311,9 +308,8 @@ class TestSuite(unittest.TestSuite):
             test = module.curname() == 'nemoa.common.__test__'
             self.assertTrue(test)
 
-        with self.subTest(function = "callername"):
-            test = module.callername() \
-                == 'nemoa.common.__test__.test_common_module'
+        with self.subTest(function = "caller"):
+            test = module.caller() == 'nemoa.common.__test__.test_common_module'
             self.assertTrue(test)
 
         with self.subTest(function = "submodules"):
@@ -413,10 +409,10 @@ class TestSuite(unittest.TestSuite):
     def test_common_table(self):
         from nemoa.common import table
 
-        import numpy
+        import numpy as np
 
-        a = numpy.array([(1., 2), (3., 4)], dtype=[('x', float), ('y', int)])
-        b = numpy.array([('a'), ('b')], dtype=[('z', 'U4')])
+        a = np.array([(1., 2), (3., 4)], dtype=[('x', float), ('y', int)])
+        b = np.array([('a'), ('b')], dtype=[('z', 'U4')])
 
         with self.subTest(function = "addcols"):
             self.assertTrue(table.addcols(a, b, 'z')['z'][0] == 'a')

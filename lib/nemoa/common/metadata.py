@@ -6,7 +6,7 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 class BaseClassIP:
     """Generic base class for resources subjected to intellectual property.
@@ -50,17 +50,17 @@ class BaseClassIP:
 
     """
 
-    _attr_meta: dict = {
+    _attr_meta: Dict[str, str] = {
         'author': 'rw', 'email': 'rw', 'license': 'rw', 'copyright': 'rw',
         'fullname': 'r', 'name': 'rw', 'branch': 'rw', 'version': 'rw',
         'about': 'rw', 'type': 'r', 'path': 'rw' }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs) -> None:
         """Import object configuration and content from dictionary."""
 
         self._set_copy(**kwargs)
 
-    def __getattr__(self, key: str):
+    def __getattr__(self, key: str) -> None:
         """Attribute wrapper for getter methods."""
 
         if key in self._attr_meta:
@@ -74,7 +74,7 @@ class BaseClassIP:
 
         raise AttributeError(f"{cname} instance has no attribute '{key}'")
 
-    def __setattr__(self, key: str, val: Any):
+    def __setattr__(self, key: str, val: Any) -> None:
         """Attribute wrapper to setter methods."""
 
         if key in self._attr_meta:

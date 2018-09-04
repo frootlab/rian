@@ -52,7 +52,7 @@ def save(network, path = None, filetype = None, workspace = None,
 
     from nemoa.common import classes, ospath
 
-    if not classes.hasbase(network, 'network'):
+    if not classes.hasbase(network, 'Network'):
         raise ValueError("network is not valid")
 
     # get directory, filename and fileextension

@@ -452,10 +452,8 @@ class Session:
         if isinstance(obj, type(Exception)):
             if issubclass(obj, Warning): key = 'warning'
             else: key = 'error'
-            if mode == 'shell':
-                clr = module.callername(-5)
-                #if clr.split('.')[0] == 'IPython': clr = 'IPython'
-            else: clr = module.callername(-4)
+            if mode == 'shell': clr = module.caller(-5)
+            else: clr = module.caller(-4)
             msg = str(args[1]).capitalize()
             etype = obj.__name__
 
@@ -463,13 +461,13 @@ class Session:
         # in this case the arguments are (msg)
         elif isinstance(obj, str) and len(args) == 1:
             key, msg = 'info', args[0].capitalize()
-            clr = module.callername(-3)
+            clr = module.caller(-3)
 
         # test if args are given as a message of given type
         # in this case the arguments are (type, msg)
         elif isinstance(obj, str) and len(args) == 2:
             key, msg = args[0], args[1].capitalize()
-            clr = module.callername(-3)
+            clr = module.caller(-3)
 
         else: return True
 

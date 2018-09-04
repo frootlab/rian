@@ -196,10 +196,10 @@ class Optimizer:
         """
 
         # test type of model instance and subclasses
-        if not classes.hasbase(model, 'model'): return False
-        if not classes.hasbase(model.dataset, 'dataset'): return False
-        if not classes.hasbase(model.network, 'network'): return False
-        if not classes.hasbase(model.system, 'system'): return False
+        if not classes.hasbase(model, 'Model'): return False
+        if not classes.hasbase(model.dataset, 'Dataset'): return False
+        if not classes.hasbase(model.network, 'Network'): return False
+        if not classes.hasbase(model.system, 'System'): return False
 
         # check dataset
         if (not 'check_dataset' in model.system._default['init']

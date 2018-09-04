@@ -55,8 +55,8 @@ def get(name: Optional['str'] = None,
 
     """
 
-    def _update_vars(path: Optional['str'] = None) -> None:
-        """Update application variables from module attributs."""
+    def updatevars(path: Optional['str'] = None) -> None:
+        """Update application variables from module attributes."""
 
         if not path:
 
@@ -88,7 +88,7 @@ def get(name: Optional['str'] = None,
         globals()['_VARS'] = dvars
 
     # update variables if not present or path is given
-    if '_VARS' not in globals() or path: _update_vars(path = path)
+    if '_VARS' not in globals() or path: updatevars(path = path)
 
     d = globals()['_VARS']
     if not name: return d.copy()
@@ -127,8 +127,8 @@ def path(name: Optional[str] = None, appname: Optional[str] = None,
             You might want to use this if you want multiple versions of your
             app to be able to run independently. If used, this would typically
             be "<major>.<minor>". Only applied when appname is present.
-        **kwargs: Optional additional keyword arguments, that depend on the
-            given name. For more information see [1].
+        **kwargs: Optional keyword arguments for the respective directory name.
+            For more information see [1].
 
     Returns:
         String containing path of environmental directory or None if
@@ -139,7 +139,7 @@ def path(name: Optional[str] = None, appname: Optional[str] = None,
 
     """
 
-    def _update_dirs(appname: Optional[str] = None,
+    def upddirs(appname: Optional[str] = None,
         appauthor: Optional[Union[str, bool]] = None,
         version: Optional[str] = None,
         **kwargs: Any) -> None:
@@ -168,8 +168,8 @@ def path(name: Optional[str] = None, appname: Optional[str] = None,
         globals()['_DIRS'] = d
 
     if '_DIRS' not in globals():
-        _update_dirs(appname = appname, appauthor = appauthor,
-            version = version, **kwargs)
+        upddirs(appname = appname, appauthor = appauthor, version = version,
+            **kwargs)
     d = globals()['_DIRS']
     if not name: return d.copy()
     if not isinstance(name, str):

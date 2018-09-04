@@ -96,10 +96,10 @@ class Evaluation:
         """
 
         # test type of model instance and subclasses
-        if not classes.hasbase(model, 'model'): return False
-        if not classes.hasbase(model.dataset, 'dataset'): return False
-        if not classes.hasbase(model.network, 'network'): return False
-        if not classes.hasbase(model.system, 'system'): return False
+        if not classes.hasbase(model, 'Model'): return False
+        if not classes.hasbase(model.dataset, 'Dataset'): return False
+        if not classes.hasbase(model.network, 'Network'): return False
+        if not classes.hasbase(model.system, 'System'): return False
 
         # check dataset
         if (not 'check_dataset' in model.system._default['init']
@@ -171,17 +171,19 @@ class Evaluation:
         elif category == 'units':
             if retfmt == 'vector':
                 units = getunits(layer = kwargs['mapping'][-1])
+
                 return {unit: retval[:, uid] \
                     for uid, unit in enumerate(units)}
             elif retfmt == 'scalar':
                 units = getunits(layer = kwargs['mapping'][-1])
+
                 return dict(list(zip(units, retval)))
         elif category == 'links':
             if retfmt == 'scalar':
+                from nemoa.common import array
                 src = getunits(layer = kwargs['mapping'][0])
                 tgt = getunits(layer = kwargs['mapping'][-1])
-                from nemoa.common.dict import array_to_dict
-                return array_to_dict(retval, (src, tgt))
+                return array.asdict(retval, (src, tgt))
         elif category == 'relation':
             if algorithm['retfmt'] == 'scalar':
 
@@ -201,10 +203,10 @@ class Evaluation:
                 # create formated return values
                 if rettype == 'array': return retval
                 if rettype == 'dict':
+                    from nemoa.common import array
                     src = getunits(layer = kwargs['mapping'][0])
                     tgt = getunits(layer = kwargs['mapping'][-1])
-                    from nemoa.common.dict import array_to_dict
-                    retval = array_to_dict(retval, (src, tgt))
+                    retval = array.asdict(retval, (src, tgt))
                     if not evalstat: return retval
 
                     # (optional) add statistics

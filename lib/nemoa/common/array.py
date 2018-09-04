@@ -10,10 +10,69 @@ except ImportError as E:
     raise ImportError("requires package numpy: "
         "https://scipy.org") from E
 
-from typing import Optional, Tuple, Union
+from typing import Any, Dict, Optional, Sequence, Tuple, Union
 
-ArrayLike = Union[np.ndarray, np.matrix, float, int]
-Axis = Optional[Union[int, Tuple[int]]]
+Array     = np.ndarray
+ArrayLike = Union[Array, np.matrix, float, int]
+Axis      = Optional[Union[int, Sequence[int]]]
+Labels    = Tuple[Sequence[str], Sequence[str]]
+EdgeDict  = Dict[Tuple[str, str], Any]
+
+def fromdict(d: EdgeDict, labels: Labels, na: float = 0.) -> Array:
+    """Convert dictionary to array.
+
+    Args:
+        d: Dictionary of format {(<row>, <col>): value, ...}, where:
+            <row> is an element of the <row list> of the argument labels and
+            <col> is an element of the <col list> of the argument labels.
+        labels: Tuple of format (<row list>, <col list>), where:
+            <row list> is a list of row labels ['row1', 'row2', ...] and
+            <col list> is a list of column labels ['col1', 'col2', ...].
+        na: Value to mask NA (Not Available) entries. Missing entries in the
+            dictionary are replenished by the NA value in the array.
+
+    Returns:
+        Numpy array of shape (n, m), where n equals the length of the
+        <row list> of the argument labels and m equals the length of the
+        <col list> of the argument labels.
+
+    """
+
+    a = np.empty(shape = (len(labels[0]), len(labels[1])))
+    for i, x in enumerate(labels[0]):
+        for j, y in enumerate(labels[1]):
+            a[i, j] = d[(x, y)] if (x, y) in d else na
+
+    return a
+
+def asdict(a: Array, labels: Labels, na: Optional[float] = None) -> EdgeDict:
+    """Convert array to dictionary.
+
+    Args:
+        a: Numpy array of shape (n, m), where n equals the length of the
+            <row list> of the argument labels and m equals the length of the
+            <col list> of the argument labels.
+        labels: Tuple of format (<row list>, <col list>), where:
+            <row list> is a list of row labels ['row1', 'row2', ...] and
+            <col list> is a list of column labels ['col1', 'col2', ...]
+        na: Optional value to mask NA (Not Available) entries. For cells in the
+            array, which have this value, no entry in the returned dictionary
+            is created.
+
+    Returns:
+        Dictionary of format {(<row>, <col>): value, ...}, where:
+            <row> is an element of the <row list> of the argument labels and
+            <col> is an element of the <col list> of the argument labels.
+
+    """
+
+    d = {}
+    for i, x in enumerate(labels[0]):
+        for j, y in enumerate(labels[1]):
+            if not na is None and a[i, j] == na: continue
+            d[(x, y)] = a[i, j]
+
+    return d
 
 def sumnorm(a: ArrayLike, norm: Optional[str] = None,
     axis: Axis = 0) -> ArrayLike:

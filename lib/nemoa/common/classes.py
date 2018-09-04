@@ -6,22 +6,31 @@ __license__ = 'GPLv3'
 
 from typing import Optional
 
-def hasbase(cinst, cname: str) -> bool:
-    """Return true if the class instance has the given name."""
-
-    if not hasattr(cinst, '__class__'): return False
-    bases = [o.__name__.lower() for o in cinst.__class__.__mro__]
-
-    return cname.lower() in bases
-
-def methods(cinst: type, attribute: Optional[str] = None,
-    grouping: Optional[str] = None,
-    prefix: str = '', removeprefix: bool = True,
-    renamekey: Optional[str] = None):
-    """Get the methods of a given class instance.
+def hasbase(obj: object, base: str) -> bool:
+    """Return true if the class instance has the given base.
 
     Args:
-        cinst: instance of class
+        obj: Class instance
+        base: Class name of base class
+
+    Returns:
+        True if the given object has the named base as base
+
+    """
+
+    if not hasattr(obj, '__class__'):
+        raise TypeError("obj is required to be a class instance")
+
+    bases = [o.__name__ for o in obj.__class__.__mro__]
+    return base in bases
+
+def methods(obj: object, attribute: Optional[str] = None,
+    grouping: Optional[str] = None, prefix: str = '', removeprefix: bool = True,
+    renamekey: Optional[str] = None) -> dict:
+    """Get methods from a given class instance.
+
+    Args:
+        obj: Class instance
         prefix: only methods with given prefix are returned.
         removeprefix: remove prefix in dictionary keys if True.
         renamekey:
@@ -37,7 +46,7 @@ def methods(cinst: type, attribute: Optional[str] = None,
     import inspect
 
     # get references from module inspection and filter prefix
-    methods = dict(inspect.getmembers(cinst, inspect.ismethod))
+    methods = dict(inspect.getmembers(obj, inspect.ismethod))
     if prefix:
         for name in list(methods.keys()):
             if not name.startswith(prefix) or name == prefix:

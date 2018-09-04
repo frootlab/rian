@@ -8,9 +8,9 @@ import os
 
 from pathlib import Path
 
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Sequence, Union
 
-PathLike = Union['PathLike', tuple, list, str]
+PathLike = Sequence[Union['PathLike', str]]
 PathLikeDict = Dict[str, PathLike]
 
 #
