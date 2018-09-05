@@ -145,8 +145,7 @@ def path(name: Optional[str] = None, appname: Optional[str] = None,
         **kwargs: Any) -> None:
         """Update application paths from application name, author and version."""
 
-        try:
-            from appdirs import AppDirs
+        try: from appdirs import AppDirs
         except ImportError as E:
             raise ImportError(
                 "requires package appdirs: "

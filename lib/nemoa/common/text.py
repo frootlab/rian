@@ -19,9 +19,10 @@ def splitargs(text: str) -> Tuple[str, tuple, dict]:
 
     """
 
-    # Check Argument Types
-    if not isinstance(text, str): raise TypeError(
-        f"argument 'text' requires to be of type 'str', not '{type(text)}'")
+    # check argument types
+    if not isinstance(text, str):
+        raise TypeError("argument 'text' requires type "
+            f"'str', not '{type(text)}'")
 
     import ast
     tree = ast.parse(text)
@@ -66,21 +67,22 @@ def astype(text: str, fmt: Optional[str] = None, **kwargs: Any) -> Any:
 
     """
 
-    # Check Argument Types
-    if not isinstance(text, str): raise TypeError(
-        f"argument 'text' requires to be of type 'str', not '{type(text)}'")
+    # check argument types
+    if not isinstance(text, str):
+        raise TypeError("argument 'text' requires type "
+            f"'str', not '{type(text)}'")
 
-    # Evaluate text if no format is given
+    # evaluate text if no format is given
     if fmt == None: return eval(text)
 
-    # Basic Types
+    # basic types
     if fmt == 'str': return text.strip().replace('\n', '')
     if fmt == 'bool': return text.lower().strip() == 'true'
     if fmt == 'int': return int(text)
     if fmt == 'float': return float(text)
     if fmt == 'complex': return complex(text)
 
-    # Sequence Types
+    # sequence types
     if fmt == 'list': return aslist(text, **kwargs)
     if fmt == 'tuple': return astuple(text, **kwargs)
     if fmt == 'set': return asset(text, **kwargs)
@@ -106,10 +108,12 @@ def aslist(text: str, delim: str = ',') -> list:
     """
 
     # check argument types
-    if not isinstance(text, str): raise TypeError(
-        f"argument 'text' requires to be of type 'str', not '{type(text)}'")
-    if not isinstance(delim, str): raise TypeError(
-        f"argument 'delim' requires to be of type 'str', not '{type(text)}'")
+    if not isinstance(text, str):
+        raise TypeError("argument 'text' requires type "
+            f"'str', not '{type(text)}'")
+    if not isinstance(delim, str):
+        raise TypeError("argument 'delim' requires type "
+            f"'str', not '{type(text)}'")
 
     # return empty list if the string is blank
     if not text or not text.strip(): return list()
@@ -144,10 +148,12 @@ def astuple(text: str, delim: str = ',') -> tuple:
     """
 
     # check argument types
-    if not isinstance(text, str): raise TypeError(
-        f"argument 'text' requires to be of type 'str', not '{type(text)}'")
-    if not isinstance(delim, str): raise TypeError(
-        f"argument 'delim' requires to be of type 'str', not '{type(text)}'")
+    if not isinstance(text, str):
+        raise TypeError("argument 'text' requires type "
+            f"'str', not '{type(text)}'")
+    if not isinstance(delim, str):
+        raise TypeError("argument 'delim' requires type "
+            f"'str', not '{type(text)}'")
 
     # return empty tuple if the string is blank
     if not text or not text.strip(): return tuple()
@@ -182,10 +188,12 @@ def asset(text: str, delim: str = ',') -> list:
     """
 
     # check argument types
-    if not isinstance(text, str): raise TypeError(
-        f"argument 'text' requires to be of type 'str', not '{type(text)}'")
-    if not isinstance(delim, str): raise TypeError(
-        f"argument 'delim' requires to be of type 'str', not '{type(text)}'")
+    if not isinstance(text, str):
+        raise TypeError("argument 'text' requires type "
+            f"'str', not '{type(text)}'")
+    if not isinstance(delim, str):
+        raise TypeError("argument 'delim' requires type "
+            f"'str', not '{type(text)}'")
 
     # return empty set if the string is blank
     if not text or not text.strip(): return set()
@@ -221,10 +229,12 @@ def asdict(text: str, delim: str = ',') -> dict:
     """
 
     # check argument types
-    if not isinstance(text, str): raise TypeError(
-        f"argument 'text' requires to be of type 'str', not '{type(text)}'")
-    if not isinstance(delim, str): raise TypeError(
-        f"argument 'delim' requires to be of type 'str', not '{type(text)}'")
+    if not isinstance(text, str):
+        raise TypeError("argument 'text' requires type "
+            f"'str', not '{type(text)}'")
+    if not isinstance(delim, str):
+        raise TypeError("argument 'delim' requires type "
+            f"'str', not '{type(text)}'")
 
     # return empty dict if the string is blank
     if not text or not text.strip(): return dict()

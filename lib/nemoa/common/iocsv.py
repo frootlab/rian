@@ -48,7 +48,9 @@ def load(path: str, delim: Optional[str] = None,
 
     # get labels
     if labels:
-        if not usecols: raise ValueError("argument 'usecols' is not given")
+        if not usecols:
+            raise ValueError("argument 'usecols' is required "
+                " if 'labels' is given")
     else:
         labels = get_labels(path, delim = delim)
         usecols = tuple(range(len(labels)))
@@ -178,9 +180,8 @@ def get_delim(path: str, delims: list = [',', ';', '\t', ' '],
     """
 
     # check file
-    if not os.path.isfile(path): raise OSError(
-        "could not determine csv delimiter: "
-        "file '%s' does not exist." % path)
+    if not os.path.isfile(path):
+        raise OSError(f"file '{path}' does not exist.")
 
     delim = None
     with open(path, 'r') as csvfile:
@@ -205,8 +206,8 @@ def get_delim(path: str, delims: list = [',', ';', '\t', ' '],
                 except Exception as e: continue
                 delim = dialect.delimiter
 
-    if not delim: raise TypeError(
-        f"could not get CSV delimiter: file '{path}' is not valid.")
+    if not delim:
+        raise TypeError(f"file '{path}' is not valid")
 
     return delim
 
@@ -224,14 +225,13 @@ def get_labels(path: str, delim: Optional[str] = None) -> list:
     """
 
     # check file
-    if not os.path.isfile(path): raise TypeError(
-        f"could not get CSV labels: file '{path}' does not exist.")
+    if not os.path.isfile(path):
+        raise TypeError(f"file '{path}' does not exist")
 
     # get delimiter
     if not delim: delim = get_delim(path)
-    if not delim: raise TypeError(
-        "could not get CSV labels: "
-        f"the delimiter in file '{path}' is not supported.")
+    if not delim:
+        raise TypeError(f"delimiter in file '{path}' is not supported")
 
     # get first and second non comment and non empty line
     first = None
@@ -246,14 +246,14 @@ def get_labels(path: str, delim: Optional[str] = None) -> list:
                 second = line
                 break
 
-    if not first or not second: raise TypeError(
-        f"could not get CSV labels: file '{path}' is not valid.")
+    if not first or not second:
+        raise TypeError(f"file '{path}' is not valid")
 
     if first.count(delim) == second.count(delim): csvtype = 'default'
     elif first.count(delim) == second.count(delim) - 1:
         csvtype == 'r-table'
-    else: raise TypeError(
-        f"could not get CSV labels: file '{path}' is not valid.")
+    else:
+        raise TypeError(f"file '{path}' is not valid")
 
     col_labels = first.split(delim)
     col_labels = [col.strip('\"\'\n\r\t ') for col in col_labels]
@@ -277,15 +277,13 @@ def get_labelcolumn(path: str, delim: Optional[str] = None) -> int:
     """
 
     # check file
-    if not os.path.isfile(path): raise OSError(
-        "could not get csv row label column id: "
-        f"file '{path}' does not exist.")
+    if not os.path.isfile(path):
+        raise OSError(f"file '{path}' does not exist")
 
     # get delimiter
     if not delim: delim = get_delim(path)
-    if not delim: raise TypeError(
-        "could not get csv row label column id: "
-        f"the delimiter in file '{path}' is not supported.")
+    if not delim:
+        raise TypeError(f"the delimiter in file '{path}' is not supported")
 
     # get first and second non comment and non empty line
     first = None
@@ -303,9 +301,8 @@ def get_labelcolumn(path: str, delim: Optional[str] = None) -> int:
                 second = line
                 break
 
-    if first is None or second is None: raise TypeError(
-        "could not get csv row label column id: "
-        f"file '{path}' is not valid.")
+    if first is None or second is None:
+        raise TypeError(f"file '{path}' is not valid")
 
     colvals = second.split(delim)
     colvals = [col.strip('\"\' \n') for col in colvals]

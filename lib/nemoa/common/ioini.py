@@ -55,16 +55,15 @@ def save(d: dict, f: str, flat: Optional[bool] = None,
     """
 
     # Convert configuration dictionary to INI formated string
-    try:
-        s = dumps(d, flat = flat, header = header)
-    except Exception as e:
-        raise ValueError("dictionary is not valid") from e
+    try: s = dumps(d, flat = flat, header = header)
+    except Exception as E:
+        raise ValueError("dictionary is not valid") from E
 
     # write string to file
     try:
         with open(f, 'w') as h: h.write(s)
-    except IOError as e:
-        raise IOError(f"file '{f}' can not be written.") from e
+    except IOError as E:
+        raise IOError(f"file '{f}' can not be written.") from E
 
     return True
 
@@ -73,8 +72,8 @@ def loads(s: str, structure: Optional[dict] = None,
     """Import configuration dictionary from INI formated string
 
     Args:
-        s (str): INI formated string, that contains the configuration
-        structure (dict, optional): Dictionary, that determines the structure
+        s: INI formated string, that contains the configuration
+        structure: Dictionary, that determines the structure
             of the configuration dictionary. If "structure" is None the INI File
             is completely imported and all values are interpreted as strings.
             If "structure" is a dictionary, only those sections and keys are
@@ -82,7 +81,7 @@ def loads(s: str, structure: Optional[dict] = None,
             and keys can be given as regular expressions to allow equally
             structured sections. Moreover the values are imported as the types,
             that are given in the structure dictionary, e.g. 'str', 'int' etc.
-        flat (bool, optional): Determines if the desired INI format structure
+        flat: Determines if the desired INI format structure
             contains sections or not. By default sections are used, if the
             first non empty, non comment line in the string identifies a
             section.
@@ -104,7 +103,7 @@ def loads(s: str, structure: Optional[dict] = None,
     # if no sections are to be used create a temporary [root] section
     # and embed the structure dictionary within a 'root' key
     if flat:
-        s = '[root]\n' + s
+        s = '\n'.join(['[root]', s])
         if isinstance(structure, dict):
             structure = {'root': structure.copy()}
 
@@ -126,11 +125,11 @@ def dumps(d: dict, flat: Optional[bool] = None,
     """Convert configuration dictionary to INI formated string.
 
     Args:
-        d (dict): dictionary containing configuration
-        flat (bool, optional): Determines if the desired INI format structure
+        d: dictionary containing configuration
+        flat: Determines if the desired INI format structure
             contains sections or not. By default sections are used, if the
             dictionary contains subdictionaries.
-        header (str, optional): The Header string is written in the INI format
+        header: The Header string is written in the INI format
             string as an initial comment. By default no header is written.
 
     Return:
@@ -178,7 +177,7 @@ def header(f: str) -> str:
     """Get header from INI file.
 
     Args:
-        f (str): Fully qualified file path to INI file.
+        f: Fully qualified file path to INI file.
 
     Returns:
         String containing header of INI file or empty string if header
@@ -189,22 +188,21 @@ def header(f: str) -> str:
     import os
 
     # check file
-    if not os.path.isfile(f): raise OSError(
-        "could not get INI header: "
-        f"file '{f}' does not exist.")
+    if not os.path.isfile(f):
+        raise OSError(f"file '{f}' does not exist")
 
     # scan INI file for header
-    s = ''
+    hlist = []
     with open(f, 'r') as h:
         for line in [l.lstrip(' ') for l in h]:
             if len(line) == 0: continue
             if line.startswith('#'):
-                s += line[1:].lstrip()
+                hlist.append(line[1:].lstrip())
                 continue
             break
 
-    # strip header
-    s = s.strip()
+    # join lines and strip header
+    s = ''.join(hlist).strip()
 
     return s
 

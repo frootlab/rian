@@ -113,9 +113,10 @@ class GetchMacCarbon:
     """OSX/Carbon implementation of getch.
 
     A function which returns the current ASCII key that is down.
-    If no ASCII key is down, the null string is returned. The
-    page http://www.mactech.com/macintosh-c/chap02-1.html was
-    very helpful in figuring out how to do this.
+    If no ASCII key is down, the null string is returned. See [1].
+
+    References:
+        [1] http://www.mactech.com/macintosh-c/chap02-1.html
 
     """
 

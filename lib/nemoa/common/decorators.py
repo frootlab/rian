@@ -110,20 +110,6 @@ def association(name: str, title: str = '', tags: list = [], classes: list = [],
 
     return wrapper
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def attributes(**attr):
     """Generic attribute decorator for arbitrary class methods."""
 

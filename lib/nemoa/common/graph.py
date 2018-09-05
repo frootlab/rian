@@ -41,18 +41,12 @@ def get_layout(G: DiGraph, layout: str = 'spring',
     # 2do: allow layouts from pygraphviz_layout
     # 2do: determine layout by graph type if layout is None
 
-    if layout == 'spring': pos = nx.spring_layout(G, **kwargs)
-    elif layout == 'layer': pos = get_layer_layout(G, **kwargs)
-    elif layout == 'random': pos = nx.random_layout(G, **kwargs)
-    elif layout == 'circular': pos = nx.circular_layout(G, **kwargs)
-    elif layout == 'shell': pos = nx.shell_layout(G, **kwargs)
-    elif layout == 'spectral': pos = nx.spectral_layout(G, **kwargs)
-    elif layout == 'fruchterman_reingold':
-        pos = nx.fruchterman_reingold_layout(G, **kwargs)
-    else: raise TypeError(f"layout '{layout}' is not supported")
+    if layout == 'layer': pos = get_layer_layout(G, **kwargs)
+    elif layout + '_layout' in nx.drawing.layout.__all__:
+        pos = getattr(nx.drawing.layout, layout + '_layout')(G, **kwargs)
+    else: raise ValueError(f"layout '{layout}' is not supported")
 
-    # rescale node positions to given figure size, padding
-    # and rotation angle
+    # rescale node positions to given figure size, padding and rotation angle
     pos = rescale_layout(pos, size = size, padding = padding, rotate = rotate)
 
     return pos

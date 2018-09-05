@@ -85,7 +85,7 @@ def submodules(minst: Optional[Module] = None, recursive: bool = False) -> list:
 
     if minst is None: minst = get_module(curname(-1))
     elif not isinstance(minst, Module):
-        raise TypeError('minst is required to be a module instance')
+        raise TypeError("argument 'minst' is required to be a module instance")
 
     # check if module is a package or a file
     if not hasattr(minst, '__path__'): return []

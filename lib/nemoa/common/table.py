@@ -37,8 +37,8 @@ def addcols(base: Table, data: Table, cols: Optional[Cols] = None) -> Table:
 
     if not cols: cols = data.dtype.names
     if not isinstance(cols, (tuple, str)):
-        raise TypeError("cols requires type 'tuple' or 'str', "
-            f"not '{type(cols)}'")
+        raise TypeError("argument 'cols' requires types "
+            f"'tuple' or 'str', not '{type(cols)}'")
 
     cols = list(cols) # make cols mutable
     r = recfunctions.rec_append_fields(base, cols, [data[c] for c in cols])

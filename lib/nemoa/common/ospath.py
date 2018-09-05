@@ -59,8 +59,8 @@ def join(*args: PathLike) -> str:
     """Join and normalize path like structure.
 
     Args:
-        *args (PathLike): Path like structure, which is given by a tree of
-            strings, which can be joined to a path.
+        *args: Path like arguments, respectively given by a tree of strings,
+            which can be joined to a path.
 
     Returns:
         String containing valid path syntax.
@@ -100,16 +100,16 @@ def expand(*args: PathLike, udict: PathLikeDict = {}, expapp: bool = True,
     """Iteratively expand path variables.
 
     Args:
-        *args (PathLike): Path like structure, which is given by a tree of
-            strings, which can be joined to a path.
-        udict (PathLikeDict, optional): dictionary for user variables.
+        *args: Path like arguments, respectively given by a tree of strings,
+            which can be joined to a path.
+        udict: dictionary for user variables.
             Thereby the keys in the dictionary are encapsulated
             by the symbol '%'. The user variables may also include references.
-        expapp (bool, optional): determines if application path variables are
-            expanded. For a full list of valid application variables see
+        expapp: determines if application path variables are expanded.
+            For a full list of valid application variables see
             'nemoa.common.appinfo.path'. Default is True
-        expenv (bool, optional): determines if environmental path variables are
-            expanded. For a full list of valid environmental path variables see
+        expenv: determines if environmental path variables are expanded.
+            For a full list of valid environmental path variables see
             'nemoa.common.ospath'. Default is True
 
     Returns:
@@ -163,7 +163,7 @@ def dirname(*args: PathLike) -> str:
     """Extract directory name from a path like structure.
 
     Args:
-        *args (PathLike): Path like structure, given by a tree of strings,
+        *args: Path like arguments, respectively given by a tree of strings,
             which can be joined to a path.
 
     Returns:
@@ -186,7 +186,7 @@ def filename(*args: PathLike) -> str:
     """Extract file name from a path like structure.
 
     Args:
-        *args (PathLike): Path like structure, given by a tree of strings,
+        *args: Path like arguments, respectively given by a tree of strings,
             which can be joined to a path.
 
     Returns:
@@ -209,7 +209,7 @@ def basename(*args: PathLike) -> str:
     """Extract file basename from a path like structure.
 
     Args:
-        *args (PathLike): Path like structure, given by a tree of strings,
+        *args: Path like arguments, respectively given by a tree of strings,
             which can be joined to a path.
 
     Returns:
@@ -233,7 +233,7 @@ def fileext(*args: PathLike) -> str:
     """Fileextension of file.
 
     Args:
-        *args (PathLike): Path like structure, given by a tree of strings,
+        *args: Path like arguments, respectively given by a tree of strings,
             which can be joined to a path.
 
     Returns:
@@ -257,9 +257,9 @@ def cp(source: PathLike, target: PathLike) -> bool:
     """Copy sub directories from given source to destination directory.
 
     Args:
-        source (PathLike): Path like structure, which comprises the
+        source: Path like structure, which comprises the
             path of a source folder
-        target (PathLike): Path like structure, which comprises the
+        target: Path like structure, which comprises the
             path of a destination folder
 
     Returns:

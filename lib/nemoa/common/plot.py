@@ -121,7 +121,7 @@ class Heatmap(Plot):
 
         try: import matplotlib.cm
         except ImportError: raise ImportError(
-            "nemoa.common.plot.Heatmap.plot() requires matplotlib: "
+            "requires package matplotlib: "
             "https://matplotlib.org")
 
         # plot grid
@@ -302,12 +302,12 @@ class Graph(Plot):
             import matplotlib.patches
             import matplotlib.pyplot as plt
         except ImportError: raise ImportError(
-            "nemoa.common.plot.Graph.plot() requires matplotlib: "
+            "requires package matplotlib: "
             "https://matplotlib.org")
 
         try: import networkx as nx
         except ImportError: raise ImportError(
-            "nemoa.common.plot.Graph.plot() requires networkx: "
+            "requires package networkx: "
             "https://networkx.github.io")
 
         from nemoa.common import ndict
@@ -515,7 +515,7 @@ def filetypes():
 
     try: import matplotlib.pyplot as plt
     except ImportError: raise ImportError(
-        "nemoa.common.plot.filetypes() requires matplotlib: "
+        "requires package matplotlib: "
         "https://matplotlib.org")
 
     return plt.gcf().canvas.get_supported_filetypes()
