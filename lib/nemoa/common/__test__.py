@@ -30,29 +30,34 @@ class TestSuite(unittest.TestSuite):
 
         import numpy as np
 
-        a = np.array([[.1, -.9], [.3, .2], [-.4, -.9]])
-        b = np.array([[0., 1.], [0., 0.]])
         t = lambda x, y: np.isclose(x.sum(), y, atol = 1e-3)
-        d = {('a', 'b'): 1.}
-        labels = (['a', 'b'], ['a', 'b'])
-        na = 0.
 
         with self.subTest(function = "fromdict"):
-            rval = array.fromdict(d, labels = labels, na = na)
-            self.assertTrue((rval == b).any())
+            self.assertTrue(
+                (array.fromdict({('a', 'b'): 1.}, \
+                labels = (['a', 'b'], ['a', 'b']), na = 0.) \
+                == np.array([[0., 1.], [0., 0.]])).any())
 
         with self.subTest(function = "asdict"):
-            rval = array.asdict(b, labels = labels, na = na)
-            self.assertTrue(rval == d)
+            self.assertTrue(
+                array.asdict(np.array([[0., 1.], [0., 0.]]), \
+                labels = (['a', 'b'], ['a', 'b']), na = 0.) \
+                == {('a', 'b'): 1.})
 
         with self.subTest(function = "sumnorm"):
-            self.assertTrue(t(array.sumnorm(a), -1.6))
+            self.assertTrue(
+                t(array.sumnorm(np.array([[.1, -.9], [.3, .2], [-.4, -.9]])),
+                -1.6))
 
         with self.subTest(function = "meannorm"):
-            self.assertTrue(t(array.meannorm(a), -0.5333))
+            self.assertTrue(
+                t(array.meannorm(np.array([[.1, -.9], [.3, .2], [-.4, -.9]])),
+                -0.5333))
 
         with self.subTest(function = "devnorm"):
-            self.assertTrue(t(array.devnorm(a), 0.8129))
+            self.assertTrue(
+                t(array.devnorm(np.array([[.1, -.9], [.3, .2], [-.4, -.9]])),
+                0.8129))
 
     def test_common_calc(self):
         from nemoa.common import calc
@@ -122,27 +127,6 @@ class TestSuite(unittest.TestSuite):
         with self.subTest(function = 'methods'):
             self.assertTrue(len(classes.methods(obj, prefix = 'm')) == 1)
 
-    def test_common_dict(self):
-        from nemoa.common import ndict
-
-        import numpy as np
-
-        with self.subTest(function = "merge"):
-            rval = ndict.merge({'a': 1}, {'a': 2, 'b': 2}, {'c': 3})
-            self.assertTrue(rval == {'a': 1, 'b': 2, 'c': 3})
-
-        with self.subTest(function = "section"):
-            rval = ndict.section({'a1': 1, 'a2': 2, 'b1': 3}, 'a')
-            self.assertTrue(rval == {'1': 1, '2': 2})
-
-        with self.subTest(function = "strkeys"):
-            rval = ndict.strkeys({(1, 2): 3, None: {True: False}})
-            self.assertTrue(rval == {('1', '2'): 3, 'None': {'True': False}})
-
-        with self.subTest(function = "sumjoin"):
-            rval = ndict.sumjoin({'a': 1}, {'a': 2, 'b': 3})
-            self.assertTrue(rval == {'a': 3, 'b': 3})
-
     def test_common_graph(self):
         from nemoa.common import graph
 
@@ -167,16 +151,13 @@ class TestSuite(unittest.TestSuite):
         pos3 = {1: (4., 2.), 2: (4., 16.), 4: (32., 2.), 3: (32., 16.)}
 
         with self.subTest(function = "is_directed"):
-            test = graph.is_directed(G)
-            self.assertTrue(test)
+            self.assertTrue(graph.is_directed(G))
 
         with self.subTest(function = "is_layered"):
-            test = graph.is_layered(G)
-            self.assertTrue(test)
+            self.assertTrue(graph.is_layered(G))
 
         with self.subTest(function = "get_layers"):
-            test = graph.get_layers(G) == [[1, 2], [3, 4]]
-            self.assertTrue(test)
+            self.assertTrue(graph.get_layers(G) == [[1, 2], [3, 4]])
 
         with self.subTest(function = "get_groups"):
             test = graph.get_groups(G, attribute = 'layer') \
@@ -184,9 +165,10 @@ class TestSuite(unittest.TestSuite):
             self.assertTrue(test)
 
         with self.subTest(function = "get_layer_layout"):
-            test = graph.get_layer_layout(G, direction = 'right') == pos1 \
-                and graph.get_layer_layout(G, direction = 'down') == pos2
-            self.assertTrue(test)
+            self.assertTrue(
+                graph.get_layer_layout(G, direction = 'right') == pos1)
+            self.assertTrue(
+                graph.get_layer_layout(G, direction = 'down') == pos2)
 
         with self.subTest(function = "rescale_layout"):
             test = graph.rescale_layout(pos1, size = (40, 20), \
@@ -243,10 +225,9 @@ class TestSuite(unittest.TestSuite):
 
         with self.subTest(function = "load"):
             rval = iocsv.load(f)
-            test = isinstance(rval, np.ndarray) \
-                and (rval['col1'] == data['col1']).any() \
-                and (rval['col2'] == data['col2']).any()
-            self.assertTrue(test)
+            self.assertTrue(isinstance(rval, np.ndarray))
+            self.assertTrue((rval['col1'] == data['col1']).any())
+            self.assertTrue((rval['col2'] == data['col2']).any())
 
         if os.path.exists(f): os.remove(f)
 
@@ -312,42 +293,73 @@ class TestSuite(unittest.TestSuite):
         from nemoa.common import module
 
         with self.subTest(function = "curname"):
-            test = module.curname() == 'nemoa.common.__test__'
-            self.assertTrue(test)
+            self.assertTrue(
+                module.curname() == __name__)
 
         with self.subTest(function = "caller"):
-            test = module.caller() == 'nemoa.common.__test__.test_common_module'
-            self.assertTrue(test)
+            self.assertTrue(
+                module.caller() == __name__ + '.test_common_module')
 
         with self.subTest(function = "submodules"):
-            test = 'nemoa.common.module' in module.submodules(nemoa.common)
-            self.assertTrue(test)
+            self.assertTrue(
+                module.__name__ in module.submodules(nemoa.common))
 
         with self.subTest(function = "get_module"):
-            minst = module.get_module('nemoa.common.module')
-            test = hasattr(minst, '__name__') \
-                and minst.__name__ == 'nemoa.common.module'
-            self.assertTrue(test)
+            self.assertTrue(
+                hasattr(module.get_module(module.__name__), '__name__'))
+            self.assertTrue(
+                module.get_module(module.__name__).__name__ == module.__name__)
 
         with self.subTest(function = "functions"):
-            funcs = module.functions(minst)
-            test = 'nemoa.common.module.functions' in funcs \
-                and len(module.functions(minst, name = 'functions')) == 1 \
-                and len(module.functions(minst, name = '')) == 0
-            self.assertTrue(test)
+            self.assertTrue(
+                module.__name__ + '.functions' in module.functions(module))
+            self.assertTrue(
+                len(module.functions(module, name = '')) == 0)
+            self.assertTrue(
+                len(module.functions(module, name = 'functions')) == 1)
 
         with self.subTest(function = "get_function"):
-            finst = module.get_function('nemoa.common.module.functions')
-            self.assertTrue(type(finst).__name__ == 'function')
-
-        with self.subTest(function = "get_kwargs"):
-            fargs = module.get_kwargs(finst)
-            self.assertTrue('details' in fargs)
+            self.assertTrue(
+                type(module.get_function(module.__name__ \
+                + '.get_function')).__name__ == 'function')
 
         with self.subTest(function = "locfuncs"):
             minst = module.get_module('nemoa.common')
             funcs = module.locfuncs(minst, name = 'locfuncs')
             self.assertTrue(len(funcs) == 1)
+
+    def test_common_nfunc(self):
+        from nemoa.common import nfunc
+
+        with self.subTest(function = "kwargs"):
+            self.assertTrue(
+                'd' in nfunc.kwargs(nfunc.kwargs))
+
+    def test_common_ndict(self):
+        from nemoa.common import ndict
+
+        with self.subTest(function = "merge"):
+            self.assertTrue(
+                ndict.merge({'a': 1}, {'a': 2, 'b': 2}, {'c': 3}) \
+                == {'a': 1, 'b': 2, 'c': 3})
+
+        with self.subTest(function = "section"):
+            self.assertTrue(
+                ndict.section({'a1': 1, 'a2': 2, 'b1': 3}, 'a') \
+                == {'1': 1, '2': 2})
+
+        with self.subTest(function = "strkeys"):
+            self.assertTrue(
+                ndict.strkeys({(1, 2): 3, None: {True: False}}) \
+                == {('1', '2'): 3, 'None': {'True': False}})
+
+        with self.subTest(function = "sumjoin"):
+            self.assertTrue(
+                ndict.sumjoin({'a': 1}, {'a': 2, 'b': 3}) \
+                == {'a': 3, 'b': 3})
+            self.assertTrue(
+                ndict.sumjoin({1: 'a', 2: True}, {1: 'b', 2: True}) \
+                == {1: 'ab', 2: 2})
 
     def test_common_ospath(self):
         from nemoa.common import ospath

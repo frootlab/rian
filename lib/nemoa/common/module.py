@@ -229,20 +229,3 @@ def get_shortdoc(finst: Function):
 
     if finst.__doc__ is None: return ""
     return finst.__doc__.split('\n', 1)[0].strip(' .')
-
-def get_kwargs(finst: Function, d: dict = None):
-    """Get the keyword arguments of a given function instance."""
-
-    if not isinstance(finst, Function): raise TypeError(
-        'first argument is required to be a function')
-
-    import inspect
-
-    all = inspect.signature(finst).parameters
-    l = [key for key, val in all.items() if '=' in str(val)]
-
-    if d is None: return l
-
-    kwargs = {key: d.get(key) for key in l if key in d}
-
-    return kwargs
