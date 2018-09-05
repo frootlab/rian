@@ -23,6 +23,12 @@ def kwargs(func: Function, default: Optional[dict] = None) -> dict:
     Returns:
         Dictionary of keyword arguments with default values.
 
+    Examples:
+        >>> kwargs(kwargs)
+        {'default': None}
+        >>> kwargs(kwargs, default = {'default': 'not None'})
+        {'default': 'not None'}
+
     """
 
     # check types of arguments
@@ -44,13 +50,17 @@ def kwargs(func: Function, default: Optional[dict] = None) -> dict:
     return kd
 
 def about(func: Function) -> str:
-    """Summary line of the docstring of a function.
+    """Summary about a function.
 
     Args:
         func: Function instance
 
     Returns:
         Summary line of the docstring of a function.
+
+    Examples:
+        >>> about(about)
+        'Summary about a function'
 
     """
 
