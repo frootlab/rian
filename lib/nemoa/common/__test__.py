@@ -332,8 +332,7 @@ class TestSuite(unittest.TestSuite):
         from nemoa.common import nfunc
 
         with self.subTest(function = "kwargs"):
-            self.assertTrue(
-                'd' in nfunc.kwargs(nfunc.kwargs))
+            self.assertTrue('default' in nfunc.kwargs(nfunc.kwargs))
 
     def test_common_ndict(self):
         from nemoa.common import ndict

@@ -152,11 +152,13 @@ def functions(minst: Optional[Module] = None, details: bool = False,
         return [pref + name for name, ref in funcs]
 
     # create dictionary with function attributes
+    from nemoa.common import nfunc
+
     if len(funcs) == 0: return {}
     fdetails = {}
     for name, ref in funcs:
         # set default attributes
-        fdict = {'name': name, 'about': get_shortdoc(ref), 'reference': ref }
+        fdict = {'name': name, 'about': nfunc.about(ref), 'reference': ref }
         # update attributes
         for key, val in ref.__dict__.items():
             fdict[key] = val
@@ -223,9 +225,3 @@ def get_function(fname: str) -> Optional[Function]:
     finst = getattr(minst, fname.split('.')[-1])
 
     return finst
-
-def get_shortdoc(finst: Function):
-    """Get short description of a given function instance."""
-
-    if finst.__doc__ is None: return ""
-    return finst.__doc__.split('\n', 1)[0].strip(' .')

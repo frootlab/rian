@@ -30,11 +30,11 @@ def merge(*args: dict, new: bool = True) -> dict:
 
     # check types of arguments
     if not isinstance(d1, dict):
-        raise TypeError("first argument is required to be "
-            f"of type 'dict', not '{type(d1)}'")
+        raise TypeError("first argument requires type "
+            f"'dict', not '{type(d1)}'")
     if not isinstance(d2, dict):
-        raise TypeError("second argument is required to be "
-            f"of type 'dict', not '{type(d2)}'")
+        raise TypeError("second argument requires type "
+            f"'dict', not '{type(d2)}'")
 
     # create new dictionary
     if new:

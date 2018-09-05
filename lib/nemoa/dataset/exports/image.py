@@ -85,7 +85,7 @@ class Heatmap(nemoa.common.plot.Heatmap):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwargs = nfunc.kwargs(func, self._config)
+        kwargs = nfunc.kwargs(func, default = self._config)
         array  = dataset.evaluate(fname, **kwargs)
 
         # check return value
@@ -125,7 +125,7 @@ class Histogram(nemoa.common.plot.Histogram):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwargs = nfunc.kwargs(func, self._config)
+        kwargs = nfunc.kwargs(func, default = self._config)
         array  = dataset.evaluate(fname, **kwargs)
 
         # check return value
@@ -163,7 +163,7 @@ class Scatter2D(nemoa.common.plot.Scatter2D):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwargs = nfunc.kwargs(func, self._config)
+        kwargs = nfunc.kwargs(func, default = self._config)
         array  = dataset.evaluate(fname, **kwargs)
 
         # check return value
@@ -207,7 +207,7 @@ class Graph(nemoa.common.plot.Graph):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwargs = nfunc.kwargs(func, self._config)
+        kwargs = nfunc.kwargs(func, default = self._config)
         array  = dataset.evaluate(fname, **kwargs)
 
         # check if evaluation yields valid relation
