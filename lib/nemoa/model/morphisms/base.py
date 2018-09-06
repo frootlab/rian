@@ -45,8 +45,8 @@ class Optimizer:
 
         algorithms = self._buffer['algorithms'].get(attribute, None)
         if not algorithms:
-            algorithms = classes.methods(self, renamekey = 'name',
-                grouping = 'category', attribute = attribute)
+            algorithms = classes.methods(self, key = 'name', val = attribute,
+                groupby = 'category')
             self._buffer['algorithms'][attribute] = algorithms
         if category:
             if category not in algorithms: return {}

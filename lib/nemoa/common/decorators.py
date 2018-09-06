@@ -110,20 +110,6 @@ def association(name: str, title: str = '', tags: list = [], classes: list = [],
 
     return wrapper
 
-def attributes(**attr):
-    """Generic attribute decorator for arbitrary class methods."""
-
-    def wrapper(method):
-        def wrapped(self, *args, **kwargs):
-            return method(self, *args, **kwargs)
-        for key, val in attr.items():
-            setattr(wrapped, key, val)
-
-        wrapped.__doc__ = method.__doc__
-        return wrapped
-
-    return wrapper
-
 def algorithm(**attr):
     """Attribute decorator for algorithm methods."""
 

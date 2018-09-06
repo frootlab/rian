@@ -24,18 +24,23 @@ def hasbase(obj: object, base: str) -> bool:
     bases = [o.__name__ for o in obj.__class__.__mro__]
     return base in bases
 
-def methods(obj: object, attribute: Optional[str] = None,
-    grouping: Optional[str] = None, prefix: str = '', removeprefix: bool = True,
-    renamekey: Optional[str] = None) -> dict:
+def methods(obj: object, prefix: str = '',
+    key: Optional[str] = None, val: Optional[str] = None,
+    groupby: Optional[str] = None) -> dict:
     """Get methods from a given class instance.
 
     Args:
         obj: Class instance
-        prefix: only methods with given prefix are returned.
-        removeprefix: remove prefix in dictionary keys if True.
-        renamekey:
-        attribute:
-        grouping:
+        prefix: Only methods, which names have the given prefix are returned.
+        key: Name of attribute which is used as key for the returned dictionary.
+            If key is None, then the (trimmed) method names are used as key.
+            Default: None
+        val: Name of attribute name which is used as value for the returned
+            dictionary. If val is None, then all attributes of the respective
+            methods are returned. Default: None
+        groupby: Name of attribute which value is used to group the results.
+            If groupby is None, then the results are not grouped.
+            Default: None
 
     Returns:
         Dictionary containing all methods of a given class instance, that
@@ -46,56 +51,60 @@ def methods(obj: object, attribute: Optional[str] = None,
     import inspect
 
     # get references from module inspection and filter prefix
-    methods = dict(inspect.getmembers(obj, inspect.ismethod))
-    if prefix:
-        for name in list(methods.keys()):
-            if not name.startswith(prefix) or name == prefix:
-                del methods[name]
-                continue
-            if removeprefix:
-                methods[name[len(prefix):]] = methods.pop(name)
-    if not grouping and not renamekey and attribute == 'reference':
-        return methods
+    md = dict(inspect.getmembers(obj, inspect.ismethod))
 
-    # get attributes from decorators
-    methoddict = {}
-    for name, method in methods.items():
-        methoddict[name] = { 'reference': method, 'about': '' }
+    # reduce dictionary to methods with given prefix
+    from nemoa.common import ndict
+    md = ndict.reduce(md, s = prefix, trim = False)
 
-        # copy method attributes and docstring to dictionary
-        for attr in method.__dict__:
-            methoddict[name][attr] = method.__dict__[attr]
-        if isinstance(method.__doc__, str):
-            methoddict[name]['about'] = \
-                method.__doc__.split('\n', 1)[0].strip(' .')
+    # get method attributes
+    mc = {}
+    for k, v in md.items():
+        a = v.__dict__
 
-        # filter methods by required attributes
-        if renamekey and not renamekey in methoddict[name]:
-            del methoddict[name]
-        elif attribute and not attribute in methoddict[name]:
-            del methoddict[name]
-        elif grouping and not grouping in methoddict[name]:
-            del methoddict[name]
-    methods = methoddict
+        # ignore method if some required attribute is not available
+        if key and not key in a or val and not val in a \
+            or groupby and not groupby in a: continue
 
-    # (optional) group methods, rename key and reduce to attribute
-    if grouping:
-        groups = {}
-        for ukey, udata in methods.items():
-            group = udata[grouping]
-            key = udata[renamekey] if renamekey else ukey
-            if group not in groups: groups[group] = {}
-            if key in groups[group]: continue
-            if attribute: groups[group][key] = udata[attribute]
-            else: groups[group][key] = udata
-        methods = groups
-    elif renamekey:
-        renamend = {}
-        for ukey, udata in methods.items():
-            key = udata[renamekey]
-            if key in renamend: continue
-            if attribute: renamend[key] = udata[attribute]
-            else: renamend[key] = udata
-        methods = renamend
+        mc[k] = a
+        mc[k]['reference'] = v
+        if isinstance(v.__doc__, str):
+            mc[k]['about'] = v.__doc__.split('\n', 1)[0].strip(' .')
+        else: mc[k]['about'] = ''
+    md = mc
 
-    return methods
+    # set key for returned dictionary
+    if key:
+        nd = {}
+        for k, v in md.items():
+            kr = v[key]
+            if kr in nd: continue
+            nd[kr] = v
+        md = nd
+
+    # group methods, rename key and reduce to attribute
+    if groupby: md = ndict.groupby(md, key = groupby)
+
+    # set value for returned dictionary
+    if val:
+        if groupby:
+            for k1, v1 in md.items():
+                for k2, v2 in v1.items(): v2 = v2[val]
+        else:
+            for k, v in md.items(): v = v[val]
+
+    return md
+
+def attributes(**attr):
+    """Generic attribute decorator for class methods."""
+
+    def wrapper(method):
+        def wrapped(self, *args, **kwargs):
+            return method(self, *args, **kwargs)
+        for k, v in attr.items():
+            setattr(wrapped, k, v)
+
+        wrapped.__doc__ = method.__doc__
+        return wrapped
+
+    return wrapper

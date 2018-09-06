@@ -115,17 +115,24 @@ class TestSuite(unittest.TestSuite):
     def test_common_classes(self):
         from nemoa.common import classes
 
-        class t:
-            def mm(self): pass
-            def nn(self): pass
-
-        obj = t()
-
         with self.subTest(function = 'hasbase'):
             self.assertTrue(classes.hasbase(None, 'object'))
 
+        with self.subTest(function = 'attributes'):
+            class tclass:
+                @classes.attributes(name = 'a', group = 1)
+                def m1(self): pass
+                @classes.attributes(name = 'b', group = 2)
+                def m2(self): pass
+                @classes.attributes(name = 'c', group = 2)
+                def nn(self): pass
+            obj = tclass()
+            self.assertTrue(
+                obj.m1.name == 'a' and obj.m2.name == 'b')
+
         with self.subTest(function = 'methods'):
-            self.assertTrue(len(classes.methods(obj, prefix = 'm')) == 1)
+            self.assertTrue(
+                list(classes.methods(obj, prefix = 'm').keys()) == ['m1', 'm2'])
 
     def test_common_graph(self):
         from nemoa.common import graph
@@ -347,14 +354,20 @@ class TestSuite(unittest.TestSuite):
     def test_common_ndict(self):
         from nemoa.common import ndict
 
+        with self.subTest(function = "groupby"):
+            self.assertTrue(
+                ndict.groupby({1: {'a': 0}, 2: {'a': 0}, 3: {'a': 1}, 4: {}},
+                key = 'a') == {0: {1: {'a': 0}, 2: {'a': 0}},
+                1: {3: {'a': 1}}, None: {4: {}}})
+
         with self.subTest(function = "merge"):
             self.assertTrue(
                 ndict.merge({'a': 1}, {'a': 2, 'b': 2}, {'c': 3}) \
                 == {'a': 1, 'b': 2, 'c': 3})
 
-        with self.subTest(function = "section"):
+        with self.subTest(function = "reduce"):
             self.assertTrue(
-                ndict.section({'a1': 1, 'a2': 2, 'b1': 3}, 'a') \
+                ndict.reduce({'a1': 1, 'a2': 2, 'b1': 3}, 'a') \
                 == {'1': 1, '2': 2})
 
         with self.subTest(function = "strkeys"):

@@ -136,7 +136,7 @@ class System(metadata.BaseClassIP):
 
         # get dictionary with all methods
         # with prefix '_get_' and attribute 'name'
-        methods = classes.methods(self, prefix = '_get_', attribute = 'name')
+        methods = classes.methods(self, prefix = '_get_', val = 'name')
 
         # filter algorithms by given category
         if category is not None:

@@ -325,7 +325,7 @@ class Graph(Plot):
         ax.axis('off')
 
         # get node positions and sizes
-        layout_params = ndict.section(self._config, 'graph_')
+        layout_params = ndict.reduce(self._config, 'graph_')
         del layout_params['layout']
 
         pos = get_layout(graph,
