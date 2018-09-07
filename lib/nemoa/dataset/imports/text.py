@@ -17,10 +17,10 @@ def filetypes():
 def load(path, **kwargs):
     """Import dataset from text file."""
 
-    from nemoa.common import ospath
+    from nemoa.common import npath
 
     # get extract filetype from file extension
-    filetype = ospath.fileext(path).lower()
+    filetype = npath.fileext(path).lower()
 
     # test if filetype is supported
     if filetype not in filetypes():
@@ -50,10 +50,10 @@ class Csv:
 
         """
 
-        from nemoa.common import iocsv, ioini, ospath
+        from nemoa.common import ncsv, nini, npath
 
         # get config from csv header
-        header = iocsv.get_header(path)
+        header = ncsv.get_header(path)
 
         structure = {
             'name': 'str',
@@ -69,11 +69,11 @@ class Csv:
             'type': 'str',
             'labelformat': 'str' }
 
-        config = ioini.loads(header, flat = True, structure = structure)
+        config = nini.loads(header, flat = True, structure = structure)
 
         if 'name' in config: name = config['name']
         else:
-            name = ospath.basename(path)
+            name = npath.basename(path)
             config['name'] = name
         if 'type' not in config: config['type'] = 'base.Dataset'
 
@@ -81,7 +81,7 @@ class Csv:
         config['colfilter'] = {'*': ['*:*']}
         config['rowfilter'] = {'*': ['*:*'], name: [name + ':*']}
 
-        data = iocsv.load(path)
+        data = ncsv.load(path)
 
         config['table'] = {name: config.copy()}
         config['table'][name]['fraction'] = 1.0

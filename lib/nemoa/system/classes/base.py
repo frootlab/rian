@@ -8,7 +8,7 @@ import nemoa
 import numpy
 import copy
 
-from nemoa.common import calc, nclass, docs
+from nemoa.common import calc, nalgo, nclass, docs
 
 class System(docs.BaseClassIP):
     """System base class.
@@ -540,7 +540,7 @@ class System(docs.BaseClassIP):
         raise ValueError("""could not get parameters:
             unknown key '%s'.""" % key)
 
-    @nemoa.common.decorators.objective(
+    @nalgo.objective(
         name     = 'error',
         category = ('system', 'evaluation'),
         args     = 'all',
@@ -551,7 +551,7 @@ class System(docs.BaseClassIP):
         """Mean data reconstruction error of output units."""
         return numpy.mean(self._get_uniterror(*args, **kwargs))
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'accuracy',
         category = ('system', 'evaluation'),
         args     = 'all',
@@ -562,7 +562,7 @@ class System(docs.BaseClassIP):
         """Mean data reconstruction accuracy of output units."""
         return numpy.mean(self._get_unitaccuracy(*args, **kwargs))
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'precision',
         category = ('system', 'evaluation'),
         args     = 'all',
@@ -573,7 +573,7 @@ class System(docs.BaseClassIP):
         """Mean data reconstruction precision of output units."""
         return numpy.mean(self._get_unitprecision(*args, **kwargs))
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'units_mean',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -610,7 +610,7 @@ class System(docs.BaseClassIP):
 
         return model_out.mean(axis = 0)
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'units_variance',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -642,7 +642,7 @@ class System(docs.BaseClassIP):
 
         return model_out.var(axis = 0)
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'units_expect',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -683,7 +683,7 @@ class System(docs.BaseClassIP):
         return out_data
 
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'units_values',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -741,7 +741,7 @@ class System(docs.BaseClassIP):
                     self._units[mapping[id]].params))
             return data
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'units_samples',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -798,7 +798,7 @@ class System(docs.BaseClassIP):
                     data, self._units[mapping[id]].params)
             return data
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'units_residuals',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -841,7 +841,7 @@ class System(docs.BaseClassIP):
         # calculate residuals
         return d_tgt - m_out
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'units_error',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -877,7 +877,7 @@ class System(docs.BaseClassIP):
 
         return error
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'units_accuracy',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -914,7 +914,7 @@ class System(docs.BaseClassIP):
 
         return 1. - normres / normdat
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'units_precision',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -951,7 +951,7 @@ class System(docs.BaseClassIP):
 
         return 1. - devres / devdat
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'correlation',
         category = ('system', 'relation', 'evaluation'),
         directed = False,
@@ -999,7 +999,7 @@ class System(docs.BaseClassIP):
 
         return R
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'weightsumproduct',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -1039,7 +1039,7 @@ class System(docs.BaseClassIP):
 
         return wsp.T
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'knockout',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -1099,7 +1099,7 @@ class System(docs.BaseClassIP):
 
         return R
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'coinduction',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -1170,7 +1170,7 @@ class System(docs.BaseClassIP):
 
         return coop
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'induction',
         category = ('system', 'relation', 'evaluation'),
         directed = True,

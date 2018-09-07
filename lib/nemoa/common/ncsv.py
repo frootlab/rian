@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""nemoa common module for csv data handling."""
 
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'

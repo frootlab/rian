@@ -43,7 +43,7 @@ def save(model, path = None, filetype = None, workspace = None,
 
     """
 
-    from nemoa.common import nclass, ospath
+    from nemoa.common import nclass, npath
 
     if not nclass.hasbase(model, 'Model'):
         raise TypeError("model is not valid")
@@ -51,19 +51,19 @@ def save(model, path = None, filetype = None, workspace = None,
     # get directory, filename and fileextension
     if isinstance(workspace, str) and not workspace == 'None':
         directory = nemoa.path('models', workspace = workspace, base = base)
-    elif isinstance(path, str): directory = ospath.dirname(path)
-    else: directory = ospath.dirname(model.path)
-    if isinstance(path, str): name = ospath.basename(path)
+    elif isinstance(path, str): directory = npath.dirname(path)
+    else: directory = npath.dirname(model.path)
+    if isinstance(path, str): name = npath.basename(path)
     else:
         name = model.fullname
     if isinstance(filetype, str):
         fileext = filetype
     elif isinstance(path, str):
-        fileext = ospath.fileext(path)
-        if not fileext: fileext = ospath.fileext(model.path)
+        fileext = npath.fileext(path)
+        if not fileext: fileext = npath.fileext(model.path)
     else:
-        fileext = ospath.fileext(model.path)
-    path = ospath.join(directory, name + '.' + fileext)
+        fileext = npath.fileext(model.path)
+    path = npath.join(directory, name + '.' + fileext)
 
     # get filetype from file extension if not given
     # and test if filetype is supported

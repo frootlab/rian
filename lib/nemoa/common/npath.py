@@ -5,8 +5,7 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import os
-
-from pathlib import Path
+import pathlib
 
 from typing import Dict, Optional, Sequence, Union
 
@@ -21,7 +20,7 @@ def cwd() -> str:
 
     """
 
-    return str(Path.cwd())
+    return str(pathlib.Path.cwd())
 
 def home() -> str:
     """Path of current users home directory.
@@ -31,7 +30,7 @@ def home() -> str:
 
     """
 
-    return str(Path.home())
+    return str(pathlib.Path.home())
 
 def clear(fname: str) -> str:
     """Clear filename from invalid characters.
@@ -91,7 +90,7 @@ def join(*args: PathLike) -> str:
     if not path: return ''
 
     # normalize path
-    path = str(Path(path))
+    path = str(pathlib.Path(path))
 
     return path
 
@@ -110,7 +109,7 @@ def expand(*args: PathLike, udict: PathLikeDict = {}, expapp: bool = True,
             'nemoa.common.appinfo.path'. Default is True
         expenv: determines if environmental path variables are expanded.
             For a full list of valid environmental path variables see
-            'nemoa.common.ospath'. Default is True
+            'nemoa.common.npath'. Default is True
 
     Returns:
         String containing valid path syntax.

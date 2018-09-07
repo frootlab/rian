@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-from nemoa.common import nclass, docs
+from nemoa.common import nalgo, nclass, docs
 
 class Dataset(docs.BaseClassIP):
     """Dataset base class.
@@ -1336,7 +1336,7 @@ class Dataset(docs.BaseClassIP):
 
         return algorithms[name](*args, **kwargs)
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'sample',
         title    = 'Sample Values',
         category = ('dataset', 'evaluation'),
@@ -1347,7 +1347,7 @@ class Dataset(docs.BaseClassIP):
 
         return self._get_data(*args, **kwargs)
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'covariance',
         title    = 'Covariance',
         category = ('dataset', 'columns', 'evaluation'),
@@ -1373,7 +1373,7 @@ class Dataset(docs.BaseClassIP):
 
         return C
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'correlation',
         title    = 'Pearson Correlation',
         category = ('dataset', 'columns', 'evaluation'),
@@ -1399,7 +1399,7 @@ class Dataset(docs.BaseClassIP):
 
         return C
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'pca-sample',
         title    = 'PCA Sample Values',
         category = ('dataset', 'evaluation'),
@@ -1428,7 +1428,7 @@ class Dataset(docs.BaseClassIP):
 
         return pca_data
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name      = 'k-covariance',
         title     = 'k-Covariance',
         title_tex = '$k$-Covariance',
@@ -1461,7 +1461,7 @@ class Dataset(docs.BaseClassIP):
 
         return C
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name      = 'k-correlation',
         title     = 'k-Correlation',
         title_tex = '$k$-Correlation',
@@ -1494,7 +1494,7 @@ class Dataset(docs.BaseClassIP):
 
         return C
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'test_binary',
         title    = None,
         category = ('dataset', 'evaluation'),
@@ -1521,7 +1521,7 @@ class Dataset(docs.BaseClassIP):
 
         return isbinary
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'test_gauss',
         title    = None,
         category = ('dataset', 'evaluation'),

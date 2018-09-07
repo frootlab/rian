@@ -7,6 +7,7 @@ __license__ = 'GPLv3'
 
 import nemoa.model.morphisms.base
 import numpy
+from nemoa.common import nalgo
 
 class ANN(nemoa.model.morphisms.base.Optimizer):
 
@@ -37,7 +38,7 @@ class ANN(nemoa.model.morphisms.base.Optimizer):
         'tracker_eval_time_interval': 10.,
         'ignore_units': [] }
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'bprop',
         longname = 'backpropagation of error',
         category = 'optimization',
@@ -149,13 +150,13 @@ class ANN(nemoa.model.morphisms.base.Optimizer):
 
         return { 'units': units, 'links': links }
 
-    @nemoa.common.decorators.algorithm(
+    @nalgo.algorithm(
         name     = 'rprop',
         longname = 'resiliant backpropagation of error',
         category = 'optimization',
         type     = 'algorithm',
-        syscheck = None)
-
+        syscheck = None
+    )
     def _rprop(self):
         """Optimize parameters using resiliant backpropagation (RPROP).
 

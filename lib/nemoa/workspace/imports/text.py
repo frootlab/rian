@@ -15,10 +15,10 @@ def filetypes():
 def load(path, **kwargs):
     """Import workspace from text file."""
 
-    from nemoa.common import ospath
+    from nemoa.common import npath
 
     # extract filetype from path
-    filetype = ospath.fileext(path).lower()
+    filetype = npath.fileext(path).lower()
 
     # test if filetype is supported
     if filetype not in filetypes():
@@ -49,7 +49,7 @@ class Ini:
 
         """
 
-        from nemoa.common import ioini
+        from nemoa.common import nini
 
         structure = {
             'workspace': {
@@ -64,7 +64,7 @@ class Ini:
                 'models': 'str',
                 'scripts': 'str' }}
 
-        config = ioini.load(path, structure)
+        config = nini.load(path, structure)
         config['type'] = 'base.Workspace'
 
         return { 'config': config }

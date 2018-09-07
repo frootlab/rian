@@ -34,7 +34,7 @@ def load(path, filetype = None, **kwargs):
 
     import os
 
-    from nemoa.common import ospath
+    from nemoa.common import npath
 
     # get path (if necessary)
     if 'workspace' in kwargs or not os.path.isfile(path):
@@ -54,7 +54,7 @@ def load(path, filetype = None, **kwargs):
 
     # get filtype from file extension if not given
     # and check if filetype is supported
-    if not filetype: filetype = ospath.fileext(path).lower()
+    if not filetype: filetype = npath.fileext(path).lower()
     if filetype not in filetypes():
         raise ValueError(f"filetype '{filetype}' is not supported")
 

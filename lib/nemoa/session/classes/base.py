@@ -56,7 +56,7 @@ class Session:
         import sys
 
         from nemoa.common import ndict
-        from nemoa.common import ioini
+        from nemoa.common import nini
 
         self._config = ndict.merge(kwargs, self._default)
 
@@ -71,7 +71,7 @@ class Session:
         configfile = self._get_path_expand(configfile)
 
         if os.path.exists(configfile):
-            ini_dict = ioini.load(configfile, {
+            ini_dict = nini.load(configfile, {
                 'folders': {
                     'user': 'str',
                     'cache': 'str',
@@ -223,7 +223,7 @@ class Session:
 
         import glob
         import os
-        from nemoa.common import ospath
+        from nemoa.common import npath
 
         basepath = self._config['default']['basepath'][base]
         baseglob = self._get_path_expand((basepath, '*'))
@@ -232,7 +232,7 @@ class Session:
         fname = self._config['default']['path']['inifile'][-1]
         for subdir in glob.iglob(baseglob):
             if not os.path.isdir(subdir): continue
-            fpath = ospath.join(subdir, fname)
+            fpath = npath.join(subdir, fname)
             if not os.path.isfile(fpath): continue
             workspaces.append(os.path.basename(subdir))
 
@@ -403,27 +403,27 @@ class Session:
         """
 
         import os
-        from nemoa.common import ospath
+        from nemoa.common import npath
 
-        path = ospath.join(args)
+        path = npath.join(args)
 
         # expand nemoa environment variables
         base = self._get_base()
         udict = {
             'workspace': self._get_workspace() or 'none',
             'base': self._get_base() or 'none',
-            'basepath': ospath.join(self._config['default']['basepath'][base])
+            'basepath': npath.join(self._config['default']['basepath'][base])
         }
 
         for key, val in self._config['default']['basepath'].items():
-            udict[key] = ospath.join(val)
+            udict[key] = npath.join(val)
         for key, val in self._config['current']['path'].items():
-            udict[key] = ospath.join(val)
+            udict[key] = npath.join(val)
 
-        path = ospath.expand(path, udict = udict)
+        path = npath.expand(path, udict = udict)
 
         # (optional) create directory
-        if create: ospath.mkdir(path)
+        if create: npath.mkdir(path)
 
         # (optional) check path
         if check and not os.path.exists(path): return None
@@ -782,7 +782,7 @@ class Session:
         """Scan workspace for files."""
 
         import glob
-        from nemoa.common import ospath
+        from nemoa.common import npath
 
         # change current base and workspace (if necessary)
         cur_workspace = self._get_workspace()
@@ -816,9 +816,9 @@ class Session:
             # scan for files
             objregister = self._config['register'][objtype]
             for filepath in glob.iglob(filemask):
-                filetype = ospath.fileext(filepath)
+                filetype = npath.fileext(filepath)
                 if filetype not in filetypes: continue
-                basename = ospath.basename(filepath)
+                basename = npath.basename(filepath)
                 filespace = self._get_workspace()
                 filebase = self._get_base()
                 fullname = '%s.%s.%s' % (filebase, filespace, basename)

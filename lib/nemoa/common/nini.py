@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""nemoa common module for ini formated configuration data handling."""
 
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
@@ -11,9 +12,9 @@ def load(f: str, structure: Optional[dict] = None) -> dict:
     """Import configuration dictionary from INI file.
 
     Args:
-        f (str): full qualified path to INI File
-        structure (dict, optional): Dictionary, that determines the structure
-            of the configuration dictionary. If "structure" is None the INI File
+        f: full qualified path to INI File
+        structure: Dictionary, that determines the structure of the
+            configuration dictionary. If "structure" is None the INI File
             is completely imported and all values are interpreted as strings.
             If "structure" is a dictionary, only those sections and keys are
             imported, that match the structure dictionary. Thereby the sections
@@ -41,13 +42,13 @@ def save(d: dict, f: str, flat: Optional[bool] = None,
     """Save configuration dictionary to INI file.
 
     Args:
-        d (dict): dictionary containing configuration
-        f (str): full qualified path to writeable file
-        flat (bool, optional): Determines if the desired INI format structure
-            contains sections or not. By default sections are used, if the
-            dictionary contains subdictionaries.
-        header (str, optional): The Header string is written in the INI file
-            as an initial comment. By default no header is written.
+        d: dictionary containing configuration
+        f: full qualified path to writeable file
+        flat: Determines if the desired INI format structure contains sections.
+            By default sections are used, if the dictionary contains
+            subdictionaries.
+        header: The Header string is written in the INI file as initial comment.
+            By default no header is written.
 
     Return:
         Bool which is True if no error occured.
@@ -210,10 +211,10 @@ def parse(parser: ConfigParser, structure: Optional[dict] = None) -> dict:
     """Import configuration dictionary from INI formated string
 
     Args:
-        parser (ConfigParser): ConfigParser instance that contains an
-            unstructured / unfiltered configuration dictionary
-        structure (dict, optional): Dictionary, that determines the structure
-            of the configuration dictionary. If "structure" is None the INI File
+        parser: ConfigParser instance that contains an unstructured
+            configuration dictionary
+        structure: Dictionary, that determines the structure of the
+            configuration dictionary. If "structure" is None the INI File
             is completely imported and all values are interpreted as strings.
             If "structure" is a dictionary, only those sections and keys are
             imported, that match the structure dictionary. Thereby the sections

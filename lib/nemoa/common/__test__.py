@@ -199,8 +199,8 @@ class TestSuite(unittest.TestSuite):
             test = graph.get_layout(G, 'layer', direction = 'right') == pos1
             self.assertTrue(test)
 
-    def test_common_iocsv(self):
-        from nemoa.common import iocsv
+    def test_common_ncsv(self):
+        from nemoa.common import ncsv
 
         import numpy as np
         import os
@@ -216,31 +216,31 @@ class TestSuite(unittest.TestSuite):
         labels = ["", "col1", "col2"]
 
         with self.subTest(function = "save"):
-            self.assertTrue(iocsv.save(f, data, header = header,
+            self.assertTrue(ncsv.save(f, data, header = header,
                 labels = labels, delim = delim))
 
         with self.subTest(function = "get_header"):
-            self.assertTrue(iocsv.get_header(f) == header)
+            self.assertTrue(ncsv.get_header(f) == header)
 
         with self.subTest(function = "get_delim"):
-            self.assertTrue(iocsv.get_delim(f) == delim)
+            self.assertTrue(ncsv.get_delim(f) == delim)
 
         with self.subTest(function = "get_labels"):
-            self.assertTrue(iocsv.get_labels(f) == labels)
+            self.assertTrue(ncsv.get_labels(f) == labels)
 
         with self.subTest(function = "get_labelcolumn"):
-            self.assertTrue(iocsv.get_labelcolumn(f) == 0)
+            self.assertTrue(ncsv.get_labelcolumn(f) == 0)
 
         with self.subTest(function = "load"):
-            rval = iocsv.load(f)
+            rval = ncsv.load(f)
             self.assertTrue(isinstance(rval, np.ndarray))
             self.assertTrue((rval['col1'] == data['col1']).any())
             self.assertTrue((rval['col2'] == data['col2']).any())
 
         if os.path.exists(f): os.remove(f)
 
-    def test_common_ioini(self):
-        from nemoa.common import ioini
+    def test_common_nini(self):
+        from nemoa.common import nini
 
         import os
         import tempfile
@@ -256,24 +256,24 @@ class TestSuite(unittest.TestSuite):
             "[l1]\na = 1\n\n[l2]\na = 2\n\n")
 
         with self.subTest(function = "dumps"):
-            self.assertTrue(ioini.dumps(d, header = header) == s)
+            self.assertTrue(nini.dumps(d, header = header) == s)
 
         with self.subTest(function = "loads"):
-            self.assertTrue(ioini.loads(s, structure = struct) == d)
+            self.assertTrue(nini.loads(s, structure = struct) == d)
 
         with self.subTest(function = "save"):
-            self.assertTrue(ioini.save(d, f, header = header))
+            self.assertTrue(nini.save(d, f, header = header))
 
         with self.subTest(function = "load"):
-            self.assertTrue(ioini.load(f, structure = struct) == d)
+            self.assertTrue(nini.load(f, structure = struct) == d)
 
         with self.subTest(function = "header"):
-            self.assertTrue(ioini.header(f) == header)
+            self.assertTrue(nini.header(f) == header)
 
         if os.path.exists(f): os.remove(f)
 
-    def test_common_iozip(self):
-        from nemoa.common import iozip
+    def test_common_nzip(self):
+        from nemoa.common import nzip
 
         import os
         import tempfile
@@ -283,17 +283,17 @@ class TestSuite(unittest.TestSuite):
         f = tempfile.NamedTemporaryFile().name
 
         with self.subTest(function = "dumps"):
-            self.assertTrue(iozip.dumps(d) == s)
+            self.assertTrue(nzip.dumps(d) == s)
 
         with self.subTest(function = "loads"):
-            self.assertTrue(iozip.loads(s) == d)
+            self.assertTrue(nzip.loads(s) == d)
 
         with self.subTest(function = "dump"):
-            iozip.dump(d, f)
+            nzip.dump(d, f)
             self.assertTrue(os.path.exists(f))
 
         with self.subTest(function = "load"):
-            self.assertTrue(iozip.load(f) == d)
+            self.assertTrue(nzip.load(f) == d)
 
         if os.path.exists(f): os.remove(f)
 
@@ -389,8 +389,8 @@ class TestSuite(unittest.TestSuite):
                 ndict.sumjoin({1: 'a', 2: True}, {1: 'b', 2: True}) \
                 == {1: 'ab', 2: 2})
 
-    def test_common_ospath(self):
-        from nemoa.common import ospath
+    def test_common_npath(self):
+        from nemoa.common import npath
 
         import os
         import tempfile
@@ -401,40 +401,40 @@ class TestSuite(unittest.TestSuite):
         stdir = tempfile.TemporaryDirectory().name
 
         with self.subTest(function = "cwd"):
-            self.assertTrue(ospath.cwd())
+            self.assertTrue(npath.cwd())
 
         with self.subTest(function = "home"):
-            self.assertTrue(ospath.home())
+            self.assertTrue(npath.home())
 
         with self.subTest(function = "clear"):
-            self.assertTrue(ospath.clear('3/\nE{$5}.e') == '3E5.e')
+            self.assertTrue(npath.clear('3/\nE{$5}.e') == '3E5.e')
 
         with self.subTest(function = "join"):
-            val = ospath.join(('a', ('b', 'c')), 'd')
+            val = npath.join(('a', ('b', 'c')), 'd')
             self.assertTrue(val == dname)
 
         with self.subTest(function = "expand"):
-            val = ospath.expand('%var1%/c', 'd',
+            val = npath.expand('%var1%/c', 'd',
                 udict = {'var1': 'a/%var2%', 'var2': 'b'})
             self.assertTrue(val == dname)
 
         with self.subTest(function = "dirname"):
-            self.assertTrue(ospath.dirname(*plike) == dname)
+            self.assertTrue(npath.dirname(*plike) == dname)
 
         with self.subTest(function = "filename"):
-            self.assertTrue(ospath.filename(*plike) == 'base.ext')
+            self.assertTrue(npath.filename(*plike) == 'base.ext')
 
         with self.subTest(function = "basename"):
-            self.assertTrue(ospath.basename(*plike) == 'base')
+            self.assertTrue(npath.basename(*plike) == 'base')
 
         with self.subTest(function = "fileext"):
-            self.assertTrue(ospath.fileext(*plike) == 'ext')
+            self.assertTrue(npath.fileext(*plike) == 'ext')
 
         with self.subTest(function = "mkdir"):
-            self.assertTrue(ospath.mkdir(stdir))
+            self.assertTrue(npath.mkdir(stdir))
 
         with self.subTest(function = "rmdir"):
-            self.assertTrue(ospath.rmdir(stdir))
+            self.assertTrue(npath.rmdir(stdir))
 
         with self.subTest(function = "cp"):
             self.assertTrue(True)

@@ -50,7 +50,7 @@ def save(network, path = None, filetype = None, workspace = None,
 
     """
 
-    from nemoa.common import nclass, ospath
+    from nemoa.common import nclass, npath
 
     if not nclass.hasbase(network, 'Network'):
         raise ValueError("network is not valid")
@@ -58,15 +58,15 @@ def save(network, path = None, filetype = None, workspace = None,
     # get directory, filename and fileextension
     if isinstance(workspace, str) and not workspace == 'None':
         directory = nemoa.path('networks', workspace = workspace, base = base)
-    elif isinstance(path, str): directory = ospath.dirname(path)
-    else: directory = ospath.dirname(network.path)
-    if isinstance(path, str): name = ospath.basename(path)
+    elif isinstance(path, str): directory = npath.dirname(path)
+    else: directory = npath.dirname(network.path)
+    if isinstance(path, str): name = npath.basename(path)
     else: name = network.fullname
     if isinstance(filetype, str): fileext = filetype
     elif isinstance(path, str):
-        fileext = ospath.fileext(path) or ospath.fileext(network.path)
-    else: fileext = ospath.fileext(network.path)
-    path = ospath.join(directory, name + '.' + fileext)
+        fileext = npath.fileext(path) or npath.fileext(network.path)
+    else: fileext = npath.fileext(network.path)
+    path = npath.join(directory, name + '.' + fileext)
 
     # get filetype from file extension if not given
     # and test if filetype is supported

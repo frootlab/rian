@@ -240,13 +240,13 @@ class BaseClassIP:
 
         """
 
-        from nemoa.common import ospath
+        from nemoa.common import npath
 
         mname = self.__module__.split('.')[-1]
-        dname = nemoa.path(mname + 's') or ospath.cwd()
-        fbase = ospath.clear(self._get_fullname())
+        dname = nemoa.path(mname + 's') or npath.cwd()
+        fbase = npath.clear(self._get_fullname())
         fext  = nemoa.get('default', 'filetype', mname)
-        path  = ospath.join(dname, fbase + '.' + fext)
+        path  = npath.join(dname, fbase + '.' + fext)
 
         return path
 
