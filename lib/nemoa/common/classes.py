@@ -4,7 +4,7 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from typing import Optional
+from typing import Any, Callable, Optional
 
 def hasbase(obj: object, base: str) -> bool:
     """Return true if the class instance has the given base.
@@ -95,8 +95,16 @@ def methods(obj: object, prefix: str = '',
 
     return md
 
-def attributes(**attr):
-    """Generic attribute decorator for class methods."""
+def attributes(**attr: Any) -> Callable:
+    """Generic attribute decorator for class methods.
+
+    Args:
+        **attr: Arbitrary attributs
+
+    Returns:
+        Wrapper function with additional attributes
+
+    """
 
     def wrapper(method):
         def wrapped(self, *args, **kwargs):

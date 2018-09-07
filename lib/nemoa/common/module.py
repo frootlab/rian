@@ -133,10 +133,6 @@ def functions(minst: Optional[Module] = None, details: bool = False,
     Returns:
         List with full qualified function names.
 
-    Example:
-        >>> all = lambda a, b: frozenset(a) <= frozenset(b)
-        >>> functions(filters = {'tags': all}, tags = ['fast', 'stable'])
-
     """
 
     if minst is None: minst = get_module(curname(-1))
@@ -183,7 +179,7 @@ def functions(minst: Optional[Module] = None, details: bool = False,
 
 def locfuncs(minst: Optional[Module] = None, recursive: bool = True,
     details: bool = False, filters: dict = {},  **kwargs):
-    """Recursively search for functions within submodules."""
+    """Locate functions within submodules."""
 
     if minst is None: minst = get_module(curname(-1))
     elif not isinstance(minst, Module): raise TypeError(

@@ -6,12 +6,15 @@ __license__ = 'GPLv3'
 
 from typing import Dict, Hashable
 
-def merge(*args: dict, new: bool = True) -> dict:
+def merge(*args: dict, mode: int = 1) -> dict:
     """Recursive right merge dictionaries.
 
     Args:
         *args: dictionaries with arbitrary hirarchy structures
-        new: a new dictionary is created if new is True
+        mode: creation mode for resulting dictionary:
+            0: change rightmost dictionary
+            1: create new dictionary by deepcopy
+            2: create new dictionary by chain mapping
 
     Returns:
         Dictionary containing right merge of dictionaries.
@@ -22,13 +25,21 @@ def merge(*args: dict, new: bool = True) -> dict:
 
     """
 
-    # recursively right merge
+    # check for trivial cases
     if len(args) < 2:
         raise TypeError("at least two arguments are required")
-    elif len(args) == 2:
+
+    # check for chain mapping creation mode
+    if mode == 2:
+        import collections
+        return dict(collections.ChainMap(*args))
+
+    # recursively right merge
+    if len(args) == 2:
         d1, d2 = args[0], args[1]
     else:
-        d1, d2, new = args[0], merge(*args[1:], new = new), False
+        d1, d2 = args[0], merge(*args[1:], mode = mode)
+        mode = 0
 
     # check types of arguments
     if not isinstance(d1, dict):
@@ -39,14 +50,14 @@ def merge(*args: dict, new: bool = True) -> dict:
             f"'dict', not '{type(d2)}'")
 
     # create new dictionary
-    if new:
+    if mode == 1:
         import copy
         d2 = copy.deepcopy(d2)
 
     # right merge couple of dictionaries
     for k1, v1 in d1.items():
         if k1 not in d2: d2[k1] = v1
-        elif isinstance(v1, dict): merge(v1, d2[k1], new = False)
+        elif isinstance(v1, dict): merge(v1, d2[k1], mode = 0)
         else: d2[k1] = v1
 
     return d2

@@ -5,9 +5,9 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 try: import numpy as np
-except ImportError as E:
+except ImportError as e:
     raise ImportError("requires package numpy: "
-        "https://scipy.org") from E
+        "https://scipy.org") from e
 
 from typing import Optional, Sequence, Union
 Table = np.recarray

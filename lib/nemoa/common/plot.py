@@ -7,9 +7,9 @@ __license__ = 'GPLv3'
 import nemoa
 
 try: import numpy as np
-except ImportError as E:
+except ImportError as e:
     raise ImportError("requires package numpy: "
-        "https://scipy.org") from E
+        "https://scipy.org") from e
 
 class Plot:
     """Base class for matplotlib plots.
@@ -46,9 +46,9 @@ class Plot:
     def __init__(self, *args, **kwargs):
 
         try: import matplotlib
-        except ImportError as E:
+        except ImportError as e:
             raise ImportError("requires package matplotlib: "
-                "https://matplotlib.org") from E
+                "https://matplotlib.org") from e
 
         from nemoa.common import ndict
 

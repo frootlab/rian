@@ -9,7 +9,7 @@ import nemoa
 from typing import Any, Dict, Optional
 
 class BaseClassIP:
-    """Generic base class for resources subjected to intellectual property.
+    """Base class for resources subjected to intellectual property.
 
     Resources like datasets, networks, systems and models share common
     descriptive metadata comprising author and copyright, as well as
@@ -55,7 +55,7 @@ class BaseClassIP:
         'fullname': 'r', 'name': 'rw', 'branch': 'rw', 'version': 'rw',
         'about': 'rw', 'type': 'r', 'path': 'rw' }
 
-    def __init__(self, *args: Any, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Import object configuration and content from dictionary."""
 
         self._set_copy(**kwargs)
@@ -253,8 +253,7 @@ class BaseClassIP:
     def _get_type(self) -> Optional[str]:
         """Get instance type, using module name and class name.
 
-        String concatenation of module name and class name of the
-        instance.
+        String concatenation of module name and class name of the instance.
 
         Returns:
             String containing instance type identifier.

@@ -141,15 +141,14 @@ def path(name: Optional[str] = None, appname: Optional[str] = None,
 
     def upddirs(appname: Optional[str] = None,
         appauthor: Optional[Union[str, bool]] = None,
-        version: Optional[str] = None,
-        **kwargs: Any) -> None:
-        """Update application paths from application name, author and version."""
+        version: Optional[str] = None, **kwargs: Any) -> None:
+        """Update application paths from name, author and version."""
 
         try: from appdirs import AppDirs
-        except ImportError as E:
+        except ImportError as e:
             raise ImportError(
                 "requires package appdirs: "
-                "https://pypi.org/project/appdirs/") from E
+                "https://pypi.org/project/appdirs/") from e
 
         app = {
             'appname': appname or get('name'),
@@ -172,8 +171,7 @@ def path(name: Optional[str] = None, appname: Optional[str] = None,
     d = globals()['_DIRS']
     if not name: return d.copy()
     if not isinstance(name, str):
-        raise TypeError(
-            "argument 'name' requires types 'str' or 'None', "
+        raise TypeError("argument 'name' requires types 'str' or 'None', "
             f"not '{type(name)}'")
     if not name in d:
         raise KeyError(f"pathname '{name}' is not valid")

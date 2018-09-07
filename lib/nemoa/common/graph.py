@@ -5,14 +5,14 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 try: import networkx as nx
-except ImportError as E:
+except ImportError as e:
     raise ImportError("requires package networkx: "
-        "https://networkx.github.io") from E
+        "https://networkx.github.io") from e
 
 try: import numpy as np
-except ImportError as E:
+except ImportError as e:
     raise ImportError("requires package numpy: "
-        "https://scipy.org") from E
+        "https://scipy.org") from e
 
 from networkx.classes import digraph
 from typing import Optional

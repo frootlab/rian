@@ -276,8 +276,8 @@ def cp(source: PathLike, target: PathLike) -> bool:
         t = os.path.join(ddir, basename(s))
         if os.path.exists(t): shutil.rmtree(t)
         try: shutil.copytree(s, t)
-        except Exception as E:
-            raise OSError("could not copy directory") from E
+        except Exception as e:
+            raise OSError("could not copy directory") from e
 
     return True
 
@@ -297,8 +297,8 @@ def mkdir(*args: PathLike) -> bool:
     if os.path.isdir(path): return True
 
     try: os.makedirs(path)
-    except Exception as E:
-        raise OSError("could not create directory") from E
+    except Exception as e:
+        raise OSError("could not create directory") from e
 
     return os.path.isdir(path)
 

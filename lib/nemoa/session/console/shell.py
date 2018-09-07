@@ -11,8 +11,8 @@ def main():
 
     try:
         import IPython
-    except ImportError as E:
-        raise ImportError("IPython is required: https://ipython.org/") from E
+    except ImportError as e:
+        raise ImportError("IPython is required: https://ipython.org/") from e
 
     from IPython.core.interactiveshell import InteractiveShell
 
