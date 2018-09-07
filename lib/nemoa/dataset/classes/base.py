@@ -1106,7 +1106,7 @@ class Dataset(docs.BaseClassIP):
                 type = numpy.recarray, dtype = dtype)
 
             if labels:
-                from nemoa.common import table as ntable
+                from nemoa.common import ntable
                 table_colsel = ntable.addcols(arr, self._tables[table], 'label')
             else:
                 table_colsel = arr

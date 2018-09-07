@@ -442,7 +442,7 @@ class Session:
         import logging
         import traceback
 
-        from nemoa.common import sysinfo, module
+        from nemoa.common import nsysinfo, module
 
         mode = self._get_mode()
         obj = args[0]
@@ -450,12 +450,15 @@ class Session:
         # test if args are given from an exception
         # in this case the arguments are (type, value, traceback)
         if isinstance(obj, type(Exception)):
-            if issubclass(obj, Warning): key = 'warning'
+            etype, value, tb = args[0], args[1], args[2]
+            if issubclass(etype, Warning): key = 'warning'
             else: key = 'error'
             if mode == 'shell': clr = module.caller(-5)
             else: clr = module.caller(-4)
-            msg = str(args[1]).capitalize()
-            etype = obj.__name__
+            if mode == 'debug':
+                msg = ('').join(traceback.format_exception(etype, value, tb))
+            else:
+                msg = str(args[1]).capitalize()
 
         # test if args are given as an info message
         # in this case the arguments are (msg)
@@ -472,7 +475,7 @@ class Session:
         else: return True
 
         # define colors (platform dependent workaround)
-        osname = sysinfo.osname()
+        osname = nsysinfo.osname()
 
         # 2do define colors based on shell not on platform
         if osname.lower() == 'windows' and mode != 'shell':
@@ -519,13 +522,15 @@ class Session:
             return None
 
         if key == 'warning':
+            ename = etype.__name__
             if mode != 'silent': tty_log.warning(
-                f"{color['red']}{etype}:{color['default']} {msg}")
+                f"{color['red']}{ename}:{color['default']} {msg}")
             file_log.warning(file_msg)
             return None
 
         if key == 'error':
-            tty_log.error(f"{color['red']}{etype}:{color['default']} {msg}")
+            ename = etype.__name__
+            tty_log.error(f"{color['red']}{ename}:{color['default']} {msg}")
                 #clr + ': ' + color['yellow'] + msg + color['default'])
             file_log.error(file_msg)
             for line in traceback.format_stack():

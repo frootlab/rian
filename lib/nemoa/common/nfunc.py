@@ -4,11 +4,9 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from typing import Optional
-import types
-Function = types.FunctionType
+from typing import Callable, Optional
 
-def kwargs(func: Function, default: Optional[dict] = None) -> dict:
+def kwargs(func: Callable, default: Optional[dict] = None) -> dict:
     """Keyword arguments of a function.
 
     Args:
@@ -31,11 +29,13 @@ def kwargs(func: Function, default: Optional[dict] = None) -> dict:
 
     """
 
+    import types
+
     # check types of arguments
-    if not isinstance(func, Function):
+    if not isinstance(func, types.FunctionType):
         raise TypeError('first argument requires to be a function')
     if not isinstance(default, (dict, type(None))):
-        raise TypeError(f"argument default requires types "
+        raise TypeError(f"argument 'default' requires types "
             f"'None' or 'dict', not '{type(default)}'")
 
     import inspect
@@ -49,7 +49,7 @@ def kwargs(func: Function, default: Optional[dict] = None) -> dict:
 
     return kd
 
-def about(func: Function) -> str:
+def about(func: Callable) -> str:
     """Summary about a function.
 
     Args:
@@ -64,7 +64,9 @@ def about(func: Function) -> str:
 
     """
 
-    if not isinstance(func, Function):
+    import types
+
+    if not isinstance(func, types.FunctionType):
         raise TypeError('first argument requires to be a function')
 
     if func.__doc__ is None: return ""

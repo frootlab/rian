@@ -10,11 +10,11 @@ import networkx
 import numpy
 import os
 
-from nemoa.common import text
+from nemoa.common import nplot, ntext
 
 def filetypes():
     """Get supported image filetypes."""
-    return nemoa.common.plot.filetypes()
+    return nplot.filetypes()
 
 def save(model, path = None, filetype = None, plot = None, **kwargs):
 
@@ -47,7 +47,7 @@ def save(model, path = None, filetype = None, plot = None, **kwargs):
 
     # get information about relation
     if plot._config['show_title']:
-        rel_id = text.splitargs(plot._config['relation'])[0]
+        rel_id = ntext.splitargs(plot._config['relation'])[0]
         rel_dict = model.system.get('algorithm', rel_id,
             category = ('system', 'relation', 'evaluation'))
         rel_name = rel_dict['name']
@@ -87,11 +87,7 @@ def show(model, plot = None, *args, **kwargs):
 
     # get information about relation
     if plot._config['show_title']:
-        if isinstance(plot._config.get('relation', None), str):
-            relation = plot._config.get('relation')
-        else:
-            relation = 'correlation'
-        rel_id = text.splitargs(relation)[0]
+        rel_id = plot._config.get('relation', 'correlation').split('(')[0]
         rel_dict = model.system.get('algorithm', rel_id,
             category = ('system', 'relation', 'evaluation'))
         rel_name = rel_dict['name']
@@ -105,7 +101,7 @@ def show(model, plot = None, *args, **kwargs):
 
     return True
 
-class Graph(nemoa.common.plot.Graph):
+class Graph(nplot.Graph):
 
     def create(self, model):
 
@@ -141,7 +137,7 @@ class Graph(nemoa.common.plot.Graph):
 
         # calculate edge weights from 'weight' relation
         relarg = self._config.get('relation', '')
-        rel_name = text.splitargs(relarg)[0]
+        rel_name = relarg.split('(')[0]
         W = model.evaluate('system', 'relations', rel_name,
             preprocessing = self._config['preprocessing'],
             measure = self._config['measure'],
@@ -263,7 +259,7 @@ class Graph(nemoa.common.plot.Graph):
         # create plot
         return self.plot(graph)
 
-class Heatmap(nemoa.common.plot.Heatmap):
+class Heatmap(nplot.Heatmap):
 
     def create(self, model):
 
@@ -314,7 +310,7 @@ class Heatmap(nemoa.common.plot.Heatmap):
 
         # update title by evaluated relation
         if self._config['show_title']:
-            rel_id = text.splitargs(self._config['relation'])[0]
+            rel_id = ntext.splitargs(self._config['relation'])[0]
             rel_dict = model.system.get('algorithm', rel_id,
                 category = ('system', 'relation', 'evaluation'))
             rel_name = rel_dict['name']
@@ -323,7 +319,7 @@ class Heatmap(nemoa.common.plot.Heatmap):
         # create plot
         return self.plot(matrix)
 
-class Histogram(nemoa.common.plot.Histogram):
+class Histogram(nplot.Histogram):
 
     def create(self, model):
 
@@ -337,7 +333,7 @@ class Histogram(nemoa.common.plot.Histogram):
             'transform': '' })
 
         # get information about evaluation algorithm
-        rel_id = text.splitargs(self._config['evaluation'])[0]
+        rel_id = ntext.splitargs(self._config['evaluation'])[0]
         rel_dict = model.system.get('algorithm', rel_id,
             category = ('system', 'relation', 'evaluation'))
 

@@ -106,7 +106,7 @@ def expand(*args: PathLike, udict: PathLikeDict = {}, expapp: bool = True,
             by the symbol '%'. The user variables may also include references.
         expapp: determines if application path variables are expanded.
             For a full list of valid application variables see
-            'nemoa.common.appinfo.path'. Default is True
+            'nemoa.common.nappinfo.path'. Default is True
         expenv: determines if environmental path variables are expanded.
             For a full list of valid environmental path variables see
             'nemoa.common.npath'. Default is True
@@ -122,7 +122,7 @@ def expand(*args: PathLike, udict: PathLikeDict = {}, expapp: bool = True,
 
     import sys
 
-    from nemoa.common import appinfo
+    from nemoa.common import nappinfo
 
     path = join(*args)
 
@@ -131,7 +131,7 @@ def expand(*args: PathLike, udict: PathLikeDict = {}, expapp: bool = True,
     if udict:
         for key, val in udict.items(): d[key] = join(val)
     if expapp:
-        for key, val in appinfo.path().items(): d[key] = val
+        for key, val in nappinfo.path().items(): d[key] = val
     if expenv:
         d['home'], d['cwd'] = home(), cwd()
 

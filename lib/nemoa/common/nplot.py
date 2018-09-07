@@ -279,10 +279,10 @@ class Graph(Plot):
                 False: edges are black
             edge_poscolor (string): name of color for edges with
                 positive signed attribute. For a full list of specified
-                color names see nemoa.common.plot.get_color()
+                color names see nemoa.common.nplot.get_color()
             edge_negcolor (string): name of color for edges with
                 negative signed attribute. For a full list of specified
-                color names see nemoa.common.plot.get_color()
+                color names see nemoa.common.nplot.get_color()
             edge_curvature (float): value within the intervall [-1, 1],
                 that determines the curvature of the edges.
                 Thereby 1 equals max convexity and -1 max concavity.
@@ -301,16 +301,17 @@ class Graph(Plot):
         try:
             import matplotlib.patches
             import matplotlib.pyplot as plt
-        except ImportError: raise ImportError(
+        except ImportError as e: raise ImportError(
             "requires package matplotlib: "
-            "https://matplotlib.org")
+            "https://matplotlib.org") from e
 
         try: import networkx as nx
-        except ImportError: raise ImportError(
+        except ImportError as e: raise ImportError(
             "requires package networkx: "
-            "https://networkx.github.io")
+            "https://networkx.github.io") from e
 
         from nemoa.common import ndict
+
         from nemoa.common.graph import get_layout, get_layout_normsize, \
             get_groups, is_directed
 
@@ -438,7 +439,7 @@ class Graph(Plot):
                 mutation_scale  = linewidth * 12.,
                 linewidth       = linewidth,
                 linestyle       = linestyle,
-                color           = get_color(data['color'], 'black'),
+                color           = get_color(data.get('color', 'black')),
                 alpha           = alpha )
             ax.add_patch(arrow)
 
@@ -475,7 +476,7 @@ def get_color(*args):
 
     try: import matplotlib.colors as colors
     except ImportError: raise ImportError(
-        "nemoa.common.plot.get_color() requires matplotlib: "
+        "nemoa.common.nplot.get_color() requires matplotlib: "
         "https://matplotlib.org")
 
     if len(args) == 0:

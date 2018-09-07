@@ -8,7 +8,7 @@ within complex and natural data samples.
 
 """
 
-__version__      = '0.5.114'
+__version__      = '0.5.115'
 __status__       = 'Development'
 __description__  = 'Network-based Modeling and deep Data Analysis'
 __url__          = 'https://fishroot.github.io/nemoa'
@@ -20,7 +20,6 @@ __maintainer__   = 'Patrick Michl'
 __organization__ = 'Froot'
 __credits__      = ['Willi Jäger', 'Rainer König']
 
-import nemoa.common
 import nemoa.dataset
 import nemoa.model
 import nemoa.network

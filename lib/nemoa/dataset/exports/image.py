@@ -7,9 +7,12 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
+from nemoa.common import nplot
+
 def filetypes():
     """Get supported image filetypes."""
-    return nemoa.common.plot.filetypes()
+
+    return nplot.filetypes()
 
 def get_plot(dataset, func = None, plot = None, **kwargs):
 
@@ -71,7 +74,7 @@ def save(dataset, path = None, filetype = None, *args, **kwargs):
 
     return True
 
-class Heatmap(nemoa.common.plot.Heatmap):
+class Heatmap(nplot.Heatmap):
 
     def create(self, dataset):
 
@@ -111,7 +114,7 @@ class Heatmap(nemoa.common.plot.Heatmap):
         # create plot
         return self.plot(array)
 
-class Histogram(nemoa.common.plot.Histogram):
+class Histogram(nplot.Histogram):
 
     def create(self, dataset):
 
@@ -148,7 +151,7 @@ class Histogram(nemoa.common.plot.Histogram):
         # create plot
         return self.plot(data)
 
-class Scatter2D(nemoa.common.plot.Scatter2D):
+class Scatter2D(nplot.Scatter2D):
 
     def create(self, dataset):
 
@@ -183,14 +186,14 @@ class Scatter2D(nemoa.common.plot.Scatter2D):
         # create plot
         return self.plot(array)
 
-class Graph(nemoa.common.plot.Graph):
+class Graph(nplot.Graph):
 
     def create(self, dataset):
 
         try: import networkx
-        except ImportError: raise ImportError(
-            "nemoa.dataset.exports.image.Graph() requires networkx: "
-            "https://networkx.github.io")
+        except ImportError as e: raise ImportError(
+            "requires package networkx: "
+            "https://networkx.github.io") from e
 
         from nemoa.common import module, nfunc
 

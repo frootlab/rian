@@ -9,9 +9,9 @@ import csv
 import os
 
 try: import numpy as np
-except ImportError as e:
-    raise ImportError("requires package numpy: "
-        "https://scipy.org") from e
+except ImportError as e: raise ImportError(
+    "requires package numpy: "
+    "https://scipy.org") from e
 
 from typing import Optional
 

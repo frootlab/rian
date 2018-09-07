@@ -9,9 +9,11 @@ import numpy
 import networkx
 import importlib
 
+from nemoa.common import nplot
+
 def filetypes():
     """Get supported image filetypes."""
-    return nemoa.common.plot.filetypes()
+    return nplot.filetypes()
 
 def show(network, plot = None, **kwargs):
 
@@ -64,14 +66,13 @@ def save(network, path = None, filetype = None, plot = None, **kwargs):
 
     return path
 
-class Graph(nemoa.common.plot.Graph):
+class Graph(nplot.Graph):
 
     def create(self, network):
 
         from nemoa.common.graph import is_layered, is_directed, \
             get_layers, get_groups, get_node_layout
 
-        import nemoa.common.plot as nmplot
         from nemoa.common import calc
 
         # set plot defaults

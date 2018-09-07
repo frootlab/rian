@@ -228,7 +228,7 @@ def parse(parser: ConfigParser, structure: Optional[dict] = None) -> dict:
     """
 
     from re import compile
-    from nemoa.common import text
+    from nemoa.common import ntext
 
     # if no structure is given retrieve dictionary from INI parser
     if not isinstance(structure, dict):
@@ -257,7 +257,7 @@ def parse(parser: ConfigParser, structure: Optional[dict] = None) -> dict:
             for key in parser.options(sec):
                 if not re_key.match(key): continue
                 val = parser.get(sec, key)
-                dsec[key] = text.astype(val, fmt)
+                dsec[key] = ntext.astype(val, fmt)
 
         d[sec] = dsec
 

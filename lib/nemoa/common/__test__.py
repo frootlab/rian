@@ -4,14 +4,12 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
-
 from nemoa.common import unittest
 
 class TestSuite(unittest.TestSuite):
 
-    def test_common_appinfo(self):
-        from nemoa.common import appinfo
+    def test_common_nappinfo(self):
+        from nemoa.common import nappinfo
 
         dirs = ['user_cache_dir', 'user_config_dir', 'user_data_dir',
             'user_log_dir', 'site_config_dir', 'site_data_dir']
@@ -19,11 +17,11 @@ class TestSuite(unittest.TestSuite):
 
         for key in dirs:
             with self.subTest(function = f"path('{key}')"):
-                self.assertTrue(appinfo.path(key))
+                self.assertTrue(nappinfo.path(key))
 
         for key in vars:
             with self.subTest(function = f"get('{key}')"):
-                self.assertTrue(appinfo.get(key))
+                self.assertTrue(nappinfo.get(key))
 
     def test_common_array(self):
         from nemoa.common import array
@@ -309,8 +307,10 @@ class TestSuite(unittest.TestSuite):
                 module.caller() == __name__ + '.test_common_module')
 
         with self.subTest(function = "submodules"):
+
             self.assertTrue(
-                module.__name__ in module.submodules(nemoa.common))
+                module.__name__ in module.submodules(
+                module.get_module('nemoa.common')))
 
         with self.subTest(function = "get_module"):
             self.assertTrue(
@@ -439,17 +439,17 @@ class TestSuite(unittest.TestSuite):
         with self.subTest(function = "cp"):
             self.assertTrue(True)
 
-    def test_common_sysinfo(self):
-        from nemoa.common import sysinfo
+    def test_common_nsysinfo(self):
+        from nemoa.common import nsysinfo
 
         with self.subTest(function = "hostname"):
-            self.assertTrue(sysinfo.hostname())
+            self.assertTrue(nsysinfo.hostname())
 
         with self.subTest(function = "osname"):
-            self.assertTrue(sysinfo.osname())
+            self.assertTrue(nsysinfo.osname())
 
-    def test_common_table(self):
-        from nemoa.common import table
+    def test_common_ntable(self):
+        from nemoa.common import ntable
 
         import numpy as np
 
@@ -457,40 +457,40 @@ class TestSuite(unittest.TestSuite):
         b = np.array([('a'), ('b')], dtype=[('z', 'U4')])
 
         with self.subTest(function = "addcols"):
-            self.assertTrue(table.addcols(a, b, 'z')['z'][0] == 'a')
+            self.assertTrue(ntable.addcols(a, b, 'z')['z'][0] == 'a')
 
-    def test_common_text(self):
-        from nemoa.common import text
+    def test_common_ntext(self):
+        from nemoa.common import ntext
 
         l = [('t', 'str'), (True, 'bool'), (1, 'int'), (.5, 'float'),
             ((1+1j), 'complex')]
 
         with self.subTest(function = "splitargs"):
-            test = text.splitargs("f(1., 'a', b = 2)") \
+            test = ntext.splitargs("f(1., 'a', b = 2)") \
                 == ('f', (1.0, 'a'), {'b': 2})
             self.assertTrue(test)
 
         with self.subTest(function = "aslist"):
-            test = text.aslist('a, 2, ()') == ['a', '2', '()'] \
-                and text.aslist('[1, 2, 3]') == [1, 2, 3]
+            test = ntext.aslist('a, 2, ()') == ['a', '2', '()'] \
+                and ntext.aslist('[1, 2, 3]') == [1, 2, 3]
             self.assertTrue(test)
 
         with self.subTest(function = "astuple"):
-            test = text.astuple('a, 2, ()') == ('a', '2', '()') \
-                and text.astuple('(1, 2, 3)') == (1, 2, 3)
+            test = ntext.astuple('a, 2, ()') == ('a', '2', '()') \
+                and ntext.astuple('(1, 2, 3)') == (1, 2, 3)
             self.assertTrue(test)
 
         with self.subTest(function = "asset"):
-            test = text.asset('a, 2, ()') == {'a', '2', '()'} \
-                and text.asset('{1, 2, 3}') == {1, 2, 3}
+            test = ntext.asset('a, 2, ()') == {'a', '2', '()'} \
+                and ntext.asset('{1, 2, 3}') == {1, 2, 3}
             self.assertTrue(test)
 
         with self.subTest(function = "asdict"):
-            test = text.asdict("a = 'b', b = 1") == {'a': 'b', 'b': 1} \
-                and text.asdict("'a': 'b', 'b': 1") == {'a': 'b', 'b': 1}
+            test = ntext.asdict("a = 'b', b = 1") == {'a': 'b', 'b': 1} \
+                and ntext.asdict("'a': 'b', 'b': 1") == {'a': 'b', 'b': 1}
             self.assertTrue(test)
 
         for var, typ in l:
             with self.subTest(function = f"astype({str(var)}, {typ})"):
-                test = text.astype(str(var), typ) == var
+                test = ntext.astype(str(var), typ) == var
                 self.assertTrue(test)

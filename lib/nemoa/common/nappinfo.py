@@ -145,10 +145,9 @@ def path(name: Optional[str] = None, appname: Optional[str] = None,
         """Update application paths from name, author and version."""
 
         try: from appdirs import AppDirs
-        except ImportError as e:
-            raise ImportError(
-                "requires package appdirs: "
-                "https://pypi.org/project/appdirs/") from e
+        except ImportError as e: raise ImportError(
+            "requires package appdirs: "
+            "https://pypi.org/project/appdirs/") from e
 
         app = {
             'appname': appname or get('name'),

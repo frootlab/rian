@@ -5,11 +5,12 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 try: import numpy as np
-except ImportError as e:
-    raise ImportError("requires package numpy: "
-        "https://scipy.org") from e
+except ImportError as e: raise ImportError(
+    "requires package numpy: "
+    "https://scipy.org") from e
 
 from typing import Any, Dict, Optional, Sequence, Tuple, Union
+
 Array     = np.ndarray
 ArrayLike = Union[Array, np.matrix, float, int]
 Axis      = Optional[Union[int, Sequence[int]]]
