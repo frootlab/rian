@@ -8,7 +8,7 @@ import nemoa
 import copy
 import os
 
-from nemoa.common import classes, docs
+from nemoa.common import nclass, docs
 
 class Model(docs.BaseClassIP):
     """Model base class.
@@ -77,11 +77,11 @@ class Model(docs.BaseClassIP):
     def configure(self):
         """Configure model."""
 
-        if not classes.hasbase(self.dataset, 'Dataset'):
+        if not nclass.hasbase(self.dataset, 'Dataset'):
             raise ValueError("dataset is not valid")
-        if not classes.hasbase(self.network, 'Network'):
+        if not nclass.hasbase(self.network, 'Network'):
             raise ValueError("network is not valid")
-        if not classes.hasbase(self.system, 'System'):
+        if not nclass.hasbase(self.system, 'System'):
             raise ValueError("system is not valid")
 
         retval = True
@@ -98,11 +98,11 @@ class Model(docs.BaseClassIP):
     def initialize(self):
         """Initialize model parameters."""
 
-        if not classes.hasbase(self.dataset, 'Dataset'):
+        if not nclass.hasbase(self.dataset, 'Dataset'):
             raise ValueError("dataset is not valid")
-        if not classes.hasbase(self.network, 'Network'):
+        if not nclass.hasbase(self.network, 'Network'):
             raise ValueError("network is not valid")
-        if not classes.hasbase(self.system, 'System'):
+        if not nclass.hasbase(self.system, 'System'):
             raise ValueError("system is not valid")
 
         retval = True
@@ -339,13 +339,13 @@ class Model(docs.BaseClassIP):
 
         """
 
-        if classes.hasbase(dataset, 'Dataset'):
+        if nclass.hasbase(dataset, 'Dataset'):
             self.dataset = dataset
             return True
 
         if not isinstance(dataset, dict): return False
 
-        if classes.hasbase(self.dataset, 'Dataset'):
+        if nclass.hasbase(self.dataset, 'Dataset'):
             return self.dataset.set('copy', **dataset)
 
         self.dataset = nemoa.dataset.new(**dataset)
@@ -368,13 +368,13 @@ class Model(docs.BaseClassIP):
 
         """
 
-        if classes.hasbase(network, 'Network'):
+        if nclass.hasbase(network, 'Network'):
             self.network = network
             return True
 
         if not isinstance(network, dict): return False
 
-        if classes.hasbase(self.network, 'Network'):
+        if nclass.hasbase(self.network, 'Network'):
             return self.network.set('copy', **network)
 
         self.network = nemoa.network.new(**network)
@@ -397,13 +397,13 @@ class Model(docs.BaseClassIP):
 
         """
 
-        if classes.hasbase(system, 'System'):
+        if nclass.hasbase(system, 'System'):
             self.system = system
             return True
 
         if not isinstance(system, dict): return False
 
-        if classes.hasbase(self.system, 'System'):
+        if nclass.hasbase(self.system, 'System'):
             return self.system.set('copy', **system)
 
         self.system = nemoa.system.new(**system)

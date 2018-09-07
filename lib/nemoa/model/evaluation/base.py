@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-from nemoa.common import classes
+from nemoa.common import nclass
 
 class Evaluation:
 
@@ -40,12 +40,12 @@ class Evaluation:
     def _get_algorithms(self, category = None, attribute = None):
         """Get evaluation algorithms."""
 
-        from nemoa.common import classes
+        from nemoa.common import nclass
 
         if 'algorithms' not in self._buffer: self._buffer['algorithms'] = {}
         algorithms = self._buffer['algorithms'].get(attribute, None)
         if not algorithms:
-            algorithms = classes.methods(self, key = 'name',
+            algorithms = nclass.methods(self, key = 'name',
                 val = attribute, groupby = 'category')
             self._buffer['algorithms'][attribute] = algorithms
         if category:
@@ -96,10 +96,10 @@ class Evaluation:
         """
 
         # test type of model instance and subclasses
-        if not classes.hasbase(model, 'Model'): return False
-        if not classes.hasbase(model.dataset, 'Dataset'): return False
-        if not classes.hasbase(model.network, 'Network'): return False
-        if not classes.hasbase(model.system, 'System'): return False
+        if not nclass.hasbase(model, 'Model'): return False
+        if not nclass.hasbase(model.dataset, 'Dataset'): return False
+        if not nclass.hasbase(model.network, 'Network'): return False
+        if not nclass.hasbase(model.system, 'System'): return False
 
         # check dataset
         if (not 'check_dataset' in model.system._default['init']

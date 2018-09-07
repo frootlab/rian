@@ -8,7 +8,7 @@ import nemoa
 import numpy
 import copy
 
-from nemoa.common import calc, classes, docs
+from nemoa.common import calc, nclass, docs
 
 class System(docs.BaseClassIP):
     """System base class.
@@ -67,7 +67,7 @@ class System(docs.BaseClassIP):
     def configure(self, network = None):
         """Configure system to network."""
 
-        if not classes.hasbase(network, 'Network'):
+        if not nclass.hasbase(network, 'Network'):
             raise ValueError("network is not valid")
 
         return self._set_params(network = network)
@@ -82,21 +82,20 @@ class System(docs.BaseClassIP):
 
         """
 
-        if not classes.hasbase(dataset, 'Dataset'):
-            raise ValueError("""could not initilize system:
-                dataset is not valid.""")
+        if not nclass.hasbase(dataset, 'Dataset'):
+            raise ValueError("dataset is not valid")
 
         return self._set_params_init_units(dataset) \
             and self._set_params_init_links(dataset)
 
     def _check_network(self, network, *args, **kwargs):
         """Check if network is valid for system."""
-        if not classes.hasbase(network, 'Network'): return False
+        if not nclass.hasbase(network, 'Network'): return False
         return True
 
     def _check_dataset(self, dataset, *args, **kwargs):
         """Check if network is valid for system."""
-        if not classes.hasbase(dataset, 'Dataset'): return False
+        if not nclass.hasbase(dataset, 'Dataset'): return False
         return True
 
     def get(self, key = 'name', *args, **kwargs):
@@ -132,11 +131,11 @@ class System(docs.BaseClassIP):
     def _get_algorithms(self, category = None, attribute = None, tree = False):
         """Get algorithms provided by system."""
 
-        from nemoa.common import classes
+        from nemoa.common import nclass
 
         # get dictionary with all methods
         # with prefix '_get_' and attribute 'name'
-        methods = classes.methods(self, prefix = '_get_', val = 'name')
+        methods = nclass.methods(self, filter = '_get_*', val = 'name')
 
         # filter algorithms by given category
         if category is not None:
@@ -1407,7 +1406,7 @@ class System(docs.BaseClassIP):
 
         # get system parameters from network
         elif network:
-            if not classes.hasbase(network, 'Network'):
+            if not nclass.hasbase(network, 'Network'):
                 raise ValueError("network is not valid")
 
             # get unit layers and unit params
@@ -1461,7 +1460,7 @@ class System(docs.BaseClassIP):
 
         # initialize system parameters if dataset is given
         if dataset:
-            if not classes.hasbase(dataset, 'Dataset'):
+            if not nclass.hasbase(dataset, 'Dataset'):
                 raise ValueError("""could not initialize
                     system: dataset instance is not valid.""")
 
@@ -1525,8 +1524,8 @@ class System(docs.BaseClassIP):
 
         """
 
-        if dataset is not None and not classes.hasbase(dataset, 'Dataset'):
-            raise ValueError("invalid dataset argument given")
+        if dataset is not None and not nclass.hasbase(dataset, 'Dataset'):
+            raise TypeError("invalid dataset argument given")
 
         for layer in list(self._units.keys()):
             if dataset is None:
@@ -1559,7 +1558,7 @@ class System(docs.BaseClassIP):
 
         """
 
-        if dataset and not classes.hasbase(dataset, 'Dataset'):
+        if dataset and not nclass.hasbase(dataset, 'Dataset'):
             raise TypeError("dataset is required to be of type dataset")
 
         for links in self._params['links']:

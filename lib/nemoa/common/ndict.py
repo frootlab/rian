@@ -4,7 +4,9 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from typing import Dict, Hashable
+from typing import Any, Dict, Hashable
+
+Collection = Dict[Hashable, Dict[str, Any]]
 
 def merge(*args: dict, mode: int = 1) -> dict:
     """Recursive right merge dictionaries.
@@ -62,6 +64,40 @@ def merge(*args: dict, mode: int = 1) -> dict:
 
     return d2
 
+def filter(d: dict, pattern: str) -> dict:
+    """Filter dictionary to keys, that match a given pattern.
+
+    Args:
+        d: Dictionary with string keys
+        pattern: Wildcard pattern as described in the standard library module
+            'fnmatch' [1].
+
+    Returns:
+        Subdictionary of the original dictionary, which only contains keys
+        that match the given pattern
+
+    Examples:
+        >>> filter({'a1': 1, 'a2': 2, 'b1': 3}, 'a*')
+        {'a1': 1, 'a2': 2}
+
+    References:
+        [1] https://docs.python.org/3/library/fnmatch.html
+
+    """
+
+    # check argument types
+    if not isinstance(d, dict):
+        raise TypeError("first argument is required to be "
+            f"of type dict, not '{type(d)}'")
+    if not isinstance(pattern, str):
+        raise TypeError("second argument is required to be "
+            "of type string, not '{type(s)}'")
+
+    import fnmatch
+    valid = fnmatch.filter(list(d.keys()), pattern)
+
+    return {k: d[k] for k in valid}
+
 def reduce(d: dict, s: str, trim: bool = True) -> dict:
     """Crop dictionary to keys, that start with an initial string.
 
@@ -101,7 +137,7 @@ def reduce(d: dict, s: str, trim: bool = True) -> dict:
 
     return sec
 
-def groupby(d: Dict[Hashable, dict], key: Hashable) -> Dict[Hashable, dict]:
+def groupby(d: Collection, key: Hashable) -> Dict[Hashable, Collection]:
     """Group dictionary by the value of a given key of subdictionaries.
 
     Args:

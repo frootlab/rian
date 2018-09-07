@@ -112,19 +112,19 @@ class TestSuite(unittest.TestSuite):
         with self.subTest(function = "multilogistic"):
             self.assertTrue(t(calc.multilogistic(x), 0.500272))
 
-    def test_common_classes(self):
-        from nemoa.common import classes
+    def test_common_nclass(self):
+        from nemoa.common import nclass
 
         with self.subTest(function = 'hasbase'):
-            self.assertTrue(classes.hasbase(None, 'object'))
+            self.assertTrue(nclass.hasbase(None, 'object'))
 
         with self.subTest(function = 'attributes'):
             class tclass:
-                @classes.attributes(name = 'a', group = 1)
+                @nclass.attributes(name = 'a', group = 1)
                 def m1(self): pass
-                @classes.attributes(name = 'b', group = 2)
+                @nclass.attributes(name = 'b', group = 2)
                 def m2(self): pass
-                @classes.attributes(name = 'c', group = 2)
+                @nclass.attributes(name = 'c', group = 2)
                 def nn(self): pass
             obj = tclass()
             self.assertTrue(
@@ -132,7 +132,8 @@ class TestSuite(unittest.TestSuite):
 
         with self.subTest(function = 'methods'):
             self.assertTrue(
-                list(classes.methods(obj, prefix = 'm').keys()) == ['m1', 'm2'])
+                list(nclass.methods(obj, filter = 'm*').keys()) \
+                == ['m1', 'm2'])
 
     def test_common_graph(self):
         from nemoa.common import graph
@@ -353,6 +354,11 @@ class TestSuite(unittest.TestSuite):
 
     def test_common_ndict(self):
         from nemoa.common import ndict
+
+        with self.subTest(function = "filter"):
+            self.assertTrue(
+                ndict.filter({'a1': 1, 'a2': 2, 'b1': 3}, 'a*') \
+                == {'a1': 1, 'a2': 2})
 
         with self.subTest(function = "groupby"):
             self.assertTrue(

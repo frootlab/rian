@@ -13,20 +13,16 @@ __license__ = 'GPLv3'
 import nemoa.system.classes.ann
 import numpy
 
-from nemoa.common import classes
+from nemoa.common import nclass
 
 class RBM(nemoa.system.classes.ann.ANN):
     """Restricted Boltzmann Machine (RBM).
 
-    Restricted Boltzmann Machines (1) are energy based undirected
+    Restricted Boltzmann Machines [1] are energy based undirected
     artificial neuronal networks with two layers with visible and
     hidden units. The visible layer contains binary distributed
     sigmoidal units to model data. The hidden layer contains binary
     distributed sigmoidal units to model data relations.
-
-    Reference:
-        (1) "A Practical Guide to Training Restricted Boltzmann
-            Machines", Geoffrey E. Hinton, University of Toronto, 2010
 
     Attributes:
         about (str): Short description of the content of the resource.
@@ -70,6 +66,10 @@ class RBM(nemoa.system.classes.ann.ANN):
             Hint: Read- & writeable wrapping attribute to get('version')
                 and set('version', int).
 
+    References:
+        [1] "A Practical Guide to Training Restricted Boltzmann
+            Machines", Geoffrey E. Hinton, University of Toronto, 2010
+
     """
 
     _default = {
@@ -95,7 +95,7 @@ class RBM(nemoa.system.classes.ann.ANN):
 
     def _check_dataset(self, dataset):
         """Check if dataset contains only binary values."""
-        if not classes.hasbase(dataset, 'Dataset'):
+        if not nclass.hasbase(dataset, 'Dataset'):
             raise ValueError("""could not test dataset:
                 invalid dataset instance given.""")
         if not dataset._get_test_binary():
@@ -176,9 +176,8 @@ class GRBM(RBM):
 
     def _check_dataset(self, dataset):
         """Check if dataset contains gauss normalized values."""
-        if not classes.hasbase(dataset, 'Dataset'):
-            raise ValueError("""could not test dataset:
-                invalid dataset instance given.""")
+        if not nclass.hasbase(dataset, 'Dataset'):
+            raise TypeError("dataset is not valid")
         if not dataset.evaluate('test_gauss'):
             raise ValueError("""dataset '%s' is not valid:
                 GRBMs expect standard normal distributed data."""

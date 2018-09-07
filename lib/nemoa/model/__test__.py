@@ -6,22 +6,24 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-from nemoa.common import classes, unittest
+from nemoa.common import unittest
 
 class TestSuite(unittest.TestSuite):
 
     def test_model_import(self):
+        from nemoa.common import nclass
 
         with self.subTest(filetype = 'npz'):
             model = nemoa.model.open('test', workspace = 'testsuite')
-            self.assertTrue(classes.hasbase(model, 'Model'))
+            self.assertTrue(nclass.hasbase(model, 'Model'))
 
     def test_model_ann(self):
+        from nemoa.common import nclass
 
         with self.subTest(step = 'create shallow ann'):
             model = nemoa.model.create(
                 dataset = 'linear', network = 'shallow', system = 'ann')
-            self.assertTrue(classes.hasbase(model, 'Model'))
+            self.assertTrue(nclass.hasbase(model, 'Model'))
 
         with self.subTest(step = 'optimize shallow ann'):
             model.optimize()
@@ -29,11 +31,12 @@ class TestSuite(unittest.TestSuite):
             self.assertTrue(test)
 
     def test_model_dbn(self):
+        from nemoa.common import nclass
 
         with self.subTest(step = 'create dbn'):
             model = nemoa.model.create(
                 dataset = 'linear', network = 'deep', system = 'dbn')
-            self.assertTrue(classes.hasbase(model, 'Model'))
+            self.assertTrue(nclass.hasbase(model, 'Model'))
 
         with self.subTest(step = 'optimize dbn'):
             model.optimize()

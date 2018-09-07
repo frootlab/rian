@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-from nemoa.common import classes, docs
+from nemoa.common import nclass, docs
 
 class Dataset(docs.BaseClassIP):
     """Dataset base class.
@@ -261,7 +261,7 @@ class Dataset(docs.BaseClassIP):
                 transform = preprocessing['transform']
 
         # get preprocessing parameters from system
-        if classes.hasbase(system, 'System'):
+        if nclass.hasbase(system, 'System'):
             input_layer = system.get('layers')[0]
             distribution = system.get('layer', input_layer)['class']
             if distribution == 'gauss': normalize = 'gauss'
@@ -508,7 +508,7 @@ class Dataset(docs.BaseClassIP):
         mapping = None, func: str = 'expect'):
         """ """
 
-        if not classes.hasbase(system, 'System'):
+        if not nclass.hasbase(system, 'System'):
             raise ValueError("system is not valid")
 
         nemoa.log("transform data using model '%s'." % system.name)
@@ -600,11 +600,11 @@ class Dataset(docs.BaseClassIP):
     def _get_algorithms(self, category = None, attribute = None, tree = False):
         """Get algorithms provided by dataset."""
 
-        from nemoa.common import classes
+        from nemoa.common import nclass
 
         # get dictionary with all methods
         # with prefix '_get_' and attribute 'name'
-        methods = classes.methods(self, prefix = '_get_', val = 'name')
+        methods = nclass.methods(self, filter = '_get_*', val = 'name')
 
         # filter algorithms by given category
         if category is not None:

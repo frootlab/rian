@@ -24,14 +24,17 @@ def hasbase(obj: object, base: str) -> bool:
     bases = [o.__name__ for o in obj.__class__.__mro__]
     return base in bases
 
-def methods(obj: object, prefix: str = '',
-    key: Optional[str] = None, val: Optional[str] = None,
-    groupby: Optional[str] = None) -> dict:
+def methods(obj: object,
+    filter: Optional[str] = None, groupby: Optional[str] = None,
+    key: Optional[str] = None, val: Optional[str] = None) -> dict:
     """Get methods from a given class instance.
 
     Args:
         obj: Class instance
-        prefix: Only methods, which names have the given prefix are returned.
+        filter: Only methods, which names satisfy the wildcard patterns given
+            by 'filter' are returned. The format of the wildcard pattern
+            is described in the standard library module 'fnmatch' [1]
+         have the given prefix are returned.
         key: Name of attribute which is used as key for the returned dictionary.
             If key is None, then the (trimmed) method names are used as key.
             Default: None
@@ -43,19 +46,22 @@ def methods(obj: object, prefix: str = '',
             Default: None
 
     Returns:
-        Dictionary containing all methods of a given class instance, that
-        pass the given filter.
+        Dictionary containing all methods of a given class instance, which
+        names satisfy a given filter pattern.
+
+    References:
+        [1] https://docs.python.org/3/library/fnmatch.html
 
     """
 
     import inspect
+    from nemoa.common import ndict
 
     # get references from module inspection and filter prefix
     md = dict(inspect.getmembers(obj, inspect.ismethod))
 
-    # reduce dictionary to methods with given prefix
-    from nemoa.common import ndict
-    md = ndict.reduce(md, s = prefix, trim = False)
+    # filter dictionary to methods with given prefix
+    if filter: md = ndict.filter(md, filter)
 
     # get method attributes
     mc = {}
@@ -99,7 +105,7 @@ def attributes(**attr: Any) -> Callable:
     """Generic attribute decorator for class methods.
 
     Args:
-        **attr: Arbitrary attributs
+        **attr: Arbitrary attributes
 
     Returns:
         Wrapper function with additional attributes
@@ -109,8 +115,7 @@ def attributes(**attr: Any) -> Callable:
     def wrapper(method):
         def wrapped(self, *args, **kwargs):
             return method(self, *args, **kwargs)
-        for k, v in attr.items():
-            setattr(wrapped, k, v)
+        for k, v in attr.items(): setattr(wrapped, k, v)
 
         wrapped.__doc__ = method.__doc__
         return wrapped

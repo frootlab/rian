@@ -7,18 +7,18 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-from nemoa.common import classes, unittest
+from nemoa.common import nclass, unittest
 
 class TestSuite(unittest.TestSuite):
 
     def test_dataset_import(self):
         with self.subTest(filetype = "csv"):
             dataset = nemoa.dataset.open('sinus', workspace = 'testsuite')
-            test = classes.hasbase(dataset, 'Dataset')
+            test = nclass.hasbase(dataset, 'Dataset')
             self.assertTrue(test)
         with self.subTest(filetype = "tab"):
             dataset = nemoa.dataset.open('linear', workspace = 'testsuite')
-            test = classes.hasbase(dataset, 'Dataset')
+            test = nclass.hasbase(dataset, 'Dataset')
             self.assertTrue(test)
 
     def test_dataset_evaluate(self):
@@ -54,5 +54,5 @@ class TestSuite(unittest.TestSuite):
                 rules = [('o1', 'i1 + i2'), ('o2', 'i3 + i4')],
                 normalize = 'gauss',
                 samples = 10000)
-            test = classes.hasbase(dataset, 'Dataset')
+            test = nclass.hasbase(dataset, 'Dataset')
             self.assertTrue(test)
