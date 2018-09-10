@@ -6,7 +6,7 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import types
-from typing import Optional
+from typing import Any, Optional
 
 Function = types.FunctionType
 Module = types.ModuleType
@@ -75,7 +75,7 @@ def submodules(minst: Optional[Module] = None, recursive: bool = False) -> list:
 
     Args:
         minst: Module instance to search for submodules
-            default: Use current module, which called this function
+            default: Use current module which calls this function
         recursive: Search recursively within submodules
             default: Do not search recursively
 
@@ -119,20 +119,26 @@ def get_module(s: str) -> Optional[Module]:
 
     return minst
 
-def functions(minst: Optional[Module] = None, details: bool = False,
-    rules: dict = {}, **kwargs) -> list:
-    """Get filtered list of function names within given module instance.
+def functions(minst: Optional[Module] = None, filter: Optional[str] = None,
+    rules: dict = None, **kwargs: Any) -> dict:
+    """Get dictionary with functions and attributes.
 
     Args:
         minst: Module instance to search for submodules
             default: Use current module, which called this function
-        details:
-            default: False
+        filter: Only functions which names satisfy the wildcard pattern given
+            by 'filter' are returned. The format of the wildcard pattern
+            is described in the standard library module 'fnmatch' [1]
         rules:
             default: {}
+        **kwargs:
 
     Returns:
-        List with full qualified function names.
+        Dictionary with fully qualified function names as keys and attribute
+        dictinaries as values.
+
+    References:
+        [1] https://docs.python.org/3/library/fnmatch.html
 
     """
 
@@ -141,74 +147,119 @@ def functions(minst: Optional[Module] = None, details: bool = False,
         "first argument is required to be a module instance")
 
     import inspect
+    from nemoa.common import ndict, nfunc
 
-    funcs = inspect.getmembers(minst, inspect.isfunction)
-    pref = minst.__name__ + '.'
+    # get dictionary with function names and references from inspect
+    fd = dict(inspect.getmembers(minst, inspect.isfunction))
 
-    if not details and not kwargs:
-        return [pref + name for name, ref in funcs]
+    # filter dictionary to functions names, that match given pattern
+    if filter: fd = ndict.filter(fd, filter)
 
     # create dictionary with function attributes
-    from nemoa.common import nfunc
+    fc = {}
+    pref = minst.__name__ + '.'
+    rules = rules or {}
+    for name, ref in fd.items():
+        attr = ref.__dict__
 
-    if len(funcs) == 0: return {}
-    fdetails = {}
-    for name, ref in funcs:
-        # set default attributes
-        fdict = {'name': name, 'about': nfunc.about(ref), 'reference': ref }
-        # update attributes
-        for key, val in ref.__dict__.items():
-            fdict[key] = val
         # filter entry by attributes
         passed = True
         for key, val in kwargs.items():
-            if not key in fdict:
+            if not key in attr:
                 passed = False
                 break
             if key in rules:
-                if rules[key](val, fdict[key]): continue
+                match = rules[key]
+                if match(val, attr[key]): continue
                 passed = False
                 break
-            if val == fdict[key]: continue
+            if val == attr[key]: continue
             passed = False
             break
-        if passed: fdetails[pref + name] = fdict
+        if not passed: continue
 
-    if details: return fdetails
+        # add item
+        fqn = pref + name # fully qualified name
+        fc[fqn] = attr
+        fc[fqn]['reference'] = ref
+        fc[fqn]['about'] = fc[fqn].get('about', nfunc.about(ref))
+        fc[fqn]['name'] = fc[fqn].get('name', name)
 
-    return fdetails.keys()
+    return fc
 
-def findfuncs(minst: Optional[Module] = None, recursive: bool = True,
-    details: bool = False, rules: Optional[dict] = None,  **kwargs):
-    """Locate functions within submodules."""
+def search(minst: Optional[Module] = None,
+    filter: Optional[str] = None, groupby: Optional[str] = None,
+    key: Optional[str] = None, val: Optional[str] = None,
+    rules: Optional[dict] = None, recursive: bool = True,
+    **kwargs: Any) -> dict:
+    """Recursively search for functions within submodules.
+
+    Args:
+        minst: Module instance to search for submodules
+            default: Use current module, which called this function
+        filter: Only functions which names satisfy the wildcard pattern given
+            by 'filter' are returned. The format of the wildcard pattern
+            is described in the standard library module 'fnmatch' [1]
+        groupby: Name of attribute which value is used to group the results.
+            If groupby is None, then the results are not grouped.
+            Default: None
+        key: Name of the attribute which is used as the key for the returned
+            dictionary. If key is None, then the fully qualified function names
+            are used as key. Default: None
+        val: Name of attribute which is used as the value for the returned
+            dictionary. If val is None, then all attributes of the respective
+            functions are returned. Default: None
+
+    References:
+        [1] https://docs.python.org/3/library/fnmatch.html
+
+    """
 
     if minst is None: minst = get_module(curname(-1))
     elif not isinstance(minst, Module): raise TypeError(
         "first argument is required to be a module instance")
 
-    mnames = submodules(minst, recursive = recursive)
+    from nemoa.common import ndict
 
-    # create list with qualified function names
-    if not details:
-        funcs = []
-        for mname in mnames:
-            subinst = get_module(mname)
-            if subinst is None: continue
-            funcs += functions(subinst, details = False, rules = rules or {},
-                **kwargs)
-        return funcs
+    # get list with submodules
+    mnames = [minst.__name__] + submodules(minst, recursive = recursive)
 
     # create dictionary with function attributes
-    funcs = {}
+    fd = {}
+    rules = rules or {}
     for mname in mnames:
-        subinst = get_module(mname)
-        if subinst is None: continue
-        fdict = functions(subinst, details = True, rules = rules or {},
-            **kwargs)
-        for key, val in fdict.items():
-            funcs[key] = val
+        m = get_module(mname)
+        if m is None: continue
+        d = functions(m, filter = filter, rules = rules, **kwargs)
 
-    return funcs
+        # ignore functions if any required attribute is not available
+        for name, attr in d.items():
+            if key and not key in attr: continue
+            if val and not val in attr: continue
+            fd[name] = attr
+
+    # rename key for returned dictionary
+    if key:
+        d = {}
+        for name, attr in fd.items():
+            if key not in attr: continue
+            id = attr[key]
+            if id in d: continue
+            d[id] = attr
+        fd = d
+
+    # group results
+    if groupby: fd = ndict.groupby(fd, key = groupby)
+
+    # set value for returned dictionary
+    if val:
+        if groupby:
+            for gn, group in fd.items():
+                for name, attr in group.items(): fd[name] = attr[val]
+        else:
+            for name, attr in fd.items(): fd[name] = attr[val]
+
+    return fd
 
 def get_function(fname: str) -> Optional[Function]:
     """Return function instance for a given full qualified function name.

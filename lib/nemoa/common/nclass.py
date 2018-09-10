@@ -35,16 +35,15 @@ def methods(obj: object,
         filter: Only methods, which names satisfy the wildcard patterns given
             by 'filter' are returned. The format of the wildcard pattern
             is described in the standard library module 'fnmatch' [1]
-         have the given prefix are returned.
-        key: Name of attribute which is used as key for the returned dictionary.
-            If key is None, then the (trimmed) method names are used as key.
-            Default: None
-        val: Name of attribute name which is used as value for the returned
-            dictionary. If val is None, then all attributes of the respective
-            methods are returned. Default: None
         groupby: Name of attribute which value is used to group the results.
             If groupby is None, then the results are not grouped.
             Default: None
+        key: Name of the attribute which is used as the key for the returned
+            dictionary. If key is None, then the method names are used as key.
+            Default: None
+        val: Name of attribute which is used as the value for the returned
+            dictionary. If val is None, then all attributes of the respective
+            methods are returned. Default: None
 
     Returns:
         Dictionary containing all methods of a given class instance, which
@@ -58,18 +57,18 @@ def methods(obj: object,
     import inspect
     from nemoa.common import ndict
 
-    # get references from module inspection and filter prefix
+    # get references from object inspection
     md = dict(inspect.getmembers(obj, inspect.ismethod))
 
-    # filter dictionary to methods with given prefix
+    # filter dictionary to methods that match given pattern
     if filter: md = ndict.filter(md, filter)
 
-    # get method attributes
+    # create dictionary with method attributes
     mc = {}
     for k, v in md.items():
         a = v.__dict__
 
-        # ignore method if some required attribute is not available
+        # ignore method if any required attribute is not available
         if key and not key in a or val and not val in a \
             or groupby and not groupby in a: continue
 
@@ -89,7 +88,7 @@ def methods(obj: object,
             nd[kr] = v
         md = nd
 
-    # group methods, rename key and reduce to attribute
+    # group results
     if groupby: md = ndict.groupby(md, key = groupby)
 
     # set value for returned dictionary

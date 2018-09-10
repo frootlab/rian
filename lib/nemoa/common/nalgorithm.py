@@ -9,16 +9,13 @@ from typing import Any, Callable, List, Optional, Union
 import types
 Module = types.ModuleType
 
-def search(minst: Optional[Module] = None, **kwargs: Any) -> Union[list, dict]:
+def search(minst: Optional[Module] = None, **kwargs: Any) -> dict:
     """Search for algorithms, that pass given filters.
 
     Args:
         minst: Module instance, which is used to recursively search in
             submodules for algorithms. Default: Use the module of the caller
             of this function.
-        details: Boolean value which determines, if a dictionary with all
-            attributes is returned, or only a list of full qualified function
-            names. Default: False
         **kwargs: Attributes, which are testet by using the filter rules
 
     Returns:
@@ -43,7 +40,7 @@ def search(minst: Optional[Module] = None, **kwargs: Any) -> Union[list, dict]:
     }
 
     # search for algorithms
-    algs = nmodule.findfuncs(minst = minst, rules = rules, **kwargs)
+    algs = nmodule.search(minst = minst, rules = rules, **kwargs)
 
     return algs
 

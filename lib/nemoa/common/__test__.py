@@ -331,9 +331,9 @@ class TestSuite(ntest.TestSuite):
                 type(nmodule.get_function(nmodule.__name__ \
                 + '.get_function')).__name__ == 'function')
 
-        with self.subTest(function = "findfuncs"):
+        with self.subTest(function = "search"):
             minst = nmodule.get_module('nemoa.common')
-            funcs = nmodule.findfuncs(minst, name = 'findfuncs')
+            funcs = nmodule.search(minst, name = 'search')
             self.assertTrue(len(funcs) == 1)
 
     def test_common_nfunc(self):
