@@ -6,20 +6,20 @@ models with acyclic graphs, generally known as Bayesian networks. These models
 e.g. include linear models (LM) and feedforward neural networks (ANN) like
 Deep belief networks (DBN).
 
-The supported categories of analysis functions are:
+The supported categories of algorithms are:
 
-    (1) "Sampler": Matrix valued statistical inference functions
-        Return numpy ndarray of shape (d, t), where d is the size of the sample
+    (1) "Sampler": Matrix valued statistical inference function.
+        Returns numpy ndarray of shape (d, t), where d is the size of the sample
         and t the number of target observables within the model.
-    (2) "Response statistics": Vectorial statistical inference functions,
-        regarding the response variables
-        Return numpy array of shape (1, t), where t is the number of
+    (2) "Statistic": Vectorial statistical inference function, regarding the
+        response variables of the Bayesian Network.
+        Returns numpy array of shape (1, t), where t is the number of
         target observables within the model.
-    (3) "Objective functions": Scalar statistical inference functions, that can
-        be used for the determination of local optima.
-        Return scalar value
+    (3) "Objective": Scalar statistical inference functions, that are used for
+        the determination of local or global optima.
+        Returns scalar value.
     (4) "Association measures": Matrix valued statistical association measures
-        Return numpy ndarray of shape (s, t), where s is the number of
+        Returns numpy ndarray of shape (s, t), where s is the number of
         source observables and t the number of target observables within the
         model.
 
@@ -58,13 +58,13 @@ def draw_forward_sample(model, *args, **kwargs):
         mode (int, optional): Sampling mode:
             0: Prediction of target observables:
                Returns consecutively forward sampled exact relizations of
-               target observables, as required for predictions
+               target observables, as required for predictions.
             1: Monte Carlo sampling of target observables:
                Returns consecutively forward sampled random realizations of
-               target observables, as required for probabilistic learning
+               target observables, as required for probabilistic learning.
             2: Forward expectation of target observables:
                Returns consecutively forward sampled expectations of
-               target observables
+               target observables.
         expect_last (bool, optional): return expectation for the last
             sampling step instead of relizations to reduce variance in
             probabilistic learning.
@@ -127,7 +127,7 @@ def get_forward_residuals(model, data, mapping = None, block = None):
 # (2) Sample statistics for Bayesian Networks
 #
 
-@nalgorithm.statistics(
+@nalgorithm.statistic(
     name    = 'errorvector',
     title   = 'Reconstruction Error',
     classes = ['LM', 'ANN'],

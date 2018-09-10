@@ -120,7 +120,7 @@ def get_module(s: str) -> Optional[Module]:
     return minst
 
 def functions(minst: Optional[Module] = None, details: bool = False,
-    filters: dict = {}, **kwargs) -> list:
+    rules: dict = {}, **kwargs) -> list:
     """Get filtered list of function names within given module instance.
 
     Args:
@@ -128,7 +128,7 @@ def functions(minst: Optional[Module] = None, details: bool = False,
             default: Use current module, which called this function
         details:
             default: False
-        filters:
+        rules:
             default: {}
 
     Returns:
@@ -165,8 +165,8 @@ def functions(minst: Optional[Module] = None, details: bool = False,
             if not key in fdict:
                 passed = False
                 break
-            if key in filters:
-                if filters[key](val, fdict[key]): continue
+            if key in rules:
+                if rules[key](val, fdict[key]): continue
                 passed = False
                 break
             if val == fdict[key]: continue
@@ -179,7 +179,7 @@ def functions(minst: Optional[Module] = None, details: bool = False,
     return fdetails.keys()
 
 def findfuncs(minst: Optional[Module] = None, recursive: bool = True,
-    details: bool = False, filters: dict = {},  **kwargs):
+    details: bool = False, rules: Optional[dict] = None,  **kwargs):
     """Locate functions within submodules."""
 
     if minst is None: minst = get_module(curname(-1))
@@ -194,7 +194,7 @@ def findfuncs(minst: Optional[Module] = None, recursive: bool = True,
         for mname in mnames:
             subinst = get_module(mname)
             if subinst is None: continue
-            funcs += functions(subinst, details = False, filters = filters,
+            funcs += functions(subinst, details = False, rules = rules or {},
                 **kwargs)
         return funcs
 
@@ -203,7 +203,8 @@ def findfuncs(minst: Optional[Module] = None, recursive: bool = True,
     for mname in mnames:
         subinst = get_module(mname)
         if subinst is None: continue
-        fdict = functions(subinst, details = True, filters = filters, **kwargs)
+        fdict = functions(subinst, details = True, rules = rules or {},
+            **kwargs)
         for key, val in fdict.items():
             funcs[key] = val
 

@@ -1,11 +1,51 @@
 # -*- coding: utf-8 -*-
-"""Collection of frequently used algorithm decorators."""
+"""Collection of frequently functions to orginize algorithms."""
 
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Union
+import types
+Module = types.ModuleType
+
+def search(minst: Optional[Module] = None, **kwargs: Any) -> Union[list, dict]:
+    """Search for algorithms, that pass given filters.
+
+    Args:
+        minst: Module instance, which is used to recursively search in
+            submodules for algorithms. Default: Use the module of the caller
+            of this function.
+        details: Boolean value which determines, if a dictionary with all
+            attributes is returned, or only a list of full qualified function
+            names. Default: False
+        **kwargs: Attributes, which are testet by using the filter rules
+
+    Returns:
+        Dictionary with fully qualified function names and attributes or list
+        of fully qualified function names.
+
+    """
+
+    from nemoa.common import nmodule
+
+    if minst is None:
+        # get module of caller
+        mname = nmodule.curname(-1)
+        minst = nmodule.get_module(mname)
+    elif not isinstance(minst, Module):
+        raise TypeError("argument 'minst' is required to be a module instance")
+
+    # create filter rules for algorithms attributes
+    rules = {
+        'tags': lambda a, b: set(a) <= set(b), # requires all
+        'classes': lambda a, b: bool(set(a) & set(b)) # requires any
+    }
+
+    # search for algorithms
+    algs = nmodule.findfuncs(minst = minst, rules = rules, **kwargs)
+
+    return algs
 
 def generic(name: Optional[str] = None, category: Optional[str] = None,
     classes: Optional[List[str]] = None, tags: Optional[List[str]] = None,
@@ -16,7 +56,7 @@ def generic(name: Optional[str] = None, category: Optional[str] = None,
         name: Name of the algorithm
         category: Category name of the algorithm, which is used to specify the
             required data, as well as the returned results of the algorithm.
-            Supported categories are: 'objective', 'sampler', 'statistics',
+            Supported categories are: 'objective', 'sampler', 'statistic',
             'association'
         tags: List of strings, that describe the algorithm and allow it to be
             found by browsing or searching
@@ -115,6 +155,11 @@ def sampler(name: Optional[str] = None, classes: Optional[List[str]] = None,
     **attr: Any) -> Callable:
     """Attribute decorator for statistical samplers.
 
+    Statistical samplers are random functions, that generate samples from
+    a desired posterior distribution in Bayesian data analysis. Thereby the
+    different approaches exploit properties of the underlying dependency
+    structure. For more information see e.g. [1]
+
     Args:
         name: Name of the algorithm
         tags: List of strings, that describe the algorithm and allow it to be
@@ -127,6 +172,9 @@ def sampler(name: Optional[str] = None, classes: Optional[List[str]] = None,
 
     Returns:
         Decorated function or method.
+
+    References:
+        [1] https://en.wikipedia.org/wiki/Gibbs_sampling
 
     """
 
@@ -152,7 +200,7 @@ def sampler(name: Optional[str] = None, classes: Optional[List[str]] = None,
     return wrapper
 
 
-def statistics(name: Optional[str] = None, classes: Optional[List[str]] = None,
+def statistic(name: Optional[str] = None, classes: Optional[List[str]] = None,
     tags: Optional[List[str]] = None, plot: Optional[str] = 'Histogram',
     **attr: Any) -> Callable:
     """Attribute decorator for sample statistics.
@@ -185,7 +233,7 @@ def statistics(name: Optional[str] = None, classes: Optional[List[str]] = None,
 
         # set attributes with metainformation about algorithm
         setattr(wrapped, 'name', name or func.__name__)
-        setattr(wrapped, 'category', 'statistics')
+        setattr(wrapped, 'category', 'statistic')
         setattr(wrapped, 'classes', classes or [])
         setattr(wrapped, 'plot', plot)
         setattr(wrapped, 'tags', tags or [])
@@ -204,14 +252,15 @@ def association(name: Optional[str] = None, classes: Optional[List[str]] = None,
     tags: Optional[List[str]] = None, plot: Optional[str] = 'Histogram',
     directed: bool = True, signed: bool = True, normal: bool = False,
     **attr: Any) -> Callable:
-    """Attribute decorator for statistical association measures.
+    """Attribute decorator for statistical measures of association.
 
-    Association measures are pairwise statistical relationships, whether causal
-    or not, between given random variables, which are realized by a sample.
-    For more information see [1].
+    Measures of association refer to a wide variety of coefficients that measure
+    the statistical strength of relationships between the variables of interest.
+    These measures can be directed / undirected, signed / unsigned and
+    normalized or unnormalized. For more information see [1].
 
     Args:
-        name: Name of the association measure
+        name: Name of the measure of association
         tags: List of strings, that describe the algorithm and allow it to be
             found by browsing or searching
         classes: Optional list of model class names, that can be processed by
@@ -219,11 +268,11 @@ def association(name: Optional[str] = None, classes: Optional[List[str]] = None,
         plot: Name of plot class, which is used to interpret the results.
             Supported values are: None, 'Heatmap', 'Histogram', 'Scatter2D' or
             'Graph'. The default value is 'Heatmap'
-        directed: Boolean value which indicates if the association measure is
+        directed: Boolean value which indicates if the measure of association is
             dictected. Default is True.
-        signed: Boolean value which indicates if the association measure is
+        signed: Boolean value which indicates if the measure of association is
             signed. Default is True.
-        normal: Boolean value which indicates if the association measure is
+        normal: Boolean value which indicates if the measure of association is
             normalized. Default is False.
 
     Returns:
