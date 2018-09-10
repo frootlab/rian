@@ -32,7 +32,7 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-from nemoa.common import calc, nalgo
+from nemoa.common import ncalc, nalgo
 
 #
 # (1) Sampler for Bayesian Networks
@@ -149,15 +149,15 @@ def get_error_vector(model, data, norm = 'MSE', **kwargs):
         block: list of strings containing labels of source units
             that are blocked by setting the values to their means
         norm: used norm to calculate data reconstuction error from
-            residuals. see nemoa.common.array.meannorm for a list
+            residuals. see nemoa.common.narray.meannorm for a list
             of provided norms
 
     """
 
-    from nemoa.common import array
+    from nemoa.common import narray
 
     res = get_residuals(data, **kwargs)
-    error = array.meannorm(res, norm = norm)
+    error = narray.meannorm(res, norm = norm)
 
     return error
 
@@ -185,16 +185,16 @@ def get_accuracy_vector(model, data, norm = 'MSE', **kwargs):
         block: list of strings containing labels of source units
             that are blocked by setting the values to their means
         norm: used norm to calculate accuracy
-            see nemoa.common.array.meannorm for a list of provided
+            see nemoa.common.narray.meannorm for a list of provided
             norms
 
     """
 
-    from nemoa.common import array
+    from nemoa.common import narray
 
     res = get_residuals(data, **kwargs)
-    normres = array.meannorm(res, norm = norm)
-    normdat = array.meannorm(data[1], norm = norm)
+    normres = narray.meannorm(res, norm = norm)
+    normdat = narray.meannorm(data[1], norm = norm)
 
     return 1. - normres / normdat
 
@@ -222,16 +222,16 @@ def get_precision_vector(model, data, norm = 'SD', **kwargs):
         block: list of strings containing labels of source units
             that are blocked by setting the values to their means
         norm: used norm to calculate deviation for precision
-            see nemoa.common.array.devnorm for a list of provided
+            see nemoa.common.narray.devnorm for a list of provided
             norms
 
     """
 
-    from nemoa.common import array
+    from nemoa.common import narray
 
     res = get_residuals(data, **kwargs)
-    devres = array.devnorm(res, norm = norm)
-    devdat = array.devnorm(data[1], norm = norm)
+    devres = narray.devnorm(res, norm = norm)
+    devdat = narray.devnorm(data[1], norm = norm)
 
     return 1. - devres / devdat
 
@@ -649,4 +649,4 @@ def induction(model, data, mapping = None, points = 10,
             if inlabel == outlabel: A[iid, oid] = 0.0
     bound = numpy.amax(A)
 
-    return calc.dialogistic(R, sigma = contrast, scale = bound)
+    return nncalc.dialogistic(R, sigma = contrast, scale = bound)

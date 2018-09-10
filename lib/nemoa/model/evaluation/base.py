@@ -25,10 +25,9 @@ class Evaluation:
         """ """
 
         # algorithms
-        if key == 'algorithm':
-            return self._get_algorithm(*args, **kwargs)
-        if key == 'algorithms': return self._get_algorithms(
-            attribute = 'about', *args, **kwargs)
+        if key == 'algorithm': return self._get_algorithm(*args, **kwargs)
+        if key == 'algorithms':
+            return self._get_algorithms(attribute = 'about', *args, **kwargs)
 
         if key == 'data': return self._get_data(*args, **kwargs)
         if key == 'model': return self._get_model()
@@ -112,10 +111,8 @@ class Evaluation:
     def evaluate(self, key = None, *args, **kwargs):
         """Evaluate model."""
 
-        if key == 'dataset':
-            return self.model.dataset.evaluate(*args, **kwargs)
-        if key == 'network':
-            return self.model.network.evaluate(*args, **kwargs)
+        if key == 'dataset': return self.model.dataset.evaluate(*args, **kwargs)
+        if key == 'network': return self.model.network.evaluate(*args, **kwargs)
 
         if key in ['units', 'links', 'relation']:
             category = key
@@ -180,10 +177,10 @@ class Evaluation:
                 return dict(list(zip(units, retval)))
         elif category == 'links':
             if retfmt == 'scalar':
-                from nemoa.common import array
+                from nemoa.common import narray
                 src = getunits(layer = kwargs['mapping'][0])
                 tgt = getunits(layer = kwargs['mapping'][-1])
-                return array.asdict(retval, (src, tgt))
+                return narray.asdict(retval, (src, tgt))
         elif category == 'relation':
             if algorithm['retfmt'] == 'scalar':
 
@@ -203,10 +200,10 @@ class Evaluation:
                 # create formated return values
                 if rettype == 'array': return retval
                 if rettype == 'dict':
-                    from nemoa.common import array
+                    from nemoa.common import narray
                     src = getunits(layer = kwargs['mapping'][0])
                     tgt = getunits(layer = kwargs['mapping'][-1])
-                    retval = array.asdict(retval, (src, tgt))
+                    retval = narray.asdict(retval, (src, tgt))
                     if not evalstat: return retval
 
                     # (optional) add statistics

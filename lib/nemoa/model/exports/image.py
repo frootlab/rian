@@ -105,7 +105,7 @@ class Graph(nplot.Graph):
 
     def create(self, model):
 
-        from nemoa.common.graph import get_node_layout
+        from nemoa.common import ngraph
 
         # set plot defaults
         self.set_default({
@@ -207,7 +207,7 @@ class Graph(nplot.Graph):
             normalize = self._config['edge_normalize']
         else: raise ValueError(
             "could not create relation graph: "
-            "invalid value for parameter 'edge_normalize'!")
+            "invalid value for parameter 'edge_normalize'")
 
         # add nodes with attributes
         nodes = units[0] + units[1]
@@ -223,7 +223,7 @@ class Graph(nplot.Graph):
             elif issrc and not istgt: node_type = 'source'
             elif not issrc and istgt: node_type = 'target'
             else: node_type = 'isolated'
-            layout = get_node_layout(node_type)
+            layout = ngraph.get_node_layout(node_type)
             graph.node[node].update(layout)
 
         # add edges with attributes

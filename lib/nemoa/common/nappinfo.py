@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Functions to access application variables and directories."""
 
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
@@ -60,9 +61,9 @@ def get(name: Optional['str'] = None,
         if not path:
 
             # use init script of current root module
-            from nemoa.common import module
-            name = module.curname().split('.')[0]
-            path = module.get_module(name).__file__
+            from nemoa.common import nmodule
+            name = nmodule.curname().split('.')[0]
+            path = nmodule.get_module(name).__file__
 
         # read file content
         import io
@@ -81,8 +82,8 @@ def get(name: Optional['str'] = None,
         if not 'name' in dvars:
 
             # use name of current root module
-            from nemoa.common import module
-            dvars['name'] = module.curname().split('.')[0]
+            from nemoa.common import nmodule
+            dvars['name'] = nmodule.curname().split('.')[0]
 
         globals()['_VARS'] = dvars
 

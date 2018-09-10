@@ -70,10 +70,7 @@ class Graph(nplot.Graph):
 
     def create(self, network):
 
-        from nemoa.common.graph import is_layered, is_directed, \
-            get_layers, get_groups, get_node_layout
-
-        from nemoa.common import calc
+        from nemoa.common import ncalc, ngraph
 
         # set plot defaults
         self.set_default({
@@ -139,7 +136,7 @@ class Graph(nplot.Graph):
 
             # transform weights (optional)
             if transform == 'softstep':
-                weight = calc.softstep(weight)
+                weight = ncalc.softstep(weight)
 
             graph.edges[u, v]['weight'] = weight
 
@@ -174,14 +171,14 @@ class Graph(nplot.Graph):
                 node_params = data.get('params', {})
                 data['group'] = node_params.get(groupby)
         else:
-            is_layer = is_layered(graph)
-            is_directed = is_directed(graph)
+            is_layer = ngraph.is_layered(graph)
+            is_directed = ngraph.is_directed(graph)
             if is_layer and not is_directed:
                 for node, data in graph.nodes(data = True):
                     gid = int(data.get('visible', True))
                     data['group'] = {0: 'latent', 1: 'observable'}[gid]
             elif is_layer and is_directed:
-                layers = get_layers(graph)
+                layers = ngraph.get_layers(graph)
                 ilayer, olayer = layers[0], layers[-1]
                 for node, data in graph.nodes(data = True):
                     gid = int(node in ilayer) \
@@ -194,10 +191,10 @@ class Graph(nplot.Graph):
                     data['group'] = {0: 'latent', 1: 'observable'}[gid]
 
         # update node attributes for layout
-        groups = get_groups(graph, attribute = 'group')
+        groups = ngraph.get_groups(graph, attribute = 'group')
         for group in sorted(groups.keys()):
             if group == '': continue
-            layout = get_node_layout(group)
+            layout = ngraph.get_node_layout(group)
             group_label = layout.get('label', {
                 True: str(groupby),
                 False: 'not ' + str(groupby)}[group] \

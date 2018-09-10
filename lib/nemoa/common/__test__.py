@@ -4,9 +4,9 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.common import unittest
+from nemoa.common import ntest
 
-class TestSuite(unittest.TestSuite):
+class TestSuite(ntest.TestSuite):
 
     def test_common_nappinfo(self):
         from nemoa.common import nappinfo
@@ -23,8 +23,8 @@ class TestSuite(unittest.TestSuite):
             with self.subTest(function = f"get('{key}')"):
                 self.assertTrue(nappinfo.get(key))
 
-    def test_common_array(self):
-        from nemoa.common import array
+    def test_common_narray(self):
+        from nemoa.common import narray
 
         import numpy as np
 
@@ -32,33 +32,33 @@ class TestSuite(unittest.TestSuite):
 
         with self.subTest(function = "fromdict"):
             self.assertTrue(
-                (array.fromdict({('a', 'b'): 1.}, \
+                (narray.fromdict({('a', 'b'): 1.}, \
                 labels = (['a', 'b'], ['a', 'b']), na = 0.) \
                 == np.array([[0., 1.], [0., 0.]])).any())
 
         with self.subTest(function = "asdict"):
             self.assertTrue(
-                array.asdict(np.array([[0., 1.], [0., 0.]]), \
+                narray.asdict(np.array([[0., 1.], [0., 0.]]), \
                 labels = (['a', 'b'], ['a', 'b']), na = 0.) \
                 == {('a', 'b'): 1.})
 
         with self.subTest(function = "sumnorm"):
             self.assertTrue(
-                t(array.sumnorm(np.array([[.1, -.9], [.3, .2], [-.4, -.9]])),
+                t(narray.sumnorm(np.array([[.1, -.9], [.3, .2], [-.4, -.9]])),
                 -1.6))
 
         with self.subTest(function = "meannorm"):
             self.assertTrue(
-                t(array.meannorm(np.array([[.1, -.9], [.3, .2], [-.4, -.9]])),
+                t(narray.meannorm(np.array([[.1, -.9], [.3, .2], [-.4, -.9]])),
                 -0.5333))
 
         with self.subTest(function = "devnorm"):
             self.assertTrue(
-                t(array.devnorm(np.array([[.1, -.9], [.3, .2], [-.4, -.9]])),
+                t(narray.devnorm(np.array([[.1, -.9], [.3, .2], [-.4, -.9]])),
                 0.8129))
 
-    def test_common_calc(self):
-        from nemoa.common import calc
+    def test_common_ncalc(self):
+        from nemoa.common import ncalc
 
         import numpy as np
 
@@ -66,49 +66,49 @@ class TestSuite(unittest.TestSuite):
         t = lambda x, y: np.isclose(x.sum(), y, atol = 1e-3)
 
         with self.subTest(function = "logistic"):
-            self.assertTrue(t(calc.logistic(x), 2.122459))
+            self.assertTrue(t(ncalc.logistic(x), 2.122459))
 
         with self.subTest(function = "tanh"):
-            self.assertTrue(t(calc.tanh(x), 0.462117))
+            self.assertTrue(t(ncalc.tanh(x), 0.462117))
 
         with self.subTest(function = "lecun"):
-            self.assertTrue(t(calc.lecun(x), 0.551632))
+            self.assertTrue(t(ncalc.lecun(x), 0.551632))
 
         with self.subTest(function = "elliot"):
-            self.assertTrue(t(calc.elliot(x), 0.333333))
+            self.assertTrue(t(ncalc.elliot(x), 0.333333))
 
         with self.subTest(function = "hill"):
-            self.assertTrue(t(calc.hill(x), 0.447213))
+            self.assertTrue(t(ncalc.hill(x), 0.447213))
 
         with self.subTest(function = "arctan"):
-            self.assertTrue(t(calc.arctan(x), 0.463647))
+            self.assertTrue(t(ncalc.arctan(x), 0.463647))
 
         with self.subTest(function = "d_logistic"):
-            self.assertTrue(t(calc.d_logistic(x), 0.878227))
+            self.assertTrue(t(ncalc.d_logistic(x), 0.878227))
 
         with self.subTest(function = "d_elliot"):
-            self.assertTrue(t(calc.d_elliot(x), 1.944444))
+            self.assertTrue(t(ncalc.d_elliot(x), 1.944444))
 
         with self.subTest(function = "d_hill"):
-            self.assertTrue(t(calc.d_hill(x), 2.422648))
+            self.assertTrue(t(ncalc.d_hill(x), 2.422648))
 
         with self.subTest(function = "d_lecun"):
-            self.assertTrue(t(calc.d_lecun(x), 3.680217))
+            self.assertTrue(t(ncalc.d_lecun(x), 3.680217))
 
         with self.subTest(function = "d_tanh"):
-            self.assertTrue(t(calc.d_tanh(x), 2.626396))
+            self.assertTrue(t(ncalc.d_tanh(x), 2.626396))
 
         with self.subTest(function = "d_arctan"):
-            self.assertTrue(t(calc.d_arctan(x), 2.800000))
+            self.assertTrue(t(ncalc.d_arctan(x), 2.800000))
 
         with self.subTest(function = "dialogistic"):
-            self.assertTrue(t(calc.dialogistic(x), 0.251661))
+            self.assertTrue(t(ncalc.dialogistic(x), 0.251661))
 
         with self.subTest(function = "softstep"):
-            self.assertTrue(t(calc.softstep(x), 0.323637))
+            self.assertTrue(t(ncalc.softstep(x), 0.323637))
 
         with self.subTest(function = "multilogistic"):
-            self.assertTrue(t(calc.multilogistic(x), 0.500272))
+            self.assertTrue(t(ncalc.multilogistic(x), 0.500272))
 
     def test_common_nclass(self):
         from nemoa.common import nclass
@@ -133,8 +133,8 @@ class TestSuite(unittest.TestSuite):
                 list(nclass.methods(obj, filter = 'm*').keys()) \
                 == ['m1', 'm2'])
 
-    def test_common_graph(self):
-        from nemoa.common import graph
+    def test_common_ngraph(self):
+        from nemoa.common import ngraph
 
         import networkx as nx
 
@@ -157,44 +157,44 @@ class TestSuite(unittest.TestSuite):
         pos3 = {1: (4., 2.), 2: (4., 16.), 4: (32., 2.), 3: (32., 16.)}
 
         with self.subTest(function = "is_directed"):
-            self.assertTrue(graph.is_directed(G))
+            self.assertTrue(ngraph.is_directed(G))
 
         with self.subTest(function = "is_layered"):
-            self.assertTrue(graph.is_layered(G))
+            self.assertTrue(ngraph.is_layered(G))
 
         with self.subTest(function = "get_layers"):
-            self.assertTrue(graph.get_layers(G) == [[1, 2], [3, 4]])
+            self.assertTrue(ngraph.get_layers(G) == [[1, 2], [3, 4]])
 
         with self.subTest(function = "get_groups"):
-            test = graph.get_groups(G, attribute = 'layer') \
+            test = ngraph.get_groups(G, attribute = 'layer') \
                 == {'': [], 'i': [1, 2], 'o': [3, 4]}
             self.assertTrue(test)
 
         with self.subTest(function = "get_layer_layout"):
             self.assertTrue(
-                graph.get_layer_layout(G, direction = 'right') == pos1)
+                ngraph.get_layer_layout(G, direction = 'right') == pos1)
             self.assertTrue(
-                graph.get_layer_layout(G, direction = 'down') == pos2)
+                ngraph.get_layer_layout(G, direction = 'down') == pos2)
 
         with self.subTest(function = "rescale_layout"):
-            test = graph.rescale_layout(pos1, size = (40, 20), \
+            test = ngraph.rescale_layout(pos1, size = (40, 20), \
                 padding = (.2, .2, .1, .1)) == pos3
             self.assertTrue(test)
 
         with self.subTest(function = "get_scaling_factor"):
-            test = int(graph.get_scaling_factor(pos3)) == 9
+            test = int(ngraph.get_scaling_factor(pos3)) == 9
             self.assertTrue(test)
 
         with self.subTest(function = "get_layout_normsize"):
-            test = int(graph.get_layout_normsize(pos3)['node_size']) == 4
+            test = int(ngraph.get_layout_normsize(pos3)['node_size']) == 4
             self.assertTrue(test)
 
         with self.subTest(function = "get_node_layout"):
-            test = isinstance(graph.get_node_layout('observable')['color'], str)
+            test = isinstance(ngraph.get_node_layout('observable')['color'], str)
             self.assertTrue(test)
 
         with self.subTest(function = "get_layout"):
-            test = graph.get_layout(G, 'layer', direction = 'right') == pos1
+            test = ngraph.get_layout(G, 'layer', direction = 'right') == pos1
             self.assertTrue(test)
 
     def test_common_ncsv(self):
@@ -295,45 +295,45 @@ class TestSuite(unittest.TestSuite):
 
         if os.path.exists(f): os.remove(f)
 
-    def test_common_module(self):
-        from nemoa.common import module
+    def test_common_nmodule(self):
+        from nemoa.common import nmodule
 
         with self.subTest(function = "curname"):
             self.assertTrue(
-                module.curname() == __name__)
+                nmodule.curname() == __name__)
 
         with self.subTest(function = "caller"):
             self.assertTrue(
-                module.caller() == __name__ + '.test_common_module')
+                nmodule.caller() == __name__ + '.test_common_nmodule')
 
         with self.subTest(function = "submodules"):
-
             self.assertTrue(
-                module.__name__ in module.submodules(
-                module.get_module('nemoa.common')))
+                nmodule.__name__ in nmodule.submodules(
+                nmodule.get_module('nemoa.common')))
 
         with self.subTest(function = "get_module"):
             self.assertTrue(
-                hasattr(module.get_module(module.__name__), '__name__'))
+                hasattr(nmodule.get_module(nmodule.__name__), '__name__'))
             self.assertTrue(
-                module.get_module(module.__name__).__name__ == module.__name__)
+                nmodule.get_module(nmodule.__name__).__name__ \
+                == nmodule.__name__)
 
         with self.subTest(function = "functions"):
             self.assertTrue(
-                module.__name__ + '.functions' in module.functions(module))
+                nmodule.__name__ + '.functions' in nmodule.functions(nmodule))
             self.assertTrue(
-                len(module.functions(module, name = '')) == 0)
+                len(nmodule.functions(nmodule, name = '')) == 0)
             self.assertTrue(
-                len(module.functions(module, name = 'functions')) == 1)
+                len(nmodule.functions(nmodule, name = 'functions')) == 1)
 
         with self.subTest(function = "get_function"):
             self.assertTrue(
-                type(module.get_function(module.__name__ \
+                type(nmodule.get_function(nmodule.__name__ \
                 + '.get_function')).__name__ == 'function')
 
-        with self.subTest(function = "locfuncs"):
-            minst = module.get_module('nemoa.common')
-            funcs = module.locfuncs(minst, name = 'locfuncs')
+        with self.subTest(function = "findfuncs"):
+            minst = nmodule.get_module('nemoa.common')
+            funcs = nmodule.findfuncs(minst, name = 'findfuncs')
             self.assertTrue(len(funcs) == 1)
 
     def test_common_nfunc(self):

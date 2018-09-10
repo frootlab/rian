@@ -6,9 +6,9 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-from nemoa.common import unittest
+from nemoa.common import ntest
 
-class TestSuite(unittest.TestSuite):
+class TestSuite(ntest.TestSuite):
 
     def test_session_about(self):
 
@@ -206,7 +206,7 @@ class TestSuite(unittest.TestSuite):
         with self.subTest(cmd = "nemoa.path('expand', )"):
             valid = nemoa.path('expand', '%basepath%', '%workspace%',
                 check = True)
-                
+
             invalid = nemoa.path('expand', '%basepath%', '%workspace%',
                 'invalid_path_name', check = True)
             test = valid and not invalid

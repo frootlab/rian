@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-from nemoa.common import calc
+from nemoa.common import ncalc
 
 class UnitsBaseClass:
     """Base Class for Unit Layer.
@@ -132,7 +132,7 @@ class Sigmoid(UnitsBaseClass):
         return 'bias' in layer
 
     def energy(self, data):
-        """Return system energy of sigmoidal units as numpy array. """
+        """Return system energy of sigmoidal units as numpy array."""
 
         bias = self.params['bias']
 
@@ -144,7 +144,7 @@ class Sigmoid(UnitsBaseClass):
 
         bias = self.params['bias']
 
-        return calc.sigmoid(bias + numpy.dot(data, weights))
+        return ncalc.sigmoid(bias + numpy.dot(data, weights))
 
     def expect_from_gauss_layer(self, data, source, weights):
         """Return expected values of a sigmoid output layer
@@ -153,7 +153,7 @@ class Sigmoid(UnitsBaseClass):
         bias = self.params['bias']
         sdev = numpy.sqrt(numpy.exp(source['lvar']))
 
-        return calc.sigmoid(bias + numpy.dot(data / sdev, weights))
+        return ncalc.sigmoid(bias + numpy.dot(data / sdev, weights))
 
     def get_param_updates(self, data, model, weights):
         """Return parameter updates of a sigmoidal output layer
@@ -180,7 +180,7 @@ class Sigmoid(UnitsBaseClass):
 
         value = numpy.dot(delta, wout)
         bias = self.params['bias']
-        backdelta = value * calc.dlogistic((bias + numpy.dot(data, win)))
+        backdelta = value * ncalc.dlogistic((bias + numpy.dot(data, win)))
 
         return backdelta
 

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+""" """
 
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
@@ -7,9 +8,9 @@ __license__ = 'GPLv3'
 import nemoa
 
 try: import numpy as np
-except ImportError as e:
-    raise ImportError("requires package numpy: "
-        "https://scipy.org") from e
+except ImportError as e: raise ImportError(
+    "requires package numpy: "
+    "https://scipy.org") from e
 
 class Plot:
     """Base class for matplotlib plots.
@@ -46,9 +47,9 @@ class Plot:
     def __init__(self, *args, **kwargs):
 
         try: import matplotlib
-        except ImportError as e:
-            raise ImportError("requires package matplotlib: "
-                "https://matplotlib.org") from e
+        except ImportError as e: raise ImportError(
+            "requires package matplotlib: "
+            "https://matplotlib.org") from e
 
         from nemoa.common import ndict
 
@@ -80,13 +81,11 @@ class Plot:
         # create subplot (matplotlib.axes.Axes)
         self._axes = self._fig.add_subplot(111)
 
-    # def __del__(self):
-    #     self._fig.clear()
-
     def set_default(self, config: dict = {}):
         """Set default values. """
 
         from nemoa.common import ndict
+
         self._config = ndict.merge(self._kwargs, config, self._config)
 
         return True
@@ -262,11 +261,11 @@ class Graph(Plot):
         'edge_curvature': 1.0
     }
 
-    def plot(self, graph):
+    def plot(self, G):
         """Plot graph.
 
         Args:
-            graph: networkx graph instance
+            G: networkx graph instance
             figure_size (tuple): figure size in inches
                 (11.69,8.27) for A4, (16.53,11.69) for A3
             edge_attribute (string): name of edge attribute, that
@@ -310,10 +309,7 @@ class Graph(Plot):
             "requires package networkx: "
             "https://networkx.github.io") from e
 
-        from nemoa.common import ndict
-
-        from nemoa.common.graph import get_layout, get_layout_normsize, \
-            get_groups, is_directed
+        from nemoa.common import ndict, ngraph
 
         # adjust size of subplot
         fig = self._fig
@@ -329,13 +325,13 @@ class Graph(Plot):
         layout_params = ndict.reduce(self._config, 'graph_')
         del layout_params['layout']
 
-        pos = get_layout(graph,
+        pos = ngraph.get_layout(G,
             layout  = self._config['graph_layout'],
             size    = figsize,
             padding = self._config['padding'],
             **layout_params)
 
-        sizes       = get_layout_normsize(pos)
+        sizes       = ngraph.get_layout_normsize(pos)
         node_size   = sizes.get('node_size', None)
         node_radius = sizes.get('node_radius', None)
         line_width  = sizes.get('line_width', None)
@@ -343,20 +339,20 @@ class Graph(Plot):
         font_size   = sizes.get('font_size', None)
 
         # get nodes and groups sorted by node attribute group_id
-        groups = get_groups(graph, attribute = 'group')
+        groups = ngraph.get_groups(G, attribute = 'group')
         sorted_groups = sorted(list(groups.keys()), key = \
             lambda g: 0 if not isinstance(g, list) or len(g) == 0 \
-            else graph.node.get(g[0], {}).get('group_id', 0))
+            else G.node.get(g[0], {}).get('group_id', 0))
 
         # draw nodes, labeled by groups
         for group in sorted_groups:
             gnodes = groups.get(group, [])
             if len(gnodes) == 0: continue
-            refnode = graph.node.get(gnodes[0])
+            refnode = G.node.get(gnodes[0])
             label = refnode['description'] or refnode['group'] or str(group)
 
             # draw nodes in group
-            node_obj = nx.draw_networkx_nodes(graph, pos,
+            node_obj = nx.draw_networkx_nodes(G, pos,
                 nodelist   = gnodes,
                 linewidths = line_width,
                 node_size  = node_size,
@@ -367,7 +363,7 @@ class Graph(Plot):
                 get_color(refnode['border_color'], 'black'))
 
         # draw node labels
-        for node, data in graph.nodes(data = True):
+        for node, data in G.nodes(data = True):
 
             # determine label, fontsize and color
             node_label = data.get('label', str(node).title())
@@ -376,7 +372,7 @@ class Graph(Plot):
             font_color = get_color(data['font_color'], 'black')
 
             # draw node label
-            nx.draw_networkx_labels(graph, pos,
+            nx.draw_networkx_labels(G, pos,
                 labels      = {node: node_label_format},
                 font_size   = font_size / node_label_size,
                 font_color  = font_color,
@@ -387,14 +383,14 @@ class Graph(Plot):
             circle = matplotlib.patches.Circle(pos.get(node), alpha = 0.,
                 radius = node_radius)
             ax.add_patch(circle)
-            graph.node[node]['patch'] = circle
+            G.node[node]['patch'] = circle
 
         # draw edges
         seen = {}
-        if is_directed(graph): default_edge_style = '-|>'
+        if ngraph.is_directed(G): default_edge_style = '-|>'
         else: default_edge_style = '-'
 
-        for (u, v, data) in graph.edges(data = True):
+        for (u, v, data) in G.edges(data = True):
             weight = data['weight']
             if weight == 0.: continue
 
@@ -427,8 +423,8 @@ class Graph(Plot):
                 alpha = np.amin([np.absolute(weight), 1.0])
 
             # draw edge
-            nodeA = graph.node[u]['patch']
-            nodeB = graph.node[v]['patch']
+            nodeA = G.node[u]['patch']
+            nodeB = G.node[v]['patch']
             arrow = matplotlib.patches.FancyArrowPatch(
                 posA            = nodeA.center,
                 posB            = nodeB.center,

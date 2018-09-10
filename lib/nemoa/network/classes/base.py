@@ -337,12 +337,12 @@ class Network(ndoc.BaseClassIP):
     def _get_algorithms(self, category = None, attribute = None):
         """Get algorithms provided by network."""
 
-        from nemoa.common import module
+        from nemoa.common import nmodule
 
-        funcs = module.functions(networkx.algorithms, details = True)
+        funcs = nmodule.functions(networkx.algorithms, details = True)
         if attribute is None: return funcs
 
-        return {key: val.get(attribute, None) for key, val in funcs.items()}
+        return {k: v.get(attribute, None) for k, v in funcs.items()}
 
     def _get_algorithm(self, algorithm = None, *args, **kwargs):
         """Get algorithm."""

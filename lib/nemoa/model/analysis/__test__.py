@@ -6,9 +6,9 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-from nemoa.common import unittest
+from nemoa.common import ntest
 
-# class TestSuite(unittest.TestSuite):
+# class TestSuite(ntest.TestSuite):
 #
 #     def test_init(self):
 #         with self.subTest(function = "algorithm"):

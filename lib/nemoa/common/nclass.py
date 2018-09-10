@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Generic handling of classes and methods."""
 
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'

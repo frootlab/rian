@@ -20,7 +20,7 @@ import numpy
 
 from nemoa.model.evaluation.base import Evaluation
 
-from nemoa.common import calc, nalgo
+from nemoa.common import ncalc, nalgo
 
 class ANN(Evaluation):
 
@@ -286,15 +286,15 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate data reconstuction error from
-                residuals. see nemoa.common.array.meannorm for a list
+                residuals. see nemoa.common.narray.meannorm for a list
                 of provided norms
 
         """
 
-        from nemoa.common import array
+        from nemoa.common import narray
 
         res = self.unitresiduals(data, **kwargs)
-        error = array.meannorm(res, norm = norm)
+        error = narray.meannorm(res, norm = norm)
 
         return error
 
@@ -322,16 +322,16 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate accuracy
-                see nemoa.common.array.meannorm for a list of provided
+                see nemoa.common.narray.meannorm for a list of provided
                 norms
 
         """
 
-        from nemoa.common import array
+        from nemoa.common import narray
 
         res = self.unitresiduals(data, **kwargs)
-        normres = array.meannorm(res, norm = norm)
-        normdat = array.meannorm(data[1], norm = norm)
+        normres = narray.meannorm(res, norm = norm)
+        normdat = narray.meannorm(data[1], norm = norm)
 
         return 1. - normres / normdat
 
@@ -359,16 +359,16 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate deviation for precision
-                see nemoa.common.array.devnorm for a list of provided
+                see nemoa.common.narray.devnorm for a list of provided
                 norms
 
         """
 
-        from nemoa.common import array
+        from nemoa.common import narray
 
         res = self.unitresiduals(data, **kwargs)
-        devres = array.devnorm(res, norm = norm)
-        devdat = array.devnorm(data[1], norm = norm)
+        devres = narray.devnorm(res, norm = norm)
+        devdat = narray.devnorm(data[1], norm = norm)
 
         return 1. - devres / devdat
 
@@ -681,7 +681,7 @@ class ANN(Evaluation):
                 if inlabel == outlabel: A[iid, oid] = 0.0
         bound = numpy.amax(A)
 
-        return calc.dialogistic(R, scale = bound, sigma = contrast)
+        return ncalc.dialogistic(R, scale = bound, sigma = contrast)
 
     @nalgo.algorithm(
         name     = 'energy',

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Collection of functions for platform independent filesystem operations."""
 
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'

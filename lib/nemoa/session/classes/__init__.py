@@ -13,12 +13,12 @@ def new(*args, **kwargs):
         raise ValueError("configuration is not valid")
 
     mname, cname = tuple(kwargs['config']['type'].split('.'))
-    try:
-        from nemoa.common import module
-        minst = module.get_submodule(mname)
-        if not hasattr(minst, cname): raise ImportError()
-        cinst = getattr(minst, cname)(**kwargs)
-    except ImportError as e: raise ValueError(
-        f"session type '{mname}.{cname}' is not valid") from e
+
+    from nemoa.common import nmodule
+    
+    minst = nmodule.get_submodule(mname)
+    if not hasattr(minst, cname):
+        raise NameError(f"class '{mname}.{cname}' is not known")
+    cinst = getattr(minst, cname)(**kwargs)
 
     return cinst

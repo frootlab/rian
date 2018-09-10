@@ -7,12 +7,12 @@ __license__ = 'GPLv3'
 import nemoa
 
 def algorithms(**kwargs):
-    """Returns list or dict of algorithms, that pass given filters. """
+    """Returns dictionary of algorithms, that pass given filters. """
 
-    from nemoa.common import module
+    from nemoa.common import nmodule
 
-    all = lambda a, b: frozenset(a) <= frozenset(b)
-    any = lambda a, b: bool(frozenset(a) & frozenset(b))
+    all = lambda a, b: set(a) <= set(b)
+    any = lambda a, b: bool(set(a) & set(b))
     filters = {'tags': all, 'classes': any}
 
-    return module.locfuncs(filters = filters, **kwargs)
+    return nmodule.findfuncs(filters = filters, **kwargs)

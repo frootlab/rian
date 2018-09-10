@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-#
+"""Collection of frequently used console functions."""
 
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'

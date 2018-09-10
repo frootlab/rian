@@ -1,17 +1,14 @@
 # -*- coding: utf-8 -*-
+"""Collection of frequently used mathematical functions."""
 
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-# import modules into namespace
-
 try: import numpy as np
 except ImportError as e: raise ImportError(
     "requires package numpy: "
     "https://scipy.org") from e
-
-# define additional types
 
 from typing import Union, Optional
 ArrayLike = Union[np.ndarray, np.matrix, float, int]

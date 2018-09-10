@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Collection of functions for module handling."""
 
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
@@ -177,7 +178,7 @@ def functions(minst: Optional[Module] = None, details: bool = False,
 
     return fdetails.keys()
 
-def locfuncs(minst: Optional[Module] = None, recursive: bool = True,
+def findfuncs(minst: Optional[Module] = None, recursive: bool = True,
     details: bool = False, filters: dict = {},  **kwargs):
     """Locate functions within submodules."""
 
@@ -212,7 +213,7 @@ def get_function(fname: str) -> Optional[Function]:
     """Return function instance for a given full qualified function name.
 
     Example:
-        get_function("nemoa.common.module.get_function")
+        >>> get_function("nemoa.common.nmodule.get_function")
 
     """
 

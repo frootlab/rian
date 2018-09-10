@@ -8,10 +8,10 @@ import nemoa
 import numpy
 import copy
 
-from nemoa.common import calc, nalgo, nclass, ndoc
+from nemoa.common import ncalc, nalgo, nclass, ndoc
 
 class System(ndoc.BaseClassIP):
-    """System base class.
+    """Base class for systems.
 
     Attributes:
         about (str): Short description of the content of the resource.
@@ -383,7 +383,7 @@ class System(ndoc.BaseClassIP):
         else:
             link_norm_max = numpy.amax(numpy.abs(layer_adjacency
                 * layer_weights)) * adjacency_sum / weight_sum
-            link_intensity = calc.dialogistic(link_norm_weight,
+            link_intensity = ncalc.dialogistic(link_norm_weight,
                 scale = 0.7 * link_norm_max, sigma = 10.)
 
         link_params['layer'] = (src_layer, tgt_layer)
@@ -865,15 +865,15 @@ class System(ndoc.BaseClassIP):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate data reconstuction error from
-                residuals. see nemoa.common.array.meannorm for a list
+                residuals. see nemoa.common.narray.meannorm for a list
                 of provided norms
 
         """
 
-        from nemoa.common import array
+        from nemoa.common import narray
 
         res = self._get_unitresiduals(data, **kwargs)
-        error = array.meannorm(res, norm = norm)
+        error = narray.meannorm(res, norm = norm)
 
         return error
 
@@ -901,16 +901,16 @@ class System(ndoc.BaseClassIP):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate accuracy
-                see nemoa.common.array.meannorm for a list of provided
+                see nemoa.common.narray.meannorm for a list of provided
                 norms
 
         """
 
-        from nemoa.common import array
+        from nemoa.common import narray
 
         res = self._get_unitresiduals(data, **kwargs)
-        normres = array.meannorm(res, norm = norm)
-        normdat = array.meannorm(data[1], norm = norm)
+        normres = narray.meannorm(res, norm = norm)
+        normdat = narray.meannorm(data[1], norm = norm)
 
         return 1. - normres / normdat
 
@@ -938,16 +938,16 @@ class System(ndoc.BaseClassIP):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate deviation for precision
-                see nemoa.common.array.devnorm for a list of provided
+                see nemoa.common.narray.devnorm for a list of provided
                 norms
 
         """
 
-        from nemoa.common import array
+        from nemoa.common import narray
 
         res = self._get_unitresiduals(data, **kwargs)
-        devres = array.devnorm(res, norm = norm)
-        devdat = array.devnorm(data[1], norm = norm)
+        devres = narray.devnorm(res, norm = norm)
+        devdat = narray.devnorm(data[1], norm = norm)
 
         return 1. - devres / devdat
 
@@ -1268,7 +1268,7 @@ class System(ndoc.BaseClassIP):
                 if inlabel == outlabel: A[inid, outid] = 0.0
         bound = numpy.amax(A)
 
-        R = calc.dialogistic(R, scale = bound, sigma = contrast)
+        R = ncalc.dialogistic(R, scale = bound, sigma = contrast)
 
         return R
 
@@ -1874,10 +1874,10 @@ class System(ndoc.BaseClassIP):
             if retfmt == 'array':
                 retval = values
             elif retfmt == 'dict':
-                from nemoa.common import array
+                from nemoa.common import narray
                 src = self._get_units(layer = ekwargs['mapping'][0])
                 tgt = self._get_units(layer = ekwargs['mapping'][-1])
-                retval = array.asdict(values, (src, tgt))
+                retval = narray.asdict(values, (src, tgt))
                 if not evalstat: return retval
 
                 # (optional) add statistics
