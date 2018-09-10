@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 
 import nemoa.model.morphisms.ann
 import numpy
-from nemoa.common import nalgo
+from nemoa.common import nalgorithm
 
 class RBM(nemoa.model.morphisms.ann.ANN):
     """Restricted Boltzmann Machine (RBM) Optimizer.
@@ -70,7 +70,7 @@ class RBM(nemoa.model.morphisms.ann.ANN):
         'tracker_eval_time_interval': 10.,
         'ignore_units': [] }
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'cd',
         longname = 'contrastive divergency',
         category = 'optimization',

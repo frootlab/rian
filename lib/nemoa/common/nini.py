@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Collection of functions for handling of INI formated data."""
+"""Collection of frequently used functions for INI formatted data handling."""
 
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'

@@ -12,7 +12,7 @@ __license__ = 'GPLv3'
 
 import nemoa.model.morphisms.ann
 
-from nemoa.common import nalgo
+from nemoa.common import nalgorithm
 
 class DBN(nemoa.model.morphisms.ann.ANN):
     """Deep Belief Network (DBN) Optimizer."""
@@ -27,7 +27,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
         'schedule_rbm.rbm': 'default',
         'schedule_rbm.grbm': 'default' }
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'dbn',
         longname = 'deep belief network optimization',
         category = 'optimization',
@@ -46,7 +46,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
 
         return retval
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'pretraining',
         longname = 'deep belief network pretraining',
         category = 'optimization',
@@ -216,7 +216,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
 
         return True
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'finetuning',
         longname = 'deep belief network finetuning',
         category = 'optimization',

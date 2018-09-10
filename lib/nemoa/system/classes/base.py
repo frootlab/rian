@@ -8,9 +8,9 @@ import nemoa
 import numpy
 import copy
 
-from nemoa.common import ncalc, nalgo, nclass, ndoc
+from nemoa.common import ncalc, nalgorithm, nclass, nbase
 
-class System(ndoc.BaseClassIP):
+class System(nbase.ObjectIP):
     """Base class for systems.
 
     Attributes:
@@ -540,7 +540,7 @@ class System(ndoc.BaseClassIP):
         raise ValueError("""could not get parameters:
             unknown key '%s'.""" % key)
 
-    @nalgo.objective(
+    @nalgorithm.objective(
         name     = 'error',
         category = ('system', 'evaluation'),
         args     = 'all',
@@ -551,7 +551,7 @@ class System(ndoc.BaseClassIP):
         """Mean data reconstruction error of output units."""
         return numpy.mean(self._get_uniterror(*args, **kwargs))
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'accuracy',
         category = ('system', 'evaluation'),
         args     = 'all',
@@ -562,7 +562,7 @@ class System(ndoc.BaseClassIP):
         """Mean data reconstruction accuracy of output units."""
         return numpy.mean(self._get_unitaccuracy(*args, **kwargs))
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'precision',
         category = ('system', 'evaluation'),
         args     = 'all',
@@ -573,7 +573,7 @@ class System(ndoc.BaseClassIP):
         """Mean data reconstruction precision of output units."""
         return numpy.mean(self._get_unitprecision(*args, **kwargs))
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'units_mean',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -610,7 +610,7 @@ class System(ndoc.BaseClassIP):
 
         return model_out.mean(axis = 0)
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'units_variance',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -642,7 +642,7 @@ class System(ndoc.BaseClassIP):
 
         return model_out.var(axis = 0)
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'units_expect',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -683,7 +683,7 @@ class System(ndoc.BaseClassIP):
         return out_data
 
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'units_values',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -741,7 +741,7 @@ class System(ndoc.BaseClassIP):
                     self._units[mapping[id]].params))
             return data
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'units_samples',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -798,7 +798,7 @@ class System(ndoc.BaseClassIP):
                     data, self._units[mapping[id]].params)
             return data
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'units_residuals',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -841,7 +841,7 @@ class System(ndoc.BaseClassIP):
         # calculate residuals
         return d_tgt - m_out
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'units_error',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -877,7 +877,7 @@ class System(ndoc.BaseClassIP):
 
         return error
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'units_accuracy',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -914,7 +914,7 @@ class System(ndoc.BaseClassIP):
 
         return 1. - normres / normdat
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'units_precision',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -951,7 +951,7 @@ class System(ndoc.BaseClassIP):
 
         return 1. - devres / devdat
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'correlation',
         category = ('system', 'relation', 'evaluation'),
         directed = False,
@@ -999,7 +999,7 @@ class System(ndoc.BaseClassIP):
 
         return R
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'weightsumproduct',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -1039,7 +1039,7 @@ class System(ndoc.BaseClassIP):
 
         return wsp.T
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'knockout',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -1099,7 +1099,7 @@ class System(ndoc.BaseClassIP):
 
         return R
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'coinduction',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -1170,7 +1170,7 @@ class System(ndoc.BaseClassIP):
 
         return coop
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'induction',
         category = ('system', 'relation', 'evaluation'),
         directed = True,

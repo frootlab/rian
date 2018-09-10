@@ -9,11 +9,11 @@ import nemoa
 
 from typing import Any, Dict, Optional
 
-class BaseClassIP:
-    """Base class for resources subjected to intellectual property.
+class ObjectIP:
+    """Base class for objects subjected to intellectual property.
 
     Resources like datasets, networks, systems and models share common
-    descriptive metadata comprising author and copyright, as well as
+    descriptive metadata comprising authorship and copyright, as well as
     administrative metadata like branch and version. This base class is
     intended to provide a unified interface to access those attributes.
 
@@ -51,10 +51,11 @@ class BaseClassIP:
 
     """
 
-    _attr_meta: Dict[str, str] = {
-        'author': 'rw', 'email': 'rw', 'license': 'rw', 'copyright': 'rw',
-        'fullname': 'r', 'name': 'rw', 'branch': 'rw', 'version': 'rw',
-        'about': 'rw', 'type': 'r', 'path': 'rw' }
+    _attr_meta: Dict[str, int] = {
+        'author': 0b11, 'email': 0b11, 'license': 0b11, 'copyright': 0b11,
+        'fullname': 0b01, 'name': 0b11, 'branch': 0b11, 'version': 0b11,
+        'about': 0b11, 'type': 0b01, 'path': 0b11
+    }
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Import object configuration and content from dictionary."""
@@ -65,7 +66,7 @@ class BaseClassIP:
         """Attribute wrapper for getter methods."""
 
         if key in self._attr_meta:
-            if 'r' in self._attr_meta[key]: return self._get_meta(key)
+            if self._attr_meta[key] & 0b01: return self._get_meta(key)
             raise AttributeError(f"attribute '{key}' is not readable")
         if key in self._attr:
             if 'r' in self._attr[key]: return self.get(key)
@@ -79,8 +80,7 @@ class BaseClassIP:
         """Attribute wrapper to setter methods."""
 
         if key in self._attr_meta:
-            if 'w' in self._attr_meta[key]:
-                return self._set_meta(key, val)
+            if self._attr_meta[key] & 0b10: return self._set_meta(key, val)
             raise AttributeError(f"attribute '{key}' is not writeable")
         if key in self._attr:
             if 'w' in self._attr[key]: return self.set(key, val)

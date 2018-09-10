@@ -7,9 +7,9 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-from nemoa.common import nalgo, nclass, ndoc
+from nemoa.common import nalgorithm, nclass, nbase
 
-class Dataset(ndoc.BaseClassIP):
+class Dataset(nbase.ObjectIP):
     """Dataset base class.
 
     Attributes:
@@ -1336,7 +1336,7 @@ class Dataset(ndoc.BaseClassIP):
 
         return algorithms[name](*args, **kwargs)
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'sample',
         title    = 'Sample Values',
         category = ('dataset', 'evaluation'),
@@ -1347,7 +1347,7 @@ class Dataset(ndoc.BaseClassIP):
 
         return self._get_data(*args, **kwargs)
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'covariance',
         title    = 'Covariance',
         category = ('dataset', 'columns', 'evaluation'),
@@ -1373,7 +1373,7 @@ class Dataset(ndoc.BaseClassIP):
 
         return C
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'correlation',
         title    = 'Pearson Correlation',
         category = ('dataset', 'columns', 'evaluation'),
@@ -1399,7 +1399,7 @@ class Dataset(ndoc.BaseClassIP):
 
         return C
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'pca-sample',
         title    = 'PCA Sample Values',
         category = ('dataset', 'evaluation'),
@@ -1428,7 +1428,7 @@ class Dataset(ndoc.BaseClassIP):
 
         return pca_data
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name      = 'k-covariance',
         title     = 'k-Covariance',
         title_tex = '$k$-Covariance',
@@ -1461,7 +1461,7 @@ class Dataset(ndoc.BaseClassIP):
 
         return C
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name      = 'k-correlation',
         title     = 'k-Correlation',
         title_tex = '$k$-Correlation',
@@ -1494,7 +1494,7 @@ class Dataset(ndoc.BaseClassIP):
 
         return C
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'test_binary',
         title    = None,
         category = ('dataset', 'evaluation'),
@@ -1521,7 +1521,7 @@ class Dataset(ndoc.BaseClassIP):
 
         return isbinary
 
-    @nalgo.algorithm(
+    @nalgorithm.generic(
         name     = 'test_gauss',
         title    = None,
         category = ('dataset', 'evaluation'),
