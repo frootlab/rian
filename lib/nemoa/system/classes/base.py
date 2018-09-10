@@ -8,9 +8,9 @@ import nemoa
 import numpy
 import copy
 
-from nemoa.common import calc, nalgo, nclass, docs
+from nemoa.common import calc, nalgo, nclass, ndoc
 
-class System(docs.BaseClassIP):
+class System(ndoc.BaseClassIP):
     """System base class.
 
     Attributes:

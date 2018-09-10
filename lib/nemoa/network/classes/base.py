@@ -9,9 +9,9 @@ import networkx
 import copy
 import importlib
 
-from nemoa.common import nclass, docs
+from nemoa.common import nclass, ndoc
 
-class Network(docs.BaseClassIP):
+class Network(ndoc.BaseClassIP):
     """Network base class.
 
     Attributes:

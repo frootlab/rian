@@ -7,9 +7,9 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-from nemoa.common import nalgo, nclass, docs
+from nemoa.common import nalgo, nclass, ndoc
 
-class Dataset(docs.BaseClassIP):
+class Dataset(ndoc.BaseClassIP):
     """Dataset base class.
 
     Attributes:

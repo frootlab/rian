@@ -55,8 +55,7 @@ class Session:
         import os
         import sys
 
-        from nemoa.common import ndict
-        from nemoa.common import nini
+        from nemoa.common import ndict, nini
 
         self._config = ndict.merge(kwargs, self._default)
 
@@ -118,6 +117,11 @@ class Session:
             return self._get_objconfig(key, *args, **kwargs)
 
         raise KeyError(f"unknown key '{key}'")
+
+    def path(self, *args, **kwargs):
+        """Get path of given object."""
+
+        return self._get_path(*args, **kwargs)
 
     def _get_about(self, key = 'about', *args, **kwargs):
         """Get nemoa meta information."""
@@ -376,15 +380,15 @@ class Session:
             path = self._get_objconfig(objtype = key, name = name,
                 attribute = 'path')
         else:
-            raise Warning("""could not get path:
-                path identifier '%s' is not valid.""" % key) or None
+            raise Warning("path identifier '{key}' is not valid")
 
         # change to previous workspace if necessary
         if chdir:
             if current:
                 self._set_workspace(current.get('name'),
                     base = current.get('base'))
-            else: self._set_workspace(None)
+            else:
+                self._set_workspace(None)
 
         return path or None
 
@@ -688,8 +692,8 @@ class Session:
 
         if curmode == 'line' and mode == 'key':
             if not self._buffer.get('inkey', None):
-                import nemoa.common.console as console
-                self._buffer['inkey'] = console.Getch()
+                from nemoa.common import nconsole
+                self._buffer['inkey'] = nconsole.getch()
             self._buffer['inkey'].start()
             return True
 
@@ -776,9 +780,12 @@ class Session:
     def _set_workspace_reset(self):
         """ """
 
-        import copy
+        c = self._config['current']
+        d = self._default['current']
+        c['workspace'] = d['workspace']
+        c['base'] = d['base']
+        c['path'] = d['path'].copy()
 
-        self._config['current'] = copy.deepcopy(self._default['current'])
         self._config['workspace'] = None
 
         return self._init_logging()

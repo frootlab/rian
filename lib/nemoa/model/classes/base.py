@@ -8,9 +8,9 @@ import nemoa
 import copy
 import os
 
-from nemoa.common import nclass, docs
+from nemoa.common import nclass, ndoc
 
-class Model(docs.BaseClassIP):
+class Model(ndoc.BaseClassIP):
     """Model base class.
 
     Attributes:

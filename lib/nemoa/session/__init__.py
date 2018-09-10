@@ -27,6 +27,10 @@ def open(*args, **kwargs):
     """Open object in current session."""
     return instance().open(*args, **kwargs)
 
+def path(*args, **kwargs):
+    """Get path for given object in current session."""
+    return instance().path(*args, **kwargs)
+
 def run(*args, **kwargs):
     """Run script in current session."""
     return instance().run(*args, **kwargs)

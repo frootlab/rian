@@ -4,9 +4,7 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import os
-
-def Getch():
+def getch():
     """Getch wrapper for various platforms."""
 
     found = False
@@ -18,14 +16,12 @@ def Getch():
         try:
             retval = GetchUnix()
             found = True
-        except ImportError:
-            pass
+        except ImportError: pass
     if not found:
         try:
             retval = GetchMac()
             found = True
-        except ImportError:
-            pass
+        except ImportError: pass
     if not found: return False
 
     return retval

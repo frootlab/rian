@@ -8,7 +8,7 @@ within complex and natural data samples.
 
 """
 
-__version__      = '0.5.115'
+__version__      = '0.5.116'
 __status__       = 'Development'
 __description__  = 'Network-based Modeling and deep Data Analysis'
 __url__          = 'https://fishroot.github.io/nemoa'
@@ -57,7 +57,7 @@ def open(*args, **kwargs):
 
 def path(*args, **kwargs):
     """Get path to given object type or object."""
-    return get('path', *args, **kwargs)
+    return nemoa.session.path(*args, **kwargs)
 
 def run(*args, **kwargs):
     """Run nemoa python script in current session."""

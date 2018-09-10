@@ -18,31 +18,30 @@ def get(name: Optional['str'] = None,
 
     Args:
         name: Name of application variable. Typical variable names are:
-            'name' -- The name of the distribution
-            'version' -- A string containing the distribution's version number
-            'status' -- Development status of the distributed application.
+            'name': The name of the distribution
+            'version': A string containing the distribution's version number
+            'status': Development status of the distributed application.
                 Typical values are 'Prototype', 'Development', or 'Production'
-            'description' -- A longer description of the distribution that can
+            'description': A longer description of the distribution that can
                 run to several paragraphs.
-            'keywords' -- A list of additional keywords to be used to assist
+            'keywords': A list of additional keywords to be used to assist
                 searching for the distribution in a larger catalog.
-            'url' -- A string containing the URL for the distribution's
-                home page
-            'license' -- Text indicating the license covering the distribution
-            'copyright' -- Notice of statutorily prescribed form that informs
+            'url': A string containing the URL for the distribution's
+                homepage.
+            'license': Text indicating the license covering the distribution
+            'copyright': Notice of statutorily prescribed form that informs
                 users of the distribution to published copyright ownership.
-            'author' -- A string containing the author's name at a minimum;
+            'author': A string containing the author's name at a minimum;
                 additional contact information may be provided.
-            'email' -- A string containing the author's e-mail address. It can
-                contain a name and e-mail address, as described in [RFC822]
-            'maintainer' -- A string containing the maintainer's name at a
+            'email': A string containing the author's e-mail address. It can
+                contain a name and e-mail address, as described in [RFC822].
+            'maintainer': A string containing the maintainer's name at a
                 minimum; additional contact information may be provided.
-            'company' -- The company, that created or maintains the
+            'company': The company, which created or maintains the distribution.
+            'organization': The organization, twhich created or maintains the
                 distribution.
-            'organization' -- The organization, that created or maintains the
-                distribution.
-            'credits' -- list with strings, acknowledging further contributors,
-                Teams or supporting organizations
+            'credits': list with strings, acknowledging further contributors,
+                Teams or supporting organizations.
         path: Valid path to python module, which comprises
 
 
@@ -112,12 +111,12 @@ def path(name: Optional[str] = None, appname: Optional[str] = None,
 
     Args:
         name: Environmental directory name. Allowed values are:
-            'user_cache_dir' -- Cache directory of user
-            'user_config_dir' -- Configuration directory of user
-            'user_data_dir' -- Data directory of user
-            'user_log_dir' -- Logging directory of user
-            'site_config_dir' -- Site specific configuration directory
-            'site_data_dir' -- Site specific data directory
+            'user_cache_dir': Cache directory of user
+            'user_config_dir': Configuration directory of user
+            'user_data_dir': Data directory of user
+            'user_log_dir': Logging directory of user
+            'site_config_dir': Site specific configuration directory
+            'site_data_dir': Site specific data directory
         appname: is the name of application.
             If None, just the system directory is returned.
         appauthor: is the name of the appauthor or distributing body for this
@@ -142,7 +141,7 @@ def path(name: Optional[str] = None, appname: Optional[str] = None,
     def upddirs(appname: Optional[str] = None,
         appauthor: Optional[Union[str, bool]] = None,
         version: Optional[str] = None, **kwargs: Any) -> None:
-        """Update application paths from name, author and version."""
+        """Update application directories from name, author and version."""
 
         try: from appdirs import AppDirs
         except ImportError as e: raise ImportError(

@@ -31,19 +31,22 @@ def load(path, filetype = None, **kwargs):
 
     # get path (if necessary)
     if 'workspace' in kwargs or not os.path.isfile(path):
+
         name = path
         pathkwargs = {}
         if 'workspace' in kwargs:
             pathkwargs['workspace'] = kwargs.pop('workspace')
+
         if 'base' in kwargs:
             pathkwargs['base'] = kwargs.pop('base')
+
         path = nemoa.path('model', name, **pathkwargs)
+        #path = nemoa.session.get('path', 'model', name, **pathkwargs)
+
         if not path:
-            raise Warning("""could not import model:
-                invalid model name.""") or {}
+            raise Warning(f"unknown model '{name}'")
         if not os.path.isfile(path):
-            raise Warning("""could not import model:
-                file '%s' does not exist.""" % path) or {}
+            raise IOError(f"file '{path}' does not exist")
 
     # get filtype from file extension if not given
     # and check if filetype is supported
@@ -58,8 +61,7 @@ def load(path, filetype = None, **kwargs):
     else:
         model = None
     if not model:
-        raise ValueError("""could not import model:
-            file '%s' is not valid.""" % path) or {}
+        raise ValueError(f"file '{path}' is not valid")
 
     # update path
     model['config']['path'] = path

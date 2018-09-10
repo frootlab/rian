@@ -9,14 +9,14 @@ def main():
 
     import nemoa
 
-    try:
-        import IPython
-    except ImportError as e:
-        raise ImportError("IPython is required: https://ipython.org/") from e
+    try: import IPython
+    except ImportError as e: raise ImportError(
+        "requires package ipython: "
+        "https://ipython.org/") from e
 
-    from IPython.core.interactiveshell import InteractiveShell
+    from IPython.core import interactiveshell
 
-    def __change(func):
+    def _change(func):
         from functools import wraps
         import sys
 
@@ -35,7 +35,8 @@ def main():
 
         return showtraceback
 
-    InteractiveShell.showtraceback = __change(InteractiveShell.showtraceback)
+    interactiveshell.InteractiveShell.showtraceback \
+        = _change(interactiveshell.InteractiveShell.showtraceback)
 
     def about(*args, **kwargs):
         """Get meta information."""
