@@ -8,17 +8,54 @@ from nemoa.common import ntest
 
 class TestSuite(ntest.TestSuite):
 
+    def test_common_nalgorithm(self):
+        from nemoa.common import nalgorithm
+
+        with self.subTest(function = 'search'):
+            self.assertTrue(
+                len(nalgorithm.search(nalgorithm, name = 'search')) \
+                == 1)
+
+        with self.subTest(function = 'generic'):
+            @nalgorithm.generic()
+            def test_generic(): pass
+            self.assertTrue(test_generic.name == 'test_generic')
+            self.assertTrue(test_generic.category == None)
+
+        with self.subTest(function = 'objective'):
+            @nalgorithm.objective()
+            def test_objective(): pass
+            self.assertTrue(test_objective.name == 'test_objective')
+            self.assertTrue(test_objective.category == 'objective')
+
+        with self.subTest(function = 'sampler'):
+            @nalgorithm.sampler()
+            def test_sampler(): pass
+            self.assertTrue(test_sampler.name == 'test_sampler')
+            self.assertTrue(test_sampler.category == 'sampler')
+
+        with self.subTest(function = 'statistic'):
+            @nalgorithm.statistic()
+            def test_statistic(): pass
+            self.assertTrue(test_statistic.name == 'test_statistic')
+            self.assertTrue(test_statistic.category == 'statistic')
+
+        with self.subTest(function = 'association'):
+            @nalgorithm.association()
+            def test_association(): pass
+            self.assertTrue(test_association.name == 'test_association')
+            self.assertTrue(test_association.category == 'association')
+
     def test_common_nappinfo(self):
         from nemoa.common import nappinfo
 
         dirs = ['user_cache_dir', 'user_config_dir', 'user_data_dir',
             'user_log_dir', 'site_config_dir', 'site_data_dir']
-        vars = ['name', 'author', 'version', 'license']
-
         for key in dirs:
             with self.subTest(function = f"path('{key}')"):
                 self.assertTrue(nappinfo.path(key))
 
+        vars = ['name', 'author', 'version', 'license']
         for key in vars:
             with self.subTest(function = f"get('{key}')"):
                 self.assertTrue(nappinfo.get(key))
@@ -326,18 +363,21 @@ class TestSuite(ntest.TestSuite):
             self.assertTrue(
                 len(nmodule.functions(nmodule, name = 'functions')) == 1)
 
-        with self.subTest(function = "get_function"):
-            self.assertTrue(
-                type(nmodule.get_function(nmodule.__name__ \
-                + '.get_function')).__name__ == 'function')
-
         with self.subTest(function = "search"):
-            minst = nmodule.get_module('nemoa.common')
-            funcs = nmodule.search(minst, name = 'search')
-            self.assertTrue(len(funcs) == 1)
+            self.assertTrue(
+                len(nmodule.search(nmodule, name = 'search')) == 1)
 
     def test_common_nfunc(self):
         from nemoa.common import nfunc
+
+        with self.subTest(function = "about"):
+            self.assertTrue(
+                nfunc.about(nfunc.about) == 'Summary about a function')
+
+        with self.subTest(function = "func"):
+            self.assertTrue(
+                type(nfunc.func(nfunc.__name__ + '.func')).__name__ \
+                == 'function')
 
         with self.subTest(function = "kwargs"):
             self.assertTrue(
@@ -347,10 +387,6 @@ class TestSuite(ntest.TestSuite):
             self.assertTrue(
                 nfunc.kwargs(nfunc.kwargs, default = {'default': True}) \
                 == {'default': True})
-
-        with self.subTest(function = "about"):
-            self.assertTrue(
-                nfunc.about(nfunc.about) == 'Summary about a function')
 
     def test_common_ndict(self):
         from nemoa.common import ndict

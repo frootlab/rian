@@ -6,7 +6,7 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import types
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 Function = types.FunctionType
 Module = types.ModuleType
@@ -120,7 +120,7 @@ def get_module(s: str) -> Optional[Module]:
     return minst
 
 def functions(minst: Optional[Module] = None, filter: Optional[str] = None,
-    rules: dict = None, **kwargs: Any) -> dict:
+    rules: Optional[Dict[str, Function]] = None, **kwargs: Any) -> dict:
     """Get dictionary with functions and attributes.
 
     Args:
@@ -143,17 +143,18 @@ def functions(minst: Optional[Module] = None, filter: Optional[str] = None,
     """
 
     if minst is None: minst = get_module(curname(-1))
-    elif not isinstance(minst, Module): raise TypeError(
-        "first argument is required to be a module instance")
+    elif isinstance(minst, Module): pass
+    else: raise TypeError("argument 'minst' is requires type 'module', "
+        f"not type '{type(minst)}'")
 
     import inspect
     from nemoa.common import ndict, nfunc
 
     # get dictionary with function names and references from inspect
-    fd = dict(inspect.getmembers(minst, inspect.isfunction))
+    fd = {k: v for k, v in inspect.getmembers(minst, inspect.isfunction)}
 
     # filter dictionary to functions names, that match given pattern
-    if filter: fd = ndict.filter(fd, filter)
+    if filter: fd = ndict.filter(fd, pattern = filter)
 
     # create dictionary with function attributes
     fc = {}
@@ -161,6 +162,9 @@ def functions(minst: Optional[Module] = None, filter: Optional[str] = None,
     rules = rules or {}
     for name, ref in fd.items():
         attr = ref.__dict__
+        attr['reference'] = ref
+        if not 'about' in attr: attr['about'] = nfunc.about(ref)
+        if not 'name' in attr: attr['name'] = name
 
         # filter entry by attributes
         passed = True
@@ -179,36 +183,40 @@ def functions(minst: Optional[Module] = None, filter: Optional[str] = None,
         if not passed: continue
 
         # add item
-        fqn = pref + name # fully qualified name
-        fc[fqn] = attr
-        fc[fqn]['reference'] = ref
-        fc[fqn]['about'] = fc[fqn].get('about', nfunc.about(ref))
-        fc[fqn]['name'] = fc[fqn].get('name', name)
+        fc[pref + name] = attr
 
     return fc
 
 def search(minst: Optional[Module] = None,
     filter: Optional[str] = None, groupby: Optional[str] = None,
     key: Optional[str] = None, val: Optional[str] = None,
-    rules: Optional[dict] = None, recursive: bool = True,
+    rules: Optional[Dict[str, Function]] = None, recursive: bool = True,
     **kwargs: Any) -> dict:
     """Recursively search for functions within submodules.
 
     Args:
-        minst: Module instance to search for submodules
-            default: Use current module, which called this function
+        minst: Module instance to search for functions
+            Default: Use current module, which calles this function
         filter: Only functions which names satisfy the wildcard pattern given
             by 'filter' are returned. The format of the wildcard pattern
             is described in the standard library module 'fnmatch' [1]
-        groupby: Name of attribute which value is used to group the results.
-            If groupby is None, then the results are not grouped.
+        groupby: Name of function attribute which is used to group the results.
+            If 'groupby' is None, then the results are not grouped.
             Default: None
-        key: Name of the attribute which is used as the key for the returned
-            dictionary. If key is None, then the fully qualified function names
-            are used as key. Default: None
-        val: Name of attribute which is used as the value for the returned
-            dictionary. If val is None, then all attributes of the respective
-            functions are returned. Default: None
+        key: Name of function attribute which is used as the key for the
+            returned dictionary. If 'key' is None, then the fully qualified
+            function names are used as keys. Default: None
+        val: Name of function attribute which is used as the value for the
+            returned dictionary. If 'val' is None, then all attributes of the
+            respective functions are returned. Default: None
+        rules: Default: None
+        recursive: Boolean value which determines if the search is recursively
+            within submodules. Defaut: True
+        **kwargs: Attributes, which values are testet by using the filter rules.
+
+    Returns:
+        Dictionary with function information as specified in the arguments
+        'key' and 'val'.
 
     References:
         [1] https://docs.python.org/3/library/fnmatch.html
@@ -216,8 +224,8 @@ def search(minst: Optional[Module] = None,
     """
 
     if minst is None: minst = get_module(curname(-1))
-    elif not isinstance(minst, Module): raise TypeError(
-        "first argument is required to be a module instance")
+    elif isinstance(minst, Module): pass
+    else: raise TypeError("first argument is required to be a module instance")
 
     from nemoa.common import ndict
 
@@ -260,17 +268,3 @@ def search(minst: Optional[Module] = None,
             for name, attr in fd.items(): fd[name] = attr[val]
 
     return fd
-
-def get_function(fname: str) -> Optional[Function]:
-    """Return function instance for a given full qualified function name.
-
-    Example:
-        >>> get_function("nemoa.common.nmodule.get_function")
-
-    """
-
-    minst = get_module('.'.join(fname.split('.')[:-1]))
-    if minst is None: return None
-    finst = getattr(minst, fname.split('.')[-1])
-
-    return finst

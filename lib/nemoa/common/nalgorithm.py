@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Collection of frequently functions to orginize algorithms."""
+"""Collection of frequently used functions to orginize algorithms."""
 
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
@@ -19,8 +19,7 @@ def search(minst: Optional[Module] = None, **kwargs: Any) -> dict:
         **kwargs: Attributes, which are testet by using the filter rules
 
     Returns:
-        Dictionary with fully qualified function names and attributes or list
-        of fully qualified function names.
+        Dictionary with function information.
 
     """
 
@@ -90,7 +89,6 @@ def generic(name: Optional[str] = None, category: Optional[str] = None,
 
     return wrapper
 
-
 def objective(name: Optional[str] = None, classes: Optional[List[str]] = None,
     tags: Optional[List[str]] = None, optimum: str = 'min',
     scope: str = 'local', plot: Optional[str] = None, **attr: Any) -> Callable:
@@ -146,7 +144,6 @@ def objective(name: Optional[str] = None, classes: Optional[List[str]] = None,
 
     return wrapper
 
-
 def sampler(name: Optional[str] = None, classes: Optional[List[str]] = None,
     tags: Optional[List[str]] = None, plot: Optional[str] = 'Histogram',
     **attr: Any) -> Callable:
@@ -195,7 +192,6 @@ def sampler(name: Optional[str] = None, classes: Optional[List[str]] = None,
         return wrapped
 
     return wrapper
-
 
 def statistic(name: Optional[str] = None, classes: Optional[List[str]] = None,
     tags: Optional[List[str]] = None, plot: Optional[str] = 'Histogram',
@@ -287,7 +283,7 @@ def association(name: Optional[str] = None, classes: Optional[List[str]] = None,
 
         # set attributes with metainformation about algorithm
         setattr(wrapped, 'name', name or func.__name__)
-        setattr(wrapped, 'category', 'sampler')
+        setattr(wrapped, 'category', 'association')
         setattr(wrapped, 'classes', classes or [])
         setattr(wrapped, 'plot', plot)
         setattr(wrapped, 'directed', directed)
