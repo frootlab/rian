@@ -297,9 +297,8 @@ class Session:
                 self._set_workspace(cur_workspace, base = cur_base)
 
         if not config:
-            raise Warning("""could not get configuration:
-                %s with name '%s' is not found in %s workspace '%s'.
-                """ % (objtype, name, base, workspace))
+            raise Warning(f"{objtype} with name '{name}' is not "
+                f"found in {base} workspace '{workspace}'")
 
         if not attribute: return config
         elif not isinstance(attribute, str):

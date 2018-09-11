@@ -6,11 +6,11 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import os
-import pathlib
 
+from pathlib import Path
 from typing import Dict, Optional, Sequence, Union
 
-PathLike = Sequence[Union['PathLike', str]]
+PathLike = Sequence[Union['PathLike', str, Path]]
 PathLikeDict = Dict[str, PathLike]
 
 def cwd() -> str:
@@ -21,7 +21,7 @@ def cwd() -> str:
 
     """
 
-    return str(pathlib.Path.cwd())
+    return str(Path.cwd())
 
 def home() -> str:
     """Path of current users home directory.
@@ -31,7 +31,7 @@ def home() -> str:
 
     """
 
-    return str(pathlib.Path.home())
+    return str(Path.home())
 
 def clear(fname: str) -> str:
     """Clear filename from invalid characters.
@@ -72,8 +72,10 @@ def join(*args: PathLike) -> str:
     """
 
     # flatten tree of strings to list and join list using os path seperators
-    if len(args) == 0: return ''
-    if len(args) == 1 and isinstance(args[0], str): path = args[0]
+    if len(args) == 0:
+        return ''
+    if len(args) == 1 and isinstance(args[0], (str, Path)):
+        path = args[0]
     else:
         l = list(args)
         i = 0
@@ -85,15 +87,17 @@ def join(*args: PathLike) -> str:
                     break
                 else: l[i:i + 1] = l[i]
             i += 1
-        try: path = os.path.sep.join(list(l))
+        try:
+            path = Path(*l)
         except Exception as e:
-            raise ValueError("Path like tree structure is not valid") from e
+            raise ValueError("path like tree structure is invalid") from e
     if not path: return ''
 
     # normalize path
-    path = str(pathlib.Path(path))
+    path = str(Path(path))
 
     return path
+
 
 def expand(*args: PathLike, udict: PathLikeDict = {}, expapp: bool = True,
     expenv: bool = True) -> str:
@@ -125,7 +129,7 @@ def expand(*args: PathLike, udict: PathLikeDict = {}, expapp: bool = True,
 
     from nemoa.common import nappinfo
 
-    path = join(*args)
+    path = Path(join(*args))
 
     # create dictionary with variables
     d = {}
@@ -143,21 +147,21 @@ def expand(*args: PathLike, udict: PathLikeDict = {}, expapp: bool = True,
     while update:
         update = False
         for key, val in list(d.items()):
-            if '%' + key + '%' not in path: continue
-            try: path = path.replace('%' + key + '%', val)
+            if '%' + key + '%' not in str(path): continue
+            try: path = Path(str(path).replace('%' + key + '%', val))
             except TypeError: del d[key]
             update = True
         i += 1
         if i > limit:
             raise RecursionError('cyclic dependency in variables detected')
-        path = os.path.normpath(path)
+        path = Path(path)
 
     # expand environmental paths
-    if not expenv: return path
-    path = os.path.expanduser(path)
+    if not expenv: return str(path)
+    path = path.expanduser()
     path = os.path.expandvars(path)
 
-    return path
+    return str(path)
 
 def dirname(*args: PathLike) -> str:
     """Extract directory name from a path like structure.
@@ -175,12 +179,9 @@ def dirname(*args: PathLike) -> str:
 
     """
 
-    path = expand(*args)
-
-    if os.path.isdir(path): return path
-    name = os.path.dirname(path)
-
-    return name
+    path = Path(expand(*args))
+    if path.is_dir(): return str(path)
+    return str(path.parent)
 
 def filename(*args: PathLike) -> str:
     """Extract file name from a path like structure.
@@ -198,12 +199,9 @@ def filename(*args: PathLike) -> str:
 
     """
 
-    path = expand(*args)
-
-    if os.path.isdir(path): return ''
-    name = os.path.basename(path)
-
-    return name
+    path = Path(expand(*args))
+    if path.is_dir(): return ''
+    return str(path.name)
 
 def basename(*args: PathLike) -> str:
     """Extract file basename from a path like structure.
@@ -221,13 +219,9 @@ def basename(*args: PathLike) -> str:
 
     """
 
-    path = expand(*args)
-
-    if os.path.isdir(path): return ''
-    name = os.path.basename(path)
-    base = os.path.splitext(name)[0].rstrip('.')
-
-    return base
+    path = Path(expand(*args))
+    if path.is_dir(): return ''
+    return str(path.stem)
 
 def fileext(*args: PathLike) -> str:
     """Fileextension of file.
@@ -245,13 +239,9 @@ def fileext(*args: PathLike) -> str:
 
     """
 
-    path = expand(*args)
-
-    if os.path.isdir(path): return ''
-    name = os.path.basename(path)
-    ext = os.path.splitext(name)[1].lstrip('.')
-
-    return ext
+    path = Path(expand(*args))
+    if path.is_dir(): return ''
+    return str(path.suffix).lstrip('.')
 
 def cp(source: PathLike, target: PathLike) -> bool:
     """Copy sub directories from given source to destination directory.
@@ -267,15 +257,14 @@ def cp(source: PathLike, target: PathLike) -> bool:
 
     """
 
-    import glob
     import shutil
 
-    sdir, ddir = expand(source), expand(target)
+    sdir, ddir = Path(expand(source)), Path(expand(target))
 
-    for s in glob.glob(os.path.join(sdir, '*')):
-        t = os.path.join(ddir, basename(s))
-        if os.path.exists(t): shutil.rmtree(t)
-        try: shutil.copytree(s, t)
+    for s in sdir.glob('*'):
+        t = Path(ddir, basename(s))
+        if t.exists(): shutil.rmtree(str(t))
+        try: shutil.copytree(str(s), str(t))
         except Exception as e:
             raise OSError("could not copy directory") from e
 
@@ -293,14 +282,14 @@ def mkdir(*args: PathLike) -> bool:
 
     """
 
-    path = expand(*args)
-    if os.path.isdir(path): return True
+    path = Path(expand(*args))
+    if path.is_dir(): return True
 
     try: os.makedirs(path)
     except Exception as e:
         raise OSError("could not create directory") from e
 
-    return os.path.isdir(path)
+    return path.is_dir()
 
 def rmdir(*args: PathLike) -> bool:
     """Remove directory.
@@ -316,9 +305,9 @@ def rmdir(*args: PathLike) -> bool:
 
     import shutil
 
-    path = expand(*args)
+    path = Path(expand(*args))
 
-    if not os.path.isdir(path): return False
-    shutil.rmtree(path, ignore_errors = True)
+    if not path.is_dir(): return False
+    shutil.rmtree(str(path), ignore_errors = True)
 
-    return not os.path.isdir(path)
+    return not path.exists()
