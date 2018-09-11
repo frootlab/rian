@@ -60,7 +60,7 @@ class ANN(Evaluation):
         """Mean data reconstruction precision of output units."""
         return numpy.mean(self.unitprecision(*args, **kwargs))
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'mean',
         title    = 'Average Target Reconstruction Values',
         category = 'units',
@@ -99,7 +99,7 @@ class ANN(Evaluation):
 
         return model_out.mean(axis = 0)
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'variance',
         category = 'units',
         args     = 'input',
@@ -131,7 +131,7 @@ class ANN(Evaluation):
 
         return model_out.var(axis = 0)
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'expect',
         category = 'units',
         args     = 'input',
@@ -159,7 +159,7 @@ class ANN(Evaluation):
 
         return self.model.system._get_unitexpect(*args, **kwargs)
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'values',
         category = 'units',
         args     = 'input',
@@ -189,7 +189,7 @@ class ANN(Evaluation):
 
         return self.model.system._get_unitvalues(*args, **kwargs)
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'samples',
         category = 'units',
         args     = 'input',
@@ -219,7 +219,7 @@ class ANN(Evaluation):
 
         return self.model.system._get_unitsamples(*args, **kwargs)
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'residuals',
         category = 'units',
         args     = 'all',
@@ -262,7 +262,7 @@ class ANN(Evaluation):
         # calculate residuals
         return d_tgt - m_out
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'error',
         category = 'units',
         args     = 'all',
@@ -298,7 +298,7 @@ class ANN(Evaluation):
 
         return error
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'accuracy',
         category = 'units',
         args     = 'all',
@@ -335,7 +335,7 @@ class ANN(Evaluation):
 
         return 1. - normres / normdat
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'precision',
         category = 'units',
         args     = 'all',
@@ -372,7 +372,7 @@ class ANN(Evaluation):
 
         return 1. - devres / devdat
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'correlation',
         category = 'relation',
         directed = False,
@@ -420,7 +420,7 @@ class ANN(Evaluation):
 
         return relation
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'connectionweight',
         category = 'relation',
         directed = True,
@@ -460,7 +460,7 @@ class ANN(Evaluation):
 
         return wsp.T
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'knockout',
         category = 'relation',
         directed = True,
@@ -522,7 +522,7 @@ class ANN(Evaluation):
 
         return R
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'coinduction',
         category = 'relation',
         directed = True,
@@ -593,7 +593,7 @@ class ANN(Evaluation):
 
         return coop
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'induction',
         category = 'relation',
         directed = True,
@@ -683,7 +683,7 @@ class ANN(Evaluation):
 
         return ncalc.dialogistic(R, scale = bound, sigma = contrast)
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'energy',
         category = 'model',
         args     = 'all',
@@ -709,7 +709,7 @@ class ANN(Evaluation):
         # calculate (pseudo) energy of system
         return numpy.log(1. + numpy.exp(-energy).sum())
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'energy',
         category = 'units',
         args     = 'input',
@@ -737,7 +737,7 @@ class ANN(Evaluation):
         data = self.unitexpect(data, mapping)
         return self.model.system._units[mapping[-1]].energy(data)
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'links_energy',
         category = ('system', 'links', 'evaluation'),
         args     = 'input',

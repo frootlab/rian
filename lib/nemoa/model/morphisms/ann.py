@@ -38,7 +38,7 @@ class ANN(nemoa.model.morphisms.base.Optimizer):
         'tracker_eval_time_interval': 10.,
         'ignore_units': [] }
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'bprop',
         longname = 'backpropagation of error',
         category = 'optimization',
@@ -150,7 +150,7 @@ class ANN(nemoa.model.morphisms.base.Optimizer):
 
         return { 'units': units, 'links': links }
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'rprop',
         longname = 'resiliant backpropagation of error',
         category = 'optimization',

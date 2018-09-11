@@ -16,11 +16,11 @@ class TestSuite(ntest.TestSuite):
                 len(nalgorithm.search(nalgorithm, name = 'search')) \
                 == 1)
 
-        with self.subTest(function = 'generic'):
-            @nalgorithm.generic()
-            def test_generic(): pass
-            self.assertTrue(test_generic.name == 'test_generic')
-            self.assertTrue(test_generic.category == None)
+        with self.subTest(function = 'custom'):
+            @nalgorithm.custom(category = 'custom')
+            def test_custom(): pass
+            self.assertTrue(test_custom.name == 'test_custom')
+            self.assertTrue(test_custom.category == 'custom')
 
         with self.subTest(function = 'objective'):
             @nalgorithm.objective()

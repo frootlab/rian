@@ -27,7 +27,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
         'schedule_rbm.rbm': 'default',
         'schedule_rbm.grbm': 'default' }
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'dbn',
         longname = 'deep belief network optimization',
         category = 'optimization',
@@ -46,7 +46,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
 
         return retval
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'pretraining',
         longname = 'deep belief network pretraining',
         category = 'optimization',
@@ -216,7 +216,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
 
         return True
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'finetuning',
         longname = 'deep belief network finetuning',
         category = 'optimization',

@@ -551,7 +551,7 @@ class System(nbase.ObjectIP):
         """Mean data reconstruction error of output units."""
         return numpy.mean(self._get_uniterror(*args, **kwargs))
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'accuracy',
         category = ('system', 'evaluation'),
         args     = 'all',
@@ -562,7 +562,7 @@ class System(nbase.ObjectIP):
         """Mean data reconstruction accuracy of output units."""
         return numpy.mean(self._get_unitaccuracy(*args, **kwargs))
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'precision',
         category = ('system', 'evaluation'),
         args     = 'all',
@@ -573,7 +573,7 @@ class System(nbase.ObjectIP):
         """Mean data reconstruction precision of output units."""
         return numpy.mean(self._get_unitprecision(*args, **kwargs))
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'units_mean',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -610,7 +610,7 @@ class System(nbase.ObjectIP):
 
         return model_out.mean(axis = 0)
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'units_variance',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -642,7 +642,7 @@ class System(nbase.ObjectIP):
 
         return model_out.var(axis = 0)
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'units_expect',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -683,7 +683,7 @@ class System(nbase.ObjectIP):
         return out_data
 
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'units_values',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -741,7 +741,7 @@ class System(nbase.ObjectIP):
                     self._units[mapping[id]].params))
             return data
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'units_samples',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -798,7 +798,7 @@ class System(nbase.ObjectIP):
                     data, self._units[mapping[id]].params)
             return data
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'units_residuals',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -841,7 +841,7 @@ class System(nbase.ObjectIP):
         # calculate residuals
         return d_tgt - m_out
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'units_error',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -877,7 +877,7 @@ class System(nbase.ObjectIP):
 
         return error
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'units_accuracy',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -914,7 +914,7 @@ class System(nbase.ObjectIP):
 
         return 1. - normres / normdat
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'units_precision',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -951,7 +951,7 @@ class System(nbase.ObjectIP):
 
         return 1. - devres / devdat
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'correlation',
         category = ('system', 'relation', 'evaluation'),
         directed = False,
@@ -999,7 +999,7 @@ class System(nbase.ObjectIP):
 
         return R
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'weightsumproduct',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -1039,7 +1039,7 @@ class System(nbase.ObjectIP):
 
         return wsp.T
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'knockout',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -1099,7 +1099,7 @@ class System(nbase.ObjectIP):
 
         return R
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'coinduction',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -1170,7 +1170,7 @@ class System(nbase.ObjectIP):
 
         return coop
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'induction',
         category = ('system', 'relation', 'evaluation'),
         directed = True,

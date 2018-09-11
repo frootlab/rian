@@ -1336,7 +1336,7 @@ class Dataset(nbase.ObjectIP):
 
         return algorithms[name](*args, **kwargs)
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'sample',
         title    = 'Sample Values',
         category = ('dataset', 'evaluation'),
@@ -1347,7 +1347,7 @@ class Dataset(nbase.ObjectIP):
 
         return self._get_data(*args, **kwargs)
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'covariance',
         title    = 'Covariance',
         category = ('dataset', 'columns', 'evaluation'),
@@ -1373,7 +1373,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'correlation',
         title    = 'Pearson Correlation',
         category = ('dataset', 'columns', 'evaluation'),
@@ -1399,7 +1399,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'pca-sample',
         title    = 'PCA Sample Values',
         category = ('dataset', 'evaluation'),
@@ -1428,7 +1428,7 @@ class Dataset(nbase.ObjectIP):
 
         return pca_data
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name      = 'k-covariance',
         title     = 'k-Covariance',
         title_tex = '$k$-Covariance',
@@ -1461,7 +1461,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name      = 'k-correlation',
         title     = 'k-Correlation',
         title_tex = '$k$-Correlation',
@@ -1494,7 +1494,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'test_binary',
         title    = None,
         category = ('dataset', 'evaluation'),
@@ -1521,7 +1521,7 @@ class Dataset(nbase.ObjectIP):
 
         return isbinary
 
-    @nalgorithm.generic(
+    @nalgorithm.custom(
         name     = 'test_gauss',
         title    = None,
         category = ('dataset', 'evaluation'),

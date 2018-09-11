@@ -5,9 +5,15 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from typing import Any, Callable, List, Optional, Union
+try: import numpy as np
+except ImportError as e: raise ImportError(
+    "requires package numpy: "
+    "https://scipy.org") from e
+
+from typing import Any, Callable, List, Optional, Sequence, Union
 import types
 Module = types.ModuleType
+Array = Union[np.ndarray, Sequence[np.ndarray]]
 
 def search(minst: Optional[Module] = None, **kwargs: Any) -> dict:
     """Search for algorithms, that pass given filters.
@@ -43,17 +49,20 @@ def search(minst: Optional[Module] = None, **kwargs: Any) -> dict:
 
     return algs
 
-def generic(name: Optional[str] = None, category: Optional[str] = None,
+def custom(name: Optional[str] = None, category: Optional[str] = None,
     classes: Optional[List[str]] = None, tags: Optional[List[str]] = None,
     plot: Optional[str] = None, **attr: Any) -> Callable:
-    """Generic attribute decorator for algorithms.
+    """Attribute decorator for custom algorithms.
+
+    For the case, that an algorithm does not fit into the builtin categories
+    ('objective', 'sampler', 'statistic', 'association') then a custom
+    category is required, which does not prescribe the function arguments
+    and return values.
 
     Args:
         name: Name of the algorithm
-        category: Category name of the algorithm, which is used to specify the
-            required data, as well as the returned results of the algorithm.
-            Supported categories are: 'objective', 'sampler', 'statistic',
-            'association'
+        category: Custom category name of the algorithm.
+            Supported categories are:
         tags: List of strings, that describe the algorithm and allow it to be
             found by browsing or searching
         classes: Optional list of model class names, that can be processed by
@@ -123,8 +132,8 @@ def objective(name: Optional[str] = None, classes: Optional[List[str]] = None,
 
     def wrapper(func: Callable) -> Callable:
 
-        def wrapped(*args: Any, **kwargs: Any) -> Any:
-            return func(*args, **kwargs)
+        def wrapped(data: Array, *args: Any, **kwargs: Any) -> float:
+            return func(data, *args, **kwargs)
 
         # set attributes with metainformation about algorithm
         setattr(wrapped, 'name', name or func.__name__)
@@ -174,8 +183,8 @@ def sampler(name: Optional[str] = None, classes: Optional[List[str]] = None,
 
     def wrapper(func: Callable) -> Callable:
 
-        def wrapped(*args: Any, **kwargs: Any) -> Any:
-            return func(*args, **kwargs)
+        def wrapped(data: Array, *args: Any, **kwargs: Any) -> Array:
+            return func(data, *args, **kwargs)
 
         # set attributes with metainformation about algorithm
         setattr(wrapped, 'name', name or func.__name__)
@@ -221,8 +230,8 @@ def statistic(name: Optional[str] = None, classes: Optional[List[str]] = None,
 
     def wrapper(func: Callable) -> Callable:
 
-        def wrapped(*args: Any, **kwargs: Any) -> Any:
-            return func(*args, **kwargs)
+        def wrapped(data: Array, *args: Any, **kwargs: Any) -> Array:
+            return func(data, *args, **kwargs)
 
         # set attributes with metainformation about algorithm
         setattr(wrapped, 'name', name or func.__name__)
@@ -241,8 +250,8 @@ def statistic(name: Optional[str] = None, classes: Optional[List[str]] = None,
     return wrapper
 
 
-def association(name: Optional[str] = None, classes: Optional[List[str]] = None,
-    tags: Optional[List[str]] = None, plot: Optional[str] = 'Histogram',
+def association(name: Optional[str] = None, tags: Optional[List[str]] = None,
+    classes: Optional[List[str]] = None, plot: Optional[str] = 'Histogram',
     directed: bool = True, signed: bool = True, normal: bool = False,
     **attr: Any) -> Callable:
     """Attribute decorator for statistical measures of association.
@@ -250,23 +259,25 @@ def association(name: Optional[str] = None, classes: Optional[List[str]] = None,
     Measures of association refer to a wide variety of coefficients that measure
     the statistical strength of relationships between the variables of interest.
     These measures can be directed / undirected, signed / unsigned and
-    normalized or unnormalized. For more information see [1].
+    normalized or unnormalized. Examples for measures of association are the
+    Pearson correlation coefficient, Mutual information or Statistical
+    Interactions. For more information see [1].
 
     Args:
         name: Name of the measure of association
         tags: List of strings, that describe the algorithm and allow it to be
-            found by browsing or searching
+            found by browsing or searching.
         classes: Optional list of model class names, that can be processed by
-            the algorithm
+            the algorithm.
         plot: Name of plot class, which is used to interpret the results.
             Supported values are: None, 'Heatmap', 'Histogram', 'Scatter2D' or
-            'Graph'. The default value is 'Heatmap'
+            'Graph'. Default: 'Heatmap'.
         directed: Boolean value which indicates if the measure of association is
-            dictected. Default is True.
+            dictected. Default: True.
         signed: Boolean value which indicates if the measure of association is
-            signed. Default is True.
+            signed. Default: True.
         normal: Boolean value which indicates if the measure of association is
-            normalized. Default is False.
+            normalized. Default: False.
 
     Returns:
         Decorated function or method.
@@ -278,8 +289,8 @@ def association(name: Optional[str] = None, classes: Optional[List[str]] = None,
 
     def wrapper(func: Callable) -> Callable:
 
-        def wrapped(*args: Any, **kwargs: Any) -> Any:
-            return func(*args, **kwargs)
+        def wrapped(data: Array, *args: Any, **kwargs: Any) -> Any:
+            return func(data, *args, **kwargs)
 
         # set attributes with metainformation about algorithm
         setattr(wrapped, 'name', name or func.__name__)

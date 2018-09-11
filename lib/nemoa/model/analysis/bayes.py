@@ -161,7 +161,7 @@ def get_error_vector(model, data, norm = 'MSE', **kwargs):
 
     return error
 
-@nalgorithm.generic(
+@nalgorithm.custom(
     name     = 'accuracyvector',
     category = 'units',
     args     = 'all',
@@ -198,7 +198,7 @@ def get_accuracy_vector(model, data, norm = 'MSE', **kwargs):
 
     return 1. - normres / normdat
 
-@nalgorithm.generic(
+@nalgorithm.custom(
     name     = 'precisionvector',
     category = 'units',
     args     = 'all',
@@ -235,7 +235,7 @@ def get_precision_vector(model, data, norm = 'SD', **kwargs):
 
     return 1. - devres / devdat
 
-@nalgorithm.generic(
+@nalgorithm.custom(
     name     = 'mean',
     title    = 'Reconstructed Mean Values',
     category = 'units',
@@ -269,7 +269,7 @@ def get_mean_vector(model, data, mapping = None, block = None):
 
     return model_out.mean(axis = 0)
 
-@nalgorithm.generic(
+@nalgorithm.custom(
     name     = 'variance',
     category = 'units',
     args     = 'input',
@@ -338,7 +338,7 @@ def get_precision(model, *args, **kwargs):
 # (4) Association Measures for Bayesian Networks
 #
 
-@nalgorithm.generic(
+@nalgorithm.custom(
     name     = 'correlation',
     category = 'relation',
     directed = False,
@@ -387,7 +387,7 @@ def correlation(model, data, mapping = None, **kwargs):
     return relation
 
 
-@nalgorithm.generic(
+@nalgorithm.custom(
     name     = 'knockout',
     category = 'relation',
     directed = True,
@@ -450,7 +450,7 @@ def knockout(model, data, mapping = None, **kwargs):
 
     return R
 
-@nalgorithm.generic(
+@nalgorithm.custom(
     name     = 'connectionweight',
     category = 'relation',
     directed = True,
@@ -490,7 +490,7 @@ def connectionweight(model, data, mapping = None, **kwargs):
 
     return wsp.T
 
-@nalgorithm.generic(
+@nalgorithm.custom(
     name     = 'coinduction',
     category = 'relation',
     directed = True,
@@ -561,7 +561,7 @@ def coinduction(model, data, *args, **kwargs):
 
     return coop
 
-@nalgorithm.generic(
+@nalgorithm.custom(
     name     = 'induction',
     category = 'relation',
     directed = True,
