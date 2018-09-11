@@ -361,7 +361,7 @@ class Dataset(nbase.ObjectIP):
         return False
 
     def _initialize_normalize_gauss(self, mu: float = 0.0, sigma: float = 1.0,
-        size: int = 100000):
+        size: int = 100000) -> bool:
         """Gauss normalization of tables.
 
         Args:
@@ -569,8 +569,11 @@ class Dataset(nbase.ObjectIP):
     def get(self, key: str = 'name', *args, **kwargs):
         """Get meta information and content."""
 
-        # meta information
-        if key in self._attr_meta: return self._get_meta(key)
+        # # meta information
+        # if key in self._attr_meta: return self._get_meta(key)
+
+        # get attributes
+        if key in self._attr_meta: return self.__getattr__(key)
 
         # algorithms
         if key == 'algorithm': return self._get_algorithm(*args, **kwargs)
@@ -1180,9 +1183,13 @@ class Dataset(nbase.ObjectIP):
     def set(self, key = None, *args, **kwargs):
         """Set meta information, parameters and data of dataset."""
 
-        # set meta information
-        if key in self._attr_meta:
-            return self._set_meta(key, *args, **kwargs)
+        # # set meta information
+        # if key in self._attr_meta:
+        #     return self._set_meta(key, *args, **kwargs)
+
+        # setter methods for meta information attributes
+        if key in self._attr_meta and self._attr_meta[key] & 0b10:
+            return getattr(self, '_set_' + key)(*args, **kwargs)
 
         # modify dataset parameters
         if key == 'columns': return self._set_columns(*args, **kwargs)

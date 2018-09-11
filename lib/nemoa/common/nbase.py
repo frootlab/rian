@@ -7,7 +7,9 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Sequence, Union
+
+PathLike = Sequence[Union['PathLike', str]]
 
 class ObjectIP:
     """Base class for objects subjected to intellectual property.
@@ -57,8 +59,14 @@ class ObjectIP:
         'about': 0b11, 'type': 0b01, 'path': 0b11
     }
 
+    _attr: Dict[str, int] = {}
+
+    _config: Optional[Dict[str, dict]] = None
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Import object configuration and content from dictionary."""
+
+        if isinstance(self._config, type(None)): self._config = {}
 
         self._set_copy(**kwargs)
 
@@ -66,51 +74,72 @@ class ObjectIP:
         """Attribute wrapper for getter methods."""
 
         if key in self._attr_meta:
-            if self._attr_meta[key] & 0b01: return self._get_meta(key)
-            raise AttributeError(f"attribute '{key}' is not readable")
+            if not self._attr_meta[key] & 0b01: raise AttributeError(
+                f"attribute '{key}' is not readable")
+            return getattr(self, '_get_' + key)()
+
         if key in self._attr:
-            if 'r' in self._attr[key]: return self.get(key)
-            raise AttributeError(f"attribute '{key}' is not readable")
+            if 'r' not in self._attr[key]: raise AttributeError(
+                f"attribute '{key}' is not readable")
+            if not hasattr(self, '_get_' + key): raise AttributeError(
+                f"{self.__class__.__name__} instance has "
+                f"no attribute '_get_{key}'")
+            return getattr(self, '_get_' + key)()
 
-        cname = self.__class__.__name__
-
-        raise AttributeError(f"{cname} instance has no attribute '{key}'")
+        raise AttributeError(
+            f"{self.__class__.__name__} instance has no attribute '{key}'")
 
     def __setattr__(self, key: str, val: Any) -> None:
         """Attribute wrapper to setter methods."""
 
         if key in self._attr_meta:
-            if self._attr_meta[key] & 0b10: return self._set_meta(key, val)
-            raise AttributeError(f"attribute '{key}' is not writeable")
+            if not self._attr_meta[key] & 0b10: raise AttributeError(
+                f"attribute '{key}' is not writeable")
+            return getattr(self, '_set_' + key)(val)
+
         if key in self._attr:
-            if 'w' in self._attr[key]: return self.set(key, val)
-            raise AttributeError(f"attribute '{key}' is not writeable")
+            if 'w' not in self._attr[key]: raise AttributeError(
+                f"attribute '{key}' is not writeable")
+            if not hasattr(self, '_set_' + key): raise AttributeError(
+                f"{self.__class__.__name__} instance has "
+                f"no attribute '_set_{key}'")
+            return getattr(self, '_set_' + key)(val)
 
         self.__dict__[key] = val
 
-    def _get_meta(self, key: str) -> Any:
-        """Get metadata like 'author' or 'version'.
+    def get(self, key: str = 'name', *args: Any, **kwargs: Any) -> Any:
+        """Call getter methods."""
 
-        Returns:
-            Value of requested attribute.
+        # get meta information attributes
+        if key in self._attr_meta and self._attr_meta[key] & 0b01:
+            return getattr(self, '_get_' + key)()
 
-        """
+        # get content attributes
+        if key in self._attr and 'r' in self._attr[key]:
+            return getattr(self, '_get_' + key)(*args, **kwargs)
 
-        if key == 'about':     return self._get_about()
-        if key == 'author':    return self._get_author()
-        if key == 'branch':    return self._get_branch()
-        if key == 'copyright': return self._get_copyright()
-        if key == 'email':     return self._get_email()
-        if key == 'fullname':  return self._get_fullname()
-        if key == 'license':   return self._get_license()
-        if key == 'name':      return self._get_name()
-        if key == 'path':      return self._get_path()
-        if key == 'type':      return self._get_type()
-        if key == 'version':   return self._get_version()
+        # call getter method if it exists
+        if hasattr(self, '_get_' + key):
+            return getattr(self, '_get_' + key)(*args, **kwargs)
 
-        cname = self.__class__.__name__
+        raise KeyError(f"key '{key}' is not valid")
 
-        raise AttributeError(f"{cname} instance has no attribute '{key}'")
+    def _get_config(self, key: Optional[str] = None, *args: Any,
+        **kwargs: Any) -> Any:
+        """Get configuration or configuration value."""
+
+        import copy
+
+        conf = self._config or {}
+        if key is None: return copy.deepcopy(conf)
+        if not isinstance(key, str): raise TypeError(
+            "argument 'key' is required to be of type 'str' or 'None', "
+            f"not '{type(key)}'")
+        if key in conf:
+            if isinstance(conf[key], dict): return copy.deepcopy(conf)
+            return conf[key]
+
+        raise KeyError(f"key '{key}' is not valid")
 
     def _get_about(self) -> Optional[str]:
         """Get a short description of the content of the resource.
@@ -229,25 +258,21 @@ class ObjectIP:
 
         """
 
-        return self._config.get('path', self._get_path_default())
-
-    def _get_path_default(self) -> Optional[str]:
-        """Get default filepath.
-
-        Path to a potential file containing or referencing the resource.
-
-        Returns:
-            String containing the potential path of the resource.
-
-        """
+        if 'path' in self._config:
+            path = str(self._config['path'])
+            if path: return path
 
         from nemoa.common import npath
+        from nemoa import session
 
         mname = self.__module__.split('.')[-1]
-        dname = nemoa.path(mname + 's') or npath.cwd()
+        dname = session.path(mname + 's')
+        if not dname: return None
         fbase = npath.clear(self._get_fullname())
-        fext  = nemoa.get('default', 'filetype', mname)
-        path  = npath.join(dname, fbase + '.' + fext)
+        if not fbase: return None
+        fext = session.get('default', 'filetype', mname)
+        if not fext: return None
+        path = npath.join(dname, fbase + '.' + fext)
 
         return path
 
@@ -278,27 +303,47 @@ class ObjectIP:
 
         return self._config.get('version', None)
 
-    def _set_meta(self, key: str, *args: Any, **kwargs: Any) -> bool:
-        """Set meta information like 'author' or 'version'.
+    def set(self, key: Optional[str] = None, *args: Any, **kwargs: Any) -> bool:
+        """Call setter methods."""
+
+        # setter methods for meta information attributes
+        if key in self._attr_meta and self._attr_meta[key] & 0b10:
+            return getattr(self, '_set_' + key)(*args, **kwargs)
+
+        # setter methods for supplementary attributes
+        if key in self._attr and 'w' in self._attr[key]:
+            if not hasattr(self, '_set_' + key): raise AttributeError(
+                f"{self.__class__.__name__} instance has "
+                f"no attribute '_set_{key}'")
+            return getattr(self, '_set_' + key)(*args, **kwargs)
+
+        # supplementary setter methods
+        if hasattr(self, '_get_' + key):
+            return getattr(self, '_get_' + key)(*args, **kwargs)
+
+        raise KeyError(f"key '{key}' is not valid")
+
+    def _set_copy(self, **kwargs: Any) -> bool:
+        """Set dataset configuration and dataset tables.
+
+        Args:
+            **kwargs:
 
         Returns:
-            Boolean value which is True on success, else False.
+            Bool which is True if and only if no error occured.
 
         """
 
-        if key == 'about':     return self._set_about(*args, **kwargs)
-        if key == 'author':    return self._set_author(*args, **kwargs)
-        if key == 'branch':    return self._set_branch(*args, **kwargs)
-        if key == 'copyright': return self._set_copyright(*args, **kwargs)
-        if key == 'email':     return self._set_email(*args, **kwargs)
-        if key == 'license':   return self._set_license(*args, **kwargs)
-        if key == 'name':      return self._set_name(*args, **kwargs)
-        if key == 'path':      return self._set_path(*args, **kwargs)
-        if key == 'version':   return self._set_version(*args, **kwargs)
+        for key, val in kwargs.items():
+            if not isinstance(key, str): continue
+            mname = '_set_' + key
+            if not hasattr(self, mname):
+                cname = self.__class__.__name__
+                raise AttributeError(
+                    f"{cname} instance has no method '{mname}'")
+            getattr(self, mname)(val)
 
-        cname = self.__class__.__name__
-
-        raise AttributeError(f"{cname} instance has no attribute '{key}'")
+        return True
 
     def _set_about(self, val: str) -> bool:
         """Set short description of the content of the resource.
@@ -411,7 +456,7 @@ class ObjectIP:
         self._config['name'] = val
         return True
 
-    def _set_path(self, val: str) -> bool:
+    def _set_path(self, path: PathLike) -> bool:
         """Set filepath.
 
         Path to a file containing or referencing the resource.
@@ -421,9 +466,13 @@ class ObjectIP:
 
         """
 
-        if not isinstance(val, str): raise TypeError(
-            "attribute 'path' is required to be of type string")
-        self._config['path'] = val
+        if not isinstance(path, (str, tuple)): raise TypeError(
+            "attribute 'path' is required to be of type 'str' "
+            f"or 'tuple of str', not '{type(path)}'")
+
+        from nemoa.common import npath
+        import pathlib
+        self._config['path'] = pathlib.Path(npath.expand(path))
         return True
 
     def _set_version(self, val: int) -> bool:

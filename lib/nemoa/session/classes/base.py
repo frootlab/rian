@@ -160,15 +160,12 @@ class Session:
 
         if not key: return copy.deepcopy(self._config['default'])
         elif key not in self._config['default']:
-            raise ValueError("key '%s' is not valid." % key)
+            raise KeyError(f"key '{key}' is not valid")
         retval = self._config['default'][key]
         parent = key
         while args:
-            if not isinstance(args[0], str) \
-                or not args[0] in retval:
-                raise ValueError("""could not get default
-                    value: '%s' does not contain key '%s'.""" %
-                    (parent, args[0]))
+            if not isinstance(args[0], str) or not args[0] in retval:
+                return None
             parent = args[0]
             retval = retval[args[0]]
             args = args[1:]
@@ -379,8 +376,7 @@ class Session:
                 or (args[0] if len(args) > 0 else None)
             path = self._get_objconfig(objtype = key, name = name,
                 attribute = 'path')
-        else:
-            raise Warning("path identifier '{key}' is not valid")
+        else: path = None
 
         # change to previous workspace if necessary
         if chdir:

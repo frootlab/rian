@@ -121,40 +121,24 @@ class Model(nbase.ObjectIP):
 
         return nemoa.model.optimize(self, *args, **kwargs)
 
-    def get(self, key = 'name', *args, **kwargs):
+    def get(self, *args, **kwargs):
         """Get meta information and content."""
+        return super(Model, self).get(*args, **kwargs)
 
-        # meta information
-        if key in self._attr_meta: return self._get_meta(key)
+    def _get_error(self):
+        """Evaluate model error."""
+        return self.evaluate('system', 'error')
 
-        # algorithms
-        if key == 'algorithm':
-            return self._get_algorithm(*args, **kwargs)
-        if key == 'algorithms': return self._get_algorithms(
-            attribute = 'about', *args, **kwargs)
-        if key == 'algorithms_new': return self._get_algorithms_new(
-            *args, **kwargs)
+    def _get_accuracy(self):
+        """Evaluate model accuracy."""
+        return self.evaluate('system', 'accuracy')
 
-        # model evaluation
-        if key == 'error': return self.evaluate('system', 'error')
-        if key == 'accuracy': return self.evaluate('system', 'accuracy')
-        if key == 'precision': return self.evaluate('system', 'precision')
-
-        # data access
-        if key == 'sample': return self._get_sample(*args, **kwargs)
-
-        # direct access
-        if key == 'copy': return self._get_copy(*args, **kwargs)
-        if key == 'config': return self._get_config(*args, **kwargs)
-        if key == 'dataset': return self.dataset.get(*args, **kwargs)
-        if key == 'network': return self.network.get(*args, **kwargs)
-        if key == 'system': return self.system.get(*args, **kwargs)
-
-        raise Warning("unknown key '%s'." % key)
+    def _get_precision(self):
+        """Evaluate model precision."""
+        return self.evaluate('system', 'precision')
 
     def _get_algorithms(self, *args, **kwargs):
         """Get algorithms provided by model."""
-
         return {
             'dataset': self.dataset._get_algorithms(*args, **kwargs),
             'network': self.network._get_algorithms(*args, **kwargs),
@@ -162,7 +146,6 @@ class Model(nbase.ObjectIP):
 
     def _get_algorithms_new(self, *args, **kwargs):
         """Get algorithms provided by model."""
-
         return {
             'dataset': self.dataset._get_algorithms(*args, **kwargs),
             'network': self.network._get_algorithms(*args, **kwargs),
@@ -274,8 +257,12 @@ class Model(nbase.ObjectIP):
     def set(self, key = None, *args, **kwargs):
         """Set meta information and parameters of model."""
 
-        # set meta information
-        if key in self._attr_meta: return self._set_meta(key, *args, **kwargs)
+        # # set meta information
+        # if key in self._attr_meta: return self._set_meta(key, *args, **kwargs)
+
+        # setter methods for meta information attributes
+        if key in self._attr_meta and self._attr_meta[key] & 0b10:
+            return getattr(self, '_set_' + key)(*args, **kwargs)
 
         # set model parameters
         if key == 'network': return self.network.set(*args, **kwargs)

@@ -310,8 +310,11 @@ class Network(nbase.ObjectIP):
     def get(self, key = 'name', *args, **kwargs):
         """Get meta information and content."""
 
-        # meta information
-        if key in self._attr_meta: return self._get_meta(key)
+        # # meta information
+        # if key in self._attr_meta: return self._get_meta(key)
+
+        # get attributes
+        if key in self._attr_meta: return self.__getattr__(key)
 
         # algorithms
         if key == 'algorithm':
@@ -574,8 +577,12 @@ class Network(nbase.ObjectIP):
     def set(self, key = None, *args, **kwargs):
         """Set meta information, parameters and data of network."""
 
-        # set meta information
-        if key in self._attr_meta: return self._set_meta(key, *args, **kwargs)
+        # # set meta information
+        # if key in self._attr_meta: return self._set_meta(key, *args, **kwargs)
+
+        # setter methods for meta information attributes
+        if key in self._attr_meta and self._attr_meta[key] & 0b10:
+            return getattr(self, '_set_' + key)(*args, **kwargs)
 
         # import network configuration and graph
         if key == 'copy': return self._set_copy(*args, **kwargs)

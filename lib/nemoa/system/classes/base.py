@@ -98,35 +98,40 @@ class System(nbase.ObjectIP):
         if not nclass.hasbase(dataset, 'Dataset'): return False
         return True
 
-    def get(self, key = 'name', *args, **kwargs):
-        """Get meta information and content."""
-
-        # meta information
-        if key in self._attr_meta: return self._get_meta(key)
-
-        # algorithms
-        if key == 'algorithm':
-            return self._get_algorithm(*args, **kwargs)
-        if key == 'algorithms': return self._get_algorithms(
-            attribute = 'about', *args, **kwargs)
-        if key == 'algorithms_new': return self._get_algorithms_new(
-            *args, **kwargs)
-
-        # content
-        if key == 'unit': return self._get_unit(*args, **kwargs)
-        if key == 'units': return self._get_units(*args, **kwargs)
-        if key == 'link': return self._get_link(*args, **kwargs)
-        if key == 'links': return self._get_links(*args, **kwargs)
-        if key == 'layer': return self._get_layer(*args, **kwargs)
-        if key == 'layers': return self._get_layers(*args, **kwargs)
-        if key == 'mapping': return self._get_mapping(*args, **kwargs)
-
-        # direct access
-        if key == 'copy': return self._get_copy(*args, **kwargs)
-        if key == 'config': return self._get_config(*args, **kwargs)
-        if key == 'params': return self._get_params(*args, **kwargs)
-
-        raise KeyError(f"unknown key '{key}'")
+    # def get(self, key = 'name', *args, **kwargs):
+    #     """Get meta information and content."""
+    #
+    #     # # meta information
+    #     # if key in self._attr_meta: return self._get_meta(key)
+    #
+    #     # get attributes
+    #     if key in self._attr_meta: return self.__getattr__(key)
+    #
+    #     if key in self._attr:
+    #
+    #     # algorithms
+    #     if key == 'algorithm':
+    #         return self._get_algorithm(*args, **kwargs)
+    #     if key == 'algorithms': return self._get_algorithms(
+    #         attribute = 'about', *args, **kwargs)
+    #     if key == 'algorithms_new': return self._get_algorithms_new(
+    #         *args, **kwargs)
+    #
+    #     # content
+    #     if key == 'unit': return self._get_unit(*args, **kwargs)
+    #     if key == 'units': return self._get_units(*args, **kwargs)
+    #     if key == 'link': return self._get_link(*args, **kwargs)
+    #     if key == 'links': return self._get_links(*args, **kwargs)
+    #     if key == 'layer': return self._get_layer(*args, **kwargs)
+    #     if key == 'layers': return self._get_layers(*args, **kwargs)
+    #     if key == 'mapping': return self._get_mapping(*args, **kwargs)
+    #
+    #     # direct access
+    #     if key == 'copy': return self._get_copy(*args, **kwargs)
+    #     if key == 'config': return self._get_config(*args, **kwargs)
+    #     if key == 'params': return self._get_params(*args, **kwargs)
+    #
+    #     raise KeyError(f"unknown key '{key}'")
 
     def _get_algorithms(self, category = None, attribute = None, tree = False):
         """Get algorithms provided by system."""
@@ -1275,9 +1280,13 @@ class System(nbase.ObjectIP):
     def set(self, key = None, *args, **kwargs):
         """Set meta information, configuration and parameters."""
 
-        # set meta information
-        if key in self._attr_meta:
-            return self._set_meta(key, *args, **kwargs)
+        # # set meta information
+        # if key in self._attr_meta:
+        #     return self._set_meta(key, *args, **kwargs)
+
+        # setter methods for meta information attributes
+        if key in self._attr_meta and self._attr_meta[key] & 0b10:
+            return getattr(self, '_set_' + key)(*args, **kwargs)
 
         # set configuration and parameters
         #if key == 'units': return self._set_units(*args, **kwargs)
