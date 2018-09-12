@@ -59,19 +59,28 @@ class Network(nbase.ObjectIP):
 
     """
 
-    _config  = None
-    _graph   = None
-    _default = { 'name': None }
-
     _attr: Dict[str, int] = {
         'nodes': 0b01, 'edges': 0b01, 'layers': 0b01
     }
 
+    _copy: Dict[str, str] = {
+        'graph': '_graph'
+    }
+
+    _default = {
+        'name': None
+    }
+
+    _config  = None
+    _graph   = None
+
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize network with content from arguments."""
 
-        # get attribute defaults from parent
+        # get attribute and storage defaults from parent
         self._attr = {**getattr(super(), '_attr', {}), **self._attr}
+        self._copy = {**getattr(super(), '_copy', {}), **self._copy}
 
         super().__init__(*args, **kwargs)
 
@@ -544,31 +553,6 @@ class Network(nbase.ObjectIP):
             layers.append(layer)
 
         return layers
-
-    def _get_copy(self, key = None, *args, **kwargs):
-        """Get network copy as dictionary."""
-
-        if key is None: return {
-            'config': self._get_config(), 'graph': self._get_graph() }
-
-        if key == 'config': return self._get_config(*args, **kwargs)
-        if key == 'graph': return self._get_graph(*args, **kwargs)
-
-        raise ValueError("""could not get network copy:
-            unknown key '%s'.""" % key)
-
-    def _get_config(self, key = None, *args, **kwargs):
-        """Get configuration or configuration value."""
-
-        if key is None: return copy.deepcopy(self._config)
-
-        if isinstance(key, str) and key in list(self._config.keys()):
-            if isinstance(self._config[key], dict):
-                return self._config[key].copy()
-            return self._config[key]
-
-        raise ValueError("""could not get configuration:
-            unknown key '%s'.""" % key)
 
     def _get_graph(self, type = 'dict'):
         """Get graph as dictionary or networkx graph."""

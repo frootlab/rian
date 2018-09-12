@@ -78,11 +78,16 @@ class Model(nbase.ObjectIP):
         'error': 0b01, 'accuracy': 0b01, 'precision': 0b01
     }
 
+    _copy: Dict[str, str] = {
+        'dataset': 'dataset', 'network': 'network', 'system': 'system'
+    }
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize model with content from arguments."""
 
-        # get attribute defaults from parent
+        # get attribute and storage defaults from parent
         self._attr = {**getattr(super(), '_attr', {}), **self._attr}
+        self._copy = {**getattr(super(), '_copy', {}), **self._copy}
 
         super().__init__(*args, **kwargs)
 
@@ -130,7 +135,6 @@ class Model(nbase.ObjectIP):
 
     def optimize(self, *args, **kwargs):
         """Optimize model parameters."""
-
         return nemoa.model.optimize(self, *args, **kwargs)
 
     def get(self, *args, **kwargs):
@@ -181,46 +185,13 @@ class Model(nbase.ObjectIP):
 
         return found[0]
 
-    def _get_copy(self, key = None, *args, **kwargs):
-        """Get model copy as dictionary."""
-
-        if key is None: return {
-            'config': self._get_config(),
-            'dataset': self._get_dataset(),
-            'network': self._get_network(),
-            'system': self._get_system()
-        }
-
-        if key == 'config': return self._get_config(*args, **kwargs)
-        if key == 'dataset': return self._get_dataset(*args, **kwargs)
-        if key == 'network': return self._get_network(*args, **kwargs)
-        if key == 'system': return self._get_system(*args, **kwargs)
-
-        raise ValueError(
-            "could not get copy of configuration: "
-            "unknown section '%s'." % key)
-
-    def _get_config(self, key = None, *args, **kwargs):
-        """Get configuration or configuration value."""
-
-        if key is None: return copy.deepcopy(self._config)
-
-        if isinstance(key, str) and key in list(self._config.keys()):
-            if isinstance(self._config[key], dict):
-                return self._config[key].copy()
-            return self._config[key]
-
-        raise ValueError("""could not get configuration:
-            unknown key '%s'.""" % key)
-
     def _get_dataset(self, type = 'dict'):
         """ """
 
         if type == 'dataset': return self.dataset.copy()
         if type == 'dict': return self.dataset.get('copy')
 
-        raise Warning(
-            "could not get dataset: unknown type '%s'." % type) or None
+        raise ValueError(f"type '{str(type)}' is not valid")
 
     def _get_network(self, type = 'dict'):
         """ """
@@ -228,8 +199,7 @@ class Model(nbase.ObjectIP):
         if type == 'network': return self.network.copy()
         if type == 'dict': return self.network.get('copy')
 
-        raise Warning(
-            "could not get network: unknown type '%s'." % type) or None
+        raise ValueError(f"type '{str(type)}' is not valid")
 
     def _get_system(self, type: str = 'dict'):
         """ """
@@ -237,8 +207,7 @@ class Model(nbase.ObjectIP):
         if type == 'system': return self.system.copy()
         if type == 'dict': return self.system.get('copy')
 
-        raise Warning(
-            "could not get system: unknown type '%s'." % type) or None
+        raise ValueError(f"type '{str(type)}' is not valid")
 
     def _get_sample(self, *args, **kwargs):
         """ """
@@ -408,14 +377,6 @@ class Model(nbase.ObjectIP):
 
     def evaluate(self, key = None, *args, **kwargs):
         """Evaluate model."""
-
-        # 2do: evaluate('correlation', *args, **kwargs)
-        # 1. get algorithm 'correlation' as func
-        # 2a. for datasets -> func(dataset, *args, **kwargs)
-        # 2b. for networks -> func(network, *args, **kwargs)
-        # 2c. for models ->  func(model, *args, **kwargs)
-
-
 
         if not key: key = 'system'
 

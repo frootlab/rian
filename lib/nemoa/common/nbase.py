@@ -59,6 +59,10 @@ class ObjectIP:
         'about': 0b11, 'type': 0b01, 'path': 0b11
     }
 
+    _copy: Dict[str, str] = {
+        'config': '_config'
+    }
+
     _config: Optional[Dict[str, dict]] = None
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -115,24 +119,6 @@ class ObjectIP:
 
         raise KeyError(f"key '{key}' is not valid")
 
-    def _get_config(self, key: Optional[str] = None) -> Any:
-        """Get configuration or configuration value.
-
-
-        """
-
-        import copy
-        conf = self._config or {}
-        if key is None: return copy.deepcopy(conf)
-        if not isinstance(key, str): raise TypeError(
-            "argument 'key' is required to be of type 'str' or 'None', "
-            f"not '{type(key)}'")
-        if key in conf:
-            if isinstance(conf[key], dict): return copy.deepcopy(conf)
-            return conf[key]
-
-        raise KeyError(f"key '{key}' is not valid")
-
     def _get_about(self) -> Optional[str]:
         """Get a short description of the content of the resource.
 
@@ -169,6 +155,70 @@ class ObjectIP:
         """
 
         return self._config.get('branch', None)
+
+    def _get_config(self, key: Optional[str] = None) -> Any:
+        """Get configuration or configuration value.
+
+        Args:
+            key: Name of entry in configuration dictionary. If key is None,
+                then all entries are returned. Default: None
+
+        Returns:
+            Copy of configuration.
+
+        """
+
+        if not isinstance(key, (str, type(None))): raise TypeError(
+            "argument 'key' is required to be of type "
+            f"'str' or 'None', not '{type(key)}'")
+
+        import copy
+
+        conf = self._config or {}
+        if key is None: return copy.deepcopy(conf)
+        if key in conf: return copy.deepcopy(conf[key])
+
+        raise KeyError(f"key '{key}' is not valid")
+
+    def _get_copy(self, key: Optional[str] = None) -> Any:
+        """Get copy of configuration and named resources.
+
+        Args:
+            key: Name of resource to return. If key is None, then all resources
+                that are specified in self._copy are returned. Default: None
+
+        Returns:
+            Copy of configuration and named resources.
+
+        """
+
+        if not isinstance(key, (str, type(None))): raise TypeError(
+            "argument 'key' is required to be of type "
+            f"'str' or 'None', not '{type(key)}'")
+
+        import copy
+
+        # get mapping for internal datastorage
+        d = getattr(self, '_copy', None) \
+            or {k.strip('_'): k for k in self.__dict__.keys()}
+
+        # remove class variables from mapping
+        d.pop('attr', None)
+        d.pop('copy', None)
+
+        getter = self._get_getter()
+
+        if key is None:
+            dcopy = {}
+            for k in d.keys():
+                dcopy[k] = getattr(self, '_get_' + k)() \
+                    or copy.deepcopy(self.__dict__[d[k]])
+            return dcopy
+        if key in d.keys():
+            if key in getter: return getattr(self, '_get_' + key)()
+            return copy.deepcopy(self.__dict__[d[key]])
+
+        raise KeyError(f"key '{str(key)}' is not valid")
 
     def _get_copyright(self) -> Optional[str]:
         """Get the copyright notice of the resource.
@@ -356,12 +406,14 @@ class ObjectIP:
 
         """
 
+        import copy
+
+        setter = self._get_setter()
         for key, val in kwargs.items():
-            if not isinstance(key, str): continue
-            if not hasattr(self, '_set_' + key): raise AttributeError(
-                f"{self.__class__.__name__} instance "
-                f"has no method '_set_{key}'")
-            getattr(self, '_set_' + key)(val)
+            if key not in self._copy.keys():
+                raise KeyError(f"key '{key}' is not valid")
+            if key in setter: self.set(key, val)
+            else: self.__dict__[self._copy[key]] = copy.deepcopy(val)
 
         return True
 

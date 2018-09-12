@@ -58,23 +58,29 @@ class System(nbase.ObjectIP):
 
     """
 
-    _config  = None
-    _params  = None
-    _default = {'params': {}, 'init': {}, 'optimize': {},
-                'schedules': {}}
-
     _attr: Dict[str, int] = {
         'units': 0b01, 'links': 0b01, 'layers': 0b01, 'mapping': 0b11
     }
 
+    _copy: Dict[str, str] = {
+        'params': '_params'
+    }
+
+    _default = {
+        'params': {}, 'init': {}, 'optimize': {}, 'schedules': {}
+    }
+
+    _config = None
+    _params = None
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize system with content from arguments."""
 
-        # get attribute defaults from parent
+        # get attribute and storage defaults from parent
         self._attr = {**getattr(super(), '_attr', {}), **self._attr}
+        self._copy = {**getattr(super(), '_copy', {}), **self._copy}
 
         super().__init__(*args, **kwargs)
-
 
     def configure(self, network = None):
         """Configure system to network."""
@@ -485,32 +491,6 @@ class System(nbase.ObjectIP):
 
         return mapping[sid:tid + 1] if sid <= tid \
             else mapping[tid:sid + 1][::-1]
-
-    def _get_copy(self, key = None, *args, **kwargs):
-        """Get system copy as dictionary."""
-
-        if key is None: return {
-            'config': self._get_config(),
-            'params': self._get_params() }
-
-        if key == 'config': return self._get_config(*args, **kwargs)
-        if key == 'params': return self._get_params(*args, **kwargs)
-
-        raise ValueError("""could not get system copy:
-            unknown key '%s'.""" % key)
-
-    def _get_config(self, key = None, *args, **kwargs):
-        """Get configuration or configuration value."""
-
-        if key is None: return copy.deepcopy(self._config)
-
-        if isinstance(key, str) and key in list(self._config.keys()):
-            if isinstance(self._config[key], dict):
-                return self._config[key].copy()
-            return self._config[key]
-
-        raise ValueError("""could not get configuration:
-            unknown key '%s'.""" % key)
 
     def _get_params(self, key = None, *args, **kwargs):
         """Get configuration or configuration value."""

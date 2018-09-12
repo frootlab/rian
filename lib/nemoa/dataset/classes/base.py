@@ -68,11 +68,16 @@ class Dataset(nbase.ObjectIP):
         'columns': 0b01, 'rows': 0b01
     }
 
+    _copy: Dict[str, str] = {
+        'tables': '_tables'
+    }
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize dataset with content from arguments."""
 
-        # get attribute defaults from parent
+        # get attribute and storage defaults from parent
         self._attr = {**getattr(super(), '_attr', {}), **self._attr}
+        self._copy = {**getattr(super(), '_copy', {}), **self._copy}
 
         super().__init__(*args, **kwargs)
 
@@ -1153,34 +1158,6 @@ class Dataset(nbase.ObjectIP):
         """Get single value from dataset."""
         return float(self._get_data(cols = [col], rows = [row]))
 
-    def _get_copy(self, key = None, *args, **kwargs):
-        """Get dataset copy as dictionary."""
-
-        if key is None: return {
-            'config': self._get_config(),
-            'tables': self._get_tables() }
-
-        if key == 'config': return self._get_config(*args, **kwargs)
-        if key == 'tables': return self._get_tables(*args, **kwargs)
-
-        raise ValueError("""could not get dataset copy:
-            unknown key '%s'.""" % key) or None
-
-    def _get_config(self, key = None, *args, **kwargs):
-        """Get configuration or configuration value."""
-
-        if key is None:
-            import copy
-            return copy.deepcopy(self._config)
-
-        if isinstance(key, str) and key in list(self._config.keys()):
-            if isinstance(self._config[key], dict):
-                return self._config[key].copy()
-            return self._config[key]
-
-        raise ValueError("""could not get configuration:
-            unknown key '%s'.""" % key) or None
-
     def _get_tables(self, key = None):
         """Get dataset tables."""
 
@@ -1265,6 +1242,8 @@ class Dataset(nbase.ObjectIP):
         return True
 
     def _set_colfilter(self, **kwargs):
+        """ """
+        
         col_names = self._get_columns()
 
         for col_filter_name in list(kwargs.keys()):

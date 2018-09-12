@@ -78,7 +78,7 @@ class Heatmap(nplot.Heatmap):
 
     def create(self, dataset):
 
-        from nemoa.common import module, nfunc
+        from nemoa.common import nfunc, nmodule
 
         # set plot defaults
         self.set_default({
@@ -118,7 +118,7 @@ class Histogram(nplot.Histogram):
 
     def create(self, dataset):
 
-        from nemoa.common import module, nfunc
+        from nemoa.common import nfunc, nmodule
 
         # set plot defaults
         self.set_default({
@@ -155,7 +155,7 @@ class Scatter2D(nplot.Scatter2D):
 
     def create(self, dataset):
 
-        from nemoa.common import module, nfunc
+        from nemoa.common import nfunc, nmodule
 
         # set plot defaults
         self.set_default({
@@ -190,12 +190,12 @@ class Graph(nplot.Graph):
 
     def create(self, dataset):
 
-        try: import networkx
+        try: import networkx as nx
         except ImportError as e: raise ImportError(
             "requires package networkx: "
             "https://networkx.github.io") from e
 
-        from nemoa.common import module, nfunc
+        from nemoa.common import nfunc, nmodule
 
         # set plot defaults
         self.set_default({
@@ -222,7 +222,7 @@ class Graph(nplot.Graph):
                 "is not supported." % fname)
 
         # create networkx graph object
-        G = networkx.DiGraph(name = fname)
+        G = nx.DiGraph(name = fname)
 
         # graph is directed if and only if relation is unsymmetric
         G.graph['directed'] = not numpy.allclose(array, array.T)
