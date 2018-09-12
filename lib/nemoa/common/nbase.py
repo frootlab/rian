@@ -5,13 +5,14 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+from typing import Any, ClassVar, Dict, Optional, Tuple, Union
+from pathlib import Path
+
+PathLike = Tuple[Union['PathLike', str, Path], ...]
+
 import nemoa
 
-from typing import Any, Dict, Optional, Sequence, Union
-
-PathLike = Sequence[Union['PathLike', str]]
-
-class ObjectIP:
+class ObjectIP(object):
     """Base class for objects subjected to intellectual property.
 
     Resources like datasets, networks, systems and models share common
@@ -30,20 +31,18 @@ class ObjectIP:
         copyright (str): Notice of statutorily prescribed form that informs
             users of the underlying resource to published copyright ownership.
             Hint: Read- & writeable wrapping attribute.
-        email (str): Email address to a person, an organization, or a
-            service that is responsible for the content of the resource.
+        email (str): Email address to a person, an organization, or a service
+            that is responsible for the content of the resource.
             Hint: Read- & writeable wrapping attribute.
-        fullname (str): String concatenation of name, branch and
-            version. Branch and version are only conatenated if they
-            exist.
+        fullname (str): String concatenation of name, branch and version.
+            Branch and version are only conatenated if they exist.
             Hint: Readonly wrapping attribute.
         license (str): Namereference to a legal document giving official
             permission to do something with the resource.
             Hint: Read- & writeable wrapping attribute.
         name (str): Name of the resource.
             Hint: Read- & writeable wrapping attribute.
-        path (str): Path to a file containing or referencing the
-            resource.
+        path (str): Path to a file containing or referencing the resource.
             Hint: Read- & writeable wrapping attribute.
         type (str): String concatenation of module name and class name
             of the instance.
@@ -53,27 +52,26 @@ class ObjectIP:
 
     """
 
-    _attr: Dict[str, int] = {
+    _attr: ClassVar[Dict[str, int]] = {
         'author': 0b11, 'email': 0b11, 'license': 0b11, 'copyright': 0b11,
         'fullname': 0b01, 'name': 0b11, 'branch': 0b11, 'version': 0b11,
         'about': 0b11, 'type': 0b01, 'path': 0b11
     }
 
-    _copy: Dict[str, str] = {
+    _copy: ClassVar[Dict[str, str]] = {
         'config': '_config'
     }
 
-    _config: Optional[Dict[str, dict]] = None
+    _config: Dict[str, dict]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """Import object configuration and content from dictionary."""
+        """Initializes object with given configuration."""
 
-        if self._config is None: self._config = {}
-
+        self._config = {}
         self._set_copy(*args, **kwargs)
 
     def __getattr__(self, key: str) -> None:
-        """Attribute wrapper for getter methods."""
+        """Wraps attribute get requests to private getter methods."""
 
         if key in self._attr:
             if not self._attr[key] & 0b01: raise AttributeError(
@@ -88,7 +86,7 @@ class ObjectIP:
             f"has no attribute '{key}'")
 
     def __setattr__(self, key: str, val: Any) -> None:
-        """Attribute wrapper to setter methods."""
+        """Wraps attribute set requests to private setter methods."""
 
         if key in self._attr:
             if not self._attr[key] & 0b10: raise AttributeError(
@@ -101,8 +99,12 @@ class ObjectIP:
         self.__dict__[key] = val
 
     def get(self, key: str = 'name', *args: Any, **kwargs: Any) -> Any:
-        """Call private getter methods of the class instance.
+        """Get the value of an object property.
 
+        Args:
+            key: Property of which the value is to be returned
+            *args: Arguments of arbitrary types
+            **kwargs: Keyword arguments of arbitrary types
         Returns:
             Arbitrary typed return value of the respective private getter
             method of the class instance.
@@ -164,7 +166,7 @@ class ObjectIP:
                 then all entries are returned. Default: None
 
         Returns:
-            Copy of configuration.
+            Dictionary containing a copy of configuration.
 
         """
 
@@ -377,10 +379,15 @@ class ObjectIP:
         return self._config.get('version', None)
 
     def set(self, key: str, *args: Any, **kwargs: Any) -> bool:
-        """Call private setter methods of the class instance.
+        """Sets private instance variable to given values.
+
+        Args:
+            key: Name of variable, that is to be changed
+            *args: Arguments of arbitrary types
+            **kwargs: Keyword arguments of arbitrary types
 
         Returns:
-            Boolean value which is returned by the respoective private setter
+            Boolean value, which is returned by the respective private setter
             method of the class instance.
 
         """
@@ -396,10 +403,10 @@ class ObjectIP:
         raise KeyError(f"key '{key}' is not valid")
 
     def _set_copy(self, **kwargs: Any) -> bool:
-        """Call setter methods for all keywords.
+        """Call setter methods for all keyword arguments.
 
         Args:
-            **kwargs:
+            **kwargs: Items of arbitrary types.
 
         Returns:
             Bool which is True if and only if no error occured.
@@ -409,11 +416,11 @@ class ObjectIP:
         import copy
 
         setter = self._get_setter()
-        for key, val in kwargs.items():
-            if key not in self._copy.keys():
-                raise KeyError(f"key '{key}' is not valid")
-            if key in setter: self.set(key, val)
-            else: self.__dict__[self._copy[key]] = copy.deepcopy(val)
+        for k, v in kwargs.items():
+            if k not in self._copy.keys():
+                raise KeyError(f"key '{k}' is not valid")
+            if k in setter: self.set(k, v)
+            else: self.__dict__[self._copy[k]] = copy.deepcopy(v)
 
         return True
 
@@ -428,8 +435,11 @@ class ObjectIP:
         """
 
         if not isinstance(val, str): raise TypeError(
-            "attribute 'about' is required to be of type string")
+            "attribute 'about' is required to be of type string, "
+            f"not '{type(val)}'")
+
         self._config['about'] = val
+
         return True
 
     def _set_author(self, val: str) -> bool:
@@ -444,8 +454,11 @@ class ObjectIP:
         """
 
         if not isinstance(val, str): raise TypeError(
-            "attribute 'author' is required to be of type string")
+            "attribute 'author' is required to be of type string, "
+            f"not '{type(val)}'")
+
         self._config['author'] = val
+
         return True
 
     def _set_branch(self, val: str) -> bool:
@@ -459,8 +472,11 @@ class ObjectIP:
         """
 
         if not isinstance(val, str): raise TypeError(
-            "attribute 'branch' is required to be of type string")
+            "attribute 'branch' is required to be of type string, "
+            f"not '{type(val)}'")
+
         self._config['branch'] = val
+
         return True
 
     def _set_copyright(self, val: str) -> bool:
@@ -475,8 +491,11 @@ class ObjectIP:
         """
 
         if not isinstance(val, str): raise TypeError(
-            "attribute 'copyright' is required to be of type string")
+            "attribute 'copyright' is required to be of type string, "
+            f"not '{type(val)}'")
+
         self._config['copyright'] = val
+
         return True
 
     def _set_email(self, val: str) -> bool:
@@ -491,8 +510,11 @@ class ObjectIP:
         """
 
         if not isinstance(val, str): raise TypeError(
-            "attribute 'email' is required to be of type string")
+            "attribute 'email' is required to be of type string, "
+            f"not '{type(val)}'")
+
         self._config['email'] = val
+
         return True
 
     def _set_license(self, val: str) -> bool:
@@ -507,8 +529,11 @@ class ObjectIP:
         """
 
         if not isinstance(val, str): raise TypeError(
-            "attribute 'livense' is required to be of type string")
+            "attribute 'license' is required to be of type string, "
+            f"not '{type(val)}'")
+
         self._config['license'] = val
+
         return True
 
     def _set_name(self, val: str) -> bool:
@@ -524,8 +549,11 @@ class ObjectIP:
         """
 
         if not isinstance(val, str): raise TypeError(
-            "attribute 'name' is required to be of type string")
+            "attribute 'name' is required to be of type string, "
+            f"not '{type(name)}'")
+
         self._config['name'] = val
+
         return True
 
     def _set_path(self, path: PathLike) -> bool:
@@ -538,13 +566,13 @@ class ObjectIP:
 
         """
 
-        if not isinstance(path, (str, tuple)): raise TypeError(
-            "attribute 'path' is required to be of type 'str' "
-            f"or 'tuple of str', not '{type(path)}'")
+        if not isinstance(path, (str, tuple, Path)): raise TypeError(
+            "attribute 'path' is required to be path-like, "
+            f"not '{type(path)}'")
 
         from nemoa.common import npath
-        import pathlib
-        self._config['path'] = pathlib.Path(npath.expand(path))
+        self._config['path'] = Path(npath.expand(path))
+
         return True
 
     def _set_version(self, val: int) -> bool:
@@ -560,4 +588,5 @@ class ObjectIP:
         if not isinstance(val, int): raise TypeError(
             "attribute 'version' is required to be of type integer")
         self._config['version'] = val
+
         return True
