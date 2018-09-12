@@ -10,8 +10,6 @@ from pathlib import Path
 
 PathLike = Tuple[Union['PathLike', str, Path], ...]
 
-import nemoa
-
 class ObjectIP(object):
     """Base class for objects subjected to intellectual property.
 

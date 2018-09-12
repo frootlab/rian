@@ -8,7 +8,7 @@ within complex and natural data samples.
 
 """
 
-__version__      = '0.5.127'
+__version__      = '0.5.128'
 __status__       = 'Development'
 __description__  = 'Network-based Modeling and deep Data Analysis'
 __url__          = 'https://fishroot.github.io/nemoa'
