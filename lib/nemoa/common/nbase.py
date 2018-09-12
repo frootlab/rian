@@ -53,52 +53,41 @@ class ObjectIP:
 
     """
 
-    _attr_meta: Dict[str, int] = {
+    _attr: Dict[str, int] = {
         'author': 0b11, 'email': 0b11, 'license': 0b11, 'copyright': 0b11,
         'fullname': 0b01, 'name': 0b11, 'branch': 0b11, 'version': 0b11,
         'about': 0b11, 'type': 0b01, 'path': 0b11
     }
-
-    _attr: Dict[str, int] = {}
 
     _config: Optional[Dict[str, dict]] = None
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Import object configuration and content from dictionary."""
 
-        if isinstance(self._config, type(None)): self._config = {}
+        if self._config is None: self._config = {}
 
-        self._set_copy(**kwargs)
+        self._set_copy(*args, **kwargs)
 
     def __getattr__(self, key: str) -> None:
         """Attribute wrapper for getter methods."""
 
-        if key in self._attr_meta:
-            if not self._attr_meta[key] & 0b01: raise AttributeError(
-                f"attribute '{key}' is not readable")
-            return getattr(self, '_get_' + key)()
-
         if key in self._attr:
-            if 'r' not in self._attr[key]: raise AttributeError(
+            if not self._attr[key] & 0b01: raise AttributeError(
                 f"attribute '{key}' is not readable")
             if not hasattr(self, '_get_' + key): raise AttributeError(
-                f"{self.__class__.__name__} instance has "
-                f"no attribute '_get_{key}'")
+                f"{self.__class__.__name__} instance "
+                f"has no attribute '_get_{key}'")
             return getattr(self, '_get_' + key)()
 
         raise AttributeError(
-            f"{self.__class__.__name__} instance has no attribute '{key}'")
+            f"{self.__class__.__name__} instance "
+            f"has no attribute '{key}'")
 
     def __setattr__(self, key: str, val: Any) -> None:
         """Attribute wrapper to setter methods."""
 
-        if key in self._attr_meta:
-            if not self._attr_meta[key] & 0b10: raise AttributeError(
-                f"attribute '{key}' is not writeable")
-            return getattr(self, '_set_' + key)(val)
-
         if key in self._attr:
-            if 'w' not in self._attr[key]: raise AttributeError(
+            if not self._attr[key] & 0b10: raise AttributeError(
                 f"attribute '{key}' is not writeable")
             if not hasattr(self, '_set_' + key): raise AttributeError(
                 f"{self.__class__.__name__} instance has "
@@ -108,14 +97,16 @@ class ObjectIP:
         self.__dict__[key] = val
 
     def get(self, key: str = 'name', *args: Any, **kwargs: Any) -> Any:
-        """Call getter methods."""
+        """Call private getter methods of the class instance.
 
-        # get meta information attributes
-        if key in self._attr_meta and self._attr_meta[key] & 0b01:
-            return getattr(self, '_get_' + key)()
+        Returns:
+            Arbitrary typed return value of the respective private getter
+            method of the class instance.
 
-        # get content attributes
-        if key in self._attr and 'r' in self._attr[key]:
+        """
+
+        # get readable attributes
+        if self._attr.get(key, 0b00) & 0b01:
             return getattr(self, '_get_' + key)(*args, **kwargs)
 
         # call getter method if it exists
@@ -124,12 +115,13 @@ class ObjectIP:
 
         raise KeyError(f"key '{key}' is not valid")
 
-    def _get_config(self, key: Optional[str] = None, *args: Any,
-        **kwargs: Any) -> Any:
-        """Get configuration or configuration value."""
+    def _get_config(self, key: Optional[str] = None) -> Any:
+        """Get configuration or configuration value.
+
+
+        """
 
         import copy
-
         conf = self._config or {}
         if key is None: return copy.deepcopy(conf)
         if not isinstance(key, str): raise TypeError(
@@ -218,8 +210,23 @@ class ObjectIP:
         """
 
         l = [self._get_name(), self._get_branch(), self._get_version()]
-
         return '.'.join([str(val) for val in l if val])
+
+    def _get_getter(self) -> list:
+        """Get sorted list of keys, which are accepted by the 'get' method.
+
+        The class method 'get' wraps given keys to private getter methods of
+        the class instance, which are identified by an initial prefix '_get_'
+        in the method name.
+
+        Returns:
+            Sorted list of keys, which are accepted by the 'get' method.
+
+        """
+
+        from nemoa.common import nclass, ndict
+        d = nclass.methods(self, filter = '_get_*')
+        return sorted(ndict.reduce(d, '_get_'))
 
     def _get_license(self) -> Optional[str]:
         """Get the license of the resource.
@@ -276,6 +283,22 @@ class ObjectIP:
 
         return path
 
+    def _get_setter(self) -> list:
+        """Get sorted list of keys, which are accepted by the 'set' method.
+
+        The class method 'set' wraps given keys to private getter methods of
+        the class instance, which are identified by an initial prefix '_set_'
+        in the method name.
+
+        Returns:
+            Sorted list of keys, which are accepted by the 'set' method.
+
+        """
+
+        from nemoa.common import nclass, ndict
+        d = nclass.methods(self, filter = '_set_*')
+        return sorted(ndict.reduce(d, '_set_'))
+
     def _get_type(self) -> Optional[str]:
         """Get instance type, using module name and class name.
 
@@ -303,18 +326,17 @@ class ObjectIP:
 
         return self._config.get('version', None)
 
-    def set(self, key: Optional[str] = None, *args: Any, **kwargs: Any) -> bool:
-        """Call setter methods."""
+    def set(self, key: str, *args: Any, **kwargs: Any) -> bool:
+        """Call private setter methods of the class instance.
 
-        # setter methods for meta information attributes
-        if key in self._attr_meta and self._attr_meta[key] & 0b10:
-            return getattr(self, '_set_' + key)(*args, **kwargs)
+        Returns:
+            Boolean value which is returned by the respoective private setter
+            method of the class instance.
 
-        # setter methods for supplementary attributes
-        if key in self._attr and 'w' in self._attr[key]:
-            if not hasattr(self, '_set_' + key): raise AttributeError(
-                f"{self.__class__.__name__} instance has "
-                f"no attribute '_set_{key}'")
+        """
+
+        # set writeable attributes
+        if self._attr.get(key, 0b00) & 0b10:
             return getattr(self, '_set_' + key)(*args, **kwargs)
 
         # supplementary setter methods
@@ -324,7 +346,7 @@ class ObjectIP:
         raise KeyError(f"key '{key}' is not valid")
 
     def _set_copy(self, **kwargs: Any) -> bool:
-        """Set dataset configuration and dataset tables.
+        """Call setter methods for all keywords.
 
         Args:
             **kwargs:
@@ -336,12 +358,10 @@ class ObjectIP:
 
         for key, val in kwargs.items():
             if not isinstance(key, str): continue
-            mname = '_set_' + key
-            if not hasattr(self, mname):
-                cname = self.__class__.__name__
-                raise AttributeError(
-                    f"{cname} instance has no method '{mname}'")
-            getattr(self, mname)(val)
+            if not hasattr(self, '_set_' + key): raise AttributeError(
+                f"{self.__class__.__name__} instance "
+                f"has no method '_set_{key}'")
+            getattr(self, '_set_' + key)(val)
 
         return True
 

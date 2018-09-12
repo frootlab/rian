@@ -6,13 +6,13 @@ __license__ = 'GPLv3'
 
 def load(*args, **kwargs):
     """Import workspace dictionary from file."""
-    import nemoa.workspace.imports
-    return nemoa.workspace.imports.load(*args, **kwargs)
+    from nemoa.workspace import imports
+    return imports.load(*args, **kwargs)
 
 def new(*args, **kwargs):
     """Create workspace instance from workspace dictionary."""
-    import nemoa.workspace.classes
-    return nemoa.workspace.classes.new(*args, **kwargs)
+    from nemoa.workspace import classes
+    return classes.new(*args, **kwargs)
 
 def open(*args, **kwargs):
     """Import workspace instance from file."""

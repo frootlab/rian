@@ -4,7 +4,7 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.network.builder.layer
+from nemoa.network.builder import layer
 
 def types(type = None):
     """Get supported network types of network builders."""
@@ -12,7 +12,7 @@ def types(type = None):
     type_dict = {}
 
     # get supported layered networks
-    layer_types = nemoa.network.builder.layer.types()
+    layer_types = layer.types()
     for key, val in list(layer_types.items()):
         type_dict[key] = ('layer', val)
 
@@ -34,6 +34,6 @@ def build(type, *args, **kwargs):
     module_name = types(type)[0]
 
     if module_name == 'layer':
-        network = nemoa.network.builder.layer.build(type, *args, **kwargs)
+        network = layer.build(type, *args, **kwargs)
 
     return network or {}

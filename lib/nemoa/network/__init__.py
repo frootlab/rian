@@ -4,14 +4,10 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.network.builder
-import nemoa.network.classes
-import nemoa.network.exports
-import nemoa.network.imports
-
 def build(*args, **kwargs):
     """Create network dictionary from building script."""
-    return nemoa.network.builder.build(*args, **kwargs)
+    from nemoa.network import builder
+    return builder.build(*args, **kwargs)
 
 def copy(network, *args, **kwargs):
     """Create copy of network instance."""
@@ -23,11 +19,13 @@ def create(*args, **kwargs):
 
 def load(*args, **kwargs):
     """Import network dictionary from file."""
-    return nemoa.network.imports.load(*args, **kwargs)
+    from nemoa.network import imports
+    return imports.load(*args, **kwargs)
 
 def new(*args, **kwargs):
     """Create network instance from network dictionary."""
-    return nemoa.network.classes.new(*args, **kwargs)
+    from nemoa.network import classes
+    return classes.new(*args, **kwargs)
 
 def open(*args, **kwargs):
     """Import network intance from file."""
@@ -35,8 +33,10 @@ def open(*args, **kwargs):
 
 def save(*args, **kwargs):
     """Export network intance to file."""
-    return nemoa.network.exports.save(*args, **kwargs)
+    from nemoa.network import exports
+    return exports.save(*args, **kwargs)
 
 def show(*args, **kwargs):
     """Show network as image."""
-    return nemoa.network.exports.show(*args, **kwargs)
+    from nemoa.network import exports
+    return exports.show(*args, **kwargs)

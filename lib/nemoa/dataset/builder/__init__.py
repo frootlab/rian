@@ -4,7 +4,7 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.dataset.builder.plain
+from nemoa.dataset.builder import plain
 
 def types(type = None):
     """Get supported dataset types of dataset builders."""
@@ -12,7 +12,7 @@ def types(type = None):
     alltypes = {}
 
     # get supported plain datasets
-    types = nemoa.dataset.builder.plain.types()
+    types = plain.types()
     for key, val in list(types.items()): alltypes[key] = ('plain', val)
 
     if type is None:
@@ -32,7 +32,6 @@ def build(type, *args, **kwargs):
     module_name = types(type)[0]
 
     if module_name == 'plain':
-        dataset = nemoa.dataset.builder.plain.build(
-            type, *args, **kwargs)
+        dataset = plain.build(type, *args, **kwargs)
 
     return dataset or {}

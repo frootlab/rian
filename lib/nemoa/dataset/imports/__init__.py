@@ -4,8 +4,8 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.dataset.imports.archive
-import nemoa.dataset.imports.text
+import nemoa
+from nemoa.dataset.imports import archive, text
 
 def filetypes(filetype = None):
     """Get supported dataset import filetypes."""
@@ -13,12 +13,12 @@ def filetypes(filetype = None):
     type_dict = {}
 
     # get supported archive filetypes
-    archive_types = nemoa.dataset.imports.archive.filetypes()
+    archive_types = archive.filetypes()
     for key, val in list(archive_types.items()):
         type_dict[key] = ('archive', val)
 
     # get supported text filetypes
-    text_types = nemoa.dataset.imports.text.filetypes()
+    text_types = text.filetypes()
     for key, val in list(text_types.items()):
         type_dict[key] = ('text', val)
 
@@ -60,12 +60,9 @@ def load(path, filetype = None, **kwargs):
 
     # import and check dictionary
     mname = filetypes(filetype)[0]
-    if mname == 'archive':
-        dataset = nemoa.dataset.imports.archive.load(path, **kwargs)
-    elif mname == 'text':
-        dataset = nemoa.dataset.imports.text.load(path, **kwargs)
-    else:
-        dataset = None
+    if mname == 'archive': dataset = archive.load(path, **kwargs)
+    elif mname == 'text': dataset = text.load(path, **kwargs)
+    else: dataset = None
     if not dataset:
         raise ValueError("""could not import dataset:
             file '%s' is not valid.""" % path) or {}

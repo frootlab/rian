@@ -10,6 +10,7 @@ import copy
 import importlib
 
 from nemoa.common import nclass, nbase
+from typing import Any, Dict
 
 class Network(nbase.ObjectIP):
     """Network base class.
@@ -61,7 +62,18 @@ class Network(nbase.ObjectIP):
     _config  = None
     _graph   = None
     _default = { 'name': None }
-    _attr    = { 'nodes': 'r', 'edges': 'r', 'layers': 'r' }
+
+    _attr: Dict[str, int] = {
+        'nodes': 0b01, 'edges': 0b01, 'layers': 0b01
+    }
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize network with content from arguments."""
+
+        # get attribute defaults from parent
+        self._attr = {**getattr(super(), '_attr', {}), **self._attr}
+
+        super().__init__(*args, **kwargs)
 
     def configure(self, dataset = None):
         """Configure network to dataset."""
@@ -310,11 +322,9 @@ class Network(nbase.ObjectIP):
     def get(self, key = 'name', *args, **kwargs):
         """Get meta information and content."""
 
-        # # meta information
-        # if key in self._attr_meta: return self._get_meta(key)
-
-        # get attributes
-        if key in self._attr_meta: return self.__getattr__(key)
+        # get readable attributes
+        if self._attr.get(key, 0b00) & 0b01:
+            return getattr(self, '_get_' + key)(*args, **kwargs)
 
         # algorithms
         if key == 'algorithm':
@@ -577,11 +587,8 @@ class Network(nbase.ObjectIP):
     def set(self, key = None, *args, **kwargs):
         """Set meta information, parameters and data of network."""
 
-        # # set meta information
-        # if key in self._attr_meta: return self._set_meta(key, *args, **kwargs)
-
-        # setter methods for meta information attributes
-        if key in self._attr_meta and self._attr_meta[key] & 0b10:
+        # set writeable attributes
+        if self._attr.get(key, 0b00) & 0b10:
             return getattr(self, '_set_' + key)(*args, **kwargs)
 
         # import network configuration and graph

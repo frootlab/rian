@@ -5,18 +5,18 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+def cur():
+    """Get current session instance."""
+    if '_cur' not in globals(): globals()['_cur'] = new()
+    return globals()['_cur']
+
 def get(*args, **kwargs):
     """Get meta information and content from current session."""
-    return instance().get(*args, **kwargs)
-
-def instance(*args, **kwargs):
-    """Get session instance."""
-    if 'default' not in globals(): globals()['default'] = new()
-    return globals()['default']
+    return cur().get(*args, **kwargs)
 
 def log(*args, **kwargs):
     """Log message in current session."""
-    return instance().log(*args, **kwargs)
+    return cur().log(*args, **kwargs)
 
 def new(*args, **kwargs):
     """Create session instance from session dictionary."""
@@ -25,16 +25,16 @@ def new(*args, **kwargs):
 
 def open(*args, **kwargs):
     """Open object in current session."""
-    return instance().open(*args, **kwargs)
+    return cur().open(*args, **kwargs)
 
 def path(*args, **kwargs):
     """Get path for given object in current session."""
-    return instance().path(*args, **kwargs)
+    return cur().path(*args, **kwargs)
 
 def run(*args, **kwargs):
     """Run script in current session."""
-    return instance().run(*args, **kwargs)
+    return cur().run(*args, **kwargs)
 
 def set(*args, **kwargs):
     """Set configuration parameter and env var in current session."""
-    return instance().set(*args, **kwargs)
+    return cur().set(*args, **kwargs)

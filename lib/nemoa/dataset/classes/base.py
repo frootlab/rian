@@ -5,9 +5,14 @@ __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa
-import numpy
+
+try: import numpy as np
+except ImportError as e: raise ImportError(
+    "requires package numpy: "
+    "https://scipy.org") from e
 
 from nemoa.common import nalgorithm, nclass, nbase
+from typing import Any, Dict, Optional
 
 class Dataset(nbase.ObjectIP):
     """Dataset base class.
@@ -55,10 +60,21 @@ class Dataset(nbase.ObjectIP):
 
     """
 
-    _config  = None
-    _tables  = None
+    _config: Optional[dict] = None
+    _tables: Optional[dict] = None
     _default = { 'name': None }
-    _attr    = { 'columns': 'r', 'rows': 'r' }
+
+    _attr: Dict[str, int] = {
+        'columns': 0b01, 'rows': 0b01
+    }
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize dataset with content from arguments."""
+
+        # get attribute defaults from parent
+        self._attr = {**getattr(super(), '_attr', {}), **self._attr}
+
+        super().__init__(*args, **kwargs)
 
     def configure(self, network):
         """Configure dataset columns to a given network.
@@ -70,6 +86,8 @@ class Dataset(nbase.ObjectIP):
             Boolen value which is True if no error occured.
 
         """
+
+        from nemoa.dataset.commons import labels
 
         # get visible network layers and node label format
         layers = network.get('layers', visible = True)
@@ -93,8 +111,7 @@ class Dataset(nbase.ObjectIP):
                     network.get('node', node)['params']['label'])
 
             # convert node labels to standard label format
-            conv, lost = nemoa.dataset.commons.labels.convert(
-                node_labels, input = labelformat)
+            conv, lost = labels.convert(node_labels, input = labelformat)
 
             nodes_conv[layer] = conv
             nodes_lost += [conv[i] for i in lost]
@@ -128,8 +145,7 @@ class Dataset(nbase.ObjectIP):
                     source_labelformat = 'generic:string'
 
                 columns_conv, columns_lost = \
-                    nemoa.dataset.commons.labels.convert(
-                    source_columns, input = source_labelformat)
+                    labels.convert(source_columns, input = source_labelformat)
 
                 table_config['columns_orig'] = source_columns
                 table_config['columns_conv'] = columns_conv
@@ -423,7 +439,7 @@ class Dataset(nbase.ObjectIP):
         # calculate q-quantile for each column
         quantile = {}
         for col in columns:
-            scol = numpy.sort(data[col].copy())
+            scol = np.sort(data[col].copy())
             rid = int((1. - p) * data.size)
             lrid = rid - int(0.1 * p * data.size)
             urid = rid + int(0.1 * p * data.size)
@@ -485,7 +501,7 @@ class Dataset(nbase.ObjectIP):
             for table in self._tables:
                 for column in self._tables[table].dtype.names[1:]:
                     self._tables[table][column] = \
-                        (2. / (1. + numpy.exp(-1. * \
+                        (2. / (1. + np.exp(-1. * \
                         self._tables[table][column] ** 2))
                         ).astype(float)
             return True
@@ -495,7 +511,7 @@ class Dataset(nbase.ObjectIP):
             for table in self._tables:
                 for column in self._tables[table].dtype.names[1:]:
                     self._tables[table][column] = \
-                        (1. - (2. / (1. + numpy.exp(-1. * \
+                        (1. - (2. / (1. + np.exp(-1. * \
                         self._tables[table][column] ** 2)))
                         ).astype(float)
             return True
@@ -546,7 +562,7 @@ class Dataset(nbase.ObjectIP):
             col_names = ('label',) + tuple(target_columns)
             col_formats = ('<U12',) + tuple(['<f8' \
                 for x in target_columns])
-            new_rec_array = numpy.recarray((num_rows,),
+            new_rec_array = np.recarray((num_rows,),
                 dtype = list(zip(col_names, col_formats)))
 
             # set values in record array
@@ -569,11 +585,9 @@ class Dataset(nbase.ObjectIP):
     def get(self, key: str = 'name', *args, **kwargs):
         """Get meta information and content."""
 
-        # # meta information
-        # if key in self._attr_meta: return self._get_meta(key)
-
-        # get attributes
-        if key in self._attr_meta: return self.__getattr__(key)
+        # get readable attributes
+        if self._attr.get(key, 0b00) & 0b01:
+            return getattr(self, '_get_' + key)(*args, **kwargs)
 
         # algorithms
         if key == 'algorithm': return self._get_algorithm(*args, **kwargs)
@@ -827,11 +841,11 @@ class Dataset(nbase.ObjectIP):
             raise ValueError(
                 "could not get data: "
                 "no valid data sources found!")
-        data = numpy.concatenate(src_stack)
+        data = np.concatenate(src_stack)
 
         # (optional) shuffle data and correct size
         if size:
-            numpy.random.shuffle(data)
+            np.random.shuffle(data)
             data = data[:size]
 
         # format data
@@ -965,29 +979,29 @@ class Dataset(nbase.ObjectIP):
 
         # gaussian noise model
         elif type.lower() == 'gauss':
-            noise = numpy.random.normal(
+            noise = np.random.normal(
                 size = data.shape, loc = 0., scale = factor)
             return data + noise
 
         # bernoulli noise model
         elif type.lower() == 'bernoulli':
-            mask = numpy.random.binomial(
+            mask = np.random.binomial(
                 size = data.shape, n = 1, p = 1. - factor)
             return (data - mask).astype(bool).astype(int)
 
         # masking noise model
         elif type.lower() == 'mask':
-            mask = numpy.random.binomial(
+            mask = np.random.binomial(
                 size = data.shape, n = 1, p = 1. - factor)
             return mask * data
 
         # salt & pepper noise model
         elif type.lower() == 'salt':
-            amax = numpy.amax(data, axis = 0)
-            amin = numpy.amin(data, axis = 0)
-            mask = numpy.random.binomial(
+            amax = np.amax(data, axis = 0)
+            amin = np.amin(data, axis = 0)
+            mask = np.random.binomial(
                 size = data.shape, n = 1, p = 1. - factor)
-            sp = numpy.random.binomial(
+            sp = np.random.binomial(
                 size = data.shape, n = 1, p = .5)
             noise = mask * (amax * sp + amin * (1. - sp))
 
@@ -1004,29 +1018,29 @@ class Dataset(nbase.ObjectIP):
         if k > datadim: k = datadim
 
         # calculate covariance matrix
-        cov = numpy.cov(data.T)
+        cov = np.cov(data.T)
 
         # calculate eigenvectors and eigenvalues
-        eigvals, eigvecs = numpy.linalg.eig(cov)
+        eigvals, eigvecs = np.linalg.eig(cov)
 
         # sort eigenvectors by absolute eigenvalues
-        eigpairs = [(numpy.abs(eigvals[i]), eigvecs[:, i])
+        eigpairs = [(np.abs(eigvals[i]), eigvecs[:, i])
             for i in range(len(eigvals))]
         eigpairs.sort(key = lambda x: x[0], reverse = True)
 
         # calculate projection and inverse transformation
-        vec = lambda i: eigpairs[i][1] if i < k else numpy.zeros(datadim)
+        vec = lambda i: eigpairs[i][1] if i < k else np.zeros(datadim)
         if embed:
-            proj = numpy.hstack(
+            proj = np.hstack(
                 [vec(i).reshape(datadim, 1) for i in range(datadim)])
-            trans = numpy.hstack(
+            trans = np.hstack(
                 [eigpairs[i][1].reshape(datadim, 1) for i in range(datadim)])
-            itrans = numpy.linalg.inv(trans)
-            data_pca = numpy.dot(numpy.dot(data, proj), itrans)
+            itrans = np.linalg.inv(trans)
+            data_pca = np.dot(np.dot(data, proj), itrans)
         else:
-            proj = numpy.hstack(
+            proj = np.hstack(
                 [vec(i).reshape(datadim, 1) for i in range(k)])
-            data_pca = numpy.dot(data, proj)
+            data_pca = np.dot(data, proj)
 
         return data_pca
 
@@ -1059,7 +1073,7 @@ class Dataset(nbase.ObjectIP):
         # check table name
         if not isinstance(table, str) \
             or not table in list(self._tables.keys()) \
-            or not isinstance(self._tables[table], numpy.ndarray):
+            or not isinstance(self._tables[table], np.ndarray):
             raise ValueError(
                 "could not retrieve data: "
                 "invalid table name: '%s'." % table)
@@ -1085,8 +1099,8 @@ class Dataset(nbase.ObjectIP):
             # changes from Numpy 1.14 to Numpy 1.15
             # https://docs.scipy.org/doc/numpy/user/basics.rec.html
 
-            with numpy.warnings.catch_warnings():
-                numpy.warnings.filterwarnings('ignore')
+            with np.warnings.catch_warnings():
+                np.warnings.filterwarnings('ignore')
                 table_colsel = self._tables[table][colnames]
 
         else:
@@ -1103,10 +1117,10 @@ class Dataset(nbase.ObjectIP):
                 if counter[col] == 1: names.append(col)
                 else: names.append('%s.%i' % (col, counter[col]))
             formats = [redfmt[cid] for cid in select]
-            dtype = numpy.dtype({'names': names, 'formats': formats})
+            dtype = np.dtype({'names': names, 'formats': formats})
             arr = redrec[redcols].view('<f8').reshape(
                 redrec.size, len(redcols))[:,select].copy().view(
-                type = numpy.recarray, dtype = dtype)
+                type = np.recarray, dtype = dtype)
 
             if labels:
                 from nemoa.common import ntable
@@ -1121,19 +1135,19 @@ class Dataset(nbase.ObjectIP):
             rowfilter_filtered = [
                 row.split(':')[1] for row in rowfilter
                 if row.split(':')[0] in [source, '*']]
-            rowsel = numpy.asarray([
+            rowsel = np.asarray([
                 rowid for rowid, row in enumerate(
                 self._tables[table]['label'])
                 if row in rowfilter_filtered])
-            data = numpy.take(table_colsel, rowsel)
+            data = np.take(table_colsel, rowsel)
 
         # stratify and return data as numpy record array
         if size == 0 or size is None: return data
         fraction = self._config['table'][table]['fraction']
-        rowsel = numpy.random.randint(data.size,
+        rowsel = np.random.randint(data.size,
             size = int(round(fraction * size)))
 
-        return numpy.take(data, rowsel)
+        return np.take(data, rowsel)
 
     def _get_value(self, row = None, col = None):
         """Get single value from dataset."""
@@ -1183,12 +1197,8 @@ class Dataset(nbase.ObjectIP):
     def set(self, key = None, *args, **kwargs):
         """Set meta information, parameters and data of dataset."""
 
-        # # set meta information
-        # if key in self._attr_meta:
-        #     return self._set_meta(key, *args, **kwargs)
-
-        # setter methods for meta information attributes
-        if key in self._attr_meta and self._attr_meta[key] & 0b10:
+        # set writeable attribute
+        if self._attr.get(key, 0b00) & 0b10:
             return getattr(self, '_set_' + key)(*args, **kwargs)
 
         # modify dataset parameters
@@ -1376,7 +1386,7 @@ class Dataset(nbase.ObjectIP):
         data = self._get_data(cols = cols)
 
         # calculate matrix with covariance coefficients
-        C = numpy.cov(data.T)
+        C = np.cov(data.T)
 
         return C
 
@@ -1402,7 +1412,7 @@ class Dataset(nbase.ObjectIP):
         data = self._get_data(cols = cols)
 
         # calculate matrix with correlation coefficients
-        C = numpy.corrcoef(data.T)
+        C = np.corrcoef(data.T)
 
         return C
 
@@ -1464,7 +1474,7 @@ class Dataset(nbase.ObjectIP):
         pca_data = self._get_data_pca(data, k = k, embed = True)
 
         # calculate matrix with covariance coefficients
-        C = numpy.cov(pca_data.T)
+        C = np.cov(pca_data.T)
 
         return C
 
@@ -1497,7 +1507,7 @@ class Dataset(nbase.ObjectIP):
         pca_data = self._get_data_pca(data, k = k, embed = True)
 
         # calculate matrix with correlation coefficients
-        C = numpy.corrcoef(pca_data.T)
+        C = np.corrcoef(pca_data.T)
 
         return C
 
@@ -1569,12 +1579,12 @@ class Dataset(nbase.ObjectIP):
 
         # test mean values of columns
         mean = data.mean(axis = 0)
-        test = numpy.all(numpy.abs(mu - mean) < delta)
+        test = np.all(np.abs(mu - mean) < delta)
         if not test: return False
 
         # test standard deviations of columns
         sdev = data.std(axis = 0)
-        test = numpy.all(numpy.abs(sigma - sdev) < delta)
+        test = np.all(np.abs(sigma - sdev) < delta)
         if not test: return False
 
         return True

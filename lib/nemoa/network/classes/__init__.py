@@ -4,9 +4,6 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.network.classes.base
-import importlib
-
 def new(*args, **kwargs):
     """Create new network instance."""
 
@@ -15,6 +12,8 @@ def new(*args, **kwargs):
         or not len(kwargs['config']['type'].split('.')) == 2:
         raise ValueError("""could not create network:
             configuration is not valid.""")
+
+    import importlib
 
     type = kwargs['config']['type']
     module_name = 'nemoa.network.classes.' + type.split('.')[0]

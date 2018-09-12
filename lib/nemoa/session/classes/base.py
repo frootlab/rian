@@ -92,13 +92,17 @@ class Session:
     def create(self, key = None, *args, **kwargs):
         """Open object in current session."""
         if key == 'model':
-            return nemoa.model.create(*args, **kwargs)
+            from nemoa import model
+            return model.create(*args, **kwargs)
         if key == 'network':
-            return nemoa.network.create(*args, **kwargs)
+            from nemoa import network
+            return network.create(*args, **kwargs)
         if key == 'dataset':
-            return nemoa.dataset.create(*args, **kwargs)
+            from nemoa import dataset
+            return dataset.create(*args, **kwargs)
         if key == 'system':
-            return nemoa.system.create(*args, **kwargs)
+            from nemoa import system
+            return system.create(*args, **kwargs)
         return None
 
     def get(self, key = 'workspace', *args, **kwargs):
@@ -810,13 +814,17 @@ class Session:
             dirmask = self._config['current']['path'][objtype + 's']
             filemask = self._get_path_expand(dirmask, '*.*')
             if objtype == 'dataset':
-                filetypes = nemoa.dataset.imports.filetypes()
+                from nemoa.dataset import imports
+                filetypes = imports.filetypes()
             elif objtype == 'network':
-                filetypes = nemoa.network.imports.filetypes()
+                from nemoa.network import imports
+                filetypes = imports.filetypes()
             elif objtype == 'system':
-                filetypes = nemoa.system.imports.filetypes()
+                from nemoa.system import imports
+                filetypes = imports.filetypes()
             elif objtype == 'model':
-                filetypes = nemoa.model.imports.filetypes()
+                from nemoa.model import imports
+                filetypes = imports.filetypes()
             elif objtype == 'script':
                 filetypes = ['py']
 

@@ -4,9 +4,7 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.network.exports.archive
-import nemoa.network.exports.graph
-import nemoa.network.exports.image
+from nemoa.network import exports
 
 def filetypes(filetype = None):
     """Get supported network export filetypes."""
@@ -14,17 +12,17 @@ def filetypes(filetype = None):
     type_dict = {}
 
     # get supported archive filetypes
-    archive_types = nemoa.network.exports.archive.filetypes()
+    archive_types = exports.archive.filetypes()
     for key, val in list(archive_types.items()):
         type_dict[key] = ('archive', val)
 
     # get supported graph description file types
-    graph_types = nemoa.network.exports.graph.filetypes()
+    graph_types = exports.graph.filetypes()
     for key, val in list(graph_types.items()):
         type_dict[key] = ('graph', val)
 
     # get supported image filetypes
-    image_types = nemoa.network.exports.image.filetypes()
+    image_types = exports.image.filetypes()
     for key, val in list(image_types.items()):
         type_dict[key] = ('image', val)
 
@@ -76,17 +74,14 @@ def save(network, path = None, filetype = None, workspace = None,
 
     # export to file
     module_name = filetypes(filetype)[0]
-    if module_name == 'graph':
-        return nemoa.network.exports.graph.save(
-            network, path, filetype, **kwargs)
-    if module_name == 'archive':
-        return nemoa.network.exports.archive.save(
-            network, path, filetype, **kwargs)
-    if module_name == 'image':
-        return nemoa.network.exports.image.save(
-            network, path, filetype, **kwargs)
+    if module_name == 'graph': return exports.graph.save(
+        network, path, filetype, **kwargs)
+    if module_name == 'archive': return exports.archive.save(
+        network, path, filetype, **kwargs)
+    if module_name == 'image': return exports.image.save(
+        network, path, filetype, **kwargs)
 
     return False
 
 def show(network, *args, **kwargs):
-    return nemoa.network.exports.image.show(network, *args, **kwargs)
+    return exports.image.show(network, *args, **kwargs)

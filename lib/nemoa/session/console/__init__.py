@@ -119,26 +119,32 @@ def main():
         except ImportError: pass
         else: suite.addTests(
             loader.loadTestsFromModule(nemoa.common.__test__))
+
         try: import nemoa.workspace.__test__
         except ImportError: pass
         else: suite.addTests(
             loader.loadTestsFromModule(nemoa.workspace.__test__))
+
         try: import nemoa.session.__test__
         except ImportError: pass
         else: suite.addTests(
             loader.loadTestsFromModule(nemoa.session.__test__))
+
         try: import nemoa.dataset.__test__
         except ImportError: pass
         else: suite.addTests(
             loader.loadTestsFromModule(nemoa.dataset.__test__))
+
         try: import nemoa.network.__test__
         except ImportError: pass
         else: suite.addTests(
             loader.loadTestsFromModule(nemoa.network.__test__))
+
         try: import nemoa.system.__test__
         except ImportError: pass
         else: suite.addTests(
             loader.loadTestsFromModule(nemoa.system.__test__))
+            
         try: import nemoa.model.__test__
         except ImportError: pass
         else: suite.addTests(

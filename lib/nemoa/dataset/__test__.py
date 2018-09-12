@@ -12,6 +12,8 @@ from nemoa.common import nclass, ntest
 class TestSuite(ntest.TestSuite):
 
     def test_dataset_import(self):
+        import nemoa.dataset
+
         with self.subTest(filetype = "csv"):
             dataset = nemoa.dataset.open('sinus', workspace = 'testsuite')
             test = nclass.hasbase(dataset, 'Dataset')
@@ -22,6 +24,8 @@ class TestSuite(ntest.TestSuite):
             self.assertTrue(test)
 
     def test_dataset_evaluate(self):
+        import nemoa.dataset
+
         dataset = nemoa.dataset.open('linear', workspace = 'testsuite')
         with self.subTest(evaluate = "test_gauss"):
             evaluate = dataset.evaluate('test_gauss')
@@ -46,6 +50,8 @@ class TestSuite(ntest.TestSuite):
             self.assertEqual(numpy.around(evaluate, 3), 0.141)
 
     def test_dataset_create(self):
+        import nemoa.dataset
+
         with self.subTest(create = "rules"):
             dataset = nemoa.dataset.create('rules',
                 name = 'example',

@@ -9,6 +9,7 @@ import copy
 import os
 
 from nemoa.common import nclass, nbase
+from typing import Any, Dict
 
 class Model(nbase.ObjectIP):
     """Model base class.
@@ -72,7 +73,18 @@ class Model(nbase.ObjectIP):
 
     _config  = None
     _default = {}
-    _attr    = { 'error': 'r', 'accuracy': 'r', 'precision': 'r' }
+
+    _attr: Dict[str, int] = {
+        'error': 0b01, 'accuracy': 0b01, 'precision': 0b01
+    }
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize model with content from arguments."""
+
+        # get attribute defaults from parent
+        self._attr = {**getattr(super(), '_attr', {}), **self._attr}
+
+        super().__init__(*args, **kwargs)
 
     def configure(self):
         """Configure model."""
@@ -123,7 +135,7 @@ class Model(nbase.ObjectIP):
 
     def get(self, *args, **kwargs):
         """Get meta information and content."""
-        return super(Model, self).get(*args, **kwargs)
+        return super().get(*args, **kwargs)
 
     def _get_error(self):
         """Evaluate model error."""
@@ -257,11 +269,8 @@ class Model(nbase.ObjectIP):
     def set(self, key = None, *args, **kwargs):
         """Set meta information and parameters of model."""
 
-        # # set meta information
-        # if key in self._attr_meta: return self._set_meta(key, *args, **kwargs)
-
-        # setter methods for meta information attributes
-        if key in self._attr_meta and self._attr_meta[key] & 0b10:
+        # set writeable attributes
+        if self._attr.get(key, 0b00) & 0b10:
             return getattr(self, '_set_' + key)(*args, **kwargs)
 
         # set model parameters

@@ -8,7 +8,7 @@ within complex and natural data samples.
 
 """
 
-__version__      = '0.5.124'
+__version__      = '0.5.125'
 __status__       = 'Development'
 __description__  = 'Network-based Modeling and deep Data Analysis'
 __url__          = 'https://fishroot.github.io/nemoa'
@@ -23,9 +23,10 @@ __credits__      = ['Willi Jäger', 'Rainer König']
 import nemoa.dataset
 import nemoa.model
 import nemoa.network
-import nemoa.session
 import nemoa.system
 import nemoa.workspace
+
+from nemoa import session
 
 def about(*args, **kwargs):
     """Get meta information about current instance."""
@@ -37,11 +38,11 @@ def close(*args, **kwargs):
 
 def create(*args, **kwargs):
     """Create new object instance from building script."""
-    return nemoa.session.create(*args, **kwargs)
+    return session.create(*args, **kwargs)
 
 def get(*args, **kwargs):
     """Get value from configuration instance."""
-    return nemoa.session.get(*args, **kwargs)
+    return session.get(*args, **kwargs)
 
 def list(*args, **kwargs):
     """Return list of given objects."""
@@ -49,20 +50,20 @@ def list(*args, **kwargs):
 
 def log(*args, **kwargs):
     """Log errors, warnings, notes etc. to console and logfiles."""
-    return nemoa.session.log(*args, **kwargs)
+    return session.log(*args, **kwargs)
 
 def open(*args, **kwargs):
     """Open object instance in current session."""
-    return nemoa.session.open(*args, **kwargs)
+    return session.open(*args, **kwargs)
 
 def path(*args, **kwargs):
     """Get path to given object type or object."""
-    return nemoa.session.path(*args, **kwargs)
+    return session.path(*args, **kwargs)
 
 def run(*args, **kwargs):
     """Run nemoa python script in current session."""
-    return nemoa.session.run(*args, **kwargs)
+    return session.run(*args, **kwargs)
 
 def set(*args, **kwargs):
     """Set value in configuration instance."""
-    return nemoa.session.set(*args, **kwargs)
+    return session.set(*args, **kwargs)

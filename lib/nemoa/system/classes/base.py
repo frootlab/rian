@@ -9,6 +9,7 @@ import numpy
 import copy
 
 from nemoa.common import ncalc, nalgorithm, nclass, nbase
+from typing import Any, Dict
 
 class System(nbase.ObjectIP):
     """Base class for systems.
@@ -61,8 +62,19 @@ class System(nbase.ObjectIP):
     _params  = None
     _default = {'params': {}, 'init': {}, 'optimize': {},
                 'schedules': {}}
-    _attr    = {'units': 'r', 'links': 'r', 'layers': 'r',
-                'mapping': 'rw'}
+
+    _attr: Dict[str, int] = {
+        'units': 0b01, 'links': 0b01, 'layers': 0b01, 'mapping': 0b11
+    }
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize system with content from arguments."""
+
+        # get attribute defaults from parent
+        self._attr = {**getattr(super(), '_attr', {}), **self._attr}
+
+        super().__init__(*args, **kwargs)
+
 
     def configure(self, network = None):
         """Configure system to network."""
@@ -98,40 +110,10 @@ class System(nbase.ObjectIP):
         if not nclass.hasbase(dataset, 'Dataset'): return False
         return True
 
-    # def get(self, key = 'name', *args, **kwargs):
-    #     """Get meta information and content."""
-    #
-    #     # # meta information
-    #     # if key in self._attr_meta: return self._get_meta(key)
-    #
-    #     # get attributes
-    #     if key in self._attr_meta: return self.__getattr__(key)
-    #
-    #     if key in self._attr:
-    #
-    #     # algorithms
-    #     if key == 'algorithm':
-    #         return self._get_algorithm(*args, **kwargs)
-    #     if key == 'algorithms': return self._get_algorithms(
-    #         attribute = 'about', *args, **kwargs)
-    #     if key == 'algorithms_new': return self._get_algorithms_new(
-    #         *args, **kwargs)
-    #
-    #     # content
-    #     if key == 'unit': return self._get_unit(*args, **kwargs)
-    #     if key == 'units': return self._get_units(*args, **kwargs)
-    #     if key == 'link': return self._get_link(*args, **kwargs)
-    #     if key == 'links': return self._get_links(*args, **kwargs)
-    #     if key == 'layer': return self._get_layer(*args, **kwargs)
-    #     if key == 'layers': return self._get_layers(*args, **kwargs)
-    #     if key == 'mapping': return self._get_mapping(*args, **kwargs)
-    #
-    #     # direct access
-    #     if key == 'copy': return self._get_copy(*args, **kwargs)
-    #     if key == 'config': return self._get_config(*args, **kwargs)
-    #     if key == 'params': return self._get_params(*args, **kwargs)
-    #
-    #     raise KeyError(f"unknown key '{key}'")
+
+
+
+
 
     def _get_algorithms(self, category = None, attribute = None, tree = False):
         """Get algorithms provided by system."""
@@ -1280,16 +1262,11 @@ class System(nbase.ObjectIP):
     def set(self, key = None, *args, **kwargs):
         """Set meta information, configuration and parameters."""
 
-        # # set meta information
-        # if key in self._attr_meta:
-        #     return self._set_meta(key, *args, **kwargs)
-
-        # setter methods for meta information attributes
-        if key in self._attr_meta and self._attr_meta[key] & 0b10:
+        # set writeable attributes
+        if self._attr.get(key, 0b00) & 0b10:
             return getattr(self, '_set_' + key)(*args, **kwargs)
 
         # set configuration and parameters
-        #if key == 'units': return self._set_units(*args, **kwargs)
         if key == 'links': return self._set_links(*args, **kwargs)
         if key == 'mapping': return self._set_mapping(*args, **kwargs)
 

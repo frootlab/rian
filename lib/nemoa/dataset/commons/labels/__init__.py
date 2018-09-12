@@ -53,7 +53,8 @@ def convert(list, input, output = None, filter = False):
 
     # import annotation module
     module_name = input_class.lower()
-    module = importlib.import_module('nemoa.dataset.commons.labels.' + module_name)
+    module = importlib.import_module('nemoa.dataset.commons.labels.'
+        + module_name)
     converter = getattr(module, module_name)()
     output_list, output_lost = converter.convert_list(
         list, input_format, output_format, filter)
