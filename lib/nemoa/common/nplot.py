@@ -7,10 +7,12 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-try: import numpy as np
-except ImportError as e: raise ImportError(
-    "requires package numpy: "
-    "https://scipy.org") from e
+try:
+    import numpy as np
+except ImportError as err:
+    raise ImportError(
+        "requires package numpy: "
+        "https://scipy.org") from err
 
 class Plot:
     """Base class for matplotlib plots.
@@ -47,9 +49,9 @@ class Plot:
     def __init__(self, *args, **kwargs):
 
         try: import matplotlib
-        except ImportError as e: raise ImportError(
+        except ImportError as err: raise ImportError(
             "requires package matplotlib: "
-            "https://matplotlib.org") from e
+            "https://matplotlib.org") from err
 
         from nemoa.common import ndict
 
@@ -300,14 +302,14 @@ class Graph(Plot):
         try:
             import matplotlib.patches
             import matplotlib.pyplot as plt
-        except ImportError as e: raise ImportError(
+        except ImportError as err: raise ImportError(
             "requires package matplotlib: "
-            "https://matplotlib.org") from e
+            "https://matplotlib.org") from err
 
         try: import networkx as nx
-        except ImportError as e: raise ImportError(
+        except ImportError as err: raise ImportError(
             "requires package networkx: "
-            "https://networkx.github.io") from e
+            "https://networkx.github.io") from err
 
         from nemoa.common import ndict, ngraph
 

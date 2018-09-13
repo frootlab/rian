@@ -9,10 +9,12 @@ def main():
 
     import nemoa
 
-    try: import IPython
-    except ImportError as e: raise ImportError(
-        "requires package ipython: "
-        "https://ipython.org/") from e
+    try:
+        import IPython
+    except ImportError as err:
+        raise ImportError(
+            "requires package ipython: "
+            "https://ipython.org/") from err
 
     from IPython.core import interactiveshell
 
@@ -24,80 +26,69 @@ def main():
         def showtraceback(*args, **kwargs):
 
             # extract exception type, value and traceback
-            typ, val, tb = sys.exc_info()
+            etype, value, trace = sys.exc_info()
 
             # run the original python hook
-            if issubclass(typ, Exception):
-                return sys.__excepthook__(typ, val, tb)
-            else:
-                # otherwise run the original hook
-                return func(*args, **kwargs)
+            if issubclass(etype, Exception):
+                return sys.__excepthook__(etype, value, trace)
+
+            # otherwise run the original hook
+            return func(*args, **kwargs)
 
         return showtraceback
 
     interactiveshell.InteractiveShell.showtraceback \
         = _change(interactiveshell.InteractiveShell.showtraceback)
 
-    def about(*args, **kwargs):
+    def about(*args, **kwargs) -> None:
         """Get meta information."""
         nemoa.log('note', nemoa.about(*args, **kwargs))
-        return None
 
-    def close(*args, **kwargs):
+    def close() -> None:
         """Close current workspace instance."""
         nemoa.close()
-        return None
 
-    def create(*args, **kwargs):
-        """Create object instance from building script."""
-        return nemoa.create(*args, **kwargs)
-
-    def get(*args, **kwargs):
+    def get(*args, **kwargs) -> None:
         """Wrapping function to nemoa.get()."""
         nemoa.log('note', nemoa.get(*args, **kwargs))
-        return None
 
-    def list(*args, **kwargs):
+    def list(*args, **kwargs) -> None:
         """Wrapping function to nemoa.list()."""
         retval = nemoa.list(*args, **kwargs)
         if isinstance(retval, dict):
             for key, val in retval.items():
-                if not val: continue
+                if not val:
+                    continue
                 if hasattr(val, '__iter__'):
                     nemoa.log('note', '%s: %s' % (key, ', '.join(val)))
                 else:
                     nemoa.log('note', '%s: %s' % (key, val))
         elif hasattr(retval, '__iter__'):
             nemoa.log('note', ', '.join(retval))
-        return None
 
     def open(*args, **kwargs):
         """Open object in current session."""
         return nemoa.open(*args, **kwargs)
 
-    def optimize(*args, **kwargs):
+    def optimize(*args, **kwargs) -> None:
         """Optimize model."""
         return nemoa.model.morphisms.optimize(*args, **kwargs)
 
-    def path(*args, **kwargs):
+    def path(*args, **kwargs) -> None:
         """Wrapping function to nemoa.path()."""
         nemoa.log('note', nemoa.path(*args, **kwargs))
-        return None
 
-    def run(*args, **kwargs):
+    def run(*args, **kwargs) -> None:
         """Wrapping function to nemoa.run()."""
         nemoa.run(*args, **kwargs)
-        return None
 
-    def show(*args, **kwargs):
+    def show(*args, **kwargs) -> None:
         """ """
         open(*args, **kwargs).show()
-        return None
 
-    def set(*args, **kwargs):
+    def set(*args, **kwargs) -> None:
         """Wrapping function to nemoa.set()."""
         nemoa.set(*args, **kwargs)
-        return None
 
     import os
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -107,7 +98,7 @@ def main():
     name = nappinfo.get('name')
     version = nappinfo.get('version')
 
-    return IPython.embed(banner1 = f"{name} {version}\n")
+    return IPython.embed(banner1=f"{name} {version}\n")
 
 if __name__ == '__main__':
     main()

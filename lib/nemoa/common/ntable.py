@@ -8,9 +8,9 @@ __license__ = 'GPLv3'
 from typing import Optional, Sequence, Union
 
 try: import numpy as np
-except ImportError as e: raise ImportError(
+except ImportError as err: raise ImportError(
     "requires package numpy: "
-    "https://scipy.org") from e
+    "https://scipy.org") from err
 
 Table = np.recarray
 Cols = Union[str, Sequence[str]]

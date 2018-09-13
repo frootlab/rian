@@ -8,7 +8,7 @@ within complex and natural data samples.
 
 """
 
-__version__      = '0.5.129'
+__version__      = '0.5.130'
 __status__       = 'Development'
 __description__  = 'Network-based Modeling and deep Data Analysis'
 __url__          = 'https://fishroot.github.io/nemoa'
@@ -32,13 +32,9 @@ def about(*args, **kwargs):
     """Get meta information about current instance."""
     return get('about', *args, **kwargs)
 
-def close(*args, **kwargs):
+def close():
     """Close current workspace instance."""
     return set('workspace', None)
-
-def create(*args, **kwargs):
-    """Create new object instance from building script."""
-    return session.create(*args, **kwargs)
 
 def get(*args, **kwargs):
     """Get value from configuration instance."""

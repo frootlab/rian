@@ -1194,9 +1194,9 @@ class System(nbase.ObjectIP):
         for inid, inunit in enumerate(inputs):
             try:
                 i_curve = numpy.take(numpy.sort(sdata[:, inid]), r_ids)
-            except Exception as e:
+            except Exception as err:
                 raise ValueError(
-                    "could not evaluate induction: unknown error") from e
+                    "could not evaluate induction: unknown error") from err
             i_curve = amplify * i_curve
 
             # create output matrix for each output
@@ -1676,8 +1676,8 @@ class System(nbase.ObjectIP):
         # evaluate units
         try:
             values = algorithm['reference'](*evalargs, **evalkwargs)
-        except Exception as e:
-            raise ValueError('could not evaluate units') from e
+        except Exception as err:
+            raise ValueError('could not evaluate units') from err
 
         # create dictionary of target units
         labels = self._get_units(layer = evalkwargs['mapping'][-1])
@@ -1734,8 +1734,8 @@ class System(nbase.ObjectIP):
         # perform evaluation
         try:
             values = algorithm['reference'](*evalargs, **evalkwargs)
-        except Exception as e:
-            raise ValueError('could not evaluate links') from e
+        except Exception as err:
+            raise ValueError('could not evaluate links') from err
 
         # create link dictionary
         in_labels = self._get_units(layer = evalkwargs['mapping'][-2])
@@ -1832,9 +1832,10 @@ class System(nbase.ObjectIP):
                 try:
                     T = eval(transform)
                     values = T
-                except Exception as e:
-                    raise ValueError("could not transform relations: "
-                    "invalid syntax") from e
+                except Exception as err:
+                    raise ValueError(
+                        "could not transform relations: "
+                        "invalid syntax") from err
 
             # create formated return values
             if retfmt == 'array':

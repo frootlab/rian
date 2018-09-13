@@ -8,10 +8,12 @@ __license__ = 'GPLv3'
 from typing import Any, Callable, List, Optional, Sequence, Union
 from types import ModuleType as Module
 
-try: import numpy as np
-except ImportError as e: raise ImportError(
-    "requires package numpy: "
-    "https://scipy.org") from e
+try:
+    import numpy as np
+except ImportError as err:
+    raise ImportError(
+        "requires package numpy: "
+        "https://scipy.org") from err
 
 Array = Union[np.ndarray, Sequence[np.ndarray]]
 
@@ -31,7 +33,8 @@ def search(minst: Optional[Module] = None, **kwargs: Any) -> dict:
 
     from nemoa.common import nmodule
 
-    if minst is None: minst = nmodule.objectify(nmodule.curname(-1))
+    if minst is None:
+        minst = nmodule.objectify(nmodule.curname(-1))
     elif not isinstance(minst, Module):
         raise TypeError("argument 'minst' is required to be a module instance")
 

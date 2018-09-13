@@ -21,9 +21,10 @@ class gene:
             import rpy2.robjects
             self.robjects = rpy2.robjects
             sys.stdout = stdout
-        except Exception as e:
+        except Exception as err:
             sys.stdout = stdout
-            raise ImportError("could not import python package 'rpy2'") from e
+            raise ImportError(
+                "could not import python package 'rpy2'") from err
 
     def _exec_rcmd(self, rcmd = None):
         if not rcmd: return True
@@ -34,10 +35,10 @@ class gene:
             sys.stdout = NullDevice()
             self.robjects.r(rcmd)
             sys.stdout = sysstout
-        except Exception as e:
+        except Exception as err:
             sys.stdout = sysstout
             raise RuntimeError("""could not execute
-                R command '%s' (see logfile)""" % rcmd) from e
+                R command '%s' (see logfile)""" % rcmd) from err
 
         return True
 
@@ -46,18 +47,18 @@ class gene:
             if not self._exec_rcmd(rcmd): return False
         return True
 
-    def _load_pkg(self, pkg = 'org.Hs.eg.db'):
+    def _load_pkg(self, pkg='org.Hs.eg.db'):
         if not self._exec_rcmd("library('%s')" % pkg) and not (
             self._install_pkg(pkg) and
             self._exec_rcmd("library('%s')" % pkg)): return False
         return True
 
-    def _install_pkg(self, pkg = None):
+    def _install_pkg(self, pkg=None):
         if not pkg:
             nemoa.log('note', "trying to install bioconductor base")
         else:
             nemoa.log('note', "trying to install "
-                "bioconductor package: '{pkg}'")
+                f"bioconductor package: '{pkg}'")
 
         # try to evaluate the remote R script biocLite()
         bioclite = "https://bioconductor.org/biocLite.R"
@@ -69,13 +70,14 @@ class gene:
             base.source(bioclite)
             base.require('biocLite')
             sys.stdout = sysstout
-        except Exception as e:
+        except Exception as err:
             sys.stdout = sysstout
-            raise ValueError("""could not evaluate remote R
-                script: '%s'""" % bioclite) from e
+            raise ValueError(
+                f"could not evaluate remote R script: '{bioclite}'") from err
 
         # try to install bioconductor packages with biocLite()
-        if not pkg: return self._exec_rcmd("biocLite()")
+        if not pkg:
+            return self._exec_rcmd("biocLite()")
         return self._exec_rcmd("biocLite('%s')" % pkg)
 
     def convert_list(self, inlist, infmt, outfmt, filter = False,

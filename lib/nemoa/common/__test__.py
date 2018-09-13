@@ -80,18 +80,18 @@ class TestSuite(ntest.TestSuite):
                 == {('a', 'b'): 1.})
 
         with self.subTest("sumnorm"):
-            self.assertTrue(
-                t(narray.sumnorm(np.array([[.1, -.9], [.3, .2], [-.4, -.9]])),
+            self.assertTrue(t(
+                narray.sumnorm(np.array([[.1, -.9], [.3, .2], [-.4, -.9]])),
                 -1.6))
 
         with self.subTest("meannorm"):
-            self.assertTrue(
-                t(narray.meannorm(np.array([[.1, -.9], [.3, .2], [-.4, -.9]])),
+            self.assertTrue(t(
+                narray.meannorm(np.array([[.1, -.9], [.3, .2], [-.4, -.9]])),
                 -0.5333))
 
         with self.subTest("devnorm"):
-            self.assertTrue(
-                t(narray.devnorm(np.array([[.1, -.9], [.3, .2], [-.4, -.9]])),
+            self.assertTrue(t(
+                narray.devnorm(np.array([[.1, -.9], [.3, .2], [-.4, -.9]])),
                 0.8129))
 
     def test_common_nbase(self):

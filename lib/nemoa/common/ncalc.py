@@ -8,9 +8,9 @@ __license__ = 'GPLv3'
 from typing import Union, Optional
 
 try: import numpy as np
-except ImportError as e: raise ImportError(
+except ImportError as err: raise ImportError(
     "requires package numpy: "
-    "https://scipy.org") from e
+    "https://scipy.org") from err
 
 ArrayLike = Union[np.ndarray, np.matrix, float, int]
 
@@ -32,13 +32,20 @@ def sigmoid(x: ArrayLike, func: Optional[str] = None, **kwargs) -> ArrayLike:
 
     """
 
-    if func is None: return logistic(x, **kwargs)
-    if func == 'logistic': return logistic(x, **kwargs)
-    if func == 'tanh': return tanh(x, **kwargs)
-    if func == 'lecun': return lecun(x, **kwargs)
-    if func == 'elliot': return elliot(x, **kwargs)
-    if func == 'hill': return hill(x, **kwargs)
-    if func == 'arctan': return arctan(x, **kwargs)
+    if func is None:
+        return logistic(x, **kwargs)
+    if func == 'logistic':
+        return logistic(x, **kwargs)
+    if func == 'tanh':
+        return tanh(x, **kwargs)
+    if func == 'lecun':
+        return lecun(x, **kwargs)
+    if func == 'elliot':
+        return elliot(x, **kwargs)
+    if func == 'hill':
+        return hill(x, **kwargs)
+    if func == 'arctan':
+        return arctan(x, **kwargs)
 
     raise ValueError(f"function {func} is not supported.")
 
@@ -122,8 +129,9 @@ def hill(x: ArrayLike, n: float = 2.) -> ArrayLike:
 
     """
 
-    if n == 2.: return x / np.sqrt(1. + x ** 2)
-    return x / np.power( 1. + x ** n, 1. / n)
+    if n == 2.:
+        return x / np.sqrt(1. + x ** 2)
+    return x / np.power(1. + x ** n, 1. / n)
 
 def arctan(x: ArrayLike) -> ArrayLike:
     """Inverse tangent function.
@@ -158,15 +166,27 @@ def d_sigmoid(x: ArrayLike, func: Optional[str] = None, **kwargs) -> ArrayLike:
 
     """
 
-    if isinstance(func, type(None)): return d_logistic(x, **kwargs)
-    if func == 'd_logistic': return d_logistic(x, **kwargs)
-    if func == 'd_elliot': return d_elliot(x, **kwargs)
-    if func == 'd_hill': return d_hill(x, **kwargs)
-    if func == 'd_lecun': return d_lecun(x, **kwargs)
-    if func == 'd_tanh': return d_tanh(x, **kwargs)
-    if func == 'd_arctan': return d_arctan(x, **kwargs)
+    retval = None
 
-    raise ValueError(f"function {func} is not supported")
+    if isinstance(func, type(None)):
+        retval = d_logistic(x, **kwargs)
+    elif func == 'd_logistic':
+        retval = d_logistic(x, **kwargs)
+    elif func == 'd_elliot':
+        retval = d_elliot(x, **kwargs)
+    elif func == 'd_hill':
+        retval = d_hill(x, **kwargs)
+    elif func == 'd_lecun':
+        retval = d_lecun(x, **kwargs)
+    elif func == 'd_tanh':
+        retval = d_tanh(x, **kwargs)
+    elif func == 'd_arctan':
+        retval = d_arctan(x, **kwargs)
+
+    if retval is None:
+        raise ValueError(f"function {func} is not supported")
+
+    return retval
 
 def d_logistic(x: ArrayLike) -> ArrayLike:
     """Derivative of the standard logistic function.
@@ -180,7 +200,7 @@ def d_logistic(x: ArrayLike) -> ArrayLike:
 
     """
 
-    return ((1. / (1. + np.exp(-x))) * (1. - 1. / (1. + np.exp(-x))))
+    return (1. / (1. + np.exp(-x))) * (1. - 1. / (1. + np.exp(-x)))
 
 def d_elliot(x: ArrayLike) -> ArrayLike:
     """Derivative of the Elliot sigmoid function.
@@ -213,7 +233,8 @@ def d_hill(x: ArrayLike, n: float = 2.) -> ArrayLike:
 
     """
 
-    if n == 2.: return 1. / np.power(1. + x ** 2, 3. / 2.)
+    if n == 2.:
+        return 1. / np.power(1. + x ** 2, 3. / 2.)
     return 1. / np.power(1. + x ** n, (1. + n) / n)
 
 def d_lecun(x: ArrayLike) -> ArrayLike:
@@ -286,11 +307,12 @@ def dialogistic(x: ArrayLike, scale: float = 1.,
     """
 
     sigma = max(sigma, .000001)
+    lle = logistic(sigma * (x - .5 * scale))
+    lre = logistic(sigma * (x + .5 * scale))
+    sle = logistic(.5 * sigma * scale)
+    sre = logistic(1.5 * sigma * scale)
 
-    return np.abs(x) * (logistic(sigma * (x + .5 * scale))
-        + logistic(sigma * (x - .5 * scale)) - 1.) \
-        / np.abs(logistic(1.5 * sigma * scale)
-        + logistic(.5 * sigma * scale) - 1.)
+    return np.abs(x) * (lle + lre - 1.) / np.abs(sre + sle - 1.)
 
 def softstep(x: ArrayLike, scale: float = 1., sigma: float = 10.) -> ArrayLike:
     """Calulate softstep function.
@@ -308,7 +330,7 @@ def softstep(x: ArrayLike, scale: float = 1., sigma: float = 10.) -> ArrayLike:
 
     norm = np.tanh(scale)
 
-    return np.tanh(dialogistic(x, scale = scale, sigma = sigma)) / norm
+    return np.tanh(dialogistic(x, scale=scale, sigma=sigma)) / norm
 
 def multilogistic(x: ArrayLike, scale: float = 1.,
     sigma: float = 10.) -> ArrayLike:
@@ -331,11 +353,12 @@ def multilogistic(x: ArrayLike, scale: float = 1.,
 
     # the multilogistic function approximates the identity function
     # iff the scaling or the sharpness parameter goes to zero
-    if scale == 0. or sigma == 0.: return x
+    if scale == 0. or sigma == 0.:
+        return x
 
-    xs = x / scale
-    xsf = np.floor(xs)
-    r = 2. * (xs - xsf) - 1.
+    fxs = x / scale
+    ixs = np.floor(fxs)
+    r = 2. * (fxs - ixs) - 1.
     m = 2. / logistic(sigma) - 1.
 
-    return scale * (xsf + 1. / m * (logistic(sigma * r) - .5) + .5)
+    return scale * (ixs + 1. / m * (logistic(sigma * r) - .5) + .5)

@@ -11,9 +11,9 @@ class TestSuite(unittest.TestCase):
 
     def setUp(self):
         try: import nemoa
-        except ImportError as e: raise ImportError(
+        except ImportError as err: raise ImportError(
             "requires package nemoa: "
-            "http://fishroot.github.io/nemoa/") from e
+            "http://fishroot.github.io/nemoa/") from err
 
         self.mode = nemoa.get('mode')
         self.workspace = nemoa.get('workspace')
@@ -21,8 +21,8 @@ class TestSuite(unittest.TestCase):
 
     def tearDown(self):
         try: import nemoa
-        except ImportError as e: raise ImportError(
+        except ImportError as err: raise ImportError(
             "requires package nemoa: "
-            "http://fishroot.github.io/nemoa/") from e
+            "http://fishroot.github.io/nemoa/") from err
 
         nemoa.set('mode', self.mode)

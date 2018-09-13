@@ -7,10 +7,12 @@ __license__ = 'GPLv3'
 
 from typing import Any, Dict, Optional, Sequence, Tuple, Union
 
-try: import numpy as np
-except ImportError as e: raise ImportError(
-    "requires package numpy: "
-    "https://scipy.org") from e
+try:
+    import numpy as np
+except ImportError as err:
+    raise ImportError(
+        "requires package numpy: "
+        "https://scipy.org") from err
 
 Array = np.ndarray
 ArrayLike = Union[Array, np.matrix, float, int]
@@ -38,7 +40,7 @@ def fromdict(d: DyaDict, labels: Labels, na: float = 0.) -> Array:
 
     """
 
-    a = np.empty(shape = (len(labels[0]), len(labels[1])))
+    a = np.empty(shape=(len(labels[0]), len(labels[1])))
     for i, x in enumerate(labels[0]):
         for j, y in enumerate(labels[1]):
             a[i, j] = d[(x, y)] if (x, y) in d else na
@@ -69,7 +71,8 @@ def asdict(a: Array, labels: Labels, na: Optional[float] = None) -> DyaDict:
     d = {}
     for i, x in enumerate(labels[0]):
         for j, y in enumerate(labels[1]):
-            if not na is None and a[i, j] == na: continue
+            if not na is None and a[i, j] == na:
+                continue
             d[(x, y)] = a[i, j]
 
     return d
@@ -94,23 +97,28 @@ def sumnorm(a: ArrayLike, norm: Optional[str] = None,
 
     """
 
-    if norm is None: return np.sum(a, axis = axis)
+    if norm is None:
+        return np.sum(a, axis=axis)
     if not isinstance(norm, str):
         raise TypeError(f"norm requires type 'str', not '{type(norm)}'")
 
-    n = norm.upper()
+    norm = norm.upper()
 
     # Sum of Values (S)
-    if n == 'S': return np.sum(a, axis = axis)
+    if norm == 'S':
+        return np.sum(a, axis=axis)
 
     # Sum of Errors (SE) / l1-Norm (l1)
-    if n in ['SE', 'L1']: return np.sum(np.abs(a), axis = axis)
+    if norm in ['SE', 'L1']:
+        return np.sum(np.abs(a), axis=axis)
 
     # Sum of Squared Errors (SSE) / Residual sum of squares (RSS)
-    if n in ['SSE', 'RSS']: return np.sum(a ** 2, axis = axis)
+    if norm in ['SSE', 'RSS']:
+        return np.sum(a ** 2, axis=axis)
 
     # Root Sum of Squared Errors (RSSE) / l2-Norm (l2)
-    if n in ['RSSE', 'L2']: return np.sqrt(np.sum(a ** 2, axis = axis))
+    if norm in ['RSSE', 'L2']:
+        return np.sqrt(np.sum(a ** 2, axis=axis))
 
     raise ValueError(f"norm '{norm}' is not supported")
 
@@ -134,23 +142,28 @@ def meannorm(a: ArrayLike, norm: Optional[str] = None,
 
     """
 
-    if norm is None: return np.mean(a, axis = axis)
+    if norm is None:
+        return np.mean(a, axis=axis)
     if not isinstance(norm, str):
         raise TypeError(f"norm requires type 'str', not '{type(norm)}'")
 
-    n = norm.upper()
+    norm = norm.upper()
 
     # Mean of Values (M)
-    if n == 'M': return np.mean(a, axis = axis)
+    if norm == 'M':
+        return np.mean(a, axis=axis)
 
     # Mean of Errors (ME)
-    if n == 'ME': return np.mean(np.abs(a), axis = axis)
+    if norm == 'ME':
+        return np.mean(np.abs(a), axis=axis)
 
     # Mean of Squared Errors (MSE)
-    if n == 'MSE': return np.mean(a ** 2, axis = axis)
+    if norm == 'MSE':
+        return np.mean(a ** 2, axis=axis)
 
     # Root Mean of Squared Errors (RMSE) / L2-Norm
-    if n == 'RMSE': return np.sqrt(np.mean(a ** 2, axis = axis))
+    if norm == 'RMSE':
+        return np.sqrt(np.mean(a ** 2, axis=axis))
 
     raise ValueError(f"norm '{norm}' is not supported")
 
@@ -173,19 +186,23 @@ def devnorm(a: ArrayLike, norm: Optional[str] = None,
 
     """
 
-    if norm is None: return np.std(a, axis = axis)
+    if norm is None:
+        return np.std(a, axis=axis)
     if not isinstance(norm, str):
         raise TypeError(f"norm requires type 'str', not '{type(norm)}'")
 
-    n = norm.upper()
+    norm = norm.upper()
 
     # Standard Deviation of Data (SD)
-    if n == 'SD': return np.std(a, axis = axis)
+    if norm == 'SD':
+        return np.std(a, axis=axis)
 
     # Standard Deviation of Errors (SDE)
-    if n == 'SDE': return np.std(np.abs(a), axis = axis)
+    if norm == 'SDE':
+        return np.std(np.abs(a), axis=axis)
 
     # Standard Deviation of Squared Errors (SDSE)
-    if n == 'SDSE': return np.std(a ** 2, axis = axis)
+    if norm == 'SDSE':
+        return np.std(a ** 2, axis=axis)
 
     raise ValueError(f"norm '{norm}' is not supported")

@@ -14,7 +14,7 @@ def filetypes():
 
     return nplot.filetypes()
 
-def get_plot(dataset, func = None, plot = None, **kwargs):
+def get_plot(dataset, func=None, plot=None, **kwargs):
 
     import importlib
 
@@ -35,15 +35,17 @@ def get_plot(dataset, func = None, plot = None, **kwargs):
     mname = save.__module__
     try:
         module = importlib.import_module(mname)
-        if not hasattr(module, cname): raise ImportError()
-    except ImportError:
+        if not hasattr(module, cname):
+            raise ImportError()
+    except ImportError as err:
         raise ValueError(
             "could not plot dataset '%s': "
-            "plot type '%s' is not supported." % (dataset.name, plot))
+            "plot type '%s' is not supported." % (dataset.name, plot)) from err
 
     # create plot
-    plot = getattr(module, cname)(func = fname, **kwargs)
-    if plot.create(dataset): return plot
+    plot = getattr(module, cname)(func=fname, **kwargs)
+    if plot.create(dataset):
+        return plot
 
     plot.release()
     return None
@@ -78,7 +80,7 @@ class Heatmap(nplot.Heatmap):
 
     def create(self, dataset):
 
-        from nemoa.common import nfunc, nmodule
+        from nemoa.common import nfunc
 
         # set plot defaults
         self.set_default({
@@ -118,7 +120,7 @@ class Histogram(nplot.Histogram):
 
     def create(self, dataset):
 
-        from nemoa.common import nfunc, nmodule
+        from nemoa.common import nfunc
 
         # set plot defaults
         self.set_default({
@@ -128,7 +130,7 @@ class Histogram(nplot.Histogram):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwargs = nfunc.kwargs(func, default = self._config)
+        kwargs = nfunc.kwargs(func, default=self._config)
         array  = dataset.evaluate(fname, **kwargs)
 
         # check return value
@@ -155,7 +157,7 @@ class Scatter2D(nplot.Scatter2D):
 
     def create(self, dataset):
 
-        from nemoa.common import nfunc, nmodule
+        from nemoa.common import nfunc
 
         # set plot defaults
         self.set_default({
@@ -190,12 +192,14 @@ class Graph(nplot.Graph):
 
     def create(self, dataset):
 
-        try: import networkx as nx
-        except ImportError as e: raise ImportError(
-            "requires package networkx: "
-            "https://networkx.github.io") from e
+        try:
+            import networkx as nx
+        except ImportError as err:
+            raise ImportError(
+                "requires package networkx: "
+                "https://networkx.github.io") from err
 
-        from nemoa.common import nfunc, nmodule
+        from nemoa.common import nfunc
 
         # set plot defaults
         self.set_default({

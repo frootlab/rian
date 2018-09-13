@@ -31,8 +31,8 @@ def splitargs(text: str) -> Tuple[str, tuple, dict]:
     # get function name
     try:
         func = tree.body[0].value.func.id
-    except AttributeError as e:
-        raise ValueError(f"'{text}' is not a valid function call") from e
+    except AttributeError as err:
+        raise ValueError(f"'{text}' is not a valid function call") from err
 
     # get tuple with arguments
     Args = tree.body[0].value.args

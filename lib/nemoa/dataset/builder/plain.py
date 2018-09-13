@@ -69,8 +69,8 @@ class Rules:
             'type': 'base.Dataset',
             'columns': tuple(),
             'colmapping': {},
-            'colfilter': { '*': ['*:*'] },
-            'rowfilter': { '*': ['*:*'], name: [name + ':*'] } }
+            'colfilter': {'*': ['*:*']},
+            'rowfilter': {'*': ['*:*'], name: [name + ':*']}}
         for col in cols:
             config['colmapping'][col] = col
             config['columns'] += (('', col), )
@@ -80,7 +80,7 @@ class Rules:
         # initialize dataset with random values
         dtype = numpy.dtype({
             'names': ('label',) + tuple(cols),
-            'formats': ('<U12',) + ('<f8',) * len(cols) })
+            'formats': ('<U12',) + ('<f8',) * len(cols)})
         data = numpy.recarray((rowsize, ), dtype)
         rowlabels = [self.settings['rowlabel'] % (i + 1) \
             for i in range(rowsize)]
@@ -106,21 +106,26 @@ class Rules:
             if 'bernoulli' in initrule:
                 abin = self.settings['abin']
                 bernoulli = numpy.random.binomial(1, abin, rowsize)
-            try: values = eval(initrule)
-            except Exception as e:
-                raise ValueError("""could not initialize '%s':
-                    init rule "%s" is not valid.""" % (col, initrule)) from e
+            try:
+                values = eval(initrule)
+            except Exception as err:
+                raise ValueError(
+                    f"could not initialize '{col}': "
+                    f"init rule '{initrule}' is not valid") from err
             data[col] = values
 
         # evaluate manipulation rules
         for col, rule in self.settings['rules']:
-            if col not in cols: continue
+            if col not in cols:
+                continue
             for key in cols:
-                if key not in rule: continue
+                if key not in rule:
+                    continue
                 rule = rule.replace(key, "data['%s']" % key)
             random = {}
             for key in ['gauss', 'bernoulli']:
-                if key not in rule: continue
+                if key not in rule:
+                    continue
                 if key == 'gauss':
                     sdev = self.settings['sdev']
                     if sdev > 0.:
@@ -132,10 +137,11 @@ class Rules:
                     rvalues = numpy.random.binomial(1, abin, rowsize)
                 random[key] = rvalues
                 rule.replace(key, "random['%s']" % key)
-            try: values = eval(rule)
-            except Exception as e:
-                raise ValueError("""could not evaluate manipulation
-                    rule "%s".""" % rule) from e
+            try:
+                values = eval(rule)
+            except Exception as err:
+                raise ValueError(
+                    f"could not evaluate manipulation rule '{rule}'") from err
             data[col] = values
 
         # normalize data
@@ -145,4 +151,4 @@ class Rules:
                 data[col] = (data[col] - data[col].mean()) \
                     / data[col].std()
 
-        return { 'config': config, 'tables': { name: data } }
+        return {'config': config, 'tables': {name: data}}

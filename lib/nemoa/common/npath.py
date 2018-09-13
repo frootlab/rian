@@ -85,10 +85,9 @@ def join(*args: PathLike) -> str:
                     break
                 else: l[i:i + 1] = l[i]
             i += 1
-        try:
-            path = Path(*l)
-        except Exception as e:
-            raise ValueError("path like tree structure is invalid") from e
+        try: path = Path(*l)
+        except Exception as err: raise ValueError(
+            "path like tree structure is invalid") from err
     if not path: return ''
 
     # normalize path
@@ -263,9 +262,10 @@ def cp(source: PathLike, target: PathLike) -> bool:
     for s in sdir.glob('*'):
         t = Path(ddir, basename(s))
         if t.exists(): shutil.rmtree(str(t))
-        try: shutil.copytree(str(s), str(t))
-        except Exception as e:
-            raise OSError("could not copy directory") from e
+        try:
+            shutil.copytree(str(s), str(t))
+        except Exception as err:
+            raise OSError("could not copy directory") from err
 
     return True
 
@@ -286,9 +286,10 @@ def mkdir(*args: PathLike) -> bool:
     path = Path(expand(*args))
     if path.is_dir(): return True
 
-    try: os.makedirs(path)
-    except Exception as e:
-        raise OSError("could not create directory") from e
+    try:
+        os.makedirs(path)
+    except Exception as err:
+        raise OSError("could not create directory") from err
 
     return path.is_dir()
 

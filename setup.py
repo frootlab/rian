@@ -5,15 +5,17 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-def getpath(filepath = None):
+def getpath(filepath=None):
     """Get absolute filepath from string or iterable."""
 
     import os
 
     here = os.path.abspath(os.path.dirname(__file__))
 
-    if not filepath: return here
-    if isinstance(filepath, str): return os.path.join(here, filepath)
+    if not filepath:
+        return here
+    if isinstance(filepath, str):
+        return os.path.join(here, filepath)
     if isinstance(filepath, (tuple, list)):
         return os.path.join(here, os.path.sep.join(filepath))
 
@@ -37,19 +39,19 @@ def install():
 
             subprocess.call([sys.executable, __file__, 'postinstall'])
 
-    def getfile(filepath = None):
+    def getfile(filepath=None):
         """Get the content from a file."""
 
         import codecs
 
         path = getpath(filepath)
 
-        with codecs.open(path, encoding = 'utf-8') as file_handler:
+        with codecs.open(path, encoding='utf-8') as file_handler:
             content = file_handler.read()
 
         return content
 
-    def getvars(filepath = None):
+    def getvars(filepath=None):
         """Get all __VARIABLE__ from given file."""
 
         import io
@@ -57,7 +59,7 @@ def install():
 
         # get file content
         path = getpath(filepath)
-        with io.open(path, encoding = 'utf8') as file_handler:
+        with io.open(path, encoding='utf8') as file_handler:
             content = file_handler.read()
 
         # parse variables with regular expressions
@@ -84,7 +86,7 @@ def install():
             'matplotlib'],
         'extras_require': {
             'gui': ['pyside'],
-            'systemsbiology': ['rpy2'] },
+            'systemsbiology': ['rpy2']},
         'classifiers': [
             'Development Status :: 3 - Alpha',
             'Intended Audience :: Science/Research',
@@ -92,19 +94,19 @@ def install():
             'Operating System :: OS Independent',
             'License :: OSI Approved :: GPLv3',
             'Programming Language :: Python :: 3',
-            'Programming Language :: Python :: 3.5',
 			'Programming Language :: Python :: 3.6'],
         'entry_points': {
             'console_scripts': [
-                'nemoa = nemoa.session.console:main'] }
+                'nemoa = nemoa.session.console:main']}
     }
 
     # prepare dynamic package variables
     srcfile = (pkg['libdir'], pkg['name'], '__init__.py')
-    for key, val in list(getvars(srcfile).items()): pkg[key] = val
+    for key, val in getvars(srcfile).items():
+        pkg[key] = val
     pkg['long_description'] = getfile(pkg['descfile'])
-    pkg['package_dir'] = { '': pkg['libdir'] }
-    pkg['cmdclass'] = { 'install': NemoaCustomInstall }
+    pkg['package_dir'] = {'': pkg['libdir']}
+    pkg['cmdclass'] = {'install': NemoaCustomInstall}
     pkg['packages'] = setuptools.find_packages(pkg['libdir'])
 
     # install nemoa lib
@@ -149,14 +151,10 @@ def postinstall():
 
             try:
                 shutil.copytree(srcsdir, tgtsdir)
-
-            # directories are the same
-            except shutil.Error as e:
-                print(('directory not copied. Error: %s' % e))
-
-            # any error saying that the directory doesn't exist
-            except OSError as e:
-                print(('directory not copied. Error: %s' % e))
+            except shutil.Error as err: # unknown error
+                print(f"directory not copied: {str(err)}")
+            except OSError as err: # directory doesn't exist
+                print(f"directory not copied: {str(err)}")
 
         return True
 
@@ -167,15 +165,13 @@ def postinstall():
 
     # copy user workspaces
     user_src_base = getpath(('data', 'user'))
-    user_tgt_base = appdirs.user_data_dir(
-        appname = appname, appauthor = appauthor)
+    user_tgt_base = appdirs.user_data_dir(appname=appname, appauthor=appauthor)
     user_tgt_base = getpath((user_tgt_base, 'workspaces'))
     copytree(user_src_base, user_tgt_base)
 
     # copy site workspaces
     site_src_base = getpath(('data', 'site'))
-    site_tgt_base = appdirs.site_data_dir(
-        appname = appname, appauthor = appauthor)
+    site_tgt_base = appdirs.site_data_dir(appname=appname, appauthor=appauthor)
     site_tgt_base = getpath((site_tgt_base, 'workspaces'))
     copytree(site_src_base, site_tgt_base)
 

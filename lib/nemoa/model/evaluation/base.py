@@ -4,8 +4,8 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
 import numpy
+import nemoa
 
 from nemoa.common import nclass
 
@@ -25,30 +25,34 @@ class Evaluation:
         """ """
 
         # algorithms
-        if key == 'algorithm': return self._get_algorithm(*args, **kwargs)
+        if key == 'algorithm':
+            return self._get_algorithm(*args, **kwargs)
         if key == 'algorithms':
-            return self._get_algorithms(attribute = 'about', *args, **kwargs)
+            return self._get_algorithms(attribute='about', *args, **kwargs)
 
-        if key == 'data': return self._get_data(*args, **kwargs)
-        if key == 'model': return self._get_model()
+        if key == 'data':
+            return self._get_data(*args, **kwargs)
+        if key == 'model':
+            return self._get_model()
 
-        if key in self._buffer: return self._buffer[key]
+        if key in self._buffer:
+            return self._buffer[key]
 
         return False
 
-    def _get_algorithms(self, category = None, attribute = None):
+    def _get_algorithms(self, category=None, attribute=None):
         """Get evaluation algorithms."""
 
-        from nemoa.common import nclass
-
-        if 'algorithms' not in self._buffer: self._buffer['algorithms'] = {}
+        if 'algorithms' not in self._buffer:
+            self._buffer['algorithms'] = {}
         algorithms = self._buffer['algorithms'].get(attribute, None)
         if not algorithms:
-            algorithms = nclass.methods(self, key = 'name',
-                val = attribute, groupby = 'category')
+            algorithms = nclass.methods(
+                self, key='name', val=attribute, groupby='category')
             self._buffer['algorithms'][attribute] = algorithms
         if category:
-            if category not in algorithms: return {}
+            if category not in algorithms:
+                return {}
             algorithms = algorithms[category]
 
         return algorithms
@@ -74,8 +78,9 @@ class Evaluation:
             dataset = self.model.dataset
             mapping = system._get_mapping()
             cols = (mapping[0], mapping[-1])
-            data = dataset.get('data', cols = cols)
-            if data: self._buffer['data'] = data
+            data = dataset.get('data', cols=cols)
+            if data:
+                self._buffer['data'] = data
 
         return data or None
 
@@ -95,10 +100,14 @@ class Evaluation:
         """
 
         # test type of model instance and subclasses
-        if not nclass.hasbase(model, 'Model'): return False
-        if not nclass.hasbase(model.dataset, 'Dataset'): return False
-        if not nclass.hasbase(model.network, 'Network'): return False
-        if not nclass.hasbase(model.system, 'System'): return False
+        if not nclass.hasbase(model, 'Model'):
+            return False
+        if not nclass.hasbase(model.dataset, 'Dataset'):
+            return False
+        if not nclass.hasbase(model.network, 'Network'):
+            return False
+        if not nclass.hasbase(model.system, 'System'):
+            return False
 
         # check dataset
         if (not 'check_dataset' in model.system._default['init']
@@ -108,11 +117,13 @@ class Evaluation:
 
         return True
 
-    def evaluate(self, key = None, *args, **kwargs):
+    def evaluate(self, key=None, *args, **kwargs):
         """Evaluate model."""
 
-        if key == 'dataset': return self.model.dataset.evaluate(*args, **kwargs)
-        if key == 'network': return self.model.network.evaluate(*args, **kwargs)
+        if key == 'dataset':
+            return self.model.dataset.evaluate(*args, **kwargs)
+        if key == 'network':
+            return self.model.network.evaluate(*args, **kwargs)
 
         if key in ['units', 'links', 'relation']:
             category = key
@@ -125,17 +136,20 @@ class Evaluation:
             category = kwargs.pop('category', args.pop(0) if args else None)
             args = tuple(args)
 
-        if not category: category = 'model'
-        if not algname: algname = {
-            'model': 'accuracy',
-            'units': 'accuracy',
-            'links': 'energy',
-            'relation': 'correlation' }.get(category, None)
+        if not category:
+            category = 'model'
+        if not algname:
+            algname = {
+                'model': 'accuracy', 'units': 'accuracy', 'links': 'energy',
+                'relation': 'correlation'
+            }.get(category, None)
 
-        algorithm = self._get_algorithm(algname, category = category)
+        algorithm = self._get_algorithm(algname, category=category)
 
-        if not algorithm: raise Warning(
-            f"could not evaluate {category}: invalid algorithm {algname}.")
+        if not algorithm:
+            raise Warning(
+                f"could not evaluate {category}: "
+                f"invalid algorithm {algname}.")
 
         data = kwargs.pop('data', self._get_data())
 
@@ -143,8 +157,10 @@ class Evaluation:
         getunits = self.model.system._get_units
 
         # prepare non keyword arguments for evaluation
-        args = {'none': [], 'input': [data[0]], 'output': [data[1]],
-            'all': [data]}.get(algorithm.get('args', None), [data])
+        args = {
+            'none': [], 'input': [data[0]], 'output': [data[1]],
+            'all': [data]
+        }.get(algorithm.get('args', None), [data])
 
         # get category specific keyword arguments
         if category == 'relation':
@@ -154,7 +170,7 @@ class Evaluation:
         elif category in ['units', 'links'] \
             and kwargs.get('units', None):
             kwargs['mapping'] = \
-                getmapping(tgt = kwargs.pop('units'))
+                getmapping(tgt=kwargs.pop('units'))
         if kwargs.get('mapping', None) is not None:
             kwargs['mapping'] = getmapping()
 
@@ -165,21 +181,19 @@ class Evaluation:
         retfmt = algorithm.get('retfmt', 'scalar')
         if category == 'model':
             return retval
-        elif category == 'units':
+        if category == 'units':
             if retfmt == 'vector':
-                units = getunits(layer = kwargs['mapping'][-1])
-
+                units = getunits(layer=kwargs['mapping'][-1])
                 return {unit: retval[:, uid] \
                     for uid, unit in enumerate(units)}
-            elif retfmt == 'scalar':
-                units = getunits(layer = kwargs['mapping'][-1])
-
+            if retfmt == 'scalar':
+                units = getunits(layer=kwargs['mapping'][-1])
                 return dict(list(zip(units, retval)))
         elif category == 'links':
             if retfmt == 'scalar':
                 from nemoa.common import narray
-                src = getunits(layer = kwargs['mapping'][0])
-                tgt = getunits(layer = kwargs['mapping'][-1])
+                src = getunits(layer=kwargs['mapping'][0])
+                tgt = getunits(layer=kwargs['mapping'][-1])
                 return narray.asdict(retval, (src, tgt))
         elif category == 'relation':
             if algorithm['retfmt'] == 'scalar':
@@ -193,25 +207,28 @@ class Evaluation:
                     try:
                         T = eval(transform)
                         retval = T
-                    except Exception as e:
+                    except Exception as err:
                         raise ValueError("could not transform relations: "
-                            "invalid syntax") from e
+                            "invalid syntax") from err
 
                 # create formated return values
-                if rettype == 'array': return retval
+                if rettype == 'array':
+                    return retval
                 if rettype == 'dict':
                     from nemoa.common import narray
-                    src = getunits(layer = kwargs['mapping'][0])
-                    tgt = getunits(layer = kwargs['mapping'][-1])
+                    src = getunits(layer=kwargs['mapping'][0])
+                    tgt = getunits(layer=kwargs['mapping'][-1])
                     retval = narray.asdict(retval, (src, tgt))
-                    if not evalstat: return retval
+                    if not evalstat:
+                        return retval
 
                     # (optional) add statistics
                     filtered = []
                     for src, tgt in retval:
                         sunit = src.split(':')[1] if ':' in src else src
                         tunit = tgt.split(':')[1] if ':' in tgt else tgt
-                        if sunit == tunit: continue
+                        if sunit == tunit:
+                            continue
                         filtered.append(retval[(src, tgt)])
                     array = numpy.array(filtered)
                     retval['max'] = numpy.amax(array)
@@ -227,16 +244,19 @@ class Evaluation:
     def set(self, key, *args, **kwargs):
         """ """
 
-        if key == 'model': return self._set_model(*args, **kwargs)
-        if key == 'config': return self._set_config(*args, **kwargs)
+        if key == 'model':
+            return self._set_model(*args, **kwargs)
+        if key == 'config':
+            return self._set_config(*args, **kwargs)
 
         raise KeyError(f"unknown key '{key}'")
 
-    def _set_config(self, config = None, **kwargs):
+    def _set_config(self, config=None, **kwargs):
         """Set evaluation configuration from dictionary."""
 
         from nemoa.common import ndict
-        if not isinstance(config, dict): config = {}
+        if not isinstance(config, dict):
+            config = {}
         self._config = ndict.merge(kwargs, config, self._default)
 
         return True

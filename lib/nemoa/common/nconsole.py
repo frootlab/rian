@@ -13,40 +13,44 @@ def getch() -> Optional[object]:
     class GetchMsvcrt:
         """Microsoft Visual C/C++ Runtime Library implementation of getch."""
 
-        def get(self) -> str:
+        @staticmethod
+        def get() -> str:
             """Return character from stdin."""
 
             import msvcrt
 
-            if not msvcrt.kbhit(): return ''
+            if not msvcrt.kbhit():
+                return ''
             return str(msvcrt.getch(), 'utf-8')
 
     class GetchTermios:
         """Unix/Termios implementation of getch."""
 
         def __init__(self) -> None:
-            """Create thread to fill internal buffer."""
-
             import queue
             import sys
-            import termios
             import threading
             import time
 
-            fd = sys.stdin.fileno()
-            curterm = termios.tcgetattr(fd)
+            try:
+                import termios
+            except ImportError as err:
+                raise ImportError("requires package termios") from err
+
+            fdesc = sys.stdin.fileno()
+            curterm = termios.tcgetattr(fdesc)
 
             # set unbuffered terminal
-            newterm = termios.tcgetattr(fd)
+            newterm = termios.tcgetattr(fdesc)
             newterm[3] = (newterm[3] & ~termios.ICANON & ~termios.ECHO)
-            termios.tcsetattr(fd, termios.TCSAFLUSH, newterm)
+            termios.tcsetattr(fdesc, termios.TCSAFLUSH, newterm)
 
             self.queue = {
                 'stdin': queue.Queue(),
                 'runsignal': True,
                 'time': time.time(),
                 'curterm': curterm,
-                'fd': fd
+                'fdesc': fdesc
             }
 
             def stream(queue):
@@ -55,18 +59,19 @@ def getch() -> Optional[object]:
                     queue['stdin'].put(sys.stdin.read(1))
 
             self.queue['handler'] = threading.Thread(
-                target = stream, args = (self.queue, ))
+                target=stream, args=(self.queue, ))
             self.queue['handler'].daemon = True
             self.queue['handler'].start()
 
         def __del__(self) -> None:
-            """ """
+            try:
+                import termios
+            except ImportError as err:
+                raise ImportError("requires package termios") from err
 
-            import termios
-
-            fd = self.queue['fd']
+            fdesc = self.queue['fdesc']
             curterm = self.queue['curterm']
-            termios.tcsetattr(fd, termios.TCSAFLUSH, curterm)
+            termios.tcsetattr(fdesc, termios.TCSAFLUSH, curterm)
             self.queue['runsignal'] = False
 
             del self.__dict__['queue']
@@ -76,11 +81,14 @@ def getch() -> Optional[object]:
 
             import time
 
-            if not self.__dict__.get('queue', None): self.start()
+            if not self.__dict__.get('queue', None):
+                self.__init__()
             now = time.time()
-            if now < self.queue['time'] + .5: return ''
+            if now < self.queue['time'] + .5:
+                return ''
             self.queue['time'] = now
-            if self.queue['stdin'].empty(): return ''
+            if self.queue['stdin'].empty():
+                return ''
 
             return self.queue['stdin'].get()
 
@@ -88,8 +96,9 @@ def getch() -> Optional[object]:
 
     lib = nsysinfo.ttylib()
 
-    if lib == 'msvcrt': return GetchMsvcrt()
-    if lib == 'Carbon': return GetchCarbon()
-    if lib == 'termios': return GetchTermios()
+    if lib == 'msvcrt':
+        return GetchMsvcrt()
+    if lib == 'termios':
+        return GetchTermios()
 
     return None

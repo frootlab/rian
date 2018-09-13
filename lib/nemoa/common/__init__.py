@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""common modules."""
 
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'

@@ -11,9 +11,9 @@ import csv
 import os
 
 try: import numpy as np
-except ImportError as e: raise ImportError(
+except ImportError as err: raise ImportError(
     "requires package numpy: "
-    "https://scipy.org") from e
+    "https://scipy.org") from err
 
 def load(path: str, delim: Optional[str] = None,
     labels: Optional[list] = None, usecols: Optional[tuple] = None,
@@ -204,7 +204,7 @@ def get_delim(path: str, delims: list = [',', ';', '\t', ' '],
             # try to detect delimiter of probe
             if lines > minprobe:
                 try: dialect = csv.Sniffer().sniff(probe, delims)
-                except Exception as e: continue
+                except Exception: continue
                 delim = dialect.delimiter
 
     if not delim:
@@ -241,7 +241,7 @@ def get_labels(path: str, delim: Optional[str] = None) -> list:
         for line in csvfile:
             stripped_line = line.lstrip(' ')
             if stripped_line.startswith('#'): continue
-            if stripped_line  in ['\n', '\r\n']: continue
+            if stripped_line in ['\n', '\r\n']: continue
             if first is None: first = line
             elif second is None:
                 second = line

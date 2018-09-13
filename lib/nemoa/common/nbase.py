@@ -10,7 +10,7 @@ from pathlib import Path
 
 PathLike = Tuple[Union['PathLike', str, Path], ...]
 
-class ObjectIP(object):
+class ObjectIP:
     """Base class for objects subjected to intellectual property.
 
     Resources like datasets, networks, systems and models share common
@@ -87,16 +87,18 @@ class ObjectIP(object):
         """Wraps attribute set requests to private setter methods."""
 
         if key in self._attr:
-            if not self._attr[key] & 0b10: raise AttributeError(
-                f"attribute '{key}' is not writeable")
-            if not hasattr(self, '_set_' + key): raise AttributeError(
-                f"{self.__class__.__name__} instance has "
-                f"no attribute '_set_{key}'")
-            return getattr(self, '_set_' + key)(val)
+            if not self._attr[key] & 0b10:
+                raise AttributeError(
+                    f"attribute '{key}' is not writeable")
+            if not hasattr(self, '_set_' + key):
+                raise AttributeError(
+                    f"{self.__class__.__name__} instance has "
+                    f"no attribute '_set_{key}'")
+            getattr(self, '_set_' + key)(val)
+        else:
+            self.__dict__[key] = val
 
-        self.__dict__[key] = val
-
-    def get(self, key: str = 'name', *args: Any, **kwargs: Any) -> Any:
+    def get(self, key: str, *args: Any, **kwargs: Any) -> Any:
         """Get the value of an object property.
 
         Args:
@@ -168,15 +170,18 @@ class ObjectIP(object):
 
         """
 
-        if not isinstance(key, (str, type(None))): raise TypeError(
-            "argument 'key' is required to be of type "
-            f"'str' or 'None', not '{type(key)}'")
+        if not isinstance(key, (str, type(None))):
+            raise TypeError(
+                "argument 'key' is required to be of type "
+                f"'str' or 'None', not '{type(key)}'")
 
         import copy
 
         conf = self._config or {}
-        if key is None: return copy.deepcopy(conf)
-        if key in conf: return copy.deepcopy(conf[key])
+        if key is None:
+            return copy.deepcopy(conf)
+        if key in conf:
+            return copy.deepcopy(conf[key])
 
         raise KeyError(f"key '{key}' is not valid")
 
@@ -192,31 +197,33 @@ class ObjectIP(object):
 
         """
 
-        if not isinstance(key, (str, type(None))): raise TypeError(
-            "argument 'key' is required to be of type "
-            f"'str' or 'None', not '{type(key)}'")
+        if not isinstance(key, (str, type(None))):
+            raise TypeError(
+                "argument 'key' is required to be of type "
+                f"'str' or 'None', not '{type(key)}'")
 
         import copy
 
         # get mapping for internal datastorage
-        d = getattr(self, '_copy', None) \
+        cmap = getattr(self, '_copy', None) \
             or {k.strip('_'): k for k in self.__dict__.keys()}
 
         # remove class variables from mapping
-        d.pop('attr', None)
-        d.pop('copy', None)
+        cmap.pop('attr', None)
+        cmap.pop('copy', None)
 
         getter = self._get_getter()
 
         if key is None:
             dcopy = {}
-            for k in d.keys():
+            for k in cmap.keys():
                 dcopy[k] = getattr(self, '_get_' + k)() \
-                    or copy.deepcopy(self.__dict__[d[k]])
+                    or copy.deepcopy(self.__dict__[cmap[k]])
             return dcopy
-        if key in d.keys():
-            if key in getter: return getattr(self, '_get_' + key)()
-            return copy.deepcopy(self.__dict__[d[key]])
+        if key in cmap.keys():
+            if key in getter:
+                return getattr(self, '_get_' + key)()
+            return copy.deepcopy(self.__dict__[cmap[key]])
 
         raise KeyError(f"key '{str(key)}' is not valid")
 
@@ -275,7 +282,7 @@ class ObjectIP(object):
         """
 
         from nemoa.common import nclass, ndict
-        d = nclass.methods(self, filter = '_get_*')
+        d = nclass.methods(self, filter='_get_*')
         return sorted(ndict.reduce(d, '_get_'))
 
     def _get_license(self) -> Optional[str]:
@@ -317,18 +324,22 @@ class ObjectIP(object):
 
         if 'path' in self._config:
             path = str(self._config['path'])
-            if path: return path
+            if path:
+                return path
 
         from nemoa.common import npath
         from nemoa import session
 
         mname = self.__module__.split('.')[-1]
         dname = session.path(mname + 's')
-        if not dname: return None
+        if not dname:
+            return None
         fbase = npath.clear(self._get_fullname())
-        if not fbase: return None
+        if not fbase:
+            return None
         fext = session.get('default', 'filetype', mname)
-        if not fext: return None
+        if not fext:
+            return None
         path = npath.join(dname, fbase + '.' + fext)
 
         return path
@@ -346,7 +357,7 @@ class ObjectIP(object):
         """
 
         from nemoa.common import nclass, ndict
-        d = nclass.methods(self, filter = '_set_*')
+        d = nclass.methods(self, filter='_set_*')
         return sorted(ndict.reduce(d, '_set_'))
 
     def _get_type(self) -> Optional[str]:
@@ -548,7 +559,7 @@ class ObjectIP(object):
 
         if not isinstance(val, str): raise TypeError(
             "attribute 'name' is required to be of type string, "
-            f"not '{type(name)}'")
+            f"not '{type(val)}'")
 
         self._config['name'] = val
 
