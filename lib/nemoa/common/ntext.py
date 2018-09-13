@@ -21,9 +21,9 @@ def splitargs(text: str) -> Tuple[str, tuple, dict]:
     """
 
     # check argument types
-    if not isinstance(text, str):
-        raise TypeError("argument 'text' requires type "
-            f"'str', not '{type(text)}'")
+    if not isinstance(text, str): raise TypeError(
+        "argument 'text' requires to be of type 'str'"
+        f", not '{type(text)}'")
 
     import ast
     tree = ast.parse(text)
@@ -72,9 +72,9 @@ def astype(text: str, fmt: Optional[str] = None, **kwargs: Any) -> Any:
     """
 
     # check argument types
-    if not isinstance(text, str):
-        raise TypeError("argument 'text' requires type "
-            f"'str', not '{type(text)}'")
+    if not isinstance(text, str): raise TypeError(
+        "argument 'text' requires to be of type 'str'"
+        f", not '{type(text)}'")
 
     # evaluate text if no format is given
     if fmt == None: return eval(text)
@@ -112,9 +112,9 @@ def aslist(text: str, delim: str = ',') -> list:
     """
 
     # check argument types
-    if not isinstance(text, str):
-        raise TypeError("argument 'text' requires type "
-            f"'str', not '{type(text)}'")
+    if not isinstance(text, str): raise TypeError(
+        "argument 'text' requires to be of type 'str'"
+        f", not '{type(text)}'")
     if not isinstance(delim, str):
         raise TypeError("argument 'delim' requires type "
             f"'str', not '{type(text)}'")
@@ -152,9 +152,9 @@ def astuple(text: str, delim: str = ',') -> tuple:
     """
 
     # check argument types
-    if not isinstance(text, str):
-        raise TypeError("argument 'text' requires type "
-            f"'str', not '{type(text)}'")
+    if not isinstance(text, str): raise TypeError(
+        "argument 'text' requires to be of type 'str'"
+        f", not '{type(text)}'")
     if not isinstance(delim, str):
         raise TypeError("argument 'delim' requires type "
             f"'str', not '{type(text)}'")
@@ -192,9 +192,9 @@ def asset(text: str, delim: str = ',') -> list:
     """
 
     # check argument types
-    if not isinstance(text, str):
-        raise TypeError("argument 'text' requires type "
-            f"'str', not '{type(text)}'")
+    if not isinstance(text, str): raise TypeError(
+        "argument 'text' requires to be of type 'str'"
+        f", not '{type(text)}'")
     if not isinstance(delim, str):
         raise TypeError("argument 'delim' requires type "
             f"'str', not '{type(text)}'")
@@ -233,9 +233,9 @@ def asdict(text: str, delim: str = ',') -> dict:
     """
 
     # check argument types
-    if not isinstance(text, str):
-        raise TypeError("argument 'text' requires type "
-            f"'str', not '{type(text)}'")
+    if not isinstance(text, str): raise TypeError(
+        "argument 'text' requires to be of type 'str'"
+        f", not '{type(text)}'")
     if not isinstance(delim, str):
         raise TypeError("argument 'delim' requires type "
             f"'str', not '{type(text)}'")

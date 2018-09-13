@@ -7,7 +7,6 @@ __license__ = 'GPLv3'
 
 from typing import Callable, Optional
 
-
 def about(func: Callable) -> str:
     """Summary about a function.
 
@@ -23,15 +22,11 @@ def about(func: Callable) -> str:
 
     """
 
-    import types
-
-    if not isinstance(func, types.FunctionType):
+    if not isinstance(func, Callable):
         raise TypeError('first argument requires to be a function')
-
-    if func.__doc__ is None: return ""
+    if not func.__doc__: return ''
 
     return func.__doc__.split('\n', 1)[0].strip(' .')
-
 
 def func(name: str) -> Optional[Callable]:
     """Function instance for a given fully qualified function name.
@@ -49,13 +44,12 @@ def func(name: str) -> Optional[Callable]:
 
     from nemoa.common import nmodule
 
-    minst = nmodule.get_module('.'.join(name.split('.')[:-1]))
+    minst = nmodule.objectify('.'.join(name.split('.')[:-1]))
 
     if minst is None: return None
     func = getattr(minst, name.split('.')[-1])
 
     return func
-
 
 def kwargs(func: Callable, default: Optional[dict] = None) -> dict:
     """Keyword arguments of a function.
@@ -80,10 +74,8 @@ def kwargs(func: Callable, default: Optional[dict] = None) -> dict:
 
     """
 
-    import types
-
     # check types of arguments
-    if not isinstance(func, types.FunctionType):
+    if not isinstance(func, Callable):
         raise TypeError('first argument requires to be a function')
     if not isinstance(default, (dict, type(None))):
         raise TypeError(f"argument 'default' requires types "

@@ -6,12 +6,12 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-class Session:
+class Session(object):
     """Session Manager."""
 
-    _buffer = {}
+    _buffer: dict = {}
     _config = None
-    _default = {
+    _default: dict = {
         'current': {
             'workspace': None,
             'base': None,
@@ -49,7 +49,7 @@ class Session:
             'script': {},
             'system': {} }}
 
-    def __init__(self, site = True, **kwargs):
+    def __init__(self, site: bool = True, **kwargs):
         """ """
 
         import os
@@ -693,11 +693,11 @@ class Session:
             if not self._buffer.get('inkey', None):
                 from nemoa.common import nconsole
                 self._buffer['inkey'] = nconsole.getch()
-            self._buffer['inkey'].start()
+            #self._buffer['inkey'].start()
             return True
 
         if curmode == 'key' and mode == 'line':
-            self._buffer['inkey'].stop()
+            self._buffer['inkey'].__del__() # call destructor manually
             del self._buffer['inkey']
             return True
         return False

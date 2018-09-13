@@ -5,132 +5,91 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-def getch():
+from typing import Optional
+
+def getch() -> Optional[object]:
     """Getch wrapper for various platforms."""
 
-    found = False
-    try:
-        retval = GetchWindows()
-        found = True
-    except ImportError: pass
-    if not found:
-        try:
-            retval = GetchUnix()
-            found = True
-        except ImportError: pass
-    if not found:
-        try:
-            retval = GetchMac()
-            found = True
-        except ImportError: pass
-    if not found: return False
+    class GetchMsvcrt:
+        """Microsoft Visual C/C++ Runtime Library implementation of getch."""
 
-    return retval
+        def get(self) -> str:
+            """Return character from stdin."""
 
-class GetchUnix:
-    """Unix/Termios implementation of getch."""
+            import msvcrt
 
-    def __init__(self):
-        import termios
+            if not msvcrt.kbhit(): return ''
+            return str(msvcrt.getch(), 'utf-8')
 
-    def get(self):
-        import time
+    class GetchTermios:
+        """Unix/Termios implementation of getch."""
 
-        if not self.__dict__.get('queue', None): self.start()
-        now = time.time()
-        if now < self.queue['time'] + 0.5: return ''
-        self.queue['time'] = now
-        if self.queue['stdin'].empty(): return ''
-        return self.queue['stdin'].get()
+        def __init__(self) -> None:
+            """Create thread to fill internal buffer."""
 
-    def start(self):
-        import sys
-        import threading
-        import time
-        import queue
-        import termios
-
-        fd = sys.stdin.fileno()
-        curterm = termios.tcgetattr(fd)
-
-        # set unbuffered terminal
-        newterm = termios.tcgetattr(fd)
-        newterm[3] = (newterm[3] & ~termios.ICANON & ~termios.ECHO)
-        termios.tcsetattr(fd, termios.TCSAFLUSH, newterm)
-
-        self.queue = {
-            'stdin': queue.Queue(),
-            'runsignal': True,
-            'time': time.time(),
-            'curterm': curterm,
-            'fd': fd }
-
-        def stream(queue):
+            import queue
             import sys
-            while queue['runsignal']:
-                queue['stdin'].put(sys.stdin.read(1))
+            import termios
+            import threading
+            import time
 
-        self.queue['handler'] = threading.Thread(
-            target = stream, args = (self.queue, ))
-        self.queue['handler'].daemon = True
-        self.queue['handler'].start()
+            fd = sys.stdin.fileno()
+            curterm = termios.tcgetattr(fd)
 
-        return True
+            # set unbuffered terminal
+            newterm = termios.tcgetattr(fd)
+            newterm[3] = (newterm[3] & ~termios.ICANON & ~termios.ECHO)
+            termios.tcsetattr(fd, termios.TCSAFLUSH, newterm)
 
-    def stop(self):
+            self.queue = {
+                'stdin': queue.Queue(),
+                'runsignal': True,
+                'time': time.time(),
+                'curterm': curterm,
+                'fd': fd
+            }
 
-        import termios
-        fd = self.queue['fd']
-        curterm = self.queue['curterm']
-        termios.tcsetattr(fd, termios.TCSAFLUSH, curterm)
-        self.queue['runsignal'] = False
+            def stream(queue):
+                import sys
+                while queue['runsignal']:
+                    queue['stdin'].put(sys.stdin.read(1))
 
-        del self.__dict__['queue']
+            self.queue['handler'] = threading.Thread(
+                target = stream, args = (self.queue, ))
+            self.queue['handler'].daemon = True
+            self.queue['handler'].start()
 
-        return True
+        def __del__(self) -> None:
+            """ """
 
-class GetchWindows:
-    """Microsoft Windows/Visual C Run-Time implementation of getch."""
+            import termios
 
-    def __init__(self):
-        import msvcrt
+            fd = self.queue['fd']
+            curterm = self.queue['curterm']
+            termios.tcsetattr(fd, termios.TCSAFLUSH, curterm)
+            self.queue['runsignal'] = False
 
-    def get(self):
-        import msvcrt
-        if msvcrt.kbhit(): return str(msvcrt.getch(), 'utf-8')
-        return ''
+            del self.__dict__['queue']
 
-    def start(self):
-        return True
+        def get(self) -> str:
+            """Return character from internal buffer."""
 
-    def stop(self):
-        return True
+            import time
 
-class GetchMacCarbon:
-    """OSX/Carbon implementation of getch.
+            if not self.__dict__.get('queue', None): self.start()
+            now = time.time()
+            if now < self.queue['time'] + .5: return ''
+            self.queue['time'] = now
+            if self.queue['stdin'].empty(): return ''
 
-    A function which returns the current ASCII key that is down.
-    If no ASCII key is down, the null string is returned. See [1].
+            return self.queue['stdin'].get()
 
-    References:
-        [1] http://www.mactech.com/macintosh-c/chap02-1.html
+    from nemoa.common import nsysinfo
 
-    """
+    lib = nsysinfo.ttylib()
 
-    def __init__(self):
-        import Carbon
+    if lib == 'msvcrt': return GetchMsvcrt()
+    if lib == 'Carbon': return GetchCarbon()
+    if lib == 'termios': return GetchTermios()
 
-    def get(self):
-        import Carbon
-        if Carbon.Evt.EventAvail(0x0008)[0] == 0: return ''
-        else:
-            (what, msg, when, where, mod) = \
-                Carbon.Evt.GetNextEvent(0x0008)[1]
-            return chr(msg & 0x000000FF)
-        return ''
-
-    def start(self):
-        return True
-
-    def stop(self):
-        return True
+    return None

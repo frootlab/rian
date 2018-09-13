@@ -8,7 +8,7 @@ import imp
 import nemoa
 import os
 
-class Workspace:
+class Workspace(object):
     """Nemoa workspace class."""
 
     _config    = None

@@ -63,7 +63,7 @@ def get(name: Optional['str'] = None,
             # use init script of current root module
             from nemoa.common import nmodule
             name = nmodule.curname().split('.')[0]
-            path = nmodule.get_module(name).__file__
+            path = nmodule.objectify(name).__file__
 
         # read file content
         import io

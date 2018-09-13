@@ -4,15 +4,15 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
+from typing import Any, Dict, Optional
 
 try: import numpy as np
 except ImportError as e: raise ImportError(
     "requires package numpy: "
     "https://scipy.org") from e
 
+import nemoa
 from nemoa.common import nalgorithm, nclass, nbase
-from typing import Any, Dict, Optional
 
 class Dataset(nbase.ObjectIP):
     """Dataset base class.
@@ -1243,7 +1243,7 @@ class Dataset(nbase.ObjectIP):
 
     def _set_colfilter(self, **kwargs):
         """ """
-        
+
         col_names = self._get_columns()
 
         for col_filter_name in list(kwargs.keys()):

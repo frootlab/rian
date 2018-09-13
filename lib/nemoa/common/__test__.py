@@ -356,13 +356,13 @@ class TestSuite(ntest.TestSuite):
         with self.subTest("submodules"):
             self.assertTrue(
                 nmodule.__name__ in nmodule.submodules(
-                nmodule.get_module('nemoa.common')))
+                nmodule.objectify('nemoa.common')))
 
-        with self.subTest("get_module"):
+        with self.subTest("objectify"):
             self.assertTrue(
-                hasattr(nmodule.get_module(nmodule.__name__), '__name__'))
+                hasattr(nmodule.objectify(nmodule.__name__), '__name__'))
             self.assertTrue(
-                nmodule.get_module(nmodule.__name__).__name__ \
+                nmodule.objectify(nmodule.__name__).__name__ \
                 == nmodule.__name__)
 
         with self.subTest("functions"):
@@ -493,6 +493,9 @@ class TestSuite(ntest.TestSuite):
 
         with self.subTest("osname"):
             self.assertTrue(nsysinfo.osname())
+
+        with self.subTest("ttylib"):
+            self.assertTrue(nsysinfo.ttylib())
 
     def test_common_ntable(self):
         from nemoa.common import ntable

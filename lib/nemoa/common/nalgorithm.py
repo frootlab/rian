@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
-"""Collection of frequently used functions to orginize algorithms."""
+"""Collection of functions for the organization and handling of algorithms."""
 
 __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
+
+from typing import Any, Callable, List, Optional, Sequence, Union
+from types import ModuleType as Module
 
 try: import numpy as np
 except ImportError as e: raise ImportError(
     "requires package numpy: "
     "https://scipy.org") from e
 
-from typing import Any, Callable, List, Optional, Sequence, Union
-import types
-Module = types.ModuleType
 Array = Union[np.ndarray, Sequence[np.ndarray]]
 
 def search(minst: Optional[Module] = None, **kwargs: Any) -> dict:
@@ -31,10 +31,7 @@ def search(minst: Optional[Module] = None, **kwargs: Any) -> dict:
 
     from nemoa.common import nmodule
 
-    if minst is None:
-        # get module of caller
-        mname = nmodule.curname(-1)
-        minst = nmodule.get_module(mname)
+    if minst is None: minst = nmodule.objectify(nmodule.curname(-1))
     elif not isinstance(minst, Module):
         raise TypeError("argument 'minst' is required to be a module instance")
 

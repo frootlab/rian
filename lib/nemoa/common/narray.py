@@ -5,18 +5,18 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+from typing import Any, Dict, Optional, Sequence, Tuple, Union
+
 try: import numpy as np
 except ImportError as e: raise ImportError(
     "requires package numpy: "
     "https://scipy.org") from e
 
-from typing import Any, Dict, Optional, Sequence, Tuple, Union
-
-Array     = np.ndarray
+Array = np.ndarray
 ArrayLike = Union[Array, np.matrix, float, int]
-Axis      = Optional[Union[int, Sequence[int]]]
-Labels    = Tuple[Sequence[str], Sequence[str]]
-DyaDict   = Dict[Tuple[str, str], Any]
+Axis = Optional[Union[int, Sequence[int]]]
+Labels = Tuple[Sequence[str], Sequence[str]]
+DyaDict = Dict[Tuple[str, str], Any]
 
 def fromdict(d: DyaDict, labels: Labels, na: float = 0.) -> Array:
     """Convert dictionary to array.
@@ -94,7 +94,7 @@ def sumnorm(a: ArrayLike, norm: Optional[str] = None,
 
     """
 
-    if not norm: return np.sum(a, axis = axis)
+    if norm is None: return np.sum(a, axis = axis)
     if not isinstance(norm, str):
         raise TypeError(f"norm requires type 'str', not '{type(norm)}'")
 
@@ -134,7 +134,7 @@ def meannorm(a: ArrayLike, norm: Optional[str] = None,
 
     """
 
-    if not norm: return np.mean(a, axis = axis)
+    if norm is None: return np.mean(a, axis = axis)
     if not isinstance(norm, str):
         raise TypeError(f"norm requires type 'str', not '{type(norm)}'")
 
@@ -173,7 +173,7 @@ def devnorm(a: ArrayLike, norm: Optional[str] = None,
 
     """
 
-    if not norm: return np.std(a, axis = axis)
+    if norm is None: return np.std(a, axis = axis)
     if not isinstance(norm, str):
         raise TypeError(f"norm requires type 'str', not '{type(norm)}'")
 

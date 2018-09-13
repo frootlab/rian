@@ -5,11 +5,11 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+from typing import Any, Optional, Union
+
 import base64
 import pickle
 import zlib
-
-from typing import Any, Optional, Union
 
 ByteLike = Union[bytes, bytearray, str]
 
@@ -19,7 +19,8 @@ def load(path: str, encoding: Optional[str] = 'base64') -> dict:
     Args:
         path: Fully qualified filepath
         encoding: Encodings specified in [RFC3548]. Allowed values are:
-            'Base16', 'Base32', 'Base64' and 'Base85'
+            'base16', 'base32', 'base64' and 'base85' and None for no encoding.
+            Default: 'base64'
 
     Returns:
          Reconstituted object specified within the encoded file.
@@ -42,11 +43,12 @@ def dump(obj: object, path: str, encoding: Optional[str] = 'base64',
         obj: Arbitrary object
         path: Fully qualified filepath
         encoding: Encodings specified in [RFC3548]. Allowed values are:
-            'base16', 'base32', 'base64' and 'base85'
+            'base16', 'base32', 'base64' and 'base85' and None for no encoding.
+            Default: 'base64'
         level: compression level ranging from 0 to 9. Thereby:
-            0 is no compression
-            1 is fastest and produces the least compression
-            9 is slowest and produces the most compression
+            0: no compression
+            1: fastest, produces the least compression
+            9: slowest, produces the most compression
 
     Returns:
         True if no exception has been raised.
@@ -67,7 +69,8 @@ def loads(s: ByteLike, encoding: Optional[str] = 'base64') -> Any:
     Args:
         s: Encoded bytes-like structure or string
         encoding: Encodings specified in [RFC3548]. Allowed values are:
-            'Base16', 'Base32', 'Base64' and 'Base85'
+            'base16', 'base32', 'base64' and 'base85' and None for no encoding.
+            Default: 'base64'
 
     Returns:
          Reconstituted object specified within the encoded bytes-like
@@ -84,7 +87,7 @@ def loads(s: ByteLike, encoding: Optional[str] = 'base64') -> Any:
     elif encoding == 'base32': s = base64.b32decode(s)
     elif encoding == 'base16': s = base64.b16decode(s)
     elif encoding == 'base85': s = base64.b85decode(s)
-    else: raise ValueError("value of argument 'encoding' is not valid")
+    else: raise ValueError(f"encoding '{encoding}' is not supported")
 
     s = zlib.decompress(s) # decompress bytes, level is not required
     obj = pickle.loads(s) # bytes to object
@@ -98,11 +101,12 @@ def dumps(obj: object, encoding: Optional[str] = 'base64',
     Args:
         obj: Arbitrary object
         encoding: Encodings specified in [RFC3548]. Allowed values are:
-            'base16', 'base32', 'base64' and 'base85'
+            'base16', 'base32', 'base64' and 'base85' and None for no encoding.
+            Default: 'base64'
         level: compression level ranging from 0 to 9. Thereby:
-            0 is no compression
-            1 is fastest and produces the least compression
-            9 is slowest and produces the most compression
+            0: no compression
+            1: fastest, produces the least compression
+            9: slowest, produces the most compression
 
     Returns:
         Compressed and encoded byte representation of the object.
@@ -121,6 +125,6 @@ def dumps(obj: object, encoding: Optional[str] = 'base64',
     elif encoding == 'base32': s = base64.b32encode(s)
     elif encoding == 'base16': s = base64.b16encode(s)
     elif encoding == 'base85': s = base64.b85encode(s)
-    else: raise ValueError("value of argument 'encoding' is not valid")
+    else: raise ValueError(f"encoding '{encoding}' is not supported")
 
     return s

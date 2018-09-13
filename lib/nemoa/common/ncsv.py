@@ -5,6 +5,8 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+from typing import Optional
+
 import csv
 import os
 
@@ -12,8 +14,6 @@ try: import numpy as np
 except ImportError as e: raise ImportError(
     "requires package numpy: "
     "https://scipy.org") from e
-
-from typing import Optional
 
 def load(path: str, delim: Optional[str] = None,
     labels: Optional[list] = None, usecols: Optional[tuple] = None,

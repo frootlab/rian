@@ -5,6 +5,8 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+from typing import Optional
+
 import platform
 
 def hostname() -> str:
@@ -38,3 +40,25 @@ def osname() -> str:
     """
 
     return platform.system()
+
+def ttylib() -> Optional[str]:
+    """Name of package for tty I/O control.
+
+    Returns:
+        Name of package for tty I/O control or None, if the package could not
+        be determined.
+
+    References:
+        [1] https://docs.python.org/3/library/termios.html
+        [2] https://docs.python.org/3/library/msvcrt.html
+
+    """
+
+    from nemoa.common import nmodule
+
+    libs = ['msvcrt', 'termios']
+
+    for name in libs:
+        if nmodule.objectify(name): return name
+
+    return None

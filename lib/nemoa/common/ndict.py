@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 
 from typing import Any, Dict, Hashable
 
-Collection = Dict[Hashable, Dict[str, Any]]
+Register = Dict[Hashable, Dict[str, Any]]
 
 def merge(*args: dict, mode: int = 1) -> dict:
     """Recursive right merge dictionaries.
@@ -138,7 +138,7 @@ def reduce(d: dict, s: str, trim: bool = True) -> dict:
 
     return sec
 
-def groupby(d: Collection, key: Hashable) -> Dict[Hashable, Collection]:
+def groupby(d: Register, key: Hashable) -> Dict[Hashable, Register]:
     """Group dictionary by the value of a given key of subdictionaries.
 
     Args:

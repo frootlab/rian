@@ -5,12 +5,13 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+from typing import Union, Optional
+
 try: import numpy as np
 except ImportError as e: raise ImportError(
     "requires package numpy: "
     "https://scipy.org") from e
 
-from typing import Union, Optional
 ArrayLike = Union[np.ndarray, np.matrix, float, int]
 
 #

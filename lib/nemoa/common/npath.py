@@ -5,10 +5,8 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import os
-
-from pathlib import Path
 from typing import Dict, Optional, Sequence, Union
+from pathlib import Path
 
 PathLike = Sequence[Union['PathLike', str, Path]]
 PathLikeDict = Dict[str, PathLike]
@@ -125,6 +123,7 @@ def expand(*args: PathLike, udict: PathLikeDict = {}, expapp: bool = True,
 
     """
 
+    import os
     import sys
 
     from nemoa.common import nappinfo
@@ -281,6 +280,8 @@ def mkdir(*args: PathLike) -> bool:
         True if the directory already exists, or the operation was successful.
 
     """
+
+    import os
 
     path = Path(expand(*args))
     if path.is_dir(): return True

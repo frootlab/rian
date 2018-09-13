@@ -5,11 +5,8 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import types
-from typing import Any, Dict, Optional
-
-Function = types.FunctionType
-Module = types.ModuleType
+from typing import Any, Callable, Dict, Optional
+from types import ModuleType as Module
 
 def curname(frame: int = 0) -> str:
     """Get name of module, which calls this function.
@@ -17,18 +14,18 @@ def curname(frame: int = 0) -> str:
     Args:
         frame: Frame index relative to the current frame in the callstack,
             which is identified with 0. Negative values consecutively identify
-            previous modules within the callstack.
-            default: 0
+            previous modules within the callstack. Default: 0
 
     Returns:
         String with name of module.
 
     """
 
-    if not isinstance(frame, int):
-        raise TypeError(f"frame requires type 'int', not '{type(frame)}'")
-    if frame > 0:
-        raise ValueError("frame is required to be zero or negative")
+    if not isinstance(frame, int): raise TypeError(
+        "argument 'frame' is required to be of type 'int'"
+        f", not '{type(frame)}'")
+    if frame > 0: raise ValueError(
+        "argument 'frame' is required to be a negative number or zero")
 
     import inspect
 
@@ -57,10 +54,11 @@ def caller(frame: int = 0) -> str:
 
     """
 
-    if not isinstance(frame, int):
-        raise TypeError(f"frame requires type 'int', not '{type(frame)}'")
-    if frame > 0:
-        raise ValueError("frame is required to be zero or negative")
+    if not isinstance(frame, int): raise TypeError(
+        "argument 'frame' is required to be of type 'int'"
+        f", not '{type(frame)}'")
+    if frame > 0: raise ValueError(
+        "argument 'frame' is required to be a negative number or zero")
 
     import inspect
 
@@ -84,9 +82,10 @@ def submodules(minst: Optional[Module] = None, recursive: bool = False) -> list:
 
     """
 
-    if minst is None: minst = get_module(curname(-1))
-    elif not isinstance(minst, Module):
-        raise TypeError("argument 'minst' is required to be a module instance")
+    if minst is None: minst = objectify(curname(-1))
+    elif not isinstance(minst, Module): raise TypeError(
+        "argument 'minst' is required to be of type 'ModuleType' or None"
+        f", not '{type(minst)}'")
 
     # check if module is a package or a file
     if not hasattr(minst, '__path__'): return []
@@ -100,27 +99,39 @@ def submodules(minst: Optional[Module] = None, recursive: bool = False) -> list:
     for path, name, ispkg in pkgutil.iter_modules(mpath):
         mlist += [mpref + name]
         if not ispkg or not recursive: continue
-        mlist += submodules(get_module(mpref + name), recursive = True)
+        mlist += submodules(objectify(mpref + name), recursive = True)
 
     return mlist
 
-def get_submodule(s: str) -> Optional[Module]:
-    """Get module instance, by name of current submodule."""
+def get_submodule(name: str) -> Optional[Module]:
+    """Get module instance from the name of a current submodule."""
 
-    return get_module('.'.join([curname(-1), s]))
+    # check types of arguments
+    if not isinstance(name, str): raise TypeError(
+        "first argument is required to be of type 'str'"
+        f", not '{type(name)}'")
 
-def get_module(s: str) -> Optional[Module]:
-    """Get module instance for a given qualified module name."""
+    return objectify('.'.join([curname(-1), name]))
+
+def objectify(name: str) -> Optional[Module]:
+    """Get module instance from a fully qualified module name."""
+
+    # check types of arguments
+    if not isinstance(name, str): raise TypeError(
+        "first argument is required to be of type 'str'"
+        f", not '{type(name)}'")
 
     import importlib
 
-    try: minst = importlib.import_module(s)
-    except ModuleNotFoundError: return None
+    try:
+        module = importlib.import_module(name)
+    except ModuleNotFoundError:
+        return None
 
-    return minst
+    return module
 
 def functions(minst: Optional[Module] = None, filter: Optional[str] = None,
-    rules: Optional[Dict[str, Function]] = None, **kwargs: Any) -> dict:
+    rules: Optional[Dict[str, Callable]] = None, **kwargs: Any) -> dict:
     """Get dictionary with functions and attributes.
 
     Args:
@@ -142,10 +153,10 @@ def functions(minst: Optional[Module] = None, filter: Optional[str] = None,
 
     """
 
-    if minst is None: minst = get_module(curname(-1))
-    elif isinstance(minst, Module): pass
-    else: raise TypeError("argument 'minst' is requires type 'module', "
-        f"not type '{type(minst)}'")
+    if minst is None: minst = objectify(curname(-1))
+    elif not isinstance(minst, Module): raise TypeError(
+        "argument 'minst' is required to be of type 'ModuleType' or None"
+        f", not '{type(minst)}'")
 
     import inspect
     from nemoa.common import ndict, nfunc
@@ -190,7 +201,7 @@ def functions(minst: Optional[Module] = None, filter: Optional[str] = None,
 def search(minst: Optional[Module] = None,
     filter: Optional[str] = None, groupby: Optional[str] = None,
     key: Optional[str] = None, val: Optional[str] = None,
-    rules: Optional[Dict[str, Function]] = None, recursive: bool = True,
+    rules: Optional[Dict[str, Callable]] = None, recursive: bool = True,
     **kwargs: Any) -> dict:
     """Recursively search for functions within submodules.
 
@@ -223,9 +234,10 @@ def search(minst: Optional[Module] = None,
 
     """
 
-    if minst is None: minst = get_module(curname(-1))
-    elif isinstance(minst, Module): pass
-    else: raise TypeError("first argument is required to be a module instance")
+    if minst is None: minst = objectify(curname(-1))
+    elif not isinstance(minst, Module): raise TypeError(
+        "argument 'minst' is required to be of type 'ModuleType' or None"
+        f", not '{type(minst)}'")
 
     from nemoa.common import ndict
 
@@ -236,7 +248,7 @@ def search(minst: Optional[Module] = None,
     fd = {}
     rules = rules or {}
     for mname in mnames:
-        m = get_module(mname)
+        m = objectify(mname)
         if m is None: continue
         d = functions(m, filter = filter, rules = rules, **kwargs)
 
