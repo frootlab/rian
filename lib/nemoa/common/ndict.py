@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 """Collection of frequently used dictionary functions."""
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from typing import Any, Dict, Hashable
-
-Register = Dict[Hashable, Dict[str, Any]]
+from nemoa.common.ntype import Dict, DictOfStrDicts, Hashable
 
 def merge(*args: dict, mode: int = 1) -> dict:
     """Recursive right merge dictionaries.
@@ -41,15 +39,17 @@ def merge(*args: dict, mode: int = 1) -> dict:
     if len(args) == 2:
         d1, d2 = args[0], args[1]
     else:
-        d1, d2 = args[0], merge(*args[1:], mode = mode)
+        d1, d2 = args[0], merge(*args[1:], mode=mode)
         mode = 0
 
     # check types of arguments
     if not isinstance(d1, dict):
-        raise TypeError("first argument requires type "
+        raise TypeError(
+            "first argument requires type "
             f"'dict', not '{type(d1)}'")
     if not isinstance(d2, dict):
-        raise TypeError("second argument requires type "
+        raise TypeError(
+            "second argument requires type "
             f"'dict', not '{type(d2)}'")
 
     # create new dictionary
@@ -88,10 +88,12 @@ def filter(d: dict, pattern: str) -> dict:
 
     # check argument types
     if not isinstance(d, dict):
-        raise TypeError("first argument is required to be "
+        raise TypeError(
+            "first argument is required to be "
             f"of type dict, not '{type(d)}'")
     if not isinstance(pattern, str):
-        raise TypeError("second argument is required to be "
+        raise TypeError(
+            "second argument is required to be "
             "of type string, not '{type(s)}'")
 
     import fnmatch
@@ -121,10 +123,12 @@ def reduce(d: dict, s: str, trim: bool = True) -> dict:
 
     # check argument types
     if not isinstance(d, dict):
-        raise TypeError("first argument is required to be "
+        raise TypeError(
+            "first argument is required to be "
             f"of type dict, not '{type(d)}'")
     if not isinstance(s, str):
-        raise TypeError("second argument is required to be "
+        raise TypeError(
+            "second argument is required to be "
             "of type string, not '{type(s)}'")
 
     # create new dictionary
@@ -138,7 +142,7 @@ def reduce(d: dict, s: str, trim: bool = True) -> dict:
 
     return sec
 
-def groupby(d: Register, key: Hashable) -> Dict[Hashable, Register]:
+def groupby(d: DictOfStrDicts, key: Hashable) -> Dict[Hashable, DictOfStrDicts]:
     """Group dictionary by the value of a given key of subdictionaries.
 
     Args:
@@ -180,13 +184,16 @@ def strkeys(d: dict) -> dict:
     """
 
     # if argument is not a dictionary, return it for recursion
-    if not isinstance(d, dict): return d
+    if not isinstance(d, dict):
+        return d
 
     # create new dictionary with string keys
     dn = {}
     for k, v in list(d.items()):
-        if not isinstance(k, tuple): kn = str(k)
-        else: kn = tuple([str(t) for t in k])
+        if not isinstance(k, tuple):
+            kn = str(k)
+        else:
+            kn = tuple([str(t) for t in k])
         dn[kn] = strkeys(v)
 
     return dn
@@ -212,10 +219,12 @@ def sumjoin(*args: dict) -> dict:
 
     dn = {}
     for d in args:
-        if not isinstance(d, dict): continue
+        if not isinstance(d, dict):
+            continue
         for k, v in d.items():
             if k in dn:
-                if not isinstance(dn[k], type(v)): continue
+                if not isinstance(dn[k], type(v)):
+                    continue
                 dn[k] += v
             else: dn[k] = v
 

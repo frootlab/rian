@@ -2,12 +2,12 @@
 """Collection of frequently used console functions."""
 
 __author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from typing import Optional
+from nemoa.common.ntype import OptObject
 
-def getch() -> Optional[object]:
+def getch() -> OptObject:
     """Getch wrapper for various platforms."""
 
     class GetchMsvcrt:

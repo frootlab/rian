@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 """Collection of functions for module handling."""
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from typing import Any, Callable, Dict, Optional
-from types import ModuleType as Module
+from nemoa.common.ntype import Any, Callable, Dict, Optional, Module
 
 def curname(frame: int = 0) -> str:
     """Get name of module, which calls this function.
@@ -21,21 +20,25 @@ def curname(frame: int = 0) -> str:
 
     """
 
-    if not isinstance(frame, int): raise TypeError(
-        "argument 'frame' is required to be of type 'int'"
-        f", not '{type(frame)}'")
-    if frame > 0: raise ValueError(
-        "argument 'frame' is required to be a negative number or zero")
+    if not isinstance(frame, int):
+        raise TypeError(
+            "argument 'frame' is required to be of type 'int'"
+            f", not '{type(frame)}'")
+    if frame > 0:
+        raise ValueError(
+            "argument 'frame' is required to be a negative number or zero")
 
     import inspect
 
     caller = inspect.currentframe()
 
     for i in range(abs(frame - 1)):
-        if caller is None: break
+        if caller is None:
+            break
         caller = caller.f_back
 
-    if caller is None: return ''
+    if caller is None:
+        return ''
     mname = caller.f_globals['__name__']
 
     return mname

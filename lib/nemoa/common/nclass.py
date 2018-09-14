@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """Generic handling of classes and methods."""
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from typing import Any, Callable, Optional
+from nemoa.common.ntype import Any, Callable, Object, OptStr
 
-def hasbase(obj: object, base: str) -> bool:
+def hasbase(obj: Object, base: str) -> bool:
     """Return true if the class instance has the given base.
 
     Args:
@@ -20,14 +20,14 @@ def hasbase(obj: object, base: str) -> bool:
     """
 
     if not hasattr(obj, '__class__'):
-        raise TypeError("obj is required to be a class instance")
+        raise TypeError("argument 'obj' is required to be a class instance")
 
-    bases = [o.__name__ for o in obj.__class__.__mro__]
-    return base in bases
+    return base in [o.__name__ for o in obj.__class__.__mro__]
 
-def methods(obj: object,
-    filter: Optional[str] = None, groupby: Optional[str] = None,
-    key: Optional[str] = None, val: Optional[str] = None) -> dict:
+def methods(
+        obj: Object, filter: OptStr = None, groupby: OptStr = None,
+        key: OptStr = None, val: OptStr = None
+    ) -> dict:
     """Get methods from a given class instance.
 
     Args:
@@ -61,7 +61,8 @@ def methods(obj: object,
     md = dict(inspect.getmembers(obj, inspect.ismethod))
 
     # filter dictionary to methods that match given pattern
-    if filter: md = ndict.filter(md, filter)
+    if filter:
+        md = ndict.filter(md, filter)
 
     # create dictionary with method attributes
     mc = {}
@@ -69,14 +70,19 @@ def methods(obj: object,
         a = v.__dict__
 
         # ignore method if any required attribute is not available
-        if key and not key in a or val and not val in a \
-            or groupby and not groupby in a: continue
+        if key and key not in a:
+            continue
+        if val and val not in a:
+            continue
+        if groupby and groupby not in a:
+            continue
 
         mc[k] = a
         mc[k]['reference'] = v
         if isinstance(v.__doc__, str):
             mc[k]['about'] = v.__doc__.split('\n', 1)[0].strip(' .')
-        else: mc[k]['about'] = ''
+        else:
+            mc[k]['about'] = ''
     md = mc
 
     # set key for returned dictionary
@@ -89,15 +95,18 @@ def methods(obj: object,
         md = nd
 
     # group results
-    if groupby: md = ndict.groupby(md, key = groupby)
+    if groupby:
+        md = ndict.groupby(md, key=groupby)
 
     # set value for returned dictionary
     if val:
         if groupby:
             for k1, v1 in md.items():
-                for k2, v2 in v1.items(): v2 = v2[val]
+                for k2, v2 in v1.items():
+                    v2 = v2[val]
         else:
-            for k, v in md.items(): v = v[val]
+            for k, v in md.items():
+                v = v[val]
 
     return md
 
@@ -115,7 +124,8 @@ def attributes(**attr: Any) -> Callable:
     def wrapper(method):
         def wrapped(self, *args, **kwargs):
             return method(self, *args, **kwargs)
-        for k, v in attr.items(): setattr(wrapped, k, v)
+        for key, val in attr.items():
+            setattr(wrapped, key, val)
 
         wrapped.__doc__ = method.__doc__
         return wrapped

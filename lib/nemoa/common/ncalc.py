@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 """Collection of frequently used mathematical functions."""
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from typing import Union, Optional
+try:
+    import numpy as np
+except ImportError as err:
+    raise ImportError(
+        "requires package numpy: "
+        "https://scipy.org") from err
 
-try: import numpy as np
-except ImportError as err: raise ImportError(
-    "requires package numpy: "
-    "https://scipy.org") from err
+from nemoa.common.ntype import Union, OptStr
 
 ArrayLike = Union[np.ndarray, np.matrix, float, int]
 
@@ -18,7 +20,7 @@ ArrayLike = Union[np.ndarray, np.matrix, float, int]
 # Sigmoid Functions
 #
 
-def sigmoid(x: ArrayLike, func: Optional[str] = None, **kwargs) -> ArrayLike:
+def sigmoid(x: ArrayLike, func: OptStr = None, **kwargs) -> ArrayLike:
     """Calculate sigmoid functions.
 
     Args:
@@ -34,20 +36,11 @@ def sigmoid(x: ArrayLike, func: Optional[str] = None, **kwargs) -> ArrayLike:
 
     if func is None:
         return logistic(x, **kwargs)
-    if func == 'logistic':
-        return logistic(x, **kwargs)
-    if func == 'tanh':
-        return tanh(x, **kwargs)
-    if func == 'lecun':
-        return lecun(x, **kwargs)
-    if func == 'elliot':
-        return elliot(x, **kwargs)
-    if func == 'hill':
-        return hill(x, **kwargs)
-    if func == 'arctan':
-        return arctan(x, **kwargs)
+    if func in ['logistic', 'tanh', 'lecun', 'elliot', 'hill', 'arctan']:
+        import sys
+        return getattr(sys.modules[__name__], func)(x, **kwargs)
 
-    raise ValueError(f"function {func} is not supported.")
+    raise ValueError(f"function {func} is not supported")
 
 def logistic(x: ArrayLike) -> ArrayLike:
     """Calculate standard logistic function.
@@ -151,7 +144,7 @@ def arctan(x: ArrayLike) -> ArrayLike:
 # Derivatives of Sigmoid Functions
 #
 
-def d_sigmoid(x: ArrayLike, func: Optional[str] = None, **kwargs) -> ArrayLike:
+def d_sigmoid(x: ArrayLike, func: OptStr = None, **kwargs) -> ArrayLike:
     """Derivative of sigmoid function.
 
     Args:
@@ -291,8 +284,9 @@ def d_arctan(x: ArrayLike) -> ArrayLike:
 # Multistep Sigmoid Functions
 #
 
-def dialogistic(x: ArrayLike, scale: float = 1.,
-    sigma: float = 10.) -> ArrayLike:
+def dialogistic(
+        x: ArrayLike, scale: float = 1., sigma: float = 10.
+    ) -> ArrayLike:
     """Calulate dialogistic function.
 
     Args:
@@ -332,8 +326,9 @@ def softstep(x: ArrayLike, scale: float = 1., sigma: float = 10.) -> ArrayLike:
 
     return np.tanh(dialogistic(x, scale=scale, sigma=sigma)) / norm
 
-def multilogistic(x: ArrayLike, scale: float = 1.,
-    sigma: float = 10.) -> ArrayLike:
+def multilogistic(
+        x: ArrayLike, scale: float = 1., sigma: float = 10.
+    ) -> ArrayLike:
     """Muliple logistic function.
 
     Args:

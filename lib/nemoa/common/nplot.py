@@ -5,7 +5,7 @@ __author__  = 'Patrick Michl'
 __email__   = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
+from typing import Optional
 
 try:
     import numpy as np
@@ -46,12 +46,14 @@ class Plot:
     _fig = None
     _axes = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
 
-        try: import matplotlib
-        except ImportError as err: raise ImportError(
-            "requires package matplotlib: "
-            "https://matplotlib.org") from err
+        try:
+            import matplotlib
+        except ImportError as err:
+            raise ImportError(
+                "requires package matplotlib: "
+                "https://matplotlib.org") from err
 
         from nemoa.common import ndict
 
@@ -60,8 +62,8 @@ class Plot:
         self._config = ndict.merge(kwargs, self._config, self._default)
 
         # update global matplotlib settings
-        matplotlib.rc('text', usetex = self._config['usetex'])
-        matplotlib.rc('font', family = self._config['font_family'])
+        matplotlib.rc('text', usetex=self._config['usetex'])
+        matplotlib.rc('font', family=self._config['font_family'])
 
         # link matplotlib.pyplot
         import matplotlib.pyplot as plt
@@ -75,43 +77,48 @@ class Plot:
 
         # create figure
         self._fig = plt.figure(
-            figsize   = self._config['figure_size'],
-            dpi       = self._config['dpi'],
-            facecolor = self._config['bg_color']
-        )
+            figsize=self._config['figure_size'],
+            dpi=self._config['dpi'],
+            facecolor=self._config['bg_color'])
 
         # create subplot (matplotlib.axes.Axes)
         self._axes = self._fig.add_subplot(111)
 
-    def set_default(self, config: dict = {}):
+    def set_default(self, config: Optional[dict] = None):
         """Set default values. """
 
         from nemoa.common import ndict
 
+        if config is None: config = {}
         self._config = ndict.merge(self._kwargs, config, self._config)
 
         return True
 
     def plot_title(self):
-        if not self._config['show_title']: return False
+        """ """
+        if not self._config['show_title']:
+            return False
 
         title = self._config['title'] or 'Unknown'
         fontsize = self._config['title_fontsize']
 
-        self._plt.title(title, fontsize = fontsize)
+        self._plt.title(title, fontsize=fontsize)
         return True
 
     def show(self):
+        """ """
         return self._plt.show()
 
-    def save(self, path, *args, **kwargs):
-        return self._fig.savefig(path,
-            dpi = self._config['dpi'], **kwargs)
+    def save(self, path, **kwargs):
+        """ """
+        return self._fig.savefig(path, dpi=self._config['dpi'], **kwargs)
 
     def release(self):
+        """ """
         return self._fig.clear()
 
 class Heatmap(Plot):
+    """ """
 
     _config = {
         'interpolation': 'nearest',
@@ -119,40 +126,45 @@ class Heatmap(Plot):
     }
 
     def plot(self, array):
+        """ """
 
-        try: import matplotlib.cm
-        except ImportError: raise ImportError(
-            "requires package matplotlib: "
-            "https://matplotlib.org")
+        try:
+            from matplotlib.cm import hot_r
+        except ImportError as err:
+            raise ImportError(
+                "requires package matplotlib: "
+                "https://matplotlib.org") from err
 
         # plot grid
         self._axes.grid(self._config['grid'])
 
         # plot heatmap
-        cax = self._axes.imshow(array,
-            cmap = matplotlib.cm.hot_r,
-            interpolation = self._config['interpolation'],
-            extent = (0, array.shape[1], 0, array.shape[0])
-        )
+        cax = self._axes.imshow(
+            array,
+            cmap=hot_r,
+            interpolation=self._config['interpolation'],
+            extent=(0, array.shape[1], 0, array.shape[0]))
 
         # create labels for axis
         max_font_size = 12.
         x_labels = []
         for label in self._config['x_labels']:
-            if ':' in label: label = label.split(':', 1)[1]
+            if ':' in label:
+                label = label.split(':', 1)[1]
             x_labels.append(get_texlabel(label))
         y_labels = []
         for label in self._config['y_labels']:
-            if ':' in label: label = label.split(':', 1)[1]
+            if ':' in label:
+                label = label.split(':', 1)[1]
             y_labels.append(get_texlabel(label))
         fontsize = min(max_font_size, \
             400. / float(max(len(x_labels), len(y_labels))))
         self._plt.xticks(
             np.arange(len(x_labels)) + 0.5,
-            tuple(x_labels), fontsize = fontsize, rotation = 65)
+            tuple(x_labels), fontsize=fontsize, rotation=65)
         self._plt.yticks(
             len(y_labels) - np.arange(len(y_labels)) - 0.5,
-            tuple(y_labels), fontsize = fontsize)
+            tuple(y_labels), fontsize=fontsize)
 
         # create colorbar
         cbar = self._fig.colorbar(cax)
@@ -165,6 +177,7 @@ class Heatmap(Plot):
         return True
 
 class Histogram(Plot):
+    """ """
 
     _config = {
         'bins': 100,
@@ -176,18 +189,19 @@ class Histogram(Plot):
     }
 
     def plot(self, array):
+        """ """
 
         # plot grid
         self._axes.grid(self._config['grid'])
 
         # plot histogram
-        cax = self._axes.hist(array,
-            bins      = self._config['bins'],
-            facecolor = self._config['facecolor'],
-            histtype  = self._config['histtype'],
-            linewidth = self._config['linewidth'],
-            edgecolor = self._config['edgecolor']
-        )
+        self._axes.hist(
+            array,
+            bins=self._config['bins'],
+            facecolor=self._config['facecolor'],
+            histtype=self._config['histtype'],
+            linewidth=self._config['linewidth'],
+            edgecolor=self._config['edgecolor'])
 
         # (optional) plot title
         self.plot_title()
@@ -195,49 +209,50 @@ class Histogram(Plot):
         return True
 
 class Scatter2D(Plot):
+    """ """
 
     _config = {
         'grid': True,
         'pca': True
     }
 
-    def _pca2d(self, array):
-            """Calculate projection to largest two principal components."""
+    @staticmethod
+    def _pca2d(array):
+        """Calculate projection to largest two principal components."""
 
-            # get dimension of array
-            dim = array.shape[1]
+        # get dimension of array
+        dim = array.shape[1]
 
-            # calculate covariance matrix
-            cov = np.cov(array.T)
+        # calculate covariance matrix
+        cov = np.cov(array.T)
 
-            # calculate eigenvectors and eigenvalues
-            vals, vecs = np.linalg.eig(cov)
+        # calculate eigenvectors and eigenvalues
+        vals, vecs = np.linalg.eig(cov)
 
-            # sort eigenvectors by absolute eigenvalues
-            pairs = [(np.abs(vals[i]), vecs[:, i])
-                for i in range(len(vals))]
-            pairs.sort(key = lambda x: x[0], reverse = True)
+        # sort eigenvectors by absolute eigenvalues
+        pairs = [(np.abs(vals[i]), vecs[:, i]) for i in range(len(vals))]
+        pairs.sort(key=lambda x: x[0], reverse=True)
 
-            # calculate projection matrix
-            proj = np.hstack(
-                [pairs[0][1].reshape(dim, 1), pairs[1][1].reshape(dim, 1)])
+        # calculate projection matrix
+        proj = np.hstack(
+            [pairs[0][1].reshape(dim, 1), pairs[1][1].reshape(dim, 1)])
 
-            # calculate projection
-            parray = np.dot(array, proj)
+        # calculate projection
+        parray = np.dot(array, proj)
 
-            return parray
+        return parray
 
     def plot(self, array):
         """ """
 
         # test arguments
         if array.shape[1] != 2:
-            if self._config['pca']: array = self._pca2d(array)
+            if self._config['pca']:
+                array = self._pca2d(array)
             else: raise TypeError(
                 "first argument is required to be an array of shape (n, 2)")
 
-        x = array[:, 0]
-        y = array[:, 1]
+        x, y = array[:, 0], array[:, 1]
 
         # plot grid
         self._axes.grid(self._config['grid'])
@@ -301,15 +316,17 @@ class Graph(Plot):
 
         try:
             import matplotlib.patches
-            import matplotlib.pyplot as plt
-        except ImportError as err: raise ImportError(
-            "requires package matplotlib: "
-            "https://matplotlib.org") from err
+        except ImportError as err:
+            raise ImportError(
+                "requires package matplotlib: "
+                "https://matplotlib.org") from err
 
-        try: import networkx as nx
-        except ImportError as err: raise ImportError(
-            "requires package networkx: "
-            "https://networkx.github.io") from err
+        try:
+            import networkx as nx
+        except ImportError as err:
+            raise ImportError(
+                "requires package networkx: "
+                "https://networkx.github.io") from err
 
         from nemoa.common import ndict, ngraph
 
@@ -327,45 +344,42 @@ class Graph(Plot):
         layout_params = ndict.reduce(self._config, 'graph_')
         del layout_params['layout']
 
-        pos = ngraph.get_layout(G,
-            layout  = self._config['graph_layout'],
-            size    = figsize,
-            padding = self._config['padding'],
-            **layout_params)
+        pos = ngraph.get_layout(
+            G, layout=self._config['graph_layout'], size=figsize,
+            padding=self._config['padding'], **layout_params)
 
-        sizes       = ngraph.get_layout_normsize(pos)
-        node_size   = sizes.get('node_size', None)
+        sizes = ngraph.get_layout_normsize(pos)
+        node_size = sizes.get('node_size', None)
         node_radius = sizes.get('node_radius', None)
-        line_width  = sizes.get('line_width', None)
-        edge_width  = sizes.get('edge_width', None)
-        font_size   = sizes.get('font_size', None)
+        line_width = sizes.get('line_width', None)
+        edge_width = sizes.get('edge_width', None)
+        font_size = sizes.get('font_size', None)
 
         # get nodes and groups sorted by node attribute group_id
-        groups = ngraph.get_groups(G, attribute = 'group')
-        sorted_groups = sorted(list(groups.keys()), key = \
-            lambda g: 0 if not isinstance(g, list) or len(g) == 0 \
+        groups = ngraph.get_groups(G, attribute='group')
+        sorted_groups = sorted(
+            list(groups.keys()),
+            key=lambda g: 0 if not isinstance(g, list) or not g \
             else G.node.get(g[0], {}).get('group_id', 0))
 
         # draw nodes, labeled by groups
         for group in sorted_groups:
             gnodes = groups.get(group, [])
-            if len(gnodes) == 0: continue
+            if not gnodes:
+                continue
             refnode = G.node.get(gnodes[0])
             label = refnode['description'] or refnode['group'] or str(group)
 
             # draw nodes in group
-            node_obj = nx.draw_networkx_nodes(G, pos,
-                nodelist   = gnodes,
-                linewidths = line_width,
-                node_size  = node_size,
-                node_shape = self._config['node_style'],
-                node_color = get_color(refnode['color'], 'white'),
-                label      = label)
+            node_obj = nx.draw_networkx_nodes(
+                G, pos, nodelist=gnodes, linewidths=line_width,
+                node_size=node_size, node_shape=self._config['node_style'],
+                node_color=get_color(refnode['color'], 'white'), label=label)
             node_obj.set_edgecolor(
                 get_color(refnode['border_color'], 'black'))
 
         # draw node labels
-        for node, data in G.nodes(data = True):
+        for node, data in G.nodes(data=True):
 
             # determine label, fontsize and color
             node_label = data.get('label', str(node).title())
@@ -374,27 +388,27 @@ class Graph(Plot):
             font_color = get_color(data['font_color'], 'black')
 
             # draw node label
-            nx.draw_networkx_labels(G, pos,
-                labels      = {node: node_label_format},
-                font_size   = font_size / node_label_size,
-                font_color  = font_color,
-                font_family = 'sans-serif',
-                font_weight = 'normal')
+            nx.draw_networkx_labels(
+                G, pos, labels={node: node_label_format},
+                font_size=font_size / node_label_size, font_color=font_color,
+                font_family='sans-serif', font_weight='normal')
 
             # patch node for edges
-            circle = matplotlib.patches.Circle(pos.get(node), alpha = 0.,
-                radius = node_radius)
+            circle = matplotlib.patches.Circle(
+                pos.get(node), alpha=0., radius=node_radius)
             ax.add_patch(circle)
             G.node[node]['patch'] = circle
 
         # draw edges
         seen = {}
-        if ngraph.is_directed(G): default_edge_style = '-|>'
+        if ngraph.is_directed(G):
+            default_edge_style = '-|>'
         else: default_edge_style = '-'
 
-        for (u, v, data) in G.edges(data = True):
+        for (u, v, data) in G.edges(data=True):
             weight = data['weight']
-            if weight == 0.: continue
+            if weight == 0.:
+                continue
 
             # calculate edge curvature from node positions
             # parameter rad describes the height in the normalized triangle
@@ -407,7 +421,8 @@ class Graph(Plot):
                 rad = vec[0] * vec[1] / np.sqrt(2 * np.sum(vec ** 2))
                 if self._config['graph_layout'] == 'layer':
                     gdir = self._config['graph_direction']
-                    if gdir in ['left', 'right']: rad *= -1
+                    if gdir in ['left', 'right']:
+                        rad *= -1
             seen[(u, v)] = rad
 
             # determine style of edge from edge weight
@@ -425,36 +440,32 @@ class Graph(Plot):
                 alpha = np.amin([np.absolute(weight), 1.0])
 
             # draw edge
-            nodeA = G.node[u]['patch']
-            nodeB = G.node[v]['patch']
+            node_a = G.node[u]['patch']
+            node_b = G.node[v]['patch']
             arrow = matplotlib.patches.FancyArrowPatch(
-                posA            = nodeA.center,
-                posB            = nodeB.center,
-                patchA          = nodeA,
-                patchB          = nodeB,
-                arrowstyle      = default_edge_style,
-                connectionstyle = 'arc3,rad=%s' % rad,
-                mutation_scale  = linewidth * 12.,
-                linewidth       = linewidth,
-                linestyle       = linestyle,
-                color           = get_color(data.get('color', 'black')),
-                alpha           = alpha )
+                posA=node_a.center, posB=node_b.center,
+                patchA=node_a, patchB=node_b,
+                arrowstyle=default_edge_style,
+                connectionstyle='arc3,rad=%s' % rad,
+                mutation_scale=linewidth * 12.,
+                linewidth=linewidth, linestyle=linestyle,
+                color=get_color(data.get('color', 'black')), alpha=alpha)
             ax.add_patch(arrow)
 
         # (optional) draw legend
         if self._config['show_legend']:
             num_groups = np.sum([1 for g in list(groups.values()) \
-                if isinstance(g, list) and len(g) > 0])
+                if isinstance(g, list) and g])
             markerscale = 0.6 * self._config['legend_fontsize'] / font_size
             ax.legend(
-                numpoints      = 1,
-                loc            = 'lower center',
-                ncol           = num_groups,
-                borderaxespad  = 0.,
-                framealpha     = 0.,
-                bbox_to_anchor = (0.5, -0.1),
-                fontsize       = self._config['legend_fontsize'],
-                markerscale    = markerscale)
+                numpoints=1,
+                loc='lower center',
+                ncol=num_groups,
+                borderaxespad=0.,
+                framealpha=0.,
+                bbox_to_anchor=(0.5, -0.1),
+                fontsize=self._config['legend_fontsize'],
+                markerscale=markerscale)
 
         # (optional) plot title
         self.plot_title()
@@ -472,12 +483,14 @@ def get_color(*args):
 
     """
 
-    try: import matplotlib.colors as colors
-    except ImportError: raise ImportError(
-        "nemoa.common.nplot.get_color() requires matplotlib: "
-        "https://matplotlib.org")
+    try:
+        import matplotlib.colors as colors
+    except ImportError as err:
+        raise ImportError(
+            "nemoa.common.nplot.get_color() requires matplotlib: "
+            "https://matplotlib.org") from err
 
-    if len(args) == 0:
+    if not args:
         clist = list(colors.get_named_colors_mapping().keys())
         return sorted([cname[5:].title() \
             for cname in clist if cname[:5] == 'xkcd:'])
@@ -495,7 +508,8 @@ def get_texlabel(string):
     """Return formated node label as used for plots."""
 
     lstr = string.rstrip('1234567890')
-    if len(lstr) == len(string): return '${%s}$' % (string)
+    if len(lstr) == len(string):
+        return '${%s}$' % (string)
     rnum = int(string[len(lstr):])
     lstr = lstr.strip('_')
     return '${%s}_{%i}$' % (lstr, rnum)
@@ -504,7 +518,8 @@ def get_texlabel_width(string):
     """Return estimated width for formated node labels."""
 
     lstr = string.rstrip('1234567890')
-    if len(lstr) == len(string): return len(string)
+    if len(lstr) == len(string):
+        return len(string)
     lstr = lstr.strip('_')
     rstr = str(int(string[len(lstr):]))
     return len(lstr) + 0.7 * len(rstr)
@@ -512,9 +527,11 @@ def get_texlabel_width(string):
 def filetypes():
     """Return supported image filetypes."""
 
-    try: import matplotlib.pyplot as plt
-    except ImportError: raise ImportError(
-        "requires package matplotlib: "
-        "https://matplotlib.org")
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError as err:
+        raise ImportError(
+            "requires package matplotlib: "
+            "https://matplotlib.org") from err
 
     return plt.gcf().canvas.get_supported_filetypes()

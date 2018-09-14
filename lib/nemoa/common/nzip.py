@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Collection of frequently used functions for gzip compressed data handling."""
+"""Collection of functions for gzip compressed data handling."""
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 from typing import Any, Optional, Union
@@ -11,9 +11,10 @@ import base64
 import pickle
 import zlib
 
+OptStr = Optional[str]
 ByteLike = Union[bytes, bytearray, str]
 
-def load(path: str, encoding: Optional[str] = 'base64') -> dict:
+def load(path: str, encoding: OptStr = 'base64') -> dict:
     """Decode and decompress file.
 
     Args:
@@ -30,12 +31,12 @@ def load(path: str, encoding: Optional[str] = 'base64') -> dict:
 
     """
 
-    s = pickle.load(open(path, 'rb')) # file to bytes
-    obj = loads(s, encoding = encoding) # bytes to object
+    blob = pickle.load(open(path, 'rb')) # file to bytes
+    obj = loads(blob, encoding=encoding) # bytes to object
 
     return obj
 
-def dump(obj: object, path: str, encoding: Optional[str] = 'base64',
+def dump(obj: object, path: str, encoding: OptStr = 'base64',
     level: int = 6) -> bool:
     """Compress and encode arbitrary object to file.
 
@@ -58,16 +59,16 @@ def dump(obj: object, path: str, encoding: Optional[str] = 'base64',
 
     """
 
-    s = dumps(obj, encoding = encoding, level = level) # object to bytes
-    pickle.dump(s, file = open(path, 'wb')) # bytes to file
+    blob = dumps(obj, encoding=encoding, level=level) # object to bytes
+    pickle.dump(blob, file=open(path, 'wb')) # bytes to file
 
     return True
 
-def loads(s: ByteLike, encoding: Optional[str] = 'base64') -> Any:
+def loads(blob: ByteLike, encoding: OptStr = 'base64') -> Any:
     """Decode and decompress bytes-like object to object hierarchy.
 
     Args:
-        s: Encoded bytes-like structure or string
+        blob: Encoded byte-like objects
         encoding: Encodings specified in [RFC3548]. Allowed values are:
             'base16', 'base32', 'base64' and 'base85' and None for no encoding.
             Default: 'base64'
@@ -82,20 +83,25 @@ def loads(s: ByteLike, encoding: Optional[str] = 'base64') -> Any:
     """
 
     # decode bytes
-    if not encoding: pass
-    elif encoding == 'base64': s = base64.b64decode(s)
-    elif encoding == 'base32': s = base64.b32decode(s)
-    elif encoding == 'base16': s = base64.b16decode(s)
-    elif encoding == 'base85': s = base64.b85decode(s)
-    else: raise ValueError(f"encoding '{encoding}' is not supported")
+    if not encoding:
+        pass
+    elif encoding == 'base64':
+        blob = base64.b64decode(blob)
+    elif encoding == 'base32':
+        blob = base64.b32decode(blob)
+    elif encoding == 'base16':
+        blob = base64.b16decode(blob)
+    elif encoding == 'base85':
+        blob = base64.b85decode(blob)
+    else:
+        raise ValueError(f"encoding '{encoding}' is not supported")
 
-    s = zlib.decompress(s) # decompress bytes, level is not required
-    obj = pickle.loads(s) # bytes to object
+    blob = zlib.decompress(blob) # decompress bytes, level is not required
+    obj = pickle.loads(blob) # bytes to object
 
     return obj
 
-def dumps(obj: object, encoding: Optional[str] = 'base64',
-    level: int = 6) -> bytes:
+def dumps(obj: object, encoding: OptStr = 'base64', level: int = 6) -> bytes:
     """Compress and encode arbitrary object to bytes.
 
     Args:
@@ -116,15 +122,21 @@ def dumps(obj: object, encoding: Optional[str] = 'base64',
 
     """
 
-    s = pickle.dumps(obj) # object to bytes
-    s = zlib.compress(s, level) # compress bytes
+    blob = pickle.dumps(obj) # object to bytes
+    blob = zlib.compress(blob, level) # compress bytes
 
     # encode bytes
-    if not encoding: pass
-    elif encoding == 'base64': s = base64.b64encode(s)
-    elif encoding == 'base32': s = base64.b32encode(s)
-    elif encoding == 'base16': s = base64.b16encode(s)
-    elif encoding == 'base85': s = base64.b85encode(s)
-    else: raise ValueError(f"encoding '{encoding}' is not supported")
+    if not encoding:
+        pass
+    elif encoding == 'base64':
+        blob = base64.b64encode(blob)
+    elif encoding == 'base32':
+        blob = base64.b32encode(blob)
+    elif encoding == 'base16':
+        blob = base64.b16encode(blob)
+    elif encoding == 'base85':
+        blob = base64.b85encode(blob)
+    else:
+        raise ValueError(f"encoding '{encoding}' is not supported")
 
-    return s
+    return blob

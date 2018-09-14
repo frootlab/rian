@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """Collection of functions for function handling."""
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from typing import Callable, Optional
+from nemoa.common.ntype import Callable, OptCallable, OptDict
 
 def about(func: Callable) -> str:
     """Summary about a function.
@@ -24,11 +24,13 @@ def about(func: Callable) -> str:
 
     if not isinstance(func, Callable):
         raise TypeError('first argument requires to be a function')
-    if not func.__doc__: return ''
+
+    if not func.__doc__:
+        return ''
 
     return func.__doc__.split('\n', 1)[0].strip(' .')
 
-def func(name: str) -> Optional[Callable]:
+def func(name: str) -> OptCallable:
     """Function instance for a given fully qualified function name.
 
     Args:
@@ -46,12 +48,12 @@ def func(name: str) -> Optional[Callable]:
 
     minst = nmodule.objectify('.'.join(name.split('.')[:-1]))
 
-    if minst is None: return None
-    func = getattr(minst, name.split('.')[-1])
+    if minst is None:
+        return None
 
-    return func
+    return getattr(minst, name.split('.')[-1])
 
-def kwargs(func: Callable, default: Optional[dict] = None) -> dict:
+def kwargs(func: Callable, default: OptDict = None) -> dict:
     """Keyword arguments of a function.
 
     Args:
@@ -78,16 +80,20 @@ def kwargs(func: Callable, default: Optional[dict] = None) -> dict:
     if not isinstance(func, Callable):
         raise TypeError('first argument requires to be a function')
     if not isinstance(default, (dict, type(None))):
-        raise TypeError(f"argument 'default' requires types "
+        raise TypeError(
+            "argument 'default' requires types "
             f"'None' or 'dict', not '{type(default)}'")
 
     import inspect
 
     df = inspect.signature(func).parameters
-    kd = {}
-    for k, v in df.items():
-        if '=' not in str(v): continue
-        if default is None: kd[k] = v.default
-        elif k in default: kd[k] = default[k]
+    dkwargs = {}
+    for key, val in df.items():
+        if '=' not in str(val):
+            continue
+        if default is None:
+            dkwargs[key] = val.default
+        elif key in default:
+            dkwargs[key] = default[key]
 
-    return kd
+    return dkwargs

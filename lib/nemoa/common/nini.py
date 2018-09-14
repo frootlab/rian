@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """Collection of frequently used functions for INI formatted data handling."""
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 from configparser import ConfigParser
-from typing import Optional
+from nemoa.common.ntype import OptDict, OptBool, OptStr
 
-def load(f: str, structure: Optional[dict] = None) -> dict:
+def load(f: str, structure: OptDict = None) -> dict:
     """Import configuration dictionary from INI file.
 
     Args:
@@ -33,12 +33,13 @@ def load(f: str, structure: Optional[dict] = None) -> dict:
     parser.read(f)
 
     # parse sections and create configuration dictionary
-    d = parse(parser, structure = structure)
+    d = parse(parser, structure=structure)
 
     return d
 
-def save(d: dict, f: str, flat: Optional[bool] = None,
-    header: Optional[str] = None) -> bool:
+def save(
+        d: dict, f: str, flat: OptBool = None, header: OptStr = None
+    ) -> bool:
     """Save configuration dictionary to INI file.
 
     Args:
@@ -56,20 +57,21 @@ def save(d: dict, f: str, flat: Optional[bool] = None,
     """
 
     # Convert configuration dictionary to INI formated string
-    try: s = dumps(d, flat = flat, header = header)
+    try:
+        s = dumps(d, flat=flat, header=header)
     except Exception as err:
         raise ValueError("dictionary is not valid") from err
 
     # write string to file
     try:
-        with open(f, 'w') as h: h.write(s)
+        with open(f, 'w') as h:
+            h.write(s)
     except IOError as err:
         raise IOError(f"file '{f}' can not be written.") from err
 
     return True
 
-def loads(s: str, structure: Optional[dict] = None,
-    flat: Optional[bool] = None) -> dict:
+def loads(s: str, structure: OptDict = None, flat: OptBool = None) -> dict:
     """Import configuration dictionary from INI formated string
 
     Args:
@@ -97,7 +99,8 @@ def loads(s: str, structure: Optional[dict] = None,
     if flat is None:
         flat = True
         for line in [l.lstrip(' ') for l in s.split('\n')]:
-            if len(line) == 0 or line.startswith('#'): continue
+            if len(line) == 0 or line.startswith('#'):
+                continue
             flat = not line.startswith('[')
             break
 
@@ -117,12 +120,12 @@ def loads(s: str, structure: Optional[dict] = None,
     d = parse(parser, structure)
 
     # if no sections are to be used collapse the 'root' key
-    if flat: d = d.get('root')
+    if flat:
+        d = d.get('root')
 
     return d
 
-def dumps(d: dict, flat: Optional[bool] = None,
-    header: Optional[str] = None) -> str:
+def dumps(d: dict, flat: OptBool = None, header: OptStr = None) -> str:
     """Convert configuration dictionary to INI formated string.
 
     Args:
@@ -145,16 +148,19 @@ def dumps(d: dict, flat: Optional[bool] = None,
     if flat is None:
         flat = True
         for key, val in d.items():
-            if not isinstance(val, dict): continue
+            if not isinstance(val, dict):
+                continue
             flat = False
 
     # if no sections are to be used create a temporary [root] section
-    if flat: d = {'root': d.copy()}
+    if flat:
+        d = {'root': d.copy()}
 
     # succesively pass (key, value) pairs to INI parser
     parser = ConfigParser()
     for sec in d.keys():
-        if not isinstance(d[sec], dict): continue
+        if not isinstance(d[sec], dict):
+            continue
         parser.add_section(str(sec))
         for key, val in d[sec].items():
             parser.set(str(sec), str(key), str(val))
@@ -165,7 +171,8 @@ def dumps(d: dict, flat: Optional[bool] = None,
         s = buffer.getvalue()
 
     # if no section are to be used remove [root] section from string
-    if flat: s = s.replace('[root]\n', '')
+    if flat:
+        s = s.replace('[root]\n', '')
 
     # if header is given, write header as comment before string
     if isinstance(header, str):
@@ -196,7 +203,8 @@ def header(f: str) -> str:
     hlist = []
     with open(f, 'r') as h:
         for line in [l.lstrip(' ') for l in h]:
-            if len(line) == 0: continue
+            if len(line) == 0:
+                continue
             if line.startswith('#'):
                 hlist.append(line[1:].lstrip())
                 continue
@@ -207,7 +215,7 @@ def header(f: str) -> str:
 
     return s
 
-def parse(parser: ConfigParser, structure: Optional[dict] = None) -> dict:
+def parse(parser: ConfigParser, structure: OptDict = None) -> dict:
     """Import configuration dictionary from INI formated string
 
     Args:
@@ -245,17 +253,20 @@ def parse(parser: ConfigParser, structure: Optional[dict] = None) -> dict:
         # use regular expression to match sections
         rsec = None
         for key in structure.keys():
-            if not rsecs[key].match(sec): continue
+            if not rsecs[key].match(sec):
+                continue
             rsec = key
             break
-        if not rsec: continue
+        if not rsec:
+            continue
 
         # use regular expression to match keys
         dsec = {}
         for regex_key, fmt in structure[rsec].items():
             re_key = compile(regex_key)
             for key in parser.options(sec):
-                if not re_key.match(key): continue
+                if not re_key.match(key):
+                    continue
                 val = parser.get(sec, key)
                 dsec[key] = ntext.astype(val, fmt)
 

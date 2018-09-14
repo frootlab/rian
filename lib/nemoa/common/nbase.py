@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 """Collection of frequently used base classes."""
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from typing import Any, ClassVar, Dict, Optional, Tuple, Union
 from pathlib import Path
+
+from nemoa.common.ntype import (
+    Any, ClassVar, Dict, OptInt, OptStr, Tuple, Union)
 
 PathLike = Tuple[Union['PathLike', str, Path], ...]
 
@@ -72,11 +74,12 @@ class ObjectIP:
         """Wraps attribute get requests to private getter methods."""
 
         if key in self._attr:
-            if not self._attr[key] & 0b01: raise AttributeError(
-                f"attribute '{key}' is not readable")
-            if not hasattr(self, '_get_' + key): raise AttributeError(
-                f"{self.__class__.__name__} instance "
-                f"has no attribute '_get_{key}'")
+            if not self._attr[key] & 0b01:
+                raise AttributeError(f"attribute '{key}' is not readable")
+            if not hasattr(self, '_get_' + key):
+                raise AttributeError(
+                    f"{self.__class__.__name__} instance "
+                    f"has no attribute '_get_{key}'")
             return getattr(self, '_get_' + key)()
 
         raise AttributeError(
@@ -121,7 +124,7 @@ class ObjectIP:
 
         raise KeyError(f"key '{key}' is not valid")
 
-    def _get_about(self) -> Optional[str]:
+    def _get_about(self) -> OptStr:
         """Get a short description of the content of the resource.
 
         Short description of the content of the resource.
@@ -146,7 +149,7 @@ class ObjectIP:
 
         return self._config.get('author', None)
 
-    def _get_branch(self) -> Optional[str]:
+    def _get_branch(self) -> OptStr:
         """Get the name of the current branch.
 
         Name of a duplicate of the original resource.
@@ -158,7 +161,7 @@ class ObjectIP:
 
         return self._config.get('branch', None)
 
-    def _get_config(self, key: Optional[str] = None) -> Any:
+    def _get_config(self, key: OptStr = None) -> Any:
         """Get configuration or configuration value.
 
         Args:
@@ -185,7 +188,7 @@ class ObjectIP:
 
         raise KeyError(f"key '{key}' is not valid")
 
-    def _get_copy(self, key: Optional[str] = None) -> Any:
+    def _get_copy(self, key: OptStr = None) -> Any:
         """Get copy of configuration and named resources.
 
         Args:
@@ -227,7 +230,7 @@ class ObjectIP:
 
         raise KeyError(f"key '{str(key)}' is not valid")
 
-    def _get_copyright(self) -> Optional[str]:
+    def _get_copyright(self) -> OptStr:
         """Get the copyright notice of the resource.
 
         Notice of statutorily prescribed form that informs users of the
@@ -240,7 +243,7 @@ class ObjectIP:
 
         return self._config.get('copyright', None)
 
-    def _get_email(self) -> Optional[str]:
+    def _get_email(self) -> OptStr:
         """Get an email address of the author.
 
         Email address to a person, an organization, or a service that is
@@ -253,7 +256,7 @@ class ObjectIP:
 
         return self._config.get('email', None)
 
-    def _get_fullname(self) -> Optional[str]:
+    def _get_fullname(self) -> OptStr:
         """Get full name including 'branch' and 'version'.
 
         String concatenation of 'name', 'branch' and 'version'. Branch
@@ -285,7 +288,7 @@ class ObjectIP:
         d = nclass.methods(self, filter='_get_*')
         return sorted(ndict.reduce(d, '_get_'))
 
-    def _get_license(self) -> Optional[str]:
+    def _get_license(self) -> OptStr:
         """Get the license of the resource.
 
         Namereference to a legal document giving specified users an
@@ -298,7 +301,7 @@ class ObjectIP:
 
         return self._config.get('license', None)
 
-    def _get_name(self) -> Optional[str]:
+    def _get_name(self) -> OptStr:
         """Get the name of the resource.
 
         The name has to be unique for a given class and a given
@@ -312,7 +315,7 @@ class ObjectIP:
 
         return self._config.get('name', None)
 
-    def _get_path(self) -> Optional[str]:
+    def _get_path(self) -> OptStr:
         """Get filepath.
 
         Path to a potential file containing or referencing the resource.
@@ -360,7 +363,7 @@ class ObjectIP:
         d = nclass.methods(self, filter='_set_*')
         return sorted(ndict.reduce(d, '_set_'))
 
-    def _get_type(self) -> Optional[str]:
+    def _get_type(self) -> OptStr:
         """Get instance type, using module name and class name.
 
         String concatenation of module name and class name of the instance.
@@ -375,7 +378,7 @@ class ObjectIP:
 
         return '.'.join([mname, cname])
 
-    def _get_version(self) -> Optional[int]:
+    def _get_version(self) -> OptInt:
         """Get the version number of the branch of the resource.
 
         Versionnumber of branch of the resource.
@@ -425,11 +428,13 @@ class ObjectIP:
         import copy
 
         setter = self._get_setter()
-        for k, v in kwargs.items():
-            if k not in self._copy.keys():
-                raise KeyError(f"key '{k}' is not valid")
-            if k in setter: self.set(k, v)
-            else: self.__dict__[self._copy[k]] = copy.deepcopy(v)
+        for key, val in kwargs.items():
+            if key not in self._copy.keys():
+                raise KeyError(f"key '{key}' is not valid")
+            if key in setter:
+                self.set(key, val)
+            else:
+                self.__dict__[self._copy[key]] = copy.deepcopy(val)
 
         return True
 
@@ -443,9 +448,10 @@ class ObjectIP:
 
         """
 
-        if not isinstance(val, str): raise TypeError(
-            "attribute 'about' is required to be of type string, "
-            f"not '{type(val)}'")
+        if not isinstance(val, str):
+            raise TypeError(
+                "attribute 'about' is required to be of type string, "
+                f"not '{type(val)}'")
 
         self._config['about'] = val
 
@@ -462,9 +468,10 @@ class ObjectIP:
 
         """
 
-        if not isinstance(val, str): raise TypeError(
-            "attribute 'author' is required to be of type string, "
-            f"not '{type(val)}'")
+        if not isinstance(val, str):
+            raise TypeError(
+                "attribute 'author' is required to be of type string, "
+                f"not '{type(val)}'")
 
         self._config['author'] = val
 
@@ -480,9 +487,10 @@ class ObjectIP:
 
         """
 
-        if not isinstance(val, str): raise TypeError(
-            "attribute 'branch' is required to be of type string, "
-            f"not '{type(val)}'")
+        if not isinstance(val, str):
+            raise TypeError(
+                "attribute 'branch' is required to be of type string, "
+                f"not '{type(val)}'")
 
         self._config['branch'] = val
 
@@ -499,9 +507,10 @@ class ObjectIP:
 
         """
 
-        if not isinstance(val, str): raise TypeError(
-            "attribute 'copyright' is required to be of type string, "
-            f"not '{type(val)}'")
+        if not isinstance(val, str):
+            raise TypeError(
+                "attribute 'copyright' is required to be of type string, "
+                f"not '{type(val)}'")
 
         self._config['copyright'] = val
 
@@ -518,9 +527,10 @@ class ObjectIP:
 
         """
 
-        if not isinstance(val, str): raise TypeError(
-            "attribute 'email' is required to be of type string, "
-            f"not '{type(val)}'")
+        if not isinstance(val, str):
+            raise TypeError(
+                "attribute 'email' is required to be of type string, "
+                f"not '{type(val)}'")
 
         self._config['email'] = val
 
@@ -537,9 +547,10 @@ class ObjectIP:
 
         """
 
-        if not isinstance(val, str): raise TypeError(
-            "attribute 'license' is required to be of type string, "
-            f"not '{type(val)}'")
+        if not isinstance(val, str):
+            raise TypeError(
+                "attribute 'license' is required to be of type string, "
+                f"not '{type(val)}'")
 
         self._config['license'] = val
 
@@ -557,9 +568,10 @@ class ObjectIP:
 
         """
 
-        if not isinstance(val, str): raise TypeError(
-            "attribute 'name' is required to be of type string, "
-            f"not '{type(val)}'")
+        if not isinstance(val, str):
+            raise TypeError(
+                "attribute 'name' is required to be of type string, "
+                f"not '{type(val)}'")
 
         self._config['name'] = val
 
@@ -575,9 +587,10 @@ class ObjectIP:
 
         """
 
-        if not isinstance(path, (str, tuple, Path)): raise TypeError(
-            "attribute 'path' is required to be path-like, "
-            f"not '{type(path)}'")
+        if not isinstance(path, (str, tuple, Path)):
+            raise TypeError(
+                "attribute 'path' is required to be path-like, "
+                f"not '{type(path)}'")
 
         from nemoa.common import npath
         self._config['path'] = Path(npath.expand(path))
@@ -594,8 +607,11 @@ class ObjectIP:
 
         """
 
-        if not isinstance(val, int): raise TypeError(
-            "attribute 'version' is required to be of type integer")
+        if not isinstance(val, int):
+            raise TypeError(
+                "attribute 'version' is required to be of type 'int'"
+                f"not '{type(val)}'")
+
         self._config['version'] = val
 
         return True

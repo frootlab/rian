@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
-"""common modules."""
+"""Generic toolbox for basic tasks.
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+This package contains modules for basic tasks like handling of certain objects,
+handling of file formats or plattform independent system integration.
+Accordingly, the modules are kept as lightweight as possible and independent
+from the main application.
+
+"""
+
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'

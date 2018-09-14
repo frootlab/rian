@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 """Collection of functions for the organization and handling of algorithms."""
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
-
-from typing import Any, Callable, List, Optional, Sequence, Union
-from types import ModuleType as Module
 
 try:
     import numpy as np
@@ -15,9 +12,13 @@ except ImportError as err:
         "requires package numpy: "
         "https://scipy.org") from err
 
+from nemoa.common.ntype import (
+    Any, Callable, List, Optional, Sequence, Union, Module, OptModule,
+    OptStr, OptStrList)
+
 Array = Union[np.ndarray, Sequence[np.ndarray]]
 
-def search(minst: Optional[Module] = None, **kwargs: Any) -> dict:
+def search(minst: OptModule = None, **kwargs: Any) -> dict:
     """Search for algorithms, that pass given filters.
 
     Args:
@@ -45,13 +46,15 @@ def search(minst: Optional[Module] = None, **kwargs: Any) -> dict:
     }
 
     # search for algorithms
-    algs = nmodule.search(minst = minst, rules = rules, **kwargs)
+    algs = nmodule.search(minst=minst, rules=rules, **kwargs)
 
     return algs
 
-def custom(name: Optional[str] = None, category: Optional[str] = None,
-    classes: Optional[List[str]] = None, tags: Optional[List[str]] = None,
-    plot: Optional[str] = None, **attr: Any) -> Callable:
+def custom(
+        name: OptStr = None, category: OptStr = None,
+        classes: OptStrList = None, tags: OptStrList = None,
+        plot: OptStr = None, **attr: Any
+    ) -> Callable:
     """Attribute decorator for custom algorithms.
 
     For the case, that an algorithm does not fit into the builtin categories
@@ -92,15 +95,18 @@ def custom(name: Optional[str] = None, category: Optional[str] = None,
         wrapped.__doc__ = func.__doc__
 
         # set additional attributes
-        for key, val in attr.items(): setattr(wrapped, key, val)
+        for key, val in attr.items():
+            setattr(wrapped, key, val)
 
         return wrapped
 
     return wrapper
 
-def objective(name: Optional[str] = None, classes: Optional[List[str]] = None,
-    tags: Optional[List[str]] = None, optimum: str = 'min',
-    scope: str = 'local', plot: Optional[str] = None, **attr: Any) -> Callable:
+def objective(
+        name: OptStr = None, classes: OptStrList = None,
+        tags: OptStrList = None, optimum: str = 'min',
+        scope: str = 'local', plot: OptStr = None, **attr: Any
+    ) -> Callable:
     """Attribute decorator for objective functions.
 
     Objective functions are real valued functions, thet specify the goal
@@ -147,15 +153,17 @@ def objective(name: Optional[str] = None, classes: Optional[List[str]] = None,
         wrapped.__doc__ = func.__doc__
 
         # set additional attributes
-        for key, val in attr.items(): setattr(wrapped, key, val)
+        for key, val in attr.items():
+            setattr(wrapped, key, val)
 
         return wrapped
 
     return wrapper
 
-def sampler(name: Optional[str] = None, classes: Optional[List[str]] = None,
-    tags: Optional[List[str]] = None, plot: Optional[str] = 'Histogram',
-    **attr: Any) -> Callable:
+def sampler(
+        name: OptStr = None, classes: OptStrList = None,
+        tags: OptStrList = None, plot: OptStr = 'Histogram', **attr: Any
+    ) -> Callable:
     """Attribute decorator for statistical samplers.
 
     Statistical samplers are random functions, that generate samples from
@@ -196,15 +204,17 @@ def sampler(name: Optional[str] = None, classes: Optional[List[str]] = None,
         wrapped.__doc__ = func.__doc__
 
         # set additional attributes
-        for key, val in attr.items(): setattr(wrapped, key, val)
+        for key, val in attr.items():
+            setattr(wrapped, key, val)
 
         return wrapped
 
     return wrapper
 
-def statistic(name: Optional[str] = None, classes: Optional[List[str]] = None,
-    tags: Optional[List[str]] = None, plot: Optional[str] = 'Histogram',
-    **attr: Any) -> Callable:
+def statistic(
+        name: OptStr = None, classes: OptStrList = None,
+        tags: OptStrList = None, plot: OptStr = 'Histogram', **attr: Any
+    ) -> Callable:
     """Attribute decorator for sample statistics.
 
     Sample statistics are measures of some attribute of the individual columns
@@ -243,17 +253,20 @@ def statistic(name: Optional[str] = None, classes: Optional[List[str]] = None,
         wrapped.__doc__ = func.__doc__
 
         # set additional attributes
-        for key, val in attr.items(): setattr(wrapped, key, val)
+        for key, val in attr.items():
+            setattr(wrapped, key, val)
 
         return wrapped
 
     return wrapper
 
 
-def association(name: Optional[str] = None, tags: Optional[List[str]] = None,
-    classes: Optional[List[str]] = None, plot: Optional[str] = 'Histogram',
-    directed: bool = True, signed: bool = True, normal: bool = False,
-    **attr: Any) -> Callable:
+def association(
+        name: Optional[str] = None, tags: Optional[List[str]] = None,
+        classes: Optional[List[str]] = None, plot: Optional[str] = 'Histogram',
+        directed: bool = True, signed: bool = True, normal: bool = False,
+        **attr: Any
+    ) -> Callable:
     """Attribute decorator for statistical measures of association.
 
     Measures of association refer to a wide variety of coefficients that measure
@@ -305,7 +318,8 @@ def association(name: Optional[str] = None, tags: Optional[List[str]] = None,
         wrapped.__doc__ = func.__doc__
 
         # set additional attributes
-        for key, val in attr.items(): setattr(wrapped, key, val)
+        for key, val in attr.items():
+            setattr(wrapped, key, val)
 
         return wrapped
 

@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 """Collection of frequently used numpy ndarray functions."""
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
-
-from typing import Any, Dict, Optional, Sequence, Tuple, Union
 
 try:
     import numpy as np
@@ -14,13 +12,13 @@ except ImportError as err:
         "requires package numpy: "
         "https://scipy.org") from err
 
+from nemoa.common.ntype import (
+    DyaDict, DyaTuple, Optional, NpAxis, OptStr, Union)
+
 Array = np.ndarray
 ArrayLike = Union[Array, np.matrix, float, int]
-Axis = Optional[Union[int, Sequence[int]]]
-Labels = Tuple[Sequence[str], Sequence[str]]
-DyaDict = Dict[Tuple[str, str], Any]
 
-def fromdict(d: DyaDict, labels: Labels, na: float = 0.) -> Array:
+def fromdict(d: DyaDict, labels: DyaTuple, na: float = 0.) -> Array:
     """Convert dictionary to array.
 
     Args:
@@ -47,7 +45,7 @@ def fromdict(d: DyaDict, labels: Labels, na: float = 0.) -> Array:
 
     return a
 
-def asdict(a: Array, labels: Labels, na: Optional[float] = None) -> DyaDict:
+def asdict(a: Array, labels: DyaTuple, na: Optional[float] = None) -> DyaDict:
     """Convert array to dictionary.
 
     Args:
@@ -77,8 +75,7 @@ def asdict(a: Array, labels: Labels, na: Optional[float] = None) -> DyaDict:
 
     return d
 
-def sumnorm(a: ArrayLike, norm: Optional[str] = None,
-    axis: Axis = 0) -> ArrayLike:
+def sumnorm(a: ArrayLike, norm: OptStr = None, axis: NpAxis = 0) -> ArrayLike:
     """Sum of array.
 
     Calculate sum of data along given axes, using a given norm.
@@ -122,8 +119,7 @@ def sumnorm(a: ArrayLike, norm: Optional[str] = None,
 
     raise ValueError(f"norm '{norm}' is not supported")
 
-def meannorm(a: ArrayLike, norm: Optional[str] = None,
-    axis: Axis = 0) -> ArrayLike:
+def meannorm(a: ArrayLike, norm: OptStr = None, axis: NpAxis = 0) -> ArrayLike:
     """Mean of data.
 
     Calculate mean of data along given axes, using a given norm.
@@ -167,8 +163,7 @@ def meannorm(a: ArrayLike, norm: Optional[str] = None,
 
     raise ValueError(f"norm '{norm}' is not supported")
 
-def devnorm(a: ArrayLike, norm: Optional[str] = None,
-    axis: Axis = 0) -> ArrayLike:
+def devnorm(a: ArrayLike, norm: OptStr = None, axis: NpAxis = 0) -> ArrayLike:
     """Deviation of data.
 
     Calculate deviation of data along given axes, using a given norm.
