@@ -13,16 +13,16 @@ except ImportError as err:
         "https://scipy.org") from err
 
 from nemoa.common.ntype import (
-    DyaDict, DyaTuple, Optional, NpAxis, OptStr, Union)
+    DyaDict, DyaTuple, NpAxis, OptStr, OptFloat, Union)
 
 Array = np.ndarray
 ArrayLike = Union[Array, np.matrix, float, int]
 
-def fromdict(d: DyaDict, labels: DyaTuple, na: float = 0.) -> Array:
+def fromdict(edges: DyaDict, labels: DyaTuple, na: float = 0.) -> Array:
     """Convert dictionary to array.
 
     Args:
-        d: Dictionary of format {(<row>, <col>): value, ...}, where:
+        edges: Dictionary of format {(<row>, <col>): value, ...}, where:
             <row> is an element of the <row list> of the argument labels and
             <col> is an element of the <col list> of the argument labels.
         labels: Tuple of format (<row list>, <col list>), where:
@@ -37,19 +37,18 @@ def fromdict(d: DyaDict, labels: DyaTuple, na: float = 0.) -> Array:
         <col list> of the argument labels.
 
     """
+    arr = np.empty(shape=(len(labels[0]), len(labels[1])))
+    for i, colx in enumerate(labels[0]):
+        for j, coly in enumerate(labels[1]):
+            arr[i, j] = edges.get((colx, coly), na)
 
-    a = np.empty(shape=(len(labels[0]), len(labels[1])))
-    for i, x in enumerate(labels[0]):
-        for j, y in enumerate(labels[1]):
-            a[i, j] = d[(x, y)] if (x, y) in d else na
+    return arr
 
-    return a
-
-def asdict(a: Array, labels: DyaTuple, na: Optional[float] = None) -> DyaDict:
+def asdict(arr: Array, labels: DyaTuple, na: OptFloat = None) -> DyaDict:
     """Convert array to dictionary.
 
     Args:
-        a: Numpy array of shape (n, m), where n equals the length of the
+        arr: Numpy array of shape (n, m), where n equals the length of the
             <row list> of the argument labels and m equals the length of the
             <col list> of the argument labels.
         labels: Tuple of format (<row list>, <col list>), where:
@@ -65,17 +64,16 @@ def asdict(a: Array, labels: DyaTuple, na: Optional[float] = None) -> DyaDict:
             <col> is an element of the <col list> of the argument labels.
 
     """
-
-    d = {}
-    for i, x in enumerate(labels[0]):
-        for j, y in enumerate(labels[1]):
-            if not na is None and a[i, j] == na:
+    edges = {}
+    for i, colx in enumerate(labels[0]):
+        for j, coly in enumerate(labels[1]):
+            if not na is None and arr[i, j] == na:
                 continue
-            d[(x, y)] = a[i, j]
+            edges[(colx, coly)] = arr[i, j]
 
-    return d
+    return edges
 
-def sumnorm(a: ArrayLike, norm: OptStr = None, axis: NpAxis = 0) -> ArrayLike:
+def sumnorm(arr: ArrayLike, norm: OptStr = None, axis: NpAxis = 0) -> ArrayLike:
     """Sum of array.
 
     Calculate sum of data along given axes, using a given norm.
@@ -93,9 +91,8 @@ def sumnorm(a: ArrayLike, norm: OptStr = None, axis: NpAxis = 0) -> ArrayLike:
         Sum of data as ndarray.
 
     """
-
     if norm is None:
-        return np.sum(a, axis=axis)
+        return np.sum(arr, axis=axis)
     if not isinstance(norm, str):
         raise TypeError(f"norm requires type 'str', not '{type(norm)}'")
 
@@ -103,23 +100,25 @@ def sumnorm(a: ArrayLike, norm: OptStr = None, axis: NpAxis = 0) -> ArrayLike:
 
     # Sum of Values (S)
     if norm == 'S':
-        return np.sum(a, axis=axis)
+        return np.sum(arr, axis=axis)
 
     # Sum of Errors (SE) / l1-Norm (l1)
     if norm in ['SE', 'L1']:
-        return np.sum(np.abs(a), axis=axis)
+        return np.sum(np.abs(arr), axis=axis)
 
     # Sum of Squared Errors (SSE) / Residual sum of squares (RSS)
     if norm in ['SSE', 'RSS']:
-        return np.sum(a ** 2, axis=axis)
+        return np.sum(arr ** 2, axis=axis)
 
     # Root Sum of Squared Errors (RSSE) / l2-Norm (l2)
     if norm in ['RSSE', 'L2']:
-        return np.sqrt(np.sum(a ** 2, axis=axis))
+        return np.sqrt(np.sum(arr ** 2, axis=axis))
 
     raise ValueError(f"norm '{norm}' is not supported")
 
-def meannorm(a: ArrayLike, norm: OptStr = None, axis: NpAxis = 0) -> ArrayLike:
+def meannorm(
+        arr: ArrayLike, norm: OptStr = None, axis: NpAxis = 0
+    ) -> ArrayLike:
     """Mean of data.
 
     Calculate mean of data along given axes, using a given norm.
@@ -137,9 +136,8 @@ def meannorm(a: ArrayLike, norm: OptStr = None, axis: NpAxis = 0) -> ArrayLike:
         Mean of data as ndarray
 
     """
-
     if norm is None:
-        return np.mean(a, axis=axis)
+        return np.mean(arr, axis=axis)
     if not isinstance(norm, str):
         raise TypeError(f"norm requires type 'str', not '{type(norm)}'")
 
@@ -147,23 +145,25 @@ def meannorm(a: ArrayLike, norm: OptStr = None, axis: NpAxis = 0) -> ArrayLike:
 
     # Mean of Values (M)
     if norm == 'M':
-        return np.mean(a, axis=axis)
+        return np.mean(arr, axis=axis)
 
     # Mean of Errors (ME)
     if norm == 'ME':
-        return np.mean(np.abs(a), axis=axis)
+        return np.mean(np.abs(arr), axis=axis)
 
     # Mean of Squared Errors (MSE)
     if norm == 'MSE':
-        return np.mean(a ** 2, axis=axis)
+        return np.mean(arr ** 2, axis=axis)
 
     # Root Mean of Squared Errors (RMSE) / L2-Norm
     if norm == 'RMSE':
-        return np.sqrt(np.mean(a ** 2, axis=axis))
+        return np.sqrt(np.mean(arr ** 2, axis=axis))
 
     raise ValueError(f"norm '{norm}' is not supported")
 
-def devnorm(a: ArrayLike, norm: OptStr = None, axis: NpAxis = 0) -> ArrayLike:
+def devnorm(
+        arr: ArrayLike, norm: OptStr = None, axis: NpAxis = 0
+    ) -> ArrayLike:
     """Deviation of data.
 
     Calculate deviation of data along given axes, using a given norm.
@@ -180,9 +180,8 @@ def devnorm(a: ArrayLike, norm: OptStr = None, axis: NpAxis = 0) -> ArrayLike:
         Deviation of data as ndarray
 
     """
-
     if norm is None:
-        return np.std(a, axis=axis)
+        return np.std(arr, axis=axis)
     if not isinstance(norm, str):
         raise TypeError(f"norm requires type 'str', not '{type(norm)}'")
 
@@ -190,14 +189,14 @@ def devnorm(a: ArrayLike, norm: OptStr = None, axis: NpAxis = 0) -> ArrayLike:
 
     # Standard Deviation of Data (SD)
     if norm == 'SD':
-        return np.std(a, axis=axis)
+        return np.std(arr, axis=axis)
 
     # Standard Deviation of Errors (SDE)
     if norm == 'SDE':
-        return np.std(np.abs(a), axis=axis)
+        return np.std(np.abs(arr), axis=axis)
 
     # Standard Deviation of Squared Errors (SDSE)
     if norm == 'SDSE':
-        return np.std(a ** 2, axis=axis)
+        return np.std(arr ** 2, axis=axis)
 
     raise ValueError(f"norm '{norm}' is not supported")

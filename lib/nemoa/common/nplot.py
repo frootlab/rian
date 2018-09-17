@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
-""" """
+"""Common function for creating plots with matplotlib."""
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
-
-from typing import Optional
 
 try:
     import numpy as np
@@ -13,6 +11,8 @@ except ImportError as err:
     raise ImportError(
         "requires package numpy: "
         "https://scipy.org") from err
+
+from nemoa.common.ntype import OptDict
 
 class Plot:
     """Base class for matplotlib plots.
@@ -47,7 +47,6 @@ class Plot:
     _axes = None
 
     def __init__(self, **kwargs):
-
         try:
             import matplotlib
         except ImportError as err:
@@ -84,18 +83,18 @@ class Plot:
         # create subplot (matplotlib.axes.Axes)
         self._axes = self._fig.add_subplot(111)
 
-    def set_default(self, config: Optional[dict] = None):
-        """Set default values. """
-
+    def set_default(self, config: OptDict = None) -> bool:
+        """Set default values."""
         from nemoa.common import ndict
 
-        if config is None: config = {}
+        if config is None:
+            config = {}
         self._config = ndict.merge(self._kwargs, config, self._config)
 
         return True
 
-    def plot_title(self):
-        """ """
+    def plot_title(self) -> bool:
+        """Plot title."""
         if not self._config['show_title']:
             return False
 
@@ -105,16 +104,16 @@ class Plot:
         self._plt.title(title, fontsize=fontsize)
         return True
 
-    def show(self):
-        """ """
+    def show(self) -> None:
+        """Show plot."""
         return self._plt.show()
 
     def save(self, path, **kwargs):
-        """ """
+        """Save plot to file."""
         return self._fig.savefig(path, dpi=self._config['dpi'], **kwargs)
 
     def release(self):
-        """ """
+        """Clear current plot."""
         return self._fig.clear()
 
 class Heatmap(Plot):
@@ -219,7 +218,6 @@ class Scatter2D(Plot):
     @staticmethod
     def _pca2d(array):
         """Calculate projection to largest two principal components."""
-
         # get dimension of array
         dim = array.shape[1]
 
@@ -313,7 +311,6 @@ class Graph(Plot):
             Boolen value which is True if no error occured.
 
         """
-
         try:
             import matplotlib.patches
         except ImportError as err:
@@ -341,10 +338,10 @@ class Graph(Plot):
         ax.axis('off')
 
         # get node positions and sizes
-        layout_params = ndict.reduce(self._config, 'graph_')
+        layout_params = ndict.crop(self._config, 'graph_')
         del layout_params['layout']
 
-        pos = ngraph.get_layout(
+        pos = ngraph.getlayout(
             G, layout=self._config['graph_layout'], size=figsize,
             padding=self._config['padding'], **layout_params)
 
@@ -482,12 +479,11 @@ def get_color(*args):
         valid None is returned.
 
     """
-
     try:
-        import matplotlib.colors as colors
+        from matplotlib import colors
     except ImportError as err:
         raise ImportError(
-            "nemoa.common.nplot.get_color() requires matplotlib: "
+            "requires package matplotlib: "
             "https://matplotlib.org") from err
 
     if not args:
@@ -506,7 +502,6 @@ def get_color(*args):
 
 def get_texlabel(string):
     """Return formated node label as used for plots."""
-
     lstr = string.rstrip('1234567890')
     if len(lstr) == len(string):
         return '${%s}$' % (string)
@@ -516,7 +511,6 @@ def get_texlabel(string):
 
 def get_texlabel_width(string):
     """Return estimated width for formated node labels."""
-
     lstr = string.rstrip('1234567890')
     if len(lstr) == len(string):
         return len(string)
@@ -526,7 +520,6 @@ def get_texlabel_width(string):
 
 def filetypes():
     """Return supported image filetypes."""
-
     try:
         import matplotlib.pyplot as plt
     except ImportError as err:

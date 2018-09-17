@@ -14,53 +14,53 @@ class TestSuite(ntest.TestSuite):
         from nemoa.common import nalgorithm
 
         with self.subTest('search'):
-            self.assertTrue(
-                len(nalgorithm.search(nalgorithm, name='search')) == 1)
+            self.assertEqual(
+                len(nalgorithm.search(nalgorithm, name='search')), 1)
 
         with self.subTest('custom'):
             @nalgorithm.custom(category='custom')
             def test_custom():
                 pass
-            self.assertTrue(
-                test_custom.name == 'test_custom')
-            self.assertTrue(
-                test_custom.category == 'custom')
+            self.assertEqual(
+                test_custom.name, 'test_custom')
+            self.assertEqual(
+                test_custom.category, 'custom')
 
         with self.subTest('objective'):
             @nalgorithm.objective()
             def test_objective():
                 pass
-            self.assertTrue(
-                test_objective.name == 'test_objective')
-            self.assertTrue(
-                test_objective.category == 'objective')
+            self.assertEqual(
+                test_objective.name, 'test_objective')
+            self.assertEqual(
+                test_objective.category, 'objective')
 
         with self.subTest('sampler'):
             @nalgorithm.sampler()
             def test_sampler():
                 pass
-            self.assertTrue(
-                test_sampler.name == 'test_sampler')
-            self.assertTrue(
-                test_sampler.category == 'sampler')
+            self.assertEqual(
+                test_sampler.name, 'test_sampler')
+            self.assertEqual(
+                test_sampler.category, 'sampler')
 
         with self.subTest('statistic'):
             @nalgorithm.statistic()
             def test_statistic():
                 pass
-            self.assertTrue(
-                test_statistic.name == 'test_statistic')
-            self.assertTrue(
-                test_statistic.category == 'statistic')
+            self.assertEqual(
+                test_statistic.name, 'test_statistic')
+            self.assertEqual(
+                test_statistic.category, 'statistic')
 
         with self.subTest('association'):
             @nalgorithm.association()
             def test_association():
                 pass
-            self.assertTrue(
-                test_association.name == 'test_association')
-            self.assertTrue(
-                test_association.category == 'association')
+            self.assertEqual(
+                test_association.name, 'test_association')
+            self.assertEqual(
+                test_association.category, 'association')
 
     def test_common_nappinfo(self):
         from nemoa.common import nappinfo
@@ -83,8 +83,8 @@ class TestSuite(ntest.TestSuite):
 
         import numpy as np
 
-        x = np.array([[.1, -.9], [.3, .2], [-.4, -.9]])
-        sumapprox = lambda x, y: np.isclose(x.sum(), y, atol=1e-3)
+        exam = np.array([[.1, -.9], [.3, .2], [-.4, -.9]])
+        test = lambda x, y: np.isclose(x.sum(), y, atol=1e-3)
 
         with self.subTest("fromdict"):
             self.assertTrue(
@@ -104,15 +104,15 @@ class TestSuite(ntest.TestSuite):
 
         with self.subTest("sumnorm"):
             self.assertTrue(
-                sumapprox(narray.sumnorm(x), -1.6))
+                test(narray.sumnorm(exam), -1.6))
 
         with self.subTest("meannorm"):
             self.assertTrue(
-                sumapprox(narray.meannorm(x), -0.5333))
+                test(narray.meannorm(exam), -0.5333))
 
         with self.subTest("devnorm"):
             self.assertTrue(
-                sumapprox(narray.devnorm(x), 0.8129))
+                test(narray.devnorm(exam), 0.8129))
 
     def test_common_nbase(self):
         from nemoa.common import nbase
@@ -123,76 +123,75 @@ class TestSuite(ntest.TestSuite):
             self.assertTrue(
                 obj.get('config') == {'name': 'test'})
             obj.path = ('%site_data_dir%', 'test')
-            self.assertTrue(
-                '%' not in obj.path)
+            self.assertNotIn('%', obj.path)
 
     def test_common_ncalc(self):
         from nemoa.common import ncalc
 
         import numpy as np
 
-        x = np.array([[0.0, 0.5], [1.0, -1.0]])
-        sumapprox = lambda x, y: np.isclose(x.sum(), y, atol=1e-3)
+        exam = np.array([[0.0, 0.5], [1.0, -1.0]])
+        test = lambda x, y: np.isclose(x.sum(), y, atol=1e-3)
 
         with self.subTest("logistic"):
             self.assertTrue(
-                sumapprox(ncalc.logistic(x), 2.122459))
+                test(ncalc.logistic(exam), 2.122459))
 
         with self.subTest("tanh"):
             self.assertTrue(
-                sumapprox(ncalc.tanh(x), 0.462117))
+                test(ncalc.tanh(exam), 0.462117))
 
         with self.subTest("lecun"):
             self.assertTrue(
-                sumapprox(ncalc.lecun(x), 0.551632))
+                test(ncalc.lecun(exam), 0.551632))
 
         with self.subTest("elliot"):
             self.assertTrue(
-                sumapprox(ncalc.elliot(x), 0.333333))
+                test(ncalc.elliot(exam), 0.333333))
 
         with self.subTest("hill"):
             self.assertTrue(
-                sumapprox(ncalc.hill(x), 0.447213))
+                test(ncalc.hill(exam), 0.447213))
 
         with self.subTest("arctan"):
             self.assertTrue(
-                sumapprox(ncalc.arctan(x), 0.463647))
+                test(ncalc.arctan(exam), 0.463647))
 
         with self.subTest("d_logistic"):
             self.assertTrue(
-                sumapprox(ncalc.d_logistic(x), 0.878227))
+                test(ncalc.d_logistic(exam), 0.878227))
 
         with self.subTest("d_elliot"):
             self.assertTrue(
-                sumapprox(ncalc.d_elliot(x), 1.944444))
+                test(ncalc.d_elliot(exam), 1.944444))
 
         with self.subTest("d_hill"):
             self.assertTrue(
-                sumapprox(ncalc.d_hill(x), 2.422648))
+                test(ncalc.d_hill(exam), 2.422648))
 
         with self.subTest("d_lecun"):
             self.assertTrue(
-                sumapprox(ncalc.d_lecun(x), 3.680217))
+                test(ncalc.d_lecun(exam), 3.680217))
 
         with self.subTest("d_tanh"):
             self.assertTrue(
-                sumapprox(ncalc.d_tanh(x), 2.626396))
+                test(ncalc.d_tanh(exam), 2.626396))
 
         with self.subTest("d_arctan"):
             self.assertTrue(
-                sumapprox(ncalc.d_arctan(x), 2.800000))
+                test(ncalc.d_arctan(exam), 2.800000))
 
         with self.subTest("dialogistic"):
             self.assertTrue(
-                sumapprox(ncalc.dialogistic(x), 0.251661))
+                test(ncalc.dialogistic(exam), 0.251661))
 
         with self.subTest("softstep"):
             self.assertTrue(
-                sumapprox(ncalc.softstep(x), 0.323637))
+                test(ncalc.softstep(exam), 0.323637))
 
         with self.subTest("multilogistic"):
             self.assertTrue(
-                sumapprox(ncalc.multilogistic(x), 0.500272))
+                test(ncalc.multilogistic(exam), 0.500272))
 
     def test_common_nconsole(self):
         from nemoa.common import nconsole
@@ -200,7 +199,7 @@ class TestSuite(ntest.TestSuite):
         with self.subTest("getch"):
             getch = nconsole.getch()
             self.assertTrue(hasattr(getch, 'get'))
-            self.assertTrue(isinstance(getch.get(), str))
+            self.assertIsInstance(getch.get(), str)
 
     def test_common_nclass(self):
         from nemoa.common import nclass
@@ -218,24 +217,18 @@ class TestSuite(ntest.TestSuite):
         obj = Base()
 
         with self.subTest('hasbase'):
-            self.assertTrue(
-                nclass.hasbase(None, 'object'))
-            self.assertTrue(
-                nclass.hasbase(obj, 'Base'))
+            self.assertTrue(nclass.hasbase(None, 'object'))
+            self.assertTrue(nclass.hasbase(obj, 'Base'))
 
         with self.subTest('attributes'):
-            self.assertTrue(
-                getattr(obj.geta, 'name', None) == 'a')
-            self.assertTrue(
-                getattr(obj.getb, 'name', None) == 'b')
+            self.assertEqual(getattr(obj.geta, 'name', None), 'a')
+            self.assertEqual(getattr(obj.getb, 'name', None), 'b')
 
         with self.subTest('methods'):
-            self.assertTrue(
-                nclass.methods(obj, filter='get*').keys()
-                == {'geta', 'getb'})
-            self.assertTrue(
-                nclass.methods(obj, filter='*b').keys()
-                == {'getb', 'setb'})
+            self.assertEqual(
+                nclass.methods(obj, pattern='get*').keys(), {'geta', 'getb'})
+            self.assertEqual(
+                nclass.methods(obj, pattern='*b').keys(), {'getb', 'setb'})
 
     def test_common_ngraph(self):
         from nemoa.common import ngraph
@@ -257,49 +250,45 @@ class TestSuite(ntest.TestSuite):
         pos3 = {1: (4., 2.), 2: (4., 16.), 4: (32., 2.), 3: (32., 16.)}
 
         with self.subTest("is_directed"):
-            self.assertTrue(
-                ngraph.is_directed(G))
+            self.assertTrue(ngraph.is_directed(G))
 
         with self.subTest("is_layered"):
-            self.assertTrue(
-                ngraph.is_layered(G))
+            self.assertTrue(ngraph.is_layered(G))
 
         with self.subTest("get_layers"):
-            self.assertTrue(
-                ngraph.get_layers(G) == [[1, 2], [3, 4]])
+            self.assertEqual(ngraph.get_layers(G), [[1, 2], [3, 4]])
 
         with self.subTest("get_groups"):
-            self.assertTrue(
-                ngraph.get_groups(G, attribute='layer') == {
-                    '': [], 'i': [1, 2], 'o': [3, 4]})
+            self.assertEqual(
+                ngraph.get_groups(G, attribute='layer'),
+                {'': [], 'i': [1, 2], 'o': [3, 4]})
 
         with self.subTest("get_layer_layout"):
-            self.assertTrue(
-                ngraph.get_layer_layout(G, direction='right') == pos1)
-            self.assertTrue(
-                ngraph.get_layer_layout(G, direction='down') == pos2)
+            self.assertEqual(
+                ngraph.get_layer_layout(G, direction='right'), pos1)
+            self.assertEqual(
+                ngraph.get_layer_layout(G, direction='down'), pos2)
 
         with self.subTest("rescale_layout"):
-            self.assertTrue(
+            self.assertEqual(
                 ngraph.rescale_layout(
-                    pos1, size=(40, 20), padding=(.2, .2, .1, .1)) == pos3)
+                    pos1, size=(40, 20), padding=(.2, .2, .1, .1)), pos3)
 
         with self.subTest("get_scaling_factor"):
-            self.assertTrue(
-                int(ngraph.get_scaling_factor(pos3)) == 9)
+            self.assertEqual(
+                int(ngraph.get_scaling_factor(pos3)), 9)
 
         with self.subTest("get_layout_normsize"):
-            self.assertTrue(
-                int(ngraph.get_layout_normsize(pos3)['node_size']) == 4)
+            self.assertEqual(
+                int(ngraph.get_layout_normsize(pos3)['node_size']), 4)
 
         with self.subTest("get_node_layout"):
-            self.assertTrue(
-                isinstance(
-                    ngraph.get_node_layout('observable')['color'], str))
+            self.assertIsInstance(
+                ngraph.get_node_layout('observable')['color'], str)
 
         with self.subTest("get_layout"):
-            self.assertTrue(
-                ngraph.get_layout(G, 'layer', direction='right') == pos1)
+            self.assertEqual(
+                ngraph.getlayout(G, 'layer', direction='right'), pos1)
 
     def test_common_ncsv(self):
         from nemoa.common import ncsv
@@ -321,21 +310,17 @@ class TestSuite(ntest.TestSuite):
                 ncsv.save(
                     filename, data, header=header, labels=labels, delim=delim))
 
-        with self.subTest("get_header"):
-            self.assertTrue(
-                ncsv.get_header(filename) == header)
+        with self.subTest("getheader"):
+            self.assertEqual(ncsv.getheader(filename), header)
 
-        with self.subTest("delimiter"):
-            self.assertTrue(
-                ncsv.delimiter(filename) == delim)
+        with self.subTest("getdelim"):
+            self.assertEqual(ncsv.getdelim(filename), delim)
 
-        with self.subTest("get_labels"):
-            self.assertTrue(
-                ncsv.get_labels(filename) == labels)
+        with self.subTest("getlabels"):
+            self.assertEqual(ncsv.getlabels(filename), labels)
 
-        with self.subTest("labelcolid"):
-            self.assertTrue(
-                ncsv.labelcolid(filename) == 0)
+        with self.subTest("getacolid"):
+            self.assertEqual(ncsv.getacolid(filename), 0)
 
         with self.subTest("load"):
             rval = ncsv.load(filename)
@@ -369,24 +354,23 @@ class TestSuite(ntest.TestSuite):
             "[l1]\na = 1\n\n[l2]\na = 2\n\n")
 
         with self.subTest("dumps"):
-            self.assertTrue(
-                nini.dumps(obj, header=header) == string)
+            self.assertEqual(
+                nini.dumps(obj, header=header), string)
 
         with self.subTest("loads"):
-            self.assertTrue(
-                nini.loads(string, structure=structure) == obj)
+            self.assertEqual(
+                nini.loads(string, structure=structure), obj)
 
         with self.subTest("save"):
             self.assertTrue(
                 nini.save(obj, filename, header=header))
 
         with self.subTest("load"):
-            self.assertTrue(
-                nini.load(filename, structure=structure) == obj)
+            self.assertEqual(
+                nini.load(filename, structure=structure), obj)
 
-        with self.subTest("header"):
-            self.assertTrue(
-                nini.header(filename) == header)
+        with self.subTest("getheader"):
+            self.assertEqual(nini.getheader(filename), header)
 
         if os.path.exists(filename):
             os.remove(filename)
@@ -402,19 +386,17 @@ class TestSuite(ntest.TestSuite):
         filename = tempfile.NamedTemporaryFile().name
 
         with self.subTest("dumps"):
-            self.assertTrue(
-                nzip.dumps(obj) == blob)
+            self.assertEqual(nzip.dumps(obj), blob)
 
         with self.subTest("loads"):
-            self.assertTrue(
-                nzip.loads(blob) == obj)
+            self.assertEqual(nzip.loads(blob), obj)
 
         with self.subTest("dump"):
-            self.assertTrue(
-                nzip.dump(obj, filename) and os.path.exists(filename))
+            self.assertTrue(nzip.dump(obj, filename))
+            self.assertTrue(os.path.exists(filename))
 
         with self.subTest("load"):
-            self.assertTrue(nzip.load(filename) == obj)
+            self.assertEqual(nzip.load(filename), obj)
 
         if os.path.exists(filename):
             os.remove(filename)
@@ -423,97 +405,95 @@ class TestSuite(ntest.TestSuite):
         from nemoa.common import nmodule
 
         with self.subTest("curname"):
-            self.assertTrue(
-                nmodule.curname() == __name__)
+            self.assertEqual(nmodule.curname(), __name__)
 
         with self.subTest("caller"):
-            self.assertTrue(
-                nmodule.caller() == __name__ + '.test_common_nmodule')
+            self.assertEqual(
+                nmodule.caller(), __name__ + '.test_common_nmodule')
 
         with self.subTest("submodules"):
-            self.assertTrue(
-                nmodule.__name__
-                in nmodule.submodules(nmodule.objectify('nemoa.common')))
+            self.assertIn(
+                nmodule.__name__,
+                nmodule.submodules(nmodule.inst('nemoa.common')))
 
-        with self.subTest("objectify"):
+        with self.subTest("inst"):
             self.assertTrue(
-                hasattr(nmodule.objectify(nmodule.__name__), '__name__'))
-            self.assertTrue(
-                nmodule.objectify(nmodule.__name__).__name__
-                == nmodule.__name__)
+                hasattr(nmodule.inst(nmodule.__name__), '__name__'))
+            self.assertEqual(
+                nmodule.inst(nmodule.__name__).__name__,
+                nmodule.__name__)
 
         with self.subTest("functions"):
-            self.assertTrue(
-                nmodule.__name__ + '.functions'
-                in nmodule.functions(nmodule))
-            self.assertTrue(
-                len(nmodule.functions(nmodule, name='')) == 0)
-            self.assertTrue(
-                len(nmodule.functions(nmodule, name='functions')) == 1)
+            self.assertIn(
+                nmodule.__name__ + '.functions',
+                nmodule.functions(nmodule))
+            self.assertEqual(
+                len(nmodule.functions(nmodule, name='')), 0)
+            self.assertEqual(
+                len(nmodule.functions(nmodule, name='functions')), 1)
 
         with self.subTest("search"):
-            self.assertTrue(
-                len(nmodule.search(nmodule, name='search')) == 1)
+            self.assertEqual(
+                len(nmodule.search(nmodule, name='search')), 1)
 
     def test_common_nfunc(self):
         from nemoa.common import nfunc
 
         with self.subTest("about"):
-            self.assertTrue(
-                nfunc.about(nfunc.about)
-                == 'Summary about a function')
+            self.assertEqual(
+                nfunc.about(nfunc.about), 'Summary about a function')
 
-        with self.subTest("func"):
-            self.assertTrue(
-                type(nfunc.func(nfunc.__name__ + '.func')).__name__
-                == 'function')
+        with self.subTest("inst"):
+            self.assertEqual(
+                type(nfunc.inst(nfunc.__name__ + '.inst')).__name__,
+                'function')
 
         with self.subTest("kwargs"):
-            self.assertTrue(
-                nfunc.kwargs(nfunc.kwargs) == {'default': None})
-            self.assertTrue(
-                nfunc.kwargs(nfunc.kwargs, default={}) == {})
-            self.assertTrue(
-                nfunc.kwargs(nfunc.kwargs, default={'default': True})
-                == {'default': True})
+            self.assertEqual(
+                nfunc.kwargs(nfunc.kwargs), {'default': None})
+            self.assertEqual(
+                nfunc.kwargs(nfunc.kwargs, default={}), {})
+            self.assertEqual(
+                nfunc.kwargs(nfunc.kwargs, default={'default': True}),
+                {'default': True})
 
     def test_common_ndict(self):
         from nemoa.common import ndict
 
-        with self.subTest("filter"):
+        with self.subTest("select"):
             self.assertTrue(
-                ndict.filter({'a1': 1, 'a2': 2, 'b1': 3}, 'a*') \
+                ndict.select({'a1': 1, 'a2': 2, 'b1': 3}, pattern='a*') \
                 == {'a1': 1, 'a2': 2})
 
         with self.subTest("groupby"):
-            self.assertTrue(
+            self.assertEqual(
                 ndict.groupby(
-                    {1: {'a': 0}, 2: {'a': 0}, 3: {'a': 1}, 4: {}}, key='a')
-                == {
+                    {1: {'a': 0}, 2: {'a': 0}, 3: {'a': 1}, 4: {}}, key='a'),
+                {
                     0: {1: {'a': 0}, 2: {'a': 0}},
                     1: {3: {'a': 1}}, None: {4: {}}})
 
         with self.subTest("merge"):
-            self.assertTrue(
-                ndict.merge({'a': 1}, {'a': 2, 'b': 2}, {'c': 3})
-                == {'a': 1, 'b': 2, 'c': 3})
+            self.assertEqual(
+                ndict.merge({'a': 1}, {'a': 2, 'b': 2}, {'c': 3}),
+                {'a': 1, 'b': 2, 'c': 3})
 
-        with self.subTest("reduce"):
-            self.assertTrue(
-                ndict.reduce({'a1': 1, 'a2': 2, 'b1': 3}, 'a')
-                == {'1': 1, '2': 2})
+        with self.subTest("crop"):
+            self.assertEqual(
+                ndict.crop({'a1': 1, 'a2': 2, 'b1': 3}, 'a'),
+                {'1': 1, '2': 2})
 
         with self.subTest("strkeys"):
-            self.assertTrue(
-                ndict.strkeys({(1, 2): 3, None: {True: False}})
-                == {('1', '2'): 3, 'None': {'True': False}})
+            self.assertEqual(
+                ndict.strkeys({(1, 2): 3, None: {True: False}}),
+                {('1', '2'): 3, 'None': {'True': False}})
 
         with self.subTest("sumjoin"):
-            self.assertTrue(
-                ndict.sumjoin({'a': 1}, {'a': 2, 'b': 3}) == {'a': 3, 'b': 3})
-            self.assertTrue(
-                ndict.sumjoin({1: 'a', 2: True}, {1: 'b', 2: True})
-                == {1: 'ab', 2: 2})
+            self.assertEqual(
+                ndict.sumjoin({'a': 1}, {'a': 2, 'b': 3}), {'a': 3, 'b': 3})
+            self.assertEqual(
+                ndict.sumjoin({1: 'a', 2: True}, {1: 'b', 2: True}),
+                {1: 'ab', 2: 2})
 
     def test_common_npath(self):
         from nemoa.common import npath
@@ -522,54 +502,53 @@ class TestSuite(ntest.TestSuite):
         import pathlib
 
         dname = str(pathlib.Path('a', 'b', 'c', 'd'))
-        plike = (('a', ('b', 'c')), 'd', 'base.ext')
+        ptest = (('a', ('b', 'c')), 'd', 'base.ext')
         stdir = tempfile.TemporaryDirectory().name
 
         with self.subTest("cwd"):
-            self.assertTrue(
-                npath.cwd())
+            self.assertTrue(npath.cwd())
 
         with self.subTest("home"):
-            self.assertTrue(
-                npath.home())
+            self.assertTrue(npath.home())
 
         with self.subTest("clear"):
-            self.assertTrue(
-                npath.clear('3/\nE{$5}.e') == '3E5.e')
+            self.assertEqual(npath.clear('3/\nE{$5}.e'), '3E5.e')
 
         with self.subTest("join"):
-            self.assertTrue(
-                npath.join(('a', ('b', 'c')), 'd') == dname)
+            self.assertEqual(npath.join(('a', ('b', 'c')), 'd'), dname)
 
         with self.subTest("expand"):
-            self.assertTrue(
+            self.assertEqual(
                 npath.expand(
                     '%var1%/c', 'd',
-                    udict={'var1': 'a/%var2%', 'var2': 'b'}) == dname)
+                    udict={'var1': 'a/%var2%', 'var2': 'b'}), dname)
 
         with self.subTest("dirname"):
-            self.assertTrue(
-                npath.dirname(*plike) == dname)
+            self.assertEqual(npath.dirname(*ptest), dname)
 
         with self.subTest("filename"):
-            self.assertTrue(
-                npath.filename(*plike) == 'base.ext')
+            self.assertEqual(npath.filename(*ptest), 'base.ext')
 
         with self.subTest("basename"):
-            self.assertTrue(
-                npath.basename(*plike) == 'base')
+            self.assertEqual(npath.basename(*ptest), 'base')
 
         with self.subTest("fileext"):
-            self.assertTrue(
-                npath.fileext(*plike) == 'ext')
+            self.assertEqual(npath.fileext(*ptest), 'ext')
 
         with self.subTest("mkdir"):
-            self.assertTrue(
-                npath.mkdir(stdir))
+            self.assertTrue(npath.mkdir(stdir))
+
+        with self.subTest("isdir"):
+            self.assertTrue(npath.isdir(stdir))
+
+        with self.subTest("isfile"):
+            self.assertFalse(npath.isfile(stdir))
+
+        with self.subTest("validfile"):
+            self.assertIsNone(npath.validfile(stdir))
 
         with self.subTest("rmdir"):
-            self.assertTrue(
-                npath.rmdir(stdir))
+            self.assertTrue(npath.rmdir(stdir))
 
         # with self.subTest("cp"):
         #     self.assertTrue(True)
@@ -578,16 +557,13 @@ class TestSuite(ntest.TestSuite):
         from nemoa.common import nsysinfo
 
         with self.subTest("hostname"):
-            self.assertTrue(
-                nsysinfo.hostname())
+            self.assertTrue(nsysinfo.hostname())
 
         with self.subTest("osname"):
-            self.assertTrue(
-                nsysinfo.osname())
+            self.assertTrue(nsysinfo.osname())
 
         with self.subTest("ttylib"):
-            self.assertTrue(
-                nsysinfo.ttylib())
+            self.assertTrue(nsysinfo.ttylib())
 
     def test_common_ntable(self):
         from nemoa.common import ntable
@@ -599,45 +575,37 @@ class TestSuite(ntest.TestSuite):
                 [(1., 2), (3., 4)], dtype=[('x', float), ('y', int)])
             src = np.array(
                 [('a'), ('b')], dtype=[('z', 'U4')])
-            self.assertTrue(
-                ntable.addcols(tgt, src, 'z')['z'][0] == 'a')
+            self.assertEqual(ntable.addcols(tgt, src, 'z')['z'][0], 'a')
 
     def test_common_ntext(self):
         from nemoa.common import ntext
 
         with self.subTest("splitargs"):
-            self.assertTrue(
-                ntext.splitargs("f(1., 'a', b = 2)")
-                == ('f', (1.0, 'a'), {'b': 2}))
+            self.assertEqual(
+                ntext.splitargs("f(1., 'a', b = 2)"),
+                ('f', (1.0, 'a'), {'b': 2}))
 
         with self.subTest("aslist"):
-            self.assertTrue(
-                ntext.aslist('a, 2, ()') == ['a', '2', '()'])
-            self.assertTrue(
-                ntext.aslist('[1, 2, 3]') == [1, 2, 3])
+            self.assertEqual(ntext.aslist('a, 2, ()'), ['a', '2', '()'])
+            self.assertEqual(ntext.aslist('[1, 2, 3]'), [1, 2, 3])
 
         with self.subTest("astuple"):
-            self.assertTrue(
-                ntext.astuple('a, 2, ()') == ('a', '2', '()'))
-            self.assertTrue(
-                ntext.astuple('(1, 2, 3)') == (1, 2, 3))
+            self.assertEqual(ntext.astuple('a, 2, ()'), ('a', '2', '()'))
+            self.assertEqual(ntext.astuple('(1, 2, 3)'), (1, 2, 3))
 
         with self.subTest("asset"):
-            self.assertTrue(
-                ntext.asset('a, 2, ()') == {'a', '2', '()'})
-            self.assertTrue(
-                ntext.asset('{1, 2, 3}') == {1, 2, 3})
+            self.assertEqual(ntext.asset('a, 2, ()'), {'a', '2', '()'})
+            self.assertEqual(ntext.asset('{1, 2, 3}'), {1, 2, 3})
 
         with self.subTest("asdict"):
-            self.assertTrue(
-                ntext.asdict("a = 'b', b = 1") == {'a': 'b', 'b': 1})
-            self.assertTrue(
-                ntext.asdict("'a': 'b', 'b': 1") == {'a': 'b', 'b': 1})
+            self.assertEqual(
+                ntext.asdict("a = 'b', b = 1"), {'a': 'b', 'b': 1})
+            self.assertEqual(
+                ntext.asdict("'a': 'b', 'b': 1"), {'a': 'b', 'b': 1})
 
         with self.subTest("astype"):
             examples = [
                 ('t', 'str'), (True, 'bool'), (1, 'int'), (.5, 'float'),
                 ((1+1j), 'complex')]
             for var, typ in examples:
-                self.assertTrue(
-                    ntext.astype(str(var), typ) == var)
+                self.assertEqual(ntext.astype(str(var), typ), var)

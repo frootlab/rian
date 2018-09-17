@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa
@@ -116,11 +116,6 @@ class System(nbase.ObjectIP):
         if not nclass.hasbase(dataset, 'Dataset'): return False
         return True
 
-
-
-
-
-
     def _get_algorithms(self, category = None, attribute = None, tree = False):
         """Get algorithms provided by system."""
 
@@ -128,7 +123,7 @@ class System(nbase.ObjectIP):
 
         # get dictionary with all methods
         # with prefix '_get_' and attribute 'name'
-        methods = nclass.methods(self, filter = '_get_*', val = 'name')
+        methods = nclass.methods(self, pattern = '_get_*', val = 'name')
 
         # filter algorithms by given category
         if category is not None:
@@ -1844,8 +1839,9 @@ class System(nbase.ObjectIP):
                 from nemoa.common import narray
                 src = self._get_units(layer = ekwargs['mapping'][0])
                 tgt = self._get_units(layer = ekwargs['mapping'][-1])
-                retval = narray.asdict(values, (src, tgt))
-                if not evalstat: return retval
+                retval = narray.asdict(values, labels=(src, tgt))
+                if not evalstat:
+                    return retval
 
                 # (optional) add statistics
                 filtered = []

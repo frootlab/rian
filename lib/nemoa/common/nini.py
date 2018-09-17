@@ -6,13 +6,15 @@ __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 from configparser import ConfigParser
+
+from nemoa.common import npath
 from nemoa.common.ntype import OptDict, OptBool, OptStr
 
-def load(f: str, structure: OptDict = None) -> dict:
+def load(filepath: str, structure: OptDict = None) -> dict:
     """Import configuration dictionary from INI file.
 
     Args:
-        f: full qualified path to INI File
+        filepath: full qualified path to INI File
         structure: Dictionary, that determines the structure of the
             configuration dictionary. If "structure" is None the INI File
             is completely imported and all values are interpreted as strings.
@@ -26,25 +28,27 @@ def load(f: str, structure: OptDict = None) -> dict:
         Structured configuration dictionary
 
     """
+    # validate filepath
+    path = npath.validfile(filepath)
+    if not path:
+        raise TypeError(f"file '{str(filepath)}' does not exist")
 
     # get configuration from INI File
     parser = ConfigParser()
     parser.optionxform = str
-    parser.read(f)
+    parser.read(path)
 
     # parse sections and create configuration dictionary
-    d = parse(parser, structure=structure)
-
-    return d
+    return parse(parser, structure=structure)
 
 def save(
-        d: dict, f: str, flat: OptBool = None, header: OptStr = None
-    ) -> bool:
+        d: dict, filepath: str, flat: OptBool = None,
+        header: OptStr = None) -> bool:
     """Save configuration dictionary to INI file.
 
     Args:
         d: dictionary containing configuration
-        f: full qualified path to writeable file
+        filepath: full qualified path to writeable file
         flat: Determines if the desired INI format structure contains sections.
             By default sections are used, if the dictionary contains
             subdictionaries.
@@ -55,27 +59,29 @@ def save(
         Bool which is True if no error occured.
 
     """
+    # normalize filepath
+    path = npath.expand(filepath)
 
     # Convert configuration dictionary to INI formated string
     try:
-        s = dumps(d, flat=flat, header=header)
+        string = dumps(d, flat=flat, header=header)
     except Exception as err:
         raise ValueError("dictionary is not valid") from err
 
     # write string to file
     try:
-        with open(f, 'w') as h:
-            h.write(s)
+        with open(path, 'w') as file:
+            file.write(string)
     except IOError as err:
-        raise IOError(f"file '{f}' can not be written.") from err
+        raise IOError(f"file '{path}' can not be written") from err
 
     return True
 
-def loads(s: str, structure: OptDict = None, flat: OptBool = None) -> dict:
-    """Import configuration dictionary from INI formated string
+def loads(string: str, structure: OptDict = None, flat: OptBool = None) -> dict:
+    """Load configuration dictionary from INI formated string.
 
     Args:
-        s: INI formated string, that contains the configuration
+        string: INI formated string, that contains the configuration
         structure: Dictionary, that determines the structure
             of the configuration dictionary. If "structure" is None the INI File
             is completely imported and all values are interpreted as strings.
@@ -93,13 +99,12 @@ def loads(s: str, structure: OptDict = None, flat: OptBool = None) -> dict:
         Structured configuration dictionary
 
     """
-
     # if the usage of sections is not explicitely given, search for sections
     # in the given string
     if flat is None:
         flat = True
-        for line in [l.lstrip(' ') for l in s.split('\n')]:
-            if len(line) == 0 or line.startswith('#'):
+        for line in [l.lstrip(' ') for l in string.split('\n')]:
+            if not line or line.startswith('#'):
                 continue
             flat = not line.startswith('[')
             break
@@ -107,16 +112,16 @@ def loads(s: str, structure: OptDict = None, flat: OptBool = None) -> dict:
     # if no sections are to be used create a temporary [root] section
     # and embed the structure dictionary within a 'root' key
     if flat:
-        s = '\n'.join(['[root]', s])
+        string = '\n'.join(['[root]', string])
         if isinstance(structure, dict):
             structure = {'root': structure.copy()}
 
     # strip leading and trailing white spaces from lines in INI string
-    s = '\n'.join([line.strip(' ') for line in s.split('\n')])
+    string = '\n'.join([line.strip(' ') for line in string.split('\n')])
 
     # parse sections and create config dictionary
     parser = ConfigParser()
-    parser.read_string(s)
+    parser.read_string(string)
     d = parse(parser, structure)
 
     # if no sections are to be used collapse the 'root' key
@@ -140,7 +145,6 @@ def dumps(d: dict, flat: OptBool = None, header: OptStr = None) -> str:
         String with INI File Structure
 
     """
-
     from io import StringIO
 
     # if the usage of sections is not explicitely given, use sections if
@@ -168,42 +172,40 @@ def dumps(d: dict, flat: OptBool = None, header: OptStr = None) -> str:
     # retrieve INI formated string from INI parser
     with StringIO() as buffer:
         parser.write(buffer)
-        s = buffer.getvalue()
+        string = buffer.getvalue()
 
     # if no section are to be used remove [root] section from string
     if flat:
-        s = s.replace('[root]\n', '')
+        string = string.replace('[root]\n', '')
 
     # if header is given, write header as comment before string
     if isinstance(header, str):
-        h = '\n'.join(['# ' + l.strip() for l in header.split('\n')])
-        s = h + '\n\n' + s
+        hstring = '\n'.join(['# ' + l.strip() for l in header.split('\n')])
+        string = hstring + '\n\n' + string
 
-    return s
+    return string
 
-def header(f: str) -> str:
+def getheader(filepath: str) -> str:
     """Get header from INI file.
 
     Args:
-        f: Fully qualified file path to INI file.
+        filepath: Fully qualified file path to INI file.
 
     Returns:
         String containing header of INI file or empty string if header
         could not be detected.
 
     """
-
-    import os
-
-    # check file
-    if not os.path.isfile(f):
-        raise OSError(f"file '{f}' does not exist")
+    # validate filepath
+    path = npath.validfile(filepath)
+    if not path:
+        raise TypeError(f"file '{str(filepath)}' does not exist")
 
     # scan INI file for header
     hlist = []
-    with open(f, 'r') as h:
-        for line in [l.lstrip(' ') for l in h]:
-            if len(line) == 0:
+    with open(path, 'r') as file:
+        for line in [l.lstrip(' ') for l in file]:
+            if not line:
                 continue
             if line.startswith('#'):
                 hlist.append(line[1:].lstrip())
@@ -211,12 +213,10 @@ def header(f: str) -> str:
             break
 
     # join lines and strip header
-    s = ''.join(hlist).strip()
-
-    return s
+    return ''.join(hlist).strip()
 
 def parse(parser: ConfigParser, structure: OptDict = None) -> dict:
-    """Import configuration dictionary from INI formated string
+    """Import configuration dictionary from INI formated string.
 
     Args:
         parser: ConfigParser instance that contains an unstructured
@@ -234,8 +234,7 @@ def parse(parser: ConfigParser, structure: OptDict = None) -> dict:
         Structured configuration dictionary
 
     """
-
-    from re import compile
+    import re
     from nemoa.common import ntext
 
     # if no structure is given retrieve dictionary from INI parser
@@ -247,7 +246,7 @@ def parse(parser: ConfigParser, structure: OptDict = None) -> dict:
 
     # if structure is given use regular expression to match sections and keys
     d = {}
-    rsecs = {key: compile('\A' + key) for key in structure.keys()}
+    rsecs = {key: re.compile(r'\A' + key) for key in structure.keys()}
     for sec in parser.sections():
 
         # use regular expression to match sections
@@ -262,10 +261,10 @@ def parse(parser: ConfigParser, structure: OptDict = None) -> dict:
 
         # use regular expression to match keys
         dsec = {}
-        for regex_key, fmt in structure[rsec].items():
-            re_key = compile(regex_key)
+        for regexkey, fmt in structure[rsec].items():
+            rekey = re.compile(regexkey)
             for key in parser.options(sec):
-                if not re_key.match(key):
+                if not rekey.match(key):
                     continue
                 val = parser.get(sec, key)
                 dsec[key] = ntext.astype(val, fmt)

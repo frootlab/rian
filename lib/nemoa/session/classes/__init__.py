@@ -8,17 +8,18 @@ def new(*args, **kwargs):
     """Create new session instance."""
 
     # validate configuration
-    if not kwargs: kwargs = {'config': {'type': 'base.Session'}}
+    if not kwargs:
+        kwargs = {'config': {'type': 'base.Session'}}
     elif len(kwargs.get('config', {}).get('type', '').split('.')) != 2:
         raise ValueError("configuration is not valid")
 
     mname, cname = tuple(kwargs['config']['type'].split('.'))
 
     from nemoa.common import nmodule
-    
-    minst = nmodule.get_submodule(mname)
-    if not hasattr(minst, cname):
+
+    module = nmodule.getsubmodule(mname)
+    if not hasattr(module, cname):
         raise NameError(f"class '{mname}.{cname}' is not known")
-    cinst = getattr(minst, cname)(**kwargs)
+    cinst = getattr(module, cname)(**kwargs)
 
     return cinst

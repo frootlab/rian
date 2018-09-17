@@ -25,7 +25,6 @@ def merge(*args: dict, mode: int = 1) -> dict:
         {'a': 1, 'b': 2, 'c': 3}
 
     """
-
     # check for trivial cases
     if len(args) < 2:
         raise TypeError("at least two arguments are required")
@@ -59,13 +58,15 @@ def merge(*args: dict, mode: int = 1) -> dict:
 
     # right merge couple of dictionaries
     for k1, v1 in d1.items():
-        if k1 not in d2: d2[k1] = v1
-        elif isinstance(v1, dict): merge(v1, d2[k1], mode = 0)
+        if k1 not in d2:
+            d2[k1] = v1
+        elif isinstance(v1, dict):
+            merge(v1, d2[k1], mode=0)
         else: d2[k1] = v1
 
     return d2
 
-def filter(d: dict, pattern: str) -> dict:
+def select(d: dict, pattern: str) -> dict:
     """Filter dictionary to keys, that match a given pattern.
 
     Args:
@@ -85,7 +86,6 @@ def filter(d: dict, pattern: str) -> dict:
         [1] https://docs.python.org/3/library/fnmatch.html
 
     """
-
     # check argument types
     if not isinstance(d, dict):
         raise TypeError(
@@ -101,7 +101,7 @@ def filter(d: dict, pattern: str) -> dict:
 
     return {k: d[k] for k in valid}
 
-def reduce(d: dict, s: str, trim: bool = True) -> dict:
+def crop(d: dict, s: str, trim: bool = True) -> dict:
     """Crop dictionary to keys, that start with an initial string.
 
     Args:
@@ -116,11 +116,10 @@ def reduce(d: dict, s: str, trim: bool = True) -> dict:
         from the initial section string.
 
     Examples:
-        >>> reduce({'a1': 1, 'a2': 2, 'b1': 3}, 'a')
+        >>> crop({'a1': 1, 'a2': 2, 'b1': 3}, 'a')
         {'1': 1, '2': 2}
 
     """
-
     # check argument types
     if not isinstance(d, dict):
         raise TypeError(
@@ -156,11 +155,11 @@ def groupby(d: DictOfStrDicts, key: Hashable) -> Dict[Hashable, DictOfStrDicts]:
         subdictionaries.
 
     """
-
     gd = dict()
     for k, v in d.items():
         g = v.get(key, None)
-        if not g in gd: gd[g] = dict()
+        if not g in gd:
+            gd[g] = dict()
         gd[g][k] = v
 
     return gd
@@ -182,7 +181,6 @@ def strkeys(d: dict) -> dict:
         {('1', '2'): 3, 'None': {'True': False}}
 
     """
-
     # if argument is not a dictionary, return it for recursion
     if not isinstance(d, dict):
         return d
@@ -216,7 +214,6 @@ def sumjoin(*args: dict) -> dict:
         {1: 'ab', 2: 2}
 
     """
-
     dn = {}
     for d in args:
         if not isinstance(d, dict):

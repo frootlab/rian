@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 """Collection of frequently used string conversion functions."""
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from typing import Any, Tuple, Optional
+import ast
+import sys
+
+from nemoa.common.ntype import Any, OptStr, Tuple
 
 def splitargs(text: str) -> Tuple[str, tuple, dict]:
     """Split a function call in the function name, its arguments and keywords.
@@ -19,42 +22,42 @@ def splitargs(text: str) -> Tuple[str, tuple, dict]:
         tuple and the keywords as dictionary.
 
     """
-
     # check argument types
-    if not isinstance(text, str): raise TypeError(
-        "argument 'text' requires to be of type 'str'"
-        f", not '{type(text)}'")
-
-    import ast
-    tree = ast.parse(text)
+    if not isinstance(text, str):
+        raise TypeError(
+            "argument 'text' requires to be of type 'str'"
+            f", not '{type(text)}'")
 
     # get function name
     try:
+        tree = ast.parse(text)
         func = tree.body[0].value.func.id
+    except SyntaxError as err:
+        raise ValueError(f"'{text}' is not a valid function call") from err
     except AttributeError as err:
         raise ValueError(f"'{text}' is not a valid function call") from err
 
     # get tuple with arguments
-    Args = tree.body[0].value.args
+    astargs = tree.body[0].value.args
     args = []
-    for Arg in Args:
-        typ = Arg._fields[0]
-        val = getattr(Arg, typ)
+    for astarg in astargs:
+        typ = astarg._fields[0]
+        val = getattr(astarg, typ)
         args.append(val)
     args = tuple(args)
 
     # get dictionary with keywords
-    KwArgs = tree.body[0].value.keywords
+    astkwargs = tree.body[0].value.keywords
     kwargs = {}
-    for KwArg in KwArgs:
-        key = KwArg.arg
-        typ = KwArg.value._fields[0]
-        val = getattr(KwArg.value, typ)
+    for astkwarg in astkwargs:
+        key = astkwarg.arg
+        typ = astkwarg.value._fields[0]
+        val = getattr(astkwarg.value, typ)
         kwargs[key] = val
 
     return func, args, kwargs
 
-def astype(text: str, fmt: Optional[str] = None, **kwargs: Any) -> Any:
+def astype(text: str, fmt: OptStr = None, **kwargs: Any) -> Any:
     """Convert text into given target format.
 
     Args:
@@ -70,27 +73,32 @@ def astype(text: str, fmt: Optional[str] = None, **kwargs: Any) -> Any:
         Value of the text in given target format.
 
     """
-
     # check argument types
-    if not isinstance(text, str): raise TypeError(
-        "argument 'text' requires to be of type 'str'"
-        f", not '{type(text)}'")
+    if not isinstance(text, str):
+        raise TypeError(
+            "argument 'text' requires to be of type 'str'"
+            f", not '{type(text)}'")
 
     # evaluate text if no format is given
-    if fmt == None: return eval(text)
+    if fmt is None:
+        return ast.literal_eval(text)
 
     # basic types
-    if fmt == 'str': return text.strip().replace('\n', '')
-    if fmt == 'bool': return text.lower().strip() == 'true'
-    if fmt == 'int': return int(text)
-    if fmt == 'float': return float(text)
-    if fmt == 'complex': return complex(text)
+    if fmt == 'str':
+        return text.strip().replace('\n', '')
+    if fmt == 'bool':
+        return text.lower().strip() == 'true'
+    if fmt == 'int':
+        return int(text)
+    if fmt == 'float':
+        return float(text)
+    if fmt == 'complex':
+        return complex(text)
 
     # sequence types
-    if fmt == 'list': return aslist(text, **kwargs)
-    if fmt == 'tuple': return astuple(text, **kwargs)
-    if fmt == 'set': return asset(text, **kwargs)
-    if fmt == 'dict': return asdict(text, **kwargs)
+    stypes = ['list', 'tuple', 'set', 'dict']
+    if fmt in stypes:
+        return getattr(sys.modules[__name__], 'as' + fmt)(text, **kwargs)
 
     raise KeyError(f"type '{fmt}' is not supported")
 
@@ -110,29 +118,32 @@ def aslist(text: str, delim: str = ',') -> list:
         Value of the text as list.
 
     """
-
     # check argument types
-    if not isinstance(text, str): raise TypeError(
-        "argument 'text' requires to be of type 'str'"
-        f", not '{type(text)}'")
+    if not isinstance(text, str):
+        raise TypeError(
+            "argument 'text' requires to be of type 'str'"
+            f", not '{type(text)}'")
     if not isinstance(delim, str):
-        raise TypeError("argument 'delim' requires type "
+        raise TypeError(
+            "argument 'delim' requires type "
             f"'str', not '{type(text)}'")
 
     # return empty list if the string is blank
-    if not text or not text.strip(): return list()
+    if not text or not text.strip():
+        return list()
 
     # python format
-    l = None
+    val = None
     if delim == ',':
-        try: l = list(eval(text))
-        except: pass
-    if isinstance(l, list): return l
+        try:
+            val = list(ast.literal_eval(text))
+        except (SyntaxError, ValueError, Warning):
+            pass
+    if isinstance(val, list):
+        return val
 
     # Delimited String Fromat: "<value>, ..."
-    l = [item.strip() for item in text.split(delim)]
-
-    return l
+    return [item.strip() for item in text.split(delim)]
 
 def astuple(text: str, delim: str = ',') -> tuple:
     """Convert text into tuple.
@@ -150,29 +161,32 @@ def astuple(text: str, delim: str = ',') -> tuple:
         Value of the text as tuple.
 
     """
-
     # check argument types
-    if not isinstance(text, str): raise TypeError(
-        "argument 'text' requires to be of type 'str'"
-        f", not '{type(text)}'")
+    if not isinstance(text, str):
+        raise TypeError(
+            "argument 'text' requires to be of type 'str'"
+            f", not '{type(text)}'")
     if not isinstance(delim, str):
-        raise TypeError("argument 'delim' requires type "
+        raise TypeError(
+            "argument 'delim' requires type "
             f"'str', not '{type(text)}'")
 
     # return empty tuple if the string is blank
-    if not text or not text.strip(): return tuple()
+    if not text or not text.strip():
+        return tuple()
 
     # python format
-    t = None
+    val = None
     if delim == ',':
-        try: t = tuple(eval(text))
-        except: pass
-    if isinstance(t, tuple): return t
+        try:
+            val = tuple(ast.literal_eval(text))
+        except (SyntaxError, ValueError, Warning):
+            pass
+    if isinstance(val, tuple):
+        return val
 
     # delimited string format
-    l = [item.strip() for item in text.split(delim)]
-
-    return tuple(l)
+    return tuple([item.strip() for item in text.split(delim)])
 
 def asset(text: str, delim: str = ',') -> list:
     """Convert text into set.
@@ -190,29 +204,32 @@ def asset(text: str, delim: str = ',') -> list:
         Value of the text as set.
 
     """
-
     # check argument types
-    if not isinstance(text, str): raise TypeError(
-        "argument 'text' requires to be of type 'str'"
-        f", not '{type(text)}'")
+    if not isinstance(text, str):
+        raise TypeError(
+            "argument 'text' requires to be of type 'str'"
+            f", not '{type(text)}'")
     if not isinstance(delim, str):
-        raise TypeError("argument 'delim' requires type "
+        raise TypeError(
+            "argument 'delim' requires type "
             f"'str', not '{type(text)}'")
 
     # return empty set if the string is blank
-    if not text or not text.strip(): return set()
+    if not text or not text.strip():
+        return set()
 
     # python format
-    s = None
+    val = None
     if delim == ',':
-        try: s = set(eval(text))
-        except: pass
-    if isinstance(s, set): return s
+        try:
+            val = set(ast.literal_eval(text))
+        except (SyntaxError, ValueError, Warning):
+            pass
+    if isinstance(val, set):
+        return val
 
     # delimited string format
-    l = [item.strip() for item in text.split(delim)]
-
-    return set(l)
+    return {item.strip() for item in text.split(delim)}
 
 def asdict(text: str, delim: str = ',') -> dict:
     """Convert text into dictionary.
@@ -231,51 +248,60 @@ def asdict(text: str, delim: str = ',') -> dict:
         Value of the text as dictionary.
 
     """
-
     # check argument types
-    if not isinstance(text, str): raise TypeError(
-        "argument 'text' requires to be of type 'str'"
-        f", not '{type(text)}'")
+    if not isinstance(text, str):
+        raise TypeError(
+            "argument 'text' requires to be of type 'str'"
+            f", not '{type(text)}'")
     if not isinstance(delim, str):
-        raise TypeError("argument 'delim' requires type "
+        raise TypeError(
+            "argument 'delim' requires type "
             f"'str', not '{type(text)}'")
 
     # return empty dict if the string is blank
-    if not text or not text.strip(): return dict()
+    if not text or not text.strip():
+        return dict()
 
     import pyparsing as pp
 
-    Num  = pp.Word(pp.nums + '.')
-    Str  = pp.quotedString
+    Num = pp.Word(pp.nums + '.')
+    Str = pp.quotedString
     Bool = pp.Or(pp.Word("True") | pp.Word("False"))
-    Key  = pp.Word(pp.alphas + "_", pp.alphanums + "_.")
-    Val  = pp.Or(Num | Str | Bool)
+    Key = pp.Word(pp.alphas + "_", pp.alphanums + "_.")
+    Val = pp.Or(Num | Str | Bool)
 
     # try dictionary format "<key> = <value><delim> ..."
     Term = pp.Group(Key + '=' + Val)
     Terms = Term + pp.ZeroOrMore(delim + Term)
-    try: l = Terms.parseString(text.strip('{}'))
-    except: l = None
+    try:
+        l = Terms.parseString(text.strip('{}'))
+    except:
+        l = None
 
     # try dictionary format "'<key>': <value><delim> ..."
     if not l:
         Term = pp.Group(Str + ':' + Val)
         Terms = Term + pp.ZeroOrMore(delim + Term)
-        try: l = Terms.parseString(text.strip('{}'))
-        except: return {}
+        try:
+            l = Terms.parseString(text.strip('{}'))
+        except:
+            return {}
 
     # create dictionary from list
     d = {}
     for item in l:
         if len(item) == 1:
-            if item[0] == ',': continue
+            if item[0] == ',':
+                continue
             d[item] = True
             continue
-        try: key, value = item[0].strip('\'\"'), eval(item[2])
-        except: continue
+        try:
+            key, val = item[0].strip('\'\"'), ast.literal_eval(item[2])
+        except:
+            continue
 
-        d[key] = value
-        if not isinstance(d[key], str): continue
-        d[key] = d[key].strip()
+        if isinstance(val, str):
+            val = val.strip()
+        d[key] = val
 
     return d

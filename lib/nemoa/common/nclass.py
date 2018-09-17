@@ -18,22 +18,23 @@ def hasbase(obj: Object, base: str) -> bool:
         True if the given object has the named base as base
 
     """
-
     if not hasattr(obj, '__class__'):
-        raise TypeError("argument 'obj' is required to be a class instance")
+        raise TypeError(
+            "argument 'obj' requires to be a class instance"
+            f", not '{type(obj)}'")
 
     return base in [o.__name__ for o in obj.__class__.__mro__]
 
 def methods(
-        obj: Object, filter: OptStr = None, groupby: OptStr = None,
+        obj: Object, pattern: OptStr = None, groupby: OptStr = None,
         key: OptStr = None, val: OptStr = None
     ) -> dict:
     """Get methods from a given class instance.
 
     Args:
         obj: Class instance
-        filter: Only methods, which names satisfy the wildcard patterns given
-            by 'filter' are returned. The format of the wildcard pattern
+        pattern: Only methods, which names satisfy the wildcard pattern given
+            by 'pattern' are returned. The format of the wildcard pattern
             is described in the standard library module 'fnmatch' [1]
         groupby: Name of attribute which value is used to group the results.
             If groupby is None, then the results are not grouped.
@@ -53,7 +54,6 @@ def methods(
         [1] https://docs.python.org/3/library/fnmatch.html
 
     """
-
     import inspect
     from nemoa.common import ndict
 
@@ -61,8 +61,8 @@ def methods(
     md = dict(inspect.getmembers(obj, inspect.ismethod))
 
     # filter dictionary to methods that match given pattern
-    if filter:
-        md = ndict.filter(md, filter)
+    if pattern:
+        md = ndict.select(md, pattern)
 
     # create dictionary with method attributes
     mc = {}
@@ -90,7 +90,8 @@ def methods(
         nd = {}
         for k, v in md.items():
             kr = v[key]
-            if kr in nd: continue
+            if kr in nd:
+                continue
             nd[kr] = v
         md = nd
 
@@ -111,7 +112,7 @@ def methods(
     return md
 
 def attributes(**attr: Any) -> Callable:
-    """Generic attribute decorator for class methods.
+    """Decorate methods with attributes.
 
     Args:
         **attr: Arbitrary attributes
@@ -120,7 +121,6 @@ def attributes(**attr: Any) -> Callable:
         Wrapper function with additional attributes
 
     """
-
     def wrapper(method):
         def wrapped(self, *args, **kwargs):
             return method(self, *args, **kwargs)

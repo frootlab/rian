@@ -13,16 +13,15 @@ except ImportError as err:
         "https://scipy.org") from err
 
 from nemoa.common.ntype import (
-    Any, Callable, List, Optional, Sequence, Union, Module, OptModule,
-    OptStr, OptStrList)
+    Any, Callable, Sequence, Union, Module, OptModule, OptStr, OptStrList)
 
 Array = Union[np.ndarray, Sequence[np.ndarray]]
 
-def search(minst: OptModule = None, **kwargs: Any) -> dict:
+def search(module: OptModule = None, **kwargs: Any) -> dict:
     """Search for algorithms, that pass given filters.
 
     Args:
-        minst: Module instance, which is used to recursively search in
+        module: Module instance, which is used to recursively search in
             submodules for algorithms. Default: Use the module of the caller
             of this function.
         **kwargs: Attributes, which are testet by using the filter rules
@@ -31,13 +30,13 @@ def search(minst: OptModule = None, **kwargs: Any) -> dict:
         Dictionary with function information.
 
     """
-
     from nemoa.common import nmodule
 
-    if minst is None:
-        minst = nmodule.objectify(nmodule.curname(-1))
-    elif not isinstance(minst, Module):
-        raise TypeError("argument 'minst' is required to be a module instance")
+    module = module or nmodule.inst(nmodule.curname(-1))
+    if not isinstance(module, Module):
+        raise TypeError(
+            "argument 'module' is required to be of type 'ModuleType' or None"
+            f", not 'type(module)'")
 
     # create filter rules for algorithms attributes
     rules = {
@@ -46,15 +45,12 @@ def search(minst: OptModule = None, **kwargs: Any) -> dict:
     }
 
     # search for algorithms
-    algs = nmodule.search(minst=minst, rules=rules, **kwargs)
-
-    return algs
+    return nmodule.search(module=module, rules=rules, **kwargs)
 
 def custom(
         name: OptStr = None, category: OptStr = None,
         classes: OptStrList = None, tags: OptStrList = None,
-        plot: OptStr = None, **attr: Any
-    ) -> Callable:
+        plot: OptStr = None, **attr: Any) -> Callable:
     """Attribute decorator for custom algorithms.
 
     For the case, that an algorithm does not fit into the builtin categories
@@ -64,8 +60,7 @@ def custom(
 
     Args:
         name: Name of the algorithm
-        category: Custom category name of the algorithm.
-            Supported categories are:
+        category: Custom category name for the algorithm.
         tags: List of strings, that describe the algorithm and allow it to be
             found by browsing or searching
         classes: Optional list of model class names, that can be processed by
@@ -79,7 +74,6 @@ def custom(
         Decorated function or method.
 
     """
-
     def wrapper(func: Callable) -> Callable:
 
         def wrapped(*args: Any, **kwargs: Any) -> Any:
@@ -105,8 +99,7 @@ def custom(
 def objective(
         name: OptStr = None, classes: OptStrList = None,
         tags: OptStrList = None, optimum: str = 'min',
-        scope: str = 'local', plot: OptStr = None, **attr: Any
-    ) -> Callable:
+        scope: str = 'local', plot: OptStr = None, **attr: Any) -> Callable:
     """Attribute decorator for objective functions.
 
     Objective functions are real valued functions, thet specify the goal
@@ -135,7 +128,6 @@ def objective(
         [1] https://en.wikipedia.org/wiki/Mathematical_optimization
 
     """
-
     def wrapper(func: Callable) -> Callable:
 
         def wrapped(data: Array, *args: Any, **kwargs: Any) -> float:
@@ -162,8 +154,8 @@ def objective(
 
 def sampler(
         name: OptStr = None, classes: OptStrList = None,
-        tags: OptStrList = None, plot: OptStr = 'Histogram', **attr: Any
-    ) -> Callable:
+        tags: OptStrList = None, plot: OptStr = 'Histogram',
+        **attr: Any) -> Callable:
     """Attribute decorator for statistical samplers.
 
     Statistical samplers are random functions, that generate samples from
@@ -188,7 +180,6 @@ def sampler(
         [1] https://en.wikipedia.org/wiki/Gibbs_sampling
 
     """
-
     def wrapper(func: Callable) -> Callable:
 
         def wrapped(data: Array, *args: Any, **kwargs: Any) -> Array:
@@ -213,8 +204,8 @@ def sampler(
 
 def statistic(
         name: OptStr = None, classes: OptStrList = None,
-        tags: OptStrList = None, plot: OptStr = 'Histogram', **attr: Any
-    ) -> Callable:
+        tags: OptStrList = None, plot: OptStr = 'Histogram',
+        **attr: Any) -> Callable:
     """Attribute decorator for sample statistics.
 
     Sample statistics are measures of some attribute of the individual columns
@@ -237,7 +228,6 @@ def statistic(
         [1] https://en.wikipedia.org/wiki/Statistic
 
     """
-
     def wrapper(func: Callable) -> Callable:
 
         def wrapped(data: Array, *args: Any, **kwargs: Any) -> Array:
@@ -260,13 +250,11 @@ def statistic(
 
     return wrapper
 
-
 def association(
-        name: Optional[str] = None, tags: Optional[List[str]] = None,
-        classes: Optional[List[str]] = None, plot: Optional[str] = 'Histogram',
+        name: OptStr = None, tags: OptStrList = None,
+        classes: OptStrList = None, plot: OptStr = 'Histogram',
         directed: bool = True, signed: bool = True, normal: bool = False,
-        **attr: Any
-    ) -> Callable:
+        **attr: Any) -> Callable:
     """Attribute decorator for statistical measures of association.
 
     Measures of association refer to a wide variety of coefficients that measure
@@ -299,7 +287,6 @@ def association(
         [1] https://en.wikipedia.org/wiki/Correlation_and_dependence
 
     """
-
     def wrapper(func: Callable) -> Callable:
 
         def wrapped(data: Array, *args: Any, **kwargs: Any) -> Any:

@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """Collection of fequently used functions to access platform information."""
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from typing import Optional
-
 import platform
+
+from nemoa.common.ntype import OptStr
 
 def hostname() -> str:
     """Hostname of the system.
@@ -22,7 +22,6 @@ def hostname() -> str:
         [1] https://docs.python.org/3/library/platform.html
 
     """
-
     return platform.node()
 
 def osname() -> str:
@@ -38,10 +37,9 @@ def osname() -> str:
         [1] https://docs.python.org/3/library/platform.html
 
     """
-
     return platform.system()
 
-def ttylib() -> Optional[str]:
+def ttylib() -> OptStr:
     """Name of package for tty I/O control.
 
     Returns:
@@ -53,12 +51,12 @@ def ttylib() -> Optional[str]:
         [2] https://docs.python.org/3/library/msvcrt.html
 
     """
-
     from nemoa.common import nmodule
 
     libs = ['msvcrt', 'termios']
 
     for name in libs:
-        if nmodule.objectify(name): return name
+        if nmodule.inst(name):
+            return name
 
     return None

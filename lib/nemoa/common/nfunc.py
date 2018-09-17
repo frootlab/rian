@@ -21,7 +21,6 @@ def about(func: Callable) -> str:
         'Summary about a function'
 
     """
-
     if not isinstance(func, Callable):
         raise TypeError('first argument requires to be a function')
 
@@ -30,8 +29,8 @@ def about(func: Callable) -> str:
 
     return func.__doc__.split('\n', 1)[0].strip(' .')
 
-def func(name: str) -> OptCallable:
-    """Function instance for a given fully qualified function name.
+def inst(name: str) -> OptCallable:
+    """Create functionion instance for a given function name.
 
     Args:
         name: fully qualified function name
@@ -40,18 +39,16 @@ def func(name: str) -> OptCallable:
 
 
     Examples:
-        >>> func("nemoa.common.nfunc.func")
+        >>> inst("nemoa.common.nfunc.inst")
 
     """
-
     from nemoa.common import nmodule
 
-    minst = nmodule.objectify('.'.join(name.split('.')[:-1]))
-
-    if minst is None:
+    module = nmodule.inst('.'.join(name.split('.')[:-1]))
+    if module is None:
         return None
 
-    return getattr(minst, name.split('.')[-1])
+    return getattr(module, name.split('.')[-1])
 
 def kwargs(func: Callable, default: OptDict = None) -> dict:
     """Keyword arguments of a function.
@@ -75,7 +72,6 @@ def kwargs(func: Callable, default: OptDict = None) -> dict:
         {'default': 'not None'}
 
     """
-
     # check types of arguments
     if not isinstance(func, Callable):
         raise TypeError('first argument requires to be a function')

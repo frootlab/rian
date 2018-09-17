@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-#
 """Collection of frequently used console functions."""
 
-__author__  = 'Patrick Michl'
+__author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
@@ -9,14 +9,12 @@ from nemoa.common.ntype import OptObject
 
 def getch() -> OptObject:
     """Getch wrapper for various platforms."""
-
     class GetchMsvcrt:
         """Microsoft Visual C/C++ Runtime Library implementation of getch."""
 
         @staticmethod
         def get() -> str:
             """Return character from stdin."""
-
             import msvcrt
 
             if not msvcrt.kbhit():
@@ -78,7 +76,6 @@ def getch() -> OptObject:
 
         def get(self) -> str:
             """Return character from internal buffer."""
-
             import time
 
             if not self.__dict__.get('queue', None):

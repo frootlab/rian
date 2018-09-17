@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Collection of functions for graph handling."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
@@ -18,17 +19,14 @@ except ImportError as err:
         "requires package numpy: "
         "https://scipy.org") from err
 
-from networkx.classes import digraph
-
 from nemoa.common.ntype import OptBool, OptStr, OptTuple
 
-DiGraph = digraph.DiGraph
+DiGraph = nx.classes.digraph.DiGraph
 
-def get_layout(
+def getlayout(
         G: DiGraph, layout: str = 'spring',
         size: OptTuple = None, padding: tuple = (0., 0., 0., 0.),
-        rotate: float = 0.0, **kwargs
-    ) -> dict:
+        rotate: float = 0.0, **kwargs) -> dict:
     """Calculate positions of nodes, depending on graph layout.
 
     Args:
@@ -48,7 +46,6 @@ def get_layout(
         * determine layout by graph type if layout is None
 
     """
-
     if layout == 'layer':
         pos = get_layer_layout(G, **kwargs)
     elif layout + '_layout' in nx.drawing.layout.__all__:
@@ -63,7 +60,6 @@ def get_layout(
 
 def get_layers(G: DiGraph) -> list:
     """Return list of layers in DiGraph."""
-
     # create list of lists
     # sorted by the node attributes "layer_id" and "layer_sub_id"
     sort = {}
@@ -83,10 +79,9 @@ def get_layers(G: DiGraph) -> list:
     return layers
 
 def get_groups(
-        G: DiGraph, attribute: OptStr = None, param: OptStr = None
-    ) -> dict:
+        G: DiGraph, attribute: OptStr = None,
+        param: OptStr = None) -> dict:
     """Return dictinary with grouped lists of nodes."""
-
     if attribute is None and param is None:
         attribute = 'group'
 
@@ -117,8 +112,8 @@ def get_groups(
     return groups
 
 def get_layer_layout(
-        G: DiGraph, direction: str = 'right', minimize: str = 'weight'
-    ) -> dict:
+        G: DiGraph, direction: str = 'right',
+        minimize: str = 'weight') -> dict:
     """Calculate node positions for layer layout.
 
     Args:
@@ -129,7 +124,6 @@ def get_layer_layout(
     Return:
 
     """
-
     if not is_layered(G):
         raise ValueError("graph is not layered")
 
@@ -211,7 +205,6 @@ def get_layout_normsize(pos: dict) -> dict:
         pos:
 
     """
-
     # calculate norm scaling
     scale = get_scaling_factor(pos)
 
@@ -224,8 +217,15 @@ def get_layout_normsize(pos: dict) -> dict:
     }
 
 def get_node_layout(ntype: str) -> dict:
-    """ """
+    """Get plot layout for node type.
 
+    Args:
+        ntype: Name of node type. Accepted values are:
+            'observable', 'latent', 'source', 'target', 'isolated'
+
+
+    """
+    # named layouts
     layouts = {
         'dark blue': {
             'color': 'marine blue', 'font_color': 'white',
@@ -237,6 +237,7 @@ def get_node_layout(ntype: str) -> dict:
             'color': 'dark grey', 'font_color': 'white',
             'border_color': 'black'}}
 
+    # named node types
     types = {
         'observable': {
             'description': 'Observable', 'groupid': 0,
@@ -267,8 +268,9 @@ def is_directed(G: DiGraph) -> OptBool:
     Args:
         G: networkx graph instance
 
-    """
+    Returns:
 
+    """
     if is_layered(G):
         decl = G.graph.get('directed')
         if isinstance(decl, bool):
@@ -290,13 +292,13 @@ def is_layered(G: DiGraph) -> bool:
     Args:
         G: networkx graph instance
 
-    Return:
-        bool which is True if the graph nodes contain layer attributes.
+    Returns:
+        Bool which is True if the graph nodes contain layer attributes.
+
+    Todo:
+        * test by edge structure and not by node attributes
 
     """
-
-    # 2do: test by edge structure and not by node attributes
-
     require = ['layer', 'layer_id', 'layer_sub_id']
     for node, data in G.nodes(data=True):
         for key in require:
@@ -315,7 +317,6 @@ def get_scaling_factor(pos: dict) -> float:
         float containing a normalized scaling factor
 
     """
-
     # calculate euclidean distances between node positions
     norm = lambda x: np.sqrt(np.sum(x ** 2))
     dist = lambda u, v: norm(np.array(pos[u]) - np.array(pos[v]))
@@ -341,8 +342,7 @@ def get_scaling_factor(pos: dict) -> float:
 
 def rescale_layout(
         pos: dict, size: OptTuple = None,
-        padding: tuple = (0., 0., 0., 0.), rotate: float = 0.
-    ) -> dict:
+        padding: tuple = (0., 0., 0., 0.), rotate: float = 0.) -> dict:
     """Rescale node positions.
 
     Args:
@@ -357,7 +357,6 @@ def rescale_layout(
         dictionary containing rescaled node positions.
 
     """
-
     # create numpy array with positions
     a = np.array([(x, y) for x, y in list(pos.values())])
 

@@ -11,8 +11,8 @@ it. These methods include:
 
 """
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 from nemoa.model.evaluation.ann import ANN as EvalationOfANN

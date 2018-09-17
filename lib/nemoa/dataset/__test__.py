@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa
@@ -14,37 +14,44 @@ class TestSuite(ntest.TestSuite):
     def test_dataset_import(self):
         import nemoa.dataset
 
-        with self.subTest(filetype = "csv"):
-            dataset = nemoa.dataset.open('sinus', workspace = 'testsuite')
+        with self.subTest(filetype="csv"):
+            dataset = nemoa.dataset.open('sinus', workspace='testsuite')
             test = nclass.hasbase(dataset, 'Dataset')
             self.assertTrue(test)
-        with self.subTest(filetype = "tab"):
-            dataset = nemoa.dataset.open('linear', workspace = 'testsuite')
+        with self.subTest(filetype="tab"):
+            dataset = nemoa.dataset.open('linear', workspace='testsuite')
             test = nclass.hasbase(dataset, 'Dataset')
             self.assertTrue(test)
 
     def test_dataset_evaluate(self):
         import nemoa.dataset
 
-        dataset = nemoa.dataset.open('linear', workspace = 'testsuite')
-        with self.subTest(evaluate = "test_gauss"):
+        dataset = nemoa.dataset.open('linear', workspace='testsuite')
+
+        with self.subTest("test_gauss"):
             evaluate = dataset.evaluate('test_gauss')
             self.assertTrue(evaluate)
-        with self.subTest(evaluate = "test_binary"):
+
+        with self.subTest("test_binary"):
             evaluate = dataset.evaluate('test_binary')
             self.assertTrue(evaluate != True)
-        with self.subTest(evaluate = "covariance"):
+
+        with self.subTest("covariance"):
             evaluate = dataset.evaluate('covariance')[0][4]
             self.assertEqual(numpy.around(evaluate, 3), 0.544)
-        with self.subTest(evaluate = "correlation"):
+
+        with self.subTest("correlation"):
             evaluate = dataset.evaluate('correlation')[0][4]
             self.assertEqual(numpy.around(evaluate, 3), 0.538)
+
         with self.subTest(evaluate = "pca-sample", embed = False):
             evaluate = dataset.evaluate('pca-sample', embed = False)[0][0]
             self.assertEqual(numpy.around(evaluate, 3), -3.466)
+
         with self.subTest(evaluate = "pca-sample", embed = True):
             evaluate = dataset.evaluate('pca-sample', embed = True)[0][0]
             self.assertEqual(numpy.around(evaluate, 3), -1.693)
+            
         with self.subTest(evaluate = "k-correlation"):
             evaluate = dataset.evaluate('k-correlation')[0][2]
             self.assertEqual(numpy.around(evaluate, 3), 0.141)

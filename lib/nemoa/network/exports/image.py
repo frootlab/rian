@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
-import numpy
-import networkx
 import importlib
+
+import numpy
 
 from nemoa.common import nplot
 
@@ -15,17 +14,19 @@ def filetypes():
     """Get supported image filetypes."""
     return nplot.filetypes()
 
-def show(network, plot = None, **kwargs):
+def show(network, plot=None, **kwargs):
 
     # get class for plotting from attribute 'plot'
-    if not plot: plot = 'graph'
+    if not plot:
+        plot = 'graph'
 
     # get plot class and module name
     cname = plot.lower().title()
     mname = save.__module__
     try:
         module = importlib.import_module(mname)
-        if not hasattr(module, cname): raise ImportError()
+        if not hasattr(module, cname):
+            raise ImportError()
     except ImportError:
         raise ValueError(
             "could not plot graph '%s': "
@@ -33,24 +34,27 @@ def show(network, plot = None, **kwargs):
 
     # create and show plot
     plot = getattr(module, cname)(**kwargs)
-    if plot.create(network): plot.show()
+    if plot.create(network):
+        plot.show()
 
     plot.release()
     return True
 
-def save(network, path = None, filetype = None, plot = None, **kwargs):
+def save(network, path=None, filetype=None, plot=None, **kwargs):
 
     # test if filetype is supported
     if filetype not in filetypes():
         raise ValueError(f"filetype '{filetype}' is not supported")
 
     # get class for plotting from attribute 'plot'
-    if not plot: plot = 'graph'
+    if not plot:
+        plot = 'graph'
     class_name = plot.lower().title()
     module_name = save.__module__
     try:
         module = importlib.import_module(module_name)
-        if not hasattr(module, class_name): raise ImportError()
+        if not hasattr(module, class_name):
+            raise ImportError()
     except ImportError:
         raise ValueError("""could not plot network '%s':
             plot type '%s' is not supported.""" % (network.name, plot))
@@ -59,7 +63,8 @@ def save(network, path = None, filetype = None, plot = None, **kwargs):
     plot = getattr(module, class_name)(**kwargs)
 
     # create plot and save to file
-    if plot.create(network): plot.save(path)
+    if plot.create(network):
+        plot.save(path)
 
     # clear figures and release memory
     plot.release()
@@ -85,10 +90,10 @@ class Graph(nplot.Graph):
             'edge_weight': 'intensity',
             'edge_threshold': 0.,
             'edge_transform': 'softstep',
-            'edge_sign_normalize': True  })
+            'edge_sign_normalize': True})
 
         # copy graph from model graph
-        graph = network.get('graph', type = 'graph')
+        graph = network.get('graph', type='graph')
 
         # copy graph attributes from graph 'params'
         params = graph.graph.get('params', {})
@@ -96,7 +101,7 @@ class Graph(nplot.Graph):
             graph.graph['directed'] = params['directed']
 
         # create edge attribute 'weight'
-        edgeattr  = self._config.get('edge_weight', None)
+        edgeattr = self._config.get('edge_weight', None)
         normalize = self._config.get('edge_normalize', None)
         threshold = self._config.get('edge_threshold', None)
         transform = self._config.get('edge_transform', None)
@@ -105,13 +110,15 @@ class Graph(nplot.Graph):
         if bool(normalize):
             absmean = numpy.absolute(numpy.mean(
                 [data['params'].get(edgeattr, 0.) \
-                for (u, v, data) in graph.edges(data = True)]))
-            if absmean == 0.: normalize = None
+                for (u, v, data) in graph.edges(data=True)]))
+            if absmean == 0.:
+                normalize = None
 
-        for (u, v, data) in graph.edges(data = True):
+        for (u, v, data) in graph.edges(data=True):
             weight = data['params'].get(edgeattr, None)
             if weight is None:
-                if 'weight' in data: data.pop('weight')
+                if 'weight' in data:
+                    data.pop('weight')
                 continue
 
             # threshold weights (optional)
@@ -121,10 +128,12 @@ class Graph(nplot.Graph):
 
             # create edge attribute 'color' (optional)
             if self._config.get('edge_color', False):
-                if weight > 0.: graph.edges[u, v]['color'] = \
-                    self._config.get('edge_poscolor', 'green')
-                else: graph.edges[u, v]['color'] = \
-                    self._config.get('edge_negcolor', 'red')
+                if weight > 0.:
+                    graph.edges[u, v]['color'] = \
+                        self._config.get('edge_poscolor', 'green')
+                else:
+                    graph.edges[u, v]['color'] = \
+                        self._config.get('edge_negcolor', 'red')
 
             # create edge attribute 'caption' (optional)
             if self._config.get('edge_caption'):
@@ -132,7 +141,8 @@ class Graph(nplot.Graph):
                 graph.edges[u, v]['caption'] = caption
 
             # normalize weights (optional)
-            if bool(normalize): weight /= absmean
+            if bool(normalize):
+                weight /= absmean
 
             # transform weights (optional)
             if transform == 'softstep':
@@ -152,10 +162,10 @@ class Graph(nplot.Graph):
                         if 'weight' in graph.edges[edge]:
                             graph.edges[edge]['weight'] *= -1
 
-        nodes = {n: data for n, data in graph.nodes(data = True)}
+        nodes = {n: data for n, data in graph.nodes(data=True)}
 
         # copy node attributes 'label' and 'visible' from unit params
-        for node, data in graph.nodes(data = True):
+        for node, data in graph.nodes(data=True):
             params = data.get('params', {})
             data.update({
                 'label': params.get('label', str(node)),
@@ -167,33 +177,34 @@ class Graph(nplot.Graph):
         # update node attribute 'group'
         groupby = self._config.get('node_groupby', None)
         if groupby is not None:
-            for node, data in graph.nodes(data = True):
+            for node, data in graph.nodes(data=True):
                 node_params = data.get('params', {})
                 data['group'] = node_params.get(groupby)
         else:
             is_layer = ngraph.is_layered(graph)
             is_directed = ngraph.is_directed(graph)
             if is_layer and not is_directed:
-                for node, data in graph.nodes(data = True):
+                for node, data in graph.nodes(data=True):
                     gid = int(data.get('visible', True))
                     data['group'] = {0: 'latent', 1: 'observable'}[gid]
             elif is_layer and is_directed:
                 layers = ngraph.get_layers(graph)
                 ilayer, olayer = layers[0], layers[-1]
-                for node, data in graph.nodes(data = True):
+                for node, data in graph.nodes(data=True):
                     gid = int(node in ilayer) \
                         + 2 * int(node in olayer)
                     data['group'] = {0: 'latent', 1: 'source',
                         2: 'target', 3: 'transit'}[gid]
             else:
-                for node, data in graph.nodes(data = True):
+                for node, data in graph.nodes(data=True):
                     gid = int(data.get('visible', True))
                     data['group'] = {0: 'latent', 1: 'observable'}[gid]
 
         # update node attributes for layout
-        groups = ngraph.get_groups(graph, attribute = 'group')
+        groups = ngraph.get_groups(graph, attribute='group')
         for group in sorted(groups.keys()):
-            if group == '': continue
+            if group == '':
+                continue
             layout = ngraph.get_node_layout(group)
             group_label = layout.get('label', {
                 True: str(groupby),
@@ -203,7 +214,7 @@ class Graph(nplot.Graph):
                 node_params = nodes[node].get('params')
                 graph.node[node].update({
                     'label': node_params.get('label', str(node)),
-                    'group': group_label })
+                    'group': group_label})
                 graph.node[node].update(layout)
 
         # prepare parameters

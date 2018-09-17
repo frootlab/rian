@@ -5,11 +5,9 @@ __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.common.ntype import Any, Optional, Union, OptStr
+from nemoa.common.ntype import Any, OptStr, OptStrOrBool, OptStrOrDict
 
-def get(
-        name: OptStr = None, filepath: OptStr = None
-    ) -> Optional[Union[dict, str]]:
+def get(name: OptStr = None, filepath: OptStr = None) -> OptStrOrDict:
     """Get application variable by name.
 
     Application variables are intended to describe the application distribution
@@ -55,10 +53,8 @@ def get(
         [RFC822] https://www.w3.org/Protocols/rfc822/
 
     """
-
     def updatevars(filepath: OptStr = None) -> None:
         """Update application variables from module attributes."""
-
         import io
         import re
 
@@ -66,14 +62,14 @@ def get(
         if not filepath:
             from nemoa.common import nmodule
             name = nmodule.curname().split('.')[0]
-            filepath = nmodule.objectify(name).__file__
+            filepath = getattr(nmodule.inst(name), '__file__', None)
 
         # read file content
         with io.open(filepath, encoding='utf8') as file:
             content = file.read()
 
         # parse content for module variables with regular expressions
-        rkey = """__([a-zA-Z][a-zA-Z0-9]*)__"""
+        rkey = "__([a-zA-Z][a-zA-Z0-9]*)__"
         rval = """['\"]([^'\"]*)['\"]"""
         rexp = r"^[ ]*%s[ ]*=[ ]*%s" % (rkey, rval)
         dvars = {}
@@ -98,17 +94,15 @@ def get(
         return dvars.copy()
     if not isinstance(name, str):
         raise TypeError(
-            "argument 'name' requires types 'str' or 'None', "
-            f"not '{type(name)}'")
+            "argument 'name' requires types 'str' or 'None'"
+            f", not '{type(name)}'")
 
     return dvars.get(name, None)
 
 def path(
-        name: Optional[str] = None, appname: Optional[str] = None,
-        appauthor: Optional[Union[str, bool]] = None,
-        version: Optional[str] = None,
-        **kwargs: Any
-    ) -> Optional[Union[dict, str]]:
+        name: OptStr = None, appname: OptStr = None,
+        appauthor: OptStrOrBool = None, version: OptStr = None,
+        **kwargs: Any) -> OptStrOrDict:
     """Get application specific paths for caching, configuration etc.
 
     This function returns application specific system directories by platform
@@ -144,14 +138,10 @@ def path(
         [1] http://github.com/ActiveState/appdirs
 
     """
-
     def upddirs(
-            appname: OptStr = None,
-            appauthor: Optional[Union[str, bool]] = None,
-            version: OptStr = None, **kwargs: Any
-        ) -> None:
+            appname: OptStr = None, appauthor: OptStrOrBool = None,
+            version: OptStr = None, **kwargs: Any) -> None:
         """Update application directories from name, author and version."""
-
         try:
             from appdirs import AppDirs
         except ImportError as err:
@@ -161,8 +151,8 @@ def path(
 
         app = {
             'appname': appname or get('name'),
-            'appauthor': appauthor or get('company') \
-                or get('organization') or get('author'),
+            'appauthor': appauthor or get('company') or get('organization') \
+                or get('author'),
             'version': version}
         paths = AppDirs(**app, **kwargs)
         keys = [
@@ -180,8 +170,8 @@ def path(
         return dirs.copy()
     if not isinstance(name, str):
         raise TypeError(
-            "argument 'name' requires types 'str' or 'None', "
-            f"not '{type(name)}'")
+            "argument 'name' requires to be of type 'str' or None"
+            f", not '{type(name)}'")
     if not name in dirs:
         raise KeyError(f"pathname '{name}' is not valid")
 

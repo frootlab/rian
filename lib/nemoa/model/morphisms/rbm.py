@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Restricted Boltzmann Machine Morphisms."""
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa.model.morphisms.ann

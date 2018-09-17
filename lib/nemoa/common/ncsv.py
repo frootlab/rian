@@ -6,7 +6,6 @@ __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import csv
-import os
 
 try:
     import numpy as np
@@ -16,18 +15,18 @@ except ImportError as err:
         "https://scipy.org") from err
 
 from nemoa.common.ntype import (
-    Optional, OptStr, OptStrList, OptIntTuple, OptInt)
+    OptStr, OptStrList, OptInt, OptIntTuple, OptNpArray)
 
-OptArray = Optional[np.ndarray]
+from nemoa.common import npath
 
 def load(
-        path: str, delim: OptStr = None, labels: OptStrList = None,
-        usecols: OptIntTuple = None, rowlabelcol: OptInt = None
-    ) -> OptArray:
+        filepath: str, delim: OptStr = None,
+        labels: OptStrList = None, usecols: OptIntTuple = None,
+        rowlabelcol: OptInt = None) -> OptNpArray:
     """Load numpy ndarray from CSV file.
 
     Args:
-        path: file path to CSV file.
+        filepath: filepath that points to a valid CSV file.
         delim: string containing CSV delimiter.
             If not given, the CSV delimiter is detected from CSV file.
         labels: list of strings containing CSV labels.
@@ -43,19 +42,19 @@ def load(
         data could not be imported.
 
     """
-
-    # check file
-    if not os.path.isfile(path):
-        raise ValueError(f"file '{path}' does not exist")
+    # validate path
+    path = npath.validfile(filepath)
+    if not path:
+        raise TypeError(f"file '{str(filepath)}' does not exist")
 
     # get delimiter
-    delim = delim or delimiter(path)
+    delim = delim or getdelim(path)
     if not delim:
         raise ValueError(f"delimiter in file '{path}' is not supported")
 
     # get labels
     if not labels:
-        labels = get_labels(path, delim=delim)
+        labels = getlabels(path, delim=delim)
         if not labels:
             raise ValueError("argument 'usecols' is not valid")
         usecols = tuple(range(len(labels)))
@@ -65,7 +64,7 @@ def load(
 
     # get row label column id
     if rowlabelcol is None:
-        rowlabelcol = labelcolid(path, delim=delim)
+        rowlabelcol = getacolid(path, delim=delim)
 
     # get datatype
     if rowlabelcol is None:
@@ -106,23 +105,22 @@ def load(
     return data
 
 def save(
-        path: str, data: np.ndarray, header: OptStr = None,
+        filepath: str, data: np.ndarray, header: OptStr = None,
         labels: OptStrList = None, delim: str = ','
     ) -> bool:
     """Save numpy array to CSV file.
 
     Args:
-        path (string): file path to CSV file.
-        data (numpy ndarray): data
-        header (string, optional):
-        labels (list, optional): list of strings containing CSV labels.
-        delim (string, optional):
+        filepath: filepath to CSV file.
+        data: data
+        header:
+        labels: list of strings containing CSV labels.
+        delim:
 
     Returns:
         True if no error occured.
 
     """
-
     if isinstance(header, str):
         header = '# %s\n\n' % (header.replace('\n', '\n# '))
         if isinstance(labels, list):
@@ -132,25 +130,24 @@ def save(
 
     fmt = delim.join(['%s'] + ['%10.10f'] * (len(data[0]) - 1))
 
-    return np.savetxt(path, data, fmt=fmt, header=header, comments='') is None
+    return np.savetxt(
+        filepath, data, fmt=fmt, header=header, comments='') is None
 
-def get_header(path: str) -> str:
+def getheader(filepath: str) -> str:
     """Get header from CSV file.
 
     Args:
-        path (string): file path to CSV file.
+        filepath: file path to CSV file.
 
     Returns:
         String containing header of CSV file or empty string if header
         could not be detected.
 
     """
-
-    # check file
-    if not os.path.isfile(path):
-        raise OSError(
-            "could not get CSV header: "
-            f"file '{path}' does not exist.")
+    # validate path
+    path = npath.validfile(filepath)
+    if not path:
+        raise TypeError(f"file '{str(filepath)}' does not exist")
 
     # scan csvfile for header
     header = ''
@@ -171,14 +168,14 @@ def get_header(path: str) -> str:
 
     return header
 
-def delimiter(
-        path: str, delims: OptStrList = None, minprobe: int = 3,
+def getdelim(
+        filepath: str, delims: OptStrList = None, minprobe: int = 3,
         maxprobe: int = 100
     ) -> str:
-    """Get delimiter from CSV file.
+    r"""Get delimiter from CSV file.
 
     Args:
-        path: file path to CSV file.
+        filepath: file path to CSV file.
         delims: Optional list of strings containing delimiter candidates to
             search for. Default: [',', ';', '\t', ' ']
         minprobe: minimum number of (non comment, not empty) lines used to
@@ -191,10 +188,10 @@ def delimiter(
         detected.
 
     """
-
-    # check file
-    if not os.path.isfile(path):
-        raise OSError(f"file '{path}' does not exist.")
+    # validate path
+    path = npath.validfile(filepath)
+    if not path:
+        raise TypeError(f"file '{str(filepath)}' does not exist")
 
     # get default delims
     delims = delims or [',', ';', '\t', ' ']
@@ -231,25 +228,25 @@ def delimiter(
 
     return delim
 
-def get_labels(path: str, delim: OptStr = None) -> list:
-    """Get (column) labels from CSV file.
+def getlabels(filepath: str, delim: OptStr = None) -> list:
+    """Get column labels from CSV file.
 
     Args:
-        path (string): file path to CSV file.
-        delim (string, optional): string containing CSV delimiter.
+        filepath: file path to CSV file.
+        delim: string containing CSV delimiter.
 
     Returns:
         List of strings containing column labels from first non comment,
         non empty line from CSV file.
 
     """
-
-    # check file
-    if not os.path.isfile(path):
-        raise TypeError(f"file '{path}' does not exist")
+    # validate path
+    path = npath.validfile(filepath)
+    if not path:
+        raise TypeError(f"file '{str(filepath)}' does not exist")
 
     # get delimiter
-    delim = delim or delimiter(path)
+    delim = delim or getdelim(path)
     if not delim:
         raise TypeError(f"delimiter in file '{path}' is not supported")
 
@@ -287,25 +284,25 @@ def get_labels(path: str, delim: OptStr = None) -> list:
 
     return []
 
-def labelcolid(path: str, delim: OptStr = None) -> int:
+def getacolid(filepath: str, delim: OptStr = None) -> int:
     """Get column id for column containing row labels from CSV file.
 
     Args:
-        path (string): file path to CSV file.
-        delim (string, optional): string containing CSV delimiter.
+        path: file path to CSV file.
+        delim: string containing CSV delimiter.
 
     Returns:
         Integer containing first index of CSV data column containing
         strings.
 
     """
-
-    # check file
-    if not os.path.isfile(path):
-        raise OSError(f"file '{path}' does not exist")
+    # validate filepath
+    path = npath.validfile(filepath)
+    if not path:
+        raise TypeError(f"file '{str(filepath)}' does not exist")
 
     # get delimiter
-    delim = delim or delimiter(path)
+    delim = delim or getdelim(path)
     if not delim:
         raise TypeError(f"the delimiter in file '{path}' is not supported")
 

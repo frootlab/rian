@@ -5,14 +5,11 @@ __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from typing import Any, Optional, Union
-
 import base64
 import pickle
 import zlib
 
-OptStr = Optional[str]
-ByteLike = Union[bytes, bytearray, str]
+from nemoa.common.ntype import Any, OptStr, ByteLike
 
 def load(path: str, encoding: OptStr = 'base64') -> dict:
     """Decode and decompress file.

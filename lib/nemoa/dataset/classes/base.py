@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 from typing import Any, Dict, Optional
@@ -628,7 +628,7 @@ class Dataset(nbase.ObjectIP):
 
         # get dictionary with all methods
         # with prefix '_get_' and attribute 'name'
-        methods = nclass.methods(self, filter = '_get_*', val = 'name')
+        methods = nclass.methods(self, pattern = '_get_*', val = 'name')
 
         # filter algorithms by given category
         if category is not None:

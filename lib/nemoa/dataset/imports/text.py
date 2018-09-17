@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa
@@ -35,7 +35,7 @@ class Csv:
     """Import dataset from Comma Separated Values."""
 
     settings = None
-    default = { 'delim': ',' }
+    default = {'delim': ','}
 
     def __init__(self, **kwargs):
         from nemoa.common import ndict
@@ -53,7 +53,7 @@ class Csv:
         from nemoa.common import ncsv, nini, npath
 
         # get config from csv header
-        header = ncsv.get_header(path)
+        header = ncsv.getheader(path)
 
         structure = {
             'name': 'str',

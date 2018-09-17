@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 import numpy
@@ -194,7 +194,7 @@ class Evaluation:
                 from nemoa.common import narray
                 src = getunits(layer=kwargs['mapping'][0])
                 tgt = getunits(layer=kwargs['mapping'][-1])
-                return narray.asdict(retval, (src, tgt))
+                return narray.asdict(retval, labels=(src, tgt))
         elif category == 'relation':
             if algorithm['retfmt'] == 'scalar':
 
@@ -208,7 +208,8 @@ class Evaluation:
                         T = eval(transform)
                         retval = T
                     except Exception as err:
-                        raise ValueError("could not transform relations: "
+                        raise ValueError(
+                            "could not transform relations: "
                             "invalid syntax") from err
 
                 # create formated return values
@@ -218,7 +219,7 @@ class Evaluation:
                     from nemoa.common import narray
                     src = getunits(layer=kwargs['mapping'][0])
                     tgt = getunits(layer=kwargs['mapping'][-1])
-                    retval = narray.asdict(retval, (src, tgt))
+                    retval = narray.asdict(retval, labels=(src, tgt))
                     if not evalstat:
                         return retval
 

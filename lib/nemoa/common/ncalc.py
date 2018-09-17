@@ -5,6 +5,8 @@ __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+import sys
+
 try:
     import numpy as np
 except ImportError as err:
@@ -16,9 +18,7 @@ from nemoa.common.ntype import Union, OptStr
 
 ArrayLike = Union[np.ndarray, np.matrix, float, int]
 
-#
 # Sigmoid Functions
-#
 
 def sigmoid(x: ArrayLike, func: OptStr = None, **kwargs) -> ArrayLike:
     """Calculate sigmoid functions.
@@ -33,14 +33,14 @@ def sigmoid(x: ArrayLike, func: OptStr = None, **kwargs) -> ArrayLike:
         function to the given data.
 
     """
+    sigmoids = ['logistic', 'tanh', 'lecun', 'elliot', 'hill', 'arctan']
 
     if func is None:
-        return logistic(x, **kwargs)
-    if func in ['logistic', 'tanh', 'lecun', 'elliot', 'hill', 'arctan']:
-        import sys
+        return getattr(sys.modules[__name__], sigmoids[0])(x, **kwargs)
+    if func in sigmoids:
         return getattr(sys.modules[__name__], func)(x, **kwargs)
 
-    raise ValueError(f"function {func} is not supported")
+    raise ValueError(f"sigmoid function '{func}' is not supported")
 
 def logistic(x: ArrayLike) -> ArrayLike:
     """Calculate standard logistic function.
@@ -53,11 +53,10 @@ def logistic(x: ArrayLike) -> ArrayLike:
         logistic function to the given data.
 
     """
-
     return 1. / (1. + np.exp(-x))
 
 def tanh(x: ArrayLike) -> ArrayLike:
-    """Hyperbolic tangent function.
+    """Calculate hyperbolic tangent function.
 
     Args:
         x: Numerical data arranged in an array-like structure
@@ -67,11 +66,10 @@ def tanh(x: ArrayLike) -> ArrayLike:
         tangent function to the given data.
 
     """
-
     return np.tanh(x)
 
 def lecun(x: ArrayLike) -> ArrayLike:
-    """LeCun hyperbolic tangent function.
+    """Calculate normalized hyperbolic tangent function.
 
     Hyperbolic tangent function, which has been proposed to be more efficient
     in learning Artificial Neural Networks [1].
@@ -88,11 +86,10 @@ def lecun(x: ArrayLike) -> ArrayLike:
             "Efficient BackProp" (1998)
 
     """
-
     return 1.7159 * np.tanh(0.6666 * x)
 
 def elliot(x: ArrayLike) -> ArrayLike:
-    """Elliot activation function.
+    """Calculate Elliot activation function.
 
     Args:
         x: Numerical data arranged in an array-like structure
@@ -106,11 +103,10 @@ def elliot(x: ArrayLike) -> ArrayLike:
             Artificial Neural Networks" (1993)
 
     """
-
     return x / (1. + np.abs(x))
 
 def hill(x: ArrayLike, n: float = 2.) -> ArrayLike:
-    """Hill type activation function.
+    """Calculate Hill type activation function.
 
     Args:
         x: Numerical data arranged in an array-like structure
@@ -121,13 +117,12 @@ def hill(x: ArrayLike, n: float = 2.) -> ArrayLike:
         activation function to the given data.
 
     """
-
     if n == 2.:
         return x / np.sqrt(1. + x ** 2)
     return x / np.power(1. + x ** n, 1. / n)
 
 def arctan(x: ArrayLike) -> ArrayLike:
-    """Inverse tangent function.
+    """Calculate inverse tangent function.
 
     Args:
         x: Numerical data arranged in an array-like structure
@@ -137,15 +132,12 @@ def arctan(x: ArrayLike) -> ArrayLike:
         tangent function to the given data.
 
     """
-
     return np.arctan(x)
 
-#
 # Derivatives of Sigmoid Functions
-#
 
 def d_sigmoid(x: ArrayLike, func: OptStr = None, **kwargs) -> ArrayLike:
-    """Derivative of sigmoid function.
+    """Calculate derivative of sigmoid function.
 
     Args:
         x: Numerical data arranged in an array-like structure
@@ -158,31 +150,19 @@ def d_sigmoid(x: ArrayLike, func: OptStr = None, **kwargs) -> ArrayLike:
         a sigmnoid function to the given data.
 
     """
+    d_sigmoids = [
+        'd_logistic', 'd_tanh', 'd_lecun', 'd_elliot', 'd_hill', 'd_arctan']
 
-    retval = None
+    if func is None:
+        return getattr(sys.modules[__name__], d_sigmoids[0])(x, **kwargs)
+    if func in d_sigmoids:
+        return getattr(sys.modules[__name__], func)(x, **kwargs)
 
-    if isinstance(func, type(None)):
-        retval = d_logistic(x, **kwargs)
-    elif func == 'd_logistic':
-        retval = d_logistic(x, **kwargs)
-    elif func == 'd_elliot':
-        retval = d_elliot(x, **kwargs)
-    elif func == 'd_hill':
-        retval = d_hill(x, **kwargs)
-    elif func == 'd_lecun':
-        retval = d_lecun(x, **kwargs)
-    elif func == 'd_tanh':
-        retval = d_tanh(x, **kwargs)
-    elif func == 'd_arctan':
-        retval = d_arctan(x, **kwargs)
-
-    if retval is None:
-        raise ValueError(f"function {func} is not supported")
-
-    return retval
+    raise ValueError(
+        f"derivative of sigmoid function '{func}' is not implemented")
 
 def d_logistic(x: ArrayLike) -> ArrayLike:
-    """Derivative of the standard logistic function.
+    """Calculate derivative of the standard logistic function.
 
     Args:
         x: Numerical data arranged in an array-like structure
@@ -192,11 +172,10 @@ def d_logistic(x: ArrayLike) -> ArrayLike:
         the standard logistic function to the given data.
 
     """
-
     return (1. / (1. + np.exp(-x))) * (1. - 1. / (1. + np.exp(-x)))
 
 def d_elliot(x: ArrayLike) -> ArrayLike:
-    """Derivative of the Elliot sigmoid function.
+    """Calculate derivative of the Elliot sigmoid function.
 
     Args:
         x: Numerical data arranged in an array-like structure
@@ -210,11 +189,10 @@ def d_elliot(x: ArrayLike) -> ArrayLike:
             Artificial Neural Networks", (1993)
 
     """
-
     return 1. / (1. + np.abs(x)) ** 2
 
 def d_hill(x: ArrayLike, n: float = 2.) -> ArrayLike:
-    """Derivative of Hill type activation function.
+    """Calculate derivative of Hill type activation function.
 
     Args:
         x: Numerical data arranged in an array-like structure
@@ -225,13 +203,12 @@ def d_hill(x: ArrayLike, n: float = 2.) -> ArrayLike:
         the Hill type activation function to the given data.
 
     """
-
     if n == 2.:
         return 1. / np.power(1. + x ** 2, 3. / 2.)
     return 1. / np.power(1. + x ** n, (1. + n) / n)
 
 def d_lecun(x: ArrayLike) -> ArrayLike:
-    """Derivative of LeCun hyperbolic tangent.
+    """Calculate derivative of LeCun hyperbolic tangent.
 
     Hyperbolic tangent function, which has been proposed to be more efficient
     in learning Artificial Neural Networks [1].
@@ -248,12 +225,11 @@ def d_lecun(x: ArrayLike) -> ArrayLike:
             "Efficient BackProp" (1998)
 
     """
-
     return 1.14382 / np.cosh(0.6666 * x) ** 2
 
 
 def d_tanh(x: ArrayLike) -> ArrayLike:
-    """Derivative of hyperbolic tangent function.
+    """Calculate derivative of hyperbolic tangent function.
 
     Args:
         x: Numerical data arranged in an array-like structure
@@ -263,11 +239,10 @@ def d_tanh(x: ArrayLike) -> ArrayLike:
         of the hyperbolic tangent function to the given data.
 
     """
-
     return 1. - np.tanh(x) ** 2
 
 def d_arctan(x: ArrayLike) -> ArrayLike:
-    """Derivative of inverse tangent function.
+    """Calculate derivative of inverse tangent function.
 
     Args:
         x: Numerical data arranged in an array-like structure
@@ -277,16 +252,12 @@ def d_arctan(x: ArrayLike) -> ArrayLike:
         of the inverse tangent function to the given data.
 
     """
-
     return 1. / (1. + x ** 2.)
 
-#
 # Multistep Sigmoid Functions
-#
 
 def dialogistic(
-        x: ArrayLike, scale: float = 1., sigma: float = 10.
-    ) -> ArrayLike:
+        x: ArrayLike, scale: float = 1., sigma: float = 10.) -> ArrayLike:
     """Calulate dialogistic function.
 
     Args:
@@ -299,7 +270,6 @@ def dialogistic(
         function to the given data.
 
     """
-
     sigma = max(sigma, .000001)
     lle = logistic(sigma * (x - .5 * scale))
     lre = logistic(sigma * (x + .5 * scale))
@@ -321,15 +291,13 @@ def softstep(x: ArrayLike, scale: float = 1., sigma: float = 10.) -> ArrayLike:
         function to the given data.
 
     """
-
+    step = np.tanh(dialogistic(x, scale=scale, sigma=sigma))
     norm = np.tanh(scale)
-
-    return np.tanh(dialogistic(x, scale=scale, sigma=sigma)) / norm
+    return step / norm
 
 def multilogistic(
-        x: ArrayLike, scale: float = 1., sigma: float = 10.
-    ) -> ArrayLike:
-    """Muliple logistic function.
+        x: ArrayLike, scale: float = 1., sigma: float = 10.) -> ArrayLike:
+    """Calculate muliple logistic function.
 
     Args:
         x: Numerical data arranged in an array-like structure
@@ -341,13 +309,12 @@ def multilogistic(
         logistic function to the given data.
 
     References:
-        [1] https://math.stackexchange.com/questions/\
-            2529531/multiple-soft-step-function
+        [1] https://math.stackexchange.com/questions/2529531/
 
     """
-
     # the multilogistic function approximates the identity function
     # iff the scaling or the sharpness parameter goes to zero
+
     if scale == 0. or sigma == 0.:
         return x
 

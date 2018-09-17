@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Global session management using singleton design pattern."""
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 def cur():
