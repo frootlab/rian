@@ -5,9 +5,9 @@ __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.common.ntype import OptObject
+from nemoa.common.ntype import cast, OptObj
 
-def getch() -> OptObject:
+def getch() -> OptObj:
     """Getch wrapper for various platforms."""
     class GetchMsvcrt:
         """Microsoft Visual C/C++ Runtime Library implementation of getch."""
@@ -17,9 +17,12 @@ def getch() -> OptObject:
             """Return character from stdin."""
             import msvcrt
 
-            if not msvcrt.kbhit():
+            kb = getattr(msvcrt, 'kbhit')
+            ch = getattr(msvcrt, 'getch')
+
+            if not kb():
                 return ''
-            return str(msvcrt.getch(), 'utf-8')
+            return str(ch(), 'utf-8')
 
     class GetchTermios:
         """Unix/Termios implementation of getch."""
@@ -39,27 +42,27 @@ def getch() -> OptObject:
             curterm = termios.tcgetattr(fdesc)
 
             # set unbuffered terminal
-            newterm = termios.tcgetattr(fdesc)
-            newterm[3] = (newterm[3] & ~termios.ICANON & ~termios.ECHO)
-            termios.tcsetattr(fdesc, termios.TCSAFLUSH, newterm)
+            attr = termios.tcgetattr(fdesc)
+            attr[3] = cast(int, attr[3]) & ~termios.ICANON & ~termios.ECHO
+            termios.tcsetattr(fdesc, termios.TCSAFLUSH, attr)
 
             self.queue = {
                 'stdin': queue.Queue(),
                 'runsignal': True,
                 'time': time.time(),
                 'curterm': curterm,
-                'fdesc': fdesc
-            }
+                'fdesc': fdesc}
 
             def stream(queue):
+                """ """
                 import sys
                 while queue['runsignal']:
                     queue['stdin'].put(sys.stdin.read(1))
 
             self.queue['handler'] = threading.Thread(
                 target=stream, args=(self.queue, ))
-            self.queue['handler'].daemon = True
-            self.queue['handler'].start()
+            setattr(self.queue['handler'], 'daemon', True)
+            getattr(self.queue['handler'], 'start')()
 
         def __del__(self) -> None:
             try:
@@ -84,10 +87,10 @@ def getch() -> OptObject:
             if now < self.queue['time'] + .5:
                 return ''
             self.queue['time'] = now
-            if self.queue['stdin'].empty():
+            if getattr(self.queue['stdin'], 'empty')():
                 return ''
 
-            return self.queue['stdin'].get()
+            return getattr(self.queue['stdin'], 'get')()
 
     from nemoa.common import nsysinfo
 

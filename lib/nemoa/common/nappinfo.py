@@ -5,7 +5,7 @@ __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.common.ntype import Any, OptStr, OptStrOrBool, OptStrOrDict
+from nemoa.common.ntype import cast, Any, OptStr, OptStrOrBool, OptStrOrDict
 
 def get(name: OptStr = None, filepath: OptStr = None) -> OptStrOrDict:
     """Get application variable by name.
@@ -59,13 +59,13 @@ def get(name: OptStr = None, filepath: OptStr = None) -> OptStrOrDict:
         import re
 
         # use init script of current root module
-        if not filepath:
+        if filepath is None:
             from nemoa.common import nmodule
             name = nmodule.curname().split('.')[0]
             filepath = getattr(nmodule.inst(name), '__file__', None)
 
         # read file content
-        with io.open(filepath, encoding='utf8') as file:
+        with io.open(cast(str, filepath), encoding='utf8') as file:
             content = file.read()
 
         # parse content for module variables with regular expressions
@@ -143,7 +143,7 @@ def path(
             version: OptStr = None, **kwargs: Any) -> None:
         """Update application directories from name, author and version."""
         try:
-            from appdirs import AppDirs
+            import appdirs
         except ImportError as err:
             raise ImportError(
                 "requires package appdirs: "
@@ -154,7 +154,7 @@ def path(
             'appauthor': appauthor or get('company') or get('organization') \
                 or get('author'),
             'version': version}
-        paths = AppDirs(**app, **kwargs)
+        paths = appdirs.AppDirs(**app, **kwargs)
         keys = [
             'user_cache_dir', 'user_config_dir', 'user_data_dir',
             'user_log_dir', 'site_config_dir', 'site_data_dir']

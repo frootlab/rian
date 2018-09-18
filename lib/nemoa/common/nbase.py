@@ -66,10 +66,10 @@ class ObjectIP:
 
     _config: Dict[str, dict]
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         """Initialize object with given configuration."""
         self._config = {}
-        self._set_copy(*args, **kwargs)
+        self._set_copy(**kwargs)
 
     def __getattr__(self, key: str) -> None:
         """Wrap attribute requests to private getter methods."""
@@ -100,18 +100,25 @@ class ObjectIP:
         else:
             self.__dict__[key] = val
 
-    def get(self, key: str, *args: Any, **kwargs: Any) -> Any:
+    def get(self, *args: Any, **kwargs: Any) -> Any:
         """Get the value of an object property.
 
         Args:
-            key: Property of which the value is to be returned
-            *args: Arguments of arbitrary types
+            key: Property name of which the value is to be returned. If key is
+                not given, then a copy of all data is returned
+            *args: Arguments of arbitrary types.
             **kwargs: Keyword arguments of arbitrary types
         Returns:
             Arbitrary typed return value of the respective private getter
             method of the class instance.
 
         """
+        # default: get() -> get('copy')
+        if args:
+            key, args = args[0], args[1:]
+        else:
+            key = 'copy'
+
         # get readable attributes
         if self._attr.get(key, 0b00) & 0b01:
             return getattr(self, '_get_' + key)(*args, **kwargs)
@@ -133,7 +140,7 @@ class ObjectIP:
         """
         return self._config.get('about', None)
 
-    def _get_author(self) -> str:
+    def _get_author(self) -> OptStr:
         """Get the name of the author of the resource.
 
         A person, an organization, or a service that is responsible for
@@ -247,7 +254,7 @@ class ObjectIP:
         """
         return self._config.get('email', None)
 
-    def _get_fullname(self) -> OptStr:
+    def _get_fullname(self) -> str:
         """Get full name including 'branch' and 'version'.
 
         String concatenation of 'name', 'branch' and 'version'. Branch
@@ -346,6 +353,7 @@ class ObjectIP:
         """
         setter = nclass.methods(self, pattern='_set_*')
         setter = sorted(ndict.crop(setter, '_set_'))
+
         return setter
 
     def _get_type(self) -> OptStr:

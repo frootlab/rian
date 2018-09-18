@@ -5,7 +5,7 @@ __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.common.ntype import Dict, DictOfStrDicts, Hashable
+from nemoa.common.ntype import RecDict, DictOfRecDicts, StrTupleDict
 
 def merge(*args: dict, mode: int = 1) -> dict:
     """Recursive right merge dictionaries.
@@ -86,7 +86,7 @@ def select(d: dict, pattern: str) -> dict:
         [1] https://docs.python.org/3/library/fnmatch.html
 
     """
-    # check argument types
+    # Check arguments
     if not isinstance(d, dict):
         raise TypeError(
             "first argument is required to be "
@@ -120,7 +120,7 @@ def crop(d: dict, s: str, trim: bool = True) -> dict:
         {'1': 1, '2': 2}
 
     """
-    # check argument types
+    # Check arguments
     if not isinstance(d, dict):
         raise TypeError(
             "first argument is required to be "
@@ -130,18 +130,18 @@ def crop(d: dict, s: str, trim: bool = True) -> dict:
             "second argument is required to be "
             "of type string, not '{type(s)}'")
 
-    # create new dictionary
+    # Create new dictionary
     i = len(s)
     if trim:
-        sec = {k[i:]: v for k, v in d.items() \
+        dc = {k[i:]: v for k, v in d.items() \
             if isinstance(k, str) and k[:i] == s}
     else:
-        sec = {k: v for k, v in d.items() \
+        dc = {k: v for k, v in d.items() \
             if isinstance(k, str) and k[:i] == s}
 
-    return sec
+    return dc
 
-def groupby(d: DictOfStrDicts, key: Hashable) -> Dict[Hashable, DictOfStrDicts]:
+def groupby(d: RecDict, key: str) -> DictOfRecDicts:
     """Group dictionary by the value of a given key of subdictionaries.
 
     Args:
@@ -155,17 +155,18 @@ def groupby(d: DictOfStrDicts, key: Hashable) -> Dict[Hashable, DictOfStrDicts]:
         subdictionaries.
 
     """
-    gd = dict()
+    # Declare and initialize return value
+    gd: DictOfRecDicts = {}
+
     for k, v in d.items():
         g = v.get(key, None)
         if not g in gd:
-            gd[g] = dict()
+            gd[g] = {}
         gd[g][k] = v
 
     return gd
 
-
-def strkeys(d: dict) -> dict:
+def strkeys(d: dict) -> StrTupleDict:
     """Recursively convert dictionary keys to string keys.
 
     Args:
@@ -181,18 +182,19 @@ def strkeys(d: dict) -> dict:
         {('1', '2'): 3, 'None': {'True': False}}
 
     """
-    # if argument is not a dictionary, return it for recursion
+    # If argument is not a dictionary, return it for recursion
     if not isinstance(d, dict):
         return d
 
-    # create new dictionary with string keys
-    dn = {}
-    for k, v in list(d.items()):
-        if not isinstance(k, tuple):
-            kn = str(k)
+    # Declare and initialize return value
+    dn: StrTupleDict = {}
+
+    # Create new dictionary with string keys
+    for k, v in d.items():
+        if isinstance(k, tuple):
+            dn[tuple([str(t) for t in k])] = strkeys(v)
         else:
-            kn = tuple([str(t) for t in k])
-        dn[kn] = strkeys(v)
+            dn[str(k)] = strkeys(v)
 
     return dn
 
@@ -214,7 +216,7 @@ def sumjoin(*args: dict) -> dict:
         {1: 'ab', 2: 2}
 
     """
-    dn = {}
+    dn: dict = {}
     for d in args:
         if not isinstance(d, dict):
             continue

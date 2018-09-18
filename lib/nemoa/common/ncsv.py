@@ -15,7 +15,7 @@ except ImportError as err:
         "https://scipy.org") from err
 
 from nemoa.common.ntype import (
-    OptStr, OptStrList, OptInt, OptIntTuple, OptNpArray)
+    OptStr, OptStrList, OptInt, OptIntTuple, OptNpArray, NpArray)
 
 from nemoa.common import npath
 
@@ -72,15 +72,14 @@ def load(
     elif rowlabelcol not in usecols:
         float_count = len(usecols)
         usecols = (rowlabelcol, ) + usecols
-        labels = ('label',) + labels
+        labels = ['label'] + labels
         formats = ('<U12',) + ('<f8',) * float_count
     else:
         float_count = len(usecols) - 1
         rowlabelcollabel = labels[usecols.index(rowlabelcol)]
         usecols = (rowlabelcol, ) + tuple(
             col for col in usecols if col != rowlabelcol)
-        labels = ('label',) + tuple(
-            col for col in labels if col != rowlabelcollabel)
+        labels = ['label'] + [col for col in labels if col != rowlabelcollabel]
         formats = ('<U12',) + ('<f8',) * float_count
     dtype = {'names': labels, 'formats': formats}
 
@@ -105,9 +104,8 @@ def load(
     return data
 
 def save(
-        filepath: str, data: np.ndarray, header: OptStr = None,
-        labels: OptStrList = None, delim: str = ','
-    ) -> bool:
+        filepath: str, data: NpArray, header: OptStr = None,
+        labels: OptStrList = None, delim: str = ',') -> bool:
     """Save numpy array to CSV file.
 
     Args:
@@ -121,14 +119,19 @@ def save(
         True if no error occured.
 
     """
+    # Check and prepare arguments
     if isinstance(header, str):
-        header = '# %s\n\n' % (header.replace('\n', '\n# '))
+        header = '# ' + header.replace('\n', '\n# ') + '\n\n'
         if isinstance(labels, list):
             header += delim.join(labels)
     elif isinstance(labels, list):
         header = delim.join(labels)
 
-    fmt = delim.join(['%s'] + ['%10.10f'] * (len(data[0]) - 1))
+    # Get number of columns from last entry in data.shape
+    cols = list(getattr(data, 'shape'))[-1]
+
+    # Get format from number of columns
+    fmt = delim.join(['%s'] + ['%10.10f'] * (cols - 1))
 
     return np.savetxt(
         filepath, data, fmt=fmt, header=header, comments='') is None
@@ -170,14 +173,13 @@ def getheader(filepath: str) -> str:
 
 def getdelim(
         filepath: str, delims: OptStrList = None, minprobe: int = 3,
-        maxprobe: int = 100
-    ) -> str:
+        maxprobe: int = 100) -> str:
     r"""Get delimiter from CSV file.
 
     Args:
         filepath: file path to CSV file.
         delims: Optional list of strings containing delimiter candidates to
-            search for. Default: [',', ';', '\t', ' ']
+            search for. Default: [',', '\t', ';', ' ', ':']
         minprobe: minimum number of (non comment, not empty) lines used to
             detect CSV delimiter.
         maxprobe: maximum number of (non comment, not empty) lines used to
@@ -194,7 +196,7 @@ def getdelim(
         raise TypeError(f"file '{str(filepath)}' does not exist")
 
     # get default delims
-    delims = delims or [',', ';', '\t', ' ']
+    delims = delims or [',', '\t', ';', ' ', ':']
 
     delim = None
     with open(path, 'r') as csvfile:
@@ -216,9 +218,11 @@ def getdelim(
             lines += 1
 
             # try to detect delimiter of probe
+            sniffer = csv.Sniffer()
+            sniffer.preferred = delims
             if lines > minprobe:
                 try:
-                    dialect = csv.Sniffer().sniff(probe, delims)
+                    dialect = sniffer.sniff(probe)
                 except csv.Error:
                     continue
                 delim = dialect.delimiter

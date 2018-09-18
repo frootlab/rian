@@ -179,5 +179,7 @@ class gene:
         return inlist, blist
 
 class NullDevice():
-    def write(self, s): pass
-    def flush(self, s): pass
+    def write(self, s):
+        pass
+    def flush(self, s):
+        pass

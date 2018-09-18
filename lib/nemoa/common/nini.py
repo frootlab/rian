@@ -246,7 +246,7 @@ def parse(parser: ConfigParser, structure: OptDict = None) -> dict:
 
     # if structure is given use regular expression to match sections and keys
     d = {}
-    rsecs = {key: re.compile(r'\A' + key) for key in structure.keys()}
+    rsecs = {key: re.compile(r'\A' + str(key)) for key in structure.keys()}
     for sec in parser.sections():
 
         # use regular expression to match sections
@@ -261,7 +261,7 @@ def parse(parser: ConfigParser, structure: OptDict = None) -> dict:
 
         # use regular expression to match keys
         dsec = {}
-        for regexkey, fmt in structure[rsec].items():
+        for regexkey, fmt in getattr(structure[rsec], 'items')():
             rekey = re.compile(regexkey)
             for key in parser.options(sec):
                 if not rekey.match(key):

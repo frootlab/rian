@@ -7,9 +7,9 @@ __license__ = 'GPLv3'
 
 import threading
 
-from nemoa.common.ntype import Any, Callable
+from nemoa.common.ntype import Any, AnyFunc, Obj
 
-def thread(func: Callable, *args: Any, **kwargs: Any):
+def thread(func: AnyFunc, *args: Any, **kwargs: Any) -> Obj:
     """Create and start thread for given callable and arguments."""
     thr = threading.Thread(
         target=(lambda func, args, kwargs: func(*args, **kwargs)),
@@ -18,4 +18,4 @@ def thread(func: Callable, *args: Any, **kwargs: Any):
     thr.daemon = True
     thr.start()
 
-    return thread
+    return thr

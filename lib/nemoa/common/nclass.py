@@ -5,9 +5,11 @@ __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.common.ntype import Any, Callable, Object, OptStr
+from nemoa.common.ntype import (
+    cast, Any, AnyFunc, RecDict, DictOfRecDicts, RecDictLike, FuncWrapper, Obj,
+    OptStr, StrDict)
 
-def hasbase(obj: Object, base: str) -> bool:
+def hasbase(obj: Obj, base: str) -> bool:
     """Return true if the class instance has the given base.
 
     Args:
@@ -26,9 +28,8 @@ def hasbase(obj: Object, base: str) -> bool:
     return base in [o.__name__ for o in obj.__class__.__mro__]
 
 def methods(
-        obj: Object, pattern: OptStr = None, groupby: OptStr = None,
-        key: OptStr = None, val: OptStr = None
-    ) -> dict:
+        obj: Obj, pattern: OptStr = None, groupby: OptStr = None,
+        key: OptStr = None, val: OptStr = None) -> RecDictLike:
     """Get methods from a given class instance.
 
     Args:
@@ -57,61 +58,61 @@ def methods(
     import inspect
     from nemoa.common import ndict
 
+    # declare and initialize return values
+    mdict: RecDict = {}
+    gdict: DictOfRecDicts = {}
+
     # get references from object inspection
-    md = dict(inspect.getmembers(obj, inspect.ismethod))
+    ref = dict(inspect.getmembers(obj, inspect.ismethod))
 
     # filter dictionary to methods that match given pattern
     if pattern:
-        md = ndict.select(md, pattern)
+        ref = ndict.select(ref, pattern)
 
     # create dictionary with method attributes
-    mc = {}
-    for k, v in md.items():
-        a = v.__dict__
+    for k, v in ref.items():
+        attr = cast(StrDict, v.__dict__)
 
         # ignore method if any required attribute is not available
-        if key and key not in a:
+        if key and key not in attr:
             continue
-        if val and val not in a:
+        if val and val not in attr:
             continue
-        if groupby and groupby not in a:
+        if groupby and groupby not in attr:
             continue
 
-        mc[k] = a
-        mc[k]['reference'] = v
-        if isinstance(v.__doc__, str):
-            mc[k]['about'] = v.__doc__.split('\n', 1)[0].strip(' .')
-        else:
-            mc[k]['about'] = ''
-    md = mc
+        doc = v.__doc__ or ''
+        about = doc.split('\n', 1)[0].strip(' .')
+        attr['reference'] = v
+        attr['about'] = attr.get('about', about)
 
-    # set key for returned dictionary
-    if key:
-        nd = {}
-        for k, v in md.items():
-            kr = v[key]
-            if kr in nd:
+        # change dictionary key, if argument 'key' is given
+        if key:
+            k = str(attr[key])
+            if k in mdict:
                 continue
-            nd[kr] = v
-        md = nd
+
+        mdict[k] = attr
 
     # group results
     if groupby:
-        md = ndict.groupby(md, key=groupby)
+        gdict = ndict.groupby(mdict, key=groupby)
+
+        # set value for returned dictionary
+        if val:
+            for v in gdict.values():
+                for w in v.values():
+                    w = w[val]
+        return gdict
 
     # set value for returned dictionary
     if val:
-        if groupby:
-            for k1, v1 in md.items():
-                for k2, v2 in v1.items():
-                    v2 = v2[val]
-        else:
-            for k, v in md.items():
-                v = v[val]
+        for v in mdict.values():
+            v = v[val]
 
-    return md
+    return mdict
 
-def attributes(**attr: Any) -> Callable:
+def attributes(**attr: Any) -> FuncWrapper:
     """Decorate methods with attributes.
 
     Args:
@@ -121,8 +122,8 @@ def attributes(**attr: Any) -> Callable:
         Wrapper function with additional attributes
 
     """
-    def wrapper(method):
-        def wrapped(self, *args, **kwargs):
+    def wrapper(method: AnyFunc) -> AnyFunc:
+        def wrapped(self: Obj, *args: Any, **kwargs: Any) -> Any:
             return method(self, *args, **kwargs)
         for key, val in attr.items():
             setattr(wrapped, key, val)

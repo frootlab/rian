@@ -5,17 +5,9 @@ __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-try:
-    import numpy as np
-except ImportError as err:
-    raise ImportError(
-        "requires package numpy: "
-        "https://scipy.org") from err
-
 from nemoa.common.ntype import (
-    Any, Callable, Sequence, Union, Module, OptModule, OptStr, OptStrList)
-
-Array = Union[np.ndarray, Sequence[np.ndarray]]
+    Any, AnyFunc, FuncWrapper, Module, OptModule, OptStr, OptStrList,
+    NpArray, NpArrayLike, NpArrayFunc, Scalar, ScalarFunc)
 
 def search(module: OptModule = None, **kwargs: Any) -> dict:
     """Search for algorithms, that pass given filters.
@@ -38,7 +30,7 @@ def search(module: OptModule = None, **kwargs: Any) -> dict:
             "argument 'module' is required to be of type 'ModuleType' or None"
             f", not 'type(module)'")
 
-    # create filter rules for algorithms attributes
+    # create filter rules for algorithm attributes
     rules = {
         'tags': lambda a, b: set(a) <= set(b), # requires all
         'classes': lambda a, b: bool(set(a) & set(b)) # requires any
@@ -50,7 +42,7 @@ def search(module: OptModule = None, **kwargs: Any) -> dict:
 def custom(
         name: OptStr = None, category: OptStr = None,
         classes: OptStrList = None, tags: OptStrList = None,
-        plot: OptStr = None, **attr: Any) -> Callable:
+        plot: OptStr = None, **attr: Any) -> FuncWrapper:
     """Attribute decorator for custom algorithms.
 
     For the case, that an algorithm does not fit into the builtin categories
@@ -69,13 +61,14 @@ def custom(
             The default value None indicates, that that results can not be
             visalized. Supported values are: None, 'Heatmap', 'Histogram',
             'Scatter2D' or 'Graph'
+        **attr: Arbitrary supplem,entary attributes, with the purpose to
+            identify and characterize the algorithm by their respective values.
 
     Returns:
         Decorated function or method.
 
     """
-    def wrapper(func: Callable) -> Callable:
-
+    def wrapper(func: AnyFunc) -> AnyFunc:
         def wrapped(*args: Any, **kwargs: Any) -> Any:
             return func(*args, **kwargs)
 
@@ -98,14 +91,14 @@ def custom(
 
 def objective(
         name: OptStr = None, classes: OptStrList = None,
-        tags: OptStrList = None, optimum: str = 'min',
-        scope: str = 'local', plot: OptStr = None, **attr: Any) -> Callable:
+        tags: OptStrList = None, optimum: str = 'min', scope: str = 'local',
+        plot: OptStr = None, **attr: Any) -> FuncWrapper:
     """Attribute decorator for objective functions.
 
-    Objective functions are real valued functions, thet specify the goal
-    of an optimization problem. Therby the objective function can describe
-    a local or global objective, which is to be minimized or maximized. For
-    more information see [1].
+    Objective functions are scalar functions, thet specify the goal of an
+    optimization problem. Thereby the objective function identifies local or
+    global objectives by it's extremal points, which allows the application
+    of approximations. For more information see [1].
 
     Args:
         name: Name of the algorithm
@@ -120,6 +113,8 @@ def objective(
         scope: Scope of optimizer: Ether 'local' or 'global'
         optimum: String describung the optimum of the objective functions.
             Supported values are 'min' and 'max'
+        **attr: Arbitrary supplem,entary attributes, with the purpose to
+            identify and characterize the algorithm by their respective values.
 
     Returns:
         Decorated function or method.
@@ -128,9 +123,8 @@ def objective(
         [1] https://en.wikipedia.org/wiki/Mathematical_optimization
 
     """
-    def wrapper(func: Callable) -> Callable:
-
-        def wrapped(data: Array, *args: Any, **kwargs: Any) -> float:
+    def wrapper(func: ScalarFunc) -> ScalarFunc:
+        def wrapped(data: NpArrayLike, *args: Any, **kwargs: Any) -> Scalar:
             return func(data, *args, **kwargs)
 
         # set attributes with metainformation about algorithm
@@ -155,7 +149,7 @@ def objective(
 def sampler(
         name: OptStr = None, classes: OptStrList = None,
         tags: OptStrList = None, plot: OptStr = 'Histogram',
-        **attr: Any) -> Callable:
+        **attr: Any) -> FuncWrapper:
     """Attribute decorator for statistical samplers.
 
     Statistical samplers are random functions, that generate samples from
@@ -172,6 +166,8 @@ def sampler(
         plot: Name of plot class, which is used to interpret the results.
             Supported values are: None, 'Heatmap', 'Histogram', 'Scatter2D' or
             'Graph'. The default value is 'Histogram'
+        **attr: Arbitrary supplem,entary attributes, with the purpose to
+            identify and characterize the algorithm by their respective values.
 
     Returns:
         Decorated function or method.
@@ -180,9 +176,9 @@ def sampler(
         [1] https://en.wikipedia.org/wiki/Gibbs_sampling
 
     """
-    def wrapper(func: Callable) -> Callable:
+    def wrapper(func: NpArrayFunc) -> NpArrayFunc:
 
-        def wrapped(data: Array, *args: Any, **kwargs: Any) -> Array:
+        def wrapped(data: NpArrayLike, *args: Any, **kwargs: Any) -> NpArray:
             return func(data, *args, **kwargs)
 
         # set attributes with metainformation about algorithm
@@ -205,7 +201,7 @@ def sampler(
 def statistic(
         name: OptStr = None, classes: OptStrList = None,
         tags: OptStrList = None, plot: OptStr = 'Histogram',
-        **attr: Any) -> Callable:
+        **attr: Any) -> FuncWrapper:
     """Attribute decorator for sample statistics.
 
     Sample statistics are measures of some attribute of the individual columns
@@ -220,6 +216,8 @@ def statistic(
         plot: Name of plot class, which is used to interpret the results.
             Supported values are: None, 'Heatmap', 'Histogram', 'Scatter2D' or
             'Graph'. The default value is 'Histogram'
+        **attr: Arbitrary supplem,entary attributes, with the purpose to
+            identify and characterize the algorithm by their respective values.
 
     Returns:
         Decorated function or method.
@@ -228,9 +226,8 @@ def statistic(
         [1] https://en.wikipedia.org/wiki/Statistic
 
     """
-    def wrapper(func: Callable) -> Callable:
-
-        def wrapped(data: Array, *args: Any, **kwargs: Any) -> Array:
+    def wrapper(func: NpArrayFunc) -> NpArrayFunc:
+        def wrapped(data: NpArrayLike, *args: Any, **kwargs: Any) -> NpArray:
             return func(data, *args, **kwargs)
 
         # set attributes with metainformation about algorithm
@@ -254,7 +251,7 @@ def association(
         name: OptStr = None, tags: OptStrList = None,
         classes: OptStrList = None, plot: OptStr = 'Histogram',
         directed: bool = True, signed: bool = True, normal: bool = False,
-        **attr: Any) -> Callable:
+        **attr: Any) -> FuncWrapper:
     """Attribute decorator for statistical measures of association.
 
     Measures of association refer to a wide variety of coefficients that measure
@@ -279,6 +276,8 @@ def association(
             signed. Default: True.
         normal: Boolean value which indicates if the measure of association is
             normalized. Default: False.
+        **attr: Arbitrary supplem,entary attributes, with the purpose to
+            identify and characterize the algorithm by their respective values.
 
     Returns:
         Decorated function or method.
@@ -287,9 +286,8 @@ def association(
         [1] https://en.wikipedia.org/wiki/Correlation_and_dependence
 
     """
-    def wrapper(func: Callable) -> Callable:
-
-        def wrapped(data: Array, *args: Any, **kwargs: Any) -> Any:
+    def wrapper(func: NpArrayFunc) -> NpArrayFunc:
+        def wrapped(data: NpArrayLike, *args: Any, **kwargs: Any) -> NpArray:
             return func(data, *args, **kwargs)
 
         # set attributes with metainformation about algorithm

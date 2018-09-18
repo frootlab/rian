@@ -11,6 +11,13 @@ class Session(object):
 
     _buffer: dict = {}
     _config = None
+    _struct: dict = {
+        'folders': {
+            'user': 'str',
+            'cache': 'str',
+            'site': 'str'},
+        'files': {
+            'logfile': 'str'}}
     _default: dict = {
         'current': {
             'workspace': None,
@@ -18,18 +25,18 @@ class Session(object):
             'mode': 'exec',
             'path': {},
             'shell': {
-                'buffmode': 'line' }},
+                'buffmode': 'line'}},
         'default': {
             'basepath': {
                 'cwd': '%user_cwd%',
                 'user': ('%user_data_dir%', 'workspaces'),
-                'site': ('%site_data_dir%', 'workspaces') },
+                'site': ('%site_data_dir%', 'workspaces')},
             'filetype': {
                 'dataset': 'csv',
                 'network': 'graphml',
                 'system': 'npz',
                 'model': 'npz',
-                'script': 'py' },
+                'script': 'py'},
             'path': {
                 'baseconf': ('%user_config_dir%', 'nemoa.ini'),
                 'datasets': ('%basepath%', '%workspace%', 'datasets'),
@@ -41,13 +48,13 @@ class Session(object):
                 'inifile':
                     ('%basepath%', '%workspace%', 'workspace.ini'),
                 'logfile':
-                    ('%basepath%', '%workspace%', 'nemoa.log') }},
+                    ('%basepath%', '%workspace%', 'nemoa.log')}},
         'register': {
             'dataset': {},
             'model': {},
             'network': {},
             'script': {},
-            'system': {} }}
+            'system': {}}}
 
     def __init__(self, site: bool = True, **kwargs):
         """ """
@@ -70,13 +77,7 @@ class Session(object):
         configfile = self._get_path_expand(configfile)
 
         if os.path.exists(configfile):
-            ini_dict = nini.load(configfile, {
-                'folders': {
-                    'user': 'str',
-                    'cache': 'str',
-                    'site': 'str' },
-                'files': {
-                    'logfile': 'str' }})
+            ini_dict = nini.load(configfile, self._struct)
 
             if 'folders' in ini_dict:
                 for key, val in ini_dict['folders'].items():
@@ -89,7 +90,7 @@ class Session(object):
                     path = self._get_path_expand(val)
                     if path: self._config['current']['path'][key] = path
 
-    def create(self, key = None, *args, **kwargs):
+    def create(self, key: str, *args, **kwargs):
         """Open object in current session."""
         if key == 'model':
             from nemoa import model
@@ -105,17 +106,25 @@ class Session(object):
             return system.create(*args, **kwargs)
         return None
 
-    def get(self, key = 'workspace', *args, **kwargs):
+    def get(self, key='workspace', *args, **kwargs):
         """Get meta information and content."""
 
-        if key == 'about': return self._get_about(*args, **kwargs)
-        if key == 'base': return self._get_base()
-        if key == 'default': return self._get_default(*args, **kwargs)
-        if key == 'list': return self._get_list(*args, **kwargs)
-        if key == 'mode': return self._get_mode(*args, **kwargs)
-        if key == 'path': return self._get_path(*args, **kwargs)
-        if key == 'shell': return self._get_shell(*args, **kwargs)
-        if key == 'workspace': return self._get_workspace()
+        if key == 'about':
+            return self._get_about(*args, **kwargs)
+        if key == 'base':
+            return self._get_base()
+        if key == 'default':
+            return self._get_default(*args, **kwargs)
+        if key == 'list':
+            return self._get_list(*args, **kwargs)
+        if key == 'mode':
+            return self._get_mode(*args, **kwargs)
+        if key == 'path':
+            return self._get_path(*args, **kwargs)
+        if key == 'shell':
+            return self._get_shell(*args, **kwargs)
+        if key == 'workspace':
+            return self._get_workspace()
 
         if key in self._config['register']:
             return self._get_objconfig(key, *args, **kwargs)
@@ -127,7 +136,7 @@ class Session(object):
 
         return self._get_path(*args, **kwargs)
 
-    def _get_about(self, key = 'about', *args, **kwargs):
+    def _get_about(self, key='about', *args, **kwargs):
         """Get nemoa meta information."""
 
         if key == 'about': return nemoa.__description__
@@ -151,18 +160,21 @@ class Session(object):
     def _get_basepath(self, base = None):
         """Get path of given or current workspace search path."""
 
-        if not base: base = self._get_base()
-        elif base not in self._config['default']['basepath']: return None
+        if not base:
+            base = self._get_base()
+        elif base not in self._config['default']['basepath']:
+            return None
         mask = self._config['default']['basepath'][base]
 
         return self._get_path_expand(mask)
 
-    def _get_default(self, key = None, *args, **kwargs):
+    def _get_default(self, key=None, *args, **kwargs):
         """Get default value."""
 
         import copy
 
-        if not key: return copy.deepcopy(self._config['default'])
+        if not key:
+            return copy.deepcopy(self._config['default'])
         elif key not in self._config['default']:
             raise KeyError(f"key '{key}' is not valid")
         retval = self._config['default'][key]
@@ -174,8 +186,7 @@ class Session(object):
             retval = retval[args[0]]
             args = args[1:]
 
-        if isinstance(retval, dict): return copy.deepcopy(retval)
-        return retval
+        return copy.deepcopy(retval)
 
     def _get_list(self, key = None, *args, **kwargs):
         """Get list. """
@@ -186,8 +197,7 @@ class Session(object):
             base = self._get_base()
             for key in self._config['register']:
                 keys = key + 's'
-                objlist = self._get_list(keys,
-                    workspace = workspace, base = base)
+                objlist = self._get_list(keys, workspace=workspace, base=base)
                 retval[keys] = objlist
             return retval
         if key == 'bases':
@@ -195,10 +205,12 @@ class Session(object):
         if key == 'workspaces':
             return self._get_list_workspaces(*args, **kwargs)
         if key in [rkey + 's' for rkey in self._config['register']]:
-            if 'base' not in kwargs: kwargs['base'] = self._get_base()
+            if 'base' not in kwargs:
+                kwargs['base'] = self._get_base()
             if 'workspace' not in kwargs:
                 kwargs['workspace'] = self._get_workspace()
-            if 'attribute' not in kwargs: kwargs['attribute'] = 'name'
+            if 'attribute' not in kwargs:
+                kwargs['attribute'] = 'name'
             return self._get_objconfigs(key[:-1], *args, **kwargs)
 
         raise Warning(f"unknown key '{key}'")
@@ -210,7 +222,7 @@ class Session(object):
             return sorted(self._config['default']['basepath'].keys())
         bases = []
         for base in self._config['default']['basepath']:
-            if workspace in self._get_list_workspaces(base = base):
+            if workspace in self._get_list_workspaces(base=base):
                 bases.append(base)
 
         return sorted(bases)
@@ -221,9 +233,9 @@ class Session(object):
         if not base:
             workspaces = {}
             for base in self._config['default']['basepath']:
-                workspaces[base] = self._get_list_workspaces(base = base)
+                workspaces[base] = self._get_list_workspaces(base=base)
             return workspaces
-        elif base not in self._config['default']['basepath']:
+        if base not in self._config['default']['basepath']:
             raise ValueError("unknown workspace base '%s'." % base)
 
         import glob
@@ -236,9 +248,11 @@ class Session(object):
         workspaces = []
         fname = self._config['default']['path']['inifile'][-1]
         for subdir in glob.iglob(baseglob):
-            if not os.path.isdir(subdir): continue
+            if not os.path.isdir(subdir):
+                continue
             fpath = npath.join(subdir, fname)
-            if not os.path.isfile(fpath): continue
+            if not os.path.isfile(fpath):
+                continue
             workspaces.append(os.path.basename(subdir))
 
         return sorted(workspaces)
@@ -246,8 +260,10 @@ class Session(object):
     def _get_shell(self, key = None, *args, **kwargs):
         """Get shell attribute."""
 
-        if key == 'inkey': return self._get_shell_inkey()
-        if key == 'buffmode': return self._get_shell_buffmode()
+        if key == 'inkey':
+            return self._get_shell_inkey()
+        if key == 'buffmode':
+            return self._get_shell_buffmode()
 
         raise KeyError(f"unknown key '{key}'")
 
@@ -282,7 +298,7 @@ class Session(object):
             workspace = cur_workspace
             base = cur_base
         elif workspace != cur_workspace or base != cur_base:
-            if not self._set_workspace(workspace, base = base):
+            if not self._set_workspace(workspace, base=base):
                 raise Warning("""could not get configuration:
                     workspace '%s' does not exist.""" % workspace)
 
@@ -298,19 +314,18 @@ class Session(object):
         # (optional) load current workspace
         if cur_workspace:
             if workspace != cur_workspace or base != cur_base:
-                self._set_workspace(cur_workspace, base = cur_base)
+                self._set_workspace(cur_workspace, base=cur_base)
 
         if not config:
             raise Warning(f"{objtype} with name '{name}' is not "
                 f"found in {base} workspace '{workspace}'")
 
-        if not attribute: return config
+        if not attribute:
+            return config
         elif not isinstance(attribute, str):
-            raise Warning("""could not get configuration:
-                attribute is not vlid.""")
+            raise Warning("attribute is not valid")
         elif attribute not in config:
-            raise Warning("""could not get configuration:
-                attribute '%s' is not valid.""" % attribute)
+            raise Warning("attribute '%s' is not valid" % attribute)
 
         return config[attribute]
 
@@ -321,16 +336,18 @@ class Session(object):
         if not objtype:
             objs = {}
             for obj in self._config['register']:
-                objs[obj] = self._get_objconfigs(objtype = obj,
-                    workspace = workspace, base = base)
+                objs[obj] = self._get_objconfigs(objtype=obj,
+                    workspace=workspace, base=base)
             return objs
 
-        if objtype and objtype not in self._config['register']: return False
+        if objtype and objtype not in self._config['register']:
+            return False
 
         # create dictionary
         objlist = []
         for key in list(self._config['register'].keys()):
-            if objtype and not key == objtype: continue
+            if objtype and not key == objtype:
+                continue
             for obj in self._config['register'][key].values():
                 if base and not base == obj['base']:
                     continue
@@ -338,11 +355,14 @@ class Session(object):
                     continue
                 if attribute and not attribute in obj:
                     continue
-                if attribute: objlist.append(obj[attribute])
-                else: objlist.append(obj)
+                if attribute:
+                    objlist.append(obj[attribute])
+                else:
+                    objlist.append(obj)
 
-        if attribute: return sorted(objlist)
-        return sorted(objlist, key = lambda obj: obj['name'])
+        if attribute:
+            return sorted(objlist)
+        return sorted(objlist, key=lambda obj: obj['name'])
 
     def _get_path(self, key = None, *args, **kwargs):
         """Get path of given object or object type."""
@@ -356,36 +376,39 @@ class Session(object):
         base = None
         if 'workspace' in kwargs:
             workspace = kwargs.pop('workspace')
-            if workspace != self._get_workspace(): chdir = True
+            if workspace != self._get_workspace():
+                chdir = True
         if 'base' in kwargs:
             base = kwargs.pop('base')
-            if base != self._get_base(): chdir = True
+            if base != self._get_base():
+                chdir = True
         if chdir:
             current = self._config.get('workspace', None)
-            self._set_workspace(workspace, base = base)
+            self._set_workspace(workspace, base=base)
 
         # get path
         if key is None:
             import copy
             path = copy.deepcopy(self._config['current']['path'])
         elif key == 'expand':
-            if 'workspace' in kwargs: del kwargs['workspace']
-            if 'base' in kwargs: del kwargs['base']
+            if 'workspace' in kwargs:
+                del kwargs['workspace']
+            if 'base' in kwargs:
+                del kwargs['base']
             path = self._get_path_expand(*args, **kwargs)
         elif key in self._config['current']['path']:
             path = self._config['current']['path'][key]
         elif key in self._config['register']:
-            name = kwargs.get('name', None) \
-                or (args[0] if len(args) > 0 else None)
-            path = self._get_objconfig(objtype = key, name = name,
-                attribute = 'path')
+            name = kwargs.get('name', None) or (args[0] if args else None)
+            path = self._get_objconfig(objtype=key, name=name,
+                attribute='path')
         else: path = None
 
         # change to previous workspace if necessary
         if chdir:
             if current:
                 self._set_workspace(current.get('name'),
-                    base = current.get('base'))
+                    base=current.get('base'))
             else:
                 self._set_workspace(None)
 
@@ -799,13 +822,18 @@ class Session(object):
         cur_workspace = self._get_workspace()
         cur_base = self._get_base()
 
-        if len(args) > 0: workspace = args[0]
-        else: workspace = cur_workspace
-        if 'base' in kwargs: base = kwargs.pop('base')
-        else: base = cur_base
+        if args:
+            workspace = args[0]
+        else:
+            workspace = cur_workspace
+        if 'base' in kwargs:
+            base = kwargs.pop('base')
+        else:
+            base = cur_base
 
         if (base, workspace) != (cur_base, cur_workspace):
-            chdir = self._set_workspace(workspace, base = base)
+            current = self._config.get('workspace', None)
+            chdir = self._set_workspace(workspace, base=base)
         else:
             chdir = False
 
@@ -832,13 +860,15 @@ class Session(object):
             objregister = self._config['register'][objtype]
             for filepath in glob.iglob(filemask):
                 filetype = npath.fileext(filepath)
-                if filetype not in filetypes: continue
+                if filetype not in filetypes:
+                    continue
                 basename = npath.basename(filepath)
                 filespace = self._get_workspace()
                 filebase = self._get_base()
                 fullname = '%s.%s.%s' % (filebase, filespace, basename)
 
-                if fullname in objregister: continue
+                if fullname in objregister:
+                    continue
 
                 # register object configuration
                 objregister[fullname] = {
@@ -847,13 +877,13 @@ class Session(object):
                     'name': basename,
                     'path': filepath,
                     'type': objtype,
-                    'workspace': filespace }
+                    'workspace': filespace}
 
         # change to previous workspace if necessary
         if chdir:
             if current:
                 self._set_workspace(current.get('name'),
-                    base = current.get('base'))
+                    base=current.get('base'))
             else:
                 self._set_workspace(None)
 
@@ -862,10 +892,11 @@ class Session(object):
     def open(self, key = None, *args, **kwargs):
         """Open object in current session."""
 
-        if not key: return None
+        if not key:
+            return None
         if not args:
             return self._set_workspace(key)
-        elif len(args) == 1:
+        if len(args) == 1:
             if key == 'workspace':
                 return self._set_workspace(args[0])
             if key == 'model':

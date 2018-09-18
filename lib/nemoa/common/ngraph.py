@@ -19,14 +19,14 @@ except ImportError as err:
         "requires package numpy: "
         "https://scipy.org") from err
 
-from nemoa.common.ntype import OptBool, OptStr, OptTuple
+from nemoa.common.ntype import Any, OptBool, OptStr, OptTuple, FloatPair
 
 DiGraph = nx.classes.digraph.DiGraph
 
 def getlayout(
         G: DiGraph, layout: str = 'spring',
         size: OptTuple = None, padding: tuple = (0., 0., 0., 0.),
-        rotate: float = 0.0, **kwargs) -> dict:
+        rotate: float = 0.0, **kwargs: Any) -> dict:
     """Calculate positions of nodes, depending on graph layout.
 
     Args:
@@ -85,7 +85,7 @@ def get_groups(
     if attribute is None and param is None:
         attribute = 'group'
 
-    groups = {'': []}
+    groups: dict = {'': []}
 
     for node, data in G.nodes(data=True):
         if not isinstance(data, dict):
@@ -124,6 +124,18 @@ def get_layer_layout(
     Return:
 
     """
+    def _orientate(p: FloatPair, d: str) -> FloatPair:
+        """Oriantate node positions."""
+        if d == 'right':
+            return (p[0], p[1])
+        if d == 'up':
+            return (p[1], p[0])
+        if d == 'left':
+            return (1. - p[0], p[1])
+        if d == 'down':
+            return (p[1], 1. - p[0])
+        return (p[0], p[1])
+
     if not is_layered(G):
         raise ValueError("graph is not layered")
 
@@ -182,19 +194,12 @@ def get_layer_layout(
             stack[lid] = sort
 
     # calculate node positions in box [0, 1] x [0, 1]
-    orientate = lambda p, d: {
-        'right': (p[0], p[1]),
-        'up': (p[1], p[0]),
-        'left': (1. - p[0], p[1]),
-        'down': (p[1], 1. - p[0])
-    }.get(d)
-
     pos = {}
     for l, layer in enumerate(stack):
         for n, node in enumerate(layer):
             x = float(l) / (len(stack) - 1)
             y = (float(n) + .5) / len(layer)
-            pos[node] = orientate((x, y), direction)
+            pos[node] = _orientate((x, y), direction)
 
     return pos
 

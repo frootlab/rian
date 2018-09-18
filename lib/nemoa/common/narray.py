@@ -13,12 +13,10 @@ except ImportError as err:
         "https://scipy.org") from err
 
 from nemoa.common.ntype import (
-    DyaDict, DyaTuple, NpAxis, OptStr, OptFloat, Union)
+    StrPairDict, StrListPair, NpAxis, NpArray, NpArrayLike, OptStr, OptFloat)
 
-Array = np.ndarray
-ArrayLike = Union[Array, np.matrix, float, int]
-
-def fromdict(edges: DyaDict, labels: DyaTuple, na: float = 0.) -> Array:
+def fromdict(
+        edges: StrPairDict, labels: StrListPair, na: float = 0.) -> NpArray:
     """Convert dictionary to array.
 
     Args:
@@ -44,8 +42,9 @@ def fromdict(edges: DyaDict, labels: DyaTuple, na: float = 0.) -> Array:
 
     return arr
 
-def asdict(arr: Array, labels: DyaTuple, na: OptFloat = None) -> DyaDict:
-    """Convert array to dictionary.
+def asdict(
+        arr: NpArray, labels: StrListPair, na: OptFloat = None) -> StrPairDict:
+    """Convert two dimensional array to dictionary of pairs.
 
     Args:
         arr: Numpy array of shape (n, m), where n equals the length of the
@@ -64,16 +63,26 @@ def asdict(arr: Array, labels: DyaTuple, na: OptFloat = None) -> DyaDict:
             <col> is an element of the <col list> of the argument labels.
 
     """
-    edges = {}
-    for i, colx in enumerate(labels[0]):
-        for j, coly in enumerate(labels[1]):
-            if not na is None and arr[i, j] == na:
-                continue
-            edges[(colx, coly)] = arr[i, j]
+    # Check argument 'arr'
+    if not hasattr(arr, 'item'):
+        raise TypeError(
+            "argument 'arr' is required to by of type 'ndarray'"
+            f", not '{type(arr)}'")
 
-    return edges
+    # Declare and initialize return value
+    dpair: StrPairDict = {}
 
-def sumnorm(arr: ArrayLike, norm: OptStr = None, axis: NpAxis = 0) -> ArrayLike:
+    # Get dictionary with pairs as keys
+    getval = getattr(arr, 'item')
+    for i, x in enumerate(labels[0]):
+        for j, y in enumerate(labels[1]):
+            val = getval(i, j)
+            if na is None or val != na:
+                dpair[(x, y)] = val
+
+    return dpair
+
+def sumnorm(arr: NpArrayLike, norm: OptStr = None, axis: NpAxis = 0) -> NpArray:
     """Sum of array.
 
     Calculate sum of data along given axes, using a given norm.
@@ -108,17 +117,16 @@ def sumnorm(arr: ArrayLike, norm: OptStr = None, axis: NpAxis = 0) -> ArrayLike:
 
     # Sum of Squared Errors (SSE) / Residual sum of squares (RSS)
     if norm in ['SSE', 'RSS']:
-        return np.sum(arr ** 2, axis=axis)
+        return np.sum(np.square(arr), axis=axis)
 
     # Root Sum of Squared Errors (RSSE) / l2-Norm (l2)
     if norm in ['RSSE', 'L2']:
-        return np.sqrt(np.sum(arr ** 2, axis=axis))
+        return np.sqrt(np.sum(np.square(arr), axis=axis))
 
     raise ValueError(f"norm '{norm}' is not supported")
 
 def meannorm(
-        arr: ArrayLike, norm: OptStr = None, axis: NpAxis = 0
-    ) -> ArrayLike:
+        arr: NpArrayLike, norm: OptStr = None, axis: NpAxis = 0) -> NpArray:
     """Mean of data.
 
     Calculate mean of data along given axes, using a given norm.
@@ -153,17 +161,16 @@ def meannorm(
 
     # Mean of Squared Errors (MSE)
     if norm == 'MSE':
-        return np.mean(arr ** 2, axis=axis)
+        return np.mean(np.square(arr), axis=axis)
 
     # Root Mean of Squared Errors (RMSE) / L2-Norm
     if norm == 'RMSE':
-        return np.sqrt(np.mean(arr ** 2, axis=axis))
+        return np.sqrt(np.mean(np.square(arr), axis=axis))
 
     raise ValueError(f"norm '{norm}' is not supported")
 
 def devnorm(
-        arr: ArrayLike, norm: OptStr = None, axis: NpAxis = 0
-    ) -> ArrayLike:
+        arr: NpArrayLike, norm: OptStr = None, axis: NpAxis = 0) -> NpArray:
     """Deviation of data.
 
     Calculate deviation of data along given axes, using a given norm.
@@ -197,6 +204,6 @@ def devnorm(
 
     # Standard Deviation of Squared Errors (SDSE)
     if norm == 'SDSE':
-        return np.std(arr ** 2, axis=axis)
+        return np.std(np.square(arr), axis=axis)
 
     raise ValueError(f"norm '{norm}' is not supported")

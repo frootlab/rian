@@ -5,9 +5,9 @@ __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.common.ntype import Callable, OptCallable, OptDict
+from nemoa.common.ntype import AnyFunc, StrDict, Function, OptFunction, OptDict
 
-def about(func: Callable) -> str:
+def about(func: AnyFunc) -> str:
     """Summary about a function.
 
     Args:
@@ -21,15 +21,12 @@ def about(func: Callable) -> str:
         'Summary about a function'
 
     """
-    if not isinstance(func, Callable):
-        raise TypeError('first argument requires to be a function')
-
-    if not func.__doc__:
+    if not hasattr(func, '__doc__') or not func.__doc__:
         return ''
 
     return func.__doc__.split('\n', 1)[0].strip(' .')
 
-def inst(name: str) -> OptCallable:
+def inst(name: str) -> OptFunction:
     """Create functionion instance for a given function name.
 
     Args:
@@ -44,13 +41,20 @@ def inst(name: str) -> OptCallable:
     """
     from nemoa.common import nmodule
 
-    module = nmodule.inst('.'.join(name.split('.')[:-1]))
+    mname = '.'.join(name.split('.')[:-1])
+    fname = name.split('.')[-1]
+
+    module = nmodule.inst(mname)
     if module is None:
         return None
 
-    return getattr(module, name.split('.')[-1])
+    func = getattr(module, fname)
+    if not isinstance(func, Function):
+        return None
 
-def kwargs(func: Callable, default: OptDict = None) -> dict:
+    return func
+
+def kwargs(func: Function, default: OptDict = None) -> StrDict:
     """Keyword arguments of a function.
 
     Args:
@@ -73,12 +77,12 @@ def kwargs(func: Callable, default: OptDict = None) -> dict:
 
     """
     # check types of arguments
-    if not isinstance(func, Callable):
+    if not isinstance(func, Function):
         raise TypeError('first argument requires to be a function')
     if not isinstance(default, (dict, type(None))):
         raise TypeError(
-            "argument 'default' requires types "
-            f"'None' or 'dict', not '{type(default)}'")
+            "argument 'default' requires to be of type 'dict' or None"
+            f", not '{type(default)}'")
 
     import inspect
 

@@ -31,7 +31,7 @@ def addcols(
     """
     from numpy.lib import recfunctions as rec
 
-    cols = cols or data.dtype.names
+    cols = cols or getattr(data, 'dtype').names
     if not isinstance(cols, (tuple, str)):
         raise TypeError(
             "argument 'cols' requires to be of type 'tuple' or 'str'"

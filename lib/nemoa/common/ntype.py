@@ -1,77 +1,145 @@
 # -*- coding: utf-8 -*-
-"""Collection of frequently used type objects."""
+"""Collection of types."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 from typing import (
-    Any, Callable, ClassVar, Dict, Hashable, Iterable, List, NewType, Optional,
-    Sequence, Tuple, Union)
+    cast, Any, Callable, ClassVar, Dict, Hashable, Iterable,
+    List, NewType, Optional, Sequence, Set, Tuple, TypeVar, Union)
+
+# import special types
 from types import ModuleType as Module, FunctionType as Function
+from array import ArrayType as Array
 
-# Alias types
-Object = object
+################################################################################
+# Generic Variables
+################################################################################
 
-# compound types
-StrList = List[str]
-StrTuple = Tuple[str, ...]
-StrDict = Dict[str, Any]
-IntList = List[int]
-IntTuple = Tuple[int, ...]
-IntDict = Dict[int, Any]
-StrDictOfFuncs = Dict[str, Function]
-DictOfStrDicts = Dict[Hashable, StrDict]
-StrOrBool = Union[str, bool]
-StrOrDict = Union[str, dict]
+# Generic Type-Variables
+S = TypeVar('S')
+T = TypeVar('T')
 
-# optional types
-OptSet = Optional[set]
+# Built-in Type Aliases for Generic Types
+Obj = object
+
+################################################################################
+# Literals and Collections of Literals
+################################################################################
+
+# Unions of Literals
 OptStr = Optional[str]
 OptInt = Optional[int]
 OptFloat = Optional[float]
 OptComplex = Optional[complex]
 OptBool = Optional[bool]
-OptList = Optional[list]
-OptDict = Optional[dict]
-OptTuple = Optional[tuple]
-OptObject = Optional[Object]
-OptModule = Optional[Module]
-OptFunction = Optional[Function]
-OptCallable = Optional[Callable]
+OptObj = Optional[Obj]
+OptArray = Optional[Array]
+StrOrBool = Union[str, bool]
+OptStrOrBool = Optional[StrOrBool]
+ByteLike = Union[bytes, bytearray, str]
+Number = Union[int, float, complex]
+Scalar = Union[int, float, complex]
 
-# optional compound types
+# Collections of Literals
+StrSet = Set[str]
+StrPair = Tuple[str, str]
+StrTuple = Tuple[str, ...]
+StrList = List[str]
+StrDict = Dict[str, Obj]
+IntSet = Set[int]
+IntPair = Tuple[int, int]
+IntTuple = Tuple[int, ...]
+IntList = List[int]
+IntDict = Dict[int, Obj]
+FloatPair = Tuple[float, float]
+
+# Unions of Collections of Literals
+OptSet = Optional[Set[Obj]]
+OptPair = Optional[Tuple[Obj, Obj]]
+OptTuple = Optional[Tuple[Obj, ...]]
+OptList = Optional[List[Obj]]
+OptDict = Optional[Dict[Hashable, Obj]]
+StrOrDict = Union[str, Dict[Hashable, Obj]]
 OptStrList = Optional[StrList]
 OptIntList = Optional[IntList]
 OptStrTuple = Optional[StrTuple]
 OptIntTuple = Optional[IntTuple]
-OptStrDictOfFuncs = Optional[StrDictOfFuncs]
-OptStrOrBool = Optional[StrOrBool]
 OptStrOrDict = Optional[StrOrDict]
 
-# edge attribute dictionary types
-DyaDict = Dict[Tuple[str, str], Any]
-DyaTuple = Tuple[Sequence[str], Sequence[str]]
+# Compounds of Literals
+RecDict = Dict[Hashable, StrDict]
+DictOfRecDicts = Dict[Hashable, RecDict]
+RecDictLike = Union[StrDict, RecDict, DictOfRecDicts]
+StrPairDict = Dict[StrPair, Obj]
+StrListPair = Tuple[StrList, StrList]
+StrTupleDict = Dict[Union[str, Tuple[str, ...]], Obj]
+Vector = Sequence[Scalar]
 
-# numpy types
+################################################################################
+# Callable types
+################################################################################
+
+# Elementary Callables
+AnyFunc = Callable[..., Obj]
+BoolFunc = Callable[..., bool]
+ScalarFunc = Callable[..., Scalar]
+VectorFunc = Callable[..., Vector]
+UnaryFunc = Callable[[T], Obj]
+BinaryFunc = Callable[[S, T], Obj]
+TestFunc = Callable[[S, T], bool]
+
+# Unions of Callables and Literals
+OptCallable = Optional[AnyFunc]
+OptFunction = Optional[Function]
+OptModule = Optional[Module]
+
+# Collections of Callables
+StrDictOfFuncs = Dict[str, AnyFunc]
+StrDictOfTestFuncs = Dict[str, TestFunc]
+
+# Unions of Collections of Callables and Literals
+OptStrDictOfFuncs = Optional[StrDictOfFuncs]
+OptStrDictOfTestFuncs = Optional[StrDictOfTestFuncs]
+
+# Compounds of Collables and Literals
+FuncWrapper = Callable[[Callable[..., T]], Callable[..., T]]
+
+################################################################################
+# Types of builtin packages
+################################################################################
+
+# pathlib
+from pathlib import Path
+PathLike = Sequence[Union['PathLike', str, Path]]
+PathLikeDict = Dict[str, PathLike]
+
+################################################################################
+# Types of external packages
+################################################################################
+
+# NumPy types
+
+# currently not available (2018.09), but typing support is on the road:
+# see: https://github.com/numpy/numpy-stubs
+# callables with variing numbers of arguments are on the road:
+# see: https://github.com/python/typing/issues/264
+NpShape = Optional[IntTuple]
+NpShapeLike = Optional[Union[int, Sequence[int]]]
 NpAxis = Optional[Union[int, Sequence[int]]]
 NpFields = Optional[Union[str, Iterable[str]]]
-NpRecArray = NewType('NpRecArray', 'numpy.recarray')
-NpArray = NewType('NpArray', 'numpy.ndarray')
+NpArray = Obj # TODO: replace with numpy.ndarray
+NpMatrix = Obj # TODO: replace with numpy.matrix
+NpRecArray = Obj # TODO: replace with numpy.recarray
+NpDtype = Obj # TODO: replace with numpy.dtype
+NpArraySeq = Sequence[NpArray]
+NpMatrixSeq = Sequence[NpMatrix]
+NpArrayLike = Union[Number, NpArray, NpArraySeq, NpMatrix, NpMatrixSeq]
+OptNpRecArray = Optional[NpRecArray]
 OptNpArray = Optional[NpArray]
-# import numpy
-#
-# NpArray = typing.NewType('NpArray', numpy.array)
+NpArrayFunc = Callable[..., NpArray]
+NpRecArrayFunc = Callable[..., NpRecArray]
+NpMatrixFunc = Callable[..., NpMatrix]
 
-
- #typing.NewType('NpArray', ...)
-#NpMatrix = typing.NewType('NpMatrix', Any)
-
-# if 'numpy' in dir():
-#     numpy = sys.modules['numpy']
-#     NpArray = typing.NewType('NpArray', numpy.ndarray)
-#     NpMatrix = numpy.matrix
-#     NpArray = Union['numpy.ndarray', 'numpy.matrix']
-
-# special
-ByteLike = Union[bytes, bytearray, str]
+# networkx types

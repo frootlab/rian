@@ -9,7 +9,7 @@ import base64
 import pickle
 import zlib
 
-from nemoa.common.ntype import Any, OptStr, ByteLike
+from nemoa.common.ntype import cast, Any, OptStr, ByteLike
 
 def load(path: str, encoding: OptStr = 'base64') -> dict:
     """Decode and decompress file.
@@ -27,7 +27,6 @@ def load(path: str, encoding: OptStr = 'base64') -> dict:
         [RFC3548] https://tools.ietf.org/html/rfc3548.html
 
     """
-
     blob = pickle.load(open(path, 'rb')) # file to bytes
     obj = loads(blob, encoding=encoding) # bytes to object
 
@@ -55,7 +54,6 @@ def dump(obj: object, path: str, encoding: OptStr = 'base64',
         [RFC3548] https://tools.ietf.org/html/rfc3548.html
 
     """
-
     blob = dumps(obj, encoding=encoding, level=level) # object to bytes
     pickle.dump(blob, file=open(path, 'wb')) # bytes to file
 
@@ -78,7 +76,6 @@ def loads(blob: ByteLike, encoding: OptStr = 'base64') -> Any:
         [RFC3548] https://tools.ietf.org/html/rfc3548.html
 
     """
-
     # decode bytes
     if not encoding:
         pass
@@ -93,7 +90,8 @@ def loads(blob: ByteLike, encoding: OptStr = 'base64') -> Any:
     else:
         raise ValueError(f"encoding '{encoding}' is not supported")
 
-    blob = zlib.decompress(blob) # decompress bytes, level is not required
+    # decompress bytes, level is not required
+    blob = zlib.decompress(cast(bytes, blob))
     obj = pickle.loads(blob) # bytes to object
 
     return obj
@@ -118,7 +116,6 @@ def dumps(obj: object, encoding: OptStr = 'base64', level: int = 6) -> bytes:
         [RFC3548] https://tools.ietf.org/html/rfc3548.html
 
     """
-
     blob = pickle.dumps(obj) # object to bytes
     blob = zlib.compress(blob, level) # compress bytes
 

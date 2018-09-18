@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 
-__author__  = 'Patrick Michl'
-__email__   = 'patrick.michl@gmail.com'
+__author__ = 'Patrick Michl'
+__email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 def new(*args, **kwargs):
     """Create new session instance."""
-
     # validate configuration
     if not kwargs:
         kwargs = {'config': {'type': 'base.Session'}}

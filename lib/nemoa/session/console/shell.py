@@ -49,11 +49,11 @@ def main():
         nemoa.close()
 
     def get(*args, **kwargs) -> None:
-        """Wrapping function to nemoa.get()."""
+        """Wrap function to nemoa.get()."""
         nemoa.log('note', nemoa.get(*args, **kwargs))
 
     def list(*args, **kwargs) -> None:
-        """Wrapping function to nemoa.list()."""
+        """Wrap function to nemoa.list()."""
         retval = nemoa.list(*args, **kwargs)
         if isinstance(retval, dict):
             for key, val in retval.items():
@@ -75,11 +75,11 @@ def main():
         return nemoa.model.morphisms.optimize(*args, **kwargs)
 
     def path(*args, **kwargs) -> None:
-        """Wrapping function to nemoa.path()."""
+        """Wrap function to nemoa.path()."""
         nemoa.log('note', nemoa.path(*args, **kwargs))
 
     def run(*args, **kwargs) -> None:
-        """Wrapping function to nemoa.run()."""
+        """Wrap function to nemoa.run()."""
         nemoa.run(*args, **kwargs)
 
     def show(*args, **kwargs) -> None:
@@ -87,7 +87,7 @@ def main():
         open(*args, **kwargs).show()
 
     def set(*args, **kwargs) -> None:
-        """Wrapping function to nemoa.set()."""
+        """Wrap function to nemoa.set()."""
         nemoa.set(*args, **kwargs)
 
     import os

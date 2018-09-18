@@ -7,10 +7,7 @@ __license__ = 'GPLv3'
 
 from pathlib import Path
 
-from nemoa.common.ntype import Dict, OptStr, Sequence, Union
-
-PathLike = Sequence[Union['PathLike', str, Path]]
-PathLikeDict = Dict[str, PathLike]
+from nemoa.common.ntype import OptStr, PathLike, PathLikeDict
 
 def cwd() -> str:
     """Path of current working directory.
@@ -80,7 +77,8 @@ def join(*args: PathLike) -> str:
                     l.pop(i)
                     i -= 1
                     break
-                else: l[i:i + 1] = l[i]
+                else:
+                    l[i:i + 1] = l[i]
             i += 1
         try:
             path = Path(*l)

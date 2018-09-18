@@ -7,7 +7,8 @@ __license__ = 'GPLv3'
 
 def cur():
     """Get current session instance."""
-    if '_cur' not in globals(): globals()['_cur'] = new()
+    if '_cur' not in globals():
+        globals()['_cur'] = new()
     return globals()['_cur']
 
 def get(*args, **kwargs):

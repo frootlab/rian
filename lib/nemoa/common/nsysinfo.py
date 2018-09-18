@@ -54,7 +54,6 @@ def ttylib() -> OptStr:
     from nemoa.common import nmodule
 
     libs = ['msvcrt', 'termios']
-
     for name in libs:
         if nmodule.inst(name):
             return name
