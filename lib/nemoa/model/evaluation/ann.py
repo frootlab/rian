@@ -270,7 +270,7 @@ class ANN(Evaluation):
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram'
     )
-    def uniterror(self, data, norm = 'MSE', **kwargs):
+    def uniterror(self, data, norm: str = 'MSE', **kwargs):
         """Unit reconstruction error.
 
         The unit reconstruction error is defined by:
@@ -286,7 +286,7 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate data reconstuction error from
-                residuals. see nemoa.common.narray.meannorm for a list
+                residuals. see nemoa.common.narray.vecnorm for a list
                 of provided norms
 
         """
@@ -294,7 +294,7 @@ class ANN(Evaluation):
         from nemoa.common import narray
 
         res = self.unitresiduals(data, **kwargs)
-        error = narray.meannorm(res, norm = norm)
+        error = narray.vecnorm(res, norm=norm)
 
         return error
 
@@ -306,7 +306,7 @@ class ANN(Evaluation):
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram'
     )
-    def unitaccuracy(self, data, norm = 'MSE', **kwargs):
+    def unitaccuracy(self, data, norm: str = 'MSE', **kwargs):
         """Unit reconstruction accuracy.
 
         The unit reconstruction accuracy is defined by:
@@ -322,7 +322,7 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate accuracy
-                see nemoa.common.narray.meannorm for a list of provided
+                see nemoa.common.narray.vecnorm for a list of provided
                 norms
 
         """
@@ -330,8 +330,8 @@ class ANN(Evaluation):
         from nemoa.common import narray
 
         res = self.unitresiduals(data, **kwargs)
-        normres = narray.meannorm(res, norm = norm)
-        normdat = narray.meannorm(data[1], norm = norm)
+        normres = narray.vecnorm(res, norm=norm)
+        normdat = narray.vecnorm(data[1], norm=norm)
 
         return 1. - normres / normdat
 
@@ -343,7 +343,7 @@ class ANN(Evaluation):
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram'
     )
-    def unitprecision(self, data, norm = 'SD', **kwargs):
+    def unitprecision(self, data, norm: str = 'SD', **kwargs):
         """Unit reconstruction precision.
 
         The unit reconstruction precision is defined by:
@@ -359,7 +359,7 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate deviation for precision
-                see nemoa.common.narray.devnorm for a list of provided
+                see nemoa.common.narray.vecnorm for a list of provided
                 norms
 
         """
@@ -367,8 +367,8 @@ class ANN(Evaluation):
         from nemoa.common import narray
 
         res = self.unitresiduals(data, **kwargs)
-        devres = narray.devnorm(res, norm = norm)
-        devdat = narray.devnorm(data[1], norm = norm)
+        devres = narray.vecnorm(res, norm=norm)
+        devdat = narray.vecnorm(data[1], norm=norm)
 
         return 1. - devres / devdat
 

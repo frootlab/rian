@@ -133,7 +133,7 @@ def get_forward_residuals(model, data, mapping = None, block = None):
     classes = ['LM', 'ANN'],
     plot    = 'bar'
 )
-def get_error_vector(model, data, norm = 'MSE', **kwargs):
+def get_error_vector(model, data, norm: str = 'MSE', **kwargs):
     """Reconstruction error of regressands.
 
     The reconstruction error is defined by:
@@ -149,7 +149,7 @@ def get_error_vector(model, data, norm = 'MSE', **kwargs):
         block: list of strings containing labels of source units
             that are blocked by setting the values to their means
         norm: used norm to calculate data reconstuction error from
-            residuals. see nemoa.common.narray.meannorm for a list
+            residuals. see nemoa.common.narray.vecnorm for a list
             of provided norms
 
     """
@@ -157,7 +157,7 @@ def get_error_vector(model, data, norm = 'MSE', **kwargs):
     from nemoa.common import narray
 
     res = get_residuals(data, **kwargs)
-    error = narray.meannorm(res, norm = norm)
+    error = narray.vecnorm(res, norm=norm)
 
     return error
 
@@ -169,7 +169,7 @@ def get_error_vector(model, data, norm = 'MSE', **kwargs):
     formater = lambda val: '%.3f' % (val),
     plot     = 'diagram'
 )
-def get_accuracy_vector(model, data, norm = 'MSE', **kwargs):
+def get_accuracy_vector(model, data, norm: str = 'MSE', **kwargs):
     """Unit reconstruction accuracy.
 
     The unit reconstruction accuracy is defined by:
@@ -185,7 +185,7 @@ def get_accuracy_vector(model, data, norm = 'MSE', **kwargs):
         block: list of strings containing labels of source units
             that are blocked by setting the values to their means
         norm: used norm to calculate accuracy
-            see nemoa.common.narray.meannorm for a list of provided
+            see nemoa.common.narray.vecnorm for a list of provided
             norms
 
     """
@@ -193,8 +193,8 @@ def get_accuracy_vector(model, data, norm = 'MSE', **kwargs):
     from nemoa.common import narray
 
     res = get_residuals(data, **kwargs)
-    normres = narray.meannorm(res, norm = norm)
-    normdat = narray.meannorm(data[1], norm = norm)
+    normres = narray.vecnorm(res, norm=norm)
+    normdat = narray.vecnorm(data[1], norm=norm)
 
     return 1. - normres / normdat
 
@@ -222,7 +222,7 @@ def get_precision_vector(model, data, norm = 'SD', **kwargs):
         block: list of strings containing labels of source units
             that are blocked by setting the values to their means
         norm: used norm to calculate deviation for precision
-            see nemoa.common.narray.devnorm for a list of provided
+            see nemoa.common.narray.vecnorm for a list of provided
             norms
 
     """
@@ -230,8 +230,8 @@ def get_precision_vector(model, data, norm = 'SD', **kwargs):
     from nemoa.common import narray
 
     res = get_residuals(data, **kwargs)
-    devres = narray.devnorm(res, norm = norm)
-    devdat = narray.devnorm(data[1], norm = norm)
+    devres = narray.vecnorm(res, norm = norm)
+    devdat = narray.vecnorm(data[1], norm = norm)
 
     return 1. - devres / devdat
 

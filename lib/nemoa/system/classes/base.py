@@ -827,7 +827,7 @@ class System(nbase.ObjectIP):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate data reconstuction error from
-                residuals. see nemoa.common.narray.meannorm for a list
+                residuals. see nemoa.common.narray.vecnorm for a list
                 of provided norms
 
         """
@@ -835,7 +835,7 @@ class System(nbase.ObjectIP):
         from nemoa.common import narray
 
         res = self._get_unitresiduals(data, **kwargs)
-        error = narray.meannorm(res, norm = norm)
+        error = narray.vecnorm(res, norm=norm)
 
         return error
 
@@ -863,7 +863,7 @@ class System(nbase.ObjectIP):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate accuracy
-                see nemoa.common.narray.meannorm for a list of provided
+                see nemoa.common.narray.vecnorm for a list of provided
                 norms
 
         """
@@ -871,8 +871,8 @@ class System(nbase.ObjectIP):
         from nemoa.common import narray
 
         res = self._get_unitresiduals(data, **kwargs)
-        normres = narray.meannorm(res, norm = norm)
-        normdat = narray.meannorm(data[1], norm = norm)
+        normres = narray.vecnorm(res, norm=norm)
+        normdat = narray.vecnorm(data[1], norm=norm)
 
         return 1. - normres / normdat
 
@@ -884,7 +884,7 @@ class System(nbase.ObjectIP):
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram' )
 
-    def _get_unitprecision(self, data, norm = 'SD', **kwargs):
+    def _get_unitprecision(self, data, norm='SD', **kwargs):
         """Unit reconstruction precision.
 
         The unit reconstruction precision is defined by:
@@ -900,7 +900,7 @@ class System(nbase.ObjectIP):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate deviation for precision
-                see nemoa.common.narray.devnorm for a list of provided
+                see nemoa.common.narray.vecnorm for a list of provided
                 norms
 
         """
@@ -908,8 +908,8 @@ class System(nbase.ObjectIP):
         from nemoa.common import narray
 
         res = self._get_unitresiduals(data, **kwargs)
-        devres = narray.devnorm(res, norm = norm)
-        devdat = narray.devnorm(data[1], norm = norm)
+        devres = narray.vecnorm(res, norm=norm)
+        devdat = narray.vecnorm(data[1], norm=norm)
 
         return 1. - devres / devdat
 

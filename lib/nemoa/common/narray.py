@@ -12,15 +12,21 @@ except ImportError as err:
         "requires package numpy: "
         "https://scipy.org") from err
 
+from nemoa.common import nmodule
 from nemoa.common.ntype import (
-    StrPairDict, StrListPair, NpAxis, NpArray, NpArrayLike, OptStr, OptFloat)
+    StrList, StrPairDict, StrListPair, NpAxis, NpArray, NpArrayLike, OptFloat)
 
-def fromdict(
-        edges: StrPairDict, labels: StrListPair, na: float = 0.) -> NpArray:
+VECNORM_PREFIX = 'vecnorm_'
+
+#
+#  Array Conversion Functions
+#
+
+def fromdict(d: StrPairDict, labels: StrListPair, na: float = 0.) -> NpArray:
     """Convert dictionary to array.
 
     Args:
-        edges: Dictionary of format {(<row>, <col>): value, ...}, where:
+        d: Dictionary of format {(<row>, <col>): value, ...}, where:
             <row> is an element of the <row list> of the argument labels and
             <col> is an element of the <col list> of the argument labels.
         labels: Tuple of format (<row list>, <col list>), where:
@@ -30,24 +36,28 @@ def fromdict(
             dictionary are replenished by the NA value in the array.
 
     Returns:
-        Numpy array of shape (n, m), where n equals the length of the
+        Numpy ndarray of shape (n, m), where n equals the length of the
         <row list> of the argument labels and m equals the length of the
         <col list> of the argument labels.
 
     """
-    arr = np.empty(shape=(len(labels[0]), len(labels[1])))
-    for i, colx in enumerate(labels[0]):
-        for j, coly in enumerate(labels[1]):
-            arr[i, j] = edges.get((colx, coly), na)
+    # Declare and initialize return value
+    array: NpArray = np.empty(shape=(len(labels[0]), len(labels[1])))
 
-    return arr
+    # Get numpy ndarray
+    setitem = getattr(array, 'itemset')
+    for i, row in enumerate(labels[0]):
+        for j, col in enumerate(labels[1]):
+            setitem((i, j), d.get((row, col), na))
+
+    return array
 
 def asdict(
-        arr: NpArray, labels: StrListPair, na: OptFloat = None) -> StrPairDict:
+        x: NpArray, labels: StrListPair, na: OptFloat = None) -> StrPairDict:
     """Convert two dimensional array to dictionary of pairs.
 
     Args:
-        arr: Numpy array of shape (n, m), where n equals the length of the
+        x: Numpy ndarray of shape (n, m), where n equals the length of the
             <row list> of the argument labels and m equals the length of the
             <col list> of the argument labels.
         labels: Tuple of format (<row list>, <col list>), where:
@@ -59,151 +69,320 @@ def asdict(
 
     Returns:
         Dictionary of format {(<row>, <col>): value, ...}, where:
-            <row> is an element of the <row list> of the argument labels and
-            <col> is an element of the <col list> of the argument labels.
+        <row> is an element of the <row list> of the argument labels and
+        <col> is an element of the <col list> of the argument labels.
 
     """
-    # Check argument 'arr'
-    if not hasattr(arr, 'item'):
+    # Check argument 'array'
+    if not hasattr(x, 'item'):
         raise TypeError(
             "argument 'arr' is required to by of type 'ndarray'"
-            f", not '{type(arr)}'")
+            f", not '{type(x)}'")
 
     # Declare and initialize return value
-    dpair: StrPairDict = {}
+    d: StrPairDict = {}
 
     # Get dictionary with pairs as keys
-    getval = getattr(arr, 'item')
-    for i, x in enumerate(labels[0]):
-        for j, y in enumerate(labels[1]):
-            val = getval(i, j)
+    getitem = getattr(x, 'item')
+    for i, row in enumerate(labels[0]):
+        for j, col in enumerate(labels[1]):
+            val = getitem(i, j)
             if na is None or val != na:
-                dpair[(x, y)] = val
+                d[(row, col)] = val
 
-    return dpair
+    return d
 
-def sumnorm(arr: NpArrayLike, norm: OptStr = None, axis: NpAxis = 0) -> NpArray:
-    """Sum of array.
+#
+# Vector norms and distances
+#
 
-    Calculate sum of data along given axes, using a given norm.
-
-    Args:
-        a: Numpy ndarray containing data
-        norm: Data sum norm. Accepted values are:
-            'S': Sum of Values
-            'SE', 'l1': Sum of Errors / l1 Norm of Residuals
-            'SSE', 'RSS': Sum of Squared Errors / Residual Sum of Squares
-            'RSSE', 'l2': Root Sum of Squared Errors / l2 Norm of Residuals
-        axis: Axis or axes along which a sum is performed.
-
-    Returns:
-        Sum of data as ndarray.
-
-    """
-    if norm is None:
-        return np.sum(arr, axis=axis)
-    if not isinstance(norm, str):
-        raise TypeError(f"norm requires type 'str', not '{type(norm)}'")
-
-    norm = norm.upper()
-
-    # Sum of Values (S)
-    if norm == 'S':
-        return np.sum(arr, axis=axis)
-
-    # Sum of Errors (SE) / l1-Norm (l1)
-    if norm in ['SE', 'L1']:
-        return np.sum(np.abs(arr), axis=axis)
-
-    # Sum of Squared Errors (SSE) / Residual sum of squares (RSS)
-    if norm in ['SSE', 'RSS']:
-        return np.sum(np.square(arr), axis=axis)
-
-    # Root Sum of Squared Errors (RSSE) / l2-Norm (l2)
-    if norm in ['RSSE', 'L2']:
-        return np.sqrt(np.sum(np.square(arr), axis=axis))
-
-    raise ValueError(f"norm '{norm}' is not supported")
-
-def meannorm(
-        arr: NpArrayLike, norm: OptStr = None, axis: NpAxis = 0) -> NpArray:
-    """Mean of data.
-
-    Calculate mean of data along given axes, using a given norm.
+def vecnorm(x: NpArrayLike, norm: str, axis: NpAxis = 0) -> NpArray:
+    """Calculate vector norm along given axis.
 
     Args:
-        a: Numpy array containing data
-        norm: Data mean norm. Accepted values are:
-            'M': Arithmetic Mean of Values
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
+        norm: Name of vector norm. Accepted values are:
+            'L1': l1-Norm / Sum of Errors
+            'L2': l2-Norm / Root Sum of Squared Errors
+            'MAX': Maximum-Norm
             'ME': Mean of Errors
             'MSE': Mean of Squared Errors
-            'RMSE': Root Mean of Squared Errors / L2 Norm
-        axis: Axis or axes along which a mean is performed.
-
-    Returns:
-        Mean of data as ndarray
-
-    """
-    if norm is None:
-        return np.mean(arr, axis=axis)
-    if not isinstance(norm, str):
-        raise TypeError(f"norm requires type 'str', not '{type(norm)}'")
-
-    norm = norm.upper()
-
-    # Mean of Values (M)
-    if norm == 'M':
-        return np.mean(arr, axis=axis)
-
-    # Mean of Errors (ME)
-    if norm == 'ME':
-        return np.mean(np.abs(arr), axis=axis)
-
-    # Mean of Squared Errors (MSE)
-    if norm == 'MSE':
-        return np.mean(np.square(arr), axis=axis)
-
-    # Root Mean of Squared Errors (RMSE) / L2-Norm
-    if norm == 'RMSE':
-        return np.sqrt(np.mean(np.square(arr), axis=axis))
-
-    raise ValueError(f"norm '{norm}' is not supported")
-
-def devnorm(
-        arr: NpArrayLike, norm: OptStr = None, axis: NpAxis = 0) -> NpArray:
-    """Deviation of data.
-
-    Calculate deviation of data along given axes, using a given norm.
-
-    Args:
-        a: Numpy array containing data
-        norm: Data deviation norm. Accepted values are:
-            'SD': Standard Deviation of Values
+            'RMSE': Root Mean of Squared Errors
+            'SD': Standard Deviation
             'SDE': Standard Deviation of Errors
             'SDSE': Standard Deviation of Squared Errors
-        axis: Axis or axes along which a deviation is performed.
+            'SSE': Sum of Squared Errors / Residual Sum of Squares
+        axis: Axis (or axes) along which the norm is calculated. Within a
+            one-dimensional array the axis always has index 0. A two-dimensional
+            array has two corresponding axes: The first running vertically
+            downwards across rows (axis 0), and the second running horizontally
+            across columns (axis 1). Default: 0
 
     Returns:
-        Deviation of data as ndarray
+        Numpy ndarray of dimension <dim x> - <number of axes>.
 
     """
-    if norm is None:
-        return np.std(arr, axis=axis)
-    if not isinstance(norm, str):
-        raise TypeError(f"norm requires type 'str', not '{type(norm)}'")
+    # Declare return value
+    array: NpArray
 
-    norm = norm.upper()
+    fname = VECNORM_PREFIX + norm.lower()
+    module = nmodule.inst(nmodule.curname())
+    try:
+        array = getattr(module, fname)(x, axis=axis)
+    except AttributeError as err:
+        raise ValueError(
+            f"argument 'norm' has an invalid assignment '{str(norm)}'")
 
-    # Standard Deviation of Data (SD)
-    if norm == 'SD':
-        return np.std(arr, axis=axis)
+    return array
 
-    # Standard Deviation of Errors (SDE)
-    if norm == 'SDE':
-        return np.std(np.abs(arr), axis=axis)
+def vecnorms() -> StrList:
+    """Get sorted list of implemented vector norms."""
+    from nemoa.common import ndict
 
-    # Standard Deviation of Squared Errors (SDSE)
-    if norm == 'SDSE':
-        return np.std(np.square(arr), axis=axis)
+    # Declare and initialize return value
+    norms: StrList = []
 
-    raise ValueError(f"norm '{norm}' is not supported")
+    # Get dictionary of functions with given prefix
+    module = nmodule.inst(nmodule.curname())
+    pattern = VECNORM_PREFIX + '*'
+    d = nmodule.functions(module, pattern=pattern)
+
+    #
+    i = len(VECNORM_PREFIX)
+    norms = [v['name'][i:].upper() for v in d.values()]
+
+    return sorted(norms)
+
+def vecnorm_l1(x: NpArrayLike, axis: NpAxis = 0) -> NpArray:
+    """Calculate l1-Norm along given axis.
+
+    The l1-norm (aka 'Sum of Errors') ...
+
+    Args:
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
+        axis: Axis (or axes) along which the norm is calculated. Within a
+            one-dimensional array the axis always has index 0. A two-dimensional
+            array has two corresponding axes: The first running vertically
+            downwards across rows (axis 0), and the second running horizontally
+            across columns (axis 1). Default: 0
+
+    Returns:
+        Numpy ndarray of dimension <dim x> - <number of axes>.
+
+    """
+    return np.sum(np.abs(x), axis=axis)
+
+def vecnorm_max(x: NpArrayLike, axis: NpAxis = 0) -> NpArray:
+    r"""Calculate Maximum-norm along given axis.
+
+    The Maximum-norm is the limit of the Lp-norms for p \rightarrow \infty.
+    It turns out that this limit is equivalent to the following definition ...
+
+    Args:
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
+        axis: Axis (or axes) along which the norm is calculated. Within a
+            one-dimensional array the axis always has index 0. A two-dimensional
+            array has two corresponding axes: The first running vertically
+            downwards across rows (axis 0), and the second running horizontally
+            across columns (axis 1). Default: 0
+
+    Returns:
+        Numpy ndarray of dimension <dim x> - <number of axes>.
+
+    """
+    return np.amax(np.abs(x), axis=axis)
+
+def vecnorm_me(x: NpArrayLike, axis: NpAxis = 0) -> NpArray:
+    """Calculate ME-Norm along given axis.
+
+    The Mean of Errors ...
+
+    Args:
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
+        axis: Axis (or axes) along which the norm is calculated. Within a
+            one-dimensional array the axis always has index 0. A two-dimensional
+            array has two corresponding axes: The first running vertically
+            downwards across rows (axis 0), and the second running horizontally
+            across columns (axis 1). Default: 0
+
+    Returns:
+        Numpy ndarray of dimension <dim x> - <number of axes>.
+
+    """
+    return np.mean(np.abs(x), axis=axis)
+
+def vecnorm_sse(x: NpArrayLike, axis: NpAxis = 0) -> NpArray:
+    """Calculate SSE-Norm along given axis.
+
+    The Sum of Squared Errors (aka 'Residual Sum of Squares') ...
+
+    Args:
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
+        axis: Axis (or axes) along which the norm is calculated. Within a
+            one-dimensional array the axis always has index 0. A two-dimensional
+            array has two corresponding axes: The first running vertically
+            downwards across rows (axis 0), and the second running horizontally
+            across columns (axis 1). Default: 0
+
+    Returns:
+        Numpy ndarray of dimension <dim x> - <number of axes>.
+
+    """
+    return np.sum(np.square(x), axis=axis)
+
+def vecnorm_mse(x: NpArrayLike, axis: NpAxis = 0) -> NpArray:
+    """Calculate MSE-Norm along given axis.
+
+    The Mean of Squared Errors ...
+
+    Args:
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
+        axis: Axis (or axes) along which the norm is calculated. Within a
+            one-dimensional array the axis always has index 0. A two-dimensional
+            array has two corresponding axes: The first running vertically
+            downwards across rows (axis 0), and the second running horizontally
+            across columns (axis 1). Default: 0
+
+    Returns:
+        Numpy ndarray of dimension <dim x> - <number of axes>.
+
+    """
+    return np.mean(np.square(x), axis=axis)
+
+def vecnorm_l2(x: NpArrayLike, axis: NpAxis = 0) -> NpArray:
+    """Calculate L2-Norm along given axis.
+
+    The L2-norm, aka the 'Root Sum of Squared Errors' (RSSE), ...
+
+    Args:
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
+        axis: Axis (or axes) along which the norm is calculated. Within a
+            one-dimensional array the axis always has index 0. A two-dimensional
+            array has two corresponding axes: The first running vertically
+            downwards across rows (axis 0), and the second running horizontally
+            across columns (axis 1). Default: 0
+
+    Returns:
+        Numpy ndarray of dimension <dim x> - <number of axes>.
+
+    """
+    return np.sqrt(np.sum(np.square(x), axis=axis))
+
+def vecnorm_rmse(x: NpArrayLike, axis: NpAxis = 0) -> NpArray:
+    """Calculate RMSE-Norm along given axis.
+
+    The 'Root Mean of Squared Errors' (RMSE) ...
+
+    Args:
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
+        axis: Axis (or axes) along which the norm is calculated. Within a
+            one-dimensional array the axis always has index 0. A two-dimensional
+            array has two corresponding axes: The first running vertically
+            downwards across rows (axis 0), and the second running horizontally
+            across columns (axis 1). Default: 0
+
+    Returns:
+        Numpy ndarray of dimension <dim x> - <number of axes>.
+
+    """
+    return np.sqrt(np.mean(np.square(x), axis=axis))
+
+def vecnorm_sd(x: NpArrayLike, axis: NpAxis = 0) -> NpArray:
+    """Calculate SD-Norm along given axis.
+
+    The 'Standard Deviation' (SD) can be interpreted as a norm on the vector
+    space of mean zero random variables in a similar way, that the standard
+    Euclidian norm in a three-dimensional space. [1]
+
+    Args:
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
+        axis: Axis (or axes) along which the norm is calculated. Within a
+            one-dimensional array the axis always has index 0. A two-dimensional
+            array has two corresponding axes: The first running vertically
+            downwards across rows (axis 0), and the second running horizontally
+            across columns (axis 1). Default: 0
+
+    Returns:
+        Numpy ndarray of dimension <dim x> - <number of axes>.
+
+    References:
+        [1] https://stats.stackexchange.com/questions/269405
+
+    """
+    return np.std(x, axis=axis)
+
+def vecnorm_sde(x: NpArrayLike, axis: NpAxis = 0) -> NpArray:
+    """Calculate SDE-Norm along given axis.
+
+    The 'Standard Deviation of Errors' (SDE) can be interpreted as a norm on the
+    vector space of mean zero random variables) in a similar way that the
+    standard Euclidian norm in a three-dimensional space. [1]
+
+    Args:
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
+        axis: Axis (or axes) along which the norm is calculated. Within a
+            one-dimensional array the axis always has index 0. A two-dimensional
+            array has two corresponding axes: The first running vertically
+            downwards across rows (axis 0), and the second running horizontally
+            across columns (axis 1). Default: 0
+
+    Returns:
+        Numpy ndarray of dimension <dim x> - <number of axes>.
+
+    Todo:
+        * This is not a norm
+
+    References:
+        [1] https://stats.stackexchange.com/questions/269405
+
+    """
+    return np.std(np.abs(x), axis=axis)
+
+def vecnorm_sdse(x: NpArrayLike, axis: NpAxis = 0) -> NpArray:
+    """Calculate SDSE-Norm (SDev of Squared Errors) along given axis.
+
+    The standard deviation can be interpreted as a norm (on the vector space
+    of mean zero random variables) in a similar way that the standard Euclidian
+    norm in a three-dimensional space. [1]
+
+    Args:
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
+        axis: Axis (or axes) along which the norm is calculated. Within a
+            one-dimensional array the axis always has index 0. A two-dimensional
+            array has two corresponding axes: The first running vertically
+            downwards across rows (axis 0), and the second running horizontally
+            across columns (axis 1). Default: 0
+
+    Returns:
+        Numpy ndarray of dimension <dim x> - <number of axes>.
+
+    Todo:
+        * This is not a norm
+
+    References:
+        [1] https://stats.stackexchange.com/questions/269405
+
+    """
+    return np.std(np.square(x), axis=axis)

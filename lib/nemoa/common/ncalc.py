@@ -22,7 +22,9 @@ def sigmoid(x: NpArrayLike, name: OptStr = None, **kwargs: Any) -> NpArray:
     """Calculate sigmoid functions.
 
     Args:
-        x: Numerical data arranged in an array-like structure
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
         name: Name of sigmoid function. Default: 'logistic'
 
     Returns:
@@ -41,7 +43,9 @@ def logistic(x: NpArrayLike) -> NpArray:
     """Calculate standard logistic function.
 
     Args:
-        x: Numerical data arranged in an array-like structure
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
 
     Returns:
         Numpy ndarray which contains the evaluation of the standard
@@ -54,7 +58,9 @@ def tanh(x: NpArrayLike) -> NpArray:
     """Calculate hyperbolic tangent function.
 
     Args:
-        x: Numerical data arranged in an array-like structure
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
 
     Returns:
         Numpy ndarray which contains the evaluation of the hyperbolic
@@ -70,7 +76,9 @@ def lecun(x: NpArrayLike) -> NpArray:
     in learning Artificial Neural Networks [1].
 
     Args:
-        x: Numerical data arranged in an array-like structure
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
 
     Returns:
         Numpy ndarray which contains the evaluation of the LeCun
@@ -87,7 +95,9 @@ def elliot(x: NpArrayLike) -> NpArray:
     """Calculate Elliot activation function.
 
     Args:
-        x: Numerical data arranged in an array-like structure
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
 
     Returns:
         Numpy ndarray which contains the evaluation of the Elliot
@@ -104,7 +114,9 @@ def hill(x: NpArrayLike, n: float = 2.) -> NpArray:
     """Calculate Hill type activation function.
 
     Args:
-        x: Numerical data arranged in an array-like structure
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
         n: Hill coefficient
 
     Returns:
@@ -120,7 +132,9 @@ def arctan(x: NpArrayLike) -> NpArray:
     """Calculate inverse tangent function.
 
     Args:
-        x: Numerical data arranged in an array-like structure
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
 
     Returns:
         Numpy ndarray which contains the evaluation of the inverse
@@ -135,7 +149,9 @@ def d_sigmoid(x: NpArrayLike, name: OptStr = None, **kwargs: Any) -> NpArray:
     """Calculate derivative of sigmoid function.
 
     Args:
-        x: Numerical data arranged in an array-like structure
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
         name: Name of derivative of sigmoid function. Default: 'd_logictic'
 
     Returns:
@@ -155,7 +171,9 @@ def d_logistic(x: NpArrayLike) -> NpArray:
     """Calculate derivative of the standard logistic function.
 
     Args:
-        x: Numerical data arranged in an array-like structure
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
 
     Returns:
         Numpy ndarray which contains the evaluation of the derivative of
@@ -169,7 +187,9 @@ def d_elliot(x: NpArrayLike) -> NpArray:
     """Calculate derivative of the Elliot sigmoid function.
 
     Args:
-        x: Numerical data arranged in an array-like structure
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
 
     Returns:
         Numpy ndarray which contains the evaluation of the derivative of
@@ -186,7 +206,9 @@ def d_hill(x: NpArrayLike, n: float = 2.) -> NpArray:
     """Calculate derivative of Hill type activation function.
 
     Args:
-        x: Numerical data arranged in an array-like structure
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
         n: Hill coefficient
 
     Returns:
@@ -203,7 +225,9 @@ def d_lecun(x: NpArrayLike) -> NpArray:
     in learning Artificial Neural Networks [1].
 
     Args:
-        x: Numerical data arranged in an array-like structure
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
 
     Returns:
         Numpy ndarray which contains the evaluation of the derivative of
@@ -221,7 +245,9 @@ def d_tanh(x: NpArrayLike) -> NpArray:
     """Calculate derivative of hyperbolic tangent function.
 
     Args:
-        x: Numerical data arranged in an array-like structure
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
 
     Returns:
         Numpy ndarray which contains the evaluation of the derivative
@@ -234,7 +260,9 @@ def d_arctan(x: NpArrayLike) -> NpArray:
     """Calculate derivative of inverse tangent function.
 
     Args:
-        x: Numerical data arranged in an array-like structure
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
 
     Returns:
         Numpy ndarray which contains the evaluation of the derivative
@@ -250,9 +278,11 @@ def dialogistic(
     """Calulate dialogistic function.
 
     Args:
-        x: Numerical data arranged in an array-like structure
-        scale: scale parameter. Default: 1.
-        sigma: sharpness parameter. Default: 10.
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
+        scale: Scale parameter. Default: 1.
+        sigma: Sharpness parameter. Default: 10.
 
     Returns:
         Numpy ndarray which contains the evaluation of the dialogistic
@@ -275,9 +305,11 @@ def softstep(x: NpArrayLike, scale: float = 1., sigma: float = 10.) -> NpArray:
     """Calulate softstep function.
 
     Args:
-        x: Numerical data arranged in an array-like structure
-        scale: scale parameter, default is 1.
-        sigma: sharpness parameter, default is 10.
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
+        scale: Scale parameter, default is 1.
+        sigma: Sharpness parameter, default is 10.
 
     Returns:
         Array-like structure which contains the evaluation of the softstep
@@ -294,9 +326,11 @@ def multilogistic(
     """Calculate muliple logistic function.
 
     Args:
-        x: Numerical data arranged in an array-like structure
-        scale: scale parameter. Default: 1.
-        sigma: sharpness parameter. Default: 10.
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimensions. This includes nested lists, tuples, scalars and existing
+            arrays.
+        scale: Scale parameter. Default: 1.
+        sigma: Sharpness parameter. Default: 10.
 
     Returns:
         Array-like structure which contains the evaluation of the multiple

@@ -105,17 +105,8 @@ class TestSuite(ntest.TestSuite):
                     labels=(['a', 'b'], ['a', 'b']), na=0.)
                 == {('a', 'b'): 1.})
 
-        with self.subTest("sumnorm"):
-            self.assertTrue(
-                test(narray.sumnorm(exam), -1.6))
-
-        with self.subTest("meannorm"):
-            self.assertTrue(
-                test(narray.meannorm(exam), -0.5333))
-
-        with self.subTest("devnorm"):
-            self.assertTrue(
-                test(narray.devnorm(exam), 0.8129))
+        with self.subTest("vecnorms"):
+            self.assertTrue(narray.vecnorms())
 
     def test_common_nbase(self) -> None:
         """Test module 'nemoa.common.nbase'."""
