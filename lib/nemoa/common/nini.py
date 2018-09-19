@@ -8,14 +8,15 @@ __license__ = 'GPLv3'
 from configparser import ConfigParser
 
 from nemoa.common import npath
-from nemoa.common.ntype import OptDict, OptBool, OptStr
+from nemoa.common.ntype import (
+    cast, Any, NestPath, NestDict, OptNestDict, OptBool, OptStr)
 
-def load(filepath: str, structure: OptDict = None) -> dict:
+def load(filepath: NestPath, structure: OptNestDict = None) -> OptNestDict:
     """Import configuration dictionary from INI file.
 
     Args:
-        filepath: full qualified path to INI File
-        structure: Dictionary, that determines the structure of the
+        filepath: Fully qualified path to INI File
+        structure: Nested dictionary, which determines the structure of the
             configuration dictionary. If "structure" is None the INI File
             is completely imported and all values are interpreted as strings.
             If "structure" is a dictionary, only those sections and keys are
@@ -35,20 +36,20 @@ def load(filepath: str, structure: OptDict = None) -> dict:
 
     # get configuration from INI File
     parser = ConfigParser()
-    parser.optionxform = str
+    setattr(parser, 'optionxform', lambda key: key)
     parser.read(path)
 
     # parse sections and create configuration dictionary
     return parse(parser, structure=structure)
 
 def save(
-        d: dict, filepath: str, flat: OptBool = None,
+        d: dict, filepath: NestPath, flat: OptBool = None,
         header: OptStr = None) -> bool:
     """Save configuration dictionary to INI file.
 
     Args:
-        d: dictionary containing configuration
-        filepath: full qualified path to writeable file
+        d: Configuration dictionary
+        filepath: Fully qualified path to writeable file
         flat: Determines if the desired INI format structure contains sections.
             By default sections are used, if the dictionary contains
             subdictionaries.
@@ -77,12 +78,14 @@ def save(
 
     return True
 
-def loads(string: str, structure: OptDict = None, flat: OptBool = None) -> dict:
+def loads(
+        string: str, structure: OptNestDict = None,
+        flat: OptBool = None) -> NestDict:
     """Load configuration dictionary from INI formated string.
 
     Args:
         string: INI formated string, that contains the configuration
-        structure: Dictionary, that determines the structure
+        structure: Nested dictionary, that determines the structure
             of the configuration dictionary. If "structure" is None the INI File
             is completely imported and all values are interpreted as strings.
             If "structure" is a dictionary, only those sections and keys are
@@ -99,8 +102,9 @@ def loads(string: str, structure: OptDict = None, flat: OptBool = None) -> dict:
         Structured configuration dictionary
 
     """
-    # if the usage of sections is not explicitely given, search for sections
-    # in the given string
+    # If the existens of sections is not defined by the argument 'flat'
+    # automatically determine the existence by the appearance of a line,
+    # that starts with the character '['
     if flat is None:
         flat = True
         for line in [l.lstrip(' ') for l in string.split('\n')]:
@@ -109,22 +113,22 @@ def loads(string: str, structure: OptDict = None, flat: OptBool = None) -> dict:
             flat = not line.startswith('[')
             break
 
-    # if no sections are to be used create a temporary [root] section
+    # If no sections are to be used create a temporary [root] section
     # and embed the structure dictionary within a 'root' key
     if flat:
         string = '\n'.join(['[root]', string])
         if isinstance(structure, dict):
             structure = {'root': structure.copy()}
 
-    # strip leading and trailing white spaces from lines in INI string
+    # Strip leading and trailing white spaces from lines in INI string
     string = '\n'.join([line.strip(' ') for line in string.split('\n')])
 
-    # parse sections and create config dictionary
+    # Parse sections and create dictionary
     parser = ConfigParser()
     parser.read_string(string)
-    d = parse(parser, structure)
+    d = cast(Any, parse(parser, structure))
 
-    # if no sections are to be used collapse the 'root' key
+    # If no sections are to be used collapse the 'root' key
     if flat:
         d = d.get('root')
 
@@ -134,7 +138,7 @@ def dumps(d: dict, flat: OptBool = None, header: OptStr = None) -> str:
     """Convert configuration dictionary to INI formated string.
 
     Args:
-        d: dictionary containing configuration
+        d: Configuration dictionary
         flat: Determines if the desired INI format structure
             contains sections or not. By default sections are used, if the
             dictionary contains subdictionaries.
@@ -185,7 +189,7 @@ def dumps(d: dict, flat: OptBool = None, header: OptStr = None) -> str:
 
     return string
 
-def getheader(filepath: str) -> str:
+def getheader(filepath: NestPath) -> str:
     """Get header from INI file.
 
     Args:
@@ -196,12 +200,12 @@ def getheader(filepath: str) -> str:
         could not be detected.
 
     """
-    # validate filepath
+    # Validate filepath
     path = npath.validfile(filepath)
     if not path:
         raise TypeError(f"file '{str(filepath)}' does not exist")
 
-    # scan INI file for header
+    # Scan INI file for header
     hlist = []
     with open(path, 'r') as file:
         for line in [l.lstrip(' ') for l in file]:
@@ -215,13 +219,13 @@ def getheader(filepath: str) -> str:
     # join lines and strip header
     return ''.join(hlist).strip()
 
-def parse(parser: ConfigParser, structure: OptDict = None) -> dict:
+def parse(parser: ConfigParser, structure: OptNestDict = None) -> dict:
     """Import configuration dictionary from INI formated string.
 
     Args:
         parser: ConfigParser instance that contains an unstructured
             configuration dictionary
-        structure: Dictionary, that determines the structure of the
+        structure: Nested dictionary, which determines the structure of the
             configuration dictionary. If "structure" is None the INI File
             is completely imported and all values are interpreted as strings.
             If "structure" is a dictionary, only those sections and keys are

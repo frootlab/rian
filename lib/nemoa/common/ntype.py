@@ -71,11 +71,17 @@ OptStrOrDict = Optional[StrOrDict]
 # Compounds of Literals
 RecDict = Dict[Hashable, StrDict]
 DictOfRecDicts = Dict[Hashable, RecDict]
+NestRecDict = Dict[Hashable, Union['NestRecDict', StrDict]]
 RecDictLike = Union[StrDict, RecDict, DictOfRecDicts]
 StrPairDict = Dict[StrPair, Obj]
 StrListPair = Tuple[StrList, StrList]
 StrTupleDict = Dict[Union[str, Tuple[str, ...]], Obj]
 Vector = Sequence[Scalar]
+NestDict = Dict[Hashable, Union['NestDict', Any]]
+OptNestDict = Optional[NestDict]
+
+# Generators and Iterables
+IterNestRecDict = Iterable[NestRecDict]
 
 ################################################################################
 # Callable types
@@ -110,10 +116,12 @@ FuncWrapper = Callable[[Callable[..., T]], Callable[..., T]]
 # Types of builtin packages
 ################################################################################
 
-# pathlib
-from pathlib import Path
-PathLike = Sequence[Union['PathLike', str, Path]]
-PathLikeDict = Dict[str, PathLike]
+# os / pathlib
+from os import PathLike as Path
+# currently recursive types are not fully supported (2018.09)
+NestPath = Sequence[Union['NestPath', str, Path]]
+NestPathDict = Dict[str, NestPath]
+OptNestPathDict = Optional[NestPathDict]
 
 ################################################################################
 # Types of external packages

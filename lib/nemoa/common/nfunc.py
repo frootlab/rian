@@ -54,7 +54,7 @@ def inst(name: str) -> OptFunction:
 
     return func
 
-def kwargs(func: Function, default: OptDict = None) -> StrDict:
+def kwargs(func: AnyFunc, default: OptDict = None) -> StrDict:
     """Keyword arguments of a function.
 
     Args:
@@ -76,7 +76,7 @@ def kwargs(func: Function, default: OptDict = None) -> StrDict:
         {'default': 'not None'}
 
     """
-    # check types of arguments
+    # Check arguments
     if not isinstance(func, Function):
         raise TypeError('first argument requires to be a function')
     if not isinstance(default, (dict, type(None))):

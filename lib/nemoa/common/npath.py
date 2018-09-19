@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 
 from pathlib import Path
 
-from nemoa.common.ntype import OptStr, PathLike, PathLikeDict
+from nemoa.common.ntype import cast, OptStr, NestPath, OptNestPathDict
 
 def cwd() -> str:
     """Path of current working directory.
@@ -48,7 +48,7 @@ def clear(fname: str) -> str:
 
     return fname
 
-def join(*args: PathLike) -> str:
+def join(*args: NestPath) -> str:
     r"""Join and normalize path like structure.
 
     Args:
@@ -63,7 +63,7 @@ def join(*args: PathLike) -> str:
         'a\\b\\c\\d'
 
     """
-    # flatten tree of strings to list and join list using os path seperators
+    # flatten nested path to list and join list using os path seperators
     if not args:
         return ''
     if len(args) == 1 and isinstance(args[0], (str, Path)):
@@ -83,8 +83,7 @@ def join(*args: PathLike) -> str:
         try:
             path = Path(*l)
         except Exception as err:
-            raise ValueError(
-                "path like tree structure is invalid") from err
+            raise ValueError("nested path is invalid") from err
     if not path:
         return ''
 
@@ -95,7 +94,7 @@ def join(*args: PathLike) -> str:
 
 
 def expand(
-        *args: PathLike, udict: PathLikeDict = {}, expapp: bool = True,
+        *args: NestPath, udict: OptNestPathDict = None, expapp: bool = True,
         expenv: bool = True) -> str:
     r"""Expand path variables.
 
@@ -125,6 +124,7 @@ def expand(
 
     from nemoa.common import nappinfo
 
+    udict = udict or {}
     path = Path(join(*args))
 
     # create dictionary with variables
@@ -133,7 +133,8 @@ def expand(
         for key, val in udict.items():
             d[key] = join(val)
     if expapp:
-        for key, val in nappinfo.path().items():
+        appdirs = cast(dict, nappinfo.path())
+        for key, val in appdirs.items():
             d[key] = val
     if expenv:
         d['home'], d['cwd'] = home(), cwd()
@@ -161,11 +162,11 @@ def expand(
     if not expenv:
         return str(path)
     path = path.expanduser()
-    path = os.path.expandvars(path)
+    path = Path(os.path.expandvars(path))
 
     return str(path)
 
-def dirname(*args: PathLike) -> str:
+def dirname(*args: NestPath) -> str:
     r"""Extract directory name from a path like structure.
 
     Args:
@@ -185,7 +186,7 @@ def dirname(*args: PathLike) -> str:
         return str(path)
     return str(path.parent)
 
-def filename(*args: PathLike) -> str:
+def filename(*args: NestPath) -> str:
     """Extract file name from a path like structure.
 
     Args:
@@ -205,7 +206,7 @@ def filename(*args: PathLike) -> str:
         return ''
     return str(path.name)
 
-def basename(*args: PathLike) -> str:
+def basename(*args: NestPath) -> str:
     """Extract file basename from a path like structure.
 
     Args:
@@ -225,7 +226,7 @@ def basename(*args: PathLike) -> str:
         return ''
     return str(path.stem)
 
-def fileext(*args: PathLike) -> str:
+def fileext(*args: NestPath) -> str:
     """Fileextension of file.
 
     Args:
@@ -245,7 +246,7 @@ def fileext(*args: PathLike) -> str:
         return ''
     return str(path.suffix).lstrip('.')
 
-def isdir(path: PathLike) -> bool:
+def isdir(path: NestPath) -> bool:
     """Determine if given path points to a directory.
 
     Wrapper function to pathlib.Path.is_file [1]
@@ -263,7 +264,7 @@ def isdir(path: PathLike) -> bool:
     """
     return Path(expand(path)).is_dir()
 
-def isfile(path: PathLike) -> bool:
+def isfile(path: NestPath) -> bool:
     """Determine if given path points to a file.
 
     Wrapper function to pathlib.Path.is_file [1]
@@ -281,7 +282,7 @@ def isfile(path: PathLike) -> bool:
     """
     return Path(expand(path)).is_file()
 
-def validfile(filepath: PathLike) -> OptStr:
+def validfile(filepath: NestPath) -> OptStr:
     """Return normalized filepath, if file is valid.
 
     Args:
@@ -297,7 +298,7 @@ def validfile(filepath: PathLike) -> OptStr:
         return None
     return str(path)
 
-def cp(source: PathLike, target: PathLike) -> bool:
+def cp(source: NestPath, target: NestPath) -> bool:
     """Copy sub directories from given source to destination directory.
 
     Args:
@@ -324,7 +325,7 @@ def cp(source: PathLike, target: PathLike) -> bool:
 
     return True
 
-def mkdir(*args: PathLike) -> bool:
+def mkdir(*args: NestPath) -> bool:
     """Create directory.
 
     Args:
@@ -347,7 +348,7 @@ def mkdir(*args: PathLike) -> bool:
 
     return path.is_dir()
 
-def rmdir(*args: PathLike) -> bool:
+def rmdir(*args: NestPath) -> bool:
     """Remove directory.
 
     Args:

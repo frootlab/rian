@@ -5,7 +5,8 @@ __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.common.ntype import RecDict, DictOfRecDicts, StrTupleDict
+from nemoa.common.ntype import (
+    RecDict, DictOfRecDicts, StrTupleDict, OptStr)
 
 def merge(*args: dict, mode: int = 1) -> dict:
     """Recursive right merge dictionaries.
@@ -26,8 +27,10 @@ def merge(*args: dict, mode: int = 1) -> dict:
 
     """
     # check for trivial cases
-    if len(args) < 2:
-        raise TypeError("at least two arguments are required")
+    if not args:
+        return {}
+    if len(args) == 1:
+        return args[0]
 
     # check for chain mapping creation mode
     if mode == 2:
@@ -44,12 +47,12 @@ def merge(*args: dict, mode: int = 1) -> dict:
     # check types of arguments
     if not isinstance(d1, dict):
         raise TypeError(
-            "first argument requires type "
-            f"'dict', not '{type(d1)}'")
+            "first argument requires to be of type 'dict'"
+            f", not '{type(d1)}'")
     if not isinstance(d2, dict):
         raise TypeError(
-            "second argument requires type "
-            f"'dict', not '{type(d2)}'")
+            "second argument requires to be of type 'dict'"
+            f", not '{type(d2)}'")
 
     # create new dictionary
     if mode == 1:
@@ -141,14 +144,51 @@ def crop(d: dict, s: str, trim: bool = True) -> dict:
 
     return dc
 
-def groupby(d: RecDict, key: str) -> DictOfRecDicts:
-    """Group dictionary by the value of a given key of subdictionaries.
+def flatten(d: DictOfRecDicts, group: OptStr = None) -> RecDict:
+    """Flatten grouped record dictionary by given group name.
+
+    Inverse dictionary operation to 'groupby'.
+
+    Args:
+        d: Nested dictionary, which entries are interpreted as attributes.
+        group: Attribute names, which describes the groups.
+
+    Returns:
+        Dictinary which flattens the groups of the original dictinary to
+        attributes.
+
+    Examples:
+        >>> flatten({1: {'a': {}}, 2: {'b': {}}})
+        {'a': {}, 'b': {}}
+        >>> flatten({1: {'a': {}}, 2: {'b': {}}}, group='id')
+        {'a': {'id': 1}, 'b': {'id': 2}}
+
+    """
+    # Declare and initialize return value
+    rd: RecDict = {}
+
+    # Do not create group attribute, if not given
+    if not group:
+        rd = merge(*tuple(d.values()))
+        return rd
+
+    for gval, sub in d.items():
+        for key, attr in sub.items():
+            attr[group] = gval
+            rd[key] = attr
+
+    return rd
+
+def groupby(d: RecDict, key: str, rmkey: bool = False) -> DictOfRecDicts:
+    """Group record dictionary by the value of a given key.
 
     Args:
         d: Dictionary of dictionaries, which entries are interpreted as
-            elements and attributes.
+            attributes.
         key: Name of attribute which is used to group the results by it's
             corresponding value.
+        rmkey: Boolean which determines, if the group attribute is removed from
+            the the sub dictionaries.
 
     Returns:
         Dictinary which groups the entries of the original dictinary in
@@ -156,15 +196,18 @@ def groupby(d: RecDict, key: str) -> DictOfRecDicts:
 
     """
     # Declare and initialize return value
-    gd: DictOfRecDicts = {}
+    rd: DictOfRecDicts = {}
 
-    for k, v in d.items():
-        g = v.get(key, None)
-        if not g in gd:
-            gd[g] = {}
-        gd[g][k] = v
+    for k, attr in d.items():
+        if rmkey:
+            gval = attr.pop(key, None)
+        else:
+            gval = attr.get(key, None)
+        if not gval in rd:
+            rd[gval] = {}
+        rd[gval][k] = attr
 
-    return gd
+    return rd
 
 def strkeys(d: dict) -> StrTupleDict:
     """Recursively convert dictionary keys to string keys.

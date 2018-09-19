@@ -8,9 +8,10 @@ __license__ = 'GPLv3'
 from nemoa.common import ntest
 
 class TestSuite(ntest.TestSuite):
-    """Testsuite for modules in the package 'nemoa.common'."""
+    """Testsuite for modules within the package 'nemoa.common'."""
 
-    def test_common_nalgorithm(self):
+    def test_common_nalgorithm(self) -> None:
+        """Test module 'nemoa.common.nalgorithm'."""
         from nemoa.common import nalgorithm
 
         with self.subTest('search'):
@@ -19,50 +20,51 @@ class TestSuite(ntest.TestSuite):
 
         with self.subTest('custom'):
             @nalgorithm.custom(category='custom')
-            def test_custom():
+            def test_custom() -> None:
                 pass
             self.assertEqual(
-                test_custom.name, 'test_custom')
+                getattr(test_custom, 'name', None), 'test_custom')
             self.assertEqual(
-                test_custom.category, 'custom')
+                getattr(test_custom, 'category', None), 'custom')
 
         with self.subTest('objective'):
             @nalgorithm.objective()
-            def test_objective():
+            def test_objective() -> None:
                 pass
             self.assertEqual(
-                test_objective.name, 'test_objective')
+                getattr(test_objective, 'name', None), 'test_objective')
             self.assertEqual(
-                test_objective.category, 'objective')
+                getattr(test_objective, 'category', None), 'objective')
 
         with self.subTest('sampler'):
             @nalgorithm.sampler()
-            def test_sampler():
+            def test_sampler() -> None:
                 pass
             self.assertEqual(
-                test_sampler.name, 'test_sampler')
+                getattr(test_sampler, 'name', None), 'test_sampler')
             self.assertEqual(
-                test_sampler.category, 'sampler')
+                getattr(test_sampler, 'category', None), 'sampler')
 
         with self.subTest('statistic'):
             @nalgorithm.statistic()
-            def test_statistic():
+            def test_statistic() -> None:
                 pass
             self.assertEqual(
-                test_statistic.name, 'test_statistic')
+                getattr(test_statistic, 'name', None), 'test_statistic')
             self.assertEqual(
-                test_statistic.category, 'statistic')
+                getattr(test_statistic, 'category', None), 'statistic')
 
         with self.subTest('association'):
             @nalgorithm.association()
-            def test_association():
+            def test_association() -> None:
                 pass
             self.assertEqual(
-                test_association.name, 'test_association')
+                getattr(test_association, 'name', None), 'test_association')
             self.assertEqual(
-                test_association.category, 'association')
+                getattr(test_association, 'category', None), 'association')
 
-    def test_common_nappinfo(self):
+    def test_common_nappinfo(self) -> None:
+        """Test module 'nemoa.common.nappinfo'."""
         from nemoa.common import nappinfo
 
         dirs = [
@@ -78,7 +80,8 @@ class TestSuite(ntest.TestSuite):
                 self.assertTrue(
                     nappinfo.get(key))
 
-    def test_common_narray(self):
+    def test_common_narray(self) -> None:
+        """Test module 'nemoa.common.narray'."""
         from nemoa.common import narray
 
         import numpy as np
@@ -114,7 +117,8 @@ class TestSuite(ntest.TestSuite):
             self.assertTrue(
                 test(narray.devnorm(exam), 0.8129))
 
-    def test_common_nbase(self):
+    def test_common_nbase(self) -> None:
+        """Test module 'nemoa.common.nbase'."""
         from nemoa.common import nbase
 
         with self.subTest("ObjectIP"):
@@ -125,7 +129,8 @@ class TestSuite(ntest.TestSuite):
             obj.path = ('%site_data_dir%', 'test')
             self.assertNotIn('%', obj.path)
 
-    def test_common_ncalc(self):
+    def test_common_ncalc(self) -> None:
+        """Test module 'nemoa.common.ncalc'."""
         from nemoa.common import ncalc
 
         import numpy as np
@@ -193,15 +198,19 @@ class TestSuite(ntest.TestSuite):
             self.assertTrue(
                 test(ncalc.multilogistic(exam), 0.500272))
 
-    def test_common_nconsole(self):
+    def test_common_nconsole(self) -> None:
+        """Test module 'nemoa.common.nconsole'."""
         from nemoa.common import nconsole
 
         with self.subTest("getch"):
             getch = nconsole.getch()
-            self.assertTrue(hasattr(getch, 'get'))
-            self.assertIsInstance(getch.get(), str)
+            self.assertTrue(
+                hasattr(getch, 'get'))
+            self.assertIsInstance(
+                getattr(getch, 'get')(), str)
 
-    def test_common_nclass(self):
+    def test_common_nclass(self) -> None:
+        """Test module 'nemoa.common.nclass'."""
         from nemoa.common import nclass
 
         class Base:
@@ -230,7 +239,8 @@ class TestSuite(ntest.TestSuite):
             self.assertEqual(
                 nclass.methods(obj, pattern='*b').keys(), {'getb', 'setb'})
 
-    def test_common_ngraph(self):
+    def test_common_ngraph(self) -> None:
+        """Test module 'nemoa.common.ngraph'."""
         from nemoa.common import ngraph
 
         import networkx as nx
@@ -290,7 +300,8 @@ class TestSuite(ntest.TestSuite):
             self.assertEqual(
                 ngraph.getlayout(G, 'layer', direction='right'), pos1)
 
-    def test_common_ncsv(self):
+    def test_common_ncsv(self) -> None:
+        """Test module 'nemoa.common.ncsv'."""
         from nemoa.common import ncsv
 
         import numpy as np
@@ -334,7 +345,8 @@ class TestSuite(ntest.TestSuite):
         if os.path.exists(filename):
             os.remove(filename)
 
-    def test_common_nini(self):
+    def test_common_nini(self) -> None:
+        """Test module 'nemoa.common.nini'."""
         from nemoa.common import nini
 
         import os
@@ -375,7 +387,8 @@ class TestSuite(ntest.TestSuite):
         if os.path.exists(filename):
             os.remove(filename)
 
-    def test_common_nzip(self):
+    def test_common_nzip(self) -> None:
+        """Test module 'nemoa.common.nzip'."""
         from nemoa.common import nzip
 
         import os
@@ -401,7 +414,8 @@ class TestSuite(ntest.TestSuite):
         if os.path.exists(filename):
             os.remove(filename)
 
-    def test_common_nmodule(self):
+    def test_common_nmodule(self) -> None:
+        """Test module 'nemoa.common.nmodule'."""
         from nemoa.common import nmodule
 
         with self.subTest("curname"):
@@ -436,7 +450,8 @@ class TestSuite(ntest.TestSuite):
             self.assertEqual(
                 len(nmodule.search(nmodule, name='search')), 1)
 
-    def test_common_nfunc(self):
+    def test_common_nfunc(self) -> None:
+        """Test module 'nemoa.common.nfunc'."""
         from nemoa.common import nfunc
 
         with self.subTest("about"):
@@ -457,7 +472,8 @@ class TestSuite(ntest.TestSuite):
                 nfunc.kwargs(nfunc.kwargs, default={'default': True}),
                 {'default': True})
 
-    def test_common_ndict(self):
+    def test_common_ndict(self) -> None:
+        """Test module 'nemoa.common.ndict'."""
         from nemoa.common import ndict
 
         with self.subTest("select"):
@@ -472,6 +488,14 @@ class TestSuite(ntest.TestSuite):
                 {
                     0: {1: {'a': 0}, 2: {'a': 0}},
                     1: {3: {'a': 1}}, None: {4: {}}})
+
+        with self.subTest("flatten"):
+            self.assertEqual(
+                ndict.flatten({1: {'a': {}}, 2: {'b': {}}}),
+                {'a': {}, 'b': {}})
+            self.assertEqual(
+                ndict.flatten({1: {'a': {}}, 2: {'b': {}}}, group='id'),
+                {'a': {'id': 1}, 'b': {'id': 2}})
 
         with self.subTest("merge"):
             self.assertEqual(
@@ -495,7 +519,8 @@ class TestSuite(ntest.TestSuite):
                 ndict.sumjoin({1: 'a', 2: True}, {1: 'b', 2: True}),
                 {1: 'ab', 2: 2})
 
-    def test_common_npath(self):
+    def test_common_npath(self) -> None:
+        """Test module 'nemoa.common.npath'."""
         from nemoa.common import npath
 
         import tempfile
@@ -553,7 +578,8 @@ class TestSuite(ntest.TestSuite):
         # with self.subTest("cp"):
         #     self.assertTrue(True)
 
-    def test_common_nsysinfo(self):
+    def test_common_nsysinfo(self) -> None:
+        """Test module 'nemoa.common.nsysinfo'."""
         from nemoa.common import nsysinfo
 
         with self.subTest("hostname"):
@@ -565,9 +591,10 @@ class TestSuite(ntest.TestSuite):
         with self.subTest("ttylib"):
             self.assertTrue(nsysinfo.ttylib())
 
-    def test_common_ntable(self):
+    def test_common_ntable(self) -> None:
+        """Test module 'nemoa.common.ntable'."""
         from nemoa.common import ntable
-
+        from nemoa.common.ntype import cast, Any
         import numpy as np
 
         with self.subTest("addcols"):
@@ -575,9 +602,11 @@ class TestSuite(ntest.TestSuite):
                 [(1., 2), (3., 4)], dtype=[('x', float), ('y', int)])
             src = np.array(
                 [('a'), ('b')], dtype=[('z', 'U4')])
-            self.assertEqual(ntable.addcols(tgt, src, 'z')['z'][0], 'a')
+            self.assertEqual(
+                cast(Any, ntable.addcols(tgt, src, 'z'))['z'][0], 'a')
 
-    def test_common_ntext(self):
+    def test_common_ntext(self) -> None:
+        """Test module 'nemoa.common.ntext'."""
         from nemoa.common import ntext
 
         with self.subTest("splitargs"):
