@@ -811,7 +811,7 @@ class System(nbase.ObjectIP):
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram'
     )
-    def _get_uniterror(self, data, norm = 'MSE', **kwargs):
+    def _get_uniterror(self, data, norm = 'MS', **kwargs):
         """Unit reconstruction error.
 
         The unit reconstruction error is defined by:
@@ -845,9 +845,9 @@ class System(nbase.ObjectIP):
         args     = 'all',
         retfmt   = 'scalar',
         formater = lambda val: '%.3f' % (val),
-        plot     = 'diagram' )
+        plot     = 'diagram')
 
-    def _get_unitaccuracy(self, data, norm = 'MSE', **kwargs):
+    def _get_unitaccuracy(self, data, norm = 'MS', **kwargs):
         """Unit reconstruction accuracy.
 
         The unit reconstruction accuracy is defined by:

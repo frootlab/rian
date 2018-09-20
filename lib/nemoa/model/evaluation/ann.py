@@ -270,7 +270,7 @@ class ANN(Evaluation):
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram'
     )
-    def uniterror(self, data, norm: str = 'MSE', **kwargs):
+    def uniterror(self, data, norm: str = 'MS', **kwargs):
         """Unit reconstruction error.
 
         The unit reconstruction error is defined by:
@@ -305,7 +305,7 @@ class ANN(Evaluation):
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram'
     )
-    def unitaccuracy(self, data, norm: str = 'MSE', **kwargs):
+    def unitaccuracy(self, data, norm: str = 'MS', **kwargs):
         """Unit reconstruction accuracy.
 
         The unit reconstruction accuracy is defined by:

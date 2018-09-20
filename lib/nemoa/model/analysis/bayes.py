@@ -133,7 +133,7 @@ def get_forward_residuals(model, data, mapping = None, block = None):
     classes = ['LM', 'ANN'],
     plot    = 'bar'
 )
-def get_error_vector(model, data, norm: str = 'MSE', **kwargs):
+def get_error_vector(model, data, norm: str = 'MS', **kwargs):
     """Reconstruction error of regressands.
 
     The reconstruction error is defined by:
@@ -168,7 +168,7 @@ def get_error_vector(model, data, norm: str = 'MSE', **kwargs):
     formater = lambda val: '%.3f' % (val),
     plot     = 'diagram'
 )
-def get_accuracy_vector(model, data, norm: str = 'MSE', **kwargs):
+def get_accuracy_vector(model, data, norm: str = 'MS', **kwargs):
     """Unit reconstruction accuracy.
 
     The unit reconstruction accuracy is defined by:
