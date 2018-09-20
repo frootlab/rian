@@ -149,15 +149,14 @@ def get_error_vector(model, data, norm: str = 'MSE', **kwargs):
         block: list of strings containing labels of source units
             that are blocked by setting the values to their means
         norm: used norm to calculate data reconstuction error from
-            residuals. see nemoa.common.narray.vecnorm for a list
+            residuals. see nemoa.common.nmetric.vecnorm for a list
             of provided norms
 
     """
-
-    from nemoa.common import narray
+    from nemoa.common import nmetric
 
     res = get_residuals(data, **kwargs)
-    error = narray.vecnorm(res, norm=norm)
+    error = nmetric.vecnorm(res, norm=norm)
 
     return error
 
@@ -185,16 +184,15 @@ def get_accuracy_vector(model, data, norm: str = 'MSE', **kwargs):
         block: list of strings containing labels of source units
             that are blocked by setting the values to their means
         norm: used norm to calculate accuracy
-            see nemoa.common.narray.vecnorm for a list of provided
+            see nemoa.common.nmetric.vecnorm for a list of provided
             norms
 
     """
-
-    from nemoa.common import narray
+    from nemoa.common import nmetric
 
     res = get_residuals(data, **kwargs)
-    normres = narray.vecnorm(res, norm=norm)
-    normdat = narray.vecnorm(data[1], norm=norm)
+    normres = nmetric.vecnorm(res, norm=norm)
+    normdat = nmetric.vecnorm(data[1], norm=norm)
 
     return 1. - normres / normdat
 
@@ -222,16 +220,16 @@ def get_precision_vector(model, data, norm = 'SD', **kwargs):
         block: list of strings containing labels of source units
             that are blocked by setting the values to their means
         norm: used norm to calculate deviation for precision
-            see nemoa.common.narray.vecnorm for a list of provided
+            see nemoa.common.nmetric.vecnorm for a list of provided
             norms
 
     """
 
-    from nemoa.common import narray
+    from nemoa.common import nmetric
 
     res = get_residuals(data, **kwargs)
-    devres = narray.vecnorm(res, norm = norm)
-    devdat = narray.vecnorm(data[1], norm = norm)
+    devres = nmetric.vecnorm(res, norm=norm)
+    devdat = nmetric.vecnorm(data[1], norm=norm)
 
     return 1. - devres / devdat
 

@@ -286,15 +286,14 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate data reconstuction error from
-                residuals. see nemoa.common.narray.vecnorm for a list
+                residuals. see nemoa.common.nmetric.vecnorm for a list
                 of provided norms
 
         """
-
-        from nemoa.common import narray
+        from nemoa.common import nmetric
 
         res = self.unitresiduals(data, **kwargs)
-        error = narray.vecnorm(res, norm=norm)
+        error = nmetric.vecnorm(res, norm=norm)
 
         return error
 
@@ -322,16 +321,16 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate accuracy
-                see nemoa.common.narray.vecnorm for a list of provided
+                see nemoa.common.nmetric.vecnorm for a list of provided
                 norms
 
         """
 
-        from nemoa.common import narray
+        from nemoa.common import nmetric
 
         res = self.unitresiduals(data, **kwargs)
-        normres = narray.vecnorm(res, norm=norm)
-        normdat = narray.vecnorm(data[1], norm=norm)
+        normres = nmetric.vecnorm(res, norm=norm)
+        normdat = nmetric.vecnorm(data[1], norm=norm)
 
         return 1. - normres / normdat
 
@@ -359,16 +358,16 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate deviation for precision
-                see nemoa.common.narray.vecnorm for a list of provided
+                see nemoa.common.nmetric.vecnorm for a list of provided
                 norms
 
         """
 
-        from nemoa.common import narray
+        from nemoa.common import nmetric
 
         res = self.unitresiduals(data, **kwargs)
-        devres = narray.vecnorm(res, norm=norm)
-        devdat = narray.vecnorm(data[1], norm=norm)
+        devres = nmetric.vecnorm(res, norm=norm)
+        devdat = nmetric.vecnorm(data[1], norm=norm)
 
         return 1. - devres / devdat
 

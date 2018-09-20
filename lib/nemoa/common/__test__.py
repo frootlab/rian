@@ -83,11 +83,7 @@ class TestSuite(ntest.TestSuite):
     def test_common_narray(self) -> None:
         """Test module 'nemoa.common.narray'."""
         from nemoa.common import narray
-
         import numpy as np
-
-        exam = np.array([[.1, -.9], [.3, .2], [-.4, -.9]])
-        test = lambda x, y: np.isclose(x.sum(), y, atol=1e-3)
 
         with self.subTest("fromdict"):
             self.assertTrue(
@@ -105,8 +101,19 @@ class TestSuite(ntest.TestSuite):
                     labels=(['a', 'b'], ['a', 'b']), na=0.)
                 == {('a', 'b'): 1.})
 
+    def test_common_nmetric(self) -> None:
+        """Test module 'nemoa.common.nmetric'."""
+        from nemoa.common import nmetric
+        import numpy as np
+
+        #exam = np.array([[.1, -.9], [.3, .2], [-.4, -.9]])
+        #test = lambda x, y: np.isclose(x.sum(), y, atol=1e-3)
+
         with self.subTest("vecnorms"):
-            self.assertTrue(narray.vecnorms())
+            self.assertTrue(nmetric.vecnorms())
+
+        with self.subTest("vecdists"):
+            self.assertTrue(nmetric.vecdists())
 
     def test_common_nbase(self) -> None:
         """Test module 'nemoa.common.nbase'."""
