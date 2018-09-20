@@ -23,7 +23,7 @@ def sigmoid(x: NpArrayLike, name: OptStr = None, **kwargs: Any) -> NpArray:
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
-            dimensions. This includes nested lists, tuples, scalars and existing
+            dimension. This includes nested lists, tuples, scalars and existing
             arrays.
         name: Name of sigmoid function. Default: 'logistic'
 
@@ -44,7 +44,7 @@ def logistic(x: NpArrayLike) -> NpArray:
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
-            dimensions. This includes nested lists, tuples, scalars and existing
+            dimension. This includes nested lists, tuples, scalars and existing
             arrays.
 
     Returns:
@@ -59,7 +59,7 @@ def tanh(x: NpArrayLike) -> NpArray:
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
-            dimensions. This includes nested lists, tuples, scalars and existing
+            dimension. This includes nested lists, tuples, scalars and existing
             arrays.
 
     Returns:
@@ -77,7 +77,7 @@ def lecun(x: NpArrayLike) -> NpArray:
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
-            dimensions. This includes nested lists, tuples, scalars and existing
+            dimension. This includes nested lists, tuples, scalars and existing
             arrays.
 
     Returns:
@@ -96,7 +96,7 @@ def elliot(x: NpArrayLike) -> NpArray:
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
-            dimensions. This includes nested lists, tuples, scalars and existing
+            dimension. This includes nested lists, tuples, scalars and existing
             arrays.
 
     Returns:
@@ -115,7 +115,7 @@ def hill(x: NpArrayLike, n: float = 2.) -> NpArray:
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
-            dimensions. This includes nested lists, tuples, scalars and existing
+            dimension. This includes nested lists, tuples, scalars and existing
             arrays.
         n: Hill coefficient
 
@@ -133,7 +133,7 @@ def arctan(x: NpArrayLike) -> NpArray:
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
-            dimensions. This includes nested lists, tuples, scalars and existing
+            dimension. This includes nested lists, tuples, scalars and existing
             arrays.
 
     Returns:
@@ -150,7 +150,7 @@ def d_sigmoid(x: NpArrayLike, name: OptStr = None, **kwargs: Any) -> NpArray:
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
-            dimensions. This includes nested lists, tuples, scalars and existing
+            dimension. This includes nested lists, tuples, scalars and existing
             arrays.
         name: Name of derivative of sigmoid function. Default: 'd_logictic'
 
@@ -172,7 +172,7 @@ def d_logistic(x: NpArrayLike) -> NpArray:
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
-            dimensions. This includes nested lists, tuples, scalars and existing
+            dimension. This includes nested lists, tuples, scalars and existing
             arrays.
 
     Returns:
@@ -188,7 +188,7 @@ def d_elliot(x: NpArrayLike) -> NpArray:
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
-            dimensions. This includes nested lists, tuples, scalars and existing
+            dimension. This includes nested lists, tuples, scalars and existing
             arrays.
 
     Returns:
@@ -207,7 +207,7 @@ def d_hill(x: NpArrayLike, n: float = 2.) -> NpArray:
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
-            dimensions. This includes nested lists, tuples, scalars and existing
+            dimension. This includes nested lists, tuples, scalars and existing
             arrays.
         n: Hill coefficient
 
@@ -226,7 +226,7 @@ def d_lecun(x: NpArrayLike) -> NpArray:
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
-            dimensions. This includes nested lists, tuples, scalars and existing
+            dimension. This includes nested lists, tuples, scalars and existing
             arrays.
 
     Returns:
@@ -246,7 +246,7 @@ def d_tanh(x: NpArrayLike) -> NpArray:
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
-            dimensions. This includes nested lists, tuples, scalars and existing
+            dimension. This includes nested lists, tuples, scalars and existing
             arrays.
 
     Returns:
@@ -261,7 +261,7 @@ def d_arctan(x: NpArrayLike) -> NpArray:
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
-            dimensions. This includes nested lists, tuples, scalars and existing
+            dimension. This includes nested lists, tuples, scalars and existing
             arrays.
 
     Returns:
@@ -279,7 +279,7 @@ def dialogistic(
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
-            dimensions. This includes nested lists, tuples, scalars and existing
+            dimension. This includes nested lists, tuples, scalars and existing
             arrays.
         scale: Scale parameter. Default: 1.
         sigma: Sharpness parameter. Default: 10.
@@ -306,7 +306,7 @@ def softstep(x: NpArrayLike, scale: float = 1., sigma: float = 10.) -> NpArray:
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
-            dimensions. This includes nested lists, tuples, scalars and existing
+            dimension. This includes nested lists, tuples, scalars and existing
             arrays.
         scale: Scale parameter, default is 1.
         sigma: Sharpness parameter, default is 10.
@@ -327,7 +327,7 @@ def multilogistic(
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
-            dimensions. This includes nested lists, tuples, scalars and existing
+            dimension. This includes nested lists, tuples, scalars and existing
             arrays.
         scale: Scale parameter. Default: 1.
         sigma: Sharpness parameter. Default: 10.
