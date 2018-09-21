@@ -12,7 +12,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://scipy.org") from err
 
-from nemoa.common.ntype import OptDict
+from nemoa.types import OptDict
 
 class Plot:
     """Base class for matplotlib plots.

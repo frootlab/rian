@@ -8,7 +8,7 @@ __license__ = 'GPLv3'
 from configparser import ConfigParser
 
 from nemoa.common import npath
-from nemoa.common.ntype import (
+from nemoa.types import (
     cast, Any, NestPath, NestDict, OptNestDict, OptBool, OptStr)
 
 def load(filepath: NestPath, structure: OptNestDict = None) -> OptNestDict:

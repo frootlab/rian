@@ -8,7 +8,7 @@ __license__ = 'GPLv3'
 import ast
 import sys
 
-from nemoa.common.ntype import Any, OptStr, Tuple
+from nemoa.types import Any, OptStr, Tuple
 
 def splitargs(text: str) -> Tuple[str, tuple, dict]:
     """Split a function call in the function name, its arguments and keywords.

@@ -7,12 +7,8 @@ __license__ = 'GPLv3'
 
 from pathlib import Path
 
-from nemoa.common.ntype import (
-    Any, ClassVar, Dict, OptInt, OptStr, Tuple, Union)
-
 from nemoa.common import nclass, ndict, npath
-
-PathLike = Tuple[Union['PathLike', str, Path], ...]
+from nemoa.types import Any, ClassVar, Dict, OptInt, OptStr, PathLike
 
 class ObjectIP:
     """Base class for objects subjected to intellectual property.

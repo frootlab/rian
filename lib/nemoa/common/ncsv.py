@@ -14,7 +14,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://scipy.org") from err
 
-from nemoa.common.ntype import (
+from nemoa.types import (
     OptStr, OptStrList, OptInt, OptIntTuple, OptNpArray, NpArray)
 
 from nemoa.common import npath

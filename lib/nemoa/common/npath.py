@@ -6,8 +6,7 @@ __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 from pathlib import Path
-
-from nemoa.common.ntype import cast, OptStr, NestPath, OptNestPathDict
+from nemoa.types import NestPath, OptStr, OptStrDict
 
 def cwd() -> str:
     """Path of current working directory.
@@ -69,19 +68,19 @@ def join(*args: NestPath) -> str:
     if len(args) == 1 and isinstance(args[0], (str, Path)):
         path = args[0]
     else:
-        l = list(args)
+        largs = list(args) # make args mutable
         i = 0
-        while i < len(l):
-            while isinstance(l[i], (list, tuple)):
-                if not l[i]:
-                    l.pop(i)
+        while i < len(largs):
+            while isinstance(largs[i], (list, tuple)):
+                if not largs[i]:
+                    largs.pop(i)
                     i -= 1
                     break
                 else:
-                    l[i:i + 1] = l[i]
+                    largs[i:i + 1] = largs[i]
             i += 1
         try:
-            path = Path(*l)
+            path = Path(*largs)
         except Exception as err:
             raise ValueError("nested path is invalid") from err
     if not path:
@@ -94,7 +93,7 @@ def join(*args: NestPath) -> str:
 
 
 def expand(
-        *args: NestPath, udict: OptNestPathDict = None, expapp: bool = True,
+        *args: NestPath, udict: OptStrDict = None, expapp: bool = True,
         expenv: bool = True) -> str:
     r"""Expand path variables.
 
@@ -104,9 +103,10 @@ def expand(
         udict: dictionary for user variables.
             Thereby the keys in the dictionary are encapsulated
             by the symbol '%'. The user variables may also include references.
-        expapp: determines if application path variables are expanded.
-            For a full list of valid application variables see
-            'nemoa.common.nappinfo.path'. Default is True
+        expapp: determines if application specific environmental
+            directories are expanded. For a full list of valid application
+            variables see
+            'nemoa.common.nappinfo.getdir'. Default is True
         expenv: determines if environmental path variables are expanded.
             For a full list of valid environmental path variables see
             'nemoa.common.npath'. Default is True
@@ -133,7 +133,7 @@ def expand(
         for key, val in udict.items():
             d[key] = join(val)
     if expapp:
-        appdirs = cast(dict, nappinfo.path())
+        appdirs = nappinfo.getdirs()
         for key, val in appdirs.items():
             d[key] = val
     if expenv:

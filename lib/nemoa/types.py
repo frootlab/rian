@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Collection of types."""
+"""Collection of types used in nemoa."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
@@ -7,11 +7,12 @@ __license__ = 'GPLv3'
 
 from typing import (
     cast, Any, Callable, ClassVar, Dict, Hashable, Iterable,
-    List, NewType, Optional, Sequence, Set, Tuple, TypeVar, Union)
+    List, Optional, Sequence, Set, Tuple, TypeVar, Union)
 
-# import special types
+# import specific types
 from types import ModuleType as Module, FunctionType as Function
 from array import ArrayType as Array
+from os import PathLike as Path
 
 ################################################################################
 # Generic Variables
@@ -21,8 +22,14 @@ from array import ArrayType as Array
 S = TypeVar('S')
 T = TypeVar('T')
 
-# Built-in Type Aliases for Generic Types
+################################################################################
+# Module Constants
+################################################################################
+
+# Built-in Type Aliases and constants
 Obj = object
+NaN = float('nan')
+Infty = float('inf')
 
 ################################################################################
 # Literals and Collections of Literals
@@ -34,12 +41,12 @@ OptInt = Optional[int]
 OptFloat = Optional[float]
 OptComplex = Optional[complex]
 OptBool = Optional[bool]
-OptObj = Optional[Obj]
 OptArray = Optional[Array]
 StrOrBool = Union[str, bool]
 OptStrOrBool = Optional[StrOrBool]
 ByteLike = Union[bytes, bytearray, str]
-Number = Union[int, float, complex]
+Num = Union[int, float, complex]
+OptNum = Optional[Num]
 Scalar = Union[int, float, complex]
 
 # Collections of Literals
@@ -47,40 +54,47 @@ StrSet = Set[str]
 StrPair = Tuple[str, str]
 StrTuple = Tuple[str, ...]
 StrList = List[str]
-StrDict = Dict[str, Obj]
+StrDict = Dict[str, Any]
 IntSet = Set[int]
 IntPair = Tuple[int, int]
 IntTuple = Tuple[int, ...]
 IntList = List[int]
-IntDict = Dict[int, Obj]
+IntDict = Dict[int, Any]
 FloatPair = Tuple[float, float]
 
 # Unions of Collections of Literals
-OptSet = Optional[Set[Obj]]
-OptPair = Optional[Tuple[Obj, Obj]]
-OptTuple = Optional[Tuple[Obj, ...]]
-OptList = Optional[List[Obj]]
-OptDict = Optional[Dict[Hashable, Obj]]
-StrOrDict = Union[str, Dict[Hashable, Obj]]
+StrOrDict = Union[str, Dict[Hashable, Any]]
+OptSet = Optional[Set[Any]]
+OptPair = Optional[Tuple[Any, Any]]
+OptTuple = Optional[Tuple[Any, ...]]
+OptList = Optional[List[Any]]
+OptDict = Optional[Dict[Hashable, Any]]
+OptStrDict = Optional[StrDict]
 OptStrList = Optional[StrList]
-OptIntList = Optional[IntList]
 OptStrTuple = Optional[StrTuple]
-OptIntTuple = Optional[IntTuple]
 OptStrOrDict = Optional[StrOrDict]
+OptIntList = Optional[IntList]
+OptIntTuple = Optional[IntTuple]
 
-# Compounds of Literals
+# Compounds of Literals and Collections of Literals
+DictOfDicts = Dict[Hashable, Dict[Hashable, Any]]
+DictOfDictOfDicts = Dict[Hashable, DictOfDicts]
+StrPairDict = Dict[StrPair, Any]
+StrListPair = Tuple[StrList, StrList]
+StrTupleDict = Dict[Union[str, Tuple[str, ...]], Any]
 RecDict = Dict[Hashable, StrDict]
 DictOfRecDicts = Dict[Hashable, RecDict]
-NestRecDict = Dict[Hashable, Union['NestRecDict', StrDict]]
-RecDictLike = Union[StrDict, RecDict, DictOfRecDicts]
-StrPairDict = Dict[StrPair, Obj]
-StrListPair = Tuple[StrList, StrList]
-StrTupleDict = Dict[Union[str, Tuple[str, ...]], Obj]
 Vector = Sequence[Scalar]
-NestDict = Dict[Hashable, Union['NestDict', Any]]
-OptNestDict = Optional[NestDict]
 
-# Generators and Iterables
+# Nested Types
+# TODO: (2018.09) currently recursive type definition is not fully supported
+# by the typing module. When recursive type definition is available replace
+# the following lines by their respective recursive definitions
+NestDict = Union[Dict[Hashable, Any], DictOfDicts, DictOfDictOfDicts]
+#NestDict = Dict[Hashable, Union[Any, 'NestDict']]
+NestRecDict = Union[StrDict, RecDict, DictOfRecDicts]
+# NestRecDict = Dict[Hashable, Union[StrDict, 'NestRecDict']]
+OptNestDict = Optional[NestDict]
 IterNestRecDict = Iterable[NestRecDict]
 
 ################################################################################
@@ -88,12 +102,12 @@ IterNestRecDict = Iterable[NestRecDict]
 ################################################################################
 
 # Elementary Callables
-AnyFunc = Callable[..., Obj]
+AnyFunc = Callable[..., Any]
 BoolFunc = Callable[..., bool]
 ScalarFunc = Callable[..., Scalar]
 VectorFunc = Callable[..., Vector]
-UnaryFunc = Callable[[T], Obj]
-BinaryFunc = Callable[[S, T], Obj]
+UnaryFunc = Callable[[T], Any]
+BinaryFunc = Callable[[S, T], Any]
 TestFunc = Callable[[S, T], bool]
 
 # Unions of Callables and Literals
@@ -117,9 +131,16 @@ FuncWrapper = Callable[[Callable[..., T]], Callable[..., T]]
 ################################################################################
 
 # os / pathlib
-from os import PathLike as Path
-# currently recursive types are not fully supported (2018.09)
-NestPath = Sequence[Union['NestPath', str, Path]]
+PathLike = Union[str, Path]
+# Nested Types
+# TODO: (2018.09) currently recursive type definition is not fully supported
+# by the typing module. When recursive type definition is available replace
+# the following lines by their respective recursive definitions
+PathLikeSeq = Sequence[PathLike]
+PathLikeSeq2 = Sequence[Union[PathLike, PathLikeSeq]]
+PathLikeSeq3 = Sequence[Union[PathLike, PathLikeSeq, PathLikeSeq2]]
+NestPath = Union[PathLike, PathLikeSeq, PathLikeSeq2, PathLikeSeq3]
+#NestPath = Sequence[Union[str, Path, 'NestPath']]
 NestPathDict = Dict[str, NestPath]
 OptNestPathDict = Optional[NestPathDict]
 
@@ -129,25 +150,28 @@ OptNestPathDict = Optional[NestPathDict]
 
 # NumPy types
 
-# currently not available (2018.09), but typing support is on the road:
+# TODO: (2018.09) currently typing support for NumPy is not available
+# but typing support is on the road:
 # see: https://github.com/numpy/numpy-stubs
-# callables with variing numbers of arguments are on the road:
-# see: https://github.com/python/typing/issues/264
 NpShape = Optional[IntTuple]
 NpShapeLike = Optional[Union[int, Sequence[int]]]
-NpAxis = Optional[Union[int, Sequence[int]]]
-NpFields = Optional[Union[str, Iterable[str]]]
-NpArray = Obj # TODO: replace with numpy.ndarray
-NpMatrix = Obj # TODO: replace with numpy.matrix
-NpRecArray = Obj # TODO: replace with numpy.recarray
-NpDtype = Obj # TODO: replace with numpy.dtype
+NpAxis = Union[None, int, IntTuple]
+NpFields = Union[None, str, Iterable[str]]
+NpArray = Any # TODO: replace with numpy.ndarray, when supported
+NpMatrix = Any # TODO: replace with numpy.matrix, when supported
+NpRecArray = Any # TODO: replace with numpy.recarray, when supported
+NpDtype = Any # TODO: replace with numpy.dtype, when supported
 NpArraySeq = Sequence[NpArray]
 NpMatrixSeq = Sequence[NpMatrix]
-NpArrayLike = Union[Number, NpArray, NpArraySeq, NpMatrix, NpMatrixSeq]
+NpArrayLike = Union[Num, NpArray, NpArraySeq, NpMatrix, NpMatrixSeq]
 OptNpRecArray = Optional[NpRecArray]
 OptNpArray = Optional[NpArray]
 NpArrayFunc = Callable[..., NpArray]
 NpRecArrayFunc = Callable[..., NpRecArray]
 NpMatrixFunc = Callable[..., NpMatrix]
-
-# networkx types
+# TODO: (2018.09) currently typing for callables with variing numbers of
+# arguments is not supported by the typing module, but on the road:
+# see: https://github.com/python/typing/issues/264
+# TODO: specify arguments, when supported
+# FuncOfNpArray = Callable[[NpArray, ...], Any]
+# NpArrayFuncOfNpArray = Callable[[NpArray, ...], NpArray]

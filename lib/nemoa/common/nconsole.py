@@ -5,9 +5,9 @@ __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.common.ntype import cast, OptObj
+from nemoa.types import cast, Any
 
-def getch() -> OptObj:
+def getch() -> Any:
     """Getch wrapper for various platforms."""
     class GetchMsvcrt:
         """Microsoft Visual C/C++ Runtime Library implementation of getch."""

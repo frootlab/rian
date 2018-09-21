@@ -9,7 +9,7 @@ import base64
 import pickle
 import zlib
 
-from nemoa.common.ntype import cast, Any, OptStr, ByteLike
+from nemoa.types import cast, Any, OptStr, ByteLike
 
 def load(path: str, encoding: OptStr = 'base64') -> dict:
     """Decode and decompress file.

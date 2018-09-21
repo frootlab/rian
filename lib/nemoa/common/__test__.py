@@ -72,34 +72,28 @@ class TestSuite(ntest.TestSuite):
             'user_log_dir', 'site_config_dir', 'site_data_dir']
         for key in dirs:
             with self.subTest(f"path('{key}')"):
-                self.assertTrue(
-                    nappinfo.path(key))
+                self.assertTrue(nappinfo.getdir(key))
 
         for key in ['name', 'author', 'version', 'license']:
             with self.subTest(f"get('{key}')"):
-                self.assertTrue(
-                    nappinfo.get(key))
+                self.assertTrue(nappinfo.getvar(key))
 
     def test_common_narray(self) -> None:
         """Test module 'nemoa.common.narray'."""
         from nemoa.common import narray
+        from nemoa.types import NaN
         import numpy as np
+        arr = np.array([[NaN, 1.], [NaN, NaN]])
+        dic = {('a', 'b'): 1.}
+        labels = (['a', 'b'], ['a', 'b'])
 
         with self.subTest("fromdict"):
             self.assertTrue(
-                (
-                    narray.fromdict(
-                        {('a', 'b'): 1.},
-                        labels=(['a', 'b'], ['a', 'b']), na=0.)
-                    == np.array([[0., 1.], [0., 0.]])
-                ).any())
+                (narray.fromdict(dic, labels=labels) == arr).any())
 
         with self.subTest("asdict"):
             self.assertTrue(
-                narray.asdict(
-                    np.array([[0., 1.], [0., 0.]]),
-                    labels=(['a', 'b'], ['a', 'b']), na=0.)
-                == {('a', 'b'): 1.})
+                narray.asdict(arr, labels=labels) == {('a', 'b'): 1.})
 
     def test_common_nmetric(self) -> None:
         """Test module 'nemoa.common.nmetric'."""
@@ -592,7 +586,7 @@ class TestSuite(ntest.TestSuite):
     def test_common_ntable(self) -> None:
         """Test module 'nemoa.common.ntable'."""
         from nemoa.common import ntable
-        from nemoa.common.ntype import cast, Any
+        from nemoa.types import cast, Any
         import numpy as np
 
         with self.subTest("addcols"):

@@ -5,8 +5,8 @@ __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.common.ntype import (
-    cast, Any, AnyFunc, RecDict, DictOfRecDicts, RecDictLike, FuncWrapper, Obj,
+from nemoa.types import (
+    cast, Any, AnyFunc, RecDict, DictOfRecDicts, NestRecDict, FuncWrapper, Obj,
     OptStr, StrDict)
 
 def hasbase(obj: Obj, base: str) -> bool:
@@ -29,7 +29,7 @@ def hasbase(obj: Obj, base: str) -> bool:
 
 def methods(
         obj: Obj, pattern: OptStr = None, groupby: OptStr = None,
-        key: OptStr = None, val: OptStr = None) -> RecDictLike:
+        key: OptStr = None, val: OptStr = None) -> NestRecDict:
     """Get methods from a given class instance.
 
     Args:

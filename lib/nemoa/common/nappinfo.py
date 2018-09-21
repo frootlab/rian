@@ -5,14 +5,14 @@ __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.common.ntype import cast, Any, OptStr, OptStrOrBool, OptStrOrDict
+from nemoa.types import cast, Any, OptStr, StrDict, OptStrOrBool
 
-def get(name: OptStr = None, filepath: OptStr = None) -> OptStrOrDict:
+def getvar(varname: str, *args: Any, **kwargs: Any) -> OptStr:
     """Get application variable by name.
 
     Application variables are intended to describe the application distribution
     by authorship information, bibliographic information, status, formal
-    conditions and notes or warnings. Consequently the variables are independent
+    conditions and notes or warnings. Therfore the variables are independent
     from runtime properties including user and session. For more information
     see [PEP345].
 
@@ -42,8 +42,10 @@ def get(name: OptStr = None, filepath: OptStr = None) -> OptStrOrDict:
                 distribution.
             'credits': list with strings, acknowledging further contributors,
                 Teams or supporting organizations.
-        filepath: Valid path to python module or package, which comprises the
-            application variables as module variables in the format '__var__'
+        *args: Optional arguments that specify the application, as required by
+            the function 'nemoa.common.napp.updvars'.
+        **kwargs: Optional keyword arguments that specify the application, as
+            required by the function 'nemoa.common.napp.updvars'.
 
     Returns:
         String representing the value of the application variable.
@@ -53,71 +55,170 @@ def get(name: OptStr = None, filepath: OptStr = None) -> OptStrOrDict:
         [RFC822] https://www.w3.org/Protocols/rfc822/
 
     """
-    def updatevars(filepath: OptStr = None) -> None:
-        """Update application variables from module attributes."""
-        import io
-        import re
-
-        # use init script of current root module
-        if filepath is None:
-            from nemoa.common import nmodule
-            name = nmodule.curname().split('.')[0]
-            filepath = getattr(nmodule.inst(name), '__file__', None)
-
-        # read file content
-        with io.open(cast(str, filepath), encoding='utf8') as file:
-            content = file.read()
-
-        # parse content for module variables with regular expressions
-        rkey = "__([a-zA-Z][a-zA-Z0-9]*)__"
-        rval = """['\"]([^'\"]*)['\"]"""
-        rexp = r"^[ ]*%s[ ]*=[ ]*%s" % (rkey, rval)
-        dvars = {}
-        for match in re.finditer(rexp, content, re.M):
-            dvars[str(match.group(1))] = str(match.group(2))
-
-        # supplement missing entries
-        if 'name' not in dvars:
-
-            # use name of current root module
-            from nemoa.common import nmodule
-            dvars['name'] = nmodule.curname().split('.')[0]
-
-        globals()['_VARS'] = dvars
-
-    # update variables if not present or path is given
-    if '_VARS' not in globals() or filepath:
-        updatevars(filepath=filepath)
-
-    dvars = globals()['_VARS']
-    if not name:
-        return dvars.copy()
-    if not isinstance(name, str):
+    # Check type of argument 'name'
+    if not isinstance(varname, str):
         raise TypeError(
-            "argument 'name' requires types 'str' or 'None'"
-            f", not '{type(name)}'")
+            "argument 'name' requires to be of type 'str' or None"
+            f", not '{type(varname)}'")
 
-    return dvars.get(name, None)
+    # Update variables if not present or if optional arguments are given
+    if not '_VARS' in globals() or args or kwargs:
+        updvars(*args, **kwargs)
+    appvars = globals().get('_VARS', {})
 
-def path(
-        name: OptStr = None, appname: OptStr = None,
-        appauthor: OptStrOrBool = None, version: OptStr = None,
-        **kwargs: Any) -> OptStrOrDict:
-    """Get application specific paths for caching, configuration etc.
+    return appvars.get(varname, None)
+
+def getvars(*args: Any, **kwargs: Any) -> StrDict:
+    """Get dictionary with application vaiables.
+
+    Application variables are intended to describe the application distribution
+    by authorship information, bibliographic information, status, formal
+    conditions and notes or warnings. Therfore the variables are independent
+    from runtime properties including user and session. For more information
+    see [PEP345].
+
+    Args:
+        *args: Optional arguments that specify the application, as required by
+            the function 'nemoa.common.napp.updvars'.
+        **kwargs: Optional keyword arguments that specify the application, as
+            required by the function 'nemoa.common.napp.updvars'.
+
+    Returns:
+        Dictionary containing application variables.
+
+    References:
+        [PEP345] https://www.python.org/dev/peps/pep-0345/
+
+    """
+    # update variables if not present or if optional arguments are given
+    if not '_VARS' in globals() or args or kwargs:
+        updvars(*args, **kwargs)
+    return globals().get('_VARS', {}).copy()
+
+def updvars(filepath: OptStr = None) -> None:
+    """Update application variables from module attributes.
+
+    Application variables are intended to describe the application distribution
+    by authorship information, bibliographic information, status, formal
+    conditions and notes or warnings. Therfore the variables are independent
+    from runtime properties including user and session. For more information
+    see [PEP345].
+
+    Args:
+        filepath: Valid path to python module or package, which comprises the
+            application variables as module variables in the format '__var__'
+
+    Returns:
+        Dictionary with application variables.
+
+    References:
+        [PEP345] https://www.python.org/dev/peps/pep-0345/
+
+    """
+    import io
+    import re
+
+    # use init script of current root module
+    if filepath is None:
+        from nemoa.common import nmodule
+        mname = nmodule.curname().split('.')[0]
+        module = nmodule.inst(mname)
+        filepath = getattr(module, '__file__', None)
+
+    # read file content
+    with io.open(cast(str, filepath), encoding='utf8') as file:
+        content = file.read()
+
+    # parse content for module variables with regular expressions
+    rkey = "__([a-zA-Z][a-zA-Z0-9]*)__"
+    rval = """['\"]([^'\"]*)['\"]"""
+    rexp = r"^[ ]*%s[ ]*=[ ]*%s" % (rkey, rval)
+    dvars = {}
+    for match in re.finditer(rexp, content, re.M):
+        dvars[str(match.group(1))] = str(match.group(2))
+
+    # supplement missing entries
+    if 'name' not in dvars:
+
+        # use name of current root module
+        from nemoa.common import nmodule
+        dvars['name'] = nmodule.curname().split('.')[0]
+
+    globals()['_VARS'] = dvars
+
+def getdir(dirname: str, *args: Any, **kwargs: Any) -> str:
+    """Get application specific environmental directory.
 
     This function returns application specific system directories by platform
     independent names to allow platform independent storage for caching,
-    logging, configuration and permanent data. This is a wrapper function to
-    the package 'appdirs' [1].
+    logging, configuration and permanent data storage.
 
     Args:
-        name: Environmental directory name. Allowed values are:
+        dirname: Environmental directory name. Allowed values are:
             'user_cache_dir': Cache directory of user
             'user_config_dir': Configuration directory of user
             'user_data_dir': Data directory of user
             'user_log_dir': Logging directory of user
             'site_config_dir': Site specific configuration directory
             'site_data_dir': Site specific data directory
+        *args: Optional arguments that specify the application, as required by
+            the function 'nemoa.common.napp.upddirs'.
+        **kwargs: Optional keyword arguments that specify the application, as
+            required by the function 'nemoa.common.napp.upddirs'.
+
+    Returns:
+        String containing path of environmental directory or None if
+        the pathname is not supported.
+
+    """
+    # Check type argument 'dirname'
+    if not isinstance(dirname, str):
+        raise TypeError(
+            "argument 'name' requires to be of type 'str' or None"
+            f", not '{type(dirname)}'")
+
+    # Update appdirs if not present or if optional arguments are given
+    if not '_DIRS' in globals() or args or kwargs:
+        upddirs(*args, **kwargs)
+    dirs = globals().get('_DIRS', {})
+
+    # Check value of argument 'dirname'
+    if dirname not in dirs:
+        raise ValueError(f"directory name '{dirname}' is not valid")
+
+    return dirs[dirname]
+
+def getdirs(*args: Any, **kwargs: Any) -> StrDict:
+    """Get application specific environmental directories.
+
+    This function returns application specific system directories by platform
+    independent names to allow platform independent storage for caching,
+    logging, configuration and permanent data storage.
+
+    Args:
+        *args: Optional arguments that specify the application, as required by
+            the function 'nemoa.common.napp.upddirs'.
+        **kwargs: Optional keyword arguments that specify the application, as
+            required by the function 'nemoa.common.napp.upddirs'.
+
+    Returns:
+        Dictionary containing paths of application specific environmental
+        directories.
+
+    """
+    # Update appdirs if not present or if optional arguments are given
+    if not '_DIRS' in globals() or args or kwargs:
+        upddirs(*args, **kwargs)
+    return globals().get('_DIRS', {}).copy()
+
+def upddirs(
+        appname: OptStr = None, appauthor: OptStrOrBool = None,
+        version: OptStr = None, **kwargs: Any) -> None:
+    """Update application specific directories from name, author and version.
+
+    This is a wrapper function to the package 'appdirs' [1].
+
+    Args:
         appname: is the name of application.
             If None, just the system directory is returned.
         appauthor: is the name of the appauthor or distributing body for this
@@ -131,48 +232,28 @@ def path(
             For more information see [1].
 
     Returns:
-        String containing path of environmental directory or None if
-        the pathname is not supported.
+        Dictionary containing paths of application specific environmental
+        directories.
 
     References:
         [1] http://github.com/ActiveState/appdirs
 
     """
-    def upddirs(
-            appname: OptStr = None, appauthor: OptStrOrBool = None,
-            version: OptStr = None, **kwargs: Any) -> None:
-        """Update application directories from name, author and version."""
-        try:
-            import appdirs
-        except ImportError as err:
-            raise ImportError(
-                "requires package appdirs: "
-                "https://pypi.org/project/appdirs/") from err
+    try:
+        import appdirs
+    except ImportError as err:
+        raise ImportError(
+            "requires package appdirs: "
+            "https://pypi.org/project/appdirs/") from err
 
-        app = {
-            'appname': appname or get('name'),
-            'appauthor': appauthor or get('company') or get('organization') \
-                or get('author'),
-            'version': version}
-        paths = appdirs.AppDirs(**app, **kwargs)
-        keys = [
-            'user_cache_dir', 'user_config_dir', 'user_data_dir',
-            'user_log_dir', 'site_config_dir', 'site_data_dir']
+    app = {
+        'appname': appname or getvar('name'),
+        'appauthor': appauthor or getvar('company') \
+            or getvar('organization') or getvar('author'),
+        'version': version}
+    dirs = appdirs.AppDirs(**app, **kwargs)
+    keys = [
+        'user_cache_dir', 'user_config_dir', 'user_data_dir',
+        'user_log_dir', 'site_config_dir', 'site_data_dir']
 
-        globals()['_DIRS'] = {key: getattr(paths, key) for key in keys}
-
-    if '_DIRS' not in globals():
-        upddirs(
-            appname=appname, appauthor=appauthor, version=version, **kwargs)
-
-    dirs = globals()['_DIRS']
-    if not name:
-        return dirs.copy()
-    if not isinstance(name, str):
-        raise TypeError(
-            "argument 'name' requires to be of type 'str' or None"
-            f", not '{type(name)}'")
-    if not name in dirs:
-        raise KeyError(f"pathname '{name}' is not valid")
-
-    return dirs[name]
+    globals()['_DIRS'] = {key: getattr(dirs, key) for key in keys}

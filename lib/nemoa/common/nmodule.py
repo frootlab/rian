@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 
 import inspect
 
-from nemoa.common.ntype import (
+from nemoa.types import (
     Any, Module, OptStr, OptModule, OptStrDictOfTestFuncs, StrList)
 
 def curname(frame: int = 0) -> str:

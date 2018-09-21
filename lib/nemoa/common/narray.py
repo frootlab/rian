@@ -12,13 +12,13 @@ except ImportError as err:
         "requires package numpy: "
         "https://scipy.org") from err
 
-from nemoa.common.ntype import StrPairDict, StrListPair, NpArray, OptFloat
+from nemoa.types import StrPairDict, StrListPair, NpArray, NaN, Num, OptNum
 
 #
-#  Array Conversion Functions
+#  Array <-> Dictionary Conversion Functions
 #
 
-def fromdict(d: StrPairDict, labels: StrListPair, na: float = 0.) -> NpArray:
+def fromdict(d: StrPairDict, labels: StrListPair, nan: Num = NaN) -> NpArray:
     """Convert dictionary to array.
 
     Args:
@@ -28,13 +28,17 @@ def fromdict(d: StrPairDict, labels: StrListPair, na: float = 0.) -> NpArray:
         labels: Tuple of format (<row list>, <col list>), where:
             <row list> is a list of row labels ['row1', 'row2', ...] and
             <col list> is a list of column labels ['col1', 'col2', ...].
-        na: Value to mask NA (Not Available) entries. Missing entries in the
-            dictionary are replenished by the NA value in the array.
+        nan: Value to mask Not Not a Number (NaN) entries. Missing entries in
+            the dictionary are replenished by the NaN value in the array.
+            Default: IEEE 754 floating point representation of NaN [1]
 
     Returns:
         Numpy ndarray of shape (n, m), where n equals the length of the
         <row list> of the argument labels and m equals the length of the
         <col list> of the argument labels.
+
+    References:
+        [1] https://ieeexplore.ieee.org/document/4610935/
 
     """
     # Declare and initialize return value
@@ -44,12 +48,12 @@ def fromdict(d: StrPairDict, labels: StrListPair, na: float = 0.) -> NpArray:
     setitem = getattr(array, 'itemset')
     for i, row in enumerate(labels[0]):
         for j, col in enumerate(labels[1]):
-            setitem((i, j), d.get((row, col), na))
+            setitem((i, j), d.get((row, col), nan))
 
     return array
 
 def asdict(
-        x: NpArray, labels: StrListPair, na: OptFloat = None) -> StrPairDict:
+        x: NpArray, labels: StrListPair, nan: OptNum = NaN) -> StrPairDict:
     """Convert two dimensional array to dictionary of pairs.
 
     Args:
@@ -59,14 +63,18 @@ def asdict(
         labels: Tuple of format (<row list>, <col list>), where:
             <row list> is a list of row labels ['row1', 'row2', ...] and
             <col list> is a list of column labels ['col1', 'col2', ...]
-        na: Optional value to mask NA (Not Available) entries. For cells in the
+        na: Optional value to mask Not a Number (NaN) entries. For cells in the
             array, which have this value, no entry in the returned dictionary
-            is created.
+            is created. If nan is None, then for all numbers entries are
+            created. Default: IEEE 754 floating point representation of NaN [1]
 
     Returns:
         Dictionary of format {(<row>, <col>): value, ...}, where:
         <row> is an element of the <row list> of the argument labels and
         <col> is an element of the <col list> of the argument labels.
+
+    References:
+        [1] https://ieeexplore.ieee.org/document/4610935/
 
     """
     # Check argument 'x'
@@ -83,7 +91,7 @@ def asdict(
     for i, row in enumerate(labels[0]):
         for j, col in enumerate(labels[1]):
             val = getitem(i, j)
-            if na is None or val != na:
+            if nan is None or not np.isnan(val):
                 d[(row, col)] = val
 
     return d

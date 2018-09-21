@@ -19,7 +19,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://scipy.org") from err
 
-from nemoa.common.ntype import Any, OptBool, OptStr, OptTuple, FloatPair
+from nemoa.types import Any, OptBool, OptStr, OptTuple, FloatPair
 
 DiGraph = nx.classes.digraph.DiGraph
 

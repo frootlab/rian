@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Collection of frequently used numpy ndarray functions."""
+"""Collection of vector norms and distance functions."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
@@ -13,7 +13,7 @@ except ImportError as err:
         "https://scipy.org") from err
 
 from nemoa.common import nmodule
-from nemoa.common.ntype import StrList, NpAxis, NpArray, NpArrayLike
+from nemoa.types import StrList, NpAxis, NpArray, NpArrayLike
 
 VECNORM_PREFIX = 'vecnorm_'
 VECDIST_PREFIX = 'vecdist_'
@@ -66,11 +66,13 @@ def vecnorm(x: NpArrayLike, norm: str, p: int = 1, axis: NpAxis = 0) -> NpArray:
             'ME': Mean Square product, pseudo norm (induces: MSE)
         p: Positive integer, which parameterizes the respective p-norm. If the
             argument 'norm' is not a p-norm, then 'p' is not used.
-        axis: Axis (or axes) along which the norm is calculated. Within a
-            one-dimensional array the axis always has index 0. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1). Default: 0
+        axis: Index of axis (or axes) along which the function is performed.
+            Within a 1d array the axis has index 0. In a 2d array the axis with
+            index 0 is running across rows, and the axis with index 1 is running
+            across columns. If axis is a tuple of ints, the function is
+            performed over all axes in the tuple. If axis is None, the function
+            is performed over all axes.
+            Default: 0
 
     Returns:
         Numpy ndarray of dimension <dim x> - <number of axes>.
@@ -108,11 +110,13 @@ def vecnorm_lp(x: NpArray, p: int = 1, axis: NpAxis = 0) -> NpArray:
             arrays.
         p: Positive integer, which determines the lp-norm by the p-th root of
             the summed p-th powered absolute values.
-        axis: Axis (or axes) along which the norm is calculated. Within a
-            one-dimensional array the axis always has index 0. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1). Default: 0
+        axis: Index of axis (or axes) along which the function is performed.
+            Within a 1d array the axis has index 0. In a 2d array the axis with
+            index 0 is running across rows, and the axis with index 1 is running
+            across columns. If axis is a tuple of ints, the function is
+            performed over all axes in the tuple. If axis is None, the function
+            is performed over all axes.
+            Default: 0
 
     Returns:
         Numpy ndarray of dimension <dim x> - <number of axes>.

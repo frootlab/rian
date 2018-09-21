@@ -5,7 +5,7 @@ __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.common.ntype import AnyFunc, StrDict, Function, OptFunction, OptDict
+from nemoa.types import AnyFunc, StrDict, Function, OptFunction, OptDict
 
 def about(func: AnyFunc) -> str:
     """Summary about a function.

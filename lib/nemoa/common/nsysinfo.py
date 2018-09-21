@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 
 import platform
 
-from nemoa.common.ntype import OptStr
+from nemoa.types import OptStr
 
 def hostname() -> str:
     """Hostname of the system.

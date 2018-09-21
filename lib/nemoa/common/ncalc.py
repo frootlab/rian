@@ -14,7 +14,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://scipy.org") from err
 
-from nemoa.common.ntype import Any, OptStr, NpArray, NpArrayLike
+from nemoa.types import Any, OptStr, NpArray, NpArrayLike
 
 # Sigmoid Functions
 
