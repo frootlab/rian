@@ -60,7 +60,7 @@ class ObjectIP:
         'config': '_config'
     }
 
-    _config: Dict[str, dict]
+    _config: dict
 
     def __init__(self, **kwargs: Any) -> None:
         """Initialize object with given configuration."""
@@ -276,10 +276,10 @@ class ObjectIP:
             Sorted list of keys, which are accepted by the 'get' method.
 
         """
-        getter = nclass.methods(self, pattern='_get_*')
-        getter = sorted(ndict.crop(getter, '_get_'))
+        gdict = nclass.methods(self, pattern='_get_*')
+        glist = sorted(ndict.crop(gdict, '_get_'))
 
-        return getter
+        return glist
 
     def _get_license(self) -> OptStr:
         """Get the license of the resource.
@@ -347,10 +347,10 @@ class ObjectIP:
             Sorted list of keys, which are accepted by the 'set' method.
 
         """
-        setter = nclass.methods(self, pattern='_set_*')
-        setter = sorted(ndict.crop(setter, '_set_'))
+        sdict = nclass.methods(self, pattern='_set_*')
+        slist = sorted(ndict.crop(sdict, '_set_'))
 
-        return setter
+        return slist
 
     def _get_type(self) -> OptStr:
         """Get instance type, using module name and class name.

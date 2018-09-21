@@ -16,7 +16,9 @@ except ImportError as err:
 
 from nemoa.types import Any, OptStr, NpArray, NpArrayLike
 
+#
 # Sigmoid Functions
+#
 
 def sigmoid(x: NpArrayLike, name: OptStr = None, **kwargs: Any) -> NpArray:
     """Calculate sigmoid functions.
@@ -143,7 +145,9 @@ def arctan(x: NpArrayLike) -> NpArray:
     """
     return np.arctan(x)
 
+#
 # Derivatives of Sigmoid Functions
+#
 
 def d_sigmoid(x: NpArrayLike, name: OptStr = None, **kwargs: Any) -> NpArray:
     """Calculate derivative of sigmoid function.
@@ -271,7 +275,9 @@ def d_arctan(x: NpArrayLike) -> NpArray:
     """
     return 1. / (1. + np.square(x))
 
-# Multistep Sigmoid Functions
+#
+# Multiple Sigmoid Functions
+#
 
 def dialogistic(
         x: NpArrayLike, scale: float = 1., sigma: float = 10.) -> NpArray:

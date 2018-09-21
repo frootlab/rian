@@ -6,7 +6,7 @@ __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 from typing import (
-    cast, Any, Callable, ClassVar, Dict, Hashable, Iterable,
+    Any, Callable, ClassVar, Dict, Hashable, Iterable,
     List, Optional, Sequence, Set, Tuple, TypeVar, Union)
 
 # import specific types
@@ -22,12 +22,13 @@ from os import PathLike as Path
 S = TypeVar('S')
 T = TypeVar('T')
 
-################################################################################
-# Module Constants
-################################################################################
-
 # Built-in Type Aliases and constants
 Obj = object
+
+################################################################################
+# Numerical Constants
+################################################################################
+
 NaN = float('nan')
 Infty = float('inf')
 
@@ -44,7 +45,8 @@ OptBool = Optional[bool]
 OptArray = Optional[Array]
 StrOrBool = Union[str, bool]
 OptStrOrBool = Optional[StrOrBool]
-ByteLike = Union[bytes, bytearray, str]
+BytesLike = Union[bytes, bytearray, memoryview]
+BytesLikeOrStr = Union[BytesLike, str]
 Num = Union[int, float, complex]
 OptNum = Optional[Num]
 Scalar = Union[int, float, complex]
@@ -149,14 +151,13 @@ OptNestPathDict = Optional[NestPathDict]
 ################################################################################
 
 # NumPy types
-
-# TODO: (2018.09) currently typing support for NumPy is not available
-# but typing support is on the road:
-# see: https://github.com/numpy/numpy-stubs
 NpShape = Optional[IntTuple]
 NpShapeLike = Optional[Union[int, Sequence[int]]]
 NpAxis = Union[None, int, IntTuple]
 NpFields = Union[None, str, Iterable[str]]
+# TODO: (2018.09) currently typing support for NumPy is not available
+# but typing support is on the road:
+# see: https://github.com/numpy/numpy-stubs
 NpArray = Any # TODO: replace with numpy.ndarray, when supported
 NpMatrix = Any # TODO: replace with numpy.matrix, when supported
 NpRecArray = Any # TODO: replace with numpy.recarray, when supported

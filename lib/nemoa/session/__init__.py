@@ -5,13 +5,15 @@ __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+from nemoa.types import Any
+
 def cur():
     """Get current session instance."""
     if '_cur' not in globals():
         globals()['_cur'] = new()
     return globals()['_cur']
 
-def get(*args, **kwargs):
+def get(*args: Any, **kwargs: Any) -> Any:
     """Get meta information and content from current session."""
     return cur().get(*args, **kwargs)
 
@@ -28,7 +30,7 @@ def open(*args, **kwargs):
     """Open object in current session."""
     return cur().open(*args, **kwargs)
 
-def path(*args, **kwargs):
+def path(*args: Any, **kwargs: Any) -> str:
     """Get path for given object in current session."""
     return cur().path(*args, **kwargs)
 

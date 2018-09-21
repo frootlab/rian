@@ -9,7 +9,7 @@ import base64
 import pickle
 import zlib
 
-from nemoa.types import cast, Any, OptStr, ByteLike
+from nemoa.types import Any, Obj, OptStr, BytesLikeOrStr
 
 def load(path: str, encoding: OptStr = 'base64') -> dict:
     """Decode and decompress file.
@@ -32,8 +32,9 @@ def load(path: str, encoding: OptStr = 'base64') -> dict:
 
     return obj
 
-def dump(obj: object, path: str, encoding: OptStr = 'base64',
-    level: int = 6) -> bool:
+def dump(
+        obj: Obj, path: str, encoding: OptStr = 'base64',
+        level: int = 6) -> bool:
     """Compress and encode arbitrary object to file.
 
     Args:
@@ -59,7 +60,7 @@ def dump(obj: object, path: str, encoding: OptStr = 'base64',
 
     return True
 
-def loads(blob: ByteLike, encoding: OptStr = 'base64') -> Any:
+def loads(blob: BytesLikeOrStr, encoding: OptStr = 'base64') -> Any:
     """Decode and decompress bytes-like object to object hierarchy.
 
     Args:
@@ -76,27 +77,27 @@ def loads(blob: ByteLike, encoding: OptStr = 'base64') -> Any:
         [RFC3548] https://tools.ietf.org/html/rfc3548.html
 
     """
-    # decode bytes
+    # Decode bytes
     if not encoding:
-        pass
+        bbytes = bytes(blob)
     elif encoding == 'base64':
-        blob = base64.b64decode(blob)
+        bbytes = base64.b64decode(blob)
     elif encoding == 'base32':
-        blob = base64.b32decode(blob)
+        bbytes = base64.b32decode(blob)
     elif encoding == 'base16':
-        blob = base64.b16decode(blob)
+        bbytes = base64.b16decode(blob)
     elif encoding == 'base85':
-        blob = base64.b85decode(blob)
+        bbytes = base64.b85decode(blob)
     else:
         raise ValueError(f"encoding '{encoding}' is not supported")
 
-    # decompress bytes, level is not required
-    blob = zlib.decompress(cast(bytes, blob))
-    obj = pickle.loads(blob) # bytes to object
+    # Decompress bytes, level is not required
+    bbytes = zlib.decompress(bbytes)
+    obj = pickle.loads(bbytes) # bytes to object
 
     return obj
 
-def dumps(obj: object, encoding: OptStr = 'base64', level: int = 6) -> bytes:
+def dumps(obj: Obj, encoding: OptStr = 'base64', level: int = 6) -> bytes:
     """Compress and encode arbitrary object to bytes.
 
     Args:
@@ -119,7 +120,7 @@ def dumps(obj: object, encoding: OptStr = 'base64', level: int = 6) -> bytes:
     blob = pickle.dumps(obj) # object to bytes
     blob = zlib.compress(blob, level) # compress bytes
 
-    # encode bytes
+    # Encode bytes
     if not encoding:
         pass
     elif encoding == 'base64':

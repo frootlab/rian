@@ -6,10 +6,10 @@ __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 from configparser import ConfigParser
+from typing import cast
 
 from nemoa.common import npath
-from nemoa.types import (
-    cast, Any, NestPath, NestDict, OptNestDict, OptBool, OptStr)
+from nemoa.types import Any, NestPath, NestDict, OptNestDict, OptBool, OptStr
 
 def load(filepath: NestPath, structure: OptNestDict = None) -> OptNestDict:
     """Import configuration dictionary from INI file.

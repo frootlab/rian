@@ -5,8 +5,10 @@ __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+from typing import cast
+
 from nemoa.types import (
-    cast, Any, AnyFunc, RecDict, DictOfRecDicts, NestRecDict, FuncWrapper, Obj,
+    Any, AnyFunc, RecDict, DictOfRecDicts, NestRecDict, FuncWrapper, Obj,
     OptStr, StrDict)
 
 def hasbase(obj: Obj, base: str) -> bool:

@@ -6,8 +6,8 @@ __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
 from nemoa.types import (
-    Any, AnyFunc, FuncWrapper, Module, OptModule, OptStr, OptStrList,
-    NpArray, NpArrayLike, NpArrayFunc, Scalar, ScalarFunc)
+    Any, AnyFunc, FuncWrapper, Module, NpArray, NpArrayFunc, NpArrayLike,
+    OptModule, OptStr, OptStrList, Scalar, ScalarFunc)
 
 def search(module: OptModule = None, **kwargs: Any) -> dict:
     """Search for algorithms, that pass given filters.
@@ -33,8 +33,7 @@ def search(module: OptModule = None, **kwargs: Any) -> dict:
     # create filter rules for algorithm attributes
     rules = {
         'tags': lambda a, b: set(a) <= set(b), # requires all
-        'classes': lambda a, b: bool(set(a) & set(b)) # requires any
-    }
+        'classes': lambda a, b: bool(set(a) & set(b))} # requires any
 
     # search for algorithms
     return nmodule.search(module=module, rules=rules, **kwargs)

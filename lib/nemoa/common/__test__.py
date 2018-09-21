@@ -63,20 +63,20 @@ class TestSuite(ntest.TestSuite):
             self.assertEqual(
                 getattr(test_association, 'category', None), 'association')
 
-    def test_common_nappinfo(self) -> None:
-        """Test module 'nemoa.common.nappinfo'."""
-        from nemoa.common import nappinfo
+    def test_common_napp(self) -> None:
+        """Test module 'nemoa.common.napp'."""
+        from nemoa.common import napp
 
         dirs = [
             'user_cache_dir', 'user_config_dir', 'user_data_dir',
             'user_log_dir', 'site_config_dir', 'site_data_dir']
         for key in dirs:
             with self.subTest(f"path('{key}')"):
-                self.assertTrue(nappinfo.getdir(key))
+                self.assertTrue(napp.getdir(key))
 
         for key in ['name', 'author', 'version', 'license']:
             with self.subTest(f"get('{key}')"):
-                self.assertTrue(nappinfo.getvar(key))
+                self.assertTrue(napp.getvar(key))
 
     def test_common_narray(self) -> None:
         """Test module 'nemoa.common.narray'."""
@@ -124,71 +124,99 @@ class TestSuite(ntest.TestSuite):
     def test_common_ncalc(self) -> None:
         """Test module 'nemoa.common.ncalc'."""
         from nemoa.common import ncalc
-
         import numpy as np
 
-        exam = np.array([[0.0, 0.5], [1.0, -1.0]])
-        test = lambda x, y: np.isclose(x.sum(), y, atol=1e-3)
+        arr = np.array([[0.0, 0.5], [1.0, -1.0]])
 
         with self.subTest("logistic"):
             self.assertTrue(
-                test(ncalc.logistic(exam), 2.122459))
+                np.isclose(
+                    ncalc.logistic(arr).sum(),
+                    2.122459, atol=1e-3))
 
         with self.subTest("tanh"):
             self.assertTrue(
-                test(ncalc.tanh(exam), 0.462117))
+                np.isclose(
+                    ncalc.tanh(arr).sum(),
+                    0.462117, atol=1e-3))
 
         with self.subTest("lecun"):
             self.assertTrue(
-                test(ncalc.lecun(exam), 0.551632))
+                np.isclose(
+                    ncalc.lecun(arr).sum(),
+                    0.551632, atol=1e-3))
 
         with self.subTest("elliot"):
             self.assertTrue(
-                test(ncalc.elliot(exam), 0.333333))
+                np.isclose(
+                    ncalc.elliot(arr).sum(),
+                    0.333333, atol=1e-3))
 
         with self.subTest("hill"):
             self.assertTrue(
-                test(ncalc.hill(exam), 0.447213))
+                np.isclose(
+                    ncalc.hill(arr).sum(),
+                    0.447213, atol=1e-3))
 
         with self.subTest("arctan"):
             self.assertTrue(
-                test(ncalc.arctan(exam), 0.463647))
+                np.isclose(
+                    ncalc.arctan(arr).sum(),
+                    0.463647, atol=1e-3))
 
         with self.subTest("d_logistic"):
             self.assertTrue(
-                test(ncalc.d_logistic(exam), 0.878227))
+                np.isclose(
+                    ncalc.d_logistic(arr).sum(),
+                    0.878227, atol=1e-3))
 
         with self.subTest("d_elliot"):
             self.assertTrue(
-                test(ncalc.d_elliot(exam), 1.944444))
+                np.isclose(
+                    ncalc.d_elliot(arr).sum(),
+                    1.944444, atol=1e-3))
 
         with self.subTest("d_hill"):
             self.assertTrue(
-                test(ncalc.d_hill(exam), 2.422648))
+                np.isclose(
+                    ncalc.d_hill(arr).sum(),
+                    2.422648, atol=1e-3))
 
         with self.subTest("d_lecun"):
             self.assertTrue(
-                test(ncalc.d_lecun(exam), 3.680217))
+                np.isclose(
+                    ncalc.d_lecun(arr).sum(),
+                    3.680217, atol=1e-3))
 
         with self.subTest("d_tanh"):
             self.assertTrue(
-                test(ncalc.d_tanh(exam), 2.626396))
+                np.isclose(
+                    ncalc.d_tanh(arr).sum(),
+                    2.626396, atol=1e-3))
 
         with self.subTest("d_arctan"):
             self.assertTrue(
-                test(ncalc.d_arctan(exam), 2.800000))
+                np.isclose(
+                    ncalc.d_arctan(arr).sum(),
+                    2.800000, atol=1e-3))
 
         with self.subTest("dialogistic"):
             self.assertTrue(
-                test(ncalc.dialogistic(exam), 0.251661))
+                np.isclose(
+                    ncalc.dialogistic(arr).sum(),
+                    0.251661, atol=1e-3))
 
         with self.subTest("softstep"):
             self.assertTrue(
-                test(ncalc.softstep(exam), 0.323637))
+                np.isclose(
+                    ncalc.softstep(arr).sum(),
+                    0.323637, atol=1e-3))
 
         with self.subTest("multilogistic"):
             self.assertTrue(
-                test(ncalc.multilogistic(exam), 0.500272))
+                np.isclose(
+                    ncalc.multilogistic(arr).sum(),
+                    0.500272, atol=1e-3))
 
     def test_common_nconsole(self) -> None:
         """Test module 'nemoa.common.nconsole'."""
@@ -207,13 +235,13 @@ class TestSuite(ntest.TestSuite):
 
         class Base:
             @nclass.attributes(name='a', group=1)
-            def geta(self):
+            def geta(self) -> None:
                 pass
             @nclass.attributes(name='b', group=2)
-            def getb(self):
+            def getb(self) -> None:
                 pass
             @nclass.attributes(name='b', group=2)
-            def setb(self):
+            def setb(self) -> None:
                 pass
         obj = Base()
 
@@ -330,9 +358,9 @@ class TestSuite(ntest.TestSuite):
             self.assertTrue(
                 isinstance(rval, np.ndarray))
             self.assertTrue(
-                (rval['col1'] == data['col1']).any())
+                (np.array(rval)['col1'] == data['col1']).any())
             self.assertTrue(
-                (rval['col2'] == data['col2']).any())
+                (np.array(rval)['col2'] == data['col2']).any())
 
         if os.path.exists(filename):
             os.remove(filename)
@@ -343,6 +371,7 @@ class TestSuite(ntest.TestSuite):
 
         import os
         import tempfile
+        from typing import cast
 
         filename = tempfile.NamedTemporaryFile().name + '.ini'
         header = '-*- coding: utf-8 -*-'
@@ -363,7 +392,7 @@ class TestSuite(ntest.TestSuite):
 
         with self.subTest("loads"):
             self.assertEqual(
-                nini.loads(string, structure=structure), obj)
+                nini.loads(string, structure=cast(dict, structure)), obj)
 
         with self.subTest("save"):
             self.assertTrue(
@@ -371,7 +400,7 @@ class TestSuite(ntest.TestSuite):
 
         with self.subTest("load"):
             self.assertEqual(
-                nini.load(filename, structure=structure), obj)
+                nini.load(filename, structure=cast(dict, structure)), obj)
 
         with self.subTest("getheader"):
             self.assertEqual(nini.getheader(filename), header)
@@ -409,6 +438,8 @@ class TestSuite(ntest.TestSuite):
     def test_common_nmodule(self) -> None:
         """Test module 'nemoa.common.nmodule'."""
         from nemoa.common import nmodule
+        from nemoa.types import Module
+        from typing import cast
 
         with self.subTest("curname"):
             self.assertEqual(nmodule.curname(), __name__)
@@ -424,9 +455,10 @@ class TestSuite(ntest.TestSuite):
 
         with self.subTest("inst"):
             self.assertTrue(
-                hasattr(nmodule.inst(nmodule.__name__), '__name__'))
+                hasattr(
+                    nmodule.inst(nmodule.__name__), '__name__'))
             self.assertEqual(
-                nmodule.inst(nmodule.__name__).__name__,
+                cast(Module, nmodule.inst(nmodule.__name__)).__name__,
                 nmodule.__name__)
 
         with self.subTest("functions"):
@@ -585,8 +617,9 @@ class TestSuite(ntest.TestSuite):
 
     def test_common_ntable(self) -> None:
         """Test module 'nemoa.common.ntable'."""
+        from typing import cast
         from nemoa.common import ntable
-        from nemoa.types import cast, Any
+        from nemoa.types import Any
         import numpy as np
 
         with self.subTest("addcols"):

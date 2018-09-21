@@ -5,7 +5,8 @@ __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.types import cast, Any
+from typing import cast
+from nemoa.types import Any
 
 def getch() -> Any:
     """Getch wrapper for various platforms."""
