@@ -76,7 +76,7 @@ def kwargs(func: AnyFunc, default: OptDict = None) -> StrDict:
         {'default': 'not None'}
 
     """
-    # Check arguments
+    # Check Arguments
     if not isinstance(func, Function):
         raise TypeError('first argument requires to be a function')
     if not isinstance(default, (dict, type(None))):

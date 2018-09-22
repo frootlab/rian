@@ -32,13 +32,13 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-from nemoa.common import ncalc, nalgorithm
+from nemoa.common import ncalc, nalgo
 
 #
 # (1) Sampler for Bayesian Networks
 #
 
-@nalgorithm.sampler(
+@nalgo.sampler(
     name    = 'forward',
     title   = 'Forward Sampling',
     classes = ['LM', 'ANN']
@@ -83,7 +83,7 @@ def draw_forward_sample(model, *args, **kwargs):
 
     return None
 
-@nalgorithm.sampler(
+@nalgo.sampler(
     name    = 'ancestral_residual',
     title   = 'Ancestral Residual Sampler',
     classes = ['LM', 'ANN']
@@ -127,7 +127,7 @@ def get_forward_residuals(model, data, mapping = None, block = None):
 # (2) Sample statistics for Bayesian Networks
 #
 
-@nalgorithm.statistic(
+@nalgo.statistic(
     name    = 'errorvector',
     title   = 'Reconstruction Error',
     classes = ['LM', 'ANN'],
@@ -160,7 +160,7 @@ def get_error_vector(model, data, norm: str = 'MS', **kwargs):
 
     return error
 
-@nalgorithm.custom(
+@nalgo.custom(
     name     = 'accuracyvector',
     category = 'units',
     args     = 'all',
@@ -196,7 +196,7 @@ def get_accuracy_vector(model, data, norm: str = 'MS', **kwargs):
 
     return 1. - normres / normdat
 
-@nalgorithm.custom(
+@nalgo.custom(
     name     = 'precisionvector',
     category = 'units',
     args     = 'all',
@@ -233,7 +233,7 @@ def get_precision_vector(model, data, norm = 'SD', **kwargs):
 
     return 1. - devres / devdat
 
-@nalgorithm.custom(
+@nalgo.custom(
     name     = 'mean',
     title    = 'Reconstructed Mean Values',
     category = 'units',
@@ -267,7 +267,7 @@ def get_mean_vector(model, data, mapping = None, block = None):
 
     return model_out.mean(axis = 0)
 
-@nalgorithm.custom(
+@nalgo.custom(
     name     = 'variance',
     category = 'units',
     args     = 'input',
@@ -302,7 +302,7 @@ def get_variance_vector(model, data, mapping = None, block = None):
 # (3) Objective Functions for Bayesian Networks
 #
 
-@nalgorithm.objective(
+@nalgo.objective(
     name    = 'error',
     title   = 'Mean Reconstruction Error',
     classes = ['LM', 'ANN'],
@@ -312,7 +312,7 @@ def get_error(model, *args, **kwargs):
     """Return mean error of regressands."""
     return numpy.mean(get_error_vector(model, *args, **kwargs))
 
-@nalgorithm.objective(
+@nalgo.objective(
     name    = 'accuracy',
     title   = 'Mean Reconstruction Accuracy',
     classes = ['LM', 'ANN'],
@@ -322,7 +322,7 @@ def get_accuracy(model, *args, **kwargs):
     """Return mean accuracy of regressands."""
     return numpy.mean(get_accuracy_vector(model, *args, **kwargs))
 
-@nalgorithm.objective(
+@nalgo.objective(
     name    = 'precision',
     title   = 'Mean Reconstruction Pricision',
     classes = ['LM', 'ANN'],
@@ -336,7 +336,7 @@ def get_precision(model, *args, **kwargs):
 # (4) Association Measures for Bayesian Networks
 #
 
-@nalgorithm.custom(
+@nalgo.custom(
     name     = 'correlation',
     category = 'relation',
     directed = False,
@@ -385,7 +385,7 @@ def correlation(model, data, mapping = None, **kwargs):
     return relation
 
 
-@nalgorithm.custom(
+@nalgo.custom(
     name     = 'knockout',
     category = 'relation',
     directed = True,
@@ -448,7 +448,7 @@ def knockout(model, data, mapping = None, **kwargs):
 
     return R
 
-@nalgorithm.custom(
+@nalgo.custom(
     name     = 'connectionweight',
     category = 'relation',
     directed = True,
@@ -488,7 +488,7 @@ def connectionweight(model, data, mapping = None, **kwargs):
 
     return wsp.T
 
-@nalgorithm.custom(
+@nalgo.custom(
     name     = 'coinduction',
     category = 'relation',
     directed = True,
@@ -559,7 +559,7 @@ def coinduction(model, data, *args, **kwargs):
 
     return coop
 
-@nalgorithm.custom(
+@nalgo.custom(
     name     = 'induction',
     category = 'relation',
     directed = True,

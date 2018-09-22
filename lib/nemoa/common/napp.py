@@ -7,6 +7,7 @@ __license__ = 'GPLv3'
 
 from typing import cast
 from nemoa.types import Any, OptStr, StrDict, OptStrOrBool
+from nemoa.common import nmodule
 
 def getvar(varname: str, *args: Any, **kwargs: Any) -> OptStr:
     """Get application variable by name.
@@ -119,31 +120,29 @@ def updvars(filepath: OptStr = None) -> None:
     import io
     import re
 
-    # use init script of current root module
+
+    dvars = {}
+
+    # Use init script of current root module
     if filepath is None:
-        from nemoa.common import nmodule
         mname = nmodule.curname().split('.')[0]
         module = nmodule.inst(mname)
         filepath = getattr(module, '__file__', None)
 
-    # read file content
+    # Read file content
     with io.open(cast(str, filepath), encoding='utf8') as file:
         content = file.read()
 
-    # parse content for module variables with regular expressions
+    # Parse content for module variables with regular expressions
     rkey = "__([a-zA-Z][a-zA-Z0-9]*)__"
     rval = """['\"]([^'\"]*)['\"]"""
     rexp = r"^[ ]*%s[ ]*=[ ]*%s" % (rkey, rval)
-    dvars = {}
     for match in re.finditer(rexp, content, re.M):
         dvars[str(match.group(1))] = str(match.group(2))
 
-    # supplement missing entries
-    if 'name' not in dvars:
-
-        # use name of current root module
-        from nemoa.common import nmodule
-        dvars['name'] = nmodule.curname().split('.')[0]
+    # Set module name of current root module as default value for the
+    # application variable 'name'
+    dvars['name'] = dvars.get('name', nmodule.curname().split('.')[0])
 
     globals()['_VARS'] = dvars
 
@@ -247,12 +246,11 @@ def upddirs(
             "requires package appdirs: "
             "https://pypi.org/project/appdirs/") from err
 
-    app = {
-        'appname': appname or getvar('name'),
-        'appauthor': appauthor or getvar('company') \
-            or getvar('organization') or getvar('author'),
-        'version': version}
-    dirs = appdirs.AppDirs(**app, **kwargs)
+    dirs = appdirs.AppDirs(
+        appname=appname or getvar('name'),
+        appauthor=(appauthor or getvar('company')
+            or getvar('organization') or getvar('author')),
+        version=version, **kwargs)
     keys = [
         'user_cache_dir', 'user_config_dir', 'user_data_dir',
         'user_log_dir', 'site_config_dir', 'site_data_dir']

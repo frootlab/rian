@@ -1,21 +1,22 @@
 # -*- coding: utf-8 -*-
-"""Collection of types used in nemoa."""
+"""Collection of types and constants used in nemoa."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
 
+# import generic types from typing
 from typing import (
     Any, Callable, ClassVar, Dict, Hashable, Iterable,
     List, Optional, Sequence, Set, Tuple, TypeVar, Union)
 
-# import specific types
-from types import ModuleType as Module, FunctionType as Function
+# import specific types from builtin packages
 from array import ArrayType as Array
 from os import PathLike as Path
+from types import ModuleType as Module, FunctionType as Function
 
 ################################################################################
-# Generic Variables
+# Define generic Variables
 ################################################################################
 
 # Generic Type-Variables
@@ -26,14 +27,14 @@ T = TypeVar('T')
 Obj = object
 
 ################################################################################
-# Numerical Constants
+# Define numerical Constants
 ################################################################################
 
 NaN = float('nan')
 Infty = float('inf')
 
 ################################################################################
-# Literals and Collections of Literals
+# Define Types for Literals and Collections of Literals
 ################################################################################
 
 # Unions of Literals
@@ -100,7 +101,7 @@ OptNestDict = Optional[NestDict]
 IterNestRecDict = Iterable[NestRecDict]
 
 ################################################################################
-# Callable types
+# Define Types for Callables
 ################################################################################
 
 # Elementary Callables
@@ -129,7 +130,14 @@ OptStrDictOfTestFuncs = Optional[StrDictOfTestFuncs]
 FuncWrapper = Callable[[Callable[..., T]], Callable[..., T]]
 
 ################################################################################
-# Types of builtin packages
+# Define Types for Class Variables
+################################################################################
+
+ClassDict = ClassVar[Dict[Hashable, Any]]
+ClassStrDict = ClassVar[Dict[str, Any]]
+
+################################################################################
+# Define specific Types for builtin Packages
 ################################################################################
 
 # os / pathlib
@@ -147,7 +155,7 @@ NestPathDict = Dict[str, NestPath]
 OptNestPathDict = Optional[NestPathDict]
 
 ################################################################################
-# Types of external packages
+# Define specific Types for external Packages
 ################################################################################
 
 # NumPy types

@@ -10,16 +10,16 @@ from nemoa.common import ntest
 class TestSuite(ntest.TestSuite):
     """Testsuite for modules within the package 'nemoa.common'."""
 
-    def test_common_nalgorithm(self) -> None:
-        """Test module 'nemoa.common.nalgorithm'."""
-        from nemoa.common import nalgorithm
+    def test_common_nalgo(self) -> None:
+        """Test module 'nemoa.common.nalgo'."""
+        from nemoa.common import nalgo
 
         with self.subTest('search'):
             self.assertEqual(
-                len(nalgorithm.search(nalgorithm, name='search')), 1)
+                len(nalgo.search(nalgo, name='search')), 1)
 
         with self.subTest('custom'):
-            @nalgorithm.custom(category='custom')
+            @nalgo.custom(category='custom')
             def test_custom() -> None:
                 pass
             self.assertEqual(
@@ -28,7 +28,7 @@ class TestSuite(ntest.TestSuite):
                 getattr(test_custom, 'category', None), 'custom')
 
         with self.subTest('objective'):
-            @nalgorithm.objective()
+            @nalgo.objective()
             def test_objective() -> None:
                 pass
             self.assertEqual(
@@ -37,7 +37,7 @@ class TestSuite(ntest.TestSuite):
                 getattr(test_objective, 'category', None), 'objective')
 
         with self.subTest('sampler'):
-            @nalgorithm.sampler()
+            @nalgo.sampler()
             def test_sampler() -> None:
                 pass
             self.assertEqual(
@@ -46,7 +46,7 @@ class TestSuite(ntest.TestSuite):
                 getattr(test_sampler, 'category', None), 'sampler')
 
         with self.subTest('statistic'):
-            @nalgorithm.statistic()
+            @nalgo.statistic()
             def test_statistic() -> None:
                 pass
             self.assertEqual(
@@ -55,7 +55,7 @@ class TestSuite(ntest.TestSuite):
                 getattr(test_statistic, 'category', None), 'statistic')
 
         with self.subTest('association'):
-            @nalgorithm.association()
+            @nalgo.association()
             def test_association() -> None:
                 pass
             self.assertEqual(

@@ -20,11 +20,11 @@ import numpy
 
 from nemoa.model.evaluation.base import Evaluation
 
-from nemoa.common import ncalc, nalgorithm
+from nemoa.common import ncalc, nalgo
 
 class ANN(Evaluation):
 
-    @nalgorithm.objective(
+    @nalgo.objective(
         name     = 'error',
         title    = 'Average Reconstruction Error',
         category = 'model',
@@ -36,7 +36,7 @@ class ANN(Evaluation):
         """Mean data reconstruction error of output units."""
         return numpy.mean(self.uniterror(*args, **kwargs))
 
-    @nalgorithm.objective(
+    @nalgo.objective(
         name     = 'accuracy',
         title    = 'Average Reconstruction Accuracy',
         category = 'model',
@@ -48,7 +48,7 @@ class ANN(Evaluation):
         """Mean data reconstruction accuracy of output units."""
         return numpy.mean(self.unitaccuracy(*args, **kwargs))
 
-    @nalgorithm.objective(
+    @nalgo.objective(
         name     = 'precision',
         title    = 'Average Reconstruction Pricision',
         category = 'model',
@@ -60,7 +60,7 @@ class ANN(Evaluation):
         """Mean data reconstruction precision of output units."""
         return numpy.mean(self.unitprecision(*args, **kwargs))
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'mean',
         title    = 'Average Target Reconstruction Values',
         category = 'units',
@@ -99,7 +99,7 @@ class ANN(Evaluation):
 
         return model_out.mean(axis = 0)
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'variance',
         category = 'units',
         args     = 'input',
@@ -131,7 +131,7 @@ class ANN(Evaluation):
 
         return model_out.var(axis = 0)
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'expect',
         category = 'units',
         args     = 'input',
@@ -159,7 +159,7 @@ class ANN(Evaluation):
 
         return self.model.system._get_unitexpect(*args, **kwargs)
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'values',
         category = 'units',
         args     = 'input',
@@ -189,7 +189,7 @@ class ANN(Evaluation):
 
         return self.model.system._get_unitvalues(*args, **kwargs)
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'samples',
         category = 'units',
         args     = 'input',
@@ -219,7 +219,7 @@ class ANN(Evaluation):
 
         return self.model.system._get_unitsamples(*args, **kwargs)
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'residuals',
         category = 'units',
         args     = 'all',
@@ -262,7 +262,7 @@ class ANN(Evaluation):
         # calculate residuals
         return d_tgt - m_out
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'error',
         category = 'units',
         args     = 'all',
@@ -297,7 +297,7 @@ class ANN(Evaluation):
 
         return error
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'accuracy',
         category = 'units',
         args     = 'all',
@@ -334,7 +334,7 @@ class ANN(Evaluation):
 
         return 1. - normres / normdat
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'precision',
         category = 'units',
         args     = 'all',
@@ -371,7 +371,7 @@ class ANN(Evaluation):
 
         return 1. - devres / devdat
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'correlation',
         category = 'relation',
         directed = False,
@@ -419,7 +419,7 @@ class ANN(Evaluation):
 
         return relation
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'connectionweight',
         category = 'relation',
         directed = True,
@@ -459,7 +459,7 @@ class ANN(Evaluation):
 
         return wsp.T
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'knockout',
         category = 'relation',
         directed = True,
@@ -521,7 +521,7 @@ class ANN(Evaluation):
 
         return R
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'coinduction',
         category = 'relation',
         directed = True,
@@ -592,7 +592,7 @@ class ANN(Evaluation):
 
         return coop
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'induction',
         category = 'relation',
         directed = True,
@@ -682,7 +682,7 @@ class ANN(Evaluation):
 
         return ncalc.dialogistic(R, scale = bound, sigma = contrast)
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'energy',
         category = 'model',
         args     = 'all',
@@ -708,7 +708,7 @@ class ANN(Evaluation):
         # calculate (pseudo) energy of system
         return numpy.log(1. + numpy.exp(-energy).sum())
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'energy',
         category = 'units',
         args     = 'input',
@@ -736,7 +736,7 @@ class ANN(Evaluation):
         data = self.unitexpect(data, mapping)
         return self.model.system._units[mapping[-1]].energy(data)
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'links_energy',
         category = ('system', 'links', 'evaluation'),
         args     = 'input',

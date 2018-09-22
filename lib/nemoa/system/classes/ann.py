@@ -20,7 +20,7 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-from nemoa.common import nalgorithm
+from nemoa.common import nalgo
 
 class ANN(nemoa.system.classes.base.System):
     """Artificial Neuronal Network (ANN).
@@ -175,7 +175,7 @@ class ANN(nemoa.system.classes.base.System):
 
         return True
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'energy',
         category = ('system', 'evaluation'),
         args     = 'all',
@@ -201,7 +201,7 @@ class ANN(nemoa.system.classes.base.System):
         # calculate (pseudo) energy of system
         return numpy.log(1. + numpy.exp(-energy).sum())
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'units_energy',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -229,7 +229,7 @@ class ANN(nemoa.system.classes.base.System):
         data = self._get_unitexpect(data, mapping)
         return self._units[mapping[-1]].energy(data)
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'links_energy',
         category = ('system', 'links', 'evaluation'),
         args     = 'input',

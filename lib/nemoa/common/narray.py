@@ -15,7 +15,7 @@ except ImportError as err:
 from nemoa.types import StrPairDict, StrListPair, NpArray, NaN, Num, OptNum
 
 #
-#  Array <-> Dictionary Conversion Functions
+#  Array <-> Dictionary Conversion
 #
 
 def fromdict(d: StrPairDict, labels: StrListPair, nan: Num = NaN) -> NpArray:
@@ -41,23 +41,29 @@ def fromdict(d: StrPairDict, labels: StrListPair, nan: Num = NaN) -> NpArray:
         [1] https://ieeexplore.ieee.org/document/4610935/
 
     """
-    # Declare and initialize return value
-    array: NpArray = np.empty(shape=(len(labels[0]), len(labels[1])))
+    # Check Type of Argument 'd'
+    if not isinstance(d, dict):
+        raise TypeError(
+            "argument 'd' is required to by of type 'dict'"
+            f", not '{type(d)}'")
 
-    # Get numpy ndarray
-    setitem = getattr(array, 'itemset')
+    # Declare and initialize return value
+    x: NpArray = np.empty(shape=(len(labels[0]), len(labels[1])))
+
+    # Get NumPy ndarray
+    setit = getattr(x, 'itemset')
     for i, row in enumerate(labels[0]):
         for j, col in enumerate(labels[1]):
-            setitem((i, j), d.get((row, col), nan))
+            setit((i, j), d.get((row, col), nan))
 
-    return array
+    return x
 
 def asdict(
         x: NpArray, labels: StrListPair, nan: OptNum = NaN) -> StrPairDict:
     """Convert two dimensional array to dictionary of pairs.
 
     Args:
-        x: Numpy ndarray of shape (n, m), where n equals the length of the
+        x: NumPy ndarray of shape (n, m), where n equals the length of the
             <row list> of the argument labels and m equals the length of the
             <col list> of the argument labels.
         labels: Tuple of format (<row list>, <col list>), where:
@@ -77,20 +83,24 @@ def asdict(
         [1] https://ieeexplore.ieee.org/document/4610935/
 
     """
-    # Check argument 'x'
-    if not hasattr(x, 'item'):
+    # Check Type of Argument 'x'
+    if not hasattr(x, 'ndim'):
         raise TypeError(
             "argument 'x' is required to by of type 'ndarray'"
             f", not '{type(x)}'")
+    if getattr(x, 'ndim') != 2:
+        raise TypeError(
+            "ndarray 'x' is required to have dimension 2"
+            f", not '{getattr(x, 'ndim')}'")
 
     # Declare and initialize return value
     d: StrPairDict = {}
 
     # Get dictionary with pairs as keys
-    getitem = getattr(x, 'item')
+    getit = getattr(x, 'item')
     for i, row in enumerate(labels[0]):
         for j, col in enumerate(labels[1]):
-            val = getitem(i, j)
+            val = getit(i, j)
             if nan is None or not np.isnan(val):
                 d[(row, col)] = val
 

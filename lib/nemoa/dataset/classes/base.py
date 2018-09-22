@@ -14,7 +14,7 @@ except ImportError as err:
         "https://scipy.org") from err
 
 import nemoa
-from nemoa.common import nalgorithm, nclass, nbase
+from nemoa.common import nalgo, nclass, nbase
 
 class Dataset(nbase.ObjectIP):
     """Dataset base class.
@@ -1334,7 +1334,7 @@ class Dataset(nbase.ObjectIP):
 
         return algorithms[name](*args, **kwargs)
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'sample',
         title    = 'Sample Values',
         category = ('dataset', 'evaluation'),
@@ -1345,7 +1345,7 @@ class Dataset(nbase.ObjectIP):
 
         return self._get_data(*args, **kwargs)
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'covariance',
         title    = 'Covariance',
         category = ('dataset', 'columns', 'evaluation'),
@@ -1371,7 +1371,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'correlation',
         title    = 'Pearson Correlation',
         category = ('dataset', 'columns', 'evaluation'),
@@ -1397,7 +1397,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'pca-sample',
         title    = 'PCA Sample Values',
         category = ('dataset', 'evaluation'),
@@ -1426,7 +1426,7 @@ class Dataset(nbase.ObjectIP):
 
         return pca_data
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name      = 'k-covariance',
         title     = 'k-Covariance',
         title_tex = '$k$-Covariance',
@@ -1459,7 +1459,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name      = 'k-correlation',
         title     = 'k-Correlation',
         title_tex = '$k$-Correlation',
@@ -1492,7 +1492,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'test_binary',
         title    = None,
         category = ('dataset', 'evaluation'),
@@ -1519,7 +1519,7 @@ class Dataset(nbase.ObjectIP):
 
         return isbinary
 
-    @nalgorithm.custom(
+    @nalgo.custom(
         name     = 'test_gauss',
         title    = None,
         category = ('dataset', 'evaluation'),
