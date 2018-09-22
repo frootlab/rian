@@ -83,13 +83,16 @@ class TestSuite(ntest.TestSuite):
         from nemoa.common import narray
         from nemoa.types import NaN
         import numpy as np
+
         arr = np.array([[NaN, 1.], [NaN, NaN]])
         dic = {('a', 'b'): 1.}
         labels = (['a', 'b'], ['a', 'b'])
 
         with self.subTest("fromdict"):
             self.assertTrue(
-                (narray.fromdict(dic, labels=labels) == arr).any())
+                np.allclose(
+                    narray.fromdict(dic, labels=labels), arr,
+                    equal_nan=True))
 
         with self.subTest("asdict"):
             self.assertTrue(
@@ -100,11 +103,31 @@ class TestSuite(ntest.TestSuite):
         from nemoa.common import nmetric
         import numpy as np
 
-        #exam = np.array([[.1, -.9], [.3, .2], [-.4, -.9]])
-        #test = lambda x, y: np.isclose(x.sum(), y, atol=1e-3)
+        x = np.array([[0.1, -1.9], [1.3, 2.2], [-3.4, -7.9]])
+        y = np.array([[5.1, 2.9], [2.4, 1.1], [-1.6, -5.9]])
 
         with self.subTest("vecnorms"):
-            self.assertTrue(nmetric.vecnorms())
+            vecnorms = nmetric.vecnorms()
+            self.assertIsInstance(vecnorms, list)
+            self.assertTrue(vecnorms)
+
+        for norm in nmetric.vecnorms():
+            with self.subTest("vecnorm_" + norm):
+                nx = nmetric.vecnorm(x, norm)
+                ny = nmetric.vecnorm(y, norm)
+                nz = nmetric.vecnorm(x - x, norm)
+                nxy = nmetric.vecnorm(x + y, norm)
+                nax = nmetric.vecnorm(2 * x, norm)
+                self.assertIsInstance(nx, np.ndarray)
+                self.assertEqual(nx.ndim, x.ndim-1)
+                # test if norm is not negative
+                self.assertTrue(np.all(nx >= 0))
+                # test if norm of zero values is zero
+                self.assertTrue(np.all(nz == 0))
+                # test triangle inequality
+                self.assertTrue(np.all(nxy <= nx + ny))
+                # test sub homogeneity
+                self.assertTrue(np.all(nax <= 2 * nx))
 
         with self.subTest("vecdists"):
             self.assertTrue(nmetric.vecdists())
@@ -358,9 +381,9 @@ class TestSuite(ntest.TestSuite):
             self.assertTrue(
                 isinstance(rval, np.ndarray))
             self.assertTrue(
-                (np.array(rval)['col1'] == data['col1']).any())
+                np.all(np.array(rval)['col1'] == data['col1']))
             self.assertTrue(
-                (np.array(rval)['col2'] == data['col2']).any())
+                np.all(np.array(rval)['col2'] == data['col2']))
 
         if os.path.exists(filename):
             os.remove(filename)

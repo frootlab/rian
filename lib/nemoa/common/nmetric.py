@@ -13,7 +13,7 @@ except ImportError as err:
         "https://scipy.org") from err
 
 from nemoa.common import nfunc, nmodule
-from nemoa.types import StrList, NpAxis, NpArray, NpArrayLike
+from nemoa.types import Any, NpAxis, NpArray, NpArrayLike, StrList
 
 VECNORM_PREFIX = 'vecnorm_'
 VECDIST_PREFIX = 'vecdist_'
@@ -46,7 +46,7 @@ def vecnorms() -> StrList:
 
     return norms
 
-def vecnorm(x: NpArrayLike, norm: str, p: int = 1, axis: NpAxis = 0) -> NpArray:
+def vecnorm(x: NpArrayLike, norm: str, **kwargs: Any) -> NpArray:
     """Calculate vector norm or pseudo vector norm along given axis.
 
     Args:
@@ -61,18 +61,10 @@ def vecnorm(x: NpArrayLike, norm: str, p: int = 1, axis: NpAxis = 0) -> NpArray:
             'mp': Class of Generalized Mean Norms (induce: mp-distances)
             'm1': Absolute Mean (induces: MAE)
             'm2': Quadratic Mean (induces: RMSD)
-            'SS': Sum of Squares, pseudo norm (induces: SSD)
-            'MS': Mean Square, pseudo norm (induces: MSD)
-            'SD': Corrected Standard Deviation (induces: Bias)
-        p: Positive integer, which parameterizes the respective p-norm. If the
-            argument 'norm' is not a p-norm, then 'p' is not used.
-        axis: Index of axis (or axes) along which the function is performed.
-            Within a 1d array the axis has index 0. In a 2d array the axis with
-            index 0 is running across rows, and the axis with index 1 is running
-            across columns. If axis is a tuple of ints, the function is
-            performed over all axes in the tuple. If axis is None, the function
-            is performed over all axes.
-            Default: 0
+            'SD': Corrected Standard Deviation
+        **kwargs: Parameters of the given norm / class of norms.
+            The norm Parameters are documented within the respective 'vecnorm'
+            functions.
 
     Returns:
         NumPy ndarray of dimension <dim x> - <number of axes>.
@@ -85,7 +77,7 @@ def vecnorm(x: NpArrayLike, norm: str, p: int = 1, axis: NpAxis = 0) -> NpArray:
         raise TypeError(
             "argument 'x' is required to be 'NumPy ArrayLike'") from err
 
-    # Get Metric function
+    # Get norm function
     fname = VECNORM_PREFIX + norm.lower()
     module = nmodule.inst(nmodule.curname())
     try:
@@ -94,14 +86,8 @@ def vecnorm(x: NpArrayLike, norm: str, p: int = 1, axis: NpAxis = 0) -> NpArray:
         raise ValueError(
             f"argument 'norm' has an invalid value '{str(norm)}'")
 
-    # Declare return value and evaluate metric
-    arr: NpArray
-    if 'p' in nfunc.kwargs(func):
-        arr = func(x, p=p, axis=axis)
-    else:
-        arr = func(x, axis=axis)
-
-    return arr
+    # Evaluate norm function
+    return func(x, **nfunc.kwargs(func, default=kwargs))
 
 def vecnorm_lp(x: NpArray, p: int = 1, axis: NpAxis = 0) -> NpArray:
     """Calculate lp-norm of an array along given axis.
@@ -325,76 +311,6 @@ def vecnorm_m2(x: NpArray, axis: NpAxis = 0) -> NpArray:
     """
     return np.sqrt(np.mean(np.square(x), axis=axis))
 
-def vecnorm_ss(x: NpArray, axis: NpAxis = 0) -> NpArray:
-    """Calculate the Sum of Squares of an Array along given axis.
-
-    The 'Sum of Squares' (SS) equals the square of the l2-Norm [1]. Due to this
-    nonlinear dependency the Sum of Squares does not satisfy the property of
-    absolute homogeneity and is therefore not a vector norm. Since the Sum of
-    Squares however is positive definite, subhomogeneous and subadditive, it is
-    a vector space pseudo norm [2] and thus induces a metric within its domain.
-
-    With respect to a given sample the induced metric is a sample statistic,
-    which is referred as the Residual Sum of Squares (RSS) [3]. The RSS is used
-    in regression analysis to quantify the unexplained variation of a model [4].
-
-    Args:
-        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
-            dimension. This includes nested lists, tuples, scalars and existing
-            arrays.
-        axis: Axis (or axes) along which the norm is calculated. Within a
-            one-dimensional array the axis always has index 0. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1). Default: 0
-
-    Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
-
-    References:
-        [1] https://en.wikipedia.org/wiki/Sum_of_squares
-        [2] https://en.wikipedia.org/wiki/Pseudonorm
-        [3] https://en.wikipedia.org/wiki/Residual_sum_of_squares
-        [4] https://en.wikipedia.org/wiki/Explained_variation
-
-    """
-    return np.sum(np.square(x), axis=axis)
-
-def vecnorm_ms(x: NpArray, axis: NpAxis = 0) -> NpArray:
-    """Calculate Mean Square of an array along given axis.
-
-    The 'Mean Square' (MS) equals the square of the m2-Norm [1]. Due to this
-    nonlinear dependency the Mean Square does not satisfy the property of
-    absolute homogeneity and is therefore not a vector norm. Since the Mean
-    Square however is positive definite, subhomogeneous and subadditive, it is
-    a vector space pseudo norm [2] and thus induces a metric within its domain.
-
-    With respect to a given sample the induced metric is a sample statistic,
-    which is referred as the 'Mean Squared Difference' (MSD) [3], which is used
-    as a risk function to measure of the quality estimators [4].
-
-    Args:
-        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
-            dimension. This includes nested lists, tuples, scalars and existing
-            arrays.
-        axis: Axis (or axes) along which the norm is calculated. Within a
-            one-dimensional array the axis always has index 0. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1). Default: 0
-
-    Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
-
-    References:
-        [1] https://en.wikipedia.org/wiki/Mean_square
-        [2] https://en.wikipedia.org/wiki/Pseudonorm
-        [3] https://en.wikipedia.org/wiki/Mean_squared_deviation
-        [4] https://en.wikipedia.org/wiki/Risk_function
-
-    """
-    return np.mean(np.square(x), axis=axis)
-
 def vecnorm_sd(x: NpArray, axis: NpAxis = 0) -> NpArray:
     """Calculate Corrected Standard Deviation of an array along given axis.
 
@@ -451,8 +367,7 @@ def vecdists() -> StrList:
     return dists
 
 def vecdist(
-        x: NpArrayLike, y: NpArrayLike, metric: str, p: int = 1,
-        axis: NpAxis = 0) -> NpArray:
+        x: NpArrayLike, y: NpArrayLike, metric: str, **kwargs: Any) -> NpArray:
     """Calculate vector distances of two arrays along given axis.
 
     A vector distance function, also known as metric, is a function d(x, y),
@@ -475,15 +390,11 @@ def vecdist(
             'mp': Class of Generalized Mean Distances (induces by mp-Norms)
             'MAD': Mean Absolute Difference (induced by m1-Norm)
             'RMSD': Root-Mean-Square Difference (induced by m2-Norm)
-            'SSD': Sum of Squared Differences (induces by Sum of Squares)
+            'SSD': Sum of Squared Difference (induces by Sum of Squares)
             'MSD': Mean Square Difference (induced by Mean Square)
-        p: Positive integer, which parameterizes the respective p-distance. If
-            the argument 'metric' is not a p-distance, then 'p' is not used.
-        axis: Axis (or axes) along which the distance is calculated. Within a
-            one-dimensional array the axis always has index 0. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1). Default: 0
+        **kwargs: Parameters of the given metric / class of metrics.
+            The Parameters are documented within the respective 'vecdist'
+            functions.
 
     Returns:
         NumPy ndarray of dimension <dim x> - <number of axes>.
@@ -505,12 +416,12 @@ def vecdist(
         raise TypeError(
             "argument 'y' is required to be 'Array like'") from err
 
-    # Check dtypes and shapes of 'x' and 'y'
+    # Check shapes and dtypes of 'x' and 'y'
     if x.shape != y.shape:
         raise ValueError(
             "arrays 'x' and 'y' can not be broadcasted together")
 
-    # Get Metric function
+    # Get distance function
     fname = VECNORM_PREFIX + metric.lower()
     module = nmodule.inst(nmodule.curname())
     try:
@@ -519,14 +430,8 @@ def vecdist(
         raise ValueError(
             f"argument 'metric' has an invalid value '{str(metric)}'")
 
-    # Declare return value and evaluate metric
-    arr: NpArray
-    if 'p' in nfunc.kwargs(func):
-        arr = func(x, y, p=p, axis=axis)
-    else:
-        arr = func(x, y, axis=axis)
-
-    return arr
+    # Evaluate function
+    return func(x, **nfunc.kwargs(func, default=kwargs))
 
 def vecdist_lp(x: NpArray, y: NpArray, p: int = 1, axis: NpAxis = 0) -> NpArray:
     """Calculate lp-distances of two arrays along given axis.
@@ -729,12 +634,20 @@ def vecdist_rmsd(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
     return vecnorm_m2(np.add(x, np.multiply(y, -1)), axis=axis)
 
 def vecdist_ssd(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
-    """Calculate Sum of Squared Differences of two arrays along given axis.
+    """Calculate Sum of Squares Differences of two arrays along given axis.
 
-    The 'Sum of Squared Differences' (SSD) is the metric, which is induced by
-    the 'Sum of Squares' pseudo norm to a space of random variables [1, 2]. The
-    SSD is used in regression analysis to quantify the unexplained variation of
-    a model [3].
+    The 'Sum of Squares Difference' (SSD) is a semi metric, which is induced by
+    the 'Sum of Squares' (SS). The Sum of Squares equals the square of the
+    l2-Norm [1]. Due to this nonlinear dependency the Sum of Squares does not
+    satisfy the property of absolute homogeneity nor the triangle inequality
+    and is therefore not a vector norm. Since the Sum of Squares however is
+    positive definite and subhomogeneous, it induces a semi metric within its
+    domain.
+
+    With respect to a given sample the induced semi metric is a sample
+    statistic, which is referred as the Sum of Squares Difference or the
+    'Residual Sum of Squares' (RSS) [3]. The RSS is used in regression analysis
+    to quantify the unexplained variation of a model [4].
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
@@ -754,15 +667,24 @@ def vecdist_ssd(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
         [3] https://en.wikipedia.org/wiki/Explained_variation
 
     """
-    return vecnorm_ss(np.add(x, np.multiply(y, -1)), axis=axis)
+    return np.sum(np.square(np.add(x, np.multiply(y, -1))), axis=axis)
 
 def vecdist_msd(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
-    """Calculate Mean Square Difference of two arrays along given axis.
+    """Calculate Mean Square Differences of two arrays along given axis.
 
-    The 'Mean Square Difference' (MSD) is the metric, which is induced by the
-    Mean Square pseudo norm to a space of random variables [1, 2]. The Mean
-    Square Difference is used in mathematical optimization and statistics as a
-    risk function [3, 4]. ... (RSS)
+    The 'Mean Squared Difference' (MSD) is a semi metric, which is induced by
+    the 'Mean Square' (MS) [1]. The Mean Square in turn equals the square of the
+    m2-Norm. Due to this nonlinear dependency the Mean Square does not satisfy
+    the property of absolute homogeneity nor the triangle inequality and is
+    therefore not a vector norm. Since the Mean Square however is positive
+    definite and subhomogeneous, it induces a semi metric within its
+    domain.
+
+    With respect to a given sample the induced semi metric is a sample
+    statistic, which is referred as the 'Mean Squared Difference'. Applied to
+    an estimator, the MSD is also referred as the Mean Squared Deviation or
+    the 'Mean Squared Error' (MSE) [2]. In this context the MSE is a measure of
+    the quality in terms of the expected loss of an estimator [3].
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
@@ -778,12 +700,11 @@ def vecdist_msd(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
 
     References:
         [1] https://en.wikipedia.org/wiki/Mean_square
-        [2] https://en.wikipedia.org/wiki/Pseudonorm
-        [3] https://en.wikipedia.org/wiki/Mean_squared_error
-        [4] https://en.wikipedia.org/wiki/Risk_function
+        [2] https://en.wikipedia.org/wiki/Mean_squared_error
+        [3] https://en.wikipedia.org/wiki/Risk_function
 
     """
-    return vecnorm_ms(np.add(x, np.multiply(y, -1)), axis=axis)
+    return np.mean(np.square(np.add(x, np.multiply(y, -1))), axis=axis)
 
 #vecdist_manhattan = vecdist_l1
 #vecdist_sad = vecdist_l1

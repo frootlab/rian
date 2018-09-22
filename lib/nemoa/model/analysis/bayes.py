@@ -133,7 +133,7 @@ def get_forward_residuals(model, data, mapping = None, block = None):
     classes = ['LM', 'ANN'],
     plot    = 'bar'
 )
-def get_error_vector(model, data, norm: str = 'MS', **kwargs):
+def get_error_vector(model, data, norm: str = 'MSE', **kwargs):
     """Reconstruction error of regressands.
 
     The reconstruction error is defined by:
@@ -155,8 +155,10 @@ def get_error_vector(model, data, norm: str = 'MS', **kwargs):
     """
     from nemoa.common import nmetric
 
+    # TODO: use nmetric
+    #error = nmetric.vecdist(x, y, metric=metric)
     res = get_residuals(data, **kwargs)
-    error = nmetric.vecnorm(res, norm=norm)
+    error = numpy.mean(numpy.square(res), axis=0)
 
     return error
 
@@ -168,7 +170,7 @@ def get_error_vector(model, data, norm: str = 'MS', **kwargs):
     formater = lambda val: '%.3f' % (val),
     plot     = 'diagram'
 )
-def get_accuracy_vector(model, data, norm: str = 'MS', **kwargs):
+def get_accuracy_vector(model, data, norm: str = 'MSE', **kwargs):
     """Unit reconstruction accuracy.
 
     The unit reconstruction accuracy is defined by:
@@ -190,9 +192,11 @@ def get_accuracy_vector(model, data, norm: str = 'MS', **kwargs):
     """
     from nemoa.common import nmetric
 
+    # TODO: use nmetric
+    #error = nmetric.vecdist(x, y, metric=metric)
     res = get_residuals(data, **kwargs)
-    normres = nmetric.vecnorm(res, norm=norm)
-    normdat = nmetric.vecnorm(data[1], norm=norm)
+    normres = numpy.mean(numpy.square(res), axis=0)
+    normdat = numpy.mean(numpy.square(data[1]), axis=0)
 
     return 1. - normres / normdat
 

@@ -811,7 +811,7 @@ class System(nbase.ObjectIP):
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram'
     )
-    def _get_uniterror(self, data, norm = 'MS', **kwargs):
+    def _get_uniterror(self, data, norm = 'MSE', **kwargs):
         """Unit reconstruction error.
 
         The unit reconstruction error is defined by:
@@ -834,8 +834,10 @@ class System(nbase.ObjectIP):
 
         from nemoa.common import nmetric
 
+        # TODO: use nmetric
+        #error = nmetric.vecdist(x, y, metric=metric)
         res = self._get_unitresiduals(data, **kwargs)
-        error = nmetric.vecnorm(res, norm=norm)
+        error = numpy.mean(numpy.square(res), axis=0)
 
         return error
 
@@ -847,7 +849,7 @@ class System(nbase.ObjectIP):
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram')
 
-    def _get_unitaccuracy(self, data, norm = 'MS', **kwargs):
+    def _get_unitaccuracy(self, data, norm = 'MSE', **kwargs):
         """Unit reconstruction accuracy.
 
         The unit reconstruction accuracy is defined by:
@@ -870,9 +872,11 @@ class System(nbase.ObjectIP):
 
         from nemoa.common import nmetric
 
+        # TODO: use nmetric
+        #error = nmetric.vecdist(x, y, metric=metric)
         res = self._get_unitresiduals(data, **kwargs)
-        normres = nmetric.vecnorm(res, norm=norm)
-        normdat = nmetric.vecnorm(data[1], norm=norm)
+        normres = numpy.mean(numpy.square(res), axis=0)
+        normdat = numpy.mean(numpy.square(data[1]), axis=0)
 
         return 1. - normres / normdat
 

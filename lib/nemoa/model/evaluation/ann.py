@@ -270,7 +270,7 @@ class ANN(Evaluation):
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram'
     )
-    def uniterror(self, data, norm: str = 'MS', **kwargs):
+    def uniterror(self, data, norm: str = 'MSE', **kwargs):
         """Unit reconstruction error.
 
         The unit reconstruction error is defined by:
@@ -292,8 +292,10 @@ class ANN(Evaluation):
         """
         from nemoa.common import nmetric
 
+        # TODO: use nmetric
+        #error = nmetric.vecdist(x, y, metric=metric)
         res = self.unitresiduals(data, **kwargs)
-        error = nmetric.vecnorm(res, norm=norm)
+        error = numpy.mean(numpy.square(res), axis=0)
 
         return error
 
@@ -305,7 +307,7 @@ class ANN(Evaluation):
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram'
     )
-    def unitaccuracy(self, data, norm: str = 'MS', **kwargs):
+    def unitaccuracy(self, data, norm: str = 'MSE', **kwargs):
         """Unit reconstruction accuracy.
 
         The unit reconstruction accuracy is defined by:
@@ -328,9 +330,10 @@ class ANN(Evaluation):
 
         from nemoa.common import nmetric
 
+        # TODO: use nmetric to calculate distance
         res = self.unitresiduals(data, **kwargs)
-        normres = nmetric.vecnorm(res, norm=norm)
-        normdat = nmetric.vecnorm(data[1], norm=norm)
+        normres = numpy.mean(numpy.square(res), axis=0)
+        normdat = numpy.mean(numpy.square(data[1]), axis=0)
 
         return 1. - normres / normdat
 
