@@ -75,7 +75,7 @@ class Graph(nplot.Graph):
 
     def create(self, network):
 
-        from nemoa.common import ncalc, ngraph
+        from nemoa.common import ncurve, ngraph
 
         # set plot defaults
         self.set_default({
@@ -146,7 +146,7 @@ class Graph(nplot.Graph):
 
             # transform weights (optional)
             if transform == 'softstep':
-                weight = ncalc.softstep(weight)
+                weight = ncurve.softstep(weight)
 
             graph.edges[u, v]['weight'] = weight
 

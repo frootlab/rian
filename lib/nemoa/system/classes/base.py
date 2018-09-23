@@ -8,7 +8,7 @@ import nemoa
 import numpy
 import copy
 
-from nemoa.common import ncalc, nalgo, nclass, nbase
+from nemoa.common import ncurve, nalgo, nclass, nbase
 from typing import Any, Dict
 
 class System(nbase.ObjectIP):
@@ -371,7 +371,7 @@ class System(nbase.ObjectIP):
         else:
             link_norm_max = numpy.amax(numpy.abs(layer_adjacency
                 * layer_weights)) * adjacency_sum / weight_sum
-            link_intensity = ncalc.dialogistic(link_norm_weight,
+            link_intensity = ncurve.dialogistic(link_norm_weight,
                 scale = 0.7 * link_norm_max, sigma = 10.)
 
         link_params['layer'] = (src_layer, tgt_layer)
@@ -1234,7 +1234,7 @@ class System(nbase.ObjectIP):
                 if inlabel == outlabel: A[inid, outid] = 0.0
         bound = numpy.amax(A)
 
-        R = ncalc.dialogistic(R, scale = bound, sigma = contrast)
+        R = ncurve.dialogistic(R, scale = bound, sigma = contrast)
 
         return R
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Collection of frequently used mathematical functions."""
+"""Collection of curves like sigmoids and related functions."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'

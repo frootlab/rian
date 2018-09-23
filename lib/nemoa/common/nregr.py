@@ -15,13 +15,14 @@ except ImportError as err:
 from nemoa.common import nfunc, nmodule, nvector
 from nemoa.types import Any, NpAxis, NpArray, NpArrayLike, StrList
 
-DIFF_PREFIX = 'diff_'
+ERR_PREFIX = 'err_'
+FIT_PREFIX = 'fit_'
 
 #
-# Discrepancy Functions
+# Discrepancy Functions for the evaluation of Regression Errors and Residuals
 #
 
-def dfuncs() -> StrList:
+def errors() -> StrList:
     """Get sorted list of discrepancy functions.
 
     A 'discrepancy' is a sample statistic, that quantifies the difference of
@@ -45,14 +46,14 @@ def dfuncs() -> StrList:
 
     # Get dictionary of functions with given prefix
     module = nmodule.inst(nmodule.curname())
-    pattern = DIFF_PREFIX + '*'
+    pattern = ERR_PREFIX + '*'
     d = nmodule.functions(module, pattern=pattern)
 
     # Create sorted list of discrepancy functions
-    i = len(DIFF_PREFIX)
+    i = len(ERR_PREFIX)
     return sorted([v['name'][i:] for v in d.values()])
 
-def diff(
+def error(
         x: NpArrayLike, y: NpArrayLike, dfunc: str, **kwargs: Any) -> NpArray:
     """Calculate discrepancy of samples along given axis.
 
@@ -70,8 +71,10 @@ def diff(
         y: Any sequence that can be interpreted as a numpy ndarray with the same
             dimension, shape and datatypes as 'x'.
         dfunc: Name of discrepany function:
-            'ssd': Sum of Square Difference (induced by Sum of Squares)
-            'msd': Mean Square Difference (induced by Mean Square)
+            'rss': Residual Sum of Squares
+            'mse': Mean Squared Error
+            'mae': Mean Absolute Error
+            'rmse': Root-Mean-Squared Error
         **kwargs: Parameters of the given discrapancy function.
             The Parameters are documented within the respective 'dist'
             functions.
@@ -102,7 +105,7 @@ def diff(
             "arrays 'x' and 'y' can not be broadcasted together")
 
     # Get discrepancy function
-    fname = DIFF_PREFIX + dfunc.lower()
+    fname = ERR_PREFIX + dfunc.lower()
     module = nmodule.inst(nmodule.curname())
     try:
         func = getattr(module, fname)
@@ -113,21 +116,18 @@ def diff(
     # Evaluate distance function
     return func(x, y, **nfunc.kwargs(func, default=kwargs))
 
-def diff_ssd(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
-    """Calculate Sum of Squares Differences of two arrays along given axis.
+def err_rss(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
+    """Calculate Residual Sum of Squares of two samples along given axis.
 
-    The 'Sum of Squares Difference' (SSD) is a semi metric, which is induced by
-    the Sum of Squares. The Sum of Squares is given by the square of the
-    Euclidean norm [1] and therefore non-convex. Consequently the Sum of Squares
-    does not satisfy the property of absolute homogeneity nor the triangle
-    inequality and is therefore not a vector norm. Since the Sum of Squares
-    however is positive definite and subhomogeneous, it induces a semi metric
-    within its domain.
-
-    With respect to a given sample the induced semi metric is a sample
-    statistic, which is referred as the Sum of Squares Difference or the
-    'Residual Sum of Squares' (RSS) [3]. The RSS is used in regression analysis
-    to quantify the unexplained variation of a model [4].
+    The Residual Sum of Squares (RSS), also known as the the Sum of squared
+    errors (SSE), is a sample statistic on in the space of random variables [1],
+    and induced by the Sum of Squares [2]. Since the Sum of Squares, which
+    equals the square of the Euclidean norm, is non-convex, it does not satisfy
+    the triangle inequality and therefore does not define a valid norm. Since
+    the Sum of Squares however is positive definite and subhomogeneous, the
+    induced RSS is a semi-metric within its domain, and therefore a valid
+    measure of discrepancy [3]. The RSS is used in regression analysis to
+    quantify the unexplained variation of a model [4].
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
@@ -142,28 +142,25 @@ def diff_ssd(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
         NumPy ndarray of dimension <dim x> - <number of axes>.
 
     References:
-        [1] https://en.wikipedia.org/wiki/sum_of_squares
-        [2] https://en.wikipedia.org/wiki/residual_sum_of_squares
+        [1] https://en.wikipedia.org/wiki/residual_sum_of_squares
+        [2] https://en.wikipedia.org/wiki/sum_of_squares
+        [3] https://en.wikipedia.org/wiki/discrepancy_function
         [3] https://en.wikipedia.org/wiki/explained_variation
 
     """
     return np.sum(np.square(np.add(x, np.multiply(y, -1))), axis=axis)
 
-def diff_msd(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
-    """Calculate Mean Square Difference of two arrays along given axis.
+def err_mse(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
+    """Calculate Mean Squared Error of two samples along given axis.
 
-    The 'Mean Squared Difference' (MSD) is a semi metric, which is induced by
-    the 'Mean Square' (MS) [1]. The Mean Square in turn equals the square of the
-    m2-Norm. Due to this nonlinear dependency the Mean Square does not satisfy
-    the property of absolute homogeneity nor the triangle inequality and is
-    therefore not a vector norm. Since the Mean Square however is positive
-    definite and subhomogeneous, it induces a semi metric within its domain.
-
-    With respect to a given sample the induced semi metric is a sample
-    statistic, which is referred as the 'Mean Squared Difference'. Applied to
-    an estimator, the MSD is also referred as the Mean Squared Deviation or
-    the 'Mean Squared Error' (MSE) [2]. In this context the MSE is a measure of
-    the quality in terms of the expected loss of an estimator [3].
+    The Mean Squared Error (MSE) is a sample statistic on in the space of random
+    variables [1] and induced by the Mean Square (MS) [2]. Since the MS, which
+    equals the square of the Quadratic Mean, is non-convex, it does not satisfy
+    the triangle inequality and therefore does not define a valid norm. Since
+    the MS however is positive definite and subhomogeneous, the induced MSE is
+    a semi metric within its domain, and therefore a valid measure of
+    discrepancy [3]. The MSE is used in regression analysis as a risk function
+    to quantify the quality of an estimator [4].
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
@@ -178,22 +175,24 @@ def diff_msd(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
         NumPy ndarray of dimension <dim x> - <number of axes>.
 
     References:
-        [1] https://en.wikipedia.org/wiki/mean_square
-        [2] https://en.wikipedia.org/wiki/mean_squared_error
-        [3] https://en.wikipedia.org/wiki/risk_function
+        [1] https://en.wikipedia.org/wiki/mean_squared_error
+        [2] https://en.wikipedia.org/wiki/mean_square
+        [3] https://en.wikipedia.org/wiki/discrepancy_function
+        [4] https://en.wikipedia.org/wiki/risk_function
 
     """
     return np.mean(np.square(np.add(x, np.multiply(y, -1))), axis=axis)
 
-def diff_rmsd(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
-    """Calculate Root-Mean-Square Difference of two arrays along given axis.
+def err_mae(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
+    """Calculate Mean Absolute Error of two samples along given axis.
 
-    The 'Root-Mean-Square Difference' (RMSD) is the metric, which is induced by
-    the Quadratic Mean to a space of random variables [1, 2]. Thereby the
-    Quadritic Mean equals the Euclidean norm multiplied by the prefactor
-    sqrt(1 / n), where d is the size of the underlying sample [3]. Consequently
-    for an unbiased estimator, the RMSD is the square root of the variance and
-    thus the uncorrected standard deviation.
+    The Mean Absolute Error (MAE) is a sample statistic on in the space of
+    random variables [1], which is induced by the Arithmetic Mean of absolute
+    values. This norm equals the 1-norm multiplied by the prefactor (1 / d),
+    where d is the length of the sample [2]. Consequently the induced MAE
+    is a valid metric within its domain, and therefore in particular a valid
+    measure of discrepancy [3]. The MSE is used in regression analysis as a
+    risk function to quantify the quality of an estimator [4].
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
@@ -208,9 +207,45 @@ def diff_rmsd(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
         NumPy ndarray of dimension <dim x> - <number of axes>.
 
     References:
-        [1] https://en.wikipedia.org/wiki/root_mean_square
-        [2] https://en.wikipedia.org/wiki/root-mean-square_error
-        [3] https://en.wikipedia.org/wiki/power_mean
+        [1] https://en.wikipedia.org/wiki/mean_absolute_error
+        [2] https://en.wikipedia.org/wiki/generalized_mean
+        [3] https://en.wikipedia.org/wiki/discrepancy_function
+        [4] https://en.wikipedia.org/wiki/risk_function
+
+    """
+    return nvector.dist_amean(x, y, axis=axis)
+
+def err_rmse(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
+    """Calculate Root-Mean-Square Error of two samples along given axis.
+
+    The Root-Mean-Square Error (RMSE) is a sample statistic on in the space of
+    random variables [1], which is induced by the Quadratic Mean [2]. This norm
+    equals the Euclidean norm multiplied by the prefactor sqrt(1 / d), where d
+    is the length of the sample. Consequently the induced RMSE is a valid metric
+    within its domain, and therefore in particular a valid measure of
+    discrepancy [3]. The RMSE is used in regression analysis to quantify the
+    quality of an estimator.
+
+
+    Args:
+        x: NumPy ndarray with numeric values of arbitrary dimension.
+        y: NumPy ndarray with same dimension, shape and datatypes as 'x'
+        axis: Axis (or axes) along which the distance is calculated. Within a
+            one-dimensional array the axis always has index 0. A two-dimensional
+            array has two corresponding axes: The first running vertically
+            downwards across rows (axis 0), and the second running horizontally
+            across columns (axis 1). Default: 0
+
+    Returns:
+        NumPy ndarray of dimension <dim x> - <number of axes>.
+
+    References:
+        [1] https://en.wikipedia.org/wiki/root-mean-square_error
+        [2] https://en.wikipedia.org/wiki/power_mean
+        [3] https://en.wikipedia.org/wiki/discrepancy_function
 
     """
     return nvector.dist_qmean(x, y, axis=axis)
+
+# TODO: Goodness of fit Measures
+# https://en.wikipedia.org/wiki/Goodness_of_fit

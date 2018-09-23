@@ -19,7 +19,7 @@ NORM_PREFIX = 'norm_'
 DIST_PREFIX = 'dist_'
 
 #
-# Vector Space Norms and Generalized Vector Space Norms
+# Vector Space Norms
 #
 
 def norms() -> StrList:
@@ -41,7 +41,7 @@ def norms() -> StrList:
     return sorted([v['name'][i:] for v in d.values()])
 
 def length(x: NpArrayLike, norm: str = 'euclid', **kwargs: Any) -> NpArray:
-    """Calculate length of vector by given norm.
+    """Calculate generalized length of vector by given norm.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary

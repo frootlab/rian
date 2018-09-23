@@ -171,9 +171,9 @@ class TestSuite(ntest.TestSuite):
             obj.path = ('%site_data_dir%', 'test')
             self.assertNotIn('%', obj.path)
 
-    def test_common_ncalc(self) -> None:
-        """Test module 'nemoa.common.ncalc'."""
-        from nemoa.common import ncalc
+    def test_common_ncurve(self) -> None:
+        """Test module 'nemoa.common.ncurve'."""
+        from nemoa.common import ncurve
         import numpy as np
 
         arr = np.array([[0.0, 0.5], [1.0, -1.0]])
@@ -181,91 +181,91 @@ class TestSuite(ntest.TestSuite):
         with self.subTest("logistic"):
             self.assertTrue(
                 np.isclose(
-                    ncalc.logistic(arr).sum(),
+                    ncurve.logistic(arr).sum(),
                     2.122459, atol=1e-3))
 
         with self.subTest("tanh"):
             self.assertTrue(
                 np.isclose(
-                    ncalc.tanh(arr).sum(),
+                    ncurve.tanh(arr).sum(),
                     0.462117, atol=1e-3))
 
         with self.subTest("lecun"):
             self.assertTrue(
                 np.isclose(
-                    ncalc.lecun(arr).sum(),
+                    ncurve.lecun(arr).sum(),
                     0.551632, atol=1e-3))
 
         with self.subTest("elliot"):
             self.assertTrue(
                 np.isclose(
-                    ncalc.elliot(arr).sum(),
+                    ncurve.elliot(arr).sum(),
                     0.333333, atol=1e-3))
 
         with self.subTest("hill"):
             self.assertTrue(
                 np.isclose(
-                    ncalc.hill(arr).sum(),
+                    ncurve.hill(arr).sum(),
                     0.447213, atol=1e-3))
 
         with self.subTest("arctan"):
             self.assertTrue(
                 np.isclose(
-                    ncalc.arctan(arr).sum(),
+                    ncurve.arctan(arr).sum(),
                     0.463647, atol=1e-3))
 
         with self.subTest("d_logistic"):
             self.assertTrue(
                 np.isclose(
-                    ncalc.d_logistic(arr).sum(),
+                    ncurve.d_logistic(arr).sum(),
                     0.878227, atol=1e-3))
 
         with self.subTest("d_elliot"):
             self.assertTrue(
                 np.isclose(
-                    ncalc.d_elliot(arr).sum(),
+                    ncurve.d_elliot(arr).sum(),
                     1.944444, atol=1e-3))
 
         with self.subTest("d_hill"):
             self.assertTrue(
                 np.isclose(
-                    ncalc.d_hill(arr).sum(),
+                    ncurve.d_hill(arr).sum(),
                     2.422648, atol=1e-3))
 
         with self.subTest("d_lecun"):
             self.assertTrue(
                 np.isclose(
-                    ncalc.d_lecun(arr).sum(),
+                    ncurve.d_lecun(arr).sum(),
                     3.680217, atol=1e-3))
 
         with self.subTest("d_tanh"):
             self.assertTrue(
                 np.isclose(
-                    ncalc.d_tanh(arr).sum(),
+                    ncurve.d_tanh(arr).sum(),
                     2.626396, atol=1e-3))
 
         with self.subTest("d_arctan"):
             self.assertTrue(
                 np.isclose(
-                    ncalc.d_arctan(arr).sum(),
+                    ncurve.d_arctan(arr).sum(),
                     2.800000, atol=1e-3))
 
         with self.subTest("dialogistic"):
             self.assertTrue(
                 np.isclose(
-                    ncalc.dialogistic(arr).sum(),
+                    ncurve.dialogistic(arr).sum(),
                     0.251661, atol=1e-3))
 
         with self.subTest("softstep"):
             self.assertTrue(
                 np.isclose(
-                    ncalc.softstep(arr).sum(),
+                    ncurve.softstep(arr).sum(),
                     0.323637, atol=1e-3))
 
         with self.subTest("multilogistic"):
             self.assertTrue(
                 np.isclose(
-                    ncalc.multilogistic(arr).sum(),
+                    ncurve.multilogistic(arr).sum(),
                     0.500272, atol=1e-3))
 
     def test_common_nconsole(self) -> None:

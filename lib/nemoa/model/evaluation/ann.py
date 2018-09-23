@@ -20,7 +20,7 @@ import numpy
 
 from nemoa.model.evaluation.base import Evaluation
 
-from nemoa.common import ncalc, nalgo
+from nemoa.common import ncurve, nalgo
 
 class ANN(Evaluation):
 
@@ -683,7 +683,7 @@ class ANN(Evaluation):
                 if inlabel == outlabel: A[iid, oid] = 0.0
         bound = numpy.amax(A)
 
-        return ncalc.dialogistic(R, scale = bound, sigma = contrast)
+        return ncurve.dialogistic(R, scale = bound, sigma = contrast)
 
     @nalgo.custom(
         name     = 'energy',
