@@ -98,53 +98,53 @@ class TestSuite(ntest.TestSuite):
             self.assertTrue(
                 narray.asdict(arr, labels=labels) == {('a', 'b'): 1.})
 
-    def test_common_nmetric(self) -> None:
-        """Test module 'nemoa.common.nmetric'."""
-        from nemoa.common import nmetric
+    def test_common_nvector(self) -> None:
+        """Test module 'nemoa.common.nvector'."""
+        from nemoa.common import nvector
         import numpy as np
 
         x = np.array([[0.1, -1.9], [1.3, 2.2], [-3.4, -7.9]])
         y = np.array([[5.1, 2.9], [2.4, 1.1], [-1.6, -5.9]])
         z = np.array([[-2.6, 1.3], [1.1, -2.6], [7.0, -3.9]])
 
-        with self.subTest("vecnorms"):
-            vecnorms = nmetric.vecnorms()
-            self.assertIsInstance(vecnorms, list)
-            self.assertTrue(vecnorms)
+        with self.subTest('norms'):
+            norms = nvector.norms()
+            self.assertIsInstance(norms, list)
+            self.assertTrue(norms)
 
-        for norm in nmetric.vecnorms():
-            with self.subTest("vecnorm_" + norm):
-                nx = nmetric.vecnorm(x, norm)
-                ny = nmetric.vecnorm(y, norm)
-                nn = nmetric.vecnorm(x - x, norm)
-                nxy = nmetric.vecnorm(x + y, norm)
-                n2x = nmetric.vecnorm(2 * x, norm)
+        for norm in nvector.norms():
+            with self.subTest(nvector.NORM_PREFIX  + norm):
+                lx = nvector.length(x, norm=norm)
+                ly = nvector.length(y, norm=norm)
+                ln = nvector.length(x - x, norm=norm)
+                lxy = nvector.length(x + y, norm=norm)
+                l2x = nvector.length(2 * x, norm=norm)
 
                 # test type
-                self.assertIsInstance(nx, np.ndarray)
+                self.assertIsInstance(lx, np.ndarray)
                 # test dimension
-                self.assertEqual(nx.ndim, x.ndim-1)
+                self.assertEqual(lx.ndim, x.ndim-1)
                 # test if norm is not negative
-                self.assertTrue(np.all(nx >= 0))
+                self.assertTrue(np.all(lx >= 0))
                 # test if norm of zero values is zero
-                self.assertTrue(np.all(nn == 0))
+                self.assertTrue(np.all(ln == 0))
                 # test triangle inequality
-                self.assertTrue(np.all(nxy <= nx + ny))
+                self.assertTrue(np.all(lxy <= lx + ly))
                 # test absolute homogeneity
-                self.assertTrue(np.all(n2x == 2 * nx))
+                self.assertTrue(np.all(l2x == 2 * lx))
 
-        with self.subTest("vecmetrices"):
-            metrices = nmetric.vecmetrices()
+        with self.subTest("metrices"):
+            metrices = nvector.metrices()
             self.assertIsInstance(metrices, list)
             self.assertTrue(metrices)
 
-        for metric in nmetric.vecmetrices():
-            with self.subTest("vecdist_" + metric):
-                dxx = nmetric.vecdist(x, x, metric=metric)
-                dxy = nmetric.vecdist(x, y, metric=metric)
-                dyx = nmetric.vecdist(y, x, metric=metric)
-                dyz = nmetric.vecdist(y, z, metric=metric)
-                dxz = nmetric.vecdist(x, z, metric=metric)
+        for metric in nvector.metrices():
+            with self.subTest(nvector.DIST_PREFIX + metric):
+                dxx = nvector.distance(x, x, metric=metric)
+                dxy = nvector.distance(x, y, metric=metric)
+                dyx = nvector.distance(y, x, metric=metric)
+                dyz = nvector.distance(y, z, metric=metric)
+                dxz = nvector.distance(x, z, metric=metric)
 
                 # test type
                 self.assertIsInstance(dxy, np.ndarray)

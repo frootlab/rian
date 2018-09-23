@@ -149,14 +149,14 @@ def get_error_vector(model, data, norm: str = 'MSE', **kwargs):
         block: list of strings containing labels of source units
             that are blocked by setting the values to their means
         norm: used norm to calculate data reconstuction error from
-            residuals. see nemoa.common.nmetric.vecnorm for a list
+            residuals. see nemoa.common.nvector.norms for a list
             of provided norms
 
     """
-    from nemoa.common import nmetric
+    from nemoa.common import nvector
 
-    # TODO: use nmetric
-    #error = nmetric.vecdist(x, y, metric=metric)
+    # TODO: use nvector
+    #error = nvector.distance(x, y, metric=metric)
     res = get_residuals(data, **kwargs)
     error = numpy.mean(numpy.square(res), axis=0)
 
@@ -186,14 +186,14 @@ def get_accuracy_vector(model, data, norm: str = 'MSE', **kwargs):
         block: list of strings containing labels of source units
             that are blocked by setting the values to their means
         norm: used norm to calculate accuracy
-            see nemoa.common.nmetric.vecnorm for a list of provided
+            see nemoa.common.nvector.norms for a list of provided
             norms
 
     """
-    from nemoa.common import nmetric
+    from nemoa.common import nvector
 
-    # TODO: use nmetric
-    #error = nmetric.vecdist(x, y, metric=metric)
+    # TODO: use nvector
+    #error = nvector.distance(x, y, metric=metric)
     res = get_residuals(data, **kwargs)
     normres = numpy.mean(numpy.square(res), axis=0)
     normdat = numpy.mean(numpy.square(data[1]), axis=0)
@@ -224,16 +224,16 @@ def get_precision_vector(model, data, norm = 'SD', **kwargs):
         block: list of strings containing labels of source units
             that are blocked by setting the values to their means
         norm: used norm to calculate deviation for precision
-            see nemoa.common.nmetric.vecnorm for a list of provided
+            see nemoa.common.nvector.norms for a list of provided
             norms
 
     """
 
-    from nemoa.common import nmetric
+    from nemoa.common import nvector
 
     res = get_residuals(data, **kwargs)
-    devres = nmetric.vecnorm(res, norm=norm)
-    devdat = nmetric.vecnorm(data[1], norm=norm)
+    devres = nvector.length(res, norm=norm)
+    devdat = nvector.length(data[1], norm=norm)
 
     return 1. - devres / devdat
 
