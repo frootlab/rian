@@ -129,6 +129,39 @@ class TestSuite(ntest.TestSuite):
                 # test if discrepancy is symmetric
                 self.assertTrue(np.all(dxy == dyx))
 
+    def test_common_nmatrix(self) -> None:
+        """Test module 'nemoa.common.nmatrix'."""
+        from nemoa.common import nmatrix
+        import numpy as np
+
+        x = np.array([[0.1, -1.9], [1.3, 2.2], [-3.4, -7.9]])
+        y = np.array([[5.1, 2.9], [2.4, 1.1], [-1.6, -5.9]])
+        z = np.array([[-2.6, 1.3], [1.1, -2.6], [7.0, -3.9]])
+
+        with self.subTest('norms'):
+            norms = nmatrix.norms()
+            self.assertIsInstance(norms, list)
+            self.assertTrue(norms)
+
+        for norm in nmatrix.norms():
+            with self.subTest(nmatrix.NORM_PREFIX  + norm):
+                vx = nmatrix.volume(x, norm=norm)
+                vy = nmatrix.volume(y, norm=norm)
+                vn = nmatrix.volume(x - x, norm=norm)
+                vxy = nmatrix.volume(x + y, norm=norm)
+                v2x = nmatrix.volume(2 * x, norm=norm)
+
+                # test type (and dimension)
+                self.assertIsInstance(vx, float)
+                # test if norm is not negative
+                self.assertTrue(vx >= 0)
+                # test if norm of zero values is zero
+                self.assertTrue(vn == 0.)
+                # test triangle inequality
+                self.assertTrue(vxy <= vx + vy)
+                # test absolute homogeneity
+                self.assertTrue(v2x == 2 * vx)
+
     def test_common_nvector(self) -> None:
         """Test module 'nemoa.common.nvector'."""
         from nemoa.common import nvector
