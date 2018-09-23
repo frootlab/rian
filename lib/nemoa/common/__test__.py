@@ -98,6 +98,37 @@ class TestSuite(ntest.TestSuite):
             self.assertTrue(
                 narray.asdict(arr, labels=labels) == {('a', 'b'): 1.})
 
+    def test_common_nregr(self) -> None:
+        """Test module 'nemoa.common.nregr'."""
+        from nemoa.common import nregr
+        import numpy as np
+
+        x = np.array([[0.1, -1.9], [1.3, 2.2], [-3.4, -7.9]])
+        y = np.array([[5.1, 2.9], [2.4, 1.1], [-1.6, -5.9]])
+        z = np.array([[-2.6, 1.3], [1.1, -2.6], [7.0, -3.9]])
+
+        with self.subTest('errors'):
+            dfuncs = nregr.errors()
+            self.assertIsInstance(dfuncs, list)
+            self.assertTrue(dfuncs)
+
+        for dfunc in nregr.errors():
+            with self.subTest(nregr.ERR_PREFIX  + dfunc):
+                dxx = nregr.error(x, x, dfunc=dfunc)
+                dxy = nregr.error(x, y, dfunc=dfunc)
+                dyx = nregr.error(y, x, dfunc=dfunc)
+
+                # test type
+                self.assertIsInstance(dxy, np.ndarray)
+                # test dimension
+                self.assertEqual(dxy.ndim, x.ndim-1)
+                # test if discrepancy is not negative
+                self.assertTrue(np.all(dxy >= 0))
+                # test if discrepancy of identical values is zero
+                self.assertTrue(np.all(dxx == 0))
+                # test if discrepancy is symmetric
+                self.assertTrue(np.all(dxy == dyx))
+
     def test_common_nvector(self) -> None:
         """Test module 'nemoa.common.nvector'."""
         from nemoa.common import nvector

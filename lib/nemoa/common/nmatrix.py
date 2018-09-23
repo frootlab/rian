@@ -65,6 +65,11 @@ def volume(x: NpArrayLike, norm: str = 'euclid', **kwargs: Any) -> NpArray:
         raise TypeError(
             "argument 'x' is required to be of type 'NumPy ArrayLike'") from err
 
+    # Check dimension of ndarray 'x'
+    if getattr(x, 'ndim') < 2:
+        raise ValueError(
+            "NumPy Array 'x' is required to have dimension > 1") from err
+
     # Get norm function
     fname = NORM_PREFIX + norm.lower()
     module = nmodule.inst(nmodule.curname())

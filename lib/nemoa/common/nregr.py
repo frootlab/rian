@@ -30,7 +30,7 @@ def errors() -> StrList:
     usually appear as deviations [2] and errors [3], which are to be minimized
     (locally or globally) by an underlying model. The traversal of the parameter
     space therefore requires, the class of discrepancy functions to be continous
-    semi-metrices.
+    semi-metrices [4].
 
     Returns:
         Sorted list of all discrepany functions, that are implemented within
@@ -40,6 +40,7 @@ def errors() -> StrList:
         [1] https://en.wikipedia.org/wiki/discrepancy_function
         [2] https://en.wikipedia.org/wiki/deviation_(statistics)
         [3] https://en.wikipedia.org/wiki/errors_and_residuals
+        [4] https://en.wikipedia.org/wiki/semimetrics
 
     """
     from nemoa.common import ndict
@@ -70,13 +71,13 @@ def error(
             arrays.
         y: Any sequence that can be interpreted as a numpy ndarray with the same
             dimension, shape and datatypes as 'x'.
-        dfunc: Name of discrepany function:
+        dfunc: Name of discrepancy function:
             'rss': Residual Sum of Squares
             'mse': Mean Squared Error
             'mae': Mean Absolute Error
             'rmse': Root-Mean-Squared Error
         **kwargs: Parameters of the given discrapancy function.
-            The Parameters are documented within the respective 'dist'
+            The Parameters are documented within the respective 'err'
             functions.
 
     Returns:
