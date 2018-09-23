@@ -12,7 +12,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://scipy.org") from err
 
-from nemoa.common import nfunc, nmodule
+from nemoa.common import nfunc, nmodule, nvector
 from nemoa.types import Any, NpAxis, NpArray, NpArrayLike, StrList
 
 NORM_PREFIX = 'norm_'
@@ -40,16 +40,18 @@ def norms() -> StrList:
     i = len(NORM_PREFIX)
     return sorted([v['name'][i:] for v in d.values()])
 
-def volume(x: NpArrayLike, norm: str = 'euclid', **kwargs: Any) -> NpArray:
+def volume(x: NpArrayLike, norm: str = 'frobenius', **kwargs: Any) -> NpArray:
     """Calculate generalized volume of matrix by given norm.
 
     Args:
-        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
-            dimension. This includes nested lists, tuples, scalars and existing
-            arrays.
+        x: Any sequence that can be interpreted as a numpy ndarray of two or
+            more dimensions. This includes nested lists, tuples, scalars and
+            existing arrays.
         norm: Name of matrix norm. Accepted values are:
-
-            Default: 'euclid'
+            'pq': pq-norm (induces: pq-distances)
+                Remark: requires additional parameters 'p' and 'q'
+            'frobenius': Frobenius norm (induces: Frobenius distance)
+            Default: 'frobenius'
         **kwargs: Parameters of the given norm / class of norms.
             The norm Parameters are documented within the respective 'norm'
             functions.
@@ -81,3 +83,30 @@ def volume(x: NpArrayLike, norm: str = 'euclid', **kwargs: Any) -> NpArray:
 
     # Evaluate norm function
     return func(x, **nfunc.kwargs(func, default=kwargs))
+
+def norm_frobenius(x: NpArray, axes: NpAxis = (0, 1)) -> NpArray:
+    """Calculate Frobenius norm of an array along given axes.
+
+    The Frobenius norm is the Euclidean norm on the space of (m, n) matrices.
+    It equals the pq-norm for p = q = 2 and thus is calculated by the entrywise
+    root sum of squared values [1]. From this it follows, that the Frobenius is
+    sub-multiplicative.
+
+    Args:
+        x: Any sequence that can be interpreted as a numpy ndarray of two or
+            more dimensions. This includes nested lists, tuples, scalars and
+            existing arrays.
+        axis: Axes along which the norm is calculated. A two-dimensional
+            array has two corresponding axes: The first running vertically
+            downwards across rows (axis 0), and the second running horizontally
+            across columns (axis 1).
+            Default: (0, 1)
+
+    Returns:
+        NumPy ndarray of dimension <dim x> - <number of axes>.
+
+    References:
+        [1] https://en.wikipedia.org/wiki/frobenius_norm
+
+    """
+    return nvector.norm_euclid(x, axis=axes)

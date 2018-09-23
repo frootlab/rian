@@ -227,7 +227,6 @@ def err_rmse(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
     discrepancy [3]. The RMSE is used in regression analysis to quantify the
     quality of an estimator.
 
-
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
         y: NumPy ndarray with same dimension, shape and datatypes as 'x'
@@ -247,6 +246,14 @@ def err_rmse(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
 
     """
     return nvector.dist_qmean(x, y, axis=axis)
+
+# TODO: Add RSSE
+# norm_euclid
+# With respect to a given sample the induced metric, is a sample statistic and
+# referred as the 'Root-Sum-Square Difference' (RSSD). An important
+# application is the method of least squares [3].
+# [3] https://en.wikipedia.org/wiki/least_squares
+
 
 # TODO: Goodness of fit Measures
 # https://en.wikipedia.org/wiki/Goodness_of_fit
