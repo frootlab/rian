@@ -105,6 +105,7 @@ class TestSuite(ntest.TestSuite):
 
         x = np.array([[0.1, -1.9], [1.3, 2.2], [-3.4, -7.9]])
         y = np.array([[5.1, 2.9], [2.4, 1.1], [-1.6, -5.9]])
+        z = np.array([[-2.6, 1.3], [1.1, -2.6], [7.0, -3.9]])
 
         with self.subTest("vecnorms"):
             vecnorms = nmetric.vecnorms()
@@ -115,22 +116,48 @@ class TestSuite(ntest.TestSuite):
             with self.subTest("vecnorm_" + norm):
                 nx = nmetric.vecnorm(x, norm)
                 ny = nmetric.vecnorm(y, norm)
-                nz = nmetric.vecnorm(x - x, norm)
+                nn = nmetric.vecnorm(x - x, norm)
                 nxy = nmetric.vecnorm(x + y, norm)
-                nax = nmetric.vecnorm(2 * x, norm)
+                n2x = nmetric.vecnorm(2 * x, norm)
+
+                # test type
                 self.assertIsInstance(nx, np.ndarray)
+                # test dimension
                 self.assertEqual(nx.ndim, x.ndim-1)
                 # test if norm is not negative
                 self.assertTrue(np.all(nx >= 0))
                 # test if norm of zero values is zero
-                self.assertTrue(np.all(nz == 0))
+                self.assertTrue(np.all(nn == 0))
                 # test triangle inequality
                 self.assertTrue(np.all(nxy <= nx + ny))
-                # test sub homogeneity
-                self.assertTrue(np.all(nax <= 2 * nx))
+                # test absolute homogeneity
+                self.assertTrue(np.all(n2x == 2 * nx))
 
-        with self.subTest("vecdists"):
-            self.assertTrue(nmetric.vecdists())
+        with self.subTest("vecmetrices"):
+            metrices = nmetric.vecmetrices()
+            self.assertIsInstance(metrices, list)
+            self.assertTrue(metrices)
+
+        for metric in nmetric.vecmetrices():
+            with self.subTest("vecdist_" + metric):
+                dxx = nmetric.vecdist(x, x, metric=metric)
+                dxy = nmetric.vecdist(x, y, metric=metric)
+                dyx = nmetric.vecdist(y, x, metric=metric)
+                dyz = nmetric.vecdist(y, z, metric=metric)
+                dxz = nmetric.vecdist(x, z, metric=metric)
+
+                # test type
+                self.assertIsInstance(dxy, np.ndarray)
+                # test dimension
+                self.assertEqual(dxy.ndim, x.ndim-1)
+                # test if distance is not negative
+                self.assertTrue(np.all(dxy >= 0))
+                # test if distance of identical values is zero
+                self.assertTrue(np.all(dxx == 0))
+                # test if distance is symmetric
+                self.assertTrue(np.all(dxy == dyx))
+                # test triangle inequality
+                self.assertTrue(np.all(dxz <= dxy + dyz))
 
     def test_common_nbase(self) -> None:
         """Test module 'nemoa.common.nbase'."""
