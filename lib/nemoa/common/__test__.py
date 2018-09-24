@@ -461,11 +461,14 @@ class TestSuite(ntest.TestSuite):
         with self.subTest("getdelim"):
             self.assertEqual(ncsv.getdelim(filename), delim)
 
+        with self.subTest("getlabelformat"):
+            self.assertEqual(ncsv.getlabelformat(filename), 'standard')
+
         with self.subTest("getlabels"):
             self.assertEqual(ncsv.getlabels(filename), labels)
 
-        with self.subTest("getacolid"):
-            self.assertEqual(ncsv.getacolid(filename), 0)
+        with self.subTest("getanncolid"):
+            self.assertEqual(ncsv.getanncolid(filename), 0)
 
         with self.subTest("load"):
             rval = ncsv.load(filename)

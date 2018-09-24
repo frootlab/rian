@@ -120,7 +120,6 @@ def updvars(filepath: OptStr = None) -> None:
     import io
     import re
 
-
     dvars = {}
 
     # Use init script of current root module
@@ -171,7 +170,7 @@ def getdir(dirname: str, *args: Any, **kwargs: Any) -> str:
         the pathname is not supported.
 
     """
-    # Check type argument 'dirname'
+    # Check type of argument 'dirname'
     if not isinstance(dirname, str):
         raise TypeError(
             "argument 'name' requires to be of type 'str' or None"
