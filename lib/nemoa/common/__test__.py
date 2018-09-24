@@ -145,22 +145,22 @@ class TestSuite(ntest.TestSuite):
 
         for norm in nmatrix.norms():
             with self.subTest(nmatrix.NORM_PREFIX  + norm):
-                vx = nmatrix.volume(x, norm=norm)
-                vy = nmatrix.volume(y, norm=norm)
-                vn = nmatrix.volume(x - x, norm=norm)
-                vxy = nmatrix.volume(x + y, norm=norm)
-                v2x = nmatrix.volume(2 * x, norm=norm)
+                mx = nmatrix.magnitude(x, norm=norm)
+                my = nmatrix.magnitude(y, norm=norm)
+                mn = nmatrix.magnitude(x - x, norm=norm)
+                mxy = nmatrix.magnitude(x + y, norm=norm)
+                m2x = nmatrix.magnitude(2 * x, norm=norm)
 
                 # test type (and dimension)
-                self.assertIsInstance(vx, float)
+                self.assertIsInstance(mx, float)
                 # test if norm is not negative
-                self.assertTrue(vx >= 0)
+                self.assertTrue(mx >= 0)
                 # test if norm of zero values is zero
-                self.assertTrue(vn == 0.)
+                self.assertTrue(mn == 0.)
                 # test triangle inequality
-                self.assertTrue(vxy <= vx + vy)
+                self.assertTrue(mxy <= mx + my)
                 # test absolute homogeneity
-                self.assertTrue(v2x == 2 * vx)
+                self.assertTrue(m2x == 2 * mx)
 
     def test_common_nvector(self) -> None:
         """Test module 'nemoa.common.nvector'."""

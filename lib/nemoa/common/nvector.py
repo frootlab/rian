@@ -97,10 +97,10 @@ def norm_p(x: NpArray, p: float = 2., axis: NpAxis = 0) -> NpArray:
             dimension. This includes nested lists, tuples, scalars and existing
             arrays.
         p: Positive real number, which determines the p-norm by the p-th root of
-            the summed p-th powered absolute values. For p < 1, the 'p-norm'
-            does not satisfy the triangle inequality. In this case the 'p-norm'
-            is a quasi-norm. For p >= 1 the p-norm is a norm.
-            Default: 2
+            the summed p-th powered absolute values. For p < 1, the function
+            does not satisfy the triangle inequality and yields a quasi-norm.
+            For p >= 1 the p-norm is a norm.
+            Default: 2.
         axis: Index of axis (or axes) along which the function is performed.
             Within a 1d array the axis has index 0. In a 2d array the axis with
             index 0 is running across rows, and the axis with index 1 is running
@@ -117,11 +117,15 @@ def norm_p(x: NpArray, p: float = 2., axis: NpAxis = 0) -> NpArray:
         [2] https://en.wikipedia.org/wiki/Quasinorm
 
     """
-    if p == 1.:
-        return norm_1(x, axis=axis) # faster then generic implementation
-    if p == 2.:
-        return norm_euclid(x, axis=axis) # faster then generic implementation
-    return np.power(np.sum(np.power(np.abs(x), p), axis=axis), 1. / float(p))
+    # For special cases prefer individual implementations, which are faster then
+    # the generic implementation of the p-norm
+    if p == 1.: # Use the 1-norm
+        return norm_1(x, axis=axis)
+    if p == 2.: # Use the Euclidean norm
+        return norm_euclid(x, axis=axis)
+
+    psum = np.sum(np.power(np.abs(x), p), axis=axis)
+    return np.power(psum, 1. / p)
 
 def norm_1(x: NpArray, axis: NpAxis = 0) -> NpArray:
     """Calculate 1-norm of an array along given axis.
@@ -231,8 +235,8 @@ def norm_pmean(x: NpArray, p: float = 2., axis: NpAxis = 0) -> NpArray:
             arrays.
         p: Positive real number, which determines the power mean by the p-th
             root of the averaged p-th powered absolute values. For p < 1, the
-            power mean does not satisfy the triangle inequality. In this case
-            power mean is a quasi-norm. For p >= 1 the power mean is a norm.
+            function does not satisfy the triangle inequality and yields a
+            quasi-norm. For p >= 1 the power mean is a norm.
             Default: 2
         axis: Axis (or axes) along which the norm is calculated. Within a
             one-dimensional array the axis always has index 0. A two-dimensional
@@ -258,7 +262,7 @@ def norm_amean(x: NpArray, axis: NpAxis = 0) -> NpArray:
     """Calculate Arithmetic Mean of the absolute values of an array.
 
     The 'Arithmetic Mean' is the power mean for p = 1 and equals the 1-norm
-    except for the additional normalization factor (1 / n), where n is the
+    except for an additional normalization factor (1 / n), where n is the
     dimension of the vector space [1]. Due to this linear dependency the
     Arithmetic Mean is a valid vector norm and thus induces a metric within its
     domain, which is referred as 'arithmetic mean difference'.
@@ -454,10 +458,9 @@ def dist_minkowski(
         x: NumPy ndarray with numeric values of arbitrary dimension.
         y: NumPy ndarray with same dimension, shape and datatypes as 'x'
         p: Positive real number, which determines the Minkowsi distance by the
-            respective p-norm. For p < 1, the 'p-norm' does not satisfy the
-            triangle inequality. In this case the induced 'Minkowski distance'
-            is not a distance, but a quasi-metric. For p >= 1 the Minkowski
-            distance is a metric.
+            respective p-norm. For p < 1, the function does not satisfy the
+            triangle inequality and thus is not a valid metric, but a
+            quasi-metric. For p >= 1 the Minkowski distance is a metric.
             Default: 2.
         axis: Axis (or axes) along which the distance is calculated. Within a
             one-dimensional array the axis always has index 0. A two-dimensional
@@ -585,9 +588,9 @@ def dist_pmean(
         y: NumPy ndarray with same dimension, shape and datatypes as 'x'
         p: Positive real number, which determines the power mean difference by
             the respective power mean. For p < 1, the power mean does not
-            satisfy the triangle inequality. In this case the induced power mean
-            difference is not a valid metric, but a quasi-metric. For p >= 1 the
-            power mean difference is a metric.
+            satisfy the triangle inequality, such that the induced power mean
+            difference is not a valid metric, but a quasi-metric. For p >= 1
+            the power mean difference is a metric.
             Default: 2.
         axis: Axis (or axes) along which the distance is calculated. Within a
             one-dimensional array the axis always has index 0. A two-dimensional
