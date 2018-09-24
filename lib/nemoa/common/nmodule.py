@@ -16,7 +16,8 @@ def curname(frame: int = 0) -> str:
     Args:
         frame: Frame index relative to the current frame in the callstack,
             which is identified with 0. Negative values consecutively identify
-            previous modules within the callstack. Default: 0
+            previous modules within the callstack.
+            Default: 0
 
     Returns:
         String with name of module.
@@ -82,10 +83,12 @@ def submodules(module: OptModule = None, recursive: bool = False) -> StrList:
     """Get list with submodule names.
 
     Args:
-        module: Module instance to search for submodules
-            default: Use current module which calls this function
-        recursive: Search recursively within submodules
-            default: Do not search recursively
+        module: Module instance to search for submodules. If 'module' is None,
+            then the module of the caller function is used.
+            Default: None
+        recursive: Boolean value which determines, if the search is performed
+            recursively within the submodules.
+            Default: False
 
     Returns:
         List with submodule names.
@@ -123,7 +126,7 @@ def getsubmodule(name: str) -> OptModule:
     """Get instance from the name of a submodule of the current module.
 
     Args:
-        name: Name of submodule of current module
+        name: Name of submodule of current module.
 
     Returns:
         Module instance of submodule or None, if the current module does not
@@ -177,14 +180,31 @@ def functions(
     """Get dictionary with functions and attributes.
 
     Args:
-        module: Module instance to search for submodules
-            default: Use current module, which called this function
+        module: Module instance in which functions are searched. If 'module' is
+            None, then the module of the caller function is used.
+            Default: None
         pattern: Only functions which names satisfy the wildcard pattern given
             by 'pattern' are returned. The format of the wildcard pattern
-            is described in the standard library module 'fnmatch' [1]
-        rules:
-            default: {}
-        **kwargs:
+            is described in the standard library module 'fnmatch' [1]. If
+            pattern is None, then all functions are returned.
+            Default: None
+        rules: Dictionary with individual filter rules, used by the attribute
+            filter. The form is {<attribute>: <lambda>, ...}, where:
+            <attribute> is a string with the attribute name and <lambda> is a
+            boolean valued lambda function, which specifies the comparison of
+            the attribute value against the argument value.
+            Example:
+                {'tags': lambda arg, attr: set(arg) <= set(attr)}
+            By default any attribute, which is not in the filter rules
+            is compared to the argument value by equality.
+            Default: None
+        **kwargs: Arguments, that define the attribute filter for the returned
+            dictionary. For example if the argument "tags = ['test']" is given,
+            then only functions are returned, which have the attribute 'tags'
+            and the value of the attribute equals ['test']. If, however, the
+            filter rule of the above example is given, then any function,
+            with attribute 'tags' and a corresponding tag list, that comprises
+            'test' is returned.
 
     Returns:
         Dictionary with fully qualified function names as keys and attribute
@@ -222,12 +242,13 @@ def functions(
         attr['name'] = attr.get('name', name)
         attr['reference'] = ref
 
-        # filter entry by attributes using filter rules
+        # Filter entry by attribute filter
         passed = True
         for key, val in kwargs.items():
             if not key in attr:
                 passed = False
                 break
+            # Apply individual attribute filter rules
             if key in rules:
                 match = rules[key]
                 if match(val, attr[key]):
@@ -241,37 +262,58 @@ def functions(
         if not passed:
             continue
 
-        # add item
+        # Add item
         funcs[prefix + name] = attr
 
     return funcs
 
 def search(
         module: OptModule = None, pattern: OptStr = None,
-        groupby: OptStr = None, key: OptStr = None,
-        val: OptStr = None, rules: OptStrDictOfTestFuncs = None,
-        recursive: bool = True, **kwargs: Any) -> dict:
+        key: OptStr = None, val: OptStr = None,
+        groupby: OptStr = None, recursive: bool = True,
+        rules: OptStrDictOfTestFuncs = None, **kwargs: Any) -> dict:
     """Recursively search for functions within submodules.
 
     Args:
-        module: Module instance to search for functions
-            Default: Use current module, which calles this function
+        module: Module instance in which functions are searched. If 'module' is
+            None, then the module of the caller function is used.
+            Default: None
         pattern: Only functions which names satisfy the wildcard pattern given
             by 'pattern' are returned. The format of the wildcard pattern
-            is described in the standard library module 'fnmatch' [1]
-        groupby: Name of function attribute which is used to group the results.
-            If 'groupby' is None, then the results are not grouped.
+            is described in the standard library module 'fnmatch' [1]. If
+            pattern is None, then all functions are returned.
             Default: None
         key: Name of function attribute which is used as the key for the
             returned dictionary. If 'key' is None, then the fully qualified
-            function names are used as keys. Default: None
+            function names are used as keys.
+            Default: None
         val: Name of function attribute which is used as the value for the
             returned dictionary. If 'val' is None, then all attributes of the
-            respective functions are returned. Default: None
-        rules: Default: None
-        recursive: Boolean value which determines if the search is recursively
-            within submodules. Defaut: True
-        **kwargs: Attributes, which values are testet by using the filter rules.
+            respective functions are returned.
+            Default: None
+        groupby: Name of function attribute which is used to group the results.
+            If 'groupby' is None, then the results are not grouped.
+            Default: None
+        recursive: Boolean value which determines if the search is performed
+            recursively within all submodules.
+            Default: True
+        rules: Dictionary with individual filter rules, used by the attribute
+            filter. The form is {<attribute>: <lambda>, ...}, where:
+            <attribute> is a string with the attribute name and <lambda> is a
+            boolean valued lambda function, which specifies the comparison of
+            the attribute value against the argument value.
+            Example:
+                {'tags': lambda arg, attr: set(arg) <= set(attr)}
+            By default any attribute, which is not in the filter rules
+            is compared to the argument value by equality.
+            Default: None
+        **kwargs: Arguments, that define the attribute filter for the returned
+            dictionary. For example if the argument "tags = ['test']" is given,
+            then only functions are returned, which have the attribute 'tags'
+            and the value of the attribute equals ['test']. If, however, the
+            filter rule of the above example is given, then any function,
+            with attribute 'tags' and a corresponding tag list, that comprises
+            'test' is returned.
 
     Returns:
         Dictionary with function information as specified in the arguments
@@ -289,10 +331,10 @@ def search(
 
     from nemoa.common import ndict
 
-    # get list with submodules
+    # Get list with submodules
     mnames = [module.__name__] + submodules(module, recursive=recursive)
 
-    # create dictionary with function attributes
+    # Create dictionary with function attributes
     fd = {}
     rules = rules or {}
     for mname in mnames:
@@ -301,7 +343,7 @@ def search(
             continue
         d = functions(m, pattern=pattern, rules=rules, **kwargs)
 
-        # ignore functions if any required attribute is not available
+        # Ignore functions if any required attribute is not available
         for name, attr in d.items():
             if key and not key in attr:
                 continue
@@ -309,7 +351,7 @@ def search(
                 continue
             fd[name] = attr
 
-    # rename key for returned dictionary
+    # Rename key for returned dictionary
     if key:
         d = {}
         for name, attr in fd.items():
@@ -321,11 +363,11 @@ def search(
             d[kval] = attr
         fd = d
 
-    # group results
+    # Group results
     if groupby:
         fd = ndict.groupby(fd, key=groupby)
 
-    # set value for returned dictionary
+    # Set value for returned dictionary
     if val:
         if groupby:
             for gn, group in fd.items():
