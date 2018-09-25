@@ -11,8 +11,12 @@ dimensionality reduction.
 
 ##### Licensing and Installation #####
 Nemoa is available free for any use under the
-[GPLv3 license](https://www.gnu.org/licenses/gpl.html). Releases can be
-downloaded from [GitHub Pages](https://github.com/fishroot/nemoa/releases).
+[GPLv3 license](https://www.gnu.org/licenses/gpl.html).
+For installation instructions see the [documentation](https://nemoa.readthedocs.io/en/latest/install) page.
+Releases can be downloaded from the [release](https://github.com/fishroot/nemoa/releases) page.
+
+##### Usage #####
+[Documentation](https://nemoa.readthedocs.io)
 
 ##### Contributing #####
 Contributers are very welcome! Feel free to report bugs and feature requests to
