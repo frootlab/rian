@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-"""Collection of functions for graph handling."""
+"""Extended handling of NetworkX Graph type objects."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
+__docformat__ = 'google'
 
 try:
     import networkx as nx

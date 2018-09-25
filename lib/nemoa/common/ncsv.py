@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
-"""Extended CSV data handling to support R-Tables and CSV record annotation."""
+"""I/O functions for CSV data.
+
+This module provides functions to support R-Tables and CSV record annotation.
+"""
 
 __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
+__docformat__ = 'google'
 
 import csv
 

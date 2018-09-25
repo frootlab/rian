@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
-"""Collection of functions for gzip compressed data handling."""
+"""I/O functions for gzip compressed data."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
+__docformat__ = 'google'
 
 import base64
 import pickle
 import zlib
 
+from typing import cast
 from nemoa.types import Any, Obj, OptStr, BytesLikeOrStr
 
 def load(path: str, encoding: OptStr = 'base64') -> dict:
@@ -79,7 +81,7 @@ def loads(blob: BytesLikeOrStr, encoding: OptStr = 'base64') -> Any:
     """
     # Decode bytes
     if not encoding:
-        bbytes = bytes(blob)
+        bbytes = bytes(cast(bytes, blob))
     elif encoding == 'base64':
         bbytes = base64.b64decode(blob)
     elif encoding == 'base32':

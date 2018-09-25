@@ -1,9 +1,19 @@
 # -*- coding: utf-8 -*-
-"""Collection of curves like sigmoids and related functions."""
+"""Curves that are used in Machine Learning.
+
+This module provides curves that are frequently used in Machine Learning. This
+comprises:
+
+    * Sigmoidal Functions
+    * Derivatives of Sigmoidal Functions
+    * Multiple Sigmoidal Functions
+
+"""
 
 __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
+__docformat__ = 'google'
 
 import sys
 
@@ -17,7 +27,7 @@ except ImportError as err:
 from nemoa.types import Any, OptStr, NpArray, NpArrayLike
 
 #
-# Sigmoid Functions
+# Sigmoidal Functions
 #
 
 def sigmoid(x: NpArrayLike, name: OptStr = None, **kwargs: Any) -> NpArray:
@@ -276,7 +286,7 @@ def d_arctan(x: NpArrayLike) -> NpArray:
     return 1. / (1. + np.square(x))
 
 #
-# Multiple Sigmoid Functions
+# Multiple Sigmoidal Functions
 #
 
 def dialogistic(

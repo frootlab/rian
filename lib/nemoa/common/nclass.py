@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-"""Generic handling of classes and methods."""
+"""Handling of classes and methods."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
+__docformat__ = 'google'
 
 from typing import cast
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Collection of types and constants used in nemoa."""
+"""Types."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'

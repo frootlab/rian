@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-#
-"""Collection of frequently used console functions."""
+"""Console functions."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
+__docformat__ = 'google'
 
 from typing import cast
 from nemoa.types import Any

@@ -4,6 +4,7 @@
 __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
+__docformat__ = 'google'
 
 import ast
 import sys
@@ -22,32 +23,32 @@ def splitargs(text: str) -> Tuple[str, tuple, dict]:
         tuple and the keywords as dictionary.
 
     """
-    # check argument types
+    # Check argument types
     if not isinstance(text, str):
         raise TypeError(
             "argument 'text' requires to be of type 'str'"
             f", not '{type(text)}'")
 
-    # get function name
+    # Get function name
     try:
         tree = ast.parse(text)
-        func = tree.body[0].value.func.id
+        func = getattr(getattr(getattr(tree.body[0], 'value'), 'func'), 'id')
     except SyntaxError as err:
         raise ValueError(f"'{text}' is not a valid function call") from err
     except AttributeError as err:
         raise ValueError(f"'{text}' is not a valid function call") from err
 
     # get tuple with arguments
-    astargs = tree.body[0].value.args
-    args = []
+    astargs = getattr(getattr(tree.body[0], 'value'), 'args')
+    largs = []
     for astarg in astargs:
         typ = astarg._fields[0]
         val = getattr(astarg, typ)
-        args.append(val)
-    args = tuple(args)
+        largs.append(val)
+    args = tuple(largs)
 
     # get dictionary with keywords
-    astkwargs = tree.body[0].value.keywords
+    astkwargs = getattr(getattr(tree.body[0], 'value'), 'keywords')
     kwargs = {}
     for astkwarg in astkwargs:
         key = astkwarg.arg
@@ -188,7 +189,7 @@ def astuple(text: str, delim: str = ',') -> tuple:
     # delimited string format
     return tuple([item.strip() for item in text.split(delim)])
 
-def asset(text: str, delim: str = ',') -> list:
+def asset(text: str, delim: str = ',') -> set:
     """Convert text into set.
 
     Args:

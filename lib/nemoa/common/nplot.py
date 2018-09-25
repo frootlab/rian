@@ -4,6 +4,7 @@
 __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
+__docformat__ = 'google'
 
 try:
     import numpy as np
@@ -47,6 +48,7 @@ class Plot:
     _axes = None
 
     def __init__(self, **kwargs):
+        """ """
         try:
             import matplotlib
         except ImportError as err:
@@ -101,12 +103,12 @@ class Plot:
         title = self._config['title'] or 'Unknown'
         fontsize = self._config['title_fontsize']
 
-        self._plt.title(title, fontsize=fontsize)
+        getattr(self._plt, 'title')(title, fontsize=fontsize)
         return True
 
     def show(self) -> None:
         """Show plot."""
-        return self._plt.show()
+        getattr(self._plt, 'show')()
 
     def save(self, path, **kwargs):
         """Save plot to file."""

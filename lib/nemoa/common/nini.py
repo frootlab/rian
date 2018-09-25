@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-"""Collection of frequently used functions for INI formatted data handling."""
+"""I/O functions for INI data."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
+__docformat__ = 'google'
 
 from configparser import ConfigParser
 from typing import cast

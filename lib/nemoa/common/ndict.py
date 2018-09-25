@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-"""Collection of frequently used dictionary functions."""
+"""Extended handling of collection type objects like dictionaries."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
+__docformat__ = 'google'
 
 from nemoa.types import (
     RecDict, DictOfRecDicts, StrTupleDict, OptStr)

@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-"""Collection of functions for the organization and handling of algorithms."""
+"""Organization and handling of algorithms."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
+__docformat__ = 'google'
 
 from nemoa.types import (
     Any, AnyFunc, FuncWrapper, Module, NpArray, NpArrayFunc, NpArrayLike,

@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-"""Collection of frequently used numpy ndarray functions."""
+"""Supplementary NumPy ndarray functions."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'patrick.michl@gmail.com'
 __license__ = 'GPLv3'
+__docformat__ = 'google'
 
 try:
     import numpy as np
