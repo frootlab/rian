@@ -27,15 +27,16 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'nemoa'
-copyright = '2018, Patrick Michl'
-author = 'Patrick Michl'
+import nemoa
 
-# The short X.Y version
-version = ''
+project = nemoa.__name__
+copyright = nemoa.__copyright__
+author = nemoa.__author__
+version = nemoa.__version__
 # The full version, including alpha/beta/rc tags
-release = '0.6pre1'
+release = nemoa.__version__
 
+add_module_names = False
 
 # -- General configuration ---------------------------------------------------
 
@@ -50,6 +51,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'sphinx.ext.todo',
+    'sphinx_autodoc_typehints',
     'sphinx.ext.mathjax',
     'sphinx.ext.githubpages',
 ]

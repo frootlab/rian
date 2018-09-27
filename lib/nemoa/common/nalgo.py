@@ -68,8 +68,8 @@ def custom(
         Decorated function or method.
 
     """
-    def wrapper(func: AnyFunc) -> AnyFunc:
-        def wrapped(*args: Any, **kwargs: Any) -> Any:
+    def wrapper(func):
+        def wrapped(*args, **kwargs):
             return func(*args, **kwargs)
 
         # set attributes with metainformation about algorithm
@@ -123,8 +123,8 @@ def objective(
         [1] https://en.wikipedia.org/wiki/Mathematical_optimization
 
     """
-    def wrapper(func: ScalarFunc) -> ScalarFunc:
-        def wrapped(data: NpArrayLike, *args: Any, **kwargs: Any) -> Scalar:
+    def wrapper(func):
+        def wrapped(data, *args, **kwargs):
             return func(data, *args, **kwargs)
 
         # set attributes with metainformation about algorithm
@@ -176,9 +176,9 @@ def sampler(
         [1] https://en.wikipedia.org/wiki/Gibbs_sampling
 
     """
-    def wrapper(func: NpArrayFunc) -> NpArrayFunc:
+    def wrapper(func):
 
-        def wrapped(data: NpArrayLike, *args: Any, **kwargs: Any) -> NpArray:
+        def wrapped(data, *args, **kwargs):
             return func(data, *args, **kwargs)
 
         # set attributes with metainformation about algorithm
@@ -226,7 +226,7 @@ def statistic(
         [1] https://en.wikipedia.org/wiki/Statistic
 
     """
-    def wrapper(func: NpArrayFunc) -> NpArrayFunc:
+    def wrapper(func):
         def wrapped(data: NpArrayLike, *args: Any, **kwargs: Any) -> NpArray:
             return func(data, *args, **kwargs)
 
@@ -286,9 +286,12 @@ def association(
         [1] https://en.wikipedia.org/wiki/Correlation_and_dependence
 
     """
-    def wrapper(func: NpArrayFunc) -> NpArrayFunc:
-        def wrapped(data: NpArrayLike, *args: Any, **kwargs: Any) -> NpArray:
+    def wrapper(func):
+        def wrapped(data, *args, **kwargs):
             return func(data, *args, **kwargs)
+    # def wrapper(func: NpArrayFunc) -> NpArrayFunc:
+    #     def wrapped(data: NpArrayLike, *args: Any, **kwargs: Any) -> NpArray:
+    #         return func(data, *args, **kwargs)
 
         # set attributes with metainformation about algorithm
         setattr(wrapped, 'name', name or func.__name__)
