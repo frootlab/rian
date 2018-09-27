@@ -1,8 +1,3 @@
-.. nemoa documentation master file, created by
-   sphinx-quickstart on Tue Sep 25 10:32:44 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Nemoa
 =====
 
@@ -19,7 +14,7 @@ structural data analysis or data dimensionality reduction.
    :alt: Nemoa Deep Belief Model
 
 .. toctree::
-   :maxdepth: 5
+   :maxdepth: 8
    :caption: Contents:
 
    install

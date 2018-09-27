@@ -2,7 +2,7 @@
 """Restricted Boltzmann Machine Morphisms."""
 
 __author__ = 'Patrick Michl'
-__email__ = 'patrick.michl@gmail.com'
+__email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa.model.morphisms.ann

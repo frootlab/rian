@@ -2,7 +2,7 @@
 """Collection of functions for platform independent filesystem operations."""
 
 __author__ = 'Patrick Michl'
-__email__ = 'patrick.michl@gmail.com'
+__email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
