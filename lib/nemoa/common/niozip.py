@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""I/O functions for gzip compressed data."""
+"""I/O functions for gzip compressed files."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -11,13 +11,16 @@ import pickle
 import zlib
 
 from typing import cast
-from nemoa.types import Any, Obj, OptStr, BytesLikeOrStr
+from nemoa.common import npath
+from nemoa.types import Any, Obj, OptStr, PathLike, BytesLikeOrStr
 
-def load(path: str, encoding: OptStr = 'base64') -> dict:
+FILEEXTS = ['.zip', '.gz', '.tar.gz']
+
+def load(filepath: PathLike, encoding: OptStr = 'base64') -> dict:
     """Decode and decompress file.
 
     Args:
-        path: Fully qualified filepath
+        filepath: Fully qualified filepath
         encoding: Encodings specified in [RFC3548]. Allowed values are:
             'base16', 'base32', 'base64' and 'base85' and None for no encoding.
             Default: 'base64'
@@ -29,6 +32,11 @@ def load(path: str, encoding: OptStr = 'base64') -> dict:
         [RFC3548] https://tools.ietf.org/html/rfc3548.html
 
     """
+    # Validate filepath
+    path = npath.validfile(filepath)
+    if not path:
+        raise TypeError(f"file '{str(filepath)}' does not exist")
+
     blob = pickle.load(open(path, 'rb')) # file to bytes
     obj = loads(blob, encoding=encoding) # bytes to object
 

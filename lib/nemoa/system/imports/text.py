@@ -50,11 +50,11 @@ class Ini:
 
         """
 
-        from nemoa.common import nini, npath
+        from nemoa.common import nioini, npath
 
         # import ini file to dictionary, using ini file structure
         # described with regular expressions
-        system = nini.load(path, {
+        system = nioini.load(path, {
             'system': {
                 'name': 'str',
                 'type': 'str' },

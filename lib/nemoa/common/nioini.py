@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""I/O functions for INI data."""
+"""I/O functions for INI files."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -7,16 +7,20 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from configparser import ConfigParser
-from typing import cast
+from io import TextIOWrapper
 
 from nemoa.common import npath
-from nemoa.types import Any, NestPath, NestDict, OptNestDict, OptBool, OptStr
+from nemoa.types import (
+    BinaryFile, Path, PathLike, OptBool, OptStr, OptStrDict2, StrDict2,
+    TextFile, FileOrPathLike)
 
-def load(filepath: NestPath, structure: OptNestDict = None) -> OptNestDict:
+FILEEXTS = ['.ini', '.cfg']
+
+def load(file: FileOrPathLike, structure: OptStrDict2 = None) -> StrDict2:
     """Import configuration dictionary from INI file.
 
     Args:
-        filepath: Fully qualified path to INI File
+        file: String, Path or Filehandler that points to a valid INI File
         structure: Nested dictionary, which determines the structure of the
             configuration dictionary. If "structure" is None the INI File
             is completely imported and all values are interpreted as strings.
@@ -30,21 +34,32 @@ def load(filepath: NestPath, structure: OptNestDict = None) -> OptNestDict:
         Structured configuration dictionary
 
     """
-    # validate filepath
-    path = npath.validfile(filepath)
-    if not path:
-        raise TypeError(f"file '{str(filepath)}' does not exist")
-
-    # get configuration from INI File
+    # Initialize Configuration Parser
     parser = ConfigParser()
     setattr(parser, 'optionxform', lambda key: key)
-    parser.read(path)
+
+    # Read configuration from file or path
+    if isinstance(file, TextFile):
+        parser.read_file(file)
+    elif isinstance(file, BinaryFile):
+        parser.read_file(TextIOWrapper(file))
+    elif isinstance(file, (str, Path)):
+        path = npath.getpath(file)
+        if not npath.isfile(path):
+            raise FileNotFoundError(
+                "first argument 'file' is required to be of types 'str', "
+                f"'Path' or 'File', not '{type(file)}'")
+        parser.read(path)
+    else:
+        raise TypeError(
+            "'file' is required to be of types 'str', 'Path' or 'File'"
+            f", not '{type(file)}'")
 
     # parse sections and create configuration dictionary
     return parse(parser, structure=structure)
 
 def save(
-        d: dict, filepath: NestPath, flat: OptBool = None,
+        d: dict, filepath: PathLike, flat: OptBool = None,
         header: OptStr = None) -> bool:
     """Save configuration dictionary to INI file.
 
@@ -80,8 +95,8 @@ def save(
     return True
 
 def loads(
-        string: str, structure: OptNestDict = None,
-        flat: OptBool = None) -> NestDict:
+        string: str, structure: OptStrDict2 = None,
+        flat: OptBool = None) -> StrDict2:
     """Load configuration dictionary from INI formated string.
 
     Args:
@@ -127,11 +142,11 @@ def loads(
     # Parse sections and create dictionary
     parser = ConfigParser()
     parser.read_string(string)
-    d = cast(Any, parse(parser, structure))
+    d = parse(parser, structure)
 
     # If no sections are to be used collapse the 'root' key
     if flat:
-        d = d.get('root')
+        return d.get('root') or {}
 
     return d
 
@@ -190,11 +205,11 @@ def dumps(d: dict, flat: OptBool = None, header: OptStr = None) -> str:
 
     return string
 
-def getheader(filepath: NestPath) -> str:
+def getheader(filepath: PathLike) -> str:
     """Get header from INI file.
 
     Args:
-        filepath: Fully qualified file path to INI file.
+        filepath: Filepath that points to a valid INI file.
 
     Returns:
         String containing header of INI file or empty string if header
@@ -220,7 +235,7 @@ def getheader(filepath: NestPath) -> str:
     # join lines and strip header
     return ''.join(hlist).strip()
 
-def parse(parser: ConfigParser, structure: OptNestDict = None) -> dict:
+def parse(parser: ConfigParser, structure: OptStrDict2 = None) -> StrDict2:
     """Import configuration dictionary from INI formated string.
 
     Args:

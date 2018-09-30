@@ -5,26 +5,14 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-# import generic types from typing
+import array
+import io
+import os
+import types
+
 from typing import (
-    Any, Callable, ClassVar, Dict, Hashable, Iterable,
+    Any, Callable, ClassVar, Dict, Hashable, IO, Iterable,
     List, Optional, Sequence, Set, Tuple, TypeVar, Union)
-
-# import specific types from builtin packages
-from array import ArrayType as Array
-from os import PathLike as Path
-from types import ModuleType as Module, FunctionType as Function
-
-################################################################################
-# Define generic Variables
-################################################################################
-
-# Generic Type-Variables
-S = TypeVar('S')
-T = TypeVar('T')
-
-# Built-in Type Aliases and constants
-Obj = object
 
 ################################################################################
 # Define numerical Constants
@@ -32,6 +20,27 @@ Obj = object
 
 NaN = float('nan')
 Infty = float('inf')
+
+################################################################################
+# Define Classinfos (which can be used with 'isinstance')
+################################################################################
+
+Obj = object
+Module = types.ModuleType
+Function = types.FunctionType
+BinaryFile = io.BufferedIOBase
+TextFile = io.TextIOBase
+AnyFile = (BinaryFile, TextFile)
+Path = os.PathLike
+Array = array.ArrayType
+
+################################################################################
+# Define generic Type Variables
+################################################################################
+
+# Generic Type-Variables
+S = TypeVar('S')
+T = TypeVar('T')
 
 ################################################################################
 # Define Types for Literals and Collections of Literals
@@ -43,6 +52,7 @@ OptInt = Optional[int]
 OptFloat = Optional[float]
 OptComplex = Optional[complex]
 OptBool = Optional[bool]
+OptBytes = Optional[bytes]
 OptArray = Optional[Array]
 StrOrBool = Union[str, bool]
 OptStrOrBool = Optional[StrOrBool]
@@ -85,6 +95,8 @@ DictOfDictOfDicts = Dict[Hashable, DictOfDicts]
 StrPairDict = Dict[StrPair, Any]
 StrListPair = Tuple[StrList, StrList]
 StrTupleDict = Dict[Union[str, Tuple[str, ...]], Any]
+StrDict2 = Dict[str, StrDict]
+OptStrDict2 = Optional[StrDict2]
 RecDict = Dict[Hashable, StrDict]
 DictOfRecDicts = Dict[Hashable, RecDict]
 Vector = Sequence[Scalar]
@@ -140,8 +152,14 @@ ClassStrDict = ClassVar[Dict[str, Any]]
 # Define specific Types for builtin Packages
 ################################################################################
 
-# os / pathlib
+# os / io / pathlib
+OptPath = Optional[Path]
+BytesIO = IO[bytes]
+StringIO = IO[str]
+FileLike = Union[BytesIO, StringIO]
 PathLike = Union[str, Path]
+FileOrPathLike = Union[FileLike, PathLike]
+
 # Nested Types
 # TODO: (2018.09) currently recursive type definition is not fully supported
 # by the typing module. When recursive type definition is available replace

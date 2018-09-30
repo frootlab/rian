@@ -1,12 +1,15 @@
 Nemoa
 =====
 
-*Nemoa* is a python package for deep data analysis and visualization by
-including structural assumptions within probabilistic graphical models. The key
-goal of this project is to provide an intuitive framework for building and
-analysing complex systems of stacked graphical models. Common requirements are
-pattern recognition, reconstruction of missing information, data classification,
-structural data analysis or data dimensionality reduction.
+*Nemoa* is a python framework for `deep data analysis`. In many domains of
+statistical data analysis the lack of strong structural beliefs requires deep
+structured models to capture the respective uncertainty. These classes of
+statistical models, however, are barely accessible by traditional statistical
+approaches. The key goal of this project is therefore, to provide an intuitive
+framework for `deep data analysis`, which closes this gap by utilizing methods
+from differential geometry and differential topology. The fields of applications
+comprise nonlinear association analysis, reconstruction of missing data,
+classification tasks and data dimensionality reduction.
 
 .. image:: images/model.png
    :width: 300

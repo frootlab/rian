@@ -62,7 +62,7 @@ class Session(object):
         import os
         import sys
 
-        from nemoa.common import ndict, nini
+        from nemoa.common import ndict, nioini
 
         self._config = ndict.merge(kwargs, self._default)
 
@@ -77,7 +77,7 @@ class Session(object):
         configfile = self._get_path_expand(configfile)
 
         if os.path.exists(configfile):
-            ini_dict = nini.load(configfile, self._struct)
+            ini_dict = nioini.load(configfile, self._struct)
 
             if 'folders' in ini_dict:
                 for key, val in ini_dict['folders'].items():

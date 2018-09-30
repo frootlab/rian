@@ -48,10 +48,10 @@ class Ini:
 
         """
 
-        from nemoa.common import nini
+        from nemoa.common import nioini
 
         structure = {'network': { 'type': 'str' }}
-        network = nini.load(path, structure)
+        network = nioini.load(path, structure)
         if not network \
             or not 'network' in network \
             or not 'type' in network['network']:
@@ -68,7 +68,7 @@ class Ini:
 
     def _parse_layer_network(self, path):
 
-        from nemoa.common import nini, npath
+        from nemoa.common import nioini, npath
 
         structure = {
             'network': {
@@ -96,7 +96,7 @@ class Ini:
             'binding [0-9a-zA-Z]*-[0-9a-zA-Z]*': {
                 '[0-9a-zA-Z]*': 'list' }}
 
-        ini_dict = nini.load(path, structure = structure)
+        ini_dict = nioini.load(path, structure = structure)
         config = ini_dict['network'].copy()
 
         # layers

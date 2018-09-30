@@ -41,7 +41,7 @@ def load(path, **kwargs):
 def _graph_decode(G):
     """ """
 
-    from nemoa.common import nzip
+    from nemoa.common import niozip
 
     # no decoding
     if not G.graph.get('coding', None) or G.graph['coding'].lower() == 'none':
@@ -49,14 +49,14 @@ def _graph_decode(G):
 
     # base64 decoding
     elif G.graph['coding'] == 'base64':
-        G.graph['params'] = nzip.loads(G.graph['params'], encode = 'base64')
+        G.graph['params'] = niozip.loads(G.graph['params'], encode = 'base64')
 
         for node in G.nodes():
-            G.node[node]['params'] = nzip.loads(
+            G.node[node]['params'] = niozip.loads(
                 G.node[node]['params'], encode = 'base64')
 
         for edge in G.edges():
-            G.edges[edge]['params'] = nzip.loads(
+            G.edges[edge]['params'] = niozip.loads(
                 G.edges[edge]['params'], encode = 'base64')
 
         G.graph['coding'] == 'none'

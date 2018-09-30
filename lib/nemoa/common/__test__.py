@@ -435,9 +435,9 @@ class TestSuite(ntest.TestSuite):
             self.assertEqual(
                 ngraph.getlayout(G, 'layer', direction='right'), pos1)
 
-    def test_common_ncsv(self) -> None:
-        """Test module 'nemoa.common.ncsv'."""
-        from nemoa.common import ncsv
+    def test_common_niocsv(self) -> None:
+        """Test module 'nemoa.common.niocsv'."""
+        from nemoa.common import niocsv
 
         import numpy as np
         import os
@@ -453,26 +453,26 @@ class TestSuite(ntest.TestSuite):
 
         with self.subTest("save"):
             self.assertTrue(
-                ncsv.save(
+                niocsv.save(
                     filename, data, header=header, labels=labels, delim=delim))
 
         with self.subTest("getheader"):
-            self.assertEqual(ncsv.getheader(filename), header)
+            self.assertEqual(niocsv.getheader(filename), header)
 
         with self.subTest("getdelim"):
-            self.assertEqual(ncsv.getdelim(filename), delim)
+            self.assertEqual(niocsv.getdelim(filename), delim)
 
         with self.subTest("getlabelformat"):
-            self.assertEqual(ncsv.getlabelformat(filename), 'standard')
+            self.assertEqual(niocsv.getlabelformat(filename), 'standard')
 
         with self.subTest("getlabels"):
-            self.assertEqual(ncsv.getlabels(filename), labels)
+            self.assertEqual(niocsv.getlabels(filename), labels)
 
         with self.subTest("getanncolid"):
-            self.assertEqual(ncsv.getanncolid(filename), 0)
+            self.assertEqual(niocsv.getanncolid(filename), 0)
 
         with self.subTest("load"):
-            rval = ncsv.load(filename)
+            rval = niocsv.load(filename)
             self.assertTrue(
                 isinstance(rval, np.ndarray))
             self.assertTrue(
@@ -483,9 +483,9 @@ class TestSuite(ntest.TestSuite):
         if os.path.exists(filename):
             os.remove(filename)
 
-    def test_common_nini(self) -> None:
-        """Test module 'nemoa.common.nini'."""
-        from nemoa.common import nini
+    def test_common_nioini(self) -> None:
+        """Test module 'nemoa.common.nioini'."""
+        from nemoa.common import nioini
 
         import os
         import tempfile
@@ -506,29 +506,29 @@ class TestSuite(ntest.TestSuite):
 
         with self.subTest("dumps"):
             self.assertEqual(
-                nini.dumps(obj, header=header), string)
+                nioini.dumps(obj, header=header), string)
 
         with self.subTest("loads"):
             self.assertEqual(
-                nini.loads(string, structure=cast(dict, structure)), obj)
+                nioini.loads(string, structure=cast(dict, structure)), obj)
 
         with self.subTest("save"):
             self.assertTrue(
-                nini.save(obj, filename, header=header))
+                nioini.save(obj, filename, header=header))
 
         with self.subTest("load"):
             self.assertEqual(
-                nini.load(filename, structure=cast(dict, structure)), obj)
+                nioini.load(filename, structure=cast(dict, structure)), obj)
 
         with self.subTest("getheader"):
-            self.assertEqual(nini.getheader(filename), header)
+            self.assertEqual(nioini.getheader(filename), header)
 
         if os.path.exists(filename):
             os.remove(filename)
 
-    def test_common_nzip(self) -> None:
-        """Test module 'nemoa.common.nzip'."""
-        from nemoa.common import nzip
+    def test_common_niozip(self) -> None:
+        """Test module 'nemoa.common.niozip'."""
+        from nemoa.common import niozip
 
         import os
         import tempfile
@@ -538,17 +538,17 @@ class TestSuite(ntest.TestSuite):
         filename = tempfile.NamedTemporaryFile().name
 
         with self.subTest("dumps"):
-            self.assertEqual(nzip.dumps(obj), blob)
+            self.assertEqual(niozip.dumps(obj), blob)
 
         with self.subTest("loads"):
-            self.assertEqual(nzip.loads(blob), obj)
+            self.assertEqual(niozip.loads(blob), obj)
 
         with self.subTest("dump"):
-            self.assertTrue(nzip.dump(obj, filename))
+            self.assertTrue(niozip.dump(obj, filename))
             self.assertTrue(os.path.exists(filename))
 
         with self.subTest("load"):
-            self.assertEqual(nzip.load(filename), obj)
+            self.assertEqual(niozip.load(filename), obj)
 
         if os.path.exists(filename):
             os.remove(filename)
