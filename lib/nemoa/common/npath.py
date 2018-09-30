@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from pathlib import Path
-from nemoa.types import NestPath, OptStr, OptStrDict
+from nemoa.types import NestPath, OptStr, OptStrDict, PathLike
 
 def cwd() -> str:
     """Path of current working directory.
@@ -92,7 +92,6 @@ def join(*args: NestPath) -> str:
 
     return path
 
-
 def expand(
         *args: NestPath, udict: OptStrDict = None, expapp: bool = True,
         expenv: bool = True) -> str:
@@ -166,6 +165,12 @@ def expand(
     path = Path(os.path.expandvars(path))
 
     return str(path)
+
+def getpath(path: PathLike, unpack: bool = True) -> Path:
+    """Get path from string or PathLike structure."""
+    if unpack:
+        return Path(expand(path))
+    return Path(join(path))
 
 def dirname(*args: NestPath) -> str:
     r"""Extract directory name from a path like structure.

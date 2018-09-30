@@ -12,12 +12,13 @@ Submodules
    nemoa.common.nbase
    nemoa.common.nclass
    nemoa.common.nconsole
-   nemoa.common.ncsv
    nemoa.common.ncurve
    nemoa.common.ndict
    nemoa.common.nfunc
    nemoa.common.ngraph
-   nemoa.common.nini
+   nemoa.common.niocsv
+   nemoa.common.nioini
+   nemoa.common.niozip
    nemoa.common.nmatrix
    nemoa.common.nmodule
    nemoa.common.npath
@@ -29,7 +30,6 @@ Submodules
    nemoa.common.ntext
    nemoa.common.nthreads
    nemoa.common.nvector
-   nemoa.common.nzip
 
 Module contents
 ---------------

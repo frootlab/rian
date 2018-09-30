@@ -9,7 +9,7 @@ __docformat__ = 'google'
 import ast
 import sys
 
-from nemoa.types import Any, OptStr, Tuple
+from nemoa.types import Any, OptStr, Tuple, Path
 
 def splitargs(text: str) -> Tuple[str, tuple, dict]:
     """Split a function call in the function name, its arguments and keywords.
@@ -96,8 +96,8 @@ def astype(text: str, fmt: OptStr = None, **kwargs: Any) -> Any:
     if fmt == 'complex':
         return complex(text)
 
-    # sequence types
-    stypes = ['list', 'tuple', 'set', 'dict']
+    # sequence and special types
+    stypes = ['list', 'tuple', 'set', 'dict', 'path']
     if fmt in stypes:
         return getattr(sys.modules[__name__], 'as' + fmt)(text, **kwargs)
 
@@ -122,7 +122,7 @@ def aslist(text: str, delim: str = ',') -> list:
     # check argument types
     if not isinstance(text, str):
         raise TypeError(
-            "argument 'text' requires to be of type 'str'"
+            "first argument requires to be of type 'str'"
             f", not '{type(text)}'")
     if not isinstance(delim, str):
         raise TypeError(
@@ -165,7 +165,7 @@ def astuple(text: str, delim: str = ',') -> tuple:
     # check argument types
     if not isinstance(text, str):
         raise TypeError(
-            "argument 'text' requires to be of type 'str'"
+            "first argument requires to be of type 'str'"
             f", not '{type(text)}'")
     if not isinstance(delim, str):
         raise TypeError(
@@ -208,7 +208,7 @@ def asset(text: str, delim: str = ',') -> set:
     # check argument types
     if not isinstance(text, str):
         raise TypeError(
-            "argument 'text' requires to be of type 'str'"
+            "first argument requires to be of type 'str'"
             f", not '{type(text)}'")
     if not isinstance(delim, str):
         raise TypeError(
@@ -252,7 +252,7 @@ def asdict(text: str, delim: str = ',') -> dict:
     # check argument types
     if not isinstance(text, str):
         raise TypeError(
-            "argument 'text' requires to be of type 'str'"
+            "first argument requires to be of type 'str'"
             f", not '{type(text)}'")
     if not isinstance(delim, str):
         raise TypeError(
@@ -306,3 +306,29 @@ def asdict(text: str, delim: str = ',') -> dict:
         d[key] = val
 
     return d
+
+def aspath(text: str, expand: bool = True) -> Path:
+    """Convert text into list.
+
+    Args:
+        text: String representing a path.
+        unpack: Boolen value, whoch determines, if variables in the text
+            of format '%VARIABLA%' are expanded.
+
+    Returns:
+        Value of the text as Path.
+
+    """
+    # Check types of Arguments
+    if not isinstance(text, str):
+        raise TypeError(
+            "first argument requires to be of type 'str'"
+            f", not '{type(text)}'")
+    if not isinstance(expand, bool):
+        raise TypeError(
+            "argument 'expand' requires to be of type 'bool'"
+            f", not '{type(expand)}'")
+
+    from nemoa.common import npath
+
+    return npath.getpath(text, unpack=expand)

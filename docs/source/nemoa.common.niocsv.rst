@@ -1,5 +1,5 @@
 nemoa.common.niocsv module
-========================
+==========================
 
 .. automodule:: nemoa.common.niocsv
     :members:

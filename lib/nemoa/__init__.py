@@ -7,14 +7,13 @@ models, graphical and statistical methods are used to uncover structures
 within complex and natural data samples.
 
 """
-
-__version__ = '0.5.153'
+__version__ = '0.5.156'
 __status__ = 'Development'
 __description__ = 'Network-based Modeling and deep Data Analysis'
-__url__ = 'https://fishroot.github.io/nemoa'
+__url__ = 'https://frootlab.github.io/nemoa'
 __license__ = 'GPLv3'
 __copyright__ = 'Copyright 2013-2018, Patrick Michl'
-__organization__ = 'FrootLab'
+__organization__ = 'frootlab'
 __email__ = 'frootlab@gmail.com'
 __maintainer__ = 'Patrick Michl'
 __author__ = 'Patrick Michl'

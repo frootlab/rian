@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-"""I/O functions for CSV data.
-
-This module provides functions to support R-Tables and CSV record annotation.
-"""
+"""I/O functions for CSV files."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -21,6 +18,8 @@ except ImportError as err:
 from nemoa.common import npath
 from nemoa.types import (
     NpArray, OptStr, OptStrList, OptInt, OptIntTuple, PathLike)
+
+FILEEXTS = ['.csv', '.tsv']
 
 def load(
         filepath: PathLike, delim: OptStr = None,

@@ -17,3 +17,6 @@ class NemoaError(NemoaException):
 
 class NemoaWarning(NemoaException):
     """Exception for warnings in nemoa."""
+
+class BadWSFile(NemoaError):
+    """Exception for invalid nemoa workspace files."""

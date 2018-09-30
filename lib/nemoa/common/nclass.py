@@ -9,8 +9,8 @@ __docformat__ = 'google'
 from typing import cast
 
 from nemoa.types import (
-    Any, AnyFunc, RecDict, DictOfRecDicts, NestRecDict, FuncWrapper, Obj,
-    OptStr, StrDict)
+    Any, RecDict, DictOfRecDicts, NestRecDict, FuncWrapper, Obj, OptStr,
+    StrDict)
 
 def hasbase(obj: Obj, base: str) -> bool:
     """Return true if the class instance has the given base.
@@ -125,9 +125,10 @@ def attributes(**attr: Any) -> FuncWrapper:
         Wrapper function with additional attributes
 
     """
-    def wrapper(method: AnyFunc) -> AnyFunc:
-        def wrapped(self: Obj, *args: Any, **kwargs: Any) -> Any:
+    def wrapper(method):
+        def wrapped(self, *args, **kwargs):
             return method(self, *args, **kwargs)
+
         for key, val in attr.items():
             setattr(wrapped, key, val)
 
