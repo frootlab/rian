@@ -18,6 +18,7 @@ Submodules
    nemoa.common.ngraph
    nemoa.common.niocsv
    nemoa.common.nioini
+   nemoa.common.nionws
    nemoa.common.niozip
    nemoa.common.nmatrix
    nemoa.common.nmodule

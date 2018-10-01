@@ -59,13 +59,13 @@ def load(file: FileOrPathLike, structure: OptStrDict2 = None) -> StrDict2:
     return parse(parser, structure=structure)
 
 def save(
-        d: dict, filepath: PathLike, flat: OptBool = None,
+        d: dict, file: FileOrPathLike, flat: OptBool = None,
         header: OptStr = None) -> bool:
     """Save configuration dictionary to INI file.
 
     Args:
         d: Configuration dictionary
-        filepath: Fully qualified path to writeable file
+        file: String, Path or Filehandler that points to a writeable INI File.
         flat: Determines if the desired INI format structure contains sections.
             By default sections are used, if the dictionary contains
             subdictionaries.
@@ -76,21 +76,24 @@ def save(
         Bool which is True if no error occured.
 
     """
-    # normalize filepath
-    path = npath.expand(filepath)
-
     # Convert configuration dictionary to INI formated string
     try:
-        string = dumps(d, flat=flat, header=header)
+        text = dumps(d, flat=flat, header=header)
     except Exception as err:
         raise ValueError("dictionary is not valid") from err
 
-    # write string to file
-    try:
-        with open(path, 'w') as file:
-            file.write(string)
-    except IOError as err:
-        raise IOError(f"file '{path}' can not be written") from err
+    # Write INI formated string to file
+    if isinstance(file, TextFile):
+        file.write(text)
+    elif isinstance(file, BinaryFile):
+        file.write(bytes(text))
+    elif isinstance(file, (str, Path)):
+        path = npath.getpath(file)
+        try:
+            with open(path, 'w') as newfile:
+                newfile.write(text)
+        except IOError as err:
+            raise IOError(f"file '{path}' can not be written") from err
 
     return True
 
