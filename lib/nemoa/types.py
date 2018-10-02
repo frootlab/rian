@@ -11,7 +11,7 @@ import os
 import types
 
 from typing import (
-    Any, Callable, ClassVar, Dict, Hashable, IO, Iterable,
+    Any, Callable, ClassVar, Dict, Hashable, IO, Iterable, Iterator,
     List, Optional, Sequence, Set, Tuple, TypeVar, Union)
 
 ################################################################################
@@ -26,6 +26,7 @@ Infty = float('inf')
 ################################################################################
 
 Obj = object
+Traceback = types.TracebackType
 Module = types.ModuleType
 Function = types.FunctionType
 BinaryFile = io.BufferedIOBase
@@ -113,6 +114,13 @@ OptNestDict = Optional[NestDict]
 IterNestRecDict = Iterable[NestRecDict]
 
 ################################################################################
+# Define Types for Iterators / Generators
+################################################################################
+
+IterAny = Iterator[Any]
+IterNone = Iterator[None]
+
+################################################################################
 # Define Types for Callables
 ################################################################################
 
@@ -154,11 +162,12 @@ ClassStrDict = ClassVar[Dict[str, Any]]
 
 # os / io / pathlib
 OptPath = Optional[Path]
-BytesIO = IO[bytes]
-StringIO = IO[str]
-FileLike = Union[BytesIO, StringIO]
 PathLike = Union[str, Path]
+BytesIOLike = IO[bytes]
+StringIOLike = IO[str]
+FileLike = Union[BytesIOLike, StringIOLike]
 FileOrPathLike = Union[FileLike, PathLike]
+IterFileLike = Iterator[FileLike]
 
 # Nested Types
 # TODO: (2018.09) currently recursive type definition is not fully supported

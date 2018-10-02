@@ -15,10 +15,6 @@ except ImportError as err:
 
 from nemoa.types import StrPairDict, StrListPair, NpArray, NaN, Num, OptNum
 
-#
-#  Array <-> Dictionary Conversion
-#
-
 def fromdict(d: StrPairDict, labels: StrListPair, nan: Num = NaN) -> NpArray:
     """Convert dictionary to array.
 

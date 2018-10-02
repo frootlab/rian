@@ -6,7 +6,6 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from typing import cast
 from nemoa.types import Any, OptStr, StrDict, OptStrOrBool
 from nemoa.common import nmodule
 
@@ -127,11 +126,15 @@ def updvars(filepath: OptStr = None) -> None:
     if filepath is None:
         mname = nmodule.curname().split('.')[0]
         module = nmodule.inst(mname)
-        filepath = getattr(module, '__file__', None)
+        filepath = getattr(module, '__file__')
 
     # Read file content
-    with io.open(cast(str, filepath), encoding='utf8') as file:
-        content = file.read()
+    if isinstance(filepath, str):
+        with io.open(filepath, encoding='utf8') as file:
+            content = file.read()
+    else:
+        raise TypeError(
+            f"module '{mname}' could not be loaded")
 
     # Parse content for module variables with regular expressions
     rkey = "__([a-zA-Z][a-zA-Z0-9]*)__"
