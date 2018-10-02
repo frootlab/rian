@@ -162,10 +162,10 @@ ClassStrDict = ClassVar[Dict[str, Any]]
 
 # os / io / pathlib
 OptPath = Optional[Path]
-BytesIO = IO[bytes]
-StringIO = IO[str]
-FileLike = Union[BytesIO, StringIO]
 PathLike = Union[str, Path]
+BytesIOLike = IO[bytes]
+StringIOLike = IO[str]
+FileLike = Union[BytesIOLike, StringIOLike]
 FileOrPathLike = Union[FileLike, PathLike]
 IterFileLike = Iterator[FileLike]
 
