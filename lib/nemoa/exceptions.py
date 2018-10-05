@@ -8,6 +8,8 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
+class DirNotEmptyError(OSError):
+    """Exception for remove() requested on a non empty directory."""
 
 class NemoaException(Exception):
     """Base class for exceptions in nemoa."""

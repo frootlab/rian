@@ -6,8 +6,12 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from pathlib import Path
-from nemoa.types import NestPath, OptStr, OptStrDict, PathLike
+
+import fnmatch
+import os
+
+from pathlib import Path, PurePath
+from nemoa.types import NestPath, OptStr, OptStrDict, PathLike, PathLikeList
 
 def cwd() -> str:
     """Path of current working directory.
@@ -48,6 +52,30 @@ def clear(fname: str) -> str:
 
     return fname
 
+def match(paths: PathLikeList, pattern: str) -> PathLikeList:
+    """Filter pathlist to matches with wildcard pattern.
+
+    Args:
+        paths: List of paths, which is filtered to matches with pattern.
+        pattern:
+
+    Returns:
+        Filtered list of paths.
+
+    Examples:
+        >>> match([Path('a.b'), Path('b.a')], '*.b')
+        [Path('a.b')]
+
+    """
+    # Normalize path and pattern representation using POSIX standard
+    mapping = {PurePath(path).as_posix(): path for path in paths}
+    pattern = PurePath(pattern).as_posix()
+    # Match normalized paths with normalized pattern
+    names = list(mapping.keys())
+    matches = fnmatch.filter(names, pattern)
+    # Return original paths
+    return [mapping[name] for name in matches]
+
 def join(*args: NestPath) -> str:
     r"""Join and normalize path like structure.
 
@@ -69,7 +97,7 @@ def join(*args: NestPath) -> str:
     if len(args) == 1 and isinstance(args[0], (str, Path)):
         path = args[0]
     else:
-        largs = list(args) # make args mutable
+        largs = list(args) # Make args mutable
         i = 0
         while i < len(largs):
             while isinstance(largs[i], (list, tuple)):
@@ -119,7 +147,6 @@ def expand(
         'a\\b\\c\\d'
 
     """
-    import os
     import sys
 
     from nemoa.common import napp
@@ -341,8 +368,6 @@ def mkdir(*args: NestPath) -> bool:
         True if the directory already exists, or the operation was successful.
 
     """
-    import os
-
     path = Path(expand(*args))
     if path.is_dir():
         return True
