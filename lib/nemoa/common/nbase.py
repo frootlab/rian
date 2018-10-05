@@ -591,3 +591,116 @@ class ObjectIP:
         self._config['version'] = val
 
         return True
+
+    # @property
+    # def about(self) -> OptStr:
+    #     """Get a short description of the content of the resource."""
+    #     try:
+    #         return self._cfg['workspace']['about']
+    #     except KeyError:
+    #         return None
+    #     return None
+    #
+    # @about.setter
+    # def about(self, val: str) -> None:
+    #     if not isinstance(val, str):
+    #         raise TypeError(
+    #             "attribute 'about' is required to be of type 'str'"
+    #             f", not '{type(val).__name__}'")
+    #     wscfg = self._cfg['workspace']
+    #     if wscfg.get('about') != val:
+    #         wscfg['about'] = val
+    #         self._changed = True
+    #
+    # @property
+    # def branch(self) -> OptStr:
+    #     """Name of a duplicate of the original resource."""
+    #     try:
+    #         return self._cfg['workspace']['branch']
+    #     except KeyError:
+    #         return None
+    #     return None
+    #
+    # @branch.setter
+    # def branch(self, val: str) -> None:
+    #     if not isinstance(val, str):
+    #         raise TypeError(
+    #             "attribute 'branch' is required to be of type 'str'"
+    #             f", not '{type(val).__name__}'")
+    #     wscfg = self._cfg['workspace']
+    #     if wscfg.get('branch') != val:
+    #         wscfg['branch'] = val
+    #         self._changed = True
+    #
+    # @property
+    # def version(self) -> OptStr:
+    #     """Version of the branch of the workspace."""
+    #     try:
+    #         return self._cfg['workspace']['version']
+    #     except KeyError:
+    #         return None
+    #     return None
+    #
+    # @version.setter
+    # def version(self, val: str) -> None:
+    #     if not isinstance(val, str):
+    #         raise TypeError(
+    #             "attribute 'version' is required to be of type 'str'"
+    #             f", not '{type(val).__name__}'")
+    #     wscfg = self._cfg['workspace']
+    #     if wscfg.get('version') != val:
+    #         wscfg['version'] = val
+    #         self._changed = True
+    #
+    # @property
+    # def license(self) -> OptStr:
+    #     """License for the usage of the workspace.
+    #
+    #     Namereference to a legal document giving specified users an
+    #     official permission to do something with the workspace. The attribute
+    #     license is inherited by resources, that are created inside the
+    #     workspace.
+    #
+    #     """
+    #     try:
+    #         return self._cfg['workspace']['license']
+    #     except KeyError:
+    #         return None
+    #     return None
+    #
+    # @license.setter
+    # def license(self, val: str) -> None:
+    #     if not isinstance(val, str):
+    #         raise TypeError(
+    #             "attribute 'license' is required to be of type 'str'"
+    #             f", not '{type(val).__name__}'")
+    #     wscfg = self._cfg['workspace']
+    #     if wscfg.get('license') != val:
+    #         wscfg['license'] = val
+    #         self._changed = True
+    #
+    # @property
+    # def email(self) -> OptStr:
+    #     """Email address of the maintainer of the workspace.
+    #
+    #     Email address to a person, an organization, or a service that is
+    #     responsible for the content of the workspace. The attribute email
+    #     is inherited by resources, that are created inside the workspace.
+    #
+    #     """
+    #     try:
+    #         return self._cfg['workspace']['email']
+    #     except KeyError:
+    #         return None
+    #     return None
+    #
+    # @email.setter
+    # def email(self, val: str) -> None:
+    #     if not isinstance(val, str):
+    #         raise TypeError(
+    #             "attribute 'email' is required to be of type 'str'"
+    #             f", not '{type(val).__name__}'")
+    #     wscfg = self._cfg['workspace']
+    #     if wscfg.get('email') != val:
+    #         wscfg['email'] = val
+    #         self._changed = True

@@ -7,7 +7,7 @@ models, graphical and statistical methods are used to uncover structures
 within complex and natural data samples.
 
 """
-__version__ = '0.5.159'
+__version__ = '0.5.160'
 __status__ = 'Development'
 __description__ = 'Network-based Modeling and deep Data Analysis'
 __url__ = 'https://frootlab.github.io/nemoa'
