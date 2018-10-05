@@ -17,8 +17,8 @@ from pathlib import Path, PurePath
 from nemoa.common import nioini, npath
 from nemoa.exceptions import BadWorkspaceFile
 from nemoa.types import (
-    BytesIOLike, IterFileLike, List, OptBytes,
-    OptStr, OptPath, PathLike, Traceback, StrDict2, StrList)
+    BytesIOLike, IterFileLike, List, OptBytes, OptStr, OptPath,
+    PathLike, PathLikeList, Traceback, StrDict, StrDict2, StrList)
 
 ZipInfoList = List[ZipInfo]
 
@@ -36,23 +36,17 @@ class NwsFile:
             'license': 'str',
             'maintainer': 'str',
             'email': 'str',
-            'startup_script': 'str'},
-        'folders': {
-            'dataset': 'path',
-            'network': 'path',
-            'system': 'path',
-            'model': 'path',
-            'script': 'path'}}
+            'startup_script': 'path'}}
 
     _buffer: BytesIOLike
     _file: ZipFile
-    _cfg: StrDict2
+    _cfg: StrDict
     _path: Path
     _pwd: OptBytes
     _changed: bool
 
     def __init__(self, filepath: PathLike, pwd: OptBytes = None) -> None:
-        """ """
+        """Load nemoa workspace from file."""
         self.load(filepath, pwd=pwd)
 
     def load(self, filepath: PathLike, pwd: OptBytes = None) -> None:
@@ -86,8 +80,8 @@ class NwsFile:
 
         # Try to open and load workspace configuration from buffer
         try:
-            with self.open(self._CFGFILE, fmt=str) as cfile:
-                self._cfg = nioini.load(cfile, self._CFGSTRUCT)
+            with self.open(self._CFGFILE, fmt=str) as file:
+                cfg = nioini.load(file, self._CFGSTRUCT)
         except KeyError as err:
             raise BadWorkspaceFile(
                 f"workspace '{self._path}' is not valid: '{self._CFGFILE}' "
@@ -95,36 +89,21 @@ class NwsFile:
 
         # Check if configuration contains required sections
         rsec = self._CFGSTRUCT.keys()
-        if rsec > self._cfg.keys():
+        if rsec > cfg.keys():
             raise BadWorkspaceFile(
                 f"workspace '{self._path}' is not valid: '{self._CFGFILE}' "
                 f"requires sections '{rsec}'") from err
 
-    def _getpath(self, *args: PathLike) -> Path:
-        """Get path representation for archive member."""
-        if not args:
-            raise TypeError("missing 1 required positional argument")
-        if len(args) == 1:
-            path = Path(args[0])
-        elif len(args) == 2:
-            dirname = str(args[0])
-            try:
-                dirpath = self._cfg['folders'][dirname]
-            except KeyError as err:
-                raise KeyError(
-                    f"folder '{dirname}' does not exist") from err
-            path = Path(dirpath) / Path(args[1])
-        else:
-            raise TypeError("too many positional arguments")
-        return path
+        # Link configuration
+        self._cfg = cfg.get('workspace', {})
 
     @contextmanager
     def open(
-            self, *args: PathLike, mode: str = 'r',
+            self, filepath: PathLike, mode: str = 'r',
             fmt: type = bytes) -> IterFileLike:
         """Open archive member as file handler."""
         # Get path representation for archive member
-        path = self._getpath(*args)
+        path = Path(filepath)
 
         # Open file handler to archive member
         if mode == 'r':
@@ -168,7 +147,7 @@ class NwsFile:
         # and open file handler for writing file
         zinfo = ZipInfo(
             filename=PurePath(path).as_posix(),
-            date_time=time.localtime())
+            date_time=time.localtime()[:6])
         # Catch Warning for duplicate files
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
@@ -195,8 +174,9 @@ class NwsFile:
     def saveas(self, filepath: PathLike) -> None:
         """Save the workspace to a file."""
         # Update 'workspace.ini'
-        with self.open(self._CFGFILE, mode='w', fmt=str) as cfile:
-            nioini.save(self._cfg, cfile)
+        with self.open(self._CFGFILE, mode='w', fmt=str) as file:
+            config = {'workspace': self._cfg}
+            nioini.save(config, file)
 
         # Remove duplicates from workspace
         self._remove_duplicates()
@@ -222,32 +202,23 @@ class NwsFile:
         # Reopen file
         self.load(self._path, pwd=self._pwd)
 
-    def getfiles(self, filetype: OptStr = None) -> StrList:
+    def getfiles(self, pattern: OptStr = None) -> StrList:
         """Get list of files in the archive."""
-        # Get 'folder' of given 'filetype' in posix standard
-        if isinstance(filetype, str):
-            try:
-                dname = self._cfg['folders'][filetype]
-            except KeyError as err:
-                raise KeyError(f"folder '{dname}' does not exist") from err
-            dname = PurePath(dname).as_posix() + '/'
-        else:
-            dname = None
-
-        # Get list of unique filenames in posix standard
-        # which start with the 'folder' of the given 'filetype'
-        names: StrList = []
+        # Get list of normalized unique paths of archive members
+        paths: PathLikeList = []
         for zinfo in self._file.infolist():
-            name = PurePath(zinfo.filename).as_posix()
+            path = PurePath(zinfo.filename).as_posix()
             if getattr(zinfo, 'is_dir')():
-                name += '/'
-            if name in names:
-                continue
-            if dname and not name.startswith(dname):
-                continue
-            names.append(name)
+                path += '/'
+            if path not in paths:
+                paths.append(path)
 
-        return sorted(names)
+        # Match path list with given pattern
+        if pattern:
+            paths = npath.match(paths, pattern)
+
+        # Sort paths
+        return sorted([str(path) for path in paths])
 
     def _remove(self, zinfos: ZipInfoList) -> bool:
         """Remove members from archive.
@@ -324,138 +295,132 @@ class NwsFile:
 
     @property
     def files(self) -> StrList:
-        """List of files within the archive."""
+        """List of all files within the workspace."""
         return self.getfiles()
 
     @property
     def folders(self) -> StrList:
-        """List of files within the archive."""
+        """List of folders within the workspace."""
         # Get list of unique foldernames in posix standard
         names: StrList = []
         for zinfo in self._file.infolist():
-            if not getattr(zinfo, 'is_dir')():
-                continue
-            name = PurePath(zinfo.filename).as_posix() + '/'
-            names.append(name)
+            if getattr(zinfo, 'is_dir')():
+                name = PurePath(zinfo.filename).as_posix() + '/'
+                names.append(name)
         return sorted(names)
 
-    @property
-    def types(self) -> list:
-        """List of filetypes within archive."""
-        return sorted(list(self._cfg.get('folders', {}).keys()))
-
-    @property
-    def about(self) -> OptStr:
-        """Get a short description of the content of the resource."""
-        try:
-            return self._cfg['workspace']['about']
-        except KeyError:
-            return None
-        return None
-
-    @about.setter
-    def about(self, val: str) -> None:
-        if not isinstance(val, str):
-            raise TypeError(
-                "attribute 'about' is required to be of type 'str'"
-                f", not '{type(val).__name__}'")
-        wscfg = self._cfg['workspace']
-        if wscfg.get('about') != val:
-            wscfg['about'] = val
-            self._changed = True
-
-    @property
-    def branch(self) -> OptStr:
-        """Name of a duplicate of the original resource."""
-        try:
-            return self._cfg['workspace']['branch']
-        except KeyError:
-            return None
-        return None
-
-    @branch.setter
-    def branch(self, val: str) -> None:
-        if not isinstance(val, str):
-            raise TypeError(
-                "attribute 'branch' is required to be of type 'str'"
-                f", not '{type(val).__name__}'")
-        wscfg = self._cfg['workspace']
-        if wscfg.get('branch') != val:
-            wscfg['branch'] = val
-            self._changed = True
-
-    @property
-    def version(self) -> OptStr:
-        """Version of the branch of the workspace."""
-        try:
-            return self._cfg['workspace']['version']
-        except KeyError:
-            return None
-        return None
-
-    @version.setter
-    def version(self, val: str) -> None:
-        if not isinstance(val, str):
-            raise TypeError(
-                "attribute 'version' is required to be of type 'str'"
-                f", not '{type(val).__name__}'")
-        wscfg = self._cfg['workspace']
-        if wscfg.get('version') != val:
-            wscfg['version'] = val
-            self._changed = True
-
-    @property
-    def license(self) -> OptStr:
-        """License for the usage of the workspace.
-
-        Namereference to a legal document giving specified users an
-        official permission to do something with the workspace. The attribute
-        license is inherited by resources, that are created inside the
-        workspace.
-
-        """
-        try:
-            return self._cfg['workspace']['license']
-        except KeyError:
-            return None
-        return None
-
-    @license.setter
-    def license(self, val: str) -> None:
-        if not isinstance(val, str):
-            raise TypeError(
-                "attribute 'license' is required to be of type 'str'"
-                f", not '{type(val).__name__}'")
-        wscfg = self._cfg['workspace']
-        if wscfg.get('license') != val:
-            wscfg['license'] = val
-            self._changed = True
-
-    @property
-    def email(self) -> OptStr:
-        """Email address of the maintainer of the workspace.
-
-        Email address to a person, an organization, or a service that is
-        responsible for the content of the workspace. The attribute email
-        is inherited by resources, that are created inside the workspace.
-
-        """
-        try:
-            return self._cfg['workspace']['email']
-        except KeyError:
-            return None
-        return None
-
-    @email.setter
-    def email(self, val: str) -> None:
-        if not isinstance(val, str):
-            raise TypeError(
-                "attribute 'email' is required to be of type 'str'"
-                f", not '{type(val).__name__}'")
-        wscfg = self._cfg['workspace']
-        if wscfg.get('email') != val:
-            wscfg['email'] = val
-            self._changed = True
+    # @property
+    # def about(self) -> OptStr:
+    #     """Get a short description of the content of the resource."""
+    #     try:
+    #         return self._cfg['workspace']['about']
+    #     except KeyError:
+    #         return None
+    #     return None
+    #
+    # @about.setter
+    # def about(self, val: str) -> None:
+    #     if not isinstance(val, str):
+    #         raise TypeError(
+    #             "attribute 'about' is required to be of type 'str'"
+    #             f", not '{type(val).__name__}'")
+    #     wscfg = self._cfg['workspace']
+    #     if wscfg.get('about') != val:
+    #         wscfg['about'] = val
+    #         self._changed = True
+    #
+    # @property
+    # def branch(self) -> OptStr:
+    #     """Name of a duplicate of the original resource."""
+    #     try:
+    #         return self._cfg['workspace']['branch']
+    #     except KeyError:
+    #         return None
+    #     return None
+    #
+    # @branch.setter
+    # def branch(self, val: str) -> None:
+    #     if not isinstance(val, str):
+    #         raise TypeError(
+    #             "attribute 'branch' is required to be of type 'str'"
+    #             f", not '{type(val).__name__}'")
+    #     wscfg = self._cfg['workspace']
+    #     if wscfg.get('branch') != val:
+    #         wscfg['branch'] = val
+    #         self._changed = True
+    #
+    # @property
+    # def version(self) -> OptStr:
+    #     """Version of the branch of the workspace."""
+    #     try:
+    #         return self._cfg['workspace']['version']
+    #     except KeyError:
+    #         return None
+    #     return None
+    #
+    # @version.setter
+    # def version(self, val: str) -> None:
+    #     if not isinstance(val, str):
+    #         raise TypeError(
+    #             "attribute 'version' is required to be of type 'str'"
+    #             f", not '{type(val).__name__}'")
+    #     wscfg = self._cfg['workspace']
+    #     if wscfg.get('version') != val:
+    #         wscfg['version'] = val
+    #         self._changed = True
+    #
+    # @property
+    # def license(self) -> OptStr:
+    #     """License for the usage of the workspace.
+    #
+    #     Namereference to a legal document giving specified users an
+    #     official permission to do something with the workspace. The attribute
+    #     license is inherited by resources, that are created inside the
+    #     workspace.
+    #
+    #     """
+    #     try:
+    #         return self._cfg['workspace']['license']
+    #     except KeyError:
+    #         return None
+    #     return None
+    #
+    # @license.setter
+    # def license(self, val: str) -> None:
+    #     if not isinstance(val, str):
+    #         raise TypeError(
+    #             "attribute 'license' is required to be of type 'str'"
+    #             f", not '{type(val).__name__}'")
+    #     wscfg = self._cfg['workspace']
+    #     if wscfg.get('license') != val:
+    #         wscfg['license'] = val
+    #         self._changed = True
+    #
+    # @property
+    # def email(self) -> OptStr:
+    #     """Email address of the maintainer of the workspace.
+    #
+    #     Email address to a person, an organization, or a service that is
+    #     responsible for the content of the workspace. The attribute email
+    #     is inherited by resources, that are created inside the workspace.
+    #
+    #     """
+    #     try:
+    #         return self._cfg['workspace']['email']
+    #     except KeyError:
+    #         return None
+    #     return None
+    #
+    # @email.setter
+    # def email(self, val: str) -> None:
+    #     if not isinstance(val, str):
+    #         raise TypeError(
+    #             "attribute 'email' is required to be of type 'str'"
+    #             f", not '{type(val).__name__}'")
+    #     wscfg = self._cfg['workspace']
+    #     if wscfg.get('email') != val:
+    #         wscfg['email'] = val
+    #         self._changed = True
 
     def __enter__(self) -> 'NwsFile':
         """ """
@@ -471,5 +436,5 @@ class NwsFile:
             print(f'exc_traceback: {tb}')
 
     def __eq__(self, other: object) -> bool:
-        """ """
+        """Compare workspaces by path."""
         return self.path == getattr(other, 'path')

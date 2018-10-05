@@ -666,9 +666,10 @@ class TestSuite(ntest.TestSuite):
         from nemoa.common import npath
 
         import tempfile
-        import pathlib
+        from pathlib import Path
+        from typing import cast, Any
 
-        dname = str(pathlib.Path('a', 'b', 'c', 'd'))
+        dname = str(Path('a', 'b', 'c', 'd'))
         ptest = (('a', ('b', 'c')), 'd', 'base.ext')
         stdir = tempfile.TemporaryDirectory().name
 
@@ -680,6 +681,17 @@ class TestSuite(ntest.TestSuite):
 
         with self.subTest("clear"):
             self.assertEqual(npath.clear('3/\nE{$5}.e'), '3E5.e')
+
+        with self.subTest("match"):
+            paths = cast(Any, [Path('a.b'), Path('b.a'), Path('c/a.b')])
+            self.assertEqual(
+                npath.match(paths, 'a.*'), [Path('a.b')])
+            self.assertEqual(
+                npath.match(paths, '*.a'), [Path('b.a')])
+            self.assertEqual(
+                npath.match(paths, 'c\\*'), [Path('c/a.b')])
+            self.assertEqual(
+                npath.match(paths, 'c/*'), [Path('c/a.b')])
 
         with self.subTest("join"):
             self.assertEqual(npath.join(('a', ('b', 'c')), 'd'), dname)
