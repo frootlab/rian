@@ -48,6 +48,7 @@ T = TypeVar('T')
 ################################################################################
 
 # Unions of Literals
+OptType = Optional[type]
 OptStr = Optional[str]
 OptInt = Optional[int]
 OptFloat = Optional[float]
@@ -164,6 +165,7 @@ ClassStrDict = ClassVar[Dict[str, Any]]
 OptPath = Optional[Path]
 PathList = List[Path]
 PathLike = Union[str, Path]
+OptPathLike = Optional[PathLike]
 PathLikeList = List[PathLike]
 BytesIOLike = IO[bytes]
 StringIOLike = IO[str]

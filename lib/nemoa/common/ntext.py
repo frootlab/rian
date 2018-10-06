@@ -9,6 +9,13 @@ __docformat__ = 'google'
 import ast
 import sys
 
+try:
+    import pyparsing as pp
+except ImportError as err:
+    raise ImportError(
+        "requires package pyparsing: "
+        "https://pypi.org/project/pyparsing/") from err
+
 from nemoa.types import Any, OptStr, Tuple, Path
 
 def splitargs(text: str) -> Tuple[str, tuple, dict]:
@@ -263,8 +270,6 @@ def asdict(text: str, delim: str = ',') -> dict:
     if not text or not text.strip():
         return dict()
 
-    import pyparsing as pp
-
     Num = pp.Word(pp.nums + '.')
     Str = pp.quotedString
     Bool = pp.Or(pp.Word("True") | pp.Word("False"))
@@ -276,7 +281,7 @@ def asdict(text: str, delim: str = ',') -> dict:
     Terms = Term + pp.ZeroOrMore(delim + Term)
     try:
         l = Terms.parseString(text.strip('{}'))
-    except:
+    except pp.ParseException:
         l = None
 
     # try dictionary format "'<key>': <value><delim> ..."
@@ -285,7 +290,7 @@ def asdict(text: str, delim: str = ',') -> dict:
         Terms = Term + pp.ZeroOrMore(delim + Term)
         try:
             l = Terms.parseString(text.strip('{}'))
-        except:
+        except pp.ParseException:
             return {}
 
     # create dictionary from list
@@ -298,7 +303,9 @@ def asdict(text: str, delim: str = ',') -> dict:
             continue
         try:
             key, val = item[0].strip('\'\"'), ast.literal_eval(item[2])
-        except:
+        except (
+            KeyError, NameError, TypeError, ValueError, SyntaxError,
+            AttributeError):
             continue
 
         if isinstance(val, str):

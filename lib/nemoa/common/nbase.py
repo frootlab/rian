@@ -9,7 +9,7 @@ __docformat__ = 'google'
 from pathlib import Path
 
 from nemoa.common import nclass, ndict, npath
-from nemoa.types import Any, ClassVar, Dict, OptInt, OptStr, PathLike
+from nemoa.types import Any, ClassVar, Dict, OptInt, OptStr, OptType, PathLike
 
 class ObjectIP:
     """Base class for objects subjected to intellectual property.
