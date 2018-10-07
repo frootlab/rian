@@ -16,7 +16,7 @@ from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
 
 from nemoa.common import nioini, npath
-from nemoa.descriptors import Attr, ReadWriteAttr
+from nemoa.descriptors import Attr, ReadOnlyAttr, ReadWriteAttr
 from nemoa.exceptions import BadWorkspaceFile, DirNotEmptyError
 from nemoa.types import (
     BinaryFile, BytesIOLike, BytesLike, IterFileLike, List,
@@ -35,12 +35,13 @@ class WsFile:
     _CFGSTRUCT: StrDict2 = {
         'workspace': {
             'about': 'str',
-            'branch': 'str',
-            'version': 'str',
             'license': 'str',
             'maintainer': 'str',
             'email': 'str',
             'startup': 'path'}}
+    _CFGDEFAULT: StrDict2 = {
+        'workspace': {
+            'maintainer': ''}}
 
     _buffer: BytesIOLike
     _file: ZipFile
@@ -49,34 +50,64 @@ class WsFile:
     _pwd: OptBytes
     _changed: bool
 
-    # Bind descriptors
     about: Attr = ReadWriteAttr(str, key='_cfg')
-    branch: Attr = ReadWriteAttr(str, key='_cfg')
-    version: Attr = ReadWriteAttr(str, key='_cfg')
-    license: Attr = ReadWriteAttr(str, key='_cfg')
-    maintainer: Attr = ReadWriteAttr(str, key='_cfg')
-    email: Attr = ReadWriteAttr(str, key='_cfg')
-    startup: Attr = ReadWriteAttr(Path, key='_cfg')
+    """Short description of the workspace.
 
-    @property
-    def name(self) -> OptStr:
-        """Filename of the workspace without file extension."""
+    Short description of the contents, the purpose or the application of the
+    workspace. The attribute about is inherited by resources, that are created
+    inside the workspace.
+    """
+
+    email: Attr = ReadWriteAttr(str, key='_cfg')
+    """Email address of the maintainer of the workspace.
+
+    Email address to a person, an organization, or a service that is responsible
+    for the content of the workspace. The attribute email is inherited by
+    resources, that are created inside the workspace.
+    """
+
+    license: Attr = ReadWriteAttr(str, key='_cfg')
+    """License for the usage of the contents of the workspace.
+
+    Namereference to a legal document giving specified users an official
+    permission to do something with the contents of the workspace. The attribute
+    license is inherited by resources, that are created inside the workspace.
+    """
+
+    maintainer: Attr = ReadWriteAttr(str, key='_cfg')
+    """Name of the maintainer of the workspace.
+
+    A person, an organization, or a service that is responsible for the content
+    of the workspace. The attribute maintainer is inherited by resources, that
+    are created inside the workspace.
+    """
+
+    startup: Attr = ReadWriteAttr(Path, key='_cfg')
+    """Path that points to a python script inside the workspace.
+
+    The startup script identifies a python script that is aimed to be executed
+    after loading the workspace.
+    """
+
+    files: Attr = ReadOnlyAttr(list, getter='get_files')
+    """List of all files within the workspace."""
+
+    name: Attr = ReadOnlyAttr(list, getter='_get_name')
+    """Filename of the workspace without file extension."""
+
+    path: Attr = ReadOnlyAttr(Path, getter='_get_path')
+    """Filepath of the workspace."""
+
+    folders: Attr = ReadOnlyAttr(list, getter='_get_folders')
+    """List of all folders within the workspace."""
+
+    def _get_name(self) -> OptStr:
         return getattr(self._path, 'stem')
 
-    @property
-    def path(self) -> OptPath:
-        """Filepath of the workspace."""
+    def _get_path(self) -> OptPath:
         return self._path
 
-    @property
-    def files(self) -> StrList:
-        """List of all files within the workspace."""
-        return self.get_files()
-
-    @property
-    def folders(self) -> StrList:
-        """List of folders within the workspace."""
-        # Get list of unique foldernames in POSIX standard
+    def _get_folders(self) -> StrList:
         names: StrList = []
         for zinfo in self._file.infolist():
             if getattr(zinfo, 'is_dir')():
@@ -85,7 +116,7 @@ class WsFile:
         return sorted(names)
 
     def __init__(self, filepath: OptPathLike, pwd: OptBytes = None) -> None:
-        """Load nemoa workspace from file."""
+        """Load Workspace from file."""
         if filepath:
             self.load(filepath, pwd=pwd)
 
@@ -409,7 +440,6 @@ class WsFile:
         self._buffer.close()
         self._buffer = new_buffer
         self._file = new_file
-
         self._changed = True
 
         return True
@@ -436,7 +466,7 @@ class WsFile:
         return self
 
     def __exit__(self, etype: str, value: int, tb: Traceback) -> None:
-        """Close open workspaces and buffer."""
+        """Close workspaces and buffer."""
         self.close()
         # Error handling
         if etype:

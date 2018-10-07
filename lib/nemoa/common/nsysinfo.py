@@ -6,8 +6,6 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import platform
-
 from nemoa.types import OptStr
 
 def hostname() -> str:
@@ -23,6 +21,7 @@ def hostname() -> str:
         [1] https://docs.python.org/3/library/platform.html
 
     """
+    import platform
     return platform.node()
 
 def osname() -> str:
@@ -38,7 +37,28 @@ def osname() -> str:
         [1] https://docs.python.org/3/library/platform.html
 
     """
+    import platform
     return platform.system()
+
+def username() -> str:
+    """Login name of the current user.
+
+    This is a wrapper function to the standard library function
+    `getpass.getuser()`_. This function checks the environment variables
+    LOGNAME, USER, LNAME and USERNAME, in order, and returns the value of the
+    first one which is set to a non-empty string. If none are set, the login
+    name from the password database is returned on systems which support the
+    pwd module, otherwise, an exception is raised.
+
+    Returns:
+        String representing the login name of the current user.
+
+    .. _getpass.getuser():
+       https://docs.python.org/3/library/getpass.html#getpass.getuser
+
+    """
+    import getpass
+    return getpass.getuser()
 
 def ttylib() -> OptStr:
     """Name of package for tty I/O control.

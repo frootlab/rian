@@ -4,6 +4,7 @@
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
+__docformat__ = 'google'
 
 import array
 import io
@@ -29,6 +30,7 @@ Obj = object
 Traceback = types.TracebackType
 Module = types.ModuleType
 Function = types.FunctionType
+Method = types.MethodType
 BinaryFile = io.BufferedIOBase
 TextFile = io.TextIOBase
 AnyFile = (BinaryFile, TextFile)

@@ -19,6 +19,7 @@ Submodules
 
 .. toctree::
 
+   nemoa.descriptors
    nemoa.exceptions
    nemoa.types
 

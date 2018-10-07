@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
-"""Application specific Exceptions.
-
-Base exceptions and errors for nemoa.
-"""
+"""Exceptions."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
+__docformat__ = 'google'
 
 class DirNotEmptyError(OSError):
     """Exception for remove() requested on a non empty directory."""
