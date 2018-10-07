@@ -15,8 +15,8 @@ from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
 
 from nemoa.common import nioini, npath, nsysinfo
-from nemoa.descriptors import Attr, ReadOnlyAttr, ReadWriteAttr
-from nemoa.exceptions import BadWorkspaceFile, DirNotEmptyError
+from nemoa.classes import Attr, ReadOnlyAttr, ReadWriteAttr
+from nemoa.errors import BadWsFile, DirNotEmptyError, FileNotGivenError
 from nemoa.types import (
     BinaryFile, BytesIOLike, BytesLike, IterFileLike, List,
     OptBytes, OptStr, OptPath, OptPathLike, PathLike, PathLikeList,
@@ -47,12 +47,12 @@ class WsFile:
     _buffer: BytesIOLike
     _file: ZipFile
     _cfg: StrDict
-    _path: Path
+    _path: OptPath
     _pwd: OptBytes
     _changed: bool
 
     about: Attr = ReadWriteAttr(str, key='_cfg')
-    """Short description of the workspace.
+    """Summary description of the workspace.
 
     Short description of the contents, the purpose or the application of the
     workspace. The attribute about is inherited by resources, that are created
@@ -102,34 +102,27 @@ class WsFile:
     folders: Attr = ReadOnlyAttr(list, getter='_get_folders')
     """List of all folders within the workspace."""
 
-    def _get_name(self) -> OptStr:
-        return getattr(self._path, 'stem')
+    def __init__(
+            self, filepath: OptPathLike = None, pwd: OptBytes = None) -> None:
+        """Load Workspace from file.
 
-    def _get_path(self) -> OptPath:
-        return self._path
+        Args:
+            filepath: Filepath that points to a valid workspace file or None
+            pwd: Bytes representing password of workspace file
 
-    def _get_folders(self) -> StrList:
-        names: StrList = []
-        for zinfo in self._file.infolist():
-            if getattr(zinfo, 'is_dir')():
-                name = PurePath(zinfo.filename).as_posix() + '/'
-                names.append(name)
-        return sorted(names)
-
-    def __init__(self, filepath: OptPathLike, pwd: OptBytes = None) -> None:
-        """Load Workspace from file."""
+        """
         if filepath:
             self.load(filepath, pwd=pwd)
+        else:
+            self.create_new()
 
     def load(self, filepath: PathLike, pwd: OptBytes = None) -> None:
-        """Load Workspace from File."""
-        # Initialize instance variables
+        """Load Workspace from file."""
+        # Initialize instance Variables, Buffer and buffered ZipFile
         self._cfg = {}
         self._changed = False
         self._path = npath.getpath(filepath)
         self._pwd = pwd
-
-        # Initialize buffered ZipFile
         self._buffer = BytesIO()
         self._file = ZipFile(self._buffer, mode='w')
 
@@ -160,24 +153,38 @@ class WsFile:
             with self.open(self._CFGFILE) as file:
                 cfg = nioini.load(file, self._CFGSTRUCT)
         except KeyError as err:
-            raise BadWorkspaceFile(
+            raise BadWsFile(
                 f"workspace '{self._path}' is not valid: '{self._CFGFILE}' "
                 "is missing") from err
 
         # Check if configuration contains required sections
         rsec = self._CFGSTRUCT.keys()
         if rsec > cfg.keys():
-            raise BadWorkspaceFile(
+            raise BadWsFile(
                 f"workspace '{self._path}' is not valid: '{self._CFGFILE}' "
                 f"requires sections '{rsec}'") from err
 
         # Link configuration
         self._cfg = cfg.get('workspace', {})
 
+    def create_new(self) -> None:
+        """Create new Workspace."""
+        # Initialize instance Variables, Buffer and buffered ZipFile
+        self._cfg = self._CFGDEFAULT['workspace'].copy()
+        self._changed = False
+        self._path = None
+        self._pwd = None
+        self._buffer = BytesIO()
+        self._file = ZipFile(self._buffer, mode='w')
+
+        # Create folders
+        for folder in self._DIRDEFAULT:
+            self.mkdir(folder)
+
     @contextmanager
     def open(
-            self, filepath: PathLike, mode: str = '',
-            encoding: OptStr = None) -> IterFileLike:
+            self, filepath: PathLike, mode: str = '', encoding: OptStr = None,
+            isdir: bool = False) -> IterFileLike:
         """Open file within the workspace.
 
         Args:
@@ -190,6 +197,10 @@ class WsFile:
                 'b': Binary mode
                 't': Text mode (default)
             encoding:
+            isdir: Boolean value which determines, if the filepath is to be
+                treated as a directory. This information is required for writing
+                directories to the workspace. The default behaviour is not to
+                treat paths as directories.
 
         """
         # Get default values
@@ -200,7 +211,7 @@ class WsFile:
 
         # Open file handler to workspace member
         if 'w' in mode:
-            file = self._open_write(path)
+            file = self._open_write(path, isdir=isdir)
         else:
             file = self._open_read(path)
 
@@ -227,17 +238,35 @@ class WsFile:
         zinfo = matches[-1]
         return self._file.open(zinfo, pwd=self._pwd, mode='r')
 
-    def _open_write(self, path: PathLike) -> BytesIOLike:
-        """Open workspace member for writing."""
+    def _open_write(self, path: PathLike, isdir: bool = False) -> BytesIOLike:
+        """Open workspace member for writing.
+
+        Args:
+            path:
+            isdir: Boolean value which determines, if the filepath is to be
+                treated as a directory. This information is required for writing
+                directories to the workspace. The default behaviour is not to
+                treat paths as directories.
+
+        """
         # Determine workspace member name from path
-        # and open file handler for writing file
+        # and get ZipInfo with local time as date_time
+        filename = PurePath(path).as_posix()
+        if isdir:
+            filename += '/'
         zinfo = ZipInfo( # type: ignore
-            filename=PurePath(path).as_posix(),
-            date_time=time.localtime()[:6])
+            filename=filename, date_time=time.localtime()[:6])
         # Catch Warning for duplicate files
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
-            file = self._file.open(zinfo, mode='w', pwd=self._pwd)
+            # TODO (patrick.michl@gmail.com): The zipfile standard
+            # module currently does not support encryption in write
+            # mode of new ZipFiles. See:
+            # https://docs.python.org/3/library/zipfile.html
+            # When support is provided, the below line for writing
+            # files shall be replaced by:
+            # file = self._file.open(zinfo, mode='w', pwd=self._pwd)
+            file = self._file.open(zinfo, mode='w')
         self._changed = True
         return file
 
@@ -297,11 +326,11 @@ class WsFile:
                 ", not a file")
         return self._remove(matches)
 
-    def mkdir(self, dirpath: PathLike, exist_ok: bool = False) -> None:
+    def mkdir(self, path: PathLike, exist_ok: bool = False) -> None:
         """Create a new directory at the given path.
 
         Args:
-            dirpath:
+            path:
             exist_ok: boolean value which determines, if FileExistsError is
                 raised, if the target directory already exists.
 
@@ -309,12 +338,13 @@ class WsFile:
             FileExistsError If the path already exists.
 
         """
-        dirname = PurePath(dirpath).as_posix() + '/'
-        if not self._locate(dirname):
-            return self._file.write(dirname)
-        if not exist_ok:
-            raise FileExistsError(f"directory '{dirname}' does already exist")
-        return None
+        matches = self._locate(path)
+        if not matches:
+            with self.open(path, mode='w', isdir=True):
+                pass
+        elif not exist_ok:
+            name = PurePath(path).as_posix() + '/'
+            raise FileExistsError(f"directory '{name}' does already exist")
 
     def rmdir(self, dirpath: PathLike, recursive: bool = False) -> bool:
         """Remove directory from workspace."""
@@ -346,10 +376,16 @@ class WsFile:
 
     def save(self) -> None:
         """Save the workspace to it's original file path."""
-        self.saveas(self._path)
+        if isinstance(self._path, Path):
+            self.saveas(self._path)
+        else:
+            raise FileNotGivenError(
+                "use saveas() to save the workspace to a file")
 
     def saveas(self, filepath: PathLike) -> None:
         """Save the workspace to a file."""
+        path = npath.getpath(filepath)
+
         # Update 'workspace.ini'
         with self.open(self._CFGFILE, mode='w') as file:
             config = {'workspace': self._cfg}
@@ -359,16 +395,16 @@ class WsFile:
         self._remove_duplicates()
 
         # Mark plattform, which created the files as Windows
-        # to avoid Unix permissions to be inferred as 0000
+        # to avoid inference of wrong Unix permissions
         for zinfo in self._file.infolist():
             zinfo.create_system = 0
 
-        # Close ZipArchive to read buffer
+        # Close ZipArchive (to allow to read the buffer)
         self._file.close()
 
-        # Read buffer and write to file
+        # Read buffer and write workspace file
         if isinstance(self._buffer, BytesIO):
-            with open(filepath, 'wb') as file:
+            with open(path, 'wb') as file:
                 file.write(self._buffer.getvalue())
         else:
             raise TypeError("buffer has not been initialized")
@@ -376,8 +412,8 @@ class WsFile:
         # Close buffer
         self._buffer.close()
 
-        # Reopen file
-        self.load(self._path, pwd=self._pwd)
+        # Load saved workpace file
+        self.load(path, pwd=self._pwd)
 
     def get_files(self, pattern: OptStr = None) -> StrList:
         """Get list of files in the workspace."""
@@ -396,6 +432,20 @@ class WsFile:
 
         # Sort paths
         return sorted([str(path) for path in paths])
+
+    def _get_name(self) -> OptStr:
+        return getattr(self._path, 'stem', None)
+
+    def _get_path(self) -> OptPath:
+        return self._path
+
+    def _get_folders(self) -> StrList:
+        names: StrList = []
+        for zinfo in self._file.infolist():
+            if getattr(zinfo, 'is_dir')():
+                name = PurePath(zinfo.filename).as_posix() + '/'
+                names.append(name)
+        return sorted(names)
 
     def _remove(self, zinfos: ZipInfoList) -> bool:
         """Remove members from workspace.

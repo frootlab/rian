@@ -14,6 +14,10 @@ __docformat__ = 'google'
 
 from nemoa.types import Any, Method, OptDict, OptCallable, OptStr, OptType
 
+################################################################################
+# Descriptors
+################################################################################
+
 class Attr:
     """Descriptor with type checking and dictionary encapsulation."""
 
@@ -31,6 +35,7 @@ class Attr:
             self, vtype: OptType = None, key: OptStr = None,
             getter: OptStr = None, setter: OptStr = None,
             default: Any = None) -> None:
+        """ """
         self._type = vtype
         self._dict = key
         self._getter = getter
@@ -44,7 +49,7 @@ class Attr:
         if not isinstance(self._obj_dict, dict):
             self._bind(obj)
         if isinstance(self._obj_getter, Method):
-            return self._obj_getter(obj)
+            return self._obj_getter()
         return self._obj_dict.get(self._name, self._default) # type: ignore
 
     def __set__(self, obj: object, val: Any) -> None:
@@ -56,7 +61,7 @@ class Attr:
         if not isinstance(self._obj_dict, dict):
             self._bind(obj)
         if isinstance(self._obj_setter, Method):
-            self._obj_setter(obj, val)
+            self._obj_setter(val)
         else:
             self._obj_dict[self._name] = val # type: ignore
 
