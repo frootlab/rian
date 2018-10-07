@@ -8,6 +8,25 @@ __docformat__ = 'google'
 
 from nemoa.types import OptStr
 
+def encoding() -> str:
+    """Preferred encoding used for text data.
+
+    This is a wrapper function to the standard library function
+    `locale.getpreferredencoding()`_. This function returns the encoding used
+    for text data, according to user preferences. User preferences are expressed
+    differently on different systems, and might not be available
+    programmatically on some systems, so this function only returns a guess.
+
+    Returns:
+        String representing the preferred encoding used for text data.
+
+    .. _locale.getpreferredencoding():
+       https://docs.python.org/3/library/locale.html#locale.getpreferredencoding
+
+    """
+    import locale
+    return locale.getpreferredencoding()
+
 def hostname() -> str:
     """Hostname of the computer.
 
@@ -43,45 +62,6 @@ def osname() -> str:
     import platform
     return platform.system()
 
-def username() -> str:
-    """Login name of the current user.
-
-    This is a wrapper function to the standard library function
-    `getpass.getuser()`_. This function checks the environment variables
-    LOGNAME, USER, LNAME and USERNAME, in order, and returns the value of the
-    first one which is set to a non-empty string. If none are set, the login
-    name from the password database is returned on systems which support the
-    pwd module, otherwise, an exception is raised.
-
-    Returns:
-        String representing the login name of the current user.
-
-    .. _getpass.getuser():
-       https://docs.python.org/3/library/getpass.html#getpass.getuser
-
-    """
-    import getpass
-    return getpass.getuser()
-
-def encoding() -> str:
-    """Preferred encoding used for text data.
-
-    This is a wrapper function to the standard library function
-    `locale.getpreferredencoding()`_. This function returns the encoding used
-    for text data, according to user preferences. User preferences are expressed
-    differently on different systems, and might not be available
-    programmatically on some systems, so this function only returns a guess.
-
-    Returns:
-        String representing the preferred encoding used for text data.
-
-    .. _locale.getpreferredencoding():
-       https://docs.python.org/3/library/locale.html#locale.getpreferredencoding
-
-    """
-    import locale
-    return locale.getpreferredencoding()
-
 def ttylib() -> OptStr:
     """Name of package for tty I/O control.
 
@@ -104,5 +84,24 @@ def ttylib() -> OptStr:
     for name in libs:
         if nmodule.inst(name):
             return name
-
     return None
+
+def username() -> str:
+    """Login name of the current user.
+
+    This is a wrapper function to the standard library function
+    `getpass.getuser()`_. This function checks the environment variables
+    LOGNAME, USER, LNAME and USERNAME, in order, and returns the value of the
+    first one which is set to a non-empty string. If none are set, the login
+    name from the password database is returned on systems which support the
+    pwd module, otherwise, an exception is raised.
+
+    Returns:
+        String representing the login name of the current user.
+
+    .. _getpass.getuser():
+       https://docs.python.org/3/library/getpass.html#getpass.getuser
+
+    """
+    import getpass
+    return getpass.getuser()

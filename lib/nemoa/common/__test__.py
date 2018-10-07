@@ -735,15 +735,22 @@ class TestSuite(ntest.TestSuite):
     def test_common_nsysinfo(self) -> None:
         """Test module 'nemoa.common.nsysinfo'."""
         from nemoa.common import nsysinfo
+        from types import FunctionType
 
-        with self.subTest("hostname"):
-            self.assertTrue(nsysinfo.hostname())
+        ftypes = {
+            'encoding': str,
+            'hostname': str,
+            'osname': str,
+            'ttylib': str,
+            'username': str }
 
-        with self.subTest("osname"):
-            self.assertTrue(nsysinfo.osname())
-
-        with self.subTest("ttylib"):
-            self.assertTrue(nsysinfo.ttylib())
+        for fname, ftype in ftypes.items():
+            with self.subTest(fname):
+                func = getattr(nsysinfo, fname)
+                # Check if function exists
+                self.assertIsInstance(func, FunctionType)
+                # Check type of returned value
+                self.assertIsInstance(func(), ftype)
 
     def test_common_ntable(self) -> None:
         """Test module 'nemoa.common.ntable'."""
