@@ -6,7 +6,6 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import locale
 import time
 import warnings
 
@@ -15,7 +14,7 @@ from contextlib import contextmanager
 from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
 
-from nemoa.common import nioini, npath
+from nemoa.common import nioini, npath, nsysinfo
 from nemoa.descriptors import Attr, ReadOnlyAttr, ReadWriteAttr
 from nemoa.exceptions import BadWorkspaceFile, DirNotEmptyError
 from nemoa.types import (
@@ -25,7 +24,7 @@ from nemoa.types import (
 
 ZipInfoList = List[ZipInfo]
 
-ENCODING = locale.getpreferredencoding()
+ENCODING = nsysinfo.encoding()
 FILEEXTS = ['.ws.zip', '.ws', '.zip']
 
 class WsFile:
@@ -41,7 +40,9 @@ class WsFile:
             'startup': 'path'}}
     _CFGDEFAULT: StrDict2 = {
         'workspace': {
-            'maintainer': ''}}
+            'maintainer': nsysinfo.username()}}
+    _DIRDEFAULT: StrList = [
+        'dataset', 'network', 'system', 'model', 'script']
 
     _buffer: BytesIOLike
     _file: ZipFile

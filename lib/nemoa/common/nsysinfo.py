@@ -9,16 +9,17 @@ __docformat__ = 'google'
 from nemoa.types import OptStr
 
 def hostname() -> str:
-    """Hostname of the system.
+    """Hostname of the computer.
 
-    Wrapper function to platform.node [1]
+    This is a wrapper function to the standard library function
+    `platform.node()`_. This function returns the computer’s hostname. If the
+    value cannot be determined, an empty string is returned.
 
     Returns:
-        Returns the computer’s hostname. If the value cannot be determined,
-        an empty string is returned.
+        String representing the computer’s hostname or None.
 
-    References:
-        [1] https://docs.python.org/3/library/platform.html
+    .. _platform.node()
+        https://docs.python.org/3/library/platform.html#platform.node
 
     """
     import platform
@@ -27,14 +28,16 @@ def hostname() -> str:
 def osname() -> str:
     """Name of the Operating System.
 
-    Wrapper function to platform.system [1]
+    This is a wrapper function to the standard library function
+    `platform.system()`_. This function returns the OS name, e.g. 'Linux',
+    'Windows', or 'Java'. If the value cannot be determined, an empty string is
+    returned.
 
     Returns:
-        Returns the OS name, e.g. 'Linux', 'Windows', or 'Java'. If the value
-        cannot be determined, an empty string is returned.
+        String representing the OS name or None.
 
-    References:
-        [1] https://docs.python.org/3/library/platform.html
+    .. _platform.system()
+        https://docs.python.org/3/library/platform.html#platform.system
 
     """
     import platform
@@ -60,16 +63,39 @@ def username() -> str:
     import getpass
     return getpass.getuser()
 
+def encoding() -> str:
+    """Preferred encoding used for text data.
+
+    This is a wrapper function to the standard library function
+    `locale.getpreferredencoding()`_. This function returns the encoding used
+    for text data, according to user preferences. User preferences are expressed
+    differently on different systems, and might not be available
+    programmatically on some systems, so this function only returns a guess.
+
+    Returns:
+        String representing the preferred encoding used for text data.
+
+    .. _locale.getpreferredencoding():
+       https://docs.python.org/3/library/locale.html#locale.getpreferredencoding
+
+    """
+    import locale
+    return locale.getpreferredencoding()
+
 def ttylib() -> OptStr:
     """Name of package for tty I/O control.
+
+    Depending on the plattform the module within the standard library, which is
+    required for tty I/O control differs. The module ´termios´_ provides an
+    interface to the POSIX calls for tty I/O control. The module ´msvcrt´_
+    provides access to some useful capabilities on Windows platforms.
 
     Returns:
         Name of package for tty I/O control or None, if the package could not
         be determined.
 
-    References:
-        [1] https://docs.python.org/3/library/termios.html
-        [2] https://docs.python.org/3/library/msvcrt.html
+    .. _termios: https://docs.python.org/3/library/termios.html
+    .. _msvcrt: https://docs.python.org/3/library/msvcrt.html
 
     """
     from nemoa.common import nmodule
