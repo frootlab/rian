@@ -4,6 +4,7 @@
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
+__docformat__ = 'google'
 
 import array
 import io
@@ -29,6 +30,7 @@ Obj = object
 Traceback = types.TracebackType
 Module = types.ModuleType
 Function = types.FunctionType
+Method = types.MethodType
 BinaryFile = io.BufferedIOBase
 TextFile = io.TextIOBase
 AnyFile = (BinaryFile, TextFile)
@@ -48,6 +50,7 @@ T = TypeVar('T')
 ################################################################################
 
 # Unions of Literals
+OptType = Optional[type]
 OptStr = Optional[str]
 OptInt = Optional[int]
 OptFloat = Optional[float]
@@ -164,6 +167,7 @@ ClassStrDict = ClassVar[Dict[str, Any]]
 OptPath = Optional[Path]
 PathList = List[Path]
 PathLike = Union[str, Path]
+OptPathLike = Optional[PathLike]
 PathLikeList = List[PathLike]
 BytesIOLike = IO[bytes]
 StringIOLike = IO[str]
