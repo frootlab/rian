@@ -16,9 +16,9 @@ from pathlib import Path, PurePath
 
 from nemoa.common import nioini, npath, nsysinfo
 from nemoa.classes import Attr, ReadOnlyAttr, ReadWriteAttr
-from nemoa.errors import BadWsFile, DirNotEmptyError, FileNotGivenError
+from nemoa.errors import DirNotEmptyError, FileNotGivenError
 from nemoa.types import (
-    BinaryFile, BytesIOLike, BytesLike, IterFileLike, List,
+    BinaryFile, BytesIOLike, BytesLike, ClassVar, IterFileLike, List,
     OptBytes, OptStr, OptPath, OptPathLike, PathLike, PathLikeList,
     TextFile, Traceback, StrDict, StrDict2, StrList)
 
@@ -26,6 +26,9 @@ ZipInfoList = List[ZipInfo]
 
 ENCODING = nsysinfo.encoding()
 FILEEXTS = ['.ws.zip', '.ws', '.zip']
+
+class BadWsFile(OSError):
+    """Exception for invalid workspace files."""
 
 class WsFile:
     """Workspace File.
@@ -49,19 +52,23 @@ class WsFile:
 
     """
 
-    _CONFIG_FILE: Path = Path('workspace.ini')
-    _CONFIG_STRUCT: StrDict2 = {
+    # Set Class Constants
+
+    CONFIG_FILE: ClassVar[Path] = Path('workspace.ini')
+    CONFIG_STRUCT: ClassVar[StrDict2] = {
         'workspace': {
             'about': 'str',
             'license': 'str',
             'maintainer': 'str',
             'email': 'str',
             'startup': 'path'}}
-    _CONFIG_DEFAULT: StrDict2 = {
+    CONFIG_DEFAULT: ClassVar[StrDict2] = {
         'workspace': {
             'maintainer': nsysinfo.username()}}
-    _DIR_LAYOUT: StrList = [
+    DIR_LAYOUT: ClassVar[StrList] = [
         'dataset', 'network', 'system', 'model', 'script']
+
+    # Declare Instance Variables
 
     _attr: StrDict
     _buffer: BytesIOLike
@@ -70,7 +77,9 @@ class WsFile:
     _pwd: OptBytes
     _changed: bool
 
-    about: Attr = ReadWriteAttr(str, key='_attr')
+    # Declare Attributes from Descriptors
+
+    about: Attr = ReadWriteAttr(str, bind='_attr')
     about.__doc__ = """Summary of the workspace.
 
     A short description of the contents, the purpose or the intended application
@@ -78,7 +87,7 @@ class WsFile:
     created inside the workspace and support the attribute.
     """
 
-    email: Attr = ReadWriteAttr(str, key='_attr')
+    email: Attr = ReadWriteAttr(str, bind='_attr')
     email.__doc__ = """Email address of the maintainer of the workspace.
 
     Email address to a person, an organization, or a service that is responsible
@@ -86,7 +95,7 @@ class WsFile:
     resources, that are created inside the workspace and support the attribute.
     """
 
-    license: Attr = ReadWriteAttr(str, key='_attr')
+    license: Attr = ReadWriteAttr(str, bind='_attr')
     license.__doc__ = """License for the usage of the contents of the workspace.
 
     Namereference to a legal document giving specified users an official
@@ -95,7 +104,7 @@ class WsFile:
     and support the attribute.
     """
 
-    maintainer: Attr = ReadWriteAttr(str, key='_attr')
+    maintainer: Attr = ReadWriteAttr(str, bind='_attr')
     maintainer.__doc__ = """Name of the maintainer of the workspace.
 
     A person, an organization, or a service that is responsible for the content
@@ -103,7 +112,7 @@ class WsFile:
     are created inside the workspace and support the attribute.
     """
 
-    startup: Attr = ReadWriteAttr(Path, key='_attr')
+    startup: Attr = ReadWriteAttr(Path, bind='_attr')
     startup.__doc__ = """Startup script inside the workspace.
 
     The startup script is a path, that points to a a python script inside the
@@ -121,6 +130,9 @@ class WsFile:
 
     folders: Attr = ReadOnlyAttr(list, getter='_get_folders')
     folders.__doc__ = """List of all folders within the workspace."""
+
+    changed: Attr = ReadOnlyAttr(bool, key='_changed')
+    changed.__doc__ = """Tells whether the workspace file been changed."""
 
     def __init__(
             self, filepath: OptPathLike = None, pwd: OptBytes = None) -> None:
@@ -184,26 +196,26 @@ class WsFile:
 
         # Try to open and load workspace configuration from buffer
         try:
-            with self.open(self._CONFIG_FILE) as file:
-                cfg = nioini.load(file, self._CONFIG_STRUCT)
+            with self.open(self.CONFIG_FILE) as file:
+                cfg = nioini.load(file, self.CONFIG_STRUCT)
         except KeyError as err:
             raise BadWsFile(
                 f"workspace '{self._path}' is not valid: "
-                "file '{self._CONFIG_FILE}' is missing") from err
+                "file '{self.CONFIG_FILE}' is missing") from err
 
         # Check if configuration contains required sections
-        rsec = self._CONFIG_STRUCT.keys()
+        rsec = self.CONFIG_STRUCT.keys()
         if rsec > cfg.keys():
             raise BadWsFile(
                 f"workspace '{self._path}' is not valid: "
-                f"'{self._CONFIG_FILE}' requires sections '{rsec}'") from err
+                f"'{self.CONFIG_FILE}' requires sections '{rsec}'") from err
 
         # Link configuration
         self._attr = cfg.get('workspace', {})
 
     def _create_new(self) -> None:
         # Initialize instance Variables, Buffer and buffered ZipFile
-        self._attr = self._CONFIG_DEFAULT['workspace'].copy()
+        self._attr = self.CONFIG_DEFAULT['workspace'].copy()
         self._changed = False
         self._path = None
         self._pwd = None
@@ -211,7 +223,7 @@ class WsFile:
         self._file = ZipFile(self._buffer, mode='w')
 
         # Create folders
-        for folder in self._DIR_LAYOUT:
+        for folder in self.DIR_LAYOUT:
             self.mkdir(folder)
 
     def close(self) -> None:
@@ -512,7 +524,7 @@ class WsFile:
         path = npath.getpath(filepath)
 
         # Update 'workspace.ini'
-        with self.open(self._CONFIG_FILE, mode='w') as file:
+        with self.open(self.CONFIG_FILE, mode='w') as file:
             nioini.save({'workspace': self._attr}, file)
 
         # Remove duplicates from workspace

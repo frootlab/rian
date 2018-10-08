@@ -25,6 +25,7 @@ class Attr:
 
     Args:
         vtype:
+        bind:
         key:
         getter:
         setter:
@@ -32,84 +33,87 @@ class Attr:
 
     """
 
-    _name: str
-    _type: OptType = None
-    _default: Any = None
-    _dict: OptStr = None
-    _getter: OptStr = None
-    _setter: OptStr = None
-    _obj_dict: OptDict = None
-    _obj_getter: OptCallable = None
-    _obj_setter: OptCallable = None
+    name: str
+    attr: dict
+
+    store: OptDict = None
+    key: OptStr = None
+    vtype: OptType = None
+    getter: OptCallable = None
+    setter: OptCallable = None
+    default: Any = None
 
     def __init__(
-            self, vtype: OptType = None, key: OptStr = None,
+            self, vtype: OptType = None,
+            bind: OptStr = None, key: OptStr = None,
             getter: OptStr = None, setter: OptStr = None,
             default: Any = None) -> None:
-        """Set optional names of dictionary, getter, setter, etc."""
-        self._type = vtype
-        self._dict = key
-        self._getter = getter
-        self._setter = setter
-        self._default = default
+        """Set attribute names of dictionary, getter, setter, etc."""
+        self.attr = {
+            'dict': bind, 'key': key, 'getter': getter, 'setter': setter}
+        self.vtype = vtype
+        self.default = default
 
     def __set_name__(self, owner: type, name: str) -> None:
         """Set name of the Attribute."""
-        self._name = name
+        self.name = name
 
     def __get__(self, obj: object, owner: type) -> Any:
         """Wrap get requests to the Attribute."""
-        if not isinstance(self._obj_dict, dict):
+        if not isinstance(self.store, dict):
             self._bind(obj)
-        if isinstance(self._obj_getter, Method):
-            return self._obj_getter()
-        return self._obj_dict.get(self._name, self._default) # type: ignore
+        if isinstance(self.getter, Method):
+            return self.getter()
+        if not self.store or not self.key in self.store:
+            return self.default
+        return self.store[self.key]
 
     def __set__(self, obj: object, val: Any) -> None:
         """Wrap set requests to the Attribute."""
         # Check Type of Attribute
-        if self._type is not None and not isinstance(val, self._type):
+        if self.vtype is not None and not isinstance(val, self.vtype):
             raise TypeError(
-                f"'{self._name}' requires type {self._type.__name__} "
+                f"'{self.name}' requires type {self.vtype.__name__} "
                 f"not {type(val).__name__}")
-        if not isinstance(self._obj_dict, dict):
+        if not isinstance(self.store, dict):
             self._bind(obj)
-        if isinstance(self._obj_setter, Method):
-            self._obj_setter(val)
+        if isinstance(self.setter, Method):
+            self.setter(val)
         else:
-            self._obj_dict[self._name] = val # type: ignore
+            self.store[self.key] = val # type: ignore
 
     def _bind(self, obj: object) -> None:
         """Bind dictionary, getter and setter functions."""
-        # Bind dictionary
-        if isinstance(self._dict, str):
-            self._obj_dict = obj.__dict__.get(self._dict)
-            if not isinstance(self._obj_dict, dict):
+        # Bind dictionary and key
+        if isinstance(self.attr['dict'], str):
+            self.store = obj.__dict__.get(self.attr['dict'])
+            if not isinstance(self.store, dict):
                 raise TypeError(
-                    f"'{self._dict}' requires type dict "
-                    f"not {type(self._obj_dict).__name__}")
+                    f"'{self.attr['dict']}' requires type dict "
+                    f"not {type(self.store).__name__}")
         else:
-            self._obj_dict = obj.__dict__
+            self.store = obj.__dict__
+        self.key = self.attr['key'] or self.name
 
         # Bind getter function
-        if isinstance(self._getter, str):
-            self._obj_getter = getattr(obj, self._getter)
-            if not isinstance(self._obj_getter, Method):
+        if isinstance(self.attr['getter'], str):
+            self.getter = getattr(obj, self.attr['getter'])
+            if not isinstance(self.getter, Method):
                 raise TypeError(
-                    f"'{self._getter}' requires type function "
-                    f"not {type(self._obj_getter).__name__}")
+                    f"'{self.attr['getter']}' requires type function "
+                    f"not {type(self.getter).__name__}")
         else:
-            self._obj_getter = None
+            self.getter = None
 
         # Bind setter function
-        if isinstance(self._setter, str):
-            self._obj_setter = getattr(obj, self._setter)
-            if not isinstance(self._obj_setter, Method):
+        if isinstance(self.attr['setter'], str):
+            self.setter = getattr(obj, self.attr['setter'])
+            if not isinstance(self.setter, Method):
                 raise TypeError(
-                    f"'{self._setter}' requires type function "
-                    f"not {type(self._obj_setter).__name__}")
+                    f"'{self.attr['setter']}' requires type function "
+                    f"not {type(self.setter).__name__}")
         else:
-            self._obj_setter = None
+            self.setter = None
 
 class ReadWriteAttr(Attr):
     """Descriptor Class for read- and writeable Attribute binding."""
@@ -122,7 +126,7 @@ class ReadOnlyAttr(Attr):
     def __set__(self, obj: object, val: Any) -> None:
         """Wrap set attribute requests."""
         raise AttributeError(
-            f"'{self._name}' is a read-only property "
+            f"'{self.name}' is a read-only property "
             f"of class {type(obj).__name__}")
 
 ################################################################################
@@ -136,7 +140,7 @@ class ReadOnlyAttr(Attr):
 #     descriptive metadata comprising authorship and copyright, as well as
 #     administrative metadata like branch and version. This base class is
 #     intended to provide a unified interface to access those attributes.
-# 
+#
 #     """
 #
 #     _attr: StrDict
