@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Application variables and directories."""
+"""Functions to access application variables and directories."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'

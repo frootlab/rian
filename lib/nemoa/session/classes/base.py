@@ -250,7 +250,7 @@ class Session(object):
         for subdir in glob.iglob(baseglob):
             if not os.path.isdir(subdir):
                 continue
-            fpath = npath.join(subdir, fname)
+            fpath = str(npath.join(subdir, fname))
             if not os.path.isfile(fpath):
                 continue
             workspaces.append(os.path.basename(subdir))
@@ -431,25 +431,26 @@ class Session(object):
         import os
         from nemoa.common import npath
 
-        path = npath.join(args)
+        path = str(npath.join(args))
 
         # expand nemoa environment variables
         base = self._get_base()
         udict = {
             'workspace': self._get_workspace() or 'none',
             'base': self._get_base() or 'none',
-            'basepath': npath.join(self._config['default']['basepath'][base])
-        }
+            'basepath': str(
+                npath.join(self._config['default']['basepath'][base]))}
 
         for key, val in self._config['default']['basepath'].items():
-            udict[key] = npath.join(val)
+            udict[key] = str(npath.join(val))
         for key, val in self._config['current']['path'].items():
-            udict[key] = npath.join(val)
+            udict[key] = str(npath.join(val))
 
-        path = npath.expand(path, udict = udict)
+        path = npath.expand(path, udict=udict)
 
         # (optional) create directory
-        if create: npath.mkdir(path)
+        if create:
+            npath.mkdir(path)
 
         # (optional) check path
         if check and not os.path.exists(path): return None

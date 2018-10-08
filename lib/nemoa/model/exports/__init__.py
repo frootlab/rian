@@ -63,7 +63,7 @@ def save(model, path = None, filetype = None, workspace = None,
         if not fileext: fileext = npath.fileext(model.path)
     else:
         fileext = npath.fileext(model.path)
-    path = npath.join(directory, name + '.' + fileext)
+    path = str(npath.join(directory, name + '.' + fileext))
 
     # get filetype from file extension if not given
     # and test if filetype is supported

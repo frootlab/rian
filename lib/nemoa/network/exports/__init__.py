@@ -64,7 +64,7 @@ def save(network, path = None, filetype = None, workspace = None,
     elif isinstance(path, str):
         fileext = npath.fileext(path) or npath.fileext(network.path)
     else: fileext = npath.fileext(network.path)
-    path = npath.join(directory, name + '.' + fileext)
+    path = str(npath.join(directory, name + '.' + fileext))
 
     # get filetype from file extension if not given
     # and test if filetype is supported

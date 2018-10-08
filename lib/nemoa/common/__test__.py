@@ -669,7 +669,8 @@ class TestSuite(ntest.TestSuite):
         from pathlib import Path
         from typing import cast, Any
 
-        dname = str(Path('a', 'b', 'c', 'd'))
+        dpath = Path('a', 'b', 'c', 'd')
+        dname = str(dpath)
         ptest = (('a', ('b', 'c')), 'd', 'base.ext')
         stdir = tempfile.TemporaryDirectory().name
 
@@ -694,7 +695,7 @@ class TestSuite(ntest.TestSuite):
                 npath.match(paths, 'c/*'), [Path('c/a.b')])
 
         with self.subTest("join"):
-            self.assertEqual(npath.join(('a', ('b', 'c')), 'd'), dname)
+            self.assertEqual(npath.join(('a', ('b', 'c')), 'd'), dpath)
 
         with self.subTest("expand"):
             self.assertEqual(

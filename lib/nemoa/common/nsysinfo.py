@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Collection of fequently used functions to access platform information."""
+"""Functions to access OS and platform informations."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -37,7 +37,7 @@ def hostname() -> str:
     Returns:
         String representing the computer’s hostname or None.
 
-    .. _platform.node()
+    .. _platform.node():
         https://docs.python.org/3/library/platform.html#platform.node
 
     """
@@ -55,7 +55,7 @@ def osname() -> str:
     Returns:
         String representing the OS name or None.
 
-    .. _platform.system()
+    .. _platform.system():
         https://docs.python.org/3/library/platform.html#platform.system
 
     """
@@ -66,8 +66,8 @@ def ttylib() -> OptStr:
     """Name of package for tty I/O control.
 
     Depending on the plattform the module within the standard library, which is
-    required for tty I/O control differs. The module ´termios´_ provides an
-    interface to the POSIX calls for tty I/O control. The module ´msvcrt´_
+    required for tty I/O control differs. The module `termios`_ provides an
+    interface to the POSIX calls for tty I/O control. The module `msvcrt`_
     provides access to some useful capabilities on Windows platforms.
 
     Returns:

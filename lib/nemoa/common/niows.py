@@ -28,98 +28,132 @@ ENCODING = nsysinfo.encoding()
 FILEEXTS = ['.ws.zip', '.ws', '.zip']
 
 class WsFile:
-    """I/O handling of Workspace Files."""
+    """Workspace File.
 
-    _CFGFILE: Path = Path('workspace.ini')
-    _CFGSTRUCT: StrDict2 = {
+    Workspace files are Zip-Archives, that contain the INI-formatted
+    configuration file 'workspace.ini' in the archives root, and arbitrary
+    resource files within subfolders.
+
+    Args:
+        filepath: String or pathlike object, that points to a valid workspace
+            file or None. If the filepath points to a valid workspace file, then
+            the class instance is initialized with a memory copy of the file.
+            If the given file, however, does not exist, isn't a valid ZipFile,
+            or does not contain a workspace configuration, respectively one of
+            the errors FileNotFoundError, BadZipFile or BadWsFile is raised. The
+            default behaviour, if the filepath is None, is to create an empty
+            workspace in the memory, that uses the default folders layout. In
+            this case the attribute maintainer is initialized with the current
+            username.
+        pwd: Bytes representing password of workspace file.
+
+    """
+
+    _CONFIG_FILE: Path = Path('workspace.ini')
+    _CONFIG_STRUCT: StrDict2 = {
         'workspace': {
             'about': 'str',
             'license': 'str',
             'maintainer': 'str',
             'email': 'str',
             'startup': 'path'}}
-    _CFGDEFAULT: StrDict2 = {
+    _CONFIG_DEFAULT: StrDict2 = {
         'workspace': {
             'maintainer': nsysinfo.username()}}
-    _DIRDEFAULT: StrList = [
+    _DIR_LAYOUT: StrList = [
         'dataset', 'network', 'system', 'model', 'script']
 
+    _attr: StrDict
     _buffer: BytesIOLike
     _file: ZipFile
-    _cfg: StrDict
     _path: OptPath
     _pwd: OptBytes
     _changed: bool
 
-    about: Attr = ReadWriteAttr(str, key='_cfg')
-    """Summary description of the workspace.
+    about: Attr = ReadWriteAttr(str, key='_attr')
+    about.__doc__ = """Summary of the workspace.
 
-    Short description of the contents, the purpose or the application of the
-    workspace. The attribute about is inherited by resources, that are created
-    inside the workspace.
+    A short description of the contents, the purpose or the intended application
+    of the workspace. The attribute about is inherited by resources, that are
+    created inside the workspace and support the attribute.
     """
 
-    email: Attr = ReadWriteAttr(str, key='_cfg')
-    """Email address of the maintainer of the workspace.
+    email: Attr = ReadWriteAttr(str, key='_attr')
+    email.__doc__ = """Email address of the maintainer of the workspace.
 
     Email address to a person, an organization, or a service that is responsible
     for the content of the workspace. The attribute email is inherited by
-    resources, that are created inside the workspace.
+    resources, that are created inside the workspace and support the attribute.
     """
 
-    license: Attr = ReadWriteAttr(str, key='_cfg')
-    """License for the usage of the contents of the workspace.
+    license: Attr = ReadWriteAttr(str, key='_attr')
+    license.__doc__ = """License for the usage of the contents of the workspace.
 
     Namereference to a legal document giving specified users an official
     permission to do something with the contents of the workspace. The attribute
-    license is inherited by resources, that are created inside the workspace.
+    license is inherited by resources, that are created inside the workspace
+    and support the attribute.
     """
 
-    maintainer: Attr = ReadWriteAttr(str, key='_cfg')
-    """Name of the maintainer of the workspace.
+    maintainer: Attr = ReadWriteAttr(str, key='_attr')
+    maintainer.__doc__ = """Name of the maintainer of the workspace.
 
     A person, an organization, or a service that is responsible for the content
     of the workspace. The attribute maintainer is inherited by resources, that
-    are created inside the workspace.
+    are created inside the workspace and support the attribute.
     """
 
-    startup: Attr = ReadWriteAttr(Path, key='_cfg')
-    """Path that points to a python script inside the workspace.
+    startup: Attr = ReadWriteAttr(Path, key='_attr')
+    startup.__doc__ = """Startup script inside the workspace.
 
-    The startup script identifies a python script that is aimed to be executed
-    after loading the workspace.
+    The startup script is a path, that points to a a python script inside the
+    workspace, which is intended to be executed after loading the workspace.
     """
 
     files: Attr = ReadOnlyAttr(list, getter='get_files')
-    """List of all files within the workspace."""
+    files.__doc__ = """List of all files within the workspace."""
 
     name: Attr = ReadOnlyAttr(list, getter='_get_name')
-    """Filename of the workspace without file extension."""
+    name.__doc__ = """Filename of the workspace without file extension."""
 
     path: Attr = ReadOnlyAttr(Path, getter='_get_path')
-    """Filepath of the workspace."""
+    path.__doc__ = """Filepath of the workspace."""
 
     folders: Attr = ReadOnlyAttr(list, getter='_get_folders')
-    """List of all folders within the workspace."""
+    folders.__doc__ = """List of all folders within the workspace."""
 
     def __init__(
             self, filepath: OptPathLike = None, pwd: OptBytes = None) -> None:
-        """Load Workspace from file.
-
-        Args:
-            filepath: Filepath that points to a valid workspace file or None
-            pwd: Bytes representing password of workspace file
-
-        """
+        """Load Workspace from file."""
         if filepath:
             self.load(filepath, pwd=pwd)
         else:
-            self.create_new()
+            self._create_new()
+
+    def __enter__(self) -> 'WsFile':
+        """Enter with statement."""
+        return self
+
+    def __exit__(self, etype: str, value: int, tb: Traceback) -> None:
+        """Close workspace file and buffer."""
+        self.close()
 
     def load(self, filepath: PathLike, pwd: OptBytes = None) -> None:
-        """Load Workspace from file."""
+        """Load Workspace from file.
+
+        Args:
+            filepath: String or pathlike object, that points to a valid
+                workspace file. If the filepath points to a valid workspace
+                file, then the class instance is initialized with a memory copy
+                of the file. If the given file, however, does not exist, isn't a
+                valid ZipFile, or does not contain a workspace configuration,
+                respectively one of the errors FileNotFoundError, BadZipFile or
+                BadWsFile is raised.
+            pwd: Bytes representing password of workspace file.
+
+        """
         # Initialize instance Variables, Buffer and buffered ZipFile
-        self._cfg = {}
+        self._attr = {}
         self._changed = False
         self._path = npath.getpath(filepath)
         self._pwd = pwd
@@ -150,27 +184,26 @@ class WsFile:
 
         # Try to open and load workspace configuration from buffer
         try:
-            with self.open(self._CFGFILE) as file:
-                cfg = nioini.load(file, self._CFGSTRUCT)
+            with self.open(self._CONFIG_FILE) as file:
+                cfg = nioini.load(file, self._CONFIG_STRUCT)
         except KeyError as err:
             raise BadWsFile(
-                f"workspace '{self._path}' is not valid: '{self._CFGFILE}' "
-                "is missing") from err
+                f"workspace '{self._path}' is not valid: "
+                "file '{self._CONFIG_FILE}' is missing") from err
 
         # Check if configuration contains required sections
-        rsec = self._CFGSTRUCT.keys()
+        rsec = self._CONFIG_STRUCT.keys()
         if rsec > cfg.keys():
             raise BadWsFile(
-                f"workspace '{self._path}' is not valid: '{self._CFGFILE}' "
-                f"requires sections '{rsec}'") from err
+                f"workspace '{self._path}' is not valid: "
+                f"'{self._CONFIG_FILE}' requires sections '{rsec}'") from err
 
         # Link configuration
-        self._cfg = cfg.get('workspace', {})
+        self._attr = cfg.get('workspace', {})
 
-    def create_new(self) -> None:
-        """Create new Workspace."""
+    def _create_new(self) -> None:
         # Initialize instance Variables, Buffer and buffered ZipFile
-        self._cfg = self._CFGDEFAULT['workspace'].copy()
+        self._attr = self._CONFIG_DEFAULT['workspace'].copy()
         self._changed = False
         self._path = None
         self._pwd = None
@@ -178,39 +211,59 @@ class WsFile:
         self._file = ZipFile(self._buffer, mode='w')
 
         # Create folders
-        for folder in self._DIRDEFAULT:
+        for folder in self._DIR_LAYOUT:
             self.mkdir(folder)
+
+    def close(self) -> None:
+        """Close current workspace and buffer."""
+        if hasattr(self._file, 'close'):
+            self._file.close()
+        if hasattr(self._buffer, 'close'):
+            self._buffer.close()
 
     @contextmanager
     def open(
-            self, filepath: PathLike, mode: str = '', encoding: OptStr = None,
+            self, path: PathLike, mode: str = '', encoding: OptStr = None,
             isdir: bool = False) -> IterFileLike:
         """Open file within the workspace.
 
         Args:
-            filepath:
+            path: String or pathlike object, that represents a workspace member.
+                In reading mode the path has to point to a valid workspace file,
+                or a FileNotFoundError is raised. In writing mode the path by
+                default is treated as a file path. New directories can be
+                written by setting the argument isdir to True.
             mode: String, which characters specify the mode in which the file is
-                to be opened. It defaults to 'r' which means open for reading in
-                text mode. Suported characters are:
-                'r': Open for reading (default)
-                'w': Open for writing
+                to be opened. The default mode is reading in text mode. Suported
+                characters are:
+                'r': Reading mode (default)
+                'w': Writing mode
                 'b': Binary mode
                 't': Text mode (default)
-            encoding:
-            isdir: Boolean value which determines, if the filepath is to be
-                treated as a directory. This information is required for writing
+            encoding: In binary mode encoding has not effect. In text mode
+                encoding specifies the name of the encoding, which in reading
+                and writing mode respectively is used to decode the stream’s
+                bytes into strings, and to encode strings into bytes. By default
+                the preferred encoding of the operating system is used.
+            isdir: Boolean value which determines, if the path is to be treated
+                as a directory or not. This information is required for writing
                 directories to the workspace. The default behaviour is not to
                 treat paths as directories.
 
+        Returns:
+            Iterator to a file handler, to support the with statement.
+
+        Examples:
+            >>> with self.open('workspace.ini') as file:
+            >>>     print(file.read())
+
         """
-        # Get default values
-        encoding = encoding or ENCODING
-
-        # Get path representation for workspace member
-        path = Path(filepath)
-
         # Open file handler to workspace member
         if 'w' in mode:
+            if 'r' in mode:
+                raise ValueError(
+                    "argument mode is not allowed to contain the "
+                    "characters 'r' AND 'w'")
             file = self._open_write(path, isdir=isdir)
         else:
             file = self._open_read(path)
@@ -218,37 +271,30 @@ class WsFile:
         # Format buffered stream as bytes-stream or text-stream
         try:
             if 'b' in mode:
+                if 't' in mode:
+                    raise ValueError(
+                        "argument mode is not allowed to contain the "
+                        "characters 'b' AND 't'")
                 yield file
             else:
                 yield TextIOWrapper(
-                    file, encoding=encoding, write_through=True)
+                    file, encoding=encoding or ENCODING, write_through=True)
         finally:
             file.close()
 
     def _open_read(self, path: PathLike) -> BytesIOLike:
-        """Open workspace member for reading."""
         # Locate workspace member by it's path
         # and open file handler for reading the file
         matches = self._locate(path)
         if not matches:
             fname = PurePath(path).as_posix()
-            raise KeyError(
-                f"member with filename '{fname}' does not exist")
+            raise FileNotFoundError(
+                f"workspace member with filename '{fname}' does not exist")
         # Select latest version of file
         zinfo = matches[-1]
         return self._file.open(zinfo, pwd=self._pwd, mode='r')
 
     def _open_write(self, path: PathLike, isdir: bool = False) -> BytesIOLike:
-        """Open workspace member for writing.
-
-        Args:
-            path:
-            isdir: Boolean value which determines, if the filepath is to be
-                treated as a directory. This information is required for writing
-                directories to the workspace. The default behaviour is not to
-                treat paths as directories.
-
-        """
         # Determine workspace member name from path
         # and get ZipInfo with local time as date_time
         filename = PurePath(path).as_posix()
@@ -271,7 +317,19 @@ class WsFile:
         return file
 
     def read_text(self, filepath: PathLike, encoding: OptStr = None) -> str:
-        """Read text from file."""
+        """Read text from file.
+
+        Args:
+            filepath: String or pathlike object, that points to a valid
+                workspace file, or a FileNotFoundError is raised.
+            encoding: Specifies the name of the encoding, which is used to
+                decode the stream’s bytes into strings. By default the preferred
+                encoding of the operating system is used.
+
+        Returns:
+            Contents of the given filepath encoded as string.
+
+        """
         with self.open(filepath, mode='r', encoding=encoding) as file:
             text = file.read()
         if not isinstance(text, str):
@@ -279,7 +337,16 @@ class WsFile:
         return text
 
     def read_bytes(self, filepath: PathLike) -> bytes:
-        """Read bytes from file."""
+        """Read bytes from file.
+
+        Args:
+            filepath: String or pathlike object, that points to a valid
+                workspace file, or a FileNotFoundError is raised.
+
+        Returns:
+            Contents of the given filepath as bytes.
+
+        """
         with self.open(filepath, mode='rb') as file:
             blob = file.read()
         if not isinstance(blob, bytes):
@@ -291,8 +358,16 @@ class WsFile:
             encoding: OptStr = None) -> int:
         """Write text to file.
 
+        Args:
+            text: String, which has to be written to the given file.
+            filepath: String or pathlike object, that represent a workspace
+                file.
+            encoding: Specifies the name of the encoding, which is used to
+                encode strings into bytes. By default the preferred encoding of
+                the operating system is used.
+
         Returns:
-            Number of characters written.
+            Number of characters, that are written to the file.
 
         """
         with self.open(filepath, mode='w', encoding=encoding) as file:
@@ -303,8 +378,13 @@ class WsFile:
     def write_bytes(self, blob: BytesLike, filepath: PathLike) -> int:
         """Write bytes to file.
 
+        Args:
+            blob: Bytes, which are to be written to the given file.
+            filepath: String or pathlike object, that represent a workspace
+                file.
+
         Returns:
-            Number of bytes written.
+            Number of bytes, that are written to the file.
 
         """
         with self.open(filepath, mode='wb') as file:
@@ -312,58 +392,97 @@ class WsFile:
                 return file.write(blob)
         return 0
 
-    def unlink(self, filepath: PathLike) -> bool:
-        """Remove file or symbolic link from workspace.
+    def unlink(self, filepath: PathLike, ignore_missing: bool = True) -> bool:
+        """Remove file from workspace.
 
-        If the path points to a directory, use rmdir() instead.
+        Args:
+            filepath: String or pathlike object, that points to a workspace
+                file. If the filapath points to a directory, a IsADirectoryError
+                is raised. For the case, that the file does not exist, the
+                argument ignore_missing determines if a FileNotFoundError is
+                raised.
+            ignore_missing: Boolean value which determines, if FileNotFoundError
+                is raised, if the target file does not exist. The default
+                behaviour, is to ignore missing files.
+
+        Returns:
+            Boolean value, which is True if the given file was removed.
+
         """
         matches = self._locate(filepath)
         if not matches:
-            return True
+            if ignore_missing:
+                return True
+            filename = PurePath(filepath).as_posix()
+            raise FileNotFoundError(f"file '{filename}' does not exist")
         if getattr(matches[-1], 'is_dir')():
-            raise IsADirectoryError(
-                f"the requested path '{str(filepath)}' is a directory"
-                ", not a file")
-        return self._remove(matches)
+            dirname = PurePath(filepath).as_posix() + '/'
+            raise IsADirectoryError(f"'{dirname}' is a directory not a file")
+        return self._remove_members(matches)
 
-    def mkdir(self, path: PathLike, exist_ok: bool = False) -> None:
+    def mkdir(self, dirpath: PathLike, ignore_exists: bool = False) -> bool:
         """Create a new directory at the given path.
 
         Args:
-            path:
-            exist_ok: boolean value which determines, if FileExistsError is
-                raised, if the target directory already exists.
+            dirpath: String or pathlike object, that represents a workspace
+                directory. If the directory already exists, the argument
+                ignore_exists determines if a FileExistsError is raised.
+            ignore_exists: Boolean value which determines, if FileExistsError is
+                raised, if the target directory already exists. The default
+                behaviour is to raise an error, if the file already exists.
 
-        Raises:
-            FileExistsError If the path already exists.
+        Returns:
+            Boolean value, which is True if the given directory was created.
 
         """
-        matches = self._locate(path)
+        matches = self._locate(dirpath)
         if not matches:
-            with self.open(path, mode='w', isdir=True):
+            with self.open(dirpath, mode='w', isdir=True):
                 pass
-        elif not exist_ok:
-            name = PurePath(path).as_posix() + '/'
-            raise FileExistsError(f"directory '{name}' does already exist")
+        elif not ignore_exists:
+            dirname = PurePath(dirpath).as_posix() + '/'
+            raise FileExistsError(f"directory '{dirname}' already exists")
+        return True
 
-    def rmdir(self, dirpath: PathLike, recursive: bool = False) -> bool:
-        """Remove directory from workspace."""
+    def rmdir(
+            self, dirpath: PathLike, recursive: bool = False,
+            ignore_missing: bool = False) -> bool:
+        """Remove directory from workspace.
+
+        Args:
+            dirpath: String or pathlike object, that points to a workspace
+                directory. If the directory does not exist, the argument
+                ignore_missing determines if a FileNotFoundError is raised.
+            ignore_missing: Boolean value which determines, if FileNotFoundError
+                is raised, if the target directory does not exist. The default
+                behaviour, is to raise an error if the directory is missing.
+            recursive: Boolean value which determines, if directories are
+                removed recursively. If recursive is False, then only empty
+                directories can be removed. If recursive, however, is True, then
+                all files and subdirectories are alse removed. By default
+                recursive is False.
+
+        Returns:
+            Boolean value, which is True if the given directory was removed.
+
+        """
         matches = self._locate(dirpath)
         dirname = PurePath(dirpath).as_posix() + '/'
         if not matches:
+            if ignore_missing:
+                return True
             raise FileNotFoundError(f"directory '{dirname}' does not exist")
         files = self.get_files(dirname + '*')
         if not files:
-            return self._remove(matches)
+            return self._remove_members(matches)
         if not recursive:
             raise DirNotEmptyError(f"directory '{dirname}' is not empty")
         allmatches = matches
         for file in files:
             allmatches += self._locate(file)
-        return self._remove(allmatches)
+        return self._remove_members(allmatches)
 
     def _locate(self, path: PathLike, sort: bool = True) -> ZipInfoList:
-        """Locate workspace members by their path."""
         # Get list of member zipinfos
         zinfos = self._file.infolist()
         # Match members by path-like filenames
@@ -375,7 +494,7 @@ class WsFile:
         return matches
 
     def save(self) -> None:
-        """Save the workspace to it's original file path."""
+        """Save the workspace to it's filepath."""
         if isinstance(self._path, Path):
             self.saveas(self._path)
         else:
@@ -383,13 +502,18 @@ class WsFile:
                 "use saveas() to save the workspace to a file")
 
     def saveas(self, filepath: PathLike) -> None:
-        """Save the workspace to a file."""
+        """Save the workspace to a file.
+
+        Args:
+            filepath: String or pathlike object, that represents the name of a
+                workspace file.
+
+        """
         path = npath.getpath(filepath)
 
         # Update 'workspace.ini'
-        with self.open(self._CFGFILE, mode='w') as file:
-            config = {'workspace': self._cfg}
-            nioini.save(config, file)
+        with self.open(self._CONFIG_FILE, mode='w') as file:
+            nioini.save({'workspace': self._attr}, file)
 
         # Remove duplicates from workspace
         self._remove_duplicates()
@@ -412,11 +536,25 @@ class WsFile:
         # Close buffer
         self._buffer.close()
 
-        # Load saved workpace file
+        # Reload saved workpace from file
         self.load(path, pwd=self._pwd)
 
     def get_files(self, pattern: OptStr = None) -> StrList:
-        """Get list of files in the workspace."""
+        """Get list of files in the workspace.
+
+        Args:
+            pattern: String pattern, containing Unix shell-style wildcards:
+                '*': matches arbitrary strings
+                '?': matches single characters
+                [seq]: matches any character in seq
+                [!seq]: matches any character not in seq
+                If pattern is None, then all files are returned. This is the
+                default behaviour.
+
+        Returns:
+            List of file and directory names, that match the given pattern.
+
+        """
         # Get list of normalized unique paths of workspace members
         paths: PathLikeList = []
         for zinfo in self._file.infolist():
@@ -447,21 +585,12 @@ class WsFile:
                 names.append(name)
         return sorted(names)
 
-    def _remove(self, zinfos: ZipInfoList) -> bool:
-        """Remove members from workspace.
-
-        Args:
-            zinfos: List of ZipInfo entries, which are to be removed from
-                the workspace
-
-        Returns:
-            Boolean value which is true if no error occured.
-
-        """
+    def _remove_members(self, zinfos: ZipInfoList) -> bool:
+        # Return True if list of members is empty
         if not zinfos:
             return True
 
-        # Remove given entries from the list of workspace members
+        # Remove entries in the list of members from workspace
         new_zinfos = []
         zids = [(zinfo.filename, zinfo.date_time) for zinfo in zinfos]
         for zinfo in self._file.infolist():
@@ -474,7 +603,8 @@ class WsFile:
         # If any entry on the list could not be found raise an error
         if zids:
             names = [zid[0] for zid in zids]
-            raise KeyError(f"could not locate workspace members: {names}")
+            raise FileNotFoundError(
+                f"could not locate workspace members: {names}")
 
         # Create new ZipArchive in Memory
         new_buffer = BytesIO()
@@ -496,35 +626,10 @@ class WsFile:
         return True
 
     def _remove_duplicates(self) -> bool:
-        """Remove all duplicates from workspace."""
         # Get list of duplicates
         zinfos: ZipInfoList = []
         for filename in self.files:
             zinfos += self._locate(filename, sort=True)[:-1]
 
         # Remove duplicates
-        return self._remove(zinfos)
-
-    def close(self) -> None:
-        """Close current workspace and buffer."""
-        if hasattr(self._file, 'close'):
-            self._file.close()
-        if hasattr(self._buffer, 'close'):
-            self._buffer.close()
-
-    def __enter__(self) -> 'WsFile':
-        """Enter with statement."""
-        return self
-
-    def __exit__(self, etype: str, value: int, tb: Traceback) -> None:
-        """Close workspaces and buffer."""
-        self.close()
-        # Error handling
-        if etype:
-            print(f'exc_type: {etype}')
-            print(f'exc_value: {value}')
-            print(f'exc_traceback: {tb}')
-
-    def __eq__(self, other: object) -> bool:
-        """Compare workspaces by path."""
-        return self.path == getattr(other, 'path')
+        return self._remove_members(zinfos)

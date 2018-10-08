@@ -12,14 +12,25 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from nemoa.types import Any, Method, OptDict, OptCallable, OptStr, OptType
+from nemoa.types import (
+    Any, ClassVar, Dict, Method, OptDict, OptCallable, OptStr, OptType,
+    StrDict, Tuple)
 
 ################################################################################
 # Descriptors
 ################################################################################
 
 class Attr:
-    """Descriptor with type checking and dictionary encapsulation."""
+    """Generic Descriptor Class for Attributes.
+
+    Args:
+        vtype:
+        key:
+        getter:
+        setter:
+        default:
+
+    """
 
     _name: str
     _type: OptType = None
@@ -35,7 +46,7 @@ class Attr:
             self, vtype: OptType = None, key: OptStr = None,
             getter: OptStr = None, setter: OptStr = None,
             default: Any = None) -> None:
-        """ """
+        """Set optional names of dictionary, getter, setter, etc."""
         self._type = vtype
         self._dict = key
         self._getter = getter
@@ -43,9 +54,11 @@ class Attr:
         self._default = default
 
     def __set_name__(self, owner: type, name: str) -> None:
+        """Set name of the Attribute."""
         self._name = name
 
     def __get__(self, obj: object, owner: type) -> Any:
+        """Wrap get requests to the Attribute."""
         if not isinstance(self._obj_dict, dict):
             self._bind(obj)
         if isinstance(self._obj_getter, Method):
@@ -53,6 +66,7 @@ class Attr:
         return self._obj_dict.get(self._name, self._default) # type: ignore
 
     def __set__(self, obj: object, val: Any) -> None:
+        """Wrap set requests to the Attribute."""
         # Check Type of Attribute
         if self._type is not None and not isinstance(val, self._type):
             raise TypeError(
@@ -66,6 +80,7 @@ class Attr:
             self._obj_dict[self._name] = val # type: ignore
 
     def _bind(self, obj: object) -> None:
+        """Bind dictionary, getter and setter functions."""
         # Bind dictionary
         if isinstance(self._dict, str):
             self._obj_dict = obj.__dict__.get(self._dict)
@@ -96,11 +111,67 @@ class Attr:
         else:
             self._obj_setter = None
 
+class ReadWriteAttr(Attr):
+    """Descriptor Class for read- and writeable Attribute binding."""
+
+    pass
+
 class ReadOnlyAttr(Attr):
+    """Descriptor Class for read-only Attribute binding."""
+
     def __set__(self, obj: object, val: Any) -> None:
+        """Wrap set attribute requests."""
         raise AttributeError(
             f"'{self._name}' is a read-only property "
             f"of class {type(obj).__name__}")
 
-class ReadWriteAttr(Attr):
-    pass
+################################################################################
+# Base classes for object model templates
+################################################################################
+
+# class ObjectIP:
+#     """Base class for objects subjected to intellectual property.
+#
+#     Resources like datasets, networks, systems and models share common
+#     descriptive metadata comprising authorship and copyright, as well as
+#     administrative metadata like branch and version. This base class is
+#     intended to provide a unified interface to access those attributes.
+# 
+#     """
+#
+#     _attr: StrDict
+#     _copy_map: ClassVar[Dict[str, Tuple[str, type]]] = {
+#         'attr': ('_attr', dict)}
+#
+#     about: Attr = ReadWriteAttr(str, key='_attr')
+#     about.__doc__ = """Summary of the workspace.
+#
+#     A short description of the contents, the purpose or the intended application
+#     of the workspace. The attribute about is inherited by resources, that are
+#     created inside the workspace and support the attribute.
+#     """
+#
+#     email: Attr = ReadWriteAttr(str, key='_attr')
+#     email.__doc__ = """Email address of the maintainer of the workspace.
+#
+#     Email address to a person, an organization, or a service that is responsible
+#     for the content of the workspace. The attribute email is inherited by
+#     resources, that are created inside the workspace and support the attribute.
+#     """
+#
+#     license: Attr = ReadWriteAttr(str, key='_attr')
+#     license.__doc__ = """License for the usage of the contents of the workspace.
+#
+#     Namereference to a legal document giving specified users an official
+#     permission to do something with the contents of the workspace. The attribute
+#     license is inherited by resources, that are created inside the workspace
+#     and support the attribute.
+#     """
+#
+#     maintainer: Attr = ReadWriteAttr(str, key='_attr')
+#     maintainer.__doc__ = """Name of the maintainer of the workspace.
+#
+#     A person, an organization, or a service that is responsible for the content
+#     of the workspace. The attribute maintainer is inherited by resources, that
+#     are created inside the workspace and support the attribute.
+#     """
