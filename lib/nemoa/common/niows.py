@@ -119,14 +119,14 @@ class WsFile:
     workspace, which is intended to be executed after loading the workspace.
     """
 
-    files: Attr = ReadOnlyAttr(list, getter='get_files')
-    files.__doc__ = """List of all files within the workspace."""
-
     name: Attr = ReadOnlyAttr(list, getter='_get_name')
     name.__doc__ = """Filename of the workspace without file extension."""
 
-    path: Attr = ReadOnlyAttr(Path, getter='_get_path')
+    path: Attr = ReadOnlyAttr(Path, key='_path')
     path.__doc__ = """Filepath of the workspace."""
+
+    files: Attr = ReadOnlyAttr(list, getter='search')
+    files.__doc__ = """List of all files within the workspace."""
 
     folders: Attr = ReadOnlyAttr(list, getter='_get_folders')
     folders.__doc__ = """List of all folders within the workspace."""
@@ -313,7 +313,8 @@ class WsFile:
         if isdir:
             filename += '/'
         zinfo = ZipInfo( # type: ignore
-            filename=filename, date_time=time.localtime()[:6])
+            filename=filename,
+            date_time=time.localtime()[:6])
         # Catch Warning for duplicate files
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
@@ -328,12 +329,70 @@ class WsFile:
         self._changed = True
         return file
 
+    def append(self, source: PathLike, target: OptPathLike = None) -> bool:
+        """Append file to the workspace.
+
+        Args:
+            source: String or pathlike object, that points to a valid file in
+                the directory structure if the system. If the file does not
+                exist, a FileNotFoundError is raised. If the filepath points
+                to a directory, a IsADirectoryError is raised.
+            target: String or pathlike object, that points to a valid directory
+                in the directory structure of the workspace. By default the
+                root directory is used. If the directory does not exist, a
+                FileNotFoundError is raised. If the target directory already
+                contains a file, which name equals the filename of the source,
+                a FileExistsError is raised.
+
+        Returns:
+            Boolean value which is True if the file has been appended.
+
+        """
+        # Check source file
+        srcfile = npath.getpath(source)
+        if not srcfile.exists():
+            raise FileNotFoundError(f"file '{srcfile}' does not exist")
+        if srcfile.is_dir():
+            raise IsADirectoryError(f"'{srcfile}' is a directory not a file")
+
+        # Check target file
+        if target:
+            tgtdir = PurePath(target).as_posix() + '/'
+            if not self._locate(tgtdir):
+                raise FileNotFoundError(
+                    f"workspace directory '{tgtdir}' does not exist")
+        else:
+            tgtdir = '.'
+        tgtfile = Path(tgtdir, srcfile.name)
+        if self._locate(tgtfile):
+            raise FileExistsError(
+                f"workspace directory '{tgtdir}' already contains a file "
+                f"with name '{srcfile.name}'")
+
+        # Create ZipInfo entry from source file
+        filename = PurePath(tgtfile).as_posix()
+        datetime = time.localtime(srcfile.stat().st_mtime)[:6]
+        zinfo = ZipInfo(filename=filename, date_time=datetime) # type: ignore
+
+        # Copy file to archive
+        with open(srcfile, 'rb') as src:
+            data = src.read()
+        # TODO (patrick.michl@gmail.com): The zipfile standard module currently
+        # does not support encryption in write mode. See:
+        # https://docs.python.org/3/library/zipfile.html
+        # When support is provided, the below line shall be replaced by:
+        # self._file.writestr(zinfo, data, pwd=pwd)
+        self._file.writestr(zinfo, data)
+
+        return True
+
     def read_text(self, filepath: PathLike, encoding: OptStr = None) -> str:
         """Read text from file.
 
         Args:
-            filepath: String or pathlike object, that points to a valid
-                workspace file, or a FileNotFoundError is raised.
+            filepath: String or pathlike object, that points to a valid file in
+                the dierctory structure of the workspace. If the file does not
+                exist a FileNotFoundError is raised.
             encoding: Specifies the name of the encoding, which is used to
                 decode the stream’s bytes into strings. By default the preferred
                 encoding of the operating system is used.
@@ -352,8 +411,9 @@ class WsFile:
         """Read bytes from file.
 
         Args:
-            filepath: String or pathlike object, that points to a valid
-                workspace file, or a FileNotFoundError is raised.
+            filepath: String or pathlike object, that points to a valid file in
+                the dierctory structure of the workspace. If the file does not
+                exist a FileNotFoundError is raised.
 
         Returns:
             Contents of the given filepath as bytes.
@@ -372,8 +432,8 @@ class WsFile:
 
         Args:
             text: String, which has to be written to the given file.
-            filepath: String or pathlike object, that represent a workspace
-                file.
+            filepath: String or pathlike object, that represents a valid
+                filename in the dirctory structure of the workspace.
             encoding: Specifies the name of the encoding, which is used to
                 encode strings into bytes. By default the preferred encoding of
                 the operating system is used.
@@ -392,8 +452,8 @@ class WsFile:
 
         Args:
             blob: Bytes, which are to be written to the given file.
-            filepath: String or pathlike object, that represent a workspace
-                file.
+            filepath: String or pathlike object, that represents a valid
+                filename in the dirctory structure of the workspace.
 
         Returns:
             Number of bytes, that are written to the file.
@@ -408,11 +468,11 @@ class WsFile:
         """Remove file from workspace.
 
         Args:
-            filepath: String or pathlike object, that points to a workspace
-                file. If the filapath points to a directory, a IsADirectoryError
-                is raised. For the case, that the file does not exist, the
-                argument ignore_missing determines if a FileNotFoundError is
-                raised.
+            filepath: String or pathlike object, that points to a file in the
+                directory structure of the workspace. If the filapath points to
+                a directory, an IsADirectoryError is raised. For the case, that
+                the file does not exist, the argument ignore_missing determines,
+                if a FileNotFoundError is raised.
             ignore_missing: Boolean value which determines, if FileNotFoundError
                 is raised, if the target file does not exist. The default
                 behaviour, is to ignore missing files.
@@ -436,9 +496,10 @@ class WsFile:
         """Create a new directory at the given path.
 
         Args:
-            dirpath: String or pathlike object, that represents a workspace
-                directory. If the directory already exists, the argument
-                ignore_exists determines if a FileExistsError is raised.
+            dirpath: String or pathlike object, that represents a valid
+                directory name in the directory structure of the workspace. If
+                the directory already exists, the argument ignore_exists
+                determines, if a FileExistsError is raised.
             ignore_exists: Boolean value which determines, if FileExistsError is
                 raised, if the target directory already exists. The default
                 behaviour is to raise an error, if the file already exists.
@@ -462,9 +523,10 @@ class WsFile:
         """Remove directory from workspace.
 
         Args:
-            dirpath: String or pathlike object, that points to a workspace
-                directory. If the directory does not exist, the argument
-                ignore_missing determines if a FileNotFoundError is raised.
+            dirpath: String or pathlike object, that points to a directory
+                in the directory structure of the workspace. If the directory
+                does not exist, the argument ignore_missing determines, if a
+                FileNotFoundError is raised.
             ignore_missing: Boolean value which determines, if FileNotFoundError
                 is raised, if the target directory does not exist. The default
                 behaviour, is to raise an error if the directory is missing.
@@ -484,7 +546,7 @@ class WsFile:
             if ignore_missing:
                 return True
             raise FileNotFoundError(f"directory '{dirname}' does not exist")
-        files = self.get_files(dirname + '*')
+        files = self.search(dirname + '*')
         if not files:
             return self._remove_members(matches)
         if not recursive:
@@ -551,20 +613,20 @@ class WsFile:
         # Reload saved workpace from file
         self.load(path, pwd=self._pwd)
 
-    def get_files(self, pattern: OptStr = None) -> StrList:
-        """Get list of files in the workspace.
+    def search(self, pattern: OptStr = None) -> StrList:
+        """Search for files in the workspace.
 
         Args:
-            pattern: String pattern, containing Unix shell-style wildcards:
-                '*': matches arbitrary strings
-                '?': matches single characters
-                [seq]: matches any character in seq
-                [!seq]: matches any character not in seq
-                If pattern is None, then all files are returned. This is the
-                default behaviour.
+            pattern: Search pattern that contains Unix shell-style wildcards:
+                '*': Matches arbitrary strings
+                '?': Matches single characters
+                [seq]: Matches any character in seq
+                [!seq]: Matches any character not in seq
+                By default a list of all files and directories is returned.
 
         Returns:
-            List of file and directory names, that match the given pattern.
+            List of files and directories in the directory structure of the
+            workspace, that match the search pattern.
 
         """
         # Get list of normalized unique paths of workspace members
@@ -585,9 +647,6 @@ class WsFile:
 
     def _get_name(self) -> OptStr:
         return getattr(self._path, 'stem', None)
-
-    def _get_path(self) -> OptPath:
-        return self._path
 
     def _get_folders(self) -> StrList:
         names: StrList = []
