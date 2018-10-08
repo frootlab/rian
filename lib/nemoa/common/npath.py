@@ -11,7 +11,9 @@ import fnmatch
 import os
 
 from pathlib import Path, PurePath
-from nemoa.types import NestPath, OptStr, OptStrDict, PathLike, PathLikeList
+from nemoa.types import (
+    Any, Iterable, IterAny, NestPath, OptStr, OptStrDict,
+    PathLike, PathLikeList)
 
 def cwd() -> str:
     """Path of current working directory.
@@ -35,7 +37,8 @@ def clear(fname: str) -> str:
     r"""Clear filename from invalid characters.
 
     Args:
-        fname (str):
+        fname: Arbitrary string, which is be cleared from invalid filename
+            characters.
 
     Returns:
         String containing valid path syntax.
@@ -57,7 +60,11 @@ def match(paths: PathLikeList, pattern: str) -> PathLikeList:
 
     Args:
         paths: List of paths, which is filtered to matches with pattern.
-        pattern:
+        pattern: String pattern, containing Unix shell-style wildcards:
+            '*': matches arbitrary strings
+            '?': matches single characters
+            [seq]: matches any character in seq
+            [!seq]: matches any character not in seq
 
     Returns:
         Filtered list of paths.
@@ -76,47 +83,39 @@ def match(paths: PathLikeList, pattern: str) -> PathLikeList:
     # Return original paths
     return [mapping[name] for name in matches]
 
-def join(*args: NestPath) -> str:
-    r"""Join and normalize path like structure.
+def join(*args: NestPath) -> Path:
+    r"""Join nested iterable path-like structure to single path object.
 
     Args:
-        *args: Path like arguments, respectively given by a tree of strings,
-            which can be joined to a path.
+        *args: Arguments containing nested iterable paths of strings and
+            PathLike objects.
 
     Returns:
-        String containing valid path syntax.
+        Single Path comprising all arguments.
 
     Examples:
         >>> join(('a', ('b', 'c')), 'd')
-        'a\\b\\c\\d'
+        Path('a\\b\\c\\d')
 
     """
-    # flatten nested path to list and join list using os path seperators
-    if not args:
-        return ''
-    if len(args) == 1 and isinstance(args[0], (str, Path)):
-        path = args[0]
-    else:
-        largs = list(args) # Make args mutable
-        i = 0
-        while i < len(largs):
-            while isinstance(largs[i], (list, tuple)):
-                if not largs[i]:
-                    largs.pop(i)
-                    i -= 1
-                    break
-                else:
-                    largs[i:i + 1] = largs[i]
-            i += 1
-        try:
-            path = Path(*largs)
-        except Exception as err:
-            raise ValueError("nested path is invalid") from err
-    if not path:
-        return ''
+    # Generate flat structure
+    def flatten(tower: Any) -> IterAny:
+        for token in tower:
+            if not isinstance(token, Iterable):
+                yield token
+            elif isinstance(token, str):
+                yield token
+            else:
+                yield from flatten(token)
+    flat = [token for token in flatten(args)]
 
-    # normalize path
-    path = str(Path(path))
+    # Create path from flat structure
+    try:
+        path = Path(*flat)
+    except TypeError as err:
+        raise TypeError(
+            "the tokens of nested paths require to be of types "
+            "str, bytes or pathlike") from err
 
     return path
 
@@ -134,7 +133,7 @@ def expand(
         expapp: determines if application specific environmental
             directories are expanded. For a full list of valid application
             variables see
-            'nemoa.common.napp.getdir'. Default is True
+            'nemoa.common.napp.get_dir'. Default is True
         expenv: determines if environmental path variables are expanded.
             For a full list of valid environmental path variables see
             'nemoa.common.npath'. Default is True
@@ -152,16 +151,15 @@ def expand(
     from nemoa.common import napp
 
     udict = udict or {}
-    path = Path(join(*args))
+    path = join(*args)
 
     # create dictionary with variables
     d = {}
     if udict:
         for key, val in udict.items():
-            d[key] = join(val)
+            d[key] = str(join(val))
     if expapp:
-        appdirs = napp.getdirs()
-        for key, val in appdirs.items():
+        for key, val in napp.get_dirs().items():
             d[key] = val
     if expenv:
         d['home'], d['cwd'] = home(), cwd()
@@ -197,7 +195,7 @@ def getpath(path: PathLike, unpack: bool = True) -> Path:
     """Get path from string or PathLike structure."""
     if unpack:
         return Path(expand(path))
-    return Path(join(path))
+    return join(path)
 
 def dirname(*args: NestPath) -> str:
     r"""Extract directory name from a path like structure.

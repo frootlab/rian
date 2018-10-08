@@ -57,12 +57,14 @@ def save(system, path = None, filetype = None, workspace = None,
     elif isinstance(path, str):
         fileext = npath.fileext(path) or npath.fileext(system.path)
     else: fileext = npath.fileext(system.path)
-    path = npath.join(directory, name + '.' + fileext)
+    path = str(npath.join(directory, name + '.' + fileext))
 
     # get filetype from file extension if not given
     # and test if filetype is supported
-    if not filetype: filetype = fileext.lower()
-    if filetype not in filetypes(): raise ValueError(
+    if not filetype:
+        filetype = fileext.lower()
+    if filetype not in filetypes():
+        raise ValueError(
         f"filetype '{filetype}' is not supported.")
 
     # export to file

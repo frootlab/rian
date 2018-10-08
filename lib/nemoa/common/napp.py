@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Application variables and directories."""
+"""Functions to access application variables and directories."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -9,14 +9,14 @@ __docformat__ = 'google'
 from nemoa.types import Any, OptStr, StrDict, OptStrOrBool
 from nemoa.common import nmodule
 
-def getvar(varname: str, *args: Any, **kwargs: Any) -> OptStr:
+def get_var(varname: str, *args: Any, **kwargs: Any) -> OptStr:
     """Get application variable by name.
 
     Application variables are intended to describe the application distribution
     by authorship information, bibliographic information, status, formal
     conditions and notes or warnings. Therfore the variables are independent
     from runtime properties including user and session. For more information
-    see [PEP345].
+    see `[PEP345]`_.
 
     Args:
         name: Name of application variable. Typical variable names are:
@@ -36,7 +36,7 @@ def getvar(varname: str, *args: Any, **kwargs: Any) -> OptStr:
             'author': A string containing the author's name at a minimum;
                 additional contact information may be provided.
             'email': A string containing the author's e-mail address. It can
-                contain a name and e-mail address, as described in [RFC822].
+                contain a name and e-mail address, as described in `[RFC822]`_.
             'maintainer': A string containing the maintainer's name at a
                 minimum; additional contact information may be provided.
             'company': The company, which created or maintains the distribution.
@@ -45,16 +45,15 @@ def getvar(varname: str, *args: Any, **kwargs: Any) -> OptStr:
             'credits': list with strings, acknowledging further contributors,
                 Teams or supporting organizations.
         *args: Optional arguments that specify the application, as required by
-            the function 'nemoa.common.napp.updvars'.
+            the function 'nemoa.common.napp.upd_vars'.
         **kwargs: Optional keyword arguments that specify the application, as
-            required by the function 'nemoa.common.napp.updvars'.
+            required by the function 'nemoa.common.napp.upd_vars'.
 
     Returns:
         String representing the value of the application variable.
 
-    References:
-        [PEP345] https://www.python.org/dev/peps/pep-0345/
-        [RFC822] https://www.w3.org/Protocols/rfc822/
+    .. [PEP345]_: https://www.python.org/dev/peps/pep-0345/
+    .. [RFC822]_: https://www.w3.org/Protocols/rfc822/
 
     """
     # Check type of argument 'name'
@@ -65,46 +64,45 @@ def getvar(varname: str, *args: Any, **kwargs: Any) -> OptStr:
 
     # Update variables if not present or if optional arguments are given
     if not '_VARS' in globals() or args or kwargs:
-        updvars(*args, **kwargs)
+        upd_vars(*args, **kwargs)
     appvars = globals().get('_VARS', {})
 
     return appvars.get(varname, None)
 
-def getvars(*args: Any, **kwargs: Any) -> StrDict:
+def get_vars(*args: Any, **kwargs: Any) -> StrDict:
     """Get dictionary with application vaiables.
 
     Application variables are intended to describe the application distribution
     by authorship information, bibliographic information, status, formal
     conditions and notes or warnings. Therfore the variables are independent
     from runtime properties including user and session. For more information
-    see [PEP345].
+    see `[PEP345]`_.
 
     Args:
         *args: Optional arguments that specify the application, as required by
-            the function 'nemoa.common.napp.updvars'.
+            the function 'nemoa.common.napp.upd_vars'.
         **kwargs: Optional keyword arguments that specify the application, as
-            required by the function 'nemoa.common.napp.updvars'.
+            required by the function 'nemoa.common.napp.upd_vars'.
 
     Returns:
         Dictionary containing application variables.
 
-    References:
-        [PEP345] https://www.python.org/dev/peps/pep-0345/
+    .. [PEP345]_: https://www.python.org/dev/peps/pep-0345/
 
     """
     # update variables if not present or if optional arguments are given
     if not '_VARS' in globals() or args or kwargs:
-        updvars(*args, **kwargs)
+        upd_vars(*args, **kwargs)
     return globals().get('_VARS', {}).copy()
 
-def updvars(filepath: OptStr = None) -> None:
+def upd_vars(filepath: OptStr = None) -> None:
     """Update application variables from module attributes.
 
     Application variables are intended to describe the application distribution
     by authorship information, bibliographic information, status, formal
     conditions and notes or warnings. Therfore the variables are independent
     from runtime properties including user and session. For more information
-    see [PEP345].
+    see `[PEP345]`_.
 
     Args:
         filepath: Valid path to python module or package, which comprises the
@@ -113,8 +111,7 @@ def updvars(filepath: OptStr = None) -> None:
     Returns:
         Dictionary with application variables.
 
-    References:
-        [PEP345] https://www.python.org/dev/peps/pep-0345/
+    .. [PEP345]_: https://www.python.org/dev/peps/pep-0345/
 
     """
     import io
@@ -149,8 +146,8 @@ def updvars(filepath: OptStr = None) -> None:
 
     globals()['_VARS'] = dvars
 
-def getdir(dirname: str, *args: Any, **kwargs: Any) -> str:
-    """Get application specific environmental directory.
+def get_dir(dirname: str, *args: Any, **kwargs: Any) -> str:
+    """Get application specific environmental directory by name.
 
     This function returns application specific system directories by platform
     independent names to allow platform independent storage for caching,
@@ -191,7 +188,7 @@ def getdir(dirname: str, *args: Any, **kwargs: Any) -> str:
 
     return dirs[dirname]
 
-def getdirs(*args: Any, **kwargs: Any) -> StrDict:
+def get_dirs(*args: Any, **kwargs: Any) -> StrDict:
     """Get application specific environmental directories.
 
     This function returns application specific system directories by platform
@@ -219,11 +216,11 @@ def upddirs(
         version: OptStr = None, **kwargs: Any) -> None:
     """Update application specific directories from name, author and version.
 
-    This is a wrapper function to the package 'appdirs' [1].
+    This is a wrapper function to the package `appdirs`_.
 
     Args:
-        appname: is the name of application.
-            If None, just the system directory is returned.
+        appname: is the name of application. If None, just the system directory
+            is returned.
         appauthor: is the name of the appauthor or distributing body for this
             application. Typically it is the owning company name. You may pass
             False to disable it. Only applied in windows.
@@ -232,14 +229,13 @@ def upddirs(
             app to be able to run independently. If used, this would typically
             be "<major>.<minor>". Only applied when appname is present.
         **kwargs: Optional keyword arguments for the respective directory name.
-            For more information see [1].
+            For more information see `appdirs`_.
 
     Returns:
         Dictionary containing paths of application specific environmental
         directories.
 
-    References:
-        [1] http://github.com/ActiveState/appdirs
+    .. appdirs_: http://github.com/ActiveState/appdirs
 
     """
     try:
@@ -250,9 +246,9 @@ def upddirs(
             "https://pypi.org/project/appdirs/") from err
 
     dirs = appdirs.AppDirs(
-        appname=appname or getvar('name'),
-        appauthor=(appauthor or getvar('company')
-            or getvar('organization') or getvar('author')),
+        appname=appname or get_var('name'),
+        appauthor=(appauthor or get_var('company')
+            or get_var('organization') or get_var('author')),
         version=version, **kwargs)
     keys = [
         'user_cache_dir', 'user_config_dir', 'user_data_dir',

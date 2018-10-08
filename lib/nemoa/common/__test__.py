@@ -72,12 +72,12 @@ class TestSuite(ntest.TestSuite):
             'user_cache_dir', 'user_config_dir', 'user_data_dir',
             'user_log_dir', 'site_config_dir', 'site_data_dir']
         for key in dirs:
-            with self.subTest(f"path('{key}')"):
-                self.assertTrue(napp.getdir(key))
+            with self.subTest(f"get_dir('{key}')"):
+                self.assertTrue(napp.get_dir(key))
 
         for key in ['name', 'author', 'version', 'license']:
-            with self.subTest(f"get('{key}')"):
-                self.assertTrue(napp.getvar(key))
+            with self.subTest(f"get_var('{key}')"):
+                self.assertTrue(napp.get_var(key))
 
     def test_common_narray(self) -> None:
         """Test module 'nemoa.common.narray'."""
@@ -669,7 +669,8 @@ class TestSuite(ntest.TestSuite):
         from pathlib import Path
         from typing import cast, Any
 
-        dname = str(Path('a', 'b', 'c', 'd'))
+        dpath = Path('a', 'b', 'c', 'd')
+        dname = str(dpath)
         ptest = (('a', ('b', 'c')), 'd', 'base.ext')
         stdir = tempfile.TemporaryDirectory().name
 
@@ -694,7 +695,7 @@ class TestSuite(ntest.TestSuite):
                 npath.match(paths, 'c/*'), [Path('c/a.b')])
 
         with self.subTest("join"):
-            self.assertEqual(npath.join(('a', ('b', 'c')), 'd'), dname)
+            self.assertEqual(npath.join(('a', ('b', 'c')), 'd'), dpath)
 
         with self.subTest("expand"):
             self.assertEqual(
@@ -735,15 +736,22 @@ class TestSuite(ntest.TestSuite):
     def test_common_nsysinfo(self) -> None:
         """Test module 'nemoa.common.nsysinfo'."""
         from nemoa.common import nsysinfo
+        from types import FunctionType
 
-        with self.subTest("hostname"):
-            self.assertTrue(nsysinfo.hostname())
+        ftypes = {
+            'encoding': str,
+            'hostname': str,
+            'osname': str,
+            'ttylib': str,
+            'username': str }
 
-        with self.subTest("osname"):
-            self.assertTrue(nsysinfo.osname())
-
-        with self.subTest("ttylib"):
-            self.assertTrue(nsysinfo.ttylib())
+        for fname, ftype in ftypes.items():
+            with self.subTest(fname):
+                func = getattr(nsysinfo, fname)
+                # Check if function exists
+                self.assertIsInstance(func, FunctionType)
+                # Check type of returned value
+                self.assertIsInstance(func(), ftype)
 
     def test_common_ntable(self) -> None:
         """Test module 'nemoa.common.ntable'."""
@@ -764,10 +772,19 @@ class TestSuite(ntest.TestSuite):
         """Test module 'nemoa.common.ntext'."""
         from nemoa.common import ntext
 
+        from pathlib import Path
+
         with self.subTest("splitargs"):
             self.assertEqual(
                 ntext.splitargs("f(1., 'a', b = 2)"),
                 ('f', (1.0, 'a'), {'b': 2}))
+
+        with self.subTest("aspath"):
+            self.assertEqual(ntext.aspath('a/b/c'), Path('a/b/c'))
+            self.assertEqual(ntext.aspath('a\\b\\c'), Path('a\\b\\c'))
+            self.assertEqual(
+                ntext.aspath('%home%/test'),
+                Path.home() / Path('test'))
 
         with self.subTest("aslist"):
             self.assertEqual(ntext.aslist('a, 2, ()'), ['a', '2', '()'])

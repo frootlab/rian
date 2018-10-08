@@ -333,9 +333,7 @@ class ObjectIP:
         fext = session.get('default', 'filetype', mname)
         if not fext:
             return None
-        path = npath.join(dname, fbase + '.' + fext)
-
-        return path
+        return str(npath.join(dname, fbase + '.' + fext))
 
     def _get_setter(self) -> list:
         """Get sorted list of keys, which are accepted by the 'set' method.
