@@ -95,8 +95,8 @@ def main():
     nemoa.set('mode', 'shell')
 
     from nemoa.common import napp
-    name = napp.getvar('name')
-    version = napp.getvar('version')
+    name = napp.get_var('name')
+    version = napp.get_var('version')
 
     return IPython.embed(banner1=f"{name} {version}\n")
 

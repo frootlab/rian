@@ -133,7 +133,7 @@ def expand(
         expapp: determines if application specific environmental
             directories are expanded. For a full list of valid application
             variables see
-            'nemoa.common.napp.getdir'. Default is True
+            'nemoa.common.napp.get_dir'. Default is True
         expenv: determines if environmental path variables are expanded.
             For a full list of valid environmental path variables see
             'nemoa.common.npath'. Default is True
@@ -159,8 +159,7 @@ def expand(
         for key, val in udict.items():
             d[key] = str(join(val))
     if expapp:
-        appdirs = napp.getdirs()
-        for key, val in appdirs.items():
+        for key, val in napp.get_dirs().items():
             d[key] = val
     if expenv:
         d['home'], d['cwd'] = home(), cwd()
