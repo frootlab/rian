@@ -6,7 +6,7 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-class Session(object):
+class Session:
     """Session Manager."""
 
     _buffer: dict = {}
@@ -270,7 +270,7 @@ class Session(object):
     def _get_shell_inkey(self):
         """Get current key buffer."""
         inkey = self._buffer.get('inkey', None)
-        return inkey.get() if inkey else None
+        return inkey.getch() if inkey else None
 
     def _get_shell_buffmode(self):
         """Get current mode for keyboard buffering."""
@@ -706,22 +706,23 @@ class Session(object):
 
         raise KeyError(f"unknown key '{key}'")
 
-    def _set_shell_buffmode(self, mode = 'line'):
+    def _set_shell_buffmode(self, mode='line'):
         """Set current key buffer mode."""
 
         curmode = self._get_shell_buffmode()
 
-        if mode == curmode: return True
+        if mode == curmode:
+            return True
 
         if curmode == 'line' and mode == 'key':
             if not self._buffer.get('inkey', None):
                 from nemoa.common import nconsole
-                self._buffer['inkey'] = nconsole.getch()
-            #self._buffer['inkey'].start()
+                self._buffer['inkey'] = nconsole.Getch() # type: ignore
+            self._buffer['inkey'].start()
             return True
 
         if curmode == 'key' and mode == 'line':
-            self._buffer['inkey'].__del__() # call destructor manually
+            self._buffer['inkey'].stop()
             del self._buffer['inkey']
             return True
         return False
@@ -729,7 +730,8 @@ class Session(object):
     def _set_mode(self, mode = None, *args, **kwargs):
         """Set session mode."""
 
-        if mode not in ['debug', 'exec', 'shell', 'silent']: return None
+        if mode not in ['debug', 'exec', 'shell', 'silent']:
+            return None
 
         self._config['current']['mode'] = mode
 

@@ -128,6 +128,7 @@ IterNone = Iterator[None]
 ################################################################################
 
 # Elementary Callables
+VoidFunc = Callable[..., None]
 AnyFunc = Callable[..., Any]
 BoolFunc = Callable[..., bool]
 ScalarFunc = Callable[..., Scalar]

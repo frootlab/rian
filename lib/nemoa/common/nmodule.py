@@ -147,7 +147,7 @@ def getsubmodule(name: str) -> OptModule:
     return inst(mname)
 
 def inst(name: str) -> OptModule:
-    """Get module instance from a fully qualified module name.
+    """Get reference to module instance from a fully qualified module name.
 
     Args:
         name: Fully qualified name of module
