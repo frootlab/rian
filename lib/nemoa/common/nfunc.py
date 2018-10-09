@@ -28,13 +28,13 @@ def about(func: AnyFunc) -> str:
     return func.__doc__.split('\n', 1)[0].strip(' .')
 
 def inst(name: str) -> OptFunction:
-    """Create functionion instance for a given function name.
+    """Create function instance for a given function name.
 
     Args:
         name: fully qualified function name
 
     Returns:
-
+        Function instance or None, if the function could not be found.
 
     Examples:
         >>> inst("nemoa.common.nfunc.inst")

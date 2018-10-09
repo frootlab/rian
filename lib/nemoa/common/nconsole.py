@@ -9,17 +9,94 @@ __docformat__ = 'google'
 import sys
 import time
 
-from queue import Queue
+from abc import ABC, abstractmethod
+from queue import Empty, Queue
 from threading import Thread
 
 from nemoa.common import nsysinfo
+from nemoa.types import Module, OptModule
 
 ENCODING = nsysinfo.encoding()
 
-class GetchTermios:
-    """Unix/Termios implementation of getch()."""
+class GetchBase(ABC):
+    """Abstract base class for Getch classes."""
 
-    stdin: Queue
+    def __init__(self) -> None:
+        """Initialize resources required for handling of getch() requests."""
+        self.start()
+
+    def __del__(self) -> None:
+        """Release resources required for handling getch() requests."""
+        self.stop()
+
+    @abstractmethod
+    def start(self) -> None:
+        """Start handling of getch() requests."""
+        pass
+    @abstractmethod
+    def getch(self) -> str:
+        """Get character from stdio."""
+        pass
+    @abstractmethod
+    def stop(self) -> None:
+        """Stop handling of getch() requests."""
+        pass
+
+class GetchMsvcrt(GetchBase):
+    """Windows/msvcrt implementation of Getch.
+
+    This implementation supports Microsoft Windows by using the Microsoft Visual
+    C/C++ Runtime Library (`msvcrt`_).
+
+    .. _msvcrt: https://docs.python.org/3/library/msvcrt.html
+
+    """
+
+    msvcrt: OptModule
+
+    def __init__(self) -> None:
+        """Initialize resources required for handling of getch() requests."""
+        try:
+            import msvcrt
+        except ImportError as err:
+            raise ImportError(
+                "required package msvcrt from standard library "
+                "is only available on the Windows plattform") from err
+        self.msvcrt = msvcrt
+        super().__init__()
+
+    def __del__(self) -> None:
+        """Release resources required for handling getch() requests."""
+        self.msvcrt = None
+
+    def start(self) -> None:
+        """Start handling of getch() requests."""
+        pass
+
+    def getch(self) -> str:
+        """Get character from stdio."""
+        if not isinstance(self.msvcrt, Module):
+            return ''
+        if not getattr(self.msvcrt, 'kbhit')():
+            return ''
+        return str(getattr(self.msvcrt, 'getch')(), ENCODING)
+
+    def stop(self) -> None:
+        """Stop handling of getch() requests."""
+        pass
+
+class GetchTermios(GetchBase):
+    """Unix/Termios implementation of Getch.
+
+    This implementation supports Unix-like Systems by using the Unix Terminal
+    I/O API (`termios`_).
+
+    .. _termios: https://docs.python.org/3/library/termios.html
+
+    """
+
+    termios: OptModule
+    buffer: Queue
     runsignal: bool
     time: float
     curterm: list
@@ -27,100 +104,109 @@ class GetchTermios:
     thread: Thread
 
     def __init__(self) -> None:
-        """Change terminal mode and start reading stdin to buffer."""
+        """Initialize resources required for handling of getch() requests."""
         try:
             import termios
         except ImportError as err:
-            raise ImportError("requires package termios") from err
-
-        def queue(attr: dict) -> None:
-            """Copy characters from stdin to the buffer."""
-            while attr['runsignal']:
-                attr['stdin'].put(sys.stdin.read(1))
-
-        self.fdesc = sys.stdin.fileno()
-        self.curterm = termios.tcgetattr(self.fdesc)
-
-        # Modify lflag from tty attributes
-        # to set terminal mode to unbuffered
-        attr = termios.tcgetattr(self.fdesc)
-        if isinstance(attr[3], int):
-            attr[3] = attr[3] & ~termios.ICANON & ~termios.ECHO
-        termios.tcsetattr(self.fdesc, termios.TCSAFLUSH, attr)
-
-        self.stdin = Queue()
-        self.runsignal = True
-        self.time = time.time()
-        self.thread = Thread(
-            target=queue, args=(self.__dict__, ), daemon=True)
-        self.thread.start()
+            raise ImportError(
+                "required module termios from standard library "
+                "is only available on Unix-like systems") from err
+        self.termios = termios
+        super().__init__()
 
     def __del__(self) -> None:
-        """Reset terminal mode and stop reading stdin to buffer."""
-        try:
-            import termios
-        except ImportError as err:
-            raise ImportError("requires package termios") from err
+        """Release resources required for handling getch() requests."""
+        self.termios = None
 
-        termios.tcsetattr(self.fdesc, termios.TCSAFLUSH, self.curterm)
+    def start(self) -> None:
+        """Change terminal mode and start reading stdin to buffer."""
+        if not isinstance(self.termios, Module):
+            raise ImportError(
+                "required module termios from standard library "
+                "has not been imported")
 
-        # Stop thread from reading characters
-        self.runsignal = False
+        # Get current tty attributes
+        tcgetattr = getattr(self.termios, 'tcgetattr')
+        self.fdesc = sys.stdin.fileno()
+        self.curterm = tcgetattr(self.fdesc)
 
-    def get(self) -> str:
+        # Modify lflag from current tty attributes
+        # to set terminal to unbuffered mode (not waiting for Enter)
+        newattr = tcgetattr(self.fdesc)
+        if isinstance(newattr[3], int):
+            ECHO = getattr(self.termios, 'ECHO')
+            ICANON = getattr(self.termios, 'ICANON')
+            newattr[3] = newattr[3] & ~ICANON & ~ECHO
+        tcsetattr = getattr(self.termios, 'tcsetattr')
+        TCSAFLUSH = getattr(self.termios, 'TCSAFLUSH')
+        tcsetattr(self.fdesc, TCSAFLUSH, newattr)
+
+        # Initialize buffer and start thread for reading stdio to buffer
+        def buffer(attr: dict) -> None:
+            while attr['resume']:
+                attr['buffer'].put(sys.stdin.read(1))
+        self.resume = True
+        self.buffer = Queue()
+        self.thread = Thread(
+            target=buffer, args=(self.__dict__, ), daemon=True)
+        self.thread.start()
+
+        # Update time
+        self.time = time.time()
+
+    def getch(self) -> str:
         """Return character from buffer."""
+        if 'buffer' not in self.__dict__:
+            self.start()
         now = time.time()
         if now < self.time + .5:
             return ''
+
+        # Update time
         self.time = now
-        if self.stdin.empty():
+
+        try:
+            return self.buffer.get()
+        except Empty:
             return ''
-        return self.stdin.get()
 
-def getch() -> str:
-    """Get character from stdin.
+    def stop(self) -> None:
+        """Stop handling of getch() requests."""
+        if not isinstance(self.termios, Module):
+            raise ImportError(
+                "required module termios from standard library "
+                "has not been imported")
 
-    This getch() implementation supports Microsoft Windows by using the
-    Microsoft Visual C/C++ Runtime Library (`msvcrt`_) and Unix-like Systems by
-    using the Terminal I/O API `termios`_.
+        # Reset terminal mode to previous tty attributes
+        TCSAFLUSH = getattr(self.termios, 'TCSAFLUSH')
+        tcsetattr = getattr(self.termios, 'tcsetattr')
+        tcsetattr(self.fdesc, TCSAFLUSH, self.curterm)
 
-    .. _termios: https://docs.python.org/3/library/termios.html
+        # Stop thread from reading characters
+        self.resume = False
+
+        # Delete stdin buffer
+        del self.__dict__['buffer']
+
+def getch_class() -> GetchBase:
+    """Get platform specific class to handle getch() requests.
+
+    This implementation supports Microsoft Windows by using the Microsoft
+    Visual C/C++ Runtime Library (`msvcrt`_) and Unix-like Systems by
+    using the Unix Terminal I/O API (`termios`_).
+
     .. _msvcrt: https://docs.python.org/3/library/msvcrt.html
+    .. _termios: https://docs.python.org/3/library/termios.html
 
     """
-    # Get platform spoecific implementation of getch()
-    # Buffer result to reduce latency of later getch() calls
-    if 'getch' not in globals():
-        lib = nsysinfo.ttylib()
-        if lib == 'msvcrt':
-            globals()['getch'] = getch_windows
-        elif lib == 'termios':
-            globals()['getch'] = getch_unix
-        else:
-            raise ModuleNotFoundError()
+    # Get platform specific tty I/O module.
+    ref = nsysinfo.ttylib()
+    if not ref:
+        raise ImportError("no module for tty I/O could be imported")
+    cname = 'Getch' + ref.__name__.capitalize()
+    if not cname in globals() or not callable(globals()[cname]):
+        raise RuntimeError(
+            f"tty I/O module '{ref.__name__}' is not supported")
+    return globals()[cname]
 
-    # Return character from stdin
-    return globals()['getch']()
-
-def getch_unix() -> str:
-    """Get character from stdin."""
-    # Create
-    if 'getch_termios' not in globals():
-        globals()['getch_termios'] = GetchTermios()
-    return globals()['getch_termios'].get()
-
-def getch_windows() -> str:
-    """Get character from stdin.
-
-    Microsoft Visual C/C++ Runtime Library implementation of getch().
-    """
-    try:
-        import msvcrt
-    except ImportError as err:
-        raise ImportError(
-            "required package msvcrt from standard library "
-            "is only available on the Windows plattform")
-
-    if not getattr(msvcrt, 'kbhit')():
-        return ''
-    return str(getattr(msvcrt, 'getch')(), ENCODING)
+Getch: GetchBase = getch_class()

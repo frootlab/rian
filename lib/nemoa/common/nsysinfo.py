@@ -6,7 +6,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from nemoa.types import OptStr
+from nemoa.types import OptModule
 
 def encoding() -> str:
     """Preferred encoding used for text data.
@@ -62,7 +62,7 @@ def osname() -> str:
     import platform
     return platform.system()
 
-def ttylib() -> OptStr:
+def ttylib() -> OptModule:
     """Name of package for tty I/O control.
 
     Depending on the plattform the module within the standard library, which is
@@ -71,8 +71,8 @@ def ttylib() -> OptStr:
     provides access to some useful capabilities on Windows platforms.
 
     Returns:
-        Name of package for tty I/O control or None, if the package could not
-        be determined.
+        Reference to module for tty I/O control or None, if the module could
+        not be determined.
 
     .. _termios: https://docs.python.org/3/library/termios.html
     .. _msvcrt: https://docs.python.org/3/library/msvcrt.html
@@ -82,8 +82,9 @@ def ttylib() -> OptStr:
 
     libs = ['msvcrt', 'termios']
     for name in libs:
-        if nmodule.inst(name):
-            return name
+        ref = nmodule.inst(name)
+        if ref:
+            return ref
     return None
 
 def username() -> str:

@@ -337,12 +337,10 @@ class TestSuite(ntest.TestSuite):
         """Test module 'nemoa.common.nconsole'."""
         from nemoa.common import nconsole
 
-        with self.subTest("getch"):
-            getch = nconsole.getch()
-            self.assertTrue(
-                hasattr(getch, 'get'))
-            self.assertIsInstance(
-                getattr(getch, 'get')(), str)
+        with self.subTest("Getch"):
+            Ref = nconsole.Getch
+            obj = Ref() if callable(Ref) else None
+            self.assertIsInstance(obj, nconsole.GetchBase)
 
     def test_common_nclass(self) -> None:
         """Test module 'nemoa.common.nclass'."""
@@ -736,14 +734,14 @@ class TestSuite(ntest.TestSuite):
     def test_common_nsysinfo(self) -> None:
         """Test module 'nemoa.common.nsysinfo'."""
         from nemoa.common import nsysinfo
-        from types import FunctionType
 
+        from types import FunctionType, ModuleType
         ftypes = {
             'encoding': str,
             'hostname': str,
             'osname': str,
-            'ttylib': str,
-            'username': str }
+            'username': str,
+            'ttylib': ModuleType}
 
         for fname, ftype in ftypes.items():
             with self.subTest(fname):
