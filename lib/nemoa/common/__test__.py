@@ -6,7 +6,6 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import os
 import tempfile
 from pathlib import Path
 
@@ -436,117 +435,6 @@ class TestSuite(ntest.TestSuite):
         with self.subTest("get_layout"):
             self.assertEqual(
                 ngraph.getlayout(G, 'layer', direction='right'), pos1)
-
-    def test_common_niocsv(self) -> None:
-        """Test module 'nemoa.common.niocsv'."""
-        from nemoa.common import niocsv
-
-        import numpy as np
-
-        filename = tempfile.NamedTemporaryFile().name + '.csv'
-        header = '-*- coding: utf-8 -*-'
-        data = np.array(
-            [('row1', 1.1, 1.2), ('row2', 2.1, 2.2), ('row3', 3.1, 3.2)],
-            dtype=[('label', 'U8'), ('col1', 'f8'), ('col2', 'f8')])
-        delim = ','
-        labels = ['', 'col1', 'col2']
-
-        with self.subTest("save"):
-            niocsv.save(
-                filename, data, header=header, labels=labels, delim=delim)
-            self.assertTrue(Path(filename).is_file())
-
-        with self.subTest("get_header"):
-            self.assertEqual(niocsv.get_header(filename), header)
-
-        with self.subTest("get_delim"):
-            self.assertEqual(niocsv.get_delim(filename), delim)
-
-        with self.subTest("get_labels_format"):
-            self.assertEqual(niocsv.get_labels_format(filename), 'standard')
-
-        with self.subTest("get_labels"):
-            self.assertEqual(niocsv.get_labels(filename), labels)
-
-        with self.subTest("get_annotation_column"):
-            self.assertEqual(niocsv.get_annotation_column(filename), 0)
-
-        with self.subTest("load"):
-            rval = niocsv.load(filename)
-            self.assertTrue(
-                isinstance(rval, np.ndarray))
-            self.assertTrue(
-                np.all(np.array(rval)['col1'] == data['col1']))
-            self.assertTrue(
-                np.all(np.array(rval)['col2'] == data['col2']))
-
-        if os.path.exists(filename):
-            os.remove(filename)
-
-    def test_common_nioini(self) -> None:
-        """Test module 'nemoa.common.nioini'."""
-        from nemoa.common import nioini
-
-        from typing import cast
-
-        filename = tempfile.NamedTemporaryFile().name + '.ini'
-        header = '-*- coding: utf-8 -*-'
-        obj = {
-            'n': {'a': 's', 'b': True, 'c': 1},
-            'l1': {'a': 1}, 'l2': {'a': 2}}
-        structure = {
-            'n': {'a': 'str', 'b': 'bool', 'c': 'int'},
-            'l[0-9]*': {'a': 'int'}}
-        string = (
-            "# -*- coding: utf-8 -*-\n\n"
-            "[n]\na = s\nb = True\nc = 1\n\n"
-            "[l1]\na = 1\n\n[l2]\na = 2\n\n")
-
-        with self.subTest("dumps"):
-            self.assertEqual(
-                nioini.dumps(obj, header=header), string)
-
-        with self.subTest("loads"):
-            self.assertEqual(
-                nioini.loads(string, structure=cast(dict, structure)), obj)
-
-        with self.subTest("save"):
-            nioini.save(obj, filename, header=header)
-            self.assertTrue(Path(filename).is_file())
-
-        with self.subTest("load"):
-            self.assertEqual(
-                nioini.load(filename, structure=cast(dict, structure)), obj)
-
-        with self.subTest("get_header"):
-            self.assertEqual(nioini.get_header(filename), header)
-
-        if os.path.exists(filename):
-            os.remove(filename)
-
-    def test_common_niozip(self) -> None:
-        """Test module 'nemoa.common.niozip'."""
-        from nemoa.common import niozip
-
-        obj = {True: 'a', 2: {None: .5}}
-        blob = b'eJxrYK4tZNDoiGBkYGBILGT0ZqotZPJzt3/AAAbFpXoAgyIHVQ=='
-        filename = tempfile.NamedTemporaryFile().name
-
-        with self.subTest("dumps"):
-            self.assertEqual(niozip.dumps(obj), blob)
-
-        with self.subTest("loads"):
-            self.assertEqual(niozip.loads(blob), obj)
-
-        with self.subTest("dump"):
-            self.assertTrue(niozip.dump(obj, filename))
-            self.assertTrue(os.path.exists(filename))
-
-        with self.subTest("load"):
-            self.assertEqual(niozip.load(filename), obj)
-
-        if os.path.exists(filename):
-            os.remove(filename)
 
     def test_common_nmodule(self) -> None:
         """Test module 'nemoa.common.nmodule'."""

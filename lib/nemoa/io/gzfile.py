@@ -14,7 +14,7 @@ from typing import cast
 from nemoa.common import npath
 from nemoa.types import Any, Obj, OptStr, PathLike, BytesLikeOrStr
 
-FILEEXTS = ['.zip', '.gz', '.tar.gz']
+FILEEXTS = ['.gz', '.tar.gz', '.zip']
 
 def load(filepath: PathLike, encoding: OptStr = 'base64') -> dict:
     """Decode and decompress file.

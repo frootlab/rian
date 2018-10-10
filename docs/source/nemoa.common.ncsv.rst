@@ -1,7 +1,7 @@
-nemoa.common.niocsv module
+nemoa.common.csvfile module
 ========================
 
-.. automodule:: nemoa.common.niocsv
+.. automodule:: nemoa.common.csvfile
     :members:
     :undoc-members:
     :show-inheritance:

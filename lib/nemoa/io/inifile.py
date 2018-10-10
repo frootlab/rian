@@ -18,7 +18,7 @@ __docformat__ = 'google'
 from configparser import ConfigParser
 from io import StringIO
 
-from nemoa.common import niotext
+from nemoa.io import textfile
 from nemoa.types import FileOrPathLike, OptBool, OptStr, OptStrDict2, StrDict2
 
 FILEEXTS = ['.ini', '.cfg']
@@ -51,7 +51,7 @@ def load(file: FileOrPathLike, structure: OptStrDict2 = None) -> StrDict2:
     setattr(parser, 'optionxform', lambda key: key)
 
     # Read configuration from file-like or path-like object
-    with niotext.open_read(file) as fd:
+    with textfile.open_read(file) as fd:
         parser.read_file(fd)
 
     # Parse sections and create configuration dictionary
@@ -80,7 +80,7 @@ def save(
         raise ValueError("dictionary is not valid") from err
 
     # Write text to file
-    with niotext.open_write(file) as fd:
+    with textfile.open_write(file) as fd:
         fd.write(text)
 
 def loads(
@@ -209,8 +209,8 @@ def get_header(file: FileOrPathLike) -> str:
         header could be detected.
 
     """
-    with niotext.open_read(file) as fd:
-        return niotext.read_header(fd)
+    with textfile.open_read(file) as fd:
+        return textfile.read_header(fd)
 
 def parse(parser: ConfigParser, structure: OptStrDict2 = None) -> StrDict2:
     """Import configuration dictionary from INI formated text.

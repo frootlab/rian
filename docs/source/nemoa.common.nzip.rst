@@ -1,7 +1,7 @@
-nemoa.common.niozip module
+nemoa.common.gzfile module
 ========================
 
-.. automodule:: nemoa.common.niozip
+.. automodule:: nemoa.common.gzfile
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,7 +1,7 @@
-nemoa.common.nioini module
+nemoa.common.inifile module
 ========================
 
-.. automodule:: nemoa.common.nioini
+.. automodule:: nemoa.common.inifile
     :members:
     :undoc-members:
     :show-inheritance:

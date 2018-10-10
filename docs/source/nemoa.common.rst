@@ -16,10 +16,10 @@ Submodules
    nemoa.common.ndict
    nemoa.common.nfunc
    nemoa.common.ngraph
-   nemoa.common.niocsv
-   nemoa.common.nioini
-   nemoa.common.niows
-   nemoa.common.niozip
+   nemoa.common.csvfile
+   nemoa.common.inifile
+   nemoa.common.wsfile
+   nemoa.common.gzfile
    nemoa.common.nmatrix
    nemoa.common.nmodule
    nemoa.common.npath

@@ -2,7 +2,6 @@
 """I/O functions for Text files.
 
 .. References:
-.. References:
 .. _path-like object:
     https://docs.python.org/3/glossary.html#term-path-like-object
 .. _file-like object:

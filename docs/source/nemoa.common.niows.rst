@@ -1,7 +1,7 @@
-nemoa.common.niows module
+nemoa.common.wsfile module
 =========================
 
-.. automodule:: nemoa.common.niows
+.. automodule:: nemoa.common.wsfile
     :members:
     :undoc-members:
     :show-inheritance:
