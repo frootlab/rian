@@ -1,7 +1,7 @@
-nemoa.common.niozip module
+nemoa.math.ncurve module
 ========================
 
-.. automodule:: nemoa.common.niozip
+.. automodule:: nemoa.math.ncurve
     :members:
     :undoc-members:
     :show-inheritance:

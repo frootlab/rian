@@ -20,7 +20,7 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-from nemoa.common import nalgo
+from nemoa.math import nalgo
 
 class ANN(nemoa.system.classes.base.System):
     """Artificial Neuronal Network (ANN).

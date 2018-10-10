@@ -49,12 +49,12 @@ class Ini:
                 configuration dictionary.
 
         """
-
-        from nemoa.common import nioini, npath
+        from nemoa.common import npath
+        from nemoa.io import inifile
 
         # import ini file to dictionary, using ini file structure
         # described with regular expressions
-        system = nioini.load(path, {
+        system = inifile.load(path, {
             'system': {
                 'name': 'str',
                 'type': 'str' },

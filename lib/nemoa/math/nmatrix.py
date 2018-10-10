@@ -13,7 +13,8 @@ except ImportError as err:
         "requires package numpy: "
         "https://scipy.org") from err
 
-from nemoa.common import nfunc, nmodule, nvector
+from nemoa.common import nfunc, nmodule
+from nemoa.math import nvector
 from nemoa.types import Any, IntTuple, NpArray, NpArrayLike, StrList
 
 NORM_PREFIX = 'norm_'

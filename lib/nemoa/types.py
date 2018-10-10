@@ -12,8 +12,8 @@ import os
 import types
 
 from typing import (
-    Any, Callable, ClassVar, Dict, Hashable, IO, Iterable, Iterator,
-    List, Optional, Sequence, Set, Tuple, TypeVar, Union)
+    Any, Callable, ClassVar, ContextManager, Dict, Hashable, IO, Iterable,
+    Iterator, List, Optional, Sequence, Set, Tuple, TypeVar, Union)
 
 ################################################################################
 # Define numerical Constants
@@ -31,9 +31,9 @@ Traceback = types.TracebackType
 Module = types.ModuleType
 Function = types.FunctionType
 Method = types.MethodType
-BinaryFile = io.BufferedIOBase
-TextFile = io.TextIOBase
-AnyFile = (BinaryFile, TextFile)
+BytesIOBaseClass = io.BufferedIOBase
+TextIOBaseClass = io.TextIOBase
+AnyFile = (BytesIOBaseClass, TextIOBaseClass)
 Path = os.PathLike
 Array = array.ArrayType
 
@@ -171,7 +171,11 @@ PathLike = Union[str, Path]
 OptPathLike = Optional[PathLike]
 PathLikeList = List[PathLike]
 BytesIOLike = IO[bytes]
+IterBytesIOLike = Iterator[BytesIOLike]
+CManBytesIOLike = ContextManager[BytesIOLike]
 StringIOLike = IO[str]
+IterStringIOLike = Iterator[StringIOLike]
+CManStringIOLike = ContextManager[StringIOLike]
 FileLike = Union[BytesIOLike, StringIOLike]
 FileOrPathLike = Union[FileLike, PathLike]
 IterFileLike = Iterator[FileLike]

@@ -14,7 +14,8 @@ except ImportError as err:
         "https://scipy.org") from err
 
 import nemoa
-from nemoa.common import nalgo, nclass, nbase
+from nemoa.common import nclass, nbase
+from nemoa.math import nalgo
 
 class Dataset(nbase.ObjectIP):
     """Dataset base class.

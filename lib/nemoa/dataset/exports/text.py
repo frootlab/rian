@@ -44,7 +44,7 @@ class Csv:
 
     def save(self, dataset, path):
 
-        from nemoa.common import niocsv, nioini
+        from nemoa.io import csvfile, inifile
 
         # create the configuration which is included in the CSV file
         # as header as a subset of the dataset configuration
@@ -56,11 +56,11 @@ class Csv:
             if key in keys: config[key] = val
 
         # prepare CSV parameters and write CSV file
-        header = nioini.dumps(config, flat = True).strip('\n')
+        header = inifile.dumps(config, flat = True).strip('\n')
         delim = self.settings['delim']
         cols, data = dataset.get('data', output = ('cols', 'recarray'))
 
-        return niocsv.save(path, data, header = header, delim = delim,
+        return csvfile.save(path, data, header = header, delim = delim,
             labels = [''] + cols)
 
 class Tsv(Csv):

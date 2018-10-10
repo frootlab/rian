@@ -104,8 +104,7 @@ def show(model, plot = None, *args, **kwargs):
 class Graph(nplot.Graph):
 
     def create(self, model):
-
-        from nemoa.common import ngraph
+        from nemoa.math import ngraph
 
         # set plot defaults
         self.set_default({

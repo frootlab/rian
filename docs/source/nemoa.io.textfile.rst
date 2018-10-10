@@ -1,7 +1,7 @@
-nemoa.common.niocsv module
+nemoa.io.textfile module
 ========================
 
-.. automodule:: nemoa.common.niocsv
+.. automodule:: nemoa.io.textfile
     :members:
     :undoc-members:
     :show-inheritance:

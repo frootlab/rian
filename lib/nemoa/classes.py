@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Descriptors for binding class instance attributes.
-
-When an instance of a class contains a descriptor class as a method, the
-descriptor class defines the accessor and mutator methods of an attribute, which
-is identified with the method's name.
-
-"""
+"""Classes."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -16,9 +10,10 @@ from nemoa.types import (
     Any, ClassVar, Dict, Method, OptDict, OptCallable, OptStr, OptType,
     StrDict, Tuple)
 
-################################################################################
-# Descriptors
-################################################################################
+# Descriptors for binding class instance attributes: When an instance of a class
+# contains a descriptor class as a method, the descriptor class defines the
+# accessor and mutator methods of an attribute, which is identified with the
+# method's name.
 
 class Attr:
     """Generic Descriptor Class for Attributes.

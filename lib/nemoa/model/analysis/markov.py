@@ -34,7 +34,7 @@ import numpy
 # (1) Sampler for Markov Random Fields
 #
 
-from nemoa.common import nalgo
+from nemoa.math import nalgo
 
 @nalgo.objective(
     name     = 'error',

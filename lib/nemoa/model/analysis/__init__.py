@@ -6,6 +6,5 @@ __license__ = 'GPLv3'
 
 def algorithms(*args, **kwargs):
     """Returns dictionary of algorithms, that pass given filters. """
-
-    from nemoa.common import nalgo
+    from nemoa.math import nalgo
     return nalgo.search(*args, **kwargs)

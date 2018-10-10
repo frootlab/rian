@@ -22,7 +22,6 @@ def filetypes():
 
 def load(path, **kwargs):
     """Import network from graph description file."""
-
     from nemoa.common import npath
 
     # extract filetype from path
@@ -40,8 +39,7 @@ def load(path, **kwargs):
 
 def _graph_decode(G):
     """ """
-
-    from nemoa.common import niozip
+    from nemoa.io import gzfile
 
     # no decoding
     if not G.graph.get('coding', None) or G.graph['coding'].lower() == 'none':
@@ -49,14 +47,14 @@ def _graph_decode(G):
 
     # base64 decoding
     elif G.graph['coding'] == 'base64':
-        G.graph['params'] = niozip.loads(G.graph['params'], encode = 'base64')
+        G.graph['params'] = gzfile.loads(G.graph['params'], encode = 'base64')
 
         for node in G.nodes():
-            G.node[node]['params'] = niozip.loads(
+            G.node[node]['params'] = gzfile.loads(
                 G.node[node]['params'], encode = 'base64')
 
         for edge in G.edges():
-            G.edges[edge]['params'] = niozip.loads(
+            G.edges[edge]['params'] = gzfile.loads(
                 G.edges[edge]['params'], encode = 'base64')
 
         G.graph['coding'] == 'none'

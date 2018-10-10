@@ -8,6 +8,8 @@ Subpackages
 
     nemoa.common
     nemoa.dataset
+    nemoa.io
+    nemoa.math
     nemoa.model
     nemoa.network
     nemoa.session

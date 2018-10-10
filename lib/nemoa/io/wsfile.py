@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
-"""I/O functions for workspace files."""
+"""I/O functions for workspace-files.
+
+.. References:
+.. _path-like object:
+    https://docs.python.org/3/glossary.html#term-path-like-object
+
+"""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -14,18 +20,19 @@ from contextlib import contextmanager
 from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
 
-from nemoa.common import nioini, npath, nsysinfo
+from nemoa.common import npath, nsysinfo
 from nemoa.classes import Attr, ReadOnlyAttr, ReadWriteAttr
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
+from nemoa.io import inifile
 from nemoa.types import (
-    BinaryFile, BytesIOLike, BytesLike, ClassVar, IterFileLike, List,
+    BytesIOBaseClass, BytesIOLike, BytesLike, ClassVar, IterFileLike, List,
     OptBytes, OptStr, OptPath, OptPathLike, PathLike, PathLikeList,
-    TextFile, Traceback, StrDict, StrDict2, StrList)
+    TextIOBaseClass, Traceback, StrDict, StrDict2, StrList)
 
 ZipInfoList = List[ZipInfo]
 
 ENCODING = nsysinfo.encoding()
-FILEEXTS = ['.ws.zip', '.ws', '.zip']
+FILEEXTS = ['.ws', '.ws.zip']
 
 class BadWsFile(OSError):
     """Exception for invalid workspace files."""
@@ -38,22 +45,21 @@ class WsFile:
     resource files within subfolders.
 
     Args:
-        filepath: String or pathlike object, that points to a valid workspace
-            file or None. If the filepath points to a valid workspace file, then
-            the class instance is initialized with a memory copy of the file.
-            If the given file, however, does not exist, isn't a valid ZipFile,
-            or does not contain a workspace configuration, respectively one of
-            the errors FileNotFoundError, BadZipFile or BadWsFile is raised. The
-            default behaviour, if the filepath is None, is to create an empty
-            workspace in the memory, that uses the default folders layout. In
-            this case the attribute maintainer is initialized with the current
-            username.
+        filepath: String or `path-like object`_, that points to a valid
+            workspace file or None. If the filepath points to a valid workspace
+            file, then the class instance is initialized with a memory copy of
+            the file. If the given file, however, does not exist, isn't a valid
+            ZipFile, or does not contain a workspace configuration, respectively
+            one of the errors FileNotFoundError, BadZipFile or BadWsFile is
+            raised. The default behaviour, if the filepath is None, is to create
+            an empty workspace in the memory, that uses the default folders
+            layout. In this case the attribute maintainer is initialized with
+            the current username.
         pwd: Bytes representing password of workspace file.
 
     """
 
-    # Set Class Constants
-
+    # Class Constants
     CONFIG_FILE: ClassVar[Path] = Path('workspace.ini')
     CONFIG_STRUCT: ClassVar[StrDict2] = {
         'workspace': {
@@ -68,8 +74,7 @@ class WsFile:
     DIR_LAYOUT: ClassVar[StrList] = [
         'dataset', 'network', 'system', 'model', 'script']
 
-    # Declare Instance Variables
-
+    # Instance Variables
     _attr: StrDict
     _buffer: BytesIOLike
     _file: ZipFile
@@ -77,8 +82,7 @@ class WsFile:
     _pwd: OptBytes
     _changed: bool
 
-    # Declare Attributes from Descriptors
-
+    # Attributes
     about: Attr = ReadWriteAttr(str, bind='_attr')
     about.__doc__ = """Summary of the workspace.
 
@@ -154,7 +158,7 @@ class WsFile:
         """Load Workspace from file.
 
         Args:
-            filepath: String or pathlike object, that points to a valid
+            filepath: String or `path-like object`_, that points to a valid
                 workspace file. If the filepath points to a valid workspace
                 file, then the class instance is initialized with a memory copy
                 of the file. If the given file, however, does not exist, isn't a
@@ -197,7 +201,7 @@ class WsFile:
         # Try to open and load workspace configuration from buffer
         try:
             with self.open(self.CONFIG_FILE) as file:
-                cfg = nioini.load(file, self.CONFIG_STRUCT)
+                cfg = inifile.load(file, self.CONFIG_STRUCT)
         except KeyError as err:
             raise BadWsFile(
                 f"workspace '{self._path}' is not valid: "
@@ -240,11 +244,12 @@ class WsFile:
         """Open file within the workspace.
 
         Args:
-            path: String or pathlike object, that represents a workspace member.
-                In reading mode the path has to point to a valid workspace file,
-                or a FileNotFoundError is raised. In writing mode the path by
-                default is treated as a file path. New directories can be
-                written by setting the argument isdir to True.
+            path: String or `path-like object`_, that represents a workspace
+                member. In reading mode the path has to point to a valid
+                workspace file, or a FileNotFoundError is raised. In writing
+                mode the path by default is treated as a file path. New
+                directories can be written by setting the argument isdir to
+                True.
             mode: String, which characters specify the mode in which the file is
                 to be opened. The default mode is reading in text mode. Suported
                 characters are:
@@ -333,16 +338,16 @@ class WsFile:
         """Append file to the workspace.
 
         Args:
-            source: String or pathlike object, that points to a valid file in
-                the directory structure if the system. If the file does not
-                exist, a FileNotFoundError is raised. If the filepath points
-                to a directory, a IsADirectoryError is raised.
-            target: String or pathlike object, that points to a valid directory
-                in the directory structure of the workspace. By default the
-                root directory is used. If the directory does not exist, a
-                FileNotFoundError is raised. If the target directory already
-                contains a file, which name equals the filename of the source,
-                a FileExistsError is raised.
+            source: String or `path-like object`_, that points to a valid file
+                in the directory structure if the system. If the file does not
+                exist, a FileNotFoundError is raised. If the filepath points to
+                a directory, a IsADirectoryError is raised.
+            target: String or `path-like object`_, that points to a valid
+                directory in the directory structure of the workspace. By
+                default the root directory is used. If the directory does not
+                exist, a FileNotFoundError is raised. If the target directory
+                already contains a file, which name equals the filename of the
+                source, a FileExistsError is raised.
 
         Returns:
             Boolean value which is True if the file has been appended.
@@ -390,9 +395,9 @@ class WsFile:
         """Read text from file.
 
         Args:
-            filepath: String or pathlike object, that points to a valid file in
-                the dierctory structure of the workspace. If the file does not
-                exist a FileNotFoundError is raised.
+            filepath: String or `path-like object`_, that points to a valid file
+                in the directory structure of the workspace. If the file does
+                not exist a FileNotFoundError is raised.
             encoding: Specifies the name of the encoding, which is used to
                 decode the stream’s bytes into strings. By default the preferred
                 encoding of the operating system is used.
@@ -411,8 +416,8 @@ class WsFile:
         """Read bytes from file.
 
         Args:
-            filepath: String or pathlike object, that points to a valid file in
-                the dierctory structure of the workspace. If the file does not
+            filepath: String or `path-like object`_, that points to a valid file
+                in the dirctory structure of the workspace. If the file does not
                 exist a FileNotFoundError is raised.
 
         Returns:
@@ -432,7 +437,7 @@ class WsFile:
 
         Args:
             text: String, which has to be written to the given file.
-            filepath: String or pathlike object, that represents a valid
+            filepath: String or `path-like object`_, that represents a valid
                 filename in the dirctory structure of the workspace.
             encoding: Specifies the name of the encoding, which is used to
                 encode strings into bytes. By default the preferred encoding of
@@ -443,7 +448,7 @@ class WsFile:
 
         """
         with self.open(filepath, mode='w', encoding=encoding) as file:
-            if isinstance(file, TextFile):
+            if isinstance(file, TextIOBaseClass):
                 return file.write(text)
         return 0
 
@@ -452,7 +457,7 @@ class WsFile:
 
         Args:
             blob: Bytes, which are to be written to the given file.
-            filepath: String or pathlike object, that represents a valid
+            filepath: String or `path-like object`_, that represents a valid
                 filename in the dirctory structure of the workspace.
 
         Returns:
@@ -460,7 +465,7 @@ class WsFile:
 
         """
         with self.open(filepath, mode='wb') as file:
-            if isinstance(file, BinaryFile):
+            if isinstance(file, BytesIOBaseClass):
                 return file.write(blob)
         return 0
 
@@ -468,11 +473,11 @@ class WsFile:
         """Remove file from workspace.
 
         Args:
-            filepath: String or pathlike object, that points to a file in the
-                directory structure of the workspace. If the filapath points to
-                a directory, an IsADirectoryError is raised. For the case, that
-                the file does not exist, the argument ignore_missing determines,
-                if a FileNotFoundError is raised.
+            filepath: String or `path-like object`_, that points to a file in
+                the directory structure of the workspace. If the filapath points
+                to a directory, an IsADirectoryError is raised. For the case,
+                that the file does not exist, the argument ignore_missing
+                determines, if a FileNotFoundError is raised.
             ignore_missing: Boolean value which determines, if FileNotFoundError
                 is raised, if the target file does not exist. The default
                 behaviour, is to ignore missing files.
@@ -496,7 +501,7 @@ class WsFile:
         """Create a new directory at the given path.
 
         Args:
-            dirpath: String or pathlike object, that represents a valid
+            dirpath: String or `path-like object`_, that represents a valid
                 directory name in the directory structure of the workspace. If
                 the directory already exists, the argument ignore_exists
                 determines, if a FileExistsError is raised.
@@ -523,7 +528,7 @@ class WsFile:
         """Remove directory from workspace.
 
         Args:
-            dirpath: String or pathlike object, that points to a directory
+            dirpath: String or `path-like object`_, that points to a directory
                 in the directory structure of the workspace. If the directory
                 does not exist, the argument ignore_missing determines, if a
                 FileNotFoundError is raised.
@@ -579,15 +584,15 @@ class WsFile:
         """Save the workspace to a file.
 
         Args:
-            filepath: String or pathlike object, that represents the name of a
-                workspace file.
+            filepath: String or `path-like object`_, that represents the name of
+                a workspace file.
 
         """
         path = npath.getpath(filepath)
 
         # Update 'workspace.ini'
         with self.open(self.CONFIG_FILE, mode='w') as file:
-            nioini.save({'workspace': self._attr}, file)
+            inifile.save({'workspace': self._attr}, file)
 
         # Remove duplicates from workspace
         self._remove_duplicates()

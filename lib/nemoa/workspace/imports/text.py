@@ -48,8 +48,7 @@ class Ini:
                 configuration dictionary.
 
         """
-
-        from nemoa.common import nioini
+        from nemoa.io import inifile
 
         structure = {
             'workspace': {
@@ -64,7 +63,7 @@ class Ini:
                 'models': 'str',
                 'scripts': 'str' }}
 
-        config = nioini.load(path, structure)
+        config = inifile.load(path, structure)
         config['type'] = 'base.Workspace'
 
         return { 'config': config }

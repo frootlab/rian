@@ -1,7 +1,7 @@
-nemoa.exceptions module
+nemoa.io.binfile module
 =======================
 
-.. automodule:: nemoa.exceptions
+.. automodule:: nemoa.io.binfile
     :members:
     :undoc-members:
     :show-inheritance:

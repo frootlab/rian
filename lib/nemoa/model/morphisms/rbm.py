@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 
 import nemoa.model.morphisms.ann
 import numpy
-from nemoa.common import nalgo
+from nemoa.math import nalgo
 
 class RBM(nemoa.model.morphisms.ann.ANN):
     """Restricted Boltzmann Machine (RBM) Optimizer.

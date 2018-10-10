@@ -1,7 +1,7 @@
-nemoa.common.niows module
+nemoa.math.nvector module
 =========================
 
-.. automodule:: nemoa.common.niows
+.. automodule:: nemoa.math.nvector
     :members:
     :undoc-members:
     :show-inheritance:

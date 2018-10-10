@@ -8,7 +8,8 @@ import nemoa
 import numpy
 import copy
 
-from nemoa.common import ncurve, nalgo, nclass, nbase
+from nemoa.common import nbase, nclass
+from nemoa.math import nalgo, ncurve
 from typing import Any, Dict
 
 class System(nbase.ObjectIP):
@@ -832,7 +833,7 @@ class System(nbase.ObjectIP):
 
         """
 
-        from nemoa.common import nvector
+        from nemoa.math import nvector
 
         # TODO: use nvector
         #error = nvector.distance(x, y, metric=metric)
@@ -869,8 +870,7 @@ class System(nbase.ObjectIP):
                 norms
 
         """
-
-        from nemoa.common import nvector
+        from nemoa.math import nvector
 
         # TODO: use nvector
         #error = nvector.distance(x, y, metric=metric)
@@ -909,7 +909,7 @@ class System(nbase.ObjectIP):
 
         """
 
-        from nemoa.common import nvector
+        from nemoa.math import nvector
 
         res = self._get_unitresiduals(data, **kwargs)
         devres = nvector.length(res, norm=norm)
