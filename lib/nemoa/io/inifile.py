@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""I/O functions for INI files.
+"""I/O functions for INI-files.
 
 .. References:
 .. _path-like object:
@@ -27,8 +27,9 @@ def load(file: FileOrPathLike, structure: OptStrDict2 = None) -> StrDict2:
     """Import configuration dictionary from INI file.
 
     Args:
-        file: String, `path-like object`_ or `file-like object`_ that points to
-            a valid CSV-file in the directory structure of the system.
+        file: String or `path-like object`_ that points to a readable file in
+            the directory structure of the system, or a `file-like object`_ in
+            read mode.
         structure: Dictionary of dictionaries, which determines the structure of
             the configuration dictionary. If structure is None, the the INI-file
             is completely imported and all values are interpreted as strings. If
@@ -64,8 +65,9 @@ def save(
 
     Args:
         config: Configuration dictionary
-        file: String, `path-like object`_ or `file-like object`_ that points to
-            a valid INI-file in the directory structure of the system.
+        file: String or `path-like object`_ that represents to a writeable file
+            in the directory structure of the system, or a `file-like object`_
+            in write mode.
         flat: Determines if the desired INI format structure contains sections.
             By default sections are used, if the dictionary contains
             subdictionaries.
@@ -155,7 +157,7 @@ def dumps(config: dict, flat: OptBool = None, header: OptStr = None) -> str:
         header: The Header string is written in the INI format string as an
             initial comment. By default no header is written.
 
-    Return:
+    Returns:
         Text with INI-file structure.
 
     """
@@ -201,8 +203,9 @@ def get_header(file: FileOrPathLike) -> str:
     """Read header from INI-file.
 
     Args:
-        file: String, `path-like object`_ or `file-like object`_ that points to
-            a valid INI-file in the directory structure of the system.
+        file: String or `path-like object`_ that points to a readable file in
+            the directory structure of the system, or a `file-like object`_ in
+            read mode.
 
     Returns:
         String containing the header of the INI-file or an empty string, if no

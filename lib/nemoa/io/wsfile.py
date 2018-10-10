@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""I/O functions for workspace files.
+"""I/O functions for workspace-files.
 
 .. References:
 .. _path-like object:

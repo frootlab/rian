@@ -6,7 +6,6 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import os
 import tempfile
 from pathlib import Path
 
@@ -21,7 +20,7 @@ class TestSuite(ntest.TestSuite):
 
         import numpy as np
 
-        filename = tempfile.NamedTemporaryFile().name + '.csv'
+        file = Path(tempfile.NamedTemporaryFile().name + '.csv')
         header = '-*- coding: utf-8 -*-'
         data = np.array(
             [('row1', 1.1, 1.2), ('row2', 2.1, 2.2), ('row3', 3.1, 3.2)],
@@ -31,26 +30,26 @@ class TestSuite(ntest.TestSuite):
 
         with self.subTest("save"):
             csvfile.save(
-                filename, data, header=header, labels=labels, delim=delim)
-            self.assertTrue(Path(filename).is_file())
+                file, data, header=header, labels=labels, delim=delim)
+            self.assertTrue(file.is_file())
 
         with self.subTest("get_header"):
-            self.assertEqual(csvfile.get_header(filename), header)
+            self.assertEqual(csvfile.get_header(file), header)
 
         with self.subTest("get_delim"):
-            self.assertEqual(csvfile.get_delim(filename), delim)
+            self.assertEqual(csvfile.get_delim(file), delim)
 
         with self.subTest("get_labels_format"):
-            self.assertEqual(csvfile.get_labels_format(filename), 'standard')
+            self.assertEqual(csvfile.get_labels_format(file), 'standard')
 
         with self.subTest("get_labels"):
-            self.assertEqual(csvfile.get_labels(filename), labels)
+            self.assertEqual(csvfile.get_labels(file), labels)
 
-        with self.subTest("get_annotation_column"):
-            self.assertEqual(csvfile.get_annotation_column(filename), 0)
+        with self.subTest("get_annotation_colid"):
+            self.assertEqual(csvfile.get_annotation_colid(file), 0)
 
         with self.subTest("load"):
-            rval = csvfile.load(filename)
+            rval = csvfile.load(file)
             self.assertTrue(
                 isinstance(rval, np.ndarray))
             self.assertTrue(
@@ -58,16 +57,14 @@ class TestSuite(ntest.TestSuite):
             self.assertTrue(
                 np.all(np.array(rval)['col2'] == data['col2']))
 
-        if os.path.exists(filename):
-            os.remove(filename)
+        if file.is_file():
+            file.unlink()
 
     def test_io_inifile(self) -> None:
         """Test module 'nemoa.io.inifile'."""
         from nemoa.io import inifile
 
-        from typing import cast
-
-        filename = tempfile.NamedTemporaryFile().name + '.ini'
+        file = Path(tempfile.NamedTemporaryFile().name + '.ini')
         header = '-*- coding: utf-8 -*-'
         obj = {
             'n': {'a': 's', 'b': True, 'c': 1},
@@ -86,29 +83,29 @@ class TestSuite(ntest.TestSuite):
 
         with self.subTest("loads"):
             self.assertEqual(
-                inifile.loads(string, structure=cast(dict, structure)), obj)
+                inifile.loads(string, structure=structure), obj)
 
         with self.subTest("save"):
-            inifile.save(obj, filename, header=header)
-            self.assertTrue(Path(filename).is_file())
+            inifile.save(obj, file, header=header)
+            self.assertTrue(file.is_file())
 
         with self.subTest("load"):
             self.assertEqual(
-                inifile.load(filename, structure=cast(dict, structure)), obj)
+                inifile.load(file, structure=structure), obj)
 
         with self.subTest("get_header"):
-            self.assertEqual(inifile.get_header(filename), header)
+            self.assertEqual(inifile.get_header(file), header)
 
-        if os.path.exists(filename):
-            os.remove(filename)
+        if file.is_file():
+            file.unlink()
 
     def test_io_gzfile(self) -> None:
         """Test module 'nemoa.io.gzfile'."""
         from nemoa.io import gzfile
 
+        file = Path(tempfile.NamedTemporaryFile().name + '.gz')
         obj = {True: 'a', 2: {None: .5}}
         blob = b'eJxrYK4tZNDoiGBkYGBILGT0ZqotZPJzt3/AAAbFpXoAgyIHVQ=='
-        filename = tempfile.NamedTemporaryFile().name
 
         with self.subTest("dumps"):
             self.assertEqual(gzfile.dumps(obj), blob)
@@ -117,11 +114,11 @@ class TestSuite(ntest.TestSuite):
             self.assertEqual(gzfile.loads(blob), obj)
 
         with self.subTest("dump"):
-            self.assertTrue(gzfile.dump(obj, filename))
-            self.assertTrue(os.path.exists(filename))
+            gzfile.dump(obj, file)
+            self.assertTrue(file.is_file())
 
         with self.subTest("load"):
-            self.assertEqual(gzfile.load(filename), obj)
+            self.assertEqual(gzfile.load(file), obj)
 
-        if os.path.exists(filename):
-            os.remove(filename)
+        if file.is_file():
+            file.unlink()

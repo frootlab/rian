@@ -1,5 +1,17 @@
 # -*- coding: utf-8 -*-
-"""I/O functions for gzip compressed files."""
+"""I/O functions for gzip compressed files.
+
+.. References:
+.. _path-like object:
+    https://docs.python.org/3/glossary.html#term-path-like-object
+.. _file-like object:
+    https://docs.python.org/3/glossary.html#term-file-like-object
+.. _bytes-like object:
+    https://docs.python.org/3/glossary.html#term-bytes-like-object
+.. _RFC3548:
+    https://tools.ietf.org/html/rfc3548.html
+
+"""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -10,121 +22,101 @@ import base64
 import pickle
 import zlib
 
-from typing import cast
-from nemoa.common import npath
-from nemoa.types import Any, Obj, OptStr, PathLike, BytesLikeOrStr
+from nemoa.common import nsysinfo
+from nemoa.io import binfile
+from nemoa.types import Any, FileOrPathLike, OptStr, BytesLikeOrStr
 
 FILEEXTS = ['.gz', '.tar.gz', '.zip']
 
-def load(filepath: PathLike, encoding: OptStr = 'base64') -> dict:
+def load(file: FileOrPathLike, encoding: OptStr = 'base64') -> Any:
     """Decode and decompress file.
 
     Args:
-        filepath: Fully qualified filepath
-        encoding: Encodings specified in [RFC3548]. Allowed values are:
-            'base16', 'base32', 'base64' and 'base85' and None for no encoding.
-            Default: 'base64'
+        file: String or `path-like object`_ that points to a readable file in
+            the directory structure of the system, or a `file-like object`_ in
+            reading mode.
+        encoding: Encodings specified in `RFC3548`_. Allowed values are:
+            'base16', 'base32', 'base64' and 'base85' or None for no encoding.
+            By default 'base64' encoding is used.
 
     Returns:
-         Reconstituted object specified within the encoded file.
-
-    References:
-        [RFC3548] https://tools.ietf.org/html/rfc3548.html
+         Arbitry object hierarchy.
 
     """
-    # Validate filepath
-    path = npath.validfile(filepath)
-    if not path:
-        raise TypeError(f"file '{str(filepath)}' does not exist")
-
-    blob = pickle.load(open(path, 'rb')) # file to bytes
-    obj = loads(blob, encoding=encoding) # bytes to object
-
-    return obj
+    with binfile.open_read(file) as fd:
+        blob = pickle.load(fd) # binary file to bytes
+        # blob = fd.read() # binary file to bytes
+    return loads(blob, encoding=encoding) # bytes to object
 
 def dump(
-        obj: Obj, path: str, encoding: OptStr = 'base64',
-        level: int = 6) -> bool:
+        obj: object, file: FileOrPathLike, encoding: OptStr = 'base64',
+        level: int = 6) -> None:
     """Compress and encode arbitrary object to file.
 
     Args:
-        obj: Arbitrary object
-        path: Fully qualified filepath
-        encoding: Encodings specified in [RFC3548]. Allowed values are:
-            'base16', 'base32', 'base64' and 'base85' and None for no encoding.
-            Default: 'base64'
-        level: compression level ranging from 0 to 9. Thereby:
+        obj: Arbitrary object hierarchy
+        file: String or `path-like object`_ that points to a writable file in
+            the directory structure of the system, or a `file-like object`_ in
+            writing mode.
+        encoding: Encodings specified in `RFC3548`_. Allowed values are:
+            'base16', 'base32', 'base64' and 'base85' or None for no encoding.
+            By default 'base64' encoding is used.
+        level: Compression level ranging from 0 to 9, with:
             0: no compression
             1: fastest, produces the least compression
             9: slowest, produces the most compression
 
-    Returns:
-        True if no exception has been raised.
-
-    References:
-        [RFC3548] https://tools.ietf.org/html/rfc3548.html
-
     """
-    blob = dumps(obj, encoding=encoding, level=level) # object to bytes
-    pickle.dump(blob, file=open(path, 'wb')) # bytes to file
-
-    return True
+    # Pickle object to bytes
+    blob = dumps(obj, encoding=encoding, level=level)
+    with binfile.open_write(file) as fd:
+        pickle.dump(blob, fd) # bytes to file
 
 def loads(blob: BytesLikeOrStr, encoding: OptStr = 'base64') -> Any:
     """Decode and decompress bytes-like object to object hierarchy.
 
     Args:
-        blob: Encoded byte-like objects
-        encoding: Encodings specified in [RFC3548]. Allowed values are:
-            'base16', 'base32', 'base64' and 'base85' and None for no encoding.
-            Default: 'base64'
+        blob: Encoded `bytes-like object`_ or string
+        encoding: Encodings specified in `RFC3548`_. Allowed values are:
+            'base16', 'base32', 'base64' and 'base85' or None for no encoding.
+            By default 'base64' encoding is used.
 
     Returns:
-         Reconstituted object specified within the encoded bytes-like
-         object or string.
-
-    References:
-        [RFC3548] https://tools.ietf.org/html/rfc3548.html
+         Arbitry object hierarchy.
 
     """
     # Decode bytes
     if not encoding:
-        bbytes = bytes(cast(bytes, blob))
-    elif encoding == 'base64':
-        bbytes = base64.b64decode(blob)
-    elif encoding == 'base32':
-        bbytes = base64.b32decode(blob)
-    elif encoding == 'base16':
-        bbytes = base64.b16decode(blob)
-    elif encoding == 'base85':
-        bbytes = base64.b85decode(blob)
+        if isinstance(blob, str):
+            bb = bytes(blob, encoding=nsysinfo.encoding())
+        else:
+            bb = bytes(blob)
+    elif encoding in ['base64', 'base32', 'base16', 'base85']:
+        bb = getattr(base64, f"b{encoding[4:]}decode")(blob)
     else:
         raise ValueError(f"encoding '{encoding}' is not supported")
 
     # Decompress bytes, level is not required
-    bbytes = zlib.decompress(bbytes)
-    obj = pickle.loads(bbytes) # bytes to object
+    bb = zlib.decompress(bb)
 
-    return obj
+    # Bytes to object
+    return pickle.loads(bb)
 
-def dumps(obj: Obj, encoding: OptStr = 'base64', level: int = 6) -> bytes:
+def dumps(obj: object, encoding: OptStr = 'base64', level: int = 6) -> bytes:
     """Compress and encode arbitrary object to bytes.
 
     Args:
-        obj: Arbitrary object
-        encoding: Encodings specified in [RFC3548]. Allowed values are:
-            'base16', 'base32', 'base64' and 'base85' and None for no encoding.
-            Default: 'base64'
-        level: compression level ranging from 0 to 9. Thereby:
+        obj: Arbitrary object hierarchy
+        encoding: Encodings specified in `RFC3548`_. Allowed values are:
+            'base16', 'base32', 'base64' and 'base85' or None for no encoding.
+            By default 'base64' encoding is used.
+        level: Compression level ranging from 0 to 9, with:
             0: no compression
             1: fastest, produces the least compression
             9: slowest, produces the most compression
 
     Returns:
-        Compressed and encoded byte representation of the object.
-
-    References:
-        [RFC3548] https://tools.ietf.org/html/rfc3548.html
+        Compressed and encoded byte representation of given object hierachy.
 
     """
     blob = pickle.dumps(obj) # object to bytes
@@ -132,16 +124,8 @@ def dumps(obj: Obj, encoding: OptStr = 'base64', level: int = 6) -> bytes:
 
     # Encode bytes
     if not encoding:
-        pass
-    elif encoding == 'base64':
-        blob = base64.b64encode(blob)
-    elif encoding == 'base32':
-        blob = base64.b32encode(blob)
-    elif encoding == 'base16':
-        blob = base64.b16encode(blob)
-    elif encoding == 'base85':
-        blob = base64.b85encode(blob)
-    else:
-        raise ValueError(f"encoding '{encoding}' is not supported")
+        return blob
+    if encoding in ['base64', 'base32', 'base16', 'base85']:
+        return getattr(base64, f"b{encoding[4:]}encode")(blob)
 
-    return blob
+    raise ValueError(f"encoding '{encoding}' is not supported")

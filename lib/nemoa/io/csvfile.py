@@ -39,8 +39,9 @@ def load(
     """Load numpy ndarray from CSV-file.
 
     Args:
-        file: String, `path-like object`_ or `file-like object`_ that points to
-            a valid CSV-file in the directory structure of the system.
+        file: String or `path-like object`_ that points to a readable CSV-file
+            in the directory structure of the system, or a `file-like object`_
+            in read mode.
         delim: String containing CSV-delimiter. By default the CSV-delimiter is
             detected from the CSV-file.
         labels: List of column labels in CSV-file. By default the list of column
@@ -71,7 +72,7 @@ def load(
             "argument 'usecols' is required if 'labels' is given")
 
     # Get column id of annotation column
-    rowlabelcol = rowlabelcol or get_annotation_column(file, delim=delim)
+    rowlabelcol = rowlabelcol or get_annotation_colid(file, delim=delim)
 
     # Get CSV data format
     if rowlabelcol is None:
@@ -147,8 +148,9 @@ def get_header(file: FileOrPathLike) -> str:
     """Get header from CSV-file.
 
     Args:
-        file: String, `path-like object`_ or `file-like object`_ that points to
-            a valid CSV-file in the directory structure of the system.
+        file: String or `path-like object`_ that points to a readable CSV-file
+            in the directory structure of the system, or a `file-like object`_
+            in read mode.
 
     Returns:
         String containing the header of the CSV-file or an empty string, if no
@@ -164,8 +166,9 @@ def get_delim(
     r"""Detect delimiter of CSV-file.
 
     Args:
-        file: String, `path-like object`_ or `file-like object`_ that points to
-            a valid CSV-file in the directory structure of the system.
+        file: String or `path-like object`_ that points to a readable CSV-file
+            in the directory structure of the system, or a `file-like object`_
+            in read mode.
         candidates: Optional list of strings containing delimiter candidates to
             search for. Default: [',', '\t', ';', ' ', ':']
         mincount: Minimum number of lines used to detect CSV delimiter. Thereby
@@ -213,8 +216,9 @@ def get_labels_format(file: FileOrPathLike, delim: OptStr = None) -> OptStr:
     """Get format of column labels from CSV-file.
 
     Args:
-        file: String, `path-like object`_ or `file-like object`_ that points to
-            a valid CSV-file in the directory structure of the system.
+        file: String or `path-like object`_ that points to a readable CSV-file
+            in the directory structure of the system, or a `file-like object`_
+            in read mode.
         delim: String containing CSV-delimiter. By default the CSV-delimiter is
             detected from the given file.
 
@@ -252,8 +256,9 @@ def get_labels(
     """Get column labels from CSV-file.
 
     Args:
-        file: String, `path-like object`_ or `file-like object`_ that points to
-            a valid CSV-file in the directory structure of the system.
+        file: String or `path-like object`_ that points to a readable CSV-file
+            in the directory structure of the system, or a `file-like object`_
+            in read mode.
         delim: String containing CSV-delimiter. By default the CSV-delimiter is
             detected from the given file.
         fmt: Format of the column labels. By default the format is detected from
@@ -293,7 +298,7 @@ def get_labels(
         return ['label'] + labels
     return None
 
-def get_annotation_column(
+def get_annotation_colid(
         file: FileOrPathLike, delim: OptStr = None,
         fmt: OptStr = None) -> OptInt:
     """Get index of the annotation column of a CSV-file.
@@ -302,8 +307,9 @@ def get_annotation_column(
     annotation strings of the records.
 
     Args:
-        file: String, `path-like object`_ or `file-like object`_ that points to
-            a valid CSV-file in the directory structure of the system.
+        file: String or `path-like object`_ that points to a readable CSV-file
+            in the directory structure of the system, or a `file-like object`_
+            in read mode.
         delim: String containing CSV-delimiter. By default the CSV-delimiter is
             detected from the given file.
         fmt: Format of the column labels. By default the format is detected from

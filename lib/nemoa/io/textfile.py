@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""I/O functions for Text files.
+"""I/O functions for Text-files.
 
 .. References:
 .. _path-like object:
@@ -21,77 +21,86 @@ from io import TextIOWrapper
 
 from nemoa.common import npath
 from nemoa.types import (
-    BytesIOBaseClass, Path, StrList,
-    StringIOLike, IterStringIOLike, TextIOBaseClass, FileOrPathLike)
+    BytesIOBaseClass, CManStringIOLike, FileOrPathLike, IterStringIOLike, Path,
+    StrList, StringIOLike, TextIOBaseClass)
 
 @contextmanager
-def open_read(file: FileOrPathLike) -> IterStringIOLike:
-    """Contextmanager to provide unified text file reading interface.
+def wrap(file: FileOrPathLike, mode: str = '') -> IterStringIOLike:
+    """Contextmanager to provide a unified interface to text files.
 
     Args:
-        file: String, `path-like object`_ or `file-like object`_ that points to
-            a valid text-file in the directory structure of the system.
+        file: String or `path-like object`_ that points to a valid filename in
+            the directory structure of the system, or a `file-like object`_.
+        mode: String, which characters specify the mode in which the file stream
+            is wrapped. The default mode is reading mode. Suported characters
+            are:
+            'r': Reading mode (default)
+            'w': Writing mode
 
     Yields:
-        File descripter for text files in read mode.
+        `text-file`_ in reading or writing mode.
 
     """
-    # Get file descriptor from file-like or path-like objects
+    # Get file handler from file-like or path-like objects
     if isinstance(file, TextIOBaseClass):
         fd, close = file, False
     elif isinstance(file, BytesIOBaseClass):
-        fd, close = TextIOWrapper(file), False
+        if 'w' in mode:
+            fd = TextIOWrapper(file, write_through=True)
+        else:
+            fd = TextIOWrapper(file)
+        close = False
     elif isinstance(file, (str, Path)):
         path = npath.getpath(file)
-        if not path.is_file():
-            raise FileNotFoundError(f"file '{path}' is does not exist")
-        fd, close = open(path, 'r'), True
+        if 'w' in mode:
+            try:
+                fd = open(path, 'w')
+            except IOError as err:
+                raise IOError(f"file '{path}' can not be written") from err
+        else:
+            if not path.is_file():
+                raise FileNotFoundError(f"file '{path}' does not exist")
+            fd = open(path, 'r')
+        close = True
     else:
         raise TypeError(
             "first argument 'file' is required to be of types 'str', "
-            f"'Path' or 'File', not '{type(file).__name__}'")
+            f"'path-like' or 'file-like', not '{type(file).__name__}'")
 
-    # Define enter and exit of contextmanager
+    # Define enter and exit of context manager
     try:
         yield fd
     finally:
         if close:
             fd.close()
 
-@contextmanager
-def open_write(file: FileOrPathLike) -> IterStringIOLike:
-    """Contextmanager to provide unified text file writing interface.
+def open_read(file: FileOrPathLike) -> CManStringIOLike:
+    """Provide unified interface to read text files.
 
     Args:
-        file: String, `path-like object`_ or `file-like object`_ that points to
-            a valid text-file in the directory structure of the system.
+        file: String or `path-like object`_ that points to a readable file in
+            the directory structure of the system, or a `file-like object`_ in
+            reading mode.
 
-    Yields:
-        File descripter for text files in write mode.
+    Returns:
+        Context manager for `text-file`_ in reading mode.
 
     """
-    # Get file descriptor from file-like or path-like objects
-    if isinstance(file, TextIOBaseClass):
-        fd, close = file, False
-    elif isinstance(file, BytesIOBaseClass):
-        fd, close = TextIOWrapper(file, write_through=True), False
-    elif isinstance(file, (str, Path)):
-        path = npath.getpath(file)
-        try:
-            fd, close = open(path, 'w'), True
-        except IOError as err:
-            raise IOError(f"file '{path}' can not be written") from err
-    else:
-        raise TypeError(
-            "first argument 'file' is required to be of types 'str', "
-            f"'Path' or 'File', not '{type(file).__name__}'")
+    return wrap(file, mode='r')
 
-    # Define enter and exit of contextmanager
-    try:
-        yield fd
-    finally:
-        if close:
-            fd.close()
+def open_write(file: FileOrPathLike) -> CManStringIOLike:
+    """Provide unified interface to write text files.
+
+    Args:
+        file: String or `path-like object`_ that points to a writable file in
+            the directory structure of the system, or a `file-like object`_ in
+            writing mode.
+
+    Returns:
+        Context manager for `text-file`_ in writing mode.
+
+    """
+    return wrap(file, mode='w')
 
 def read_header(file: StringIOLike) -> str:
     """Read header comment from opened text-file.
@@ -122,7 +131,7 @@ def read_content(file: StringIOLike, count: int = 0) -> StrList:
             returned.
 
     Returns:
-        List of strings containing
+        List of strings containing non blank non conmment lines.
 
     """
     lines: StrList = []
