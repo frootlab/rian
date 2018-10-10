@@ -6,6 +6,10 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import os
+import tempfile
+from pathlib import Path
+
 from nemoa.common import ntest
 
 class TestSuite(ntest.TestSuite):
@@ -438,8 +442,6 @@ class TestSuite(ntest.TestSuite):
         from nemoa.common import niocsv
 
         import numpy as np
-        import os
-        import tempfile
 
         filename = tempfile.NamedTemporaryFile().name + '.csv'
         header = '-*- coding: utf-8 -*-'
@@ -454,14 +456,14 @@ class TestSuite(ntest.TestSuite):
                 niocsv.save(
                     filename, data, header=header, labels=labels, delim=delim))
 
-        with self.subTest("getheader"):
-            self.assertEqual(niocsv.getheader(filename), header)
+        with self.subTest("get_header"):
+            self.assertEqual(niocsv.get_header(filename), header)
 
-        with self.subTest("getdelim"):
-            self.assertEqual(niocsv.getdelim(filename), delim)
+        with self.subTest("get_delim"):
+            self.assertEqual(niocsv.get_delim(filename), delim)
 
-        with self.subTest("getlabelformat"):
-            self.assertEqual(niocsv.getlabelformat(filename), 'standard')
+        with self.subTest("get_labels_format"):
+            self.assertEqual(niocsv.get_labels_format(filename), 'standard')
 
         with self.subTest("getlabels"):
             self.assertEqual(niocsv.getlabels(filename), labels)
@@ -485,8 +487,6 @@ class TestSuite(ntest.TestSuite):
         """Test module 'nemoa.common.nioini'."""
         from nemoa.common import nioini
 
-        import os
-        import tempfile
         from typing import cast
 
         filename = tempfile.NamedTemporaryFile().name + '.ini'
@@ -511,15 +511,15 @@ class TestSuite(ntest.TestSuite):
                 nioini.loads(string, structure=cast(dict, structure)), obj)
 
         with self.subTest("save"):
-            self.assertTrue(
-                nioini.save(obj, filename, header=header))
+            nioini.save(obj, filename, header=header)
+            self.assertTrue(Path(filename).is_file())
 
         with self.subTest("load"):
             self.assertEqual(
                 nioini.load(filename, structure=cast(dict, structure)), obj)
 
-        with self.subTest("getheader"):
-            self.assertEqual(nioini.getheader(filename), header)
+        with self.subTest("get_header"):
+            self.assertEqual(nioini.get_header(filename), header)
 
         if os.path.exists(filename):
             os.remove(filename)
@@ -527,9 +527,6 @@ class TestSuite(ntest.TestSuite):
     def test_common_niozip(self) -> None:
         """Test module 'nemoa.common.niozip'."""
         from nemoa.common import niozip
-
-        import os
-        import tempfile
 
         obj = {True: 'a', 2: {None: .5}}
         blob = b'eJxrYK4tZNDoiGBkYGBILGT0ZqotZPJzt3/AAAbFpXoAgyIHVQ=='
@@ -663,8 +660,6 @@ class TestSuite(ntest.TestSuite):
         """Test module 'nemoa.common.npath'."""
         from nemoa.common import npath
 
-        import tempfile
-        from pathlib import Path
         from typing import cast, Any
 
         dpath = Path('a', 'b', 'c', 'd')
@@ -769,8 +764,6 @@ class TestSuite(ntest.TestSuite):
     def test_common_ntext(self) -> None:
         """Test module 'nemoa.common.ntext'."""
         from nemoa.common import ntext
-
-        from pathlib import Path
 
         with self.subTest("splitargs"):
             self.assertEqual(

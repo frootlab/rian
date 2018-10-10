@@ -31,9 +31,9 @@ Traceback = types.TracebackType
 Module = types.ModuleType
 Function = types.FunctionType
 Method = types.MethodType
-BinaryFile = io.BufferedIOBase
-TextFile = io.TextIOBase
-AnyFile = (BinaryFile, TextFile)
+BytesIOBaseClass = io.BufferedIOBase
+TextIOBaseClass = io.TextIOBase
+AnyFile = (BytesIOBaseClass, TextIOBaseClass)
 Path = os.PathLike
 Array = array.ArrayType
 
@@ -174,6 +174,7 @@ BytesIOLike = IO[bytes]
 StringIOLike = IO[str]
 FileLike = Union[BytesIOLike, StringIOLike]
 FileOrPathLike = Union[FileLike, PathLike]
+IterStringIOLike = Iterator[StringIOLike]
 IterFileLike = Iterator[FileLike]
 
 # Nested Types

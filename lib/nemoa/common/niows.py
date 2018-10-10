@@ -18,9 +18,9 @@ from nemoa.common import nioini, npath, nsysinfo
 from nemoa.classes import Attr, ReadOnlyAttr, ReadWriteAttr
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
 from nemoa.types import (
-    BinaryFile, BytesIOLike, BytesLike, ClassVar, IterFileLike, List,
+    BytesIOBaseClass, BytesIOLike, BytesLike, ClassVar, IterFileLike, List,
     OptBytes, OptStr, OptPath, OptPathLike, PathLike, PathLikeList,
-    TextFile, Traceback, StrDict, StrDict2, StrList)
+    TextIOBaseClass, Traceback, StrDict, StrDict2, StrList)
 
 ZipInfoList = List[ZipInfo]
 
@@ -443,7 +443,7 @@ class WsFile:
 
         """
         with self.open(filepath, mode='w', encoding=encoding) as file:
-            if isinstance(file, TextFile):
+            if isinstance(file, TextIOBaseClass):
                 return file.write(text)
         return 0
 
@@ -460,7 +460,7 @@ class WsFile:
 
         """
         with self.open(filepath, mode='wb') as file:
-            if isinstance(file, BinaryFile):
+            if isinstance(file, BytesIOBaseClass):
                 return file.write(blob)
         return 0
 
