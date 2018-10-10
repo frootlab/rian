@@ -452,9 +452,9 @@ class TestSuite(ntest.TestSuite):
         labels = ['', 'col1', 'col2']
 
         with self.subTest("save"):
-            self.assertTrue(
-                niocsv.save(
-                    filename, data, header=header, labels=labels, delim=delim))
+            niocsv.save(
+                filename, data, header=header, labels=labels, delim=delim)
+            self.assertTrue(Path(filename).is_file())
 
         with self.subTest("get_header"):
             self.assertEqual(niocsv.get_header(filename), header)
@@ -465,11 +465,11 @@ class TestSuite(ntest.TestSuite):
         with self.subTest("get_labels_format"):
             self.assertEqual(niocsv.get_labels_format(filename), 'standard')
 
-        with self.subTest("getlabels"):
-            self.assertEqual(niocsv.getlabels(filename), labels)
+        with self.subTest("get_labels"):
+            self.assertEqual(niocsv.get_labels(filename), labels)
 
-        with self.subTest("getanncolid"):
-            self.assertEqual(niocsv.getanncolid(filename), 0)
+        with self.subTest("get_annotation_column"):
+            self.assertEqual(niocsv.get_annotation_column(filename), 0)
 
         with self.subTest("load"):
             rval = niocsv.load(filename)

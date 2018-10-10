@@ -22,7 +22,7 @@ from io import TextIOWrapper
 
 from nemoa.common import npath
 from nemoa.types import (
-    BytesIOBaseClass, Path,
+    BytesIOBaseClass, Path, StrList,
     StringIOLike, IterStringIOLike, TextIOBaseClass, FileOrPathLike)
 
 @contextmanager
@@ -37,21 +37,20 @@ def open_read(file: FileOrPathLike) -> IterStringIOLike:
         File descripter for text files in read mode.
 
     """
-    # Get file descriptor from file-like objects
+    # Get file descriptor from file-like or path-like objects
     if isinstance(file, TextIOBaseClass):
         fd, close = file, False
     elif isinstance(file, BytesIOBaseClass):
         fd, close = TextIOWrapper(file), False
-    elif not isinstance(file, (str, Path)):
+    elif isinstance(file, (str, Path)):
+        path = npath.getpath(file)
+        if not path.is_file():
+            raise FileNotFoundError(f"file '{path}' is does not exist")
+        fd, close = open(path, 'r'), True
+    else:
         raise TypeError(
             "first argument 'file' is required to be of types 'str', "
             f"'Path' or 'File', not '{type(file).__name__}'")
-
-    # Get file descriptor from path-like objects
-    path = npath.getpath(file)
-    if not path.is_file():
-        raise FileNotFoundError(f"file '{path}' is does not exist")
-    fd, close = open(path, 'r'), True
 
     # Define enter and exit of contextmanager
     try:
@@ -72,22 +71,21 @@ def open_write(file: FileOrPathLike) -> IterStringIOLike:
         File descripter for text files in write mode.
 
     """
-    # Get file descriptor from file-like objects
+    # Get file descriptor from file-like or path-like objects
     if isinstance(file, TextIOBaseClass):
         fd, close = file, False
     elif isinstance(file, BytesIOBaseClass):
         fd, close = TextIOWrapper(file, write_through=True), False
-    elif not isinstance(file, (str, Path)):
+    elif isinstance(file, (str, Path)):
+        path = npath.getpath(file)
+        try:
+            fd, close = open(path, 'w'), True
+        except IOError as err:
+            raise IOError(f"file '{path}' can not be written") from err
+    else:
         raise TypeError(
             "first argument 'file' is required to be of types 'str', "
             f"'Path' or 'File', not '{type(file).__name__}'")
-
-    # Get file descriptor from path-like objects
-    path = npath.getpath(file)
-    try:
-        fd, close = open(path, 'w'), True
-    except IOError as err:
-        raise IOError(f"file '{path}' can not be written") from err
 
     # Define enter and exit of contextmanager
     try:
@@ -115,3 +113,26 @@ def read_header(file: StringIOLike) -> str:
             break
         lines.append(lstrip[1:].lstrip()) # Add comment lines to header
     return ''.join(lines).rstrip()
+
+def read_content(file: StringIOLike, count: int = 0) -> StrList:
+    """Read non empty, non comment lines from opened text-file.
+
+    Args:
+        file: `text-file`_ in read mode.
+        count: Number of lines, that are returned. By default all lines are
+            returned.
+
+    Returns:
+        List of strings containing
+
+    """
+    lines: StrList = []
+    with open_read(file) as fd:
+        for line in fd:
+            if count and len(lines) >= count:
+                break
+            strip = line.strip()
+            if not strip or strip.startswith('#'):
+                continue
+            lines.append(line.rstrip('\r\n'))
+    return lines

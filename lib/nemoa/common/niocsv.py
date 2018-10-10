@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""I/O functions for CSV files.
+"""I/O functions for CSV-files.
 
 .. References:
 .. _path-like object:
@@ -18,8 +18,6 @@ __docformat__ = 'google'
 
 import csv
 
-from io import TextIOWrapper
-
 try:
     import numpy as np
 except ImportError as err:
@@ -27,53 +25,44 @@ except ImportError as err:
         "requires package numpy: "
         "https://scipy.org") from err
 
-from nemoa.common import npath, niotext
+from nemoa.common import niotext
 from nemoa.types import (
-    BytesIOBaseClass, FileOrPathLike, NpArray, OptStr, OptStrList, OptInt,
-    OptIntTuple, Path, PathLike, StringIOLike, StrList, TextIOBaseClass)
+    FileOrPathLike, NpArray, OptInt, OptIntTuple, OptNpArray, OptStr,
+    OptStrList)
 
-FILEEXTS = ['.csv', '.tsv']
+FILEEXTS = ['.csv', '.csv.gz']
 
 def load(
-        filepath: PathLike, delim: OptStr = None,
+        file: FileOrPathLike, delim: OptStr = None,
         labels: OptStrList = None, usecols: OptIntTuple = None,
-        rowlabelcol: OptInt = None) -> NpArray:
-    """Load numpy ndarray from CSV file.
+        rowlabelcol: OptInt = None) -> OptNpArray:
+    """Load numpy ndarray from CSV-file.
 
     Args:
-        filepath: String, path or file descriptor that points to a valid CSV
-            file
-        delim: String containing CSV delimiter.
-            If 'delim' is None, then the CSV delimiter is detected from file.
-            Default: None
-        labels: list of strings containing CSV labels.
-            If 'labels' is None, the the CSV labels are detected from file.
-            Default: None
-        usecols: Column IDs of columns which are to be imported from the file.
-            If 'usecols' is None, then all columns are imported.
-            Default: None
+        file: String, `path-like object`_ or `file-like object`_ that points to
+            a valid CSV-file in the directory structure of the system.
+        delim: String containing CSV-delimiter. By default the CSV-delimiter is
+            detected from the CSV-file.
+        labels: List of column labels in CSV-file. By default the list of column
+            labels is taken from the first content line in the CSV-file.
+        usecols: Indices of the columns which are to be imported from the file.
+            By default all columns are imported.
         rowlabelcol: Column ID of column, which contains the row annotation.
-            If 'rowlabelcol' is None, then the first column is used.
-            Default: None
+            By default the first column is used for annotation.
 
     Returns:
-        NumPy ndarray containing data from CSV file, or None if
-        data could not be imported.
+        Numpy ndarray containing data from CSV-file, or None if the data could
+        not be imported.
 
     """
-    # Validate path
-    path = npath.validfile(filepath)
-    if not path:
-        raise OSError(f"file '{str(filepath)}' does not exist")
-
     # Get delimiter
-    delim = delim or get_delim(path)
+    delim = delim or get_delim(file)
     if not delim:
-        raise ValueError(f"delimiter in file '{path}' is not supported")
+        return None
 
     # Get labels
     if not labels:
-        labels = getlabels(path, delim=delim)
+        labels = get_labels(file, delim=delim)
         if not labels:
             raise ValueError("argument 'usecols' is not valid")
         usecols = tuple(range(len(labels)))
@@ -82,8 +71,7 @@ def load(
             "argument 'usecols' is required if 'labels' is given")
 
     # Get column id of annotation column
-    if rowlabelcol is None:
-        rowlabelcol = getanncolid(path, delim=delim)
+    rowlabelcol = rowlabelcol or get_annotation_column(file, delim=delim)
 
     # Get CSV data format
     if rowlabelcol is None:
@@ -104,35 +92,31 @@ def load(
 
     # Count how many 'comment' and 'blank' rows are to be skipped
     skiprows = 1
-    with open(path, 'r') as csvfile:
-        for line in csvfile:
-
-            # Check exclusion criteria
-            sline = line.lstrip(' ')
-            if sline.startswith('#'):
-                skiprows += 1
-                continue
-            if sline in ['\n', '\r\n']:
+    with niotext.open_read(file) as fd:
+        for line in fd:
+            strip = line.strip()
+            if not strip or strip.startswith('#'):
                 skiprows += 1
                 continue
             break
 
-    # Import CSV file to NumPy ndarray
-    return np.loadtxt(
-        path, skiprows=skiprows, delimiter=delim, usecols=usecols,
-        dtype=dtype)
+    # Import CSV-file to NumPy ndarray
+    with niotext.open_read(file) as fd:
+        return np.loadtxt(
+            fd, skiprows=skiprows, delimiter=delim, usecols=usecols,
+            dtype=dtype)
 
 def save(
-        filepath: PathLike, data: NpArray, header: OptStr = None,
-        labels: OptStrList = None, delim: str = ',') -> bool:
-    """Save NumPy array to CSV file.
+        file: FileOrPathLike, data: NpArray, header: OptStr = None,
+        labels: OptStrList = None, delim: str = ',') -> None:
+    """Save NumPy array to CSV-file.
 
     Args:
-        filepath: Filepath that points to a valid filename in a writeable
-            directory.
+        file: String, `path-like object`_ or `file-like object`_ that points to
+            a valid CSV-file in the directory structure of the system.
         data: NumPy ndarray containing the data which is to be exported to
-            a CSV file.
-        header: String which is included in the CSV file whithin an initial
+            a CSV-file.
+        header: String which is included in the CSV-file whithin an initial
             comment. If 'header' is None, then no initial comment is created.
             Default: None
         labels: List of strings containing CSV Column labels.
@@ -142,9 +126,6 @@ def save(
         True if no error occured.
 
     """
-    # Convert filepath to str
-    path = str(filepath)
-
     # Check and prepare arguments
     if isinstance(header, str):
         header = '# ' + header.replace('\n', '\n# ') + '\n\n'
@@ -156,18 +137,18 @@ def save(
     # Get number of columns from last entry in data.shape
     cols = list(getattr(data, 'shape'))[-1]
 
-    # Get format from number of columns
+    # Get column format
     fmt = delim.join(['%s'] + ['%10.10f'] * (cols - 1))
 
-    return np.savetxt(
-        path, data, fmt=fmt, header=header, comments='') is None
+    with niotext.open_write(file) as fd:
+        np.savetxt(fd, data, fmt=fmt, header=header, comments='')
 
 def get_header(file: FileOrPathLike) -> str:
     """Get header from CSV-file.
 
     Args:
         file: String, `path-like object`_ or `file-like object`_ that points to
-            a valid INI-file in the directory structure of the system.
+            a valid CSV-file in the directory structure of the system.
 
     Returns:
         String containing the header of the CSV-file or an empty string, if no
@@ -178,8 +159,8 @@ def get_header(file: FileOrPathLike) -> str:
         return niotext.read_header(fd)
 
 def get_delim(
-        file: FileOrPathLike, candidates: OptStrList = None, min_lines: int = 3,
-        max_lines: int = 100) -> OptStr:
+        file: FileOrPathLike, candidates: OptStrList = None, mincount: int = 3,
+        maxcount: int = 100) -> OptStr:
     r"""Detect delimiter of CSV-file.
 
     Args:
@@ -187,9 +168,9 @@ def get_delim(
             a valid CSV-file in the directory structure of the system.
         candidates: Optional list of strings containing delimiter candidates to
             search for. Default: [',', '\t', ';', ' ', ':']
-        min_lines: Minimum number of lines used to detect CSV delimiter. Thereby
+        mincount: Minimum number of lines used to detect CSV delimiter. Thereby
             only non comment and non empty lines are used.
-        max_lines: Maximum number of lines used to detect CSV delimiter. Thereby
+        maxcount: Maximum number of lines used to detect CSV delimiter. Thereby
             only non comment and non empty lines are used.
 
     Returns:
@@ -197,7 +178,7 @@ def get_delim(
         detected.
 
     """
-    # Initialise csv Sniffer with default values
+    # Initialise CSV-Sniffer with default values
     sniffer = csv.Sniffer()
     sniffer.preferred = candidates or [',', '\t', ';', ' ', ':']
     delim: OptStr = None
@@ -207,7 +188,7 @@ def get_delim(
         size, probe = 0, ''
         for line in fd:
             # Check termination criteria
-            if size > max_lines:
+            if size > maxcount:
                 break
             # Check exclusion criteria
             strip = line.strip()
@@ -216,7 +197,7 @@ def get_delim(
             # Increase probe size
             probe += line
             size += 1
-            if size <= min_lines:
+            if size <= mincount:
                 continue
             # Try to detect delimiter from probe using csv.Sniffer
             try:
@@ -251,155 +232,114 @@ def get_labels_format(file: FileOrPathLike, delim: OptStr = None) -> OptStr:
     if not delim:
         return None
 
-    # Get first and second non blank and non comment lines
-    line1, line2 = None, None
+    # Get first and second content lines (non comment, non empty) of CSV-file
     with niotext.open_read(file) as fd:
-        for line in fd:
-            strip = line.strip()
-            if not strip or strip.startswith('#'):
-                continue
-            if line1 is None:
-                line1 = line
-            elif line2 is None:
-                line2 = line
-                break
-    if not line1 or not line2:
+        lines = niotext.read_content(fd, count=2)
+    if len(lines) != 2:
         return None
 
     # Determine column label format
-    if line1.count(delim) == line2.count(delim):
+    if lines[0].count(delim) == lines[1].count(delim):
         return 'standard' # standard format
-    if line1.count(delim) == line2.count(delim) - 1:
+    if lines[0].count(delim) == lines[1].count(delim) - 1:
         return 'r-table' # R-Table CSV export
 
     return None
 
-def getlabels(
-        filepath: PathLike, delim: OptStr = None, fmt: OptStr = None) -> list:
-    """Get column labels from CSV file.
+def get_labels(
+        file: FileOrPathLike, delim: OptStr = None,
+        fmt: OptStr = None) -> OptStrList:
+    """Get column labels from CSV-file.
 
     Args:
-        filepath: Filepath that points to a valid CSV file.
-        delim: String containing CSV delimiter.
-            If 'delim' is None, then the CSV delimiter is detected from file.
-            Default: None
-        fmt: Format of the column labels. Accepted values are:
+        file: String, `path-like object`_ or `file-like object`_ that points to
+            a valid CSV-file in the directory structure of the system.
+        delim: String containing CSV-delimiter. By default the CSV-delimiter is
+            detected from the given file.
+        fmt: Format of the column labels. By default the format is detected from
+            the given file. Accepted values are:
             'standard': The number of column labels equals the size of the
-                CSV records, as desribed in [RFC4180].
+                CSV records, as desribed in `RFC4180`_.
             'r-table': The first column always is used for record annotation
                 and therfore does not require a seperate column label for it's
                 identification.
-            None: Detect the used format from the CSV file.
-            Default: None
 
     Returns:
         List of strings containing column labels from first non comment,
-        non empty line from CSV file.
-
-    References:
-        [RFC4180] https://tools.ietf.org/html/rfc4180
+        non empty line from CSV-file.
 
     """
-    # Validate path
-    path = npath.validfile(filepath)
-    if not path:
-        raise OSError(f"file '{str(filepath)}' does not exist")
-
     # Get delimiter
-    delim = delim or get_delim(path)
+    delim = delim or get_delim(file)
     if not delim:
-        raise csv.Error(f"delimiter in CSV file '{path}' is not supported")
+        return None
 
-    # Get column label format
-    fmt = fmt or get_labels_format(path, delim=delim)
+    # Get format of column labels
+    fmt = fmt or get_labels_format(file, delim=delim)
     if not fmt:
-        raise csv.Error(f"label format in CSV file '{path}' is not supported")
+        return None
 
-    # Get first line (non comment, non empty) of CSV file
-    line1 = ''
-    with open(path, 'r') as file:
-        for line in file:
-            bare = line.lstrip(' ')
-            if bare.startswith('#') or bare in ['\n', '\r\n']:
-                continue
-            line1 = line
-            break
+    # Get first content line (non comment, non empty) of CSV-file
+    with niotext.open_read(file) as fd:
+        line = niotext.read_content(fd, count=1)[0]
 
-    # Get unformated column labels from first line
-    labels = [col.strip('\"\'\n\r\t ') for col in line1.split(delim)]
+    # Get column labels from first content
+    labels = [col.strip('\"\'\n\r\t ') for col in line.split(delim)]
 
     # Format column labels
     if fmt == 'standard':
         return labels
     if fmt == 'r-table':
         return ['label'] + labels
+    return None
 
-    raise csv.Error(f"label format in CSV file '{path}' is not supported")
-
-def getanncolid(
-        filepath: PathLike, delim: OptStr = None, fmt: OptStr = None) -> OptInt:
-    """Get column id of the annotation column from CSV file.
+def get_annotation_column(
+        file: FileOrPathLike, delim: OptStr = None,
+        fmt: OptStr = None) -> OptInt:
+    """Get index of the annotation column of a CSV-file.
 
     The annotation column designates the CSV column, which contains the
     annotation strings of the records.
 
     Args:
-        filepath: Filepath that points to a valid CSV file.
-        delim: String containing CSV delimiter.
-            If 'delim' is None, then the CSV delimiter is detected from file.
-            Default: None
-        fmt: Format of the column labels. Accepted values are:
+        file: String, `path-like object`_ or `file-like object`_ that points to
+            a valid CSV-file in the directory structure of the system.
+        delim: String containing CSV-delimiter. By default the CSV-delimiter is
+            detected from the given file.
+        fmt: Format of the column labels. By default the format is detected from
+            the given file. Accepted values are:
             'standard': The number of column labels equals the size of the
-                CSV records, as desribed in [RFC4180].
+                CSV records, as desribed in `RFC4180`_.
             'r-table': The first column always is used for record annotation
                 and therfore does not require a seperate column label for it's
                 identification.
 
     Returns:
-        Column ID of the annotation column or None, if the CSV file does not
+        Column ID of the annotation column or None, if the CSV-file does not
         contain record annotation.
 
-    References:
-        [RFC4180] https://tools.ietf.org/html/rfc4180
-
     """
-    # Validate path
-    path = npath.validfile(filepath)
-    if not path:
-        raise OSError(f"file '{str(filepath)}' does not exist")
-
     # Get delimiter
-    delim = delim or get_delim(path)
+    delim = delim or get_delim(file)
     if not delim:
-        raise csv.Error(f"delimiter in CSV file '{path}' is not supported")
+        return None
 
-    # Get column label format
-    fmt = fmt or get_labels_format(path, delim=delim)
+    # Get format of column labels
+    fmt = fmt or get_labels_format(file, delim=delim)
     if not fmt:
-        raise csv.Error(f"label format in CSV file '{path}' is not supported")
+        return None
     if fmt == 'r-table':
         return 0 # In R-tables the first column is used for annotation
 
-    # Get first and second non comment and non empty lines
-    line1, line2 = None, None
-    with open(path, 'r') as file:
-        for line in file:
-            # Check for comments and blank lines
-            bare = line.lstrip(' ')
-            if bare.startswith('#') or bare in ['\n', '\r\n']:
-                continue
+    # Get first and second content lines (non comment, non empty) of CSV-file
+    with niotext.open_read(file) as fd:
+        lines = niotext.read_content(fd, count=2)
+    if len(lines) != 2:
+        return None
 
-            if not line1:
-                line1 = line
-            elif not line2:
-                line2 = line
-                break
-    if line1 is None or line2 is None:
-        raise csv.Error(f"file '{path}' is not a valid CSV file")
-
-    # Determine annotation column id from first value in the second line,
-    # that can not be converted to a float
-    values = [col.strip('\"\' \n') for col in line2.split(delim)]
+    # Determine annotation column id from first value in the second line, that
+    # can not be converted to a float
+    values = [col.strip('\"\' \n') for col in lines[1].split(delim)]
     for cid, val in enumerate(values):
         try:
             float(val)
