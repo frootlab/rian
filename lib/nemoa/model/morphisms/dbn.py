@@ -11,8 +11,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa.model.morphisms.ann
-
-from nemoa.common import nalgo
+from nemoa.math import nalgo
 
 class DBN(nemoa.model.morphisms.ann.ANN):
     """Deep Belief Network (DBN) Optimizer."""

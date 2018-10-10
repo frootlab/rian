@@ -1,7 +1,7 @@
-nemoa.common.nregr module
+nemoa.math.nmatrix module
 =========================
 
-.. automodule:: nemoa.common.nregr
+.. automodule:: nemoa.math.nmatrix
     :members:
     :undoc-members:
     :show-inheritance:

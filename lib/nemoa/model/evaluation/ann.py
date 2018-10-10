@@ -19,8 +19,7 @@ import nemoa
 import numpy
 
 from nemoa.model.evaluation.base import Evaluation
-
-from nemoa.common import ncurve, nalgo
+from nemoa.math import ncurve, nalgo
 
 class ANN(Evaluation):
 
@@ -290,7 +289,7 @@ class ANN(Evaluation):
                 of provided norms
 
         """
-        from nemoa.common import nvector
+        from nemoa.math import nvector
 
         # TODO: use nvector
         #error = nvector.distance(x, y, metric=metric)
@@ -328,7 +327,7 @@ class ANN(Evaluation):
 
         """
 
-        from nemoa.common import nvector
+        from nemoa.math import nvector
 
         # TODO: use nvector to calculate distance
         res = self.unitresiduals(data, **kwargs)
@@ -365,8 +364,7 @@ class ANN(Evaluation):
                 norms
 
         """
-
-        from nemoa.common import nvector
+        from nemoa.math import nvector
 
         res = self.unitresiduals(data, **kwargs)
         devres = nvector.length(res, norm=norm)

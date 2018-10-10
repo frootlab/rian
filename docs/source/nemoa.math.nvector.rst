@@ -1,7 +1,7 @@
-nemoa.common.nalgo module
+nemoa.math.nvector module
 =========================
 
-.. automodule:: nemoa.common.nalgo
+.. automodule:: nemoa.math.nvector
     :members:
     :undoc-members:
     :show-inheritance:

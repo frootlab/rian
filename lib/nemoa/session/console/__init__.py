@@ -116,6 +116,14 @@ def main():
                 loader.loadTestsFromModule(nemoa.common.__test__))
 
         try:
+            import nemoa.math.__test__
+        except ImportError:
+            pass
+        else:
+            suite.addTests(
+                loader.loadTestsFromModule(nemoa.math.__test__))
+
+        try:
             import nemoa.io.__test__
         except ImportError:
             pass

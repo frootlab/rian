@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-from nemoa.common import ncurve
+from nemoa.math import ncurve
 
 class UnitsBaseClass:
     """Base Class for Unit Layer.

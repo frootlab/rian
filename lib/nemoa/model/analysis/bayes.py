@@ -32,7 +32,7 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-from nemoa.common import ncurve, nalgo
+from nemoa.math import ncurve, nalgo
 
 #
 # (1) Sampler for Bayesian Networks
@@ -153,7 +153,7 @@ def get_error_vector(model, data, norm: str = 'MSE', **kwargs):
             of provided norms
 
     """
-    from nemoa.common import nvector
+    from nemoa.math import nvector
 
     # TODO: use nvector
     #error = nvector.distance(x, y, metric=metric)
@@ -190,7 +190,7 @@ def get_accuracy_vector(model, data, norm: str = 'MSE', **kwargs):
             norms
 
     """
-    from nemoa.common import nvector
+    from nemoa.math import nvector
 
     # TODO: use nvector
     #error = nvector.distance(x, y, metric=metric)
@@ -229,7 +229,7 @@ def get_precision_vector(model, data, norm = 'SD', **kwargs):
 
     """
 
-    from nemoa.common import nvector
+    from nemoa.math import nvector
 
     res = get_residuals(data, **kwargs)
     devres = nvector.length(res, norm=norm)

@@ -74,8 +74,7 @@ def save(network, path=None, filetype=None, plot=None, **kwargs):
 class Graph(nplot.Graph):
 
     def create(self, network):
-
-        from nemoa.common import ncurve, ngraph
+        from nemoa.math import ncurve, ngraph
 
         # set plot defaults
         self.set_default({
