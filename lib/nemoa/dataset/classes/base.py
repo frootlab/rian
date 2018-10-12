@@ -14,7 +14,7 @@ except ImportError as err:
         "https://scipy.org") from err
 
 import nemoa
-from nemoa.common import nclass, nbase
+from nemoa.core import nclass, nbase
 from nemoa.math import nalgo
 
 class Dataset(nbase.ObjectIP):
@@ -625,7 +625,7 @@ class Dataset(nbase.ObjectIP):
     def _get_algorithms(self, category = None, attribute = None, tree = False):
         """Get algorithms provided by dataset."""
 
-        from nemoa.common import nclass
+        from nemoa.core import nclass
 
         # get dictionary with all methods
         # with prefix '_get_' and attribute 'name'
@@ -1131,7 +1131,7 @@ class Dataset(nbase.ObjectIP):
                 type = np.recarray, dtype = dtype)
 
             if labels:
-                from nemoa.common import ntable
+                from nemoa.core import ntable
                 table_colsel = ntable.addcols(arr, self._tables[table], 'label')
             else:
                 table_colsel = arr
@@ -1296,7 +1296,7 @@ class Dataset(nbase.ObjectIP):
 
         """
 
-        from nemoa.common import ndict
+        from nemoa.core import ndict
 
         # initialize configuration dictionary
         if not isinstance(self._config, dict): self._config = {}
@@ -1321,7 +1321,7 @@ class Dataset(nbase.ObjectIP):
 
         if not tables: return True
 
-        from nemoa.common import ndict
+        from nemoa.core import ndict
         self._tables = ndict.merge(tables, self._tables)
 
         return True

@@ -61,7 +61,7 @@ class Session:
         import os
         import sys
 
-        from nemoa.common import ndict
+        from nemoa.core import ndict
         from nemoa.io import inifile
 
         self._config = ndict.merge(kwargs, self._default)
@@ -240,7 +240,7 @@ class Session:
 
         import glob
         import os
-        from nemoa.common import npath
+        from nemoa.core import npath
 
         basepath = self._config['default']['basepath'][base]
         baseglob = self._get_path_expand((basepath, '*'))
@@ -429,7 +429,7 @@ class Session:
         """
 
         import os
-        from nemoa.common import npath
+        from nemoa.core import npath
 
         path = str(npath.join(args))
 
@@ -469,7 +469,7 @@ class Session:
         import logging
         import traceback
 
-        from nemoa.common import nmodule, nsysinfo
+        from nemoa.core import nmodule, nsysinfo
 
         mode = self._get_mode()
         obj = args[0]
@@ -716,7 +716,7 @@ class Session:
 
         if curmode == 'line' and mode == 'key':
             if not self._buffer.get('inkey', None):
-                from nemoa.common import nconsole
+                from nemoa.core import nconsole
                 self._buffer['inkey'] = nconsole.Getch() # type: ignore
             self._buffer['inkey'].start()
             return True
@@ -819,7 +819,7 @@ class Session:
         """Scan workspace for files."""
 
         import glob
-        from nemoa.common import npath
+        from nemoa.core import npath
 
         # change current base and workspace (if necessary)
         cur_workspace = self._get_workspace()

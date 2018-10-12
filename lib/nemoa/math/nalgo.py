@@ -23,7 +23,7 @@ def search(module: OptModule = None, **kwargs: Any) -> dict:
         Dictionary with function information.
 
     """
-    from nemoa.common import nmodule
+    from nemoa.core import nmodule
 
     module = module or nmodule.inst(nmodule.curname(-1))
     if not isinstance(module, Module):

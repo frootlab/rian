@@ -9,7 +9,7 @@ __docformat__ = 'google'
 import tempfile
 from pathlib import Path
 
-from nemoa.common import ntest
+from nemoa.core import ntest
 
 class TestSuite(ntest.TestSuite):
     """Testsuite for modules within the package 'nemoa.io'."""

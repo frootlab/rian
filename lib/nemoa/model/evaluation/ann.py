@@ -285,7 +285,7 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate data reconstuction error from
-                residuals. see nemoa.common.nvector.norm for a list
+                residuals. see nemoa.core.nvector.norm for a list
                 of provided norms
 
         """
@@ -322,7 +322,7 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate accuracy
-                see nemoa.common.nvector.norm for a list of provided
+                see nemoa.core.nvector.norm for a list of provided
                 norms
 
         """
@@ -360,7 +360,7 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate deviation for precision
-                see nemoa.common.nvector.norm for a list of provided
+                see nemoa.core.nvector.norm for a list of provided
                 norms
 
         """

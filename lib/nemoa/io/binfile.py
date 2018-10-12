@@ -18,7 +18,7 @@ __docformat__ = 'google'
 
 from contextlib import contextmanager
 
-from nemoa.common import npath
+from nemoa.core import npath
 from nemoa.types import (
     BytesIOBaseClass, CManBytesIOLike, FileOrPathLike, IterBytesIOLike, Path,
     TextIOBaseClass)

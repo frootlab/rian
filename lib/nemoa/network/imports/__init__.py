@@ -37,7 +37,7 @@ def load(path, filetype = None, **kwargs):
     """Import network dictionary from file or workspace."""
 
     import os
-    from nemoa.common import npath
+    from nemoa.core import npath
     import nemoa
 
     # get path (if necessary)

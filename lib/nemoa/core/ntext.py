@@ -336,6 +336,6 @@ def aspath(text: str, expand: bool = True) -> Path:
             "argument 'expand' requires to be of type 'bool'"
             f", not '{type(expand)}'")
 
-    from nemoa.common import npath
+    from nemoa.core import npath
 
     return npath.getpath(text, unpack=expand)

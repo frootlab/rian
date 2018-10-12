@@ -1,7 +1,7 @@
-nemoa.common.narray module
+nemoa.core.narray module
 ==========================
 
-.. automodule:: nemoa.common.narray
+.. automodule:: nemoa.core.narray
     :members:
     :undoc-members:
     :show-inheritance:

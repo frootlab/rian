@@ -39,7 +39,7 @@ class Csv:
     default = { 'delim': ',' }
 
     def __init__(self, **kwargs):
-        from nemoa.common import ndict
+        from nemoa.core import ndict
         self.settings = ndict.merge(kwargs, self.default)
 
     def save(self, dataset, path):

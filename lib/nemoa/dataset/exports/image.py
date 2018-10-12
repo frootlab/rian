@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-from nemoa.common import nplot
+from nemoa.io import nplot
 
 def filetypes():
     """Get supported image filetypes."""
@@ -80,7 +80,7 @@ class Heatmap(nplot.Heatmap):
 
     def create(self, dataset):
 
-        from nemoa.common import nfunc
+        from nemoa.core import nfunc
 
         # set plot defaults
         self.set_default({
@@ -120,7 +120,7 @@ class Histogram(nplot.Histogram):
 
     def create(self, dataset):
 
-        from nemoa.common import nfunc
+        from nemoa.core import nfunc
 
         # set plot defaults
         self.set_default({
@@ -157,7 +157,7 @@ class Scatter2D(nplot.Scatter2D):
 
     def create(self, dataset):
 
-        from nemoa.common import nfunc
+        from nemoa.core import nfunc
 
         # set plot defaults
         self.set_default({
@@ -199,7 +199,7 @@ class Graph(nplot.Graph):
                 "requires package networkx: "
                 "https://networkx.github.io") from err
 
-        from nemoa.common import nfunc
+        from nemoa.core import nfunc
 
         # set plot defaults
         self.set_default({

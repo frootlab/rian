@@ -94,7 +94,7 @@ def main():
     os.system('cls' if os.name == 'nt' else 'clear')
     nemoa.set('mode', 'shell')
 
-    from nemoa.common import napp
+    from nemoa.core import napp
     name = napp.get_var('name')
     version = napp.get_var('version')
 

@@ -1,7 +1,7 @@
-nemoa.common.ntable module
+nemoa.core.ntable module
 ==========================
 
-.. automodule:: nemoa.common.ntable
+.. automodule:: nemoa.core.ntable
     :members:
     :undoc-members:
     :show-inheritance:

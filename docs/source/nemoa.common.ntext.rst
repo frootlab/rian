@@ -1,7 +1,7 @@
-nemoa.common.ntext module
+nemoa.core.ntext module
 =========================
 
-.. automodule:: nemoa.common.ntext
+.. automodule:: nemoa.core.ntext
     :members:
     :undoc-members:
     :show-inheritance:

@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import numpy
 import nemoa
 
-from nemoa.common import nclass
+from nemoa.core import nclass
 
 class Evaluation:
 
@@ -191,7 +191,7 @@ class Evaluation:
                 return dict(list(zip(units, retval)))
         elif category == 'links':
             if retfmt == 'scalar':
-                from nemoa.common import narray
+                from nemoa.core import narray
                 src = getunits(layer=kwargs['mapping'][0])
                 tgt = getunits(layer=kwargs['mapping'][-1])
                 return narray.asdict(retval, labels=(src, tgt))
@@ -216,7 +216,7 @@ class Evaluation:
                 if rettype == 'array':
                     return retval
                 if rettype == 'dict':
-                    from nemoa.common import narray
+                    from nemoa.core import narray
                     src = getunits(layer=kwargs['mapping'][0])
                     tgt = getunits(layer=kwargs['mapping'][-1])
                     retval = narray.asdict(retval, labels=(src, tgt))
@@ -255,7 +255,7 @@ class Evaluation:
     def _set_config(self, config=None, **kwargs):
         """Set evaluation configuration from dictionary."""
 
-        from nemoa.common import ndict
+        from nemoa.core import ndict
         if not isinstance(config, dict):
             config = {}
         self._config = ndict.merge(kwargs, config, self._default)

@@ -1,7 +1,7 @@
-nemoa.common.nsysinfo module
+nemoa.core.nsysinfo module
 ============================
 
-.. automodule:: nemoa.common.nsysinfo
+.. automodule:: nemoa.core.nsysinfo
     :members:
     :undoc-members:
     :show-inheritance:

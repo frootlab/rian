@@ -150,7 +150,7 @@ class Workspace(object):
         # update configuration dictionary
         if not config: return True
 
-        from nemoa.common import ndict
+        from nemoa.core import ndict
         self._config = ndict.merge(config, self._config)
 
         return True

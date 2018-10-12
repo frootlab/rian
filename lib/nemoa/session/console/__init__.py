@@ -108,12 +108,12 @@ def main():
 
         # add tests to the test suite
         try:
-            import nemoa.common.__test__
+            import nemoa.core.__test__
         except ImportError:
             pass
         else:
             suite.addTests(
-                loader.loadTestsFromModule(nemoa.common.__test__))
+                loader.loadTestsFromModule(nemoa.core.__test__))
 
         try:
             import nemoa.math.__test__

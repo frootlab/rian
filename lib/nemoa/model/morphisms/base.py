@@ -8,7 +8,7 @@ import nemoa
 import numpy
 import time
 
-from nemoa.common import nclass
+from nemoa.core import nclass
 
 class Optimizer:
 
@@ -41,7 +41,7 @@ class Optimizer:
     def _get_algorithms(self, category = None, attribute = None):
         """Get optimization algorithms."""
 
-        from nemoa.common import nclass
+        from nemoa.core import nclass
 
         algorithms = self._buffer['algorithms'].get(attribute, None)
         if not algorithms:
@@ -283,7 +283,7 @@ class Optimizer:
             schedules = system._config.get('schedules', {})
             config = schedules.get(key, {}).get(system.type, {})
 
-        from nemoa.common import ndict
+        from nemoa.core import ndict
         self._config = ndict.merge(kwargs, config, self._default)
 
         return True

@@ -6,7 +6,7 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-from nemoa.common import ntest
+from nemoa.core import ntest
 
 class TestSuite(ntest.TestSuite):
 

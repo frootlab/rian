@@ -149,7 +149,7 @@ def get_error_vector(model, data, norm: str = 'MSE', **kwargs):
         block: list of strings containing labels of source units
             that are blocked by setting the values to their means
         norm: used norm to calculate data reconstuction error from
-            residuals. see nemoa.common.nvector.norms for a list
+            residuals. see nemoa.core.nvector.norms for a list
             of provided norms
 
     """
@@ -186,7 +186,7 @@ def get_accuracy_vector(model, data, norm: str = 'MSE', **kwargs):
         block: list of strings containing labels of source units
             that are blocked by setting the values to their means
         norm: used norm to calculate accuracy
-            see nemoa.common.nvector.norms for a list of provided
+            see nemoa.core.nvector.norms for a list of provided
             norms
 
     """
@@ -224,7 +224,7 @@ def get_precision_vector(model, data, norm = 'SD', **kwargs):
         block: list of strings containing labels of source units
             that are blocked by setting the values to their means
         norm: used norm to calculate deviation for precision
-            see nemoa.common.nvector.norms for a list of provided
+            see nemoa.core.nvector.norms for a list of provided
             norms
 
     """

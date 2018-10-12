@@ -13,7 +13,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://scipy.org") from err
 
-from nemoa.common import nfunc, nmodule
+from nemoa.core import nfunc, nmodule
 from nemoa.math import nvector
 from nemoa.types import Any, IntTuple, NpArray, NpArrayLike, StrList
 
@@ -31,7 +31,7 @@ def norms() -> StrList:
         Sorted list of all matrix norms, that are implemented within the module.
 
     """
-    from nemoa.common import ndict
+    from nemoa.core import ndict
 
     # Get dictionary of functions with given prefix
     module = nmodule.inst(nmodule.curname())

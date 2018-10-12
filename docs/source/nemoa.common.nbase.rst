@@ -1,7 +1,7 @@
-nemoa.common.nbase module
+nemoa.core.nbase module
 =========================
 
-.. automodule:: nemoa.common.nbase
+.. automodule:: nemoa.core.nbase
     :members:
     :undoc-members:
     :show-inheritance:

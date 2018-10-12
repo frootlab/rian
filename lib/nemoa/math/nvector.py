@@ -13,7 +13,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://scipy.org") from err
 
-from nemoa.common import nfunc, nmodule
+from nemoa.core import nfunc, nmodule
 from nemoa.types import Any, NpAxis, NpArray, NpArrayLike, StrList
 
 NORM_PREFIX = 'norm_'
@@ -30,7 +30,7 @@ def norms() -> StrList:
         Sorted list of all vector norms, that are implemented within the module.
 
     """
-    from nemoa.common import ndict
+    from nemoa.core import ndict
 
     # Get dictionary of functions with given prefix
     module = nmodule.inst(nmodule.curname())
@@ -361,7 +361,7 @@ def metrices() -> StrList:
         metrices, that are implemented within the module.
 
     """
-    from nemoa.common import ndict
+    from nemoa.core import ndict
 
     # Declare and initialize return value
     dists: StrList = []

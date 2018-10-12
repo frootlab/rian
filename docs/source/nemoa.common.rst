@@ -1,4 +1,4 @@
-nemoa.common package
+nemoa.core package
 ====================
 
 Submodules
@@ -6,26 +6,26 @@ Submodules
 
 .. toctree::
 
-   nemoa.common.napp
-   nemoa.common.narray
-   nemoa.common.nbase
-   nemoa.common.nclass
-   nemoa.common.nconsole
-   nemoa.common.ndict
-   nemoa.common.nfunc
-   nemoa.common.nmodule
-   nemoa.common.npath
-   nemoa.common.nplot
-   nemoa.common.nsysinfo
-   nemoa.common.ntable
-   nemoa.common.ntest
-   nemoa.common.ntext
-   nemoa.common.nthreads
+   nemoa.core.napp
+   nemoa.core.narray
+   nemoa.core.nbase
+   nemoa.core.nclass
+   nemoa.core.nconsole
+   nemoa.core.ndict
+   nemoa.core.nfunc
+   nemoa.core.nmodule
+   nemoa.core.npath
+   nemoa.core.nplot
+   nemoa.core.nsysinfo
+   nemoa.core.ntable
+   nemoa.core.ntest
+   nemoa.core.ntext
+   nemoa.core.nthreads
 
 Module contents
 ---------------
 
-.. automodule:: nemoa.common
+.. automodule:: nemoa.core
     :members:
     :undoc-members:
     :show-inheritance:

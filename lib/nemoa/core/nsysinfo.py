@@ -78,7 +78,7 @@ def ttylib() -> OptModule:
     .. _msvcrt: https://docs.python.org/3/library/msvcrt.html
 
     """
-    from nemoa.common import nmodule
+    from nemoa.core import nmodule
 
     libs = ['msvcrt', 'termios']
     for name in libs:

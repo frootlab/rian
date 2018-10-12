@@ -22,7 +22,7 @@ import base64
 import pickle
 import zlib
 
-from nemoa.common import nsysinfo
+from nemoa.core import nsysinfo
 from nemoa.io import binfile
 from nemoa.types import Any, FileOrPathLike, OptStr, BytesLikeOrStr
 

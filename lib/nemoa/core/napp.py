@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from nemoa.types import Any, OptStr, StrDict, OptStrOrBool
-from nemoa.common import nmodule
+from nemoa.core import nmodule
 
 def get_var(varname: str, *args: Any, **kwargs: Any) -> OptStr:
     """Get application variable by name.
@@ -45,9 +45,9 @@ def get_var(varname: str, *args: Any, **kwargs: Any) -> OptStr:
             'credits': list with strings, acknowledging further contributors,
                 Teams or supporting organizations.
         *args: Optional arguments that specify the application, as required by
-            the function 'nemoa.common.napp.upd_vars'.
+            the function 'nemoa.core.napp.upd_vars'.
         **kwargs: Optional keyword arguments that specify the application, as
-            required by the function 'nemoa.common.napp.upd_vars'.
+            required by the function 'nemoa.core.napp.upd_vars'.
 
     Returns:
         String representing the value of the application variable.
@@ -80,9 +80,9 @@ def get_vars(*args: Any, **kwargs: Any) -> StrDict:
 
     Args:
         *args: Optional arguments that specify the application, as required by
-            the function 'nemoa.common.napp.upd_vars'.
+            the function 'nemoa.core.napp.upd_vars'.
         **kwargs: Optional keyword arguments that specify the application, as
-            required by the function 'nemoa.common.napp.upd_vars'.
+            required by the function 'nemoa.core.napp.upd_vars'.
 
     Returns:
         Dictionary containing application variables.
@@ -162,9 +162,9 @@ def get_dir(dirname: str, *args: Any, **kwargs: Any) -> str:
             'site_config_dir': Site specific configuration directory
             'site_data_dir': Site specific data directory
         *args: Optional arguments that specify the application, as required by
-            the function 'nemoa.common.napp.upddirs'.
+            the function 'nemoa.core.napp.upddirs'.
         **kwargs: Optional keyword arguments that specify the application, as
-            required by the function 'nemoa.common.napp.upddirs'.
+            required by the function 'nemoa.core.napp.upddirs'.
 
     Returns:
         String containing path of environmental directory or None if
@@ -197,9 +197,9 @@ def get_dirs(*args: Any, **kwargs: Any) -> StrDict:
 
     Args:
         *args: Optional arguments that specify the application, as required by
-            the function 'nemoa.common.napp.upddirs'.
+            the function 'nemoa.core.napp.upddirs'.
         **kwargs: Optional keyword arguments that specify the application, as
-            required by the function 'nemoa.common.napp.upddirs'.
+            required by the function 'nemoa.core.napp.upddirs'.
 
     Returns:
         Dictionary containing paths of application specific environmental

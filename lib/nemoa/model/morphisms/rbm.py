@@ -281,7 +281,7 @@ class RBM(nemoa.model.morphisms.ann.ANN):
         if config['gen_rasa_enable']:
             deltas.append(self._cdiv_delta_visible_rasa())
 
-        from nemoa.common import ndict
+        from nemoa.core import ndict
 
         return ndict.sumjoin(*deltas)
 
@@ -339,7 +339,7 @@ class RBM(nemoa.model.morphisms.ann.ANN):
         if config['gen_rasa_enable']:
             deltas.append(self._cdiv_delta_hidden_rasa())
 
-        from nemoa.common import ndict
+        from nemoa.core import ndict
 
         return ndict.sumjoin(*deltas)
 
@@ -418,7 +418,7 @@ class RBM(nemoa.model.morphisms.ann.ANN):
         if config['gen_rasa_enable']:
             deltas.append(self._cdiv_delta_links_rasa(deltas))
 
-        from nemoa.common import ndict
+        from nemoa.core import ndict
         return ndict.sumjoin(*deltas)
 
     def _cdiv_delta_links_cd(self, vdata, hdata, vmodel, hmodel, **kwargs):

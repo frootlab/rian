@@ -6,19 +6,19 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-from nemoa.common import ntest
+from nemoa.core import ntest
 
 class TestSuite(ntest.TestSuite):
 
     def test_model_import(self):
-        from nemoa.common import nclass
+        from nemoa.core import nclass
 
         with self.subTest(filetype = 'npz'):
             model = nemoa.model.open('test', workspace = 'testsuite')
             self.assertTrue(nclass.hasbase(model, 'Model'))
 
     def test_model_ann(self):
-        from nemoa.common import nclass
+        from nemoa.core import nclass
 
         with self.subTest(step = 'create shallow ann'):
             model = nemoa.model.create(
@@ -31,7 +31,7 @@ class TestSuite(ntest.TestSuite):
             self.assertTrue(test)
 
     def test_model_dbn(self):
-        from nemoa.common import nclass
+        from nemoa.core import nclass
 
         with self.subTest(step = 'create dbn'):
             model = nemoa.model.create(

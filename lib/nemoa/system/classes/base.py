@@ -8,7 +8,7 @@ import nemoa
 import numpy
 import copy
 
-from nemoa.common import nbase, nclass
+from nemoa.core import nbase, nclass
 from nemoa.math import nalgo, ncurve
 from typing import Any, Dict
 
@@ -120,7 +120,7 @@ class System(nbase.ObjectIP):
     def _get_algorithms(self, category = None, attribute = None, tree = False):
         """Get algorithms provided by system."""
 
-        from nemoa.common import nclass
+        from nemoa.core import nclass
 
         # get dictionary with all methods
         # with prefix '_get_' and attribute 'name'
@@ -828,7 +828,7 @@ class System(nbase.ObjectIP):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate data reconstuction error from
-                residuals. see nemoa.common.nvector.norm for a list
+                residuals. see nemoa.core.nvector.norm for a list
                 of provided norms
 
         """
@@ -866,7 +866,7 @@ class System(nbase.ObjectIP):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate accuracy
-                see nemoa.common.nvector.norm for a list of provided
+                see nemoa.core.nvector.norm for a list of provided
                 norms
 
         """
@@ -904,7 +904,7 @@ class System(nbase.ObjectIP):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate deviation for precision
-                see nemoa.common.nvector.norm for a list of provided
+                see nemoa.core.nvector.norm for a list of provided
                 norms
 
         """
@@ -1344,7 +1344,7 @@ class System(nbase.ObjectIP):
         if not hasattr(self, '_config') or not self._config:
             self._config = self._default.copy()
         if config:
-            from nemoa.common import ndict
+            from nemoa.core import ndict
             self._config = ndict.merge(config, self._config)
 
         # reset consistency check
@@ -1362,7 +1362,7 @@ class System(nbase.ObjectIP):
 
         # get system parameters from dict
         if params:
-            from nemoa.common import ndict
+            from nemoa.core import ndict
             self._params = ndict.merge(params, self._params)
 
             # create instances of units and links
@@ -1413,7 +1413,7 @@ class System(nbase.ObjectIP):
                 links[(src_lid, tgt_lid)]['A'][src_sid, tgt_sid] = 1.0
 
             params = {'units': units, 'links': links}
-            from nemoa.common import ndict
+            from nemoa.core import ndict
             self._params = ndict.merge(params, self._params)
 
             # create instances of units and links
@@ -1840,7 +1840,7 @@ class System(nbase.ObjectIP):
             if retfmt == 'array':
                 retval = values
             elif retfmt == 'dict':
-                from nemoa.common import narray
+                from nemoa.core import narray
                 src = self._get_units(layer = ekwargs['mapping'][0])
                 tgt = self._get_units(layer = ekwargs['mapping'][-1])
                 retval = narray.asdict(values, labels=(src, tgt))

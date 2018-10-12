@@ -1,7 +1,7 @@
-nemoa.common.nmodule module
+nemoa.core.nmodule module
 ===========================
 
-.. automodule:: nemoa.common.nmodule
+.. automodule:: nemoa.core.nmodule
     :members:
     :undoc-members:
     :show-inheritance:

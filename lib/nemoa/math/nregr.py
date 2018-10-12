@@ -13,7 +13,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://scipy.org") from err
 
-from nemoa.common import nfunc, nmodule
+from nemoa.core import nfunc, nmodule
 from nemoa.math import nvector
 from nemoa.types import Any, NpAxis, NpArray, NpArrayLike, StrList
 
@@ -45,7 +45,7 @@ def errors() -> StrList:
         [4] https://en.wikipedia.org/wiki/semimetrics
 
     """
-    from nemoa.common import ndict
+    from nemoa.core import ndict
 
     # Get dictionary of functions with given prefix
     module = nmodule.inst(nmodule.curname())

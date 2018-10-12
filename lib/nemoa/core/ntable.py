@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Collection of frequently used numpy recarray functions."""
+"""NumPy recarray functions.
+
+.. References:
+.. _rec_append_fields:
+    https://www.numpy.org/devdocs/user/basics.rec.html
+
+"""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -13,7 +19,7 @@ def addcols(
         cols: NpFields = None) -> NpRecArray:
     """Add columns from source table to target table.
 
-    Wrapper function to numpy's rec_append_fields [1].
+    Wrapper function to numpy's `rec_append_fields`_.
 
     Args:
         base: Numpy record array with table like data
@@ -26,9 +32,6 @@ def addcols(
         Numpy record array containing the base array, as well as the
         appended columns.
 
-    References:
-        [1] https://www.numpy.org/devdocs/user/basics.rec.html
-
     """
     from numpy.lib import recfunctions as rec
 
@@ -40,5 +43,5 @@ def addcols(
 
     cols = list(cols) # make cols mutable
 
-    # append fields
+    # Append fields
     return rec.rec_append_fields(base, cols, [data[c] for c in cols])

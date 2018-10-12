@@ -8,7 +8,7 @@ import importlib
 
 import numpy
 
-from nemoa.common import nplot
+from nemoa.io import nplot
 
 def filetypes():
     """Get supported image filetypes."""

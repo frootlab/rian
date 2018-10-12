@@ -222,7 +222,7 @@ def functions(
             "argument 'module' is required to be of type 'ModuleType' or None"
             f", not '{type(module)}'")
 
-    from nemoa.common import ndict, nfunc
+    from nemoa.core import ndict, nfunc
 
     # Get dictionary with function references using 'inspect'
     refs = {k: v for k, v in inspect.getmembers(module, inspect.isfunction)}
@@ -330,7 +330,7 @@ def search(
             "argument 'module' is required to be of type 'ModuleType' or None"
             f", not '{type(module)}'")
 
-    from nemoa.common import ndict
+    from nemoa.core import ndict
 
     # Get list with submodules
     mnames = [module.__name__] + submodules(module, recursive=recursive)

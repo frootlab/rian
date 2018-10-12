@@ -27,7 +27,7 @@ def load(path, filetype = None, **kwargs):
     """Import model dictionary from file or workspace."""
 
     import os
-    from nemoa.common import npath
+    from nemoa.core import npath
 
     # get path (if necessary)
     if 'workspace' in kwargs or not os.path.isfile(path):

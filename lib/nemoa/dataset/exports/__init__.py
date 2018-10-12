@@ -5,7 +5,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 from nemoa.dataset.exports import archive, text, image
-from nemoa.common import nclass
+from nemoa.core import nclass
 
 def filetypes(filetype = None):
     """Get supported dataset export filetypes."""
@@ -52,7 +52,7 @@ def save(dataset, path = None, filetype = None, workspace = None,
     if not nclass.hasbase(dataset, 'Dataset'):
         raise TypeError("dataset is not valid")
 
-    from nemoa.common import npath
+    from nemoa.core import npath
     import nemoa
 
     # get directory, filename and fileextension

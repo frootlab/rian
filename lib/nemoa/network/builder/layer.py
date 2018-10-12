@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import nemoa
 import networkx
 
-from nemoa.common import nclass
+from nemoa.core import nclass
 
 def types():
     """Get supported layer network types for network building."""
@@ -44,7 +44,7 @@ class AutoEncoder:
     default = { 'name': 'autoencoder' }
 
     def __init__(self, dataset = None, *args, **kwargs):
-        from nemoa.common import ndict
+        from nemoa.core import ndict
         self.settings = ndict.merge(kwargs, self.default)
 
         # columns
@@ -77,7 +77,7 @@ class MultiLayer:
         'labelformat': 'generic:string' }
 
     def __init__(self, **kwargs):
-        from nemoa.common import ndict
+        from nemoa.core import ndict
         self.settings = ndict.merge(kwargs, self.default)
 
     def build(self):
@@ -154,7 +154,7 @@ class Factor:
         'labelencapsulate': False }
 
     def __init__(self, **kwargs):
-        from nemoa.common import ndict
+        from nemoa.core import ndict
         self.settings = ndict.merge(kwargs, self.default)
 
     def build(self):

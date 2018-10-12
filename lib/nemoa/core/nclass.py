@@ -59,7 +59,7 @@ def methods(
 
     """
     import inspect
-    from nemoa.common import ndict
+    from nemoa.core import ndict
 
     # declare and initialize return values
     mdict: RecDict = {}

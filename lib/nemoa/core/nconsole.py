@@ -13,7 +13,7 @@ from abc import ABC, abstractmethod
 from queue import Empty, Queue
 from threading import Thread
 
-from nemoa.common import nsysinfo
+from nemoa.core import nsysinfo
 from nemoa.types import Module, OptModule
 
 ENCODING = nsysinfo.encoding()
