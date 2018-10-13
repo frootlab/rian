@@ -10,11 +10,11 @@ import threading
 
 from nemoa.types import Any, AnyFunc, Obj
 
-def thread(func: AnyFunc, *args: Any, **kwargs: Any) -> Obj:
+def thread(func: AnyFunc, *args: Any, **kwds: Any) -> Obj:
     """Create and start thread for given callable and arguments."""
     thr = threading.Thread(
-        target=(lambda func, args, kwargs: func(*args, **kwargs)),
-        args=(func, args, kwargs))
+        target=(lambda func, args, kwds: func(*args, **kwds)),
+        args=(func, args, kwds))
 
     thr.daemon = True
     thr.start()

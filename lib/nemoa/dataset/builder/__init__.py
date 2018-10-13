@@ -22,7 +22,7 @@ def types(type = None):
 
     return None
 
-def build(type, *args, **kwargs):
+def build(type, *args, **kwds):
     """Build dataset from building parameters."""
 
     # test if type is supported
@@ -32,6 +32,6 @@ def build(type, *args, **kwargs):
     module_name = types(type)[0]
 
     if module_name == 'plain':
-        dataset = plain.build(type, *args, **kwargs)
+        dataset = plain.build(type, *args, **kwds)
 
     return dataset or {}

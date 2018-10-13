@@ -1,5 +1,5 @@
 nemoa.core.npath module
-=========================
+=======================
 
 .. automodule:: nemoa.core.npath
     :members:

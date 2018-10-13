@@ -14,7 +14,7 @@ def filetypes():
         'tsv': 'Tab Separated Values',
         'tab': 'Tab Separated Values'}
 
-def load(path, **kwargs):
+def load(path, **kwds):
     """Import dataset from text file."""
 
     from nemoa.core import npath
@@ -26,8 +26,8 @@ def load(path, **kwargs):
     if filetype not in filetypes():
         raise ValueError(f"filetype '{filetype}' is not supported")
 
-    if filetype == 'csv': return Csv(**kwargs).load(path)
-    if filetype in ['tsv', 'tab']: return Tsv(**kwargs).load(path)
+    if filetype == 'csv': return Csv(**kwds).load(path)
+    if filetype in ['tsv', 'tab']: return Tsv(**kwds).load(path)
 
     return False
 
@@ -37,9 +37,9 @@ class Csv:
     settings = None
     default = {'delim': ','}
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwds):
         from nemoa.core import ndict
-        self.settings = ndict.merge(kwargs, self.default)
+        self.settings = ndict.merge(kwds, self.default)
 
     def load(self, path):
         """Get dataset configuration and dataset tables.

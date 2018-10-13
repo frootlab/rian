@@ -126,8 +126,8 @@ def attributes(**attr: Any) -> FuncWrapper:
 
     """
     def wrapper(method):
-        def wrapped(self, *args, **kwargs):
-            return method(self, *args, **kwargs)
+        def wrapped(self, *args, **kwds):
+            return method(self, *args, **kwds)
 
         for key, val in attr.items():
             setattr(wrapped, key, val)

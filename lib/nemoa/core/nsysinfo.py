@@ -1,5 +1,21 @@
 # -*- coding: utf-8 -*-
-"""Functions to access OS and platform informations."""
+"""Functions to access OS and platform informations.
+
+.. References:
+.. _locale.getpreferredencoding():
+    https://docs.python.org/3/library/locale.html#locale.getpreferredencoding
+.. _platform.node():
+    https://docs.python.org/3/library/platform.html#platform.node
+.. _platform.system():
+    https://docs.python.org/3/library/platform.html#platform.system
+.. _getpass.getuser():
+    https://docs.python.org/3/library/getpass.html#getpass.getuser
+.. _termios:
+    https://docs.python.org/3/library/termios.html
+.. _msvcrt:
+    https://docs.python.org/3/library/msvcrt.html
+
+"""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -20,9 +36,6 @@ def encoding() -> str:
     Returns:
         String representing the preferred encoding used for text data.
 
-    .. _locale.getpreferredencoding():
-       https://docs.python.org/3/library/locale.html#locale.getpreferredencoding
-
     """
     import locale
     return locale.getpreferredencoding()
@@ -36,9 +49,6 @@ def hostname() -> str:
 
     Returns:
         String representing the computer’s hostname or None.
-
-    .. _platform.node():
-        https://docs.python.org/3/library/platform.html#platform.node
 
     """
     import platform
@@ -55,9 +65,6 @@ def osname() -> str:
     Returns:
         String representing the OS name or None.
 
-    .. _platform.system():
-        https://docs.python.org/3/library/platform.html#platform.system
-
     """
     import platform
     return platform.system()
@@ -73,9 +80,6 @@ def ttylib() -> OptModule:
     Returns:
         Reference to module for tty I/O control or None, if the module could
         not be determined.
-
-    .. _termios: https://docs.python.org/3/library/termios.html
-    .. _msvcrt: https://docs.python.org/3/library/msvcrt.html
 
     """
     from nemoa.core import nmodule
@@ -99,9 +103,6 @@ def username() -> str:
 
     Returns:
         String representing the login name of the current user.
-
-    .. _getpass.getuser():
-       https://docs.python.org/3/library/getpass.html#getpass.getuser
 
     """
     import getpass

@@ -1,22 +1,34 @@
 # -*- coding: utf-8 -*-
-"""Functions to access application variables and directories."""
+"""Functions to access application variables and directories.
+
+.. References:
+.. PEP 345_: https://www.python.org/dev/peps/pep-0345/
+.. RFC 822_: https://www.w3.org/Protocols/rfc822/
+.. appdirs_: http://github.com/ActiveState/appdirs
+
+"""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from nemoa.types import Any, OptStr, StrDict, OptStrOrBool
-from nemoa.core import nmodule
+from pathlib import Path
 
-def get_var(varname: str, *args: Any, **kwargs: Any) -> OptStr:
+from nemoa.core import nmodule
+from nemoa.types import Any, OptStr, OptStrOrBool, StrDict, StrDictOfPaths
+
+# Module constants
+APPNAME = Path(__file__).parent.parent.name
+
+def get_var(varname: str, *args: Any, **kwds: Any) -> OptStr:
     """Get application variable by name.
 
     Application variables are intended to describe the application distribution
     by authorship information, bibliographic information, status, formal
     conditions and notes or warnings. Therfore the variables are independent
     from runtime properties including user and session. For more information
-    see `[PEP345]`_.
+    see `PEP 345`_.
 
     Args:
         name: Name of application variable. Typical variable names are:
@@ -46,54 +58,49 @@ def get_var(varname: str, *args: Any, **kwargs: Any) -> OptStr:
                 Teams or supporting organizations.
         *args: Optional arguments that specify the application, as required by
             the function 'nemoa.core.napp.upd_vars'.
-        **kwargs: Optional keyword arguments that specify the application, as
+        **kwds: Optional keyword arguments that specify the application, as
             required by the function 'nemoa.core.napp.upd_vars'.
 
     Returns:
         String representing the value of the application variable.
 
-    .. [PEP345]_: https://www.python.org/dev/peps/pep-0345/
-    .. [RFC822]_: https://www.w3.org/Protocols/rfc822/
-
     """
     # Check type of argument 'name'
     if not isinstance(varname, str):
         raise TypeError(
-            "argument 'name' requires to be of type 'str' or None"
-            f", not '{type(varname)}'")
+            "'name' requires to be of type 'str' or None"
+            f", not '{type(varname).__name__}'")
 
     # Update variables if not present or if optional arguments are given
-    if not '_VARS' in globals() or args or kwargs:
-        upd_vars(*args, **kwargs)
-    appvars = globals().get('_VARS', {})
+    if not '_vars' in globals() or args or kwds:
+        upd_vars(*args, **kwds)
+    appvars = globals().get('_vars', {})
 
     return appvars.get(varname, None)
 
-def get_vars(*args: Any, **kwargs: Any) -> StrDict:
+def get_vars(*args: Any, **kwds: Any) -> StrDict:
     """Get dictionary with application vaiables.
 
     Application variables are intended to describe the application distribution
     by authorship information, bibliographic information, status, formal
     conditions and notes or warnings. Therfore the variables are independent
     from runtime properties including user and session. For more information
-    see `[PEP345]`_.
+    see `PEP 345`_.
 
     Args:
         *args: Optional arguments that specify the application, as required by
             the function 'nemoa.core.napp.upd_vars'.
-        **kwargs: Optional keyword arguments that specify the application, as
+        **kwds: Optional keyword arguments that specify the application, as
             required by the function 'nemoa.core.napp.upd_vars'.
 
     Returns:
         Dictionary containing application variables.
 
-    .. [PEP345]_: https://www.python.org/dev/peps/pep-0345/
-
     """
     # update variables if not present or if optional arguments are given
-    if not '_VARS' in globals() or args or kwargs:
-        upd_vars(*args, **kwargs)
-    return globals().get('_VARS', {}).copy()
+    if not '_vars' in globals() or args or kwds:
+        upd_vars(*args, **kwds)
+    return globals().get('_vars', {}).copy()
 
 def upd_vars(filepath: OptStr = None) -> None:
     """Update application variables from module attributes.
@@ -102,7 +109,7 @@ def upd_vars(filepath: OptStr = None) -> None:
     by authorship information, bibliographic information, status, formal
     conditions and notes or warnings. Therfore the variables are independent
     from runtime properties including user and session. For more information
-    see `[PEP345]`_.
+    see `PEP 345`_.
 
     Args:
         filepath: Valid path to python module or package, which comprises the
@@ -110,8 +117,6 @@ def upd_vars(filepath: OptStr = None) -> None:
 
     Returns:
         Dictionary with application variables.
-
-    .. [PEP345]_: https://www.python.org/dev/peps/pep-0345/
 
     """
     import io
@@ -130,8 +135,7 @@ def upd_vars(filepath: OptStr = None) -> None:
         with io.open(filepath, encoding='utf8') as file:
             content = file.read()
     else:
-        raise TypeError(
-            f"module '{mname}' could not be loaded")
+        raise ImportError(f"module '{mname}' could not be loaded")
 
     # Parse content for module variables with regular expressions
     rkey = "__([a-zA-Z][a-zA-Z0-9]*)__"
@@ -144,9 +148,9 @@ def upd_vars(filepath: OptStr = None) -> None:
     # application variable 'name'
     dvars['name'] = dvars.get('name', nmodule.curname().split('.')[0])
 
-    globals()['_VARS'] = dvars
+    globals()['_vars'] = dvars
 
-def get_dir(dirname: str, *args: Any, **kwargs: Any) -> str:
+def get_dir(dirname: str, *args: Any, **kwds: Any) -> str:
     """Get application specific environmental directory by name.
 
     This function returns application specific system directories by platform
@@ -159,12 +163,14 @@ def get_dir(dirname: str, *args: Any, **kwargs: Any) -> str:
             'user_config_dir': Configuration directory of user
             'user_data_dir': Data directory of user
             'user_log_dir': Logging directory of user
-            'site_config_dir': Site specific configuration directory
-            'site_data_dir': Site specific data directory
+            'site_config_dir': Site global configuration directory
+            'site_data_dir': Site global data directory
+            'site_package_dir': Site global package directory
+            'cur_package_dir': Current package directory
         *args: Optional arguments that specify the application, as required by
-            the function 'nemoa.core.napp.upddirs'.
-        **kwargs: Optional keyword arguments that specify the application, as
-            required by the function 'nemoa.core.napp.upddirs'.
+            the function 'nemoa.core.napp.upd_dirs'.
+        **kwds: Optional keyword arguments that specify the application, as
+            required by the function 'nemoa.core.napp.upd_dirs'.
 
     Returns:
         String containing path of environmental directory or None if
@@ -174,13 +180,13 @@ def get_dir(dirname: str, *args: Any, **kwargs: Any) -> str:
     # Check type of argument 'dirname'
     if not isinstance(dirname, str):
         raise TypeError(
-            "argument 'name' requires to be of type 'str' or None"
-            f", not '{type(dirname)}'")
+            "'name' requires to be of type 'str' or None"
+            f", not '{type(dirname).__name__}'")
 
     # Update appdirs if not present or if optional arguments are given
-    if not '_DIRS' in globals() or args or kwargs:
-        upddirs(*args, **kwargs)
-    dirs = globals().get('_DIRS', {})
+    if not '_dirs' in globals() or args or kwds:
+        upd_dirs(*args, **kwds)
+    dirs = globals().get('_dirs', {})
 
     # Check value of argument 'dirname'
     if dirname not in dirs:
@@ -188,7 +194,7 @@ def get_dir(dirname: str, *args: Any, **kwargs: Any) -> str:
 
     return dirs[dirname]
 
-def get_dirs(*args: Any, **kwargs: Any) -> StrDict:
+def get_dirs(*args: Any, **kwds: Any) -> StrDict:
     """Get application specific environmental directories.
 
     This function returns application specific system directories by platform
@@ -197,9 +203,9 @@ def get_dirs(*args: Any, **kwargs: Any) -> StrDict:
 
     Args:
         *args: Optional arguments that specify the application, as required by
-            the function 'nemoa.core.napp.upddirs'.
-        **kwargs: Optional keyword arguments that specify the application, as
-            required by the function 'nemoa.core.napp.upddirs'.
+            the function 'nemoa.core.napp.upd_dirs'.
+        **kwds: Optional keyword arguments that specify the application, as
+            required by the function 'nemoa.core.napp.upd_dirs'.
 
     Returns:
         Dictionary containing paths of application specific environmental
@@ -207,13 +213,13 @@ def get_dirs(*args: Any, **kwargs: Any) -> StrDict:
 
     """
     # Update appdirs if not present or if optional arguments are given
-    if not '_DIRS' in globals() or args or kwargs:
-        upddirs(*args, **kwargs)
-    return globals().get('_DIRS', {}).copy()
+    if not '_dirs' in globals() or args or kwds:
+        upd_dirs(*args, **kwds)
+    return globals().get('_dirs', {}).copy()
 
-def upddirs(
+def upd_dirs(
         appname: OptStr = None, appauthor: OptStrOrBool = None,
-        version: OptStr = None, **kwargs: Any) -> None:
+        version: OptStr = None, **kwds: Any) -> None:
     """Update application specific directories from name, author and version.
 
     This is a wrapper function to the package `appdirs`_.
@@ -228,30 +234,44 @@ def upddirs(
             You might want to use this if you want multiple versions of your
             app to be able to run independently. If used, this would typically
             be "<major>.<minor>". Only applied when appname is present.
-        **kwargs: Optional keyword arguments for the respective directory name.
-            For more information see `appdirs`_.
+        **kwds: Optional directory name specific keyword arguments. For more
+            information see `appdirs`_.
 
     Returns:
         Dictionary containing paths of application specific environmental
         directories.
 
-    .. appdirs_: http://github.com/ActiveState/appdirs
-
     """
+    from distutils import sysconfig
+
     try:
-        import appdirs
+        from appdirs import AppDirs
     except ImportError as err:
         raise ImportError(
             "requires package appdirs: "
             "https://pypi.org/project/appdirs/") from err
 
-    dirs = appdirs.AppDirs(
-        appname=appname or get_var('name'),
-        appauthor=(appauthor or get_var('company')
-            or get_var('organization') or get_var('author')),
-        version=version, **kwargs)
-    keys = [
+    dirs: StrDictOfPaths = {}
+
+    # Get directories from appdirs
+    appname = appname or get_var('name') or APPNAME
+    appauthor = (appauthor or get_var('company') or get_var('organization')
+        or get_var('author'))
+    appdirs = AppDirs(
+        appname=appname, appauthor=appauthor, version=version, **kwds)
+    dirnames = [
         'user_cache_dir', 'user_config_dir', 'user_data_dir',
         'user_log_dir', 'site_config_dir', 'site_data_dir']
+    for dirname in dirnames:
+        dirs[dirname] = Path(getattr(appdirs, dirname))
 
-    globals()['_DIRS'] = {key: getattr(dirs, key) for key in keys}
+    # Get directories from distutils
+    packages = sysconfig.get_python_lib()
+    dirs['site_package_dir'] = Path(packages, appname)
+
+    # Get current package directory
+    mname = nmodule.curname().split('.')[0]
+    module = nmodule.inst(mname)
+    dirs['cur_package_dir'] = Path(getattr(module, '__file__')).parent
+
+    globals()['_dirs'] = dirs

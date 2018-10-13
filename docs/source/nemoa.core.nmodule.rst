@@ -1,5 +1,5 @@
 nemoa.core.nmodule module
-===========================
+=========================
 
 .. automodule:: nemoa.core.nmodule
     :members:

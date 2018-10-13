@@ -1,5 +1,5 @@
 nemoa.core.ntest module
-=========================
+=======================
 
 .. automodule:: nemoa.core.ntest
     :members:

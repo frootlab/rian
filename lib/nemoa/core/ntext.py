@@ -33,8 +33,8 @@ def splitargs(text: str) -> Tuple[str, tuple, dict]:
     # Check argument types
     if not isinstance(text, str):
         raise TypeError(
-            "argument 'text' requires to be of type 'str'"
-            f", not '{type(text)}'")
+            "'text' requires to be of type 'str'"
+            f", not '{type(text).__name__}'")
 
     # Get function name
     try:
@@ -55,17 +55,17 @@ def splitargs(text: str) -> Tuple[str, tuple, dict]:
     args = tuple(largs)
 
     # get dictionary with keywords
-    astkwargs = getattr(getattr(tree.body[0], 'value'), 'keywords')
-    kwargs = {}
-    for astkwarg in astkwargs:
+    astkwds = getattr(getattr(tree.body[0], 'value'), 'keywords')
+    kwds = {}
+    for astkwarg in astkwds:
         key = astkwarg.arg
         typ = astkwarg.value._fields[0]
         val = getattr(astkwarg.value, typ)
-        kwargs[key] = val
+        kwds[key] = val
 
-    return func, args, kwargs
+    return func, args, kwds
 
-def astype(text: str, fmt: OptStr = None, **kwargs: Any) -> Any:
+def astype(text: str, fmt: OptStr = None, **kwds: Any) -> Any:
     """Convert text into given target format.
 
     Args:
@@ -75,7 +75,7 @@ def astype(text: str, fmt: OptStr = None, **kwargs: Any) -> Any:
             function. Some types however also accept additional formats, which
             e.g. appear in the formatting of ini files.
         fmt: Target format in which the text is converted.
-        **kwargs: Supplementary parameters, that specify the target format
+        **kwds: Supplementary parameters, that specify the target format
 
     Returns:
         Value of the text in given target format.
@@ -84,8 +84,8 @@ def astype(text: str, fmt: OptStr = None, **kwargs: Any) -> Any:
     # check argument types
     if not isinstance(text, str):
         raise TypeError(
-            "argument 'text' requires to be of type 'str'"
-            f", not '{type(text)}'")
+            "'text' requires to be of type 'str'"
+            f", not '{type(text).__name__}'")
 
     # evaluate text if no format is given
     if fmt is None:
@@ -106,7 +106,7 @@ def astype(text: str, fmt: OptStr = None, **kwargs: Any) -> Any:
     # sequence and special types
     stypes = ['list', 'tuple', 'set', 'dict', 'path']
     if fmt in stypes:
-        return getattr(sys.modules[__name__], 'as' + fmt)(text, **kwargs)
+        return getattr(sys.modules[__name__], 'as' + fmt)(text, **kwds)
 
     raise KeyError(f"type '{fmt}' is not supported")
 
@@ -130,11 +130,11 @@ def aslist(text: str, delim: str = ',') -> list:
     if not isinstance(text, str):
         raise TypeError(
             "first argument requires to be of type 'str'"
-            f", not '{type(text)}'")
+            f", not '{type(text).__name__}'")
     if not isinstance(delim, str):
         raise TypeError(
             "argument 'delim' requires type "
-            f"'str', not '{type(text)}'")
+            f"'str', not '{type(text).__name__}'")
 
     # return empty list if the string is blank
     if not text or not text.strip():
@@ -212,21 +212,20 @@ def asset(text: str, delim: str = ',') -> set:
         Value of the text as set.
 
     """
-    # check argument types
+    # Check argument types
     if not isinstance(text, str):
         raise TypeError(
-            "first argument requires to be of type 'str'"
+            "first argument 'text' requires to be of type 'str'"
             f", not '{type(text)}'")
     if not isinstance(delim, str):
         raise TypeError(
-            "argument 'delim' requires type "
-            f"'str', not '{type(text)}'")
+            f"'delim' requires type 'str', not '{type(text).__name__}'")
 
-    # return empty set if the string is blank
+    # Return empty set if the string is blank
     if not text or not text.strip():
         return set()
 
-    # python format
+    # Python standard format
     val = None
     if delim == ',':
         try:
@@ -236,7 +235,7 @@ def asset(text: str, delim: str = ',') -> set:
     if isinstance(val, set):
         return val
 
-    # delimited string format
+    # Delimited string format
     return {item.strip() for item in text.split(delim)}
 
 def asdict(text: str, delim: str = ',') -> dict:
@@ -256,17 +255,16 @@ def asdict(text: str, delim: str = ',') -> dict:
         Value of the text as dictionary.
 
     """
-    # check argument types
+    # Check argument types
     if not isinstance(text, str):
         raise TypeError(
-            "first argument requires to be of type 'str'"
-            f", not '{type(text)}'")
+            "first argument 'text' requires to be of type 'str'"
+            f", not '{type(text).__name__}'")
     if not isinstance(delim, str):
         raise TypeError(
-            "argument 'delim' requires type "
-            f"'str', not '{type(text)}'")
+            f"'delim' requires type 'str', not '{type(text).__name__}'")
 
-    # return empty dict if the string is blank
+    # Return empty dict if the string is blank
     if not text or not text.strip():
         return dict()
 
@@ -276,7 +274,7 @@ def asdict(text: str, delim: str = ',') -> dict:
     Key = pp.Word(pp.alphas + "_", pp.alphanums + "_.")
     Val = pp.Or(Num | Str | Bool)
 
-    # try dictionary format "<key> = <value><delim> ..."
+    # Try dictionary format "<key> = <value><delim> ..."
     Term = pp.Group(Key + '=' + Val)
     Terms = Term + pp.ZeroOrMore(delim + Term)
     try:
@@ -293,7 +291,7 @@ def asdict(text: str, delim: str = ',') -> dict:
         except pp.ParseException:
             return {}
 
-    # create dictionary from list
+    # Create dictionary from list
     d = {}
     for item in l:
         if len(item) == 1:
@@ -329,13 +327,13 @@ def aspath(text: str, expand: bool = True) -> Path:
     # Check types of Arguments
     if not isinstance(text, str):
         raise TypeError(
-            "first argument requires to be of type 'str'"
-            f", not '{type(text)}'")
+            "first argument 'text' requires to be of type 'str'"
+            f", not '{type(text).__name__}'")
     if not isinstance(expand, bool):
         raise TypeError(
-            "argument 'expand' requires to be of type 'bool'"
-            f", not '{type(expand)}'")
+            "'expand' requires to be of type 'bool'"
+            f", not '{type(expand).__name__}'")
 
     from nemoa.core import npath
-
+    
     return npath.getpath(text, unpack=expand)

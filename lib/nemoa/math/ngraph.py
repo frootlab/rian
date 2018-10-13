@@ -27,7 +27,7 @@ DiGraph = nx.classes.digraph.DiGraph
 def getlayout(
         G: DiGraph, layout: str = 'spring',
         size: OptTuple = None, padding: tuple = (0., 0., 0., 0.),
-        rotate: float = 0.0, **kwargs: Any) -> dict:
+        rotate: float = 0.0, **kwds: Any) -> dict:
     """Calculate positions of nodes, depending on graph layout.
 
     Args:
@@ -48,9 +48,9 @@ def getlayout(
 
     """
     if layout == 'layer':
-        pos = get_layer_layout(G, **kwargs)
+        pos = get_layer_layout(G, **kwds)
     elif layout + '_layout' in nx.drawing.layout.__all__:
-        pos = getattr(nx.drawing.layout, layout + '_layout')(G, **kwargs)
+        pos = getattr(nx.drawing.layout, layout + '_layout')(G, **kwds)
     else:
         raise ValueError(f"layout '{layout}' is not supported")
 

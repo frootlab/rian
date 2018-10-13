@@ -43,7 +43,7 @@ def norms() -> StrList:
     return sorted([v['name'][i:] for v in d.values()])
 
 def magnitude(
-        x: NpArrayLike, norm: str = 'frobenius', **kwargs: Any) -> NpArray:
+        x: NpArrayLike, norm: str = 'frobenius', **kwds: Any) -> NpArray:
     """Calculate magnitude of matrix by given norm.
 
     References:
@@ -58,7 +58,7 @@ def magnitude(
                 Remark: requires additional parameters 'p' and 'q'
             'frobenius': Frobenius norm (induces: Frobenius distance)
             Default: 'frobenius'
-        **kwargs: Parameters of the given norm / class of norms.
+        **kwds: Parameters of the given norm / class of norms.
             The norm Parameters are documented within the respective 'norm'
             functions.
 
@@ -88,7 +88,7 @@ def magnitude(
             f"argument 'norm' has an invalid value '{str(norm)}'")
 
     # Evaluate norm function
-    return func(x, **nfunc.kwargs(func, default=kwargs))
+    return func(x, **nfunc.kwds(func, default=kwds))
 
 def norm_pq(x: NpArray,
         p: float = 2., q: float = 2., axes: IntTuple = (0, 1)) -> NpArray:

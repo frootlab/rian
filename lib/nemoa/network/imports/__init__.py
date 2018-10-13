@@ -33,7 +33,7 @@ def filetypes(filetype = None):
 
     return False
 
-def load(path, filetype = None, **kwargs):
+def load(path, filetype = None, **kwds):
     """Import network dictionary from file or workspace."""
 
     import os
@@ -41,14 +41,14 @@ def load(path, filetype = None, **kwargs):
     import nemoa
 
     # get path (if necessary)
-    if 'workspace' in kwargs or not os.path.isfile(path):
+    if 'workspace' in kwds or not os.path.isfile(path):
         name = path
-        pathkwargs = {}
-        if 'workspace' in kwargs:
-            pathkwargs['workspace'] = kwargs.pop('workspace')
-        if 'base' in kwargs:
-            pathkwargs['base'] = kwargs.pop('base')
-        path = nemoa.path('network', name, **pathkwargs)
+        pathkwds = {}
+        if 'workspace' in kwds:
+            pathkwds['workspace'] = kwds.pop('workspace')
+        if 'base' in kwds:
+            pathkwds['base'] = kwds.pop('base')
+        path = nemoa.path('network', name, **pathkwds)
         if not path:
             raise Warning("""could not import network:
                 invalid network name.""") or {}
@@ -65,11 +65,11 @@ def load(path, filetype = None, **kwargs):
     # import, check and update dictionary
     mname = filetypes(filetype)[0]
     if mname == 'archive':
-        network = archive.load(path, **kwargs)
+        network = archive.load(path, **kwds)
     elif mname == 'graph':
-        network = graph.load(path, **kwargs)
+        network = graph.load(path, **kwds)
     elif mname == 'text':
-        network = text.load(path, **kwargs)
+        network = text.load(path, **kwds)
     else:
         network = None
     if not network:

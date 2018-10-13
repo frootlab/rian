@@ -23,7 +23,7 @@ def filetypes(filetype = None):
 
     return False
 
-def load(arg, base = None, filetype = None, **kwargs):
+def load(arg, base = None, filetype = None, **kwds):
     """Import workspace dictionary from file or workspace."""
 
     import os
@@ -48,7 +48,7 @@ def load(arg, base = None, filetype = None, **kwargs):
     # import and check dictionary
     mname = filetypes(filetype)[0]
     if mname == 'text':
-        config = nemoa.workspace.imports.text.load(path, **kwargs)
+        config = nemoa.workspace.imports.text.load(path, **kwds)
     else:
         config = None
     if not config:

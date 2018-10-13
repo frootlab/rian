@@ -1,5 +1,15 @@
 # -*- coding: utf-8 -*-
-"""Collection of functions for platform independent filesystem operations."""
+"""Collection of functions for platform independent filesystem operations.
+
+.. References:
+.. _pathlib:
+    https://docs.python.org/3/library/pathlib.html
+.. _Path.is_file():
+    https://docs.python.org/3/library/pathlib.html#pathlib.Path.is_file
+.. _Path.is_dir():
+    https://docs.python.org/3/library/pathlib.html#pathlib.Path.is_dir
+
+"""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -12,8 +22,7 @@ import os
 
 from pathlib import Path, PurePath
 from nemoa.types import (
-    Any, Iterable, IterAny, NestPath, OptStr, OptStrDict,
-    PathLike, PathLikeList)
+    Any, Iterable, IterAny, NestPath, OptStrDict, PathLike, PathLikeList)
 
 def cwd() -> str:
     """Path of current working directory.
@@ -153,18 +162,19 @@ def expand(
     udict = udict or {}
     path = join(*args)
 
-    # create dictionary with variables
+    # Create dictionary with variables
     d = {}
     if udict:
         for key, val in udict.items():
             d[key] = str(join(val))
     if expapp:
         for key, val in napp.get_dirs().items():
-            d[key] = val
+            d[key] = str(val)
     if expenv:
-        d['home'], d['cwd'] = home(), cwd()
+        d['cwd'] = cwd()
+        d['home'] = home()
 
-    # itereratively expand variables in user dictionary
+    # Itereratively expand variables in user dictionary
     update = True
     i = 0
     limit = sys.getrecursionlimit()
@@ -183,11 +193,9 @@ def expand(
             raise RecursionError('cyclic dependency in variables detected')
         path = Path(path)
 
-    # expand environmental paths
-    if not expenv:
-        return str(path)
-    path = path.expanduser()
-    path = Path(os.path.expandvars(path))
+    # Expand environmental paths
+    if expenv:
+        path = path.expanduser()
 
     return str(path)
 
@@ -280,7 +288,8 @@ def fileext(*args: NestPath) -> str:
 def isdir(path: NestPath) -> bool:
     """Determine if given path points to a directory.
 
-    Wrapper function to pathlib.Path.is_file [1]
+    Extends `Path.is_dir()`_ from standard library `pathlib`_ by nested paths
+    and path variables.
 
     Args:
         path: Path like structure, which is expandable to a valid path
@@ -289,16 +298,14 @@ def isdir(path: NestPath) -> bool:
         True if the path points to a regular file (or a symbolic link pointing
         to a regular file), False if it points to another kind of file.
 
-    References:
-        [1] https://docs.python.org/3/library/pathlib.html
-
     """
     return Path(expand(path)).is_dir()
 
 def isfile(path: NestPath) -> bool:
     """Determine if given path points to a file.
 
-    Wrapper function to pathlib.Path.is_file [1]
+    Extends `Path.is_file()`_ from standard library `pathlib`_ by nested paths
+    and path variables.
 
     Args:
         path: Path like structure, which is expandable to a valid path.
@@ -307,27 +314,8 @@ def isfile(path: NestPath) -> bool:
         True if the path points to a directory (or a symbolic link pointing
         to a directory), False if it points to another kind of file.
 
-    References:
-        [1] https://docs.python.org/3/library/pathlib.html
-
     """
     return Path(expand(path)).is_file()
-
-def validfile(filepath: NestPath) -> OptStr:
-    """Return normalized filepath, if file is valid.
-
-    Args:
-        filepath: Path like structure, which is expandable to a valid path.
-
-    Returns:
-        String containing absolute path to a file, if the file exists,
-        otherwise None.
-
-    """
-    path = expand(filepath)
-    if not Path(path).is_file():
-        return None
-    return str(path)
 
 def cp(source: NestPath, target: NestPath) -> bool:
     """Copy sub directories from given source to destination directory.

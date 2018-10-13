@@ -55,7 +55,7 @@ def inst(name: str) -> OptFunction:
 
     return func
 
-def kwargs(func: AnyFunc, default: OptDict = None) -> StrDict:
+def kwds(func: AnyFunc, default: OptDict = None) -> StrDict:
     """Keyword arguments of a function.
 
     Args:
@@ -71,9 +71,9 @@ def kwargs(func: AnyFunc, default: OptDict = None) -> StrDict:
         Dictionary of keyword arguments with default values.
 
     Examples:
-        >>> kwargs(kwargs)
+        >>> kwds(kwds)
         {'default': None}
-        >>> kwargs(kwargs, default = {'default': 'not None'})
+        >>> kwds(kwds, default = {'default': 'not None'})
         {'default': 'not None'}
 
     """
@@ -88,13 +88,13 @@ def kwargs(func: AnyFunc, default: OptDict = None) -> StrDict:
     import inspect
 
     df = inspect.signature(func).parameters
-    dkwargs = {}
+    dkwds = {}
     for key, val in df.items():
         if '=' not in str(val):
             continue
         if default is None:
-            dkwargs[key] = val.default
+            dkwds[key] = val.default
         elif key in default:
-            dkwargs[key] = default[key]
+            dkwds[key] = default[key]
 
-    return dkwargs
+    return dkwds

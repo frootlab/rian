@@ -12,7 +12,7 @@ def filetypes():
     return {
         'ini': 'Nemoa Workspace Description' }
 
-def load(path, **kwargs):
+def load(path, **kwds):
     """Import workspace from text file."""
 
     from nemoa.core import npath
@@ -26,7 +26,7 @@ def load(path, **kwargs):
             filetype '%s' is not supported.""" % filetype)
 
     if filetype == 'ini':
-        return Ini(**kwargs).load(path)
+        return Ini(**kwds).load(path)
 
     return False
 
@@ -36,9 +36,9 @@ class Ini:
     settings = None
     default = {}
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwds):
         from nemoa.core import ndict
-        self.settings = ndict.merge(kwargs, self.default)
+        self.settings = ndict.merge(kwds, self.default)
 
     def load(self, path):
         """Return workspace configuration as dictionary.

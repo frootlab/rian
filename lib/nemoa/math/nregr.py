@@ -57,7 +57,7 @@ def errors() -> StrList:
     return sorted([v['name'][i:] for v in d.values()])
 
 def error(
-        x: NpArrayLike, y: NpArrayLike, dfunc: str, **kwargs: Any) -> NpArray:
+        x: NpArrayLike, y: NpArrayLike, dfunc: str, **kwds: Any) -> NpArray:
     """Calculate discrepancy of samples along given axis.
 
     A 'discrepancy' is a sample statistic, that quantifies the difference of
@@ -78,7 +78,7 @@ def error(
             'mse': Mean Squared Error
             'mae': Mean Absolute Error
             'rmse': Root-Mean-Squared Error
-        **kwargs: Parameters of the given discrapancy function.
+        **kwds: Parameters of the given discrapancy function.
             The Parameters are documented within the respective 'err'
             functions.
 
@@ -117,7 +117,7 @@ def error(
             f"argument 'dfunc' has an invalid value '{str(dfunc)}'")
 
     # Evaluate distance function
-    return func(x, y, **nfunc.kwargs(func, default=kwargs))
+    return func(x, y, **nfunc.kwds(func, default=kwds))
 
 def err_rss(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
     """Calculate Residual Sum of Squares of two samples along given axis.

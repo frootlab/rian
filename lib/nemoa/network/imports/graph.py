@@ -20,7 +20,7 @@ def filetypes():
 
     return d
 
-def load(path, **kwargs):
+def load(path, **kwds):
     """Import network from graph description file."""
     from nemoa.core import npath
 
@@ -31,9 +31,9 @@ def load(path, **kwargs):
     if filetype not in filetypes():
         raise ValueError(f"filetype '{filetype}' is not supported")
 
-    if filetype == 'gml': return Gml(**kwargs).load(path)
-    if filetype in ['graphml', 'xml']: return Graphml(**kwargs).load(path)
-    if filetype == 'dot': return Dot(**kwargs).load(path)
+    if filetype == 'gml': return Gml(**kwds).load(path)
+    if filetype in ['graphml', 'xml']: return Graphml(**kwds).load(path)
+    if filetype == 'dot': return Dot(**kwds).load(path)
 
     return False
 
@@ -80,12 +80,12 @@ class Graphml:
     settings = None
     default = {}
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwds):
         """ """
 
         from nemoa.core import ndict
 
-        self.settings = ndict.merge(kwargs, self.default)
+        self.settings = ndict.merge(kwds, self.default)
 
     def load(self, path):
         """ """
@@ -103,12 +103,12 @@ class Gml:
     settings = None
     default = {}
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwds):
         """ """
 
         from nemoa.core import ndict
 
-        self.settings = ndict.merge(kwargs, self.default)
+        self.settings = ndict.merge(kwds, self.default)
 
     def load(self, path):
         """ """

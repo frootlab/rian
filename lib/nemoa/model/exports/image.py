@@ -17,7 +17,7 @@ def filetypes():
     """Get supported image filetypes."""
     return nplot.filetypes()
 
-def save(model, path = None, filetype = None, plot = None, **kwargs):
+def save(model, path = None, filetype = None, plot = None, **kwds):
 
     # test if filetype is supported
     if filetype not in filetypes():
@@ -35,7 +35,7 @@ def save(model, path = None, filetype = None, plot = None, **kwargs):
             plot type '%s' is not supported.""" %  (model.name, plot))
 
     # create plot of model
-    plot = getattr(module, class_name)(**kwargs)
+    plot = getattr(module, class_name)(**kwds)
 
     # assert units
     mapping = model.system.mapping
@@ -61,7 +61,7 @@ def save(model, path = None, filetype = None, plot = None, **kwargs):
 
     return path
 
-def show(model, plot = None, *args, **kwargs):
+def show(model, plot = None, *args, **kwds):
 
     # get class for plotting from attribute 'plot'
     if not plot: plot = 'graph'
@@ -75,7 +75,7 @@ def show(model, plot = None, *args, **kwargs):
             plot type '%s' is not supported.""" % (model.name, plot))
 
     # create plot of model
-    plot = getattr(module, class_name)(*args, **kwargs)
+    plot = getattr(module, class_name)(*args, **kwds)
 
     # update units
     mapping = model.system.mapping

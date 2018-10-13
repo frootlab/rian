@@ -23,7 +23,7 @@ def types(type = None):
 
     return None
 
-def build(type, *args, **kwargs):
+def build(type, *args, **kwds):
     """Build network from parameters, datasets, etc. ."""
 
     # test if type is supported
@@ -34,6 +34,6 @@ def build(type, *args, **kwargs):
     module_name = types(type)[0]
 
     if module_name == 'layer':
-        network = layer.build(type, *args, **kwargs)
+        network = layer.build(type, *args, **kwds)
 
     return network or {}

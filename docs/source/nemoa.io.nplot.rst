@@ -1,5 +1,5 @@
 nemoa.io.nplot module
-=========================
+=====================
 
 .. automodule:: nemoa.io.nplot
     :members:

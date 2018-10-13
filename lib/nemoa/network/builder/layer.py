@@ -19,13 +19,13 @@ def types():
         'shallow': 'Shallow Network'
     }
 
-def build(type = None, *args, **kwargs):
+def build(type = None, *args, **kwds):
     """Build layered network from parameters and dataset."""
 
-    if type == 'factor': return Factor(*args, **kwargs).build()
-    if type == 'multilayer': return MultiLayer(*args, **kwargs).build()
-    if type == 'autoencoder': return AutoEncoder(*args, **kwargs).build()
-    if type == 'shallow': return Shallow(*args, **kwargs).build()
+    if type == 'factor': return Factor(*args, **kwds).build()
+    if type == 'multilayer': return MultiLayer(*args, **kwds).build()
+    if type == 'autoencoder': return AutoEncoder(*args, **kwds).build()
+    if type == 'shallow': return Shallow(*args, **kwds).build()
 
     return False
 
@@ -43,9 +43,9 @@ class AutoEncoder:
     settings = None
     default = { 'name': 'autoencoder' }
 
-    def __init__(self, dataset = None, *args, **kwargs):
+    def __init__(self, dataset = None, *args, **kwds):
         from nemoa.core import ndict
-        self.settings = ndict.merge(kwargs, self.default)
+        self.settings = ndict.merge(kwds, self.default)
 
         # columns
         if 'columns' in self.settings: columns = self.settings['columns']
@@ -76,9 +76,9 @@ class MultiLayer:
         'hiddentype': 'sigmoid',
         'labelformat': 'generic:string' }
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwds):
         from nemoa.core import ndict
-        self.settings = ndict.merge(kwargs, self.default)
+        self.settings = ndict.merge(kwds, self.default)
 
     def build(self):
         name = self.settings['name']
@@ -153,9 +153,9 @@ class Factor:
         'labelformat': 'generic:string',
         'labelencapsulate': False }
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwds):
         from nemoa.core import ndict
-        self.settings = ndict.merge(kwargs, self.default)
+        self.settings = ndict.merge(kwds, self.default)
 
     def build(self):
         network_name = self.settings['name']
@@ -208,8 +208,8 @@ class Shallow:
 
     settings = None
 
-    def __init__(self, inputs = None, outputs = None, *args, **kwargs):
-        self.settings = kwargs.copy()
+    def __init__(self, inputs = None, outputs = None, *args, **kwds):
+        self.settings = kwds.copy()
         if inputs: self.settings['inputs'] = inputs
         if outputs: self.settings['outputs'] = outputs
         self.settings['shape'] = []

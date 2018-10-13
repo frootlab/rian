@@ -7,21 +7,21 @@ __license__ = 'GPLv3'
 import nemoa.dataset.classes.base
 import importlib
 
-def new(*args, **kwargs):
+def new(*args, **kwds):
     """Create new dataset instance."""
 
-    if not kwargs: kwargs = {'config': {'type': 'base.Dataset'}}
+    if not kwds: kwds = {'config': {'type': 'base.Dataset'}}
 
     # check validity of configuration
-    if len(kwargs.get('config', {}).get('type', '').split('.')) != 2:
+    if len(kwds.get('config', {}).get('type', '').split('.')) != 2:
         raise ValueError("configuration is not valid.")
 
-    mname, cname = tuple(kwargs['config']['type'].split('.'))
+    mname, cname = tuple(kwds['config']['type'].split('.'))
 
     try:
         module = importlib.import_module('nemoa.dataset.classes.' + mname)
         if not hasattr(module, cname): raise ImportError()
-        dataset = getattr(module, cname)(**kwargs)
+        dataset = getattr(module, cname)(**kwds)
     except ImportError:
         raise ValueError("""could not create dataset:
             unknown dataset type '%s'.""" % (type))

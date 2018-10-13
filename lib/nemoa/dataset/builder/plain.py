@@ -16,10 +16,10 @@ def types():
         'model': 'Real data using model'
     }
 
-def build(type = None, *args, **kwargs):
+def build(type = None, *args, **kwds):
     """Build plain dataset from building parameters."""
 
-    if type == 'rules': return Rules(**kwargs).build()
+    if type == 'rules': return Rules(**kwds).build()
 
     return False
 
@@ -53,10 +53,10 @@ class Rules:
             ('o2', 'i3 + i4')],
         'normalize': ''}
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwds):
         from nemoa.core import ndict
 
-        self.settings = ndict.merge(kwargs, self.default)
+        self.settings = ndict.merge(kwds, self.default)
 
     def build(self):
 

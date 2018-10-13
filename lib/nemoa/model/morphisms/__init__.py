@@ -6,12 +6,12 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-def optimize(model, *args, **kwargs):
+def optimize(model, *args, **kwds):
     """Optimize model."""
 
-    return new(model).optimize(*args, **kwargs)
+    return new(model).optimize(*args, **kwds)
 
-def new(model, *args, **kwargs):
+def new(model, *args, **kwds):
     """Get model transformation instance."""
 
     import importlib

@@ -15,11 +15,11 @@ def types():
         'autoencoder': 'autoencoder',
         'model': 'generic network model' }
 
-def build(type = None, *args, **kwargs):
+def build(type = None, *args, **kwds):
     """Build model from parameters and dataset."""
 
-    if type == 'autoencoder': return AutoEncoder(**kwargs).build()
-    if type == 'model': return Model(**kwargs).build()
+    if type == 'autoencoder': return AutoEncoder(**kwds).build()
+    if type == 'model': return Model(**kwds).build()
 
     return False
 
@@ -32,9 +32,9 @@ class AutoEncoder:
         'network': None,
         'system': 'dbn' }
 
-    def __init__(self, dataset = None, **kwargs):
+    def __init__(self, dataset = None, **kwds):
         from nemoa.core import ndict
-        self.settings = ndict.merge(kwargs, self.default)
+        self.settings = ndict.merge(kwds, self.default)
 
         if nclass.hasbase(dataset, 'Dataset'):
             self.settings['dataset'] = dataset
@@ -64,9 +64,9 @@ class Model:
         'initialize': True,
         'optimize': False }
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwds):
         from nemoa.core import ndict
-        self.settings = ndict.merge(kwargs, self.default)
+        self.settings = ndict.merge(kwds, self.default)
 
     def build(self):
 

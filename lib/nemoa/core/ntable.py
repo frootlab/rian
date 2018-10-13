@@ -38,8 +38,8 @@ def addcols(
     cols = cols or getattr(data, 'dtype').names
     if not isinstance(cols, (tuple, str)):
         raise TypeError(
-            "argument 'cols' requires to be of type 'tuple' or 'str'"
-            f", not '{type(cols)}'")
+            "'cols' is required to be of types 'tuple' or 'str'"
+            f", not '{type(cols).__name__}'")
 
     cols = list(cols) # make cols mutable
 

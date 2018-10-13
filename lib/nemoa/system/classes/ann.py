@@ -182,7 +182,7 @@ class ANN(nemoa.system.classes.base.System):
         formater = lambda val: '%.3f' % (val),
         optimum  = 'min'
     )
-    def _get_energy(self, data, *args, **kwargs):
+    def _get_energy(self, data, *args, **kwds):
         """Sum of local link and unit energies."""
 
         mapping = list(self._get_mapping())
@@ -237,7 +237,7 @@ class ANN(nemoa.system.classes.base.System):
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram'
     )
-    def _get_links_energy(self, data, mapping = None, **kwargs):
+    def _get_links_energy(self, data, mapping = None, **kwds):
         """Return link energies of a layer.
 
         Args:

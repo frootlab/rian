@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
-"""Collection of functions for module handling."""
+"""Collection of functions for module handling.
+
+.. References:
+.. _fnmatch: https://docs.python.org/3/library/fnmatch.html
+
+"""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -17,8 +22,7 @@ def curname(frame: int = 0) -> str:
     Args:
         frame: Frame index relative to the current frame in the callstack,
             which is identified with 0. Negative values consecutively identify
-            previous modules within the callstack.
-            Default: 0
+            previous modules within the callstack. Default: 0
 
     Returns:
         String with name of module.
@@ -27,11 +31,11 @@ def curname(frame: int = 0) -> str:
     # Check argument 'frame'
     if not isinstance(frame, int):
         raise TypeError(
-            "argument 'frame' is required to be of type 'int'"
-            f", not '{type(frame)}'")
+            "'frame' is required to be of type 'int'"
+            f", not '{type(frame).__name__}'")
     if frame > 0:
         raise ValueError(
-            "argument 'frame' is required to be a negative number or zero")
+            "'frame' is required to be a negative number or zero")
 
     # Declare and initialize return value
     mname: str = ''
@@ -53,8 +57,7 @@ def caller(frame: int = 0) -> str:
     Args:
         frame: Frame index relative to the current frame in the callstack,
             which is identified with 0. Negative values consecutively identify
-            previous modules within the callstack.
-            Default: 0
+            previous modules within the callstack. Default: 0
 
     Returns:
         String with name of the caller.
@@ -63,11 +66,11 @@ def caller(frame: int = 0) -> str:
     # Check argument 'frame'
     if not isinstance(frame, int):
         raise TypeError(
-            "argument 'frame' is required to be of type 'int'"
-            f", not '{type(frame)}'")
+            "'frame' is required to be of type 'int'"
+            f", not '{type(frame).__name__}'")
     if frame > 0:
         raise ValueError(
-            "argument 'frame' is required to be a negative number or zero")
+            "'frame' is required to be a negative number or zero")
 
     # Declare return value
     name: str
@@ -85,11 +88,9 @@ def submodules(module: OptModule = None, recursive: bool = False) -> StrList:
 
     Args:
         module: Module instance to search for submodules. If 'module' is None,
-            then the module of the caller function is used.
-            Default: None
+            then the module of the caller function is used. Default: None
         recursive: Boolean value which determines, if the search is performed
-            recursively within the submodules.
-            Default: False
+            recursively within the submodules. Default: False
 
     Returns:
         List with submodule names.
@@ -99,8 +100,8 @@ def submodules(module: OptModule = None, recursive: bool = False) -> StrList:
     module = module or inst(curname(-1))
     if not isinstance(module, Module):
         raise TypeError(
-            "argument 'module' is required to be of type 'ModuleType' or None"
-            f", not '{type(module)}'")
+            "'module' is required to be of type 'ModuleType' or None"
+            f", not '{type(module).__name__}'")
 
     # Declare and initialize return value
     subs: StrList = []
@@ -137,8 +138,8 @@ def getsubmodule(name: str) -> OptModule:
     # Check argument 'name'
     if not isinstance(name, str):
         raise TypeError(
-            "first argument is required to be of type 'str'"
-            f", not '{type(name)}'")
+            "first argument 'name' is required to be of type 'str'"
+            f", not '{type(name).__name__}'")
 
     # Get fully qualified module name
     prefix = curname(-1) + '.'
@@ -160,8 +161,8 @@ def inst(name: str) -> OptModule:
     # Check argument 'name'
     if not isinstance(name, str):
         raise TypeError(
-            "first argument is required to be of type 'str'"
-            f", not '{type(name)}'")
+            "first argument 'name' is required to be of type 'str'"
+            f", not '{type(name).__name__}'")
 
     # Declare and initialize return value
     module: OptModule = None
@@ -177,33 +178,28 @@ def inst(name: str) -> OptModule:
 
 def functions(
         module: OptModule = None, pattern: OptStr = None,
-        rules: OptStrDictOfTestFuncs = None, **kwargs: Any) -> dict:
+        rules: OptStrDictOfTestFuncs = None, **kwds: Any) -> dict:
     """Get dictionary with functions and attributes.
 
     Args:
         module: Module instance in which functions are searched. If 'module' is
-            None, then the module of the caller function is used.
-            Default: None
+            None, then the module of the caller function is used. Default: None
         pattern: Only functions which names satisfy the wildcard pattern given
-            by 'pattern' are returned. The format of the wildcard pattern
-            is described in the standard library module 'fnmatch' [1]. If
-            pattern is None, then all functions are returned.
-            Default: None
+            by 'pattern' are returned. The format of the wildcard pattern is
+            described in the standard library module `fnmatch`_. If pattern is
+            None, then all functions are returned. Default: None
         rules: Dictionary with individual filter rules, used by the attribute
-            filter. The form is {<attribute>: <lambda>, ...}, where:
-            <attribute> is a string with the attribute name and <lambda> is a
-            boolean valued lambda function, which specifies the comparison of
-            the attribute value against the argument value.
-            Example:
-                {'tags': lambda arg, attr: set(arg) <= set(attr)}
-            By default any attribute, which is not in the filter rules
-            is compared to the argument value by equality.
-            Default: None
-        **kwargs: Arguments, that define the attribute filter for the returned
-            dictionary. For example if the argument "tags = ['test']" is given,
-            then only functions are returned, which have the attribute 'tags'
-            and the value of the attribute equals ['test']. If, however, the
-            filter rule of the above example is given, then any function,
+            filter. The form is {<attribute>: <lambda>, ...}, where: <attribute>
+            is a string with the attribute name and <lambda> is a boolean valued
+            lambda function, which specifies the comparison of the attribute
+            value against the argument value. Example: {'tags': lambda arg,
+            attr: set(arg) <= set(attr)}. By default any attribute, which is not
+            in the filter rules is compared to the argument value by equality.
+        **kwds: Keyword arguments, that define the attribute filter for the
+            returned dictionary. For example if the argument "tags = ['test']"
+            is given, then only functions are returned, which have the attribute
+            'tags' and the value of the attribute equals ['test']. If, however,
+            the filter rule of the above example is given, then any function,
             with attribute 'tags' and a corresponding tag list, that comprises
             'test' is returned.
 
@@ -211,16 +207,13 @@ def functions(
         Dictionary with fully qualified function names as keys and attribute
         dictinaries as values.
 
-    References:
-        [1] https://docs.python.org/3/library/fnmatch.html
-
     """
     # Check argument 'module'
     module = module or inst(curname(-1))
     if not isinstance(module, Module):
         raise TypeError(
-            "argument 'module' is required to be of type 'ModuleType' or None"
-            f", not '{type(module)}'")
+            "'module' is required to be of type 'ModuleType' or None"
+            f", not '{type(module).__name__}'")
 
     from nemoa.core import ndict, nfunc
 
@@ -245,7 +238,7 @@ def functions(
 
         # Filter entry by attribute filter
         passed = True
-        for key, val in kwargs.items():
+        for key, val in kwds.items():
             if not key in attr:
                 passed = False
                 break
@@ -269,50 +262,41 @@ def functions(
     return funcs
 
 def search(
-        module: OptModule = None, pattern: OptStr = None,
-        key: OptStr = None, val: OptStr = None,
-        groupby: OptStr = None, recursive: bool = True,
-        rules: OptStrDictOfTestFuncs = None, **kwargs: Any) -> dict:
+        module: OptModule = None, pattern: OptStr = None, key: OptStr = None,
+        val: OptStr = None, groupby: OptStr = None, recursive: bool = True,
+        rules: OptStrDictOfTestFuncs = None, **kwds: Any) -> dict:
     """Recursively search for functions within submodules.
 
     Args:
         module: Module instance in which functions are searched. If 'module' is
-            None, then the module of the caller function is used.
-            Default: None
+            None, then the module of the caller function is used. Default: None
         pattern: Only functions which names satisfy the wildcard pattern given
-            by 'pattern' are returned. The format of the wildcard pattern
-            is described in the standard library module 'fnmatch' [1]. If
-            pattern is None, then all functions are returned.
-            Default: None
+            by 'pattern' are returned. The format of the wildcard pattern is
+            described in the standard library module `fnmatch`_. If pattern is
+            None, then all functions are returned. Default: None
         key: Name of function attribute which is used as the key for the
             returned dictionary. If 'key' is None, then the fully qualified
-            function names are used as keys.
-            Default: None
+            function names are used as keys. Default: None
         val: Name of function attribute which is used as the value for the
             returned dictionary. If 'val' is None, then all attributes of the
-            respective functions are returned.
-            Default: None
+            respective functions are returned. Default: None
         groupby: Name of function attribute which is used to group the results.
-            If 'groupby' is None, then the results are not grouped.
-            Default: None
+            If 'groupby' is None, then the results are not grouped. Default:
+            None
         recursive: Boolean value which determines if the search is performed
-            recursively within all submodules.
-            Default: True
+            recursively within all submodules. Default: True
         rules: Dictionary with individual filter rules, used by the attribute
-            filter. The form is {<attribute>: <lambda>, ...}, where:
-            <attribute> is a string with the attribute name and <lambda> is a
-            boolean valued lambda function, which specifies the comparison of
-            the attribute value against the argument value.
-            Example:
-                {'tags': lambda arg, attr: set(arg) <= set(attr)}
-            By default any attribute, which is not in the filter rules
-            is compared to the argument value by equality.
-            Default: None
-        **kwargs: Arguments, that define the attribute filter for the returned
-            dictionary. For example if the argument "tags = ['test']" is given,
-            then only functions are returned, which have the attribute 'tags'
-            and the value of the attribute equals ['test']. If, however, the
-            filter rule of the above example is given, then any function,
+            filter. The form is {<attribute>: <lambda>, ...}, where: <attribute>
+            is a string with the attribute name and <lambda> is a boolean valued
+            lambda function, which specifies the comparison of the attribute
+            value against the argument value. Example: {'tags': lambda arg,
+            attr: set(arg) <= set(attr)} By default any attribute, which is not
+            in the filter rules is compared to the argument value by equality.
+        **kwds: Keyword arguments, that define the attribute filter for the
+            returned dictionary. For example if the argument "tags = ['test']"
+            is given, then only functions are returned, which have the attribute
+            'tags' and the value of the attribute equals ['test']. If, however,
+            the filter rule of the above example is given, then any function,
             with attribute 'tags' and a corresponding tag list, that comprises
             'test' is returned.
 
@@ -320,15 +304,12 @@ def search(
         Dictionary with function information as specified in the arguments
         'key' and 'val'.
 
-    References:
-        [1] https://docs.python.org/3/library/fnmatch.html
-
     """
     module = module or inst(curname(-1))
     if not isinstance(module, Module):
         raise TypeError(
-            "argument 'module' is required to be of type 'ModuleType' or None"
-            f", not '{type(module)}'")
+            "'module' is required to be of type 'ModuleType' or None"
+            f", not '{type(module).__name__}'")
 
     from nemoa.core import ndict
 
@@ -342,7 +323,7 @@ def search(
         m = inst(mname)
         if m is None:
             continue
-        d = functions(m, pattern=pattern, rules=rules, **kwargs)
+        d = functions(m, pattern=pattern, rules=rules, **kwds)
 
         # Ignore functions if any required attribute is not available
         for name, attr in d.items():

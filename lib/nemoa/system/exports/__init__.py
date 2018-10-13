@@ -24,7 +24,7 @@ def filetypes(filetype = None):
     return False
 
 def save(system, path = None, filetype = None, workspace = None,
-    base = 'user', **kwargs):
+    base = 'user', **kwds):
     """Export system to file.
 
     Args:
@@ -71,6 +71,6 @@ def save(system, path = None, filetype = None, workspace = None,
     module_name = filetypes(filetype)[0]
     if module_name == 'archive':
         return nemoa.system.exports.archive.save(
-            system, path, filetype, **kwargs)
+            system, path, filetype, **kwds)
 
     return False

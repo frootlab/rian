@@ -63,10 +63,10 @@ class ObjectIP:
 
     _config: dict
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwds: Any) -> None:
         """Initialize object with given configuration."""
         self._config = {}
-        self._set_copy(**kwargs)
+        self._set_copy(**kwds)
 
     def __getattr__(self, key: str) -> None:
         """Wrap attribute requests to private getter methods."""
@@ -97,14 +97,14 @@ class ObjectIP:
         else:
             self.__dict__[key] = val
 
-    def get(self, *args: Any, **kwargs: Any) -> Any:
+    def get(self, *args: Any, **kwds: Any) -> Any:
         """Get the value of an object property.
 
         Args:
             key: Property name of which the value is to be returned. If key is
                 not given, then a copy of all data is returned
             *args: Arguments of arbitrary types.
-            **kwargs: Keyword arguments of arbitrary types
+            **kwds: Keyword arguments of arbitrary types
         Returns:
             Arbitrary typed return value of the respective private getter
             method of the class instance.
@@ -118,11 +118,11 @@ class ObjectIP:
 
         # get readable attributes
         if self._attr.get(key, 0b00) & 0b01:
-            return getattr(self, '_get_' + key)(*args, **kwargs)
+            return getattr(self, '_get_' + key)(*args, **kwds)
 
         # call getter method if it exists
         if hasattr(self, '_get_' + key):
-            return getattr(self, '_get_' + key)(*args, **kwargs)
+            return getattr(self, '_get_' + key)(*args, **kwds)
 
         raise KeyError(f"key '{key}' is not valid")
 
@@ -376,13 +376,13 @@ class ObjectIP:
         """
         return self._config.get('version', None)
 
-    def set(self, key: str, *args: Any, **kwargs: Any) -> bool:
+    def set(self, key: str, *args: Any, **kwds: Any) -> bool:
         """Set a private instance variable to a given value.
 
         Args:
             key: Name of variable, that is to be changed
             *args: Arguments of arbitrary types
-            **kwargs: Keyword arguments of arbitrary types
+            **kwds: Keyword arguments of arbitrary types
 
         Returns:
             Boolean value, which is returned by the respective private setter
@@ -391,19 +391,19 @@ class ObjectIP:
         """
         # set writeable attributes
         if self._attr.get(key, 0b00) & 0b10:
-            return getattr(self, '_set_' + key)(*args, **kwargs)
+            return getattr(self, '_set_' + key)(*args, **kwds)
 
         # supplementary setter methods
         if hasattr(self, '_get_' + key):
-            return getattr(self, '_get_' + key)(*args, **kwargs)
+            return getattr(self, '_get_' + key)(*args, **kwds)
 
         raise KeyError(f"key '{key}' is not valid")
 
-    def _set_copy(self, **kwargs: Any) -> bool:
+    def _set_copy(self, **kwds: Any) -> bool:
         """Call setter methods for all keyword arguments.
 
         Args:
-            **kwargs: Items of arbitrary types.
+            **kwds: Items of arbitrary types.
 
         Returns:
             Bool which is True if and only if no error occured.
@@ -412,7 +412,7 @@ class ObjectIP:
         import copy
 
         setter = self._get_setter()
-        for key, val in kwargs.items():
+        for key, val in kwds.items():
             if key not in self._copy.keys():
                 raise KeyError(f"key '{key}' is not valid")
             if key in setter:

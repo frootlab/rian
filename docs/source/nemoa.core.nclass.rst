@@ -1,7 +1,7 @@
-nemoa.core.napp module
+nemoa.core.nclass module
 ========================
 
-.. automodule:: nemoa.core.napp
+.. automodule:: nemoa.core.nclass
     :members:
     :undoc-members:
     :show-inheritance:

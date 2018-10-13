@@ -29,13 +29,16 @@ from nemoa.types import (
     OptBytes, OptStr, OptPath, OptPathLike, PathLike, PathLikeList,
     TextIOBaseClass, Traceback, StrDict, StrDict2, StrList)
 
+# Module specific types
 ZipInfoList = List[ZipInfo]
 
-ENCODING = nsysinfo.encoding()
-FILEEXTS = ['.ws', '.ws.zip']
-
+# Module specific exceptions
 class BadWsFile(OSError):
     """Exception for invalid workspace files."""
+
+# Module constants
+ENCODING = nsysinfo.encoding()
+FILEEXTS = ['.ws', '.ws.zip']
 
 class WsFile:
     """Workspace File.
@@ -138,6 +141,7 @@ class WsFile:
     changed: Attr = ReadOnlyAttr(bool, key='_changed')
     changed.__doc__ = """Tells whether the workspace file been changed."""
 
+    # Magic Methods
     def __init__(
             self, filepath: OptPathLike = None, pwd: OptBytes = None) -> None:
         """Load Workspace from file."""
@@ -154,6 +158,7 @@ class WsFile:
         """Close workspace file and buffer."""
         self.close()
 
+    # Public Methods
     def load(self, filepath: PathLike, pwd: OptBytes = None) -> None:
         """Load Workspace from file.
 
@@ -217,19 +222,6 @@ class WsFile:
         # Link configuration
         self._attr = cfg.get('workspace', {})
 
-    def _create_new(self) -> None:
-        # Initialize instance Variables, Buffer and buffered ZipFile
-        self._attr = self.CONFIG_DEFAULT['workspace'].copy()
-        self._changed = False
-        self._path = None
-        self._pwd = None
-        self._buffer = BytesIO()
-        self._file = ZipFile(self._buffer, mode='w')
-
-        # Create folders
-        for folder in self.DIR_LAYOUT:
-            self.mkdir(folder)
-
     def close(self) -> None:
         """Close current workspace and buffer."""
         if hasattr(self._file, 'close'):
@@ -267,7 +259,7 @@ class WsFile:
                 directories to the workspace. The default behaviour is not to
                 treat paths as directories.
 
-        Returns:
+        Yields:
             Iterator to a file handler, to support the with statement.
 
         Examples:
@@ -298,41 +290,6 @@ class WsFile:
                     file, encoding=encoding or ENCODING, write_through=True)
         finally:
             file.close()
-
-    def _open_read(self, path: PathLike) -> BytesIOLike:
-        # Locate workspace member by it's path
-        # and open file handler for reading the file
-        matches = self._locate(path)
-        if not matches:
-            fname = PurePath(path).as_posix()
-            raise FileNotFoundError(
-                f"workspace member with filename '{fname}' does not exist")
-        # Select latest version of file
-        zinfo = matches[-1]
-        return self._file.open(zinfo, pwd=self._pwd, mode='r')
-
-    def _open_write(self, path: PathLike, isdir: bool = False) -> BytesIOLike:
-        # Determine workspace member name from path
-        # and get ZipInfo with local time as date_time
-        filename = PurePath(path).as_posix()
-        if isdir:
-            filename += '/'
-        zinfo = ZipInfo( # type: ignore
-            filename=filename,
-            date_time=time.localtime()[:6])
-        # Catch Warning for duplicate files
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-            # TODO (patrick.michl@gmail.com): The zipfile standard
-            # module currently does not support encryption in write
-            # mode of new ZipFiles. See:
-            # https://docs.python.org/3/library/zipfile.html
-            # When support is provided, the below line for writing
-            # files shall be replaced by:
-            # file = self._file.open(zinfo, mode='w', pwd=self._pwd)
-            file = self._file.open(zinfo, mode='w')
-        self._changed = True
-        return file
 
     def append(self, source: PathLike, target: OptPathLike = None) -> bool:
         """Append file to the workspace.
@@ -561,17 +518,6 @@ class WsFile:
             allmatches += self._locate(file)
         return self._remove_members(allmatches)
 
-    def _locate(self, path: PathLike, sort: bool = True) -> ZipInfoList:
-        # Get list of member zipinfos
-        zinfos = self._file.infolist()
-        # Match members by path-like filenames
-        matches = [i for i in zinfos if Path(i.filename) == Path(path)]
-        if sort:
-            # Sort matches by datetime
-            matches = sorted(matches, key=lambda i: i.date_time)
-        # Return sorted matches
-        return matches
-
     def save(self) -> None:
         """Save the workspace to it's filepath."""
         if isinstance(self._path, Path):
@@ -649,6 +595,66 @@ class WsFile:
 
         # Sort paths
         return sorted([str(path) for path in paths])
+
+    # Private methods
+    def _create_new(self) -> None:
+        # Initialize instance Variables, Buffer and buffered ZipFile
+        self._attr = self.CONFIG_DEFAULT['workspace'].copy()
+        self._changed = False
+        self._path = None
+        self._pwd = None
+        self._buffer = BytesIO()
+        self._file = ZipFile(self._buffer, mode='w')
+
+        # Create folders
+        for folder in self.DIR_LAYOUT:
+            self.mkdir(folder)
+
+    def _open_read(self, path: PathLike) -> BytesIOLike:
+        # Locate workspace member by it's path
+        # and open file handler for reading the file
+        matches = self._locate(path)
+        if not matches:
+            fname = PurePath(path).as_posix()
+            raise FileNotFoundError(
+                f"workspace member with filename '{fname}' does not exist")
+        # Select latest version of file
+        zinfo = matches[-1]
+        return self._file.open(zinfo, pwd=self._pwd, mode='r')
+
+    def _open_write(self, path: PathLike, isdir: bool = False) -> BytesIOLike:
+        # Determine workspace member name from path
+        # and get ZipInfo with local time as date_time
+        filename = PurePath(path).as_posix()
+        if isdir:
+            filename += '/'
+        zinfo = ZipInfo( # type: ignore
+            filename=filename,
+            date_time=time.localtime()[:6])
+        # Catch Warning for duplicate files
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            # TODO (patrick.michl@gmail.com): The zipfile standard
+            # module currently does not support encryption in write
+            # mode of new ZipFiles. See:
+            # https://docs.python.org/3/library/zipfile.html
+            # When support is provided, the below line for writing
+            # files shall be replaced by:
+            # file = self._file.open(zinfo, mode='w', pwd=self._pwd)
+            file = self._file.open(zinfo, mode='w')
+        self._changed = True
+        return file
+
+    def _locate(self, path: PathLike, sort: bool = True) -> ZipInfoList:
+        # Get list of member zipinfos
+        zinfos = self._file.infolist()
+        # Match members by path-like filenames
+        matches = [i for i in zinfos if Path(i.filename) == Path(path)]
+        if sort:
+            # Sort matches by datetime
+            matches = sorted(matches, key=lambda i: i.date_time)
+        # Return sorted matches
+        return matches
 
     def _get_name(self) -> OptStr:
         return getattr(self._path, 'stem', None)

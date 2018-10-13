@@ -39,15 +39,15 @@ class TestSuite(ntest.TestSuite):
         dic = {('a', 'b'): 1.}
         labels = (['a', 'b'], ['a', 'b'])
 
-        with self.subTest("fromdict"):
+        with self.subTest("from_dict"):
             self.assertTrue(
                 np.allclose(
-                    narray.fromdict(dic, labels=labels), arr,
+                    narray.from_dict(dic, labels=labels), arr,
                     equal_nan=True))
 
         with self.subTest("asdict"):
             self.assertTrue(
-                narray.asdict(arr, labels=labels) == {('a', 'b'): 1.})
+                narray.as_dict(arr, labels=labels) == {('a', 'b'): 1.})
 
     def test_common_nbase(self) -> None:
         """Test module 'nemoa.core.nbase'."""
@@ -152,13 +152,13 @@ class TestSuite(ntest.TestSuite):
                 type(nfunc.inst(nfunc.__name__ + '.inst')).__name__,
                 'function')
 
-        with self.subTest("kwargs"):
+        with self.subTest("kwds"):
             self.assertEqual(
-                nfunc.kwargs(nfunc.kwargs), {'default': None})
+                nfunc.kwds(nfunc.kwds), {'default': None})
             self.assertEqual(
-                nfunc.kwargs(nfunc.kwargs, default={}), {})
+                nfunc.kwds(nfunc.kwds, default={}), {})
             self.assertEqual(
-                nfunc.kwargs(nfunc.kwargs, default={'default': True}),
+                nfunc.kwds(nfunc.kwds, default={'default': True}),
                 {'default': True})
 
     def test_common_ndict(self) -> None:
@@ -268,9 +268,6 @@ class TestSuite(ntest.TestSuite):
 
         with self.subTest("isfile"):
             self.assertFalse(npath.isfile(stdir))
-
-        with self.subTest("validfile"):
-            self.assertIsNone(npath.validfile(stdir))
 
         with self.subTest("rmdir"):
             self.assertTrue(npath.rmdir(stdir))

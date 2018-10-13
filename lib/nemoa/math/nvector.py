@@ -41,7 +41,7 @@ def norms() -> StrList:
     i = len(NORM_PREFIX)
     return sorted([v['name'][i:] for v in d.values()])
 
-def length(x: NpArrayLike, norm: str = 'euclid', **kwargs: Any) -> NpArray:
+def length(x: NpArrayLike, norm: str = 'euclid', **kwds: Any) -> NpArray:
     """Calculate generalized length of vector by given norm.
 
     Args:
@@ -60,7 +60,7 @@ def length(x: NpArrayLike, norm: str = 'euclid', **kwargs: Any) -> NpArray:
             'qmean': Quadratic Mean (induces: Quadratic mean difference)
             'sd': Corrected Standard Deviation
             Default: 'euclid'
-        **kwargs: Parameters of the given norm / class of norms.
+        **kwds: Parameters of the given norm / class of norms.
             The norm Parameters are documented within the respective 'norm'
             functions.
 
@@ -85,7 +85,7 @@ def length(x: NpArrayLike, norm: str = 'euclid', **kwargs: Any) -> NpArray:
             f"argument 'norm' has an invalid value '{str(norm)}'")
 
     # Evaluate norm function
-    return func(x, **nfunc.kwargs(func, default=kwargs))
+    return func(x, **nfunc.kwds(func, default=kwds))
 
 def norm_p(x: NpArray, p: float = 2., axis: NpAxis = 0) -> NpArray:
     """Calculate p-norm of an array along given axis.
@@ -379,7 +379,7 @@ def metrices() -> StrList:
 
 def distance(
         x: NpArrayLike, y: NpArrayLike, metric: str = 'euclid',
-        **kwargs: Any) -> NpArray:
+        **kwds: Any) -> NpArray:
     """Calculate vector distances of two arrays along given axis.
 
     A vector distance function, also known as metric, is a function d(x, y),
@@ -405,7 +405,7 @@ def distance(
             'amean': Arithmetic mean difference (induced by Arithmetic Mean)
             'qmean': Quadratic mean difference (induced by Quadratic Mean)
             Default: 'euclid'
-        **kwargs: Parameters of the given metric or class of metrices.
+        **kwds: Parameters of the given metric or class of metrices.
             The Parameters are documented within the respective 'dist'
             functions.
 
@@ -444,7 +444,7 @@ def distance(
             f"argument 'metric' has an invalid value '{str(metric)}'")
 
     # Evaluate distance function
-    return func(x, y, **nfunc.kwargs(func, default=kwargs))
+    return func(x, y, **nfunc.kwds(func, default=kwds))
 
 def dist_minkowski(
         x: NpArray, y: NpArray, p: float = 2., axis: NpAxis = 0) -> NpArray:

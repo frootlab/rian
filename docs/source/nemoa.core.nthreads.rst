@@ -1,7 +1,7 @@
-nemoa.core.narray module
+nemoa.core.nthreads module
 ==========================
 
-.. automodule:: nemoa.core.narray
+.. automodule:: nemoa.core.nthreads
     :members:
     :undoc-members:
     :show-inheritance:

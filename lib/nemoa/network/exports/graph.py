@@ -16,7 +16,7 @@ def filetypes():
         'dot': 'GraphViz DOT'
     }
 
-def save(network, path, filetype, **kwargs):
+def save(network, path, filetype, **kwds):
     """Export network to graph description file."""
 
     # test if filetype is supported
@@ -31,11 +31,11 @@ def save(network, path, filetype, **kwargs):
     graph = network.get('graph', type='graph')
 
     if filetype == 'gml':
-        return Gml(**kwargs).save(graph, path)
+        return Gml(**kwds).save(graph, path)
     if filetype in ['graphml', 'xml']:
-        return Graphml(**kwargs).save(graph, path)
+        return Graphml(**kwds).save(graph, path)
     if filetype == 'dot':
-        return Dot(**kwargs).save(graph, path)
+        return Dot(**kwds).save(graph, path)
 
     return False
 
@@ -76,9 +76,9 @@ class Gml:
     settings = None
     default = {'coding': 'base64'}
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwds):
         from nemoa.core import ndict
-        self.settings = ndict.merge(kwargs, self.default)
+        self.settings = ndict.merge(kwds, self.default)
 
     def save(self, graph, path):
 
@@ -96,9 +96,9 @@ class Graphml:
     settings = None
     default = {'coding': 'base64'}
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwds):
         from nemoa.core import ndict
-        self.settings = ndict.merge(kwargs, self.default)
+        self.settings = ndict.merge(kwds, self.default)
 
     def save(self, graph, path):
 
@@ -116,9 +116,9 @@ class Dot:
     settings = None
     default = {'coding': 'base64'}
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwds):
         from nemoa.core import ndict
-        self.settings = ndict.merge(kwargs, self.default)
+        self.settings = ndict.merge(kwds, self.default)
 
     def save(self, graph, path):
 

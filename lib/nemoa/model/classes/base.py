@@ -82,14 +82,14 @@ class Model(nbase.ObjectIP):
         'dataset': 'dataset', 'network': 'network', 'system': 'system'
     }
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize model with content from arguments."""
 
         # get attribute and storage defaults from parent
         self._attr = {**getattr(super(), '_attr', {}), **self._attr}
         self._copy = {**getattr(super(), '_copy', {}), **self._copy}
 
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwds)
 
     def configure(self):
         """Configure model."""
@@ -133,13 +133,13 @@ class Model(nbase.ObjectIP):
 
         return retval
 
-    def optimize(self, *args, **kwargs):
+    def optimize(self, *args, **kwds):
         """Optimize model parameters."""
-        return nemoa.model.optimize(self, *args, **kwargs)
+        return nemoa.model.optimize(self, *args, **kwds)
 
-    def get(self, *args, **kwargs):
+    def get(self, *args, **kwds):
         """Get meta information and content."""
-        return super().get(*args, **kwargs)
+        return super().get(*args, **kwds)
 
     def _get_error(self):
         """Evaluate model error."""
@@ -153,27 +153,27 @@ class Model(nbase.ObjectIP):
         """Evaluate model precision."""
         return self.evaluate('system', 'precision')
 
-    def _get_algorithms(self, *args, **kwargs):
+    def _get_algorithms(self, *args, **kwds):
         """Get algorithms provided by model."""
         return {
-            'dataset': self.dataset._get_algorithms(*args, **kwargs),
-            'network': self.network._get_algorithms(*args, **kwargs),
-            'system': self.system._get_algorithms(*args, **kwargs) }
+            'dataset': self.dataset._get_algorithms(*args, **kwds),
+            'network': self.network._get_algorithms(*args, **kwds),
+            'system': self.system._get_algorithms(*args, **kwds) }
 
-    def _get_algorithms_new(self, *args, **kwargs):
+    def _get_algorithms_new(self, *args, **kwds):
         """Get algorithms provided by model."""
         return {
-            'dataset': self.dataset._get_algorithms(*args, **kwargs),
-            'network': self.network._get_algorithms(*args, **kwargs),
-            'system': self.system._get_algorithms_new(*args, **kwargs) }
+            'dataset': self.dataset._get_algorithms(*args, **kwds),
+            'network': self.network._get_algorithms(*args, **kwds),
+            'system': self.system._get_algorithms_new(*args, **kwds) }
 
-    def _get_algorithm(self, *args, **kwargs):
+    def _get_algorithm(self, *args, **kwds):
         """Get algorithm."""
 
         # search algorithm
-        found = [self.dataset._get_algorithm(*args, **kwargs),
-            self.network._get_algorithm(*args, **kwargs),
-            self.system._get_algorithm(*args, **kwargs)]
+        found = [self.dataset._get_algorithm(*args, **kwds),
+            self.network._get_algorithm(*args, **kwds),
+            self.system._get_algorithm(*args, **kwds)]
 
         # filter results
         found = [x for x in found if x is not None]
@@ -209,23 +209,23 @@ class Model(nbase.ObjectIP):
 
         raise ValueError(f"type '{str(type)}' is not valid")
 
-    def _get_sample(self, *args, **kwargs):
+    def _get_sample(self, *args, **kwds):
         """ """
 
         # fetch data from dataset using parameters:
         # 'preprocessing', 'statistics'
-        if 'preprocessing' in list(kwargs.keys()):
-            preprocessing = kwargs['preprocessing']
-            del kwargs['preprocessing']
+        if 'preprocessing' in list(kwds.keys()):
+            preprocessing = kwds['preprocessing']
+            del kwds['preprocessing']
         else: preprocessing = {}
         if not isinstance(preprocessing, dict):
             preprocessing = {}
         if preprocessing:
             dataset_backup = self.dataset.get('copy')
             self.dataset.preprocess(preprocessing)
-        if 'statistics' in list(kwargs.keys()):
-            statistics = kwargs['statistics']
-            del kwargs['statistics']
+        if 'statistics' in list(kwds.keys()):
+            statistics = kwds['statistics']
+            del kwds['statistics']
         else: statistics = 0
         cols = self.system.get('layers', visible = True)
         data = self.dataset.get('data',
@@ -235,21 +235,21 @@ class Model(nbase.ObjectIP):
 
         return data
 
-    def set(self, key = None, *args, **kwargs):
+    def set(self, key = None, *args, **kwds):
         """Set meta information and parameters of model."""
 
         # set writeable attributes
         if self._attr.get(key, 0b00) & 0b10:
-            return getattr(self, '_set_' + key)(*args, **kwargs)
+            return getattr(self, '_set_' + key)(*args, **kwds)
 
         # set model parameters
-        if key == 'network': return self.network.set(*args, **kwargs)
-        if key == 'dataset': return self.dataset.set(*args, **kwargs)
-        if key == 'system': return self.system.set(*args, **kwargs)
+        if key == 'network': return self.network.set(*args, **kwds)
+        if key == 'dataset': return self.dataset.set(*args, **kwds)
+        if key == 'system': return self.system.set(*args, **kwds)
 
         # import configuration
-        if key == 'copy': return self._set_copy(*args, **kwargs)
-        if key == 'config': return self._set_config(*args, **kwargs)
+        if key == 'copy': return self._set_copy(*args, **kwds)
+        if key == 'config': return self._set_config(*args, **kwds)
 
         raise Warning("unknown key '%s'." % key)
 
@@ -375,41 +375,41 @@ class Model(nbase.ObjectIP):
 
         return True
 
-    def evaluate(self, key = None, *args, **kwargs):
+    def evaluate(self, key = None, *args, **kwds):
         """Evaluate model."""
 
         if not key: key = 'system'
 
         # evaluate dataset
         if key == 'dataset':
-            return self.dataset.evaluate(*args, **kwargs)
+            return self.dataset.evaluate(*args, **kwds)
         if key == 'network':
-            return self.network.evaluate(*args, **kwargs)
+            return self.network.evaluate(*args, **kwds)
         if key == 'system':
 
             # get data for system evaluation
-            if 'data' in list(kwargs.keys()):
+            if 'data' in list(kwds.keys()):
                 # get data from keyword argument
-                data = kwargs.pop('data')
+                data = kwds.pop('data')
             else:
-                data = self._get_sample(*args, **kwargs)
-                kwargs.pop('preprocessing', None)
-                kwargs.pop('statistics', None)
+                data = self._get_sample(*args, **kwds)
+                kwds.pop('preprocessing', None)
+                kwds.pop('statistics', None)
 
-            return self.system.evaluate(data, *args, **kwargs)
+            return self.system.evaluate(data, *args, **kwds)
 
         raise Warning(
             "could not evaluate model: "
             "evaluation key '%s' is not supported." % key)
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwds):
         """Export model to file."""
-        return nemoa.model.save(self, *args, **kwargs)
+        return nemoa.model.save(self, *args, **kwds)
 
-    def show(self, *args, **kwargs):
+    def show(self, *args, **kwds):
         """Show model as image."""
-        return nemoa.model.show(self, *args, **kwargs)
+        return nemoa.model.show(self, *args, **kwds)
 
-    def copy(self, *args, **kwargs):
+    def copy(self, *args, **kwds):
         """Create copy of model."""
-        return nemoa.model.copy(self, *args, **kwargs)
+        return nemoa.model.copy(self, *args, **kwds)

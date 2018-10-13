@@ -41,13 +41,13 @@ class Plot:
     }
 
     _config: dict = {}
-    _kwargs: dict = {}
+    _kwds: dict = {}
 
     _plt = None
     _fig = None
     _axes = None
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwds):
         """ """
         try:
             import matplotlib
@@ -58,9 +58,9 @@ class Plot:
 
         from nemoa.core import ndict
 
-        # merge config from defaults, current config and kwargs
-        self._kwargs = kwargs
-        self._config = ndict.merge(kwargs, self._config, self._default)
+        # merge config from defaults, current config and keyword arguments
+        self._kwds = kwds
+        self._config = ndict.merge(kwds, self._config, self._default)
 
         # update global matplotlib settings
         matplotlib.rc('text', usetex=self._config['usetex'])
@@ -91,7 +91,7 @@ class Plot:
 
         if config is None:
             config = {}
-        self._config = ndict.merge(self._kwargs, config, self._config)
+        self._config = ndict.merge(self._kwds, config, self._config)
 
         return True
 
@@ -110,9 +110,9 @@ class Plot:
         """Show plot."""
         getattr(self._plt, 'show')()
 
-    def save(self, path, **kwargs):
+    def save(self, path, **kwds):
         """Save plot to file."""
-        return self._fig.savefig(path, dpi=self._config['dpi'], **kwargs)
+        return self._fig.savefig(path, dpi=self._config['dpi'], **kwds)
 
     def release(self):
         """Clear current plot."""

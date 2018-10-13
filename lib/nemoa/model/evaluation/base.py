@@ -16,22 +16,22 @@ class Evaluation:
         'algorithm': 'accuracy'}
     _buffer = {}
 
-    def __init__(self, model = None, *args, **kwargs):
+    def __init__(self, model = None, *args, **kwds):
         """Configure evaluation to given nemoa model instance."""
 
         if model: self._set_model(model)
 
-    def get(self, key, *args, **kwargs):
+    def get(self, key, *args, **kwds):
         """ """
 
         # algorithms
         if key == 'algorithm':
-            return self._get_algorithm(*args, **kwargs)
+            return self._get_algorithm(*args, **kwds)
         if key == 'algorithms':
-            return self._get_algorithms(attribute='about', *args, **kwargs)
+            return self._get_algorithms(attribute='about', *args, **kwds)
 
         if key == 'data':
-            return self._get_data(*args, **kwargs)
+            return self._get_data(*args, **kwds)
         if key == 'model':
             return self._get_model()
 
@@ -57,9 +57,9 @@ class Evaluation:
 
         return algorithms
 
-    def _get_algorithm(self, name, *args, **kwargs):
+    def _get_algorithm(self, name, *args, **kwds):
         """Get evaluation algorithm."""
-        return self._get_algorithms(*args, **kwargs).get(name, None)
+        return self._get_algorithms(*args, **kwds).get(name, None)
 
     def _get_data(self):
         """Get data for evaluation.
@@ -117,23 +117,23 @@ class Evaluation:
 
         return True
 
-    def evaluate(self, key=None, *args, **kwargs):
+    def evaluate(self, key=None, *args, **kwds):
         """Evaluate model."""
 
         if key == 'dataset':
-            return self.model.dataset.evaluate(*args, **kwargs)
+            return self.model.dataset.evaluate(*args, **kwds)
         if key == 'network':
-            return self.model.network.evaluate(*args, **kwargs)
+            return self.model.network.evaluate(*args, **kwds)
 
         if key in ['units', 'links', 'relation']:
             category = key
             args = list(args)
-            algname = kwargs.pop('algorithm', args.pop(0) if args else None)
+            algname = kwds.pop('algorithm', args.pop(0) if args else None)
             args = tuple(args)
         else:
             algname = key
             args = list(args)
-            category = kwargs.pop('category', args.pop(0) if args else None)
+            category = kwds.pop('category', args.pop(0) if args else None)
             args = tuple(args)
 
         if not category:
@@ -151,7 +151,7 @@ class Evaluation:
                 f"could not evaluate {category}: "
                 f"invalid algorithm {algname}.")
 
-        data = kwargs.pop('data', self._get_data())
+        data = kwds.pop('data', self._get_data())
 
         getmapping = self.model.system._get_mapping
         getunits = self.model.system._get_units
@@ -164,18 +164,18 @@ class Evaluation:
 
         # get category specific keyword arguments
         if category == 'relation':
-            transform = kwargs.pop('transform', '')
-            rettype = kwargs.pop('format', 'dict')
-            evalstat = kwargs.pop('evalstat', True)
+            transform = kwds.pop('transform', '')
+            rettype = kwds.pop('format', 'dict')
+            evalstat = kwds.pop('evalstat', True)
         elif category in ['units', 'links'] \
-            and kwargs.get('units', None):
-            kwargs['mapping'] = \
-                getmapping(tgt=kwargs.pop('units'))
-        if kwargs.get('mapping', None) is not None:
-            kwargs['mapping'] = getmapping()
+            and kwds.get('units', None):
+            kwds['mapping'] = \
+                getmapping(tgt=kwds.pop('units'))
+        if kwds.get('mapping', None) is not None:
+            kwds['mapping'] = getmapping()
 
         # run evaluation
-        retval = algorithm['reference'](*args, **kwargs)
+        retval = algorithm['reference'](*args, **kwds)
 
         # format result
         retfmt = algorithm.get('retfmt', 'scalar')
@@ -183,18 +183,18 @@ class Evaluation:
             return retval
         if category == 'units':
             if retfmt == 'vector':
-                units = getunits(layer=kwargs['mapping'][-1])
+                units = getunits(layer=kwds['mapping'][-1])
                 return {unit: retval[:, uid] \
                     for uid, unit in enumerate(units)}
             if retfmt == 'scalar':
-                units = getunits(layer=kwargs['mapping'][-1])
+                units = getunits(layer=kwds['mapping'][-1])
                 return dict(list(zip(units, retval)))
         elif category == 'links':
             if retfmt == 'scalar':
                 from nemoa.core import narray
-                src = getunits(layer=kwargs['mapping'][0])
-                tgt = getunits(layer=kwargs['mapping'][-1])
-                return narray.asdict(retval, labels=(src, tgt))
+                src = getunits(layer=kwds['mapping'][0])
+                tgt = getunits(layer=kwds['mapping'][-1])
+                return narray.as_dict(retval, labels=(src, tgt))
         elif category == 'relation':
             if algorithm['retfmt'] == 'scalar':
 
@@ -217,9 +217,9 @@ class Evaluation:
                     return retval
                 if rettype == 'dict':
                     from nemoa.core import narray
-                    src = getunits(layer=kwargs['mapping'][0])
-                    tgt = getunits(layer=kwargs['mapping'][-1])
-                    retval = narray.asdict(retval, labels=(src, tgt))
+                    src = getunits(layer=kwds['mapping'][0])
+                    tgt = getunits(layer=kwds['mapping'][-1])
+                    retval = narray.as_dict(retval, labels=(src, tgt))
                     if not evalstat:
                         return retval
 
@@ -242,23 +242,23 @@ class Evaluation:
             "could not evaluate system units: "
             "unknown return format '%s'." % retfmt)
 
-    def set(self, key, *args, **kwargs):
+    def set(self, key, *args, **kwds):
         """ """
 
         if key == 'model':
-            return self._set_model(*args, **kwargs)
+            return self._set_model(*args, **kwds)
         if key == 'config':
-            return self._set_config(*args, **kwargs)
+            return self._set_config(*args, **kwds)
 
         raise KeyError(f"unknown key '{key}'")
 
-    def _set_config(self, config=None, **kwargs):
+    def _set_config(self, config=None, **kwds):
         """Set evaluation configuration from dictionary."""
 
         from nemoa.core import ndict
         if not isinstance(config, dict):
             config = {}
-        self._config = ndict.merge(kwargs, config, self._default)
+        self._config = ndict.merge(kwds, config, self._default)
 
         return True
 

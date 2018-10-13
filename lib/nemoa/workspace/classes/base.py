@@ -37,12 +37,12 @@ class Workspace(object):
 
         self.__dict__[key] = val
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwds):
         """Import object configuration and content from dictionary."""
 
-        self._set_copy(**kwargs)
+        self._set_copy(**kwds)
 
-    def get(self, key = 'name', *args, **kwargs):
+    def get(self, key = 'name', *args, **kwds):
         """Get meta data of workspace."""
 
         # meta information
@@ -87,23 +87,23 @@ class Workspace(object):
 
         return self._config.get('path', None)
 
-    def set(self, key = None, *args, **kwargs):
+    def set(self, key = None, *args, **kwds):
         """Set meta data of workspace."""
 
         # set meta information
         if key in self._attr_meta:
-            return self._set_meta(key, *args, **kwargs)
+            return self._set_meta(key, *args, **kwds)
 
         # import workspace configuration configuration and dataset tables
-        if key == 'copy': return self._set_copy(*args, **kwargs)
-        if key == 'config': return self._set_config(*args, **kwargs)
+        if key == 'copy': return self._set_copy(*args, **kwds)
+        if key == 'config': return self._set_config(*args, **kwds)
 
         raise KeyError(f"unknown key '{key}'")
 
-    def _set_meta(self, key, *args, **kwargs):
+    def _set_meta(self, key, *args, **kwds):
         """Set meta information like 'name' or 'path'."""
 
-        if key == 'about': return self._set_about(*args, **kwargs)
+        if key == 'about': return self._set_about(*args, **kwds)
 
         raise KeyError(f"unknown key '{key}'")
 

@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
-"""Supplementary NumPy ndarray functions."""
+"""Supplementary NumPy ndarray functions.
+
+.. References:
+.. _IEEE 754: https://ieeexplore.ieee.org/document/4610935/
+
+"""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -15,34 +20,30 @@ except ImportError as err:
 
 from nemoa.types import StrPairDict, StrListPair, NpArray, NaN, Num, OptNum
 
-def fromdict(d: StrPairDict, labels: StrListPair, nan: Num = NaN) -> NpArray:
+def from_dict(d: StrPairDict, labels: StrListPair, nan: Num = NaN) -> NpArray:
     """Convert dictionary to array.
 
     Args:
-        d: Dictionary of format {(<row>, <col>): value, ...}, where:
-            <row> is an element of the <row list> of the argument labels and
-            <col> is an element of the <col list> of the argument labels.
-        labels: Tuple of format (<row list>, <col list>), where:
-            <row list> is a list of row labels ['row1', 'row2', ...] and
-            <col list> is a list of column labels ['col1', 'col2', ...].
+        d: Dictionary with keys (<*row*>, <*col*>), where the elemns <*row*> are
+            row labels from the list <*rows*> and <*col*> column labels from the
+            list *columns*.
+        labels: Tuple of format (<*rows*>, <*columns*>), where <*rows*> is a
+            list of row labels, e.g. ['row1', 'row2', ...] and <*columns*> a
+            list of column labels, e.g. ['col1', 'col2', ...].
         nan: Value to mask Not Not a Number (NaN) entries. Missing entries in
             the dictionary are replenished by the NaN value in the array.
-            Default: IEEE 754 floating point representation of NaN [1]
+            Default: `IEEE 754`_ floating point representation of NaN.
 
     Returns:
-        Numpy ndarray of shape (n, m), where n equals the length of the
-        <row list> of the argument labels and m equals the length of the
-        <col list> of the argument labels.
-
-    References:
-        [1] https://ieeexplore.ieee.org/document/4610935/
+        NumPy ndarray of shape (*n*, *m*), where *n* equals the number of
+        <*rows*> and *m* the number of <*columns*>.
 
     """
     # Check Type of Argument 'd'
     if not isinstance(d, dict):
         raise TypeError(
-            "argument 'd' is required to by of type 'dict'"
-            f", not '{type(d)}'")
+            "'d' is required to by of type 'dict'"
+            f", not '{type(d).__name__}'")
 
     # Declare and initialize return value
     x: NpArray = np.empty(shape=(len(labels[0]), len(labels[1])))
@@ -55,49 +56,43 @@ def fromdict(d: StrPairDict, labels: StrListPair, nan: Num = NaN) -> NpArray:
 
     return x
 
-def asdict(
+def as_dict(
         x: NpArray, labels: StrListPair, nan: OptNum = NaN) -> StrPairDict:
     """Convert two dimensional array to dictionary of pairs.
 
     Args:
-        x: NumPy ndarray of shape (n, m), where n equals the length of the
-            <row list> of the argument labels and m equals the length of the
-            <col list> of the argument labels.
-        labels: Tuple of format (<row list>, <col list>), where:
-            <row list> is a list of row labels ['row1', 'row2', ...] and
-            <col list> is a list of column labels ['col1', 'col2', ...]
+        x: NumPy ndarray of shape (*n*, *m*), where *n* equals the number of
+            <*rows*> and *m* the number of <*columns*>.
+        labels: Tuple of format (<*rows*>, <*columns*>), where <*rows*> is a
+            list of row labels, e.g. ['row1', 'row2', ...] and <*columns*> a
+            list of column labels, e.g. ['col1', 'col2', ...].
         na: Optional value to mask Not a Number (NaN) entries. For cells in the
             array, which have this value, no entry in the returned dictionary
             is created. If nan is None, then for all numbers entries are
-            created. Default: IEEE 754 floating point representation of NaN [1]
+            created. Default: `IEEE 754`_ floating point representation of NaN.
 
     Returns:
-        Dictionary of format {(<row>, <col>): value, ...}, where:
-        <row> is an element of the <row list> of the argument labels and
-        <col> is an element of the <col list> of the argument labels.
-
-    References:
-        [1] https://ieeexplore.ieee.org/document/4610935/
+         Dictionary with keys (<*row*>, <*col*>), where the elemns <*row*> are
+         row labels from the list <*rows*> and <*col*> column labels from the
+         list *columns*.
 
     """
     # Check Type of Argument 'x'
-    if not hasattr(x, 'ndim'):
+    if not isinstance(x, np.ndarray):
         raise TypeError(
-            "argument 'x' is required to by of type 'ndarray'"
-            f", not '{type(x)}'")
-    if getattr(x, 'ndim') != 2:
+            "'x' is required to by of type 'numpy ndarray'"
+            f", not '{type(x).__name__}'")
+    # Check dimension of Array 'x'
+    if x.ndim != 2:
         raise TypeError(
-            "ndarray 'x' is required to have dimension 2"
-            f", not '{getattr(x, 'ndim')}'")
-
-    # Declare and initialize return value
-    d: StrPairDict = {}
+            "Numpy ndarray 'x' is required to have dimension 2"
+            f", not '{x.ndim}'")
 
     # Get dictionary with pairs as keys
-    getit = getattr(x, 'item')
+    d: StrPairDict = {}
     for i, row in enumerate(labels[0]):
         for j, col in enumerate(labels[1]):
-            val = getit(i, j)
+            val = x.item(i, j)
             if nan is None or not np.isnan(val):
                 d[(row, col)] = val
 

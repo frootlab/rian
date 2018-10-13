@@ -13,7 +13,7 @@ def filetypes():
         'ini': 'Nemoa System Description',
         'txt': 'Nemoa System Description'}
 
-def load(path, **kwargs):
+def load(path, **kwds):
     """Import system from text file."""
 
     from nemoa.core import npath
@@ -27,7 +27,7 @@ def load(path, **kwargs):
             filetype '%s' is not supported.""" % (filetype))
 
     if filetype in ['ini', 'txt']:
-        return Ini(**kwargs).load(path)
+        return Ini(**kwds).load(path)
 
     return False
 
@@ -37,9 +37,9 @@ class Ini:
     settings = None
     default = {}
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwds):
         from nemoa.core import ndict
-        self.settings = ndict.merge(kwargs, self.default)
+        self.settings = ndict.merge(kwds, self.default)
 
     def load(self, path):
         """Return system configuration as dictionary.

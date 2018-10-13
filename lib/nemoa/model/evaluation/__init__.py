@@ -6,11 +6,11 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-def evaluate(model, *args, **kwargs):
+def evaluate(model, *args, **kwds):
     """Evaluate model."""
-    return new(model).evaluate(*args, **kwargs)
+    return new(model).evaluate(*args, **kwds)
 
-def new(model, *args, **kwargs):
+def new(model, *args, **kwds):
     """Get model evaluation instance."""
 
     import importlib

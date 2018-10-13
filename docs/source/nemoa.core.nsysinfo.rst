@@ -1,7 +1,7 @@
-nemoa.core.ntable module
+nemoa.core.nsysinfo module
 ==========================
 
-.. automodule:: nemoa.core.ntable
+.. automodule:: nemoa.core.nsysinfo
     :members:
     :undoc-members:
     :show-inheritance:

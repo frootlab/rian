@@ -43,7 +43,7 @@ from nemoa.math import ncurve, nalgo
     title   = 'Forward Sampling',
     classes = ['LM', 'ANN']
 )
-def draw_forward_sample(model, *args, **kwargs):
+def draw_forward_sample(model, *args, **kwds):
     """Forward sampling from source to target observables.
 
     Args:
@@ -75,11 +75,11 @@ def draw_forward_sample(model, *args, **kwargs):
 
     """
 
-    mode = kwargs.pop('mode', 0)
+    mode = kwds.pop('mode', 0)
 
-    if mode == 0: return model.system._get_unitvalues(*args, **kwargs)
-    elif mode == 1: return model.system._get_unitsamples(*args, **kwargs)
-    elif mode == 2: return model.system._get_unitexpect(*args, **kwargs)
+    if mode == 0: return model.system._get_unitvalues(*args, **kwds)
+    elif mode == 1: return model.system._get_unitsamples(*args, **kwds)
+    elif mode == 2: return model.system._get_unitexpect(*args, **kwds)
 
     return None
 
@@ -133,7 +133,7 @@ def get_forward_residuals(model, data, mapping = None, block = None):
     classes = ['LM', 'ANN'],
     plot    = 'bar'
 )
-def get_error_vector(model, data, norm: str = 'MSE', **kwargs):
+def get_error_vector(model, data, norm: str = 'MSE', **kwds):
     """Reconstruction error of regressands.
 
     The reconstruction error is defined by:
@@ -157,7 +157,7 @@ def get_error_vector(model, data, norm: str = 'MSE', **kwargs):
 
     # TODO: use nvector
     #error = nvector.distance(x, y, metric=metric)
-    res = get_residuals(data, **kwargs)
+    res = get_residuals(data, **kwds)
     error = numpy.mean(numpy.square(res), axis=0)
 
     return error
@@ -170,7 +170,7 @@ def get_error_vector(model, data, norm: str = 'MSE', **kwargs):
     formater = lambda val: '%.3f' % (val),
     plot     = 'diagram'
 )
-def get_accuracy_vector(model, data, norm: str = 'MSE', **kwargs):
+def get_accuracy_vector(model, data, norm: str = 'MSE', **kwds):
     """Unit reconstruction accuracy.
 
     The unit reconstruction accuracy is defined by:
@@ -194,7 +194,7 @@ def get_accuracy_vector(model, data, norm: str = 'MSE', **kwargs):
 
     # TODO: use nvector
     #error = nvector.distance(x, y, metric=metric)
-    res = get_residuals(data, **kwargs)
+    res = get_residuals(data, **kwds)
     normres = numpy.mean(numpy.square(res), axis=0)
     normdat = numpy.mean(numpy.square(data[1]), axis=0)
 
@@ -208,7 +208,7 @@ def get_accuracy_vector(model, data, norm: str = 'MSE', **kwargs):
     formater = lambda val: '%.3f' % (val),
     plot     = 'diagram'
 )
-def get_precision_vector(model, data, norm = 'SD', **kwargs):
+def get_precision_vector(model, data, norm = 'SD', **kwds):
     """Unit reconstruction precision.
 
     The unit reconstruction precision is defined by:
@@ -231,7 +231,7 @@ def get_precision_vector(model, data, norm = 'SD', **kwargs):
 
     from nemoa.math import nvector
 
-    res = get_residuals(data, **kwargs)
+    res = get_residuals(data, **kwds)
     devres = nvector.length(res, norm=norm)
     devdat = nvector.length(data[1], norm=norm)
 
@@ -312,9 +312,9 @@ def get_variance_vector(model, data, mapping = None, block = None):
     classes = ['LM', 'ANN'],
     optimum = 'min'
 )
-def get_error(model, *args, **kwargs):
+def get_error(model, *args, **kwds):
     """Return mean error of regressands."""
-    return numpy.mean(get_error_vector(model, *args, **kwargs))
+    return numpy.mean(get_error_vector(model, *args, **kwds))
 
 @nalgo.objective(
     name    = 'accuracy',
@@ -322,9 +322,9 @@ def get_error(model, *args, **kwargs):
     classes = ['LM', 'ANN'],
     optimum = 'max'
 )
-def get_accuracy(model, *args, **kwargs):
+def get_accuracy(model, *args, **kwds):
     """Return mean accuracy of regressands."""
-    return numpy.mean(get_accuracy_vector(model, *args, **kwargs))
+    return numpy.mean(get_accuracy_vector(model, *args, **kwds))
 
 @nalgo.objective(
     name    = 'precision',
@@ -332,9 +332,9 @@ def get_accuracy(model, *args, **kwargs):
     classes = ['LM', 'ANN'],
     optimum = 'max'
 )
-def get_precision(model, *args, **kwargs):
+def get_precision(model, *args, **kwds):
     """Return mean precision of regressands."""
-    return numpy.mean(get_precision_vector(model, *args, **kwargs))
+    return numpy.mean(get_precision_vector(model, *args, **kwds))
 
 #
 # (4) Association Measures for Bayesian Networks
@@ -351,7 +351,7 @@ def get_precision(model, *args, **kwargs):
     plot     = 'heatmap',
     formater = lambda val: '%.3f' % (val)
 )
-def correlation(model, data, mapping = None, **kwargs):
+def correlation(model, data, mapping = None, **kwds):
     """Data correlation between source and target units.
 
     Undirected data based relation describing the 'linearity'
@@ -400,7 +400,7 @@ def correlation(model, data, mapping = None, **kwargs):
     plot     = 'heatmap',
     formater = lambda val: '%.3f' % (val)
 )
-def knockout(model, data, mapping = None, **kwargs):
+def knockout(model, data, mapping = None, **kwds):
     """Knockout effect from source to target units.
 
     Directed data manipulation based relation describing the
@@ -431,8 +431,8 @@ def knockout(model, data, mapping = None, **kwargs):
     R = numpy.zeros((len(in_labels), len(out_labels)))
 
     # calculate unit values without knockout
-    if not 'measure' in kwargs: measure = 'error'
-    else: measure = kwargs['measure']
+    if not 'measure' in kwds: measure = 'error'
+    else: measure = kwds['measure']
     default = model.evaluate(algorithm = measure,
         category = 'units', mapping = mapping)
 
@@ -463,7 +463,7 @@ def knockout(model, data, mapping = None, **kwargs):
     plot     = 'heatmap',
     formater = lambda val: '%.3f' % (val)
 )
-def connectionweight(model, data, mapping = None, **kwargs):
+def connectionweight(model, data, mapping = None, **kwds):
     """Weight sum product from source to target units.
 
     Directed graph based relation describing the matrix product from
@@ -503,7 +503,7 @@ def connectionweight(model, data, mapping = None, **kwargs):
     plot     = 'heatmap',
     formater = lambda val: '%.3f' % (val)
 )
-def coinduction(model, data, *args, **kwargs):
+def coinduction(model, data, *args, **kwds):
     """Coinduced deviation from source to target units."""
 
     # 2do: Open Problem:
@@ -529,10 +529,10 @@ def coinduction(model, data, *args, **kwargs):
 
     # create keawords for induction measurement
 
-    if not 'gauge' in kwargs: kwargs['gauge'] = gauge
+    if not 'gauge' in kwds: kwds['gauge'] = gauge
 
     # calculate induction without manipulation
-    ind = induction(data, *args, **kwargs)
+    ind = induction(data, *args, **kwds)
     norm = numpy.sqrt((ind ** 2).sum(axis = 1))
 
     # calculate induction with manipulation
@@ -541,7 +541,7 @@ def coinduction(model, data, *args, **kwargs):
         # manipulate source unit values and calculate induction
         datamp = [numpy.copy(data[0]), data[1]]
         datamp[0][:, sid] = 10.0
-        indmp = induction(datamp, *args, **kwargs)
+        indmp = induction(datamp, *args, **kwds)
 
         print(('manipulation of', sunit))
         vals = [-2., -1., -0.5, 0., 0.5, 1., 2.]
@@ -549,7 +549,7 @@ def coinduction(model, data, *args, **kwargs):
         for vid, val in enumerate(vals):
             datamod = [numpy.copy(data[0]), data[1]]
             datamod[0][:, sid] = val #+ datamod[0][:, sid].mean()
-            indmod = induction(datamod, *args, **kwargs)
+            indmod = induction(datamod, *args, **kwds)
             maniparr[vid, :] = numpy.sqrt(((indmod - ind) ** 2).sum(axis = 1))
         manipvar = maniparr.var(axis = 0)
         #manipvar /= numpy.amax(manipvar)
@@ -575,7 +575,7 @@ def coinduction(model, data, *args, **kwargs):
     formater = lambda val: '%.3f' % (val)
 )
 def induction(model, data, mapping = None, points = 10,
-    amplify = 1., gauge = 0.25, contrast = 20.0, **kwargs):
+    amplify = 1., gauge = 0.25, contrast = 20.0, **kwds):
     """Induced deviation from source to target units.
 
     Directed data manipulation based relation describing the induced

@@ -23,7 +23,7 @@ def main():
         import sys
 
         @wraps(func)
-        def showtraceback(*args, **kwargs):
+        def showtraceback(*args, **kwds):
 
             # extract exception type, value and traceback
             etype, value, trace = sys.exc_info()
@@ -33,28 +33,28 @@ def main():
                 return sys.__excepthook__(etype, value, trace)
 
             # otherwise run the original hook
-            return func(*args, **kwargs)
+            return func(*args, **kwds)
 
         return showtraceback
 
     interactiveshell.InteractiveShell.showtraceback \
         = _change(interactiveshell.InteractiveShell.showtraceback)
 
-    def about(*args, **kwargs) -> None:
+    def about(*args, **kwds) -> None:
         """Get meta information."""
-        nemoa.log('note', nemoa.about(*args, **kwargs))
+        nemoa.log('note', nemoa.about(*args, **kwds))
 
     def close() -> None:
         """Close current workspace instance."""
         nemoa.close()
 
-    def get(*args, **kwargs) -> None:
+    def get(*args, **kwds) -> None:
         """Wrap function to nemoa.get()."""
-        nemoa.log('note', nemoa.get(*args, **kwargs))
+        nemoa.log('note', nemoa.get(*args, **kwds))
 
-    def list(*args, **kwargs) -> None:
+    def list(*args, **kwds) -> None:
         """Wrap function to nemoa.list()."""
-        retval = nemoa.list(*args, **kwargs)
+        retval = nemoa.list(*args, **kwds)
         if isinstance(retval, dict):
             for key, val in retval.items():
                 if not val:
@@ -66,29 +66,29 @@ def main():
         elif hasattr(retval, '__iter__'):
             nemoa.log('note', ', '.join(retval))
 
-    def open(*args, **kwargs):
+    def open(*args, **kwds):
         """Open object in current session."""
-        return nemoa.open(*args, **kwargs)
+        return nemoa.open(*args, **kwds)
 
-    def optimize(*args, **kwargs) -> None:
+    def optimize(*args, **kwds) -> None:
         """Optimize model."""
-        return nemoa.model.morphisms.optimize(*args, **kwargs)
+        return nemoa.model.morphisms.optimize(*args, **kwds)
 
-    def path(*args, **kwargs) -> None:
+    def path(*args, **kwds) -> None:
         """Wrap function to nemoa.path()."""
-        nemoa.log('note', nemoa.path(*args, **kwargs))
+        nemoa.log('note', nemoa.path(*args, **kwds))
 
-    def run(*args, **kwargs) -> None:
+    def run(*args, **kwds) -> None:
         """Wrap function to nemoa.run()."""
-        nemoa.run(*args, **kwargs)
+        nemoa.run(*args, **kwds)
 
-    def show(*args, **kwargs) -> None:
+    def show(*args, **kwds) -> None:
         """ """
-        open(*args, **kwargs).show()
+        open(*args, **kwds).show()
 
-    def set(*args, **kwargs) -> None:
+    def set(*args, **kwds) -> None:
         """Wrap function to nemoa.set()."""
-        nemoa.set(*args, **kwargs)
+        nemoa.set(*args, **kwds)
 
     import os
     os.system('cls' if os.name == 'nt' else 'clear')
