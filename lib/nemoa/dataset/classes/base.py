@@ -11,7 +11,7 @@ try:
 except ImportError as err:
     raise ImportError(
         "requires package numpy: "
-        "https://scipy.org") from err
+        "https://pypi.org/project/numpy") from err
 
 import nemoa
 from nemoa.core import nclass, nbase

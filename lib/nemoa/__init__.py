@@ -7,7 +7,7 @@ geometrical and topological methods are used to uncover complex dependency
 structures within natural data samples.
 
 """
-__version__ = '0.5.179'
+__version__ = '0.5.180'
 __status__ = 'Development'
 __description__ = 'Network-based Modeling and Data Analysis'
 __url__ = 'https://frootlab.github.io/nemoa'
@@ -16,6 +16,7 @@ __copyright__ = 'Copyright 2013-2018, Patrick Michl'
 __organization__ = 'frootlab'
 __author__ = 'frootlab'
 __email__ = 'frootlab@gmail.com'
+__email_author__ = 'test'
 __maintainer__ = 'Patrick Michl'
 __authors__ = [
     'Patrick Michl <patrick.michl@gmail.com>']
