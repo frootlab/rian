@@ -9,7 +9,7 @@ __docformat__ = 'google'
 from nemoa.types import AnyFunc, StrDict, Function, OptFunction, OptDict
 
 def about(func: AnyFunc) -> str:
-    """Summary about a function.
+    """Summary line of docstring of a function.
 
     Args:
         func: Function instance
@@ -19,7 +19,7 @@ def about(func: AnyFunc) -> str:
 
     Examples:
         >>> about(about)
-        'Summary about a function'
+        'Summary line of docstring of a function'
 
     """
     if not hasattr(func, '__doc__') or not func.__doc__:

@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
-"""Handling of classes and methods."""
+"""Handling of classes and methods.
+
+.. References:
+.. _fnmatch: https://docs.python.org/3/library/fnmatch.html
+
+"""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -26,7 +31,7 @@ def hasbase(obj: Obj, base: str) -> bool:
     if not hasattr(obj, '__class__'):
         raise TypeError(
             "argument 'obj' requires to be a class instance"
-            f", not '{type(obj)}'")
+            f", not '{type(obj).__name__}'")
 
     return base in [o.__name__ for o in obj.__class__.__mro__]
 
@@ -39,7 +44,7 @@ def methods(
         obj: Class instance
         pattern: Only methods, which names satisfy the wildcard pattern given
             by 'pattern' are returned. The format of the wildcard pattern
-            is described in the standard library module 'fnmatch' [1]
+            is described in the standard library module `fnmatch`_.
         groupby: Name of attribute which value is used to group the results.
             If groupby is None, then the results are not grouped.
             Default: None
@@ -54,29 +59,26 @@ def methods(
         Dictionary containing all methods of a given class instance, which
         names satisfy a given filter pattern.
 
-    References:
-        [1] https://docs.python.org/3/library/fnmatch.html
-
     """
     import inspect
     from nemoa.core import ndict
 
-    # declare and initialize return values
+    # Declare and initialize return values
     mdict: RecDict = {}
     gdict: DictOfRecDicts = {}
 
-    # get references from object inspection
+    # Get references from object inspection
     ref = dict(inspect.getmembers(obj, inspect.ismethod))
 
-    # filter dictionary to methods that match given pattern
+    # Filter dictionary to methods that match given pattern
     if pattern:
         ref = ndict.select(ref, pattern)
 
-    # create dictionary with method attributes
+    # Create dictionary with method attributes
     for k, v in ref.items():
         attr = cast(StrDict, v.__dict__)
 
-        # ignore method if any required attribute is not available
+        # Ignore method if any required attribute is not available
         if key and key not in attr:
             continue
         if val and val not in attr:
@@ -97,18 +99,18 @@ def methods(
 
         mdict[k] = attr
 
-    # group results
+    # Group results
     if groupby:
         gdict = ndict.groupby(mdict, key=groupby)
 
-        # set value for returned dictionary
+        # Set value for returned dictionary
         if val:
             for v in gdict.values():
                 for w in v.values():
                     w = w[val]
         return gdict
 
-    # set value for returned dictionary
+    # Set value for returned dictionary
     if val:
         for v in mdict.values():
             v = v[val]
@@ -125,8 +127,8 @@ def attributes(**attr: Any) -> FuncWrapper:
         Wrapper function with additional attributes
 
     """
-    def wrapper(method):
-        def wrapped(self, *args, **kwds):
+    def wrapper(method): # type: ignore
+        def wrapped(self, *args, **kwds): # type: ignore
             return method(self, *args, **kwds)
 
         for key, val in attr.items():

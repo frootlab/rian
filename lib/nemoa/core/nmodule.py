@@ -124,7 +124,7 @@ def submodules(module: OptModule = None, recursive: bool = False) -> StrList:
 
     return subs
 
-def getsubmodule(name: str) -> OptModule:
+def get_submodule(name: str) -> OptModule:
     """Get instance from the name of a submodule of the current module.
 
     Args:

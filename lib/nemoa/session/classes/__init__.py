@@ -16,7 +16,7 @@ def new(*args, **kwds):
 
     from nemoa.core import nmodule
 
-    module = nmodule.getsubmodule(mname)
+    module = nmodule.get_submodule(mname)
     if not hasattr(module, cname):
         raise NameError(f"class '{mname}.{cname}' is not known")
     cinst = getattr(module, cname)(**kwds)

@@ -145,7 +145,8 @@ class TestSuite(ntest.TestSuite):
 
         with self.subTest("about"):
             self.assertEqual(
-                nfunc.about(nfunc.about), 'Summary about a function')
+                nfunc.about(nfunc.about),
+                'Summary line of docstring of a function')
 
         with self.subTest("inst"):
             self.assertEqual(

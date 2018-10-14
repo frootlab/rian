@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-#
-"""Console functions."""
+"""Console functions.
+
+.. References:
+.. _msvcrt: https://docs.python.org/3/library/msvcrt.html
+.. _termios: https://docs.python.org/3/library/termios.html
+
+"""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -48,8 +54,6 @@ class GetchMsvcrt(GetchBase):
     This implementation supports Microsoft Windows by using the Microsoft Visual
     C/C++ Runtime Library (`msvcrt`_).
 
-    .. _msvcrt: https://docs.python.org/3/library/msvcrt.html
-
     """
 
     msvcrt: OptModule
@@ -90,8 +94,6 @@ class GetchTermios(GetchBase):
 
     This implementation supports Unix-like Systems by using the Unix Terminal
     I/O API (`termios`_).
-
-    .. _termios: https://docs.python.org/3/library/termios.html
 
     """
 
@@ -194,9 +196,6 @@ def getch_class() -> GetchBase:
     This implementation supports Microsoft Windows by using the Microsoft
     Visual C/C++ Runtime Library (`msvcrt`_) and Unix-like Systems by
     using the Unix Terminal I/O API (`termios`_).
-
-    .. _msvcrt: https://docs.python.org/3/library/msvcrt.html
-    .. _termios: https://docs.python.org/3/library/termios.html
 
     """
     # Get platform specific tty I/O module.
