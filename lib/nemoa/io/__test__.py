@@ -14,6 +14,23 @@ from nemoa.core import ntest
 class TestSuite(ntest.TestSuite):
     """Testsuite for modules within the package 'nemoa.io'."""
 
+    def test_io_binfile(self) -> None:
+        """Test module 'nemoa.io.binfile'."""
+        from nemoa.io import binfile
+
+        file = Path(tempfile.NamedTemporaryFile().name + '.gz')
+        data = b'eJxrYK4tZDoiGBkGT0ZqotZJzt3/AbFpXoAgyI=='
+
+        with self.subTest('save'):
+            binfile.save(data, file)
+            self.assertTrue(file.is_file())
+
+        with self.subTest('load'):
+            self.assertEqual(binfile.load(file), data)
+
+        if file.is_file():
+            file.unlink()
+
     def test_io_csvfile(self) -> None:
         """Test module 'nemoa.io.csvfile'."""
         from nemoa.io import csvfile
@@ -95,30 +112,6 @@ class TestSuite(ntest.TestSuite):
 
         with self.subTest("get_header"):
             self.assertEqual(inifile.get_header(file), header)
-
-        if file.is_file():
-            file.unlink()
-
-    def test_io_gzfile(self) -> None:
-        """Test module 'nemoa.io.gzfile'."""
-        from nemoa.io import gzfile
-
-        file = Path(tempfile.NamedTemporaryFile().name + '.gz')
-        obj = {True: 'a', 2: {None: .5}}
-        blob = b'eJxrYK4tZNDoiGBkYGBILGT0ZqotZPJzt3/AAAbFpXoAgyIHVQ=='
-
-        with self.subTest("dumps"):
-            self.assertEqual(gzfile.dumps(obj), blob)
-
-        with self.subTest("loads"):
-            self.assertEqual(gzfile.loads(blob), obj)
-
-        with self.subTest("dump"):
-            gzfile.dump(obj, file)
-            self.assertTrue(file.is_file())
-
-        with self.subTest("load"):
-            self.assertEqual(gzfile.load(file), obj)
 
         if file.is_file():
             file.unlink()

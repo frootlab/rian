@@ -143,5 +143,5 @@ def save(
         data = nbytes.compress(data, level=compression) # Compress data
     if encoding:
         data = nbytes.encode(data, encoding=encoding) # Encode data
-    with openx(file, mode='r') as fh:
+    with openx(file, mode='w') as fh:
         fh.write(nbytes.asbytes(data)) # Save binary data to file

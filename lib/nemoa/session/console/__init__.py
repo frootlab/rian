@@ -180,7 +180,7 @@ def main():
                 loader.loadTestsFromModule(nemoa.model.__test__))
 
         # initialize runner
-        runner = unittest.TextTestRunner(verbosity=2)
+        runner = unittest.TextTestRunner(verbosity=0)
 
         # run testsuite
         nemoa.log('testing nemoa ' + nemoa.__version__)
