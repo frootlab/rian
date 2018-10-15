@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import nemoa
 from nemoa.dataset.imports import archive, text
 
-def filetypes(filetype = None):
+def filetypes(filetype=None):
     """Get supported dataset import filetypes."""
 
     type_dict = {}
@@ -29,7 +29,7 @@ def filetypes(filetype = None):
 
     return False
 
-def load(path, filetype = None, **kwds):
+def load(path, filetype=None, **kwds):
     """Import dataset dictionary from file or workspace."""
 
     import os

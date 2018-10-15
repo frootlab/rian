@@ -8,7 +8,7 @@
     https://docs.python.org/3/glossary.html#term-file-like-object
 .. _bytes-like object:
     https://docs.python.org/3/glossary.html#term-bytes-like-object
-.. _RFC3548:
+.. _RFC 3548:
     https://tools.ietf.org/html/rfc3548.html
 
 """
@@ -26,7 +26,7 @@ from nemoa.core import nsysinfo
 from nemoa.io import binfile
 from nemoa.types import Any, FileOrPathLike, OptStr, BytesLikeOrStr
 
-FILEEXTS = ['.gz', '.tar.gz', '.zip']
+FILEEXTS = ['.gz', '.bin']
 
 def load(file: FileOrPathLike, encoding: OptStr = 'base64') -> Any:
     """Decode and decompress file.
@@ -35,7 +35,7 @@ def load(file: FileOrPathLike, encoding: OptStr = 'base64') -> Any:
         file: String or `path-like object`_ that points to a readable file in
             the directory structure of the system, or a `file-like object`_ in
             reading mode.
-        encoding: Encodings specified in `RFC3548`_. Allowed values are:
+        encoding: Encodings specified in `RFC 3548`_. Allowed values are:
             'base16', 'base32', 'base64' and 'base85' or None for no encoding.
             By default 'base64' encoding is used.
 
@@ -43,22 +43,21 @@ def load(file: FileOrPathLike, encoding: OptStr = 'base64') -> Any:
          Arbitry object hierarchy.
 
     """
-    with binfile.open_read(file) as fd:
-        blob = pickle.load(fd) # binary file to bytes
-        # blob = fd.read() # binary file to bytes
-    return loads(blob, encoding=encoding) # bytes to object
+    with binfile.openx(file, mode='r') as fh:
+        data = pickle.load(fh) # read binary data from file
+    return loads(data, encoding=encoding) # bytes to object
 
 def dump(
         obj: object, file: FileOrPathLike, encoding: OptStr = 'base64',
         level: int = 6) -> None:
-    """Compress and encode arbitrary object to file.
+    """Save object hierarchy to compressed binary file.
 
     Args:
         obj: Arbitrary object hierarchy
         file: String or `path-like object`_ that points to a writable file in
             the directory structure of the system, or a `file-like object`_ in
             writing mode.
-        encoding: Encodings specified in `RFC3548`_. Allowed values are:
+        encoding: Encodings specified in `RFC 3548`_. Allowed values are:
             'base16', 'base32', 'base64' and 'base85' or None for no encoding.
             By default 'base64' encoding is used.
         level: Compression level ranging from 0 to 9, with:
@@ -67,17 +66,17 @@ def dump(
             9: slowest, produces the most compression
 
     """
-    # Pickle object to bytes
-    blob = dumps(obj, encoding=encoding, level=level)
-    with binfile.open_write(file) as fd:
-        pickle.dump(blob, fd) # bytes to file
+    # Pickle object to binary data
+    data = dumps(obj, encoding=encoding, level=level)
+    with binfile.openx(file, mode='w') as fd:
+        pickle.dump(data, fd) # bytes to file
 
-def loads(blob: BytesLikeOrStr, encoding: OptStr = 'base64') -> Any:
+def loads(data: BytesLikeOrStr, encoding: OptStr = 'base64') -> Any:
     """Decode and decompress bytes-like object to object hierarchy.
 
     Args:
-        blob: Encoded `bytes-like object`_ or string
-        encoding: Encodings specified in `RFC3548`_. Allowed values are:
+        data: Binary data given as `bytes-like object`_ or string
+        encoding: Encodings specified in `RFC 3548`_. Allowed values are:
             'base16', 'base32', 'base64' and 'base85' or None for no encoding.
             By default 'base64' encoding is used.
 
@@ -87,12 +86,12 @@ def loads(blob: BytesLikeOrStr, encoding: OptStr = 'base64') -> Any:
     """
     # Decode bytes
     if not encoding:
-        if isinstance(blob, str):
-            bb = bytes(blob, encoding=nsysinfo.encoding())
+        if isinstance(data, str):
+            bb = bytes(data, encoding=nsysinfo.encoding())
         else:
-            bb = bytes(blob)
+            bb = bytes(data)
     elif encoding in ['base64', 'base32', 'base16', 'base85']:
-        bb = getattr(base64, f"b{encoding[4:]}decode")(blob)
+        bb = getattr(base64, f"b{encoding[4:]}decode")(data)
     else:
         raise ValueError(f"encoding '{encoding}' is not supported")
 
@@ -107,7 +106,7 @@ def dumps(obj: object, encoding: OptStr = 'base64', level: int = 6) -> bytes:
 
     Args:
         obj: Arbitrary object hierarchy
-        encoding: Encodings specified in `RFC3548`_. Allowed values are:
+        encoding: Encodings specified in `RFC 3548`_. Allowed values are:
             'base16', 'base32', 'base64' and 'base85' or None for no encoding.
             By default 'base64' encoding is used.
         level: Compression level ranging from 0 to 9, with:
@@ -119,13 +118,13 @@ def dumps(obj: object, encoding: OptStr = 'base64', level: int = 6) -> bytes:
         Compressed and encoded byte representation of given object hierachy.
 
     """
-    blob = pickle.dumps(obj) # object to bytes
-    blob = zlib.compress(blob, level) # compress bytes
+    data = pickle.dumps(obj) # object to bytes
+    data = zlib.compress(data, level) # compress bytes
 
     # Encode bytes
     if not encoding:
-        return blob
+        return data
     if encoding in ['base64', 'base32', 'base16', 'base85']:
-        return getattr(base64, f"b{encoding[4:]}encode")(blob)
+        return getattr(base64, f"b{encoding[4:]}encode")(data)
 
     raise ValueError(f"encoding '{encoding}' is not supported")

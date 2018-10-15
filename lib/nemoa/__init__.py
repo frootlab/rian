@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
-"""nemoa deep data analysis and visualization.
+"""Nemoa deep data-analysis and visualization.
 
-Nemoa is a python package for graphical modeling, deep data analysis
-and data visualization. By utilizing deep structured models, statistical
-geometrical and topological methods are used to uncover complex dependency
-structures within natural data samples.
+Nemoa is a python package to uncover complex dependency structures within
+natural data. For this purpose the package connects ``probabilistic graphical
+modeling``_ with ``structured data-analysis``_ and data visualization.
+
+.. _probabilistic graphical modeling:
+    https://en.wikipedia.org/wiki/Graphical_model
+.. _structured data-analysis:
+    https://en.wikipedia.org/wiki/Structured_data_analysis_(statistics)
 
 """
-__version__ = '0.5.180'
+__version__ = '0.5.181'
 __status__ = 'Development'
 __description__ = 'Network-based Modeling and Data Analysis'
 __url__ = 'https://frootlab.github.io/nemoa'
@@ -16,7 +20,6 @@ __copyright__ = 'Copyright 2013-2018, Patrick Michl'
 __organization__ = 'frootlab'
 __author__ = 'frootlab'
 __email__ = 'frootlab@gmail.com'
-__email_author__ = 'test'
 __maintainer__ = 'Patrick Michl'
 __authors__ = [
     'Patrick Michl <patrick.michl@gmail.com>']

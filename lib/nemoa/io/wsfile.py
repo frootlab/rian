@@ -222,12 +222,51 @@ class WsFile:
         # Link configuration
         self._attr = cfg.get('workspace', {})
 
-    def close(self) -> None:
-        """Close current workspace and buffer."""
-        if hasattr(self._file, 'close'):
-            self._file.close()
-        if hasattr(self._buffer, 'close'):
-            self._buffer.close()
+    def save(self) -> None:
+        """Save the workspace to it's filepath."""
+        if isinstance(self._path, Path):
+            self.saveas(self._path)
+        else:
+            raise FileNotGivenError(
+                "use saveas() to save the workspace to a file")
+
+    def saveas(self, filepath: PathLike) -> None:
+        """Save the workspace to a file.
+
+        Args:
+            filepath: String or `path-like object`_, that represents the name of
+                a workspace file.
+
+        """
+        path = npath.getpath(filepath)
+
+        # Update 'workspace.ini'
+        with self.open(self.CONFIG_FILE, mode='w') as file:
+            inifile.save({'workspace': self._attr}, file)
+
+        # Remove duplicates from workspace
+        self._remove_duplicates()
+
+        # Mark plattform, which created the files as Windows
+        # to avoid inference of wrong Unix permissions
+        for zinfo in self._file.infolist():
+            zinfo.create_system = 0
+
+        # Close ZipArchive (to allow to read the buffer)
+        self._file.close()
+
+        # Read buffer and write workspace file
+        if isinstance(self._buffer, BytesIO):
+            with open(path, 'wb') as file:
+                file.write(self._buffer.getvalue())
+        else:
+            raise TypeError("buffer has not been initialized")
+
+        # Close buffer
+        self._buffer.close()
+
+        # Reload saved workpace from file
+        self.load(path, pwd=self._pwd)
 
     @contextmanager
     def open(
@@ -290,6 +329,13 @@ class WsFile:
                     file, encoding=encoding or ENCODING, write_through=True)
         finally:
             file.close()
+
+    def close(self) -> None:
+        """Close current workspace and buffer."""
+        if hasattr(self._file, 'close'):
+            self._file.close()
+        if hasattr(self._buffer, 'close'):
+            self._buffer.close()
 
     def append(self, source: PathLike, target: OptPathLike = None) -> bool:
         """Append file to the workspace.
@@ -517,52 +563,6 @@ class WsFile:
         for file in files:
             allmatches += self._locate(file)
         return self._remove_members(allmatches)
-
-    def save(self) -> None:
-        """Save the workspace to it's filepath."""
-        if isinstance(self._path, Path):
-            self.saveas(self._path)
-        else:
-            raise FileNotGivenError(
-                "use saveas() to save the workspace to a file")
-
-    def saveas(self, filepath: PathLike) -> None:
-        """Save the workspace to a file.
-
-        Args:
-            filepath: String or `path-like object`_, that represents the name of
-                a workspace file.
-
-        """
-        path = npath.getpath(filepath)
-
-        # Update 'workspace.ini'
-        with self.open(self.CONFIG_FILE, mode='w') as file:
-            inifile.save({'workspace': self._attr}, file)
-
-        # Remove duplicates from workspace
-        self._remove_duplicates()
-
-        # Mark plattform, which created the files as Windows
-        # to avoid inference of wrong Unix permissions
-        for zinfo in self._file.infolist():
-            zinfo.create_system = 0
-
-        # Close ZipArchive (to allow to read the buffer)
-        self._file.close()
-
-        # Read buffer and write workspace file
-        if isinstance(self._buffer, BytesIO):
-            with open(path, 'wb') as file:
-                file.write(self._buffer.getvalue())
-        else:
-            raise TypeError("buffer has not been initialized")
-
-        # Close buffer
-        self._buffer.close()
-
-        # Reload saved workpace from file
-        self.load(path, pwd=self._pwd)
 
     def search(self, pattern: OptStr = None) -> StrList:
         """Search for files in the workspace.

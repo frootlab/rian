@@ -3,6 +3,12 @@
 
 This module implements session management by a singleton design pattern.
 
+.. References:
+.. _file-like object:
+    https://docs.python.org/3/glossary.html#term-file-like-object
+.. _path-like object:
+    https://docs.python.org/3/glossary.html#term-path-like-object
+
 """
 
 __author__ = 'Patrick Michl'
@@ -12,11 +18,12 @@ __docformat__ = 'google'
 
 from pathlib import Path
 
+from nemoa.classes import Attr, ReadWriteAttr
 from nemoa.core import npath
 from nemoa.io import wsfile
 from nemoa.types import (
-    ClassStrList, CManFileLike, OptBytes, OptPathLike, OptStr, PathLike,
-    StrList)
+    CManFileLike, OptBytes, OptPath, OptPathLike, OptStr, PathLike,
+    PathLikeList, StrList)
 
 # Module specific types
 WsFile = wsfile.WsFile
@@ -24,57 +31,59 @@ WsFile = wsfile.WsFile
 class Session:
     """Session."""
 
-    # Class Constants
-    DEFAULT_PATHS: ClassStrList = [
-        '%user_data_dir%', '%site_data_dir%']
+    # Class Variables
+    _DEFAULT_PATHS: StrList = [
+        '%user_data_dir%', '%site_data_dir%', '%cur_package_data_dir%']
 
     # Instance Variables
-    _paths: StrList
+    _paths: PathLikeList
     _ws: WsFile
 
+    # Attributes
+    paths: Attr = ReadWriteAttr(list, key='_paths')
+    paths.__doc__ = """Search paths for workspaces."""
+
+    # Magic Methods
     def __init__(self, workspace: OptPathLike = None,
         basedir: OptPathLike = None, pwd: OptBytes = None) -> None:
-        """Initialize instance variables and load Workspace from file."""
-        self._paths = self.DEFAULT_PATHS
-        self._ws = self.load_workspace(
-            workspace=workspace, basedir=basedir, pwd=pwd)
+        """Initialize instance variables and load workspace from file."""
+        # Get search paths for workspaces
+        self._paths = []
+        for path in self._DEFAULT_PATHS:
+            self._paths.append(npath.expand(path))
+        # Load workspace from file
+        self.load(workspace=workspace, basedir=basedir, pwd=pwd)
 
-    def load_workspace(self, workspace: OptPathLike = None,
-        basedir: OptPathLike = None, pwd: OptBytes = None) -> WsFile:
+    # Public Methods
+    def load(
+            self, workspace: OptPathLike = None, basedir: OptPathLike = None,
+            pwd: OptBytes = None) -> None:
         """Load Workspace from file.
 
-        Examples:
-            >>> load_workspace('%home%/myworkspace.ws.zip')
+        Args:
+            workspace:
+            basedir:
+            pwd: Bytes representing password of workspace file.
 
         """
-        if not workspace:
-            return WsFile()
-        if not basedir:
-            # If workspace is a fully qualified file path in the directory
-            # structure of the system, ignore the 'paths' list
-            if npath.isfile(workspace):
-                return WsFile(filepath=workspace, pwd=pwd)
-            # Use the 'paths' list to find a workspace
-            for path in self._paths:
-                candidate = Path(path, workspace)
-                if npath.isfile(candidate):
-                    return WsFile(filepath=candidate, pwd=pwd)
-            return WsFile(filepath=workspace, pwd=pwd)
-        return WsFile(filepath=Path(basedir, workspace), pwd=pwd)
+        wspath = self._get_wspath(workspace=workspace, basedir=basedir)
+        self._ws = WsFile(filepath=wspath, pwd=pwd)
 
-    def open_file(
+    def open(
         self, filepath: PathLike, workspace: OptPathLike = None,
         basedir: OptPathLike = None, pwd: OptBytes = None, mode: str = '',
         encoding: OptStr = None, isdir: bool = False) -> CManFileLike:
         """Open file within current or given workspace.
 
         Args:
-            path: String or `path-like object`_, that represents a workspace
+            filepath: String or `path-like object`_, that represents a workspace
                 member. In reading mode the path has to point to a valid
                 workspace file, or a FileNotFoundError is raised. In writing
                 mode the path by default is treated as a file path. New
                 directories can be written by setting the argument isdir to
                 True.
+            workspace:
+            basedir:
             mode: String, which characters specify the mode in which the file is
                 to be opened. The default mode is reading in text mode. Suported
                 characters are:
@@ -91,14 +100,37 @@ class Session:
                 as a directory or not. This information is required for writing
                 directories to the workspace. The default behaviour is not to
                 treat paths as directories.
+
+        Returns:
+            Context manager for `file-like object`_ in reading or writing mode.
+
         """
         if workspace:
-            ws = self.load_workspace(
-                workspace=workspace, basedir=basedir, pwd=pwd)
+            wspath = self._get_wspath(workspace=workspace, basedir=basedir)
+            ws = WsFile(filepath=wspath, pwd=pwd)
             return ws.open(
                 filepath, mode=mode, encoding=encoding, isdir=isdir)
         return self._ws.open(
             filepath, mode=mode, encoding=encoding, isdir=isdir)
+
+    def _get_wspath(
+            self, workspace: OptPathLike = None,
+            basedir: OptPathLike = None) -> OptPath:
+        if not workspace:
+            return None
+        if not basedir:
+            # If workspace is a fully qualified file path in the directory
+            # structure of the system, ignore the 'paths' list
+            if npath.isfile(workspace):
+                return Path(workspace)
+            # Use the 'paths' list to find a workspace
+            for path in self._paths:
+                candidate = Path(path, workspace)
+                if candidate.is_file():
+                    return candidate
+            raise FileNotFoundError(
+                f"file {workspace} does not exist")
+        return Path(basedir, workspace)
 
 # from nemoa.types import Any
 #

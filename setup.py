@@ -16,9 +16,10 @@ from pathlib import Path
 import setuptools
 from setuptools.command.install import install as Installer
 
-appname = 'nemoa'
-appauthor = 'frootlab'
-libdir = 'lib'
+# Module Constants
+APPNAME = 'nemoa'
+APPAUTHOR = 'frootlab'
+LIBDIR = 'lib'
 
 class CustomInstaller(Installer): # type: ignore
     """Customized setuptools install command."""
@@ -32,17 +33,13 @@ class CustomInstaller(Installer): # type: ignore
 
 def get_vars() -> dict:
     """Get __VAR__ module variables from package __init__ file."""
-    text = Path(libdir, appname, '__init__.py').read_text()
-
-    # Parse variables with regular expressions
+    text = Path(LIBDIR, APPNAME, '__init__.py').read_text()
     rekey = "__([a-zA-Z][a-zA-Z0-9_]*)__"
     reval = r"['\"]([^'\"]*)['\"]"
-    regex = f"^[ ]*{rekey}[ ]*=[ ]*{reval}"
+    pattern = f"^[ ]*{rekey}[ ]*=[ ]*{reval}"
     dvars = {}
-    for match in re.finditer(regex, text, re.M):
-        key = str(match.group(1))
-        val = str(match.group(2))
-        dvars[key] = val
+    for match in re.finditer(pattern, text, re.M):
+        dvars[str(match.group(1))] = str(match.group(2))
     return dvars
 
 def install() -> None:
@@ -52,7 +49,7 @@ def install() -> None:
 
     # Install nemoa lib
     setuptools.setup(
-        name=appname,
+        name=APPNAME,
         version=pkgvars['version'],
         description=pkgvars['description'],
         long_description=Path('.', 'README.md').read_text(),
@@ -75,9 +72,9 @@ def install() -> None:
         author=pkgvars['author'],
         author_email=pkgvars['email'],
         license=pkgvars['license'],
-        packages=setuptools.find_packages(libdir),
+        packages=setuptools.find_packages(LIBDIR),
         package_dir={
-            '': libdir},
+            '': LIBDIR},
         package_data={
             'nemoa': ['data/*.zip']},
         cmdclass={
@@ -118,13 +115,15 @@ def post_install() -> None:
 
     # copy user workspaces
     user_src_base = str(Path('.', 'data', 'user'))
-    user_tgt_base = appdirs.user_data_dir(appname=appname, appauthor=appauthor)
+    user_tgt_base = appdirs.user_data_dir(
+        appname=APPNAME, appauthor=APPAUTHOR)
     user_tgt_base = str(Path(user_tgt_base, 'workspaces'))
     copytree(user_src_base, user_tgt_base)
 
     # copy site workspaces
     site_src_base = str(Path('.', 'data', 'site'))
-    site_tgt_base = appdirs.site_data_dir(appname=appname, appauthor=appauthor)
+    site_tgt_base = appdirs.site_data_dir(
+        appname=APPNAME, appauthor=APPAUTHOR)
     site_tgt_base = str(Path(site_tgt_base, 'workspaces'))
     copytree(site_src_base, site_tgt_base)
 

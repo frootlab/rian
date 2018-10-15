@@ -27,7 +27,7 @@ class Npz:
     """Export dataset to numpy zipped archive."""
 
     settings = None
-    default = { 'compress': True }
+    default = {'compress': True}
 
     def __init__(self, **kwds):
         from nemoa.core import ndict

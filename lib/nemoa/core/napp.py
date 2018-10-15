@@ -13,13 +13,17 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import re
+
 from pathlib import Path
 
 from nemoa.core import nmodule
-from nemoa.types import Any, OptStr, OptStrOrBool, StrDict, StrDictOfPaths
+from nemoa.types import (
+    Any, OptStr, OptStrOrBool, OptPathLike, StrDict, StrDictOfPaths)
 
 # Module constants
-APPNAME = Path(__file__).parent.parent.name
+APPNAME = 'nemoa'
+APPAUTHOR = 'frootlab'
 
 def get_var(varname: str, *args: Any, **kwds: Any) -> OptStr:
     """Get application variable by name.
@@ -102,46 +106,33 @@ def get_vars(*args: Any, **kwds: Any) -> StrDict:
         upd_vars(*args, **kwds)
     return globals().get('_vars', {}).copy()
 
-def upd_vars(filepath: OptStr = None) -> None:
+def upd_vars(filepath: OptPathLike = None) -> None:
     """Update application variables from module attributes.
 
     Application variables are intended to describe the application distribution
     by authorship information, bibliographic information, status, formal
-    conditions and notes or warnings. Therfore the variables are independent
-    from runtime properties including user and session. For more information
-    see `PEP 345`_.
+    conditions and notes or warnings. The variables are independent from runtime
+    properties like user and session. For more information see `PEP 345`_.
 
     Args:
-        filepath: Valid path to python module or package, which comprises the
-            application variables as module variables in the format '__var__'
+        filepath: Valid filepath to python module, that contains the application
+            variables as module attributes. By default the current top level
+            module is used.
 
     Returns:
         Dictionary with application variables.
 
     """
-    import io
-    import re
+    # By default use the current top level module
+    filepath = filepath or nmodule.root().__file__
 
+    # Parse content for module attributes with regular expressions
+    rekey = "__([a-zA-Z][a-zA-Z0-9_]*)__"
+    reval = r"['\"]([^'\"]*)['\"]"
+    pattern = f"^[ ]*{rekey}[ ]*=[ ]*{reval}"
+    text = Path(filepath).read_text()
     dvars = {}
-
-    # Use init script of current root module
-    if filepath is None:
-        mname = nmodule.curname().split('.')[0]
-        module = nmodule.inst(mname)
-        filepath = getattr(module, '__file__')
-
-    # Read file content
-    if isinstance(filepath, str):
-        with io.open(filepath, encoding='utf8') as file:
-            content = file.read()
-    else:
-        raise ImportError(f"module '{mname}' could not be loaded")
-
-    # Parse content for module variables with regular expressions
-    rkey = "__([a-zA-Z][a-zA-Z0-9]*)__"
-    rval = """['\"]([^'\"]*)['\"]"""
-    rexp = r"^[ ]*%s[ ]*=[ ]*%s" % (rkey, rval)
-    for match in re.finditer(rexp, content, re.M):
+    for match in re.finditer(pattern, text, re.M):
         dvars[str(match.group(1))] = str(match.group(2))
 
     # Set module name of current root module as default value for the
@@ -167,14 +158,15 @@ def get_dir(dirname: str, *args: Any, **kwds: Any) -> str:
             'site_data_dir': Site global data directory
             'site_package_dir': Site global package directory
             'cur_package_dir': Current package directory
+            'cur_package_data_dir': Current package data directory
         *args: Optional arguments that specify the application, as required by
             the function 'nemoa.core.napp.upd_dirs'.
         **kwds: Optional keyword arguments that specify the application, as
             required by the function 'nemoa.core.napp.upd_dirs'.
 
     Returns:
-        String containing path of environmental directory or None if
-        the pathname is not supported.
+        String containing path of environmental directory or None if the
+        pathname is not supported.
 
     """
     # Check type of argument 'dirname'
@@ -222,7 +214,10 @@ def upd_dirs(
         version: OptStr = None, **kwds: Any) -> None:
     """Update application specific directories from name, author and version.
 
-    This is a wrapper function to the package `appdirs`_.
+    This function retrieves application specific directories from the package
+    `appdirs`_. Additionally the directory 'site_package_dir' is retrieved fom
+    the standard library package distutils and 'cur_package_dir' and
+    'cur_package_data_dir' from the current top level module.
 
     Args:
         appname: is the name of application. If None, just the system directory
@@ -252,11 +247,10 @@ def upd_dirs(
             "https://pypi.org/project/appdirs/") from err
 
     dirs: StrDictOfPaths = {}
+    appname = appname or get_var('name') or APPNAME
+    appauthor = appauthor or get_var('author') or APPAUTHOR
 
     # Get directories from appdirs
-    appname = appname or get_var('name') or APPNAME
-    appauthor = (appauthor or get_var('company') or get_var('organization')
-        or get_var('author'))
     appdirs = AppDirs(
         appname=appname, appauthor=appauthor, version=version, **kwds)
     dirnames = [
@@ -265,13 +259,13 @@ def upd_dirs(
     for dirname in dirnames:
         dirs[dirname] = Path(getattr(appdirs, dirname))
 
-    # Get directories from distutils
-    packages = sysconfig.get_python_lib()
-    dirs['site_package_dir'] = Path(packages, appname)
+    # Get site_package_dir from distutils
+    path = Path(sysconfig.get_python_lib(), appname)
+    dirs['site_package_dir'] = path
 
-    # Get current package directory
-    mname = nmodule.curname().split('.')[0]
-    module = nmodule.inst(mname)
-    dirs['cur_package_dir'] = Path(getattr(module, '__file__')).parent
+    # Get directory of current top level module
+    path = Path(nmodule.root().__file__).parent
+    dirs['cur_package_dir'] = path
+    dirs['cur_package_data_dir'] = path / 'data'
 
     globals()['_dirs'] = dirs

@@ -14,7 +14,7 @@ from nemoa.core import ntest
 class TestSuite(ntest.TestSuite):
     """Testsuite for modules within the package 'nemoa.core'."""
 
-    def test_common_napp(self) -> None:
+    def test_core_napp(self) -> None:
         """Test module 'nemoa.core.napp'."""
         from nemoa.core import napp
 
@@ -29,7 +29,7 @@ class TestSuite(ntest.TestSuite):
             with self.subTest(f"get_var('{key}')"):
                 self.assertTrue(napp.get_var(key))
 
-    def test_common_narray(self) -> None:
+    def test_core_narray(self) -> None:
         """Test module 'nemoa.core.narray'."""
         from nemoa.core import narray
         from nemoa.types import NaN
@@ -49,7 +49,7 @@ class TestSuite(ntest.TestSuite):
             self.assertTrue(
                 narray.as_dict(arr, labels=labels) == {('a', 'b'): 1.})
 
-    def test_common_nbase(self) -> None:
+    def test_core_nbase(self) -> None:
         """Test module 'nemoa.core.nbase'."""
         from nemoa.core import nbase
 
@@ -61,7 +61,68 @@ class TestSuite(ntest.TestSuite):
             obj.path = ('%site_data_dir%', 'test')
             self.assertNotIn('%', obj.path)
 
-    def test_common_nconsole(self) -> None:
+    def test_core_nbytes(self) -> None:
+        """Test module 'nemoa.core.bytes'."""
+        from nemoa.core import nbytes
+
+        with self.subTest('compress'):
+            self.assertEqual(
+                nbytes.compress(b'test', level=0),
+                b'x\x01\x01\x04\x00\xfb\xfftest\x04]\x01\xc1')
+            self.assertEqual(
+                nbytes.compress(b'test', level=1),
+                b'x\x01+I-.\x01\x00\x04]\x01\xc1')
+            self.assertEqual(
+                nbytes.compress(b'test', level=9),
+                b'x\xda+I-.\x01\x00\x04]\x01\xc1')
+
+        with self.subTest('decompress'):
+            for level in range(-1, 10):
+                self.assertEqual(
+                    nbytes.decompress(
+                        nbytes.compress(b'test', level=level)),
+                    b'test')
+
+        with self.subTest('encode'):
+            self.assertEqual(
+                nbytes.encode(b'test', encoding='base64'),
+                b'dGVzdA==')
+            self.assertEqual(
+                nbytes.encode(b'test', encoding='base32'),
+                b'ORSXG5A=')
+            self.assertEqual(
+                nbytes.encode(b'test', encoding='base16'),
+                b'74657374')
+
+        with self.subTest('decode'):
+            for encoding in ['base64', 'base32', 'base16', 'base85']:
+                data = nbytes.encode(b'test', encoding=encoding)
+                self.assertEqual(
+                    nbytes.decode(data, encoding=encoding), b'test')
+
+        with self.subTest('pack'):
+            self.assertEqual(
+                nbytes.pack({True: 1}, encoding='base64'),
+                b'gAN9cQCISwFzLg==')
+            self.assertEqual(
+                nbytes.pack(None, encoding='base32'),
+                b'QABU4LQ=')
+            self.assertEqual(
+                nbytes.pack(True, encoding='base16', compression=9),
+                b'78DA6B60EED00300034B013A')
+
+        with self.subTest('unpack'):
+            o1 = None
+            o2 = [None, True, 1, .0, 1+1j, 'a', b'b', type]
+            o3 = {True: 1, 'a': [.5, (1j, ), None]}
+            tests = [
+                (o1, None, None), (o2, None, None), (o3, None, None)]
+            for obj, enc, comp in tests:
+                data = nbytes.pack(obj, encoding=enc, compression=comp)
+                iscomp = isinstance(comp, int)
+                self.assertEqual(nbytes.unpack(data, compressed=iscomp), obj)
+
+    def test_core_nconsole(self) -> None:
         """Test module 'nemoa.core.nconsole'."""
         from nemoa.core import nconsole
 
@@ -70,7 +131,7 @@ class TestSuite(ntest.TestSuite):
             obj = Ref() if callable(Ref) else None
             self.assertIsInstance(obj, nconsole.GetchBase)
 
-    def test_common_nclass(self) -> None:
+    def test_core_nclass(self) -> None:
         """Test module 'nemoa.core.nclass'."""
         from nemoa.core import nclass
 
@@ -100,7 +161,7 @@ class TestSuite(ntest.TestSuite):
             self.assertEqual(
                 nclass.methods(obj, pattern='*b').keys(), {'getb', 'setb'})
 
-    def test_common_nmodule(self) -> None:
+    def test_core_nmodule(self) -> None:
         """Test module 'nemoa.core.nmodule'."""
         from nemoa.core import nmodule
         from nemoa.types import Module
@@ -111,7 +172,7 @@ class TestSuite(ntest.TestSuite):
 
         with self.subTest("caller"):
             self.assertEqual(
-                nmodule.caller(), __name__ + '.test_common_nmodule')
+                nmodule.caller(), __name__ + '.test_core_nmodule')
 
         with self.subTest("submodules"):
             self.assertIn(
@@ -139,7 +200,7 @@ class TestSuite(ntest.TestSuite):
             self.assertEqual(
                 len(nmodule.search(nmodule, name='search')), 1)
 
-    def test_common_nfunc(self) -> None:
+    def test_core_nfunc(self) -> None:
         """Test module 'nemoa.core.nfunc'."""
         from nemoa.core import nfunc
 
@@ -162,7 +223,7 @@ class TestSuite(ntest.TestSuite):
                 nfunc.kwds(nfunc.kwds, default={'default': True}),
                 {'default': True})
 
-    def test_common_ndict(self) -> None:
+    def test_core_ndict(self) -> None:
         """Test module 'nemoa.core.ndict'."""
         from nemoa.core import ndict
 
@@ -209,7 +270,7 @@ class TestSuite(ntest.TestSuite):
                 ndict.sumjoin({1: 'a', 2: True}, {1: 'b', 2: True}),
                 {1: 'ab', 2: 2})
 
-    def test_common_npath(self) -> None:
+    def test_core_npath(self) -> None:
         """Test module 'nemoa.core.npath'."""
         from nemoa.core import npath
 
@@ -276,7 +337,7 @@ class TestSuite(ntest.TestSuite):
         # with self.subTest("cp"):
         #     self.assertTrue(True)
 
-    def test_common_nsysinfo(self) -> None:
+    def test_core_nsysinfo(self) -> None:
         """Test module 'nemoa.core.nsysinfo'."""
         from nemoa.core import nsysinfo
 
@@ -296,7 +357,7 @@ class TestSuite(ntest.TestSuite):
                 # Check type of returned value
                 self.assertIsInstance(func(), ftype)
 
-    def test_common_ntable(self) -> None:
+    def test_core_ntable(self) -> None:
         """Test module 'nemoa.core.ntable'."""
         from typing import cast
         from nemoa.core import ntable
@@ -311,7 +372,7 @@ class TestSuite(ntest.TestSuite):
             self.assertEqual(
                 cast(Any, ntable.addcols(tgt, src, 'z'))['z'][0], 'a')
 
-    def test_common_ntext(self) -> None:
+    def test_core_ntext(self) -> None:
         """Test module 'nemoa.core.ntext'."""
         from nemoa.core import ntext
 

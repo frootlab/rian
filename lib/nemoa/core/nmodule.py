@@ -11,6 +11,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import importlib
 import inspect
 
 from nemoa.types import (
@@ -28,19 +29,18 @@ def curname(frame: int = 0) -> str:
         String with name of module.
 
     """
-    # Check argument 'frame'
+    # Check type of 'frame'
     if not isinstance(frame, int):
         raise TypeError(
             "'frame' is required to be of type 'int'"
             f", not '{type(frame).__name__}'")
+    # Check value of 'frame'
     if frame > 0:
         raise ValueError(
             "'frame' is required to be a negative number or zero")
 
-    # Declare and initialize return value
-    mname: str = ''
-
     # Traceback frames using 'inspect'
+    mname: str = ''
     cframe = inspect.currentframe()
     for i in range(abs(frame - 1)):
         if cframe is None:
@@ -83,11 +83,34 @@ def caller(frame: int = 0) -> str:
 
     return name
 
+def root(module: OptModule = None) -> Module:
+    """Get top level module.
+
+    Args:
+        module: Module reference. By default a reference to the module of the
+            caller is used.
+
+    Returns:
+        Module reference to the top level module of a given module reference or
+        the current callers module.
+
+    """
+    # Check argument 'module'
+    module = module or inst(curname(-1))
+    if not isinstance(module, Module):
+        raise TypeError(
+            "'module' is required to be of type 'ModuleType' or None"
+            f", not '{type(module).__name__}'")
+
+    name = module.__name__.split('.')[0]
+
+    return importlib.import_module(name)
+
 def submodules(module: OptModule = None, recursive: bool = False) -> StrList:
     """Get list with submodule names.
 
     Args:
-        module: Module instance to search for submodules. If 'module' is None,
+        module: Module reference to search for submodules. If 'module' is None,
             then the module of the caller function is used. Default: None
         recursive: Boolean value which determines, if the search is performed
             recursively within the submodules. Default: False
@@ -131,11 +154,11 @@ def get_submodule(name: str) -> OptModule:
         name: Name of submodule of current module.
 
     Returns:
-        Module instance of submodule or None, if the current module does not
+        Module reference of submodule or None, if the current module does not
         contain the given module name.
 
     """
-    # Check argument 'name'
+    # Check type of argument 'name'
     if not isinstance(name, str):
         raise TypeError(
             "first argument 'name' is required to be of type 'str'"
@@ -154,7 +177,7 @@ def inst(name: str) -> OptModule:
         name: Fully qualified name of module
 
     Returns:
-        Module instance of the given module name or None, if the name does not
+        Module reference of the given module name or None, if the name does not
         point to a valid module.
 
     """
@@ -168,7 +191,6 @@ def inst(name: str) -> OptModule:
     module: OptModule = None
 
     # Try to import module using 'importlib'
-    import importlib
     try:
         module = importlib.import_module(name)
     except ModuleNotFoundError:
@@ -182,7 +204,7 @@ def functions(
     """Get dictionary with functions and attributes.
 
     Args:
-        module: Module instance in which functions are searched. If 'module' is
+        module: Module reference in which functions are searched. If 'module' is
             None, then the module of the caller function is used. Default: None
         pattern: Only functions which names satisfy the wildcard pattern given
             by 'pattern' are returned. The format of the wildcard pattern is
@@ -268,7 +290,7 @@ def search(
     """Recursively search for functions within submodules.
 
     Args:
-        module: Module instance in which functions are searched. If 'module' is
+        module: Module reference in which functions are searched. If 'module' is
             None, then the module of the caller function is used. Default: None
         pattern: Only functions which names satisfy the wildcard pattern given
             by 'pattern' are returned. The format of the wildcard pattern is

@@ -41,7 +41,7 @@ def save(network, path, filetype, **kwds):
 
 def _graph_encode(graph, coding=None):
     """Encode graph parameters."""
-    from nemoa.io import gzfile
+    from nemoa.core import nbytes
 
     # no encoding
     if not isinstance(coding, str) or coding.lower() == 'none':
@@ -51,17 +51,18 @@ def _graph_encode(graph, coding=None):
     if coding.lower() == 'base64':
 
         # encode graph 'params' dictionary
-        graph.graph['params'] = gzfile.dumps(graph.graph['params'])
+        graph.graph['params'] = nbytes.pack(
+            graph.graph['params'], encoding='base64')
 
         # encode nodes 'params' dictionaries
         for node in graph.nodes():
-            graph.node[node]['params'] = gzfile.dumps(
-                graph.node[node]['params'])
+            graph.node[node]['params'] = nbytes.pack(
+                graph.node[node]['params'], encoding='base64')
 
         # encode edges 'params' dictionaries
         for edge in graph.edges():
-            graph.edges[edge]['params'] = gzfile.dumps(
-                graph.edges[edge]['params'])
+            graph.edges[edge]['params'] = nbytes.pack(
+                graph.edges[edge]['params'], encoding='base64')
 
         # set flag for graph parameter coding
         graph.graph['coding'] = 'base64'

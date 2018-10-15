@@ -4,9 +4,7 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
 import networkx
-import os
 
 def filetypes():
     """Get supported graph description filetypes for network import."""
@@ -39,23 +37,23 @@ def load(path, **kwds):
 
 def _graph_decode(G):
     """ """
-    from nemoa.io import gzfile
+    from nemoa.core import nbytes
 
-    # no decoding
+    # no encoding
     if not G.graph.get('coding', None) or G.graph['coding'].lower() == 'none':
         return G
 
-    # base64 decoding
-    elif G.graph['coding'] == 'base64':
-        G.graph['params'] = gzfile.loads(G.graph['params'], encode = 'base64')
+    # base64 encoding
+    if G.graph['coding'] == 'base64':
+        G.graph['params'] = nbytes.unpack(G.graph['params'], encoding='base64')
 
         for node in G.nodes():
-            G.node[node]['params'] = gzfile.loads(
-                G.node[node]['params'], encode = 'base64')
+            G.node[node]['params'] = nbytes.unpack(
+                G.node[node]['params'], encoding='base64')
 
         for edge in G.edges():
-            G.edges[edge]['params'] = gzfile.loads(
-                G.edges[edge]['params'], encode = 'base64')
+            G.edges[edge]['params'] = nbytes.unpack(
+                G.edges[edge]['params'], encoding='base64')
 
         G.graph['coding'] == 'none'
 
