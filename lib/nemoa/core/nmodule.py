@@ -13,9 +13,11 @@ __docformat__ = 'google'
 
 import importlib
 import inspect
+import pkgutil
 
+from nemoa.core import ndict, nobject
 from nemoa.types import (
-    Any, Module, OptStr, OptModule, OptStrDictOfTestFuncs, StrList)
+    Any, Function, Module, OptStr, OptModule, OptStrDictOfTestFuncs, StrList)
 
 def curname(frame: int = 0) -> str:
     """Get name of module, which calls this function.
@@ -34,15 +36,16 @@ def curname(frame: int = 0) -> str:
         raise TypeError(
             "'frame' is required to be of type 'int'"
             f", not '{type(frame).__name__}'")
+
     # Check value of 'frame'
     if frame > 0:
         raise ValueError(
             "'frame' is required to be a negative number or zero")
 
-    # Traceback frames using 'inspect'
+    # Traceback frames using inspect
     mname: str = ''
     cframe = inspect.currentframe()
-    for i in range(abs(frame - 1)):
+    for _ in range(abs(frame) + 1):
         if cframe is None:
             break
         cframe = cframe.f_back
@@ -63,25 +66,22 @@ def caller(frame: int = 0) -> str:
         String with name of the caller.
 
     """
-    # Check argument 'frame'
+    # Check type of 'frame'
     if not isinstance(frame, int):
         raise TypeError(
             "'frame' is required to be of type 'int'"
             f", not '{type(frame).__name__}'")
+
+    # Check value of 'frame'
     if frame > 0:
         raise ValueError(
             "'frame' is required to be a negative number or zero")
 
-    # Declare return value
-    name: str
-
-    # Get name of caller using 'inspect'
+    # Get name of caller using inspect
     stack = inspect.stack()[abs(frame - 1)]
     mname = inspect.getmodule(stack[0]).__name__
     fbase = stack[3]
-    name = '.'.join([mname, fbase])
-
-    return name
+    return '.'.join([mname, fbase])
 
 def root(module: OptModule = None) -> Module:
     """Get top level module.
@@ -95,23 +95,27 @@ def root(module: OptModule = None) -> Module:
         the current callers module.
 
     """
-    # Check argument 'module'
+    # Set default value of 'module' to current module
     module = module or inst(curname(-1))
+
+    # Check type of 'module'
     if not isinstance(module, Module):
         raise TypeError(
             "'module' is required to be of type 'ModuleType' or None"
             f", not '{type(module).__name__}'")
 
+    # Get name of top level module
     name = module.__name__.split('.')[0]
 
+    # Get reference to top level module
     return importlib.import_module(name)
 
 def submodules(module: OptModule = None, recursive: bool = False) -> StrList:
     """Get list with submodule names.
 
     Args:
-        module: Module reference to search for submodules. If 'module' is None,
-            then the module of the caller function is used. Default: None
+        module: Module reference to search for submodules. By default the
+            module of the caller function is used.
         recursive: Boolean value which determines, if the search is performed
             recursively within the submodules. Default: False
 
@@ -119,24 +123,23 @@ def submodules(module: OptModule = None, recursive: bool = False) -> StrList:
         List with submodule names.
 
     """
-    # Check argument 'module'
+    # Set default value of 'module' to current module
     module = module or inst(curname(-1))
+
+    # Check type of 'module'
     if not isinstance(module, Module):
         raise TypeError(
             "'module' is required to be of type 'ModuleType' or None"
             f", not '{type(module).__name__}'")
 
-    # Declare and initialize return value
-    subs: StrList = []
-
     # Check if given module is not a package:
     # Since only packages contain submodules, any module without an path
     # attribute does not contain any submodules and an empy list is returned.
+    subs: StrList = []
     if not hasattr(module, '__path__'):
         return subs
 
     # Iterate submodules within package by using 'pkgutil'
-    import pkgutil
     prefix = getattr(module, '__name__') + '.'
     path = getattr(module, '__path__')
     for finder, name, ispkg in pkgutil.iter_modules(path):
@@ -158,7 +161,7 @@ def get_submodule(name: str) -> OptModule:
         contain the given module name.
 
     """
-    # Check type of argument 'name'
+    # Check type of 'name'
     if not isinstance(name, str):
         raise TypeError(
             "first argument 'name' is required to be of type 'str'"
@@ -181,16 +184,14 @@ def inst(name: str) -> OptModule:
         point to a valid module.
 
     """
-    # Check argument 'name'
+    # Check type of 'name'
     if not isinstance(name, str):
         raise TypeError(
             "first argument 'name' is required to be of type 'str'"
             f", not '{type(name).__name__}'")
 
-    # Declare and initialize return value
+    # Try to import module using importlib
     module: OptModule = None
-
-    # Try to import module using 'importlib'
     try:
         module = importlib.import_module(name)
     except ModuleNotFoundError:
@@ -198,10 +199,10 @@ def inst(name: str) -> OptModule:
 
     return module
 
-def functions(
+def get_functions(
         module: OptModule = None, pattern: OptStr = None,
         rules: OptStrDictOfTestFuncs = None, **kwds: Any) -> dict:
-    """Get dictionary with functions and attributes.
+    """Get dictionary with functions and their attributes.
 
     Args:
         module: Module reference in which functions are searched. If 'module' is
@@ -230,63 +231,23 @@ def functions(
         dictinaries as values.
 
     """
-    # Check argument 'module'
+    # Set default value of 'module' to current module
     module = module or inst(curname(-1))
+
+    # Check type of 'module'
     if not isinstance(module, Module):
         raise TypeError(
             "'module' is required to be of type 'ModuleType' or None"
             f", not '{type(module).__name__}'")
 
-    from nemoa.core import ndict, nfunc
-
-    # Get dictionary with function references using 'inspect'
-    refs = {k: v for k, v in inspect.getmembers(module, inspect.isfunction)}
-
-    # Filter references to functions, that match a given pattern
-    if pattern:
-        refs = ndict.select(refs, pattern=pattern)
-
-    # Declare and initialize return value
-    funcs: dict = {}
-
-    # Add entries dictionary with function attributes
-    prefix = module.__name__ + '.'
-    rules = rules or {}
-    for name, ref in refs.items():
-        attr = ref.__dict__
-        attr['about'] = attr.get('about', nfunc.about(ref))
-        attr['name'] = attr.get('name', name)
-        attr['reference'] = ref
-
-        # Filter entry by attribute filter
-        passed = True
-        for key, val in kwds.items():
-            if not key in attr:
-                passed = False
-                break
-            # Apply individual attribute filter rules
-            if key in rules:
-                match = rules[key]
-                if match(val, attr[key]):
-                    continue
-                passed = False
-                break
-            if val == attr[key]:
-                continue
-            passed = False
-            break
-        if not passed:
-            continue
-
-        # Add item
-        funcs[prefix + name] = attr
-
-    return funcs
+    return nobject.members(
+        module, base=Function, pattern=pattern, rules=rules, **kwds)
 
 def search(
-        module: OptModule = None, pattern: OptStr = None, key: OptStr = None,
-        val: OptStr = None, groupby: OptStr = None, recursive: bool = True,
-        rules: OptStrDictOfTestFuncs = None, **kwds: Any) -> dict:
+        module: OptModule = None, pattern: OptStr = None, base: type = Function,
+        key: OptStr = None, val: OptStr = None, groupby: OptStr = None,
+        recursive: bool = True, rules: OptStrDictOfTestFuncs = None,
+        **kwds: Any) -> dict:
     """Recursively search for functions within submodules.
 
     Args:
@@ -327,13 +288,14 @@ def search(
         'key' and 'val'.
 
     """
+    # Set default value of 'module' to current module
     module = module or inst(curname(-1))
+
+    # Check type of 'module'
     if not isinstance(module, Module):
         raise TypeError(
             "'module' is required to be of type 'ModuleType' or None"
             f", not '{type(module).__name__}'")
-
-    from nemoa.core import ndict
 
     # Get list with submodules
     mnames = [module.__name__] + submodules(module, recursive=recursive)
@@ -345,7 +307,9 @@ def search(
         m = inst(mname)
         if m is None:
             continue
-        d = functions(m, pattern=pattern, rules=rules, **kwds)
+        #d = get_functions(m, pattern=pattern, rules=rules, **kwds)
+        d = nobject.members(
+            m, base=base, pattern=pattern, rules=rules, **kwds)
 
         # Ignore functions if any required attribute is not available
         for name, attr in d.items():

@@ -11,7 +11,7 @@ from pathlib import Path
 
 from nemoa.core import ntest
 
-class TestSuite(ntest.TestSuite):
+class TestCase(ntest.TestCase):
     """Testsuite for modules within the package 'nemoa.io'."""
 
     def test_io_binfile(self) -> None:

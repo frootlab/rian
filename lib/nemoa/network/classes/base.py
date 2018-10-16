@@ -361,7 +361,7 @@ class Network(nbase.ObjectIP):
 
         from nemoa.core import nmodule
 
-        funcs = nmodule.functions(networkx.algorithms)
+        funcs = nmodule.get_functions(networkx.algorithms)
         if attribute is None: return funcs
 
         return {k: v.get(attribute, None) for k, v in funcs.items()}

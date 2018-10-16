@@ -8,26 +8,35 @@ __docformat__ = 'google'
 
 import unittest
 
-class TestSuite(unittest.TestCase):
+from nemoa.core import napp, nmodule
 
+class TestCase(unittest.TestCase):
     def setUp(self):
-        try:
-            import nemoa
-        except ImportError as err:
-            raise ImportError(
-                "requires package nemoa: "
-                "http://fishroot.github.io/nemoa/") from err
-
+        import nemoa
         self.mode = nemoa.get('mode')
         self.workspace = nemoa.get('workspace')
         nemoa.set('mode', 'silent')
 
     def tearDown(self):
-        try:
-            import nemoa
-        except ImportError as err:
-            raise ImportError(
-                "requires package nemoa: "
-                "http://fishroot.github.io/nemoa/") from err
-
+        import nemoa
         nemoa.set('mode', self.mode)
+
+def run_tests():
+    import nemoa
+
+    loader = unittest.TestLoader()
+    suite = unittest.TestSuite()
+    root = nmodule.root()
+    cases = nmodule.search(root, base=TestCase, val='reference')
+    print(sorted(cases))
+    for name, ref in cases.items():
+        suite.addTests(loader.loadTestsFromTestCase(ref))
+
+    # Initialize runner
+    runner = unittest.TextTestRunner(verbosity=0)
+
+    # Run testsuite
+    nemoa.log('testing nemoa ' + nemoa.__version__)
+    result = runner.run(suite)
+
+    return result

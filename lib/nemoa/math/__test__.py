@@ -11,7 +11,7 @@ import numpy as np
 
 from nemoa.core import ntest
 
-class TestSuite(ntest.TestSuite):
+class TestCase(ntest.TestCase):
     """Testsuite for modules within the package 'nemoa.math'."""
 
     def test_common_nalgo(self) -> None:

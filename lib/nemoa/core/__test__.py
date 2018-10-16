@@ -11,7 +11,7 @@ from pathlib import Path
 
 from nemoa.core import ntest
 
-class TestSuite(ntest.TestSuite):
+class TestCase(ntest.TestCase):
     """Testsuite for modules within the package 'nemoa.core'."""
 
     def test_core_napp(self) -> None:
@@ -187,16 +187,18 @@ class TestSuite(ntest.TestSuite):
                 cast(Module, nmodule.inst(nmodule.__name__)).__name__,
                 nmodule.__name__)
 
-        with self.subTest("functions"):
+        with self.subTest('get_functions'):
+            func = nmodule.get_functions
+            name = func.__name__
+            fullname = func.__module__ + '.' + name
             self.assertIn(
-                nmodule.__name__ + '.functions',
-                nmodule.functions(nmodule))
+                fullname, nmodule.get_functions(nmodule))
             self.assertEqual(
-                len(nmodule.functions(nmodule, name='')), 0)
+                len(nmodule.get_functions(nmodule, name='')), 0)
             self.assertEqual(
-                len(nmodule.functions(nmodule, name='functions')), 1)
+                len(nmodule.get_functions(nmodule, name=name)), 1)
 
-        with self.subTest("search"):
+        with self.subTest('search'):
             self.assertEqual(
                 len(nmodule.search(nmodule, name='search')), 1)
 

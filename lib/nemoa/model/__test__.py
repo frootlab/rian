@@ -8,7 +8,7 @@ import nemoa
 
 from nemoa.core import ntest
 
-class TestSuite(ntest.TestSuite):
+class TestCase(ntest.TestCase):
 
     def test_model_import(self):
         from nemoa.core import nclass

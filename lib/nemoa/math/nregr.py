@@ -50,7 +50,7 @@ def errors() -> StrList:
     # Get dictionary of functions with given prefix
     module = nmodule.inst(nmodule.curname())
     pattern = ERR_PREFIX + '*'
-    d = nmodule.functions(module, pattern=pattern)
+    d = nmodule.get_functions(module, pattern=pattern)
 
     # Create sorted list of discrepancy functions
     i = len(ERR_PREFIX)

@@ -36,7 +36,7 @@ def norms() -> StrList:
     # Get dictionary of functions with given prefix
     module = nmodule.inst(nmodule.curname())
     pattern = NORM_PREFIX + '*'
-    d = nmodule.functions(module, pattern=pattern)
+    d = nmodule.get_functions(module, pattern=pattern)
 
     # Create sorted list of norm names
     i = len(NORM_PREFIX)
