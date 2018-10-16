@@ -9,6 +9,20 @@ import nemoa
 from nemoa.core import ntest
 
 class TestCase(ntest.TestCase):
+    def setUp(self):
+        import nemoa
+        self.mode = nemoa.get('mode')
+        self.workspace = nemoa.get('workspace')
+        nemoa.set('mode', 'silent')
+        # open workspace 'testsuite'
+        nemoa.open('testsuite', base='site')
+
+    def tearDown(self):
+        import nemoa
+        # open previous workspace
+        if nemoa.get('workspace') != self.workspace:
+            nemoa.open(self.workspace)
+        nemoa.set('mode', self.mode)
 
     def test_model_import(self):
         from nemoa.core import nclass
