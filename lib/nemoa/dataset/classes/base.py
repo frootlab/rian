@@ -11,10 +11,10 @@ try:
 except ImportError as err:
     raise ImportError(
         "requires package numpy: "
-        "https://scipy.org") from err
+        "https://pypi.org/project/numpy") from err
 
 import nemoa
-from nemoa.common import nclass, nbase
+from nemoa.core import nclass, nbase
 from nemoa.math import nalgo
 
 class Dataset(nbase.ObjectIP):
@@ -75,14 +75,14 @@ class Dataset(nbase.ObjectIP):
         'tables': '_tables'
     }
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize dataset with content from arguments."""
 
         # get attribute and storage defaults from parent
         self._attr = {**getattr(super(), '_attr', {}), **self._attr}
         self._copy = {**getattr(super(), '_copy', {}), **self._copy}
 
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwds)
 
     def configure(self, network):
         """Configure dataset columns to a given network.
@@ -300,7 +300,7 @@ class Dataset(nbase.ObjectIP):
         return retval
 
     def _initialize_stratify(self, stratification: str = 'hierarchical',
-        *args, **kwargs):
+        *args, **kwds):
         """Update sampling fractions for stratified sampling.
 
         Calculates sampling fractions for each table used in stratified
@@ -359,7 +359,7 @@ class Dataset(nbase.ObjectIP):
             "stratification '%s' is not supported." % stratification)
 
     def _initialize_normalize(self, distribution: str = 'gauss',
-        *args, **kwargs):
+        *args, **kwds):
         """Normalize data to a given distribution.
 
         Args:
@@ -378,9 +378,9 @@ class Dataset(nbase.ObjectIP):
         nemoa.log("normalize data using '%s'" % (distribution))
 
         if distribution.lower() == 'gauss':
-            return self._initialize_normalize_gauss(*args, **kwargs)
+            return self._initialize_normalize_gauss(*args, **kwds)
         if distribution.lower() == 'bernoulli':
-            return self._initialize_normalize_bernoulli(*args, **kwargs)
+            return self._initialize_normalize_bernoulli(*args, **kwds)
 
         return False
 
@@ -464,7 +464,7 @@ class Dataset(nbase.ObjectIP):
         return True
 
     def _initialize_transform(self, transformation: str = 'system',
-        *args, **kwargs):
+        *args, **kwds):
         """Transform data in tables.
 
         Args:
@@ -494,7 +494,7 @@ class Dataset(nbase.ObjectIP):
 
         # system based data transformation
         if transformation.lower() == 'system':
-            return self._initialize_transform_system(*args, **kwargs)
+            return self._initialize_transform_system(*args, **kwds)
 
         # gauss to binary data transformation
         if transformation.lower() in ['gausstobinary', 'binary']:
@@ -590,42 +590,42 @@ class Dataset(nbase.ObjectIP):
 
         return self._set_columns(target_columns, colmapping)
 
-    def get(self, key: str = 'name', *args, **kwargs):
+    def get(self, key: str = 'name', *args, **kwds):
         """Get meta information and content."""
 
         # get readable attributes
         if self._attr.get(key, 0b00) & 0b01:
-            return getattr(self, '_get_' + key)(*args, **kwargs)
+            return getattr(self, '_get_' + key)(*args, **kwds)
 
         # algorithms
-        if key == 'algorithm': return self._get_algorithm(*args, **kwargs)
+        if key == 'algorithm': return self._get_algorithm(*args, **kwds)
         if key == 'algorithms': return self._get_algorithms(
-            attribute = 'about', *args, **kwargs)
+            attribute = 'about', *args, **kwds)
 
         # content
-        if key == 'columns': return self._get_columns(*args, **kwargs)
+        if key == 'columns': return self._get_columns(*args, **kwds)
         if key == 'colgroups': return self._get_colgroups()
-        if key == 'colfilter': return self._get_colfilter(*args, **kwargs)
+        if key == 'colfilter': return self._get_colfilter(*args, **kwds)
         if key == 'colfilters': return self._get_colfilters()
-        if key == 'data': return self._get_data(*args, **kwargs)
-        if key == 'rows': return self._get_rows(*args, **kwargs)
-        if key == 'rowgroups': return self._get_rowgroups(*args, **kwargs)
-        if key == 'rowfilter': return self._get_rowfilter(*args, **kwargs)
+        if key == 'data': return self._get_data(*args, **kwds)
+        if key == 'rows': return self._get_rows(*args, **kwds)
+        if key == 'rowgroups': return self._get_rowgroups(*args, **kwds)
+        if key == 'rowfilter': return self._get_rowfilter(*args, **kwds)
         if key == 'rowfilters': return self._get_rowfilters()
-        if key == 'table': return self._get_table(*args, **kwargs)
-        if key == 'value': return self._get_value(*args, **kwargs)
+        if key == 'table': return self._get_table(*args, **kwds)
+        if key == 'value': return self._get_value(*args, **kwds)
 
         # direct access
-        if key == 'copy': return self._get_copy(*args, **kwargs)
-        if key == 'config': return self._get_config(*args, **kwargs)
-        if key == 'tables': return self._get_table(*args, **kwargs)
+        if key == 'copy': return self._get_copy(*args, **kwds)
+        if key == 'config': return self._get_config(*args, **kwds)
+        if key == 'tables': return self._get_table(*args, **kwds)
 
         raise KeyError(f"unknown key '{key}'")
 
     def _get_algorithms(self, category = None, attribute = None, tree = False):
         """Get algorithms provided by dataset."""
 
-        from nemoa.common import nclass
+        from nemoa.core import nclass
 
         # get dictionary with all methods
         # with prefix '_get_' and attribute 'name'
@@ -668,9 +668,9 @@ class Dataset(nbase.ObjectIP):
 
         return structured
 
-    def _get_algorithm(self, algorithm = None, *args, **kwargs):
+    def _get_algorithm(self, algorithm = None, *args, **kwds):
         """Get algorithm."""
-        algorithms = self._get_algorithms(*args, **kwargs)
+        algorithms = self._get_algorithms(*args, **kwds)
         if algorithm not in algorithms: return None
         return algorithms[algorithm]
 
@@ -1131,7 +1131,7 @@ class Dataset(nbase.ObjectIP):
                 type = np.recarray, dtype = dtype)
 
             if labels:
-                from nemoa.common import ntable
+                from nemoa.core import ntable
                 table_colsel = ntable.addcols(arr, self._tables[table], 'label')
             else:
                 table_colsel = arr
@@ -1174,21 +1174,21 @@ class Dataset(nbase.ObjectIP):
         raise ValueError("""could not get table:
             unknown tables name '%s'.""" % key) or None
 
-    def set(self, key = None, *args, **kwargs):
+    def set(self, key = None, *args, **kwds):
         """Set meta information, parameters and data of dataset."""
 
         # set writeable attribute
         if self._attr.get(key, 0b00) & 0b10:
-            return getattr(self, '_set_' + key)(*args, **kwargs)
+            return getattr(self, '_set_' + key)(*args, **kwds)
 
         # modify dataset parameters
-        if key == 'columns': return self._set_columns(*args, **kwargs)
-        if key == 'colfilter': return self._set_colfilter(**kwargs)
+        if key == 'columns': return self._set_columns(*args, **kwds)
+        if key == 'colfilter': return self._set_colfilter(**kwds)
 
         # import dataset configuration and dataset tables
-        if key == 'copy': return self._set_copy(*args, **kwargs)
-        if key == 'config': return self._set_config(*args, **kwargs)
-        if key == 'tables': return self._set_tables(*args, **kwargs)
+        if key == 'copy': return self._set_copy(*args, **kwds)
+        if key == 'config': return self._set_config(*args, **kwds)
+        if key == 'tables': return self._set_tables(*args, **kwds)
 
         raise KeyError(f"unknown key '{key}'")
 
@@ -1244,13 +1244,13 @@ class Dataset(nbase.ObjectIP):
 
         return True
 
-    def _set_colfilter(self, **kwargs):
+    def _set_colfilter(self, **kwds):
         """ """
 
         col_names = self._get_columns()
 
-        for col_filter_name in list(kwargs.keys()):
-            col_filter_cols = kwargs[col_filter_name]
+        for col_filter_name in list(kwds.keys()):
+            col_filter_cols = kwds[col_filter_name]
 
             # test column names of new column filter
             valid = True
@@ -1296,7 +1296,7 @@ class Dataset(nbase.ObjectIP):
 
         """
 
-        from nemoa.common import ndict
+        from nemoa.core import ndict
 
         # initialize configuration dictionary
         if not isinstance(self._config, dict): self._config = {}
@@ -1321,19 +1321,19 @@ class Dataset(nbase.ObjectIP):
 
         if not tables: return True
 
-        from nemoa.common import ndict
+        from nemoa.core import ndict
         self._tables = ndict.merge(tables, self._tables)
 
         return True
 
-    def evaluate(self, name = None, *args, **kwargs):
+    def evaluate(self, name = None, *args, **kwds):
         """Evaluate dataset."""
 
         algorithms = self._get_algorithms(attribute = 'reference')
         if name not in list(algorithms.keys()):
             raise ValueError(f"algorithm '{name}' is not supported")
 
-        return algorithms[name](*args, **kwargs)
+        return algorithms[name](*args, **kwds)
 
     @nalgo.custom(
         name     = 'sample',
@@ -1341,10 +1341,10 @@ class Dataset(nbase.ObjectIP):
         category = ('dataset', 'evaluation'),
         plot     = 'histogram'
     )
-    def _get_sample(self, *args, **kwargs):
+    def _get_sample(self, *args, **kwds):
         """Return a given number of stratified samples."""
 
-        return self._get_data(*args, **kwargs)
+        return self._get_data(*args, **kwds)
 
     @nalgo.custom(
         name     = 'covariance',
@@ -1571,14 +1571,14 @@ class Dataset(nbase.ObjectIP):
 
         return True
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwds):
         """Export dataset to file."""
-        return nemoa.dataset.save(self, *args, **kwargs)
+        return nemoa.dataset.save(self, *args, **kwds)
 
-    def show(self, *args, **kwargs):
+    def show(self, *args, **kwds):
         """Show dataset as image."""
-        return nemoa.dataset.show(self, *args, **kwargs)
+        return nemoa.dataset.show(self, *args, **kwds)
 
-    def copy(self, *args, **kwargs):
+    def copy(self, *args, **kwds):
         """Create copy of dataset."""
-        return nemoa.dataset.copy(self, *args, **kwargs)
+        return nemoa.dataset.copy(self, *args, **kwds)

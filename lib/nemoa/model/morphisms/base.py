@@ -8,27 +8,27 @@ import nemoa
 import numpy
 import time
 
-from nemoa.common import nclass
+from nemoa.core import nclass
 
 class Optimizer:
 
     _config = None
     _buffer = {}
 
-    def __init__(self, model = None, *args, **kwargs):
+    def __init__(self, model = None, *args, **kwds):
         """Configure tracker to given nemoa system instance."""
         if model: self._set_model(model)
 
-    def get(self, key, *args, **kwargs):
+    def get(self, key, *args, **kwds):
         """ """
 
         # algorithms
         if key == 'algorithm':
-            return self._get_algorithm(*args, **kwargs)
+            return self._get_algorithm(*args, **kwds)
         if key == 'algorithms': return self._get_algorithms(
-            attribute = 'about', *args, **kwargs)
+            attribute = 'about', *args, **kwds)
 
-        if key == 'data': return self._get_data(*args, **kwargs)
+        if key == 'data': return self._get_data(*args, **kwds)
         if key == 'epoch': return self._get_epoch()
         if key == 'estimatetime': return self._get_estimatetime()
         if key == 'progress': return self._get_progress()
@@ -41,7 +41,7 @@ class Optimizer:
     def _get_algorithms(self, category = None, attribute = None):
         """Get optimization algorithms."""
 
-        from nemoa.common import nclass
+        from nemoa.core import nclass
 
         algorithms = self._buffer['algorithms'].get(attribute, None)
         if not algorithms:
@@ -54,11 +54,11 @@ class Optimizer:
 
         return algorithms
 
-    def _get_algorithm(self, key, *args, **kwargs):
+    def _get_algorithm(self, key, *args, **kwds):
         """Get algorithm provided by transformation."""
-        return self._get_algorithms(*args, **kwargs).get(key, None)
+        return self._get_algorithms(*args, **kwds).get(key, None)
 
-    def _get_data(self, key, *args, **kwargs):
+    def _get_data(self, key, *args, **kwds):
         """Get data for training or evaluation.
 
         Args:
@@ -71,7 +71,7 @@ class Optimizer:
         """
 
         if key == 'training':
-            return self._get_data_training(*args, **kwargs)
+            return self._get_data_training(*args, **kwds)
 
         raise KeyError(f"unknown key '{key}'")
 
@@ -111,7 +111,7 @@ class Optimizer:
         algorithm = self._get_objective_algorithm('name')
         return self.evaluation.evaluate(algorithm)
 
-    def _get_data_training(self, *args, **kwargs):
+    def _get_data_training(self, *args, **kwds):
         """Get training data.
 
         Returns:
@@ -216,10 +216,10 @@ class Optimizer:
 
         return self.model.system._config['schedules'].get(key, {})
 
-    def optimize(self, config = None, **kwargs):
+    def optimize(self, config = None, **kwds):
         """ """
 
-        if not self._set_config(config, **kwargs): return None
+        if not self._set_config(config, **kwds): return None
         if not self._set_buffer_reset(): return None
 
         # get name of optimization algorithm
@@ -256,16 +256,16 @@ class Optimizer:
 
         return retval
 
-    def set(self, key, *args, **kwargs):
+    def set(self, key, *args, **kwds):
         """ """
 
-        if key == 'model': return self._set_model(*args, **kwargs)
-        if key == 'config': return self._set_config(*args, **kwargs)
-        if key == 'buffer': return self._set_buffer(*args, **kwargs)
+        if key == 'model': return self._set_model(*args, **kwds)
+        if key == 'config': return self._set_config(*args, **kwds)
+        if key == 'buffer': return self._set_buffer(*args, **kwds)
 
         raise KeyError(f"unknown key '{key}'")
 
-    def _set_config(self, config = None, **kwargs):
+    def _set_config(self, config = None, **kwds):
         """Set configuration for transformation from dictionary."""
 
         if not isinstance(config, dict):
@@ -283,8 +283,8 @@ class Optimizer:
             schedules = system._config.get('schedules', {})
             config = schedules.get(key, {}).get(system.type, {})
 
-        from nemoa.common import ndict
-        self._config = ndict.merge(kwargs, config, self._default)
+        from nemoa.core import ndict
+        self._config = ndict.merge(kwds, config, self._default)
 
         return True
 
@@ -350,18 +350,18 @@ class Optimizer:
 
         return queue[id]
 
-    def write(self, key, id = -1, append = False, **kwargs):
+    def write(self, key, id = -1, append = False, **kwds):
         """Write value to queue."""
 
         if key not in self._buffer['store']: self._buffer['store'][key] = []
         queue = self._buffer['store'][key]
         if len(queue) == (abs(id) - 1) or append == True:
-            queue.append(kwargs)
+            queue.append(kwds)
             return True
         if len(queue) < id:
             raise Warning(
                 'could not write to store, wrong index.')
-        queue[id] = kwargs
+        queue[id] = kwds
 
         return True
 

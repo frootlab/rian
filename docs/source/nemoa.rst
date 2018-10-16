@@ -6,7 +6,7 @@ Subpackages
 
 .. toctree::
 
-    nemoa.common
+    nemoa.core
     nemoa.dataset
     nemoa.io
     nemoa.math

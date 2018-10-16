@@ -13,10 +13,10 @@ def filetypes():
         'ini': 'Nemoa Network Description',
         'txt': 'Nemoa Network Description'}
 
-def load(path, **kwargs):
+def load(path, **kwds):
     """Import network from text file."""
 
-    from nemoa.common import npath
+    from nemoa.core import npath
 
     # extract filetype from path
     filetype = npath.fileext(path).lower()
@@ -25,7 +25,7 @@ def load(path, **kwargs):
     if filetype not in filetypes():
         raise ValueError(f"filetype '{filetype}' is not supported")
 
-    if filetype in ['ini', 'txt']:  return Ini(**kwargs).load(path)
+    if filetype in ['ini', 'txt']:  return Ini(**kwds).load(path)
 
     return False
 
@@ -35,9 +35,9 @@ class Ini:
     settings = None
     default = {}
 
-    def __init__(self, **kwargs):
-        from nemoa.common import ndict
-        self.settings = ndict.merge(kwargs, self.default)
+    def __init__(self, **kwds):
+        from nemoa.core import ndict
+        self.settings = ndict.merge(kwds, self.default)
 
     def load(self, path):
         """Return network configuration as dictionary.
@@ -66,7 +66,7 @@ class Ini:
             "type '%s'." % (path, network['network']['type']))
 
     def _parse_layer_network(self, path):
-        from nemoa.common import npath
+        from nemoa.core import npath
         from nemoa.io import inifile
 
         structure = {

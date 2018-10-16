@@ -12,9 +12,9 @@ def filetypes():
     return {
         'npz': 'Numpy Zipped Archive' }
 
-def load(path, **kwargs):
+def load(path, **kwds):
     """Import system from archive file."""
-    return Npz(**kwargs).load(path)
+    return Npz(**kwds).load(path)
 
 class Npz:
     """Import system from numpy zipped archive."""
@@ -22,9 +22,9 @@ class Npz:
     settings = None
     default = {}
 
-    def __init__(self, **kwargs):
-        from nemoa.common import ndict
-        self.settings = ndict.merge(kwargs, self.default)
+    def __init__(self, **kwds):
+        from nemoa.core import ndict
+        self.settings = ndict.merge(kwds, self.default)
 
     def load(self, path):
         copy = numpy.load(path)

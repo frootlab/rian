@@ -9,7 +9,7 @@ import networkx
 import copy
 import importlib
 
-from nemoa.common import nclass, nbase
+from nemoa.core import nclass, nbase
 from typing import Any, Dict
 
 class Network(nbase.ObjectIP):
@@ -75,14 +75,14 @@ class Network(nbase.ObjectIP):
     _graph   = None
 
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize network with content from arguments."""
 
         # get attribute and storage defaults from parent
         self._attr = {**getattr(super(), '_attr', {}), **self._attr}
         self._copy = {**getattr(super(), '_copy', {}), **self._copy}
 
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwds)
 
     def configure(self, dataset = None):
         """Configure network to dataset."""
@@ -328,54 +328,54 @@ class Network(nbase.ObjectIP):
 
         return True
 
-    def get(self, key = 'name', *args, **kwargs):
+    def get(self, key = 'name', *args, **kwds):
         """Get meta information and content."""
 
         # get readable attributes
         if self._attr.get(key, 0b00) & 0b01:
-            return getattr(self, '_get_' + key)(*args, **kwargs)
+            return getattr(self, '_get_' + key)(*args, **kwds)
 
         # algorithms
         if key == 'algorithm':
-            return self._get_algorithm(*args, **kwargs)
+            return self._get_algorithm(*args, **kwds)
         if key == 'algorithms': return self._get_algorithms(
-            attribute = 'about', *args, **kwargs)
+            attribute = 'about', *args, **kwds)
 
         # content
-        if key == 'node': return self._get_node(*args, **kwargs)
-        if key == 'nodes': return self._get_nodes(*args, **kwargs)
-        if key == 'edge': return self._get_edge(*args, **kwargs)
-        if key == 'edges': return self._get_edges(*args, **kwargs)
-        if key == 'layer': return self._get_layer(*args, **kwargs)
-        if key == 'layers': return self._get_layers(*args, **kwargs)
+        if key == 'node': return self._get_node(*args, **kwds)
+        if key == 'nodes': return self._get_nodes(*args, **kwds)
+        if key == 'edge': return self._get_edge(*args, **kwds)
+        if key == 'edges': return self._get_edges(*args, **kwds)
+        if key == 'layer': return self._get_layer(*args, **kwds)
+        if key == 'layers': return self._get_layers(*args, **kwds)
 
         # direct access
-        if key == 'copy': return self._get_copy(*args, **kwargs)
-        if key == 'config': return self._get_config(*args, **kwargs)
-        if key == 'graph': return self._get_graph(*args, **kwargs)
+        if key == 'copy': return self._get_copy(*args, **kwds)
+        if key == 'config': return self._get_config(*args, **kwds)
+        if key == 'graph': return self._get_graph(*args, **kwds)
 
         raise KeyError(f"unknown key '{key}'")
 
     def _get_algorithms(self, category = None, attribute = None):
         """Get algorithms provided by network."""
 
-        from nemoa.common import nmodule
+        from nemoa.core import nmodule
 
-        funcs = nmodule.functions(networkx.algorithms)
+        funcs = nmodule.get_functions(networkx.algorithms)
         if attribute is None: return funcs
 
         return {k: v.get(attribute, None) for k, v in funcs.items()}
 
-    def _get_algorithm(self, algorithm = None, *args, **kwargs):
+    def _get_algorithm(self, algorithm = None, *args, **kwds):
         """Get algorithm."""
-        algorithms = self._get_algorithms(*args, **kwargs)
+        algorithms = self._get_algorithms(*args, **kwds)
         return algorithms.get(algorithm, None)
 
     def _get_node(self, node):
         """Return network information of single node."""
         return self._graph.node.get(node, None)
 
-    def _get_nodes(self, groupby = None, **kwargs):
+    def _get_nodes(self, groupby = None, **kwds):
         """Get nodes of network.
 
         Args:
@@ -384,7 +384,7 @@ class Network(nbase.ObjectIP):
                 None, the returned nodes are grouped by the different
                 values of this attribute. Grouping is only
                 possible if every node contains the attribute.
-            **kwargs: filter parameters of nodes. If kwargs are given,
+            **kwds: filter parameters of nodes. If kwds are given,
                 only nodes that match the filter parameters are
                 returned.
 
@@ -405,11 +405,11 @@ class Network(nbase.ObjectIP):
         # filter nodes to given attributes
         nodes_sort_list = [None] * self._graph.number_of_nodes()
         for node, attr in self._graph.nodes(data = True):
-            if not kwargs == {}:
+            if not kwds == {}:
                 passed = True
-                for key in kwargs:
+                for key in kwds:
                     if key not in attr['params'] \
-                        or not kwargs[key] == attr['params'][key]:
+                        or not kwds[key] == attr['params'][key]:
                         passed = False
                         break
                 if not passed: continue
@@ -442,7 +442,7 @@ class Network(nbase.ObjectIP):
             raise ValueError(f"edge '{str(edge)}' is not valid")
         return self._graph.edges[edge]
 
-    def _get_edges(self, groupby = None, **kwargs):
+    def _get_edges(self, groupby = None, **kwds):
         """Get edges of network.
 
         Args:
@@ -451,7 +451,7 @@ class Network(nbase.ObjectIP):
                 None, the returned edges are grouped by the different
                 values of this attribute. Grouping is only
                 possible if every edge contains the attribute.
-            **kwargs: filter attributs of edges. If kwargs are given,
+            **kwds: filter attributs of edges. If kwds are given,
                 only edges that match the filter attributes are
                 returned.
 
@@ -472,11 +472,11 @@ class Network(nbase.ObjectIP):
         # filter efges to given attributes
         edge_sort_list = [None] * self._graph.number_of_edges()
         for src, tgt, attr in self._graph.edges(data = True):
-            if not kwargs == {}:
+            if not kwds == {}:
                 passed = True
-                for key in kwargs:
+                for key in kwds:
                     if key not in attr['params'] \
-                        or not kwargs[key] == attr['params'][key]:
+                        or not kwds[key] == attr['params'][key]:
                         passed = False
                         break
                 if not passed: continue
@@ -513,7 +513,7 @@ class Network(nbase.ObjectIP):
         retdict['layer_id'] = self._config['layer'].index(layer)
         return retdict
 
-    def _get_layers(self, **kwargs):
+    def _get_layers(self, **kwds):
         """Get node layers of network.
 
         Returns:
@@ -534,11 +534,11 @@ class Network(nbase.ObjectIP):
         # get ordered list of nodes
         nodes_sort_list = [None] * graph.number_of_nodes()
         for node, attr in graph.nodes(data = True):
-            if not kwargs == {}:
+            if not kwds == {}:
                 passed = True
-                for key in kwargs:
+                for key in kwds:
                     if key not in attr['params'] \
-                        or kwargs[key] != attr['params'][key]:
+                        or kwds[key] != attr['params'][key]:
                         passed = False
                         break
                 if not passed: continue
@@ -568,17 +568,17 @@ class Network(nbase.ObjectIP):
 
         return None
 
-    def set(self, key = None, *args, **kwargs):
+    def set(self, key = None, *args, **kwds):
         """Set meta information, parameters and data of network."""
 
         # set writeable attributes
         if self._attr.get(key, 0b00) & 0b10:
-            return getattr(self, '_set_' + key)(*args, **kwargs)
+            return getattr(self, '_set_' + key)(*args, **kwds)
 
         # import network configuration and graph
-        if key == 'copy': return self._set_copy(*args, **kwargs)
-        if key == 'config': return self._set_config(*args, **kwargs)
-        if key == 'graph': return self._set_graph(*args, **kwargs)
+        if key == 'copy': return self._set_copy(*args, **kwds)
+        if key == 'config': return self._set_config(*args, **kwds)
+        if key == 'graph': return self._set_graph(*args, **kwds)
 
         raise KeyError(f"unknown key '{key}'")
 
@@ -613,7 +613,7 @@ class Network(nbase.ObjectIP):
         if not hasattr(self, '_config') or not self._config:
             self._config = self._default.copy()
         if config:
-            from nemoa.common import ndict
+            from nemoa.core import ndict
             self._config = ndict.merge(config, self._config)
 
             # reconfigure graph
@@ -636,7 +636,7 @@ class Network(nbase.ObjectIP):
         if not graph: return True
 
         # merge graph
-        from nemoa.common import ndict
+        from nemoa.core import ndict
         graph_copy = ndict.merge(graph, self._get_graph())
 
         # create networkx graph instance
@@ -650,7 +650,7 @@ class Network(nbase.ObjectIP):
 
         return True
 
-    def evaluate(self, name = None, *args, **kwargs):
+    def evaluate(self, name = None, *args, **kwds):
         """Evaluate network."""
 
         algorithms = self._get_algorithms(attribute = 'reference')
@@ -658,7 +658,7 @@ class Network(nbase.ObjectIP):
             raise ValueError("""could not evaluate network:
                 unknown networkx algorithm name '%s'.""" % (name))
 
-        return algorithms[name](self._graph, *args, **kwargs)
+        return algorithms[name](self._graph, *args, **kwds)
 
     def initialize(self, system = None):
 
@@ -667,7 +667,7 @@ class Network(nbase.ObjectIP):
             raise ValueError("system is not valid")
 
         # get edge parameters from system links
-        from nemoa.common import ndict
+        from nemoa.core import ndict
         for edge in self._graph.edges():
             params = system.get('link', edge)
             if not params: continue
@@ -677,14 +677,14 @@ class Network(nbase.ObjectIP):
 
         return True
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwds):
         """Export network to file."""
-        return nemoa.network.save(self, *args, **kwargs)
+        return nemoa.network.save(self, *args, **kwds)
 
-    def show(self, *args, **kwargs):
+    def show(self, *args, **kwds):
         """Show network as image."""
-        return nemoa.network.show(self, *args, **kwargs)
+        return nemoa.network.show(self, *args, **kwds)
 
-    def copy(self, *args, **kwargs):
+    def copy(self, *args, **kwds):
         """Create copy of network."""
-        return nemoa.network.copy(self, *args, **kwargs)
+        return nemoa.network.copy(self, *args, **kwds)

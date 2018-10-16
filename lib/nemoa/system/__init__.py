@@ -9,22 +9,22 @@ import nemoa.system.commons
 import nemoa.system.imports
 import nemoa.system.exports
 
-def copy(system, *args, **kwargs):
+def copy(system, *args, **kwds):
     """Create copy of system instance."""
     return new(**system.get('copy'))
 
-def load(*args, **kwargs):
+def load(*args, **kwds):
     """Import system dictionary from file."""
-    return nemoa.system.imports.load(*args, **kwargs)
+    return nemoa.system.imports.load(*args, **kwds)
 
-def new(*args, **kwargs):
+def new(*args, **kwds):
     """Create system instance from system dictionary."""
-    return nemoa.system.classes.new(*args, **kwargs)
+    return nemoa.system.classes.new(*args, **kwds)
 
-def open(*args, **kwargs):
+def open(*args, **kwds):
     """Import system instance from file."""
-    return new(**load(*args, **kwargs))
+    return new(**load(*args, **kwds))
 
-def save(*args, **kwargs):
+def save(*args, **kwds):
     """Export system instance to file."""
-    return nemoa.system.exports.save(*args, **kwargs)
+    return nemoa.system.exports.save(*args, **kwds)

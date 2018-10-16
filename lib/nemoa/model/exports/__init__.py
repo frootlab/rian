@@ -29,7 +29,7 @@ def filetypes(filetype = None):
     return {}
 
 def save(model, path = None, filetype = None, workspace = None,
-    base = 'user', **kwargs):
+    base = 'user', **kwds):
     """Export model to file.
 
     Args:
@@ -43,7 +43,7 @@ def save(model, path = None, filetype = None, workspace = None,
 
     """
 
-    from nemoa.common import nclass, npath
+    from nemoa.core import nclass, npath
 
     if not nclass.hasbase(model, 'Model'):
         raise TypeError("model is not valid")
@@ -75,13 +75,13 @@ def save(model, path = None, filetype = None, workspace = None,
     module_name = filetypes(filetype)[0]
     if module_name == 'archive':
         return nemoa.model.exports.archive.save(
-            model, path, filetype, **kwargs)
+            model, path, filetype, **kwds)
     if module_name == 'image':
         return nemoa.model.exports.image.save(
-            model, path, filetype, **kwargs)
+            model, path, filetype, **kwds)
 
     return False
 
-def show(model, *args, **kwargs):
+def show(model, *args, **kwds):
     """ """
-    return nemoa.model.exports.image.show(model, *args, **kwargs)
+    return nemoa.model.exports.image.show(model, *args, **kwds)

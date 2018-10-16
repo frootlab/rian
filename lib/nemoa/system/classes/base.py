@@ -8,7 +8,7 @@ import nemoa
 import numpy
 import copy
 
-from nemoa.common import nbase, nclass
+from nemoa.core import nbase, nclass
 from nemoa.math import nalgo, ncurve
 from typing import Any, Dict
 
@@ -74,14 +74,14 @@ class System(nbase.ObjectIP):
     _config = None
     _params = None
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize system with content from arguments."""
 
         # get attribute and storage defaults from parent
         self._attr = {**getattr(super(), '_attr', {}), **self._attr}
         self._copy = {**getattr(super(), '_copy', {}), **self._copy}
 
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwds)
 
     def configure(self, network = None):
         """Configure system to network."""
@@ -107,12 +107,12 @@ class System(nbase.ObjectIP):
         return self._set_params_init_units(dataset) \
             and self._set_params_init_links(dataset)
 
-    def _check_network(self, network, *args, **kwargs):
+    def _check_network(self, network, *args, **kwds):
         """Check if network is valid for system."""
         if not nclass.hasbase(network, 'Network'): return False
         return True
 
-    def _check_dataset(self, dataset, *args, **kwargs):
+    def _check_dataset(self, dataset, *args, **kwds):
         """Check if network is valid for system."""
         if not nclass.hasbase(dataset, 'Dataset'): return False
         return True
@@ -120,7 +120,7 @@ class System(nbase.ObjectIP):
     def _get_algorithms(self, category = None, attribute = None, tree = False):
         """Get algorithms provided by system."""
 
-        from nemoa.common import nclass
+        from nemoa.core import nclass
 
         # get dictionary with all methods
         # with prefix '_get_' and attribute 'name'
@@ -163,7 +163,7 @@ class System(nbase.ObjectIP):
 
         return structured
 
-    def _get_algorithms_new(self, *args, **kwargs):
+    def _get_algorithms_new(self, *args, **kwds):
         """Get list of all available algorithms for system."""
 
         import nemoa.model.analysis
@@ -172,11 +172,11 @@ class System(nbase.ObjectIP):
         clist = [obj.__name__ for obj in self.__class__.__mro__
             if ctest(obj.__module__)]
 
-        return nemoa.model.analysis.algorithms(classes = clist, **kwargs)
+        return nemoa.model.analysis.algorithms(classes = clist, **kwds)
 
-    def _get_algorithm(self, algorithm = None, *args, **kwargs):
+    def _get_algorithm(self, algorithm = None, *args, **kwds):
         """Get algorithm."""
-        algorithms = self._get_algorithms(*args, **kwargs)
+        algorithms = self._get_algorithms(*args, **kwds)
         if algorithm not in algorithms: return None
         return algorithms[algorithm]
 
@@ -210,7 +210,7 @@ class System(nbase.ObjectIP):
 
         return unit_params
 
-    def _get_units(self, groupby = None, **kwargs):
+    def _get_units(self, groupby = None, **kwds):
         """Get units of system.
 
         Args:
@@ -219,7 +219,7 @@ class System(nbase.ObjectIP):
                 None, the returned units are grouped by the different
                 values of this attribute. Grouping is only
                 possible if every unit contains the attribute.
-            **kwargs: filter parameters of units. If kwargs are given,
+            **kwds: filter parameters of units. If kwds are given,
                 only units that match the filter parameters are
                 returned.
 
@@ -246,8 +246,8 @@ class System(nbase.ObjectIP):
         units = []
         for layer in self._params['units']:
             valid = True
-            for key in list(kwargs.keys()):
-                if layer[key] != kwargs[key]:
+            for key in list(kwds.keys()):
+                if layer[key] != kwds[key]:
                     valid = False
                     break
             if not valid: continue
@@ -275,7 +275,7 @@ class System(nbase.ObjectIP):
             grouped_units.append(group)
         return grouped_units
 
-    def _get_layers(self, **kwargs):
+    def _get_layers(self, **kwds):
         """Get unit layers of system.
 
         Returns:
@@ -297,9 +297,9 @@ class System(nbase.ObjectIP):
             return []
 
         filter_list = []
-        for key in list(kwargs.keys()):
+        for key in list(kwds.keys()):
             if key in list(self._params['units'][0].keys()):
-                filter_list.append((key, kwargs[key]))
+                filter_list.append((key, kwds[key]))
 
         layers = []
         for layer in self._params['units']:
@@ -385,7 +385,7 @@ class System(nbase.ObjectIP):
 
         return link_params
 
-    def _get_links(self, groupby = None, **kwargs):
+    def _get_links(self, groupby = None, **kwds):
         """Get links of system.
 
         Args:
@@ -394,7 +394,7 @@ class System(nbase.ObjectIP):
                 None, the returned links are grouped by the different
                 values of this attribute. Grouping is only
                 possible if every link contains the attribute.
-            **kwargs: filter attributs of links. If kwargs are given,
+            **kwds: filter attributs of links. If kwds are given,
                 only links that match the filter attributes are
                 returned.
 
@@ -437,8 +437,8 @@ class System(nbase.ObjectIP):
                     link_params = self._get_link(link)
                     if not link_params['A']: continue
                     valid = True
-                    for key in list(kwargs.keys()):
-                        if not link_params[key] == kwargs[key]:
+                    for key in list(kwds.keys()):
+                        if not link_params[key] == kwds[key]:
                             valid = False
                             break
                     if not valid: continue
@@ -488,7 +488,7 @@ class System(nbase.ObjectIP):
         return mapping[sid:tid + 1] if sid <= tid \
             else mapping[tid:sid + 1][::-1]
 
-    def _get_params(self, key = None, *args, **kwargs):
+    def _get_params(self, key = None, *args, **kwds):
         """Get configuration or configuration value."""
 
         import copy
@@ -510,9 +510,9 @@ class System(nbase.ObjectIP):
         formater = lambda val: '%.3f' % (val),
         optimum  = 'min'
     )
-    def _get_error(self, *args, **kwargs):
+    def _get_error(self, *args, **kwds):
         """Mean data reconstruction error of output units."""
-        return numpy.mean(self._get_uniterror(*args, **kwargs))
+        return numpy.mean(self._get_uniterror(*args, **kwds))
 
     @nalgo.custom(
         name     = 'accuracy',
@@ -521,9 +521,9 @@ class System(nbase.ObjectIP):
         formater = lambda val: '%.1f%%' % (val * 100.),
         optimum  = 'max' )
 
-    def _get_accuracy(self, *args, **kwargs):
+    def _get_accuracy(self, *args, **kwds):
         """Mean data reconstruction accuracy of output units."""
-        return numpy.mean(self._get_unitaccuracy(*args, **kwargs))
+        return numpy.mean(self._get_unitaccuracy(*args, **kwds))
 
     @nalgo.custom(
         name     = 'precision',
@@ -532,9 +532,9 @@ class System(nbase.ObjectIP):
         formater = lambda val: '%.1f%%' % (val * 100.),
         optimum  = 'max' )
 
-    def _get_precision(self, *args, **kwargs):
+    def _get_precision(self, *args, **kwds):
         """Mean data reconstruction precision of output units."""
-        return numpy.mean(self._get_unitprecision(*args, **kwargs))
+        return numpy.mean(self._get_unitprecision(*args, **kwds))
 
     @nalgo.custom(
         name     = 'units_mean',
@@ -812,7 +812,7 @@ class System(nbase.ObjectIP):
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram'
     )
-    def _get_uniterror(self, data, norm = 'MSE', **kwargs):
+    def _get_uniterror(self, data, norm = 'MSE', **kwds):
         """Unit reconstruction error.
 
         The unit reconstruction error is defined by:
@@ -828,7 +828,7 @@ class System(nbase.ObjectIP):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate data reconstuction error from
-                residuals. see nemoa.common.nvector.norm for a list
+                residuals. see nemoa.core.nvector.norm for a list
                 of provided norms
 
         """
@@ -837,7 +837,7 @@ class System(nbase.ObjectIP):
 
         # TODO: use nvector
         #error = nvector.distance(x, y, metric=metric)
-        res = self._get_unitresiduals(data, **kwargs)
+        res = self._get_unitresiduals(data, **kwds)
         error = numpy.mean(numpy.square(res), axis=0)
 
         return error
@@ -850,7 +850,7 @@ class System(nbase.ObjectIP):
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram')
 
-    def _get_unitaccuracy(self, data, norm = 'MSE', **kwargs):
+    def _get_unitaccuracy(self, data, norm = 'MSE', **kwds):
         """Unit reconstruction accuracy.
 
         The unit reconstruction accuracy is defined by:
@@ -866,7 +866,7 @@ class System(nbase.ObjectIP):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate accuracy
-                see nemoa.common.nvector.norm for a list of provided
+                see nemoa.core.nvector.norm for a list of provided
                 norms
 
         """
@@ -874,7 +874,7 @@ class System(nbase.ObjectIP):
 
         # TODO: use nvector
         #error = nvector.distance(x, y, metric=metric)
-        res = self._get_unitresiduals(data, **kwargs)
+        res = self._get_unitresiduals(data, **kwds)
         normres = numpy.mean(numpy.square(res), axis=0)
         normdat = numpy.mean(numpy.square(data[1]), axis=0)
 
@@ -888,7 +888,7 @@ class System(nbase.ObjectIP):
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram' )
 
-    def _get_unitprecision(self, data, norm='SD', **kwargs):
+    def _get_unitprecision(self, data, norm='SD', **kwds):
         """Unit reconstruction precision.
 
         The unit reconstruction precision is defined by:
@@ -904,14 +904,14 @@ class System(nbase.ObjectIP):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate deviation for precision
-                see nemoa.common.nvector.norm for a list of provided
+                see nemoa.core.nvector.norm for a list of provided
                 norms
 
         """
 
         from nemoa.math import nvector
 
-        res = self._get_unitresiduals(data, **kwargs)
+        res = self._get_unitresiduals(data, **kwds)
         devres = nvector.length(res, norm=norm)
         devdat = nvector.length(data[1], norm=norm)
 
@@ -928,7 +928,7 @@ class System(nbase.ObjectIP):
         plot     = 'heatmap',
         formater = lambda val: '%.3f' % (val) )
 
-    def _get_correlation(self, data, mapping = None, **kwargs):
+    def _get_correlation(self, data, mapping = None, **kwds):
         """Data correlation between source and target units.
 
         Undirected data based relation describing the 'linearity'
@@ -976,7 +976,7 @@ class System(nbase.ObjectIP):
         plot     = 'heatmap',
         formater = lambda val: '%.3f' % (val) )
 
-    def _get_weightsumproduct(self, data, mapping = None, **kwargs):
+    def _get_weightsumproduct(self, data, mapping = None, **kwds):
         """Weight sum product from source to target units.
 
         Directed graph based relation describing the matrix product from
@@ -1016,7 +1016,7 @@ class System(nbase.ObjectIP):
         plot     = 'heatmap',
         formater = lambda val: '%.3f' % (val)
     )
-    def _get_knockout(self, data, mapping = None, **kwargs):
+    def _get_knockout(self, data, mapping = None, **kwds):
         """Knockout effect from source to target units.
 
         Directed data manipulation based relation describing the
@@ -1047,7 +1047,7 @@ class System(nbase.ObjectIP):
         R = numpy.zeros((len(in_labels), len(out_labels)))
 
         # calculate unit values without knockout
-        measure = kwargs.get('measure', 'error')
+        measure = kwds.get('measure', 'error')
         default = self._evaluate_units(data,
             func = measure, mapping = mapping)
 
@@ -1076,7 +1076,7 @@ class System(nbase.ObjectIP):
         plot     = 'heatmap',
         formater = lambda val: '%.3f' % (val)
     )
-    def _get_coinduction(self, data, *args, **kwargs):
+    def _get_coinduction(self, data, *args, **kwds):
         """Coinduced deviation from source to target units."""
 
         # 2do: Open Problem:
@@ -1102,10 +1102,10 @@ class System(nbase.ObjectIP):
 
         # create keawords for induction measurement
 
-        if 'gauge' not in kwargs: kwargs['gauge'] = gauge
+        if 'gauge' not in kwds: kwds['gauge'] = gauge
 
         # calculate induction without manipulation
-        ind = self._get_induction(data, *args, **kwargs)
+        ind = self._get_induction(data, *args, **kwds)
         norm = numpy.sqrt((ind ** 2).sum(axis = 1))
 
         # calculate induction with manipulation
@@ -1114,7 +1114,7 @@ class System(nbase.ObjectIP):
             # manipulate source unit values and calculate induction
             datamp = [numpy.copy(data[0]), data[1]]
             datamp[0][:, sid] = 10.0
-            indmp = self._get_induction(datamp, *args, **kwargs)
+            indmp = self._get_induction(datamp, *args, **kwds)
 
             print(('manipulation of', sunit))
             vals = [-2., -1., -0.5, 0., 0.5, 1., 2.]
@@ -1122,7 +1122,7 @@ class System(nbase.ObjectIP):
             for vid, val in enumerate(vals):
                 datamod = [numpy.copy(data[0]), data[1]]
                 datamod[0][:, sid] = val #+ datamod[0][:, sid].mean()
-                indmod = self._get_induction(datamod, *args, **kwargs)
+                indmod = self._get_induction(datamod, *args, **kwds)
                 maniparr[vid, :] = numpy.sqrt(((indmod - ind) ** 2).sum(axis = 1))
             manipvar = maniparr.var(axis = 0)
             #manipvar /= numpy.amax(manipvar)
@@ -1148,7 +1148,7 @@ class System(nbase.ObjectIP):
         formater = lambda val: '%.3f' % (val)
     )
     def _get_induction(self, data, mapping = None, points = 10,
-        amplify = 1., gauge = 0.25, contrast = 20.0, **kwargs):
+        amplify = 1., gauge = 0.25, contrast = 20.0, **kwds):
         """Induced deviation from source to target units.
 
         Directed data manipulation based relation describing the induced
@@ -1238,21 +1238,21 @@ class System(nbase.ObjectIP):
 
         return R
 
-    def set(self, key = None, *args, **kwargs):
+    def set(self, key = None, *args, **kwds):
         """Set meta information, configuration and parameters."""
 
         # set writeable attributes
         if self._attr.get(key, 0b00) & 0b10:
-            return getattr(self, '_set_' + key)(*args, **kwargs)
+            return getattr(self, '_set_' + key)(*args, **kwds)
 
         # set configuration and parameters
-        if key == 'links': return self._set_links(*args, **kwargs)
-        if key == 'mapping': return self._set_mapping(*args, **kwargs)
+        if key == 'links': return self._set_links(*args, **kwds)
+        if key == 'mapping': return self._set_mapping(*args, **kwds)
 
         # import configuration and parameters
-        if key == 'copy': return self._set_copy(*args, **kwargs)
-        if key == 'config': return self._set_config(*args, **kwargs)
-        if key == 'params': return self._set_params(*args, **kwargs)
+        if key == 'copy': return self._set_copy(*args, **kwds)
+        if key == 'config': return self._set_config(*args, **kwds)
+        if key == 'params': return self._set_params(*args, **kwds)
 
         raise KeyError(f"unknown key '{key}'")
 
@@ -1344,7 +1344,7 @@ class System(nbase.ObjectIP):
         if not hasattr(self, '_config') or not self._config:
             self._config = self._default.copy()
         if config:
-            from nemoa.common import ndict
+            from nemoa.core import ndict
             self._config = ndict.merge(config, self._config)
 
         # reset consistency check
@@ -1362,7 +1362,7 @@ class System(nbase.ObjectIP):
 
         # get system parameters from dict
         if params:
-            from nemoa.common import ndict
+            from nemoa.core import ndict
             self._params = ndict.merge(params, self._params)
 
             # create instances of units and links
@@ -1413,7 +1413,7 @@ class System(nbase.ObjectIP):
                 links[(src_lid, tgt_lid)]['A'][src_sid, tgt_sid] = 1.0
 
             params = {'units': units, 'links': links}
-            from nemoa.common import ndict
+            from nemoa.core import ndict
             self._params = ndict.merge(params, self._params)
 
             # create instances of units and links
@@ -1559,36 +1559,36 @@ class System(nbase.ObjectIP):
 
         return True
 
-    def evaluate(self, data, *args, **kwargs):
+    def evaluate(self, data, *args, **kwds):
         """Evaluate system using data."""
 
         # default system evaluation
         if len(args) == 0:
-            return self._evaluate_system(data, **kwargs)
+            return self._evaluate_system(data, **kwds)
 
         # evaluate system units
         if args[0] == 'units':
-            return self._evaluate_units(data, *args[1:], **kwargs)
+            return self._evaluate_units(data, *args[1:], **kwds)
 
         # evaluate system links
         if args[0] == 'links':
-            return self._evaluate_links(data, *args[1:], **kwargs)
+            return self._evaluate_links(data, *args[1:], **kwds)
 
         # evaluate system relations
         if args[0] == 'relations':
-            return self._evaluate_relation(data, *args[1:], **kwargs)
+            return self._evaluate_relation(data, *args[1:], **kwds)
 
         # evaluate system
         algorithms = list(self._get_algorithms(attribute = 'name',
             category = ('system', 'evaluation')).values())
 
         if args[0] in algorithms:
-            return self._evaluate_system(data, *args, **kwargs)
+            return self._evaluate_system(data, *args, **kwds)
 
         raise Warning(
             "unsupported system evaluation '%s'." % args[0])
 
-    def _evaluate_system(self, data, func = 'accuracy', **kwargs):
+    def _evaluate_system(self, data, func = 'accuracy', **kwds):
         """Evaluation of system.
 
         Args:
@@ -1621,15 +1621,15 @@ class System(nbase.ObjectIP):
         elif algorithm['args'] == 'all': evalargs.append(data)
 
         # prepare keyword arguments for evaluation function
-        evalkwargs = kwargs.copy()
-        if 'mapping' not in evalkwargs or evalkwargs['mapping'] is None:
-            evalkwargs['mapping'] = self._get_mapping()
+        evalkwds = kwds.copy()
+        if 'mapping' not in evalkwds or evalkwds['mapping'] is None:
+            evalkwds['mapping'] = self._get_mapping()
 
         # evaluate system
-        return algorithm['reference'](*evalargs, **evalkwargs)
+        return algorithm['reference'](*evalargs, **evalkwds)
 
     def _evaluate_units(self, data, func = 'units_accuracy', units = None,
-        **kwargs):
+        **kwds):
         """Evaluation of target units.
 
         Args:
@@ -1664,22 +1664,22 @@ class System(nbase.ObjectIP):
         # prepare arguments for evaluation
         evalargs = {'input': [data[0]], 'output': [data[1]],
             'none': [], 'all': [data]}[algorithm.get('args', 'none')]
-        evalkwargs = kwargs.copy()
+        evalkwds = kwds.copy()
 
         if isinstance(units, str):
-            evalkwargs['mapping'] = self._get_mapping(tgt = units)
-        elif 'mapping' not in list(evalkwargs.keys()) \
-            or evalkwargs['mapping'] is None:
-            evalkwargs['mapping'] = self._get_mapping()
+            evalkwds['mapping'] = self._get_mapping(tgt = units)
+        elif 'mapping' not in list(evalkwds.keys()) \
+            or evalkwds['mapping'] is None:
+            evalkwds['mapping'] = self._get_mapping()
 
         # evaluate units
         try:
-            values = algorithm['reference'](*evalargs, **evalkwargs)
+            values = algorithm['reference'](*evalargs, **evalkwds)
         except Exception as err:
             raise ValueError('could not evaluate units') from err
 
         # create dictionary of target units
-        labels = self._get_units(layer = evalkwargs['mapping'][-1])
+        labels = self._get_units(layer = evalkwds['mapping'][-1])
         if algorithm['retfmt'] == 'vector': return {unit: \
             values[:, uid] for uid, unit in enumerate(labels)}
         elif algorithm['retfmt'] == 'scalar': return {unit:
@@ -1689,7 +1689,7 @@ class System(nbase.ObjectIP):
             "could not evaluate system units: "
             "unknown return format '%s'." % algorithm['retfmt'])
 
-    def _evaluate_links(self, data, func = 'energy', **kwargs):
+    def _evaluate_links(self, data, func = 'energy', **kwds):
         """Evaluate system links respective to data.
 
         Args:
@@ -1724,21 +1724,21 @@ class System(nbase.ObjectIP):
         elif algorithm['args'] == 'all': evalargs = [data]
 
         # prepare keyword arguments for evaluation
-        evalkwargs = kwargs.copy()
+        evalkwds = kwds.copy()
         if isinstance(units, str):
-            evalkwargs['mapping'] = self._get_mapping(tgt = units)
-        elif 'mapping' not in evalkwargs or evalkwargs['mapping'] is None:
-            evalkwargs['mapping'] = self._get_mapping()
+            evalkwds['mapping'] = self._get_mapping(tgt = units)
+        elif 'mapping' not in evalkwds or evalkwds['mapping'] is None:
+            evalkwds['mapping'] = self._get_mapping()
 
         # perform evaluation
         try:
-            values = algorithm['reference'](*evalargs, **evalkwargs)
+            values = algorithm['reference'](*evalargs, **evalkwds)
         except Exception as err:
             raise ValueError('could not evaluate links') from err
 
         # create link dictionary
-        in_labels = self._get_units(layer = evalkwargs['mapping'][-2])
-        out_labels = self._get_units(layer = evalkwargs['mapping'][-1])
+        in_labels = self._get_units(layer = evalkwds['mapping'][-2])
+        out_labels = self._get_units(layer = evalkwds['mapping'][-1])
         if algorithm['retfmt'] == 'scalar':
             rel_dict = {}
             for in_id, in_unit in enumerate(in_labels):
@@ -1750,7 +1750,7 @@ class System(nbase.ObjectIP):
             unknown return format '%s'.""" % (algorithm['retfmt']))
 
     def _evaluate_relation(self, data, func = 'correlation',
-        evalstat = True, **kwargs):
+        evalstat = True, **kwds):
         """Evaluate relations between source and target units.
 
         Args:
@@ -1801,22 +1801,22 @@ class System(nbase.ObjectIP):
         elif algorithm['args'] == 'all': eargs = [data]
 
         # prepare keyword arguments for evaluation
-        if 'transform' in list(kwargs.keys()) \
-            and isinstance(kwargs['transform'], str):
-            transform = kwargs['transform']
-            del kwargs['transform']
+        if 'transform' in list(kwds.keys()) \
+            and isinstance(kwds['transform'], str):
+            transform = kwds['transform']
+            del kwds['transform']
         else: transform = ''
-        if 'format' in list(kwargs.keys()) \
-            and isinstance(kwargs['format'], str):
-            retfmt = kwargs['format']
-            del kwargs['format']
+        if 'format' in list(kwds.keys()) \
+            and isinstance(kwds['format'], str):
+            retfmt = kwds['format']
+            del kwds['format']
         else: retfmt = 'dict'
-        ekwargs = kwargs.copy()
-        if 'mapping' not in ekwargs or ekwargs['mapping'] is None:
-            ekwargs['mapping'] = self._get_mapping()
+        ekwds = kwds.copy()
+        if 'mapping' not in ekwds or ekwds['mapping'] is None:
+            ekwds['mapping'] = self._get_mapping()
 
         # perform evaluation
-        values = algorithm['reference'](*eargs, **ekwargs)
+        values = algorithm['reference'](*eargs, **ekwds)
 
         # create formated return values as matrix or dict
         # (for scalar relation evaluations)
@@ -1840,10 +1840,10 @@ class System(nbase.ObjectIP):
             if retfmt == 'array':
                 retval = values
             elif retfmt == 'dict':
-                from nemoa.common import narray
-                src = self._get_units(layer = ekwargs['mapping'][0])
-                tgt = self._get_units(layer = ekwargs['mapping'][-1])
-                retval = narray.asdict(values, labels=(src, tgt))
+                from nemoa.core import narray
+                src = self._get_units(layer = ekwds['mapping'][0])
+                tgt = self._get_units(layer = ekwds['mapping'][-1])
+                retval = narray.as_dict(values, labels=(src, tgt))
                 if not evalstat:
                     return retval
 
@@ -1867,14 +1867,14 @@ class System(nbase.ObjectIP):
 
             return False
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwds):
         """Export system to file."""
-        return nemoa.system.save(self, *args, **kwargs)
+        return nemoa.system.save(self, *args, **kwds)
 
-    def show(self, *args, **kwargs):
+    def show(self, *args, **kwds):
         """Show system as image."""
-        return nemoa.system.show(self, *args, **kwargs)
+        return nemoa.system.show(self, *args, **kwds)
 
-    def copy(self, *args, **kwargs):
+    def copy(self, *args, **kwds):
         """Create copy of system."""
-        return nemoa.system.copy(self, *args, **kwargs)
+        return nemoa.system.copy(self, *args, **kwds)

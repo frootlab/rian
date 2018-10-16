@@ -13,31 +13,31 @@ def cur():
         globals()['_cur'] = new()
     return globals()['_cur']
 
-def get(*args: Any, **kwargs: Any) -> Any:
+def get(*args: Any, **kwds: Any) -> Any:
     """Get meta information and content from current session."""
-    return cur().get(*args, **kwargs)
+    return cur().get(*args, **kwds)
 
-def log(*args, **kwargs):
+def log(*args, **kwds):
     """Log message in current session."""
-    return cur().log(*args, **kwargs)
+    return cur().log(*args, **kwds)
 
-def new(*args, **kwargs):
+def new(*args, **kwds):
     """Create session instance from session dictionary."""
     from nemoa.session import classes
-    return classes.new(*args, **kwargs)
+    return classes.new(*args, **kwds)
 
-def open(*args, **kwargs):
+def open(*args, **kwds):
     """Open object in current session."""
-    return cur().open(*args, **kwargs)
+    return cur().open(*args, **kwds)
 
-def path(*args: Any, **kwargs: Any) -> str:
+def path(*args: Any, **kwds: Any) -> str:
     """Get path for given object in current session."""
-    return cur().path(*args, **kwargs)
+    return cur().path(*args, **kwds)
 
-def run(*args, **kwargs):
+def run(*args, **kwds):
     """Run script in current session."""
-    return cur().run(*args, **kwargs)
+    return cur().run(*args, **kwds)
 
-def set(*args, **kwargs):
+def set(*args, **kwds):
     """Set configuration parameter and env var in current session."""
-    return cur().set(*args, **kwargs)
+    return cur().set(*args, **kwds)

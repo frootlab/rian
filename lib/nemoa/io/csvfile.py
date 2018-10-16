@@ -23,7 +23,7 @@ try:
 except ImportError as err:
     raise ImportError(
         "requires package numpy: "
-        "https://scipy.org") from err
+        "https://pypi.org/project/numpy") from err
 
 from nemoa.io import textfile
 from nemoa.types import (
@@ -93,7 +93,7 @@ def load(
 
     # Count how many 'comment' and 'blank' rows are to be skipped
     skiprows = 1
-    with textfile.open_read(file) as fd:
+    with textfile.openx(file, mode='r') as fd:
         for line in fd:
             strip = line.strip()
             if not strip or strip.startswith('#'):
@@ -102,7 +102,7 @@ def load(
             break
 
     # Import CSV-file to NumPy ndarray
-    with textfile.open_read(file) as fd:
+    with textfile.openx(file, mode='r') as fd:
         return np.loadtxt(
             fd, skiprows=skiprows, delimiter=delim, usecols=usecols,
             dtype=dtype)
@@ -141,24 +141,23 @@ def save(
     # Get column format
     fmt = delim.join(['%s'] + ['%10.10f'] * (cols - 1))
 
-    with textfile.open_write(file) as fd:
+    with textfile.openx(file, mode='w') as fd:
         np.savetxt(fd, data, fmt=fmt, header=header, comments='')
 
 def get_header(file: FileOrPathLike) -> str:
     """Get header from CSV-file.
 
     Args:
-        file: String or `path-like object`_ that points to a readable CSV-file
-            in the directory structure of the system, or a `file-like object`_
-            in read mode.
+        file: String or `path-like object`_ that points to a readable file in
+            the directory structure of the system, or a `file-like object`_ in
+            reading mode.
 
     Returns:
         String containing the header of the CSV-file or an empty string, if no
         header could be detected.
 
     """
-    with textfile.open_read(file) as fd:
-        return textfile.read_header(fd)
+    return textfile.get_header(file)
 
 def get_delim(
         file: FileOrPathLike, candidates: OptStrList = None, mincount: int = 3,
@@ -187,7 +186,7 @@ def get_delim(
     delim: OptStr = None
 
     # Detect delimiter
-    with textfile.open_read(file) as fd:
+    with textfile.openx(file, mode='r') as fd:
         size, probe = 0, ''
         for line in fd:
             # Check termination criteria
@@ -237,8 +236,7 @@ def get_labels_format(file: FileOrPathLike, delim: OptStr = None) -> OptStr:
         return None
 
     # Get first and second content lines (non comment, non empty) of CSV-file
-    with textfile.open_read(file) as fd:
-        lines = textfile.read_content(fd, count=2)
+    lines = textfile.get_content(file, lines=2)
     if len(lines) != 2:
         return None
 
@@ -285,8 +283,7 @@ def get_labels(
         return None
 
     # Get first content line (non comment, non empty) of CSV-file
-    with textfile.open_read(file) as fd:
-        line = textfile.read_content(fd, count=1)[0]
+    line = textfile.get_content(file, lines=1)[0]
 
     # Get column labels from first content
     labels = [col.strip('\"\'\n\r\t ') for col in line.split(delim)]
@@ -338,8 +335,7 @@ def get_annotation_colid(
         return 0 # In R-tables the first column is used for annotation
 
     # Get first and second content lines (non comment, non empty) of CSV-file
-    with textfile.open_read(file) as fd:
-        lines = textfile.read_content(fd, count=2)
+    lines = textfile.get_content(file, lines=2)
     if len(lines) != 2:
         return None
 

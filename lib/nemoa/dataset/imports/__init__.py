@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import nemoa
 from nemoa.dataset.imports import archive, text
 
-def filetypes(filetype = None):
+def filetypes(filetype=None):
     """Get supported dataset import filetypes."""
 
     type_dict = {}
@@ -29,22 +29,22 @@ def filetypes(filetype = None):
 
     return False
 
-def load(path, filetype = None, **kwargs):
+def load(path, filetype=None, **kwds):
     """Import dataset dictionary from file or workspace."""
 
     import os
 
-    from nemoa.common import npath
+    from nemoa.core import npath
 
     # get path (if necessary)
-    if 'workspace' in kwargs or not os.path.isfile(path):
+    if 'workspace' in kwds or not os.path.isfile(path):
         name = path
-        pathkwargs = {}
-        if 'workspace' in kwargs:
-            pathkwargs['workspace'] = kwargs.pop('workspace')
-        if 'base' in kwargs:
-            pathkwargs['base'] = kwargs.pop('base')
-        path = nemoa.path('dataset', name, **pathkwargs)
+        pathkwds = {}
+        if 'workspace' in kwds:
+            pathkwds['workspace'] = kwds.pop('workspace')
+        if 'base' in kwds:
+            pathkwds['base'] = kwds.pop('base')
+        path = nemoa.path('dataset', name, **pathkwds)
         if not path:
             raise Warning("""could not import dataset:
                 invalid dataset name.""") or {}
@@ -60,8 +60,8 @@ def load(path, filetype = None, **kwargs):
 
     # import and check dictionary
     mname = filetypes(filetype)[0]
-    if mname == 'archive': dataset = archive.load(path, **kwargs)
-    elif mname == 'text': dataset = text.load(path, **kwargs)
+    if mname == 'archive': dataset = archive.load(path, **kwds)
+    elif mname == 'text': dataset = text.load(path, **kwds)
     else: dataset = None
     if not dataset:
         raise ValueError("""could not import dataset:

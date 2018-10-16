@@ -44,9 +44,9 @@ from nemoa.math import nalgo
     formater = lambda val: '%.3f' % (val),
     optimum  = 'min'
 )
-def modelerror(model, *args, **kwargs):
+def modelerror(model, *args, **kwds):
     """Mean data reconstruction error of output units."""
-    return numpy.mean(uniterror(model, *args, **kwargs))
+    return numpy.mean(uniterror(model, *args, **kwds))
 
 @nalgo.custom(
     name     = 'energy',
@@ -55,7 +55,7 @@ def modelerror(model, *args, **kwargs):
     formater = lambda val: '%.3f' % (val),
     optimum  = 'min'
 )
-def modelenergy(model, data, *args, **kwargs):
+def modelenergy(model, data, *args, **kwds):
     """Sum of local link and unit energies."""
 
     mapping = list(model._get_mapping())
@@ -110,7 +110,7 @@ def unitenergy(model, data, mapping = None):
     formater = lambda val: '%.3f' % (val),
     plot     = 'diagram'
 )
-def linksenergy(model, data, mapping = None, **kwargs):
+def linksenergy(model, data, mapping = None, **kwds):
     """Return link energies of a layer.
 
     Args:

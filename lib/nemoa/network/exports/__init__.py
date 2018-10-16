@@ -34,7 +34,7 @@ def filetypes(filetype = None):
     return False
 
 def save(network, path = None, filetype = None, workspace = None,
-    base = 'user', **kwargs):
+    base = 'user', **kwds):
     """Export network to file.
 
     Args:
@@ -48,7 +48,7 @@ def save(network, path = None, filetype = None, workspace = None,
 
     """
 
-    from nemoa.common import nclass, npath
+    from nemoa.core import nclass, npath
 
     if not nclass.hasbase(network, 'Network'):
         raise ValueError("network is not valid")
@@ -75,14 +75,14 @@ def save(network, path = None, filetype = None, workspace = None,
     # export to file
     module_name = filetypes(filetype)[0]
     if module_name == 'graph': return graph.save(
-        network, path, filetype, **kwargs)
+        network, path, filetype, **kwds)
     if module_name == 'archive': return archive.save(
-        network, path, filetype, **kwargs)
+        network, path, filetype, **kwds)
     if module_name == 'image': return image.save(
-        network, path, filetype, **kwargs)
+        network, path, filetype, **kwds)
 
     return False
 
-def show(network, *args, **kwargs):
+def show(network, *args, **kwds):
     """ """
-    return image.show(network, *args, **kwargs)
+    return image.show(network, *args, **kwds)

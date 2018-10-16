@@ -21,7 +21,7 @@ def types(type = None):
 
     return {}
 
-def build(type = 'model', *args, **kwargs):
+def build(type = 'model', *args, **kwds):
     """Build model from parameters, datasets, etc. ."""
 
     # test if type is supported
@@ -31,6 +31,6 @@ def build(type = 'model', *args, **kwargs):
     module_name = types(type)[0]
 
     if module_name == 'base':
-         model = nemoa.model.builder.base.build(type, *args, **kwargs)
+         model = nemoa.model.builder.base.build(type, *args, **kwds)
 
     return model or {}

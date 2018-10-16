@@ -14,7 +14,7 @@ def filetypes():
         'tsv': 'Tab Separated Values',
         'tab': 'Tab Separated Values'}
 
-def save(dataset, path, filetype, **kwargs):
+def save(dataset, path, filetype, **kwds):
     """Export dataset to archive file."""
 
     # test if filetype is supported
@@ -26,9 +26,9 @@ def save(dataset, path, filetype, **kwargs):
         os.makedirs(os.path.dirname(path))
 
     if filetype == 'csv':
-        return Csv(**kwargs).save(dataset, path)
+        return Csv(**kwds).save(dataset, path)
     if filetype in ['tsv', 'tab']:
-        return Tsv(**kwargs).save(dataset, path)
+        return Tsv(**kwds).save(dataset, path)
 
     return False
 
@@ -38,9 +38,9 @@ class Csv:
     settings = None
     default = { 'delim': ',' }
 
-    def __init__(self, **kwargs):
-        from nemoa.common import ndict
-        self.settings = ndict.merge(kwargs, self.default)
+    def __init__(self, **kwds):
+        from nemoa.core import ndict
+        self.settings = ndict.merge(kwds, self.default)
 
     def save(self, dataset, path):
 

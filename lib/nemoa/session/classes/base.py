@@ -56,15 +56,15 @@ class Session:
             'script': {},
             'system': {}}}
 
-    def __init__(self, site: bool = True, **kwargs):
+    def __init__(self, site: bool = True, **kwds):
         """ """
         import os
         import sys
 
-        from nemoa.common import ndict
+        from nemoa.core import ndict
         from nemoa.io import inifile
 
-        self._config = ndict.merge(kwargs, self._default)
+        self._config = ndict.merge(kwds, self._default)
 
         # reset workspace to default values
         self._set_workspace_reset()
@@ -90,53 +90,53 @@ class Session:
                     path = self._get_path_expand(val)
                     if path: self._config['current']['path'][key] = path
 
-    def create(self, key: str, *args, **kwargs):
+    def create(self, key: str, *args, **kwds):
         """Open object in current session."""
         if key == 'model':
             from nemoa import model
-            return model.create(*args, **kwargs)
+            return model.create(*args, **kwds)
         if key == 'network':
             from nemoa import network
-            return network.create(*args, **kwargs)
+            return network.create(*args, **kwds)
         if key == 'dataset':
             from nemoa import dataset
-            return dataset.create(*args, **kwargs)
+            return dataset.create(*args, **kwds)
         if key == 'system':
             from nemoa import system
-            return system.create(*args, **kwargs)
+            return system.create(*args, **kwds)
         return None
 
-    def get(self, key='workspace', *args, **kwargs):
+    def get(self, key='workspace', *args, **kwds):
         """Get meta information and content."""
 
         if key == 'about':
-            return self._get_about(*args, **kwargs)
+            return self._get_about(*args, **kwds)
         if key == 'base':
             return self._get_base()
         if key == 'default':
-            return self._get_default(*args, **kwargs)
+            return self._get_default(*args, **kwds)
         if key == 'list':
-            return self._get_list(*args, **kwargs)
+            return self._get_list(*args, **kwds)
         if key == 'mode':
-            return self._get_mode(*args, **kwargs)
+            return self._get_mode(*args, **kwds)
         if key == 'path':
-            return self._get_path(*args, **kwargs)
+            return self._get_path(*args, **kwds)
         if key == 'shell':
-            return self._get_shell(*args, **kwargs)
+            return self._get_shell(*args, **kwds)
         if key == 'workspace':
             return self._get_workspace()
 
         if key in self._config['register']:
-            return self._get_objconfig(key, *args, **kwargs)
+            return self._get_objconfig(key, *args, **kwds)
 
         raise KeyError(f"unknown key '{key}'")
 
-    def path(self, *args, **kwargs):
+    def path(self, *args, **kwds):
         """Get path of given object."""
 
-        return self._get_path(*args, **kwargs)
+        return self._get_path(*args, **kwds)
 
-    def _get_about(self, key='about', *args, **kwargs):
+    def _get_about(self, key='about', *args, **kwds):
         """Get nemoa meta information."""
 
         if key == 'about': return nemoa.__description__
@@ -168,7 +168,7 @@ class Session:
 
         return self._get_path_expand(mask)
 
-    def _get_default(self, key=None, *args, **kwargs):
+    def _get_default(self, key=None, *args, **kwds):
         """Get default value."""
 
         import copy
@@ -188,7 +188,7 @@ class Session:
 
         return copy.deepcopy(retval)
 
-    def _get_list(self, key = None, *args, **kwargs):
+    def _get_list(self, key = None, *args, **kwds):
         """Get list. """
 
         if key is None:
@@ -201,21 +201,21 @@ class Session:
                 retval[keys] = objlist
             return retval
         if key == 'bases':
-            return self._get_list_bases(*args, **kwargs)
+            return self._get_list_bases(*args, **kwds)
         if key == 'workspaces':
-            return self._get_list_workspaces(*args, **kwargs)
+            return self._get_list_workspaces(*args, **kwds)
         if key in [rkey + 's' for rkey in self._config['register']]:
-            if 'base' not in kwargs:
-                kwargs['base'] = self._get_base()
-            if 'workspace' not in kwargs:
-                kwargs['workspace'] = self._get_workspace()
-            if 'attribute' not in kwargs:
-                kwargs['attribute'] = 'name'
-            return self._get_objconfigs(key[:-1], *args, **kwargs)
+            if 'base' not in kwds:
+                kwds['base'] = self._get_base()
+            if 'workspace' not in kwds:
+                kwds['workspace'] = self._get_workspace()
+            if 'attribute' not in kwds:
+                kwds['attribute'] = 'name'
+            return self._get_objconfigs(key[:-1], *args, **kwds)
 
         raise Warning(f"unknown key '{key}'")
 
-    def _get_list_bases(self, workspace = None):
+    def _get_list_bases(self, workspace=None):
         """Get list of searchpaths containing given workspace name."""
 
         if workspace is None:
@@ -227,7 +227,7 @@ class Session:
 
         return sorted(bases)
 
-    def _get_list_workspaces(self, base = None):
+    def _get_list_workspaces(self, base=None):
         """Get list of workspaces in given searchpath."""
 
         if not base:
@@ -236,11 +236,11 @@ class Session:
                 workspaces[base] = self._get_list_workspaces(base=base)
             return workspaces
         if base not in self._config['default']['basepath']:
-            raise ValueError("unknown workspace base '%s'." % base)
+            raise ValueError("unknown workspace base '%s'" % base)
 
         import glob
         import os
-        from nemoa.common import npath
+        from nemoa.core import npath
 
         basepath = self._config['default']['basepath'][base]
         baseglob = self._get_path_expand((basepath, '*'))
@@ -257,7 +257,7 @@ class Session:
 
         return sorted(workspaces)
 
-    def _get_shell(self, key = None, *args, **kwargs):
+    def _get_shell(self, key = None, *args, **kwds):
         """Get shell attribute."""
 
         if key == 'inkey':
@@ -364,22 +364,22 @@ class Session:
             return sorted(objlist)
         return sorted(objlist, key=lambda obj: obj['name'])
 
-    def _get_path(self, key = None, *args, **kwargs):
+    def _get_path(self, key = None, *args, **kwds):
         """Get path of given object or object type."""
 
         if key == 'basepath':
-            return self._get_basepath(*args, **kwargs)
+            return self._get_basepath(*args, **kwds)
 
         # change current workspace if necessary
         chdir = False
         workspace = self._get_workspace()
         base = None
-        if 'workspace' in kwargs:
-            workspace = kwargs.pop('workspace')
+        if 'workspace' in kwds:
+            workspace = kwds.pop('workspace')
             if workspace != self._get_workspace():
                 chdir = True
-        if 'base' in kwargs:
-            base = kwargs.pop('base')
+        if 'base' in kwds:
+            base = kwds.pop('base')
             if base != self._get_base():
                 chdir = True
         if chdir:
@@ -391,15 +391,15 @@ class Session:
             import copy
             path = copy.deepcopy(self._config['current']['path'])
         elif key == 'expand':
-            if 'workspace' in kwargs:
-                del kwargs['workspace']
-            if 'base' in kwargs:
-                del kwargs['base']
-            path = self._get_path_expand(*args, **kwargs)
+            if 'workspace' in kwds:
+                del kwds['workspace']
+            if 'base' in kwds:
+                del kwds['base']
+            path = self._get_path_expand(*args, **kwds)
         elif key in self._config['current']['path']:
             path = self._config['current']['path'][key]
         elif key in self._config['register']:
-            name = kwargs.get('name', None) or (args[0] if args else None)
+            name = kwds.get('name', None) or (args[0] if args else None)
             path = self._get_objconfig(objtype=key, name=name,
                 attribute='path')
         else: path = None
@@ -414,8 +414,8 @@ class Session:
 
         return path or None
 
-    def _get_path_expand(self, *args, check: bool = False,
-        create: bool = False):
+    def _get_path_expand(
+            self, *args, check: bool = False, create: bool = False):
         """Get expanded path.
 
         Args:
@@ -429,7 +429,7 @@ class Session:
         """
 
         import os
-        from nemoa.common import npath
+        from nemoa.core import npath
 
         path = str(npath.join(args))
 
@@ -461,7 +461,7 @@ class Session:
         """Get name of current workspace."""
         return self._config['current'].get('workspace', None)
 
-    def log(self, *args, **kwargs):
+    def log(self, *args, **kwds):
         """Log message to file and console output."""
 
         if not args: return True
@@ -469,7 +469,7 @@ class Session:
         import logging
         import traceback
 
-        from nemoa.common import nmodule, nsysinfo
+        from nemoa.core import nmodule, nsysinfo
 
         mode = self._get_mode()
         obj = args[0]
@@ -634,15 +634,15 @@ class Session:
         import sys
 
         # pipe exceptions to nemoa.log
-        def hook(*args, **kwargs):
+        def hook(*args, **kwds):
             import nemoa
-            return nemoa.log(*args, **kwargs)
+            return nemoa.log(*args, **kwds)
 
         sys.__excepthook__ = hook
 
         return True
 
-    def run(self, script = None, *args, **kwargs):
+    def run(self, script = None, *args, **kwds):
         """Run python script."""
 
         import imp
@@ -654,20 +654,20 @@ class Session:
         chdir = False
         workspace = self._get_workspace()
         base = None
-        if 'workspace' in kwargs:
-            workspace = kwargs['workspace']
-            del kwargs['workspace']
+        if 'workspace' in kwds:
+            workspace = kwds['workspace']
+            del kwds['workspace']
             if workspace != self._get_workspace(): chdir = True
-        if 'base' in kwargs:
-            base = kwargs['base']
-            del kwargs['base']
+        if 'base' in kwds:
+            base = kwds['base']
+            del kwds['base']
             if base != self._get_base(): chdir = True
         if chdir:
             current = self._config.get('workspace', None)
             self._set_workspace(workspace, base = base)
 
         # get configuration and run script
-        config = self.get('script', name = script, *args, **kwargs)
+        config = self.get('script', name = script, *args, **kwds)
         if not isinstance(config, dict) or 'path' not in config:
             raise Warning("""could not run script '%s':
                 invalid configuration.""" % script)
@@ -676,7 +676,7 @@ class Session:
                 file '%s' not found.""" % (script, config['path']))
         else:
             minst = imp.load_source('script', config['path'])
-            minst.main(self._config['workspace'], *args, **kwargs)
+            minst.main(self._config['workspace'], *args, **kwds)
 
         # change to previous workspace if necessary
         if chdir:
@@ -688,21 +688,21 @@ class Session:
 
         return retval
 
-    def set(self, key, *args, **kwargs):
+    def set(self, key, *args, **kwds):
         """Set configuration parameters and env vars."""
 
-        if key == 'shell': return self._set_shell(*args, **kwargs)
-        if key == 'mode': return self._set_mode(*args, **kwargs)
+        if key == 'shell': return self._set_shell(*args, **kwds)
+        if key == 'mode': return self._set_mode(*args, **kwds)
         if key == 'workspace':
-            return self._set_workspace(*args, **kwargs)
+            return self._set_workspace(*args, **kwds)
 
         raise KeyError(f"unknown key '{key}'")
 
-    def _set_shell(self, key, *args, **kwargs):
+    def _set_shell(self, key, *args, **kwds):
         """Set current shell attributes."""
 
         if key == 'buffmode':
-            return self._set_shell_buffmode(*args, **kwargs)
+            return self._set_shell_buffmode(*args, **kwds)
 
         raise KeyError(f"unknown key '{key}'")
 
@@ -716,7 +716,7 @@ class Session:
 
         if curmode == 'line' and mode == 'key':
             if not self._buffer.get('inkey', None):
-                from nemoa.common import nconsole
+                from nemoa.core import nconsole
                 self._buffer['inkey'] = nconsole.Getch() # type: ignore
             self._buffer['inkey'].start()
             return True
@@ -727,7 +727,7 @@ class Session:
             return True
         return False
 
-    def _set_mode(self, mode = None, *args, **kwargs):
+    def _set_mode(self, mode = None, *args, **kwds):
         """Set session mode."""
 
         if mode not in ['debug', 'exec', 'shell', 'silent']:
@@ -815,11 +815,11 @@ class Session:
 
         return self._init_logging()
 
-    def _set_workspace_scandir(self, *args, **kwargs):
+    def _set_workspace_scandir(self, *args, **kwds):
         """Scan workspace for files."""
 
         import glob
-        from nemoa.common import npath
+        from nemoa.core import npath
 
         # change current base and workspace (if necessary)
         cur_workspace = self._get_workspace()
@@ -829,8 +829,8 @@ class Session:
             workspace = args[0]
         else:
             workspace = cur_workspace
-        if 'base' in kwargs:
-            base = kwargs.pop('base')
+        if 'base' in kwds:
+            base = kwds.pop('base')
         else:
             base = cur_base
 
@@ -892,7 +892,7 @@ class Session:
 
         return True
 
-    def open(self, key = None, *args, **kwargs):
+    def open(self, key = None, *args, **kwds):
         """Open object in current session."""
 
         if not key:
@@ -903,12 +903,12 @@ class Session:
             if key == 'workspace':
                 return self._set_workspace(args[0])
             if key == 'model':
-                return nemoa.model.open(args[0], **kwargs)
+                return nemoa.model.open(args[0], **kwds)
             if key == 'dataset':
-                return nemoa.dataset.open(args[0], **kwargs)
+                return nemoa.dataset.open(args[0], **kwds)
             if key == 'network':
-                return nemoa.network.open(args[0], **kwargs)
+                return nemoa.network.open(args[0], **kwds)
             if key == 'system':
-                return nemoa.system.open(args[0], **kwargs)
+                return nemoa.system.open(args[0], **kwds)
 
         return None

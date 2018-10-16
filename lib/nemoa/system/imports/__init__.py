@@ -29,21 +29,21 @@ def filetypes(filetype = None):
 
     return False
 
-def load(path, filetype = None, **kwargs):
+def load(path, filetype = None, **kwds):
     """Import system dictionary from file or workspace."""
 
     import os
-    from nemoa.common import npath
+    from nemoa.core import npath
 
     # get path (if necessary)
-    if 'workspace' in kwargs or not os.path.isfile(path):
+    if 'workspace' in kwds or not os.path.isfile(path):
         name = path
-        pathkwargs = {}
-        if 'workspace' in kwargs:
-            pathkwargs['workspace'] = kwargs.pop('workspace')
-        if 'base' in kwargs:
-            pathkwargs['base'] = kwargs.pop('base')
-        path = nemoa.path('system', name, **pathkwargs)
+        pathkwds = {}
+        if 'workspace' in kwds:
+            pathkwds['workspace'] = kwds.pop('workspace')
+        if 'base' in kwds:
+            pathkwds['base'] = kwds.pop('base')
+        path = nemoa.path('system', name, **pathkwds)
         if not path:
             raise Warning("""could not import system:
                 invalid system name.""") or {}
@@ -62,9 +62,9 @@ def load(path, filetype = None, **kwargs):
     # import and check dictionary
     mname = filetypes(filetype)[0]
     if mname == 'archive':
-        system = nemoa.system.imports.archive.load(path, **kwargs)
+        system = nemoa.system.imports.archive.load(path, **kwds)
     elif mname == 'text':
-        system = nemoa.system.imports.text.load(path, **kwargs)
+        system = nemoa.system.imports.text.load(path, **kwds)
     else:
         system = None
     if not system:

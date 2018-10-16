@@ -6,9 +6,11 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+from abc import ABC, abstractmethod
+
 from nemoa.types import (
-    Any, ClassVar, Dict, Method, OptDict, OptCallable, OptStr, OptType,
-    StrDict, Tuple)
+    Any, ClassVar, Dict, FileOrPathLike, Method, OptDict, OptCallable, OptStr,
+    OptType, StrDict, Tuple)
 
 # Descriptors for binding class instance attributes: When an instance of a class
 # contains a descriptor class as a method, the descriptor class defines the
@@ -123,6 +125,20 @@ class ReadOnlyAttr(Attr):
         raise AttributeError(
             f"'{self.name}' is a read-only property "
             f"of class {type(obj).__name__}")
+
+# ################################################################################
+# # Base classes for File I/O
+# ################################################################################
+#
+# class FileIOBase(ABC):
+#     @abstractmethod
+#     def load(self, file: FileOrPathLike) -> object:
+#         """Load object from file."""
+#         return object()
+#     @abstractmethod
+#     def save(self, obj: object, file: FileOrPathLike) -> None:
+#         """Save object to file."""
+#         return None
 
 ################################################################################
 # Base classes for object model templates

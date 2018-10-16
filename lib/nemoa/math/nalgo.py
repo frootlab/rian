@@ -1,5 +1,13 @@
 # -*- coding: utf-8 -*-
-"""Organization and handling of algorithms."""
+"""Organization and handling of algorithms.
+
+.. References:
+.. _Measures of association:
+    https://en.wikipedia.org/wiki/Correlation_and_dependence
+.. _Objective functions:
+    https://en.wikipedia.org/wiki/Objective_function
+
+"""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -10,20 +18,20 @@ from nemoa.types import (
     Any, AnyFunc, FuncWrapper, Module, NpArray, NpArrayFunc, NpArrayLike,
     OptModule, OptStr, OptStrList, Scalar, ScalarFunc)
 
-def search(module: OptModule = None, **kwargs: Any) -> dict:
+def search(module: OptModule = None, **kwds: Any) -> dict:
     """Search for algorithms, that pass given filters.
 
     Args:
         module: Module instance, which is used to recursively search in
             submodules for algorithms. Default: Use the module of the caller
             of this function.
-        **kwargs: Attributes, which are testet by using the filter rules
+        **kwds: Attributes, which are testet by using the filter rules
 
     Returns:
         Dictionary with function information.
 
     """
-    from nemoa.common import nmodule
+    from nemoa.core import nmodule
 
     module = module or nmodule.inst(nmodule.curname(-1))
     if not isinstance(module, Module):
@@ -37,7 +45,7 @@ def search(module: OptModule = None, **kwargs: Any) -> dict:
         'classes': lambda a, b: bool(set(a) & set(b))} # requires any
 
     # search for algorithms
-    return nmodule.search(module=module, rules=rules, **kwargs)
+    return nmodule.search(module=module, rules=rules, **kwds)
 
 def custom(
         name: OptStr = None, category: OptStr = None,
@@ -61,16 +69,16 @@ def custom(
             The default value None indicates, that that results can not be
             visalized. Supported values are: None, 'Heatmap', 'Histogram',
             'Scatter2D' or 'Graph'
-        **attr: Arbitrary supplem,entary attributes, with the purpose to
-            identify and characterize the algorithm by their respective values.
+        **attr: Supplementary user attributes, with the purpose to identify and
+            characterize the algorithm by their respective values.
 
     Returns:
         Decorated function or method.
 
     """
     def wrapper(func):
-        def wrapped(*args, **kwargs):
-            return func(*args, **kwargs)
+        def wrapped(*args, **kwds):
+            return func(*args, **kwds)
 
         # set attributes with metainformation about algorithm
         setattr(wrapped, 'name', name or func.__name__)
@@ -95,10 +103,10 @@ def objective(
         plot: OptStr = None, **attr: Any) -> FuncWrapper:
     """Attribute decorator for objective functions.
 
-    Objective functions are scalar functions, thet specify the goal of an
+    `Objective functions` are scalar functions, thet specify the goal of an
     optimization problem. Thereby the objective function identifies local or
     global objectives by it's extremal points, which allows the application
-    of approximations. For more information see [1].
+    of approximations.
 
     Args:
         name: Name of the algorithm
@@ -113,19 +121,16 @@ def objective(
         scope: Scope of optimizer: Ether 'local' or 'global'
         optimum: String describung the optimum of the objective functions.
             Supported values are 'min' and 'max'
-        **attr: Arbitrary supplem,entary attributes, with the purpose to
-            identify and characterize the algorithm by their respective values.
+        **attr: Supplementary user attributes, with the purpose to identify and
+            characterize the algorithm by their respective values.
 
     Returns:
         Decorated function or method.
 
-    References:
-        [1] https://en.wikipedia.org/wiki/Mathematical_optimization
-
     """
     def wrapper(func):
-        def wrapped(data, *args, **kwargs):
-            return func(data, *args, **kwargs)
+        def wrapped(data, *args, **kwds):
+            return func(data, *args, **kwds)
 
         # set attributes with metainformation about algorithm
         setattr(wrapped, 'name', name or func.__name__)
@@ -166,8 +171,8 @@ def sampler(
         plot: Name of plot class, which is used to interpret the results.
             Supported values are: None, 'Heatmap', 'Histogram', 'Scatter2D' or
             'Graph'. The default value is 'Histogram'
-        **attr: Arbitrary supplem,entary attributes, with the purpose to
-            identify and characterize the algorithm by their respective values.
+        **attr: Supplementary user attributes, with the purpose to identify and
+            characterize the algorithm by their respective values.
 
     Returns:
         Decorated function or method.
@@ -178,8 +183,8 @@ def sampler(
     """
     def wrapper(func):
 
-        def wrapped(data, *args, **kwargs):
-            return func(data, *args, **kwargs)
+        def wrapped(data, *args, **kwds):
+            return func(data, *args, **kwds)
 
         # set attributes with metainformation about algorithm
         setattr(wrapped, 'name', name or func.__name__)
@@ -216,8 +221,8 @@ def statistic(
         plot: Name of plot class, which is used to interpret the results.
             Supported values are: None, 'Heatmap', 'Histogram', 'Scatter2D' or
             'Graph'. The default value is 'Histogram'
-        **attr: Arbitrary supplem,entary attributes, with the purpose to
-            identify and characterize the algorithm by their respective values.
+        **attr: Supplementary user attributes, with the purpose to identify and
+            characterize the algorithm by their respective values.
 
     Returns:
         Decorated function or method.
@@ -227,8 +232,8 @@ def statistic(
 
     """
     def wrapper(func):
-        def wrapped(data: NpArrayLike, *args: Any, **kwargs: Any) -> NpArray:
-            return func(data, *args, **kwargs)
+        def wrapped(data: NpArrayLike, *args: Any, **kwds: Any) -> NpArray:
+            return func(data, *args, **kwds)
 
         # set attributes with metainformation about algorithm
         setattr(wrapped, 'name', name or func.__name__)
@@ -254,12 +259,12 @@ def association(
         **attr: Any) -> FuncWrapper:
     """Attribute decorator for statistical measures of association.
 
-    Measures of association refer to a wide variety of coefficients that measure
-    the statistical strength of relationships between the variables of interest.
-    These measures can be directed / undirected, signed / unsigned and
+    `Measures of association`_ refer to a wide variety of coefficients that
+    measure the statistical strength of relationships between the variables of
+    interest. These measures can be directed / undirected, signed / unsigned and
     normalized or unnormalized. Examples for measures of association are the
     Pearson correlation coefficient, Mutual information or Statistical
-    Interactions. For more information see [1].
+    Interactions.
 
     Args:
         name: Name of the measure of association
@@ -276,22 +281,19 @@ def association(
             signed. Default: True.
         normal: Boolean value which indicates if the measure of association is
             normalized. Default: False.
-        **attr: Arbitrary supplem,entary attributes, with the purpose to
-            identify and characterize the algorithm by their respective values.
+        **attr: Supplementary user attributes, with the purpose to identify and
+            characterize the algorithm by their respective values.
 
     Returns:
         Decorated function or method.
 
-    References:
-        [1] https://en.wikipedia.org/wiki/Correlation_and_dependence
-
     """
     def wrapper(func):
-        def wrapped(data, *args, **kwargs):
-            return func(data, *args, **kwargs)
+        def wrapped(data, *args, **kwds):
+            return func(data, *args, **kwds)
     # def wrapper(func: NpArrayFunc) -> NpArrayFunc:
-    #     def wrapped(data: NpArrayLike, *args: Any, **kwargs: Any) -> NpArray:
-    #         return func(data, *args, **kwargs)
+    #     def wrapped(data: NpArrayLike, *args: Any, **kwds: Any) -> NpArray:
+    #         return func(data, *args, **kwds)
 
         # set attributes with metainformation about algorithm
         setattr(wrapped, 'name', name or func.__name__)

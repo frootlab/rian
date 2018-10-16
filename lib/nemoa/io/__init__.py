@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""I/O modules."""
+"""File I/O modules."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'

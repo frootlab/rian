@@ -10,6 +10,7 @@ Submodules
    nemoa.io.csvfile
    nemoa.io.gzfile
    nemoa.io.inifile
+   nemoa.io.nplot
    nemoa.io.textfile
    nemoa.io.wsfile
 

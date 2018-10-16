@@ -13,7 +13,7 @@ def filetypes():
     return {
         'npz': 'Numpy Zipped Archive' }
 
-def save(system, path, filetype, **kwargs):
+def save(system, path, filetype, **kwds):
     """Export system to archive file."""
 
     # test if filetype is supported
@@ -22,7 +22,7 @@ def save(system, path, filetype, **kwargs):
             filetype '%s' is not supported.""" % (filetype))
 
     copy = system.get('copy')
-    return Npz(**kwargs).save(copy, path)
+    return Npz(**kwds).save(copy, path)
 
 class Npz:
     """Export system to numpy zipped archive."""
@@ -30,9 +30,9 @@ class Npz:
     settings = None
     default = { 'compress': True }
 
-    def __init__(self, **kwargs):
-        from nemoa.common import ndict
-        self.settings = ndict.merge(kwargs, self.default)
+    def __init__(self, **kwds):
+        from nemoa.core import ndict
+        self.settings = ndict.merge(kwds, self.default)
 
     def save(self, copy, path):
 

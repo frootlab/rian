@@ -22,7 +22,7 @@ try:
 except ImportError as err:
     raise ImportError(
         "requires package numpy: "
-        "https://scipy.org") from err
+        "https://pypi.org/project/numpy") from err
 
 from nemoa.types import Any, OptStr, NpArray, NpArrayLike
 
@@ -30,7 +30,7 @@ from nemoa.types import Any, OptStr, NpArray, NpArrayLike
 # Sigmoidal Functions
 #
 
-def sigmoid(x: NpArrayLike, name: OptStr = None, **kwargs: Any) -> NpArray:
+def sigmoid(x: NpArrayLike, name: OptStr = None, **kwds: Any) -> NpArray:
     """Calculate sigmoid functions.
 
     Args:
@@ -49,7 +49,7 @@ def sigmoid(x: NpArrayLike, name: OptStr = None, **kwargs: Any) -> NpArray:
     if name not in funcs:
         raise ValueError(f"sigmoid function '{name}' is not implemented")
 
-    return getattr(sys.modules[__name__], name)(x, **kwargs)
+    return getattr(sys.modules[__name__], name)(x, **kwds)
 
 def logistic(x: NpArrayLike) -> NpArray:
     """Calculate standard logistic function.
@@ -159,7 +159,7 @@ def arctan(x: NpArrayLike) -> NpArray:
 # Derivatives of Sigmoid Functions
 #
 
-def d_sigmoid(x: NpArrayLike, name: OptStr = None, **kwargs: Any) -> NpArray:
+def d_sigmoid(x: NpArrayLike, name: OptStr = None, **kwds: Any) -> NpArray:
     """Calculate derivative of sigmoid function.
 
     Args:
@@ -179,7 +179,7 @@ def d_sigmoid(x: NpArrayLike, name: OptStr = None, **kwargs: Any) -> NpArray:
         raise ValueError(
             f"derivative of sigmoid function '{name}' is not implemented")
 
-    return getattr(sys.modules[__name__], 'd_' + name)(x, **kwargs)
+    return getattr(sys.modules[__name__], 'd_' + name)(x, **kwds)
 
 def d_logistic(x: NpArrayLike) -> NpArray:
     """Calculate derivative of the standard logistic function.

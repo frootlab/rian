@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Unittests for submodules of package 'nemoa.common'."""
+"""Unittests for submodules of package 'nemoa.math'."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -9,13 +9,13 @@ __docformat__ = 'google'
 import networkx as nx
 import numpy as np
 
-from nemoa.common import ntest
+from nemoa.core import ntest
 
-class TestSuite(ntest.TestSuite):
-    """Testsuite for modules within the package 'nemoa.common'."""
+class TestCase(ntest.TestCase):
+    """Testsuite for modules within the package 'nemoa.math'."""
 
     def test_common_nalgo(self) -> None:
-        """Test module 'nemoa.common.nalgo'."""
+        """Test module 'nemoa.math.nalgo'."""
         from nemoa.math import nalgo
 
         with self.subTest('search'):
@@ -68,7 +68,7 @@ class TestSuite(ntest.TestSuite):
                 getattr(test_association, 'category', None), 'association')
 
     def test_common_nregr(self) -> None:
-        """Test module 'nemoa.common.nregr'."""
+        """Test module 'nemoa.math.nregr'."""
         from nemoa.math import nregr
 
         x = np.array([[0.1, -1.9], [1.3, 2.2], [-3.4, -7.9]])
@@ -98,7 +98,7 @@ class TestSuite(ntest.TestSuite):
                 self.assertTrue(np.all(dxy == dyx))
 
     def test_common_nmatrix(self) -> None:
-        """Test module 'nemoa.common.nmatrix'."""
+        """Test module 'nemoa.math.nmatrix'."""
         from nemoa.math import nmatrix
 
         x = np.array([[0.1, -1.9], [1.3, 2.2], [-3.4, -7.9]])
@@ -130,7 +130,7 @@ class TestSuite(ntest.TestSuite):
                 self.assertTrue(m2x == 2 * mx)
 
     def test_common_nvector(self) -> None:
-        """Test module 'nemoa.common.nvector'."""
+        """Test module 'nemoa.math.nvector'."""
         from nemoa.math import nvector
 
         x = np.array([[0.1, -1.9], [1.3, 2.2], [-3.4, -7.9]])
@@ -190,7 +190,7 @@ class TestSuite(ntest.TestSuite):
                 self.assertTrue(np.all(dxz <= dxy + dyz))
 
     def test_common_ncurve(self) -> None:
-        """Test module 'nemoa.common.ncurve'."""
+        """Test module 'nemoa.math.ncurve'."""
         from nemoa.math import ncurve
 
         arr = np.array([[0.0, 0.5], [1.0, -1.0]])
@@ -286,7 +286,7 @@ class TestSuite(ntest.TestSuite):
                     0.500272, atol=1e-3))
 
     def test_common_ngraph(self) -> None:
-        """Test module 'nemoa.common.ngraph'."""
+        """Test module 'nemoa.math.ngraph'."""
         from nemoa.math import ngraph
 
         G = nx.DiGraph([(1, 3), (1, 4), (2, 3), (2, 4)], directed=True)

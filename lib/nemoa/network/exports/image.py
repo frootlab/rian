@@ -8,13 +8,13 @@ import importlib
 
 import numpy
 
-from nemoa.common import nplot
+from nemoa.io import nplot
 
 def filetypes():
     """Get supported image filetypes."""
     return nplot.filetypes()
 
-def show(network, plot=None, **kwargs):
+def show(network, plot=None, **kwds):
 
     # get class for plotting from attribute 'plot'
     if not plot:
@@ -33,14 +33,14 @@ def show(network, plot=None, **kwargs):
             "plot type '%s' is not supported." % (network.name, plot))
 
     # create and show plot
-    plot = getattr(module, cname)(**kwargs)
+    plot = getattr(module, cname)(**kwds)
     if plot.create(network):
         plot.show()
 
     plot.release()
     return True
 
-def save(network, path=None, filetype=None, plot=None, **kwargs):
+def save(network, path=None, filetype=None, plot=None, **kwds):
 
     # test if filetype is supported
     if filetype not in filetypes():
@@ -60,7 +60,7 @@ def save(network, path=None, filetype=None, plot=None, **kwargs):
             plot type '%s' is not supported.""" % (network.name, plot))
 
     # create plot instance
-    plot = getattr(module, class_name)(**kwargs)
+    plot = getattr(module, class_name)(**kwds)
 
     # create plot and save to file
     if plot.create(network):

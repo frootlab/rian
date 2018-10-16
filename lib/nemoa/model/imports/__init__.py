@@ -23,25 +23,25 @@ def filetypes(filetype = None):
 
     return False
 
-def load(path, filetype = None, **kwargs):
+def load(path, filetype = None, **kwds):
     """Import model dictionary from file or workspace."""
 
     import os
-    from nemoa.common import npath
+    from nemoa.core import npath
 
     # get path (if necessary)
-    if 'workspace' in kwargs or not os.path.isfile(path):
+    if 'workspace' in kwds or not os.path.isfile(path):
 
         name = path
-        pathkwargs = {}
-        if 'workspace' in kwargs:
-            pathkwargs['workspace'] = kwargs.pop('workspace')
+        pathkwds = {}
+        if 'workspace' in kwds:
+            pathkwds['workspace'] = kwds.pop('workspace')
 
-        if 'base' in kwargs:
-            pathkwargs['base'] = kwargs.pop('base')
+        if 'base' in kwds:
+            pathkwds['base'] = kwds.pop('base')
 
-        path = nemoa.path('model', name, **pathkwargs)
-        #path = nemoa.session.get('path', 'model', name, **pathkwargs)
+        path = nemoa.path('model', name, **pathkwds)
+        #path = nemoa.session.get('path', 'model', name, **pathkwds)
 
         if not path:
             raise Warning(f"unknown model '{name}'")
@@ -57,7 +57,7 @@ def load(path, filetype = None, **kwargs):
     # import and check dictionary
     mname = filetypes(filetype)[0]
     if mname == 'archive':
-        model = nemoa.model.imports.archive.load(path, **kwargs)
+        model = nemoa.model.imports.archive.load(path, **kwds)
     else:
         model = None
     if not model:

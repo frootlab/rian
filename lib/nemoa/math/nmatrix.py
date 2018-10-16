@@ -11,9 +11,9 @@ try:
 except ImportError as err:
     raise ImportError(
         "requires package numpy: "
-        "https://scipy.org") from err
+        "https://pypi.org/project/numpy") from err
 
-from nemoa.common import nfunc, nmodule
+from nemoa.core import nfunc, nmodule
 from nemoa.math import nvector
 from nemoa.types import Any, IntTuple, NpArray, NpArrayLike, StrList
 
@@ -31,19 +31,19 @@ def norms() -> StrList:
         Sorted list of all matrix norms, that are implemented within the module.
 
     """
-    from nemoa.common import ndict
+    from nemoa.core import ndict
 
     # Get dictionary of functions with given prefix
     module = nmodule.inst(nmodule.curname())
     pattern = NORM_PREFIX + '*'
-    d = nmodule.functions(module, pattern=pattern)
+    d = nmodule.get_functions(module, pattern=pattern)
 
     # Create sorted list of norm names
     i = len(NORM_PREFIX)
     return sorted([v['name'][i:] for v in d.values()])
 
 def magnitude(
-        x: NpArrayLike, norm: str = 'frobenius', **kwargs: Any) -> NpArray:
+        x: NpArrayLike, norm: str = 'frobenius', **kwds: Any) -> NpArray:
     """Calculate magnitude of matrix by given norm.
 
     References:
@@ -58,7 +58,7 @@ def magnitude(
                 Remark: requires additional parameters 'p' and 'q'
             'frobenius': Frobenius norm (induces: Frobenius distance)
             Default: 'frobenius'
-        **kwargs: Parameters of the given norm / class of norms.
+        **kwds: Parameters of the given norm / class of norms.
             The norm Parameters are documented within the respective 'norm'
             functions.
 
@@ -88,7 +88,7 @@ def magnitude(
             f"argument 'norm' has an invalid value '{str(norm)}'")
 
     # Evaluate norm function
-    return func(x, **nfunc.kwargs(func, default=kwargs))
+    return func(x, **nfunc.kwds(func, default=kwds))
 
 def norm_pq(x: NpArray,
         p: float = 2., q: float = 2., axes: IntTuple = (0, 1)) -> NpArray:

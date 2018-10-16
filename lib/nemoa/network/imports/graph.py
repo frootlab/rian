@@ -4,9 +4,7 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
 import networkx
-import os
 
 def filetypes():
     """Get supported graph description filetypes for network import."""
@@ -20,9 +18,9 @@ def filetypes():
 
     return d
 
-def load(path, **kwargs):
+def load(path, **kwds):
     """Import network from graph description file."""
-    from nemoa.common import npath
+    from nemoa.core import npath
 
     # extract filetype from path
     filetype = npath.fileext(path).lower()
@@ -31,31 +29,31 @@ def load(path, **kwargs):
     if filetype not in filetypes():
         raise ValueError(f"filetype '{filetype}' is not supported")
 
-    if filetype == 'gml': return Gml(**kwargs).load(path)
-    if filetype in ['graphml', 'xml']: return Graphml(**kwargs).load(path)
-    if filetype == 'dot': return Dot(**kwargs).load(path)
+    if filetype == 'gml': return Gml(**kwds).load(path)
+    if filetype in ['graphml', 'xml']: return Graphml(**kwds).load(path)
+    if filetype == 'dot': return Dot(**kwds).load(path)
 
     return False
 
 def _graph_decode(G):
     """ """
-    from nemoa.io import gzfile
+    from nemoa.core import nbytes
 
-    # no decoding
+    # no encoding
     if not G.graph.get('coding', None) or G.graph['coding'].lower() == 'none':
         return G
 
-    # base64 decoding
-    elif G.graph['coding'] == 'base64':
-        G.graph['params'] = gzfile.loads(G.graph['params'], encode = 'base64')
+    # base64 encoding
+    if G.graph['coding'] == 'base64':
+        G.graph['params'] = nbytes.unpack(G.graph['params'], encoding='base64')
 
         for node in G.nodes():
-            G.node[node]['params'] = gzfile.loads(
-                G.node[node]['params'], encode = 'base64')
+            G.node[node]['params'] = nbytes.unpack(
+                G.node[node]['params'], encoding='base64')
 
         for edge in G.edges():
-            G.edges[edge]['params'] = gzfile.loads(
-                G.edges[edge]['params'], encode = 'base64')
+            G.edges[edge]['params'] = nbytes.unpack(
+                G.edges[edge]['params'], encoding='base64')
 
         G.graph['coding'] == 'none'
 
@@ -80,17 +78,17 @@ class Graphml:
     settings = None
     default = {}
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwds):
         """ """
 
-        from nemoa.common import ndict
+        from nemoa.core import ndict
 
-        self.settings = ndict.merge(kwargs, self.default)
+        self.settings = ndict.merge(kwds, self.default)
 
     def load(self, path):
         """ """
 
-        from nemoa.common import ndict
+        from nemoa.core import ndict
 
         G = networkx.read_graphml(path)
         d = ndict.strkeys(_graph_to_dict(_graph_decode(G)))
@@ -103,17 +101,17 @@ class Gml:
     settings = None
     default = {}
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwds):
         """ """
 
-        from nemoa.common import ndict
+        from nemoa.core import ndict
 
-        self.settings = ndict.merge(kwargs, self.default)
+        self.settings = ndict.merge(kwds, self.default)
 
     def load(self, path):
         """ """
 
-        from nemoa.common import ndict
+        from nemoa.core import ndict
 
         G = networkx.read_gml(path, relabel = True)
         d = ndict.strkeys(_graph_to_dict(_graph_decode(G)))

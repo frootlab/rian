@@ -2,12 +2,22 @@
 """I/O functions for binary-files.
 
 .. References:
-.. _path-like object:
-    https://docs.python.org/3/glossary.html#term-path-like-object
-.. _file-like object:
-    https://docs.python.org/3/glossary.html#term-file-like-object
 .. _binary-file:
     https://docs.python.org/3/glossary.html#term-binary-file
+.. _bytes-like object:
+    https://docs.python.org/3/glossary.html#term-bytes-like-object
+.. _file-like object:
+    https://docs.python.org/3/glossary.html#term-file-like-object
+.. _path-like object:
+    https://docs.python.org/3/glossary.html#term-path-like-object
+.. _open():
+    https://docs.python.org/3/library/functions.html#open
+.. _zlib.compress():
+    https://docs.python.org/3/library/zlib.html#zlib.compress
+.. _zlib.decompress():
+    https://docs.python.org/3/library/zlib.html#zlib.decompress
+.. _RFC 3548:
+    https://tools.ietf.org/html/rfc3548.html
 
 """
 
@@ -18,21 +28,31 @@ __docformat__ = 'google'
 
 from contextlib import contextmanager
 
-from nemoa.common import npath
+from nemoa.core import npath, nbytes
 from nemoa.types import (
-    BytesIOBaseClass, CManBytesIOLike, FileOrPathLike, IterBytesIOLike, Path,
-    TextIOBaseClass)
+    BytesIOBaseClass, BytesLikeOrStr, FileOrPathLike,
+    IterBytesIOLike, OptInt, OptStr, Path, TextIOBaseClass)
 
 @contextmanager
-def wrap(file: FileOrPathLike, mode: str = '') -> IterBytesIOLike:
-    """Contextmanager to provide a unified interface to binary files.
+def openx(file: FileOrPathLike, mode: str = '') -> IterBytesIOLike:
+    """Context manager to provide a unified interface to binary files.
+
+    This context manager extends the standard implementation of `open()`_ by
+    allowing the passed *file* argument to be a str or `path-like object`_,
+    which points to a valid filename in the directory structure of the system,
+    or a `file-like object`_. If the *file* argument is a str or a path-like
+    object, the given path may contain application variables, like '%home%' or
+    '%user_data_dir%', which are extended before returning a file handler to a
+    `binary-file`_. Afterwards, when exiting the *with* statement, the file is
+    closed. If the *file* argument, however, is a file-like object, the file is
+    not closed, when exiting the *with* statement.
 
     Args:
         file: String or `path-like object`_ that points to a valid filename in
             the directory structure of the system, or a `file-like object`_.
         mode: String, which characters specify the mode in which the file stream
-            is wrapped. The default mode is reading mode. Suported characters
-            are:
+            is opened or wrapped. The default mode is reading mode. Suported
+            characters are:
             'r': Reading mode (default)
             'w': Writing mode
 
@@ -52,10 +72,10 @@ def wrap(file: FileOrPathLike, mode: str = '') -> IterBytesIOLike:
             try:
                 fd, close = open(path, 'wb'), True
             except IOError as err:
-                raise IOError(f"file '{path}' can not be written") from err
+                raise IOError(f"file '{path}' is not writable") from err
         else:
             if not path.is_file():
-                raise FileNotFoundError(f"file '{path}' is does not exist")
+                raise FileNotFoundError(f"file '{path}' does not exist")
             fd, close = open(path, 'rb'), True
     else:
         raise TypeError(
@@ -69,30 +89,59 @@ def wrap(file: FileOrPathLike, mode: str = '') -> IterBytesIOLike:
         if close:
             fd.close()
 
-def open_read(file: FileOrPathLike) -> CManBytesIOLike:
-    """Provide unified interface to read binary files.
+def load(
+        file: FileOrPathLike, encoding: OptStr = None,
+        compressed: bool = False) -> bytes:
+    """Load binary data from file.
 
     Args:
         file: String or `path-like object`_ that points to a readable file in
             the directory structure of the system, or a `file-like object`_ in
             reading mode.
+        encoding: Encodings specified in `RFC 3548`_. Allowed values are:
+            'base16', 'base32', 'base64' and 'base85' or None for no encoding.
+            By default no encoding is used.
+        compressed: Boolean value which determines, if the returned binary
+            data shall be decompressed by using `zlib.decompress()`_.
 
     Returns:
-        Context manager for `binary-file`_ in reading mode.
+        Content of the given file as bytes object.
 
     """
-    return wrap(file, mode='r')
+    with openx(file, mode='r') as fh:
+        data = fh.read() # Load binary data from file
+    if encoding:
+        data = nbytes.decode(data, encoding=encoding) # Decode data
+    if compressed:
+        data = nbytes.decompress(data) # Decompress data
+    return data
 
-def open_write(file: FileOrPathLike) -> CManBytesIOLike:
-    """Provide unified interface to write binary files.
+def save(
+        data: BytesLikeOrStr, file: FileOrPathLike, encoding: OptStr = None,
+        compression: OptInt = None) -> None:
+    """Save binary data to file.
 
     Args:
+        data: Binary data given as `bytes-like object`_ or string
         file: String or `path-like object`_ that points to a writable file in
             the directory structure of the system, or a `file-like object`_ in
             writing mode.
-
-    Returns:
-        Context manager for `binary-file`_ in writing mode.
+        encoding: Encodings specified in `RFC 3548`_. Allowed values are:
+            'base16', 'base32', 'base64' and 'base85' or None for no encoding.
+            By default no encoding is used.
+        compression: Determines the compression level for `zlib.compress()`_.
+            By default no zlib compression is used. For an integer ranging from
+            -1 to 9, a zlib compression with the respective compression level is
+            used. Thereby *-1* is the default zlib compromise between speed and
+            compression, *0* deflates the given binary data without attempted
+            compression, *1* is the fastest compression with minimum compression
+            capability and *9* is the slowest compression with maximum
+            compression capability.
 
     """
-    return wrap(file, mode='w')
+    if isinstance(compression, int):
+        data = nbytes.compress(data, level=compression) # Compress data
+    if encoding:
+        data = nbytes.encode(data, encoding=encoding) # Encode data
+    with openx(file, mode='w') as fh:
+        fh.write(nbytes.asbytes(data)) # Save binary data to file

@@ -7,7 +7,7 @@
 .. _file-like object:
     https://docs.python.org/3/glossary.html#term-file-like-object
 .. _ntext.astype:
-    https://frootlab.github.io/nemoa-doc/latest/source/nemoa.common.ntext.html#nemoa.common.ntext.astype
+    https://frootlab.github.io/nemoa-doc/latest/source/nemoa.core.ntext.html#nemoa.core.ntext.astype
 """
 
 __author__ = 'Patrick Michl'
@@ -52,7 +52,7 @@ def load(file: FileOrPathLike, structure: OptStrDict2 = None) -> StrDict2:
     setattr(parser, 'optionxform', lambda key: key)
 
     # Read configuration from file-like or path-like object
-    with textfile.open_read(file) as fd:
+    with textfile.openx(file, mode='r') as fd:
         parser.read_file(fd)
 
     # Parse sections and create configuration dictionary
@@ -82,7 +82,7 @@ def save(
         raise ValueError("dictionary is not valid") from err
 
     # Write text to file
-    with textfile.open_write(file) as fd:
+    with textfile.openx(file, mode='w') as fd:
         fd.write(text)
 
 def loads(
@@ -205,15 +205,14 @@ def get_header(file: FileOrPathLike) -> str:
     Args:
         file: String or `path-like object`_ that points to a readable file in
             the directory structure of the system, or a `file-like object`_ in
-            read mode.
+            reading mode.
 
     Returns:
         String containing the header of the INI-file or an empty string, if no
         header could be detected.
 
     """
-    with textfile.open_read(file) as fd:
-        return textfile.read_header(fd)
+    return textfile.get_header(file)
 
 def parse(parser: ConfigParser, structure: OptStrDict2 = None) -> StrDict2:
     """Import configuration dictionary from INI formated text.
@@ -239,7 +238,7 @@ def parse(parser: ConfigParser, structure: OptStrDict2 = None) -> StrDict2:
 
     """
     import re
-    from nemoa.common import ntext
+    from nemoa.core import ntext
 
     # Retrieve dictionary from INI parser, if no structure is given
     if not isinstance(structure, dict):

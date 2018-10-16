@@ -1,0 +1,31 @@
+nemoa.core package
+==================
+
+Submodules
+----------
+
+.. toctree::
+
+   nemoa.core.napp
+   nemoa.core.narray
+   nemoa.core.nbase
+   nemoa.core.nclass
+   nemoa.core.nconsole
+   nemoa.core.ndict
+   nemoa.core.nfunc
+   nemoa.core.nmodule
+   nemoa.core.npath
+   nemoa.core.nsysinfo
+   nemoa.core.ntable
+   nemoa.core.ntest
+   nemoa.core.ntext
+   nemoa.core.nthreads
+   nemoa.core.session
+
+Module contents
+---------------
+
+.. automodule:: nemoa.core
+    :members:
+    :undoc-members:
+    :show-inheritance:

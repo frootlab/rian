@@ -7,14 +7,14 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-from nemoa.common import nplot
+from nemoa.io import nplot
 
 def filetypes():
     """Get supported image filetypes."""
 
     return nplot.filetypes()
 
-def get_plot(dataset, func=None, plot=None, **kwargs):
+def get_plot(dataset, func=None, plot=None, **kwds):
 
     import importlib
 
@@ -43,18 +43,18 @@ def get_plot(dataset, func=None, plot=None, **kwargs):
             "plot type '%s' is not supported." % (dataset.name, plot)) from err
 
     # create plot
-    plot = getattr(module, cname)(func=fname, **kwargs)
+    plot = getattr(module, cname)(func=fname, **kwds)
     if plot.create(dataset):
         return plot
 
     plot.release()
     return None
 
-def show(dataset, *args, **kwargs):
+def show(dataset, *args, **kwds):
     """ """
 
     # create plot
-    plot = get_plot(dataset, *args, **kwargs)
+    plot = get_plot(dataset, *args, **kwds)
     if plot is None: return None
 
     plot.show()
@@ -62,13 +62,13 @@ def show(dataset, *args, **kwargs):
 
     return True
 
-def save(dataset, path = None, filetype = None, *args, **kwargs):
+def save(dataset, path = None, filetype = None, *args, **kwds):
 
     # test if filetype is supported
     if filetype not in filetypes():
         raise ValueError(f"filetype '{filetype}' is not supported")
 
-    plot = get_plot(dataset, *args, **kwargs)
+    plot = get_plot(dataset, *args, **kwds)
     if plot is None: return None
 
     plot.save(path)
@@ -80,7 +80,7 @@ class Heatmap(nplot.Heatmap):
 
     def create(self, dataset):
 
-        from nemoa.common import nfunc
+        from nemoa.core import nfunc
 
         # set plot defaults
         self.set_default({
@@ -90,8 +90,8 @@ class Heatmap(nplot.Heatmap):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwargs = nfunc.kwargs(func, default = self._config)
-        array  = dataset.evaluate(fname, **kwargs)
+        kwds = nfunc.kwds(func, default = self._config)
+        array  = dataset.evaluate(fname, **kwds)
 
         # check return value
         cols  = dataset.get('columns')
@@ -120,7 +120,7 @@ class Histogram(nplot.Histogram):
 
     def create(self, dataset):
 
-        from nemoa.common import nfunc
+        from nemoa.core import nfunc
 
         # set plot defaults
         self.set_default({
@@ -130,8 +130,8 @@ class Histogram(nplot.Histogram):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwargs = nfunc.kwargs(func, default=self._config)
-        array  = dataset.evaluate(fname, **kwargs)
+        kwds = nfunc.kwds(func, default=self._config)
+        array  = dataset.evaluate(fname, **kwds)
 
         # check return value
         if not isinstance(array, numpy.ndarray):
@@ -157,7 +157,7 @@ class Scatter2D(nplot.Scatter2D):
 
     def create(self, dataset):
 
-        from nemoa.common import nfunc
+        from nemoa.core import nfunc
 
         # set plot defaults
         self.set_default({
@@ -168,8 +168,8 @@ class Scatter2D(nplot.Scatter2D):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwargs = nfunc.kwargs(func, default = self._config)
-        array  = dataset.evaluate(fname, **kwargs)
+        kwds = nfunc.kwds(func, default = self._config)
+        array  = dataset.evaluate(fname, **kwds)
 
         # check return value
         if not isinstance(array, numpy.ndarray):
@@ -199,7 +199,7 @@ class Graph(nplot.Graph):
                 "requires package networkx: "
                 "https://networkx.github.io") from err
 
-        from nemoa.common import nfunc
+        from nemoa.core import nfunc
 
         # set plot defaults
         self.set_default({
@@ -214,8 +214,8 @@ class Graph(nplot.Graph):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwargs = nfunc.kwargs(func, default = self._config)
-        array  = dataset.evaluate(fname, **kwargs)
+        kwds = nfunc.kwds(func, default = self._config)
+        array  = dataset.evaluate(fname, **kwds)
 
         # check if evaluation yields valid relation
         cols  = dataset.get('columns')

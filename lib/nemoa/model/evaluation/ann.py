@@ -31,9 +31,9 @@ class ANN(Evaluation):
         formater = lambda val: '%.3f' % (val),
         optimum  = 'min'
     )
-    def modelerror(self, *args, **kwargs):
+    def modelerror(self, *args, **kwds):
         """Mean data reconstruction error of output units."""
-        return numpy.mean(self.uniterror(*args, **kwargs))
+        return numpy.mean(self.uniterror(*args, **kwds))
 
     @nalgo.objective(
         name     = 'accuracy',
@@ -43,9 +43,9 @@ class ANN(Evaluation):
         formater = lambda val: '%.1f%%' % (val * 100.),
         optimum  = 'max'
     )
-    def modelaccuracy(self, *args, **kwargs):
+    def modelaccuracy(self, *args, **kwds):
         """Mean data reconstruction accuracy of output units."""
-        return numpy.mean(self.unitaccuracy(*args, **kwargs))
+        return numpy.mean(self.unitaccuracy(*args, **kwds))
 
     @nalgo.objective(
         name     = 'precision',
@@ -55,9 +55,9 @@ class ANN(Evaluation):
         formater = lambda val: '%.1f%%' % (val * 100.),
         optimum  = 'max'
     )
-    def modelprecision(self, *args, **kwargs):
+    def modelprecision(self, *args, **kwds):
         """Mean data reconstruction precision of output units."""
-        return numpy.mean(self.unitprecision(*args, **kwargs))
+        return numpy.mean(self.unitprecision(*args, **kwds))
 
     @nalgo.custom(
         name     = 'mean',
@@ -138,7 +138,7 @@ class ANN(Evaluation):
         formater = lambda val: '%.3f' % (val),
         plot     = 'histogram'
     )
-    def unitexpect(self, *args, **kwargs):
+    def unitexpect(self, *args, **kwds):
         """Expectation values of target units.
 
         Args:
@@ -156,7 +156,7 @@ class ANN(Evaluation):
 
         """
 
-        return self.model.system._get_unitexpect(*args, **kwargs)
+        return self.model.system._get_unitexpect(*args, **kwds)
 
     @nalgo.custom(
         name     = 'values',
@@ -166,7 +166,7 @@ class ANN(Evaluation):
         formater = lambda val: '%.3f' % (val),
         plot     = 'histogram'
     )
-    def unitvalues(self, *args, **kwargs):
+    def unitvalues(self, *args, **kwds):
         """Unit maximum likelihood values of target units.
 
         Args:
@@ -186,7 +186,7 @@ class ANN(Evaluation):
 
         """
 
-        return self.model.system._get_unitvalues(*args, **kwargs)
+        return self.model.system._get_unitvalues(*args, **kwds)
 
     @nalgo.custom(
         name     = 'samples',
@@ -196,7 +196,7 @@ class ANN(Evaluation):
         formater = lambda val: '%.3f' % (val),
         plot     = 'histogram'
     )
-    def unitsamples(self, *args, **kwargs):
+    def unitsamples(self, *args, **kwds):
         """Sampled unit values of target units.
 
         Args:
@@ -216,7 +216,7 @@ class ANN(Evaluation):
 
         """
 
-        return self.model.system._get_unitsamples(*args, **kwargs)
+        return self.model.system._get_unitsamples(*args, **kwds)
 
     @nalgo.custom(
         name     = 'residuals',
@@ -269,7 +269,7 @@ class ANN(Evaluation):
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram'
     )
-    def uniterror(self, data, norm: str = 'MSE', **kwargs):
+    def uniterror(self, data, norm: str = 'MSE', **kwds):
         """Unit reconstruction error.
 
         The unit reconstruction error is defined by:
@@ -285,7 +285,7 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate data reconstuction error from
-                residuals. see nemoa.common.nvector.norm for a list
+                residuals. see nemoa.core.nvector.norm for a list
                 of provided norms
 
         """
@@ -293,7 +293,7 @@ class ANN(Evaluation):
 
         # TODO: use nvector
         #error = nvector.distance(x, y, metric=metric)
-        res = self.unitresiduals(data, **kwargs)
+        res = self.unitresiduals(data, **kwds)
         error = numpy.mean(numpy.square(res), axis=0)
 
         return error
@@ -306,7 +306,7 @@ class ANN(Evaluation):
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram'
     )
-    def unitaccuracy(self, data, norm: str = 'MSE', **kwargs):
+    def unitaccuracy(self, data, norm: str = 'MSE', **kwds):
         """Unit reconstruction accuracy.
 
         The unit reconstruction accuracy is defined by:
@@ -322,7 +322,7 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate accuracy
-                see nemoa.common.nvector.norm for a list of provided
+                see nemoa.core.nvector.norm for a list of provided
                 norms
 
         """
@@ -330,7 +330,7 @@ class ANN(Evaluation):
         from nemoa.math import nvector
 
         # TODO: use nvector to calculate distance
-        res = self.unitresiduals(data, **kwargs)
+        res = self.unitresiduals(data, **kwds)
         normres = numpy.mean(numpy.square(res), axis=0)
         normdat = numpy.mean(numpy.square(data[1]), axis=0)
 
@@ -344,7 +344,7 @@ class ANN(Evaluation):
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram'
     )
-    def unitprecision(self, data, norm: str = 'SD', **kwargs):
+    def unitprecision(self, data, norm: str = 'SD', **kwds):
         """Unit reconstruction precision.
 
         The unit reconstruction precision is defined by:
@@ -360,13 +360,13 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate deviation for precision
-                see nemoa.common.nvector.norm for a list of provided
+                see nemoa.core.nvector.norm for a list of provided
                 norms
 
         """
         from nemoa.math import nvector
 
-        res = self.unitresiduals(data, **kwargs)
+        res = self.unitresiduals(data, **kwds)
         devres = nvector.length(res, norm=norm)
         devdat = nvector.length(data[1], norm=norm)
 
@@ -383,7 +383,7 @@ class ANN(Evaluation):
         plot     = 'heatmap',
         formater = lambda val: '%.3f' % (val)
     )
-    def correlation(self, data, mapping = None, **kwargs):
+    def correlation(self, data, mapping = None, **kwds):
         """Data correlation between source and target units.
 
         Undirected data based relation describing the 'linearity'
@@ -431,7 +431,7 @@ class ANN(Evaluation):
         plot     = 'heatmap',
         formater = lambda val: '%.3f' % (val)
     )
-    def connectionweight(self, data, mapping = None, **kwargs):
+    def connectionweight(self, data, mapping = None, **kwds):
         """Weight sum product from source to target units.
 
         Directed graph based relation describing the matrix product from
@@ -471,7 +471,7 @@ class ANN(Evaluation):
         plot     = 'heatmap',
         formater = lambda val: '%.3f' % (val)
     )
-    def knockout(self, data, mapping = None, **kwargs):
+    def knockout(self, data, mapping = None, **kwds):
         """Knockout effect from source to target units.
 
         Directed data manipulation based relation describing the
@@ -502,7 +502,7 @@ class ANN(Evaluation):
         R = numpy.zeros((len(in_labels), len(out_labels)))
 
         # calculate unit values without knockout
-        measure = kwargs.get('measure', 'error')
+        measure = kwds.get('measure', 'error')
         default = self.evaluate(algorithm = measure,
             category = 'units', mapping = mapping)
 
@@ -533,7 +533,7 @@ class ANN(Evaluation):
         plot     = 'heatmap',
         formater = lambda val: '%.3f' % (val)
     )
-    def coinduction(self, data, *args, **kwargs):
+    def coinduction(self, data, *args, **kwds):
         """Coinduced deviation from source to target units."""
 
         # 2do: Open Problem:
@@ -559,10 +559,10 @@ class ANN(Evaluation):
 
         # create keawords for induction measurement
 
-        if 'gauge' not in kwargs: kwargs['gauge'] = gauge
+        if 'gauge' not in kwds: kwds['gauge'] = gauge
 
         # calculate induction without manipulation
-        ind = self._get_induction(data, *args, **kwargs)
+        ind = self._get_induction(data, *args, **kwds)
         norm = numpy.sqrt((ind ** 2).sum(axis = 1))
 
         # calculate induction with manipulation
@@ -571,7 +571,7 @@ class ANN(Evaluation):
             # manipulate source unit values and calculate induction
             datamp = [numpy.copy(data[0]), data[1]]
             datamp[0][:, sid] = 10.0
-            indmp = self._get_induction(datamp, *args, **kwargs)
+            indmp = self._get_induction(datamp, *args, **kwds)
 
             print(('manipulation of', sunit))
             vals = [-2., -1., -0.5, 0., 0.5, 1., 2.]
@@ -579,7 +579,7 @@ class ANN(Evaluation):
             for vid, val in enumerate(vals):
                 datamod = [numpy.copy(data[0]), data[1]]
                 datamod[0][:, sid] = val #+ datamod[0][:, sid].mean()
-                indmod = self._get_induction(datamod, *args, **kwargs)
+                indmod = self._get_induction(datamod, *args, **kwds)
                 maniparr[vid, :] = numpy.sqrt(((indmod - ind) ** 2).sum(axis = 1))
             manipvar = maniparr.var(axis = 0)
             #manipvar /= numpy.amax(manipvar)
@@ -605,7 +605,7 @@ class ANN(Evaluation):
         formater = lambda val: '%.3f' % (val)
     )
     def induction(self, data, mapping = None, points = 10,
-        amplify = 1., gauge = 0.25, contrast = 20.0, **kwargs):
+        amplify = 1., gauge = 0.25, contrast = 20.0, **kwds):
         """Induced deviation from source to target units.
 
         Directed data manipulation based relation describing the induced
@@ -690,7 +690,7 @@ class ANN(Evaluation):
         formater = lambda val: '%.3f' % (val),
         optimum  = 'min'
     )
-    def modelenergy(self, data, *args, **kwargs):
+    def modelenergy(self, data, *args, **kwds):
         """Sum of local link and unit energies."""
 
         mapping = list(self._get_mapping())
@@ -745,7 +745,7 @@ class ANN(Evaluation):
         formater = lambda val: '%.3f' % (val),
         plot     = 'diagram'
     )
-    def _get_links_energy(self, data, mapping = None, **kwargs):
+    def _get_links_energy(self, data, mapping = None, **kwds):
         """Return link energies of a layer.
 
         Args:

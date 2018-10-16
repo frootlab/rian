@@ -12,46 +12,46 @@ import nemoa.model.exports
 import nemoa.model.imports
 import nemoa.model.morphisms
 
-def build(*args, **kwargs):
+def build(*args, **kwds):
     """Create model dictionary from building script."""
-    return nemoa.model.builder.build(*args, **kwargs)
+    return nemoa.model.builder.build(*args, **kwds)
 
-def copy(model, *args, **kwargs):
+def copy(model, *args, **kwds):
     """Create copy of model instance."""
     return new(**model.get('copy'))
 
-def create(*args, **kwargs):
+def create(*args, **kwds):
     """Create model instance from building script."""
-    return new(**build(*args, **kwargs))
+    return new(**build(*args, **kwds))
 
-def evaluate(*args, **kwargs):
+def evaluate(*args, **kwds):
     """Evaluate model instance."""
-    return nemoa.model.evaluation.evaluate(*args, **kwargs)
+    return nemoa.model.evaluation.evaluate(*args, **kwds)
 
-def evaluate_new(*args, **kwargs):
+def evaluate_new(*args, **kwds):
     """Evaluate model instance."""
-    return nemoa.model.analysis.evaluate(*args, **kwargs)
+    return nemoa.model.analysis.evaluate(*args, **kwds)
 
-def load(*args, **kwargs):
+def load(*args, **kwds):
     """Import model dictionary from file."""
-    return nemoa.model.imports.load(*args, **kwargs)
+    return nemoa.model.imports.load(*args, **kwds)
 
-def new(*args, **kwargs):
+def new(*args, **kwds):
     """Create model instance from model dictionary."""
-    return nemoa.model.classes.new(*args, **kwargs)
+    return nemoa.model.classes.new(*args, **kwds)
 
-def open(*args, **kwargs):
+def open(*args, **kwds):
     """Import model instance from file."""
-    return new(**load(*args, **kwargs))
+    return new(**load(*args, **kwds))
 
-def optimize(*args, **kwargs):
+def optimize(*args, **kwds):
     """Optimize model instance."""
-    return nemoa.model.morphisms.optimize(*args, **kwargs)
+    return nemoa.model.morphisms.optimize(*args, **kwds)
 
-def save(*args, **kwargs):
+def save(*args, **kwds):
     """Export model instance to file."""
-    return nemoa.model.exports.save(*args, **kwargs)
+    return nemoa.model.exports.save(*args, **kwds)
 
-def show(*args, **kwargs):
+def show(*args, **kwds):
     """Show model as image."""
-    return nemoa.model.exports.show(*args, **kwargs)
+    return nemoa.model.exports.show(*args, **kwds)
