@@ -8,7 +8,7 @@ import nemoa
 
 from nemoa.core import ntest
 
-class TestCase(ntest.TestCase):
+class TestCase(ntest.GenericTestCase):
     def setUp(self):
         import nemoa
         self.mode = nemoa.get('mode')

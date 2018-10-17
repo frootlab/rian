@@ -9,7 +9,7 @@ import numpy
 
 from nemoa.core import nclass, ntest
 
-class TestCase(ntest.TestCase):
+class TestCase(ntest.GenericTestCase):
 
     def test_dataset_import(self):
         import nemoa.dataset

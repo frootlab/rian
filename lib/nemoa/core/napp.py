@@ -61,15 +61,15 @@ def get_var(varname: str, *args: Any, **kwds: Any) -> OptStr:
             'credits': list with strings, acknowledging further contributors,
                 Teams or supporting organizations.
         *args: Optional arguments that specify the application, as required by
-            the function 'nemoa.core.napp.upd_vars'.
+            the function 'nemoa.core.napp.update_vars'.
         **kwds: Optional keyword arguments that specify the application, as
-            required by the function 'nemoa.core.napp.upd_vars'.
+            required by the function 'nemoa.core.napp.update_vars'.
 
     Returns:
         String representing the value of the application variable.
 
     """
-    # Check type of argument 'name'
+    # Check type of 'name'
     if not isinstance(varname, str):
         raise TypeError(
             "'name' requires to be of type 'str' or None"
@@ -77,7 +77,7 @@ def get_var(varname: str, *args: Any, **kwds: Any) -> OptStr:
 
     # Update variables if not present or if optional arguments are given
     if not '_vars' in globals() or args or kwds:
-        upd_vars(*args, **kwds)
+        update_vars(*args, **kwds)
     appvars = globals().get('_vars', {})
 
     return appvars.get(varname, None)
@@ -88,14 +88,14 @@ def get_vars(*args: Any, **kwds: Any) -> StrDict:
     Application variables are intended to describe the application distribution
     by authorship information, bibliographic information, status, formal
     conditions and notes or warnings. Therfore the variables are independent
-    from runtime properties including user and session. For more information
-    see `PEP 345`_.
+    from runtime properties including user and session. For more information see
+    `PEP 345`_.
 
     Args:
         *args: Optional arguments that specify the application, as required by
-            the function 'nemoa.core.napp.upd_vars'.
+            the function 'nemoa.core.napp.update_vars'.
         **kwds: Optional keyword arguments that specify the application, as
-            required by the function 'nemoa.core.napp.upd_vars'.
+            required by the function 'nemoa.core.napp.update_vars'.
 
     Returns:
         Dictionary containing application variables.
@@ -103,10 +103,10 @@ def get_vars(*args: Any, **kwds: Any) -> StrDict:
     """
     # update variables if not present or if optional arguments are given
     if not '_vars' in globals() or args or kwds:
-        upd_vars(*args, **kwds)
+        update_vars(*args, **kwds)
     return globals().get('_vars', {}).copy()
 
-def upd_vars(filepath: OptPathLike = None) -> None:
+def update_vars(filepath: OptPathLike = None) -> None:
     """Update application variables from module attributes.
 
     Application variables are intended to describe the application distribution
@@ -157,19 +157,19 @@ def get_dir(dirname: str, *args: Any, **kwds: Any) -> str:
             'site_config_dir': Site global configuration directory
             'site_data_dir': Site global data directory
             'site_package_dir': Site global package directory
-            'cur_package_dir': Current package directory
-            'cur_package_data_dir': Current package data directory
+            'package_dir': Current package directory
+            'package_data_dir': Current package data directory
         *args: Optional arguments that specify the application, as required by
-            the function 'nemoa.core.napp.upd_dirs'.
+            the function 'nemoa.core.napp.update_dirs'.
         **kwds: Optional keyword arguments that specify the application, as
-            required by the function 'nemoa.core.napp.upd_dirs'.
+            required by the function 'nemoa.core.napp.update_dirs'.
 
     Returns:
         String containing path of environmental directory or None if the
         pathname is not supported.
 
     """
-    # Check type of argument 'dirname'
+    # Check type of 'dirname'
     if not isinstance(dirname, str):
         raise TypeError(
             "'name' requires to be of type 'str' or None"
@@ -177,10 +177,10 @@ def get_dir(dirname: str, *args: Any, **kwds: Any) -> str:
 
     # Update appdirs if not present or if optional arguments are given
     if not '_dirs' in globals() or args or kwds:
-        upd_dirs(*args, **kwds)
+        update_dirs(*args, **kwds)
     dirs = globals().get('_dirs', {})
 
-    # Check value of argument 'dirname'
+    # Check value of 'dirname'
     if dirname not in dirs:
         raise ValueError(f"directory name '{dirname}' is not valid")
 
@@ -195,9 +195,9 @@ def get_dirs(*args: Any, **kwds: Any) -> StrDict:
 
     Args:
         *args: Optional arguments that specify the application, as required by
-            the function 'nemoa.core.napp.upd_dirs'.
+            the function 'nemoa.core.napp.update_dirs'.
         **kwds: Optional keyword arguments that specify the application, as
-            required by the function 'nemoa.core.napp.upd_dirs'.
+            required by the function 'nemoa.core.napp.update_dirs'.
 
     Returns:
         Dictionary containing paths of application specific environmental
@@ -206,18 +206,18 @@ def get_dirs(*args: Any, **kwds: Any) -> StrDict:
     """
     # Update appdirs if not present or if optional arguments are given
     if not '_dirs' in globals() or args or kwds:
-        upd_dirs(*args, **kwds)
+        update_dirs(*args, **kwds)
     return globals().get('_dirs', {}).copy()
 
-def upd_dirs(
+def update_dirs(
         appname: OptStr = None, appauthor: OptStrOrBool = None,
         version: OptStr = None, **kwds: Any) -> None:
     """Update application specific directories from name, author and version.
 
     This function retrieves application specific directories from the package
     `appdirs`_. Additionally the directory 'site_package_dir' is retrieved fom
-    the standard library package distutils and 'cur_package_dir' and
-    'cur_package_data_dir' from the current top level module.
+    the standard library package distutils and 'package_dir' and
+    'package_data_dir' from the current top level module.
 
     Args:
         appname: is the name of application. If None, just the system directory
@@ -265,7 +265,7 @@ def upd_dirs(
 
     # Get directory of current top level module
     path = Path(nmodule.root().__file__).parent
-    dirs['cur_package_dir'] = path
-    dirs['cur_package_data_dir'] = path / 'data'
+    dirs['package_dir'] = path
+    dirs['package_data_dir'] = path / 'data'
 
     globals()['_dirs'] = dirs

@@ -37,7 +37,6 @@ class BadWsFile(OSError):
     """Exception for invalid workspace files."""
 
 # Module constants
-ENCODING = nsysinfo.encoding()
 FILEEXTS = ['.ws', '.ws.zip']
 
 class WsFile:
@@ -76,6 +75,7 @@ class WsFile:
             'maintainer': nsysinfo.username()}}
     DIR_LAYOUT: ClassVar[StrList] = [
         'dataset', 'network', 'system', 'model', 'script']
+    ENCODING = nsysinfo.encoding()
 
     # Instance Variables
     _attr: StrDict
@@ -326,7 +326,8 @@ class WsFile:
                 yield file
             else:
                 yield TextIOWrapper(
-                    file, encoding=encoding or ENCODING, write_through=True)
+                    file, encoding=encoding or self.ENCODING,
+                    write_through=True)
         finally:
             file.close()
 

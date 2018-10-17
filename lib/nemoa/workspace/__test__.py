@@ -8,7 +8,7 @@ import nemoa
 
 from nemoa.core import ntest
 
-class TestCase(ntest.TestCase):
+class TestCase(ntest.GenericTestCase):
 
     def test_workspace_open(self):
         nemoa.open('testsuite')

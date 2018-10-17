@@ -36,6 +36,22 @@ def summary(obj: object) -> str:
         return ''
     return doc.splitlines()[0].strip('.')
 
+def get_name(obj: object) -> str:
+    """Get name of an object.
+
+    This function returns the name of an object. If the object does not have
+    a magic name attribute, the name is retrieved from the inheritance
+    hierarchy.
+
+    Args:
+        obj: Arbitrary object
+
+    Returns:
+        Name of an object.
+
+    """
+    return getattr(obj, '__name__', None) or getattr(type(obj), '__name__')
+
 def members(
         obj: object, pattern: OptStr = None, base: type = object,
         rules: OptStrDictOfTestFuncs = None, **kwds: Any) -> dict:
@@ -46,9 +62,10 @@ def members(
         pattern: Only members which names satisfy the wildcard pattern given
             by 'pattern' are returned. The format of the wildcard pattern is
             described in the standard library module `fnmatch`_. By default all
-            members are returned.
+            names are allowed.
         base: Class info given as a class, a type or a tuple containing classes,
-            types or other tuples.
+            types or other tuples. Only members, which are ether an instance or
+            a subclass of base are returned. By default all types are allowed.
         rules: Dictionary with custom test functions, which are used for the
             comparison of the attribute value against the argument value. The
             dictionary items are of the form <*attribute*>: <*test*>, where
@@ -73,10 +90,7 @@ def members(
         dictinaries as values.
 
     """
-    if not hasattr(obj, '__name__'):
-        raise TypeError("'obj' is required to have the attribute '__name__'")
-
-    # Get member references of given base class
+    # Get members of object, that satisfy the given base class
     predicate = lambda o: (
         isinstance(o, base) or
         inspect.isclass(o) and issubclass(o, base))
@@ -87,7 +101,7 @@ def members(
         refs = ndict.select(refs, pattern=pattern)
 
     # Create dictionary with members, which attributes pass all filter rules
-    prefix = obj.__name__ + '.' # type: ignore
+    prefix = get_name(obj) + '.'
     rules = rules or {}
     valid = {}
     for name, ref in refs.items():
