@@ -8,7 +8,7 @@ import nemoa
 
 from nemoa.core import ntest
 
-class TestCase(ntest.TestCase):
+class TestCase(ntest.GenericTestCase):
 
     def test_system_import(self):
         with self.subTest(filetype = "ini"):

@@ -33,7 +33,7 @@ class Session:
 
     # Class Variables
     _DEFAULT_PATHS: StrList = [
-        '%user_data_dir%', '%site_data_dir%', '%cur_package_data_dir%']
+        '%user_data_dir%', '%site_data_dir%', '%package_data_dir%']
 
     # Instance Variables
     _paths: PathLikeList

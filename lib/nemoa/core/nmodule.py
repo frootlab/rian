@@ -248,21 +248,24 @@ def search(
         key: OptStr = None, val: OptStr = None, groupby: OptStr = None,
         recursive: bool = True, rules: OptStrDictOfTestFuncs = None,
         **kwds: Any) -> dict:
-    """Recursively search for functions within submodules.
+    """Recursively search for objects within submodules.
 
     Args:
-        module: Module reference in which functions are searched. If 'module' is
+        module: Module reference in which objects are searched. If 'module' is
             None, then the module of the caller function is used. Default: None
-        pattern: Only functions which names satisfy the wildcard pattern given
+        pattern: Only objects which names satisfy the wildcard pattern given
             by 'pattern' are returned. The format of the wildcard pattern is
             described in the standard library module `fnmatch`_. If pattern is
-            None, then all functions are returned. Default: None
+            None, then all objects are returned. Default: None
+        base: Class info given as a class, a type or a tuple containing classes,
+            types or other tuples. Only members, which are ether an instance or
+            a subclass of base are returned. By default all types are allowed.
         key: Name of function attribute which is used as the key for the
             returned dictionary. If 'key' is None, then the fully qualified
             function names are used as keys. Default: None
         val: Name of function attribute which is used as the value for the
             returned dictionary. If 'val' is None, then all attributes of the
-            respective functions are returned. Default: None
+            respective objects are returned. Default: None
         groupby: Name of function attribute which is used to group the results.
             If 'groupby' is None, then the results are not grouped. Default:
             None
@@ -277,7 +280,7 @@ def search(
             in the filter rules is compared to the argument value by equality.
         **kwds: Keyword arguments, that define the attribute filter for the
             returned dictionary. For example if the argument "tags = ['test']"
-            is given, then only functions are returned, which have the attribute
+            is given, then only objects are returned, which have the attribute
             'tags' and the value of the attribute equals ['test']. If, however,
             the filter rule of the above example is given, then any function,
             with attribute 'tags' and a corresponding tag list, that comprises

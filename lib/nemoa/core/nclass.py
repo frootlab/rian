@@ -11,17 +11,20 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import inspect
+
 from typing import cast
 
+from nemoa.core import ndict
 from nemoa.types import (
-    Any, RecDict, DictOfRecDicts, NestRecDict, FuncWrapper, Obj, OptStr,
+    Any, RecDict, DictOfRecDicts, NestRecDict, FuncWrapper, OptStr,
     StrDict)
 
-def hasbase(obj: Obj, base: str) -> bool:
+def hasbase(obj: object, base: str) -> bool:
     """Return true if the class instance has the given base.
 
     Args:
-        obj: Class instance
+        obj: Class
         base: Class name of base class
 
     Returns:
@@ -36,12 +39,12 @@ def hasbase(obj: Obj, base: str) -> bool:
     return base in [o.__name__ for o in obj.__class__.__mro__]
 
 def methods(
-        obj: Obj, pattern: OptStr = None, groupby: OptStr = None,
+        obj: object, pattern: OptStr = None, groupby: OptStr = None,
         key: OptStr = None, val: OptStr = None) -> NestRecDict:
     """Get methods from a given class instance.
 
     Args:
-        obj: Class instance
+        obj: Class
         pattern: Only methods, which names satisfy the wildcard pattern given
             by 'pattern' are returned. The format of the wildcard pattern
             is described in the standard library module `fnmatch`_.
@@ -60,9 +63,6 @@ def methods(
         names satisfy a given filter pattern.
 
     """
-    import inspect
-    from nemoa.core import ndict
-
     # Declare and initialize return values
     mdict: RecDict = {}
     gdict: DictOfRecDicts = {}

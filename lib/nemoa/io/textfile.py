@@ -24,6 +24,8 @@ from nemoa.types import (
     BytesIOBaseClass, FileOrPathLike, IterStringIOLike, Path,
     StrList, TextIOBaseClass)
 
+FILEEXTS = ['.txt']
+
 @contextmanager
 def openx(file: FileOrPathLike, mode: str = '') -> IterStringIOLike:
     """Contextmanager to provide a unified interface to text files.
@@ -77,11 +79,39 @@ def openx(file: FileOrPathLike, mode: str = '') -> IterStringIOLike:
             "first argument 'file' is required to be of type 'str', "
             f"'path-like' or 'file-like', not '{type(file).__name__}'")
 
-    try: # Define enter of 'with' statement
+    try: # Enter 'with' statement
         yield fh
-    finally: # Define exit of 'with' statement
+    finally: # Exit 'with' statement
         if close:
             fh.close()
+
+def load(file: FileOrPathLike) -> str:
+    """Load text from file.
+
+    Args:
+        file: String or `path-like object`_ that points to a readable file in
+            the directory structure of the system, or a `file-like object`_ in
+            reading mode.
+
+    Returns:
+        Content of the given file as text.
+
+    """
+    with openx(file, mode='r') as fh:
+        return fh.read()
+
+def save(text: str, file: FileOrPathLike) -> None:
+    """Save text to file.
+
+    Args:
+        text: Text given as string
+        file: String or `path-like object`_ that points to a writable file in
+            the directory structure of the system, or a `file-like object`_ in
+            writing mode.
+
+    """
+    with openx(file, mode='w') as fh:
+        fh.write(text)
 
 def get_header(file: FileOrPathLike) -> str:
     """Read header comment from text-file.

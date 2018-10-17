@@ -33,6 +33,8 @@ from nemoa.types import (
     BytesIOBaseClass, BytesLikeOrStr, FileOrPathLike,
     IterBytesIOLike, OptInt, OptStr, Path, TextIOBaseClass)
 
+FILEEXTS = ['.gz', '.bin']
+
 @contextmanager
 def openx(file: FileOrPathLike, mode: str = '') -> IterBytesIOLike:
     """Context manager to provide a unified interface to binary files.
