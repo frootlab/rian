@@ -13,8 +13,8 @@ from nemoa.core import ntest
 from nemoa.math import nalgo, ncurve, ngraph, nmatrix, nregr, nvector
 from nemoa.types import Any, Callable, NpArray
 
-class MathAsserts(ntest.GenericTestCase):
-    """Additional math asserts for unittests."""
+class MathTestCase(ntest.GenericTestCase):
+    """Additional asserts for math tests."""
 
     def assertCheckSum(self, func: Callable, x: NpArray, val: float) -> None:
         vsum = func(x).sum()
@@ -229,7 +229,7 @@ class TestNalgo(ntest.ModuleTestCase):
         self.assertEqual(
             getattr(test_association, 'category', None), 'association')
 
-class TestNcurve(MathAsserts, ntest.ModuleTestCase):
+class TestNcurve(MathTestCase, ntest.ModuleTestCase):
     """Testcase for the module nemoa.math.ncurve."""
 
     module = 'nemoa.math.ncurve'
@@ -323,7 +323,7 @@ class TestNcurve(MathAsserts, ntest.ModuleTestCase):
         self.assertIncreasing(ncurve.multilogistic)
         self.assertCheckSum(ncurve.multilogistic, self.x, 0.500091)
 
-class TestNvector(MathAsserts, ntest.ModuleTestCase):
+class TestNvector(MathTestCase, ntest.ModuleTestCase):
     """Testcase for the module nemoa.math.nvector."""
 
     module = 'nemoa.math.nvector'
@@ -399,7 +399,7 @@ class TestNvector(MathAsserts, ntest.ModuleTestCase):
     def test_dist_euclid(self) -> None:
         self.assertIsVectorMetric(nvector.dist_euclid)
 
-class TestNmatrix(MathAsserts, ntest.ModuleTestCase):
+class TestNmatrix(MathTestCase, ntest.ModuleTestCase):
     """Testcase for the module nemoa.math.nmatrix."""
 
     module = 'nemoa.math.nmatrix'
@@ -436,7 +436,7 @@ class TestNmatrix(MathAsserts, ntest.ModuleTestCase):
     def test_dist_frobenius(self) -> None:
         self.assertIsMatrixMetric(nmatrix.dist_frobenius)
 
-class TestNregr(MathAsserts, ntest.ModuleTestCase):
+class TestNregr(MathTestCase, ntest.ModuleTestCase):
     """Testcase for the module nemoa.math.nregr."""
 
     module = 'nemoa.math.nregr'

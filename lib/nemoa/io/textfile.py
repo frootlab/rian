@@ -15,8 +15,10 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
+__all__ = ['openx', 'load', 'save', 'get_header', 'get_content']
 
-from contextlib import contextmanager
+import contextlib
+
 from io import TextIOWrapper
 
 from nemoa.core import npath
@@ -26,7 +28,7 @@ from nemoa.types import (
 
 FILEEXTS = ['.txt']
 
-@contextmanager
+@contextlib.contextmanager
 def openx(file: FileOrPathLike, mode: str = '') -> IterStringIOLike:
     """Contextmanager to provide a unified interface to text files.
 

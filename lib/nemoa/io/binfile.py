@@ -26,7 +26,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from contextlib import contextmanager
+import contextlib
 
 from nemoa.core import npath, nbytes
 from nemoa.types import (
@@ -35,7 +35,7 @@ from nemoa.types import (
 
 FILEEXTS = ['.gz', '.bin']
 
-@contextmanager
+@contextlib.contextmanager
 def openx(file: FileOrPathLike, mode: str = '') -> IterBytesIOLike:
     """Context manager to provide a unified interface to binary files.
 
