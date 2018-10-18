@@ -180,7 +180,8 @@ class Sigmoid(UnitsBaseClass):
 
         value = numpy.dot(delta, wout)
         bias = self.params['bias']
-        backdelta = value * ncurve.dlogistic((bias + numpy.dot(data, win)))
+        backdelta = value * ncurve.bell_d_logistic(
+            (bias + numpy.dot(data, win)))
 
         return backdelta
 

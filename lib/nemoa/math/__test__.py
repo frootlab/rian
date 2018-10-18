@@ -10,336 +10,513 @@ import networkx as nx
 import numpy as np
 
 from nemoa.core import ntest
+from nemoa.math import nalgo, ncurve, ngraph, nmatrix, nregr, nvector
+from nemoa.types import Any, Callable, NpArray
 
-class TestCase(ntest.GenericTestCase):
-    """Testsuite for modules within the package 'nemoa.math'."""
+class MathAsserts(ntest.GenericTestCase):
+    """Additional math asserts for unittests."""
 
-    def test_common_nalgo(self) -> None:
-        """Test module 'nemoa.math.nalgo'."""
-        from nemoa.math import nalgo
+    def assertCheckSum(self, func: Callable, x: NpArray, val: float) -> None:
+        vsum = func(x).sum()
+        self.assertTrue(np.isclose(vsum, val, atol=1e-4))
 
-        with self.subTest('search'):
-            self.assertEqual(
-                len(nalgo.search(nalgo, name='search')), 1)
+    def assertNotNegative(self, f: Callable, **kwds: Any) -> None:
+        x = 5. * np.random.rand(3, 3, 3) - 5.
+        self.assertTrue(np.all(f(x, **kwds) >= 0.),
+            f"function '{f.__name__}' contains negative target values")
 
-        with self.subTest('custom'):
-            @nalgo.custom(category='custom')
-            def test_custom() -> None:
-                pass
-            self.assertEqual(
-                getattr(test_custom, 'name', None), 'test_custom')
-            self.assertEqual(
-                getattr(test_custom, 'category', None), 'custom')
+    def assertNotPositive(self, f: Callable, **kwds: Any) -> None:
+        x = 5. * np.random.rand(3, 3, 3) - 5.
+        self.assertTrue(np.all(f(x, **kwds) <= 0.),
+            f"function '{f.__name__}' contains positive target values")
 
-        with self.subTest('objective'):
-            @nalgo.objective()
-            def test_objective() -> None:
-                pass
-            self.assertEqual(
-                getattr(test_objective, 'name', None), 'test_objective')
-            self.assertEqual(
-                getattr(test_objective, 'category', None), 'objective')
+    def assertIncreasing(self, f: Callable, **kwds: Any) -> None:
+        x = np.linspace(-10., 10., num=20)
+        self.assertTrue(np.all(np.diff(f(x, **kwds)) >= 0.),
+            f"function '{f.__name__}' is not monotonically increasing")
 
-        with self.subTest('sampler'):
-            @nalgo.sampler()
-            def test_sampler() -> None:
-                pass
-            self.assertEqual(
-                getattr(test_sampler, 'name', None), 'test_sampler')
-            self.assertEqual(
-                getattr(test_sampler, 'category', None), 'sampler')
+    def assertDecreasing(self, f: Callable, **kwds: Any) -> None:
+        x = np.linspace(-10., 10., num=20)
+        self.assertTrue(np.all(np.diff(f(x, **kwds)) <= 0.),
+            f"function '{f.__name__}' is not monotonically decreasing")
 
-        with self.subTest('statistic'):
-            @nalgo.statistic()
-            def test_statistic() -> None:
-                pass
-            self.assertEqual(
-                getattr(test_statistic, 'name', None), 'test_statistic')
-            self.assertEqual(
-                getattr(test_statistic, 'category', None), 'statistic')
+    def assertSingleExtremalPoint(self, f: Callable, **kwds: Any) -> None:
+        x = np.linspace(-10., 10., num=20)
+        s = np.sign(np.diff(f(x, **kwds)))
+        d_s = np.diff(s[s[:] != 0.])
+        count = d_s[d_s[:] != 0.].size
+        self.assertTrue(count == 1,
+            f"function '{f.__name__}' has {count} extremal points")
 
-        with self.subTest('association'):
-            @nalgo.association()
-            def test_association() -> None:
-                pass
-            self.assertEqual(
-                getattr(test_association, 'name', None), 'test_association')
-            self.assertEqual(
-                getattr(test_association, 'category', None), 'association')
+    def assertSingleInflectionPoint(self, f: Callable, **kwds: Any) -> None:
+        x = np.linspace(-10., 10., num=20)
+        s = np.sign(np.diff(np.diff(f(x, **kwds))))
+        d_s = np.diff(s[s[:] != 0.])
+        count = d_s[d_s[:] != 0.].size
+        self.assertTrue(count == 1,
+            f"function '{f.__name__}' has {count} inflection points")
 
-    def test_common_nregr(self) -> None:
-        """Test module 'nemoa.math.nregr'."""
-        from nemoa.math import nregr
+    def assertIsSigmoid(self, f: Callable, **kwds: Any) -> None:
+        # Test monotonicity
+        self.assertIncreasing(f, **kwds)
+        # Test number of inflection points
+        self.assertSingleInflectionPoint(f, **kwds)
 
-        x = np.array([[0.1, -1.9], [1.3, 2.2], [-3.4, -7.9]])
-        y = np.array([[5.1, 2.9], [2.4, 1.1], [-1.6, -5.9]])
-        z = np.array([[-2.6, 1.3], [1.1, -2.6], [7.0, -3.9]])
+    def assertIsBell(self, f: Callable, **kwds: Any) -> None:
+        # Test that bell function is not negative
+        self.assertNotNegative(f, **kwds)
+        # Test number of extremal points
+        self.assertSingleExtremalPoint(f, **kwds)
 
-        with self.subTest('errors'):
-            dfuncs = nregr.errors()
-            self.assertIsInstance(dfuncs, list)
-            self.assertTrue(dfuncs)
+    def assertCoDim(self, f: Callable, codim: int = 0, **kwds: Any) -> None:
+        x = np.zeros((3, 3, 3))
+        self.assertEqual(x.ndim - f(x, **kwds).ndim, codim)
 
-        for dfunc in nregr.errors():
-            with self.subTest(nregr.ERR_PREFIX  + dfunc):
-                dxx = nregr.error(x, x, dfunc=dfunc)
-                dxy = nregr.error(x, y, dfunc=dfunc)
-                dyx = nregr.error(y, x, dfunc=dfunc)
+    def assertConserveZero(self, f: Callable, **kwds: Any) -> None:
+        x = np.zeros((3, 3, 3))
+        self.assertTrue(np.allclose(f(x, **kwds), 0.))
 
-                # test type
-                self.assertIsInstance(dxy, np.ndarray)
-                # test dimension
-                self.assertEqual(dxy.ndim, x.ndim-1)
-                # test if discrepancy is not negative
-                self.assertTrue(np.all(dxy >= 0))
-                # test if discrepancy of identical values is zero
-                self.assertTrue(np.all(dxx == 0))
-                # test if discrepancy is symmetric
-                self.assertTrue(np.all(dxy == dyx))
+    def assertSubadditivity(self, f: Callable, **kwds: Any) -> None:
+        x = 5. * np.random.rand(3, 3, 3) - 5.
+        y = 5. * np.random.rand(3, 3, 3) - 5.
+        f_x, f_y = f(x, **kwds), f(y, **kwds)
+        f_xy = f(x + y, **kwds)
+        self.assertTrue(np.all(f_xy < f_x + f_y + 1e-05))
 
-    def test_common_nmatrix(self) -> None:
-        """Test module 'nemoa.math.nmatrix'."""
-        from nemoa.math import nmatrix
+    def assertAbsoluteHomogeneity(self, f: Callable, **kwds: Any) -> None:
+        x = 5. * np.random.rand(3, 3, 3) - 5.
+        f_x = f(x, **kwds)
+        for alpha in np.linspace(0., 10., num=5):
+            f_ax = f(alpha * x, **kwds)
+            self.assertTrue(np.allclose(f_ax, float(alpha) * f_x))
 
-        x = np.array([[0.1, -1.9], [1.3, 2.2], [-3.4, -7.9]])
-        y = np.array([[5.1, 2.9], [2.4, 1.1], [-1.6, -5.9]])
-        z = np.array([[-2.6, 1.3], [1.1, -2.6], [7.0, -3.9]])
+    def assertIsNorm(self, f: Callable, **kwds: Any) -> None:
+        # Test if norm is negative
+        self.assertNotNegative(f, **kwds)
+        # Test if norm of zero value is zero
+        self.assertConserveZero(f, **kwds)
+        # Test subadditivity
+        self.assertSubadditivity(f, **kwds)
+        # Test absolute homogeneity
+        self.assertAbsoluteHomogeneity(f, **kwds)
 
-        with self.subTest('norms'):
-            norms = nmatrix.norms()
-            self.assertIsInstance(norms, list)
-            self.assertTrue(norms)
+    def assertIsVectorNorm(self, f: Callable, **kwds: Any) -> None:
+        # Test codimension of function
+        self.assertCoDim(f, codim=1, **kwds)
+        # Test if function is norm
+        self.assertIsNorm(f, **kwds)
 
-        for norm in nmatrix.norms():
-            with self.subTest(nmatrix.NORM_PREFIX  + norm):
-                mx = nmatrix.magnitude(x, norm=norm)
-                my = nmatrix.magnitude(y, norm=norm)
-                mn = nmatrix.magnitude(x - x, norm=norm)
-                mxy = nmatrix.magnitude(x + y, norm=norm)
-                m2x = nmatrix.magnitude(2 * x, norm=norm)
+    def assertIsMatrixNorm(self, f: Callable, **kwds: Any) -> None:
+        # Test codimension of function
+        self.assertCoDim(f, codim=2, **kwds)
+        # Test if function is norm
+        self.assertIsNorm(f, **kwds)
 
-                # test type (and dimension)
-                self.assertIsInstance(mx, float)
-                # test if norm is not negative
-                self.assertTrue(mx >= 0)
-                # test if norm of zero values is zero
-                self.assertTrue(mn == 0.)
-                # test triangle inequality
-                self.assertTrue(mxy <= mx + my)
-                # test absolute homogeneity
-                self.assertTrue(m2x == 2 * mx)
+    #
+    # BiFunctions
+    #
 
-    def test_common_nvector(self) -> None:
-        """Test module 'nemoa.math.nvector'."""
-        from nemoa.math import nvector
+    def assertBiNotNegative(self, f: Callable, **kwds: Any) -> None:
+        x = 5. * np.random.rand(3, 3, 3) - 5.
+        y = 5. * np.random.rand(3, 3, 3) - 5.
+        self.assertTrue(np.all(f(x, y, **kwds) >= 0.),
+            f"function '{f.__name__}' contains negative target values")
 
-        x = np.array([[0.1, -1.9], [1.3, 2.2], [-3.4, -7.9]])
-        y = np.array([[5.1, 2.9], [2.4, 1.1], [-1.6, -5.9]])
-        z = np.array([[-2.6, 1.3], [1.1, -2.6], [7.0, -3.9]])
+    def assertBiFuncCoDim(
+            self, f: Callable, codim: int = 0, **kwds: Any) -> None:
+        x = np.zeros((3, 3, 3))
+        self.assertEqual(x.ndim - f(x, x, **kwds).ndim, codim)
 
-        with self.subTest('norms'):
-            norms = nvector.norms()
-            self.assertIsInstance(norms, list)
-            self.assertTrue(norms)
+    def assertTriangleInequality(self, f: Callable, **kwds: Any) -> None:
+        x = 5. * np.random.rand(3, 3, 3) - 5.
+        y = 5. * np.random.rand(3, 3, 3) - 5.
+        z = 5. * np.random.rand(3, 3, 3) - 5.
+        f_xy = f(x, y, **kwds)
+        f_yz = f(y, z, **kwds)
+        f_xz = f(x, z, **kwds)
+        self.assertTrue(np.all(f_xz < f_xy + f_yz + 1e-05))
 
+    def assertSymmetric(self, f: Callable, **kwds: Any) -> None:
+        x = 5. * np.random.rand(3, 3, 3) - 5.
+        y = 5. * np.random.rand(3, 3, 3) - 5.
+        f_xy, f_yx = f(x, y, **kwds), f(y, x, **kwds)
+        self.assertTrue(np.allclose(f_xy, f_yx),
+            f"function '{f.__name__}' is not symmetric")
+
+    def assertIndiscernibilityOfIdenticals(
+            self, f: Callable, **kwds: Any) -> None:
+        x = 5. * np.random.rand(3, 3, 3) - 5.
+        f_xx = f(x, x, **kwds)
+        self.assertTrue(np.allclose(f_xx, 0.))
+
+    def assertIsSemiMetric(self, f: Callable, **kwds: Any) -> None:
+        # Test if function is not negative
+        self.assertBiNotNegative(f, **kwds)
+        # Test indiscernibility of identicals
+        self.assertIndiscernibilityOfIdenticals(f, **kwds)
+        # Test if function is symmetric
+        self.assertSymmetric(f, **kwds)
+
+    def assertIsMetric(self, f: Callable, **kwds: Any) -> None:
+        # Test if function is semi metric
+        self.assertIsSemiMetric(f, **kwds)
+        # Test triangle inequality
+        self.assertTriangleInequality(f, **kwds)
+
+    def assertIsVectorMetric(self, f: Callable, **kwds: Any) -> None:
+        # Test of codimension of function is 1
+        self.assertBiFuncCoDim(f, codim=1, **kwds)
+        # Test if function is metric
+        self.assertIsMetric(f, **kwds)
+
+    def assertIsMatrixMetric(self, f: Callable, **kwds: Any) -> None:
+        # Test of codimension of function is 2
+        self.assertBiFuncCoDim(f, codim=2, **kwds)
+        # Test if function is metric
+        self.assertIsMetric(f, **kwds)
+
+class TestNalgo(ntest.ModuleTestCase):
+    """Testcase for the module nemoa.math.nalgo."""
+
+    module = 'nemoa.math.nalgo'
+
+    def test_search(self) -> None:
+        self.assertEqual(
+            len(nalgo.search(nalgo, name='search')), 1)
+
+    def test_custom(self) -> None:
+        @nalgo.custom(category='custom')
+        def test_custom() -> None:
+            pass
+        self.assertEqual(
+            getattr(test_custom, 'name', None), 'test_custom')
+        self.assertEqual(
+            getattr(test_custom, 'category', None), 'custom')
+
+    def test_objective(self) -> None:
+        @nalgo.objective()
+        def test_objective() -> None:
+            pass
+        self.assertEqual(
+            getattr(test_objective, 'name', None), 'test_objective')
+        self.assertEqual(
+            getattr(test_objective, 'category', None), 'objective')
+
+    def test_sampler(self) -> None:
+        @nalgo.sampler()
+        def test_sampler() -> None:
+            pass
+        self.assertEqual(
+            getattr(test_sampler, 'name', None), 'test_sampler')
+        self.assertEqual(
+            getattr(test_sampler, 'category', None), 'sampler')
+
+    def test_statistic(self) -> None:
+        @nalgo.statistic()
+        def test_statistic() -> None:
+            pass
+        self.assertEqual(
+            getattr(test_statistic, 'name', None), 'test_statistic')
+        self.assertEqual(
+            getattr(test_statistic, 'category', None), 'statistic')
+
+    def test_association(self) -> None:
+        @nalgo.association()
+        def test_association() -> None:
+            pass
+        self.assertEqual(
+            getattr(test_association, 'name', None), 'test_association')
+        self.assertEqual(
+            getattr(test_association, 'category', None), 'association')
+
+class TestNcurve(MathAsserts, ntest.ModuleTestCase):
+    """Testcase for the module nemoa.math.ncurve."""
+
+    module = 'nemoa.math.ncurve'
+
+    def setUp(self) -> None:
+        self.x = np.array([[0.0, 0.5], [1.0, -1.0]])
+
+    def test_sigmoids(self) -> None:
+        funcs = ncurve.sigmoids()
+        self.assertIsInstance(funcs, list)
+        self.assertTrue(funcs)
+
+    def test_sigmoid(self) -> None:
+        for func in ncurve.sigmoids():
+            with self.subTest(name=func):
+                self.assertIsSigmoid(ncurve.sigmoid, name=func)
+
+    def test_sigm_logistic(self) -> None:
+        self.assertIsSigmoid(ncurve.sigm_logistic)
+        self.assertCheckSum(ncurve.sigm_logistic, self.x, 2.122459)
+
+    def test_sigm_tanh(self) -> None:
+        self.assertIsSigmoid(ncurve.sigm_tanh)
+        self.assertCheckSum(ncurve.sigm_tanh, self.x, 0.462117)
+
+    def test_sigm_lecun(self) -> None:
+        self.assertIsSigmoid(ncurve.sigm_lecun)
+        self.assertCheckSum(ncurve.sigm_lecun, self.x, 0.551632)
+
+    def test_sigm_elliot(self) -> None:
+        self.assertIsSigmoid(ncurve.sigm_elliot)
+        self.assertCheckSum(ncurve.sigm_elliot, self.x, 0.333333)
+
+    def test_sigm_hill(self) -> None:
+        self.assertCheckSum(ncurve.sigm_hill, self.x, 0.447213)
+        for n in range(2, 10, 2):
+            with self.subTest(n=n):
+                self.assertIsSigmoid(ncurve.sigm_hill, n=n)
+
+    def test_sigm_arctan(self) -> None:
+        self.assertIsSigmoid(ncurve.sigm_arctan)
+        self.assertCheckSum(ncurve.sigm_arctan, self.x, 0.463647)
+
+    def test_bells(self) -> None:
+        funcs = ncurve.bells()
+        self.assertIsInstance(funcs, list)
+        self.assertTrue(funcs)
+
+    def test_bell(self) -> None:
+        for func in ncurve.bells():
+            with self.subTest(name=func):
+                self.assertIsBell(ncurve.bell, name=func)
+
+    def test_bell_gauss(self) -> None:
+        self.assertIsBell(ncurve.bell_gauss)
+        self.assertCheckSum(ncurve.bell_gauss, self.x, 1.234949)
+
+    def test_bell_d_logistic(self) -> None:
+        self.assertIsBell(ncurve.bell_d_logistic)
+        self.assertCheckSum(ncurve.bell_d_logistic, self.x, 0.878227)
+
+    def test_bell_d_elliot(self) -> None:
+        self.assertIsBell(ncurve.bell_d_elliot)
+        self.assertCheckSum(ncurve.bell_d_elliot, self.x, 1.944444)
+
+    def test_bell_d_hill(self) -> None:
+        self.assertIsBell(ncurve.bell_d_hill)
+        self.assertCheckSum(ncurve.bell_d_hill, self.x, 2.422648)
+
+    def test_bell_d_lecun(self) -> None:
+        self.assertIsBell(ncurve.bell_d_lecun)
+        self.assertCheckSum(ncurve.bell_d_lecun, self.x, 3.680217)
+
+    def test_bell_d_tanh(self) -> None:
+        self.assertIsBell(ncurve.bell_d_tanh)
+        self.assertCheckSum(ncurve.bell_d_tanh, self.x, 2.626396)
+
+    def test_bell_d_arctan(self) -> None:
+        self.assertIsBell(ncurve.bell_d_arctan)
+        self.assertCheckSum(ncurve.bell_d_arctan, self.x, 2.800000)
+
+    def test_dialogistic(self) -> None:
+        self.assertIncreasing(ncurve.dialogistic)
+        self.assertCheckSum(ncurve.dialogistic, self.x, 0.251661)
+
+    def test_softstep(self) -> None:
+        self.assertIncreasing(ncurve.softstep)
+        self.assertCheckSum(ncurve.softstep, self.x, 0.323637)
+
+    def test_multilogistic(self) -> None:
+        self.assertIncreasing(ncurve.multilogistic)
+        self.assertCheckSum(ncurve.multilogistic, self.x, 0.500091)
+
+class TestNvector(MathAsserts, ntest.ModuleTestCase):
+    """Testcase for the module nemoa.math.nvector."""
+
+    module = 'nemoa.math.nvector'
+
+    def test_norms(self) -> None:
+        norms = nvector.norms()
+        self.assertIsInstance(norms, list)
+        self.assertTrue(norms)
+
+    def test_length(self) -> None:
         for norm in nvector.norms():
-            with self.subTest(nvector.NORM_PREFIX  + norm):
-                lx = nvector.length(x, norm=norm)
-                ly = nvector.length(y, norm=norm)
-                ln = nvector.length(x - x, norm=norm)
-                lxy = nvector.length(x + y, norm=norm)
-                l2x = nvector.length(2 * x, norm=norm)
+            with self.subTest(norm=norm):
+                self.assertIsVectorNorm(nvector.length, norm=norm)
 
-                # test type
-                self.assertIsInstance(lx, np.ndarray)
-                # test dimension
-                self.assertEqual(lx.ndim, x.ndim-1)
-                # test if norm is not negative
-                self.assertTrue(np.all(lx >= 0))
-                # test if norm of zero values is zero
-                self.assertTrue(np.all(ln == 0))
-                # test triangle inequality
-                self.assertTrue(np.all(lxy <= lx + ly))
-                # test absolute homogeneity
-                self.assertTrue(np.all(l2x == 2 * lx))
+    def test_norm_p(self) -> None:
+        for p in range(1, 10):
+            with self.subTest(p=p):
+                self.assertIsVectorNorm(nvector.norm_p, p=p)
 
-        with self.subTest("metrices"):
-            metrices = nvector.metrices()
-            self.assertIsInstance(metrices, list)
-            self.assertTrue(metrices)
+    def test_norm_1(self) -> None:
+        self.assertIsVectorNorm(nvector.norm_1)
 
+    def test_norm_euclid(self) -> None:
+        self.assertIsVectorNorm(nvector.norm_euclid)
+
+    def test_norm_max(self) -> None:
+        self.assertIsVectorNorm(nvector.norm_max)
+
+    def test_norm_pmean(self) -> None:
+        for p in range(1, 10):
+            with self.subTest(p=p):
+                self.assertIsVectorNorm(nvector.norm_pmean, p=p)
+
+    def test_norm_amean(self) -> None:
+        self.assertIsVectorNorm(nvector.norm_amean)
+
+    def test_norm_qmean(self) -> None:
+        self.assertIsVectorNorm(nvector.norm_qmean)
+
+    def test_norm_sd(self) -> None:
+        self.assertIsVectorNorm(nvector.norm_sd)
+
+    def test_metrices(self) -> None:
+        metrices = nvector.metrices()
+        self.assertIsInstance(metrices, list)
+        self.assertTrue(metrices)
+
+    def test_distance(self) -> None:
         for metric in nvector.metrices():
-            with self.subTest(nvector.DIST_PREFIX + metric):
-                dxx = nvector.distance(x, x, metric=metric)
-                dxy = nvector.distance(x, y, metric=metric)
-                dyx = nvector.distance(y, x, metric=metric)
-                dyz = nvector.distance(y, z, metric=metric)
-                dxz = nvector.distance(x, z, metric=metric)
+            with self.subTest(metric=metric):
+                self.assertIsVectorMetric(nvector.distance, metric=metric)
 
-                # test type
-                self.assertIsInstance(dxy, np.ndarray)
-                # test dimension
-                self.assertEqual(dxy.ndim, x.ndim-1)
-                # test if distance is not negative
-                self.assertTrue(np.all(dxy >= 0))
-                # test if distance of identical values is zero
-                self.assertTrue(np.all(dxx == 0))
-                # test if distance is symmetric
-                self.assertTrue(np.all(dxy == dyx))
-                # test triangle inequality
-                self.assertTrue(np.all(dxz <= dxy + dyz))
+    def test_dist_chebyshev(self) -> None:
+        self.assertIsVectorMetric(nvector.dist_chebyshev)
 
-    def test_common_ncurve(self) -> None:
-        """Test module 'nemoa.math.ncurve'."""
-        from nemoa.math import ncurve
+    def test_dist_manhatten(self) -> None:
+        self.assertIsVectorMetric(nvector.dist_manhatten)
 
-        arr = np.array([[0.0, 0.5], [1.0, -1.0]])
+    def test_dist_minkowski(self) -> None:
+        self.assertIsVectorMetric(nvector.dist_minkowski)
 
-        with self.subTest("logistic"):
-            self.assertTrue(
-                np.isclose(
-                    ncurve.logistic(arr).sum(),
-                    2.122459, atol=1e-3))
+    def test_dist_amean(self) -> None:
+        self.assertIsVectorMetric(nvector.dist_amean)
 
-        with self.subTest("tanh"):
-            self.assertTrue(
-                np.isclose(
-                    ncurve.tanh(arr).sum(),
-                    0.462117, atol=1e-3))
+    def test_dist_qmean(self) -> None:
+        self.assertIsVectorMetric(nvector.dist_qmean)
 
-        with self.subTest("lecun"):
-            self.assertTrue(
-                np.isclose(
-                    ncurve.lecun(arr).sum(),
-                    0.551632, atol=1e-3))
+    def test_dist_pmean(self) -> None:
+        for p in range(1, 10):
+            with self.subTest(p=p):
+                self.assertIsVectorMetric(nvector.dist_pmean, p=p)
 
-        with self.subTest("elliot"):
-            self.assertTrue(
-                np.isclose(
-                    ncurve.elliot(arr).sum(),
-                    0.333333, atol=1e-3))
+    def test_dist_euclid(self) -> None:
+        self.assertIsVectorMetric(nvector.dist_euclid)
 
-        with self.subTest("hill"):
-            self.assertTrue(
-                np.isclose(
-                    ncurve.hill(arr).sum(),
-                    0.447213, atol=1e-3))
+class TestNmatrix(MathAsserts, ntest.ModuleTestCase):
+    """Testcase for the module nemoa.math.nmatrix."""
 
-        with self.subTest("arctan"):
-            self.assertTrue(
-                np.isclose(
-                    ncurve.arctan(arr).sum(),
-                    0.463647, atol=1e-3))
+    module = 'nemoa.math.nmatrix'
 
-        with self.subTest("d_logistic"):
-            self.assertTrue(
-                np.isclose(
-                    ncurve.d_logistic(arr).sum(),
-                    0.878227, atol=1e-3))
+    def test_norms(self) -> None:
+        norms = nmatrix.norms()
+        self.assertIsInstance(norms, list)
+        self.assertTrue(norms)
 
-        with self.subTest("d_elliot"):
-            self.assertTrue(
-                np.isclose(
-                    ncurve.d_elliot(arr).sum(),
-                    1.944444, atol=1e-3))
+    def test_norm(self) -> None:
+        for name in nmatrix.norms():
+            with self.subTest(name=name):
+                self.assertIsMatrixNorm(nmatrix.norm, name=name)
 
-        with self.subTest("d_hill"):
-            self.assertTrue(
-                np.isclose(
-                    ncurve.d_hill(arr).sum(),
-                    2.422648, atol=1e-3))
+    def test_norm_frobenius(self) -> None:
+        self.assertIsMatrixNorm(nmatrix.norm_frobenius)
 
-        with self.subTest("d_lecun"):
-            self.assertTrue(
-                np.isclose(
-                    ncurve.d_lecun(arr).sum(),
-                    3.680217, atol=1e-3))
+    def test_norm_pq(self) -> None:
+        for p in range(1, 10):
+            for q in range(1, 10):
+                with self.subTest(p=p, q=q):
+                    self.assertIsMatrixNorm(nmatrix.norm_pq, p=p, q=q)
 
-        with self.subTest("d_tanh"):
-            self.assertTrue(
-                np.isclose(
-                    ncurve.d_tanh(arr).sum(),
-                    2.626396, atol=1e-3))
+    def test_metrices(self) -> None:
+        metrices = nmatrix.metrices()
+        self.assertIsInstance(metrices, list)
+        self.assertTrue(metrices)
 
-        with self.subTest("d_arctan"):
-            self.assertTrue(
-                np.isclose(
-                    ncurve.d_arctan(arr).sum(),
-                    2.800000, atol=1e-3))
+    def test_distance(self) -> None:
+        for metric in nmatrix.metrices():
+            with self.subTest(metric=metric):
+                self.assertIsMatrixMetric(nmatrix.distance, metric=metric)
 
-        with self.subTest("dialogistic"):
-            self.assertTrue(
-                np.isclose(
-                    ncurve.dialogistic(arr).sum(),
-                    0.251661, atol=1e-3))
+    def test_dist_frobenius(self) -> None:
+        self.assertIsMatrixMetric(nmatrix.dist_frobenius)
 
-        with self.subTest("softstep"):
-            self.assertTrue(
-                np.isclose(
-                    ncurve.softstep(arr).sum(),
-                    0.323637, atol=1e-3))
+class TestNregr(MathAsserts, ntest.ModuleTestCase):
+    """Testcase for the module nemoa.math.nregr."""
 
-        with self.subTest("multilogistic"):
-            self.assertTrue(
-                np.isclose(
-                    ncurve.multilogistic(arr).sum(),
-                    0.500272, atol=1e-3))
+    module = 'nemoa.math.nregr'
 
-    def test_common_ngraph(self) -> None:
-        """Test module 'nemoa.math.ngraph'."""
-        from nemoa.math import ngraph
+    def test_errors(self) -> None:
+        dfuncs = nregr.errors()
+        self.assertIsInstance(dfuncs, list)
+        self.assertTrue(dfuncs)
 
-        G = nx.DiGraph([(1, 3), (1, 4), (2, 3), (2, 4)], directed=True)
-        nx.set_node_attributes(G, {
+    def test_error(self) -> None:
+        for dfunc in nregr.errors():
+            with self.subTest(dfunc=dfunc):
+                self.assertIsSemiMetric(nregr.error, dfunc=dfunc)
+
+    def test_err_mae(self) -> None:
+        self.assertIsSemiMetric(nregr.err_mae)
+
+    def test_err_mse(self) -> None:
+        self.assertIsSemiMetric(nregr.err_mse)
+
+    def test_err_rmse(self) -> None:
+        self.assertIsSemiMetric(nregr.err_rmse)
+
+    def test_err_rss(self) -> None:
+        self.assertIsSemiMetric(nregr.err_rss)
+
+class TestCase(ntest.ModuleTestCase):
+    """Testsuite for modules within the package 'nemoa.math.ngraph'."""
+
+    def setUp(self) -> None:
+        self.G = nx.DiGraph([(1, 3), (1, 4), (2, 3), (2, 4)], directed=True)
+        nx.set_node_attributes(self.G, {
             1: {'layer': 'i', 'layer_id': 0, 'layer_sub_id': 0},
             2: {'layer': 'i', 'layer_id': 0, 'layer_sub_id': 1},
             3: {'layer': 'o', 'layer_id': 1, 'layer_sub_id': 0},
             4: {'layer': 'o', 'layer_id': 1, 'layer_sub_id': 1}})
-        nx.set_edge_attributes(G, {
+        nx.set_edge_attributes(self.G, {
             (1, 3): {'weight': 0.1}, (1, 4): {'weight': 0.9},
             (2, 3): {'weight': 0.9}, (2, 4): {'weight': 0.1}})
+        self.pos1 = {1: (.0, .25), 2: (.0, .75), 4: (1., .25), 3: (1., .75)}
+        self.pos2 = {1: (.25, 1.), 2: (.75, 1.), 4: (.25, .0), 3: (.75, .0)}
+        self.pos3 = {1: (4., 2.), 2: (4., 16.), 4: (32., 2.), 3: (32., 16.)}
 
-        pos1 = {1: (.0, .25), 2: (.0, .75), 4: (1., .25), 3: (1., .75)}
-        pos2 = {1: (.25, 1.), 2: (.75, 1.), 4: (.25, .0), 3: (.75, .0)}
-        pos3 = {1: (4., 2.), 2: (4., 16.), 4: (32., 2.), 3: (32., 16.)}
+    def test_is_directed(self) -> None:
+        self.assertTrue(ngraph.is_directed(self.G))
 
-        with self.subTest("is_directed"):
-            self.assertTrue(ngraph.is_directed(G))
+    def test_is_layered(self) -> None:
+        self.assertTrue(ngraph.is_layered(self.G))
 
-        with self.subTest("is_layered"):
-            self.assertTrue(ngraph.is_layered(G))
+    def test_get_layers(self) -> None:
+        layers = ngraph.get_layers(self.G)
+        self.assertEqual(layers, [[1, 2], [3, 4]])
 
-        with self.subTest("get_layers"):
-            self.assertEqual(ngraph.get_layers(G), [[1, 2], [3, 4]])
+    def test_get_groups(self) -> None:
+        groups = ngraph.get_groups(self.G, attribute='layer')
+        self.assertEqual(groups, {'': [], 'i': [1, 2], 'o': [3, 4]})
 
-        with self.subTest("get_groups"):
-            self.assertEqual(
-                ngraph.get_groups(G, attribute='layer'),
-                {'': [], 'i': [1, 2], 'o': [3, 4]})
+    def test_get_layer_layout(self) -> None:
+        layout = ngraph.get_layer_layout(self.G, direction='right')
+        self.assertEqual(layout, self.pos1)
+        layout = ngraph.get_layer_layout(self.G, direction='down')
+        self.assertEqual(layout, self.pos2)
 
-        with self.subTest("get_layer_layout"):
-            self.assertEqual(
-                ngraph.get_layer_layout(G, direction='right'), pos1)
-            self.assertEqual(
-                ngraph.get_layer_layout(G, direction='down'), pos2)
+    def test_rescale_layout(self) -> None:
+        layout = ngraph.rescale_layout(
+            self.pos1, size=(40, 20), padding=(.2, .2, .1, .1))
+        self.assertEqual(layout, self.pos3)
 
-        with self.subTest("rescale_layout"):
-            self.assertEqual(
-                ngraph.rescale_layout(
-                    pos1, size=(40, 20), padding=(.2, .2, .1, .1)), pos3)
+    def test_get_scaling_factor(self) -> None:
+        scaling = int(ngraph.get_scaling_factor(self.pos3))
+        self.assertEqual(scaling, 9)
 
-        with self.subTest("get_scaling_factor"):
-            self.assertEqual(
-                int(ngraph.get_scaling_factor(pos3)), 9)
+    def test_get_layout_normsize(self) -> None:
+        normsize = ngraph.get_layout_normsize(self.pos3)
+        self.assertEqual(int(normsize['node_size']), 4)
 
-        with self.subTest("get_layout_normsize"):
-            self.assertEqual(
-                int(ngraph.get_layout_normsize(pos3)['node_size']), 4)
+    def test_get_node_layout(self) -> None:
+        color = ngraph.get_node_layout('observable')['color']
+        self.assertIsInstance(color, str)
 
-        with self.subTest("get_node_layout"):
-            self.assertIsInstance(
-                ngraph.get_node_layout('observable')['color'], str)
-
-        with self.subTest("get_layout"):
-            self.assertEqual(
-                ngraph.getlayout(G, 'layer', direction='right'), pos1)
+    def test_get_layout(self) -> None:
+        layout = ngraph.get_layout(self.G, 'layer', direction='right')
+        self.assertEqual(layout, self.pos1)

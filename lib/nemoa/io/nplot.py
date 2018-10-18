@@ -344,7 +344,7 @@ class Graph(Plot):
         layout_params = ndict.crop(self._config, 'graph_')
         del layout_params['layout']
 
-        pos = ngraph.getlayout(
+        pos = ngraph.get_layout(
             G, layout=self._config['graph_layout'], size=figsize,
             padding=self._config['padding'], **layout_params)
 

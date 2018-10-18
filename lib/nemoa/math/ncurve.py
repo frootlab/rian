@@ -8,14 +8,18 @@ comprises:
     * Derivatives of Sigmoidal Functions
     * Multiple Sigmoidal Functions
 
+.. References:
+.. _Gaussian functions:
+    https://en.wikipedia.org/wiki/Gaussian_function
+.. _normally distributed:
+    https://en.wikipedia.org/wiki/Normal_distribution
+
 """
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
-
-import sys
 
 try:
     import numpy as np
@@ -24,14 +28,28 @@ except ImportError as err:
         "requires package numpy: "
         "https://pypi.org/project/numpy") from err
 
-from nemoa.types import Any, OptStr, NpArray, NpArrayLike
+from nemoa.core import nfunc, nmodule
+from nemoa.types import Any, NpArray, NpArrayLike, StrList
+
+SIGM_PREFIX = 'sigm_'
+BELL_PREFIX = 'bell_'
 
 #
-# Sigmoidal Functions
+# Sigmoidal shaped functions
 #
 
-def sigmoid(x: NpArrayLike, name: OptStr = None, **kwds: Any) -> NpArray:
-    """Calculate sigmoid functions.
+def sigmoids() -> StrList:
+    """Get sorted list of sigmoid functions.
+
+    Returns:
+        Sorted list of all sigmoid functions, that are implemented within the
+        module.
+
+    """
+    return nmodule.list_functions_by_prefix(prefix=SIGM_PREFIX)
+
+def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
+    """Evaluate sigmoidal shaped function.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
@@ -44,14 +62,26 @@ def sigmoid(x: NpArrayLike, name: OptStr = None, **kwds: Any) -> NpArray:
         function to the given data.
 
     """
-    funcs = ['logistic', 'tanh', 'lecun', 'elliot', 'hill', 'arctan']
-    name = name or funcs[0]
-    if name not in funcs:
-        raise ValueError(f"sigmoid function '{name}' is not implemented")
+    # Check type of 'x'
+    try:
+        x = np.array(x)
+    except TypeError as err:
+        raise TypeError(
+            "First argument 'x' is required to be array-like") from err
 
-    return getattr(sys.modules[__name__], name)(x, **kwds)
+    # Get sigmoid function
+    fname = SIGM_PREFIX + name.lower()
+    module = nmodule.inst(nmodule.curname())
+    try:
+        func = getattr(module, fname)
+    except AttributeError as err:
+        raise ValueError(
+            f"'name' has an unsupported value '{str(name)}'") from err
 
-def logistic(x: NpArrayLike) -> NpArray:
+    # Evaluate norm function
+    return func(x, **nfunc.kwds(func, default=kwds))
+
+def sigm_logistic(x: NpArrayLike) -> NpArray:
     """Calculate standard logistic function.
 
     Args:
@@ -66,7 +96,7 @@ def logistic(x: NpArrayLike) -> NpArray:
     """
     return 1. / (1. + np.exp(np.multiply(-1, x)))
 
-def tanh(x: NpArrayLike) -> NpArray:
+def sigm_tanh(x: NpArrayLike) -> NpArray:
     """Calculate hyperbolic tangent function.
 
     Args:
@@ -81,7 +111,7 @@ def tanh(x: NpArrayLike) -> NpArray:
     """
     return np.tanh(x)
 
-def lecun(x: NpArrayLike) -> NpArray:
+def sigm_lecun(x: NpArrayLike) -> NpArray:
     """Calculate normalized hyperbolic tangent function.
 
     Hyperbolic tangent function, which has been proposed to be more efficient
@@ -103,7 +133,7 @@ def lecun(x: NpArrayLike) -> NpArray:
     """
     return 1.7159 * np.tanh(np.multiply(0.6666, x))
 
-def elliot(x: NpArrayLike) -> NpArray:
+def sigm_elliot(x: NpArrayLike) -> NpArray:
     """Calculate Elliot activation function.
 
     Args:
@@ -122,25 +152,29 @@ def elliot(x: NpArrayLike) -> NpArray:
     """
     return x / (1. + np.abs(x))
 
-def hill(x: NpArrayLike, n: float = 2.) -> NpArray:
+def sigm_hill(x: NpArrayLike, n: int = 2) -> NpArray:
     """Calculate Hill type activation function.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
             dimension. This includes nested lists, tuples, scalars and existing
             arrays.
-        n: Hill coefficient
+        n: Even numbered Hill coefficient
 
     Returns:
         Numpy ndarray which contains the evaluation of the Hill type
         activation function to the given data.
 
     """
-    if n == 2.:
+    if n == 2:
         return x / np.sqrt(1. + np.square(x))
-    return x / np.power(1. + np.power(x, n), 1. / n)
+    # Check if Hill coefficient is odd numbered
+    if n & 0x1:
+        raise ValueError(
+            f"'n' is required to be an even number, not {n}")
+    return x / np.power(1. + np.power(x, n), 1. / float(n))
 
-def arctan(x: NpArrayLike) -> NpArray:
+def sigm_arctan(x: NpArrayLike) -> NpArray:
     """Calculate inverse tangent function.
 
     Args:
@@ -156,32 +190,79 @@ def arctan(x: NpArrayLike) -> NpArray:
     return np.arctan(x)
 
 #
-# Derivatives of Sigmoid Functions
+# Bell shaped functions
 #
 
-def d_sigmoid(x: NpArrayLike, name: OptStr = None, **kwds: Any) -> NpArray:
-    """Calculate derivative of sigmoid function.
+def bells() -> StrList:
+    """Get sorted list of bell shaped functions.
+
+    Returns:
+        Sorted list of all bell shaped functions, that are implemented within
+        the module.
+
+    """
+    return nmodule.list_functions_by_prefix(prefix=BELL_PREFIX)
+
+def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
+    """Evaluate bell shaped function.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
             dimension. This includes nested lists, tuples, scalars and existing
             arrays.
-        name: Name of derivative of sigmoid function. Default: 'd_logictic'
+        name: Name of bell shaped function. By default the Gauss function is
+            used.
 
     Returns:
-        Numpy ndarray which contains the evaluation of the derivative of
-        a sigmnoid function to the given data.
+        Evaluation of the bell shaped function at given data.
 
     """
-    funcs = ['logistic', 'tanh', 'lecun', 'elliot', 'hill', 'arctan']
-    name = name or funcs[0]
-    if name not in funcs:
+    # Check type of 'x'
+    try:
+        x = np.array(x)
+    except TypeError as err:
+        raise TypeError(
+            "First argument 'x' is required to be array-like") from err
+
+    # Get bell shaped function
+    fname = BELL_PREFIX + name.lower()
+    module = nmodule.inst(nmodule.curname())
+    try:
+        func = getattr(module, fname)
+    except AttributeError as err:
         raise ValueError(
-            f"derivative of sigmoid function '{name}' is not implemented")
+            f"function '{str(name)}' is not supported") from err
 
-    return getattr(sys.modules[__name__], 'd_' + name)(x, **kwds)
+    # Evaluate norm function
+    return func(x, **nfunc.kwds(func, default=kwds))
 
-def d_logistic(x: NpArrayLike) -> NpArray:
+def bell_gauss(x: NpArrayLike, mu: float = 0., sigma: float = 1.) -> NpArray:
+    """Calculate Gauss function.
+
+    ``Gaussian functions``_ are used in statisttics to describe the probability
+    density of ``normally distributed``_ random variables  and therfore allow to
+    model the error of quantities, that are expected to be the sum of many
+    independent processes.
+
+    Args:
+        x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
+            dimension. This includes nested lists, tuples, scalars and existing
+            arrays.
+        mu: The real-valued location parameter *mu* determines the expectation
+            value of the normally distributed random variable.
+        sigma: The positive, real-valued scale parameter *sigma* determines the
+            standard deviation of the normally distributed random variable.
+
+    Returns:
+        Numpy ndarray which contains the evaluation of the Gauss function to the
+        given data.
+
+    """
+    pre_factor = 1. / (sigma * (np.sqrt(2 * np.pi)))
+    exp_term = np.power(np.e, -0.5 * np.square(np.add(x, -mu) / sigma))
+    return pre_factor * exp_term
+
+def bell_d_logistic(x: NpArrayLike) -> NpArray:
     """Calculate derivative of the standard logistic function.
 
     Args:
@@ -194,10 +275,10 @@ def d_logistic(x: NpArrayLike) -> NpArray:
         the standard logistic function to the given data.
 
     """
-    flog = logistic(x)
+    flog = sigm_logistic(x)
     return np.multiply(flog, -np.add(flog, -1.))
 
-def d_elliot(x: NpArrayLike) -> NpArray:
+def bell_d_elliot(x: NpArrayLike) -> NpArray:
     """Calculate derivative of the Elliot sigmoid function.
 
     Args:
@@ -216,7 +297,7 @@ def d_elliot(x: NpArrayLike) -> NpArray:
     """
     return 1. / (1. + np.abs(x)) ** 2
 
-def d_hill(x: NpArrayLike, n: float = 2.) -> NpArray:
+def bell_d_hill(x: NpArrayLike, n: float = 2.) -> NpArray:
     """Calculate derivative of Hill type activation function.
 
     Args:
@@ -232,7 +313,7 @@ def d_hill(x: NpArrayLike, n: float = 2.) -> NpArray:
     """
     return 1. / np.power(1. + np.power(x, n), (1. + n) / n)
 
-def d_lecun(x: NpArrayLike) -> NpArray:
+def bell_d_lecun(x: NpArrayLike) -> NpArray:
     """Calculate derivative of LeCun hyperbolic tangent.
 
     Hyperbolic tangent function, which has been proposed to be more efficient
@@ -255,7 +336,7 @@ def d_lecun(x: NpArrayLike) -> NpArray:
     return 1.14382 / np.cosh(np.multiply(0.6666, x)) ** 2
 
 
-def d_tanh(x: NpArrayLike) -> NpArray:
+def bell_d_tanh(x: NpArrayLike) -> NpArray:
     """Calculate derivative of hyperbolic tangent function.
 
     Args:
@@ -270,7 +351,7 @@ def d_tanh(x: NpArrayLike) -> NpArray:
     """
     return 1. - np.tanh(x) ** 2
 
-def d_arctan(x: NpArrayLike) -> NpArray:
+def bell_d_arctan(x: NpArrayLike) -> NpArray:
     """Calculate derivative of inverse tangent function.
 
     Args:
@@ -307,12 +388,12 @@ def dialogistic(
     """
     sigma = max(sigma, .000001)
 
-    ma = logistic(sigma * np.add(x, -0.5 * scale))
-    mb = logistic(sigma * np.add(x, +0.5 * scale))
+    ma = sigm_logistic(sigma * np.add(x, -0.5 * scale))
+    mb = sigm_logistic(sigma * np.add(x, +0.5 * scale))
     m = np.abs(x) * (np.add(ma, mb) - 1.)
 
-    na = logistic(sigma * 0.5 * scale)
-    nb = logistic(sigma * 1.5 * scale)
+    na = sigm_logistic(sigma * 0.5 * scale)
+    nb = sigm_logistic(sigma * 1.5 * scale)
     n = np.abs(np.add(na, nb) - 1.)
 
     return m / n
@@ -364,6 +445,6 @@ def multilogistic(
     y = np.multiply(x, 1 / scale)
     l = np.floor(y)
     r = 2. * (y - l) - 1.
-    m = np.divide(2., logistic(sigma)) - 1.
+    m = np.divide(2., sigm_logistic(sigma)) - 1.
 
-    return scale * (l + (logistic(sigma * r) / m - .5) + .5)
+    return scale * (l + (sigm_logistic(sigma * r) / m - .5) + .5)

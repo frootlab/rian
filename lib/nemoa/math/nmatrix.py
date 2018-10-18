@@ -31,20 +31,10 @@ def norms() -> StrList:
         Sorted list of all matrix norms, that are implemented within the module.
 
     """
-    from nemoa.core import ndict
+    return nmodule.list_functions_by_prefix(prefix=NORM_PREFIX)
 
-    # Get dictionary of functions with given prefix
-    module = nmodule.inst(nmodule.curname())
-    pattern = NORM_PREFIX + '*'
-    d = nmodule.get_functions(module, pattern=pattern)
-
-    # Create sorted list of norm names
-    i = len(NORM_PREFIX)
-    return sorted([v['name'][i:] for v in d.values()])
-
-def magnitude(
-        x: NpArrayLike, norm: str = 'frobenius', **kwds: Any) -> NpArray:
-    """Calculate magnitude of matrix by given norm.
+def norm(x: NpArrayLike, name: str = 'frobenius', **kwds: Any) -> NpArray:
+    """Calculate norm of matrix.
 
     References:
         [1] https://en.wikipedia.org/wiki/magnitude_(mathematics)
@@ -53,7 +43,7 @@ def magnitude(
         x: Any sequence that can be interpreted as a numpy ndarray of two or
             more dimensions. This includes nested lists, tuples, scalars and
             existing arrays.
-        norm: Name of matrix norm. Accepted values are:
+        name: Name of matrix norm. Accepted values are:
             'pq': pq-norm (induces: pq-distances)
                 Remark: requires additional parameters 'p' and 'q'
             'frobenius': Frobenius norm (induces: Frobenius distance)
@@ -66,26 +56,25 @@ def magnitude(
         NumPy ndarray of dimension <dim x> - 2.
 
     """
-    # Check Type of Argument 'x'
+    # Check Type of 'x'
     try:
         x = np.array(x)
     except TypeError as err:
         raise TypeError(
-            "argument 'x' is required to be of type 'NumPy ArrayLike'") from err
+            "first argument 'x' is required to be array-like") from err
 
-    # Check dimension of ndarray 'x'
-    if getattr(x, 'ndim') < 2:
-        raise ValueError(
-            "NumPy Array 'x' is required to have dimension > 1") from err
+    # Check dimension of 'x'
+    if x.ndim < 2:
+        raise ValueError("'x' is required to have dimension > 1")
 
     # Get norm function
-    fname = NORM_PREFIX + norm.lower()
+    fname = NORM_PREFIX + name.lower()
     module = nmodule.inst(nmodule.curname())
     try:
         func = getattr(module, fname)
     except AttributeError as err:
         raise ValueError(
-            f"argument 'norm' has an invalid value '{str(norm)}'")
+            f"norm with name '{str(norm)}' is not known") from err
 
     # Evaluate norm function
     return func(x, **nfunc.kwds(func, default=kwds))
@@ -116,7 +105,7 @@ def norm_pq(x: NpArray,
             function does not satisfy the triangle inequality and yields a
             quasi-norm [2]. For q >= 1 the p-norm is a norm.
             Default: 2.
-        axis: Axes along which the norm is calculated. A two-dimensional
+        axes: Axes along which the norm is calculated. A two-dimensional
             array has two corresponding axes: The first running vertically
             downwards across rows (axis 0), and the second running horizontally
             across columns (axis 1).
@@ -130,11 +119,13 @@ def norm_pq(x: NpArray,
         [2] https://en.wikipedia.org/wiki/quasinorm
 
     """
-    # Check argument 'axes'
+    # Check type of 'axes'
     if not isinstance(axes, tuple):
         raise TypeError(
             "argument 'axes' is required to be of type 'tuple'"
             f", not '{type(axes)}'")
+
+    # Check value of 'axes'
     if len(axes) != 2:
         raise np.AxisError(
             f"exactly two axes are required but {len(axes)} were given")
@@ -171,7 +162,7 @@ def norm_frobenius(x: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
         x: Any sequence that can be interpreted as a numpy ndarray of two or
             more dimensions. This includes nested lists, tuples, scalars and
             existing arrays.
-        axis: Axes along which the norm is calculated. A two-dimensional
+        axes: Axes along which the norm is calculated. A two-dimensional
             array has two corresponding axes: The first running vertically
             downwards across rows (axis 0), and the second running horizontally
             across columns (axis 1).
@@ -185,3 +176,105 @@ def norm_frobenius(x: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
 
     """
     return nvector.norm_euclid(x, axis=axes)
+
+#
+# Matrix Metrices
+#
+
+def metrices() -> StrList:
+    """Get sorted list of matrix metrices.
+
+    Returns:
+        Sorted list of all matrix metrices, that are implemented within the
+        module.
+
+    """
+    return nmodule.list_functions_by_prefix(prefix=DIST_PREFIX)
+
+def distance(
+        x: NpArrayLike, y: NpArrayLike, metric: str = 'frobenius',
+        **kwds: Any) -> NpArray:
+    """Calculate matrix distances of two arrays along given axis.
+
+    A matrix distance function, also known as metric, is a function d(x, y),
+    which quantifies the proximity of matrices in a vector space as non-negative
+    real numbers. If the distance is zero, then the matrices are equivalent with
+    respect to the distance function [1]. Distance functions are often used as
+    error, loss or risk functions, to evaluate statistical estimations [2].
+
+    Args:
+        x: Any sequence that can be interpreted as a numpy ndarray of two or
+            more dimensions. This includes nested lists, tuples, scalars and
+            existing arrays.
+        y: Any sequence that can be interpreted as a numpy ndarray with the same
+            dimension, shape and datatypes as 'x'.
+        metric: Name of the matrix distance function. Accepted values are:
+            'frobenius': Frobenius distance (induced by Frobenius norm)
+            Default: 'frobenius'
+        **kwds: Parameters of the given metric or class of metrices.
+            The Parameters are documented within the respective 'dist'
+            functions.
+
+    Returns:
+        NumPy ndarray of dimension <dim x> - <number of axes>.
+
+    References:
+        [1] https://en.wikipedia.org/wiki/metric_(mathematics)
+        [2] https://en.wikipedia.org/wiki/loss_function
+
+    """
+    # Check 'x' and 'y' to be array-like
+    try:
+        x = np.array(x)
+    except TypeError as err:
+        raise TypeError(
+            "first argument 'x' is required to be array-like") from err
+    try:
+        y = np.array(y)
+    except TypeError as err:
+        raise TypeError(
+            "second argument 'y' is required to be array-like") from err
+
+    # Check shapes and dtypes of 'x' and 'y'
+    if x.shape != y.shape:
+        raise ValueError(
+            "arrays 'x' and 'y' can not be broadcasted together")
+
+    # Get distance function
+    fname = DIST_PREFIX + metric.lower()
+    module = nmodule.inst(nmodule.curname())
+    try:
+        func = getattr(module, fname)
+    except AttributeError as err:
+        raise ValueError(
+            f"argument 'metric' has an invalid value '{str(metric)}'")
+
+    # Evaluate distance function
+    return func(x, y, **nfunc.kwds(func, default=kwds))
+
+def dist_frobenius(x: NpArray, y: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
+    """Calculate Frobenius distances of two arrays along given axis.
+
+    The Frobenius distance is induced by the Frobenius norm [1] and the natural
+    distance in geometric interpretations.
+
+    Args:
+        x: Any sequence that can be interpreted as a numpy ndarray of two or
+            more dimensions. This includes nested lists, tuples, scalars and
+            existing arrays.
+        y: Any sequence that can be interpreted as a numpy ndarray with the same
+            dimension, shape and datatypes as 'x'.
+        axes: Axes along which the norm is calculated. A two-dimensional
+            array has two corresponding axes: The first running vertically
+            downwards across rows (axis 0), and the second running horizontally
+            across columns (axis 1).
+            Default: (0, 1)
+
+    Returns:
+        NumPy ndarray of dimension dim *x* - 2.
+
+    References:
+        [1] https://en.wikipedia.org/wiki/frobenius_norm
+
+    """
+    return norm_frobenius(np.add(x, np.multiply(y, -1)), axes=axes)

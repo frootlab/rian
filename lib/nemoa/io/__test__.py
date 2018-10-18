@@ -9,109 +9,122 @@ __docformat__ = 'google'
 import tempfile
 from pathlib import Path
 
+import numpy as np
+
 from nemoa.core import ntest
+from nemoa.io import binfile, csvfile, inifile
 
-class TestCase(ntest.GenericTestCase):
-    """Testsuite for modules within the package 'nemoa.io'."""
+class TestBinfile(ntest.ModuleTestCase):
+    """Testcase for the module nemoa.io.binfile."""
 
-    def test_io_binfile(self) -> None:
-        """Test module 'nemoa.io.binfile'."""
-        from nemoa.io import binfile
+    module = 'nemoa.io.binfile'
 
-        file = Path(tempfile.NamedTemporaryFile().name + '.gz')
-        data = b'eJxrYK4tZDoiGBkGT0ZqotZJzt3/AbFpXoAgyI=='
+    def setUp(self) -> None:
+        self.filepath = Path(tempfile.NamedTemporaryFile().name + '.gz')
+        self.data = b'eJxrYK4tZDoiGBkGT0ZqotZJzt3/AbFpXoAgyI=='
 
-        with self.subTest('save'):
-            binfile.save(data, file)
-            self.assertTrue(file.is_file())
+    def test_save(self) -> None:
+        binfile.save(self.data, self.filepath)
+        self.assertTrue(self.filepath.is_file())
+        self.filepath.unlink()
 
-        with self.subTest('load'):
-            self.assertEqual(binfile.load(file), data)
+    def test_load(self) -> None:
+        binfile.save(self.data, self.filepath)
+        data = binfile.load(self.filepath)
+        self.filepath.unlink()
+        self.assertEqual(data, self.data)
 
-        if file.is_file():
-            file.unlink()
+class TestCsvfile(ntest.ModuleTestCase):
+    """Testcase for the module nemoa.io.csvfile."""
 
-    def test_io_csvfile(self) -> None:
-        """Test module 'nemoa.io.csvfile'."""
-        from nemoa.io import csvfile
+    module = 'nemoa.io.csvfile'
 
-        import numpy as np
-
-        file = Path(tempfile.NamedTemporaryFile().name + '.csv')
-        header = '-*- coding: utf-8 -*-'
-        data = np.array(
+    def setUp(self) -> None:
+        self.filepath = Path(tempfile.NamedTemporaryFile().name + '.csv')
+        self.header = '-*- coding: utf-8 -*-'
+        self.data = np.array(
             [('row1', 1.1, 1.2), ('row2', 2.1, 2.2), ('row3', 3.1, 3.2)],
             dtype=[('label', 'U8'), ('col1', 'f8'), ('col2', 'f8')])
-        delim = ','
-        labels = ['', 'col1', 'col2']
+        self.delim = ','
+        self.labels = ['', 'col1', 'col2']
+        csvfile.save(
+            self.filepath, self.data, header=self.header, labels=self.labels,
+            delim=self.delim)
 
-        with self.subTest("save"):
-            csvfile.save(
-                file, data, header=header, labels=labels, delim=delim)
-            self.assertTrue(file.is_file())
+    def test_save(self) -> None:
+        self.assertTrue(self.filepath.is_file())
 
-        with self.subTest("get_header"):
-            self.assertEqual(csvfile.get_header(file), header)
+    def test_get_header(self) -> None:
+        header = csvfile.get_header(self.filepath)
+        self.assertEqual(header, self.header)
 
-        with self.subTest("get_delim"):
-            self.assertEqual(csvfile.get_delim(file), delim)
+    def test_get_delim(self) -> None:
+        delim = csvfile.get_delim(self.filepath)
+        self.assertEqual(delim, self.delim)
 
-        with self.subTest("get_labels_format"):
-            self.assertEqual(csvfile.get_labels_format(file), 'standard')
+    def test_get_labels_format(self) -> None:
+        fmt = csvfile.get_labels_format(self.filepath)
+        self.assertEqual(fmt, 'standard')
 
-        with self.subTest("get_labels"):
-            self.assertEqual(csvfile.get_labels(file), labels)
+    def test_get_labels(self) -> None:
+        labels = csvfile.get_labels(self.filepath)
+        self.assertEqual(labels, self.labels)
 
-        with self.subTest("get_annotation_colid"):
-            self.assertEqual(csvfile.get_annotation_colid(file), 0)
+    def test_get_annotation_colid(self) -> None:
+        colid = csvfile.get_annotation_colid(self.filepath)
+        self.assertEqual(colid, 0)
 
-        with self.subTest("load"):
-            rval = csvfile.load(file)
-            self.assertTrue(
-                isinstance(rval, np.ndarray))
-            self.assertTrue(
-                np.all(np.array(rval)['col1'] == data['col1']))
-            self.assertTrue(
-                np.all(np.array(rval)['col2'] == data['col2']))
+    def test_load(self) -> None:
+        data = csvfile.load(self.filepath)
+        self.assertTrue(isinstance(data, np.ndarray))
+        col1 = np.array(data)['col1']
+        self.assertTrue(np.all(col1 == self.data['col1']))
+        col2 = np.array(data)['col2']
+        self.assertTrue(np.all(col2 == self.data['col2']))
 
-        if file.is_file():
-            file.unlink()
+    def tearDown(self) -> None:
+        if self.filepath.is_file():
+            self.filepath.unlink()
 
-    def test_io_inifile(self) -> None:
-        """Test module 'nemoa.io.inifile'."""
-        from nemoa.io import inifile
+class TestInifile(ntest.ModuleTestCase):
+    """Testcase for the module nemoa.io.inifile."""
 
-        file = Path(tempfile.NamedTemporaryFile().name + '.ini')
-        header = '-*- coding: utf-8 -*-'
-        obj = {
+    module = 'nemoa.io.inifile'
+
+    def setUp(self) -> None:
+        self.filepath = Path(tempfile.NamedTemporaryFile().name + '.ini')
+        self.header = '-*- coding: utf-8 -*-'
+        self.obj = {
             'n': {'a': 's', 'b': True, 'c': 1},
             'l1': {'a': 1}, 'l2': {'a': 2}}
-        structure = {
+        self.structure = {
             'n': {'a': 'str', 'b': 'bool', 'c': 'int'},
             'l[0-9]*': {'a': 'int'}}
-        string = (
+        self.string = (
             "# -*- coding: utf-8 -*-\n\n"
             "[n]\na = s\nb = True\nc = 1\n\n"
             "[l1]\na = 1\n\n[l2]\na = 2\n\n")
+        inifile.save(self.obj, self.filepath, header=self.header)
 
-        with self.subTest("dumps"):
-            self.assertEqual(
-                inifile.dumps(obj, header=header), string)
+    def test_dumps(self) -> None:
+        text = inifile.dumps(self.obj, header=self.header)
+        self.assertEqual(text, self.string)
 
-        with self.subTest("loads"):
-            self.assertEqual(
-                inifile.loads(string, structure=structure), obj)
+    def test_loads(self) -> None:
+        obj = inifile.loads(self.string, structure=self.structure)
+        self.assertEqual(obj, self.obj)
 
-        with self.subTest("save"):
-            inifile.save(obj, file, header=header)
-            self.assertTrue(file.is_file())
+    def test_save(self) -> None:
+        self.assertTrue(self.filepath.is_file())
 
-        with self.subTest("load"):
-            self.assertEqual(
-                inifile.load(file, structure=structure), obj)
+    def test_load(self) -> None:
+        obj = inifile.load(self.filepath, structure=self.structure)
+        self.assertEqual(obj, self.obj)
 
-        with self.subTest("get_header"):
-            self.assertEqual(inifile.get_header(file), header)
+    def test_get_header(self) -> None:
+        header = inifile.get_header(self.filepath)
+        self.assertEqual(header, self.header)
 
-        if file.is_file():
-            file.unlink()
+    def tearDown(self) -> None:
+        if self.filepath.is_file():
+            self.filepath.unlink()

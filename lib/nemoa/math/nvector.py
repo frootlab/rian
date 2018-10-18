@@ -20,7 +20,7 @@ NORM_PREFIX = 'norm_'
 DIST_PREFIX = 'dist_'
 
 #
-# Vector Space Norms
+# Vector Norms
 #
 
 def norms() -> StrList:
@@ -30,16 +30,7 @@ def norms() -> StrList:
         Sorted list of all vector norms, that are implemented within the module.
 
     """
-    from nemoa.core import ndict
-
-    # Get dictionary of functions with given prefix
-    module = nmodule.inst(nmodule.curname())
-    pattern = NORM_PREFIX + '*'
-    d = nmodule.get_functions(module, pattern=pattern)
-
-    # Create sorted list of norm names
-    i = len(NORM_PREFIX)
-    return sorted([v['name'][i:] for v in d.values()])
+    return nmodule.list_functions_by_prefix(prefix=NORM_PREFIX)
 
 def length(x: NpArrayLike, norm: str = 'euclid', **kwds: Any) -> NpArray:
     """Calculate generalized length of vector by given norm.
@@ -68,12 +59,12 @@ def length(x: NpArrayLike, norm: str = 'euclid', **kwds: Any) -> NpArray:
         NumPy ndarray of dimension <dim x> - <number of axes>.
 
     """
-    # Check Type of Argument 'x'
+    # Check type of 'x'
     try:
         x = np.array(x)
     except TypeError as err:
         raise TypeError(
-            "argument 'x' is required to be of type 'NumPy ArrayLike'") from err
+            "First argument 'x' is required to be array-like") from err
 
     # Get norm function
     fname = NORM_PREFIX + norm.lower()
@@ -350,7 +341,7 @@ def norm_sd(x: NpArray, axis: NpAxis = 0) -> NpArray:
     return np.std(x, axis=axis)
 
 #
-# Vector Space Metrices and Generalized Vector Space Metrices
+# Vector Metrices
 #
 
 def metrices() -> StrList:
@@ -361,21 +352,7 @@ def metrices() -> StrList:
         metrices, that are implemented within the module.
 
     """
-    from nemoa.core import ndict
-
-    # Declare and initialize return value
-    dists: StrList = []
-
-    # Get dictionary of functions with given prefix
-    module = nmodule.inst(nmodule.curname())
-    pattern = DIST_PREFIX + '*'
-    d = nmodule.get_functions(module, pattern=pattern)
-
-    # Create sorted list of norm names
-    i = len(DIST_PREFIX)
-    dists = sorted([v['name'][i:] for v in d.values()])
-
-    return dists
+    return nmodule.list_functions_by_prefix(prefix=DIST_PREFIX)
 
 def distance(
         x: NpArrayLike, y: NpArrayLike, metric: str = 'euclid',
@@ -417,7 +394,7 @@ def distance(
         [2] https://en.wikipedia.org/wiki/loss_function
 
     """
-    # Check arguments 'x' and 'y' to be array like
+    # Check 'x' and 'y' to be array-like
     try:
         x = np.array(x)
     except TypeError as err:

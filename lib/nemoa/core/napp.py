@@ -101,7 +101,7 @@ def get_vars(*args: Any, **kwds: Any) -> StrDict:
         Dictionary containing application variables.
 
     """
-    # update variables if not present or if optional arguments are given
+    # Update variables if not present or if optional arguments are given
     if not '_vars' in globals() or args or kwds:
         update_vars(*args, **kwds)
     return globals().get('_vars', {}).copy()
@@ -250,7 +250,7 @@ def update_dirs(
     appname = appname or get_var('name') or APPNAME
     appauthor = appauthor or get_var('author') or APPAUTHOR
 
-    # Get directories from appdirs
+    # Get application specific directories from appdirs
     appdirs = AppDirs(
         appname=appname, appauthor=appauthor, version=version, **kwds)
     dirnames = [
@@ -259,11 +259,11 @@ def update_dirs(
     for dirname in dirnames:
         dirs[dirname] = Path(getattr(appdirs, dirname))
 
-    # Get site_package_dir from distutils
+    # Get distribution specific directories from distutils
     path = Path(sysconfig.get_python_lib(), appname)
     dirs['site_package_dir'] = path
 
-    # Get directory of current top level module
+    # Get current package specific directories from top level module
     path = Path(nmodule.root().__file__).parent
     dirs['package_dir'] = path
     dirs['package_data_dir'] = path / 'data'
