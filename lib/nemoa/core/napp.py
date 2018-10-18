@@ -101,7 +101,7 @@ def get_vars(*args: Any, **kwds: Any) -> StrDict:
         Dictionary containing application variables.
 
     """
-    # update variables if not present or if optional arguments are given
+    # Update variables if not present or if optional arguments are given
     if not '_vars' in globals() or args or kwds:
         update_vars(*args, **kwds)
     return globals().get('_vars', {}).copy()

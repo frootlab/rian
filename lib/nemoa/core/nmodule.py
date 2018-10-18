@@ -95,7 +95,7 @@ def root(module: OptModule = None) -> Module:
         the current callers module.
 
     """
-    # Set default value of 'module' to current module
+    # Set default value of 'module' to current module of caller
     module = module or inst(curname(-1))
 
     # Check type of 'module'
@@ -123,7 +123,7 @@ def submodules(module: OptModule = None, recursive: bool = False) -> StrList:
         List with submodule names.
 
     """
-    # Set default value of 'module' to current module
+    # Set default value of 'module' to current module of caller
     module = module or inst(curname(-1))
 
     # Check type of 'module'
@@ -205,8 +205,8 @@ def get_functions(
     """Get dictionary with functions and their attributes.
 
     Args:
-        module: Module reference in which functions are searched. If 'module' is
-            None, then the module of the caller function is used. Default: None
+        module: Module reference in which functions are searched. By default the
+            module of the caller function is used.
         pattern: Only functions which names satisfy the wildcard pattern given
             by 'pattern' are returned. The format of the wildcard pattern is
             described in the standard library module `fnmatch`_. If pattern is
@@ -231,7 +231,7 @@ def get_functions(
         dictinaries as values.
 
     """
-    # Set default value of 'module' to current module
+    # Set default value of 'module' to current module of caller
     module = module or inst(curname(-1))
 
     # Check type of 'module'
@@ -242,6 +242,30 @@ def get_functions(
 
     return nobject.members(
         module, base=Function, pattern=pattern, rules=rules, **kwds)
+
+def list_functions_by_prefix(
+        module: OptModule = None, prefix: str = '') -> list:
+    """Get list of functions by prefix.
+
+    Args:
+        module: Module reference in which functions are searched. By default the
+            module of the caller function is used.
+        prefix: String
+
+    Returns:
+        List of functions, that match a given prefix.
+
+    """
+    # Set default value of 'module' to current module of caller
+    module = module or inst(curname(-1))
+
+    # Get function dictionary
+    pattern = prefix + '*'
+    funcs = get_functions(module=module, pattern=pattern)
+
+    # Create sorted list of norm names
+    i = len(prefix)
+    return sorted([v['name'][i:] for v in funcs.values()])
 
 def search(
         module: OptModule = None, pattern: OptStr = None, base: type = Function,
@@ -291,7 +315,7 @@ def search(
         'key' and 'val'.
 
     """
-    # Set default value of 'module' to current module
+    # Set default value of 'module' to current module of caller
     module = module or inst(curname(-1))
 
     # Check type of 'module'

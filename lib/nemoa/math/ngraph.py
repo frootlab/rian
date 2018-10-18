@@ -24,7 +24,7 @@ from nemoa.types import Any, OptBool, OptStr, OptTuple, FloatPair
 
 DiGraph = nx.classes.digraph.DiGraph
 
-def getlayout(
+def get_layout(
         G: DiGraph, layout: str = 'spring',
         size: OptTuple = None, padding: tuple = (0., 0., 0., 0.),
         rotate: float = 0.0, **kwds: Any) -> dict:

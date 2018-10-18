@@ -467,17 +467,17 @@ class TestNpath(ntest.ModuleTestCase):
         self.assertEqual(val, 'ext')
 
     def test_mkdir(self) -> None:
-        tempdir = Path(tempfile.TemporaryDirectory().name)
-        npath.mkdir(tempdir)
-        self.assertTrue(tempdir.is_dir())
-        tempdir.rmdir()
+        dirpath = Path(tempfile.TemporaryDirectory().name)
+        npath.mkdir(dirpath)
+        self.assertTrue(dirpath.is_dir())
+        dirpath.rmdir()
 
     def test_isdir(self) -> None:
-        tempdir = Path(tempfile.TemporaryDirectory().name)
-        tempdir.mkdir()
-        self.assertTrue(npath.isdir(tempdir))
-        tempdir.rmdir()
-        self.assertFalse(npath.isdir(tempdir))
+        dirpath = Path(tempfile.TemporaryDirectory().name)
+        dirpath.mkdir()
+        self.assertTrue(npath.isdir(dirpath))
+        dirpath.rmdir()
+        self.assertFalse(npath.isdir(dirpath))
 
     def test_isfile(self) -> None:
         file = Path(tempfile.NamedTemporaryFile().name)
@@ -487,7 +487,7 @@ class TestNpath(ntest.ModuleTestCase):
         self.assertFalse(npath.isfile(file))
 
     def test_rmdir(self) -> None:
-        tempdir = Path(tempfile.TemporaryDirectory().name)
-        tempdir.mkdir()
-        npath.rmdir(tempdir)
-        self.assertFalse(tempdir.is_dir())
+        dirpath = Path(tempfile.TemporaryDirectory().name)
+        dirpath.mkdir()
+        npath.rmdir(dirpath)
+        self.assertFalse(dirpath.is_dir())
