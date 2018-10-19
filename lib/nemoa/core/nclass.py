@@ -13,12 +13,9 @@ __docformat__ = 'google'
 
 import inspect
 
-from typing import cast
-
 from nemoa.core import ndict
 from nemoa.types import (
-    Any, RecDict, DictOfRecDicts, NestRecDict, FuncWrapper, OptStr,
-    StrDict)
+    Any, RecDict, DictOfRecDicts, NestRecDict, FuncWrapper, OptStr)
 
 def hasbase(obj: object, base: str) -> bool:
     """Return true if the class instance has the given base.
@@ -76,7 +73,7 @@ def methods(
 
     # Create dictionary with method attributes
     for k, v in ref.items():
-        attr = cast(StrDict, v.__dict__)
+        attr = v.__dict__
 
         # Ignore method if any required attribute is not available
         if key and key not in attr:

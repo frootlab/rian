@@ -15,7 +15,7 @@ from nemoa.core import nmodule, nobject
 from nemoa.types import Function, Method, OptStr
 
 # Module variables
-skip_compleness_test: bool = False
+skip_completeness_test: bool = False
 
 class GenericTestCase(TestCase):
     """Custom testcase."""
@@ -26,8 +26,7 @@ class ModuleTestCase(GenericTestCase):
     module: str
     test_completeness: bool = True
 
-    @unittest.skipIf(skip_compleness_test, "Completeness is not tested")
-    def test_compleness_of_module(self) -> None:
+    def assertModuleIsComplete(self) -> None:
         message: OptStr = None
         if hasattr(self, 'module') and self.test_completeness:
             mref = nmodule.inst(self.module)
@@ -45,14 +44,16 @@ class ModuleTestCase(GenericTestCase):
             for attr in tdict.values():
                 implemented.add(attr['name'][5:])
             complete = required <= implemented
-            message = f"untested functions: '{required - implemented}'"
+            untested = ', '.join(required - implemented)
+            message = f"untested functions: {untested}"
         else:
             complete = True
-        self.assertTrue(complete, message)
+        if not complete:
+            raise AssertionError(message)
 
-    # def tearDown(self):
-    #     """"""
-    #     pass
+    @unittest.skipIf(skip_completeness_test, "completeness is not tested")
+    def test_compleness_of_module(self) -> None:
+        self.assertModuleIsComplete()
 
 def run_tests(
         stream: StringIO = StringIO(), verbosity: int = 2) -> TestResult:

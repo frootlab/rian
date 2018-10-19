@@ -1,7 +1,7 @@
-nemoa.io.gzfile module
+nemoa.fileio.gzfile module
 ======================
 
-.. automodule:: nemoa.io.gzfile
+.. automodule:: nemoa.fileio.gzfile
     :members:
     :undoc-members:
     :show-inheritance:

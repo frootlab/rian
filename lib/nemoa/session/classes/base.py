@@ -62,7 +62,7 @@ class Session:
         import sys
 
         from nemoa.core import ndict
-        from nemoa.io import inifile
+        from nemoa.fileio import inifile
 
         self._config = ndict.merge(kwds, self._default)
 
@@ -446,14 +446,15 @@ class Session:
         for key, val in self._config['current']['path'].items():
             udict[key] = str(npath.join(val))
 
-        path = npath.expand(path, udict=udict)
+        path = str(npath.expand(path, udict=udict))
 
         # (optional) create directory
         if create:
             npath.mkdir(path)
 
         # (optional) check path
-        if check and not os.path.exists(path): return None
+        if check and not os.path.exists(path):
+            return None
 
         return path
 

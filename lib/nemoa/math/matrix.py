@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Collection of Matrix Norms and Metrices."""
+"""Matrix Norms and Metrices."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -14,7 +14,7 @@ except ImportError as err:
         "https://pypi.org/project/numpy") from err
 
 from nemoa.core import nfunc, nmodule
-from nemoa.math import nvector
+from nemoa.math import vector
 from nemoa.types import Any, IntTuple, NpArray, NpArrayLike, StrList
 
 NORM_PREFIX = 'norm_'
@@ -137,7 +137,7 @@ def norm_pq(x: NpArray,
     if p == q == 2.: # Use the Frobenius norm
         return norm_frobenius(x, axes=axes)
     if p == q: # Use the p-norm in two dimensions
-        return nvector.norm_p(x, p=p, axis=axes)
+        return vector.norm_p(x, p=p, axis=axes)
 
     # If the first axis id is smaller then the second, then the second one
     # has to be corrected by the collapsed dimension of the first sum
@@ -175,7 +175,7 @@ def norm_frobenius(x: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
         [1] https://en.wikipedia.org/wiki/frobenius_norm
 
     """
-    return nvector.norm_euclid(x, axis=axes)
+    return vector.norm_euclid(x, axis=axes)
 
 #
 # Matrix Metrices

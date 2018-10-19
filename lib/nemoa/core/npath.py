@@ -18,10 +18,13 @@ __docformat__ = 'google'
 
 import fnmatch
 import os
+import sys
 
 from pathlib import Path, PurePath
+
+from nemoa.core import napp
 from nemoa.types import (
-    Any, Iterable, IterAny, NestPath, OptStrDict, PathLike, PathLikeList)
+    Any, Iterable, IterAny, NestPath, OptStrDict, PathLikeList)
 
 def cwd() -> str:
     """Path of current working directory.
@@ -85,9 +88,11 @@ def match(paths: PathLikeList, pattern: str) -> PathLikeList:
     # Normalize path and pattern representation using POSIX standard
     mapping = {PurePath(path).as_posix(): path for path in paths}
     pattern = PurePath(pattern).as_posix()
+
     # Match normalized paths with normalized pattern
     names = list(mapping.keys())
     matches = fnmatch.filter(names, pattern)
+
     # Return original paths
     return [mapping[name] for name in matches]
 
@@ -123,13 +128,13 @@ def join(*args: NestPath) -> Path:
     except TypeError as err:
         raise TypeError(
             "the tokens of nested paths require to be of types "
-            "str, bytes or pathlike") from err
+            "str, bytes or path-like") from err
 
     return path
 
 def expand(
         *args: NestPath, udict: OptStrDict = None, expapp: bool = True,
-        expenv: bool = True) -> str:
+        expenv: bool = True) -> Path:
     r"""Expand path variables.
 
     Args:
@@ -154,12 +159,8 @@ def expand(
         'a\\b\\c\\d'
 
     """
-    import sys
-
-    from nemoa.core import napp
-
-    udict = udict or {}
     path = join(*args)
+    udict = udict or {}
 
     # Create dictionary with variables
     d = {}
@@ -196,13 +197,7 @@ def expand(
     if expenv:
         path = path.expanduser()
 
-    return str(path)
-
-def getpath(path: PathLike, unpack: bool = True) -> Path:
-    """Get path from string or PathLike structure."""
-    if unpack:
-        return Path(expand(path))
-    return join(path)
+    return path
 
 def dirname(*args: NestPath) -> str:
     r"""Extract directory name from a path like structure.
@@ -219,7 +214,7 @@ def dirname(*args: NestPath) -> str:
         'a\\b\\c\\d'
 
     """
-    path = Path(expand(*args))
+    path = expand(*args)
     if path.is_dir():
         return str(path)
     return str(path.parent)
@@ -239,7 +234,7 @@ def filename(*args: NestPath) -> str:
         'base.ext'
 
     """
-    path = Path(expand(*args))
+    path = expand(*args)
     if path.is_dir():
         return ''
     return str(path.name)
@@ -259,7 +254,7 @@ def basename(*args: NestPath) -> str:
         'base'
 
     """
-    path = Path(expand(*args))
+    path = expand(*args)
     if path.is_dir():
         return ''
     return str(path.stem)
@@ -279,16 +274,16 @@ def fileext(*args: NestPath) -> str:
         'ext'
 
     """
-    path = Path(expand(*args))
+    path = expand(*args)
     if path.is_dir():
         return ''
     return str(path.suffix).lstrip('.')
 
-def isdir(path: NestPath) -> bool:
+def is_dir(path: NestPath) -> bool:
     """Determine if given path points to a directory.
 
     Extends `Path.is_dir()`_ from standard library `pathlib`_ by nested paths
-    and path variables.
+    and path variable expansion.
 
     Args:
         path: Path like structure, which is expandable to a valid path
@@ -298,13 +293,13 @@ def isdir(path: NestPath) -> bool:
         to a regular file), False if it points to another kind of file.
 
     """
-    return Path(expand(path)).is_dir()
+    return expand(path).is_dir()
 
-def isfile(path: NestPath) -> bool:
+def is_file(path: NestPath) -> bool:
     """Determine if given path points to a file.
 
     Extends `Path.is_file()`_ from standard library `pathlib`_ by nested paths
-    and path variables.
+    and path variable expansion.
 
     Args:
         path: Path like structure, which is expandable to a valid path.
@@ -314,7 +309,7 @@ def isfile(path: NestPath) -> bool:
         to a directory), False if it points to another kind of file.
 
     """
-    return Path(expand(path)).is_file()
+    return expand(path).is_file()
 
 def cp(source: NestPath, target: NestPath) -> bool:
     """Copy sub directories from given source to destination directory.
@@ -330,7 +325,7 @@ def cp(source: NestPath, target: NestPath) -> bool:
     """
     import shutil
 
-    sdir, ddir = Path(expand(source)), Path(expand(target))
+    sdir, ddir = expand(source), expand(target)
 
     for s in sdir.glob('*'):
         t = Path(ddir, basename(s))
@@ -353,7 +348,7 @@ def mkdir(*args: NestPath) -> bool:
         True if the directory already exists, or the operation was successful.
 
     """
-    path = Path(expand(*args))
+    path = expand(*args)
     if path.is_dir():
         return True
 
@@ -376,7 +371,7 @@ def rmdir(*args: NestPath) -> bool:
     """
     import shutil
 
-    path = Path(expand(*args))
+    path = expand(*args)
 
     if not path.is_dir():
         return False

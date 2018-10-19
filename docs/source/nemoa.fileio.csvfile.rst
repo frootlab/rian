@@ -1,5 +1,5 @@
 nemoa.fileio.csvfile module
-=======================
+===========================
 
 .. automodule:: nemoa.fileio.csvfile
     :members:

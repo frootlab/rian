@@ -23,7 +23,7 @@ from pathlib import Path, PurePath
 from nemoa.core import npath, nsysinfo
 from nemoa.classes import Attr, ReadOnlyAttr, ReadWriteAttr
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
-from nemoa.io import inifile
+from nemoa.fileio import inifile
 from nemoa.types import (
     BytesIOBaseClass, BytesIOLike, BytesLike, ClassVar, IterFileLike, List,
     OptBytes, OptStr, OptPath, OptPathLike, PathLike, PathLikeList,
@@ -61,31 +61,40 @@ class WsFile:
 
     """
 
-    # Class Constants
-    CONFIG_FILE: ClassVar[Path] = Path('workspace.ini')
-    CONFIG_STRUCT: ClassVar[StrDict2] = {
+    #
+    # Private Class Variables
+    #
+
+    _CONFIG_FILE: ClassVar[Path] = Path('workspace.ini')
+    _CONFIG_STRUCT: ClassVar[StrDict2] = {
         'workspace': {
             'about': 'str',
             'license': 'str',
             'maintainer': 'str',
             'email': 'str',
             'startup': 'path'}}
-    CONFIG_DEFAULT: ClassVar[StrDict2] = {
+    _DEFAULT_CONFIG: ClassVar[StrDict2] = {
         'workspace': {
             'maintainer': nsysinfo.username()}}
-    DIR_LAYOUT: ClassVar[StrList] = [
+    _DEFAULT_DIR_LAYOUT: ClassVar[StrList] = [
         'dataset', 'network', 'system', 'model', 'script']
-    ENCODING = nsysinfo.encoding()
+    _DEFAULT_ENCODING = nsysinfo.encoding()
 
-    # Instance Variables
+    #
+    # Private Instance Variables
+    #
+
     _attr: StrDict
     _buffer: BytesIOLike
+    _changed: bool
     _file: ZipFile
     _path: OptPath
     _pwd: OptBytes
-    _changed: bool
 
-    # Attributes
+    #
+    # Public Attributes
+    #
+
     about: Attr = ReadWriteAttr(str, bind='_attr')
     about.__doc__ = """Summary of the workspace.
 
@@ -139,9 +148,12 @@ class WsFile:
     folders.__doc__ = """List of all folders within the workspace."""
 
     changed: Attr = ReadOnlyAttr(bool, key='_changed')
-    changed.__doc__ = """Tells whether the workspace file been changed."""
+    changed.__doc__ = """Tells whether the workspace file has been changed."""
 
-    # Magic Methods
+    #
+    # Magic
+    #
+
     def __init__(
             self, filepath: OptPathLike = None, pwd: OptBytes = None) -> None:
         """Load Workspace from file."""
@@ -158,7 +170,10 @@ class WsFile:
         """Close workspace file and buffer."""
         self.close()
 
+    #
     # Public Methods
+    #
+
     def load(self, filepath: PathLike, pwd: OptBytes = None) -> None:
         """Load Workspace from file.
 
@@ -176,7 +191,7 @@ class WsFile:
         # Initialize instance Variables, Buffer and buffered ZipFile
         self._attr = {}
         self._changed = False
-        self._path = npath.getpath(filepath)
+        self._path = npath.expand(filepath)
         self._pwd = pwd
         self._buffer = BytesIO()
         self._file = ZipFile(self._buffer, mode='w')
@@ -205,19 +220,19 @@ class WsFile:
 
         # Try to open and load workspace configuration from buffer
         try:
-            with self.open(self.CONFIG_FILE) as file:
-                cfg = inifile.load(file, self.CONFIG_STRUCT)
+            with self.open(self._CONFIG_FILE) as file:
+                cfg = inifile.load(file, self._CONFIG_STRUCT)
         except KeyError as err:
             raise BadWsFile(
                 f"workspace '{self._path}' is not valid: "
-                "file '{self.CONFIG_FILE}' is missing") from err
+                "file '{self._CONFIG_FILE}' is missing") from err
 
         # Check if configuration contains required sections
-        rsec = self.CONFIG_STRUCT.keys()
+        rsec = self._CONFIG_STRUCT.keys()
         if rsec > cfg.keys():
             raise BadWsFile(
                 f"workspace '{self._path}' is not valid: "
-                f"'{self.CONFIG_FILE}' requires sections '{rsec}'") from err
+                f"'{self._CONFIG_FILE}' requires sections '{rsec}'") from err
 
         # Link configuration
         self._attr = cfg.get('workspace', {})
@@ -238,10 +253,10 @@ class WsFile:
                 a workspace file.
 
         """
-        path = npath.getpath(filepath)
+        path = npath.expand(filepath)
 
         # Update 'workspace.ini'
-        with self.open(self.CONFIG_FILE, mode='w') as file:
+        with self.open(self._CONFIG_FILE, mode='w') as file:
             inifile.save({'workspace': self._attr}, file)
 
         # Remove duplicates from workspace
@@ -326,7 +341,7 @@ class WsFile:
                 yield file
             else:
                 yield TextIOWrapper(
-                    file, encoding=encoding or self.ENCODING,
+                    file, encoding=encoding or self._DEFAULT_ENCODING,
                     write_through=True)
         finally:
             file.close()
@@ -358,7 +373,7 @@ class WsFile:
 
         """
         # Check source file
-        srcfile = npath.getpath(source)
+        srcfile = npath.expand(source)
         if not srcfile.exists():
             raise FileNotFoundError(f"file '{srcfile}' does not exist")
         if srcfile.is_dir():
@@ -597,10 +612,13 @@ class WsFile:
         # Sort paths
         return sorted([str(path) for path in paths])
 
-    # Private methods
+    #
+    # Private Methods
+    #
+
     def _create_new(self) -> None:
         # Initialize instance Variables, Buffer and buffered ZipFile
-        self._attr = self.CONFIG_DEFAULT['workspace'].copy()
+        self._attr = self._DEFAULT_CONFIG['workspace'].copy()
         self._changed = False
         self._path = None
         self._pwd = None
@@ -608,7 +626,7 @@ class WsFile:
         self._file = ZipFile(self._buffer, mode='w')
 
         # Create folders
-        for folder in self.DIR_LAYOUT:
+        for folder in self._DEFAULT_DIR_LAYOUT:
             self.mkdir(folder)
 
     def _open_read(self, path: PathLike) -> BytesIOLike:

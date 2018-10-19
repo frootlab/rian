@@ -226,10 +226,10 @@ class Scatter2D(Plot):
         # calculate covariance matrix
         cov = np.cov(array.T)
 
-        # calculate eigenvectors and eigenvalues
+        # calculate eigevectors and eigenvalues
         vals, vecs = np.linalg.eig(cov)
 
-        # sort eigenvectors by absolute eigenvalues
+        # sort eigevectors by absolute eigenvalues
         pairs = [(np.abs(vals[i]), vecs[:, i]) for i in range(len(vals))]
         pairs.sort(key=lambda x: x[0], reverse=True)
 
@@ -328,7 +328,7 @@ class Graph(Plot):
                 "https://networkx.github.io") from err
 
         from nemoa.core import ndict
-        from nemoa.math import ngraph
+        from nemoa.math import graph
 
         # adjust size of subplot
         fig = self._fig
@@ -344,11 +344,11 @@ class Graph(Plot):
         layout_params = ndict.crop(self._config, 'graph_')
         del layout_params['layout']
 
-        pos = ngraph.get_layout(
+        pos = graph.get_layout(
             G, layout=self._config['graph_layout'], size=figsize,
             padding=self._config['padding'], **layout_params)
 
-        sizes = ngraph.get_layout_normsize(pos)
+        sizes = graph.get_layout_normsize(pos)
         node_size = sizes.get('node_size', None)
         node_radius = sizes.get('node_radius', None)
         line_width = sizes.get('line_width', None)
@@ -356,7 +356,7 @@ class Graph(Plot):
         font_size = sizes.get('font_size', None)
 
         # get nodes and groups sorted by node attribute group_id
-        groups = ngraph.get_groups(G, attribute='group')
+        groups = graph.get_groups(G, attribute='group')
         sorted_groups = sorted(
             list(groups.keys()),
             key=lambda g: 0 if not isinstance(g, list) or not g \
@@ -401,7 +401,7 @@ class Graph(Plot):
 
         # draw edges
         seen = {}
-        if ngraph.is_directed(G):
+        if graph.is_directed(G):
             default_edge_style = '-|>'
         else: default_edge_style = '-'
 

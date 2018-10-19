@@ -1,7 +1,7 @@
-nemoa.math.nvector module
+nemoa.math.vector module
 =========================
 
-.. automodule:: nemoa.math.nvector
+.. automodule:: nemoa.math.vector
     :members:
     :undoc-members:
     :show-inheritance:

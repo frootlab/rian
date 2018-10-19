@@ -47,7 +47,7 @@ class Ini:
                 configuration dictionary.
 
         """
-        from nemoa.io import inifile
+        from nemoa.fileio import inifile
 
         structure = {'network': { 'type': 'str' }}
         network = inifile.load(path, structure)
@@ -67,7 +67,7 @@ class Ini:
 
     def _parse_layer_network(self, path):
         from nemoa.core import npath
-        from nemoa.io import inifile
+        from nemoa.fileio import inifile
 
         structure = {
             'network': {

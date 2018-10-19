@@ -1,7 +1,7 @@
-nemoa.math.matrix module
+nemoa.core.nobject module
 =========================
 
-.. automodule:: nemoa.math.matrix
+.. automodule:: nemoa.core.nobject
     :members:
     :undoc-members:
     :show-inheritance:

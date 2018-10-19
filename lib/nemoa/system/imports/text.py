@@ -50,7 +50,7 @@ class Ini:
 
         """
         from nemoa.core import npath
-        from nemoa.io import inifile
+        from nemoa.fileio import inifile
 
         # import ini file to dictionary, using ini file structure
         # described with regular expressions

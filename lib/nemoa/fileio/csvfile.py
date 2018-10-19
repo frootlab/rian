@@ -25,7 +25,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://pypi.org/project/numpy") from err
 
-from nemoa.io import textfile
+from nemoa.fileio import textfile
 from nemoa.types import (
     FileOrPathLike, NpArray, OptInt, OptIntTuple, OptNpArray, OptStr,
     OptStrList)

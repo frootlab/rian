@@ -11,7 +11,7 @@ import numpy
 import os
 
 from nemoa.core import ntext
-from nemoa.io import nplot
+from nemoa.fileio import nplot
 
 def filetypes():
     """Get supported image filetypes."""
@@ -105,7 +105,7 @@ def show(model, plot = None, *args, **kwds):
 class Graph(nplot.Graph):
 
     def create(self, model):
-        from nemoa.math import ngraph
+        from nemoa.math import graph
 
         # set plot defaults
         self.set_default({
@@ -195,10 +195,10 @@ class Graph(nplot.Graph):
                 for edge in edges}
 
         # create graph and set attributes
-        graph = networkx.DiGraph(name = rel_about.get('name'))
+        G = networkx.DiGraph(name = rel_about.get('name'))
 
         # graph is directed if and only if relation is directed
-        graph.graph['directed'] = rel_about.get('directed')
+        G.graph['directed'] = rel_about.get('directed')
 
         # add edges and edge attributes to graph
         if self._config['edge_normalize'] in [None, 'auto']:
@@ -215,7 +215,7 @@ class Graph(nplot.Graph):
             attr = model.network.get('node', node)
             if attr is None: continue
             params = attr.get('params', {})
-            graph.add_node(node,
+            G.add_node(node,
                 label = params.get('label'),
                 group = params.get('layer'))
             issrc, istgt = node in units[0], node in units[1]
@@ -223,8 +223,8 @@ class Graph(nplot.Graph):
             elif issrc and not istgt: node_type = 'source'
             elif not issrc and istgt: node_type = 'target'
             else: node_type = 'isolated'
-            layout = ngraph.get_node_layout(node_type)
-            graph.node[node].update(layout)
+            layout = graph.get_node_layout(node_type)
+            G.node[node].update(layout)
 
         # add edges with attributes
         for (u, v) in edges:
@@ -235,29 +235,29 @@ class Graph(nplot.Graph):
             if signed: color = \
                 {1: 'green', 0: 'black', -1: 'red'}[S.get((u, v))]
             else: color = 'black'
-            graph.add_edge(u, v, weight = weight, color = color,
+            G.add_edge(u, v, weight = weight, color = color,
                 visible = True)
 
         # normalize weights (optional)
         if normalize:
             mean = numpy.mean([data.get('weight', 0.) \
-                for (u, v, data) in graph.edges(data = True)])
-            for (u, v, data) in graph.edges(data = True):
-                graph.edges[u, v]['weight'] = data['weight'] / mean
+                for (u, v, data) in G.edges(data = True)])
+            for (u, v, data) in G.edges(data = True):
+                G.edges[u, v]['weight'] = data['weight'] / mean
 
         # graph layout specific attributes
         graph_layout = self._config.get('graph_layout', None)
         if graph_layout == 'layer':
-            for node in graph.nodes():
+            for node in G.nodes():
                 attr = model.network.get('node', node)
                 params = attr.get('params', {})
-                graph.node[node].update({
+                G.node[node].update({
                     'layer': params.get('layer'),
                     'layer_id': params.get('layer_id'),
                     'layer_sub_id': params.get('layer_sub_id')})
 
         # create plot
-        return self.plot(graph)
+        return self.plot(G)
 
 class Heatmap(nplot.Heatmap):
 

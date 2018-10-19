@@ -568,7 +568,7 @@ class ObjectIP:
                 "attribute 'path' is required to be path-like"
                 f", not '{type(path)}'")
 
-        self._config['path'] = Path(npath.expand(path))
+        self._config['path'] = npath.expand(path)
 
         return True
 

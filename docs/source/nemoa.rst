@@ -7,8 +7,9 @@ Subpackages
 .. toctree::
 
     nemoa.core
+    nemoa.dataio
     nemoa.dataset
-    nemoa.io
+    nemoa.fileio
     nemoa.math
     nemoa.model
     nemoa.network

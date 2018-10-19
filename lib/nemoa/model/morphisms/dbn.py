@@ -11,7 +11,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa.model.morphisms.ann
-from nemoa.math import nalgo
+from nemoa.math import algo
 
 class DBN(nemoa.model.morphisms.ann.ANN):
     """Deep Belief Network (DBN) Optimizer."""
@@ -26,7 +26,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
         'schedule_rbm.rbm': 'default',
         'schedule_rbm.grbm': 'default' }
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'dbn',
         longname = 'deep belief network optimization',
         category = 'optimization',
@@ -45,7 +45,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
 
         return retval
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'pretraining',
         longname = 'deep belief network pretraining',
         category = 'optimization',
@@ -215,7 +215,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
 
         return True
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'finetuning',
         longname = 'deep belief network finetuning',
         category = 'optimization',

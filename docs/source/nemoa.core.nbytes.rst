@@ -1,7 +1,7 @@
-nemoa.math.curve module
+nemoa.core.nbytes module
 ========================
 
-.. automodule:: nemoa.math.curve
+.. automodule:: nemoa.core.nbytes
     :members:
     :undoc-members:
     :show-inheritance:

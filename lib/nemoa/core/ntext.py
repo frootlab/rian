@@ -324,16 +324,18 @@ def aspath(text: str, expand: bool = True) -> Path:
         Value of the text as Path.
 
     """
-    # Check types of Arguments
+    from nemoa.core import npath
+
+    # Check type of 'text'
     if not isinstance(text, str):
         raise TypeError(
             "first argument 'text' requires to be of type 'str'"
             f", not '{type(text).__name__}'")
+
+    # Check type of 'expand'
     if not isinstance(expand, bool):
         raise TypeError(
             "'expand' requires to be of type 'bool'"
             f", not '{type(expand).__name__}'")
 
-    from nemoa.core import npath
-    
-    return npath.getpath(text, unpack=expand)
+    return npath.expand(text)

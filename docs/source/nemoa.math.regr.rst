@@ -1,7 +1,7 @@
-nemoa.fileio.wsfile module
+nemoa.math.regr module
 ======================
 
-.. automodule:: nemoa.fileio.wsfile
+.. automodule:: nemoa.math.regr
     :members:
     :undoc-members:
     :show-inheritance:

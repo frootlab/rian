@@ -1,7 +1,7 @@
-nemoa.io.nplot module
+nemoa.fileio.nplot module
 =====================
 
-.. automodule:: nemoa.io.nplot
+.. automodule:: nemoa.fileio.nplot
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,7 +1,7 @@
-nemoa.math.ngraph module
+nemoa.math.graph module
 ========================
 
-.. automodule:: nemoa.math.ngraph
+.. automodule:: nemoa.math.graph
     :members:
     :undoc-members:
     :show-inheritance:

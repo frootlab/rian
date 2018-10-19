@@ -1,5 +1,5 @@
 nemoa.fileio.inifile module
-=======================
+===========================
 
 .. automodule:: nemoa.fileio.inifile
     :members:

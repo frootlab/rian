@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-from nemoa.io import nplot
+from nemoa.fileio import nplot
 
 def filetypes():
     """Get supported image filetypes."""
