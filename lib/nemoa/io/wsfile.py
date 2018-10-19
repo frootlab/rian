@@ -61,7 +61,10 @@ class WsFile:
 
     """
 
-    # Class Constants
+    #
+    # Class Variables
+    #
+
     CONFIG_FILE: ClassVar[Path] = Path('workspace.ini')
     CONFIG_STRUCT: ClassVar[StrDict2] = {
         'workspace': {
@@ -77,15 +80,21 @@ class WsFile:
         'dataset', 'network', 'system', 'model', 'script']
     ENCODING = nsysinfo.encoding()
 
+    #
     # Instance Variables
+    #
+
     _attr: StrDict
     _buffer: BytesIOLike
+    _changed: bool
     _file: ZipFile
     _path: OptPath
     _pwd: OptBytes
-    _changed: bool
 
+    #
     # Attributes
+    #
+
     about: Attr = ReadWriteAttr(str, bind='_attr')
     about.__doc__ = """Summary of the workspace.
 
@@ -141,7 +150,10 @@ class WsFile:
     changed: Attr = ReadOnlyAttr(bool, key='_changed')
     changed.__doc__ = """Tells whether the workspace file been changed."""
 
-    # Magic Methods
+    #
+    # Magic
+    #
+
     def __init__(
             self, filepath: OptPathLike = None, pwd: OptBytes = None) -> None:
         """Load Workspace from file."""
@@ -158,7 +170,10 @@ class WsFile:
         """Close workspace file and buffer."""
         self.close()
 
+    #
     # Public Methods
+    #
+
     def load(self, filepath: PathLike, pwd: OptBytes = None) -> None:
         """Load Workspace from file.
 
@@ -597,7 +612,10 @@ class WsFile:
         # Sort paths
         return sorted([str(path) for path in paths])
 
-    # Private methods
+    #
+    # Private Methods
+    #
+
     def _create_new(self) -> None:
         # Initialize instance Variables, Buffer and buffered ZipFile
         self._attr = self.CONFIG_DEFAULT['workspace'].copy()

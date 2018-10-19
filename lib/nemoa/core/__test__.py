@@ -9,14 +9,13 @@ __docformat__ = 'google'
 import tempfile
 
 from pathlib import Path
-from typing import cast
 
 import numpy as np
 
 from nemoa.core import (
     napp, narray, nbase, nbytes, nclass, nconsole, ndict, nfunc, nmodule,
     npath, nsysinfo, ntable, ntest, ntext)
-from nemoa.types import Any, Function, Module, NaN
+from nemoa.types import Any, Function, Module, NaN, PathLikeList
 
 class TestNapp(ntest.ModuleTestCase):
     """Testcase for the module nemoa.core.napp."""
@@ -209,8 +208,9 @@ class TestNmodule(ntest.ModuleTestCase):
 
     def test_inst(self) -> None:
         name = nmodule.__name__
-        self.assertTrue(hasattr(nmodule.inst(name), '__name__'))
-        self.assertEqual(cast(Module, nmodule.inst(name)).__name__, name)
+        module = nmodule.inst(name)
+        self.assertIsInstance(module, Module)
+        self.assertEqual(getattr(module, '__name__'), name)
 
     def test_get_functions(self) -> None:
         name = nmodule.get_functions.__name__
@@ -353,12 +353,12 @@ class TestNtable(ntest.ModuleTestCase):
     module = 'nemoa.core.ntable'
 
     def test_addcols(self) -> None:
-        tgt = np.array(
-            [(1., 2), (3., 4)], dtype=[('x', float), ('y', int)])
         src = np.array(
             [('a'), ('b')], dtype=[('z', 'U4')])
-        self.assertEqual(
-            cast(Any, ntable.addcols(tgt, src, 'z'))['z'][0], 'a')
+        tgt = np.array(
+            [(1., 2), (3., 4)], dtype=[('x', float), ('y', int)])
+        new = ntable.addcols(tgt, src, 'z')
+        self.assertEqual(new['z'][0], 'a')
 
 class TestNtext(ntest.ModuleTestCase):
     """Testcase for the module nemoa.core.ntext."""
@@ -427,7 +427,7 @@ class TestNpath(ntest.ModuleTestCase):
         self.assertEqual(npath.clear('3/\nE{$5}.e'), '3E5.e')
 
     def test_match(self) -> None:
-        paths = cast(Any, [Path('a.b'), Path('b.a'), Path('c/a.b')])
+        paths: PathLikeList = [Path('a.b'), Path('b.a'), Path('c/a.b')]
         val = npath.match(paths, 'a.*')
         self.assertEqual(val, [Path('a.b')])
         val = npath.match(paths, '*.a')
@@ -472,19 +472,19 @@ class TestNpath(ntest.ModuleTestCase):
         self.assertTrue(dirpath.is_dir())
         dirpath.rmdir()
 
-    def test_isdir(self) -> None:
+    def test_is_dir(self) -> None:
         dirpath = Path(tempfile.TemporaryDirectory().name)
         dirpath.mkdir()
-        self.assertTrue(npath.isdir(dirpath))
+        self.assertTrue(npath.is_dir(dirpath))
         dirpath.rmdir()
-        self.assertFalse(npath.isdir(dirpath))
+        self.assertFalse(npath.is_dir(dirpath))
 
-    def test_isfile(self) -> None:
+    def test_is_file(self) -> None:
         file = Path(tempfile.NamedTemporaryFile().name)
         file.touch()
-        self.assertTrue(npath.isfile(file))
+        self.assertTrue(npath.is_file(file))
         file.unlink()
-        self.assertFalse(npath.isfile(file))
+        self.assertFalse(npath.is_file(file))
 
     def test_rmdir(self) -> None:
         dirpath = Path(tempfile.TemporaryDirectory().name)

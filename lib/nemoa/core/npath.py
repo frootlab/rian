@@ -18,8 +18,11 @@ __docformat__ = 'google'
 
 import fnmatch
 import os
+import sys
 
 from pathlib import Path, PurePath
+
+from nemoa.core import napp
 from nemoa.types import (
     Any, Iterable, IterAny, NestPath, OptStrDict, PathLikeList)
 
@@ -85,9 +88,11 @@ def match(paths: PathLikeList, pattern: str) -> PathLikeList:
     # Normalize path and pattern representation using POSIX standard
     mapping = {PurePath(path).as_posix(): path for path in paths}
     pattern = PurePath(pattern).as_posix()
+
     # Match normalized paths with normalized pattern
     names = list(mapping.keys())
     matches = fnmatch.filter(names, pattern)
+
     # Return original paths
     return [mapping[name] for name in matches]
 
@@ -123,7 +128,7 @@ def join(*args: NestPath) -> Path:
     except TypeError as err:
         raise TypeError(
             "the tokens of nested paths require to be of types "
-            "str, bytes or pathlike") from err
+            "str, bytes or path-like") from err
 
     return path
 
@@ -154,12 +159,8 @@ def expand(
         'a\\b\\c\\d'
 
     """
-    import sys
-
-    from nemoa.core import napp
-
-    udict = udict or {}
     path = join(*args)
+    udict = udict or {}
 
     # Create dictionary with variables
     d = {}
@@ -278,11 +279,11 @@ def fileext(*args: NestPath) -> str:
         return ''
     return str(path.suffix).lstrip('.')
 
-def isdir(path: NestPath) -> bool:
+def is_dir(path: NestPath) -> bool:
     """Determine if given path points to a directory.
 
     Extends `Path.is_dir()`_ from standard library `pathlib`_ by nested paths
-    and path variables.
+    and path variable expansion.
 
     Args:
         path: Path like structure, which is expandable to a valid path
@@ -294,11 +295,11 @@ def isdir(path: NestPath) -> bool:
     """
     return expand(path).is_dir()
 
-def isfile(path: NestPath) -> bool:
+def is_file(path: NestPath) -> bool:
     """Determine if given path points to a file.
 
     Extends `Path.is_file()`_ from standard library `pathlib`_ by nested paths
-    and path variables.
+    and path variable expansion.
 
     Args:
         path: Path like structure, which is expandable to a valid path.
