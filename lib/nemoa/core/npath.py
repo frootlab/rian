@@ -21,7 +21,7 @@ import os
 
 from pathlib import Path, PurePath
 from nemoa.types import (
-    Any, Iterable, IterAny, NestPath, OptStrDict, PathLike, PathLikeList)
+    Any, Iterable, IterAny, NestPath, OptStrDict, PathLikeList)
 
 def cwd() -> str:
     """Path of current working directory.
@@ -129,7 +129,7 @@ def join(*args: NestPath) -> Path:
 
 def expand(
         *args: NestPath, udict: OptStrDict = None, expapp: bool = True,
-        expenv: bool = True) -> str:
+        expenv: bool = True) -> Path:
     r"""Expand path variables.
 
     Args:
@@ -196,13 +196,7 @@ def expand(
     if expenv:
         path = path.expanduser()
 
-    return str(path)
-
-def getpath(path: PathLike, unpack: bool = True) -> Path:
-    """Get path from string or PathLike structure."""
-    if unpack:
-        return Path(expand(path))
-    return join(path)
+    return path
 
 def dirname(*args: NestPath) -> str:
     r"""Extract directory name from a path like structure.
@@ -219,7 +213,7 @@ def dirname(*args: NestPath) -> str:
         'a\\b\\c\\d'
 
     """
-    path = Path(expand(*args))
+    path = expand(*args)
     if path.is_dir():
         return str(path)
     return str(path.parent)
@@ -239,7 +233,7 @@ def filename(*args: NestPath) -> str:
         'base.ext'
 
     """
-    path = Path(expand(*args))
+    path = expand(*args)
     if path.is_dir():
         return ''
     return str(path.name)
@@ -259,7 +253,7 @@ def basename(*args: NestPath) -> str:
         'base'
 
     """
-    path = Path(expand(*args))
+    path = expand(*args)
     if path.is_dir():
         return ''
     return str(path.stem)
@@ -279,7 +273,7 @@ def fileext(*args: NestPath) -> str:
         'ext'
 
     """
-    path = Path(expand(*args))
+    path = expand(*args)
     if path.is_dir():
         return ''
     return str(path.suffix).lstrip('.')
@@ -298,7 +292,7 @@ def isdir(path: NestPath) -> bool:
         to a regular file), False if it points to another kind of file.
 
     """
-    return Path(expand(path)).is_dir()
+    return expand(path).is_dir()
 
 def isfile(path: NestPath) -> bool:
     """Determine if given path points to a file.
@@ -314,7 +308,7 @@ def isfile(path: NestPath) -> bool:
         to a directory), False if it points to another kind of file.
 
     """
-    return Path(expand(path)).is_file()
+    return expand(path).is_file()
 
 def cp(source: NestPath, target: NestPath) -> bool:
     """Copy sub directories from given source to destination directory.
@@ -330,7 +324,7 @@ def cp(source: NestPath, target: NestPath) -> bool:
     """
     import shutil
 
-    sdir, ddir = Path(expand(source)), Path(expand(target))
+    sdir, ddir = expand(source), expand(target)
 
     for s in sdir.glob('*'):
         t = Path(ddir, basename(s))
@@ -353,7 +347,7 @@ def mkdir(*args: NestPath) -> bool:
         True if the directory already exists, or the operation was successful.
 
     """
-    path = Path(expand(*args))
+    path = expand(*args)
     if path.is_dir():
         return True
 
@@ -376,7 +370,7 @@ def rmdir(*args: NestPath) -> bool:
     """
     import shutil
 
-    path = Path(expand(*args))
+    path = expand(*args)
 
     if not path.is_dir():
         return False

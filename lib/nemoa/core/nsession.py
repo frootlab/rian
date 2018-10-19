@@ -23,7 +23,7 @@ from nemoa.core import npath
 from nemoa.io import wsfile
 from nemoa.types import (
     CManFileLike, OptBytes, OptPath, OptPathLike, OptStr, PathLike,
-    PathLikeList, StrList)
+    PathLikeList, PathList, StrList)
 
 # Module specific types
 WsFile = wsfile.WsFile
@@ -34,9 +34,10 @@ class Session:
     # Class Variables
     _DEFAULT_PATHS: StrList = [
         '%user_data_dir%', '%site_data_dir%', '%package_data_dir%']
+    _CONFIG_FILE: str = '%user_config_dir%/nemoa.ini'
 
     # Instance Variables
-    _paths: PathLikeList
+    _paths: PathList
     _ws: WsFile
 
     # Attributes
@@ -50,7 +51,7 @@ class Session:
         # Get search paths for workspaces
         self._paths = []
         for path in self._DEFAULT_PATHS:
-            self._paths.append(npath.expand(path))
+            self._paths.append(Path(npath.expand(path)))
         # Load workspace from file
         self.load(workspace=workspace, basedir=basedir, pwd=pwd)
 

@@ -69,7 +69,7 @@ def openx(file: FileOrPathLike, mode: str = '') -> IterBytesIOLike:
     elif isinstance(file, BytesIOBaseClass):
         fd, close = file, False
     elif isinstance(file, (str, Path)):
-        path = npath.getpath(file)
+        path = npath.expand(file)
         if 'w' in mode:
             try:
                 fd, close = open(path, 'wb'), True

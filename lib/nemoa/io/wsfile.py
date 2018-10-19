@@ -176,7 +176,7 @@ class WsFile:
         # Initialize instance Variables, Buffer and buffered ZipFile
         self._attr = {}
         self._changed = False
-        self._path = npath.getpath(filepath)
+        self._path = npath.expand(filepath)
         self._pwd = pwd
         self._buffer = BytesIO()
         self._file = ZipFile(self._buffer, mode='w')
@@ -238,7 +238,7 @@ class WsFile:
                 a workspace file.
 
         """
-        path = npath.getpath(filepath)
+        path = npath.expand(filepath)
 
         # Update 'workspace.ini'
         with self.open(self.CONFIG_FILE, mode='w') as file:
@@ -358,7 +358,7 @@ class WsFile:
 
         """
         # Check source file
-        srcfile = npath.getpath(source)
+        srcfile = npath.expand(source)
         if not srcfile.exists():
             raise FileNotFoundError(f"file '{srcfile}' does not exist")
         if srcfile.is_dir():

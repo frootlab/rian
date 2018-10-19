@@ -444,7 +444,7 @@ class TestNpath(ntest.ModuleTestCase):
     def test_expand(self) -> None:
         udict = {'var1': 'a/%var2%', 'var2': 'b'}
         val = npath.expand('%var1%/c', 'd', udict=udict)
-        self.assertEqual(val, str(Path('a/b/c/d')))
+        self.assertEqual(val, Path('a/b/c/d'))
 
     def test_dirname(self) -> None:
         path = (('a', ('b', 'c')), 'd', 'base.ext')

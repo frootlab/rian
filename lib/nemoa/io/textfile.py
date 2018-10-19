@@ -65,7 +65,7 @@ def openx(file: FileOrPathLike, mode: str = '') -> IterStringIOLike:
             fh = TextIOWrapper(file)
         close = False
     elif isinstance(file, (str, Path)):
-        path = npath.getpath(file)
+        path = npath.expand(file)
         if 'w' in mode:
             try:
                 fh = open(path, 'w')
