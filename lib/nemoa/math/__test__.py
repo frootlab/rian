@@ -10,7 +10,7 @@ import networkx as nx
 import numpy as np
 
 from nemoa.core import ntest
-from nemoa.math import nalgo, ncurve, ngraph, nmatrix, nregr, nvector
+from nemoa.math import algo, curve, graph, matrix, regr, vector
 from nemoa.types import Any, Callable, NpArray
 
 class MathTestCase(ntest.GenericTestCase):
@@ -175,17 +175,17 @@ class MathTestCase(ntest.GenericTestCase):
         # Test if function is metric
         self.assertIsMetric(f, **kwds)
 
-class TestNalgo(ntest.ModuleTestCase):
-    """Testcase for the module nemoa.math.nalgo."""
+class TestAlgo(ntest.ModuleTestCase):
+    """Testcase for the module nemoa.math.algo."""
 
-    module = 'nemoa.math.nalgo'
+    module = 'nemoa.math.algo'
 
     def test_search(self) -> None:
         self.assertEqual(
-            len(nalgo.search(nalgo, name='search')), 1)
+            len(algo.search(algo, name='search')), 1)
 
     def test_custom(self) -> None:
-        @nalgo.custom(category='custom')
+        @algo.custom(category='custom')
         def test_custom() -> None:
             pass
         self.assertEqual(
@@ -194,7 +194,7 @@ class TestNalgo(ntest.ModuleTestCase):
             getattr(test_custom, 'category', None), 'custom')
 
     def test_objective(self) -> None:
-        @nalgo.objective()
+        @algo.objective()
         def test_objective() -> None:
             pass
         self.assertEqual(
@@ -203,7 +203,7 @@ class TestNalgo(ntest.ModuleTestCase):
             getattr(test_objective, 'category', None), 'objective')
 
     def test_sampler(self) -> None:
-        @nalgo.sampler()
+        @algo.sampler()
         def test_sampler() -> None:
             pass
         self.assertEqual(
@@ -212,7 +212,7 @@ class TestNalgo(ntest.ModuleTestCase):
             getattr(test_sampler, 'category', None), 'sampler')
 
     def test_statistic(self) -> None:
-        @nalgo.statistic()
+        @algo.statistic()
         def test_statistic() -> None:
             pass
         self.assertEqual(
@@ -221,7 +221,7 @@ class TestNalgo(ntest.ModuleTestCase):
             getattr(test_statistic, 'category', None), 'statistic')
 
     def test_association(self) -> None:
-        @nalgo.association()
+        @algo.association()
         def test_association() -> None:
             pass
         self.assertEqual(
@@ -229,242 +229,242 @@ class TestNalgo(ntest.ModuleTestCase):
         self.assertEqual(
             getattr(test_association, 'category', None), 'association')
 
-class TestNcurve(MathTestCase, ntest.ModuleTestCase):
-    """Testcase for the module nemoa.math.ncurve."""
+class TestCurve(MathTestCase, ntest.ModuleTestCase):
+    """Testcase for the module nemoa.math.curve."""
 
-    module = 'nemoa.math.ncurve'
+    module = 'nemoa.math.curve'
 
     def setUp(self) -> None:
         self.x = np.array([[0.0, 0.5], [1.0, -1.0]])
 
     def test_sigmoids(self) -> None:
-        funcs = ncurve.sigmoids()
+        funcs = curve.sigmoids()
         self.assertIsInstance(funcs, list)
         self.assertTrue(funcs)
 
     def test_sigmoid(self) -> None:
-        for func in ncurve.sigmoids():
+        for func in curve.sigmoids():
             with self.subTest(name=func):
-                self.assertIsSigmoid(ncurve.sigmoid, name=func)
+                self.assertIsSigmoid(curve.sigmoid, name=func)
 
     def test_sigm_logistic(self) -> None:
-        self.assertIsSigmoid(ncurve.sigm_logistic)
-        self.assertCheckSum(ncurve.sigm_logistic, self.x, 2.122459)
+        self.assertIsSigmoid(curve.sigm_logistic)
+        self.assertCheckSum(curve.sigm_logistic, self.x, 2.122459)
 
     def test_sigm_tanh(self) -> None:
-        self.assertIsSigmoid(ncurve.sigm_tanh)
-        self.assertCheckSum(ncurve.sigm_tanh, self.x, 0.462117)
+        self.assertIsSigmoid(curve.sigm_tanh)
+        self.assertCheckSum(curve.sigm_tanh, self.x, 0.462117)
 
     def test_sigm_lecun(self) -> None:
-        self.assertIsSigmoid(ncurve.sigm_lecun)
-        self.assertCheckSum(ncurve.sigm_lecun, self.x, 0.551632)
+        self.assertIsSigmoid(curve.sigm_lecun)
+        self.assertCheckSum(curve.sigm_lecun, self.x, 0.551632)
 
     def test_sigm_elliot(self) -> None:
-        self.assertIsSigmoid(ncurve.sigm_elliot)
-        self.assertCheckSum(ncurve.sigm_elliot, self.x, 0.333333)
+        self.assertIsSigmoid(curve.sigm_elliot)
+        self.assertCheckSum(curve.sigm_elliot, self.x, 0.333333)
 
     def test_sigm_hill(self) -> None:
-        self.assertCheckSum(ncurve.sigm_hill, self.x, 0.447213)
+        self.assertCheckSum(curve.sigm_hill, self.x, 0.447213)
         for n in range(2, 10, 2):
             with self.subTest(n=n):
-                self.assertIsSigmoid(ncurve.sigm_hill, n=n)
+                self.assertIsSigmoid(curve.sigm_hill, n=n)
 
     def test_sigm_arctan(self) -> None:
-        self.assertIsSigmoid(ncurve.sigm_arctan)
-        self.assertCheckSum(ncurve.sigm_arctan, self.x, 0.463647)
+        self.assertIsSigmoid(curve.sigm_arctan)
+        self.assertCheckSum(curve.sigm_arctan, self.x, 0.463647)
 
     def test_bells(self) -> None:
-        funcs = ncurve.bells()
+        funcs = curve.bells()
         self.assertIsInstance(funcs, list)
         self.assertTrue(funcs)
 
     def test_bell(self) -> None:
-        for func in ncurve.bells():
+        for func in curve.bells():
             with self.subTest(name=func):
-                self.assertIsBell(ncurve.bell, name=func)
+                self.assertIsBell(curve.bell, name=func)
 
     def test_bell_gauss(self) -> None:
-        self.assertIsBell(ncurve.bell_gauss)
-        self.assertCheckSum(ncurve.bell_gauss, self.x, 1.234949)
+        self.assertIsBell(curve.bell_gauss)
+        self.assertCheckSum(curve.bell_gauss, self.x, 1.234949)
 
     def test_bell_d_logistic(self) -> None:
-        self.assertIsBell(ncurve.bell_d_logistic)
-        self.assertCheckSum(ncurve.bell_d_logistic, self.x, 0.878227)
+        self.assertIsBell(curve.bell_d_logistic)
+        self.assertCheckSum(curve.bell_d_logistic, self.x, 0.878227)
 
     def test_bell_d_elliot(self) -> None:
-        self.assertIsBell(ncurve.bell_d_elliot)
-        self.assertCheckSum(ncurve.bell_d_elliot, self.x, 1.944444)
+        self.assertIsBell(curve.bell_d_elliot)
+        self.assertCheckSum(curve.bell_d_elliot, self.x, 1.944444)
 
     def test_bell_d_hill(self) -> None:
-        self.assertIsBell(ncurve.bell_d_hill)
-        self.assertCheckSum(ncurve.bell_d_hill, self.x, 2.422648)
+        self.assertIsBell(curve.bell_d_hill)
+        self.assertCheckSum(curve.bell_d_hill, self.x, 2.422648)
 
     def test_bell_d_lecun(self) -> None:
-        self.assertIsBell(ncurve.bell_d_lecun)
-        self.assertCheckSum(ncurve.bell_d_lecun, self.x, 3.680217)
+        self.assertIsBell(curve.bell_d_lecun)
+        self.assertCheckSum(curve.bell_d_lecun, self.x, 3.680217)
 
     def test_bell_d_tanh(self) -> None:
-        self.assertIsBell(ncurve.bell_d_tanh)
-        self.assertCheckSum(ncurve.bell_d_tanh, self.x, 2.626396)
+        self.assertIsBell(curve.bell_d_tanh)
+        self.assertCheckSum(curve.bell_d_tanh, self.x, 2.626396)
 
     def test_bell_d_arctan(self) -> None:
-        self.assertIsBell(ncurve.bell_d_arctan)
-        self.assertCheckSum(ncurve.bell_d_arctan, self.x, 2.800000)
+        self.assertIsBell(curve.bell_d_arctan)
+        self.assertCheckSum(curve.bell_d_arctan, self.x, 2.800000)
 
     def test_dialogistic(self) -> None:
-        self.assertIncreasing(ncurve.dialogistic)
-        self.assertCheckSum(ncurve.dialogistic, self.x, 0.251661)
+        self.assertIncreasing(curve.dialogistic)
+        self.assertCheckSum(curve.dialogistic, self.x, 0.251661)
 
     def test_softstep(self) -> None:
-        self.assertIncreasing(ncurve.softstep)
-        self.assertCheckSum(ncurve.softstep, self.x, 0.323637)
+        self.assertIncreasing(curve.softstep)
+        self.assertCheckSum(curve.softstep, self.x, 0.323637)
 
     def test_multilogistic(self) -> None:
-        self.assertIncreasing(ncurve.multilogistic)
-        self.assertCheckSum(ncurve.multilogistic, self.x, 0.500091)
+        self.assertIncreasing(curve.multilogistic)
+        self.assertCheckSum(curve.multilogistic, self.x, 0.500091)
 
-class TestNvector(MathTestCase, ntest.ModuleTestCase):
-    """Testcase for the module nemoa.math.nvector."""
+class TestVector(MathTestCase, ntest.ModuleTestCase):
+    """Testcase for the module nemoa.math.vector."""
 
-    module = 'nemoa.math.nvector'
+    module = 'nemoa.math.vector'
 
     def test_norms(self) -> None:
-        norms = nvector.norms()
+        norms = vector.norms()
         self.assertIsInstance(norms, list)
         self.assertTrue(norms)
 
     def test_length(self) -> None:
-        for norm in nvector.norms():
+        for norm in vector.norms():
             with self.subTest(norm=norm):
-                self.assertIsVectorNorm(nvector.length, norm=norm)
+                self.assertIsVectorNorm(vector.length, norm=norm)
 
     def test_norm_p(self) -> None:
         for p in range(1, 10):
             with self.subTest(p=p):
-                self.assertIsVectorNorm(nvector.norm_p, p=p)
+                self.assertIsVectorNorm(vector.norm_p, p=p)
 
     def test_norm_1(self) -> None:
-        self.assertIsVectorNorm(nvector.norm_1)
+        self.assertIsVectorNorm(vector.norm_1)
 
     def test_norm_euclid(self) -> None:
-        self.assertIsVectorNorm(nvector.norm_euclid)
+        self.assertIsVectorNorm(vector.norm_euclid)
 
     def test_norm_max(self) -> None:
-        self.assertIsVectorNorm(nvector.norm_max)
+        self.assertIsVectorNorm(vector.norm_max)
 
     def test_norm_pmean(self) -> None:
         for p in range(1, 10):
             with self.subTest(p=p):
-                self.assertIsVectorNorm(nvector.norm_pmean, p=p)
+                self.assertIsVectorNorm(vector.norm_pmean, p=p)
 
     def test_norm_amean(self) -> None:
-        self.assertIsVectorNorm(nvector.norm_amean)
+        self.assertIsVectorNorm(vector.norm_amean)
 
     def test_norm_qmean(self) -> None:
-        self.assertIsVectorNorm(nvector.norm_qmean)
+        self.assertIsVectorNorm(vector.norm_qmean)
 
     def test_norm_sd(self) -> None:
-        self.assertIsVectorNorm(nvector.norm_sd)
+        self.assertIsVectorNorm(vector.norm_sd)
 
     def test_metrices(self) -> None:
-        metrices = nvector.metrices()
+        metrices = vector.metrices()
         self.assertIsInstance(metrices, list)
         self.assertTrue(metrices)
 
     def test_distance(self) -> None:
-        for metric in nvector.metrices():
+        for metric in vector.metrices():
             with self.subTest(metric=metric):
-                self.assertIsVectorMetric(nvector.distance, metric=metric)
+                self.assertIsVectorMetric(vector.distance, metric=metric)
 
     def test_dist_chebyshev(self) -> None:
-        self.assertIsVectorMetric(nvector.dist_chebyshev)
+        self.assertIsVectorMetric(vector.dist_chebyshev)
 
     def test_dist_manhatten(self) -> None:
-        self.assertIsVectorMetric(nvector.dist_manhatten)
+        self.assertIsVectorMetric(vector.dist_manhatten)
 
     def test_dist_minkowski(self) -> None:
-        self.assertIsVectorMetric(nvector.dist_minkowski)
+        self.assertIsVectorMetric(vector.dist_minkowski)
 
     def test_dist_amean(self) -> None:
-        self.assertIsVectorMetric(nvector.dist_amean)
+        self.assertIsVectorMetric(vector.dist_amean)
 
     def test_dist_qmean(self) -> None:
-        self.assertIsVectorMetric(nvector.dist_qmean)
+        self.assertIsVectorMetric(vector.dist_qmean)
 
     def test_dist_pmean(self) -> None:
         for p in range(1, 10):
             with self.subTest(p=p):
-                self.assertIsVectorMetric(nvector.dist_pmean, p=p)
+                self.assertIsVectorMetric(vector.dist_pmean, p=p)
 
     def test_dist_euclid(self) -> None:
-        self.assertIsVectorMetric(nvector.dist_euclid)
+        self.assertIsVectorMetric(vector.dist_euclid)
 
-class TestNmatrix(MathTestCase, ntest.ModuleTestCase):
-    """Testcase for the module nemoa.math.nmatrix."""
+class TestMatrix(MathTestCase, ntest.ModuleTestCase):
+    """Testcase for the module nemoa.math.matrix."""
 
-    module = 'nemoa.math.nmatrix'
+    module = 'nemoa.math.matrix'
 
     def test_norms(self) -> None:
-        norms = nmatrix.norms()
+        norms = matrix.norms()
         self.assertIsInstance(norms, list)
         self.assertTrue(norms)
 
     def test_norm(self) -> None:
-        for name in nmatrix.norms():
+        for name in matrix.norms():
             with self.subTest(name=name):
-                self.assertIsMatrixNorm(nmatrix.norm, name=name)
+                self.assertIsMatrixNorm(matrix.norm, name=name)
 
     def test_norm_frobenius(self) -> None:
-        self.assertIsMatrixNorm(nmatrix.norm_frobenius)
+        self.assertIsMatrixNorm(matrix.norm_frobenius)
 
     def test_norm_pq(self) -> None:
         for p in range(1, 10):
             for q in range(1, 10):
                 with self.subTest(p=p, q=q):
-                    self.assertIsMatrixNorm(nmatrix.norm_pq, p=p, q=q)
+                    self.assertIsMatrixNorm(matrix.norm_pq, p=p, q=q)
 
     def test_metrices(self) -> None:
-        metrices = nmatrix.metrices()
+        metrices = matrix.metrices()
         self.assertIsInstance(metrices, list)
         self.assertTrue(metrices)
 
     def test_distance(self) -> None:
-        for metric in nmatrix.metrices():
+        for metric in matrix.metrices():
             with self.subTest(metric=metric):
-                self.assertIsMatrixMetric(nmatrix.distance, metric=metric)
+                self.assertIsMatrixMetric(matrix.distance, metric=metric)
 
     def test_dist_frobenius(self) -> None:
-        self.assertIsMatrixMetric(nmatrix.dist_frobenius)
+        self.assertIsMatrixMetric(matrix.dist_frobenius)
 
-class TestNregr(MathTestCase, ntest.ModuleTestCase):
-    """Testcase for the module nemoa.math.nregr."""
+class TestRegr(MathTestCase, ntest.ModuleTestCase):
+    """Testcase for the module nemoa.math.regr."""
 
-    module = 'nemoa.math.nregr'
+    module = 'nemoa.math.regr'
 
     def test_errors(self) -> None:
-        dfuncs = nregr.errors()
-        self.assertIsInstance(dfuncs, list)
-        self.assertTrue(dfuncs)
+        errors = regr.errors()
+        self.assertIsInstance(errors, list)
+        self.assertTrue(errors)
 
     def test_error(self) -> None:
-        for dfunc in nregr.errors():
-            with self.subTest(dfunc=dfunc):
-                self.assertIsSemiMetric(nregr.error, dfunc=dfunc)
+        for error in regr.errors():
+            with self.subTest(name=error):
+                self.assertIsSemiMetric(regr.error, name=error)
 
-    def test_err_mae(self) -> None:
-        self.assertIsSemiMetric(nregr.err_mae)
+    def test_error_mae(self) -> None:
+        self.assertIsSemiMetric(regr.error_mae)
 
-    def test_err_mse(self) -> None:
-        self.assertIsSemiMetric(nregr.err_mse)
+    def test_error_mse(self) -> None:
+        self.assertIsSemiMetric(regr.error_mse)
 
-    def test_err_rmse(self) -> None:
-        self.assertIsSemiMetric(nregr.err_rmse)
+    def test_error_rmse(self) -> None:
+        self.assertIsSemiMetric(regr.error_rmse)
 
-    def test_err_rss(self) -> None:
-        self.assertIsSemiMetric(nregr.err_rss)
+    def test_error_rss(self) -> None:
+        self.assertIsSemiMetric(regr.error_rss)
 
-class TestCase(ntest.ModuleTestCase):
-    """Testsuite for modules within the package 'nemoa.math.ngraph'."""
+class TestGraph(ntest.ModuleTestCase):
+    """Testsuite for modules within the package 'nemoa.math.graph'."""
 
     def setUp(self) -> None:
         self.G = nx.DiGraph([(1, 3), (1, 4), (2, 3), (2, 4)], directed=True)
@@ -481,42 +481,42 @@ class TestCase(ntest.ModuleTestCase):
         self.pos3 = {1: (4., 2.), 2: (4., 16.), 4: (32., 2.), 3: (32., 16.)}
 
     def test_is_directed(self) -> None:
-        self.assertTrue(ngraph.is_directed(self.G))
+        self.assertTrue(graph.is_directed(self.G))
 
     def test_is_layered(self) -> None:
-        self.assertTrue(ngraph.is_layered(self.G))
+        self.assertTrue(graph.is_layered(self.G))
 
     def test_get_layers(self) -> None:
-        layers = ngraph.get_layers(self.G)
+        layers = graph.get_layers(self.G)
         self.assertEqual(layers, [[1, 2], [3, 4]])
 
     def test_get_groups(self) -> None:
-        groups = ngraph.get_groups(self.G, attribute='layer')
+        groups = graph.get_groups(self.G, attribute='layer')
         self.assertEqual(groups, {'': [], 'i': [1, 2], 'o': [3, 4]})
 
     def test_get_layer_layout(self) -> None:
-        layout = ngraph.get_layer_layout(self.G, direction='right')
+        layout = graph.get_layer_layout(self.G, direction='right')
         self.assertEqual(layout, self.pos1)
-        layout = ngraph.get_layer_layout(self.G, direction='down')
+        layout = graph.get_layer_layout(self.G, direction='down')
         self.assertEqual(layout, self.pos2)
 
     def test_rescale_layout(self) -> None:
-        layout = ngraph.rescale_layout(
+        layout = graph.rescale_layout(
             self.pos1, size=(40, 20), padding=(.2, .2, .1, .1))
         self.assertEqual(layout, self.pos3)
 
     def test_get_scaling_factor(self) -> None:
-        scaling = int(ngraph.get_scaling_factor(self.pos3))
+        scaling = int(graph.get_scaling_factor(self.pos3))
         self.assertEqual(scaling, 9)
 
     def test_get_layout_normsize(self) -> None:
-        normsize = ngraph.get_layout_normsize(self.pos3)
+        normsize = graph.get_layout_normsize(self.pos3)
         self.assertEqual(int(normsize['node_size']), 4)
 
     def test_get_node_layout(self) -> None:
-        color = ngraph.get_node_layout('observable')['color']
+        color = graph.get_node_layout('observable')['color']
         self.assertIsInstance(color, str)
 
     def test_get_layout(self) -> None:
-        layout = ngraph.get_layout(self.G, 'layer', direction='right')
+        layout = graph.get_layout(self.G, 'layer', direction='right')
         self.assertEqual(layout, self.pos1)

@@ -1,7 +1,7 @@
-nemoa.math.nalgo module
+nemoa.math.algo module
 =======================
 
-.. automodule:: nemoa.math.nalgo
+.. automodule:: nemoa.math.algo
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,7 +1,7 @@
-nemoa.math.curve module
+nemoa.math.vector module
 ========================
 
-.. automodule:: nemoa.math.curve
+.. automodule:: nemoa.math.vector
     :members:
     :undoc-members:
     :show-inheritance:

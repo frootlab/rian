@@ -32,13 +32,13 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-from nemoa.math import ncurve, nalgo
+from nemoa.math import curve, algo
 
 #
 # (1) Sampler for Bayesian Networks
 #
 
-@nalgo.sampler(
+@algo.sampler(
     name    = 'forward',
     title   = 'Forward Sampling',
     classes = ['LM', 'ANN']
@@ -83,7 +83,7 @@ def draw_forward_sample(model, *args, **kwds):
 
     return None
 
-@nalgo.sampler(
+@algo.sampler(
     name    = 'ancestral_residual',
     title   = 'Ancestral Residual Sampler',
     classes = ['LM', 'ANN']
@@ -127,7 +127,7 @@ def get_forward_residuals(model, data, mapping = None, block = None):
 # (2) Sample statistics for Bayesian Networks
 #
 
-@nalgo.statistic(
+@algo.statistic(
     name    = 'errorvector',
     title   = 'Reconstruction Error',
     classes = ['LM', 'ANN'],
@@ -149,20 +149,20 @@ def get_error_vector(model, data, norm: str = 'MSE', **kwds):
         block: list of strings containing labels of source units
             that are blocked by setting the values to their means
         norm: used norm to calculate data reconstuction error from
-            residuals. see nemoa.core.nvector.norms for a list
+            residuals. see nemoa.core.vector.norms for a list
             of provided norms
 
     """
-    from nemoa.math import nvector
+    from nemoa.math import vector
 
-    # TODO: use nvector
-    #error = nvector.distance(x, y, metric=metric)
+    # TODO: use vector
+    #error = vector.distance(x, y, metric=metric)
     res = get_residuals(data, **kwds)
     error = numpy.mean(numpy.square(res), axis=0)
 
     return error
 
-@nalgo.custom(
+@algo.custom(
     name     = 'accuracyvector',
     category = 'units',
     args     = 'all',
@@ -186,22 +186,22 @@ def get_accuracy_vector(model, data, norm: str = 'MSE', **kwds):
         block: list of strings containing labels of source units
             that are blocked by setting the values to their means
         norm: used norm to calculate accuracy
-            see nemoa.core.nvector.norms for a list of provided
+            see nemoa.core.vector.norms for a list of provided
             norms
 
     """
-    from nemoa.math import nvector
+    from nemoa.math import vector
 
-    # TODO: use nvector
-    #error = nvector.distance(x, y, metric=metric)
+    # TODO: use vector
+    #error = vector.distance(x, y, metric=metric)
     res = get_residuals(data, **kwds)
     normres = numpy.mean(numpy.square(res), axis=0)
     normdat = numpy.mean(numpy.square(data[1]), axis=0)
 
     return 1. - normres / normdat
 
-@nalgo.custom(
-    name     = 'precisionvector',
+@algo.custom(
+    name     = 'precisiovector',
     category = 'units',
     args     = 'all',
     retfmt   = 'scalar',
@@ -224,20 +224,20 @@ def get_precision_vector(model, data, norm = 'SD', **kwds):
         block: list of strings containing labels of source units
             that are blocked by setting the values to their means
         norm: used norm to calculate deviation for precision
-            see nemoa.core.nvector.norms for a list of provided
+            see nemoa.core.vector.norms for a list of provided
             norms
 
     """
 
-    from nemoa.math import nvector
+    from nemoa.math import vector
 
     res = get_residuals(data, **kwds)
-    devres = nvector.length(res, norm=norm)
-    devdat = nvector.length(data[1], norm=norm)
+    devres = vector.length(res, norm=norm)
+    devdat = vector.length(data[1], norm=norm)
 
     return 1. - devres / devdat
 
-@nalgo.custom(
+@algo.custom(
     name     = 'mean',
     title    = 'Reconstructed Mean Values',
     category = 'units',
@@ -271,7 +271,7 @@ def get_mean_vector(model, data, mapping = None, block = None):
 
     return model_out.mean(axis = 0)
 
-@nalgo.custom(
+@algo.custom(
     name     = 'variance',
     category = 'units',
     args     = 'input',
@@ -306,7 +306,7 @@ def get_variance_vector(model, data, mapping = None, block = None):
 # (3) Objective Functions for Bayesian Networks
 #
 
-@nalgo.objective(
+@algo.objective(
     name    = 'error',
     title   = 'Mean Reconstruction Error',
     classes = ['LM', 'ANN'],
@@ -316,7 +316,7 @@ def get_error(model, *args, **kwds):
     """Return mean error of regressands."""
     return numpy.mean(get_error_vector(model, *args, **kwds))
 
-@nalgo.objective(
+@algo.objective(
     name    = 'accuracy',
     title   = 'Mean Reconstruction Accuracy',
     classes = ['LM', 'ANN'],
@@ -326,7 +326,7 @@ def get_accuracy(model, *args, **kwds):
     """Return mean accuracy of regressands."""
     return numpy.mean(get_accuracy_vector(model, *args, **kwds))
 
-@nalgo.objective(
+@algo.objective(
     name    = 'precision',
     title   = 'Mean Reconstruction Pricision',
     classes = ['LM', 'ANN'],
@@ -340,7 +340,7 @@ def get_precision(model, *args, **kwds):
 # (4) Association Measures for Bayesian Networks
 #
 
-@nalgo.custom(
+@algo.custom(
     name     = 'correlation',
     category = 'relation',
     directed = False,
@@ -389,7 +389,7 @@ def correlation(model, data, mapping = None, **kwds):
     return relation
 
 
-@nalgo.custom(
+@algo.custom(
     name     = 'knockout',
     category = 'relation',
     directed = True,
@@ -452,7 +452,7 @@ def knockout(model, data, mapping = None, **kwds):
 
     return R
 
-@nalgo.custom(
+@algo.custom(
     name     = 'connectionweight',
     category = 'relation',
     directed = True,
@@ -492,7 +492,7 @@ def connectionweight(model, data, mapping = None, **kwds):
 
     return wsp.T
 
-@nalgo.custom(
+@algo.custom(
     name     = 'coinduction',
     category = 'relation',
     directed = True,
@@ -563,7 +563,7 @@ def coinduction(model, data, *args, **kwds):
 
     return coop
 
-@nalgo.custom(
+@algo.custom(
     name     = 'induction',
     category = 'relation',
     directed = True,
@@ -651,4 +651,4 @@ def induction(model, data, mapping = None, points = 10,
             if inlabel == outlabel: A[iid, oid] = 0.0
     bound = numpy.amax(A)
 
-    return nncurve.dialogistic(R, sigma = contrast, scale = bound)
+    return ncurve.dialogistic(R, sigma = contrast, scale = bound)

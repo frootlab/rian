@@ -1,7 +1,7 @@
-nemoa.math.matrix module
+nemoa.fileio.nplot module
 =========================
 
-.. automodule:: nemoa.math.matrix
+.. automodule:: nemoa.fileio.nplot
     :members:
     :undoc-members:
     :show-inheritance:

@@ -8,7 +8,7 @@ import importlib
 
 import numpy
 
-from nemoa.io import nplot
+from nemoa.fileio import nplot
 
 def filetypes():
     """Get supported image filetypes."""
@@ -74,7 +74,7 @@ def save(network, path=None, filetype=None, plot=None, **kwds):
 class Graph(nplot.Graph):
 
     def create(self, network):
-        from nemoa.math import ncurve, ngraph
+        from nemoa.math import curve, graph
 
         # set plot defaults
         self.set_default({
@@ -92,12 +92,12 @@ class Graph(nplot.Graph):
             'edge_sign_normalize': True})
 
         # copy graph from model graph
-        graph = network.get('graph', type='graph')
+        G = network.get('graph', type='graph')
 
         # copy graph attributes from graph 'params'
-        params = graph.graph.get('params', {})
+        params = G.graph.get('params', {})
         if 'directed' in params:
-            graph.graph['directed'] = params['directed']
+            G.graph['directed'] = params['directed']
 
         # create edge attribute 'weight'
         edgeattr = self._config.get('edge_weight', None)
@@ -109,11 +109,11 @@ class Graph(nplot.Graph):
         if bool(normalize):
             absmean = numpy.absolute(numpy.mean(
                 [data['params'].get(edgeattr, 0.) \
-                for (u, v, data) in graph.edges(data=True)]))
+                for (u, v, data) in G.edges(data=True)]))
             if absmean == 0.:
                 normalize = None
 
-        for (u, v, data) in graph.edges(data=True):
+        for (u, v, data) in G.edges(data=True):
             weight = data['params'].get(edgeattr, None)
             if weight is None:
                 if 'weight' in data:
@@ -122,22 +122,22 @@ class Graph(nplot.Graph):
 
             # threshold weights (optional)
             if bool(threshold) and threshold > numpy.absolute(weight):
-                graph.remove_edge(u, v)
+                G.remove_edge(u, v)
                 continue
 
             # create edge attribute 'color' (optional)
             if self._config.get('edge_color', False):
                 if weight > 0.:
-                    graph.edges[u, v]['color'] = \
+                    G.edges[u, v]['color'] = \
                         self._config.get('edge_poscolor', 'green')
                 else:
-                    graph.edges[u, v]['color'] = \
+                    G.edges[u, v]['color'] = \
                         self._config.get('edge_negcolor', 'red')
 
             # create edge attribute 'caption' (optional)
             if self._config.get('edge_caption'):
                 caption = ' $' + ('%.2g' % (weight)) + '$'
-                graph.edges[u, v]['caption'] = caption
+                G.edges[u, v]['caption'] = caption
 
             # normalize weights (optional)
             if bool(normalize):
@@ -145,26 +145,26 @@ class Graph(nplot.Graph):
 
             # transform weights (optional)
             if transform == 'softstep':
-                weight = ncurve.softstep(weight)
+                weight = curve.softstep(weight)
 
-            graph.edges[u, v]['weight'] = weight
+            G.edges[u, v]['weight'] = weight
 
         # normalize signs of weights (optional)
         if self._config.get('edge_sign_normalize'):
-            number_of_layers = len(graph.graph['params']['layer'])
+            number_of_layers = len(G.graph['params']['layer'])
             if number_of_layers % 2 == 1:
                 sign_sum = numpy.sum(
-                    [numpy.sign(graph.edges[edge].get('weight', 0.))
-                    for edge in graph.edges()])
+                    [numpy.sign(G.edges[edge].get('weight', 0.))
+                    for edge in G.edges()])
                 if sign_sum < 0.:
-                    for edge in graph.edges():
-                        if 'weight' in graph.edges[edge]:
-                            graph.edges[edge]['weight'] *= -1
+                    for edge in G.edges():
+                        if 'weight' in G.edges[edge]:
+                            G.edges[edge]['weight'] *= -1
 
-        nodes = {n: data for n, data in graph.nodes(data=True)}
+        nodes = {n: data for n, data in G.nodes(data=True)}
 
         # copy node attributes 'label' and 'visible' from unit params
-        for node, data in graph.nodes(data=True):
+        for node, data in G.nodes(data=True):
             params = data.get('params', {})
             data.update({
                 'label': params.get('label', str(node)),
@@ -176,49 +176,49 @@ class Graph(nplot.Graph):
         # update node attribute 'group'
         groupby = self._config.get('node_groupby', None)
         if groupby is not None:
-            for node, data in graph.nodes(data=True):
+            for node, data in G.nodes(data=True):
                 node_params = data.get('params', {})
                 data['group'] = node_params.get(groupby)
         else:
-            is_layer = ngraph.is_layered(graph)
-            is_directed = ngraph.is_directed(graph)
+            is_layer = graph.is_layered(G)
+            is_directed = graph.is_directed(G)
             if is_layer and not is_directed:
-                for node, data in graph.nodes(data=True):
+                for node, data in G.nodes(data=True):
                     gid = int(data.get('visible', True))
                     data['group'] = {0: 'latent', 1: 'observable'}[gid]
             elif is_layer and is_directed:
-                layers = ngraph.get_layers(graph)
+                layers = graph.get_layers(G)
                 ilayer, olayer = layers[0], layers[-1]
-                for node, data in graph.nodes(data=True):
+                for node, data in G.nodes(data=True):
                     gid = int(node in ilayer) \
                         + 2 * int(node in olayer)
                     data['group'] = {0: 'latent', 1: 'source',
                         2: 'target', 3: 'transit'}[gid]
             else:
-                for node, data in graph.nodes(data=True):
+                for node, data in G.nodes(data=True):
                     gid = int(data.get('visible', True))
                     data['group'] = {0: 'latent', 1: 'observable'}[gid]
 
         # update node attributes for layout
-        groups = ngraph.get_groups(graph, attribute='group')
+        groups = graph.get_groups(G, attribute='group')
         for group in sorted(groups.keys()):
             if group == '':
                 continue
-            layout = ngraph.get_node_layout(group)
+            layout = graph.get_node_layout(group)
             group_label = layout.get('label', {
                 True: str(groupby),
                 False: 'not ' + str(groupby)}[group] \
                 if isinstance(group, bool) else str(group).title())
             for node in groups.get(group, []):
                 node_params = nodes[node].get('params')
-                graph.node[node].update({
+                G.node[node].update({
                     'label': node_params.get('label', str(node)),
                     'group': group_label})
-                graph.node[node].update(layout)
+                G.node[node].update(layout)
 
         # prepare parameters
         if self._config.get('title') is None:
             self._config['title'] = network.fullname
 
         # create plot
-        return self.plot(graph)
+        return self.plot(G)

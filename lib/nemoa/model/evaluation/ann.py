@@ -19,11 +19,11 @@ import nemoa
 import numpy
 
 from nemoa.model.evaluation.base import Evaluation
-from nemoa.math import ncurve, nalgo
+from nemoa.math import curve, algo
 
 class ANN(Evaluation):
 
-    @nalgo.objective(
+    @algo.objective(
         name     = 'error',
         title    = 'Average Reconstruction Error',
         category = 'model',
@@ -35,7 +35,7 @@ class ANN(Evaluation):
         """Mean data reconstruction error of output units."""
         return numpy.mean(self.uniterror(*args, **kwds))
 
-    @nalgo.objective(
+    @algo.objective(
         name     = 'accuracy',
         title    = 'Average Reconstruction Accuracy',
         category = 'model',
@@ -47,7 +47,7 @@ class ANN(Evaluation):
         """Mean data reconstruction accuracy of output units."""
         return numpy.mean(self.unitaccuracy(*args, **kwds))
 
-    @nalgo.objective(
+    @algo.objective(
         name     = 'precision',
         title    = 'Average Reconstruction Pricision',
         category = 'model',
@@ -59,7 +59,7 @@ class ANN(Evaluation):
         """Mean data reconstruction precision of output units."""
         return numpy.mean(self.unitprecision(*args, **kwds))
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'mean',
         title    = 'Average Target Reconstruction Values',
         category = 'units',
@@ -98,7 +98,7 @@ class ANN(Evaluation):
 
         return model_out.mean(axis = 0)
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'variance',
         category = 'units',
         args     = 'input',
@@ -130,7 +130,7 @@ class ANN(Evaluation):
 
         return model_out.var(axis = 0)
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'expect',
         category = 'units',
         args     = 'input',
@@ -158,7 +158,7 @@ class ANN(Evaluation):
 
         return self.model.system._get_unitexpect(*args, **kwds)
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'values',
         category = 'units',
         args     = 'input',
@@ -188,7 +188,7 @@ class ANN(Evaluation):
 
         return self.model.system._get_unitvalues(*args, **kwds)
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'samples',
         category = 'units',
         args     = 'input',
@@ -218,7 +218,7 @@ class ANN(Evaluation):
 
         return self.model.system._get_unitsamples(*args, **kwds)
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'residuals',
         category = 'units',
         args     = 'all',
@@ -261,7 +261,7 @@ class ANN(Evaluation):
         # calculate residuals
         return d_tgt - m_out
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'error',
         category = 'units',
         args     = 'all',
@@ -285,20 +285,20 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate data reconstuction error from
-                residuals. see nemoa.core.nvector.norm for a list
+                residuals. see nemoa.core.vector.norm for a list
                 of provided norms
 
         """
-        from nemoa.math import nvector
+        from nemoa.math import vector
 
-        # TODO: use nvector
-        #error = nvector.distance(x, y, metric=metric)
+        # TODO: use vector
+        #error = vector.distance(x, y, metric=metric)
         res = self.unitresiduals(data, **kwds)
         error = numpy.mean(numpy.square(res), axis=0)
 
         return error
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'accuracy',
         category = 'units',
         args     = 'all',
@@ -322,21 +322,21 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate accuracy
-                see nemoa.core.nvector.norm for a list of provided
+                see nemoa.core.vector.norm for a list of provided
                 norms
 
         """
 
-        from nemoa.math import nvector
+        from nemoa.math import vector
 
-        # TODO: use nvector to calculate distance
+        # TODO: use vector to calculate distance
         res = self.unitresiduals(data, **kwds)
         normres = numpy.mean(numpy.square(res), axis=0)
         normdat = numpy.mean(numpy.square(data[1]), axis=0)
 
         return 1. - normres / normdat
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'precision',
         category = 'units',
         args     = 'all',
@@ -360,19 +360,19 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate deviation for precision
-                see nemoa.core.nvector.norm for a list of provided
+                see nemoa.core.vector.norm for a list of provided
                 norms
 
         """
-        from nemoa.math import nvector
+        from nemoa.math import vector
 
         res = self.unitresiduals(data, **kwds)
-        devres = nvector.length(res, norm=norm)
-        devdat = nvector.length(data[1], norm=norm)
+        devres = vector.length(res, norm=norm)
+        devdat = vector.length(data[1], norm=norm)
 
         return 1. - devres / devdat
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'correlation',
         category = 'relation',
         directed = False,
@@ -420,7 +420,7 @@ class ANN(Evaluation):
 
         return relation
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'connectionweight',
         category = 'relation',
         directed = True,
@@ -460,7 +460,7 @@ class ANN(Evaluation):
 
         return wsp.T
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'knockout',
         category = 'relation',
         directed = True,
@@ -522,7 +522,7 @@ class ANN(Evaluation):
 
         return R
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'coinduction',
         category = 'relation',
         directed = True,
@@ -593,7 +593,7 @@ class ANN(Evaluation):
 
         return coop
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'induction',
         category = 'relation',
         directed = True,
@@ -681,9 +681,9 @@ class ANN(Evaluation):
                 if inlabel == outlabel: A[iid, oid] = 0.0
         bound = numpy.amax(A)
 
-        return ncurve.dialogistic(R, scale = bound, sigma = contrast)
+        return curve.dialogistic(R, scale = bound, sigma = contrast)
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'energy',
         category = 'model',
         args     = 'all',
@@ -709,7 +709,7 @@ class ANN(Evaluation):
         # calculate (pseudo) energy of system
         return numpy.log(1. + numpy.exp(-energy).sum())
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'energy',
         category = 'units',
         args     = 'input',
@@ -737,7 +737,7 @@ class ANN(Evaluation):
         data = self.unitexpect(data, mapping)
         return self.model.system._units[mapping[-1]].energy(data)
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'links_energy',
         category = ('system', 'links', 'evaluation'),
         args     = 'input',

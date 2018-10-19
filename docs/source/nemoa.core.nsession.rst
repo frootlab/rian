@@ -1,7 +1,7 @@
-nemoa.core.nsession module
+nemoa.core.session module
 ==========================
 
-.. automodule:: nemoa.core.nsession
+.. automodule:: nemoa.core.session
     :members:
     :undoc-members:
     :show-inheritance:

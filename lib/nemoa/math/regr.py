@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Collection of Sample Statistics for Regression Analysis."""
+"""Regression Analysis Functions."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -14,11 +14,10 @@ except ImportError as err:
         "https://pypi.org/project/numpy") from err
 
 from nemoa.core import nfunc, nmodule
-from nemoa.math import nvector
+from nemoa.math import vector
 from nemoa.types import Any, NpAxis, NpArray, NpArrayLike, StrList
 
-ERR_PREFIX = 'err_'
-FIT_PREFIX = 'fit_'
+ERROR_PREFIX = 'error_'
 
 #
 # Discrepancy Functions for the evaluation of Regression Errors and Residuals
@@ -49,15 +48,15 @@ def errors() -> StrList:
 
     # Get dictionary of functions with given prefix
     module = nmodule.inst(nmodule.curname())
-    pattern = ERR_PREFIX + '*'
+    pattern = ERROR_PREFIX + '*'
     d = nmodule.get_functions(module, pattern=pattern)
 
     # Create sorted list of discrepancy functions
-    i = len(ERR_PREFIX)
+    i = len(ERROR_PREFIX)
     return sorted([v['name'][i:] for v in d.values()])
 
 def error(
-        x: NpArrayLike, y: NpArrayLike, dfunc: str, **kwds: Any) -> NpArray:
+        x: NpArrayLike, y: NpArrayLike, name: str, **kwds: Any) -> NpArray:
     """Calculate discrepancy of samples along given axis.
 
     A 'discrepancy' is a sample statistic, that quantifies the difference of
@@ -73,7 +72,7 @@ def error(
             arrays.
         y: Any sequence that can be interpreted as a numpy ndarray with the same
             dimension, shape and datatypes as 'x'.
-        dfunc: Name of discrepancy function:
+        name: Name of discrepancy function:
             'rss': Residual Sum of Squares
             'mse': Mean Squared Error
             'mae': Mean Absolute Error
@@ -108,18 +107,18 @@ def error(
             "arrays 'x' and 'y' can not be broadcasted together")
 
     # Get discrepancy function
-    fname = ERR_PREFIX + dfunc.lower()
+    fname = ERROR_PREFIX + name.lower()
     module = nmodule.inst(nmodule.curname())
     try:
         func = getattr(module, fname)
     except AttributeError as err:
         raise ValueError(
-            f"argument 'dfunc' has an invalid value '{str(dfunc)}'")
+            f"argument 'name' has an invalid value '{str(name)}'")
 
     # Evaluate distance function
     return func(x, y, **nfunc.kwds(func, default=kwds))
 
-def err_rss(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
+def error_rss(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
     """Calculate Residual Sum of Squares of two samples along given axis.
 
     The Residual Sum of Squares (RSS), also known as the the Sum of squared
@@ -153,7 +152,7 @@ def err_rss(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
     """
     return np.sum(np.square(np.add(x, np.multiply(y, -1))), axis=axis)
 
-def err_mse(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
+def error_mse(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
     """Calculate Mean Squared Error of two samples along given axis.
 
     The Mean Squared Error (MSE) is a sample statistic on in the space of random
@@ -186,7 +185,7 @@ def err_mse(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
     """
     return np.mean(np.square(np.add(x, np.multiply(y, -1))), axis=axis)
 
-def err_mae(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
+def error_mae(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
     """Calculate Mean Absolute Error of two samples along given axis.
 
     The Mean Absolute Error (MAE) is a sample statistic on in the space of
@@ -216,9 +215,9 @@ def err_mae(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
         [4] https://en.wikipedia.org/wiki/risk_function
 
     """
-    return nvector.dist_amean(x, y, axis=axis)
+    return vector.dist_amean(x, y, axis=axis)
 
-def err_rmse(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
+def error_rmse(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
     """Calculate Root-Mean-Square Error of two samples along given axis.
 
     The Root-Mean-Square Error (RMSE) is a sample statistic on in the space of
@@ -247,15 +246,14 @@ def err_rmse(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
         [3] https://en.wikipedia.org/wiki/discrepancy_function
 
     """
-    return nvector.dist_qmean(x, y, axis=axis)
+    return vector.dist_qmean(x, y, axis=axis)
 
-# TODO: Add RSSE
+# TODO (patrick.michl@gmail.com): Add RSSE
 # norm_euclid
 # With respect to a given sample the induced metric, is a sample statistic and
 # referred as the 'Root-Sum-Square Difference' (RSSD). An important
 # application is the method of least squares [3].
 # [3] https://en.wikipedia.org/wiki/least_squares
 
-
-# TODO: Goodness of fit Measures
+# TODO (patrick.michl@gmail.com): Goodness of fit Measures
 # https://en.wikipedia.org/wiki/Goodness_of_fit

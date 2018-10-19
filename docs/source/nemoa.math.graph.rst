@@ -1,7 +1,7 @@
-nemoa.fileio.binfile module
+nemoa.math.graph module
 =======================
 
-.. automodule:: nemoa.fileio.binfile
+.. automodule:: nemoa.math.graph
     :members:
     :undoc-members:
     :show-inheritance:

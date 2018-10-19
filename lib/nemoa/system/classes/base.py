@@ -9,7 +9,7 @@ import numpy
 import copy
 
 from nemoa.core import nbase, nclass
-from nemoa.math import nalgo, ncurve
+from nemoa.math import algo, curve
 from typing import Any, Dict
 
 class System(nbase.ObjectIP):
@@ -372,7 +372,7 @@ class System(nbase.ObjectIP):
         else:
             link_norm_max = numpy.amax(numpy.abs(layer_adjacency
                 * layer_weights)) * adjacency_sum / weight_sum
-            link_intensity = ncurve.dialogistic(link_norm_weight,
+            link_intensity = curve.dialogistic(link_norm_weight,
                 scale = 0.7 * link_norm_max, sigma = 10.)
 
         link_params['layer'] = (src_layer, tgt_layer)
@@ -503,7 +503,7 @@ class System(nbase.ObjectIP):
         raise ValueError("""could not get parameters:
             unknown key '%s'.""" % key)
 
-    @nalgo.objective(
+    @algo.objective(
         name     = 'error',
         category = ('system', 'evaluation'),
         args     = 'all',
@@ -514,7 +514,7 @@ class System(nbase.ObjectIP):
         """Mean data reconstruction error of output units."""
         return numpy.mean(self._get_uniterror(*args, **kwds))
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'accuracy',
         category = ('system', 'evaluation'),
         args     = 'all',
@@ -525,7 +525,7 @@ class System(nbase.ObjectIP):
         """Mean data reconstruction accuracy of output units."""
         return numpy.mean(self._get_unitaccuracy(*args, **kwds))
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'precision',
         category = ('system', 'evaluation'),
         args     = 'all',
@@ -536,7 +536,7 @@ class System(nbase.ObjectIP):
         """Mean data reconstruction precision of output units."""
         return numpy.mean(self._get_unitprecision(*args, **kwds))
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'units_mean',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -573,7 +573,7 @@ class System(nbase.ObjectIP):
 
         return model_out.mean(axis = 0)
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'units_variance',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -605,7 +605,7 @@ class System(nbase.ObjectIP):
 
         return model_out.var(axis = 0)
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'units_expect',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -646,7 +646,7 @@ class System(nbase.ObjectIP):
         return out_data
 
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'units_values',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -704,7 +704,7 @@ class System(nbase.ObjectIP):
                     self._units[mapping[id]].params))
             return data
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'units_samples',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -761,7 +761,7 @@ class System(nbase.ObjectIP):
                     data, self._units[mapping[id]].params)
             return data
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'units_residuals',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -804,7 +804,7 @@ class System(nbase.ObjectIP):
         # calculate residuals
         return d_tgt - m_out
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'units_error',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -828,21 +828,21 @@ class System(nbase.ObjectIP):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate data reconstuction error from
-                residuals. see nemoa.core.nvector.norm for a list
+                residuals. see nemoa.core.vector.norm for a list
                 of provided norms
 
         """
 
-        from nemoa.math import nvector
+        from nemoa.math import vector
 
-        # TODO: use nvector
-        #error = nvector.distance(x, y, metric=metric)
+        # TODO: use vector
+        #error = vector.distance(x, y, metric=metric)
         res = self._get_unitresiduals(data, **kwds)
         error = numpy.mean(numpy.square(res), axis=0)
 
         return error
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'units_accuracy',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -866,21 +866,21 @@ class System(nbase.ObjectIP):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate accuracy
-                see nemoa.core.nvector.norm for a list of provided
+                see nemoa.core.vector.norm for a list of provided
                 norms
 
         """
-        from nemoa.math import nvector
+        from nemoa.math import vector
 
-        # TODO: use nvector
-        #error = nvector.distance(x, y, metric=metric)
+        # TODO: use vector
+        #error = vector.distance(x, y, metric=metric)
         res = self._get_unitresiduals(data, **kwds)
         normres = numpy.mean(numpy.square(res), axis=0)
         normdat = numpy.mean(numpy.square(data[1]), axis=0)
 
         return 1. - normres / normdat
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'units_precision',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -904,20 +904,20 @@ class System(nbase.ObjectIP):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate deviation for precision
-                see nemoa.core.nvector.norm for a list of provided
+                see nemoa.core.vector.norm for a list of provided
                 norms
 
         """
 
-        from nemoa.math import nvector
+        from nemoa.math import vector
 
         res = self._get_unitresiduals(data, **kwds)
-        devres = nvector.length(res, norm=norm)
-        devdat = nvector.length(data[1], norm=norm)
+        devres = vector.length(res, norm=norm)
+        devdat = vector.length(data[1], norm=norm)
 
         return 1. - devres / devdat
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'correlation',
         category = ('system', 'relation', 'evaluation'),
         directed = False,
@@ -965,7 +965,7 @@ class System(nbase.ObjectIP):
 
         return R
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'weightsumproduct',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -1005,7 +1005,7 @@ class System(nbase.ObjectIP):
 
         return wsp.T
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'knockout',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -1065,7 +1065,7 @@ class System(nbase.ObjectIP):
 
         return R
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'coinduction',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -1136,7 +1136,7 @@ class System(nbase.ObjectIP):
 
         return coop
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'induction',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -1234,7 +1234,7 @@ class System(nbase.ObjectIP):
                 if inlabel == outlabel: A[inid, outid] = 0.0
         bound = numpy.amax(A)
 
-        R = ncurve.dialogistic(R, scale = bound, sigma = contrast)
+        R = curve.dialogistic(R, scale = bound, sigma = contrast)
 
         return R
 

@@ -20,10 +20,10 @@ from pathlib import Path
 
 from nemoa.classes import Attr, ReadOnlyAttr, ReadWriteAttr
 from nemoa.core import npath
-from nemoa.io import inifile, wsfile
+from nemoa.fileio import inifile, wsfile
 from nemoa.types import (
     CManFileLike, ClassVar, OptBytes, OptPath, OptPathLike, OptStr, PathLike,
-    PathList, StrDict2, StrList)
+    PathList, StrDict2, StrList, Traceback)
 
 # Module specific types
 WsFile = wsfile.WsFile
@@ -32,23 +32,25 @@ class Session:
     """Session."""
 
     #
-    # Class Variables
+    # Private Class Variables
     #
 
-    CONFIG_FILE: ClassVar[str] = '%user_config_dir%/nemoa.ini'
-    CONFIG_STRUCT: ClassVar[StrDict2] = {
+    _CONFIG_FILE: ClassVar[str] = '%user_config_dir%/nemoa.ini'
+    _CONFIG_STRUCT: ClassVar[StrDict2] = {
         'session': {
             'path': 'path',
-            'restore': 'bool'}}
-    DEFAULT_CONFIG: ClassVar[StrDict2] = {
+            'restore_on_startup': 'bool',
+            'autosave_on_exit': 'bool'}}
+    _DEFAULT_CONFIG: ClassVar[StrDict2] = {
         'session': {
             'path': None,
-            'restore': False}}
-    DEFAULT_PATHS: StrList = [
+            'restore_on_startup': False,
+            'autosave_on_exit': False}}
+    _DEFAULT_PATHS: StrList = [
         '%user_data_dir%', '%site_data_dir%', '%package_data_dir%']
 
     #
-    # Instance Variables
+    # Private Instance Variables
     #
 
     _cfg: StrDict2
@@ -56,14 +58,20 @@ class Session:
     _paths: PathList
 
     #
-    # Attributes
+    # Public Attributes
     #
 
     paths: Attr = ReadWriteAttr(list, key='_paths')
     paths.__doc__ = """Search paths for workspaces."""
 
     path: Attr = ReadOnlyAttr(Path, getter='_get_path')
-    path.__doc__ = """Filepath of the workspace."""
+    path.__doc__ = """Filepath of the current workspace."""
+
+    files: Attr = ReadOnlyAttr(list, getter='_get_files')
+    files.__doc__ = """Files within the current workspace."""
+
+    folders: Attr = ReadOnlyAttr(list, getter='_get_folders')
+    folders.__doc__ = """Folders within the current workspace."""
 
     #
     # Magic
@@ -73,24 +81,32 @@ class Session:
         basedir: OptPathLike = None, pwd: OptBytes = None) -> None:
         """Initialize instance variables and load workspace from file."""
         # Initialize instance variables with default values
-        self._cfg = self.DEFAULT_CONFIG.copy()
+        self._cfg = self._DEFAULT_CONFIG.copy()
         self._file = WsFile()
-        self._paths = [npath.expand(path) for path in self.DEFAULT_PATHS]
+        self._paths = [npath.expand(path) for path in self._DEFAULT_PATHS]
 
         # Load configuration from file
-        if npath.is_file(self.CONFIG_FILE):
+        if npath.is_file(self._CONFIG_FILE):
             self._load_config()
 
         # Load workspace from file
         filepath: OptPath = None
         if workspace and isinstance(workspace, (Path, str)):
             filepath = Path(workspace)
-        elif self._cfg.get('restore'):
+        elif self._cfg.get('restore_on_startup'):
             cfg_path = self._cfg.get('path')
             if isinstance(cfg_path, (Path, str)):
                 filepath = Path(cfg_path)
         if isinstance(filepath, Path):
             self.load(workspace=filepath, basedir=basedir, pwd=pwd)
+
+    def __enter__(self) -> 'Session':
+        """Enter with statement."""
+        return self
+
+    def __exit__(self, etype: str, value: int, tb: Traceback) -> None:
+        """Exit with statement."""
+        self.close()
 
     #
     # Public Methods
@@ -98,7 +114,7 @@ class Session:
 
     def load(
             self, workspace: OptPathLike = None, basedir: OptPathLike = None,
-            pwd: OptBytes = None) -> None:
+            pwd: OptBytes = None) -> 'Session':
         """Load Workspace from file.
 
         Args:
@@ -109,6 +125,7 @@ class Session:
         """
         path = self._locate_path(workspace=workspace, basedir=basedir)
         self._file = WsFile(filepath=path, pwd=pwd)
+        return self
 
     def save(self) -> None:
         """Save Workspace to current file."""
@@ -124,8 +141,12 @@ class Session:
         """
         self._file.saveas(filepath)
 
-    # def list(self) -> None:
-    #     return None
+    def close(self) -> None:
+        """Close current workspace."""
+        if self._cfg.get('autosave_on_exit') and self._file.changed:
+            self.save()
+        if hasattr(self._file, 'close'):
+            self._file.close()
 
     def open(
         self, filepath: PathLike, workspace: OptPathLike = None,
@@ -171,22 +192,128 @@ class Session:
         return self._file.open(
             filepath, mode=mode, encoding=encoding, isdir=isdir)
 
+    def append(self, source: PathLike, target: OptPathLike = None) -> bool:
+        """Append file to the current workspace.
+
+        Args:
+            source: String or `path-like object`_, that points to a valid file
+                in the directory structure if the system. If the file does not
+                exist, a FileNotFoundError is raised. If the filepath points to
+                a directory, a IsADirectoryError is raised.
+            target: String or `path-like object`_, that points to a valid
+                directory in the directory structure of the workspace. By
+                default the root directory is used. If the directory does not
+                exist, a FileNotFoundError is raised. If the target directory
+                already contains a file, which name equals the filename of the
+                source, a FileExistsError is raised.
+
+        Returns:
+            Boolean value which is True if the file has been appended.
+
+        """
+        return self._file.append(source, target=target)
+
+    def unlink(self, filepath: PathLike, ignore_missing: bool = True) -> bool:
+        """Remove file from the current workspace.
+
+        Args:
+            filepath: String or `path-like object`_, that points to a file in
+                the directory structure of the workspace. If the filapath points
+                to a directory, an IsADirectoryError is raised. For the case,
+                that the file does not exist, the argument ignore_missing
+                determines, if a FileNotFoundError is raised.
+            ignore_missing: Boolean value which determines, if FileNotFoundError
+                is raised, if the target file does not exist. The default
+                behaviour, is to ignore missing files.
+
+        Returns:
+            Boolean value, which is True if the given file was removed.
+
+        """
+        return self._file.unlink(filepath, ignore_missing=ignore_missing)
+
+    def mkdir(self, dirpath: PathLike, ignore_exists: bool = False) -> bool:
+        """Create a new directory in current workspace.
+
+        Args:
+            dirpath: String or `path-like object`_, that represents a valid
+                directory name in the directory structure of the workspace. If
+                the directory already exists, the argument ignore_exists
+                determines, if a FileExistsError is raised.
+            ignore_exists: Boolean value which determines, if FileExistsError is
+                raised, if the target directory already exists. The default
+                behaviour is to raise an error, if the file already exists.
+
+        Returns:
+            Boolean value, which is True if the given directory was created.
+
+        """
+        return self._file.mkdir(dirpath, ignore_exists=ignore_exists)
+
+    def rmdir(
+            self, dirpath: PathLike, recursive: bool = False,
+            ignore_missing: bool = False) -> bool:
+        """Remove directory from current workspace.
+
+        Args:
+            dirpath: String or `path-like object`_, that points to a directory
+                in the directory structure of the workspace. If the directory
+                does not exist, the argument ignore_missing determines, if a
+                FileNotFoundError is raised.
+            ignore_missing: Boolean value which determines, if FileNotFoundError
+                is raised, if the target directory does not exist. The default
+                behaviour, is to raise an error if the directory is missing.
+            recursive: Boolean value which determines, if directories are
+                removed recursively. If recursive is False, then only empty
+                directories can be removed. If recursive, however, is True, then
+                all files and subdirectories are alse removed. By default
+                recursive is False.
+
+        Returns:
+            Boolean value, which is True if the given directory was removed.
+
+        """
+        return self._file.rmdir(
+            dirpath, recursive=recursive, ignore_missing=ignore_missing)
+
+    def search(self, pattern: OptStr = None) -> StrList:
+        """Search for files in the current workspace.
+
+        Args:
+            pattern: Search pattern that contains Unix shell-style wildcards:
+                '*': Matches arbitrary strings
+                '?': Matches single characters
+                [seq]: Matches any character in seq
+                [!seq]: Matches any character not in seq
+                By default a list of all files and directories is returned.
+
+        Returns:
+            List of files and directories in the directory structure of the
+            workspace, that match the search pattern.
+
+        """
+        return self._file.search(pattern)
+
     #
     # Private Methods
     #
 
     def _load_config(self) -> None:
-        cfg = inifile.load(self.CONFIG_FILE, self.CONFIG_STRUCT)
+        cfg = inifile.load(self._CONFIG_FILE, self._CONFIG_STRUCT)
         self._cfg = cfg.get('session') or {}
 
     def _save_config(self) -> None:
         cfg = {'session': self._cfg}
-        inifile.save(cfg, self.CONFIG_FILE)
+        inifile.save(cfg, self._CONFIG_FILE)
 
     def _get_path(self) -> OptPath:
-        if not isinstance(self._file, WsFile):
-            return None
         return self._file.path
+
+    def _get_files(self) -> StrList:
+        return self._file.search()
+
+    def _get_folders(self) -> StrList:
+        return self._file.folders
 
     def _locate_path(
             self, workspace: OptPathLike = None,

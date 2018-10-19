@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Collection of Vector Space Norms and Metrices."""
+"""Vector Norms and Metrices."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'

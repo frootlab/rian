@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Extended handling of NetworkX Graph type objects."""
+"""Functions for NetworkX Graphs."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -302,7 +302,7 @@ def is_layered(G: DiGraph) -> bool:
         Bool which is True if the graph nodes contain layer attributes.
 
     Todo:
-        * test by edge structure and not by node attributes
+        Test by edge structure and not by node attributes
 
     """
     require = ['layer', 'layer_id', 'layer_sub_id']

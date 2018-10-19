@@ -1,7 +1,7 @@
-nemoa.math.nregr module
+nemoa.math.regr module
 =======================
 
-.. automodule:: nemoa.math.nregr
+.. automodule:: nemoa.math.regr
     :members:
     :undoc-members:
     :show-inheritance:

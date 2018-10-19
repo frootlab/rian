@@ -62,7 +62,7 @@ class Session:
         import sys
 
         from nemoa.core import ndict
-        from nemoa.io import inifile
+        from nemoa.fileio import inifile
 
         self._config = ndict.merge(kwds, self._default)
 

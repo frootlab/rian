@@ -6,12 +6,12 @@ Submodules
 
 .. toctree::
 
-   nemoa.math.nalgo
-   nemoa.math.ncurve
-   nemoa.math.ngraph
-   nemoa.math.nmatrix
-   nemoa.math.nregr
-   nemoa.math.nvector
+   nemoa.math.algo
+   nemoa.math.curve
+   nemoa.math.graph
+   nemoa.math.matrix
+   nemoa.math.regr
+   nemoa.math.vector
 
 Module contents
 ---------------

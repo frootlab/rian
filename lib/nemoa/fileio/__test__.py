@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Unittests for submodules of package 'nemoa.io'."""
+"""Unittests for submodules of package 'nemoa.fileio'."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -12,12 +12,12 @@ from pathlib import Path
 import numpy as np
 
 from nemoa.core import ntest
-from nemoa.io import binfile, csvfile, inifile, textfile
+from nemoa.fileio import binfile, csvfile, inifile, textfile
 
 class TestBinfile(ntest.ModuleTestCase):
-    """Testcase for the module nemoa.io.binfile."""
+    """Testcase for the module nemoa.fileio.binfile."""
 
-    module = 'nemoa.io.binfile'
+    module = 'nemoa.fileio.binfile'
 
     def setUp(self) -> None:
         self.filepath = Path(tempfile.NamedTemporaryFile().name + '.gz')
@@ -59,9 +59,9 @@ class TestBinfile(ntest.ModuleTestCase):
             self.filepath.unlink()
 
 class TestTextfile(ntest.ModuleTestCase):
-    """Testcase for the module nemoa.io.textfile."""
+    """Testcase for the module nemoa.fileio.textfile."""
 
-    module = 'nemoa.io.textfile'
+    module = 'nemoa.fileio.textfile'
 
     def setUp(self) -> None:
         self.filepath = Path(tempfile.NamedTemporaryFile().name + '.txt')
@@ -113,9 +113,9 @@ class TestTextfile(ntest.ModuleTestCase):
             self.filepath.unlink()
 
 class TestCsvfile(ntest.ModuleTestCase):
-    """Testcase for the module nemoa.io.csvfile."""
+    """Testcase for the module nemoa.fileio.csvfile."""
 
-    module = 'nemoa.io.csvfile'
+    module = 'nemoa.fileio.csvfile'
 
     def setUp(self) -> None:
         self.filepath = Path(tempfile.NamedTemporaryFile().name + '.csv')
@@ -165,9 +165,9 @@ class TestCsvfile(ntest.ModuleTestCase):
             self.filepath.unlink()
 
 class TestInifile(ntest.ModuleTestCase):
-    """Testcase for the module nemoa.io.inifile."""
+    """Testcase for the module nemoa.fileio.inifile."""
 
-    module = 'nemoa.io.inifile'
+    module = 'nemoa.fileio.inifile'
 
     def setUp(self) -> None:
         self.filepath = Path(tempfile.NamedTemporaryFile().name + '.ini')

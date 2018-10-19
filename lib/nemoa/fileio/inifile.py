@@ -18,7 +18,7 @@ __docformat__ = 'google'
 from configparser import ConfigParser
 from io import StringIO
 
-from nemoa.io import textfile
+from nemoa.fileio import textfile
 from nemoa.types import FileOrPathLike, OptBool, OptStr, OptStrDict2, StrDict2
 
 FILEEXTS = ['.ini', '.cfg']

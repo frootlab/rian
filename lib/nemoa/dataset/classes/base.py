@@ -15,7 +15,7 @@ except ImportError as err:
 
 import nemoa
 from nemoa.core import nclass, nbase
-from nemoa.math import nalgo
+from nemoa.math import algo
 
 class Dataset(nbase.ObjectIP):
     """Dataset base class.
@@ -1028,10 +1028,10 @@ class Dataset(nbase.ObjectIP):
         # calculate covariance matrix
         cov = np.cov(data.T)
 
-        # calculate eigenvectors and eigenvalues
+        # calculate eigevectors and eigenvalues
         eigvals, eigvecs = np.linalg.eig(cov)
 
-        # sort eigenvectors by absolute eigenvalues
+        # sort eigevectors by absolute eigenvalues
         eigpairs = [(np.abs(eigvals[i]), eigvecs[:, i])
             for i in range(len(eigvals))]
         eigpairs.sort(key = lambda x: x[0], reverse = True)
@@ -1335,7 +1335,7 @@ class Dataset(nbase.ObjectIP):
 
         return algorithms[name](*args, **kwds)
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'sample',
         title    = 'Sample Values',
         category = ('dataset', 'evaluation'),
@@ -1346,7 +1346,7 @@ class Dataset(nbase.ObjectIP):
 
         return self._get_data(*args, **kwds)
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'covariance',
         title    = 'Covariance',
         category = ('dataset', 'columns', 'evaluation'),
@@ -1372,7 +1372,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'correlation',
         title    = 'Pearson Correlation',
         category = ('dataset', 'columns', 'evaluation'),
@@ -1398,7 +1398,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'pca-sample',
         title    = 'PCA Sample Values',
         category = ('dataset', 'evaluation'),
@@ -1427,7 +1427,7 @@ class Dataset(nbase.ObjectIP):
 
         return pca_data
 
-    @nalgo.custom(
+    @algo.custom(
         name      = 'k-covariance',
         title     = 'k-Covariance',
         title_tex = '$k$-Covariance',
@@ -1460,7 +1460,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @nalgo.custom(
+    @algo.custom(
         name      = 'k-correlation',
         title     = 'k-Correlation',
         title_tex = '$k$-Correlation',
@@ -1493,7 +1493,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'test_binary',
         title    = None,
         category = ('dataset', 'evaluation'),
@@ -1520,7 +1520,7 @@ class Dataset(nbase.ObjectIP):
 
         return isbinary
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'test_gauss',
         title    = None,
         category = ('dataset', 'evaluation'),

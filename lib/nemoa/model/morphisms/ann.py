@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 
 import nemoa.model.morphisms.base
 import numpy
-from nemoa.math import nalgo
+from nemoa.math import algo
 
 class ANN(nemoa.model.morphisms.base.Optimizer):
 
@@ -38,7 +38,7 @@ class ANN(nemoa.model.morphisms.base.Optimizer):
         'tracker_eval_time_interval': 10.,
         'ignore_units': [] }
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'bprop',
         longname = 'backpropagation of error',
         category = 'optimization',
@@ -150,7 +150,7 @@ class ANN(nemoa.model.morphisms.base.Optimizer):
 
         return { 'units': units, 'links': links }
 
-    @nalgo.custom(
+    @algo.custom(
         name     = 'rprop',
         longname = 'resiliant backpropagation of error',
         category = 'optimization',

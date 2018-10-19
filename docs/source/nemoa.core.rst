@@ -17,12 +17,12 @@ Submodules
    nemoa.core.nmodule
    nemoa.core.nobject
    nemoa.core.npath
-   nemoa.core.nsession
    nemoa.core.nsysinfo
    nemoa.core.ntable
    nemoa.core.ntest
    nemoa.core.ntext
    nemoa.core.nthreads
+   nemoa.core.session
 
 Module contents
 ---------------

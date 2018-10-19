@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-"""Curves that are used in Machine Learning.
+"""Curves.
 
-This module provides curves that are frequently used in Machine Learning. This
-comprises:
+This module provides implementation of various curves, that appear in machine
+learning and statistics. These comprise::
 
-    * Sigmoidal Functions
-    * Derivatives of Sigmoidal Functions
-    * Multiple Sigmoidal Functions
+    * Sigmoidal shaped curves
+    * Bell shaped curves (e.g. derivatives of sigmoidal shaped functions)
+    * Multiple Step Functions
 
 .. References:
 .. _Gaussian functions:
@@ -334,7 +334,6 @@ def bell_d_lecun(x: NpArrayLike) -> NpArray:
 
     """
     return 1.14382 / np.cosh(np.multiply(0.6666, x)) ** 2
-
 
 def bell_d_tanh(x: NpArrayLike) -> NpArray:
     """Calculate derivative of hyperbolic tangent function.

@@ -1,5 +1,5 @@
 nemoa.fileio package
-================
+====================
 
 Submodules
 ----------
