@@ -61,7 +61,6 @@ class ModuleTestCase(GenericTestCase):
 
     @unittest.skipIf(skip_completeness_test, "completeness is not tested")
     def test_compleness_of_module(self) -> None:
-        """Test if all members of module are testet."""
         self.assertModuleIsComplete()
 
 #

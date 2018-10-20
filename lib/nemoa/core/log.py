@@ -1,5 +1,21 @@
 # -*- coding: utf-8 -*-
-"""Logging."""
+"""Logging.
+
+.. References:
+.. _path-like object:
+    https://docs.python.org/3/glossary.html#term-path-like-object
+.. _Logger.debug():
+    https://docs.python.org/3/library/logging.html#logging.Logger.debug
+.. _Logger.info():
+    https://docs.python.org/3/library/logging.html#logging.Logger.info
+.. _Logger.warning():
+    https://docs.python.org/3/library/logging.html#logging.Logger.warning
+.. _Logger.error():
+    https://docs.python.org/3/library/logging.html#logging.Logger.error
+.. _Logger.critical():
+    https://docs.python.org/3/library/logging.html#logging.Logger.critical
+
+"""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -17,20 +33,40 @@ from nemoa.base import env, npath
 from nemoa.errors import AlreadyStartedError, NotStartedError
 from nemoa.types import void, Any, AnyFunc, StrOrInt, OptPath, OptPathLike
 
-_default_level = logging.INFO
+_logger_name = env.get_var('name') or __name__
 
-def start(logfile: OptPathLike = None, level: int = _default_level) -> bool:
-    """Start logging."""
-    # Check if logging has already been started
-    if '_logger' in globals():
-        raise AlreadyStartedError("logging has already been started")
-    name = env.get_var('name') or __name__
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-    globals()['_logger'] = logger
+def start(logfile: OptPathLike = None, level: StrOrInt = logging.INFO) -> bool:
+    """Start logging.
+
+    Args:
+        logfile: String or `path-like object`_ that identifies a valid filename
+            in the directory structure of the operating system. If they do not
+            exist, the parent directories of the file are created. If no file is
+            given, or the file can not be created, a default logfile within the
+            *user log directory* is created. If even the default logfile can not
+            be created a temporary logfile is created as fallback.
+        level: Integer value or string, which describes the minimum severity of
+            events, that are logged. In the order of ascending severity, the
+            level indicators are: 'DEBUG', 'INFO', 'WARNING', 'ERROR' and
+            'CRITICAL'. These level indicators respectively correspond to the
+            integer levels 10, 20, 30, 40 and 50. The default level is 'INFO'.
+
+    Returns:
+        True if logging could be initiated with a valid logfile.
+
+    """
+    _set_logger(logging.getLogger(_logger_name))
+
+    # Set level
+    set_level(level)
 
     # Add file handler for logfile
-    return set_logfile(logfile)
+    if set_logfile(logfile):
+        return True
+
+    # If an error occured stop logging
+    stop()
+    return False
 
 def stop() -> None:
     """Stop logging."""
@@ -45,21 +81,27 @@ def stop() -> None:
 
     del globals()['_logger']
 
-def get_logfile() -> Path:
-    """Get logfile of current logger."""
-    logger = _get_logger()
-    first = [h for h in logger.handlers if hasattr(h, 'close')][0]
-    return Path(getattr(first, 'baseFilename'))
-
 def set_logfile(filepath: OptPathLike = None) -> bool:
-    """Set logfile for current logger."""
+    """Set logfile for current logger.
+
+    Args:
+        logfile: String or `path-like object`_ that identifies a valid filename
+            in the directory structure of the operating system. If they do not
+            exist, the parent directories of the file are created. If no file is
+            given, or the file can not be created, a default logfile within the
+            *user log directory* is created. If even the default logfile can not
+            be created a temporary logfile is created as fallback.
+
+    Returns:
+        True if the logger could be initiated with a valid logfile.
+
+    """
     logger = _get_logger()
 
     # Locate valid logfile
     logfile = _locate_logfile(filepath)
     if not isinstance(logfile, Path):
-        warnings.warn("turn logging off: could not determine a valid logfile")
-        stop()
+        warnings.warn("could not set logfile")
         return False
 
     # Close and remove all previous file handlers
@@ -81,16 +123,66 @@ def set_logfile(filepath: OptPathLike = None) -> bool:
     logger.addHandler(handler)
     return True
 
-def get_level() -> int:
-    """Get level."""
-    return getattr(_get_logger(), 'getEffectiveLevel')()
+def get_logfile() -> Path:
+    """Get logfile of current logger."""
+    logger = _get_logger()
+
+    first = [h for h in logger.handlers if hasattr(h, 'close')][0]
+    return Path(getattr(first, 'baseFilename'))
 
 def set_level(level: StrOrInt) -> None:
-    """Set level."""
+    """Set level.
+
+    Args:
+        level: Integer value or string, which describes the minimum severity of
+            events, that are logged. In the order of ascending severity, the
+            level names are: 'DEBUG', 'INFO', 'WARNING', 'ERROR' and 'CRITICAL'.
+            These respectively correspond to the level numbers 10, 20, 30, 40
+            and 50.
+
+    """
     logger = _get_logger()
     if isinstance(level, str):
         level = level.upper()
     getattr(logger, 'setLevel')(level)
+
+def get_level(as_name: bool = True) -> StrOrInt:
+    """Get level.
+
+    Args:
+        as_name: Boolean value which determines, if the returned level is given
+            as level name or level number.
+
+    Returns:
+        Integer value or string, which describes the minimum severity of events,
+        that are logged.
+
+    """
+    level = getattr(_get_logger(), 'getEffectiveLevel')()
+    if not as_name:
+        return level
+    index = int(max(min(level, 50), 0) / 10)
+    return ['NOTSET', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'][index]
+
+def _get_logger_method(name: str) -> AnyFunc:
+    def wrapper(msg: str, *args: Any, **kwds: Any) -> Any:
+        return getattr(_get_logger(), name, void)(*args, **kwds)
+    return wrapper
+
+debug = _get_logger_method('debug')
+debug.__doc__ = """Wrapper function to `Logger.debug()`_."""
+
+info = _get_logger_method('info')
+info.__doc__ = """Wrapper function to `Logger.info()`_."""
+
+warning = _get_logger_method('warning')
+warning.__doc__ = """Wrapper function to `Logger.warning()`_."""
+
+error = _get_logger_method('error')
+error.__doc__ = """Wrapper function to `Logger.error()`_."""
+
+critical = _get_logger_method('critical')
+critical.__doc__ = """Wrapper function to `Logger.critical()`_."""
 
 def _locate_logfile(filepath: OptPathLike = None) -> OptPath:
     warn = False
@@ -125,25 +217,7 @@ def _get_logger() -> logging.Logger:
         raise NotStartedError("logging has not been started")
     return globals()['_logger']
 
-def _get_logger_method(name: str) -> AnyFunc:
-    def wrapper(*args: Any, **kwds: Any) -> Any:
-        return getattr(_get_logger(), name, void)(*args, **kwds)
-    return wrapper
-
-debug = _get_logger_method('debug')
-debug.__doc__ = """Debug."""
-
-info = _get_logger_method('info')
-info.__doc__ = """Debug."""
-
-warning = _get_logger_method('warning')
-warning.__doc__ = """Debug."""
-
-error = _get_logger_method('error')
-error.__doc__ = """Debug."""
-
-critical = _get_logger_method('critical')
-critical.__doc__ = """Debug."""
-
-exception = _get_logger_method('exception')
-exception.__doc__ = """Debug."""
+def _set_logger(logger: logging.Logger) -> None:
+    if '_logger' in globals():
+        raise AlreadyStartedError("logging has already been started")
+    globals()['_logger'] = logger

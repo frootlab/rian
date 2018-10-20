@@ -6,10 +6,10 @@ Submodules
 
 .. toctree::
 
+   nemoa.base.binary
    nemoa.base.env
    nemoa.base.narray
    nemoa.base.nbase
-   nemoa.base.binary
    nemoa.base.nclass
    nemoa.base.nconsole
    nemoa.base.ndict
@@ -17,8 +17,8 @@ Submodules
    nemoa.base.nmodule
    nemoa.base.nobject
    nemoa.base.npath
-   nemoa.base.table
    nemoa.base.ntext
+   nemoa.base.table
    nemoa.base.test
    nemoa.base.thread
 
