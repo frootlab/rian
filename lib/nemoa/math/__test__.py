@@ -9,7 +9,7 @@ __docformat__ = 'google'
 import networkx as nx
 import numpy as np
 
-from nemoa.core import test
+from nemoa.base import test
 from nemoa.math import algo, curve, graph, matrix, regr, vector
 from nemoa.types import Any, Callable, NpArray
 

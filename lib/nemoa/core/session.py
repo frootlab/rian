@@ -19,7 +19,7 @@ __docformat__ = 'google'
 from pathlib import Path
 
 from nemoa.classes import Attr, ReadOnlyAttr, ReadWriteAttr
-from nemoa.core import npath
+from nemoa.base import npath
 from nemoa.fileio import inifile, wsfile
 from nemoa.types import (
     BytesLike, CManFileLike, ClassVar, OptBytes, OptPath, OptPathLike, OptStr,

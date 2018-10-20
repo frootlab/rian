@@ -37,10 +37,10 @@ def inst(name: str) -> OptFunction:
         Function instance or None, if the function could not be found.
 
     Examples:
-        >>> inst("nemoa.core.nfunc.inst")
+        >>> inst("nemoa.base.nfunc.inst")
 
     """
-    from nemoa.core import nmodule
+    from nemoa.base import nmodule
 
     mname = '.'.join(name.split('.')[:-1])
     fname = name.split('.')[-1]

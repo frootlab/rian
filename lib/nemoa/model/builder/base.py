@@ -6,7 +6,7 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-from nemoa.core import nclass
+from nemoa.base import nclass
 
 def types():
     """Get supported layer network types for network building."""
@@ -33,7 +33,7 @@ class AutoEncoder:
         'system': 'dbn' }
 
     def __init__(self, dataset = None, **kwds):
-        from nemoa.core import ndict
+        from nemoa.base import ndict
         self.settings = ndict.merge(kwds, self.default)
 
         if nclass.hasbase(dataset, 'Dataset'):
@@ -65,7 +65,7 @@ class Model:
         'optimize': False }
 
     def __init__(self, **kwds):
-        from nemoa.core import ndict
+        from nemoa.base import ndict
         self.settings = ndict.merge(kwds, self.default)
 
     def build(self):

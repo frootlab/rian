@@ -26,7 +26,7 @@ import sys
 
 from pathlib import Path, PurePath
 
-from nemoa.core import napp
+from nemoa.base import env
 from nemoa.types import (
     Any, Iterable, IterAny, NestPath, OptStrDict, PathLikeList)
 
@@ -150,10 +150,10 @@ def expand(
         expapp: determines if application specific environmental
             directories are expanded. For a full list of valid application
             variables see
-            'nemoa.core.napp.get_dir'. Default is True
+            'nemoa.base.env.get_dir'. Default is True
         expenv: determines if environmental path variables are expanded.
             For a full list of valid environmental path variables see
-            'nemoa.core.npath'. Default is True
+            'nemoa.base.npath'. Default is True
 
     Returns:
         String containing valid path syntax.
@@ -172,7 +172,7 @@ def expand(
         for key, val in udict.items():
             d[key] = str(join(val))
     if expapp:
-        for key, val in napp.get_dirs().items():
+        for key, val in env.get_dirs().items():
             d[key] = str(val)
     if expenv:
         d['cwd'] = cwd()

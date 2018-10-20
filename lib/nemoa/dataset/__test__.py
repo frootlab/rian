@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-from nemoa.core import nclass, test
+from nemoa.base import nclass, test
 
 class TestCase(test.GenericTestCase):
 

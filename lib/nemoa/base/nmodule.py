@@ -15,7 +15,7 @@ import importlib
 import inspect
 import pkgutil
 
-from nemoa.core import ndict, nobject
+from nemoa.base import ndict, nobject
 from nemoa.types import (
     Any, Function, Module, OptStr, OptModule, OptStrDictOfTestFuncs, StrList)
 

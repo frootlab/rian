@@ -11,7 +11,7 @@ import unittest
 from unittest import TestCase, TestResult, TestLoader, TestSuite, TextTestRunner
 from io import StringIO
 
-from nemoa.core import nmodule, nobject
+from nemoa.base import nmodule, nobject
 from nemoa.types import Function, Method, OptStr
 
 #

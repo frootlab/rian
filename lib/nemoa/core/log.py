@@ -13,7 +13,7 @@ import warnings
 
 from pathlib import Path
 
-from nemoa.core import napp, npath
+from nemoa.base import env, npath
 from nemoa.errors import AlreadyStartedError, NotStartedError
 from nemoa.types import void, Any, AnyFunc, StrOrInt, OptPath, OptPathLike
 
@@ -24,7 +24,7 @@ def start(logfile: OptPathLike = None, level: int = _default_level) -> bool:
     # Check if logging has already been started
     if '_logger' in globals():
         raise AlreadyStartedError("logging has already been started")
-    name = napp.get_var('name') or __name__
+    name = env.get_var('name') or __name__
     logger = logging.getLogger(name)
     logger.setLevel(level)
     globals()['_logger'] = logger
@@ -101,8 +101,8 @@ def _locate_logfile(filepath: OptPathLike = None) -> OptPath:
         warn = True
 
     # Get default logfile
-    dirpath = napp.get_dir('user_log_dir')
-    basename = napp.get_var('name') or __name__
+    dirpath = env.get_dir('user_log_dir')
+    basename = env.get_var('name') or __name__
     default_log = Path(dirpath, basename + '.log')
     if npath.touch(default_log):
         if warn:

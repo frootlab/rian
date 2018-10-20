@@ -38,12 +38,12 @@ def save(system, path = None, filetype = None, workspace = None,
 
     """
 
-    from nemoa.core import nclass
+    from nemoa.base import nclass
 
     if not classes.nclass(system, 'System'):
         raise ValueError("system is not valid")
 
-    from nemoa.core import npath
+    from nemoa.base import npath
 
     # get directory, filename and fileextension
     if isinstance(workspace, str) and not workspace == 'None':

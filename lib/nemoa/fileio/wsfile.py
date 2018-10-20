@@ -20,7 +20,7 @@ from contextlib import contextmanager
 from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
 
-from nemoa.core import npath, nsysinfo
+from nemoa.base import npath, env
 from nemoa.classes import Attr, ReadOnlyAttr, ReadWriteAttr
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
 from nemoa.fileio import inifile
@@ -75,10 +75,10 @@ class WsFile:
             'startup': 'path'}}
     _DEFAULT_CONFIG: ClassVar[StrDict2] = {
         'workspace': {
-            'maintainer': nsysinfo.username()}}
+            'maintainer': env.username()}}
     _DEFAULT_DIR_LAYOUT: ClassVar[StrList] = [
         'dataset', 'network', 'system', 'model', 'script']
-    _DEFAULT_ENCODING = nsysinfo.encoding()
+    _DEFAULT_ENCODING = env.encoding()
 
     #
     # Private Instance Variables

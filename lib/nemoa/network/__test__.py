@@ -6,19 +6,19 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-from nemoa.core import test
+from nemoa.base import test
 
 class TestCase(test.GenericTestCase):
 
     def test_network_import(self):
-        from nemoa.core import nclass
+        from nemoa.base import nclass
 
         with self.subTest(filetype = 'ini'):
             network = nemoa.network.open('deep', workspace = 'testsuite')
             self.assertTrue(nclass.hasbase(network, 'Network'))
 
     def test_network_create(self):
-        from nemoa.core import nclass
+        from nemoa.base import nclass
 
         with self.subTest(create = 'autoencoder'):
             network = nemoa.network.create('autoencoder',

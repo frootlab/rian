@@ -6,7 +6,7 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-from nemoa.core import test
+from nemoa.base import test
 
 # class TestCase(test.GenericTestCase):
 #
@@ -14,7 +14,7 @@ from nemoa.core import test
 #         with self.subTest(function = "algorithm"):
 #             from nemoa.model.analysis import algorithms
 #             test = algorithms(tag = )
-#             test = curname() == 'nemoa.core.__test__'
+#             test = curname() == 'nemoa.base.__test__'
 #             self.assertTrue(test)
 
 #    def test_PGM_Bayes(self):

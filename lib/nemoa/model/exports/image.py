@@ -10,7 +10,7 @@ import networkx
 import numpy
 import os
 
-from nemoa.core import ntext
+from nemoa.base import ntext
 from nemoa.fileio import nplot
 
 def filetypes():

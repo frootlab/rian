@@ -33,7 +33,7 @@ def load(path, filetype = None, **kwds):
     """Import system dictionary from file or workspace."""
 
     import os
-    from nemoa.core import npath
+    from nemoa.base import npath
 
     # get path (if necessary)
     if 'workspace' in kwds or not os.path.isfile(path):

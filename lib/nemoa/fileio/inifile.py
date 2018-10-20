@@ -7,7 +7,7 @@
 .. _file-like object:
     https://docs.python.org/3/glossary.html#term-file-like-object
 .. _ntext.astype:
-    https://frootlab.github.io/nemoa-doc/latest/source/nemoa.core.ntext.html#nemoa.core.ntext.astype
+    https://frootlab.github.io/nemoa-doc/latest/source/nemoa.base.ntext.html#nemoa.base.ntext.astype
 """
 
 __author__ = 'Patrick Michl'
@@ -238,7 +238,7 @@ def parse(parser: ConfigParser, structure: OptStrDict2 = None) -> StrDict2:
 
     """
     import re
-    from nemoa.core import ntext
+    from nemoa.base import ntext
 
     # Retrieve dictionary from INI parser, if no structure is given
     if not isinstance(structure, dict):

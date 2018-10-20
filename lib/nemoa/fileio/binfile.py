@@ -28,7 +28,7 @@ __docformat__ = 'google'
 
 import contextlib
 
-from nemoa.core import npath, nbytes
+from nemoa.base import npath, binary
 from nemoa.types import (
     BytesIOBaseClass, BytesLikeOrStr, FileOrPathLike,
     IterBytesIOLike, OptInt, OptStr, Path, TextIOBaseClass)
@@ -113,9 +113,9 @@ def load(
     with openx(file, mode='r') as fh:
         data = fh.read() # Load binary data from file
     if encoding:
-        data = nbytes.decode(data, encoding=encoding) # Decode data
+        data = binary.decode(data, encoding=encoding) # Decode data
     if compressed:
-        data = nbytes.decompress(data) # Decompress data
+        data = binary.decompress(data) # Decompress data
     return data
 
 def save(
@@ -142,8 +142,8 @@ def save(
 
     """
     if isinstance(compression, int):
-        data = nbytes.compress(data, level=compression) # Compress data
+        data = binary.compress(data, level=compression) # Compress data
     if encoding:
-        data = nbytes.encode(data, encoding=encoding) # Encode data
+        data = binary.encode(data, encoding=encoding) # Encode data
     with openx(file, mode='w') as fh:
-        fh.write(nbytes.asbytes(data)) # Save binary data to file
+        fh.write(binary.asbytes(data)) # Save binary data to file

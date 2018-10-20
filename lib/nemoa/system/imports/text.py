@@ -16,7 +16,7 @@ def filetypes():
 def load(path, **kwds):
     """Import system from text file."""
 
-    from nemoa.core import npath
+    from nemoa.base import npath
 
     # extract filetype from path
     filetype = npath.fileext(path).lower()
@@ -38,7 +38,7 @@ class Ini:
     default = {}
 
     def __init__(self, **kwds):
-        from nemoa.core import ndict
+        from nemoa.base import ndict
         self.settings = ndict.merge(kwds, self.default)
 
     def load(self, path):
@@ -49,7 +49,7 @@ class Ini:
                 configuration dictionary.
 
         """
-        from nemoa.core import npath
+        from nemoa.base import npath
         from nemoa.fileio import inifile
 
         # import ini file to dictionary, using ini file structure

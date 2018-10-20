@@ -80,7 +80,7 @@ class Heatmap(nplot.Heatmap):
 
     def create(self, dataset):
 
-        from nemoa.core import nfunc
+        from nemoa.base import nfunc
 
         # set plot defaults
         self.set_default({
@@ -120,7 +120,7 @@ class Histogram(nplot.Histogram):
 
     def create(self, dataset):
 
-        from nemoa.core import nfunc
+        from nemoa.base import nfunc
 
         # set plot defaults
         self.set_default({
@@ -157,7 +157,7 @@ class Scatter2D(nplot.Scatter2D):
 
     def create(self, dataset):
 
-        from nemoa.core import nfunc
+        from nemoa.base import nfunc
 
         # set plot defaults
         self.set_default({
@@ -199,7 +199,7 @@ class Graph(nplot.Graph):
                 "requires package networkx: "
                 "https://networkx.github.io") from err
 
-        from nemoa.core import nfunc
+        from nemoa.base import nfunc
 
         # set plot defaults
         self.set_default({

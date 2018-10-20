@@ -13,7 +13,7 @@ __docformat__ = 'google'
 
 import inspect
 
-from nemoa.core import ndict
+from nemoa.base import ndict
 from nemoa.types import (
     Any, RecDict, DictOfRecDicts, NestRecDict, FuncWrapper, OptStr)
 

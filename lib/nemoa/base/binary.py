@@ -22,7 +22,7 @@ import base64
 import pickle
 import zlib
 
-from nemoa.core import nsysinfo
+from nemoa.base import env
 from nemoa.types import Any, BytesLikeOrStr, OptInt, OptStr
 
 def asbytes(data: BytesLikeOrStr, encoding: OptStr = None) -> bytes:
@@ -32,7 +32,7 @@ def asbytes(data: BytesLikeOrStr, encoding: OptStr = None) -> bytes:
         data: Binary data given as `bytes-like object`_ or string
     """
     if isinstance(data, str):
-        encoding = encoding or nsysinfo.encoding()
+        encoding = encoding or env.encoding()
         return bytes(data, encoding=encoding)
     return bytes(data)
 

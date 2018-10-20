@@ -11,7 +11,7 @@ from pathlib import Path
 
 import numpy as np
 
-from nemoa.core import test
+from nemoa.base import test
 from nemoa.fileio import binfile, csvfile, inifile, textfile
 
 class TestBinfile(test.ModuleTestCase):

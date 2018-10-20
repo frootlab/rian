@@ -324,7 +324,7 @@ def aspath(text: str, expand: bool = True) -> Path:
         Value of the text as Path.
 
     """
-    from nemoa.core import npath
+    from nemoa.base import npath
 
     # Check type of 'text'
     if not isinstance(text, str):

@@ -15,7 +15,7 @@ def filetypes():
 def load(path, **kwds):
     """Import workspace from text file."""
 
-    from nemoa.core import npath
+    from nemoa.base import npath
 
     # extract filetype from path
     filetype = npath.fileext(path).lower()
@@ -37,7 +37,7 @@ class Ini:
     default = {}
 
     def __init__(self, **kwds):
-        from nemoa.core import ndict
+        from nemoa.base import ndict
         self.settings = ndict.merge(kwds, self.default)
 
     def load(self, path):

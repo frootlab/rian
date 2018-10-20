@@ -6,22 +6,7 @@ Submodules
 
 .. toctree::
 
-   nemoa.core.napp
-   nemoa.core.narray
-   nemoa.core.nbase
-   nemoa.core.nbytes
-   nemoa.core.nclass
-   nemoa.core.nconsole
-   nemoa.core.ndict
-   nemoa.core.nfunc
-   nemoa.core.nmodule
-   nemoa.core.nobject
-   nemoa.core.npath
-   nemoa.core.nsysinfo
-   nemoa.core.ntable
-   nemoa.core.test
-   nemoa.core.ntext
-   nemoa.core.thread
+   nemoa.core.log
    nemoa.core.session
 
 Module contents

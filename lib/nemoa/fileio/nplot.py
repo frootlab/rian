@@ -56,7 +56,7 @@ class Plot:
                 "requires package matplotlib: "
                 "https://matplotlib.org") from err
 
-        from nemoa.core import ndict
+        from nemoa.base import ndict
 
         # merge config from defaults, current config and keyword arguments
         self._kwds = kwds
@@ -87,7 +87,7 @@ class Plot:
 
     def set_default(self, config: OptDict = None) -> bool:
         """Set default values."""
-        from nemoa.core import ndict
+        from nemoa.base import ndict
 
         if config is None:
             config = {}
@@ -295,10 +295,10 @@ class Graph(Plot):
                 False: edges are black
             edge_poscolor (string): name of color for edges with
                 positive signed attribute. For a full list of specified
-                color names see nemoa.core.nplot.get_color()
+                color names see nemoa.base.nplot.get_color()
             edge_negcolor (string): name of color for edges with
                 negative signed attribute. For a full list of specified
-                color names see nemoa.core.nplot.get_color()
+                color names see nemoa.base.nplot.get_color()
             edge_curvature (float): value within the intervall [-1, 1],
                 that determines the curvature of the edges.
                 Thereby 1 equals max convexity and -1 max concavity.
@@ -327,7 +327,7 @@ class Graph(Plot):
                 "requires package networkx: "
                 "https://networkx.github.io") from err
 
-        from nemoa.core import ndict
+        from nemoa.base import ndict
         from nemoa.math import graph
 
         # adjust size of subplot
