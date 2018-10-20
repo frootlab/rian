@@ -23,7 +23,7 @@
 
 .. TODO::
     * Add get_file for 'user_package_log', 'temp_log' etc.
-    * incluse encoding, hostname etc in get_var
+    * include encoding, hostname etc. in get_var
 
 """
 
@@ -32,10 +32,20 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import getpass
+import locale
 import platform
 import re
 
+from distutils import sysconfig
 from pathlib import Path
+
+try:
+    from appdirs import AppDirs
+except ImportError as err:
+    raise ImportError(
+        "requires package appdirs: "
+        "https://pypi.org/project/appdirs/") from err
 
 from nemoa.base import nmodule
 from nemoa.types import (
@@ -264,15 +274,6 @@ def update_dirs(
         directories.
 
     """
-    from distutils import sysconfig
-
-    try:
-        from appdirs import AppDirs
-    except ImportError as err:
-        raise ImportError(
-            "requires package appdirs: "
-            "https://pypi.org/project/appdirs/") from err
-
     dirs: StrDictOfPaths = {}
     appname = appname or get_var('name') or _DEFAULT_APPNAME
     appauthor = appauthor or get_var('author') or _DEFAULT_APPAUTHOR
@@ -310,7 +311,6 @@ def encoding() -> str:
         String representing the preferred encoding used for text data.
 
     """
-    import locale
     return locale.getpreferredencoding()
 
 def hostname() -> str:
@@ -374,5 +374,4 @@ def username() -> str:
         String representing the login name of the current user.
 
     """
-    import getpass
     return getpass.getuser()

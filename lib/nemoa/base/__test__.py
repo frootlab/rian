@@ -103,7 +103,6 @@ class TestEnv(test.ModuleTestCase):
             with self.subTest(f"get_var('{key}')"):
                 self.assertTrue(env.get_var(key))
 
-
     def test_encoding(self) -> None:
         self.assertIsInstance(env.encoding(), str)
 
@@ -153,6 +152,12 @@ class TestBinary(test.ModuleTestCase):
     """Testcase for the module nemoa.base.binary."""
 
     module = 'nemoa.base.binary'
+
+    def test_as_bytes(self) -> None:
+        self.assertEqual(binary.as_bytes(b'test'), b'test')
+        self.assertEqual(binary.as_bytes('test'), b'test')
+        self.assertEqual(binary.as_bytes(bytearray(b'test')), b'test')
+        self.assertEqual(binary.as_bytes(memoryview(b'test')), b'test')
 
     def test_compress(self) -> None:
         data = binary.compress(b'test', level=0)

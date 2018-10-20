@@ -146,4 +146,4 @@ def save(
     if encoding:
         data = binary.encode(data, encoding=encoding) # Encode data
     with openx(file, mode='w') as fh:
-        fh.write(binary.asbytes(data)) # Save binary data to file
+        fh.write(binary.as_bytes(data)) # Save binary data to file
