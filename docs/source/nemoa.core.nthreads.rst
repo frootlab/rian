@@ -1,7 +1,7 @@
-nemoa.core.nthreads module
+nemoa.core.thread module
 ==========================
 
-.. automodule:: nemoa.core.nthreads
+.. automodule:: nemoa.core.thread
     :members:
     :undoc-members:
     :show-inheritance:

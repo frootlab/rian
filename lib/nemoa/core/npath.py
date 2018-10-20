@@ -2,12 +2,16 @@
 """Collection of functions for platform independent filesystem operations.
 
 .. References:
+.. _path-like object:
+    https://docs.python.org/3/glossary.html#term-path-like-object
 .. _pathlib:
     https://docs.python.org/3/library/pathlib.html
 .. _Path.is_file():
     https://docs.python.org/3/library/pathlib.html#pathlib.Path.is_file
 .. _Path.is_dir():
     https://docs.python.org/3/library/pathlib.html#pathlib.Path.is_dir
+.. _os.chmod():
+    https://docs.python.org/3/library/os.html#os.chmod
 
 """
 
@@ -378,3 +382,46 @@ def rmdir(*args: NestPath) -> bool:
     shutil.rmtree(str(path), ignore_errors=True)
 
     return not path.exists()
+
+def touch(
+        path: NestPath, parents: bool = True, mode: int = 0o666,
+        exist_ok: bool = True) -> bool:
+    """Create an empty file at the specified path.
+
+    Args:
+        path: Nested `path-like object`_, which represents a valid filename in
+            the directory structure of the operating system.
+        parents: Boolean value, which determines if missing parents of the path
+            are created as needed.
+        mode: Integer value, which specifies the properties if the file. For
+            more information see `os.chmod()`_.
+        exist_ok: Boolean value which determines, if the function returns False,
+            if the file already exists.
+
+    Returns:
+        True if the file could be created, else False.
+
+    """
+    filepath = expand(path)
+
+    # Check type of 'filepath'
+    if not isinstance(filepath, Path):
+        return False
+
+    # Check if directory exists and optionally create it
+    dirpath = filepath.parent
+    if not dirpath.is_dir():
+        if not parents:
+            return False
+        dirpath.mkdir(parents=True, exist_ok=True)
+        if not dirpath.is_dir():
+            return False
+
+    # Check if file already exsists
+    if filepath.is_file() and not exist_ok:
+        return False
+
+    # Touch file with given
+    filepath.touch(mode=mode, exist_ok=exist_ok)
+
+    return filepath.is_file()

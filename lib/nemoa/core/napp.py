@@ -6,6 +6,9 @@
 .. RFC 822_: https://www.w3.org/Protocols/rfc822/
 .. appdirs_: http://github.com/ActiveState/appdirs
 
+.. TODO::
+    * Add get_file for 'user_package_log', 'temp_log' etc.
+
 """
 
 __author__ = 'Patrick Michl'
@@ -21,9 +24,16 @@ from nemoa.core import nmodule
 from nemoa.types import (
     Any, OptStr, OptStrOrBool, OptPathLike, StrDict, StrDictOfPaths)
 
-# Module constants
-APPNAME = 'nemoa'
-APPAUTHOR = 'frootlab'
+#
+# Private Module Constants
+#
+
+_DEFAULT_APPNAME = 'nemoa'
+_DEFAULT_APPAUTHOR = 'frootlab'
+
+#
+# Public Module Functions
+#
 
 def get_var(varname: str, *args: Any, **kwds: Any) -> OptStr:
     """Get application variable by name.
@@ -141,7 +151,7 @@ def update_vars(filepath: OptPathLike = None) -> None:
 
     globals()['_vars'] = dvars
 
-def get_dir(dirname: str, *args: Any, **kwds: Any) -> str:
+def get_dir(dirname: str, *args: Any, **kwds: Any) -> Path:
     """Get application specific environmental directory by name.
 
     This function returns application specific system directories by platform
@@ -247,8 +257,8 @@ def update_dirs(
             "https://pypi.org/project/appdirs/") from err
 
     dirs: StrDictOfPaths = {}
-    appname = appname or get_var('name') or APPNAME
-    appauthor = appauthor or get_var('author') or APPAUTHOR
+    appname = appname or get_var('name') or _DEFAULT_APPNAME
+    appauthor = appauthor or get_var('author') or _DEFAULT_APPAUTHOR
 
     # Get application specific directories from appdirs
     appdirs = AppDirs(

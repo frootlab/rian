@@ -1,7 +1,7 @@
-nemoa.core.ntest module
+nemoa.core.test module
 =======================
 
-.. automodule:: nemoa.core.ntest
+.. automodule:: nemoa.core.test
     :members:
     :undoc-members:
     :show-inheritance:

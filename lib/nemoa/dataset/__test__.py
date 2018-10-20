@@ -7,9 +7,9 @@ __license__ = 'GPLv3'
 import nemoa
 import numpy
 
-from nemoa.core import nclass, ntest
+from nemoa.core import nclass, test
 
-class TestCase(ntest.GenericTestCase):
+class TestCase(test.GenericTestCase):
 
     def test_dataset_import(self):
         import nemoa.dataset

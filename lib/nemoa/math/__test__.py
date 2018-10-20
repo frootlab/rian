@@ -9,11 +9,11 @@ __docformat__ = 'google'
 import networkx as nx
 import numpy as np
 
-from nemoa.core import ntest
+from nemoa.core import test
 from nemoa.math import algo, curve, graph, matrix, regr, vector
 from nemoa.types import Any, Callable, NpArray
 
-class MathTestCase(ntest.GenericTestCase):
+class MathTestCase(test.GenericTestCase):
     """Additional asserts for math tests."""
 
     def assertCheckSum(self, func: Callable, x: NpArray, val: float) -> None:
@@ -175,7 +175,7 @@ class MathTestCase(ntest.GenericTestCase):
         # Test if function is metric
         self.assertIsMetric(f, **kwds)
 
-class TestAlgo(ntest.ModuleTestCase):
+class TestAlgo(test.ModuleTestCase):
     """Testcase for the module nemoa.math.algo."""
 
     module = 'nemoa.math.algo'
@@ -229,7 +229,7 @@ class TestAlgo(ntest.ModuleTestCase):
         self.assertEqual(
             getattr(test_association, 'category', None), 'association')
 
-class TestCurve(MathTestCase, ntest.ModuleTestCase):
+class TestCurve(MathTestCase, test.ModuleTestCase):
     """Testcase for the module nemoa.math.curve."""
 
     module = 'nemoa.math.curve'
@@ -323,7 +323,7 @@ class TestCurve(MathTestCase, ntest.ModuleTestCase):
         self.assertIncreasing(curve.multilogistic)
         self.assertCheckSum(curve.multilogistic, self.x, 0.500091)
 
-class TestVector(MathTestCase, ntest.ModuleTestCase):
+class TestVector(MathTestCase, test.ModuleTestCase):
     """Testcase for the module nemoa.math.vector."""
 
     module = 'nemoa.math.vector'
@@ -399,7 +399,7 @@ class TestVector(MathTestCase, ntest.ModuleTestCase):
     def test_dist_euclid(self) -> None:
         self.assertIsVectorMetric(vector.dist_euclid)
 
-class TestMatrix(MathTestCase, ntest.ModuleTestCase):
+class TestMatrix(MathTestCase, test.ModuleTestCase):
     """Testcase for the module nemoa.math.matrix."""
 
     module = 'nemoa.math.matrix'
@@ -436,7 +436,7 @@ class TestMatrix(MathTestCase, ntest.ModuleTestCase):
     def test_dist_frobenius(self) -> None:
         self.assertIsMatrixMetric(matrix.dist_frobenius)
 
-class TestRegr(MathTestCase, ntest.ModuleTestCase):
+class TestRegr(MathTestCase, test.ModuleTestCase):
     """Testcase for the module nemoa.math.regr."""
 
     module = 'nemoa.math.regr'
@@ -463,7 +463,7 @@ class TestRegr(MathTestCase, ntest.ModuleTestCase):
     def test_error_rss(self) -> None:
         self.assertIsSemiMetric(regr.error_rss)
 
-class TestGraph(ntest.ModuleTestCase):
+class TestGraph(test.ModuleTestCase):
     """Testsuite for modules within the package 'nemoa.math.graph'."""
 
     def setUp(self) -> None:

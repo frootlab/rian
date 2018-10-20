@@ -19,9 +19,9 @@ Submodules
    nemoa.core.npath
    nemoa.core.nsysinfo
    nemoa.core.ntable
-   nemoa.core.ntest
+   nemoa.core.test
    nemoa.core.ntext
-   nemoa.core.nthreads
+   nemoa.core.thread
    nemoa.core.session
 
 Module contents

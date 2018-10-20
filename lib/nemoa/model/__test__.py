@@ -6,9 +6,9 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-from nemoa.core import ntest
+from nemoa.core import test
 
-class TestCase(ntest.GenericTestCase):
+class TestCase(test.GenericTestCase):
     def setUp(self):
         import nemoa
         self.mode = nemoa.get('mode')

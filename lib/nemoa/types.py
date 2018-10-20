@@ -16,7 +16,13 @@ from typing import (
     Iterator, List, Optional, Sequence, Set, Tuple, TypeVar, Union)
 
 ################################################################################
-# Define numerical Constants
+# Static Functions
+################################################################################
+
+void: Callable[..., None] = lambda *args, **kwds: None
+
+################################################################################
+# Numerical Constants
 ################################################################################
 
 NaN = float('nan')
@@ -59,6 +65,7 @@ OptBytes = Optional[bytes]
 OptArray = Optional[Array]
 StrOrBool = Union[str, bool]
 OptStrOrBool = Optional[StrOrBool]
+StrOrInt = Union[str, int]
 BytesLike = Union[bytes, bytearray, memoryview]
 BytesLikeOrStr = Union[BytesLike, str]
 Num = Union[int, float, complex]
@@ -121,14 +128,14 @@ OptNestDict = Optional[NestDict]
 IterNestRecDict = Iterable[NestRecDict]
 
 ################################################################################
-# Define Types for Iterators / Generators
+# Types for Iterators / Generators
 ################################################################################
 
 IterAny = Iterator[Any]
 IterNone = Iterator[None]
 
 ################################################################################
-# Define Types for Callables
+# Types for Callables
 ################################################################################
 
 # Elementary Callables
@@ -158,7 +165,7 @@ OptStrDictOfTestFuncs = Optional[StrDictOfTestFuncs]
 FuncWrapper = Callable[[Callable[..., T]], Callable[..., T]]
 
 ################################################################################
-# Define Types for Class Variables
+# Types for Class Variables
 ################################################################################
 
 ClassStrList = ClassVar[StrList]
@@ -166,7 +173,7 @@ ClassDict = ClassVar[AnyDict]
 ClassStrDict = ClassVar[StrDict]
 
 ################################################################################
-# Define specific Types that use builtin Packages
+# Specific Types that use builtin Packages
 ################################################################################
 
 # PathLike type for path references: os, pathlib
@@ -189,23 +196,27 @@ NestPath = Union[PathLike, PathLikeSeq, PathLikeSeq2, PathLikeSeq3]
 #NestPath = Sequence[Union[str, Path, 'NestPath']]
 NestPathDict = Dict[str, NestPath]
 OptNestPathDict = Optional[NestPathDict]
+
 # BytesIO Like for binary files and buffers: io
 BytesIOLike = IO[bytes]
 IterBytesIOLike = Iterator[BytesIOLike]
 CManBytesIOLike = ContextManager[BytesIOLike]
+
 # StringIO Like for text files and buffers: io
 StringIOLike = IO[str]
 IterStringIOLike = Iterator[StringIOLike]
 CManStringIOLike = ContextManager[StringIOLike]
+
 # FileLike for files and buffers: io
 FileLike = Union[BytesIOLike, StringIOLike]
 IterFileLike = Iterator[FileLike]
 CManFileLike = ContextManager[FileLike]
+
 # FileOrPathLike for generic file references and buffers
 FileOrPathLike = Union[FileLike, PathLike]
 
 ################################################################################
-# Define specific Types for external Packages
+# Specific Types for external Packages
 ################################################################################
 
 # NumPy types

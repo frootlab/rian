@@ -95,10 +95,10 @@ def main():
 
     def run_unittest() -> None:
         """Run unittest."""
-        from nemoa.core import napp, ntest
+        from nemoa.core import napp, test
 
         print(f"testing nemoa {napp.get_var('version')}")
-        ntest.run_tests(stream=sys.stderr)
+        test.run_tests(stream=sys.stderr)
 
     workspace = ''
     script = ''
