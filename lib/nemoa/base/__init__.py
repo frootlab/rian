@@ -2,8 +2,8 @@
 """Basic structures and tasks.
 
 This package extends individual modules and types from the standard library and
-external packages by additional functions and classes. The modules are therefore
-kept lightweight and independent from nemoa modules outside the package.
+external packages by selected features and convenience functions. The modules
+are lightweight and mostly independent from nemoa modules outside the package.
 
 """
 

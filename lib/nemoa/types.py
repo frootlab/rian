@@ -13,7 +13,7 @@ import types
 
 from typing import (
     Any, Callable, ClassVar, ContextManager, Dict, Hashable, IO, Iterable,
-    Iterator, List, Optional, Sequence, Set, Tuple, TypeVar, Union)
+    Iterator, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union)
 
 ################################################################################
 # Static Functions
@@ -90,6 +90,8 @@ IntDict = Dict[int, Any]
 FloatPair = Tuple[float, float]
 
 # Unions of Collections of Literals
+ClassInfo = Union[Type[Any], Tuple[Type[Any], ...]]
+OptClassInfo = Optional[ClassInfo]
 StrOrDict = Union[str, AnyDict]
 OptSet = Optional[Set[Any]]
 OptPair = Optional[Tuple[Any, Any]]

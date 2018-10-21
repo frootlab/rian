@@ -66,6 +66,7 @@ def decompress(data: BytesLikeOrStr) -> bytes:
         data = zlib.decompress(as_bytes(data))
     except zlib.error:
         raise ValueError("'data' is not gzip compressed")
+
     return data
 
 def encode(data: BytesLikeOrStr, encoding: OptStr = None) -> bytes:

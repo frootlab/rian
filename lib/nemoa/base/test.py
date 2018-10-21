@@ -52,8 +52,8 @@ class ModuleTestCase(GenericTestCase):
             for attr in tdict.values():
                 implemented.add(attr['name'][5:])
             complete = required <= implemented
-            utested = ', '.join(required - implemented)
-            message = f"utested functions: {utested}"
+            untested = ', '.join(required - implemented)
+            message = f"untested functions: {untested}"
         else:
             complete = True
         if not complete:

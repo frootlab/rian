@@ -20,10 +20,11 @@ from pathlib import Path
 
 from nemoa.classes import Attr, ReadOnlyAttr, ReadWriteAttr
 from nemoa.base import npath
+from nemoa.core import log
 from nemoa.fileio import inifile, wsfile
 from nemoa.types import (
-    BytesLike, CManFileLike, ClassVar, OptBytes, OptPath, OptPathLike, OptStr,
-    PathLike, PathList, StrDict2, StrList, Traceback)
+    Any, BytesLike, CManFileLike, ClassVar, OptBytes, OptPath, OptPathLike,
+    OptStr, PathLike, PathList, StrDict2, StrList, StrOrInt, Traceback)
 
 # Module specific types
 WsFile = wsfile.WsFile
@@ -56,6 +57,7 @@ class Session:
     _cfg: StrDict2
     _file: WsFile
     _paths: PathList
+    _logger: log.Logger
 
     #
     # Public Attributes
@@ -77,13 +79,15 @@ class Session:
     # Magic
     #
 
-    def __init__(self, workspace: OptPathLike = None,
-        basedir: OptPathLike = None, pwd: OptBytes = None) -> None:
+    def __init__(
+            self, workspace: OptPathLike = None, basedir: OptPathLike = None,
+            pwd: OptBytes = None) -> None:
         """Initialize instance variables and load workspace from file."""
         # Initialize instance variables with default values
         self._cfg = self._DEFAULT_CONFIG.copy()
         self._file = WsFile()
         self._paths = [npath.expand(path) for path in self._DEFAULT_PATHS]
+        self._logger = log.get_instance()
 
         # Load configuration from file
         if npath.is_file(self._CONFIG_FILE):
@@ -106,7 +110,11 @@ class Session:
 
     def __exit__(self, etype: str, value: int, tb: Traceback) -> None:
         """Exit with statement."""
-        self.close()
+        self.close() # Close Workspace
+        self._save_config() # Save config
+
+    def __del__(self) -> None:
+        """Run destructor for instance."""
 
     #
     # Public Methods
@@ -397,6 +405,27 @@ class Session:
 
         """
         return self._file.write_bytes(data, filepath)
+
+    def log(self, level: StrOrInt, msg: str, *args: Any, **kwds: Any) -> None:
+        """Log event.
+
+        Args:
+            level: Integer value or string, which describes the severity of the
+                event. Ordered by ascending severity, the allowed level names
+                are: 'DEBUG', 'INFO', 'WARNING', 'ERROR' and 'CRITICAL'. The
+                respectively corresponding level numbers are 10, 20, 30, 40 and
+                50.
+            msg: Message ``format string``_, which may can contain literal text
+                or replacement fields delimited by braces. Each replacement
+                field contains either the numeric index of a positional
+                argument, given by *args, or the name of a keyword argument,
+                given by the keyword *extra*.
+            *args: Arguments, which can be used by the message format string.
+            **kwds: Additional Keywords, used by the function `Logger.log()`_.
+
+        """
+        self._logger.log(level, msg, *args, **kwds)
+
     #
     # Private Methods
     #

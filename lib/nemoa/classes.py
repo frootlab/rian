@@ -9,8 +9,8 @@ __docformat__ = 'google'
 from abc import ABC, abstractmethod
 
 from nemoa.types import (
-    Any, ClassVar, Dict, FileOrPathLike, Method, OptDict, OptCallable, OptStr,
-    OptType, StrDict, Tuple)
+    Any, ClassVar, Dict, FileOrPathLike, Method, OptClassInfo, OptDict,
+    OptCallable, OptStr, OptType, StrDict, Tuple)
 
 # Descriptors for binding class instance attributes: When an instance of a class
 # contains a descriptor class as a method, the descriptor class defines the
@@ -35,20 +35,19 @@ class Attr:
 
     store: OptDict = None
     key: OptStr = None
-    vtype: OptType = None
+    classinfo: OptClassInfo = None
     getter: OptCallable = None
     setter: OptCallable = None
     default: Any = None
 
     def __init__(
-            self, vtype: OptType = None,
-            bind: OptStr = None, key: OptStr = None,
-            getter: OptStr = None, setter: OptStr = None,
-            default: Any = None) -> None:
+            self, classinfo: OptClassInfo = None, bind: OptStr = None,
+            key: OptStr = None, default: Any = None, getter: OptStr = None,
+            setter: OptStr = None) -> None:
         """Set attribute names of dictionary, getter, setter, etc."""
         self.attr = {
             'dict': bind, 'key': key, 'getter': getter, 'setter': setter}
-        self.vtype = vtype
+        self.classinfo = classinfo
         self.default = default
 
     def __set_name__(self, owner: type, name: str) -> None:
@@ -68,9 +67,16 @@ class Attr:
     def __set__(self, obj: object, val: Any) -> None:
         """Wrap set requests to the Attribute."""
         # Check Type of Attribute
-        if self.vtype is not None and not isinstance(val, self.vtype):
+        if self.classinfo and not isinstance(val, self.classinfo):
+            if isinstance(self.classinfo, type):
+                typeinfo = self.classinfo.__name__
+            elif isinstance(self.classinfo, tuple):
+                names = [each.__name__ for each in self.classinfo]
+                typeinfo = ' or '.join(names)
+            else:
+                typeinfo = '?'
             raise TypeError(
-                f"'{self.name}' requires type {self.vtype.__name__} "
+                f"'{self.name}' requires type {typeinfo}, "
                 f"not {type(val).__name__}")
         if not isinstance(self.store, dict):
             self._bind(obj)
