@@ -6,9 +6,9 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-from nemoa.core import ntest
+from nemoa.base import test
 
-class TestCase(ntest.GenericTestCase):
+class TestCase(test.GenericTestCase):
     def setUp(self):
         import nemoa
         self.mode = nemoa.get('mode')
@@ -25,14 +25,14 @@ class TestCase(ntest.GenericTestCase):
         nemoa.set('mode', self.mode)
 
     def test_model_import(self):
-        from nemoa.core import nclass
+        from nemoa.base import nclass
 
         with self.subTest(filetype = 'npz'):
             model = nemoa.model.open('test', workspace = 'testsuite')
             self.assertTrue(nclass.hasbase(model, 'Model'))
 
     def test_model_ann(self):
-        from nemoa.core import nclass
+        from nemoa.base import nclass
 
         with self.subTest(step = 'create shallow ann'):
             model = nemoa.model.create(
@@ -45,7 +45,7 @@ class TestCase(ntest.GenericTestCase):
             self.assertTrue(test)
 
     def test_model_dbn(self):
-        from nemoa.core import nclass
+        from nemoa.base import nclass
 
         with self.subTest(step = 'create dbn'):
             model = nemoa.model.create(

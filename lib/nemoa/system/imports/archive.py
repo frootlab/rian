@@ -23,7 +23,7 @@ class Npz:
     default = {}
 
     def __init__(self, **kwds):
-        from nemoa.core import ndict
+        from nemoa.base import ndict
         self.settings = ndict.merge(kwds, self.default)
 
     def load(self, path):

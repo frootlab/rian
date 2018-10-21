@@ -17,6 +17,16 @@ class FileNotGivenError(OSError):
     """Raised when a file or directory is required but not given."""
 
 ################################################################################
+# Singleton Process Exceptions
+################################################################################
+
+class AlreadyStartedError(LookupError):
+    """Raised when a singleton process shall be started twice."""
+
+class NotStartedError(LookupError):
+    """Raised when a singleton process is called but has not been started."""
+
+################################################################################
 # Application specific Exceptions
 ################################################################################
 

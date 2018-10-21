@@ -20,7 +20,7 @@ def filetypes():
 
 def load(path, **kwds):
     """Import network from graph description file."""
-    from nemoa.core import npath
+    from nemoa.base import npath
 
     # extract filetype from path
     filetype = npath.fileext(path).lower()
@@ -37,7 +37,7 @@ def load(path, **kwds):
 
 def _graph_decode(G):
     """ """
-    from nemoa.core import nbytes
+    from nemoa.base import binary
 
     # no encoding
     if not G.graph.get('coding', None) or G.graph['coding'].lower() == 'none':
@@ -45,14 +45,14 @@ def _graph_decode(G):
 
     # base64 encoding
     if G.graph['coding'] == 'base64':
-        G.graph['params'] = nbytes.unpack(G.graph['params'], encoding='base64')
+        G.graph['params'] = binary.unpack(G.graph['params'], encoding='base64')
 
         for node in G.nodes():
-            G.node[node]['params'] = nbytes.unpack(
+            G.node[node]['params'] = binary.unpack(
                 G.node[node]['params'], encoding='base64')
 
         for edge in G.edges():
-            G.edges[edge]['params'] = nbytes.unpack(
+            G.edges[edge]['params'] = binary.unpack(
                 G.edges[edge]['params'], encoding='base64')
 
         G.graph['coding'] == 'none'
@@ -81,14 +81,14 @@ class Graphml:
     def __init__(self, **kwds):
         """ """
 
-        from nemoa.core import ndict
+        from nemoa.base import ndict
 
         self.settings = ndict.merge(kwds, self.default)
 
     def load(self, path):
         """ """
 
-        from nemoa.core import ndict
+        from nemoa.base import ndict
 
         G = networkx.read_graphml(path)
         d = ndict.strkeys(_graph_to_dict(_graph_decode(G)))
@@ -104,14 +104,14 @@ class Gml:
     def __init__(self, **kwds):
         """ """
 
-        from nemoa.core import ndict
+        from nemoa.base import ndict
 
         self.settings = ndict.merge(kwds, self.default)
 
     def load(self, path):
         """ """
 
-        from nemoa.core import ndict
+        from nemoa.base import ndict
 
         G = networkx.read_gml(path, relabel = True)
         d = ndict.strkeys(_graph_to_dict(_graph_decode(G)))

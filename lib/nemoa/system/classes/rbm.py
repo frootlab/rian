@@ -13,7 +13,7 @@ __license__ = 'GPLv3'
 import nemoa.system.classes.ann
 import numpy
 
-from nemoa.core import nclass
+from nemoa.base import nclass
 
 class RBM(nemoa.system.classes.ann.ANN):
     """Restricted Boltzmann Machine (RBM).

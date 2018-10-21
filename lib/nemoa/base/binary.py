@@ -22,17 +22,17 @@ import base64
 import pickle
 import zlib
 
-from nemoa.core import nsysinfo
+from nemoa.base import env
 from nemoa.types import Any, BytesLikeOrStr, OptInt, OptStr
 
-def asbytes(data: BytesLikeOrStr, encoding: OptStr = None) -> bytes:
+def as_bytes(data: BytesLikeOrStr, encoding: OptStr = None) -> bytes:
     """Convert bytes-like object or str to bytes.
 
     Args:
         data: Binary data given as `bytes-like object`_ or string
     """
     if isinstance(data, str):
-        encoding = encoding or nsysinfo.encoding()
+        encoding = encoding or env.encoding()
         return bytes(data, encoding=encoding)
     return bytes(data)
 
@@ -51,7 +51,7 @@ def compress(data: BytesLikeOrStr, level: int = -1) -> bytes:
          Binary data as bytes.
 
     """
-    return zlib.compress(asbytes(data), level=level)
+    return zlib.compress(as_bytes(data), level=level)
 
 def decompress(data: BytesLikeOrStr) -> bytes:
     """Decompress gzip compressed binary data.
@@ -63,9 +63,10 @@ def decompress(data: BytesLikeOrStr) -> bytes:
          Binary data as bytes.
     """
     try:
-        data = zlib.decompress(asbytes(data))
+        data = zlib.decompress(as_bytes(data))
     except zlib.error:
         raise ValueError("'data' is not gzip compressed")
+
     return data
 
 def encode(data: BytesLikeOrStr, encoding: OptStr = None) -> bytes:
@@ -83,9 +84,9 @@ def encode(data: BytesLikeOrStr, encoding: OptStr = None) -> bytes:
     """
     # Encode binary data
     if not encoding:
-        return asbytes(data)
+        return as_bytes(data)
     if encoding in ['base64', 'base32', 'base16', 'base85']:
-        return getattr(base64, f"b{encoding[4:]}encode")(asbytes(data))
+        return getattr(base64, f"b{encoding[4:]}encode")(as_bytes(data))
     raise ValueError(f"encoding '{encoding}' is not supported")
 
 def decode(
@@ -104,7 +105,7 @@ def decode(
 
     """
     if not encoding:
-        return asbytes(data)
+        return as_bytes(data)
     if encoding in ['base64', 'base32', 'base16', 'base85']:
         return getattr(base64, f"b{encoding[4:]}decode")(data)
     raise ValueError(f"encoding '{encoding}' is not supported")
@@ -160,4 +161,4 @@ def unpack(
         data = decode(data, encoding=encoding) # Decode binary data to bytes
     if compressed:
         data = decompress(data) # Decompress bytes
-    return pickle.loads(asbytes(data)) # Unpickle object from bytes
+    return pickle.loads(as_bytes(data)) # Unpickle object from bytes

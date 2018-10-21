@@ -1,7 +1,7 @@
-nemoa.base.ntext module
+nemoa.base.table module
 =======================
 
-.. automodule:: nemoa.base.ntext
+.. automodule:: nemoa.base.table
     :members:
     :undoc-members:
     :show-inheritance:

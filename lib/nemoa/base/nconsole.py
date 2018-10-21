@@ -19,10 +19,10 @@ from abc import ABC, abstractmethod
 from queue import Empty, Queue
 from threading import Thread
 
-from nemoa.core import nsysinfo
+from nemoa.base import env
 from nemoa.types import Module, OptModule
 
-ENCODING = nsysinfo.encoding()
+ENCODING = env.encoding()
 
 class GetchBase(ABC):
     """Abstract base class for Getch classes."""
@@ -199,7 +199,7 @@ def getch_class() -> GetchBase:
 
     """
     # Get platform specific tty I/O module.
-    ref = nsysinfo.ttylib()
+    ref = env.ttylib()
     if not ref:
         raise ImportError("no module for tty I/O could be imported")
     cname = 'Getch' + ref.__name__.capitalize()

@@ -21,7 +21,7 @@ import contextlib
 
 from io import TextIOWrapper
 
-from nemoa.core import npath
+from nemoa.base import npath
 from nemoa.types import (
     BytesIOBaseClass, FileOrPathLike, IterStringIOLike, Path,
     StrList, TextIOBaseClass)

@@ -19,11 +19,12 @@ __docformat__ = 'google'
 from pathlib import Path
 
 from nemoa.classes import Attr, ReadOnlyAttr, ReadWriteAttr
-from nemoa.core import npath
+from nemoa.base import npath
+from nemoa.core import log
 from nemoa.fileio import inifile, wsfile
 from nemoa.types import (
-    CManFileLike, ClassVar, OptBytes, OptPath, OptPathLike, OptStr, PathLike,
-    PathList, StrDict2, StrList, Traceback)
+    Any, BytesLike, CManFileLike, ClassVar, OptBytes, OptPath, OptPathLike,
+    OptStr, PathLike, PathList, StrDict2, StrList, StrOrInt, Traceback)
 
 # Module specific types
 WsFile = wsfile.WsFile
@@ -56,6 +57,7 @@ class Session:
     _cfg: StrDict2
     _file: WsFile
     _paths: PathList
+    _logger: log.Logger
 
     #
     # Public Attributes
@@ -77,13 +79,15 @@ class Session:
     # Magic
     #
 
-    def __init__(self, workspace: OptPathLike = None,
-        basedir: OptPathLike = None, pwd: OptBytes = None) -> None:
+    def __init__(
+            self, workspace: OptPathLike = None, basedir: OptPathLike = None,
+            pwd: OptBytes = None) -> None:
         """Initialize instance variables and load workspace from file."""
         # Initialize instance variables with default values
         self._cfg = self._DEFAULT_CONFIG.copy()
         self._file = WsFile()
         self._paths = [npath.expand(path) for path in self._DEFAULT_PATHS]
+        self._logger = log.get_instance()
 
         # Load configuration from file
         if npath.is_file(self._CONFIG_FILE):
@@ -106,7 +110,11 @@ class Session:
 
     def __exit__(self, etype: str, value: int, tb: Traceback) -> None:
         """Exit with statement."""
-        self.close()
+        self.close() # Close Workspace
+        self._save_config() # Save config
+
+    def __del__(self) -> None:
+        """Run destructor for instance."""
 
     #
     # Public Methods
@@ -151,7 +159,7 @@ class Session:
     def open(
         self, filepath: PathLike, workspace: OptPathLike = None,
         basedir: OptPathLike = None, pwd: OptBytes = None, mode: str = '',
-        encoding: OptStr = None, isdir: bool = False) -> CManFileLike:
+        encoding: OptStr = None, is_dir: bool = False) -> CManFileLike:
         """Open file within current or given workspace.
 
         Args:
@@ -159,7 +167,7 @@ class Session:
                 member. In reading mode the path has to point to a valid
                 workspace file, or a FileNotFoundError is raised. In writing
                 mode the path by default is treated as a file path. New
-                directories can be written by setting the argument isdir to
+                directories can be written by setting the argument is_dir to
                 True.
             workspace:
             basedir:
@@ -175,7 +183,7 @@ class Session:
                 and writing mode respectively is used to decode the stream’s
                 bytes into strings, and to encode strings into bytes. By default
                 the preferred encoding of the operating system is used.
-            isdir: Boolean value which determines, if the path is to be treated
+            is_dir: Boolean value which determines, if the path is to be treated
                 as a directory or not. This information is required for writing
                 directories to the workspace. The default behaviour is not to
                 treat paths as directories.
@@ -188,9 +196,9 @@ class Session:
             path = self._locate_path(workspace=workspace, basedir=basedir)
             ws = WsFile(filepath=path, pwd=pwd)
             return ws.open(
-                filepath, mode=mode, encoding=encoding, isdir=isdir)
+                filepath, mode=mode, encoding=encoding, is_dir=is_dir)
         return self._file.open(
-            filepath, mode=mode, encoding=encoding, isdir=isdir)
+            filepath, mode=mode, encoding=encoding, is_dir=is_dir)
 
     def append(self, source: PathLike, target: OptPathLike = None) -> bool:
         """Append file to the current workspace.
@@ -293,6 +301,130 @@ class Session:
 
         """
         return self._file.search(pattern)
+
+    def copy(self, source: PathLike, target: PathLike) -> bool:
+        """Copy file within current workspace.
+
+        Args:
+            source: String or `path-like object`_, that points to a file in the
+                directory structure of the workspace. If the file does not
+                exist, a FileNotFoundError is raised. If the filepath points to
+                a directory, an IsADirectoryError is raised.
+            target: String or `path-like object`_, that points to a new filename
+                or an existing directory in the directory structure of the
+                workspace. If the target is a directory the target file consists
+                of the directory and the basename of the source file. If the
+                target file already exists a FileExistsError is raised.
+
+        Returns:
+            Boolean value which is True if the file was copied.
+
+        """
+        return self._file.copy(source, target)
+
+    def move(self, source: PathLike, target: PathLike) -> bool:
+        """Move file within current workspace.
+
+        Args:
+            source: String or `path-like object`_, that points to a file in the
+                directory structure of the workspace. If the file does not
+                exist, a FileNotFoundError is raised. If the filepath points to
+                a directory, an IsADirectoryError is raised.
+            target: String or `path-like object`_, that points to a new filename
+                or an existing directory in the directory structure of the
+                workspace. If the target is a directory the target file consists
+                of the directory and the basename of the source file. If the
+                target file already exists a FileExistsError is raised.
+
+        Returns:
+            Boolean value which is True if the file has been moved.
+
+        """
+        return self._file.move(source, target)
+
+    def read_text(self, filepath: PathLike, encoding: OptStr = None) -> str:
+        """Read text from file in current workspace.
+
+        Args:
+            filepath: String or `path-like object`_, that points to a valid file
+                in the directory structure of the workspace. If the file does
+                not exist a FileNotFoundError is raised.
+            encoding: Specifies the name of the encoding, which is used to
+                decode the stream’s bytes into strings. By default the preferred
+                encoding of the operating system is used.
+
+        Returns:
+            Contents of the given filepath encoded as string.
+
+        """
+        return self._file.read_text(filepath, encoding=encoding)
+
+    def read_bytes(self, filepath: PathLike) -> bytes:
+        """Read bytes from file in current workspace.
+
+        Args:
+            filepath: String or `path-like object`_, that points to a valid file
+                in the dirctory structure of the workspace. If the file does not
+                exist a FileNotFoundError is raised.
+
+        Returns:
+            Contents of the given filepath as bytes.
+
+        """
+        return self._file.read_bytes(filepath)
+
+    def write_text(
+            self, text: str, filepath: PathLike,
+            encoding: OptStr = None) -> int:
+        """Write text to file.
+
+        Args:
+            text: String, which has to be written to the given file.
+            filepath: String or `path-like object`_, that represents a valid
+                filename in the dirctory structure of the workspace.
+            encoding: Specifies the name of the encoding, which is used to
+                encode strings into bytes. By default the preferred encoding of
+                the operating system is used.
+
+        Returns:
+            Number of characters, that are written to the file.
+
+        """
+        return self._file.write_text(text, filepath, encoding=encoding)
+
+    def write_bytes(self, data: BytesLike, filepath: PathLike) -> int:
+        """Write bytes to file.
+
+        Args:
+            data: Bytes, which are to be written to the given file.
+            filepath: String or `path-like object`_, that represents a valid
+                filename in the dirctory structure of the workspace.
+
+        Returns:
+            Number of bytes, that are written to the file.
+
+        """
+        return self._file.write_bytes(data, filepath)
+
+    def log(self, level: StrOrInt, msg: str, *args: Any, **kwds: Any) -> None:
+        """Log event.
+
+        Args:
+            level: Integer value or string, which describes the severity of the
+                event. Ordered by ascending severity, the allowed level names
+                are: 'DEBUG', 'INFO', 'WARNING', 'ERROR' and 'CRITICAL'. The
+                respectively corresponding level numbers are 10, 20, 30, 40 and
+                50.
+            msg: Message ``format string``_, which may can contain literal text
+                or replacement fields delimited by braces. Each replacement
+                field contains either the numeric index of a positional
+                argument, given by *args, or the name of a keyword argument,
+                given by the keyword *extra*.
+            *args: Arguments, which can be used by the message format string.
+            **kwds: Additional Keywords, used by the function `Logger.log()`_.
+
+        """
+        self._logger.log(level, msg, *args, **kwds)
 
     #
     # Private Methods

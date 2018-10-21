@@ -14,7 +14,7 @@ def new(*args, **kwds):
 
     mname, cname = tuple(kwds['config']['type'].split('.'))
 
-    from nemoa.core import nmodule
+    from nemoa.base import nmodule
 
     module = nmodule.get_submodule(mname)
     if not hasattr(module, cname):

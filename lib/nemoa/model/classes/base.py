@@ -8,7 +8,7 @@ import nemoa
 import copy
 import os
 
-from nemoa.core import nclass, nbase
+from nemoa.base import nclass, nbase
 from typing import Any, Dict
 
 class Model(nbase.ObjectIP):
@@ -280,7 +280,7 @@ class Model(nbase.ObjectIP):
     def _set_config(self, config = None):
         """Set configuration from dictionary."""
 
-        from nemoa.core import ndict
+        from nemoa.base import ndict
 
         # initialize or update configuration dictionary
         if not hasattr(self, '_config') or not self._config:

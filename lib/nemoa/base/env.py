@@ -1,10 +1,29 @@
 # -*- coding: utf-8 -*-
-"""Functions to access application variables and directories.
+"""Plattform, application and package specific informations.
 
 .. References:
-.. PEP 345_: https://www.python.org/dev/peps/pep-0345/
-.. RFC 822_: https://www.w3.org/Protocols/rfc822/
-.. appdirs_: http://github.com/ActiveState/appdirs
+.. _PEP 345:
+    https://www.python.org/dev/peps/pep-0345/
+.. _RFC 822:
+    https://www.w3.org/Protocols/rfc822/
+.. _appdirs:
+    http://github.com/ActiveState/appdirs
+.. _termios:
+    https://docs.python.org/3/library/termios.html
+.. _msvcrt:
+    https://docs.python.org/3/library/msvcrt.html
+.. _locale.getpreferredencoding():
+    https://docs.python.org/3/library/locale.html#locale.getpreferredencoding
+.. _platform.node():
+    https://docs.python.org/3/library/platform.html#platform.node
+.. _platform.system():
+    https://docs.python.org/3/library/platform.html#platform.system
+.. _getpass.getuser():
+    https://docs.python.org/3/library/getpass.html#getpass.getuser
+
+.. TODO::
+    * Add get_file for 'user_package_log', 'temp_log' etc.
+    * include encoding, hostname etc. in get_var
 
 """
 
@@ -13,17 +32,35 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import getpass
+import locale
+import platform
 import re
 
+from distutils import sysconfig
 from pathlib import Path
 
-from nemoa.core import nmodule
-from nemoa.types import (
-    Any, OptStr, OptStrOrBool, OptPathLike, StrDict, StrDictOfPaths)
+try:
+    from appdirs import AppDirs
+except ImportError as err:
+    raise ImportError(
+        "requires package appdirs: "
+        "https://pypi.org/project/appdirs/") from err
 
-# Module constants
-APPNAME = 'nemoa'
-APPAUTHOR = 'frootlab'
+from nemoa.base import nmodule
+from nemoa.types import (
+    Any, OptModule, OptStr, OptStrOrBool, OptPathLike, StrDict, StrDictOfPaths)
+
+#
+# Private Module Constants
+#
+
+_DEFAULT_APPNAME = 'nemoa'
+_DEFAULT_APPAUTHOR = 'frootlab'
+
+#
+# Public Module Functions
+#
 
 def get_var(varname: str, *args: Any, **kwds: Any) -> OptStr:
     """Get application variable by name.
@@ -61,9 +98,9 @@ def get_var(varname: str, *args: Any, **kwds: Any) -> OptStr:
             'credits': list with strings, acknowledging further contributors,
                 Teams or supporting organizations.
         *args: Optional arguments that specify the application, as required by
-            the function 'nemoa.core.napp.update_vars'.
+            the function 'nemoa.base.env.update_vars'.
         **kwds: Optional keyword arguments that specify the application, as
-            required by the function 'nemoa.core.napp.update_vars'.
+            required by the function 'nemoa.base.env.update_vars'.
 
     Returns:
         String representing the value of the application variable.
@@ -93,9 +130,9 @@ def get_vars(*args: Any, **kwds: Any) -> StrDict:
 
     Args:
         *args: Optional arguments that specify the application, as required by
-            the function 'nemoa.core.napp.update_vars'.
+            the function 'nemoa.base.env.update_vars'.
         **kwds: Optional keyword arguments that specify the application, as
-            required by the function 'nemoa.core.napp.update_vars'.
+            required by the function 'nemoa.base.env.update_vars'.
 
     Returns:
         Dictionary containing application variables.
@@ -141,7 +178,7 @@ def update_vars(filepath: OptPathLike = None) -> None:
 
     globals()['_vars'] = dvars
 
-def get_dir(dirname: str, *args: Any, **kwds: Any) -> str:
+def get_dir(dirname: str, *args: Any, **kwds: Any) -> Path:
     """Get application specific environmental directory by name.
 
     This function returns application specific system directories by platform
@@ -160,9 +197,9 @@ def get_dir(dirname: str, *args: Any, **kwds: Any) -> str:
             'package_dir': Current package directory
             'package_data_dir': Current package data directory
         *args: Optional arguments that specify the application, as required by
-            the function 'nemoa.core.napp.update_dirs'.
+            the function 'nemoa.base.env.update_dirs'.
         **kwds: Optional keyword arguments that specify the application, as
-            required by the function 'nemoa.core.napp.update_dirs'.
+            required by the function 'nemoa.base.env.update_dirs'.
 
     Returns:
         String containing path of environmental directory or None if the
@@ -195,9 +232,9 @@ def get_dirs(*args: Any, **kwds: Any) -> StrDict:
 
     Args:
         *args: Optional arguments that specify the application, as required by
-            the function 'nemoa.core.napp.update_dirs'.
+            the function 'nemoa.base.env.update_dirs'.
         **kwds: Optional keyword arguments that specify the application, as
-            required by the function 'nemoa.core.napp.update_dirs'.
+            required by the function 'nemoa.base.env.update_dirs'.
 
     Returns:
         Dictionary containing paths of application specific environmental
@@ -237,18 +274,9 @@ def update_dirs(
         directories.
 
     """
-    from distutils import sysconfig
-
-    try:
-        from appdirs import AppDirs
-    except ImportError as err:
-        raise ImportError(
-            "requires package appdirs: "
-            "https://pypi.org/project/appdirs/") from err
-
     dirs: StrDictOfPaths = {}
-    appname = appname or get_var('name') or APPNAME
-    appauthor = appauthor or get_var('author') or APPAUTHOR
+    appname = appname or get_var('name') or _DEFAULT_APPNAME
+    appauthor = appauthor or get_var('author') or _DEFAULT_APPAUTHOR
 
     # Get application specific directories from appdirs
     appdirs = AppDirs(
@@ -269,3 +297,81 @@ def update_dirs(
     dirs['package_data_dir'] = path / 'data'
 
     globals()['_dirs'] = dirs
+
+def encoding() -> str:
+    """Preferred encoding used for text data.
+
+    This is a wrapper function to the standard library function
+    `locale.getpreferredencoding()`_. This function returns the encoding used
+    for text data, according to user preferences. User preferences are expressed
+    differently on different systems, and might not be available
+    programmatically on some systems, so this function only returns a guess.
+
+    Returns:
+        String representing the preferred encoding used for text data.
+
+    """
+    return locale.getpreferredencoding()
+
+def hostname() -> str:
+    """Hostname of the computer.
+
+    This is a wrapper function to the standard library function
+    `platform.node()`_. This function returns the computer’s hostname. If the
+    value cannot be determined, an empty string is returned.
+
+    Returns:
+        String representing the computer’s hostname or None.
+
+    """
+    return platform.node()
+
+def osname() -> str:
+    """Name of the Operating System.
+
+    This is a wrapper function to the standard library function
+    `platform.system()`_. This function returns the OS name, e.g. 'Linux',
+    'Windows', or 'Java'. If the value cannot be determined, an empty string is
+    returned.
+
+    Returns:
+        String representing the OS name or None.
+
+    """
+    return platform.system()
+
+def ttylib() -> OptModule:
+    """Name of package for tty I/O control.
+
+    Depending on the plattform the module within the standard library, which is
+    required for tty I/O control differs. The module `termios`_ provides an
+    interface to the POSIX calls for tty I/O control. The module `msvcrt`_
+    provides access to some useful capabilities on Windows platforms.
+
+    Returns:
+        Reference to module for tty I/O control or None, if the module could
+        not be determined.
+
+    """
+    libs = ['msvcrt', 'termios']
+    for name in libs:
+        ref = nmodule.inst(name)
+        if ref:
+            return ref
+    return None
+
+def username() -> str:
+    """Login name of the current user.
+
+    This is a wrapper function to the standard library function
+    `getpass.getuser()`_. This function checks the environment variables
+    LOGNAME, USER, LNAME and USERNAME, in order, and returns the value of the
+    first one which is set to a non-empty string. If none are set, the login
+    name from the password database is returned on systems which support the
+    pwd module, otherwise, an exception is raised.
+
+    Returns:
+        String representing the login name of the current user.
+
+    """
+    return getpass.getuser()

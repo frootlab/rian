@@ -8,7 +8,7 @@ __docformat__ = 'google'
 
 from pathlib import Path
 
-from nemoa.core import nclass, ndict, npath
+from nemoa.base import nclass, ndict, npath
 from nemoa.types import Any, ClassVar, Dict, OptInt, OptStr, PathLike
 
 class ObjectIP:

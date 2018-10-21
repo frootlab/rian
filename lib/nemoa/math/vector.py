@@ -13,7 +13,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://pypi.org/project/numpy") from err
 
-from nemoa.core import nfunc, nmodule
+from nemoa.base import nfunc, nmodule
 from nemoa.types import Any, NpAxis, NpArray, NpArrayLike, StrList
 
 NORM_PREFIX = 'norm_'

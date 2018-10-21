@@ -17,7 +17,7 @@ def filetypes():
 def load(path, **kwds):
     """Import dataset from text file."""
 
-    from nemoa.core import npath
+    from nemoa.base import npath
 
     # get extract filetype from file extension
     filetype = npath.fileext(path).lower()
@@ -38,7 +38,7 @@ class Csv:
     default = {'delim': ','}
 
     def __init__(self, **kwds):
-        from nemoa.core import ndict
+        from nemoa.base import ndict
         self.settings = ndict.merge(kwds, self.default)
 
     def load(self, path):
@@ -51,7 +51,7 @@ class Csv:
         """
 
         from nemoa.fileio import csvfile, inifile
-        from nemoa.core import npath
+        from nemoa.base import npath
 
         # Get configuration from CSV header
         header = csvfile.get_header(path)

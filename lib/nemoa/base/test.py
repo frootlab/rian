@@ -11,11 +11,18 @@ import unittest
 from unittest import TestCase, TestResult, TestLoader, TestSuite, TextTestRunner
 from io import StringIO
 
-from nemoa.core import nmodule, nobject
+from nemoa.base import nmodule, nobject
 from nemoa.types import Function, Method, OptStr
 
-# Module variables
+#
+# Public Module Variables
+#
+
 skip_completeness_test: bool = False
+
+#
+# Public Module Classes
+#
 
 class GenericTestCase(TestCase):
     """Custom testcase."""
@@ -27,6 +34,7 @@ class ModuleTestCase(GenericTestCase):
     test_completeness: bool = True
 
     def assertModuleIsComplete(self) -> None:
+        """Assert that all members of module are tested."""
         message: OptStr = None
         if hasattr(self, 'module') and self.test_completeness:
             mref = nmodule.inst(self.module)
@@ -54,6 +62,10 @@ class ModuleTestCase(GenericTestCase):
     @unittest.skipIf(skip_completeness_test, "completeness is not tested")
     def test_compleness_of_module(self) -> None:
         self.assertModuleIsComplete()
+
+#
+# Public Module Functions
+#
 
 def run_tests(
         stream: StringIO = StringIO(), verbosity: int = 2) -> TestResult:

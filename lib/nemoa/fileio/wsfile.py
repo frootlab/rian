@@ -20,7 +20,7 @@ from contextlib import contextmanager
 from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
 
-from nemoa.core import npath, nsysinfo
+from nemoa.base import npath, env
 from nemoa.classes import Attr, ReadOnlyAttr, ReadWriteAttr
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
 from nemoa.fileio import inifile
@@ -75,10 +75,10 @@ class WsFile:
             'startup': 'path'}}
     _DEFAULT_CONFIG: ClassVar[StrDict2] = {
         'workspace': {
-            'maintainer': nsysinfo.username()}}
+            'maintainer': env.username()}}
     _DEFAULT_DIR_LAYOUT: ClassVar[StrList] = [
         'dataset', 'network', 'system', 'model', 'script']
-    _DEFAULT_ENCODING = nsysinfo.encoding()
+    _DEFAULT_ENCODING = env.encoding()
 
     #
     # Private Instance Variables
@@ -92,7 +92,7 @@ class WsFile:
     _pwd: OptBytes
 
     #
-    # Public Attributes
+    # Public Instance Attributes
     #
 
     about: Attr = ReadWriteAttr(str, bind='_attr')
@@ -171,7 +171,7 @@ class WsFile:
         self.close()
 
     #
-    # Public Methods
+    # Public Instance Methods
     #
 
     def load(self, filepath: PathLike, pwd: OptBytes = None) -> None:
@@ -286,7 +286,7 @@ class WsFile:
     @contextmanager
     def open(
             self, path: PathLike, mode: str = '', encoding: OptStr = None,
-            isdir: bool = False) -> IterFileLike:
+            is_dir: bool = False) -> IterFileLike:
         """Open file within the workspace.
 
         Args:
@@ -294,7 +294,7 @@ class WsFile:
                 member. In reading mode the path has to point to a valid
                 workspace file, or a FileNotFoundError is raised. In writing
                 mode the path by default is treated as a file path. New
-                directories can be written by setting the argument isdir to
+                directories can be written by setting the argument is_dir to
                 True.
             mode: String, which characters specify the mode in which the file is
                 to be opened. The default mode is reading in text mode. Suported
@@ -308,7 +308,7 @@ class WsFile:
                 and writing mode respectively is used to decode the stream’s
                 bytes into strings, and to encode strings into bytes. By default
                 the preferred encoding of the operating system is used.
-            isdir: Boolean value which determines, if the path is to be treated
+            is_dir: Boolean value which determines, if the path is to be treated
                 as a directory or not. This information is required for writing
                 directories to the workspace. The default behaviour is not to
                 treat paths as directories.
@@ -327,7 +327,7 @@ class WsFile:
                 raise ValueError(
                     "argument mode is not allowed to contain the "
                     "characters 'r' AND 'w'")
-            file = self._open_write(path, isdir=isdir)
+            file = self._open_write(path, is_dir=is_dir)
         else:
             file = self._open_read(path)
 
@@ -353,6 +353,93 @@ class WsFile:
         if hasattr(self._buffer, 'close'):
             self._buffer.close()
 
+    def copy(self, source: PathLike, target: PathLike) -> bool:
+        """Copy file within workspace.
+
+        Args:
+            source: String or `path-like object`_, that points to a file in the
+                directory structure of the workspace. If the file does not
+                exist, a FileNotFoundError is raised. If the filepath points to
+                a directory, an IsADirectoryError is raised.
+            target: String or `path-like object`_, that points to a new filename
+                or an existing directory in the directory structure of the
+                workspace. If the target is a directory the target file consists
+                of the directory and the basename of the source file. If the
+                target file already exists a FileExistsError is raised.
+
+        Returns:
+            Boolean value which is True if the file was copied.
+
+        """
+        # Check if source file exists and is not a directory
+        src_file = PurePath(source).as_posix()
+        src_infos = self._locate(source)
+        if not src_infos:
+            raise FileNotFoundError(
+                f"workspace file '{src_file}' does not exist")
+        src_info = src_infos[-1]
+        if getattr(src_info, 'is_dir')():
+            raise IsADirectoryError(
+                f"'{src_file}/' is a directory not a file")
+
+        # If target is a directory get name of target file from
+        # source filename
+        tgt_file = PurePath(target).as_posix()
+        if tgt_file == '.':
+            tgt_file = Path(src_file).name
+        else:
+            tgt_infos = self._locate(target)
+            if tgt_infos:
+                if getattr(tgt_infos[-1], 'is_dir')():
+                    tgt_path = PurePath(tgt_file, Path(src_file).name)
+                    tgt_file = tgt_path.as_posix()
+
+        # Check if target file already exists
+        if self._locate(tgt_file):
+            raise FileExistsError(
+                f"workspace file '{tgt_file}' already exist.")
+
+        # Read binary data from source file
+        data = self._file.read(src_info, pwd=self._pwd)
+
+        # Create ZipInfo for target file from source file info
+        tgt_time = getattr(src_info, 'date_time')
+        tgt_info = ZipInfo(filename=tgt_file, date_time=tgt_time) # type: ignore
+
+        # Write binary data to target file
+        # TODO (patrick.michl@gmail.com): The zipfile standard module currently
+        # does not support encryption in write mode. See:
+        # https://docs.python.org/3/library/zipfile.html
+        # When support is provided, the below line shall be replaced by:
+        # self._file.writestr(tgt_info, data, pwd=self._pwd)
+        self._file.writestr(tgt_info, data)
+        self._changed = True
+
+        # Check if new file exists
+        return bool(self._locate(tgt_file))
+
+    def move(self, source: PathLike, target: PathLike) -> bool:
+        """Move file within workspace.
+
+        Args:
+            source: String or `path-like object`_, that points to a file in the
+                directory structure of the workspace. If the file does not
+                exist, a FileNotFoundError is raised. If the filepath points to
+                a directory, an IsADirectoryError is raised.
+            target: String or `path-like object`_, that points to a new filename
+                or an existing directory in the directory structure of the
+                workspace. If the target is a directory the target file consists
+                of the directory and the basename of the source file. If the
+                target file already exists a FileExistsError is raised.
+
+        Returns:
+            Boolean value which is True if the file has been moved.
+
+        """
+        # Copy source file to target file or directory
+        # and on success remove source file
+        return self.copy(source, target) and self.unlink(source)
+
     def append(self, source: PathLike, target: OptPathLike = None) -> bool:
         """Append file to the workspace.
 
@@ -373,33 +460,33 @@ class WsFile:
 
         """
         # Check source file
-        srcfile = npath.expand(source)
-        if not srcfile.exists():
-            raise FileNotFoundError(f"file '{srcfile}' does not exist")
-        if srcfile.is_dir():
-            raise IsADirectoryError(f"'{srcfile}' is a directory not a file")
+        src_file = npath.expand(source)
+        if not src_file.exists():
+            raise FileNotFoundError(f"file '{src_file}' does not exist")
+        if src_file.is_dir():
+            raise IsADirectoryError(f"'{src_file}' is a directory not a file")
 
-        # Check target file
+        # Check target directory
         if target:
-            tgtdir = PurePath(target).as_posix() + '/'
-            if not self._locate(tgtdir):
+            tgt_dir = PurePath(target).as_posix() + '/'
+            if not self._locate(tgt_dir):
                 raise FileNotFoundError(
-                    f"workspace directory '{tgtdir}' does not exist")
+                    f"workspace directory '{tgt_dir}' does not exist")
         else:
-            tgtdir = '.'
-        tgtfile = Path(tgtdir, srcfile.name)
-        if self._locate(tgtfile):
+            tgt_dir = '.'
+        tgt_file = Path(tgt_dir, src_file.name)
+        if self._locate(tgt_file):
             raise FileExistsError(
-                f"workspace directory '{tgtdir}' already contains a file "
-                f"with name '{srcfile.name}'")
+                f"workspace directory '{tgt_dir}' already contains a file "
+                f"with name '{src_file.name}'")
 
         # Create ZipInfo entry from source file
-        filename = PurePath(tgtfile).as_posix()
-        datetime = time.localtime(srcfile.stat().st_mtime)[:6]
+        filename = PurePath(tgt_file).as_posix()
+        datetime = time.localtime(src_file.stat().st_mtime)[:6]
         zinfo = ZipInfo(filename=filename, date_time=datetime) # type: ignore
 
         # Copy file to archive
-        with open(srcfile, 'rb') as src:
+        with src_file.open('rb') as src:
             data = src.read()
         # TODO (patrick.michl@gmail.com): The zipfile standard module currently
         # does not support encryption in write mode. See:
@@ -493,7 +580,7 @@ class WsFile:
 
         Args:
             filepath: String or `path-like object`_, that points to a file in
-                the directory structure of the workspace. If the filapath points
+                the directory structure of the workspace. If the filepath points
                 to a directory, an IsADirectoryError is raised. For the case,
                 that the file does not exist, the argument ignore_missing
                 determines, if a FileNotFoundError is raised.
@@ -534,7 +621,7 @@ class WsFile:
         """
         matches = self._locate(dirpath)
         if not matches:
-            with self.open(dirpath, mode='w', isdir=True):
+            with self.open(dirpath, mode='w', is_dir=True):
                 pass
         elif not ignore_exists:
             dirname = PurePath(dirpath).as_posix() + '/'
@@ -613,7 +700,7 @@ class WsFile:
         return sorted([str(path) for path in paths])
 
     #
-    # Private Methods
+    # Private Instance Methods
     #
 
     def _create_new(self) -> None:
@@ -641,11 +728,11 @@ class WsFile:
         zinfo = matches[-1]
         return self._file.open(zinfo, pwd=self._pwd, mode='r')
 
-    def _open_write(self, path: PathLike, isdir: bool = False) -> BytesIOLike:
+    def _open_write(self, path: PathLike, is_dir: bool = False) -> BytesIOLike:
         # Determine workspace member name from path
         # and get ZipInfo with local time as date_time
         filename = PurePath(path).as_posix()
-        if isdir:
+        if is_dir:
             filename += '/'
         zinfo = ZipInfo( # type: ignore
             filename=filename,

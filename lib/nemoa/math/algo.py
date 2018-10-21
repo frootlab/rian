@@ -31,7 +31,7 @@ def search(module: OptModule = None, **kwds: Any) -> dict:
         Dictionary with function information.
 
     """
-    from nemoa.core import nmodule
+    from nemoa.base import nmodule
 
     module = module or nmodule.inst(nmodule.curname(-1))
     if not isinstance(module, Module):

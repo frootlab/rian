@@ -28,7 +28,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://pypi.org/project/numpy") from err
 
-from nemoa.core import nfunc, nmodule
+from nemoa.base import nfunc, nmodule
 from nemoa.types import Any, NpArray, NpArrayLike, StrList
 
 SIGM_PREFIX = 'sigm_'

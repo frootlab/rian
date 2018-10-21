@@ -9,7 +9,7 @@ import networkx
 import copy
 import importlib
 
-from nemoa.core import nclass, nbase
+from nemoa.base import nclass, nbase
 from typing import Any, Dict
 
 class Network(nbase.ObjectIP):
@@ -359,7 +359,7 @@ class Network(nbase.ObjectIP):
     def _get_algorithms(self, category = None, attribute = None):
         """Get algorithms provided by network."""
 
-        from nemoa.core import nmodule
+        from nemoa.base import nmodule
 
         funcs = nmodule.get_functions(networkx.algorithms)
         if attribute is None: return funcs
@@ -613,7 +613,7 @@ class Network(nbase.ObjectIP):
         if not hasattr(self, '_config') or not self._config:
             self._config = self._default.copy()
         if config:
-            from nemoa.core import ndict
+            from nemoa.base import ndict
             self._config = ndict.merge(config, self._config)
 
             # reconfigure graph
@@ -636,7 +636,7 @@ class Network(nbase.ObjectIP):
         if not graph: return True
 
         # merge graph
-        from nemoa.core import ndict
+        from nemoa.base import ndict
         graph_copy = ndict.merge(graph, self._get_graph())
 
         # create networkx graph instance
@@ -667,7 +667,7 @@ class Network(nbase.ObjectIP):
             raise ValueError("system is not valid")
 
         # get edge parameters from system links
-        from nemoa.core import ndict
+        from nemoa.base import ndict
         for edge in self._graph.edges():
             params = system.get('link', edge)
             if not params: continue

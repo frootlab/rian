@@ -41,7 +41,7 @@ def save(network, path, filetype, **kwds):
 
 def _graph_encode(graph, coding=None):
     """Encode graph parameters."""
-    from nemoa.core import nbytes
+    from nemoa.base import binary
 
     # no encoding
     if not isinstance(coding, str) or coding.lower() == 'none':
@@ -51,17 +51,17 @@ def _graph_encode(graph, coding=None):
     if coding.lower() == 'base64':
 
         # encode graph 'params' dictionary
-        graph.graph['params'] = nbytes.pack(
+        graph.graph['params'] = binary.pack(
             graph.graph['params'], encoding='base64')
 
         # encode nodes 'params' dictionaries
         for node in graph.nodes():
-            graph.node[node]['params'] = nbytes.pack(
+            graph.node[node]['params'] = binary.pack(
                 graph.node[node]['params'], encoding='base64')
 
         # encode edges 'params' dictionaries
         for edge in graph.edges():
-            graph.edges[edge]['params'] = nbytes.pack(
+            graph.edges[edge]['params'] = binary.pack(
                 graph.edges[edge]['params'], encoding='base64')
 
         # set flag for graph parameter coding
@@ -78,7 +78,7 @@ class Gml:
     default = {'coding': 'base64'}
 
     def __init__(self, **kwds):
-        from nemoa.core import ndict
+        from nemoa.base import ndict
         self.settings = ndict.merge(kwds, self.default)
 
     def save(self, graph, path):
@@ -98,7 +98,7 @@ class Graphml:
     default = {'coding': 'base64'}
 
     def __init__(self, **kwds):
-        from nemoa.core import ndict
+        from nemoa.base import ndict
         self.settings = ndict.merge(kwds, self.default)
 
     def save(self, graph, path):
@@ -118,7 +118,7 @@ class Dot:
     default = {'coding': 'base64'}
 
     def __init__(self, **kwds):
-        from nemoa.core import ndict
+        from nemoa.base import ndict
         self.settings = ndict.merge(kwds, self.default)
 
     def save(self, graph, path):

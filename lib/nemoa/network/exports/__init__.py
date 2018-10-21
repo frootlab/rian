@@ -48,7 +48,7 @@ def save(network, path = None, filetype = None, workspace = None,
 
     """
 
-    from nemoa.core import nclass, npath
+    from nemoa.base import nclass, npath
 
     if not nclass.hasbase(network, 'Network'):
         raise ValueError("network is not valid")
