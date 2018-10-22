@@ -199,6 +199,11 @@ NestPath = Union[PathLike, PathLikeSeq, PathLikeSeq2, PathLikeSeq3]
 NestPathDict = Dict[str, NestPath]
 OptNestPathDict = Optional[NestPathDict]
 
+# Tracebacks
+ExcType = Optional[Type[BaseException]]
+ExcValue = Optional[BaseException]
+ExcTraceback = Optional[Traceback]
+
 # BytesIO Like for binary files and buffers: io
 BytesIOLike = IO[bytes]
 IterBytesIOLike = Iterator[BytesIOLike]

@@ -14,23 +14,21 @@ except ImportError as err:
         "https://ipython.org/") from err
 
 from nemoa.core import shell
-from nemoa.types import OptStr
 
-def bypass_exepthook() -> None:
-    """Bypass exceptions from IPython Interactive Shell."""
-
-
-def start_shell(banner: OptStr = None) -> None:
-    """ """
+def start_shell(banner: str = '', clear: bool = True) -> None:
+    """Start IPython interactive shell in embedded mode."""
     # Bypass IPython excepthook to allow logging of uncaught exceptions
     IShell = IPython.core.interactiveshell.InteractiveShell
     IShell.showtraceback = shell.bypass_exceptions(IShell.showtraceback)
 
     # Clear screen
-    shell.clear()
+    if clear:
+        shell.clear()
 
     # Prepare arguments
     kwds = {}
     if banner:
         kwds['banner1'] = banner + '\n'
+
+    # Start IPython interactive shell in embedded mode.
     IPython.embed(**kwds)
