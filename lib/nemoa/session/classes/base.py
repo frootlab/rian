@@ -6,6 +6,8 @@ __license__ = 'GPLv3'
 
 import nemoa
 
+from nemoa.core import log
+
 class Session:
     """Session Manager."""
 
@@ -48,7 +50,7 @@ class Session:
                 'inifile':
                     ('%basepath%', '%workspace%', 'workspace.ini'),
                 'logfile':
-                    ('%basepath%', '%workspace%', 'nemoa.log')}},
+                    ('%basepath%', '%workspace%', 'nemoa_old.log')}},
         'register': {
             'dataset': {},
             'model': {},
@@ -70,7 +72,7 @@ class Session:
         self._set_workspace_reset()
 
         # initialize exception handler
-        self._init_exception_handler()
+        # self._init_exception_handler()
 
         # update basepaths from user configuration
         configfile = self._config['default']['path']['baseconf']
@@ -629,19 +631,35 @@ class Session:
 
         return True
 
-    def _init_exception_handler(self):
-        """Initialize exception handler."""
-
-        import sys
-
-        # pipe exceptions to nemoa.log
-        def hook(*args, **kwds):
-            import nemoa
-            return nemoa.log(*args, **kwds)
-
-        sys.__excepthook__ = hook
-
-        return True
+    # def _init_exception_handler(self):
+    #     """Initialize exception handler."""
+    #
+    #     from functools import wraps
+    #     import sys
+    #
+    #     def bypass(func):
+    #
+    #         @wraps(func)
+    #         def wrapper(*args, **kwds):
+    #             print('hook from Python')
+    #
+    #             exc_info = sys.exc_info()
+    #             msg = exc_info[1]
+    #             log.exception(msg, exc_info=exc_info)
+    #             return func(*args, **kwds)
+    #
+    #         return wrapper
+    #     #
+    #     # # pipe exceptions to logfile
+    #     # def hook(*args, **kwds):
+    #     #     exc_info = sys.exc_info()
+    #     #     msg = exc_info[1]
+    #     #     log.exception(msg, exc_info=exc_info)
+    #     #     return sys.__excepthook__(*args, **kwds)
+    #
+    #     sys.excepthook = bypass(sys.excepthook)
+    #
+    #     return True
 
     def run(self, script = None, *args, **kwds):
         """Run python script."""

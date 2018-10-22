@@ -5,8 +5,11 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.model.morphisms.ann
 import numpy
+
+import nemoa.model.morphisms.ann
+
+from nemoa.core import log
 from nemoa.math import algo
 
 class RBM(nemoa.model.morphisms.ann.ANN):
@@ -93,7 +96,7 @@ class RBM(nemoa.model.morphisms.ann.ANN):
                     value %.2f)""" % config['con_klpt_expect']
                 found = True
             if found:
-                nemoa.log('using restriction: %s' % about)
+                log.info('using restriction: %s' % about)
 
         # set enable flags for denoising extensions
         if config['denoising']:
@@ -105,7 +108,7 @@ class RBM(nemoa.model.morphisms.ann.ANN):
                     config['noise_factor'])
                 found = True
             if found:
-                nemoa.log('using denoising: %s' % (about))
+                log.info('using denoising: %s' % (about))
 
         # set enable flags for acceleration extensions
         config['acc_vmra_enable'] = False
@@ -117,7 +120,7 @@ class RBM(nemoa.model.morphisms.ann.ANN):
                     length %i)""" % config['acc_vmra_length']
                 found = True
             if found:
-                nemoa.log('using acceleration: %s' % about)
+                log.info('using acceleration: %s' % about)
 
         # set enable flags for globalization extensions
         config['gen_rasa_enable'] =  False
@@ -131,7 +134,7 @@ class RBM(nemoa.model.morphisms.ann.ANN):
                     config['gen_rasa_annealing_factor'])
                 found = True
             if found:
-                nemoa.log('using generalization: %s' % (about))
+                log.info('using generalization: %s' % (about))
 
         # init rasa
         self.write('sa', init_rate = config['update_rate'])

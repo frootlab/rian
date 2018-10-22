@@ -90,7 +90,7 @@ def install() -> None:
             'gene': ['rpy2']},
         entry_points={
             'console_scripts': [
-                'nemoa = nemoa.session.console:main']},
+                'nemoa = nemoa.console:main']},
         zip_safe=False)
 
 def post_install() -> None:

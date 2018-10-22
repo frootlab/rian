@@ -9,8 +9,8 @@ __docformat__ = 'google'
 from abc import ABC, abstractmethod
 
 from nemoa.types import (
-    Any, ClassVar, Dict, FileOrPathLike, Method, OptClassInfo, OptDict,
-    OptCallable, OptStr, OptType, StrDict, Tuple)
+    Any, Callable, ClassVar, Dict, FileOrPathLike, Method, ClassInfo,
+    OptClassInfo, OptDict, OptCallable, OptStr, OptType, StrDict, Tuple)
 
 # Descriptors for binding class instance attributes: When an instance of a class
 # contains a descriptor class as a method, the descriptor class defines the
@@ -18,10 +18,10 @@ from nemoa.types import (
 # method's name.
 
 class Attr:
-    """Generic Descriptor Class for Attributes.
+    """Descriptor Class for Attributes.
 
     Args:
-        vtype:
+        classinfo:
         bind:
         key:
         getter:
@@ -30,93 +30,135 @@ class Attr:
 
     """
 
-    name: str
-    attr: dict
+    #
+    # Private Instance Variables
+    #
 
-    store: OptDict = None
-    key: OptStr = None
-    classinfo: OptClassInfo = None
-    getter: OptCallable = None
-    setter: OptCallable = None
-    default: Any = None
+    _args: dict
+    _classinfo: ClassInfo
+    _default: Any
+    _getter: Callable
+    _key: str
+    _name: str
+    _setter: Callable
+    _store: dict
+
+    #
+    # Magic
+    #
 
     def __init__(
             self, classinfo: OptClassInfo = None, bind: OptStr = None,
             key: OptStr = None, default: Any = None, getter: OptStr = None,
             setter: OptStr = None) -> None:
-        """Set attribute names of dictionary, getter, setter, etc."""
-        self.attr = {
-            'dict': bind, 'key': key, 'getter': getter, 'setter': setter}
-        self.classinfo = classinfo
-        self.default = default
+        """Initialize instance variables."""
+        if classinfo:
+            if not isinstance(classinfo, (type, tuple)):
+                raise TypeError(
+                    "'classinfo' requires to be a type or a tuple of types")
+            self._classinfo = classinfo
+        self._args = {
+            'bind': bind, 'key': key, 'getter': getter, 'setter': setter}
+        self._default = default
 
     def __set_name__(self, owner: type, name: str) -> None:
         """Set name of the Attribute."""
-        self.name = name
+        self._name = name
 
     def __get__(self, obj: object, owner: type) -> Any:
         """Wrap get requests to the Attribute."""
-        if not isinstance(self.store, dict):
+        if not hasattr(self, '_store'):
             self._bind(obj)
-        if isinstance(self.getter, Method):
-            return self.getter()
-        if not self.store or not self.key in self.store:
-            return self.default
-        return self.store[self.key]
+        if hasattr(self, '_getter'):
+            return self._getter()
+        return self._store.get(self._key, self._default)
 
     def __set__(self, obj: object, val: Any) -> None:
         """Wrap set requests to the Attribute."""
         # Check Type of Attribute
-        if self.classinfo and not isinstance(val, self.classinfo):
-            if isinstance(self.classinfo, type):
-                typeinfo = self.classinfo.__name__
-            elif isinstance(self.classinfo, tuple):
-                names = [each.__name__ for each in self.classinfo]
-                typeinfo = ' or '.join(names)
+        if hasattr(self, '_classinfo') and not isinstance(val, self._classinfo):
+            if isinstance(self._classinfo, type):
+                typestr = self._classinfo.__name__
+            elif isinstance(self._classinfo, tuple):
+                names = [each.__name__ for each in self._classinfo]
+                typestr = ' or '.join(names)
             else:
-                typeinfo = '?'
+                typestr = '?'
             raise TypeError(
-                f"'{self.name}' requires type {typeinfo}, "
-                f"not {type(val).__name__}")
-        if not isinstance(self.store, dict):
+                f"'{self._name}' requires type {typestr}"
+                f", not {type(val).__name__}")
+        if not hasattr(self, '_store'):
             self._bind(obj)
-        if isinstance(self.setter, Method):
-            self.setter(val)
+        if hasattr(self, '_setter'):
+            self._setter(val)
         else:
-            self.store[self.key] = val # type: ignore
+            self._store[self._key] = val
+
+    #
+    # Private Instance Methods
+    #
 
     def _bind(self, obj: object) -> None:
-        """Bind dictionary, getter and setter functions."""
-        # Bind dictionary and key
-        if isinstance(self.attr['dict'], str):
-            self.store = obj.__dict__.get(self.attr['dict'])
-            if not isinstance(self.store, dict):
-                raise TypeError(
-                    f"'{self.attr['dict']}' requires type dict "
-                    f"not {type(self.store).__name__}")
-        else:
-            self.store = obj.__dict__
-        self.key = self.attr['key'] or self.name
+        """Bind key, getter and setter functions."""
+        # Bind key
+        self._bind_key(obj, self._args['bind'], self._args['key'])
 
-        # Bind getter function
-        if isinstance(self.attr['getter'], str):
-            self.getter = getattr(obj, self.attr['getter'])
-            if not isinstance(self.getter, Method):
-                raise TypeError(
-                    f"'{self.attr['getter']}' requires type function "
-                    f"not {type(self.getter).__name__}")
-        else:
-            self.getter = None
+        # Bind getter
+        if isinstance(self._args['getter'], str):
+            self._bind_getter(obj, self._args['getter'])
 
-        # Bind setter function
-        if isinstance(self.attr['setter'], str):
-            self.setter = getattr(obj, self.attr['setter'])
-            if not isinstance(self.setter, Method):
-                raise TypeError(
-                    f"'{self.attr['setter']}' requires type function "
-                    f"not {type(self.setter).__name__}")
+        # Bind setter
+        if isinstance(self._args['setter'], str):
+            self._bind_setter(obj, self._args['setter'])
+
+    def _bind_key(self, obj: object, mapping: OptStr, key: OptStr) -> None:
+        if mapping is None:
+            self._store = obj.__dict__
+        elif not mapping in obj.__dict__:
+            name = getattr(obj, '__name__', obj.__class__.__name__)
+            raise AttributeError(
+                f"{name} has no attribute {mapping}")
+        elif not isinstance(obj.__dict__[mapping], dict):
+            raise TypeError(
+                f"'{mapping}' requires type mapping"
+                f", not {type(obj.__dict__[mapping]).__name__}")
         else:
-            self.setter = None
+            self._store = obj.__dict__[mapping]
+        if key is None:
+            self._key = self._name
+        elif not isinstance(key, str):
+            raise TypeError(
+                f"'key' requires type string"
+                f", not '{type(key).__name__}'")
+        else:
+            self._key = key
+
+    def _bind_getter(self, obj: object, getter: str) -> None:
+        if not hasattr(obj, getter):
+            name = getattr(obj, '__name__', obj.__class__.__name__)
+            raise AttributeError(
+                f"{name} has no attribute {getter}")
+        elif not callable(getattr(obj, getter)):
+            raise TypeError(
+                f"'{getter}' requires to be callable"
+                f", not {type(getattr(obj, getter)).__name__}")
+        else:
+            # linter complains if set directly
+            setattr(self, '_getter', getattr(obj, getter))
+
+    def _bind_setter(self, obj: object, setter: str) -> None:
+        if not hasattr(obj, setter):
+            name = getattr(obj, '__name__', obj.__class__.__name__)
+            raise AttributeError(
+                f"{name} has no attribute {setter}")
+        elif not callable(getattr(obj, setter)):
+            raise TypeError(
+                f"'{setter}' requires to be callable"
+                f", not {type(getattr(obj, setter)).__name__}")
+        else:
+            # linter complains if set directly
+            setattr(self, '_setter', getattr(obj, setter))
+
 
 class ReadWriteAttr(Attr):
     """Descriptor Class for read- and writeable Attribute binding."""
@@ -129,7 +171,7 @@ class ReadOnlyAttr(Attr):
     def __set__(self, obj: object, val: Any) -> None:
         """Wrap set attribute requests."""
         raise AttributeError(
-            f"'{self.name}' is a read-only property "
+            f"'{self._name}' is a read-only property "
             f"of class {type(obj).__name__}")
 
 # ################################################################################

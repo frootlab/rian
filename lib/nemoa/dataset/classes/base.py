@@ -15,6 +15,7 @@ except ImportError as err:
 
 import nemoa
 from nemoa.base import nclass, nbase
+from nemoa.core import log
 from nemoa.math import algo
 
 class Dataset(nbase.ObjectIP):
@@ -127,9 +128,9 @@ class Dataset(nbase.ObjectIP):
 
         # notify about lost (not convertable) nodes
         if nodes_lost:
-            nemoa.log('warning', """%s of %s network nodes could not
+            log.warning("""%s of %s network nodes could not
                 be converted!""" % (len(nodes_lost), nodes_count))
-            nemoa.log('logfile', ', '.join(nodes_lost))
+            log.debug(', '.join(nodes_lost))
 
         # get columns from dataset files and convert to common format
         col_labels = {}
@@ -167,11 +168,10 @@ class Dataset(nbase.ObjectIP):
 
             # notify if any table columns could not be converted
             if columns_lost:
-                nemoa.log('warning', """%i of %i table column names
+                log.warning("""%i of %i table column names
                     could not be converted.""" %
                     (len(columns_lost), len(columns_conv)))
-                nemoa.log('logfile', ', '.join([columns_conv[i] \
-                    for i in columns_lost]))
+                log.debug(', '.join([columns_conv[i] for i in columns_lost]))
 
             # search network nodes in table columns
             num_lost = 0
@@ -198,11 +198,11 @@ class Dataset(nbase.ObjectIP):
 
             # notify if any network nodes could not be found
             if num_lost:
-                nemoa.log('warning', """%i of %i network nodes
+                log.warning("""%i of %i network nodes
                     could not be found in dataset table column names!
                     """ % (num_lost, num_all))
                 for layer in nodes_lost:
-                    nemoa.log('logfile', "missing nodes (layer '%s'): "
+                    log.debug("missing nodes (layer '%s'): "
                         % (layer) + ', '.join(nodes_lost[layer]))
 
             # prepare dictionary for column source ids
@@ -268,7 +268,7 @@ class Dataset(nbase.ObjectIP):
 
         """
 
-        nemoa.log('preprocessing data')
+        log.info('preprocessing data')
 
         stratify = None
         normalize = None
@@ -329,7 +329,7 @@ class Dataset(nbase.ObjectIP):
 
         """
 
-        nemoa.log("update sampling fractions using stratification '%s'."
+        log.info("update sampling fractions using stratification '%s'."
             % stratification)
 
         # hierarchical sampling fractions
@@ -375,7 +375,7 @@ class Dataset(nbase.ObjectIP):
 
         """
 
-        nemoa.log("normalize data using '%s'" % (distribution))
+        log.info("normalize data using '%s'" % (distribution))
 
         if distribution.lower() == 'gauss':
             return self._initialize_normalize_gauss(*args, **kwds)
@@ -490,7 +490,7 @@ class Dataset(nbase.ObjectIP):
 
         """
 
-        nemoa.log("transform data using '%s'" % (transformation))
+        log.info("transform data using '%s'" % (transformation))
 
         # system based data transformation
         if transformation.lower() == 'system':
@@ -535,7 +535,7 @@ class Dataset(nbase.ObjectIP):
         if not nclass.hasbase(system, 'System'):
             raise ValueError("system is not valid")
 
-        nemoa.log("transform data using model '%s'." % system.name)
+        log.info("transform data using model '%s'." % system.name)
 
         if mapping is None: mapping = system.mapping
 
@@ -762,7 +762,7 @@ class Dataset(nbase.ObjectIP):
 
     def _get_colfilter(self, name):
         """Get column filter by name."""
-        return self._config['colfilter'].get(name, nemoa.log('warning',
+        return self._config['colfilter'].get(name, log.warning(
             "unknown column filter: '%s'." % name) or [])
 
     def _get_colfilters(self):

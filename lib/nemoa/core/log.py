@@ -24,6 +24,8 @@ from standard library.
     https://docs.python.org/3/library/logging.html#logging.Logger.error
 .. _Logger.critical():
     https://docs.python.org/3/library/logging.html#logging.Logger.critical
+.. _Logger.exception():
+    https://docs.python.org/3/library/logging.html#logging.Logger.exception
 
 """
 
@@ -45,7 +47,12 @@ from nemoa.base import env, npath
 from nemoa.classes import Attr, ReadWriteAttr
 from nemoa.errors import AlreadyStartedError, NotStartedError
 from nemoa.types import (
-    void, Any, AnyFunc, ClassVar, PathLike, StrList, StrOrInt, OptPath)
+    void, Any, AnyFunc, ClassVar, PathLike, StrList, StrOrInt, OptPath,
+    VoidFunc)
+
+#
+# Logger Class
+#
 
 class Logger:
     """Logger class.
@@ -281,30 +288,42 @@ class Logger:
             return logfile
         return None
 
+#
+# Singleton Accessor Functions
+#
+
 def get_instance() -> Logger:
     """Get logger instance."""
     if not '_logger' in globals():
         globals()['_logger'] = Logger()
     return globals()['_logger']
 
-def _get_logger_method(name: str) -> AnyFunc:
+def get_method(name: str) -> AnyFunc:
+    """Get method of logger instance."""
     def wrapper(*args: Any, **kwds: Any) -> Any:
-        instance = get_instance()
-        method = getattr(instance.logger, name, void)
+        self = get_instance()
+        method = getattr(self.logger, name, void)
         return method(*args, **kwds)
     return wrapper
 
-debug = _get_logger_method('debug')
+#
+# Convenience Functions
+#
+
+debug: VoidFunc = get_method('debug')
 debug.__doc__ = """Wrapper function to `Logger.debug()`_."""
 
-info = _get_logger_method('info')
+info: VoidFunc = get_method('info')
 info.__doc__ = """Wrapper function to `Logger.info()`_."""
 
-warning = _get_logger_method('warning')
+warning: VoidFunc = get_method('warning')
 warning.__doc__ = """Wrapper function to `Logger.warning()`_."""
 
-error = _get_logger_method('error')
+error: VoidFunc = get_method('error')
 error.__doc__ = """Wrapper function to `Logger.error()`_."""
 
-critical = _get_logger_method('critical')
+critical: VoidFunc = get_method('critical')
 critical.__doc__ = """Wrapper function to `Logger.critical()`_."""
+
+exception: VoidFunc = get_method('exception')
+exception.__doc__ = """Wrapper function to `Logger.exception()`_."""

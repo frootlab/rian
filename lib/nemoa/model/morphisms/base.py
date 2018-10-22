@@ -9,6 +9,7 @@ import numpy
 import time
 
 from nemoa.base import nclass
+from nemoa.core import log
 
 class Optimizer:
 
@@ -238,12 +239,12 @@ class Optimizer:
 
         # start optimization
         if algorithm.get('type', None) == 'algorithm':
-            nemoa.log('note', "optimize '%s' (%s) using %s."
+            log.info("optimize '%s' (%s) using %s."
                 % (self.model.name, self.model.system.type, name))
 
             # start key events
             if not self._buffer['key_events_started']:
-                nemoa.log('note', "press 'h' for help or 'q' to quit.")
+                log.info("press 'h' for help or 'q' to quit.")
                 self._buffer['key_events_started'] = True
                 nemoa.set('shell', 'buffmode', 'key')
 
@@ -392,17 +393,17 @@ class Optimizer:
         if char == 'e':
             pass
         elif char == 'h':
-            nemoa.log('note', "Keyboard Shortcuts")
-            nemoa.log('note', "'e' -- calculate evaluation function")
-            nemoa.log('note', "'h' -- show this")
-            nemoa.log('note', "'q' -- quit optimization")
-            nemoa.log('note', "'t' -- estimate finishing time")
+            log.info("Keyboard Shortcuts")
+            log.info("'e' -- calculate evaluation function")
+            log.info("'h' -- show this")
+            log.info("'q' -- quit optimization")
+            log.info("'t' -- estimate finishing time")
         elif char == 'q':
-            nemoa.log('note', 'aborting optimization')
+            log.info('aborting optimization')
             self._buffer['continue'] = False
         elif char == 't':
             ftime = self._get_estimatetime()
-            nemoa.log('note', 'estimated finishing time %s' % ftime)
+            log.info('estimated finishing time %s' % ftime)
 
         return True
 
@@ -478,7 +479,7 @@ class Optimizer:
             func = self._get_evaluation_algorithm()
             value = self._get_evaluation_value()
             self._config['tracker_eval_enable'] = False
-            return nemoa.log('note', 'found optimum with: %s = %s' % (
+            return log.info('found optimum with: %s = %s' % (
                 func['name'], func['formater'](value)))
 
         if ((now - self._buffer['eval_prev_time']) \
@@ -500,7 +501,7 @@ class Optimizer:
                     numpy.vstack((self._buffer['eval_values'], \
                     numpy.array([[progress, value]])))
 
-            return nemoa.log('note', 'finished %.1f%%: %s = %s' % (
+            return log.info('finished %.1f%%: %s = %s' % (
                 progress * 100., func['name'], func['formater'](value)))
 
         return False

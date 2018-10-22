@@ -4,6 +4,8 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
+from nemoa.core import log
+
 from nemoa.network.builder import layer
 
 def types(type = None):
@@ -28,8 +30,7 @@ def build(type, *args, **kwds):
 
     # test if type is supported
     if type not in types():
-        nemoa.log('error', f"type '{type}' is not supported")
-        return {}
+        return log.error(f"type '{type}' is not supported") or {}
 
     module_name = types(type)[0]
 

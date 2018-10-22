@@ -4,13 +4,14 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
-import networkx
-import copy
 import importlib
+from typing import Any, Dict
+
+import networkx
+import nemoa
 
 from nemoa.base import nclass, nbase
-from typing import Any, Dict
+from nemoa.core import log
 
 class Network(nbase.ObjectIP):
     """Network base class.
@@ -91,7 +92,7 @@ class Network(nbase.ObjectIP):
         if not nclass.hasbase(dataset, 'Dataset'):
             raise TypeError("dataset is required to be of type dataset")
 
-        nemoa.log("configure network: '%s'" % (self._config['name']))
+        log.info("configure network: '%s'" % (self._config['name']))
 
         # configure network to dataset
         groups = dataset.get('colgroups')
