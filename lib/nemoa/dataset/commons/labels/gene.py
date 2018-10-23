@@ -7,9 +7,7 @@ __license__ = 'GPLv3'
 
 import sys
 
-from nemoa.core import log
-
-import nemoa
+from nemoa.core import log, ui
 
 class gene:
 
@@ -59,9 +57,9 @@ class gene:
 
     def _install_pkg(self, pkg=None):
         if not pkg:
-            log.info("trying to install bioconductor base")
+            ui.info("trying to install bioconductor base")
         else:
-            log.info("trying to install "
+            ui.info("trying to install "
                 f"bioconductor package: '{pkg}'")
 
         # try to evaluate the remote R script biocLite()

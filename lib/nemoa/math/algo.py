@@ -15,8 +15,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from nemoa.types import (
-    Any, AnyFunc, FuncWrapper, Module, NpArray, NpArrayFunc, NpArrayLike,
-    OptModule, OptStr, OptStrList, Scalar, ScalarFunc)
+    Any, FuncWrapper, Module, OptModule, OptStr, OptStrList)
 
 def search(module: OptModule = None, **kwds: Any) -> dict:
     """Search for algorithms, that pass given filters.
@@ -76,8 +75,8 @@ def custom(
         Decorated function or method.
 
     """
-    def wrapper(func):
-        def wrapped(*args, **kwds):
+    def wrapper(func): # type: ignore
+        def wrapped(*args, **kwds): # type: ignore
             return func(*args, **kwds)
 
         # set attributes with metainformation about algorithm
@@ -128,8 +127,8 @@ def objective(
         Decorated function or method.
 
     """
-    def wrapper(func):
-        def wrapped(data, *args, **kwds):
+    def wrapper(func): # type: ignore
+        def wrapped(data, *args, **kwds): # type: ignore
             return func(data, *args, **kwds)
 
         # set attributes with metainformation about algorithm
@@ -181,9 +180,8 @@ def sampler(
         [1] https://en.wikipedia.org/wiki/Gibbs_sampling
 
     """
-    def wrapper(func):
-
-        def wrapped(data, *args, **kwds):
+    def wrapper(func): # type: ignore
+        def wrapped(data, *args, **kwds): # type: ignore
             return func(data, *args, **kwds)
 
         # set attributes with metainformation about algorithm
@@ -231,8 +229,8 @@ def statistic(
         [1] https://en.wikipedia.org/wiki/Statistic
 
     """
-    def wrapper(func):
-        def wrapped(data: NpArrayLike, *args: Any, **kwds: Any) -> NpArray:
+    def wrapper(func): # type: ignore
+        def wrapped(data, *args, **kwds): # type: ignore
             return func(data, *args, **kwds)
 
         # set attributes with metainformation about algorithm
@@ -288,8 +286,8 @@ def association(
         Decorated function or method.
 
     """
-    def wrapper(func):
-        def wrapped(data, *args, **kwds):
+    def wrapper(func): # type: ignore
+        def wrapped(data, *args, **kwds): # type: ignore
             return func(data, *args, **kwds)
     # def wrapper(func: NpArrayFunc) -> NpArrayFunc:
     #     def wrapped(data: NpArrayLike, *args: Any, **kwds: Any) -> NpArray:

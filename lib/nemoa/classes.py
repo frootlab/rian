@@ -12,13 +12,15 @@ from nemoa.types import (
     Any, Callable, ClassVar, Dict, FileOrPathLike, Method, ClassInfo,
     OptClassInfo, OptDict, OptCallable, OptStr, OptType, StrDict, Tuple)
 
-# Descriptors for binding class instance attributes: When an instance of a class
-# contains a descriptor class as a method, the descriptor class defines the
-# accessor and mutator methods of an attribute, which is identified with the
-# method's name.
+################################################################################
+# Generic attribute descriptors for binding class instance attributes: When an
+# instance of a class contains a descriptor class as a method, the descriptor
+# class defines the accessor and mutator methods of the attribute, which is
+# identified by the method's name.
+################################################################################
 
-class Attr:
-    """Descriptor Class for Attributes.
+class ReadWriteAttr(property):
+    """Extended descriptor class for properties.
 
     Args:
         classinfo:
@@ -159,13 +161,7 @@ class Attr:
             # linter complains if set directly
             setattr(self, '_setter', getattr(obj, setter))
 
-
-class ReadWriteAttr(Attr):
-    """Descriptor Class for read- and writeable Attribute binding."""
-
-    pass
-
-class ReadOnlyAttr(Attr):
+class ReadOnlyAttr(ReadWriteAttr):
     """Descriptor Class for read-only Attribute binding."""
 
     def __set__(self, obj: object, val: Any) -> None:
@@ -206,7 +202,7 @@ class ReadOnlyAttr(Attr):
 #     _copy_map: ClassVar[Dict[str, Tuple[str, type]]] = {
 #         'attr': ('_attr', dict)}
 #
-#     about: Attr = ReadWriteAttr(str, key='_attr')
+#     about: property = ReadWriteAttr(str, key='_attr')
 #     about.__doc__ = """Summary of the workspace.
 #
 #     A short description of the contents, the purpose or the intended application
@@ -214,7 +210,7 @@ class ReadOnlyAttr(Attr):
 #     created inside the workspace and support the attribute.
 #     """
 #
-#     email: Attr = ReadWriteAttr(str, key='_attr')
+#     email: property = ReadWriteAttr(str, key='_attr')
 #     email.__doc__ = """Email address of the maintainer of the workspace.
 #
 #     Email address to a person, an organization, or a service that is responsible
@@ -222,7 +218,7 @@ class ReadOnlyAttr(Attr):
 #     resources, that are created inside the workspace and support the attribute.
 #     """
 #
-#     license: Attr = ReadWriteAttr(str, key='_attr')
+#     license: property = ReadWriteAttr(str, key='_attr')
 #     license.__doc__ = """License for the usage of the contents of the workspace.
 #
 #     Namereference to a legal document giving specified users an official
@@ -231,7 +227,7 @@ class ReadOnlyAttr(Attr):
 #     and support the attribute.
 #     """
 #
-#     maintainer: Attr = ReadWriteAttr(str, key='_attr')
+#     maintainer: property = ReadWriteAttr(str, key='_attr')
 #     maintainer.__doc__ = """Name of the maintainer of the workspace.
 #
 #     A person, an organization, or a service that is responsible for the content

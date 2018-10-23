@@ -4,24 +4,26 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
 import numpy
 
-from nemoa.base import nclass, test
+import nemoa
 
-class TestCase(test.GenericTestCase):
+from nemoa.base import nclass
+from nemoa.test import GenericTestCase
+
+class TestCase(GenericTestCase):
 
     def test_dataset_import(self):
         import nemoa.dataset
 
         with self.subTest(filetype="csv"):
             dataset = nemoa.dataset.open('sinus', workspace='testsuite')
-            test = nclass.hasbase(dataset, 'Dataset')
+            test = nclass.has_base(dataset, 'Dataset')
             self.assertTrue(test)
 
         with self.subTest(filetype="tab"):
             dataset = nemoa.dataset.open('linear', workspace='testsuite')
-            test = nclass.hasbase(dataset, 'Dataset')
+            test = nclass.has_base(dataset, 'Dataset')
             self.assertTrue(test)
 
     def test_dataset_evaluate(self):
@@ -68,5 +70,5 @@ class TestCase(test.GenericTestCase):
                 rules = [('o1', 'i1 + i2'), ('o2', 'i3 + i4')],
                 normalize = 'gauss',
                 samples = 10000)
-            test = nclass.hasbase(dataset, 'Dataset')
+            test = nclass.has_base(dataset, 'Dataset')
             self.assertTrue(test)

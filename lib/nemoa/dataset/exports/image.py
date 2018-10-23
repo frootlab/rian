@@ -90,7 +90,7 @@ class Heatmap(nplot.Heatmap):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwds = nfunc.kwds(func, default = self._config)
+        kwds = nfunc.get_kwds(func, default = self._config)
         array  = dataset.evaluate(fname, **kwds)
 
         # check return value
@@ -130,7 +130,7 @@ class Histogram(nplot.Histogram):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwds = nfunc.kwds(func, default=self._config)
+        kwds = nfunc.get_kwds(func, default=self._config)
         array  = dataset.evaluate(fname, **kwds)
 
         # check return value
@@ -168,7 +168,7 @@ class Scatter2D(nplot.Scatter2D):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwds = nfunc.kwds(func, default = self._config)
+        kwds = nfunc.get_kwds(func, default = self._config)
         array  = dataset.evaluate(fname, **kwds)
 
         # check return value
@@ -214,7 +214,7 @@ class Graph(nplot.Graph):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwds = nfunc.kwds(func, default = self._config)
+        kwds = nfunc.get_kwds(func, default = self._config)
         array  = dataset.evaluate(fname, **kwds)
 
         # check if evaluation yields valid relation

@@ -6,13 +6,13 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-from nemoa.base import test
+from nemoa.base import nclass
+from nemoa.test import GenericTestCase
 
-class TestCase(test.GenericTestCase):
+class TestCase(GenericTestCase):
 
     def test_system_import(self):
-        with self.subTest(filetype = "ini"):
-            from nemoa.base import nclass
-            system = nemoa.system.open('dbn', workspace = 'testsuite')
-            test = nclass.hasbase(system, 'System')
+        with self.subTest(filetype="ini"):
+            system = nemoa.system.open('dbn', workspace='testsuite')
+            test = nclass.has_base(system, 'System')
             self.assertTrue(test)

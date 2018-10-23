@@ -11,10 +11,10 @@ from pathlib import Path
 
 import numpy as np
 
-from nemoa.base import test
 from nemoa.fileio import binfile, csvfile, inifile, textfile
+from nemoa.test import ModuleTestCase
 
-class TestBinfile(test.ModuleTestCase):
+class TestBinfile(ModuleTestCase):
     """Testcase for the module nemoa.fileio.binfile."""
 
     module = 'nemoa.fileio.binfile'
@@ -58,7 +58,7 @@ class TestBinfile(test.ModuleTestCase):
         if self.filepath.is_file():
             self.filepath.unlink()
 
-class TestTextfile(test.ModuleTestCase):
+class TestTextfile(ModuleTestCase):
     """Testcase for the module nemoa.fileio.textfile."""
 
     module = 'nemoa.fileio.textfile'
@@ -112,7 +112,7 @@ class TestTextfile(test.ModuleTestCase):
         if self.filepath.is_file():
             self.filepath.unlink()
 
-class TestCsvfile(test.ModuleTestCase):
+class TestCsvfile(ModuleTestCase):
     """Testcase for the module nemoa.fileio.csvfile."""
 
     module = 'nemoa.fileio.csvfile'
@@ -164,7 +164,7 @@ class TestCsvfile(test.ModuleTestCase):
         if self.filepath.is_file():
             self.filepath.unlink()
 
-class TestInifile(test.ModuleTestCase):
+class TestInifile(ModuleTestCase):
     """Testcase for the module nemoa.fileio.inifile."""
 
     module = 'nemoa.fileio.inifile'

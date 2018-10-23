@@ -50,7 +50,7 @@ def save(network, path = None, filetype = None, workspace = None,
 
     from nemoa.base import nclass, npath
 
-    if not nclass.hasbase(network, 'Network'):
+    if not nclass.has_base(network, 'Network'):
         raise ValueError("network is not valid")
 
     # get directory, filename and fileextension

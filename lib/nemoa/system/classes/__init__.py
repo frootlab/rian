@@ -16,8 +16,8 @@ def new(*args, **kwds):
         raise ValueError("configuration is not valid")
 
     stype = kwds['config']['type']
-    mname = 'nemoa.system.classes.' + stype.split('.')[0]
-    cname = stype.split('.')[1]
+    mname = 'nemoa.system.classes.' + stype.split('.', 1)[0]
+    cname = stype.rsplit('.', 1)[-1]
 
     try:
         module = importlib.import_module(mname)

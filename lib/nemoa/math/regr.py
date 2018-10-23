@@ -17,7 +17,7 @@ from nemoa.base import nfunc, nmodule
 from nemoa.math import vector
 from nemoa.types import Any, NpAxis, NpArray, NpArrayLike, StrList
 
-ERROR_PREFIX = 'error_'
+_ERROR_PREFIX = 'error_'
 
 #
 # Discrepancy Functions for the evaluation of Regression Errors and Residuals
@@ -48,11 +48,11 @@ def errors() -> StrList:
 
     # Get dictionary of functions with given prefix
     module = nmodule.inst(nmodule.curname())
-    pattern = ERROR_PREFIX + '*'
+    pattern = _ERROR_PREFIX + '*'
     d = nmodule.get_functions(module, pattern=pattern)
 
     # Create sorted list of discrepancy functions
-    i = len(ERROR_PREFIX)
+    i = len(_ERROR_PREFIX)
     return sorted([v['name'][i:] for v in d.values()])
 
 def error(
@@ -107,7 +107,7 @@ def error(
             "arrays 'x' and 'y' can not be broadcasted together")
 
     # Get discrepancy function
-    fname = ERROR_PREFIX + name.lower()
+    fname = _ERROR_PREFIX + name.lower()
     module = nmodule.inst(nmodule.curname())
     try:
         func = getattr(module, fname)
@@ -116,7 +116,7 @@ def error(
             f"argument 'name' has an invalid value '{str(name)}'")
 
     # Evaluate distance function
-    return func(x, y, **nfunc.kwds(func, default=kwds))
+    return func(x, y, **nfunc.get_kwds(func, default=kwds))
 
 def error_rss(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
     """Calculate Residual Sum of Squares of two samples along given axis.

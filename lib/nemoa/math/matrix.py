@@ -17,8 +17,8 @@ from nemoa.base import nfunc, nmodule
 from nemoa.math import vector
 from nemoa.types import Any, IntTuple, NpArray, NpArrayLike, StrList
 
-NORM_PREFIX = 'norm_'
-DIST_PREFIX = 'dist_'
+_NORM_PREFIX = 'norm_'
+_DIST_PREFIX = 'dist_'
 
 #
 # Matrix Norms
@@ -31,7 +31,7 @@ def norms() -> StrList:
         Sorted list of all matrix norms, that are implemented within the module.
 
     """
-    return nmodule.list_functions_by_prefix(prefix=NORM_PREFIX)
+    return nmodule.crop_functions(prefix=_NORM_PREFIX)
 
 def norm(x: NpArrayLike, name: str = 'frobenius', **kwds: Any) -> NpArray:
     """Calculate norm of matrix.
@@ -68,7 +68,7 @@ def norm(x: NpArrayLike, name: str = 'frobenius', **kwds: Any) -> NpArray:
         raise ValueError("'x' is required to have dimension > 1")
 
     # Get norm function
-    fname = NORM_PREFIX + name.lower()
+    fname = _NORM_PREFIX + name.lower()
     module = nmodule.inst(nmodule.curname())
     try:
         func = getattr(module, fname)
@@ -77,7 +77,7 @@ def norm(x: NpArrayLike, name: str = 'frobenius', **kwds: Any) -> NpArray:
             f"norm with name '{str(norm)}' is not known") from err
 
     # Evaluate norm function
-    return func(x, **nfunc.kwds(func, default=kwds))
+    return func(x, **nfunc.get_kwds(func, default=kwds))
 
 def norm_pq(x: NpArray,
         p: float = 2., q: float = 2., axes: IntTuple = (0, 1)) -> NpArray:
@@ -189,7 +189,7 @@ def metrices() -> StrList:
         module.
 
     """
-    return nmodule.list_functions_by_prefix(prefix=DIST_PREFIX)
+    return nmodule.crop_functions(prefix=_DIST_PREFIX)
 
 def distance(
         x: NpArrayLike, y: NpArrayLike, metric: str = 'frobenius',
@@ -241,7 +241,7 @@ def distance(
             "arrays 'x' and 'y' can not be broadcasted together")
 
     # Get distance function
-    fname = DIST_PREFIX + metric.lower()
+    fname = _DIST_PREFIX + metric.lower()
     module = nmodule.inst(nmodule.curname())
     try:
         func = getattr(module, fname)
@@ -250,7 +250,7 @@ def distance(
             f"argument 'metric' has an invalid value '{str(metric)}'")
 
     # Evaluate distance function
-    return func(x, y, **nfunc.kwds(func, default=kwds))
+    return func(x, y, **nfunc.get_kwds(func, default=kwds))
 
 def dist_frobenius(x: NpArray, y: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
     """Calculate Frobenius distances of two arrays along given axis.

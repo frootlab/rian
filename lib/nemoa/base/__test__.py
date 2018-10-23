@@ -13,11 +13,12 @@ from pathlib import Path
 import numpy as np
 
 from nemoa.base import (
-    env, narray, nbase, binary, nclass, nconsole, ndict, nfunc, nmodule,
-    npath, table, test, ntext)
+    env, narray, nbase, binary, nclass, ndict, nfunc, nmodule,
+    npath, table, ntext)
+from nemoa.test import ModuleTestCase
 from nemoa.types import Any, Function, Module, NaN, PathLikeList
 
-class TestEnv(test.ModuleTestCase):
+class TestEnv(ModuleTestCase):
     """Testcase for the module nemoa.base.env."""
 
     module = 'nemoa.base.env'
@@ -103,22 +104,19 @@ class TestEnv(test.ModuleTestCase):
             with self.subTest(f"get_var('{key}')"):
                 self.assertTrue(env.get_var(key))
 
-    def test_encoding(self) -> None:
-        self.assertIsInstance(env.encoding(), str)
+    def test_get_encoding(self) -> None:
+        self.assertIsInstance(env.get_encoding(), str)
 
-    def test_hostname(self) -> None:
-        self.assertIsInstance(env.hostname(), str)
+    def test_get_hostname(self) -> None:
+        self.assertIsInstance(env.get_hostname(), str)
 
-    def test_osname(self) -> None:
-        self.assertIsInstance(env.osname(), str)
+    def test_get_osname(self) -> None:
+        self.assertIsInstance(env.get_osname(), str)
 
-    def test_username(self) -> None:
-        self.assertIsInstance(env.username(), str)
+    def test_get_username(self) -> None:
+        self.assertIsInstance(env.get_username(), str)
 
-    def test_ttylib(self) -> None:
-        self.assertIsInstance(env.ttylib(), Module)
-
-class TestNarray(test.ModuleTestCase):
+class TestNarray(ModuleTestCase):
     """Testcase for the module nemoa.base.narray."""
 
     module = 'nemoa.base.narray'
@@ -136,7 +134,7 @@ class TestNarray(test.ModuleTestCase):
         d = narray.as_dict(self.x, labels=self.labels)
         self.assertEqual(d, self.d)
 
-class TestNbase(test.ModuleTestCase):
+class TestNbase(ModuleTestCase):
     """Testcase for the module nemoa.base.nbase."""
 
     module = 'nemoa.base.nbase'
@@ -148,7 +146,7 @@ class TestNbase(test.ModuleTestCase):
         obj.path = ('%site_data_dir%', 'test')
         self.assertNotIn('%', obj.path)
 
-class TestBinary(test.ModuleTestCase):
+class TestBinary(ModuleTestCase):
     """Testcase for the module nemoa.base.binary."""
 
     module = 'nemoa.base.binary'
@@ -203,16 +201,7 @@ class TestBinary(test.ModuleTestCase):
             iscomp = isinstance(comp, int)
             self.assertEqual(binary.unpack(data, compressed=iscomp), obj)
 
-class TestNconsole(test.ModuleTestCase):
-    """Testcase for the module nemoa.base.nconsole."""
-
-    module = 'nemoa.base.nconsole'
-
-    def test_Getch(self) -> None:
-        obj = nconsole.Getch() if callable(nconsole.Getch) else None
-        self.assertIsInstance(obj, nconsole.GetchBase)
-
-class TestNmodule(test.ModuleTestCase):
+class TestNmodule(ModuleTestCase):
     """Testcase for the module nemoa.base.nmodule."""
 
     module = 'nemoa.base.nmodule'
@@ -243,7 +232,7 @@ class TestNmodule(test.ModuleTestCase):
     def test_search(self) -> None:
         self.assertEqual(len(nmodule.search(nmodule, name='search')), 1)
 
-class TestNclass(test.ModuleTestCase):
+class TestNclass(ModuleTestCase):
     """Testcase for the module nemoa.base.nclass."""
 
     module = 'nemoa.base.nclass'
@@ -262,10 +251,10 @@ class TestNclass(test.ModuleTestCase):
                 pass
         return Base()
 
-    def test_hasbase(self) -> None:
+    def test_has_base(self) -> None:
         obj = self.get_test_object()
-        self.assertTrue(nclass.hasbase(None, 'object'))
-        self.assertTrue(nclass.hasbase(obj, 'Base'))
+        self.assertTrue(nclass.has_base(None, 'object'))
+        self.assertTrue(nclass.has_base(obj, 'Base'))
 
     def test_attributes(self) -> None:
         obj = self.get_test_object()
@@ -279,28 +268,28 @@ class TestNclass(test.ModuleTestCase):
         names = nclass.methods(obj, pattern='*b').keys()
         self.assertEqual(names, {'getb', 'setb'})
 
-class TestNfunc(test.ModuleTestCase):
+class TestNfunc(ModuleTestCase):
     """Testcase for the module nemoa.base.nfunc."""
 
     module = 'nemoa.base.nfunc'
 
-    def test_about(self) -> None:
-        about = nfunc.about(nfunc.about)
-        self.assertEqual(about, 'Summary line of docstring of a function')
+    def test_get_summary(self) -> None:
+        text = nfunc.get_summary(nfunc.get_summary)
+        self.assertEqual(text, 'Get summary line of a function')
 
-    def test_inst(self) -> None:
-        func = nfunc.inst(nfunc.__name__ + '.inst')
+    def test_get_instance(self) -> None:
+        func = nfunc.get_instance(nfunc.__name__ + '.get_instance')
         self.assertIsInstance(func, Function)
 
-    def test_kwds(self) -> None:
-        kwds = nfunc.kwds(nfunc.kwds)
+    def test_get_kwds(self) -> None:
+        kwds = nfunc.get_kwds(nfunc.get_kwds)
         self.assertEqual(kwds, {'default': None})
-        kwds = nfunc.kwds(nfunc.kwds, default={})
+        kwds = nfunc.get_kwds(nfunc.get_kwds, default={})
         self.assertEqual(kwds, {})
-        kwds = nfunc.kwds(nfunc.kwds, default={'default': True})
+        kwds = nfunc.get_kwds(nfunc.get_kwds, default={'default': True})
         self.assertEqual(kwds, {'default': True})
 
-class TestNdict(test.ModuleTestCase):
+class TestNdict(ModuleTestCase):
     """Testcase for the module nemoa.base.ndict."""
 
     module = 'nemoa.base.ndict'
@@ -348,7 +337,7 @@ class TestNdict(test.ModuleTestCase):
             ndict.sumjoin({1: 'a', 2: True}, {1: 'b', 2: True}),
             {1: 'ab', 2: 2})
 
-class TestTable(test.ModuleTestCase):
+class TestTable(ModuleTestCase):
     """Testcase for the module nemoa.base.table."""
 
     module = 'nemoa.base.table'
@@ -361,7 +350,7 @@ class TestTable(test.ModuleTestCase):
         new = table.addcols(tgt, src, 'z')
         self.assertEqual(new['z'][0], 'a')
 
-class TestNtext(test.ModuleTestCase):
+class TestNtext(ModuleTestCase):
     """Testcase for the module nemoa.base.ntext."""
 
     module = 'nemoa.base.ntext'
@@ -413,7 +402,7 @@ class TestNtext(test.ModuleTestCase):
                 decode = ntext.astype(text, tname)
                 self.assertEqual(decode, val)
 
-class TestNpath(test.ModuleTestCase):
+class TestNpath(ModuleTestCase):
     """Testcase for the module nemoa.base.npath."""
 
     module = 'nemoa.base.npath'
@@ -479,6 +468,33 @@ class TestNpath(test.ModuleTestCase):
         self.assertTrue(npath.is_dir(dirpath))
         dirpath.rmdir()
         self.assertFalse(npath.is_dir(dirpath))
+
+    def test_touch(self) -> None:
+        dirpath = Path(tempfile.TemporaryDirectory().name)
+        filepath = dirpath / 'test'
+        npath.touch(filepath)
+        self.assertTrue(filepath.is_file())
+        filepath.unlink()
+        dirpath.rmdir()
+
+    def test_copytree(self) -> None:
+        root = Path(tempfile.TemporaryDirectory().name)
+        root.mkdir()
+        source = root / 'source'
+        source.mkdir()
+        (source / 'file').touch()
+        (source / 'dir').mkdir()
+        target = root / 'target'
+        target.mkdir()
+        npath.copytree(source, target)
+        self.assertTrue((target / 'file').is_file())
+        (source / 'file').unlink()
+        (target / 'file').unlink()
+        self.assertTrue((target / 'dir').is_dir())
+        (source / 'dir').rmdir()
+        (target / 'dir').rmdir()
+        source.rmdir()
+        target.rmdir()
 
     def test_is_file(self) -> None:
         file = Path(tempfile.NamedTemporaryFile().name)

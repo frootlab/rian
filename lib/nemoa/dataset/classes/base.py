@@ -15,7 +15,7 @@ except ImportError as err:
 
 import nemoa
 from nemoa.base import nclass, nbase
-from nemoa.core import log
+from nemoa.core import log, ui
 from nemoa.math import algo
 
 class Dataset(nbase.ObjectIP):
@@ -268,7 +268,7 @@ class Dataset(nbase.ObjectIP):
 
         """
 
-        log.info('preprocessing data')
+        ui.info('preprocessing data')
 
         stratify = None
         normalize = None
@@ -285,7 +285,7 @@ class Dataset(nbase.ObjectIP):
                 transform = preprocessing['transform']
 
         # get preprocessing parameters from system
-        if nclass.hasbase(system, 'System'):
+        if nclass.has_base(system, 'System'):
             input_layer = system.get('layers')[0]
             distribution = system.get('layer', input_layer)['class']
             if distribution == 'gauss': normalize = 'gauss'
@@ -329,7 +329,7 @@ class Dataset(nbase.ObjectIP):
 
         """
 
-        log.info("update sampling fractions using stratification '%s'."
+        ui.info("update sampling fractions using stratification '%s'."
             % stratification)
 
         # hierarchical sampling fractions
@@ -375,7 +375,7 @@ class Dataset(nbase.ObjectIP):
 
         """
 
-        log.info("normalize data using '%s'" % (distribution))
+        ui.info(f"normalize data using '{distribution}'")
 
         if distribution.lower() == 'gauss':
             return self._initialize_normalize_gauss(*args, **kwds)
@@ -490,7 +490,7 @@ class Dataset(nbase.ObjectIP):
 
         """
 
-        log.info("transform data using '%s'" % (transformation))
+        ui.info("transform data using '%s'" % (transformation))
 
         # system based data transformation
         if transformation.lower() == 'system':
@@ -532,10 +532,10 @@ class Dataset(nbase.ObjectIP):
         mapping = None, func: str = 'expect'):
         """ """
 
-        if not nclass.hasbase(system, 'System'):
+        if not nclass.has_base(system, 'System'):
             raise ValueError("system is not valid")
 
-        log.info("transform data using model '%s'." % system.name)
+        ui.info("transform data using model '%s'." % system.name)
 
         if mapping is None: mapping = system.mapping
 
@@ -1296,13 +1296,9 @@ class Dataset(nbase.ObjectIP):
             Bool which is True if and only if no error occured.
 
         """
-
-        from nemoa.base import ndict
-
         # initialize configuration dictionary
-        if not isinstance(self._config, dict): self._config = {}
-        if not isinstance(config, dict): config = {}
-        self._config = ndict.merge(config, self._config, self._default)
+        self._config = {
+            **self._default, **(self._config or {}), **(config or {})}
 
         # 2do: reconfigure!?
         self._tables = {}
@@ -1320,11 +1316,10 @@ class Dataset(nbase.ObjectIP):
 
         """
 
-        if not tables: return True
+        if not tables:
+            return True
 
-        from nemoa.base import ndict
-        self._tables = ndict.merge(tables, self._tables)
-
+        self._tables = {**self._tables, **tables}
         return True
 
     def evaluate(self, name = None, *args, **kwds):

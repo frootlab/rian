@@ -11,6 +11,7 @@ import sys
 from typing import Any, Callable
 
 from nemoa.base import env
+from nemoa.core import ui
 
 def print_scripts(workspace: str) -> None:
     """Print list of scripts to standard output."""
@@ -19,14 +20,14 @@ def print_scripts(workspace: str) -> None:
     nemoa.set('mode', 'silent')
 
     if nemoa.open(workspace):
-        print(('Scripts in workspace %s:\n' % (nemoa.get('workspace'))))
+        ui.info('Scripts in workspace %s:\n' % (nemoa.get('workspace')))
         for script in nemoa.list('scripts'):
-            print(('    %s' % (script)))
-        print()
+            ui.info('    %s' % (script))
+        ui.info('')
 
 def print_usage() -> None:
     """Print script usage to standard output."""
-    print("Usage: nemoa [options]\n\n"
+    ui.info("Usage: nemoa [options]\n\n"
         "Options:\n\n"
         "    -h --help         "
         "      Print this\n"
@@ -48,17 +49,17 @@ def print_usage() -> None:
 def print_version() -> None:
     """Print nemoa version to standard output."""
     version = env.get_var('version') or ''
-    print('nemoa ' + version)
+    ui.info('nemoa ' + version)
 
 def print_workspaces() -> None:
     """Print list of workspaces to standard output."""
     import nemoa
     nemoa.set('mode', 'silent')
     workspaces = nemoa.list('workspaces', base='user')
-    print('Workspaces:\n')
+    ui.info('Workspaces:\n')
     for workspace in workspaces:
-        print(('    %s' % (workspace)))
-    print()
+        ui.info('    %s' % (workspace))
+    ui.info('')
 
 def run_script(workspace: str, script: str, *args: Any) -> bool:
     """Run nemoa python script."""
@@ -67,22 +68,28 @@ def run_script(workspace: str, script: str, *args: Any) -> bool:
 
 def run_shell() -> None:
     """Start nemoa session in IPython interactive shell."""
-    from nemoa.core import ipython
+    from nemoa.core import shell
 
     name = env.get_var('name') or ''
     version = env.get_var('version') or ''
     banner = name + ' ' +  version
 
-    ipython.start_shell(banner=banner)
+    shell.run(banner=banner)
 
 def run_unittest() -> None:
     """Run unittest."""
-    from nemoa.base import test
-    print(f"testing nemoa {env.get_var('version')}")
-    test.run_tests(stream=sys.stderr)
+    import nemoa.test
+
+    ui.info(f"testing nemoa {env.get_var('version')}")
+    cur_level = ui.get_notification_level()
+    ui.set_notification_level('CRITICAL')
+    try:
+        nemoa.test.run(stream=sys.stderr)
+    finally:
+        ui.set_notification_level(cur_level)
 
 def main() -> Any:
-    """Run nemoa."""
+    """Launch nemoa."""
     argv = sys.argv[1:]
     if not argv:
         return run_shell()

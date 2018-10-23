@@ -18,8 +18,8 @@ def new(model, *args, **kwds):
 
     # get type of system
     stype = model.system.type
-    mname = 'nemoa.model.morphisms.' + stype.split('.')[0]
-    cname = stype.split('.')[1]
+    mname = 'nemoa.model.morphisms.' + stype.split('.', 1)[0]
+    cname = stype.rsplit('.', 1)[-1]
 
     # import module for transformation
     try:

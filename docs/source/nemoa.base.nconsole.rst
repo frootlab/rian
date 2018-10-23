@@ -1,7 +1,7 @@
-nemoa.base.nconsole module
+nemoa.base.stdio module
 ==========================
 
-.. automodule:: nemoa.base.nconsole
+.. automodule:: nemoa.base.stdio
     :members:
     :undoc-members:
     :show-inheritance:

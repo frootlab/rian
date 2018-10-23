@@ -22,6 +22,8 @@ __docformat__ = 'google'
 
 import fnmatch
 import os
+import shutil
+import string
 import sys
 
 from pathlib import Path, PurePath
@@ -63,8 +65,6 @@ def clear(fname: str) -> str:
         '3E5.e'
 
     """
-    import string
-
     valid = "-_.() " + string.ascii_letters + string.digits
     fname = ''.join(c for c in fname if c in valid).replace(' ', '_')
 
@@ -315,8 +315,8 @@ def is_file(path: NestPath) -> bool:
     """
     return expand(path).is_file()
 
-def cp(source: NestPath, target: NestPath) -> bool:
-    """Copy sub directories from given source to destination directory.
+def copytree(source: NestPath, target: NestPath) -> None:
+    """Copy directory structure from given source to target directory.
 
     Args:
         source: Path like structure, which comprises the path of a source folder
@@ -327,20 +327,16 @@ def cp(source: NestPath, target: NestPath) -> bool:
         True if the operation was successful.
 
     """
-    import shutil
-
-    sdir, ddir = expand(source), expand(target)
-
-    for s in sdir.glob('*'):
-        t = Path(ddir, basename(s))
-        if t.exists():
-            shutil.rmtree(str(t))
-        try:
-            shutil.copytree(str(s), str(t))
-        except Exception as err:
-            raise OSError("could not copy directory") from err
-
-    return True
+    # Recursive copy function, that allows existing files
+    def copy(source: Path, target: Path) -> None:
+        if source.is_dir():
+            if not target.is_dir():
+                target.mkdir()
+            for each in source.glob('*'):
+                copy(each, target / each.name)
+        else:
+            shutil.copy(source, target)
+    copy(expand(source), expand(target))
 
 def mkdir(*args: NestPath) -> bool:
     """Create directory.
@@ -373,8 +369,6 @@ def rmdir(*args: NestPath) -> bool:
         True if the directory could be deleted
 
     """
-    import shutil
-
     path = expand(*args)
 
     if not path.is_dir():

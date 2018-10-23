@@ -11,8 +11,8 @@ def new(*args, **kwds):
     """Return model instance."""
 
     type = kwds.get('config', {}).get('type', 'base.Model')
-    module_name = 'nemoa.model.classes.' + type.split('.')[0]
-    class_name = type.split('.')[1]
+    module_name = 'nemoa.model.classes.' + type.split('.', 1)[0]
+    class_name = type.rsplit('.', 1)[-1]
 
     try:
         module = importlib.import_module(module_name)

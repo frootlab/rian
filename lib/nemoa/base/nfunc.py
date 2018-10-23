@@ -6,10 +6,15 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+__all__ = ['get_summary', 'get_instance', 'get_kwds']
+
+import inspect
+
+from nemoa.base import nmodule, nobject
 from nemoa.types import AnyFunc, StrDict, Function, OptFunction, OptDict
 
-def about(func: AnyFunc) -> str:
-    """Summary line of docstring of a function.
+def get_summary(func: AnyFunc) -> str:
+    """Get summary line of a function.
 
     Args:
         func: Function instance
@@ -17,18 +22,11 @@ def about(func: AnyFunc) -> str:
     Returns:
         Summary line of the docstring of a function.
 
-    Examples:
-        >>> about(about)
-        'Summary line of docstring of a function'
-
     """
-    if not hasattr(func, '__doc__') or not func.__doc__:
-        return ''
+    return nobject.get_summary(func)
 
-    return func.__doc__.split('\n', 1)[0].strip(' .')
-
-def inst(name: str) -> OptFunction:
-    """Create function instance for a given function name.
+def get_instance(name: str) -> OptFunction:
+    """Get function instance for a given function name.
 
     Args:
         name: fully qualified function name
@@ -37,26 +35,23 @@ def inst(name: str) -> OptFunction:
         Function instance or None, if the function could not be found.
 
     Examples:
-        >>> inst("nemoa.base.nfunc.inst")
+        >>> get_instance("nemoa.base.nfunc.get_instance")
 
     """
-    from nemoa.base import nmodule
+    mname, fname = name.rsplit('.', 1)
+    minst = nmodule.inst(mname)
 
-    mname = '.'.join(name.split('.')[:-1])
-    fname = name.split('.')[-1]
-
-    module = nmodule.inst(mname)
-    if module is None:
+    if not minst:
         return None
 
-    func = getattr(module, fname)
+    func = getattr(minst, fname)
     if not isinstance(func, Function):
         return None
 
     return func
 
-def kwds(func: AnyFunc, default: OptDict = None) -> StrDict:
-    """Keyword arguments of a function.
+def get_kwds(func: AnyFunc, default: OptDict = None) -> StrDict:
+    """Get keyword arguments of a function.
 
     Args:
         func: Function instance
@@ -71,30 +66,32 @@ def kwds(func: AnyFunc, default: OptDict = None) -> StrDict:
         Dictionary of keyword arguments with default values.
 
     Examples:
-        >>> kwds(kwds)
+        >>> get_kwds(get_kwds)
         {'default': None}
-        >>> kwds(kwds, default = {'default': 'not None'})
+        >>> get_kwds(get_kwds, default = {'default': 'not None'})
         {'default': 'not None'}
 
     """
-    # Check Arguments
+    # Check type of 'func'
     if not isinstance(func, Function):
-        raise TypeError('first argument requires to be a function')
+        raise TypeError(
+            "first argument 'func' requires to be a function"
+            f", not {type(func).__name__}")
+
+    # Check type of 'default'
     if not isinstance(default, (dict, type(None))):
         raise TypeError(
-            "argument 'default' requires to be of type 'dict' or None"
-            f", not '{type(default)}'")
+            "'default' requires to be of type 'dict' or None"
+            f", not '{type(default).__name__}'")
 
-    import inspect
-
+    kwds: StrDict = {}
     df = inspect.signature(func).parameters
-    dkwds = {}
     for key, val in df.items():
         if '=' not in str(val):
             continue
         if default is None:
-            dkwds[key] = val.default
+            kwds[key] = val.default
         elif key in default:
-            dkwds[key] = default[key]
+            kwds[key] = default[key]
 
-    return dkwds
+    return kwds

@@ -9,8 +9,7 @@ import importlib
 
 def new(*args, **kwds):
     """Create new dataset instance."""
-
-    if not kwds: kwds = {'config': {'type': 'base.Dataset'}}
+    kwds = kwds or {'config': {'type': 'base.Dataset'}}
 
     # check validity of configuration
     if len(kwds.get('config', {}).get('type', '').split('.')) != 2:

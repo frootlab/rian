@@ -17,7 +17,8 @@ import pkgutil
 
 from nemoa.base import ndict, nobject
 from nemoa.types import (
-    Any, Function, Module, OptStr, OptModule, OptStrDictOfTestFuncs, StrList)
+    Any, ClassInfo, Function, Module, OptStr, OptModule, OptStrDictOfTestFuncs,
+    StrList)
 
 def curname(frame: int = 0) -> str:
     """Get name of module, which calls this function.
@@ -105,10 +106,22 @@ def root(module: OptModule = None) -> Module:
             f", not '{type(module).__name__}'")
 
     # Get name of top level module
-    name = module.__name__.split('.')[0]
+    name = module.__name__.split('.', 1)[0]
 
     # Get reference to top level module
     return importlib.import_module(name)
+
+def get_attr(name: str, default: Any = None) -> Any:
+    """Get attribute value of current module.
+
+    Args:
+        name: Name of attribute.
+
+    Returns:
+        Value of attribute.
+
+    """
+    return getattr(inst(curname(-1)), name, default)
 
 def submodules(module: OptModule = None, recursive: bool = False) -> StrList:
     """Get list with submodule names.
@@ -240,12 +253,11 @@ def get_functions(
             "'module' is required to be of type 'ModuleType' or None"
             f", not '{type(module).__name__}'")
 
-    return nobject.members(
-        module, base=Function, pattern=pattern, rules=rules, **kwds)
+    return nobject.get_members(
+        module, classinfo=Function, pattern=pattern, rules=rules, **kwds)
 
-def list_functions_by_prefix(
-        module: OptModule = None, prefix: str = '') -> list:
-    """Get list of functions by prefix.
+def crop_functions(module: OptModule = None, prefix: str = '') -> list:
+    """Get list of cropped function names that satisfy a given prefix.
 
     Args:
         module: Module reference in which functions are searched. By default the
@@ -259,19 +271,18 @@ def list_functions_by_prefix(
     # Set default value of 'module' to current module of caller
     module = module or inst(curname(-1))
 
-    # Get function dictionary
-    pattern = prefix + '*'
-    funcs = get_functions(module=module, pattern=pattern)
+    # Get functions dictionary
+    funcs = get_functions(module=module, pattern=(prefix + '*'))
 
-    # Create sorted list of norm names
+    # Create list of cropped function names
     i = len(prefix)
-    return sorted([v['name'][i:] for v in funcs.values()])
+    return [each['name'][i:] for each in funcs.values()]
 
 def search(
-        module: OptModule = None, pattern: OptStr = None, base: type = Function,
-        key: OptStr = None, val: OptStr = None, groupby: OptStr = None,
-        recursive: bool = True, rules: OptStrDictOfTestFuncs = None,
-        **kwds: Any) -> dict:
+        module: OptModule = None, pattern: OptStr = None,
+        classinfo: ClassInfo = Function, key: OptStr = None, val: OptStr = None,
+        groupby: OptStr = None, recursive: bool = True,
+        rules: OptStrDictOfTestFuncs = None, **kwds: Any) -> dict:
     """Recursively search for objects within submodules.
 
     Args:
@@ -281,9 +292,10 @@ def search(
             by 'pattern' are returned. The format of the wildcard pattern is
             described in the standard library module `fnmatch`_. If pattern is
             None, then all objects are returned. Default: None
-        base: Class info given as a class, a type or a tuple containing classes,
-            types or other tuples. Only members, which are ether an instance or
-            a subclass of base are returned. By default all types are allowed.
+        classinfo: Classinfo given as a class, a type or a tuple containing
+            classes, types or other tuples. Only members, which are ether an
+            instance or a subclass of classinfo are returned. By default all
+            types are allowed.
         key: Name of function attribute which is used as the key for the
             returned dictionary. If 'key' is None, then the fully qualified
             function names are used as keys. Default: None
@@ -327,18 +339,18 @@ def search(
     # Get list with submodules
     mnames = [module.__name__] + submodules(module, recursive=recursive)
 
-    # Create dictionary with function attributes
+    # Create dictionary with member attributes
     fd = {}
     rules = rules or {}
     for mname in mnames:
-        m = inst(mname)
-        if m is None:
+        minst = inst(mname)
+        if minst is None:
             continue
-        #d = get_functions(m, pattern=pattern, rules=rules, **kwds)
-        d = nobject.members(
-            m, base=base, pattern=pattern, rules=rules, **kwds)
+        d = nobject.get_members(
+                minst, classinfo=classinfo, pattern=pattern, rules=rules,
+                **kwds)
 
-        # Ignore functions if any required attribute is not available
+        # Ignore members if any required attribute is not available
         for name, attr in d.items():
             if key and not key in attr:
                 continue

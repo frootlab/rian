@@ -49,7 +49,7 @@ def save(dataset, path = None, filetype = None, workspace = None,
 
     """
 
-    if not nclass.hasbase(dataset, 'Dataset'):
+    if not nclass.has_base(dataset, 'Dataset'):
         raise TypeError("dataset is not valid")
 
     from nemoa.base import npath

@@ -63,10 +63,9 @@ class Session:
         import os
         import sys
 
-        from nemoa.base import ndict
         from nemoa.fileio import inifile
 
-        self._config = ndict.merge(kwds, self._default)
+        self._config = {**self._default, **kwds}
 
         # reset workspace to default values
         self._set_workspace_reset()
@@ -505,7 +504,7 @@ class Session:
         else: return True
 
         # define colors (platform dependent workaround)
-        osname = env.osname()
+        osname = env.get_osname()
 
         # 2do define colors based on shell not on platform
         if osname.lower() == 'windows' and mode != 'shell':
@@ -735,8 +734,8 @@ class Session:
 
         if curmode == 'line' and mode == 'key':
             if not self._buffer.get('inkey', None):
-                from nemoa.base import nconsole
-                self._buffer['inkey'] = nconsole.Getch() # type: ignore
+                from nemoa.core import stdio
+                self._buffer['inkey'] = stdio.Getch() # type: ignore
             self._buffer['inkey'].start()
             return True
 

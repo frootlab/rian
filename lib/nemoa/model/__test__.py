@@ -6,11 +6,11 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-from nemoa.base import test
+from nemoa.base import nclass
+from nemoa.test import GenericTestCase
 
-class TestCase(test.GenericTestCase):
+class TestCase(GenericTestCase):
     def setUp(self):
-        import nemoa
         self.mode = nemoa.get('mode')
         self.workspace = nemoa.get('workspace')
         nemoa.set('mode', 'silent')
@@ -18,41 +18,34 @@ class TestCase(test.GenericTestCase):
         nemoa.open('testsuite', base='site')
 
     def tearDown(self):
-        import nemoa
         # open previous workspace
         if nemoa.get('workspace') != self.workspace:
             nemoa.open(self.workspace)
         nemoa.set('mode', self.mode)
 
     def test_model_import(self):
-        from nemoa.base import nclass
-
-        with self.subTest(filetype = 'npz'):
-            model = nemoa.model.open('test', workspace = 'testsuite')
-            self.assertTrue(nclass.hasbase(model, 'Model'))
+        with self.subTest(filetype='npz'):
+            model = nemoa.model.open('test', workspace='testsuite')
+            self.assertTrue(nclass.has_base(model, 'Model'))
 
     def test_model_ann(self):
-        from nemoa.base import nclass
-
-        with self.subTest(step = 'create shallow ann'):
+        with self.subTest(step='create shallow ann'):
             model = nemoa.model.create(
-                dataset = 'linear', network = 'shallow', system = 'ann')
-            self.assertTrue(nclass.hasbase(model, 'Model'))
+                dataset='linear', network='shallow', system='ann')
+            self.assertTrue(nclass.has_base(model, 'Model'))
 
-        with self.subTest(step = 'optimize shallow ann'):
+        with self.subTest(step='optimize shallow ann'):
             model.optimize()
             test = model.error < 0.1
             self.assertTrue(test)
 
     def test_model_dbn(self):
-        from nemoa.base import nclass
-
-        with self.subTest(step = 'create dbn'):
+        with self.subTest(step='create dbn'):
             model = nemoa.model.create(
-                dataset = 'linear', network = 'deep', system = 'dbn')
-            self.assertTrue(nclass.hasbase(model, 'Model'))
+                dataset='linear', network='deep', system='dbn')
+            self.assertTrue(nclass.has_base(model, 'Model'))
 
-        with self.subTest(step = 'optimize dbn'):
+        with self.subTest(step='optimize dbn'):
             model.optimize()
             test = model.error < 0.5
             self.assertTrue(test)

@@ -12,7 +12,7 @@ __license__ = 'GPLv3'
 
 import nemoa.model.morphisms.ann
 
-from nemoa.core import log
+from nemoa.core import ui
 from nemoa.math import algo
 
 class DBN(nemoa.model.morphisms.ann.ANN):
@@ -211,7 +211,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
         del units[cid]['init']
 
         # remove output units from input layer, and vice versa
-        log.info('cleanup unit and linkage parameter arrays.')
+        ui.info('cleanup unit and linkage parameter arrays.')
         system._remove_units(mapping[0], outputs)
         system._remove_units(mapping[-1], inputs)
 

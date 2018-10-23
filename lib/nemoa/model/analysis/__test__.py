@@ -4,9 +4,7 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
-
-from nemoa.base import test
+from nemoa.test import GenericTestCase
 
 # class TestCase(test.GenericTestCase):
 #

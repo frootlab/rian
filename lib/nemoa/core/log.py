@@ -33,7 +33,9 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
-__all__ = ['get_instance', 'debug', 'info', 'warning', 'error', 'critical']
+
+__all__ = ['get_instance', 'debug', 'info', 'warning', 'error', 'critical',
+           'exception']
 
 import contextlib
 import importlib
@@ -44,7 +46,7 @@ import warnings
 from pathlib import Path
 
 from nemoa.base import env, npath
-from nemoa.classes import Attr, ReadWriteAttr
+from nemoa.classes import ReadWriteAttr
 from nemoa.errors import AlreadyStartedError, NotStartedError
 from nemoa.types import (
     void, Any, AnyFunc, ClassVar, PathLike, StrList, StrOrInt, OptPath,
@@ -58,7 +60,10 @@ class Logger:
     """Logger class.
 
     Args:
-        name:
+        name: String identifier of Logger, given as a period-separated
+            hierarchical value like 'foo.bar.baz'. The name of a Logger also
+            identifies respective parents and children by the name hierachy,
+            which equals the Python package hierarchy.
         file: String or `path-like object`_ that identifies a valid filename in
             the directory structure of the operating system. If they do not
             exist, the parent directories of the file are created. If no file is
@@ -85,24 +90,29 @@ class Logger:
     _DEFAULT_LEVEL: ClassVar[StrOrInt] = logging.INFO
 
     #
-    # Private Module Variables
+    # Private Instance Variables
     #
 
     _logger: logging.Logger
 
     #
-    # Public Attributes
+    # Public Instance Properties
     #
 
-    logger: Attr = ReadWriteAttr(
+    logger: property = ReadWriteAttr(
         logging.Logger, getter='_get_logger', setter='_set_logger')
 
-    name: Attr = ReadWriteAttr(
-        str, getter='_get_name', setter='_set_name',
-        default=_DEFAULT_NAME)
-    name.__doc__ = """Name of logger."""
+    name: property = ReadWriteAttr(
+        str, getter='_get_name', setter='_set_name', default=_DEFAULT_NAME)
+    name.__doc__ = """Name of logger.
 
-    file: Attr = ReadWriteAttr(
+    String identifier of Logger, given as a period-separated hierarchical value
+    like 'foo.bar.baz'. The name of a Logger also identifies respective parents
+    and children by the name hierachy, which equals the Python package
+    hierarchy.
+    """
+
+    file: property = ReadWriteAttr(
         (str, Path), getter='_get_file', setter='_set_file',
         default=_DEFAULT_FILE)
     file.__doc__ = """Log file.
@@ -115,7 +125,7 @@ class Logger:
     created as a fallback.
     """
 
-    level: Attr = ReadWriteAttr(
+    level: property = ReadWriteAttr(
         (str, int), getter='_get_level', setter='_set_level',
         default=_DEFAULT_LEVEL)
     level.__doc__ = """Log level.

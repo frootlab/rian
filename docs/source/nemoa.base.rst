@@ -11,7 +11,7 @@ Submodules
    nemoa.base.narray
    nemoa.base.nbase
    nemoa.base.nclass
-   nemoa.base.nconsole
+   nemoa.base.stdio
    nemoa.base.ndict
    nemoa.base.nfunc
    nemoa.base.nmodule

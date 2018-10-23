@@ -151,6 +151,7 @@ BinaryFunc = Callable[[S, T], Any]
 TestFunc = Callable[[S, T], bool]
 
 # Unions of Callables and Literals
+OptVoidFunc = Optional[VoidFunc]
 OptCallable = Optional[AnyFunc]
 OptFunction = Optional[Function]
 OptModule = Optional[Module]

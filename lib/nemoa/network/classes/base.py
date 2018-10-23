@@ -89,7 +89,7 @@ class Network(nbase.ObjectIP):
         """Configure network to dataset."""
 
         # check if dataset instance is available
-        if not nclass.hasbase(dataset, 'Dataset'):
+        if not nclass.has_base(dataset, 'Dataset'):
             raise TypeError("dataset is required to be of type dataset")
 
         log.info("configure network: '%s'" % (self._config['name']))
@@ -614,8 +614,7 @@ class Network(nbase.ObjectIP):
         if not hasattr(self, '_config') or not self._config:
             self._config = self._default.copy()
         if config:
-            from nemoa.base import ndict
-            self._config = ndict.merge(config, self._config)
+            self._config = {**self._config, **config}
 
             # reconfigure graph
             self._configure_graph()
@@ -629,16 +628,15 @@ class Network(nbase.ObjectIP):
             bool: True if no error occured, else False
 
         """
-
         # initialize graph
         if not hasattr(self, '_graph') or not self._graph:
             self._configure_graph()
 
-        if not graph: return True
+        if not graph:
+            return True
 
         # merge graph
-        from nemoa.base import ndict
-        graph_copy = ndict.merge(graph, self._get_graph())
+        graph_copy = {**self._get_graph(), **graph}
 
         # create networkx graph instance
         object_type = graph['graph']['params']['networkx']
@@ -662,18 +660,18 @@ class Network(nbase.ObjectIP):
         return algorithms[name](self._graph, *args, **kwds)
 
     def initialize(self, system = None):
-
-        if not system: return False
-        if not nclass.hasbase(system, 'System'):
+        if not system:
+            return False
+        if not nclass.has_base(system, 'System'):
             raise ValueError("system is not valid")
 
         # get edge parameters from system links
-        from nemoa.base import ndict
         for edge in self._graph.edges():
             params = system.get('link', edge)
-            if not params: continue
+            if not params:
+                continue
             edge_dict = self._graph[edge[0]][edge[1]]
-            edge_dict['params'] = ndict.merge(params, edge_dict['params'])
+            edge_dict['params'] = {**edge_dict['params'], **params}
             edge_dict['weight'] = float(params['weight'])
 
         return True

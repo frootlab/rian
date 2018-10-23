@@ -17,13 +17,14 @@ def new(model, *args, **kwds):
 
     # get type of system
     stype = model.system.type
-    mname = 'nemoa.model.evaluation.' + stype.split('.')[0]
-    cname = stype.split('.')[1]
+    mname = 'nemoa.model.evaluation.' + stype.split('.', 1)[0]
+    cname = stype.rsplit('.', 1)[-1]
 
     # import module for evaluation
     try:
         module = importlib.import_module(mname)
-        if not hasattr(module, cname): raise ImportError()
+        if not hasattr(module, cname):
+            raise ImportError()
     except ImportError:
         raise ValueError(
             "could not evaluate model: "
