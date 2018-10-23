@@ -4,11 +4,14 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
-import numpy
 import time
 
+import numpy
+
+import nemoa
+
 from nemoa.base import nclass
+from nemoa.core import ui
 
 class Optimizer:
 
@@ -196,10 +199,10 @@ class Optimizer:
         """
 
         # test type of model instance and subclasses
-        if not nclass.hasbase(model, 'Model'): return False
-        if not nclass.hasbase(model.dataset, 'Dataset'): return False
-        if not nclass.hasbase(model.network, 'Network'): return False
-        if not nclass.hasbase(model.system, 'System'): return False
+        if not nclass.has_base(model, 'Model'): return False
+        if not nclass.has_base(model.dataset, 'Dataset'): return False
+        if not nclass.has_base(model.network, 'Network'): return False
+        if not nclass.has_base(model.system, 'System'): return False
 
         # check dataset
         if (not 'check_dataset' in model.system._default['init']
@@ -238,12 +241,12 @@ class Optimizer:
 
         # start optimization
         if algorithm.get('type', None) == 'algorithm':
-            nemoa.log('note', "optimize '%s' (%s) using %s."
+            ui.info("optimize '%s' (%s) using %s."
                 % (self.model.name, self.model.system.type, name))
 
             # start key events
             if not self._buffer['key_events_started']:
-                nemoa.log('note', "press 'h' for help or 'q' to quit.")
+                ui.info("press 'h' for help or 'q' to quit.")
                 self._buffer['key_events_started'] = True
                 nemoa.set('shell', 'buffmode', 'key')
 
@@ -270,7 +273,8 @@ class Optimizer:
 
         if not isinstance(config, dict):
             if not config: key = 'default'
-            elif isinstance(config, str): key = config
+            elif isinstance(config, str):
+                key = config
             else:
                 raise Warning(
                     "could not configure transformation: "
@@ -283,8 +287,7 @@ class Optimizer:
             schedules = system._config.get('schedules', {})
             config = schedules.get(key, {}).get(system.type, {})
 
-        from nemoa.base import ndict
-        self._config = ndict.merge(kwds, config, self._default)
+        self._config = {**self._default, **config, **kwds}
 
         return True
 
@@ -392,17 +395,18 @@ class Optimizer:
         if char == 'e':
             pass
         elif char == 'h':
-            nemoa.log('note', "Keyboard Shortcuts")
-            nemoa.log('note', "'e' -- calculate evaluation function")
-            nemoa.log('note', "'h' -- show this")
-            nemoa.log('note', "'q' -- quit optimization")
-            nemoa.log('note', "'t' -- estimate finishing time")
+            ui.info(
+                "Keyboard Shortcuts\n"
+                "'e' -- calculate evaluation function\n"
+                "'h' -- show this\n"
+                "'q' -- quit optimization\n"
+                "'t' -- estimate finishing time")
         elif char == 'q':
-            nemoa.log('note', 'aborting optimization')
+            ui.info('aborting optimization')
             self._buffer['continue'] = False
         elif char == 't':
             ftime = self._get_estimatetime()
-            nemoa.log('note', 'estimated finishing time %s' % ftime)
+            ui.info('estimated finishing time %s' % ftime)
 
         return True
 
@@ -478,10 +482,10 @@ class Optimizer:
             func = self._get_evaluation_algorithm()
             value = self._get_evaluation_value()
             self._config['tracker_eval_enable'] = False
-            return nemoa.log('note', 'found optimum with: %s = %s' % (
+            return ui.info('found optimum with: %s = %s' % (
                 func['name'], func['formater'](value)))
 
-        if ((now - self._buffer['eval_prev_time']) \
+        if ((now - self._buffer['eval_prev_time'])
             > self._config['tracker_eval_time_interval']):
             func = self._get_evaluation_algorithm()
             value = self._get_evaluation_value()
@@ -500,7 +504,7 @@ class Optimizer:
                     numpy.vstack((self._buffer['eval_values'], \
                     numpy.array([[progress, value]])))
 
-            return nemoa.log('note', 'finished %.1f%%: %s = %s' % (
+            return ui.info('finished %.1f%%: %s = %s' % (
                 progress * 100., func['name'], func['formater'](value)))
 
         return False

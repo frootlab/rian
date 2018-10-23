@@ -15,9 +15,11 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import re
 from configparser import ConfigParser
 from io import StringIO
 
+from nemoa.base import ntext
 from nemoa.fileio import textfile
 from nemoa.types import FileOrPathLike, OptBool, OptStr, OptStrDict2, StrDict2
 
@@ -170,11 +172,11 @@ def dumps(config: dict, flat: OptBool = None, header: OptStr = None) -> str:
                 continue
             flat = False
 
-    # if no sections are to be used create a temporary [root] section
+    # If no sections are to be used create a temporary [root] section
     if flat:
         config = {'root': config.copy()}
 
-    # succesively pass (key, value) pairs to INI parser
+    # Succesively pass (key, value) pairs to INI parser
     parser = ConfigParser()
     for sec in config.keys():
         if not isinstance(config[sec], dict):
@@ -183,16 +185,16 @@ def dumps(config: dict, flat: OptBool = None, header: OptStr = None) -> str:
         for key, val in config[sec].items():
             parser.set(str(sec), str(key), str(val))
 
-    # retrieve INI formated text from INI parser
+    # Retrieve INI formated text from INI parser
     with StringIO() as buffer:
         parser.write(buffer)
         text = buffer.getvalue()
 
-    # if no section are to be used remove [root] section from text
+    # If no section are to be used remove [root] section from text
     if flat:
         text = text.replace('[root]\n', '')
 
-    # if header is given, write header as comments before text
+    # If header is given, write header as comments before text
     if isinstance(header, str):
         comments = ['# ' + line.strip() for line in header.splitlines()]
         text = '\n'.join(comments) + '\n\n' + text
@@ -237,9 +239,6 @@ def parse(parser: ConfigParser, structure: OptStrDict2 = None) -> StrDict2:
         Structured configuration dictionary.
 
     """
-    import re
-    from nemoa.base import ntext
-
     # Retrieve dictionary from INI parser, if no structure is given
     if not isinstance(structure, dict):
         config = {}

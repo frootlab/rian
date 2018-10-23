@@ -14,9 +14,9 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+from nemoa.base import nmodule
 from nemoa.types import (
-    Any, AnyFunc, FuncWrapper, Module, NpArray, NpArrayFunc, NpArrayLike,
-    OptModule, OptStr, OptStrList, Scalar, ScalarFunc)
+    Any, FuncWrapper, Module, OptModule, OptStr, OptStrList)
 
 def search(module: OptModule = None, **kwds: Any) -> dict:
     """Search for algorithms, that pass given filters.
@@ -31,13 +31,8 @@ def search(module: OptModule = None, **kwds: Any) -> dict:
         Dictionary with function information.
 
     """
-    from nemoa.base import nmodule
-
-    module = module or nmodule.inst(nmodule.curname(-1))
-    if not isinstance(module, Module):
-        raise TypeError(
-            "argument 'module' is required to be of type 'ModuleType' or None"
-            f", not 'type(module)'")
+    # Set default value of 'ref' to module of caller
+    module = module or nmodule.get_caller_ref()
 
     # create filter rules for algorithm attributes
     rules = {
@@ -45,7 +40,7 @@ def search(module: OptModule = None, **kwds: Any) -> dict:
         'classes': lambda a, b: bool(set(a) & set(b))} # requires any
 
     # search for algorithms
-    return nmodule.search(module=module, rules=rules, **kwds)
+    return nmodule.search(ref=module, rules=rules, **kwds)
 
 def custom(
         name: OptStr = None, category: OptStr = None,
@@ -76,8 +71,8 @@ def custom(
         Decorated function or method.
 
     """
-    def wrapper(func):
-        def wrapped(*args, **kwds):
+    def wrapper(func): # type: ignore
+        def wrapped(*args, **kwds): # type: ignore
             return func(*args, **kwds)
 
         # set attributes with metainformation about algorithm
@@ -128,8 +123,8 @@ def objective(
         Decorated function or method.
 
     """
-    def wrapper(func):
-        def wrapped(data, *args, **kwds):
+    def wrapper(func): # type: ignore
+        def wrapped(data, *args, **kwds): # type: ignore
             return func(data, *args, **kwds)
 
         # set attributes with metainformation about algorithm
@@ -181,9 +176,8 @@ def sampler(
         [1] https://en.wikipedia.org/wiki/Gibbs_sampling
 
     """
-    def wrapper(func):
-
-        def wrapped(data, *args, **kwds):
+    def wrapper(func): # type: ignore
+        def wrapped(data, *args, **kwds): # type: ignore
             return func(data, *args, **kwds)
 
         # set attributes with metainformation about algorithm
@@ -231,8 +225,8 @@ def statistic(
         [1] https://en.wikipedia.org/wiki/Statistic
 
     """
-    def wrapper(func):
-        def wrapped(data: NpArrayLike, *args: Any, **kwds: Any) -> NpArray:
+    def wrapper(func): # type: ignore
+        def wrapped(data, *args, **kwds): # type: ignore
             return func(data, *args, **kwds)
 
         # set attributes with metainformation about algorithm
@@ -288,8 +282,8 @@ def association(
         Decorated function or method.
 
     """
-    def wrapper(func):
-        def wrapped(data, *args, **kwds):
+    def wrapper(func): # type: ignore
+        def wrapped(data, *args, **kwds): # type: ignore
             return func(data, *args, **kwds)
     # def wrapper(func: NpArrayFunc) -> NpArrayFunc:
     #     def wrapped(data: NpArrayLike, *args: Any, **kwds: Any) -> NpArray:

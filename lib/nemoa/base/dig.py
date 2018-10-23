@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Functions to access application variables and directories.
+"""Object hierarchy functions.
 
 .. References:
 .. _fnmatch: https://docs.python.org/3/library/fnmatch.html
@@ -15,9 +15,9 @@ __docformat__ = 'google'
 import inspect
 
 from nemoa.base import ndict
-from nemoa.types import Any, OptStr, OptStrDictOfTestFuncs
+from nemoa.types import Any, ClassInfo, OptStr, OptStrDictOfTestFuncs
 
-def summary(obj: object) -> str:
+def get_summary(obj: object) -> str:
     """Get summary line for an object.
 
     This function returns the summary line of the documentation string for an
@@ -31,10 +31,28 @@ def summary(obj: object) -> str:
         Summary line for an object.
 
     """
-    doc = inspect.getdoc(obj)
-    if not isinstance(doc, str) or not doc:
+    text = inspect.getdoc(obj)
+    if not isinstance(text, str) or not text:
         return ''
-    return doc.splitlines()[0].strip('.')
+    return text.splitlines()[0].strip('.')
+
+def has_base(obj: object, base: str) -> bool:
+    """Return true if the object has the given base.
+
+    Args:
+        obj: Class
+        base: Class name of base class
+
+    Returns:
+        True if the given object has the named base as base
+
+    """
+    if not hasattr(obj, '__class__'):
+        raise TypeError(
+            "argument 'obj' requires to be a class instance"
+            f", not '{type(obj).__name__}'")
+
+    return base in [o.__name__ for o in obj.__class__.__mro__]
 
 def get_name(obj: object) -> str:
     """Get name of an object.
@@ -52,8 +70,8 @@ def get_name(obj: object) -> str:
     """
     return getattr(obj, '__name__', None) or getattr(type(obj), '__name__')
 
-def members(
-        obj: object, pattern: OptStr = None, base: type = object,
+def get_members(
+        obj: object, pattern: OptStr = None, classinfo: ClassInfo = object,
         rules: OptStrDictOfTestFuncs = None, **kwds: Any) -> dict:
     """Get members of an object.
 
@@ -63,9 +81,10 @@ def members(
             by 'pattern' are returned. The format of the wildcard pattern is
             described in the standard library module `fnmatch`_. By default all
             names are allowed.
-        base: Class info given as a class, a type or a tuple containing classes,
-            types or other tuples. Only members, which are ether an instance or
-            a subclass of base are returned. By default all types are allowed.
+        classinfo: Classinfo given as a class, a type or a tuple containing
+            classes, types or other tuples. Only members, which are ether an
+            instance or a subclass of classinfo are returned. By default all
+            types are allowed.
         rules: Dictionary with custom test functions, which are used for the
             comparison of the attribute value against the argument value. The
             dictionary items are of the form <*attribute*>: <*test*>, where
@@ -92,8 +111,8 @@ def members(
     """
     # Get members of object, that satisfy the given base class
     predicate = lambda o: (
-        isinstance(o, base) or
-        inspect.isclass(o) and issubclass(o, base))
+        isinstance(o, classinfo) or
+        inspect.isclass(o) and issubclass(o, classinfo))
     refs = {k: v for k, v in inspect.getmembers(obj, predicate)}
 
     # Filter references to members, which names match a given pattern
@@ -112,7 +131,7 @@ def members(
         else:
             attr = ref.__dict__.copy()
         attr['name'] = attr.get('name', name)
-        attr['about'] = attr.get('about', summary(ref))
+        attr['about'] = attr.get('about', get_summary(ref))
         attr['reference'] = ref
 
         # Filter entry by attribute filter

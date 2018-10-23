@@ -60,33 +60,28 @@ class System(nbase.ObjectIP):
     """
 
     _attr: Dict[str, int] = {
-        'units': 0b01, 'links': 0b01, 'layers': 0b01, 'mapping': 0b11
-    }
+        'units': 0b01, 'links': 0b01, 'layers': 0b01, 'mapping': 0b11}
 
     _copy: Dict[str, str] = {
-        'params': '_params'
-    }
+        'params': '_params'}
 
     _default = {
-        'params': {}, 'init': {}, 'optimize': {}, 'schedules': {}
-    }
+        'params': {}, 'init': {}, 'optimize': {}, 'schedules': {}}
 
     _config = None
     _params = None
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize system with content from arguments."""
-
         # get attribute and storage defaults from parent
         self._attr = {**getattr(super(), '_attr', {}), **self._attr}
         self._copy = {**getattr(super(), '_copy', {}), **self._copy}
-
         super().__init__(*args, **kwds)
 
     def configure(self, network = None):
         """Configure system to network."""
 
-        if not nclass.hasbase(network, 'Network'):
+        if not nclass.has_base(network, 'Network'):
             raise ValueError("network is not valid")
 
         return self._set_params(network = network)
@@ -101,7 +96,7 @@ class System(nbase.ObjectIP):
 
         """
 
-        if not nclass.hasbase(dataset, 'Dataset'):
+        if not nclass.has_base(dataset, 'Dataset'):
             raise ValueError("dataset is not valid")
 
         return self._set_params_init_units(dataset) \
@@ -109,12 +104,12 @@ class System(nbase.ObjectIP):
 
     def _check_network(self, network, *args, **kwds):
         """Check if network is valid for system."""
-        if not nclass.hasbase(network, 'Network'): return False
+        if not nclass.has_base(network, 'Network'): return False
         return True
 
     def _check_dataset(self, dataset, *args, **kwds):
         """Check if network is valid for system."""
-        if not nclass.hasbase(dataset, 'Dataset'): return False
+        if not nclass.has_base(dataset, 'Dataset'): return False
         return True
 
     def _get_algorithms(self, category = None, attribute = None, tree = False):
@@ -1337,15 +1332,13 @@ class System(nbase.ObjectIP):
 
         return retval
 
-    def _set_config(self, config = None):
+    def _set_config(self, config=None):
         """Set configuration from dictionary."""
-
         # initialize or update configuration dictionary
         if not hasattr(self, '_config') or not self._config:
             self._config = self._default.copy()
         if config:
-            from nemoa.base import ndict
-            self._config = ndict.merge(config, self._config)
+            self._config = {**self._config, **config}
 
         # reset consistency check
         self._config['check'] = {
@@ -1362,8 +1355,7 @@ class System(nbase.ObjectIP):
 
         # get system parameters from dict
         if params:
-            from nemoa.base import ndict
-            self._params = ndict.merge(params, self._params)
+            self._params = {**self._params, **params}
 
             # create instances of units and links
             retval &= self._set_params_create_units()
@@ -1371,7 +1363,7 @@ class System(nbase.ObjectIP):
 
         # get system parameters from network
         elif network:
-            if not nclass.hasbase(network, 'Network'):
+            if not nclass.has_base(network, 'Network'):
                 raise ValueError("network is not valid")
 
             # get unit layers and unit params
@@ -1380,8 +1372,10 @@ class System(nbase.ObjectIP):
 
             for layer in units:
                 layer['id'] = layer.pop('nodes')
-                if 'type' in layer: layer['class'] = layer.pop('type')
-                elif layer['visible']: layer['class'] = 'gauss'
+                if 'type' in layer:
+                    layer['class'] = layer.pop('type')
+                elif layer['visible']:
+                    layer['class'] = 'gauss'
                 else: layer['class'] = 'sigmoid'
 
             # get link layers and link params
@@ -1396,7 +1390,7 @@ class System(nbase.ObjectIP):
                 link_layer_adj = numpy.zeros(link_layer_shape)
                 links[link_layer] = {
                     'source': src, 'target': tgt,
-                    'A': link_layer_adj.astype(float) }
+                    'A': link_layer_adj.astype(float)}
             for link in network.edges:
                 src, tgt = link
                 found = False
@@ -1408,13 +1402,14 @@ class System(nbase.ObjectIP):
                         tgt_sid = units[lid + 1]['id'].index(tgt)
                         found = True
                         break
-                if not found: continue
-                if (src_lid, tgt_lid) not in links: continue
+                if not found:
+                    continue
+                if (src_lid, tgt_lid) not in links:
+                    continue
                 links[(src_lid, tgt_lid)]['A'][src_sid, tgt_sid] = 1.0
 
-            params = {'units': units, 'links': links}
-            from nemoa.base import ndict
-            self._params = ndict.merge(params, self._params)
+            self._params['units'] = units
+            self._params['links'] = links
 
             # create instances of units and links
             retval &= self._set_params_create_units()
@@ -1425,7 +1420,7 @@ class System(nbase.ObjectIP):
 
         # initialize system parameters if dataset is given
         if dataset:
-            if not nclass.hasbase(dataset, 'Dataset'):
+            if not nclass.has_base(dataset, 'Dataset'):
                 raise ValueError("""could not initialize
                     system: dataset instance is not valid.""")
 
@@ -1435,7 +1430,6 @@ class System(nbase.ObjectIP):
         return retval
 
     def _set_params_create_units(self):
-
         # create instances of unit classes
         # and link units params to local params dict
         self._units = {}
@@ -1481,7 +1475,7 @@ class System(nbase.ObjectIP):
 
         return True
 
-    def _set_params_init_units(self, dataset = None):
+    def _set_params_init_units(self, dataset=None):
         """Initialize unit parameteres.
 
         Args:
@@ -1489,7 +1483,7 @@ class System(nbase.ObjectIP):
 
         """
 
-        if dataset is not None and not nclass.hasbase(dataset, 'Dataset'):
+        if dataset is not None and not nclass.has_base(dataset, 'Dataset'):
             raise TypeError("invalid dataset argument given")
 
         for layer in list(self._units.keys()):
@@ -1502,12 +1496,12 @@ class System(nbase.ObjectIP):
                     if 'samples' in self._config['params'] else '*'
                 cols = layer \
                     if layer in dataset.get('colgroups') else '*'
-                data = dataset.get('data', rows = rows, cols = cols)
+                data = dataset.get('data', rows=rows, cols=cols)
             self._units[layer].initialize(data)
 
         return True
 
-    def _set_params_init_links(self, dataset = None):
+    def _set_params_init_links(self, dataset=None):
         """Initialize link parameteres (weights).
 
         If dataset is None, initialize weights matrices with zeros
@@ -1523,7 +1517,7 @@ class System(nbase.ObjectIP):
 
         """
 
-        if dataset and not nclass.hasbase(dataset, 'Dataset'):
+        if dataset and not nclass.has_base(dataset, 'Dataset'):
             raise TypeError("dataset is required to be of type dataset")
 
         for links in self._params['links']:
@@ -1534,24 +1528,23 @@ class System(nbase.ObjectIP):
             y = len(self._units[target].params['id'])
             alpha = self._config['init']['w_sigma'] \
                 if 'w_sigma' in self._config['init'] else 1.
-            sigma = numpy.ones([x, 1], dtype = float) * alpha / x
+            sigma = numpy.ones([x, 1], dtype=float) * alpha / x
 
             if dataset is None:
                 random = numpy.random.normal(numpy.zeros((x, y)), sigma)
             elif source in dataset.get('colgroups'):
                 rows = self._config['params']['samples'] \
                     if 'samples' in self._config['params'] else '*'
-                data = dataset.get('data', 100000, rows = rows,
-                    cols = source)
-                delta = sigma * data.std(axis = 0).reshape(x, 1) + 0.001
+                data = dataset.get('data', 100000, rows=rows, cols=source)
+                delta = sigma * data.std(axis=0).reshape(x, 1) + 0.001
                 random = numpy.random.normal(numpy.zeros((x, y)), delta)
             elif dataset.columns \
                 == self._units[source].params['id']:
                 rows = self._config['params']['samples'] \
                     if 'samples' in self._config['params'] else '*'
-                data = dataset.get('data', 100000, rows = rows, cols = '*')
+                data = dataset.get('data', 100000, rows=rows, cols='*')
                 random = numpy.random.normal(numpy.zeros((x, y)),
-                    sigma * numpy.std(data, axis = 0).reshape(1, x).T)
+                    sigma * numpy.std(data, axis=0).reshape(1, x).T)
             else: random = \
                 numpy.random.normal(numpy.zeros((x, y)), sigma)
 
@@ -1563,7 +1556,7 @@ class System(nbase.ObjectIP):
         """Evaluate system using data."""
 
         # default system evaluation
-        if len(args) == 0:
+        if not args:
             return self._evaluate_system(data, **kwds)
 
         # evaluate system units
@@ -1579,8 +1572,9 @@ class System(nbase.ObjectIP):
             return self._evaluate_relation(data, *args[1:], **kwds)
 
         # evaluate system
-        algorithms = list(self._get_algorithms(attribute = 'name',
-            category = ('system', 'evaluation')).values())
+        algorithms = list(
+            self._get_algorithms(
+                attribute='name', category=('system', 'evaluation')).values())
 
         if args[0] in algorithms:
             return self._evaluate_system(data, *args, **kwds)
@@ -1588,7 +1582,7 @@ class System(nbase.ObjectIP):
         raise Warning(
             "unsupported system evaluation '%s'." % args[0])
 
-    def _evaluate_system(self, data, func = 'accuracy', **kwds):
+    def _evaluate_system(self, data, func='accuracy', **kwds):
         """Evaluation of system.
 
         Args:
@@ -1603,22 +1597,26 @@ class System(nbase.ObjectIP):
         """
 
         # check if data is valid
-        if not isinstance(data, tuple): raise ValueError(
-            'could not evaluate system: invalid data.')
+        if not isinstance(data, tuple):
+            raise ValueError('could not evaluate system: invalid data.')
 
         # get evaluation algorithms
-        algorithms = self._get_algorithms(
-            category = ('system', 'evaluation'))
-        if func not in list(algorithms.keys()): raise ValueError(
-            """could not evaluate system: unknown algorithm '%s'.""" % (func))
+        algorithms = self._get_algorithms(category=('system', 'evaluation'))
+        if func not in list(algorithms.keys()):
+            raise ValueError(
+                f"could not evaluate system: unknown algorithm '{func}'")
         algorithm = algorithms[func]
 
         # prepare (non keyword) arguments for evaluation function
         evalargs = []
-        if algorithm['args'] == 'none': pass
-        elif algorithm['args'] == 'input': evalargs.append(data[0])
-        elif algorithm['args'] == 'output': evalargs.append(data[1])
-        elif algorithm['args'] == 'all': evalargs.append(data)
+        if algorithm['args'] == 'none':
+            pass
+        elif algorithm['args'] == 'input':
+            evalargs.append(data[0])
+        elif algorithm['args'] == 'output':
+            evalargs.append(data[1])
+        elif algorithm['args'] == 'all':
+            evalargs.append(data)
 
         # prepare keyword arguments for evaluation function
         evalkwds = kwds.copy()
@@ -1628,8 +1626,7 @@ class System(nbase.ObjectIP):
         # evaluate system
         return algorithm['reference'](*evalargs, **evalkwds)
 
-    def _evaluate_units(self, data, func = 'units_accuracy', units = None,
-        **kwds):
+    def _evaluate_units(self, data, func='units_accuracy', units=None, **kwds):
         """Evaluation of target units.
 
         Args:
@@ -1649,15 +1646,16 @@ class System(nbase.ObjectIP):
         """
 
         # check if data is valid
-        if not isinstance(data, tuple): raise ValueError(
-            "could not evaluate system units: invalid data.")
+        if not isinstance(data, tuple):
+            raise ValueError("could not evaluate system units: invalid data.")
 
         # get evaluation algorithms
         algorithms = self._get_algorithms(
-            category = ('system', 'units', 'evaluation'))
-        if func not in algorithms: raise ValueError(
-            "could not evaluate system units: "
-            "unknown algorithm name '%s'." % func)
+            category=('system', 'units', 'evaluation'))
+        if func not in algorithms:
+            raise ValueError(
+                "could not evaluate system units: "
+                f"unknown algorithm name '{func}'")
 
         algorithm = algorithms[func]
 

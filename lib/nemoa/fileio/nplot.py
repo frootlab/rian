@@ -56,11 +56,9 @@ class Plot:
                 "requires package matplotlib: "
                 "https://matplotlib.org") from err
 
-        from nemoa.base import ndict
-
         # merge config from defaults, current config and keyword arguments
         self._kwds = kwds
-        self._config = ndict.merge(kwds, self._config, self._default)
+        self._config = {**self._default, **self._config, **kwds}
 
         # update global matplotlib settings
         matplotlib.rc('text', usetex=self._config['usetex'])
@@ -87,11 +85,7 @@ class Plot:
 
     def set_default(self, config: OptDict = None) -> bool:
         """Set default values."""
-        from nemoa.base import ndict
-
-        if config is None:
-            config = {}
-        self._config = ndict.merge(self._kwds, config, self._config)
+        self._config = {**self._config, **(config or {}), **self._kwds}
 
         return True
 

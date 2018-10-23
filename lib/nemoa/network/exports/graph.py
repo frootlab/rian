@@ -78,11 +78,9 @@ class Gml:
     default = {'coding': 'base64'}
 
     def __init__(self, **kwds):
-        from nemoa.base import ndict
-        self.settings = ndict.merge(kwds, self.default)
+        self.settings = {**self.default, **kwds}
 
     def save(self, graph, path):
-
         # encode graph parameter dictionaries
         graph = _graph_encode(graph, coding=self.settings['coding'])
 
@@ -98,8 +96,7 @@ class Graphml:
     default = {'coding': 'base64'}
 
     def __init__(self, **kwds):
-        from nemoa.base import ndict
-        self.settings = ndict.merge(kwds, self.default)
+        self.settings = {**self.default, **kwds}
 
     def save(self, graph, path):
 
@@ -118,8 +115,7 @@ class Dot:
     default = {'coding': 'base64'}
 
     def __init__(self, **kwds):
-        from nemoa.base import ndict
-        self.settings = ndict.merge(kwds, self.default)
+        self.settings = {**self.default, **kwds}
 
     def save(self, graph, path):
 

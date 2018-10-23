@@ -151,6 +151,7 @@ BinaryFunc = Callable[[S, T], Any]
 TestFunc = Callable[[S, T], bool]
 
 # Unions of Callables and Literals
+OptVoidFunc = Optional[VoidFunc]
 OptCallable = Optional[AnyFunc]
 OptFunction = Optional[Function]
 OptModule = Optional[Module]
@@ -198,6 +199,11 @@ NestPath = Union[PathLike, PathLikeSeq, PathLikeSeq2, PathLikeSeq3]
 #NestPath = Sequence[Union[str, Path, 'NestPath']]
 NestPathDict = Dict[str, NestPath]
 OptNestPathDict = Optional[NestPathDict]
+
+# Tracebacks
+ExcType = Optional[Type[BaseException]]
+ExcValue = Optional[BaseException]
+ExcTraceback = Optional[Traceback]
 
 # BytesIO Like for binary files and buffers: io
 BytesIOLike = IO[bytes]

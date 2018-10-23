@@ -4,8 +4,10 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
+
 import sys
+
+from nemoa.core import log, ui
 
 class gene:
 
@@ -29,7 +31,7 @@ class gene:
     def _exec_rcmd(self, rcmd = None):
         if not rcmd: return True
 
-        nemoa.log('debuginfo', 'passing command to R: %s' % rcmd)
+        log.debug('passing command to R: %s' % rcmd)
         sysstout = sys.stdout
         try:
             sys.stdout = NullDevice()
@@ -55,9 +57,9 @@ class gene:
 
     def _install_pkg(self, pkg=None):
         if not pkg:
-            nemoa.log('note', "trying to install bioconductor base")
+            ui.info("trying to install bioconductor base")
         else:
-            nemoa.log('note', "trying to install "
+            ui.info("trying to install "
                 f"bioconductor package: '{pkg}'")
 
         # try to evaluate the remote R script biocLite()
@@ -152,7 +154,7 @@ class gene:
 
         # search listvector
         blist = []
-        nemoa.log('debuginfo', """passing command to R (per column):
+        log.debug("""passing command to R (per column):
             sym <- listmap['COLUMNNAME']; sym <- unlist(sym)""")
         sysstout = sys.stdout
         sys.stdout = NullDevice()

@@ -11,8 +11,10 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from nemoa.types import (
-    RecDict, DictOfRecDicts, StrTupleDict, OptStr)
+import fnmatch
+
+from nemoa.base import check
+from nemoa.types import RecDict, DictOfRecDicts, StrTupleDict, OptStr
 
 def merge(*args: dict, mode: int = 1) -> dict:
     """Recursive right merge dictionaries.
@@ -32,40 +34,45 @@ def merge(*args: dict, mode: int = 1) -> dict:
         {'a': 1, 'b': 2, 'c': 3}
 
     """
-    # check for trivial cases
+    # Check for trivial cases
     if not args:
         return {}
     if len(args) == 1:
         return args[0]
 
-    # check for chain mapping creation mode
+    # Check for chain mapping creation mode
     if mode == 2:
         import collections
         return dict(collections.ChainMap(*args))
 
-    # recursively right merge
+    # Recursively right merge
     if len(args) == 2:
         d1, d2 = args[0], args[1]
     else:
         d1, d2 = args[0], merge(*args[1:], mode=mode)
         mode = 0
 
-    # check types of arguments
+    # Check Type of first and second argument
+    check.argtype(1, d1, dict)
+    check.argtype(2, d1, dict)
+
     if not isinstance(d1, dict):
         raise TypeError(
-            "first argument requires to be of type 'dict'"
-            f", not '{type(d1)}'")
+            "first argument is required to be of type dict"
+            f", not '{type(d1).__name__}'")
+
+    # Check Type of second argument
     if not isinstance(d2, dict):
         raise TypeError(
             "second argument requires to be of type 'dict'"
-            f", not '{type(d2)}'")
+            f", not '{type(d2).__name__}'")
 
-    # create new dictionary
+    # Create new dictionary
     if mode == 1:
         import copy
         d2 = copy.deepcopy(d2)
 
-    # right merge couple of dictionaries
+    # Right merge couple of dictionaries
     for k1, v1 in d1.items():
         if k1 not in d2:
             d2[k1] = v1
@@ -92,27 +99,28 @@ def select(d: dict, pattern: str) -> dict:
         {'a1': 1, 'a2': 2}
 
     """
-    # Check arguments
+    # Check Type of 'd'
     if not isinstance(d, dict):
         raise TypeError(
-            "first argument is required to be "
-            f"of type dict, not '{type(d)}'")
+            "first argument 'd' is required to be of type dict"
+            f", not '{type(d).__name__}'")
+
+    # Check Type of 'pattern'
     if not isinstance(pattern, str):
         raise TypeError(
-            "second argument is required to be "
-            "of type string, not '{type(s)}'")
+            "second argument 'pattern' is required to be of type string"
+            f", not '{type(pattern).__name__}'")
 
-    import fnmatch
     valid = fnmatch.filter(list(d.keys()), pattern)
 
     return {k: d[k] for k in valid}
 
-def crop(d: dict, s: str, trim: bool = True) -> dict:
+def crop(d: dict, prefix: str, trim: bool = True) -> dict:
     """Crop dictionary to keys, that start with an initial string.
 
     Args:
         d: Dictionary that encodes sections by the prefix of string keys
-        s: Section prefix as string
+        prefix: Key prefix as string
         trim: Determines if the section prefix is removed from the keys of the
             returned dictionary. Default: True
 
@@ -126,26 +134,28 @@ def crop(d: dict, s: str, trim: bool = True) -> dict:
         {'1': 1, '2': 2}
 
     """
-    # Check arguments
+    # Check Type of 'd'
     if not isinstance(d, dict):
         raise TypeError(
-            "first argument is required to be "
-            f"of type dict, not '{type(d)}'")
-    if not isinstance(s, str):
+            "first argument 'd' is required to be of type dict"
+            f", not '{type(d).__name__}'")
+
+    # Check type of 'prefix'
+    if not isinstance(prefix, str):
         raise TypeError(
-            "second argument is required to be "
-            "of type string, not '{type(s)}'")
+            "second argument 'prefix' is required to be of type string"
+            f", not '{type(prefix).__name__}'")
 
-    # Create new dictionary
-    i = len(s)
+    # Create new dictionary with section
+    i = len(prefix)
     if trim:
-        dc = {k[i:]: v for k, v in d.items() \
-            if isinstance(k, str) and k[:i] == s}
+        section = {k[i:]: v for k, v in d.items() \
+            if isinstance(k, str) and k[:i] == prefix}
     else:
-        dc = {k: v for k, v in d.items() \
-            if isinstance(k, str) and k[:i] == s}
+        section = {k: v for k, v in d.items() \
+            if isinstance(k, str) and k[:i] == prefix}
 
-    return dc
+    return section
 
 def flatten(d: DictOfRecDicts, group: OptStr = None) -> RecDict:
     """Flatten grouped record dictionary by given group name.

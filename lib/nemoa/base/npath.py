@@ -22,6 +22,8 @@ __docformat__ = 'google'
 
 import fnmatch
 import os
+import shutil
+import string
 import sys
 
 from pathlib import Path, PurePath
@@ -30,23 +32,7 @@ from nemoa.base import env
 from nemoa.types import (
     Any, Iterable, IterAny, NestPath, OptStrDict, PathLikeList)
 
-def cwd() -> str:
-    """Path of current working directory.
-
-    Returns:
-        String containing path of current working directory.
-
-    """
-    return str(Path.cwd())
-
-def home() -> str:
-    """Path of current users home directory.
-
-    Returns:
-        String containing path of home directory.
-
-    """
-    return str(Path.home())
+_RECURSION_LIMIT = sys.getrecursionlimit()
 
 def clear(fname: str) -> str:
     r"""Clear filename from invalid characters.
@@ -63,8 +49,6 @@ def clear(fname: str) -> str:
         '3E5.e'
 
     """
-    import string
-
     valid = "-_.() " + string.ascii_letters + string.digits
     fname = ''.join(c for c in fname if c in valid).replace(' ', '_')
 
@@ -137,8 +121,8 @@ def join(*args: NestPath) -> Path:
     return path
 
 def expand(
-        *args: NestPath, udict: OptStrDict = None, expapp: bool = True,
-        expenv: bool = True) -> Path:
+        *args: NestPath, udict: OptStrDict = None,
+        envdirs: bool = True) -> Path:
     r"""Expand path variables.
 
     Args:
@@ -147,13 +131,9 @@ def expand(
         udict: dictionary for user variables.
             Thereby the keys in the dictionary are encapsulated
             by the symbol '%'. The user variables may also include references.
-        expapp: determines if application specific environmental
-            directories are expanded. For a full list of valid application
-            variables see
-            'nemoa.base.env.get_dir'. Default is True
-        expenv: determines if environmental path variables are expanded.
-            For a full list of valid environmental path variables see
-            'nemoa.base.npath'. Default is True
+        envdirs: Boolen value which determines if environmental path variables
+            are expanded. For a full list of valid environmental path variables
+            see 'nemoa.base.env.get_dirs'. Default is True
 
     Returns:
         String containing valid path syntax.
@@ -166,39 +146,35 @@ def expand(
     path = join(*args)
     udict = udict or {}
 
-    # Create dictionary with variables
-    d = {}
+    # Create mapping with path variables
+    pvars = {}
+    if envdirs:
+        for key, val in env.get_dirs().items():
+            pvars[key] = str(val)
     if udict:
         for key, val in udict.items():
-            d[key] = str(join(val))
-    if expapp:
-        for key, val in env.get_dirs().items():
-            d[key] = str(val)
-    if expenv:
-        d['cwd'] = cwd()
-        d['home'] = home()
+            pvars[key] = str(join(val))
 
-    # Itereratively expand variables in user dictionary
+    # Itereratively expand directories
     update = True
     i = 0
-    limit = sys.getrecursionlimit()
     while update:
         update = False
-        for key, val in list(d.items()):
+        for key, val in pvars.items():
             if '%' + key + '%' not in str(path):
                 continue
             try:
                 path = Path(str(path).replace('%' + key + '%', val))
             except TypeError:
-                del d[key]
+                del pvars[key]
             update = True
         i += 1
-        if i > limit:
+        if i > _RECURSION_LIMIT:
             raise RecursionError('cyclic dependency in variables detected')
         path = Path(path)
 
-    # Expand environmental paths
-    if expenv:
+    # Expand unix style home path '~'
+    if envdirs:
         path = path.expanduser()
 
     return path
@@ -315,8 +291,8 @@ def is_file(path: NestPath) -> bool:
     """
     return expand(path).is_file()
 
-def cp(source: NestPath, target: NestPath) -> bool:
-    """Copy sub directories from given source to destination directory.
+def copytree(source: NestPath, target: NestPath) -> None:
+    """Copy directory structure from given source to target directory.
 
     Args:
         source: Path like structure, which comprises the path of a source folder
@@ -327,20 +303,16 @@ def cp(source: NestPath, target: NestPath) -> bool:
         True if the operation was successful.
 
     """
-    import shutil
-
-    sdir, ddir = expand(source), expand(target)
-
-    for s in sdir.glob('*'):
-        t = Path(ddir, basename(s))
-        if t.exists():
-            shutil.rmtree(str(t))
-        try:
-            shutil.copytree(str(s), str(t))
-        except Exception as err:
-            raise OSError("could not copy directory") from err
-
-    return True
+    # Recursive copy function, that allows existing files
+    def copy(source: Path, target: Path) -> None:
+        if source.is_dir():
+            if not target.is_dir():
+                target.mkdir()
+            for each in source.glob('*'):
+                copy(each, target / each.name)
+        else:
+            shutil.copy(source, target)
+    copy(expand(source), expand(target))
 
 def mkdir(*args: NestPath) -> bool:
     """Create directory.
@@ -373,8 +345,6 @@ def rmdir(*args: NestPath) -> bool:
         True if the directory could be deleted
 
     """
-    import shutil
-
     path = expand(*args)
 
     if not path.is_dir():

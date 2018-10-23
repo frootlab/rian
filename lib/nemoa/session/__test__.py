@@ -6,109 +6,109 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-from nemoa.base import test
+from nemoa.test import GenericTestCase
 
-class TestCase(test.GenericTestCase):
+class TestCase(GenericTestCase):
 
     def test_session_about(self):
 
-        with self.subTest(cmd = "nemoa.about()"):
+        with self.subTest(cmd="nemoa.about()"):
             test = isinstance(nemoa.about(), str)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.about('about')"):
+        with self.subTest(cmd="nemoa.about('about')"):
             test = isinstance(nemoa.about('about'), str)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.about('version')"):
+        with self.subTest(cmd="nemoa.about('version')"):
             test = isinstance(nemoa.about('version'), str)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.about('status')"):
+        with self.subTest(cmd="nemoa.about('status')"):
             test = isinstance(nemoa.about('status'), str)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.about('description')"):
+        with self.subTest(cmd="nemoa.about('description')"):
             test = isinstance(nemoa.about('description'), str)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.about('url')"):
+        with self.subTest(cmd="nemoa.about('url')"):
             test = isinstance(nemoa.about('url'), str)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.about('license')"):
+        with self.subTest(cmd="nemoa.about('license')"):
             test = isinstance(nemoa.about('license'), str)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.about('copyright')"):
+        with self.subTest(cmd="nemoa.about('copyright')"):
             test = isinstance(nemoa.about('copyright'), str)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.about('author')"):
+        with self.subTest(cmd="nemoa.about('author')"):
             test = isinstance(nemoa.about('author'), str)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.about('email')"):
+        with self.subTest(cmd="nemoa.about('email')"):
             test = isinstance(nemoa.about('email'), str)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.about('maintainer')"):
+        with self.subTest(cmd="nemoa.about('maintainer')"):
             test = isinstance(nemoa.about('maintainer'), str)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.about('credits')"):
+        with self.subTest(cmd="nemoa.about('credits')"):
             test = isinstance(nemoa.about('credits'), list)
             self.assertTrue(test)
 
     def test_session_get(self):
-        with self.subTest(cmd = "nemoa.get('base')"):
+        with self.subTest(cmd="nemoa.get('base')"):
             test = isinstance(nemoa.get('base'), str)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.get('workspace')"):
+        with self.subTest(cmd="nemoa.get('workspace')"):
             test = isinstance(nemoa.get('workspace'), str)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.get('default')"):
+        with self.subTest(cmd="nemoa.get('default')"):
             test = isinstance(nemoa.get('default'), dict)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.get('default', 'filetype')"):
+        with self.subTest(cmd="nemoa.get('default', 'filetype')"):
             test = isinstance(nemoa.get('default', 'filetype'), dict)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.get('default', 'filetype', 'dataset')"):
+        with self.subTest(cmd="nemoa.get('default', 'filetype', 'dataset')"):
             filetype = nemoa.get('default', 'filetype', 'dataset')
             test = isinstance(filetype, str)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.get('default', 'filetype', 'network')"):
+        with self.subTest(cmd="nemoa.get('default', 'filetype', 'network')"):
             filetype = nemoa.get('default', 'filetype', 'network')
             test = isinstance(filetype, str)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.get('default', 'filetype', 'system')"):
+        with self.subTest(cmd="nemoa.get('default', 'filetype', 'system')"):
             filetype = nemoa.get('default', 'filetype', 'system')
             test = isinstance(filetype, str)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.get('default', 'filetype', 'model')"):
+        with self.subTest(cmd="nemoa.get('default', 'filetype', 'model')"):
             filetype = nemoa.get('default', 'filetype', 'model')
             test = isinstance(filetype, str)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.get('default', 'filetype', 'script')"):
+        with self.subTest(cmd="nemoa.get('default', 'filetype', 'script')"):
             filetype = nemoa.get('default', 'filetype', 'script')
             test = isinstance(filetype, str)
             self.assertTrue(test)
 
     def test_session_list(self):
 
-        with self.subTest(cmd = "nemoa.list('bases')"):
+        with self.subTest(cmd="nemoa.list('bases')"):
             test = 'user' in nemoa.list('bases')
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.list('workspaces')"):
+        with self.subTest(cmd="nemoa.list('workspaces')"):
             worktree = nemoa.list('workspaces')
             test = isinstance(worktree, dict) \
                 and 'user' in worktree \
@@ -116,18 +116,18 @@ class TestCase(test.GenericTestCase):
                 and 'cwd' in worktree
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.list('workspaces', base = 'site')"):
-            workspaces = nemoa.list('workspaces', base = 'site')
+        with self.subTest(cmd="nemoa.list('workspaces', base = 'site')"):
+            workspaces = nemoa.list('workspaces', base='site')
             test = isinstance(workspaces, list) \
                 and 'testsuite' in workspaces
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.list('workspaces', base = 'user')"):
-            workspaces = nemoa.list('workspaces', base = 'user')
+        with self.subTest(cmd="nemoa.list('workspaces', base = 'user')"):
+            workspaces = nemoa.list('workspaces', base='user')
             test = isinstance(workspaces, list)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.list('datasets')"):
+        with self.subTest(cmd="nemoa.list('datasets')"):
             datasets = nemoa.list('datasets')
             test = isinstance(datasets, list) \
                 and 'linear' in datasets \
@@ -135,14 +135,14 @@ class TestCase(test.GenericTestCase):
                 and 'sinus' in datasets
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.list('networks')"):
+        with self.subTest(cmd="nemoa.list('networks')"):
             networks = nemoa.list('networks')
             test = isinstance(networks, list) \
                 and 'deep' in networks \
                 and 'shallow' in networks
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.list('systems')"):
+        with self.subTest(cmd="nemoa.list('systems')"):
             systems = nemoa.list('systems')
             test = isinstance(systems, list) \
                 and 'ann' in systems \
@@ -151,12 +151,12 @@ class TestCase(test.GenericTestCase):
                 and 'rbm' in systems
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.list('models')"):
+        with self.subTest(cmd="nemoa.list('models')"):
             models = nemoa.list('models')
             test = isinstance(models, list) and 'test' in models
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.list('scripts')"):
+        with self.subTest(cmd="nemoa.list('scripts')"):
             scripts = nemoa.list('scripts')
             test = isinstance(scripts, list)
             self.assertTrue(test)

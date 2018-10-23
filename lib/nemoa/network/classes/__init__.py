@@ -16,8 +16,8 @@ def new(*args, **kwds):
     import importlib
 
     type = kwds['config']['type']
-    module_name = 'nemoa.network.classes.' + type.split('.')[0]
-    class_name = type.split('.')[1]
+    module_name = 'nemoa.network.classes.' + type.split('.', 1)[0]
+    class_name = type.rsplit('.', 1)[-1]
 
     try:
         module = importlib.import_module(module_name)

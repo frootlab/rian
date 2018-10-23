@@ -13,11 +13,11 @@ __docformat__ = 'google'
 
 import inspect
 
-from nemoa.base import ndict
+from nemoa.base import ndict, dig
 from nemoa.types import (
     Any, RecDict, DictOfRecDicts, NestRecDict, FuncWrapper, OptStr)
 
-def hasbase(obj: object, base: str) -> bool:
+def has_base(obj: object, base: str) -> bool:
     """Return true if the class instance has the given base.
 
     Args:
@@ -28,12 +28,7 @@ def hasbase(obj: object, base: str) -> bool:
         True if the given object has the named base as base
 
     """
-    if not hasattr(obj, '__class__'):
-        raise TypeError(
-            "argument 'obj' requires to be a class instance"
-            f", not '{type(obj).__name__}'")
-
-    return base in [o.__name__ for o in obj.__class__.__mro__]
+    return dig.has_base(obj, base)
 
 def methods(
         obj: object, pattern: OptStr = None, groupby: OptStr = None,
@@ -88,7 +83,7 @@ def methods(
         attr['reference'] = v
         attr['about'] = attr.get('about', about)
 
-        # change dictionary key, if argument 'key' is given
+        # Change dictionary key, if argument 'key' is given
         if key:
             k = str(attr[key])
             if k in mdict:

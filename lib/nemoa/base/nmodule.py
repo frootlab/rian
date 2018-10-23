@@ -11,15 +11,21 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+__all__ = [
+    'get_curname', 'get_caller_ref', 'get_caller', 'get_root', 'get_parent',
+    'get_attr', 'get_submodule', 'get_submodules', 'get_instance',
+    'get_functions', 'crop_functions', 'search']
+
 import importlib
 import inspect
 import pkgutil
 
-from nemoa.base import ndict, nobject
+from nemoa.base import check, ndict, dig
 from nemoa.types import (
-    Any, Function, Module, OptStr, OptModule, OptStrDictOfTestFuncs, StrList)
+    Any, ClassInfo, Function, Module, OptStr, OptModule, OptStrDictOfTestFuncs,
+    StrList)
 
-def curname(frame: int = 0) -> str:
+def get_curname(frame: int = 0) -> str:
     """Get name of module, which calls this function.
 
     Args:
@@ -32,10 +38,7 @@ def curname(frame: int = 0) -> str:
 
     """
     # Check type of 'frame'
-    if not isinstance(frame, int):
-        raise TypeError(
-            "'frame' is required to be of type 'int'"
-            f", not '{type(frame).__name__}'")
+    check.argtype('frame', frame, int)
 
     # Check value of 'frame'
     if frame > 0:
@@ -54,7 +57,11 @@ def curname(frame: int = 0) -> str:
 
     return mname
 
-def caller(frame: int = 0) -> str:
+def get_caller_ref() -> Module:
+    """Get reference to callers module."""
+    return inspect.getmodule(inspect.stack()[2][0])
+
+def get_caller(frame: int = 0) -> str:
     """Get name of the callable, which calls this function.
 
     Args:
@@ -67,10 +74,7 @@ def caller(frame: int = 0) -> str:
 
     """
     # Check type of 'frame'
-    if not isinstance(frame, int):
-        raise TypeError(
-            "'frame' is required to be of type 'int'"
-            f", not '{type(frame).__name__}'")
+    check.argtype('frame', frame, int)
 
     # Check value of 'frame'
     if frame > 0:
@@ -83,11 +87,11 @@ def caller(frame: int = 0) -> str:
     fbase = stack[3]
     return '.'.join([mname, fbase])
 
-def root(module: OptModule = None) -> Module:
+def get_root(ref: OptModule = None) -> Module:
     """Get top level module.
 
     Args:
-        module: Module reference. By default a reference to the module of the
+        ref: Module reference. By default a reference to the module of the
             caller is used.
 
     Returns:
@@ -95,22 +99,79 @@ def root(module: OptModule = None) -> Module:
         the current callers module.
 
     """
-    # Set default value of 'module' to current module of caller
-    module = module or inst(curname(-1))
+    # Set default value of 'ref' to module of caller
+    ref = ref or get_caller_ref()
 
-    # Check type of 'module'
-    if not isinstance(module, Module):
-        raise TypeError(
-            "'module' is required to be of type 'ModuleType' or None"
-            f", not '{type(module).__name__}'")
+    # Get name of the top level module
+    rootname = ref.__name__.split('.', 1)[0]
 
-    # Get name of top level module
-    name = module.__name__.split('.')[0]
+    # Get reference to the top level module
+    return importlib.import_module(rootname)
 
-    # Get reference to top level module
+def get_parent(ref: OptModule = None) -> Module:
+    """Get parent module.
+
+    Args:
+        ref: Module reference. By default a reference to the module of the
+            caller is used.
+
+    Returns:
+        Module reference to the parent module of a given module reference or
+        the current callers module.
+
+    """
+    # Set default value of 'ref' to module of caller
+    ref = ref or get_caller_ref()
+
+    # Get name of the parent module
+    name = ref.__name__.rsplit('.', 1)[0]
+
+    # Get reference to the parent module
     return importlib.import_module(name)
 
-def submodules(module: OptModule = None, recursive: bool = False) -> StrList:
+def get_attr(name: str, default: Any = None, ref: OptModule = None) -> Any:
+    """Get attribute of a module.
+
+    Args:
+        name: Name of attribute.
+        default: Default value, which is returned, if the attribute does not
+            exist.
+        ref: Optional module reference. By default the current callers module
+            is used.
+
+    Returns:
+        Value of attribute.
+
+    """
+    # Set default value of 'ref' to module of caller
+    ref = ref or get_caller_ref()
+
+    return getattr(ref, name, default)
+
+def get_submodule(name: str, ref: OptModule = None) -> OptModule:
+    """Get instance from the name of a submodule of the current module.
+
+    Args:
+        name: Name of submodule of given module.
+        ref: Optional module reference. By default the current callers module
+            is used.
+
+    Returns:
+        Module reference of submodule or None, if the current module does not
+        contain the given module name.
+
+    """
+    # Check type of 'name'
+    check.argtype('name', name, str)
+
+    # Set default value of 'ref' to module of caller
+    ref = ref or get_caller_ref()
+
+    # Get instance of submodule
+    return get_instance(ref.__name__ + '.' + name)
+
+def get_submodules(
+        ref: OptModule = None, recursive: bool = False) -> StrList:
     """Get list with submodule names.
 
     Args:
@@ -123,57 +184,29 @@ def submodules(module: OptModule = None, recursive: bool = False) -> StrList:
         List with submodule names.
 
     """
-    # Set default value of 'module' to current module of caller
-    module = module or inst(curname(-1))
+    # Set default value of 'ref' to module of caller
+    ref = ref or get_caller_ref()
 
-    # Check type of 'module'
-    if not isinstance(module, Module):
-        raise TypeError(
-            "'module' is required to be of type 'ModuleType' or None"
-            f", not '{type(module).__name__}'")
-
-    # Check if given module is not a package:
-    # Since only packages contain submodules, any module without an path
-    # attribute does not contain any submodules and an empy list is returned.
+    # Check if given module is a package by the existence of a path attribute.
+    # Otherwise the module does not contain any submodules and an empty list is
+    # returned.
     subs: StrList = []
-    if not hasattr(module, '__path__'):
+    if not hasattr(ref, '__path__'):
         return subs
 
-    # Iterate submodules within package by using 'pkgutil'
-    prefix = getattr(module, '__name__') + '.'
-    path = getattr(module, '__path__')
+    # Iterate submodules within package by using pkgutil
+    prefix = ref.__name__ + '.'
+    path = getattr(ref, '__path__')
     for finder, name, ispkg in pkgutil.iter_modules(path):
-        mname = prefix + name
-        subs.append(mname)
+        fullname = prefix + name
+        subs.append(fullname)
         if ispkg and recursive:
-            subs += submodules(inst(mname), recursive=True)
+            sref = get_instance(fullname)
+            subs += get_submodules(sref, recursive=True)
 
     return subs
 
-def get_submodule(name: str) -> OptModule:
-    """Get instance from the name of a submodule of the current module.
-
-    Args:
-        name: Name of submodule of current module.
-
-    Returns:
-        Module reference of submodule or None, if the current module does not
-        contain the given module name.
-
-    """
-    # Check type of 'name'
-    if not isinstance(name, str):
-        raise TypeError(
-            "first argument 'name' is required to be of type 'str'"
-            f", not '{type(name).__name__}'")
-
-    # Get fully qualified module name
-    prefix = curname(-1) + '.'
-    mname = prefix + name
-
-    return inst(mname)
-
-def inst(name: str) -> OptModule:
+def get_instance(name: str) -> OptModule:
     """Get reference to module instance from a fully qualified module name.
 
     Args:
@@ -185,10 +218,7 @@ def inst(name: str) -> OptModule:
 
     """
     # Check type of 'name'
-    if not isinstance(name, str):
-        raise TypeError(
-            "first argument 'name' is required to be of type 'str'"
-            f", not '{type(name).__name__}'")
+    check.argtype('name', name, str)
 
     # Try to import module using importlib
     module: OptModule = None
@@ -200,17 +230,17 @@ def inst(name: str) -> OptModule:
     return module
 
 def get_functions(
-        module: OptModule = None, pattern: OptStr = None,
+        pattern: OptStr = None, ref: OptModule = None,
         rules: OptStrDictOfTestFuncs = None, **kwds: Any) -> dict:
     """Get dictionary with functions and their attributes.
 
     Args:
-        module: Module reference in which functions are searched. By default the
-            module of the caller function is used.
         pattern: Only functions which names satisfy the wildcard pattern given
             by 'pattern' are returned. The format of the wildcard pattern is
             described in the standard library module `fnmatch`_. If pattern is
             None, then all functions are returned. Default: None
+        ref: Module reference in which functions are searched. By default the
+            module of the caller function is used.
         rules: Dictionary with individual filter rules, used by the attribute
             filter. The form is {<attribute>: <lambda>, ...}, where: <attribute>
             is a string with the attribute name and <lambda> is a boolean valued
@@ -231,59 +261,52 @@ def get_functions(
         dictinaries as values.
 
     """
-    # Set default value of 'module' to current module of caller
-    module = module or inst(curname(-1))
+    # Set default value of 'ref' to module of caller
+    ref = ref or get_caller_ref()
 
-    # Check type of 'module'
-    if not isinstance(module, Module):
-        raise TypeError(
-            "'module' is required to be of type 'ModuleType' or None"
-            f", not '{type(module).__name__}'")
+    return dig.get_members(
+        ref, classinfo=Function, pattern=pattern, rules=rules, **kwds)
 
-    return nobject.members(
-        module, base=Function, pattern=pattern, rules=rules, **kwds)
-
-def list_functions_by_prefix(
-        module: OptModule = None, prefix: str = '') -> list:
-    """Get list of functions by prefix.
+def crop_functions(prefix: str, ref: OptModule = None) -> list:
+    """Get list of cropped function names that satisfy a given prefix.
 
     Args:
-        module: Module reference in which functions are searched. By default the
-            module of the caller function is used.
         prefix: String
+        ref: Module reference in which functions are searched. By default the
+            module of the caller function is used.
 
     Returns:
         List of functions, that match a given prefix.
 
     """
-    # Set default value of 'module' to current module of caller
-    module = module or inst(curname(-1))
+    # Set default value of 'ref' to module of caller
+    ref = ref or get_caller_ref()
 
-    # Get function dictionary
-    pattern = prefix + '*'
-    funcs = get_functions(module=module, pattern=pattern)
+    # Get functions dictionary
+    funcs = get_functions(pattern=(prefix + '*'), ref=ref)
 
-    # Create sorted list of norm names
+    # Create list of cropped function names
     i = len(prefix)
-    return sorted([v['name'][i:] for v in funcs.values()])
+    return [each['name'][i:] for each in funcs.values()]
 
 def search(
-        module: OptModule = None, pattern: OptStr = None, base: type = Function,
-        key: OptStr = None, val: OptStr = None, groupby: OptStr = None,
-        recursive: bool = True, rules: OptStrDictOfTestFuncs = None,
-        **kwds: Any) -> dict:
+        pattern: OptStr = None, ref: OptModule = None,
+        classinfo: ClassInfo = Function, key: OptStr = None, val: OptStr = None,
+        groupby: OptStr = None, recursive: bool = True,
+        rules: OptStrDictOfTestFuncs = None, **kwds: Any) -> dict:
     """Recursively search for objects within submodules.
 
     Args:
-        module: Module reference in which objects are searched. If 'module' is
-            None, then the module of the caller function is used. Default: None
         pattern: Only objects which names satisfy the wildcard pattern given
             by 'pattern' are returned. The format of the wildcard pattern is
             described in the standard library module `fnmatch`_. If pattern is
             None, then all objects are returned. Default: None
-        base: Class info given as a class, a type or a tuple containing classes,
-            types or other tuples. Only members, which are ether an instance or
-            a subclass of base are returned. By default all types are allowed.
+        ref: Module reference in which objects are searched. If 'module' is
+            None, then the module of the caller function is used. Default: None
+        classinfo: Classinfo given as a class, a type or a tuple containing
+            classes, types or other tuples. Only members, which are ether an
+            instance or a subclass of classinfo are returned. By default all
+            types are allowed.
         key: Name of function attribute which is used as the key for the
             returned dictionary. If 'key' is None, then the fully qualified
             function names are used as keys. Default: None
@@ -315,30 +338,26 @@ def search(
         'key' and 'val'.
 
     """
-    # Set default value of 'module' to current module of caller
-    module = module or inst(curname(-1))
+    # Check type of 'pattern'
+    check.argtype('pattern', pattern, (str, type(None)))
 
-    # Check type of 'module'
-    if not isinstance(module, Module):
-        raise TypeError(
-            "'module' is required to be of type 'ModuleType' or None"
-            f", not '{type(module).__name__}'")
+    # Set default value of 'ref' to module of caller
+    ref = ref or get_caller_ref()
 
     # Get list with submodules
-    mnames = [module.__name__] + submodules(module, recursive=recursive)
+    mnames = [ref.__name__] + get_submodules(ref, recursive=recursive)
 
-    # Create dictionary with function attributes
+    # Create dictionary with member attributes
     fd = {}
     rules = rules or {}
     for mname in mnames:
-        m = inst(mname)
-        if m is None:
+        minst = get_instance(mname)
+        if minst is None:
             continue
-        #d = get_functions(m, pattern=pattern, rules=rules, **kwds)
-        d = nobject.members(
-            m, base=base, pattern=pattern, rules=rules, **kwds)
+        d = dig.get_members(
+            minst, classinfo=classinfo, pattern=pattern, rules=rules, **kwds)
 
-        # Ignore functions if any required attribute is not available
+        # Ignore members if any required attribute is not available
         for name, attr in d.items():
             if key and not key in attr:
                 continue

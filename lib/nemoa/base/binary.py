@@ -18,6 +18,9 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+__all__ = ['as_bytes', 'compress', 'decompress', 'encode', 'decode', 'pack',
+           'unpack']
+
 import base64
 import pickle
 import zlib
@@ -30,9 +33,10 @@ def as_bytes(data: BytesLikeOrStr, encoding: OptStr = None) -> bytes:
 
     Args:
         data: Binary data given as `bytes-like object`_ or string
+
     """
     if isinstance(data, str):
-        encoding = encoding or env.encoding()
+        encoding = encoding or env.get_encoding()
         return bytes(data, encoding=encoding)
     return bytes(data)
 
@@ -61,6 +65,7 @@ def decompress(data: BytesLikeOrStr) -> bytes:
 
     Returns:
          Binary data as bytes.
+
     """
     try:
         data = zlib.decompress(as_bytes(data))

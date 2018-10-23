@@ -16,8 +16,8 @@ except ImportError as err:
 from nemoa.base import nfunc, nmodule
 from nemoa.types import Any, NpAxis, NpArray, NpArrayLike, StrList
 
-NORM_PREFIX = 'norm_'
-DIST_PREFIX = 'dist_'
+_NORM_PREFIX = 'norm_'
+_DIST_PREFIX = 'dist_'
 
 #
 # Vector Norms
@@ -30,7 +30,7 @@ def norms() -> StrList:
         Sorted list of all vector norms, that are implemented within the module.
 
     """
-    return nmodule.list_functions_by_prefix(prefix=NORM_PREFIX)
+    return nmodule.crop_functions(prefix=_NORM_PREFIX)
 
 def length(x: NpArrayLike, norm: str = 'euclid', **kwds: Any) -> NpArray:
     """Calculate generalized length of vector by given norm.
@@ -67,8 +67,8 @@ def length(x: NpArrayLike, norm: str = 'euclid', **kwds: Any) -> NpArray:
             "First argument 'x' is required to be array-like") from err
 
     # Get norm function
-    fname = NORM_PREFIX + norm.lower()
-    module = nmodule.inst(nmodule.curname())
+    fname = _NORM_PREFIX + norm.lower()
+    module = nmodule.get_instance(nmodule.get_curname())
     try:
         func = getattr(module, fname)
     except AttributeError as err:
@@ -76,7 +76,7 @@ def length(x: NpArrayLike, norm: str = 'euclid', **kwds: Any) -> NpArray:
             f"argument 'norm' has an invalid value '{str(norm)}'")
 
     # Evaluate norm function
-    return func(x, **nfunc.kwds(func, default=kwds))
+    return func(x, **nfunc.get_kwds(func, default=kwds))
 
 def norm_p(x: NpArray, p: float = 2., axis: NpAxis = 0) -> NpArray:
     """Calculate p-norm of an array along given axis.
@@ -352,7 +352,7 @@ def metrices() -> StrList:
         metrices, that are implemented within the module.
 
     """
-    return nmodule.list_functions_by_prefix(prefix=DIST_PREFIX)
+    return nmodule.crop_functions(prefix=_DIST_PREFIX)
 
 def distance(
         x: NpArrayLike, y: NpArrayLike, metric: str = 'euclid',
@@ -412,8 +412,8 @@ def distance(
             "arrays 'x' and 'y' can not be broadcasted together")
 
     # Get distance function
-    fname = DIST_PREFIX + metric.lower()
-    module = nmodule.inst(nmodule.curname())
+    fname = _DIST_PREFIX + metric.lower()
+    module = nmodule.get_instance(nmodule.get_curname())
     try:
         func = getattr(module, fname)
     except AttributeError as err:
@@ -421,7 +421,7 @@ def distance(
             f"argument 'metric' has an invalid value '{str(metric)}'")
 
     # Evaluate distance function
-    return func(x, y, **nfunc.kwds(func, default=kwds))
+    return func(x, y, **nfunc.get_kwds(func, default=kwds))
 
 def dist_minkowski(
         x: NpArray, y: NpArray, p: float = 2., axis: NpAxis = 0) -> NpArray:

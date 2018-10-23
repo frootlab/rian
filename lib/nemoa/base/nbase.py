@@ -323,7 +323,7 @@ class ObjectIP:
 
         from nemoa import session
 
-        mname = self.__module__.split('.')[-1]
+        mname = self.__module__.rsplit('.', 1)[-1]
         dname = session.path(mname + 's')
         if not dname:
             return None
@@ -360,7 +360,7 @@ class ObjectIP:
             String containing instance type identifier.
 
         """
-        mname = self.__module__.split('.')[-1]
+        mname = self.__module__.rsplit('.', 1)[-1]
         cname = self.__class__.__name__
 
         return '.'.join([mname, cname])

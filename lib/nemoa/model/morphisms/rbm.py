@@ -5,8 +5,11 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.model.morphisms.ann
 import numpy
+
+import nemoa.model.morphisms.ann
+
+from nemoa.core import ui
 from nemoa.math import algo
 
 class RBM(nemoa.model.morphisms.ann.ANN):
@@ -84,16 +87,16 @@ class RBM(nemoa.model.morphisms.ann.ANN):
         config = self._config
 
         # set enable flags for restriction extensions
-        config['con_klpt_enable'] =  False
+        config['con_klpt_enable'] = False
         if config['con_module']:
             found = False
             if config['con_module'] == 'klpt':
-                config['con_klpt_enable'] =  True
+                config['con_klpt_enable'] = True
                 about = """Kullback-Leibler penalty (expectation
                     value %.2f)""" % config['con_klpt_expect']
                 found = True
             if found:
-                nemoa.log('using restriction: %s' % about)
+                ui.info('using restriction: %s' % about)
 
         # set enable flags for denoising extensions
         if config['denoising']:
@@ -105,7 +108,7 @@ class RBM(nemoa.model.morphisms.ann.ANN):
                     config['noise_factor'])
                 found = True
             if found:
-                nemoa.log('using denoising: %s' % (about))
+                ui.info('using denoising: %s' % (about))
 
         # set enable flags for acceleration extensions
         config['acc_vmra_enable'] = False
@@ -117,24 +120,24 @@ class RBM(nemoa.model.morphisms.ann.ANN):
                     length %i)""" % config['acc_vmra_length']
                 found = True
             if found:
-                nemoa.log('using acceleration: %s' % about)
+                ui.info('using acceleration: %s' % about)
 
         # set enable flags for globalization extensions
-        config['gen_rasa_enable'] =  False
+        config['gen_rasa_enable'] = False
         if config['gen_module']:
             found = False
             if config['gen_module'].lower() == 'rasa':
-                config['gen_rasa_enable'] =  True
+                config['gen_rasa_enable'] = True
                 about = """rate adaptive annealing (temperature %.1f,
                     annealing %.1f)""" % (
                     config['gen_rasa_init_temperature'],
                     config['gen_rasa_annealing_factor'])
                 found = True
             if found:
-                nemoa.log('using generalization: %s' % (about))
+                ui.info('using generalization: %s' % (about))
 
         # init rasa
-        self.write('sa', init_rate = config['update_rate'])
+        self.write('sa', init_rate=config['update_rate'])
 
         while self.update():
             # get training data (sample from stratified minibatches)

@@ -18,7 +18,7 @@ __docformat__ = 'google'
 
 from pathlib import Path
 
-from nemoa.classes import Attr, ReadOnlyAttr, ReadWriteAttr
+from nemoa.classes import ReadOnlyAttr, ReadWriteAttr
 from nemoa.base import npath
 from nemoa.core import log
 from nemoa.fileio import inifile, wsfile
@@ -60,19 +60,19 @@ class Session:
     _logger: log.Logger
 
     #
-    # Public Attributes
+    # Public Instance Properties
     #
 
-    paths: Attr = ReadWriteAttr(list, key='_paths')
+    paths: property = ReadWriteAttr(list, key='_paths')
     paths.__doc__ = """Search paths for workspaces."""
 
-    path: Attr = ReadOnlyAttr(Path, getter='_get_path')
+    path: property = ReadOnlyAttr(Path, getter='_get_path')
     path.__doc__ = """Filepath of the current workspace."""
 
-    files: Attr = ReadOnlyAttr(list, getter='_get_files')
+    files: property = ReadOnlyAttr(list, getter='_get_files')
     files.__doc__ = """Files within the current workspace."""
 
-    folders: Attr = ReadOnlyAttr(list, getter='_get_folders')
+    folders: property = ReadOnlyAttr(list, getter='_get_folders')
     folders.__doc__ = """Folders within the current workspace."""
 
     #
@@ -157,9 +157,9 @@ class Session:
             self._file.close()
 
     def open(
-        self, filepath: PathLike, workspace: OptPathLike = None,
-        basedir: OptPathLike = None, pwd: OptBytes = None, mode: str = '',
-        encoding: OptStr = None, is_dir: bool = False) -> CManFileLike:
+            self, filepath: PathLike, workspace: OptPathLike = None,
+            basedir: OptPathLike = None, pwd: OptBytes = None, mode: str = '',
+            encoding: OptStr = None, is_dir: bool = False) -> CManFileLike:
         """Open file within current or given workspace.
 
         Args:

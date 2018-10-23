@@ -23,11 +23,10 @@ class Npz:
     default = {}
 
     def __init__(self, **kwds):
-        from nemoa.base import ndict
-        self.settings = ndict.merge(kwds, self.default)
+        self.settings = {**self.default, **kwds}
 
     def load(self, path):
-        copy = numpy.load(path, encoding = 'latin1')
+        copy = numpy.load(path, encoding='latin1')
 
         return {
             'config': copy['config'].item(),

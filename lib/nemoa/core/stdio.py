@@ -19,10 +19,30 @@ from abc import ABC, abstractmethod
 from queue import Empty, Queue
 from threading import Thread
 
-from nemoa.base import env
+from nemoa.base import env, nmodule
 from nemoa.types import Module, OptModule
 
-ENCODING = env.encoding()
+_DEFAULT_ENCODING = env.get_encoding()
+
+def get_ttylib() -> OptModule:
+    """Get module for tty I/O control.
+
+    Depending on the plattform the module within the standard library, which is
+    required for tty I/O control differs. The module `termios`_ provides an
+    interface to the POSIX calls for tty I/O control. The module `msvcrt`_
+    provides access to some useful capabilities on Windows platforms.
+
+    Returns:
+        Reference to module for tty I/O control or None, if the module could
+        not be determined.
+
+    """
+    libs = ['msvcrt', 'termios']
+    for name in libs:
+        ref = nmodule.get_instance(name)
+        if ref:
+            return ref
+    return None
 
 class GetchBase(ABC):
     """Abstract base class for Getch classes."""
@@ -83,7 +103,7 @@ class GetchMsvcrt(GetchBase):
             return ''
         if not getattr(self.msvcrt, 'kbhit')():
             return ''
-        return str(getattr(self.msvcrt, 'getch')(), ENCODING)
+        return str(getattr(self.msvcrt, 'getch')(), _DEFAULT_ENCODING)
 
     def stop(self) -> None:
         """Stop handling of getch() requests."""
@@ -199,7 +219,7 @@ def getch_class() -> GetchBase:
 
     """
     # Get platform specific tty I/O module.
-    ref = env.ttylib()
+    ref = get_ttylib()
     if not ref:
         raise ImportError("no module for tty I/O could be imported")
     cname = 'Getch' + ref.__name__.capitalize()

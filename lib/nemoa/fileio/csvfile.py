@@ -65,11 +65,11 @@ def load(
     if not labels:
         labels = get_labels(file, delim=delim)
         if not labels:
-            raise ValueError("argument 'usecols' is not valid")
+            raise ValueError("Argument 'usecols' is not valid")
         usecols = tuple(range(len(labels)))
     elif not usecols:
         raise ValueError(
-            "argument 'usecols' is required if 'labels' is given")
+            "Argument 'usecols' is required if 'labels' is given")
 
     # Get column id of annotation column
     rowlabelcol = rowlabelcol or get_annotation_colid(file, delim=delim)

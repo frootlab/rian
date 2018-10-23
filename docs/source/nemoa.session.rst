@@ -7,7 +7,6 @@ Subpackages
 .. toctree::
 
     nemoa.session.classes
-    nemoa.session.console
 
 Module contents
 ---------------

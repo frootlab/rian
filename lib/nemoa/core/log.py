@@ -24,6 +24,8 @@ from standard library.
     https://docs.python.org/3/library/logging.html#logging.Logger.error
 .. _Logger.critical():
     https://docs.python.org/3/library/logging.html#logging.Logger.critical
+.. _Logger.exception():
+    https://docs.python.org/3/library/logging.html#logging.Logger.exception
 
 """
 
@@ -31,7 +33,9 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
-__all__ = ['get_instance', 'debug', 'info', 'warning', 'error', 'critical']
+
+__all__ = ['get_instance', 'debug', 'info', 'warning', 'error', 'critical',
+           'exception']
 
 import contextlib
 import importlib
@@ -42,16 +46,24 @@ import warnings
 from pathlib import Path
 
 from nemoa.base import env, npath
-from nemoa.classes import Attr, ReadWriteAttr
+from nemoa.classes import ReadWriteAttr
 from nemoa.errors import AlreadyStartedError, NotStartedError
 from nemoa.types import (
-    void, Any, AnyFunc, ClassVar, PathLike, StrList, StrOrInt, OptPath)
+    void, Any, AnyFunc, ClassVar, PathLike, StrList, StrOrInt, OptPath,
+    VoidFunc)
+
+#
+# Logger Class
+#
 
 class Logger:
     """Logger class.
 
     Args:
-        name:
+        name: String identifier of Logger, given as a period-separated
+            hierarchical value like 'foo.bar.baz'. The name of a Logger also
+            identifies respective parents and children by the name hierachy,
+            which equals the Python package hierarchy.
         file: String or `path-like object`_ that identifies a valid filename in
             the directory structure of the operating system. If they do not
             exist, the parent directories of the file are created. If no file is
@@ -78,24 +90,29 @@ class Logger:
     _DEFAULT_LEVEL: ClassVar[StrOrInt] = logging.INFO
 
     #
-    # Private Module Variables
+    # Private Instance Variables
     #
 
     _logger: logging.Logger
 
     #
-    # Public Attributes
+    # Public Instance Properties
     #
 
-    logger: Attr = ReadWriteAttr(
+    logger: property = ReadWriteAttr(
         logging.Logger, getter='_get_logger', setter='_set_logger')
 
-    name: Attr = ReadWriteAttr(
-        str, getter='_get_name', setter='_set_name',
-        default=_DEFAULT_NAME)
-    name.__doc__ = """Name of logger."""
+    name: property = ReadWriteAttr(
+        str, getter='_get_name', setter='_set_name', default=_DEFAULT_NAME)
+    name.__doc__ = """Name of logger.
 
-    file: Attr = ReadWriteAttr(
+    String identifier of Logger, given as a period-separated hierarchical value
+    like 'foo.bar.baz'. The name of a Logger also identifies respective parents
+    and children by the name hierachy, which equals the Python package
+    hierarchy.
+    """
+
+    file: property = ReadWriteAttr(
         (str, Path), getter='_get_file', setter='_set_file',
         default=_DEFAULT_FILE)
     file.__doc__ = """Log file.
@@ -108,7 +125,7 @@ class Logger:
     created as a fallback.
     """
 
-    level: Attr = ReadWriteAttr(
+    level: property = ReadWriteAttr(
         (str, int), getter='_get_level', setter='_set_level',
         default=_DEFAULT_LEVEL)
     level.__doc__ = """Log level.
@@ -281,30 +298,42 @@ class Logger:
             return logfile
         return None
 
+#
+# Singleton Accessor Functions
+#
+
 def get_instance() -> Logger:
     """Get logger instance."""
     if not '_logger' in globals():
         globals()['_logger'] = Logger()
     return globals()['_logger']
 
-def _get_logger_method(name: str) -> AnyFunc:
+def get_method(name: str) -> AnyFunc:
+    """Get method of logger instance."""
     def wrapper(*args: Any, **kwds: Any) -> Any:
-        instance = get_instance()
-        method = getattr(instance.logger, name, void)
+        self = get_instance()
+        method = getattr(self.logger, name, void)
         return method(*args, **kwds)
     return wrapper
 
-debug = _get_logger_method('debug')
+#
+# Convenience Functions
+#
+
+debug: VoidFunc = get_method('debug')
 debug.__doc__ = """Wrapper function to `Logger.debug()`_."""
 
-info = _get_logger_method('info')
+info: VoidFunc = get_method('info')
 info.__doc__ = """Wrapper function to `Logger.info()`_."""
 
-warning = _get_logger_method('warning')
+warning: VoidFunc = get_method('warning')
 warning.__doc__ = """Wrapper function to `Logger.warning()`_."""
 
-error = _get_logger_method('error')
+error: VoidFunc = get_method('error')
 error.__doc__ = """Wrapper function to `Logger.error()`_."""
 
-critical = _get_logger_method('critical')
+critical: VoidFunc = get_method('critical')
 critical.__doc__ = """Wrapper function to `Logger.critical()`_."""
+
+exception: VoidFunc = get_method('exception')
+exception.__doc__ = """Wrapper function to `Logger.exception()`_."""

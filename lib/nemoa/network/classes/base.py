@@ -4,13 +4,14 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
-import networkx
-import copy
 import importlib
+from typing import Any, Dict
+
+import networkx
+import nemoa
 
 from nemoa.base import nclass, nbase
-from typing import Any, Dict
+from nemoa.core import log
 
 class Network(nbase.ObjectIP):
     """Network base class.
@@ -88,10 +89,10 @@ class Network(nbase.ObjectIP):
         """Configure network to dataset."""
 
         # check if dataset instance is available
-        if not nclass.hasbase(dataset, 'Dataset'):
+        if not nclass.has_base(dataset, 'Dataset'):
             raise TypeError("dataset is required to be of type dataset")
 
-        nemoa.log("configure network: '%s'" % (self._config['name']))
+        log.info("configure network: '%s'" % (self._config['name']))
 
         # configure network to dataset
         groups = dataset.get('colgroups')
@@ -338,8 +339,9 @@ class Network(nbase.ObjectIP):
         # algorithms
         if key == 'algorithm':
             return self._get_algorithm(*args, **kwds)
-        if key == 'algorithms': return self._get_algorithms(
-            attribute = 'about', *args, **kwds)
+        if key == 'algorithms':
+            return self._get_algorithms(
+                attribute='about', *args, **kwds)
 
         # content
         if key == 'node': return self._get_node(*args, **kwds)
@@ -361,7 +363,7 @@ class Network(nbase.ObjectIP):
 
         from nemoa.base import nmodule
 
-        funcs = nmodule.get_functions(networkx.algorithms)
+        funcs = nmodule.get_functions(ref=networkx.algorithms)
         if attribute is None: return funcs
 
         return {k: v.get(attribute, None) for k, v in funcs.items()}
@@ -613,8 +615,7 @@ class Network(nbase.ObjectIP):
         if not hasattr(self, '_config') or not self._config:
             self._config = self._default.copy()
         if config:
-            from nemoa.base import ndict
-            self._config = ndict.merge(config, self._config)
+            self._config = {**self._config, **config}
 
             # reconfigure graph
             self._configure_graph()
@@ -628,16 +629,15 @@ class Network(nbase.ObjectIP):
             bool: True if no error occured, else False
 
         """
-
         # initialize graph
         if not hasattr(self, '_graph') or not self._graph:
             self._configure_graph()
 
-        if not graph: return True
+        if not graph:
+            return True
 
         # merge graph
-        from nemoa.base import ndict
-        graph_copy = ndict.merge(graph, self._get_graph())
+        graph_copy = {**self._get_graph(), **graph}
 
         # create networkx graph instance
         object_type = graph['graph']['params']['networkx']
@@ -661,18 +661,18 @@ class Network(nbase.ObjectIP):
         return algorithms[name](self._graph, *args, **kwds)
 
     def initialize(self, system = None):
-
-        if not system: return False
-        if not nclass.hasbase(system, 'System'):
+        if not system:
+            return False
+        if not nclass.has_base(system, 'System'):
             raise ValueError("system is not valid")
 
         # get edge parameters from system links
-        from nemoa.base import ndict
         for edge in self._graph.edges():
             params = system.get('link', edge)
-            if not params: continue
+            if not params:
+                continue
             edge_dict = self._graph[edge[0]][edge[1]]
-            edge_dict['params'] = ndict.merge(params, edge_dict['params'])
+            edge_dict['params'] = {**edge_dict['params'], **params}
             edge_dict['weight'] = float(params['weight'])
 
         return True

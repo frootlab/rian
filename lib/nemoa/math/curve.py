@@ -31,8 +31,8 @@ except ImportError as err:
 from nemoa.base import nfunc, nmodule
 from nemoa.types import Any, NpArray, NpArrayLike, StrList
 
-SIGM_PREFIX = 'sigm_'
-BELL_PREFIX = 'bell_'
+_SIGM_PREFIX = 'sigm_'
+_BELL_PREFIX = 'bell_'
 
 #
 # Sigmoidal shaped functions
@@ -46,7 +46,7 @@ def sigmoids() -> StrList:
         module.
 
     """
-    return nmodule.list_functions_by_prefix(prefix=SIGM_PREFIX)
+    return nmodule.crop_functions(prefix=_SIGM_PREFIX)
 
 def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
     """Evaluate sigmoidal shaped function.
@@ -70,8 +70,8 @@ def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
             "First argument 'x' is required to be array-like") from err
 
     # Get sigmoid function
-    fname = SIGM_PREFIX + name.lower()
-    module = nmodule.inst(nmodule.curname())
+    fname = _SIGM_PREFIX + name.lower()
+    module = nmodule.get_instance(nmodule.get_curname())
     try:
         func = getattr(module, fname)
     except AttributeError as err:
@@ -79,7 +79,7 @@ def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
             f"'name' has an unsupported value '{str(name)}'") from err
 
     # Evaluate norm function
-    return func(x, **nfunc.kwds(func, default=kwds))
+    return func(x, **nfunc.get_kwds(func, default=kwds))
 
 def sigm_logistic(x: NpArrayLike) -> NpArray:
     """Calculate standard logistic function.
@@ -201,7 +201,7 @@ def bells() -> StrList:
         the module.
 
     """
-    return nmodule.list_functions_by_prefix(prefix=BELL_PREFIX)
+    return nmodule.crop_functions(prefix=_BELL_PREFIX)
 
 def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
     """Evaluate bell shaped function.
@@ -225,8 +225,8 @@ def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
             "First argument 'x' is required to be array-like") from err
 
     # Get bell shaped function
-    fname = BELL_PREFIX + name.lower()
-    module = nmodule.inst(nmodule.curname())
+    fname = _BELL_PREFIX + name.lower()
+    module = nmodule.get_instance(nmodule.get_curname())
     try:
         func = getattr(module, fname)
     except AttributeError as err:
@@ -234,7 +234,7 @@ def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
             f"function '{str(name)}' is not supported") from err
 
     # Evaluate norm function
-    return func(x, **nfunc.kwds(func, default=kwds))
+    return func(x, **nfunc.get_kwds(func, default=kwds))
 
 def bell_gauss(x: NpArrayLike, mu: float = 0., sigma: float = 1.) -> NpArray:
     """Calculate Gauss function.

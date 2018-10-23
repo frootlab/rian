@@ -45,7 +45,7 @@ def save(model, path = None, filetype = None, workspace = None,
 
     from nemoa.base import nclass, npath
 
-    if not nclass.hasbase(model, 'Model'):
+    if not nclass.has_base(model, 'Model'):
         raise TypeError("model is not valid")
 
     # get directory, filename and fileextension

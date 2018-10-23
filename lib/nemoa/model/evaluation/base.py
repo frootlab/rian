@@ -100,13 +100,13 @@ class Evaluation:
         """
 
         # test type of model instance and subclasses
-        if not nclass.hasbase(model, 'Model'):
+        if not nclass.has_base(model, 'Model'):
             return False
-        if not nclass.hasbase(model.dataset, 'Dataset'):
+        if not nclass.has_base(model.dataset, 'Dataset'):
             return False
-        if not nclass.hasbase(model.network, 'Network'):
+        if not nclass.has_base(model.network, 'Network'):
             return False
-        if not nclass.hasbase(model.system, 'System'):
+        if not nclass.has_base(model.system, 'System'):
             return False
 
         # check dataset
@@ -254,12 +254,7 @@ class Evaluation:
 
     def _set_config(self, config=None, **kwds):
         """Set evaluation configuration from dictionary."""
-
-        from nemoa.base import ndict
-        if not isinstance(config, dict):
-            config = {}
-        self._config = ndict.merge(kwds, config, self._default)
-
+        self._config = {**self._default, **(config or {}), **kwds}
         return True
 
     def _set_model(self, model):

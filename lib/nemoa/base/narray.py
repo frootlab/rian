@@ -18,6 +18,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://pypi.org/project/numpy/") from err
 
+from nemoa.base import check
 from nemoa.types import StrPairDict, StrListPair, NpArray, NaN, Num, OptNum
 
 def from_dict(d: StrPairDict, labels: StrListPair, nan: Num = NaN) -> NpArray:
@@ -39,11 +40,8 @@ def from_dict(d: StrPairDict, labels: StrListPair, nan: Num = NaN) -> NpArray:
         <*rows*> and *m* the number of <*columns*>.
 
     """
-    # Check Type of Argument 'd'
-    if not isinstance(d, dict):
-        raise TypeError(
-            "'d' is required to by of type 'dict'"
-            f", not '{type(d).__name__}'")
+    # Check type of 'd'
+    check.argtype('d', d, dict)
 
     # Declare and initialize return value
     x: NpArray = np.empty(shape=(len(labels[0]), len(labels[1])))
@@ -77,12 +75,10 @@ def as_dict(
          list *columns*.
 
     """
-    # Check Type of Argument 'x'
-    if not isinstance(x, np.ndarray):
-        raise TypeError(
-            "'x' is required to by of type 'numpy ndarray'"
-            f", not '{type(x).__name__}'")
-    # Check dimension of Array 'x'
+    # Check type of 'x'
+    check.argtype('x', x, np.ndarray)
+
+    # Check dimension of 'x'
     if x.ndim != 2:
         raise TypeError(
             "Numpy ndarray 'x' is required to have dimension 2"

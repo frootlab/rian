@@ -19,12 +19,13 @@ def new(*args, **kwds):
             configuration is not valid.""")
 
     type = kwds['config']['type']
-    module_name = 'nemoa.workspace.classes.' + type.split('.')[0]
-    class_name = type.split('.')[1]
+    module_name = 'nemoa.workspace.classes.' + type.split('.', 1)[0]
+    class_name = type.rsplit('.', 1)[-1]
 
     try:
         module = importlib.import_module(module_name)
-        if not hasattr(module, class_name): raise ImportError()
+        if not hasattr(module, class_name):
+            raise ImportError()
         workspace = getattr(module, class_name)(**kwds)
     except ImportError:
         raise ValueError("""could not create workspace:

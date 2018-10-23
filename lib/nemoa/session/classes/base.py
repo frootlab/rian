@@ -6,6 +6,8 @@ __license__ = 'GPLv3'
 
 import nemoa
 
+from nemoa.core import log
+
 class Session:
     """Session Manager."""
 
@@ -48,7 +50,7 @@ class Session:
                 'inifile':
                     ('%basepath%', '%workspace%', 'workspace.ini'),
                 'logfile':
-                    ('%basepath%', '%workspace%', 'nemoa.log')}},
+                    ('%basepath%', '%workspace%', 'nemoa_old.log')}},
         'register': {
             'dataset': {},
             'model': {},
@@ -61,16 +63,15 @@ class Session:
         import os
         import sys
 
-        from nemoa.base import ndict
         from nemoa.fileio import inifile
 
-        self._config = ndict.merge(kwds, self._default)
+        self._config = {**self._default, **kwds}
 
         # reset workspace to default values
         self._set_workspace_reset()
 
         # initialize exception handler
-        self._init_exception_handler()
+        # self._init_exception_handler()
 
         # update basepaths from user configuration
         configfile = self._config['default']['path']['baseconf']
@@ -481,8 +482,8 @@ class Session:
             etype, value, tb = args[0], args[1], args[2]
             if issubclass(etype, Warning): key = 'warning'
             else: key = 'error'
-            if mode == 'shell': clr = nmodule.caller(-5)
-            else: clr = nmodule.caller(-4)
+            if mode == 'shell': clr = nmodule.get_caller(-5)
+            else: clr = nmodule.get_caller(-4)
             if mode == 'debug':
                 msg = ('').join(traceback.format_exception(etype, value, tb))
             else:
@@ -492,18 +493,18 @@ class Session:
         # in this case the arguments are (msg)
         elif isinstance(obj, str) and len(args) == 1:
             key, msg = 'info', args[0].capitalize()
-            clr = nmodule.caller(-3)
+            clr = nmodule.get_caller(-3)
 
         # test if args are given as a message of given type
         # in this case the arguments are (type, msg)
         elif isinstance(obj, str) and len(args) == 2:
             key, msg = args[0], args[1].capitalize()
-            clr = nmodule.caller(-3)
+            clr = nmodule.get_caller(-3)
 
         else: return True
 
         # define colors (platform dependent workaround)
-        osname = env.osname()
+        osname = env.get_osname()
 
         # 2do define colors based on shell not on platform
         if osname.lower() == 'windows' and mode != 'shell':
@@ -629,19 +630,35 @@ class Session:
 
         return True
 
-    def _init_exception_handler(self):
-        """Initialize exception handler."""
-
-        import sys
-
-        # pipe exceptions to nemoa.log
-        def hook(*args, **kwds):
-            import nemoa
-            return nemoa.log(*args, **kwds)
-
-        sys.__excepthook__ = hook
-
-        return True
+    # def _init_exception_handler(self):
+    #     """Initialize exception handler."""
+    #
+    #     from functools import wraps
+    #     import sys
+    #
+    #     def bypass(func):
+    #
+    #         @wraps(func)
+    #         def wrapper(*args, **kwds):
+    #             print('hook from Python')
+    #
+    #             exc_info = sys.exc_info()
+    #             msg = exc_info[1]
+    #             log.exception(msg, exc_info=exc_info)
+    #             return func(*args, **kwds)
+    #
+    #         return wrapper
+    #     #
+    #     # # pipe exceptions to logfile
+    #     # def hook(*args, **kwds):
+    #     #     exc_info = sys.exc_info()
+    #     #     msg = exc_info[1]
+    #     #     log.exception(msg, exc_info=exc_info)
+    #     #     return sys.__excepthook__(*args, **kwds)
+    #
+    #     sys.excepthook = bypass(sys.excepthook)
+    #
+    #     return True
 
     def run(self, script = None, *args, **kwds):
         """Run python script."""
@@ -717,8 +734,8 @@ class Session:
 
         if curmode == 'line' and mode == 'key':
             if not self._buffer.get('inkey', None):
-                from nemoa.base import nconsole
-                self._buffer['inkey'] = nconsole.Getch() # type: ignore
+                from nemoa.core import stdio
+                self._buffer['inkey'] = stdio.Getch() # type: ignore
             self._buffer['inkey'].start()
             return True
 

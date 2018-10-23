@@ -145,13 +145,14 @@ class Workspace(object):
         """
 
         # initialize configuration dictionary
-        if not self._config: self._config = self._default.copy()
+        if not self._config:
+            self._config = self._default.copy()
 
         # update configuration dictionary
-        if not config: return True
+        if not config:
+            return True
 
-        from nemoa.base import ndict
-        self._config = ndict.merge(config, self._config)
+        self._config = {**self._config, **config}
 
         return True
 

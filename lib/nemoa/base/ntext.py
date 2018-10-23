@@ -16,6 +16,7 @@ except ImportError as err:
         "requires package pyparsing: "
         "https://pypi.org/project/pyparsing/") from err
 
+from nemoa.base import check
 from nemoa.types import Any, OptStr, Tuple, Path
 
 def splitargs(text: str) -> Tuple[str, tuple, dict]:
@@ -30,11 +31,8 @@ def splitargs(text: str) -> Tuple[str, tuple, dict]:
         tuple and the keywords as dictionary.
 
     """
-    # Check argument types
-    if not isinstance(text, str):
-        raise TypeError(
-            "'text' requires to be of type 'str'"
-            f", not '{type(text).__name__}'")
+    # Check type of 'text'
+    check.argtype(0, text, str)
 
     # Get function name
     try:
@@ -45,7 +43,7 @@ def splitargs(text: str) -> Tuple[str, tuple, dict]:
     except AttributeError as err:
         raise ValueError(f"'{text}' is not a valid function call") from err
 
-    # get tuple with arguments
+    # Get tuple with arguments
     astargs = getattr(getattr(tree.body[0], 'value'), 'args')
     largs = []
     for astarg in astargs:
@@ -54,13 +52,13 @@ def splitargs(text: str) -> Tuple[str, tuple, dict]:
         largs.append(val)
     args = tuple(largs)
 
-    # get dictionary with keywords
+    # Get dictionary with keywords
     astkwds = getattr(getattr(tree.body[0], 'value'), 'keywords')
     kwds = {}
-    for astkwarg in astkwds:
-        key = astkwarg.arg
-        typ = astkwarg.value._fields[0]
-        val = getattr(astkwarg.value, typ)
+    for astkw in astkwds:
+        key = astkw.arg
+        typ = astkw.value._fields[0]
+        val = getattr(astkw.value, typ)
         kwds[key] = val
 
     return func, args, kwds
@@ -81,17 +79,15 @@ def astype(text: str, fmt: OptStr = None, **kwds: Any) -> Any:
         Value of the text in given target format.
 
     """
-    # check argument types
-    if not isinstance(text, str):
-        raise TypeError(
-            "'text' requires to be of type 'str'"
-            f", not '{type(text).__name__}'")
+    # Check type of Arguments
+    check.argtype(0, text, str)
+    check.argtype('fmt', fmt, (str, type(None)))
 
-    # evaluate text if no format is given
+    # Evaluate text if no format is given
     if fmt is None:
         return ast.literal_eval(text)
 
-    # basic types
+    # Basic types
     if fmt == 'str':
         return text.strip().replace('\n', '')
     if fmt == 'bool':
@@ -103,7 +99,7 @@ def astype(text: str, fmt: OptStr = None, **kwds: Any) -> Any:
     if fmt == 'complex':
         return complex(text)
 
-    # sequence and special types
+    # Sequence and special types
     stypes = ['list', 'tuple', 'set', 'dict', 'path']
     if fmt in stypes:
         return getattr(sys.modules[__name__], 'as' + fmt)(text, **kwds)
@@ -126,15 +122,9 @@ def aslist(text: str, delim: str = ',') -> list:
         Value of the text as list.
 
     """
-    # check argument types
-    if not isinstance(text, str):
-        raise TypeError(
-            "first argument requires to be of type 'str'"
-            f", not '{type(text).__name__}'")
-    if not isinstance(delim, str):
-        raise TypeError(
-            "argument 'delim' requires type "
-            f"'str', not '{type(text).__name__}'")
+    # Check types of Arguments
+    check.argtype(0, text, str)
+    check.argtype('delim', delim, str)
 
     # return empty list if the string is blank
     if not text or not text.strip():
@@ -169,21 +159,15 @@ def astuple(text: str, delim: str = ',') -> tuple:
         Value of the text as tuple.
 
     """
-    # check argument types
-    if not isinstance(text, str):
-        raise TypeError(
-            "first argument requires to be of type 'str'"
-            f", not '{type(text)}'")
-    if not isinstance(delim, str):
-        raise TypeError(
-            "argument 'delim' requires type "
-            f"'str', not '{type(text)}'")
+    # Check types of Arguments
+    check.argtype(0, text, str)
+    check.argtype('delim', delim, str)
 
-    # return empty tuple if the string is blank
+    # Return empty tuple if the string is blank
     if not text or not text.strip():
         return tuple()
 
-    # python format
+    # Python format
     val = None
     if delim == ',':
         try:
@@ -193,7 +177,7 @@ def astuple(text: str, delim: str = ',') -> tuple:
     if isinstance(val, tuple):
         return val
 
-    # delimited string format
+    # Delimited string format
     return tuple([item.strip() for item in text.split(delim)])
 
 def asset(text: str, delim: str = ',') -> set:
@@ -212,14 +196,9 @@ def asset(text: str, delim: str = ',') -> set:
         Value of the text as set.
 
     """
-    # Check argument types
-    if not isinstance(text, str):
-        raise TypeError(
-            "first argument 'text' requires to be of type 'str'"
-            f", not '{type(text)}'")
-    if not isinstance(delim, str):
-        raise TypeError(
-            f"'delim' requires type 'str', not '{type(text).__name__}'")
+    # Check types of Arguments
+    check.argtype(0, text, str)
+    check.argtype('delim', delim, str)
 
     # Return empty set if the string is blank
     if not text or not text.strip():
@@ -255,14 +234,9 @@ def asdict(text: str, delim: str = ',') -> dict:
         Value of the text as dictionary.
 
     """
-    # Check argument types
-    if not isinstance(text, str):
-        raise TypeError(
-            "first argument 'text' requires to be of type 'str'"
-            f", not '{type(text).__name__}'")
-    if not isinstance(delim, str):
-        raise TypeError(
-            f"'delim' requires type 'str', not '{type(text).__name__}'")
+    # Check types of Arguments
+    check.argtype(0, text, str)
+    check.argtype('delim', delim, str)
 
     # Return empty dict if the string is blank
     if not text or not text.strip():
@@ -282,7 +256,7 @@ def asdict(text: str, delim: str = ',') -> dict:
     except pp.ParseException:
         l = None
 
-    # try dictionary format "'<key>': <value><delim> ..."
+    # Try dictionary format "'<key>': <value><delim> ..."
     if not l:
         Term = pp.Group(Str + ':' + Val)
         Terms = Term + pp.ZeroOrMore(delim + Term)
@@ -324,18 +298,9 @@ def aspath(text: str, expand: bool = True) -> Path:
         Value of the text as Path.
 
     """
+    # Check types of Arguments
+    check.argtype(0, text, str)
+    check.argtype('expand', expand, bool)
+
     from nemoa.base import npath
-
-    # Check type of 'text'
-    if not isinstance(text, str):
-        raise TypeError(
-            "first argument 'text' requires to be of type 'str'"
-            f", not '{type(text).__name__}'")
-
-    # Check type of 'expand'
-    if not isinstance(expand, bool):
-        raise TypeError(
-            "'expand' requires to be of type 'bool'"
-            f", not '{type(expand).__name__}'")
-
     return npath.expand(text)

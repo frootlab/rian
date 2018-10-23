@@ -11,18 +11,18 @@ import unittest
 from unittest import TestCase, TestResult, TestLoader, TestSuite, TextTestRunner
 from io import StringIO
 
-from nemoa.base import nmodule, nobject
-from nemoa.types import Function, Method, OptStr
+from nemoa.base import nmodule, dig
+from nemoa.types import ClassInfo, Function, Method, OptStr, StringIOLike
 
-#
-# Public Module Variables
-#
+################################################################################
+# Global Setting
+################################################################################
 
 skip_completeness_test: bool = False
 
-#
-# Public Module Classes
-#
+################################################################################
+# Test Cases
+################################################################################
 
 class GenericTestCase(TestCase):
     """Custom testcase."""
@@ -37,17 +37,18 @@ class ModuleTestCase(GenericTestCase):
         """Assert that all members of module are tested."""
         message: OptStr = None
         if hasattr(self, 'module') and self.test_completeness:
-            mref = nmodule.inst(self.module)
+            mref = nmodule.get_instance(self.module)
             if hasattr(mref, '__all__'):
                 required = set(getattr(mref, '__all__'))
             else:
                 required = set()
-                fdict = nobject.members(mref, base=Function)
+                fdict = dig.get_members(mref, classinfo=Function)
                 for attr in fdict.values():
                     name = attr['name']
                     if not name.startswith('_'):
                         required.add(name)
-            tdict = nobject.members(self, base=Method, pattern='test_*')
+            tdict = dig.get_members(
+                self, classinfo=Method, pattern='test_*')
             implemented = set()
             for attr in tdict.values():
                 implemented.add(attr['name'][5:])
@@ -60,22 +61,21 @@ class ModuleTestCase(GenericTestCase):
             raise AssertionError(message)
 
     @unittest.skipIf(skip_completeness_test, "completeness is not tested")
-    def test_compleness_of_module(self) -> None:
+    def test_completeness_of_module(self) -> None:
         self.assertModuleIsComplete()
 
 #
 # Public Module Functions
 #
 
-def run_tests(
-        stream: StringIO = StringIO(), verbosity: int = 2) -> TestResult:
-    """Search and run testcases."""
+def run(
+        classinfo: ClassInfo = TestCase, stream: StringIOLike = StringIO(),
+        verbosity: int = 2) -> TestResult:
+    """Run all tests if given type."""
     loader = TestLoader()
     suite = TestSuite()
-    root = nmodule.root()
-    cases = nmodule.search(root, base=GenericTestCase, val='reference')
+    root = nmodule.get_root()
+    cases = nmodule.search(ref=root, classinfo=classinfo, val='reference')
     for ref in cases.values():
         suite.addTests(loader.loadTestsFromTestCase(ref))
-
-    # Initialize runner and run testsuite
     return TextTestRunner(stream=stream, verbosity=verbosity).run(suite)

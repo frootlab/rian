@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Plattform, application and package specific informations.
+"""System, application and package specific informations.
 
 .. References:
 .. _PEP 345:
@@ -47,9 +47,9 @@ except ImportError as err:
         "requires package appdirs: "
         "https://pypi.org/project/appdirs/") from err
 
-from nemoa.base import nmodule
+from nemoa.base import check, nmodule
 from nemoa.types import (
-    Any, OptModule, OptStr, OptStrOrBool, OptPathLike, StrDict, StrDictOfPaths)
+    Any, OptStr, OptStrOrBool, OptPathLike, StrDict, StrDictOfPaths)
 
 #
 # Private Module Constants
@@ -63,16 +63,17 @@ _DEFAULT_APPAUTHOR = 'frootlab'
 #
 
 def get_var(varname: str, *args: Any, **kwds: Any) -> OptStr:
-    """Get application variable by name.
+    """Get environment or application variable.
 
-    Application variables are intended to describe the application distribution
-    by authorship information, bibliographic information, status, formal
-    conditions and notes or warnings. Therfore the variables are independent
-    from runtime properties including user and session. For more information
-    see `PEP 345`_.
+    Environment variables comprise static and runtime properties of the
+    operating system like 'username' or 'hostname'. Application variables in
+    turn, are intended to describe the application distribution by authorship
+    information, bibliographic information, status, formal conditions and notes
+    or warnings. For mor information see `PEP 345`_.
 
     Args:
-        name: Name of application variable. Typical variable names are:
+        varname: Name of environment variable. Typical application variable
+            names are:
             'name': The name of the distribution
             'version': A string containing the distribution's version number
             'status': Development status of the distributed application.
@@ -106,11 +107,8 @@ def get_var(varname: str, *args: Any, **kwds: Any) -> OptStr:
         String representing the value of the application variable.
 
     """
-    # Check type of 'name'
-    if not isinstance(varname, str):
-        raise TypeError(
-            "'name' requires to be of type 'str' or None"
-            f", not '{type(varname).__name__}'")
+    # Check type of 'varname'
+    check.argtype('varname', varname, str)
 
     # Update variables if not present or if optional arguments are given
     if not '_vars' in globals() or args or kwds:
@@ -120,13 +118,13 @@ def get_var(varname: str, *args: Any, **kwds: Any) -> OptStr:
     return appvars.get(varname, None)
 
 def get_vars(*args: Any, **kwds: Any) -> StrDict:
-    """Get dictionary with application vaiables.
+    """Get dictionary with environment and application variables.
 
-    Application variables are intended to describe the application distribution
-    by authorship information, bibliographic information, status, formal
-    conditions and notes or warnings. Therfore the variables are independent
-    from runtime properties including user and session. For more information see
-    `PEP 345`_.
+    Environment variables comprise static and runtime properties of the
+    operating system like 'username' or 'hostname'. Application variables in
+    turn, are intended to describe the application distribution by authorship
+    information, bibliographic information, status, formal conditions and notes
+    or warnings. For mor information see `PEP 345`_.
 
     Args:
         *args: Optional arguments that specify the application, as required by
@@ -144,12 +142,13 @@ def get_vars(*args: Any, **kwds: Any) -> StrDict:
     return globals().get('_vars', {}).copy()
 
 def update_vars(filepath: OptPathLike = None) -> None:
-    """Update application variables from module attributes.
+    """Update environment and application variables.
 
-    Application variables are intended to describe the application distribution
-    by authorship information, bibliographic information, status, formal
-    conditions and notes or warnings. The variables are independent from runtime
-    properties like user and session. For more information see `PEP 345`_.
+    Environment variables comprise static and runtime properties of the
+    operating system like 'username' or 'hostname'. Application variables in
+    turn, are intended to describe the application distribution by authorship
+    information, bibliographic information, status, formal conditions and notes
+    or warnings. For mor information see `PEP 345`_.
 
     Args:
         filepath: Valid filepath to python module, that contains the application
@@ -160,23 +159,29 @@ def update_vars(filepath: OptPathLike = None) -> None:
         Dictionary with application variables.
 
     """
-    # By default use the current top level module
-    filepath = filepath or nmodule.root().__file__
+    # Get package specific environment variables by parsing a given file for
+    # module attributes. By default the file of the current top level module
+    # is taken. If name is not given, then use the name of the current top level
+    # module.
 
-    # Parse content for module attributes with regular expressions
+    filepath = filepath or nmodule.get_root().__file__
+    text = Path(filepath).read_text()
     rekey = "__([a-zA-Z][a-zA-Z0-9_]*)__"
     reval = r"['\"]([^'\"]*)['\"]"
     pattern = f"^[ ]*{rekey}[ ]*=[ ]*{reval}"
-    text = Path(filepath).read_text()
-    dvars = {}
+    info = {}
     for match in re.finditer(pattern, text, re.M):
-        dvars[str(match.group(1))] = str(match.group(2))
+        info[str(match.group(1))] = str(match.group(2))
+    info['name'] = info.get('name', nmodule.get_curname().split('.', 1)[0])
 
-    # Set module name of current root module as default value for the
-    # application variable 'name'
-    dvars['name'] = dvars.get('name', nmodule.curname().split('.')[0])
+    # Get plattform specific environment variables
+    info['encoding'] = get_encoding()
+    info['hostname'] = get_hostname()
+    info['osname'] = get_osname()
+    info['username'] = get_username()
 
-    globals()['_vars'] = dvars
+    # Update globals
+    globals()['_vars'] = info
 
 def get_dir(dirname: str, *args: Any, **kwds: Any) -> Path:
     """Get application specific environmental directory by name.
@@ -207,12 +212,9 @@ def get_dir(dirname: str, *args: Any, **kwds: Any) -> Path:
 
     """
     # Check type of 'dirname'
-    if not isinstance(dirname, str):
-        raise TypeError(
-            "'name' requires to be of type 'str' or None"
-            f", not '{type(dirname).__name__}'")
+    check.argtype('dirname', dirname, str)
 
-    # Update appdirs if not present or if optional arguments are given
+    # Update derectories if not present or if any optional arguments are given
     if not '_dirs' in globals() or args or kwds:
         update_dirs(*args, **kwds)
     dirs = globals().get('_dirs', {})
@@ -275,10 +277,14 @@ def update_dirs(
 
     """
     dirs: StrDictOfPaths = {}
+
+    # Get system directories
+    dirs['home'] = get_home()
+    dirs['cwd'] = get_cwd()
+
+    # Get application directories from appdirs
     appname = appname or get_var('name') or _DEFAULT_APPNAME
     appauthor = appauthor or get_var('author') or _DEFAULT_APPAUTHOR
-
-    # Get application specific directories from appdirs
     appdirs = AppDirs(
         appname=appname, appauthor=appauthor, version=version, **kwds)
     dirnames = [
@@ -287,19 +293,19 @@ def update_dirs(
     for dirname in dirnames:
         dirs[dirname] = Path(getattr(appdirs, dirname))
 
-    # Get distribution specific directories from distutils
+    # Get distribution directories from distutils
     path = Path(sysconfig.get_python_lib(), appname)
     dirs['site_package_dir'] = path
 
-    # Get current package specific directories from top level module
-    path = Path(nmodule.root().__file__).parent
+    # Get current package directories from top level module
+    path = Path(nmodule.get_root().__file__).parent
     dirs['package_dir'] = path
     dirs['package_data_dir'] = path / 'data'
 
     globals()['_dirs'] = dirs
 
-def encoding() -> str:
-    """Preferred encoding used for text data.
+def get_encoding() -> str:
+    """Get preferred encoding used for text data.
 
     This is a wrapper function to the standard library function
     `locale.getpreferredencoding()`_. This function returns the encoding used
@@ -311,10 +317,10 @@ def encoding() -> str:
         String representing the preferred encoding used for text data.
 
     """
-    return locale.getpreferredencoding()
+    return locale.getpreferredencoding(False)
 
-def hostname() -> str:
-    """Hostname of the computer.
+def get_hostname() -> str:
+    """Get hostname of the computer.
 
     This is a wrapper function to the standard library function
     `platform.node()`_. This function returns the computer’s hostname. If the
@@ -326,8 +332,8 @@ def hostname() -> str:
     """
     return platform.node()
 
-def osname() -> str:
-    """Name of the Operating System.
+def get_osname() -> str:
+    """Get name of the Operating System.
 
     This is a wrapper function to the standard library function
     `platform.system()`_. This function returns the OS name, e.g. 'Linux',
@@ -340,27 +346,7 @@ def osname() -> str:
     """
     return platform.system()
 
-def ttylib() -> OptModule:
-    """Name of package for tty I/O control.
-
-    Depending on the plattform the module within the standard library, which is
-    required for tty I/O control differs. The module `termios`_ provides an
-    interface to the POSIX calls for tty I/O control. The module `msvcrt`_
-    provides access to some useful capabilities on Windows platforms.
-
-    Returns:
-        Reference to module for tty I/O control or None, if the module could
-        not be determined.
-
-    """
-    libs = ['msvcrt', 'termios']
-    for name in libs:
-        ref = nmodule.inst(name)
-        if ref:
-            return ref
-    return None
-
-def username() -> str:
+def get_username() -> str:
     """Login name of the current user.
 
     This is a wrapper function to the standard library function
@@ -375,3 +361,21 @@ def username() -> str:
 
     """
     return getpass.getuser()
+
+def get_cwd() -> Path:
+    """Get path of current working directory.
+
+    Returns:
+        Path of current working directory.
+
+    """
+    return Path.cwd()
+
+def get_home() -> Path:
+    """Get path of current users home directory.
+
+    Returns:
+        Path of current users home directory.
+
+    """
+    return Path.home()

@@ -8,6 +8,9 @@ Submodules
 
    nemoa.core.log
    nemoa.core.session
+   nemoa.core.shell
+   nemoa.core.stdio
+   nemoa.core.ui
 
 Module contents
 ---------------
