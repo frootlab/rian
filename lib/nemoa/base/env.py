@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Plattform, application and package specific informations.
+"""System, application and package specific informations.
 
 .. References:
 .. _PEP 345:
@@ -49,7 +49,7 @@ except ImportError as err:
 
 from nemoa.base import nmodule
 from nemoa.types import (
-    Any, OptModule, OptStr, OptStrOrBool, OptPathLike, StrDict, StrDictOfPaths)
+    Any, OptStr, OptStrOrBool, OptPathLike, StrDict, StrDictOfPaths)
 
 #
 # Private Module Constants
@@ -283,10 +283,14 @@ def update_dirs(
 
     """
     dirs: StrDictOfPaths = {}
+
+    # Get system directories
+    dirs['home'] = get_home()
+    dirs['cwd'] = get_cwd()
+
+    # Get application directories from appdirs
     appname = appname or get_var('name') or _DEFAULT_APPNAME
     appauthor = appauthor or get_var('author') or _DEFAULT_APPAUTHOR
-
-    # Get application specific directories from appdirs
     appdirs = AppDirs(
         appname=appname, appauthor=appauthor, version=version, **kwds)
     dirnames = [
@@ -295,11 +299,11 @@ def update_dirs(
     for dirname in dirnames:
         dirs[dirname] = Path(getattr(appdirs, dirname))
 
-    # Get distribution specific directories from distutils
+    # Get distribution directories from distutils
     path = Path(sysconfig.get_python_lib(), appname)
     dirs['site_package_dir'] = path
 
-    # Get current package specific directories from top level module
+    # Get current package directories from top level module
     path = Path(nmodule.root().__file__).parent
     dirs['package_dir'] = path
     dirs['package_data_dir'] = path / 'data'
@@ -363,3 +367,21 @@ def get_username() -> str:
 
     """
     return getpass.getuser()
+
+def get_cwd() -> Path:
+    """Get path of current working directory.
+
+    Returns:
+        Path of current working directory.
+
+    """
+    return Path.cwd()
+
+def get_home() -> Path:
+    """Get path of current users home directory.
+
+    Returns:
+        Path of current users home directory.
+
+    """
+    return Path.home()

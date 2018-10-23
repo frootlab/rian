@@ -24,16 +24,21 @@ class TestEnv(ModuleTestCase):
     module = 'nemoa.base.env'
 
     def setUp(self) -> None:
+        self.sys_dirs = ['home', 'cwd']
         self.app_dirs = [
             'user_cache_dir', 'user_config_dir', 'user_data_dir',
             'user_log_dir', 'site_config_dir', 'site_data_dir']
         self.dist_dirs = ['site_package_dir']
         self.pkg_dirs = ['package_dir', 'package_data_dir']
-        self.app_vars = ['name', 'author', 'version', 'license']
+        self.app_vars = [
+            'name', 'author', 'version', 'license', 'encoding', 'hostname',
+            'username', 'osname']
 
     def is_dir_valid(
             self, dirname: str, path: Path, appname: str,
             appauthor: str) -> bool:
+        if dirname in self.sys_dirs: # Check system directories
+            return True
         if dirname in self.app_dirs: # Check application dir
             return appname in str(path) and appauthor in str(path)
         if dirname in self.dist_dirs: # Check distribution dir
@@ -45,7 +50,8 @@ class TestEnv(ModuleTestCase):
         return False
 
     def is_dirs_valid(self, d: dict, appname: str, appauthor: str) -> bool:
-        keys = set(self.app_dirs + self.dist_dirs + self.pkg_dirs)
+        keys = set(
+            self.sys_dirs + self.app_dirs + self.dist_dirs + self.pkg_dirs)
         if not d.keys() == keys:
             return False
         for key in keys:
@@ -62,6 +68,8 @@ class TestEnv(ModuleTestCase):
         env.update_dirs(appname=app_name, appauthor=app_author)
         new_dirs = getattr(env, '_dirs').copy()
         is_valid = self.is_dirs_valid(new_dirs, app_name, app_author)
+        if not is_valid:
+            print(new_dirs)
         self.assertTrue(is_valid)
         if dirs_exist:
             setattr(env, '_dirs', prev_dirs)
@@ -104,6 +112,10 @@ class TestEnv(ModuleTestCase):
             with self.subTest(f"get_var('{key}')"):
                 self.assertTrue(env.get_var(key))
 
+    def test_get_vars(self) -> None:
+        envvars = env.get_vars()
+        self.assertTrue(set(self.app_vars) <= envvars.keys())
+
     def test_get_encoding(self) -> None:
         self.assertIsInstance(env.get_encoding(), str)
 
@@ -115,6 +127,12 @@ class TestEnv(ModuleTestCase):
 
     def test_get_username(self) -> None:
         self.assertIsInstance(env.get_username(), str)
+
+    def test_get_cwd(self) -> None:
+        self.assertTrue(env.get_cwd().is_dir())
+
+    def test_get_home(self) -> None:
+        self.assertTrue(env.get_home().is_dir())
 
 class TestNarray(ModuleTestCase):
     """Testcase for the module nemoa.base.narray."""
@@ -406,12 +424,6 @@ class TestNpath(ModuleTestCase):
     """Testcase for the module nemoa.base.npath."""
 
     module = 'nemoa.base.npath'
-
-    def test_cwd(self) -> None:
-        self.assertTrue(Path(npath.cwd()).is_dir())
-
-    def test_home(self) -> None:
-        self.assertTrue(Path(npath.home()).is_dir())
 
     def test_clear(self) -> None:
         self.assertEqual(npath.clear('3/\nE{$5}.e'), '3E5.e')

@@ -104,11 +104,11 @@ class TestCase(GenericTestCase):
 
     def test_session_list(self):
 
-        with self.subTest(cmd = "nemoa.list('bases')"):
+        with self.subTest(cmd="nemoa.list('bases')"):
             test = 'user' in nemoa.list('bases')
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.list('workspaces')"):
+        with self.subTest(cmd="nemoa.list('workspaces')"):
             worktree = nemoa.list('workspaces')
             test = isinstance(worktree, dict) \
                 and 'user' in worktree \
@@ -116,18 +116,18 @@ class TestCase(GenericTestCase):
                 and 'cwd' in worktree
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.list('workspaces', base = 'site')"):
-            workspaces = nemoa.list('workspaces', base = 'site')
+        with self.subTest(cmd="nemoa.list('workspaces', base = 'site')"):
+            workspaces = nemoa.list('workspaces', base='site')
             test = isinstance(workspaces, list) \
                 and 'testsuite' in workspaces
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.list('workspaces', base = 'user')"):
-            workspaces = nemoa.list('workspaces', base = 'user')
+        with self.subTest(cmd="nemoa.list('workspaces', base = 'user')"):
+            workspaces = nemoa.list('workspaces', base='user')
             test = isinstance(workspaces, list)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.list('datasets')"):
+        with self.subTest(cmd="nemoa.list('datasets')"):
             datasets = nemoa.list('datasets')
             test = isinstance(datasets, list) \
                 and 'linear' in datasets \
@@ -135,14 +135,14 @@ class TestCase(GenericTestCase):
                 and 'sinus' in datasets
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.list('networks')"):
+        with self.subTest(cmd="nemoa.list('networks')"):
             networks = nemoa.list('networks')
             test = isinstance(networks, list) \
                 and 'deep' in networks \
                 and 'shallow' in networks
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.list('systems')"):
+        with self.subTest(cmd="nemoa.list('systems')"):
             systems = nemoa.list('systems')
             test = isinstance(systems, list) \
                 and 'ann' in systems \
@@ -151,12 +151,12 @@ class TestCase(GenericTestCase):
                 and 'rbm' in systems
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.list('models')"):
+        with self.subTest(cmd="nemoa.list('models')"):
             models = nemoa.list('models')
             test = isinstance(models, list) and 'test' in models
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.list('scripts')"):
+        with self.subTest(cmd="nemoa.list('scripts')"):
             scripts = nemoa.list('scripts')
             test = isinstance(scripts, list)
             self.assertTrue(test)
