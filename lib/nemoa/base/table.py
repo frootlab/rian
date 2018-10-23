@@ -12,6 +12,13 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+try:
+    from numpy.lib import recfunctions as rec
+except ImportError as err:
+    raise ImportError(
+        "requires package numpy: "
+        "https://pypi.org/project/numpy/") from err
+
 from nemoa.types import NpFields, NpRecArray
 
 def addcols(
@@ -33,8 +40,6 @@ def addcols(
         appended columns.
 
     """
-    from numpy.lib import recfunctions as rec
-
     cols = cols or getattr(data, 'dtype').names
     if not isinstance(cols, (tuple, str)):
         raise TypeError(

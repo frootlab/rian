@@ -10,7 +10,7 @@ __all__ = ['get_summary', 'get_instance', 'get_kwds']
 
 import inspect
 
-from nemoa.base import nmodule, nobject
+from nemoa.base import nmodule, dig
 from nemoa.types import AnyFunc, StrDict, Function, OptFunction, OptDict
 
 def get_summary(func: AnyFunc) -> str:
@@ -23,7 +23,7 @@ def get_summary(func: AnyFunc) -> str:
         Summary line of the docstring of a function.
 
     """
-    return nobject.get_summary(func)
+    return dig.get_summary(func)
 
 def get_instance(name: str) -> OptFunction:
     """Get function instance for a given function name.
@@ -39,7 +39,7 @@ def get_instance(name: str) -> OptFunction:
 
     """
     mname, fname = name.rsplit('.', 1)
-    minst = nmodule.inst(mname)
+    minst = nmodule.get_instance(mname)
 
     if not minst:
         return None
@@ -84,9 +84,10 @@ def get_kwds(func: AnyFunc, default: OptDict = None) -> StrDict:
             "'default' requires to be of type 'dict' or None"
             f", not '{type(default).__name__}'")
 
+    # Get keywords from inspect
     kwds: StrDict = {}
-    df = inspect.signature(func).parameters
-    for key, val in df.items():
+    struct = inspect.signature(func).parameters
+    for key, val in struct.items():
         if '=' not in str(val):
             continue
         if default is None:

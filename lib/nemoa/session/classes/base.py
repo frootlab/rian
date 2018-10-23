@@ -482,8 +482,8 @@ class Session:
             etype, value, tb = args[0], args[1], args[2]
             if issubclass(etype, Warning): key = 'warning'
             else: key = 'error'
-            if mode == 'shell': clr = nmodule.caller(-5)
-            else: clr = nmodule.caller(-4)
+            if mode == 'shell': clr = nmodule.get_caller(-5)
+            else: clr = nmodule.get_caller(-4)
             if mode == 'debug':
                 msg = ('').join(traceback.format_exception(etype, value, tb))
             else:
@@ -493,13 +493,13 @@ class Session:
         # in this case the arguments are (msg)
         elif isinstance(obj, str) and len(args) == 1:
             key, msg = 'info', args[0].capitalize()
-            clr = nmodule.caller(-3)
+            clr = nmodule.get_caller(-3)
 
         # test if args are given as a message of given type
         # in this case the arguments are (type, msg)
         elif isinstance(obj, str) and len(args) == 2:
             key, msg = args[0], args[1].capitalize()
-            clr = nmodule.caller(-3)
+            clr = nmodule.get_caller(-3)
 
         else: return True
 

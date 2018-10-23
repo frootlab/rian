@@ -339,8 +339,9 @@ class Network(nbase.ObjectIP):
         # algorithms
         if key == 'algorithm':
             return self._get_algorithm(*args, **kwds)
-        if key == 'algorithms': return self._get_algorithms(
-            attribute = 'about', *args, **kwds)
+        if key == 'algorithms':
+            return self._get_algorithms(
+                attribute='about', *args, **kwds)
 
         # content
         if key == 'node': return self._get_node(*args, **kwds)
@@ -362,7 +363,7 @@ class Network(nbase.ObjectIP):
 
         from nemoa.base import nmodule
 
-        funcs = nmodule.get_functions(networkx.algorithms)
+        funcs = nmodule.get_functions(ref=networkx.algorithms)
         if attribute is None: return funcs
 
         return {k: v.get(attribute, None) for k, v in funcs.items()}

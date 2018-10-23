@@ -11,7 +11,7 @@ import unittest
 from unittest import TestCase, TestResult, TestLoader, TestSuite, TextTestRunner
 from io import StringIO
 
-from nemoa.base import nmodule, nobject
+from nemoa.base import nmodule, dig
 from nemoa.types import ClassInfo, Function, Method, OptStr, StringIOLike
 
 ################################################################################
@@ -37,17 +37,17 @@ class ModuleTestCase(GenericTestCase):
         """Assert that all members of module are tested."""
         message: OptStr = None
         if hasattr(self, 'module') and self.test_completeness:
-            mref = nmodule.inst(self.module)
+            mref = nmodule.get_instance(self.module)
             if hasattr(mref, '__all__'):
                 required = set(getattr(mref, '__all__'))
             else:
                 required = set()
-                fdict = nobject.get_members(mref, classinfo=Function)
+                fdict = dig.get_members(mref, classinfo=Function)
                 for attr in fdict.values():
                     name = attr['name']
                     if not name.startswith('_'):
                         required.add(name)
-            tdict = nobject.get_members(
+            tdict = dig.get_members(
                 self, classinfo=Method, pattern='test_*')
             implemented = set()
             for attr in tdict.values():
@@ -74,8 +74,8 @@ def run(
     """Run all tests if given type."""
     loader = TestLoader()
     suite = TestSuite()
-    root = nmodule.root()
-    cases = nmodule.search(root, classinfo=classinfo, val='reference')
+    root = nmodule.get_root()
+    cases = nmodule.search(ref=root, classinfo=classinfo, val='reference')
     for ref in cases.values():
         suite.addTests(loader.loadTestsFromTestCase(ref))
     return TextTestRunner(stream=stream, verbosity=verbosity).run(suite)

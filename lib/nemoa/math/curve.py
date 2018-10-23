@@ -71,7 +71,7 @@ def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
 
     # Get sigmoid function
     fname = _SIGM_PREFIX + name.lower()
-    module = nmodule.inst(nmodule.curname())
+    module = nmodule.get_instance(nmodule.get_curname())
     try:
         func = getattr(module, fname)
     except AttributeError as err:
@@ -226,7 +226,7 @@ def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
 
     # Get bell shaped function
     fname = _BELL_PREFIX + name.lower()
-    module = nmodule.inst(nmodule.curname())
+    module = nmodule.get_instance(nmodule.get_curname())
     try:
         func = getattr(module, fname)
     except AttributeError as err:

@@ -8,7 +8,6 @@ Subpackages
 
     nemoa.base
     nemoa.core
-    nemoa.dataio
     nemoa.dataset
     nemoa.fileio
     nemoa.math
@@ -24,7 +23,9 @@ Submodules
 .. toctree::
 
    nemoa.classes
+   nemoa.console
    nemoa.errors
+   nemoa.test
    nemoa.types
 
 Module contents

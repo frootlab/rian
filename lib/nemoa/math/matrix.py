@@ -69,7 +69,7 @@ def norm(x: NpArrayLike, name: str = 'frobenius', **kwds: Any) -> NpArray:
 
     # Get norm function
     fname = _NORM_PREFIX + name.lower()
-    module = nmodule.inst(nmodule.curname())
+    module = nmodule.get_instance(nmodule.get_curname())
     try:
         func = getattr(module, fname)
     except AttributeError as err:
@@ -242,7 +242,7 @@ def distance(
 
     # Get distance function
     fname = _DIST_PREFIX + metric.lower()
-    module = nmodule.inst(nmodule.curname())
+    module = nmodule.get_instance(nmodule.get_curname())
     try:
         func = getattr(module, fname)
     except AttributeError as err:

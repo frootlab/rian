@@ -20,11 +20,11 @@ from nemoa.types import Any, NpAxis, NpArray, NpArrayLike, StrList
 _ERROR_PREFIX = 'error_'
 
 #
-# Discrepancy Functions for the evaluation of Regression Errors and Residuals
+# Error statistics for the evaluation of Regression Errors and Residuals
 #
 
 def errors() -> StrList:
-    """Get sorted list of discrepancy functions.
+    """Get sorted list of error statistics.
 
     A 'discrepancy' is a sample statistic, that quantifies the difference of
     realized random variables [1]. In regression analysis discrepancy functions
@@ -44,16 +44,7 @@ def errors() -> StrList:
         [4] https://en.wikipedia.org/wiki/semimetrics
 
     """
-    from nemoa.base import ndict
-
-    # Get dictionary of functions with given prefix
-    module = nmodule.inst(nmodule.curname())
-    pattern = _ERROR_PREFIX + '*'
-    d = nmodule.get_functions(module, pattern=pattern)
-
-    # Create sorted list of discrepancy functions
-    i = len(_ERROR_PREFIX)
-    return sorted([v['name'][i:] for v in d.values()])
+    return nmodule.crop_functions(prefix=_ERROR_PREFIX)
 
 def error(
         x: NpArrayLike, y: NpArrayLike, name: str, **kwds: Any) -> NpArray:
@@ -108,7 +99,7 @@ def error(
 
     # Get discrepancy function
     fname = _ERROR_PREFIX + name.lower()
-    module = nmodule.inst(nmodule.curname())
+    module = nmodule.get_instance(nmodule.get_curname())
     try:
         func = getattr(module, fname)
     except AttributeError as err:

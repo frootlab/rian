@@ -13,8 +13,8 @@ __docformat__ = 'google'
 
 import fnmatch
 
-from nemoa.types import (
-    RecDict, DictOfRecDicts, StrTupleDict, OptStr)
+from nemoa.base import check
+from nemoa.types import RecDict, DictOfRecDicts, StrTupleDict, OptStr
 
 def merge(*args: dict, mode: int = 1) -> dict:
     """Recursive right merge dictionaries.
@@ -52,7 +52,10 @@ def merge(*args: dict, mode: int = 1) -> dict:
         d1, d2 = args[0], merge(*args[1:], mode=mode)
         mode = 0
 
-    # Check Type of first argument
+    # Check Type of first and second argument
+    check.argtype(1, d1, dict)
+    check.argtype(2, d1, dict)
+
     if not isinstance(d1, dict):
         raise TypeError(
             "first argument is required to be of type dict"

@@ -65,16 +65,15 @@ class TestEnv(ModuleTestCase):
         dirs_exist = hasattr(env, '_dirs')
         if dirs_exist:
             prev_dirs = getattr(env, '_dirs').copy()
-        env.update_dirs(appname=app_name, appauthor=app_author)
-        new_dirs = getattr(env, '_dirs').copy()
-        is_valid = self.is_dirs_valid(new_dirs, app_name, app_author)
-        if not is_valid:
-            print(new_dirs)
-        self.assertTrue(is_valid)
-        if dirs_exist:
-            setattr(env, '_dirs', prev_dirs)
-        else:
-            delattr(env, '_dirs')
+        try:
+            env.update_dirs(appname=app_name, appauthor=app_author)
+            new_dirs = getattr(env, '_dirs').copy()
+            self.assertTrue(self.is_dirs_valid(new_dirs, app_name, app_author))
+        finally:
+            if dirs_exist:
+                setattr(env, '_dirs', prev_dirs)
+            else:
+                delattr(env, '_dirs')
 
     def test_get_dirs(self) -> None:
         app_name = env.get_var('name') or 'no name'
@@ -95,17 +94,19 @@ class TestEnv(ModuleTestCase):
 
     def test_update_vars(self) -> None:
         vars_exist = hasattr(env, '_vars')
-        if vars_exist:
-            prev_vars = getattr(env, '_vars').copy()
-        env.update_vars(__file__)
-        new_vars = getattr(env, '_vars').copy()
-        self.assertEqual(new_vars.get('author'), __author__)
-        self.assertEqual(new_vars.get('email'), __email__)
-        self.assertEqual(new_vars.get('license'), __license__)
-        if vars_exist:
-            setattr(env, '_vars', prev_vars)
-        else:
-            delattr(env, '_vars')
+        try:
+            if vars_exist:
+                prev_vars = getattr(env, '_vars').copy()
+            env.update_vars(__file__)
+            new_vars = getattr(env, '_vars').copy()
+            self.assertEqual(new_vars.get('author'), __author__)
+            self.assertEqual(new_vars.get('email'), __email__)
+            self.assertEqual(new_vars.get('license'), __license__)
+        finally:
+            if vars_exist:
+                setattr(env, '_vars', prev_vars)
+            else:
+                delattr(env, '_vars')
 
     def test_get_var(self) -> None:
         for key in self.app_vars:
@@ -224,31 +225,60 @@ class TestNmodule(ModuleTestCase):
 
     module = 'nemoa.base.nmodule'
 
-    def test_curname(self) -> None:
-        self.assertEqual(nmodule.curname(), __name__)
+    def setUp(self) -> None:
+        self.this = nmodule.get_instance(__name__)
+        self.parent = nmodule.get_instance('nemoa.base')
 
-    def test_caller(self) -> None:
-        self.assertEqual(nmodule.caller(), __name__ + '.test_caller')
+    def test_get_curname(self) -> None:
+        self.assertEqual(nmodule.get_curname(), __name__)
 
-    def test_submodules(self) -> None:
-        mref = nmodule.inst('nemoa.base')
-        self.assertIn(nmodule.__name__, nmodule.submodules(mref))
+    def test_get_caller(self) -> None:
+        self.assertEqual(nmodule.get_caller(), __name__ + '.test_get_caller')
 
-    def test_inst(self) -> None:
-        name = nmodule.__name__
-        module = nmodule.inst(name)
-        self.assertIsInstance(module, Module)
-        self.assertEqual(getattr(module, '__name__'), name)
+    def test_crop_functions(self) -> None:
+        name = nmodule.crop_functions.__name__
+        fullname = nmodule.crop_functions.__module__ + '.' + name
+        cropped = nmodule.crop_functions(prefix='crop_', ref=nmodule)
+        self.assertIn('functions', cropped)
+
+    def test_get_root(self) -> None:
+        self.assertEqual(nmodule.get_root().__name__, 'nemoa')
+
+    def test_get_parent(self) -> None:
+        self.assertEqual(nmodule.get_parent().__name__, 'nemoa.base')
+
+    def test_get_submodule(self) -> None:
+        sub = nmodule.get_submodule('__test__', ref=self.parent)
+        self.assertIsInstance(sub, Module)
+
+    def test_get_submodules(self) -> None:
+        subs = nmodule.get_submodules(ref=self.parent)
+        self.assertIn(__name__, subs)
+
+    def test_get_instance(self) -> None:
+        ref = nmodule.get_instance(__name__)
+        self.assertIsInstance(ref, Module)
+        self.assertEqual(getattr(ref, '__name__'), __name__)
+
+    def test_get_caller_ref(self) -> None:
+        ref = nmodule.get_caller_ref()
+        self.assertIsInstance(ref, Module)
+
+    def test_get_attr(self) -> None:
+        self.assertEqual(nmodule.get_attr('__name__'), __name__)
 
     def test_get_functions(self) -> None:
         name = nmodule.get_functions.__name__
         fullname = nmodule.get_functions.__module__ + '.' + name
-        self.assertIn(fullname, nmodule.get_functions(nmodule))
-        self.assertEqual(len(nmodule.get_functions(nmodule, name='')), 0)
-        self.assertEqual(len(nmodule.get_functions(nmodule, name=name)), 1)
+        self.assertIn(fullname, nmodule.get_functions(ref=nmodule))
+        count = len(nmodule.get_functions(ref=nmodule, name=''))
+        self.assertEqual(count, 0)
+        count = len(nmodule.get_functions(ref=nmodule, name=name))
+        self.assertEqual(count, 1)
 
     def test_search(self) -> None:
-        self.assertEqual(len(nmodule.search(nmodule, name='search')), 1)
+        count = len(nmodule.search(ref=nmodule, name='search'))
+        self.assertEqual(count, 1)
 
 class TestNclass(ModuleTestCase):
     """Testcase for the module nemoa.base.nclass."""

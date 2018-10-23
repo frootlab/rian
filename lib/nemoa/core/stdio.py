@@ -39,7 +39,7 @@ def get_ttylib() -> OptModule:
     """
     libs = ['msvcrt', 'termios']
     for name in libs:
-        ref = nmodule.inst(name)
+        ref = nmodule.get_instance(name)
         if ref:
             return ref
     return None

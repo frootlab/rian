@@ -13,7 +13,7 @@ __docformat__ = 'google'
 
 import inspect
 
-from nemoa.base import ndict, nobject
+from nemoa.base import ndict, dig
 from nemoa.types import (
     Any, RecDict, DictOfRecDicts, NestRecDict, FuncWrapper, OptStr)
 
@@ -28,7 +28,7 @@ def has_base(obj: object, base: str) -> bool:
         True if the given object has the named base as base
 
     """
-    return nobject.has_base(obj, base)
+    return dig.has_base(obj, base)
 
 def methods(
         obj: object, pattern: OptStr = None, groupby: OptStr = None,
@@ -83,7 +83,7 @@ def methods(
         attr['reference'] = v
         attr['about'] = attr.get('about', about)
 
-        # change dictionary key, if argument 'key' is given
+        # Change dictionary key, if argument 'key' is given
         if key:
             k = str(attr[key])
             if k in mdict:

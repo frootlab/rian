@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Functions to access application variables and directories.
+"""Object hierarchy functions.
 
 .. References:
 .. _fnmatch: https://docs.python.org/3/library/fnmatch.html

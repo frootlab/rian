@@ -67,7 +67,7 @@ def debug(msg: str, *args: Any, **kwds: Any) -> None:
     return notify('debug', msg, *args, **kwds)
 
 def hook_debug(msg: str, *args: Any, **kwds: Any) -> None:
-    """Default debug notification hook."""
+    """Print debug notification to stdout."""
     print(msg, *args, **kwds)
 
 def info(msg: str, *args: Any, **kwds: Any) -> None:
@@ -75,7 +75,7 @@ def info(msg: str, *args: Any, **kwds: Any) -> None:
     return notify('info', msg, *args, **kwds)
 
 def hook_info(msg: str, *args: Any, **kwds: Any) -> None:
-    """Default info notification hook."""
+    """Print info notification to stdout."""
     print(msg, *args, **kwds)
 
 def warning(msg: str, *args: Any, **kwds: Any) -> None:
@@ -83,7 +83,7 @@ def warning(msg: str, *args: Any, **kwds: Any) -> None:
     return notify('warning', msg, *args, **kwds)
 
 def hook_warning(msg: str, *args: Any, **kwds: Any) -> None:
-    """Default warning notification hook."""
+    """Print warning notification to stdout."""
     print(msg, *args, **kwds)
 
 def error(msg: str, *args: Any, **kwds: Any) -> None:
@@ -91,7 +91,7 @@ def error(msg: str, *args: Any, **kwds: Any) -> None:
     return notify('error', msg, *args, **kwds)
 
 def hook_error(msg: str, *args: Any, **kwds: Any) -> None:
-    """Default error notification hook."""
+    """Print error notification to stdout."""
     print(msg, *args, **kwds)
 
 def critical(msg: str, *args: Any, **kwds: Any) -> None:
@@ -99,7 +99,7 @@ def critical(msg: str, *args: Any, **kwds: Any) -> None:
     return notify('critical', msg, *args, **kwds)
 
 def hook_critical(msg: str, *args: Any, **kwds: Any) -> None:
-    """Default critical error notification hook."""
+    """Print critical error notification to stdout."""
     print(msg, *args, **kwds)
 
 def clear() -> None:

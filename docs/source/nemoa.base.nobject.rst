@@ -1,7 +1,7 @@
-nemoa.base.nobject module
+nemoa.base.dig module
 =========================
 
-.. automodule:: nemoa.base.nobject
+.. automodule:: nemoa.base.dig
     :members:
     :undoc-members:
     :show-inheritance:

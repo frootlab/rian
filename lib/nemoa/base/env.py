@@ -47,7 +47,7 @@ except ImportError as err:
         "requires package appdirs: "
         "https://pypi.org/project/appdirs/") from err
 
-from nemoa.base import nmodule
+from nemoa.base import check, nmodule
 from nemoa.types import (
     Any, OptStr, OptStrOrBool, OptPathLike, StrDict, StrDictOfPaths)
 
@@ -107,11 +107,8 @@ def get_var(varname: str, *args: Any, **kwds: Any) -> OptStr:
         String representing the value of the application variable.
 
     """
-    # Check type of 'name'
-    if not isinstance(varname, str):
-        raise TypeError(
-            "'name' requires to be of type 'str' or None"
-            f", not '{type(varname).__name__}'")
+    # Check type of 'varname'
+    check.argtype('varname', varname, str)
 
     # Update variables if not present or if optional arguments are given
     if not '_vars' in globals() or args or kwds:
@@ -167,7 +164,7 @@ def update_vars(filepath: OptPathLike = None) -> None:
     # is taken. If name is not given, then use the name of the current top level
     # module.
 
-    filepath = filepath or nmodule.root().__file__
+    filepath = filepath or nmodule.get_root().__file__
     text = Path(filepath).read_text()
     rekey = "__([a-zA-Z][a-zA-Z0-9_]*)__"
     reval = r"['\"]([^'\"]*)['\"]"
@@ -175,7 +172,7 @@ def update_vars(filepath: OptPathLike = None) -> None:
     info = {}
     for match in re.finditer(pattern, text, re.M):
         info[str(match.group(1))] = str(match.group(2))
-    info['name'] = info.get('name', nmodule.curname().split('.', 1)[0])
+    info['name'] = info.get('name', nmodule.get_curname().split('.', 1)[0])
 
     # Get plattform specific environment variables
     info['encoding'] = get_encoding()
@@ -215,10 +212,7 @@ def get_dir(dirname: str, *args: Any, **kwds: Any) -> Path:
 
     """
     # Check type of 'dirname'
-    if not isinstance(dirname, str):
-        raise TypeError(
-            "'name' requires to be of type 'str' or None"
-            f", not '{type(dirname).__name__}'")
+    check.argtype('dirname', dirname, str)
 
     # Update derectories if not present or if any optional arguments are given
     if not '_dirs' in globals() or args or kwds:
@@ -304,7 +298,7 @@ def update_dirs(
     dirs['site_package_dir'] = path
 
     # Get current package directories from top level module
-    path = Path(nmodule.root().__file__).parent
+    path = Path(nmodule.get_root().__file__).parent
     dirs['package_dir'] = path
     dirs['package_data_dir'] = path / 'data'
 

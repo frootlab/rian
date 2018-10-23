@@ -184,6 +184,14 @@ class TestInifile(ModuleTestCase):
             "[l1]\na = 1\n\n[l2]\na = 2\n\n")
         inifile.save(self.obj, self.filepath, header=self.header)
 
+    def test_parse(self) -> None:
+        from configparser import ConfigParser
+        parser = ConfigParser()
+        setattr(parser, 'optionxform', lambda key: key)
+        parser.read_string(self.text)
+        obj = inifile.parse(parser, structure=self.structure)
+        self.assertEqual(obj, self.obj)
+
     def test_dumps(self) -> None:
         text = inifile.dumps(self.obj, header=self.header)
         self.assertEqual(text, self.text)

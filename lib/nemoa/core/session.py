@@ -157,9 +157,9 @@ class Session:
             self._file.close()
 
     def open(
-        self, filepath: PathLike, workspace: OptPathLike = None,
-        basedir: OptPathLike = None, pwd: OptBytes = None, mode: str = '',
-        encoding: OptStr = None, is_dir: bool = False) -> CManFileLike:
+            self, filepath: PathLike, workspace: OptPathLike = None,
+            basedir: OptPathLike = None, pwd: OptBytes = None, mode: str = '',
+            encoding: OptStr = None, is_dir: bool = False) -> CManFileLike:
         """Open file within current or given workspace.
 
         Args:
