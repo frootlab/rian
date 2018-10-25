@@ -6,7 +6,7 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-from nemoa.base import nclass
+from nemoa.base import bare
 from nemoa.test import GenericTestCase
 
 class TestCase(GenericTestCase):
@@ -26,13 +26,13 @@ class TestCase(GenericTestCase):
     def test_model_import(self):
         with self.subTest(filetype='npz'):
             model = nemoa.model.open('test', workspace='testsuite')
-            self.assertTrue(nclass.has_base(model, 'Model'))
+            self.assertTrue(bare.has_base(model, 'Model'))
 
     def test_model_ann(self):
         with self.subTest(step='create shallow ann'):
             model = nemoa.model.create(
                 dataset='linear', network='shallow', system='ann')
-            self.assertTrue(nclass.has_base(model, 'Model'))
+            self.assertTrue(bare.has_base(model, 'Model'))
 
         with self.subTest(step='optimize shallow ann'):
             model.optimize()
@@ -43,7 +43,7 @@ class TestCase(GenericTestCase):
         with self.subTest(step='create dbn'):
             model = nemoa.model.create(
                 dataset='linear', network='deep', system='dbn')
-            self.assertTrue(nclass.has_base(model, 'Model'))
+            self.assertTrue(bare.has_base(model, 'Model'))
 
         with self.subTest(step='optimize dbn'):
             model.optimize()

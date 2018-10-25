@@ -13,7 +13,7 @@ import sys
 from nemoa.base import nmodule
 from nemoa.core import log
 from nemoa.types import (
-    Any, AnyFunc, ExcType, ExcValue, ExcTraceback, OptVoidFunc)
+    Any, AnyFunc, ExcType, Exc, Traceback, OptVoidFunc)
 
 _NOTIFICATION_TYPES = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 _DEFAULT_NOTIFICATION_LEVEL = 1
@@ -106,18 +106,17 @@ def clear() -> None:
     """Clear screen."""
     os.system('cls' if os.name == 'nt' else 'clear')
 
-def hook_exception(etype: ExcType, value: ExcValue, tb: ExcTraceback) -> None:
+def hook_exception(Error: ExcType, value: Exc, tb: Traceback) -> None:
     """Alternative exception hook."""
-    exc_info = (etype, value, tb)
-    log.exception(str(value), exc_info=exc_info)
+    log.exception(str(value), exc_info=(Error, value, tb))
 
 def bypass_exceptions(
         func: AnyFunc, hook: AnyFunc, interrupt: bool = False) -> AnyFunc:
     """Bypass exceptions from given function."""
     @functools.wraps(func)
     def wrapper(*args: Any, **kwds: Any) -> Any:
-        etype = sys.exc_info()[0]
-        if etype and not issubclass(etype, Exception):
+        Error = sys.exc_info()[0]
+        if Error and not issubclass(Error, Exception):
             return func(*args, **kwds)
         hook(*sys.exc_info())
         if interrupt:

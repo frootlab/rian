@@ -92,65 +92,6 @@ class WsFile:
     _pwd: OptBytes
 
     #
-    # Public Instance Attributes
-    #
-
-    about: property = ReadWriteAttr(str, bind='_attr')
-    about.__doc__ = """Summary of the workspace.
-
-    A short description of the contents, the purpose or the intended application
-    of the workspace. The attribute about is inherited by resources, that are
-    created inside the workspace and support the attribute.
-    """
-
-    email: property = ReadWriteAttr(str, bind='_attr')
-    email.__doc__ = """Email address of the maintainer of the workspace.
-
-    Email address to a person, an organization, or a service that is responsible
-    for the content of the workspace. The attribute email is inherited by
-    resources, that are created inside the workspace and support the attribute.
-    """
-
-    license: property = ReadWriteAttr(str, bind='_attr')
-    license.__doc__ = """License for the usage of the contents of the workspace.
-
-    Namereference to a legal document giving specified users an official
-    permission to do something with the contents of the workspace. The attribute
-    license is inherited by resources, that are created inside the workspace
-    and support the attribute.
-    """
-
-    maintainer: property = ReadWriteAttr(str, bind='_attr')
-    maintainer.__doc__ = """Name of the maintainer of the workspace.
-
-    A person, an organization, or a service that is responsible for the content
-    of the workspace. The attribute maintainer is inherited by resources, that
-    are created inside the workspace and support the attribute.
-    """
-
-    startup: property = ReadWriteAttr(Path, bind='_attr')
-    startup.__doc__ = """Startup script inside the workspace.
-
-    The startup script is a path, that points to a a python script inside the
-    workspace, which is intended to be executed after loading the workspace.
-    """
-
-    name: property = ReadOnlyAttr(list, getter='_get_name')
-    name.__doc__ = """Filename of the workspace without file extension."""
-
-    path: property = ReadOnlyAttr(Path, key='_path')
-    path.__doc__ = """Filepath of the workspace."""
-
-    files: property = ReadOnlyAttr(list, getter='search')
-    files.__doc__ = """List of all files within the workspace."""
-
-    folders: property = ReadOnlyAttr(list, getter='_get_folders')
-    folders.__doc__ = """List of all folders within the workspace."""
-
-    changed: property = ReadOnlyAttr(bool, key='_changed')
-    changed.__doc__ = """Tells whether the workspace file has been changed."""
-
-    #
     # Magic
     #
 
@@ -169,6 +110,129 @@ class WsFile:
     def __exit__(self, etype: str, value: int, tb: Traceback) -> None:
         """Close workspace file and buffer."""
         self.close()
+
+    #
+    # Private Instance Methods
+    #
+
+    def _create_new(self) -> None:
+        # Initialize instance Variables, Buffer and buffered ZipFile
+        self._attr = self._DEFAULT_CONFIG['workspace'].copy()
+        self._changed = False
+        self._path = None
+        self._pwd = None
+        self._buffer = BytesIO()
+        self._file = ZipFile(self._buffer, mode='w')
+
+        # Create folders
+        for folder in self._DEFAULT_DIR_LAYOUT:
+            self.mkdir(folder)
+
+    def _open_read(self, path: PathLike) -> BytesIOLike:
+        # Locate workspace member by it's path
+        # and open file handler for reading the file
+        matches = self._locate(path)
+        if not matches:
+            fname = PurePath(path).as_posix()
+            raise FileNotFoundError(
+                f"workspace member with filename '{fname}' does not exist")
+        # Select latest version of file
+        zinfo = matches[-1]
+        return self._file.open(zinfo, pwd=self._pwd, mode='r')
+
+    def _open_write(self, path: PathLike, is_dir: bool = False) -> BytesIOLike:
+        # Determine workspace member name from path
+        # and get ZipInfo with local time as date_time
+        filename = PurePath(path).as_posix()
+        if is_dir:
+            filename += '/'
+        zinfo = ZipInfo( # type: ignore
+            filename=filename,
+            date_time=time.localtime()[:6])
+        # Catch Warning for duplicate files
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            # TODO (patrick.michl@gmail.com): The zipfile standard
+            # module currently does not support encryption in write
+            # mode of new ZipFiles. See:
+            # https://docs.python.org/3/library/zipfile.html
+            # When support is provided, the below line for writing
+            # files shall be replaced by:
+            # file = self._file.open(zinfo, mode='w', pwd=self._pwd)
+            file = self._file.open(zinfo, mode='w')
+        self._changed = True
+        return file
+
+    def _locate(self, path: PathLike, sort: bool = True) -> ZipInfoList:
+        # Get list of member zipinfos
+        zinfos = self._file.infolist()
+        # Match members by path-like filenames
+        matches = [i for i in zinfos if Path(i.filename) == Path(path)]
+        if sort:
+            # Sort matches by datetime
+            matches = sorted(matches, key=lambda i: i.date_time)
+        # Return sorted matches
+        return matches
+
+    def _get_name(self) -> OptStr:
+        return getattr(self._path, 'stem', None)
+
+    def _get_folders(self) -> StrList:
+        names: StrList = []
+        for zinfo in self._file.infolist():
+            if getattr(zinfo, 'is_dir')():
+                name = PurePath(zinfo.filename).as_posix() + '/'
+                names.append(name)
+        return sorted(names)
+
+    def _remove_members(self, zinfos: ZipInfoList) -> bool:
+        # Return True if list of members is empty
+        if not zinfos:
+            return True
+
+        # Remove entries in the list of members from workspace
+        new_zinfos = []
+        zids = [(zinfo.filename, zinfo.date_time) for zinfo in zinfos]
+        for zinfo in self._file.infolist():
+            zid = (zinfo.filename, zinfo.date_time)
+            if zid in zids:
+                zids.remove(zid)
+            else:
+                new_zinfos.append(zinfo)
+
+        # If any entry on the list could not be found raise an error
+        if zids:
+            names = [zid[0] for zid in zids]
+            raise FileNotFoundError(
+                f"could not locate workspace members: {names}")
+
+        # Create new ZipArchive in Memory
+        new_buffer = BytesIO()
+        new_file = ZipFile(new_buffer, mode='w')
+
+        # Copy all workspace members on the new list from current
+        # to new workspace
+        for zinfo in new_zinfos:
+            data = self._file.read(zinfo, pwd=self._pwd)
+            new_file.writestr(zinfo, data)
+
+        # Close current workspace and buffer and link new workspace and buffer
+        self._file.close()
+        self._buffer.close()
+        self._buffer = new_buffer
+        self._file = new_file
+        self._changed = True
+
+        return True
+
+    def _remove_duplicates(self) -> bool:
+        # Get list of duplicates
+        zinfos: ZipInfoList = []
+        for filename in self.files:
+            zinfos += self._locate(filename, sort=True)[:-1]
+
+        # Remove duplicates
+        return self._remove_members(zinfos)
 
     #
     # Public Instance Methods
@@ -271,11 +335,10 @@ class WsFile:
         self._file.close()
 
         # Read buffer and write workspace file
-        if isinstance(self._buffer, BytesIO):
-            with open(path, 'wb') as file:
-                file.write(self._buffer.getvalue())
-        else:
+        if not isinstance(self._buffer, BytesIO):
             raise TypeError("buffer has not been initialized")
+        with open(path, 'wb') as file:
+            file.write(self._buffer.getvalue())
 
         # Close buffer
         self._buffer.close()
@@ -700,124 +763,60 @@ class WsFile:
         return sorted([str(path) for path in paths])
 
     #
-    # Private Instance Methods
+    # Public Instance Attributes
     #
 
-    def _create_new(self) -> None:
-        # Initialize instance Variables, Buffer and buffered ZipFile
-        self._attr = self._DEFAULT_CONFIG['workspace'].copy()
-        self._changed = False
-        self._path = None
-        self._pwd = None
-        self._buffer = BytesIO()
-        self._file = ZipFile(self._buffer, mode='w')
+    about: property = ReadWriteAttr(str, bind='_attr')
+    about.__doc__ = """Summary of the workspace.
 
-        # Create folders
-        for folder in self._DEFAULT_DIR_LAYOUT:
-            self.mkdir(folder)
+    A short description of the contents, the purpose or the intended application
+    of the workspace. The attribute about is inherited by resources, that are
+    created inside the workspace and support the attribute.
+    """
 
-    def _open_read(self, path: PathLike) -> BytesIOLike:
-        # Locate workspace member by it's path
-        # and open file handler for reading the file
-        matches = self._locate(path)
-        if not matches:
-            fname = PurePath(path).as_posix()
-            raise FileNotFoundError(
-                f"workspace member with filename '{fname}' does not exist")
-        # Select latest version of file
-        zinfo = matches[-1]
-        return self._file.open(zinfo, pwd=self._pwd, mode='r')
+    email: property = ReadWriteAttr(str, bind='_attr')
+    email.__doc__ = """Email address of the maintainer of the workspace.
 
-    def _open_write(self, path: PathLike, is_dir: bool = False) -> BytesIOLike:
-        # Determine workspace member name from path
-        # and get ZipInfo with local time as date_time
-        filename = PurePath(path).as_posix()
-        if is_dir:
-            filename += '/'
-        zinfo = ZipInfo( # type: ignore
-            filename=filename,
-            date_time=time.localtime()[:6])
-        # Catch Warning for duplicate files
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-            # TODO (patrick.michl@gmail.com): The zipfile standard
-            # module currently does not support encryption in write
-            # mode of new ZipFiles. See:
-            # https://docs.python.org/3/library/zipfile.html
-            # When support is provided, the below line for writing
-            # files shall be replaced by:
-            # file = self._file.open(zinfo, mode='w', pwd=self._pwd)
-            file = self._file.open(zinfo, mode='w')
-        self._changed = True
-        return file
+    Email address to a person, an organization, or a service that is responsible
+    for the content of the workspace. The attribute email is inherited by
+    resources, that are created inside the workspace and support the attribute.
+    """
 
-    def _locate(self, path: PathLike, sort: bool = True) -> ZipInfoList:
-        # Get list of member zipinfos
-        zinfos = self._file.infolist()
-        # Match members by path-like filenames
-        matches = [i for i in zinfos if Path(i.filename) == Path(path)]
-        if sort:
-            # Sort matches by datetime
-            matches = sorted(matches, key=lambda i: i.date_time)
-        # Return sorted matches
-        return matches
+    license: property = ReadWriteAttr(str, bind='_attr')
+    license.__doc__ = """License for the usage of the contents of the workspace.
 
-    def _get_name(self) -> OptStr:
-        return getattr(self._path, 'stem', None)
+    Namereference to a legal document giving specified users an official
+    permission to do something with the contents of the workspace. The attribute
+    license is inherited by resources, that are created inside the workspace
+    and support the attribute.
+    """
 
-    def _get_folders(self) -> StrList:
-        names: StrList = []
-        for zinfo in self._file.infolist():
-            if getattr(zinfo, 'is_dir')():
-                name = PurePath(zinfo.filename).as_posix() + '/'
-                names.append(name)
-        return sorted(names)
+    maintainer: property = ReadWriteAttr(str, bind='_attr')
+    maintainer.__doc__ = """Name of the maintainer of the workspace.
 
-    def _remove_members(self, zinfos: ZipInfoList) -> bool:
-        # Return True if list of members is empty
-        if not zinfos:
-            return True
+    A person, an organization, or a service that is responsible for the content
+    of the workspace. The attribute maintainer is inherited by resources, that
+    are created inside the workspace and support the attribute.
+    """
 
-        # Remove entries in the list of members from workspace
-        new_zinfos = []
-        zids = [(zinfo.filename, zinfo.date_time) for zinfo in zinfos]
-        for zinfo in self._file.infolist():
-            zid = (zinfo.filename, zinfo.date_time)
-            if zid in zids:
-                zids.remove(zid)
-            else:
-                new_zinfos.append(zinfo)
+    startup: property = ReadWriteAttr(Path, bind='_attr')
+    startup.__doc__ = """Startup script inside the workspace.
 
-        # If any entry on the list could not be found raise an error
-        if zids:
-            names = [zid[0] for zid in zids]
-            raise FileNotFoundError(
-                f"could not locate workspace members: {names}")
+    The startup script is a path, that points to a a python script inside the
+    workspace, which is intended to be executed after loading the workspace.
+    """
 
-        # Create new ZipArchive in Memory
-        new_buffer = BytesIO()
-        new_file = ZipFile(new_buffer, mode='w')
+    name: property = ReadOnlyAttr(list, getter='_get_name')
+    name.__doc__ = """Filename of the workspace without file extension."""
 
-        # Copy all workspace members on the new list from current
-        # to new workspace
-        for zinfo in new_zinfos:
-            data = self._file.read(zinfo, pwd=self._pwd)
-            new_file.writestr(zinfo, data)
+    path: property = ReadOnlyAttr(Path, key='_path')
+    path.__doc__ = """Filepath of the workspace."""
 
-        # Close current workspace and buffer and link new workspace and buffer
-        self._file.close()
-        self._buffer.close()
-        self._buffer = new_buffer
-        self._file = new_file
-        self._changed = True
+    files: property = ReadOnlyAttr(list, getter='search')
+    files.__doc__ = """List of all files within the workspace."""
 
-        return True
+    folders: property = ReadOnlyAttr(list, getter='_get_folders')
+    folders.__doc__ = """List of all folders within the workspace."""
 
-    def _remove_duplicates(self) -> bool:
-        # Get list of duplicates
-        zinfos: ZipInfoList = []
-        for filename in self.files:
-            zinfos += self._locate(filename, sort=True)[:-1]
-
-        # Remove duplicates
-        return self._remove_members(zinfos)
+    changed: property = ReadOnlyAttr(bool, key='_changed')
+    changed.__doc__ = """Tells whether the workspace file has been changed."""

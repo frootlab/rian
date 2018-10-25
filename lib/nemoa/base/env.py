@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""System, application and package specific informations.
+"""Environment Information.
 
 .. References:
 .. _PEP 345:
@@ -23,7 +23,6 @@
 
 .. TODO::
     * Add get_file for 'user_package_log', 'temp_log' etc.
-    * include encoding, hostname etc. in get_var
 
 """
 
@@ -108,7 +107,7 @@ def get_var(varname: str, *args: Any, **kwds: Any) -> OptStr:
 
     """
     # Check type of 'varname'
-    check.argtype('varname', varname, str)
+    check.has_type("Argument 'varname'", varname, str)
 
     # Update variables if not present or if optional arguments are given
     if not '_vars' in globals() or args or kwds:
@@ -212,7 +211,7 @@ def get_dir(dirname: str, *args: Any, **kwds: Any) -> Path:
 
     """
     # Check type of 'dirname'
-    check.argtype('dirname', dirname, str)
+    check.has_type("argument 'dirname'", dirname, str)
 
     # Update derectories if not present or if any optional arguments are given
     if not '_dirs' in globals() or args or kwds:

@@ -32,7 +32,7 @@ def splitargs(text: str) -> Tuple[str, tuple, dict]:
 
     """
     # Check type of 'text'
-    check.argtype(0, text, str)
+    check.has_type("first argument 'text'", text, str)
 
     # Get function name
     try:
@@ -79,9 +79,9 @@ def astype(text: str, fmt: OptStr = None, **kwds: Any) -> Any:
         Value of the text in given target format.
 
     """
-    # Check type of Arguments
-    check.argtype(0, text, str)
-    check.argtype('fmt', fmt, (str, type(None)))
+    # Check Arguments
+    check.has_type("first argument 'text'", text, str)
+    check.has_opt_type("argument 'fmt'", fmt, str)
 
     # Evaluate text if no format is given
     if fmt is None:
@@ -123,8 +123,8 @@ def aslist(text: str, delim: str = ',') -> list:
 
     """
     # Check types of Arguments
-    check.argtype(0, text, str)
-    check.argtype('delim', delim, str)
+    check.has_type("first argument 'text'", text, str)
+    check.has_type("argument 'delim'", delim, str)
 
     # return empty list if the string is blank
     if not text or not text.strip():
@@ -160,8 +160,8 @@ def astuple(text: str, delim: str = ',') -> tuple:
 
     """
     # Check types of Arguments
-    check.argtype(0, text, str)
-    check.argtype('delim', delim, str)
+    check.has_type("first argument 'text'", text, str)
+    check.has_type("argument 'delim'", delim, str)
 
     # Return empty tuple if the string is blank
     if not text or not text.strip():
@@ -197,8 +197,8 @@ def asset(text: str, delim: str = ',') -> set:
 
     """
     # Check types of Arguments
-    check.argtype(0, text, str)
-    check.argtype('delim', delim, str)
+    check.has_type("first argument 'text'", text, str)
+    check.has_type("argument 'delim'", delim, str)
 
     # Return empty set if the string is blank
     if not text or not text.strip():
@@ -235,8 +235,8 @@ def asdict(text: str, delim: str = ',') -> dict:
 
     """
     # Check types of Arguments
-    check.argtype(0, text, str)
-    check.argtype('delim', delim, str)
+    check.has_type("first argument 'text'", text, str)
+    check.has_type("argumnt 'delim'", delim, str)
 
     # Return empty dict if the string is blank
     if not text or not text.strip():
@@ -299,8 +299,8 @@ def aspath(text: str, expand: bool = True) -> Path:
 
     """
     # Check types of Arguments
-    check.argtype(0, text, str)
-    check.argtype('expand', expand, bool)
+    check.has_type("first argument 'text'", text, str)
+    check.has_type("argument 'expand'", expand, bool)
 
     from nemoa.base import npath
     return npath.expand(text)

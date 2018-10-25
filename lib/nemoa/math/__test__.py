@@ -11,7 +11,7 @@ import numpy as np
 
 from nemoa.math import algo, curve, graph, matrix, regr, vector
 from nemoa.test import GenericTestCase, ModuleTestCase
-from nemoa.types import Any, Callable, NpArray
+from nemoa.types import Any, Callable, NpArray, NaN
 
 class MathTestCase(GenericTestCase):
     """Additional asserts for math tests."""
@@ -113,7 +113,7 @@ class MathTestCase(GenericTestCase):
         self.assertIsNorm(f, **kwds)
 
     #
-    # BiFunctions
+    # Binary Functions
     #
 
     def assertBiNotNegative(self, f: Callable, **kwds: Any) -> None:
@@ -122,7 +122,7 @@ class MathTestCase(GenericTestCase):
         self.assertTrue(np.all(f(x, y, **kwds) >= 0.),
             f"function '{f.__name__}' contains negative target values")
 
-    def assertBiFuncCoDim(
+    def assertBinFuncCoDim(
             self, f: Callable, codim: int = 0, **kwds: Any) -> None:
         x = np.zeros((3, 3, 3))
         self.assertEqual(x.ndim - f(x, x, **kwds).ndim, codim)
@@ -165,13 +165,13 @@ class MathTestCase(GenericTestCase):
 
     def assertIsVectorMetric(self, f: Callable, **kwds: Any) -> None:
         # Test of codimension of function is 1
-        self.assertBiFuncCoDim(f, codim=1, **kwds)
+        self.assertBinFuncCoDim(f, codim=1, **kwds)
         # Test if function is metric
         self.assertIsMetric(f, **kwds)
 
     def assertIsMatrixMetric(self, f: Callable, **kwds: Any) -> None:
         # Test of codimension of function is 2
-        self.assertBiFuncCoDim(f, codim=2, **kwds)
+        self.assertBinFuncCoDim(f, codim=2, **kwds)
         # Test if function is metric
         self.assertIsMetric(f, **kwds)
 
@@ -403,6 +403,19 @@ class TestMatrix(MathTestCase, ModuleTestCase):
     """Testcase for the module nemoa.math.matrix."""
 
     module = 'nemoa.math.matrix'
+
+    def setUp(self) -> None:
+        self.x = np.array([[NaN, 1.], [NaN, NaN]])
+        self.d = {('a', 'b'): 1.}
+        self.labels = (['a', 'b'], ['a', 'b'])
+
+    def test_from_dict(self) -> None:
+        x = matrix.from_dict(self.d, labels=self.labels)
+        self.assertTrue(np.allclose(x, self.x, equal_nan=True))
+
+    def test_as_dict(self) -> None:
+        d = matrix.as_dict(self.x, labels=self.labels)
+        self.assertEqual(d, self.d)
 
     def test_norms(self) -> None:
         norms = matrix.norms()

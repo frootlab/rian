@@ -6,11 +6,9 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from abc import ABC, abstractmethod
-
-from nemoa.types import (
-    Any, Callable, ClassVar, Dict, FileOrPathLike, Method, ClassInfo,
-    OptClassInfo, OptDict, OptCallable, OptStr, OptType, StrDict, Tuple)
+from nemoa.base import check
+from nemoa.errors import SetReadOnlyAttrError
+from nemoa.types import Any, Callable, ClassInfo, OptClassInfo, OptStr, StrDict
 
 ################################################################################
 # Generic attribute descriptors for binding class instance attributes: When an
@@ -20,7 +18,7 @@ from nemoa.types import (
 ################################################################################
 
 class ReadWriteAttr(property):
-    """Extended descriptor class for properties.
+    """Descriptor Class for read- and writable Attributes.
 
     Args:
         classinfo:
@@ -43,10 +41,10 @@ class ReadWriteAttr(property):
     _key: str
     _name: str
     _setter: Callable
-    _store: dict
+    _dict: dict
 
     #
-    # Magic
+    # __Magic__
     #
 
     def __init__(
@@ -54,10 +52,15 @@ class ReadWriteAttr(property):
             key: OptStr = None, default: Any = None, getter: OptStr = None,
             setter: OptStr = None) -> None:
         """Initialize instance variables."""
+        # Check types of Arguments
+        check.has_opt_type("argument 'classinfo'", classinfo, (type, tuple))
+        check.has_opt_type("argument 'bind'", bind, str)
+        check.has_opt_type("argument 'key'", key, str)
+        check.has_opt_type("argument 'getter'", getter, str)
+        check.has_opt_type("argument 'setter'", setter, str)
+
+        # Set Instance Variables to Arguments
         if classinfo:
-            if not isinstance(classinfo, (type, tuple)):
-                raise TypeError(
-                    "'classinfo' requires to be a type or a tuple of types")
             self._classinfo = classinfo
         self._args = {
             'bind': bind, 'key': key, 'getter': getter, 'setter': setter}
@@ -69,168 +72,201 @@ class ReadWriteAttr(property):
 
     def __get__(self, obj: object, owner: type) -> Any:
         """Wrap get requests to the Attribute."""
-        if not hasattr(self, '_store'):
+        if not hasattr(self, '_dict'):
             self._bind(obj)
         if hasattr(self, '_getter'):
             return self._getter()
-        return self._store.get(self._key, self._default)
+        return self._dict.get(self._key, self._default)
 
     def __set__(self, obj: object, val: Any) -> None:
         """Wrap set requests to the Attribute."""
-        # Check Type of Attribute
-        if hasattr(self, '_classinfo') and not isinstance(val, self._classinfo):
-            if isinstance(self._classinfo, type):
-                typestr = self._classinfo.__name__
-            elif isinstance(self._classinfo, tuple):
-                names = [each.__name__ for each in self._classinfo]
-                typestr = ' or '.join(names)
-            else:
-                typestr = '?'
-            raise TypeError(
-                f"'{self._name}' requires type {typestr}"
-                f", not {type(val).__name__}")
-        if not hasattr(self, '_store'):
+        if hasattr(self, '_classinfo'):
+            check.has_type(self._name, val, self._classinfo)
+        if not hasattr(self, '_dict'):
             self._bind(obj)
         if hasattr(self, '_setter'):
             self._setter(val)
         else:
-            self._store[self._key] = val
+            self._dict[self._key] = val
 
     #
     # Private Instance Methods
     #
 
     def _bind(self, obj: object) -> None:
-        """Bind key, getter and setter functions."""
-        # Bind key
-        self._bind_key(obj, self._args['bind'], self._args['key'])
-
-        # Bind getter
+        self._dict = obj.__dict__
+        self._key = self._name
+        if isinstance(self._args['bind'], str):
+            self._bind_dict(obj, self._args['bind']) # Bind custom dict
+        if isinstance(self._args['key'], str):
+            self._key = self._args['key'] # Bind custom key
         if isinstance(self._args['getter'], str):
-            self._bind_getter(obj, self._args['getter'])
-
-        # Bind setter
+            self._bind_getter(obj, self._args['getter']) # Bind custom getter
         if isinstance(self._args['setter'], str):
-            self._bind_setter(obj, self._args['setter'])
+            self._bind_setter(obj, self._args['setter']) # Bind custom setter
 
-    def _bind_key(self, obj: object, mapping: OptStr, key: OptStr) -> None:
-        if mapping is None:
-            self._store = obj.__dict__
-        elif not mapping in obj.__dict__:
-            name = getattr(obj, '__name__', obj.__class__.__name__)
-            raise AttributeError(
-                f"{name} has no attribute {mapping}")
-        elif not isinstance(obj.__dict__[mapping], dict):
-            raise TypeError(
-                f"'{mapping}' requires type mapping"
-                f", not {type(obj.__dict__[mapping]).__name__}")
-        else:
-            self._store = obj.__dict__[mapping]
-        if key is None:
-            self._key = self._name
-        elif not isinstance(key, str):
-            raise TypeError(
-                f"'key' requires type string"
-                f", not '{type(key).__name__}'")
-        else:
-            self._key = key
+    def _bind_dict(self, obj: object, bind: str) -> None:
+        check.has_attr(obj, bind)
+        check.has_type(bind, getattr(obj, bind), dict)
+        self._dict = obj.__dict__[bind]
 
     def _bind_getter(self, obj: object, getter: str) -> None:
-        if not hasattr(obj, getter):
-            name = getattr(obj, '__name__', obj.__class__.__name__)
-            raise AttributeError(
-                f"{name} has no attribute {getter}")
-        elif not callable(getattr(obj, getter)):
-            raise TypeError(
-                f"'{getter}' requires to be callable"
-                f", not {type(getattr(obj, getter)).__name__}")
-        else:
-            # linter complains if set directly
-            setattr(self, '_getter', getattr(obj, getter))
+        check.has_attr(obj, getter)
+        check.is_callable(getter, getattr(obj, getter))
+        setattr(self, '_getter', getattr(obj, getter))
 
     def _bind_setter(self, obj: object, setter: str) -> None:
-        if not hasattr(obj, setter):
-            name = getattr(obj, '__name__', obj.__class__.__name__)
-            raise AttributeError(
-                f"{name} has no attribute {setter}")
-        elif not callable(getattr(obj, setter)):
-            raise TypeError(
-                f"'{setter}' requires to be callable"
-                f", not {type(getattr(obj, setter)).__name__}")
-        else:
-            # linter complains if set directly
-            setattr(self, '_setter', getattr(obj, setter))
+        check.has_attr(obj, setter)
+        check.is_callable(setter, getattr(obj, setter))
+        setattr(self, '_setter', getattr(obj, setter))
 
 class ReadOnlyAttr(ReadWriteAttr):
-    """Descriptor Class for read-only Attribute binding."""
+    """Descriptor Class for read-only Attributes."""
 
     def __set__(self, obj: object, val: Any) -> None:
         """Wrap set attribute requests."""
-        raise AttributeError(
-            f"'{self._name}' is a read-only property "
-            f"of class {type(obj).__name__}")
+        raise SetReadOnlyAttrError(obj, self._name)
 
-# ################################################################################
-# # Base classes for File I/O
-# ################################################################################
-#
-# class FileIOBase(ABC):
-#     @abstractmethod
-#     def load(self, file: FileOrPathLike) -> object:
-#         """Load object from file."""
-#         return object()
-#     @abstractmethod
-#     def save(self, obj: object, file: FileOrPathLike) -> None:
-#         """Save object to file."""
-#         return None
+class TreeReadWriteAttr(ReadWriteAttr):
+    """Descriptor Class for rw-Attributes within a tree object hierarchy.
+
+    Args:
+        parent: Name of attribute, which references a parent object of identical
+            type.
+
+    """
+
+    _parent: object
+
+    #
+    # __Magic__
+    #
+
+    def __init__(
+            self, classinfo: OptClassInfo = None, bind: OptStr = None,
+            key: OptStr = None, default: Any = None, getter: OptStr = None,
+            setter: OptStr = None, parent: OptStr = None) -> None:
+        """Initialize instance variables."""
+        super().__init__(
+            classinfo=classinfo, bind=bind, key=key, default=default,
+            getter=getter, setter=setter)
+        self._args['parent'] = parent
+
+    def __get__(self, obj: object, owner: type) -> Any:
+        """Wrap get requests to the Attribute."""
+        if not hasattr(self, '_dict'):
+            self._bind(obj)
+        if hasattr(self, '_getter'):
+            return self._getter()
+        if self._dict.get(self._key):
+            return self._dict.get(self._key)
+        if hasattr(self, '_parent') and hasattr(self._parent, self._name):
+            return getattr(self._parent, self._name)
+        return self._default
+
+    def _bind(self, obj: object) -> None:
+        super()._bind(obj)
+        if isinstance(self._args['parent'], str):
+            self._bind_parent(obj, self._args['parent'])
+
+    def _bind_parent(self, obj: object, parent: str) -> None:
+        check.has_attr(obj, parent)
+        setattr(self, '_parent', getattr(obj, parent))
 
 ################################################################################
-# Base classes for object model templates
+# Meta Data object model template
 ################################################################################
 
-# class ObjectIP:
-#     """Base class for objects subjected to intellectual property.
-#
-#     Resources like datasets, networks, systems and models share common
-#     descriptive metadata comprising authorship and copyright, as well as
-#     administrative metadata like branch and version. This base class is
-#     intended to provide a unified interface to access those attributes.
-#
-#     """
-#
-#     _attr: StrDict
-#     _copy_map: ClassVar[Dict[str, Tuple[str, type]]] = {
-#         'attr': ('_attr', dict)}
-#
-#     about: property = ReadWriteAttr(str, key='_attr')
-#     about.__doc__ = """Summary of the workspace.
-#
-#     A short description of the contents, the purpose or the intended application
-#     of the workspace. The attribute about is inherited by resources, that are
-#     created inside the workspace and support the attribute.
-#     """
-#
-#     email: property = ReadWriteAttr(str, key='_attr')
-#     email.__doc__ = """Email address of the maintainer of the workspace.
-#
-#     Email address to a person, an organization, or a service that is responsible
-#     for the content of the workspace. The attribute email is inherited by
-#     resources, that are created inside the workspace and support the attribute.
-#     """
-#
-#     license: property = ReadWriteAttr(str, key='_attr')
-#     license.__doc__ = """License for the usage of the contents of the workspace.
-#
-#     Namereference to a legal document giving specified users an official
-#     permission to do something with the contents of the workspace. The attribute
-#     license is inherited by resources, that are created inside the workspace
-#     and support the attribute.
-#     """
-#
-#     maintainer: property = ReadWriteAttr(str, key='_attr')
-#     maintainer.__doc__ = """Name of the maintainer of the workspace.
-#
-#     A person, an organization, or a service that is responsible for the content
-#     of the workspace. The attribute maintainer is inherited by resources, that
-#     are created inside the workspace and support the attribute.
-#     """
+class MetaAttr(TreeReadWriteAttr):
+    """Descriptor Class for MetaData Attributes."""
+
+class ContentAttr(TreeReadWriteAttr):
+    """Descriptor Class for Content Attributes."""
+
+class MetaDataObject:
+    """Base class for resources, that are subjected to intellectual property.
+
+    Resources like documents, datasets, models or entire workspaces share common
+    descriptive metadata comprising authorship and copyright, as well as further
+    administrative metadata like branch and version. This base class is intended
+    as an object model template for such resources.
+
+    """
+
+    #
+    # Private Instance Variables
+    #
+
+    _meta: StrDict
+    _content: StrDict
+    _parent: 'MetaDataObject'
+
+    #
+    # Magic
+    #
+
+    def __init__(self) -> None:
+        """Initialize instance members."""
+        self._meta = {}
+
+    #
+    # Private Methods
+    #
+
+    def _get_meta_attrs(self) -> list:
+        d = type(self).__dict__
+        return [k for k, v in d.items() if isinstance(v, MetaAttr)]
+
+    def _get_meta(self) -> dict:
+        attrs = self._get_meta_attrs()
+        return {attr: getattr(self, attr) for attr in attrs}
+
+    def _set_meta(self, meta: StrDict) -> None:
+        check.has_type("first argument 'meta'", meta, dict)
+        attrs = self._get_meta_attrs()
+        check.is_subset(
+            "argument 'meta'", set(meta.keys()),
+            "meta data attributes", set(attrs))
+        for attr, val in meta.items():
+            setattr(self, attr, val)
+
+    #
+    # Puplic Methods
+    #
+
+    #
+    # Puplic Attributes
+    #
+
+    about: property = MetaAttr(str, bind='_meta')
+    about.__doc__ = """Summary of the resource.
+
+    A short description of the contents, the purpose or the intended application
+    of the resource. The default value of the attribute is inherited from
+    resources, that are created upstream the resource hierarchy.
+    """
+
+    email: property = MetaAttr(str, bind='_meta')
+    email.__doc__ = """Email address of the maintainer of the resource.
+
+    Email address to a person, an organization, or a service that is responsible
+    for the content of the resource. The default value of the attribute is
+    inherited from resources, that are created upstream the resource hierarchy.
+    """
+
+    license: property = MetaAttr(str, bind='_meta')
+    license.__doc__ = """License for the usage of the contents of the resource.
+
+    Namereference to a legal document giving specified users an official
+    permission to do something with the contents of the resource. The default
+    value of the attribute is inherited from resources, that are created
+    upstream the resource hierarchy.
+    """
+
+    maintainer: property = MetaAttr(str, bind='_meta')
+    maintainer.__doc__ = """Name of the maintainer of the resource.
+
+    A person, an organization, or a service, that is responsible for the content
+    of the resource. The default value of the attribute is inherited from
+    resources, that are created upstream the resource hierarchy.
+    """

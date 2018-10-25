@@ -20,7 +20,7 @@ import importlib
 import inspect
 import pkgutil
 
-from nemoa.base import check, ndict, dig
+from nemoa.base import check, ndict, bare
 from nemoa.types import (
     Any, ClassInfo, Function, Module, OptStr, OptModule, OptStrDictOfTestFuncs,
     StrList)
@@ -38,7 +38,7 @@ def get_curname(frame: int = 0) -> str:
 
     """
     # Check type of 'frame'
-    check.argtype('frame', frame, int)
+    check.has_type("argument 'frame'", frame, int)
 
     # Check value of 'frame'
     if frame > 0:
@@ -74,7 +74,7 @@ def get_caller(frame: int = 0) -> str:
 
     """
     # Check type of 'frame'
-    check.argtype('frame', frame, int)
+    check.has_type("argument 'frame'", frame, int)
 
     # Check value of 'frame'
     if frame > 0:
@@ -162,7 +162,7 @@ def get_submodule(name: str, ref: OptModule = None) -> OptModule:
 
     """
     # Check type of 'name'
-    check.argtype('name', name, str)
+    check.has_type("argument 'name'", name, str)
 
     # Set default value of 'ref' to module of caller
     ref = ref or get_caller_ref()
@@ -218,7 +218,7 @@ def get_instance(name: str) -> OptModule:
 
     """
     # Check type of 'name'
-    check.argtype('name', name, str)
+    check.has_type("argument 'name'", name, str)
 
     # Try to import module using importlib
     module: OptModule = None
@@ -264,7 +264,7 @@ def get_functions(
     # Set default value of 'ref' to module of caller
     ref = ref or get_caller_ref()
 
-    return dig.get_members(
+    return bare.get_members_attr(
         ref, classinfo=Function, pattern=pattern, rules=rules, **kwds)
 
 def crop_functions(prefix: str, ref: OptModule = None) -> list:
@@ -338,8 +338,8 @@ def search(
         'key' and 'val'.
 
     """
-    # Check type of 'pattern'
-    check.argtype('pattern', pattern, (str, type(None)))
+    # Check Arguments
+    check.has_opt_type("argument 'pattern'", pattern, str)
 
     # Set default value of 'ref' to module of caller
     ref = ref or get_caller_ref()
@@ -354,7 +354,7 @@ def search(
         minst = get_instance(mname)
         if minst is None:
             continue
-        d = dig.get_members(
+        d = bare.get_members_attr(
             minst, classinfo=classinfo, pattern=pattern, rules=rules, **kwds)
 
         # Ignore members if any required attribute is not available

@@ -17,14 +17,14 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from pathlib import Path
-
 from nemoa.classes import ReadOnlyAttr, ReadWriteAttr
 from nemoa.base import npath
 from nemoa.core import log
 from nemoa.fileio import inifile, wsfile
 from nemoa.types import (
-    Any, BytesLike, CManFileLike, ClassVar, OptBytes, OptPath, OptPathLike,
-    OptStr, PathLike, PathList, StrDict2, StrList, StrOrInt, Traceback)
+    Any, BytesLike, CManFileLike, ClassVar, Exc, ExcType, OptBytes, OptPath,
+    OptPathLike, OptStr, PathLike, PathList, StrDict2, StrList, StrOrInt,
+    Traceback)
 
 # Module specific types
 WsFile = wsfile.WsFile
@@ -108,7 +108,7 @@ class Session:
         """Enter with statement."""
         return self
 
-    def __exit__(self, etype: str, value: int, tb: Traceback) -> None:
+    def __exit__(self, Error: ExcType, value: Exc, tb: Traceback) -> None:
         """Exit with statement."""
         self.close() # Close Workspace
         self._save_config() # Save config

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Object hierarchy functions.
+"""Bare object functions.
 
 .. References:
 .. _fnmatch: https://docs.python.org/3/library/fnmatch.html
@@ -17,41 +17,21 @@ import inspect
 from nemoa.base import ndict
 from nemoa.types import Any, ClassInfo, OptStr, OptStrDictOfTestFuncs
 
-def get_summary(obj: object) -> str:
-    """Get summary line for an object.
-
-    This function returns the summary line of the documentation string for an
-    object as specified in `PEP 257`_. If the documentation string is not
-    provided the summary line is retrieved from the inheritance hierarchy.
-
-    Args:
-        obj: Arbitrary object
-
-    Returns:
-        Summary line for an object.
-
-    """
-    text = inspect.getdoc(obj)
-    if not isinstance(text, str) or not text:
-        return ''
-    return text.splitlines()[0].strip('.')
+#
+# Public Module Functions
+#
 
 def has_base(obj: object, base: str) -> bool:
     """Return true if the object has the given base.
 
     Args:
-        obj: Class
+        obj: Arbitrary object hierarchy
         base: Class name of base class
 
     Returns:
         True if the given object has the named base as base
 
     """
-    if not hasattr(obj, '__class__'):
-        raise TypeError(
-            "argument 'obj' requires to be a class instance"
-            f", not '{type(obj).__name__}'")
-
     return base in [o.__name__ for o in obj.__class__.__mro__]
 
 def get_name(obj: object) -> str:
@@ -62,7 +42,7 @@ def get_name(obj: object) -> str:
     hierarchy.
 
     Args:
-        obj: Arbitrary object
+        obj: Arbitrary object hierarchy
 
     Returns:
         Name of an object.
@@ -72,8 +52,20 @@ def get_name(obj: object) -> str:
 
 def get_members(
         obj: object, pattern: OptStr = None, classinfo: ClassInfo = object,
+        rules: OptStrDictOfTestFuncs = None, **kwds: Any) -> list:
+    """List members of an object.
+
+    This is a wrapper function to `get_members_attr`, but only returns the
+    names of the members instead of the respective dictionary of attributes.
+    """
+    mattrs = get_members_attr(
+        obj, pattern=pattern, classinfo=classinfo, rules=rules, **kwds)
+    return [each['name'] for each in mattrs.values()]
+
+def get_members_attr(
+        obj: object, pattern: OptStr = None, classinfo: ClassInfo = object,
         rules: OptStrDictOfTestFuncs = None, **kwds: Any) -> dict:
-    """Get members of an object.
+    """Get dictionary with an object's members attributes.
 
     Args:
         obj: Arbitrary object
@@ -158,3 +150,22 @@ def get_members(
         valid[prefix + name] = attr
 
     return valid
+
+def get_summary(obj: object) -> str:
+    """Get summary line for an object.
+
+    This function returns the summary line of the documentation string for an
+    object as specified in `PEP 257`_. If the documentation string is not
+    provided the summary line is retrieved from the inheritance hierarchy.
+
+    Args:
+        obj: Arbitrary object hierarchy
+
+    Returns:
+        Summary line for an object.
+
+    """
+    text = inspect.getdoc(obj) or ''
+    if not isinstance(text, str) or not text:
+        return ''
+    return text.splitlines()[0].strip('.')

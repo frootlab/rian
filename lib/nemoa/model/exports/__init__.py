@@ -4,6 +4,8 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
+from nemoa.base import bare
+
 import nemoa.model.exports.archive
 import nemoa.model.exports.image
 
@@ -45,7 +47,7 @@ def save(model, path = None, filetype = None, workspace = None,
 
     from nemoa.base import nclass, npath
 
-    if not nclass.has_base(model, 'Model'):
+    if not bare.has_base(model, 'Model'):
         raise TypeError("model is not valid")
 
     # get directory, filename and fileextension

@@ -15,7 +15,7 @@ Submodules
    nemoa.base.ndict
    nemoa.base.nfunc
    nemoa.base.nmodule
-   nemoa.base.dig
+   nemoa.base.bare
    nemoa.base.npath
    nemoa.base.ntext
    nemoa.base.table

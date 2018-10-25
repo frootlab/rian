@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Binary data.
+"""Binary object functions.
 
 .. References:
 .. _bytes-like object:
@@ -27,6 +27,10 @@ import zlib
 
 from nemoa.base import env
 from nemoa.types import Any, BytesLikeOrStr, OptInt, OptStr
+
+#
+# Public Module Functions
+#
 
 def as_bytes(data: BytesLikeOrStr, encoding: OptStr = None) -> bytes:
     """Convert bytes-like object or str to bytes.

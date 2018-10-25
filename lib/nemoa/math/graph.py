@@ -375,7 +375,7 @@ def rescale_layout(
         a = np.dot(a - mean, R.T) + mean
 
     # rescale positions with padding
-    if not isinstance(size, type(None)):
+    if size:
         dmin, dmax = np.amin(a, axis=0), np.amax(a, axis=0)
         u, r, d, l = padding
         pmin, pmax = np.array([l, d]), 1. - np.array([r, u])

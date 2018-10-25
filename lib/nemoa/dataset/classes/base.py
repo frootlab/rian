@@ -14,7 +14,8 @@ except ImportError as err:
         "https://pypi.org/project/numpy") from err
 
 import nemoa
-from nemoa.base import nclass, nbase
+
+from nemoa.base import bare, nclass, nbase
 from nemoa.core import log, ui
 from nemoa.math import algo
 
@@ -285,7 +286,7 @@ class Dataset(nbase.ObjectIP):
                 transform = preprocessing['transform']
 
         # get preprocessing parameters from system
-        if nclass.has_base(system, 'System'):
+        if bare.has_base(system, 'System'):
             input_layer = system.get('layers')[0]
             distribution = system.get('layer', input_layer)['class']
             if distribution == 'gauss': normalize = 'gauss'
@@ -532,7 +533,7 @@ class Dataset(nbase.ObjectIP):
         mapping = None, func: str = 'expect'):
         """ """
 
-        if not nclass.has_base(system, 'System'):
+        if not bare.has_base(system, 'System'):
             raise ValueError("system is not valid")
 
         ui.info("transform data using model '%s'." % system.name)
@@ -624,9 +625,6 @@ class Dataset(nbase.ObjectIP):
 
     def _get_algorithms(self, category = None, attribute = None, tree = False):
         """Get algorithms provided by dataset."""
-
-        from nemoa.base import nclass
-
         # get dictionary with all methods
         # with prefix '_get_' and attribute 'name'
         methods = nclass.methods(self, pattern = '_get_*', val = 'name')

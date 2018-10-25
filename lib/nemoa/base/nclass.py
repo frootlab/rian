@@ -13,22 +13,9 @@ __docformat__ = 'google'
 
 import inspect
 
-from nemoa.base import ndict, dig
+from nemoa.base import ndict
 from nemoa.types import (
     Any, RecDict, DictOfRecDicts, NestRecDict, FuncWrapper, OptStr)
-
-def has_base(obj: object, base: str) -> bool:
-    """Return true if the class instance has the given base.
-
-    Args:
-        obj: Class
-        base: Class name of base class
-
-    Returns:
-        True if the given object has the named base as base
-
-    """
-    return dig.has_base(obj, base)
 
 def methods(
         obj: object, pattern: OptStr = None, groupby: OptStr = None,

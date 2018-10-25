@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Collection of frequently functions for multitreading."""
+"""Multithreading functions."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'

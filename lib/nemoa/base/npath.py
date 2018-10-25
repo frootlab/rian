@@ -51,7 +51,6 @@ def clear(fname: str) -> str:
     """
     valid = "-_.() " + string.ascii_letters + string.digits
     fname = ''.join(c for c in fname if c in valid).replace(' ', '_')
-
     return fname
 
 def match(paths: PathLikeList, pattern: str) -> PathLikeList:

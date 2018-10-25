@@ -10,10 +10,9 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.system.classes.ann
-import numpy
+from nemoa.base import bare
 
-from nemoa.base import nclass
+import nemoa.system.classes.ann
 
 class RBM(nemoa.system.classes.ann.ANN):
     """Restricted Boltzmann Machine (RBM).
@@ -95,7 +94,7 @@ class RBM(nemoa.system.classes.ann.ANN):
 
     def _check_dataset(self, dataset):
         """Check if dataset contains only binary values."""
-        if not nclass.has_base(dataset, 'Dataset'):
+        if not bare.has_base(dataset, 'Dataset'):
             raise ValueError("""could not test dataset:
                 invalid dataset instance given.""")
         if not dataset._get_test_binary():
@@ -176,7 +175,7 @@ class GRBM(RBM):
 
     def _check_dataset(self, dataset):
         """Check if dataset contains gauss normalized values."""
-        if not nclass.has_base(dataset, 'Dataset'):
+        if not bare.has_base(dataset, 'Dataset'):
             raise TypeError("dataset is not valid")
         if not dataset.evaluate('test_gauss'):
             raise ValueError("""dataset '%s' is not valid:

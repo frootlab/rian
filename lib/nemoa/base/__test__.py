@@ -13,10 +13,93 @@ from pathlib import Path
 import numpy as np
 
 from nemoa.base import (
-    env, narray, nbase, binary, nclass, ndict, nfunc, nmodule,
+    check, env, nbase, binary, nclass, ndict, nfunc, nmodule,
     npath, table, ntext)
 from nemoa.test import ModuleTestCase
-from nemoa.types import Any, Function, Module, NaN, PathLikeList
+from nemoa.types import Any, Function, Module, PathLikeList
+
+class TestCheck(ModuleTestCase):
+    """Testcase for the module nemoa.base.check."""
+
+    module = 'nemoa.base.check'
+
+    def test_has_type(self) -> None:
+        self.assertNoneRaises(TypeError, check.has_type, [
+            (('', 0, int), {}), (('', '', str), {}),
+            (('', list(), list), {}), (('', dict(), dict), {})])
+        self.assertAllRaises(TypeError, check.has_type, [
+            (('', '', int), {}), (('', 1., int), {}),
+            (('', 1, float), {}), (('', dict(), list), {})])
+
+    def test_has_opt_type(self) -> None:
+        self.assertNoneRaises(TypeError, check.has_opt_type, [
+            (('', None, int), {}), (('', None, str), {}),
+            (('', list(), list), {}), (('', dict(), dict), {})])
+        self.assertAllRaises(TypeError, check.has_opt_type, [
+            (('', '', int), {}), (('', 1., int), {}),
+            (('', 1, float), {}), (('', dict(), list), {})])
+
+    def test_is_callable(self) -> None:
+        self.assertNoneRaises(TypeError, check.is_callable, [
+            (('', int), {}), (('', dict), {}),
+            (('', list), {}), (('', str), {})])
+        self.assertAllRaises(TypeError, check.has_type, [
+            (('', None), {}), (('', 0), {}),
+            (('', ''), {}), (('', set()), {})])
+
+    def test_is_class(self) -> None:
+        self.assertNoneRaises(TypeError, check.is_class, [
+            (('', int), {}), (('', dict), {}),
+            (('', list), {}), (('', str), {})])
+        self.assertAllRaises(TypeError, check.is_class, [
+            (('', None), {}), (('', 0), {}),
+            (('', ''), {}), (('', set()), {})])
+
+    def test_is_subclass(self) -> None:
+        self.assertNoneRaises(TypeError, check.is_subclass, [
+            (('', int, object), {}), (('', dict, dict), {}),
+            (('', list, object), {}), (('', str, str), {})])
+        self.assertAllRaises(TypeError, check.is_subclass, [
+            (('', int, str), {}), (('', dict, list), {}),
+            (('', object, float), {}), (('', str, complex), {})])
+
+    def test_is_subset(self) -> None:
+        self.assertNoneRaises(ValueError, check.is_subset, [
+            (('', set(), '', set()), {}), (('', {1}, '', {1, 2}), {}),
+            (('', {2}, '', {1, 2}), {}), (('', {2, 1}, '', {1, 2}), {})])
+        self.assertAllRaises(ValueError, check.is_subset, [
+            (('', {1}, '', set()), {}), (('', {2}, '', {1}), {}),
+            (('', {1, 2}, '', {1}), {}), (('', {1, 2, 3}, '', set()), {})])
+
+    def test_is_positive(self) -> None:
+        self.assertNoneRaises(ValueError, check.is_positive, [
+            (('', 1), {}), (('', 1.), {})])
+        self.assertAllRaises(ValueError, check.is_positive, [
+            (('', 0), {}), (('', -1), {}), (('', -1.), {})])
+
+    def test_is_negative(self) -> None:
+        self.assertNoneRaises(ValueError, check.is_negative, [
+            (('', -1), {}), (('', -1.), {})])
+        self.assertAllRaises(ValueError, check.is_negative, [
+            (('', 0), {}), (('', 1), {}), (('', 1.), {})])
+
+    def test_is_not_positive(self) -> None:
+        self.assertNoneRaises(ValueError, check.is_not_positive, [
+            (('', 0), {}), (('', -1), {}), (('', -1.), {})])
+        self.assertAllRaises(ValueError, check.is_not_positive, [
+            (('', 1), {}), (('', 1.), {})])
+
+    def test_is_not_negative(self) -> None:
+        self.assertNoneRaises(ValueError, check.is_not_negative, [
+            (('', 0), {}), (('', 1), {}), (('', 1.), {})])
+        self.assertAllRaises(ValueError, check.is_not_negative, [
+            (('', -1), {}), (('', -1.), {})])
+
+    def test_has_attr(self) -> None:
+        self.assertNoneRaises(AttributeError, check.has_attr, [
+            (('', 'format'), {}), ((0, 'real'), {}), ((1j, 'imag'), {})])
+        self.assertAllRaises(AttributeError, check.has_attr, [
+            ((list(), 'keys'), {}), ((0, ''), {})])
 
 class TestEnv(ModuleTestCase):
     """Testcase for the module nemoa.base.env."""
@@ -134,24 +217,6 @@ class TestEnv(ModuleTestCase):
 
     def test_get_home(self) -> None:
         self.assertTrue(env.get_home().is_dir())
-
-class TestNarray(ModuleTestCase):
-    """Testcase for the module nemoa.base.narray."""
-
-    module = 'nemoa.base.narray'
-
-    def setUp(self) -> None:
-        self.x = np.array([[NaN, 1.], [NaN, NaN]])
-        self.d = {('a', 'b'): 1.}
-        self.labels = (['a', 'b'], ['a', 'b'])
-
-    def test_from_dict(self) -> None:
-        x = narray.from_dict(self.d, labels=self.labels)
-        self.assertTrue(np.allclose(x, self.x, equal_nan=True))
-
-    def test_as_dict(self) -> None:
-        d = narray.as_dict(self.x, labels=self.labels)
-        self.assertEqual(d, self.d)
 
 class TestNbase(ModuleTestCase):
     """Testcase for the module nemoa.base.nbase."""
@@ -298,11 +363,6 @@ class TestNclass(ModuleTestCase):
             def setb(self) -> None:
                 pass
         return Base()
-
-    def test_has_base(self) -> None:
-        obj = self.get_test_object()
-        self.assertTrue(nclass.has_base(None, 'object'))
-        self.assertTrue(nclass.has_base(obj, 'Base'))
 
     def test_attributes(self) -> None:
         obj = self.get_test_object()
