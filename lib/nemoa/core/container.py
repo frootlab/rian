@@ -207,16 +207,17 @@ class BaseContainer:
     def __init__(
             self, metadata: OptStrDict = None, content: OptStrDict = None,
             parent: Optional['BaseContainer'] = None) -> None:
-        """Initialize instance members."""
+        """Initialize instance."""
         self._data = {}
         self._meta = {}
         self._temp = {}
-        #self._parent = parent
 
-        if metadata:
-            self._set_metadata(metadata)
+        if parent:
+            self.parent = parent
         if content:
             self._set_content(content)
+        if metadata:
+            self._set_metadata(metadata)
 
     #
     # Getters and Setters for Attribute Groups

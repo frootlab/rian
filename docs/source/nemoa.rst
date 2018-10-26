@@ -22,7 +22,6 @@ Submodules
 
 .. toctree::
 
-   nemoa.classes
    nemoa.console
    nemoa.errors
    nemoa.test
