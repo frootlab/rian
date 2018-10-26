@@ -42,11 +42,9 @@ import importlib
 import logging
 import tempfile
 import warnings
-
 from pathlib import Path
-
 from nemoa.base import env, npath
-from nemoa.classes import ReadWriteAttr
+from nemoa.classes import Attr
 from nemoa.errors import AlreadyStartedError, NotStartedError
 from nemoa.types import (
     void, Any, AnyFunc, ClassVar, PathLike, StrList, StrOrInt, OptPath,
@@ -99,10 +97,10 @@ class Logger:
     # Public Instance Properties
     #
 
-    logger: property = ReadWriteAttr(
+    logger: property = Attr(
         logging.Logger, getter='_get_logger', setter='_set_logger')
 
-    name: property = ReadWriteAttr(
+    name: property = Attr(
         str, getter='_get_name', setter='_set_name', default=_DEFAULT_NAME)
     name.__doc__ = """Name of logger.
 
@@ -112,7 +110,7 @@ class Logger:
     hierarchy.
     """
 
-    file: property = ReadWriteAttr(
+    file: property = Attr(
         (str, Path), getter='_get_file', setter='_set_file',
         default=_DEFAULT_FILE)
     file.__doc__ = """Log file.
@@ -125,7 +123,7 @@ class Logger:
     created as a fallback.
     """
 
-    level: property = ReadWriteAttr(
+    level: property = Attr(
         (str, int), getter='_get_level', setter='_set_level',
         default=_DEFAULT_LEVEL)
     level.__doc__ = """Log level.

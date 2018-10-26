@@ -21,7 +21,7 @@ from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
 
 from nemoa.base import npath, env
-from nemoa.classes import ReadOnlyAttr, ReadWriteAttr
+from nemoa.classes import Attr
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
 from nemoa.fileio import inifile
 from nemoa.types import (
@@ -766,7 +766,7 @@ class WsFile:
     # Public Instance Attributes
     #
 
-    about: property = ReadWriteAttr(str, bind='_attr')
+    about: property = Attr(str, bind='_attr')
     about.__doc__ = """Summary of the workspace.
 
     A short description of the contents, the purpose or the intended application
@@ -774,7 +774,7 @@ class WsFile:
     created inside the workspace and support the attribute.
     """
 
-    email: property = ReadWriteAttr(str, bind='_attr')
+    email: property = Attr(str, bind='_attr')
     email.__doc__ = """Email address of the maintainer of the workspace.
 
     Email address to a person, an organization, or a service that is responsible
@@ -782,7 +782,7 @@ class WsFile:
     resources, that are created inside the workspace and support the attribute.
     """
 
-    license: property = ReadWriteAttr(str, bind='_attr')
+    license: property = Attr(str, bind='_attr')
     license.__doc__ = """License for the usage of the contents of the workspace.
 
     Namereference to a legal document giving specified users an official
@@ -791,7 +791,7 @@ class WsFile:
     and support the attribute.
     """
 
-    maintainer: property = ReadWriteAttr(str, bind='_attr')
+    maintainer: property = Attr(str, bind='_attr')
     maintainer.__doc__ = """Name of the maintainer of the workspace.
 
     A person, an organization, or a service that is responsible for the content
@@ -799,24 +799,24 @@ class WsFile:
     are created inside the workspace and support the attribute.
     """
 
-    startup: property = ReadWriteAttr(Path, bind='_attr')
+    startup: property = Attr(Path, bind='_attr')
     startup.__doc__ = """Startup script inside the workspace.
 
     The startup script is a path, that points to a a python script inside the
     workspace, which is intended to be executed after loading the workspace.
     """
 
-    name: property = ReadOnlyAttr(list, getter='_get_name')
+    name: property = Attr(list, getter='_get_name', readonly=True)
     name.__doc__ = """Filename of the workspace without file extension."""
 
-    path: property = ReadOnlyAttr(Path, key='_path')
+    path: property = Attr(Path, key='_path', readonly=True)
     path.__doc__ = """Filepath of the workspace."""
 
-    files: property = ReadOnlyAttr(list, getter='search')
+    files: property = Attr(list, getter='search', readonly=True)
     files.__doc__ = """List of all files within the workspace."""
 
-    folders: property = ReadOnlyAttr(list, getter='_get_folders')
+    folders: property = Attr(list, getter='_get_folders', readonly=True)
     folders.__doc__ = """List of all folders within the workspace."""
 
-    changed: property = ReadOnlyAttr(bool, key='_changed')
+    changed: property = Attr(bool, key='_changed', readonly=True)
     changed.__doc__ = """Tells whether the workspace file has been changed."""

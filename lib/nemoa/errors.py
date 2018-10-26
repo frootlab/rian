@@ -102,7 +102,7 @@ class NotIsSubsetError(ValueError, NmAssert):
         diff = seta - setb
         elements = _repr_set(diff)
         are = 'are' if len(diff) > 1 else 'is'
-        msg = f"{elements} of '{a}' {are} not contained in '{b}'"
+        msg = f"{elements} of {a} {are} not contained in {b}"
         super().__init__(_format_msg(msg))
 
 class IsNegativeError(ValueError, NmAssert):
@@ -137,7 +137,7 @@ class NotIsNegativeError(ValueError, NmAssert):
 # Attribute Errors
 ################################################################################
 
-class SetReadOnlyAttrError(AttributeError, NmError):
+class ReadOnlyError(AttributeError, NmError):
     """Raise when a read-only attributes setter method is called."""
 
     def __init__(self, obj: object, attr: str) -> None:

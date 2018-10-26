@@ -7,18 +7,19 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from nemoa.base import check
-from nemoa.errors import SetReadOnlyAttrError
-from nemoa.types import Any, Callable, ClassInfo, OptClassInfo, OptStr, StrDict
+from nemoa.errors import ReadOnlyError
+from nemoa.types import Any, Callable, ClassInfo, OptClassInfo, Optional
+from nemoa.types import OptStr, OptStrDict, StrDict, StrList, void
 
 ################################################################################
-# Generic attribute descriptors for binding class instance attributes: When an
+# Generic attribute descriptor for binding class instance attributes: When an
 # instance of a class contains a descriptor class as a method, the descriptor
 # class defines the accessor and mutator methods of the attribute, which is
 # identified by the method's name.
 ################################################################################
 
-class ReadWriteAttr(property):
-    """Descriptor Class for read- and writable Attributes.
+class Attr(property):
+    """Generic Descriptor Class for Attributes.
 
     Args:
         classinfo:
@@ -27,246 +28,424 @@ class ReadWriteAttr(property):
         getter:
         setter:
         default:
+        parent: Name of attribute, which references a parent object.
+        readonly:
 
     """
 
-    #
-    # Private Instance Variables
-    #
-
-    _args: dict
-    _classinfo: ClassInfo
-    _default: Any
-    _getter: Callable
-    _key: str
     _name: str
-    _setter: Callable
-    _dict: dict
+    _getter: OptStr
+    _setter: OptStr
+    _dict: OptStr
+    _key: OptStr
+    _default: Any
+    _parent: OptStr
+    _classinfo: OptClassInfo
+    _readonly: bool
 
-    #
     # __Magic__
-    #
 
     def __init__(
             self, classinfo: OptClassInfo = None, bind: OptStr = None,
             key: OptStr = None, default: Any = None, getter: OptStr = None,
-            setter: OptStr = None) -> None:
-        """Initialize instance variables."""
-        # Check types of Arguments
+            setter: OptStr = None, parent: OptStr = None,
+            readonly: bool = False) -> None:
+        """Initialize Attribute Descriptor."""
+        # Check Types of Arguments
         check.has_opt_type("argument 'classinfo'", classinfo, (type, tuple))
         check.has_opt_type("argument 'bind'", bind, str)
         check.has_opt_type("argument 'key'", key, str)
         check.has_opt_type("argument 'getter'", getter, str)
         check.has_opt_type("argument 'setter'", setter, str)
+        check.has_type("argument 'readonly'", readonly, bool)
 
-        # Set Instance Variables to Arguments
-        if classinfo:
-            self._classinfo = classinfo
-        self._args = {
-            'bind': bind, 'key': key, 'getter': getter, 'setter': setter}
+        # Set Descriptor Instance Attributes to Argument Values
+        self._classinfo = classinfo
+        self._dict = bind
+        self._getter = getter
+        self._setter = setter
+        self._key = key
+        self._parent = parent
         self._default = default
+        self._readonly = readonly
 
     def __set_name__(self, owner: type, name: str) -> None:
         """Set name of the Attribute."""
         self._name = name
 
     def __get__(self, obj: object, owner: type) -> Any:
-        """Wrap get requests to the Attribute."""
-        if not hasattr(self, '_dict'):
-            self._bind(obj)
-        if hasattr(self, '_getter'):
-            return self._getter()
-        return self._dict.get(self._key, self._default)
+        """Bypass Attribute's get requests."""
+        if self._getter:
+            return self._get_getter(obj)()
+        key = self._key or self._name
+        default = self._get_default(obj)
+        if self._dict:
+            return self._get_dict(obj).get(key, default)
+        return obj.__dict__.get(key, default)
 
     def __set__(self, obj: object, val: Any) -> None:
-        """Wrap set requests to the Attribute."""
-        if hasattr(self, '_classinfo'):
-            check.has_type(self._name, val, self._classinfo)
-        if not hasattr(self, '_dict'):
-            self._bind(obj)
-        if hasattr(self, '_setter'):
-            self._setter(val)
+        """Bypass and type check Attribute's set requests."""
+        if self._readonly:
+            raise ReadOnlyError(obj, self._name)
+        if self._classinfo:
+            check.has_type(f"attribute '{self._name}'", val, self._classinfo)
+        if self._setter:
+            self._get_setter(obj)(val)
         else:
-            self._dict[self._key] = val
+            key = self._key or self._name
+            self._get_dict(obj)[key] = val
 
-    #
-    # Private Instance Methods
-    #
+    def _get_dict(self, obj: object) -> dict:
+        attr = self._dict
+        if not attr:
+            return obj.__dict__
+        check.has_attr(obj, attr)
+        check.has_type(attr, getattr(obj, attr), dict)
+        return getattr(obj, attr)
 
-    def _bind(self, obj: object) -> None:
-        self._dict = obj.__dict__
-        self._key = self._name
-        if isinstance(self._args['bind'], str):
-            self._bind_dict(obj, self._args['bind']) # Bind custom dict
-        if isinstance(self._args['key'], str):
-            self._key = self._args['key'] # Bind custom key
-        if isinstance(self._args['getter'], str):
-            self._bind_getter(obj, self._args['getter']) # Bind custom getter
-        if isinstance(self._args['setter'], str):
-            self._bind_setter(obj, self._args['setter']) # Bind custom setter
+    def _get_getter(self, obj: object) -> Callable:
+        attr = self._getter
+        if not attr:
+            return void
+        check.has_attr(obj, attr)
+        check.is_callable(attr, getattr(obj, attr))
+        return getattr(obj, attr)
 
-    def _bind_dict(self, obj: object, bind: str) -> None:
-        check.has_attr(obj, bind)
-        check.has_type(bind, getattr(obj, bind), dict)
-        self._dict = obj.__dict__[bind]
+    def _get_setter(self, obj: object) -> Callable:
+        attr = self._setter
+        if not attr:
+            return void
+        check.has_attr(obj, attr)
+        check.is_callable(attr, getattr(obj, attr))
+        return getattr(obj, attr)
 
-    def _bind_getter(self, obj: object, getter: str) -> None:
-        check.has_attr(obj, getter)
-        check.is_callable(getter, getattr(obj, getter))
-        setattr(self, '_getter', getattr(obj, getter))
-
-    def _bind_setter(self, obj: object, setter: str) -> None:
-        check.has_attr(obj, setter)
-        check.is_callable(setter, getattr(obj, setter))
-        setattr(self, '_setter', getattr(obj, setter))
-
-class ReadOnlyAttr(ReadWriteAttr):
-    """Descriptor Class for read-only Attributes."""
-
-    def __set__(self, obj: object, val: Any) -> None:
-        """Wrap set attribute requests."""
-        raise SetReadOnlyAttrError(obj, self._name)
-
-class TreeReadWriteAttr(ReadWriteAttr):
-    """Descriptor Class for rw-Attributes within a tree object hierarchy.
-
-    Args:
-        parent: Name of attribute, which references a parent object of identical
-            type.
-
-    """
-
-    _parent: object
-
-    #
-    # __Magic__
-    #
-
-    def __init__(
-            self, classinfo: OptClassInfo = None, bind: OptStr = None,
-            key: OptStr = None, default: Any = None, getter: OptStr = None,
-            setter: OptStr = None, parent: OptStr = None) -> None:
-        """Initialize instance variables."""
-        super().__init__(
-            classinfo=classinfo, bind=bind, key=key, default=default,
-            getter=getter, setter=setter)
-        self._args['parent'] = parent
-
-    def __get__(self, obj: object, owner: type) -> Any:
-        """Wrap get requests to the Attribute."""
-        if not hasattr(self, '_dict'):
-            self._bind(obj)
-        if hasattr(self, '_getter'):
-            return self._getter()
-        if self._dict.get(self._key):
-            return self._dict.get(self._key)
-        if hasattr(self, '_parent') and hasattr(self._parent, self._name):
-            return getattr(self._parent, self._name)
-        return self._default
-
-    def _bind(self, obj: object) -> None:
-        super()._bind(obj)
-        if isinstance(self._args['parent'], str):
-            self._bind_parent(obj, self._args['parent'])
-
-    def _bind_parent(self, obj: object, parent: str) -> None:
-        check.has_attr(obj, parent)
-        setattr(self, '_parent', getattr(obj, parent))
+    def _get_default(self, obj: object) -> Any:
+        if not self._parent:
+            return self._default
+        parent = getattr(obj, self._parent, None)
+        if not parent:
+            return self._default
+        return getattr(parent, self._name, self._default)
 
 ################################################################################
-# Meta Data object model template
+# Base Container Class
 ################################################################################
 
-class MetaAttr(TreeReadWriteAttr):
-    """Descriptor Class for MetaData Attributes."""
+class ContentAttr(Attr):
+    """Attributes for persistent content storage objects."""
 
-class ContentAttr(TreeReadWriteAttr):
-    """Descriptor Class for Content Attributes."""
+    def __init__(self, *args: Any, **kwds: Any) -> None:
+        """Initialize Attribute Descriptor."""
+        kwds['bind'] = kwds.get('bind', '_content')
+        super().__init__(*args, **kwds)
 
-class MetaDataObject:
-    """Base class for resources, that are subjected to intellectual property.
+class MetadataAttr(Attr):
+    """Attributes for persistent metadata storage objects."""
 
-    Resources like documents, datasets, models or entire workspaces share common
-    descriptive metadata comprising authorship and copyright, as well as further
-    administrative metadata like branch and version. This base class is intended
-    as an object model template for such resources.
+    def __init__(self, *args: Any, **kwds: Any) -> None:
+        """Initialize Attribute Descriptor."""
+        kwds['bind'] = kwds.get('bind', '_metadata')
+        super().__init__(*args, **kwds)
 
+class TransientAttr(Attr):
+    """Attributes for not persistent storage objects."""
+
+    def __init__(self, *args: Any, **kwds: Any) -> None:
+        """Initialize Attribute Descriptor."""
+        kwds['bind'] = kwds.get('bind', '_temp')
+        super().__init__(*args, **kwds)
+
+class VirtualAttr(Attr):
+    """Attributes for not pesistent virtual objects.
+
+    Virtual objects require the implementation of a getter function.
     """
 
-    #
+    def __init__(self, *args: Any, **kwds: Any) -> None:
+        """Initialize Attribute Descriptor."""
+        check.has_type('getter', kwds.get('getter'), str)
+        super().__init__(*args, **kwds)
+
+class DescrAttr(MetadataAttr):
+    """Attributes for descriptive metadata."""
+
+class RightsAttr(MetadataAttr):
+    """Attributes for rights metadata."""
+
+class StructAttr(MetadataAttr):
+    """Attributes for structural metadata."""
+
+class TechAttr(MetadataAttr):
+    """Attributes for technical metadata."""
+
+class BaseContainer:
+    """Base class for Container Objects."""
+
     # Private Instance Variables
+
+    _content: StrDict
+    _metadata: StrDict
+    _temp: StrDict
+    _parent: Optional['BaseContainer']
+
+    #
+    # Class Attributes
     #
 
-    _meta: StrDict
-    _content: StrDict
-    _parent: 'MetaDataObject'
+    parent: property = StructAttr(object, key='_parent')
+    parent.__doc__ = """Parent object."""
 
     #
     # Magic
     #
 
-    def __init__(self) -> None:
+    def __init__(
+            self, metadata: OptStrDict = None, content: OptStrDict = None,
+            parent: Optional['BaseContainer'] = None) -> None:
         """Initialize instance members."""
-        self._meta = {}
+        self._metadata = {}
+        self._content = {}
+        self._temp = {}
+        self._parent = parent
+
+        if metadata:
+            self._set_metadata(metadata)
+        if content:
+            self._set_content(content)
 
     #
-    # Private Methods
+    # Getters and Setters for Attribute Groups
     #
 
-    def _get_meta_attrs(self) -> list:
-        d = type(self).__dict__
-        return [k for k, v in d.items() if isinstance(v, MetaAttr)]
+    def _get_attrs(self, classinfo: ClassInfo) -> StrList:
+        attrs: StrList = []
+        for attr, obj in type(self).__dict__.items():
+            if isinstance(obj, classinfo):
+                attrs.append(attr)
+        return attrs
 
-    def _get_meta(self) -> dict:
-        attrs = self._get_meta_attrs()
+    def _set_attrs(self, classinfo: ClassInfo, attrs: dict) -> None:
+        check.has_type("second argument 'attrs'", attrs, dict)
+        check.is_subset(
+            "given values", set(attrs.keys()),
+            "attributes", set(self._get_attrs(classinfo)))
+        for attr, obj in attrs.items():
+            setattr(self, attr, obj)
+
+    def _get_content(self) -> dict:
+        attrs = self._get_attrs(ContentAttr)
         return {attr: getattr(self, attr) for attr in attrs}
 
-    def _set_meta(self, meta: StrDict) -> None:
-        check.has_type("first argument 'meta'", meta, dict)
-        attrs = self._get_meta_attrs()
-        check.is_subset(
-            "argument 'meta'", set(meta.keys()),
-            "meta data attributes", set(attrs))
-        for attr, val in meta.items():
-            setattr(self, attr, val)
+    def _set_content(self, attrs: StrDict) -> None:
+        check.has_type("argument 'attrs'", attrs, dict)
+        self._set_attrs(ContentAttr, attrs)
 
-    #
-    # Puplic Methods
-    #
+    def _get_metadata(self) -> dict:
+        attrs = self._get_attrs(MetadataAttr)
+        return {attr: getattr(self, attr) for attr in attrs}
 
-    #
-    # Puplic Attributes
-    #
+    def _set_metadata(self, attrs: StrDict) -> None:
+        check.has_type("argument 'attrs'", attrs, dict)
+        self._set_attrs(MetadataAttr, attrs)
 
-    about: property = MetaAttr(str, bind='_meta')
-    about.__doc__ = """Summary of the resource.
+    def _get_descr_metadata(self) -> dict:
+        attrs = self._get_attrs(DescrAttr)
+        return {attr: getattr(self, attr) for attr in attrs}
 
-    A short description of the contents, the purpose or the intended application
-    of the resource. The default value of the attribute is inherited from
-    resources, that are created upstream the resource hierarchy.
+    def _set_descr_metadata(self, attrs: StrDict) -> None:
+        check.has_type("argument 'attrs'", attrs, dict)
+        self._set_attrs(DescrAttr, attrs)
+
+    def _get_rights_metadata(self) -> dict:
+        attrs = self._get_attrs(DescrAttr)
+        return {attr: getattr(self, attr) for attr in attrs}
+
+    def _set_rights_metadata(self, attrs: StrDict) -> None:
+        check.has_type("argument 'attrs'", attrs, dict)
+        self._set_attrs(DescrAttr, attrs)
+
+    def _get_struct_metadata(self) -> dict:
+        attrs = self._get_attrs(StructAttr)
+        return {attr: getattr(self, attr) for attr in attrs}
+
+    def _set_struct_metadata(self, attrs: StrDict) -> None:
+        check.has_type("argument 'attrs'", attrs, dict)
+        self._set_attrs(StructAttr, attrs)
+
+    def _get_tech_metadata(self) -> dict:
+        attrs = self._get_attrs(TechAttr)
+        return {attr: getattr(self, attr) for attr in attrs}
+
+    def _set_tech_metadata(self, attrs: StrDict) -> None:
+        check.has_type("argument 'attrs'", attrs, dict)
+        self._set_attrs(TechAttr, attrs)
+
+    def _get_transient(self) -> dict:
+        attrs = self._get_attrs(TransientAttr)
+        return {attr: getattr(self, attr) for attr in attrs}
+
+    def _set_transient(self, attrs: StrDict) -> None:
+        check.has_type("argument 'attrs'", attrs, dict)
+        self._set_attrs(TransientAttr, attrs)
+
+    def _get_virtual(self) -> dict:
+        attrs = self._get_attrs(VirtualAttr)
+        return {attr: getattr(self, attr) for attr in attrs}
+
+    def _set_virtual(self, attrs: StrDict) -> None:
+        check.has_type("argument 'attrs'", attrs, dict)
+        self._set_attrs(VirtualAttr, attrs)
+
+################################################################################
+# Container class with Dublin Core metadata
+################################################################################
+
+class DCContainer(BaseContainer):
+    """Container class, that implements the Dublin Core Schema.
+
+    The Dublin Core Metadata Element Set is a vocabulary of fifteen properties
+    for use in resource description. The name "Dublin" is due to its origin at a
+    1995 invitational workshop in Dublin, Ohio; "core" because its elements are
+    broad and generic, usable for describing a wide range of resources.
+
+    The fifteen element "Dublin Core" described in this standard is part of a
+    larger set of metadata vocabularies and technical specifications maintained
+    by the Dublin Core Metadata Initiative (DCMI). The full set of vocabularies,
+    DCMI Metadata Terms [DCMI-TERMS]_, also includes sets of resource classes
+    (including the DCMI Type Vocabulary [DCMI-TYPE]_), vocabulary encoding
+    schemes, and syntax encoding schemes. The terms in DCMI vocabularies are
+    intended to be used in combination with terms from other, compatible
+    vocabularies in the context of application profiles and on the basis of the
+    DCMI Abstract Model [DCAM]_.
+
+    .. [DCMI-TERMS] http://dublincore.org/documents/dcmi-terms/
+    .. [DCMI-TYPE] http://dublincore.org/documents/dcmi-type-vocabulary/
+    .. [DCAM] http://dublincore.org/documents/2007/06/04/abstract-model/
+
     """
 
-    email: property = MetaAttr(str, bind='_meta')
-    email.__doc__ = """Email address of the maintainer of the resource.
-
-    Email address to a person, an organization, or a service that is responsible
-    for the content of the resource. The default value of the attribute is
-    inherited from resources, that are created upstream the resource hierarchy.
+    title: property = DescrAttr()
+    title.__doc__ = """
+    A name given to the resource. Typically, a Title will be a name by which the
+    resource is formally known.
     """
 
-    license: property = MetaAttr(str, bind='_meta')
-    license.__doc__ = """License for the usage of the contents of the resource.
-
-    Namereference to a legal document giving specified users an official
-    permission to do something with the contents of the resource. The default
-    value of the attribute is inherited from resources, that are created
-    upstream the resource hierarchy.
+    subject: property = DescrAttr()
+    subject.__doc__ = """
+    The topic of the resource. Typically, the subject will be represented using
+    keywords, key phrases, or classification codes. Recommended best practice is
+    to use a controlled vocabulary.
     """
 
-    maintainer: property = MetaAttr(str, bind='_meta')
-    maintainer.__doc__ = """Name of the maintainer of the resource.
+    description: property = DescrAttr()
+    description.__doc__ = """
+    An account of the resource. Description may include but is not limited to:
+    an abstract, a table of contents, a graphical representation, or a free-text
+    account of the resource.
 
-    A person, an organization, or a service, that is responsible for the content
-    of the resource. The default value of the attribute is inherited from
-    resources, that are created upstream the resource hierarchy.
+    """
+
+    date: property = DescrAttr()
+    date.__doc__ = """
+    A point or period of time associated with an event in the lifecycle of the
+    resource. Date may be used to express temporal information at any level of
+    granularity. Recommended best practice is to use an encoding scheme, such as
+    the W3CDTF profile of ISO 8601 [W3CDTF]_.
+
+    .. [W3CDTF] http://www.w3.org/TR/NOTE-datetime
+    """
+
+    type: property = DescrAttr()
+    type.__doc__ = """
+    The nature or genre of the resource. Recommended best practice is to use a
+    controlled vocabulary such as the DCMI Type Vocabulary [DCMITYPE]_. To
+    describe the file format, physical medium, or dimensions of the resource,
+    use the Format element.
+
+    .. [DCMITYPE] http://dublincore.org/documents/dcmi-type-vocabulary/
+    """
+
+    format: property = DescrAttr()
+    format.__doc__ = """
+    The file format, physical medium, or dimensions of the resource. Examples of
+    dimensions include size and duration. Recommended best practice is to use a
+    controlled vocabulary such as the list of Internet Media Types [MIME]_.
+
+    .. [MIME] http://www.iana.org/assignments/media-types/
+    """
+
+    identifier: property = DescrAttr()
+    identifier.__doc__ = """
+    An unambiguous reference to the resource within a given context. Recommended
+    best practice is to identify the resource by means of a string or number
+    conforming to a formal identification system. Examples of formal
+    identification systems include the Uniform Resource Identifier (URI)
+    (including the Uniform Resource Locator (URL), the Digital Object Identifier
+    (DOI) and the International Standard Book Number (ISBN).
+    """
+
+    source: property = DescrAttr()
+    source.__doc__ = """
+    A related resource from which the described resource is derived. The
+    described resource may be derived from the related resource in whole or in
+    part. Recommended best practice is to identify the related resource by means
+    of a string conforming to a formal identification system.
+    """
+
+    language: property = DescrAttr()
+    language.__doc__ = """
+    A language of the resource. Recommended best practice is to use a controlled
+    vocabulary such as RFC 4646 [RFC4646]_.
+
+    .. [RFC4646] http://www.ietf.org/rfc/rfc4646.txt
+    """
+
+    coverage: property = DescrAttr()
+    coverage.__doc__ = """
+    The spatial or temporal topic of the resource, the spatial applicability of
+    the resource, or the jurisdiction under which the resource is relevant.
+    Spatial topic and spatial applicability may be a named place or a location
+    specified by its geographic coordinates. Temporal topic may be a named
+    period, date, or date range. A jurisdiction may be a named administrative
+    entity or a geographic place to which the resource applies. Recommended best
+    practice is to use a controlled vocabulary such as the Thesaurus of
+    Geographic Names [TGN]_. Where appropriate, named places or time periods can
+    be used in preference to numeric identifiers such as sets of coordinates or
+    date ranges.
+
+    .. [TGN] http://www.getty.edu/research/tools/vocabulary/tgn/index.html
+    """
+
+    relation: property = DescrAttr()
+    relation.__doc__ = """
+    A related resource. Recommended best practice is to identify the related
+    resource by means of a string conforming to a formal identification system.
+    """
+
+    creator: property = RightsAttr()
+    creator.__doc__ = """
+    An entity primarily responsible for making the resource. Examples of a
+    Creator include a person, an organization, or a service. Typically, the name
+    of a Creator should be used to indicate the entity.
+    """
+
+    publisher: property = RightsAttr()
+    publisher.__doc__ = """
+    An entity responsible for making the resource available. Examples of a
+    Publisher include a person, an organization, or a service. Typically, the
+    name of a Publisher should be used to indicate the entity.
+    """
+
+    contributor: property = RightsAttr()
+    contributor.__doc__ = """
+    An entity responsible for making contributions to the resource. Examples of
+    a Contributor include a person, an organization, or a service. Typically,
+    the name of a Contributor should be used to indicate the entity.
+    """
+
+    rights: property = RightsAttr()
+    rights.__doc__ = """
+    Information about rights held in and over the resource. Typically, rights
+    information includes a statement about various property rights associated
+    with the resource, including intellectual property rights.
     """
