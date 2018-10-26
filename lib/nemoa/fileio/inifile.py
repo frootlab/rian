@@ -15,17 +15,20 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import re
 from configparser import ConfigParser
 from io import StringIO
-
-from nemoa.base import ntext
+import re
+from nemoa.base import text as nmtext
 from nemoa.fileio import textfile
 from nemoa.types import FileOrPathLike, OptBool, OptStr, OptStrDict2, StrDict2
+from nemoa.types import Union, StrDict, Optional
 
-FILEEXTS = ['.ini', '.cfg']
+StrucType = Union[StrDict, StrDict2]
+OptStrucType = Optional[StrucType]
 
-def load(file: FileOrPathLike, structure: OptStrDict2 = None) -> StrDict2:
+def load(
+        file: FileOrPathLike, structure: OptStrucType = None,
+        flat: OptBool = None) -> StrucType:
     """Import configuration dictionary from INI file.
 
     Args:
@@ -44,21 +47,17 @@ def load(file: FileOrPathLike, structure: OptStrDict2 = None) -> StrDict2:
             attributes by strings representing the name of the type, e.g. 'str',
             'int', 'float', 'path' etc. Accepted type names can be found in the
             documentation of the function `ntext.astype`_.
+        flat: Determines if the desired INI format structure contains sections
+            or not. By default sections are used, if the first non empty, non
+            comment line in the string identifies a section.
 
     Return:
         Structured configuration dictionary
 
     """
-    # Initialize Configuration Parser
-    parser = ConfigParser()
-    setattr(parser, 'optionxform', lambda key: key)
-
     # Read configuration from file-like or path-like object
-    with textfile.openx(file, mode='r') as fd:
-        parser.read_file(fd)
-
-    # Parse sections and create configuration dictionary
-    return parse(parser, structure=structure)
+    with textfile.openx(file, mode='r') as fh:
+        return loads(fh.read(), structure=structure, flat=flat)
 
 def save(
         config: dict, file: FileOrPathLike, flat: OptBool = None,
@@ -84,12 +83,12 @@ def save(
         raise ValueError("dictionary is not valid") from err
 
     # Write text to file
-    with textfile.openx(file, mode='w') as fd:
-        fd.write(text)
+    with textfile.openx(file, mode='w') as fh:
+        fh.write(text)
 
 def loads(
-        text: str, structure: OptStrDict2 = None,
-        flat: OptBool = None) -> StrDict2:
+        text: str, structure: OptStrucType = None,
+        flat: OptBool = None) -> StrucType:
     """Load configuration dictionary from INI-formated text.
 
     Args:
@@ -106,10 +105,9 @@ def loads(
             attributes by strings representing the name of the type, e.g. 'str',
             'int', 'float', 'path' etc. Accepted type names can be found in the
             documentation of the function `ntext.astype`_.
-        flat: Determines if the desired INI format structure
-            contains sections or not. By default sections are used, if the
-            first non empty, non comment line in the string identifies a
-            section.
+        flat: Determines if the desired INI format structure contains sections
+            or not. By default sections are used, if the first non empty, non
+            comment line in the string identifies a section.
 
     Return:
         Structured configuration dictionary.
@@ -270,7 +268,7 @@ def parse(parser: ConfigParser, structure: OptStrDict2 = None) -> StrDict2:
                 if not rekey.match(key):
                     continue
                 val = parser.get(sec, key)
-                dsec[key] = ntext.astype(val, fmt)
+                dsec[key] = nmtext.as_type(val, fmt)
 
         config[sec] = dsec
 

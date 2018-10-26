@@ -12,6 +12,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import datetime
 import time
 import warnings
 from zipfile import BadZipFile, ZipFile, ZipInfo
@@ -81,12 +82,13 @@ class WsFile(CoreContainer):
             'rights': 'str',
             'source': 'str',
             'relation': 'str',
-            'date': 'str'},
+            'date': 'datetime'},
         'hooks': {
             'startup': 'path'}}
     _DEFAULT_CONFIG: ClassVar[StrDict2] = {
         'dcmi': {
-            'creator': env.get_username()}}
+            'creator': env.get_username(),
+            'date': datetime.datetime.now()}}
     _DEFAULT_DIR_LAYOUT: ClassVar[StrList] = [
         'dataset', 'network', 'system', 'model', 'script']
     _DEFAULT_ENCODING = env.get_encoding()
@@ -347,7 +349,7 @@ class WsFile(CoreContainer):
         except KeyError as err:
             raise BadWsFile(
                 f"workspace '{self.path}' is not valid: "
-                "file '{self._CONFIG_FILE}' is missing") from err
+                f"file '{self._CONFIG_FILE}' could not be loaded") from err
 
         # Check if configuration contains required sections
         rsec = self._CONFIG_STRUCT.keys()
@@ -376,6 +378,9 @@ class WsFile(CoreContainer):
 
         """
         path = npath.expand(filepath)
+
+        # Update datetime
+        self.date = datetime.datetime.now()
 
         # Update 'workspace.ini'
         with self.open(self._CONFIG_FILE, mode='w') as file:
@@ -605,8 +610,8 @@ class WsFile(CoreContainer):
 
         # Create ZipInfo entry from source file
         filename = PurePath(tgt_file).as_posix()
-        datetime = time.localtime(src_file.stat().st_mtime)[:6]
-        zinfo = ZipInfo(filename=filename, date_time=datetime) # type: ignore
+        date_time = time.localtime(src_file.stat().st_mtime)[:6]
+        zinfo = ZipInfo(filename=filename, date_time=date_time) # type: ignore
 
         # Copy file to archive
         with src_file.open('rb') as src:

@@ -7,14 +7,10 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import tempfile
-
 from pathlib import Path
-
 import numpy as np
-
-from nemoa.base import (
-    check, env, nbase, binary, nclass, ndict, nfunc, nmodule,
-    npath, table, ntext)
+from nemoa.base import check, env, nbase, binary, nclass, ndict, nfunc, nmodule
+from nemoa.base import npath, table, text as nmtext
 from nemoa.test import ModuleTestCase
 from nemoa.types import Any, Function, Module, PathLikeList
 
@@ -381,6 +377,11 @@ class TestNfunc(ModuleTestCase):
 
     module = 'nemoa.base.nfunc'
 
+    def test_splitargs(self) -> None:
+        self.assertEqual(
+            nfunc.splitargs("f(1., 'a', b = 2)"),
+            ('f', (1.0, 'a'), {'b': 2}))
+
     def test_get_summary(self) -> None:
         text = nfunc.get_summary(nfunc.get_summary)
         self.assertEqual(text, 'Get summary line of a function')
@@ -458,56 +459,51 @@ class TestTable(ModuleTestCase):
         new = table.addcols(tgt, src, 'z')
         self.assertEqual(new['z'][0], 'a')
 
-class TestNtext(ModuleTestCase):
-    """Testcase for the module nemoa.base.ntext."""
+class TestText(ModuleTestCase):
+    """Testcase for the module nemoa.base.text."""
 
-    module = 'nemoa.base.ntext'
+    module = 'nemoa.base.text'
 
-    def test_splitargs(self) -> None:
-        self.assertEqual(
-            ntext.splitargs("f(1., 'a', b = 2)"),
-            ('f', (1.0, 'a'), {'b': 2}))
-
-    def test_aspath(self) -> None:
-        val = ntext.aspath('a/b/c')
+    def test_as_path(self) -> None:
+        val = nmtext.as_path('a/b/c')
         self.assertEqual(val, Path('a/b/c'))
-        val = ntext.aspath('a\\b\\c')
+        val = nmtext.as_path('a\\b\\c')
         self.assertEqual(val, Path('a\\b\\c'))
-        val = ntext.aspath('%home%/test')
+        val = nmtext.as_path('%home%/test')
         self.assertEqual(val, Path.home() / 'test')
 
-    def test_aslist(self) -> None:
-        val = ntext.aslist('a, 2, ()')
+    def test_as_list(self) -> None:
+        val = nmtext.as_list('a, 2, ()')
         self.assertEqual(val, ['a', '2', '()'])
-        val = ntext.aslist('[1, 2, 3]')
+        val = nmtext.as_list('[1, 2, 3]')
         self.assertEqual(val, [1, 2, 3])
 
-    def test_astuple(self) -> None:
-        val = ntext.astuple('a, 2, ()')
+    def test_as_tuple(self) -> None:
+        val = nmtext.as_tuple('a, 2, ()')
         self.assertEqual(val, ('a', '2', '()'))
-        val = ntext.astuple('(1, 2, 3)')
+        val = nmtext.as_tuple('(1, 2, 3)')
         self.assertEqual(val, (1, 2, 3))
 
-    def test_asset(self) -> None:
-        val = ntext.asset('a, 2, ()')
+    def test_as_set(self) -> None:
+        val = nmtext.as_set('a, 2, ()')
         self.assertEqual(val, {'a', '2', '()'})
-        val = ntext.asset('{1, 2, 3}')
+        val = nmtext.as_set('{1, 2, 3}')
         self.assertEqual(val, {1, 2, 3})
 
-    def test_asdict(self) -> None:
-        val = ntext.asdict("a = 'b', b = 1")
+    def test_as_dict(self) -> None:
+        val = nmtext.as_dict("a = 'b', b = 1")
         self.assertEqual(val, {'a': 'b', 'b': 1})
-        val = ntext.asdict("'a': 'b', 'b': 1")
+        val = nmtext.as_dict("'a': 'b', 'b': 1")
         self.assertEqual(val, {'a': 'b', 'b': 1})
 
-    def test_astype(self) -> None:
+    def test_as_type(self) -> None:
         tests = [
             ('t', 'str'), (True, 'bool'), (1, 'int'), (.5, 'float'),
             ((1+1j), 'complex')]
         for val, tname in tests:
             text = str(val)
             with self.subTest(f"astype({text}, {tname})"):
-                decode = ntext.astype(text, tname)
+                decode = nmtext.as_type(text, tname)
                 self.assertEqual(decode, val)
 
 class TestNpath(ModuleTestCase):

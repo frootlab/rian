@@ -8,7 +8,7 @@ __docformat__ = 'google'
 
 from nemoa.base import check
 from nemoa.errors import ReadOnlyError
-from nemoa.types import Any, Callable, ClassInfo, OptClassInfo, Optional
+from nemoa.types import Any, Callable, ClassInfo, Date, OptClassInfo, Optional
 from nemoa.types import OptStr, OptStrDict, OptType, StrDict, StrList, void
 
 ################################################################################
@@ -320,7 +320,7 @@ class CoreContainer(BaseContainer):
     account of the resource.
     """
 
-    date: property = DCMIAttr()
+    date: property = DCMIAttr(classinfo=Date)
     date.__doc__ = """
     A point or period of time associated with an event in the lifecycle of the
     resource. Date may be used to express temporal information at any level of

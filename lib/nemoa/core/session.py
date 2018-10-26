@@ -146,6 +146,7 @@ class Session(CoreContainer):
         """
         path = self._locate_path(workspace=workspace, basedir=basedir)
         self.workspace = wsfile.WsFile(filepath=path, pwd=pwd)
+        self.parent = self.workspace
 
     def save(self) -> None:
         """Save Workspace to current file."""

@@ -25,12 +25,10 @@ import os
 import shutil
 import string
 import sys
-
 from pathlib import Path, PurePath
-
 from nemoa.base import env
-from nemoa.types import (
-    Any, Iterable, IterAny, NestPath, OptStrDict, PathLikeList)
+from nemoa.types import Any, Iterable, IterAny, NestPath, OptStrDict
+from nemoa.types import PathLikeList
 
 _RECURSION_LIMIT = sys.getrecursionlimit()
 

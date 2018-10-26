@@ -8,10 +8,10 @@ __docformat__ = 'google'
 
 __all__ = ['get_summary', 'get_instance', 'get_kwds']
 
+import ast
 import inspect
-
 from nemoa.base import bare, check, nmodule
-from nemoa.types import AnyFunc, StrDict, Function, OptFunction, OptDict
+from nemoa.types import AnyFunc, StrDict, Function, OptFunction, OptDict, Tuple
 
 def get_summary(func: AnyFunc) -> str:
     """Get summary line of a function.
@@ -88,3 +88,48 @@ def get_kwds(func: AnyFunc, default: OptDict = None) -> StrDict:
             kwds[key] = default[key]
 
     return kwds
+
+
+def splitargs(text: str) -> Tuple[str, tuple, dict]:
+    """Split a function call in the function name, its arguments and keywords.
+
+    Args:
+        text: Function call given as valid Python code. Beware: Function
+            definitions are no valid function calls.
+
+    Returns:
+        A tuple consisting of the function name as string, the arguments as
+        tuple and the keywords as dictionary.
+
+    """
+    # Check type of 'text'
+    check.has_type("first argument 'text'", text, str)
+
+    # Get function name
+    try:
+        tree = ast.parse(text)
+        func = getattr(getattr(getattr(tree.body[0], 'value'), 'func'), 'id')
+    except SyntaxError as err:
+        raise ValueError(f"'{text}' is not a valid function call") from err
+    except AttributeError as err:
+        raise ValueError(f"'{text}' is not a valid function call") from err
+
+    # Get tuple with arguments
+    astargs = getattr(getattr(tree.body[0], 'value'), 'args')
+    largs = []
+    for astarg in astargs:
+        typ = astarg._fields[0]
+        val = getattr(astarg, typ)
+        largs.append(val)
+    args = tuple(largs)
+
+    # Get dictionary with keywords
+    astkwds = getattr(getattr(tree.body[0], 'value'), 'keywords')
+    kwds = {}
+    for astkw in astkwds:
+        key = astkw.arg
+        typ = astkw.value._fields[0]
+        val = getattr(astkw.value, typ)
+        kwds[key] = val
+
+    return func, args, kwds

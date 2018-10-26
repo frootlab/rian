@@ -84,7 +84,8 @@ def install() -> None:
             'appdirs>=1.4',
             'matplotlib>=3.0',
             'networkx>=2.1',
-            'numpy>=1.15'],
+            'numpy>=1.15',
+            'pyparsing>=2.2'],
         extras_require={
             'gui': ['pyside'],
             'gene': ['rpy2']},

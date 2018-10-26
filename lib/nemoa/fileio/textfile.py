@@ -18,15 +18,10 @@ __docformat__ = 'google'
 __all__ = ['openx', 'load', 'save', 'get_header', 'get_content']
 
 import contextlib
-
 from io import TextIOWrapper
-
 from nemoa.base import npath
-from nemoa.types import (
-    BytesIOBaseClass, FileOrPathLike, IterStringIOLike, Path,
-    StrList, TextIOBaseClass)
-
-FILEEXTS = ['.txt']
+from nemoa.types import BytesIOBaseClass, FileOrPathLike, IterStringIOLike
+from nemoa.types import Path, StrList, TextIOBaseClass
 
 @contextlib.contextmanager
 def openx(file: FileOrPathLike, mode: str = '') -> IterStringIOLike:

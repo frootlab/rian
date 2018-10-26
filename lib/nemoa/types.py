@@ -7,6 +7,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import array
+import datetime
 import io
 import os
 import types
@@ -41,6 +42,7 @@ BytesIOBaseClass = io.BufferedIOBase
 TextIOBaseClass = io.TextIOBase
 AnyFile = (BytesIOBaseClass, TextIOBaseClass)
 Array = array.ArrayType
+Date = datetime.datetime
 
 ################################################################################
 # Define generic Type Variables
