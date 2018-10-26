@@ -169,22 +169,6 @@ class VirtualAttr(Attr):
         check.has_type('getter', kwds.get('getter'), str)
         super().__init__(*args, **kwds)
 
-class DescrAttr(MetadataAttr):
-    """Attributes for descriptive metadata."""
-
-    def __init__(self, *args: Any, **kwds: Any) -> None:
-        """Initialize Attribute Descriptor."""
-        kwds['classinfo'] = kwds.get('classinfo', str)
-        super().__init__(*args, **kwds)
-
-class RightsAttr(MetadataAttr):
-    """Attributes for rights metadata."""
-
-    def __init__(self, *args: Any, **kwds: Any) -> None:
-        """Initialize Attribute Descriptor."""
-        kwds['classinfo'] = kwds.get('classinfo', str)
-        super().__init__(*args, **kwds)
-
 class TechAttr(MetadataAttr):
     """Attributes for technical metadata."""
 
@@ -227,9 +211,10 @@ class BaseContainer:
 
     def _get_attrs(self, classinfo: ClassInfo) -> StrList:
         attrs: StrList = []
-        for attr, obj in type(self).__dict__.items():
-            if isinstance(obj, classinfo):
-                attrs.append(attr)
+        for objtype in type(self).__mro__:
+            for attr, obj in objtype.__dict__.items():
+                if isinstance(obj, classinfo):
+                    attrs.append(attr)
         return attrs
 
     def _set_attrs(self, classinfo: ClassInfo, attrs: dict) -> None:
@@ -255,22 +240,6 @@ class BaseContainer:
     def _set_metadata(self, attrs: StrDict) -> None:
         check.has_type("argument 'attrs'", attrs, dict)
         self._set_attrs(MetadataAttr, attrs)
-
-    def _get_descr_metadata(self) -> dict:
-        attrs = self._get_attrs(DescrAttr)
-        return {attr: getattr(self, attr) for attr in attrs}
-
-    def _set_descr_metadata(self, attrs: StrDict) -> None:
-        check.has_type("argument 'attrs'", attrs, dict)
-        self._set_attrs(DescrAttr, attrs)
-
-    def _get_rights_metadata(self) -> dict:
-        attrs = self._get_attrs(DescrAttr)
-        return {attr: getattr(self, attr) for attr in attrs}
-
-    def _set_rights_metadata(self, attrs: StrDict) -> None:
-        check.has_type("argument 'attrs'", attrs, dict)
-        self._set_attrs(DescrAttr, attrs)
 
     def _get_tech_metadata(self) -> dict:
         attrs = self._get_attrs(TechAttr)
@@ -300,6 +269,14 @@ class BaseContainer:
 # Container class with Dublin Core metadata
 ################################################################################
 
+class DCMIAttr(MetadataAttr):
+    """Attributes for Dublin Core metadata."""
+
+    def __init__(self, *args: Any, **kwds: Any) -> None:
+        """Initialize Attribute Descriptor."""
+        kwds['classinfo'] = kwds.get('classinfo', str)
+        super().__init__(*args, **kwds)
+
 class CoreContainer(BaseContainer):
     """Container class, that implements the Dublin Core Schema.
 
@@ -321,31 +298,29 @@ class CoreContainer(BaseContainer):
     .. [DCMI-TERMS] http://dublincore.org/documents/dcmi-terms/
     .. [DCMI-TYPE] http://dublincore.org/documents/dcmi-type-vocabulary/
     .. [DCAM] http://dublincore.org/documents/2007/06/04/abstract-model/
-
     """
 
-    title: property = DescrAttr()
+    title: property = DCMIAttr()
     title.__doc__ = """
     A name given to the resource. Typically, a Title will be a name by which the
     resource is formally known.
     """
 
-    subject: property = DescrAttr()
+    subject: property = DCMIAttr()
     subject.__doc__ = """
     The topic of the resource. Typically, the subject will be represented using
     keywords, key phrases, or classification codes. Recommended best practice is
     to use a controlled vocabulary.
     """
 
-    description: property = DescrAttr()
+    description: property = DCMIAttr()
     description.__doc__ = """
     An account of the resource. Description may include but is not limited to:
     an abstract, a table of contents, a graphical representation, or a free-text
     account of the resource.
-
     """
 
-    date: property = DescrAttr()
+    date: property = DCMIAttr()
     date.__doc__ = """
     A point or period of time associated with an event in the lifecycle of the
     resource. Date may be used to express temporal information at any level of
@@ -355,7 +330,7 @@ class CoreContainer(BaseContainer):
     .. [W3CDTF] http://www.w3.org/TR/NOTE-datetime
     """
 
-    type: property = DescrAttr()
+    type: property = DCMIAttr()
     type.__doc__ = """
     The nature or genre of the resource. Recommended best practice is to use a
     controlled vocabulary such as the DCMI Type Vocabulary [DCMITYPE]_. To
@@ -365,7 +340,7 @@ class CoreContainer(BaseContainer):
     .. [DCMITYPE] http://dublincore.org/documents/dcmi-type-vocabulary/
     """
 
-    format: property = DescrAttr()
+    format: property = DCMIAttr()
     format.__doc__ = """
     The file format, physical medium, or dimensions of the resource. Examples of
     dimensions include size and duration. Recommended best practice is to use a
@@ -374,7 +349,7 @@ class CoreContainer(BaseContainer):
     .. [MIME] http://www.iana.org/assignments/media-types/
     """
 
-    identifier: property = DescrAttr()
+    identifier: property = DCMIAttr()
     identifier.__doc__ = """
     An unambiguous reference to the resource within a given context. Recommended
     best practice is to identify the resource by means of a string or number
@@ -384,7 +359,7 @@ class CoreContainer(BaseContainer):
     (DOI) and the International Standard Book Number (ISBN).
     """
 
-    source: property = DescrAttr()
+    source: property = DCMIAttr()
     source.__doc__ = """
     A related resource from which the described resource is derived. The
     described resource may be derived from the related resource in whole or in
@@ -392,7 +367,7 @@ class CoreContainer(BaseContainer):
     of a string conforming to a formal identification system.
     """
 
-    language: property = DescrAttr()
+    language: property = DCMIAttr()
     language.__doc__ = """
     A language of the resource. Recommended best practice is to use a controlled
     vocabulary such as RFC 4646 [RFC4646]_.
@@ -400,7 +375,7 @@ class CoreContainer(BaseContainer):
     .. [RFC4646] http://www.ietf.org/rfc/rfc4646.txt
     """
 
-    coverage: property = DescrAttr()
+    coverage: property = DCMIAttr()
     coverage.__doc__ = """
     The spatial or temporal topic of the resource, the spatial applicability of
     the resource, or the jurisdiction under which the resource is relevant.
@@ -416,36 +391,44 @@ class CoreContainer(BaseContainer):
     .. [TGN] http://www.getty.edu/research/tools/vocabulary/tgn/index.html
     """
 
-    relation: property = DescrAttr()
+    relation: property = DCMIAttr()
     relation.__doc__ = """
     A related resource. Recommended best practice is to identify the related
     resource by means of a string conforming to a formal identification system.
     """
 
-    creator: property = RightsAttr()
+    creator: property = DCMIAttr()
     creator.__doc__ = """
     An entity primarily responsible for making the resource. Examples of a
     Creator include a person, an organization, or a service. Typically, the name
     of a Creator should be used to indicate the entity.
     """
 
-    publisher: property = RightsAttr()
+    publisher: property = DCMIAttr()
     publisher.__doc__ = """
     An entity responsible for making the resource available. Examples of a
     Publisher include a person, an organization, or a service. Typically, the
     name of a Publisher should be used to indicate the entity.
     """
 
-    contributor: property = RightsAttr()
+    contributor: property = DCMIAttr()
     contributor.__doc__ = """
     An entity responsible for making contributions to the resource. Examples of
     a Contributor include a person, an organization, or a service. Typically,
     the name of a Contributor should be used to indicate the entity.
     """
 
-    rights: property = RightsAttr()
+    rights: property = DCMIAttr()
     rights.__doc__ = """
     Information about rights held in and over the resource. Typically, rights
     information includes a statement about various property rights associated
     with the resource, including intellectual property rights.
     """
+
+    def _get_dcmi(self) -> dict:
+        attrs = self._get_attrs(DCMIAttr)
+        return {attr: getattr(self, attr) for attr in attrs}
+
+    def _set_dcmi(self, attrs: StrDict) -> None:
+        check.has_type("argument 'attrs'", attrs, dict)
+        self._set_attrs(DCMIAttr, attrs)

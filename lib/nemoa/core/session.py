@@ -54,7 +54,7 @@ class Session(CoreContainer):
     workspace: property = ContentAttr(wsfile.WsFile)
 
     #
-    # Technical Metadata Attributes
+    # Metadata Attributes
     #
 
     config: property = TechAttr(dict)
@@ -99,7 +99,10 @@ class Session(CoreContainer):
         self.paths = [npath.expand(path) for path in self._default_paths]
         self.logger = log.get_instance()
 
-        # Load configuration from file
+        # Bind session to workspace
+        self.parent = self.workspace
+
+        # Load session configuration from file
         if npath.is_file(self._config_file_path):
             self._load_config()
 

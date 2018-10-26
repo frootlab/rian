@@ -14,20 +14,19 @@ __docformat__ = 'google'
 
 import time
 import warnings
-
 from zipfile import BadZipFile, ZipFile, ZipInfo
 from contextlib import contextmanager
 from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
-
 from nemoa.base import npath, env
-from nemoa.core.container import Attr
+from nemoa.core.container import ContentAttr, CoreContainer, TechAttr
+from nemoa.core.container import TransientAttr, VirtualAttr
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
 from nemoa.fileio import inifile
-from nemoa.types import (
-    BytesIOBaseClass, BytesIOLike, BytesLike, ClassVar, IterFileLike, List,
-    OptBytes, OptStr, OptPath, OptPathLike, PathLike, PathLikeList,
-    TextIOBaseClass, Traceback, StrDict, StrDict2, StrList)
+from nemoa.types import BytesIOBaseClass, BytesIOLike, BytesLike, ClassVar
+from nemoa.types import IterFileLike, List, OptBytes, OptStr, OptPathLike
+from nemoa.types import PathLike, PathLikeList, TextIOBaseClass, Traceback
+from nemoa.types import StrDict, StrDict2, StrList, OptPath
 
 # Module specific types
 ZipInfoList = List[ZipInfo]
@@ -39,7 +38,7 @@ class BadWsFile(OSError):
 # Module constants
 FILEEXTS = ['.ws', '.ws.zip']
 
-class WsFile:
+class WsFile(CoreContainer):
     """Workspace File.
 
     Workspace files are Zip-Archives, that contain the INI-formatted
@@ -67,15 +66,27 @@ class WsFile:
 
     _CONFIG_FILE: ClassVar[Path] = Path('workspace.ini')
     _CONFIG_STRUCT: ClassVar[StrDict2] = {
-        'workspace': {
-            'about': 'str',
-            'license': 'str',
-            'maintainer': 'str',
-            'email': 'str',
+        'dcmi': {
+            'identifier': 'str',
+            'format': 'str',
+            'type': 'str',
+            'language': 'str',
+            'title': 'str',
+            'subject': 'str',
+            'coverage': 'str',
+            'description': 'str',
+            'creator': 'str',
+            'publisher': 'str',
+            'contributor': 'str',
+            'rights': 'str',
+            'source': 'str',
+            'relation': 'str',
+            'date': 'str'},
+        'hooks': {
             'startup': 'path'}}
     _DEFAULT_CONFIG: ClassVar[StrDict2] = {
-        'workspace': {
-            'maintainer': env.get_username()}}
+        'dcmi': {
+            'creator': env.get_username()}}
     _DEFAULT_DIR_LAYOUT: ClassVar[StrList] = [
         'dataset', 'network', 'system', 'model', 'script']
     _DEFAULT_ENCODING = env.get_encoding()
@@ -84,12 +95,53 @@ class WsFile:
     # Private Instance Variables
     #
 
-    _attr: StrDict
-    _buffer: BytesIOLike
-    _changed: bool
-    _file: ZipFile
-    _path: OptPath
-    _pwd: OptBytes
+    _data: StrDict
+    _meta: StrDict
+    _temp: StrDict
+
+    #
+    # Private Content Attributes
+    #
+
+    _file: property = ContentAttr(ZipFile)
+    _buffer: property = ContentAttr(BytesIOBaseClass)
+
+    #
+    # Metadata Attributes
+    #
+
+    startup: property = TechAttr(Path)
+    startup.__doc__ = """
+    The startup script is a path, that points to a python script inside the
+    workspace, which is executed after loading the workspace.
+    """
+
+    #
+    # Virtual Attributes
+    #
+
+    path: property = VirtualAttr(Path, getter='_get_path', readonly=True)
+    path.__doc__ = """Filepath of the workspace."""
+
+    name: property = VirtualAttr(list, getter='_get_name', readonly=True)
+    name.__doc__ = """Filename of the workspace without file extension."""
+
+    files: property = VirtualAttr(list, getter='search', readonly=True)
+    files.__doc__ = """List of all files within the workspace."""
+
+    folders: property = VirtualAttr(list, getter='_get_folders', readonly=True)
+    folders.__doc__ = """List of all folders within the workspace."""
+
+    changed: property = VirtualAttr(bool, getter='_get_changed', readonly=True)
+    changed.__doc__ = """Tells whether the workspace file has been changed."""
+
+    #
+    # Private Transient Attributes
+    #
+
+    _path: property = TransientAttr(Path)
+    _pwd: property = TransientAttr(bytes)
+    _changed: property = TransientAttr(bool, default=False)
 
     #
     # Magic
@@ -98,6 +150,7 @@ class WsFile:
     def __init__(
             self, filepath: OptPathLike = None, pwd: OptBytes = None) -> None:
         """Load Workspace from file."""
+        super().__init__()
         if filepath:
             self.load(filepath, pwd=pwd)
         else:
@@ -117,9 +170,9 @@ class WsFile:
 
     def _create_new(self) -> None:
         # Initialize instance Variables, Buffer and buffered ZipFile
-        self._attr = self._DEFAULT_CONFIG['workspace'].copy()
-        self._changed = False
+        self._set_dcmi(self._DEFAULT_CONFIG['dcmi'])
         self._path = None
+        self._changed = False
         self._pwd = None
         self._buffer = BytesIO()
         self._file = ZipFile(self._buffer, mode='w')
@@ -176,6 +229,12 @@ class WsFile:
 
     def _get_name(self) -> OptStr:
         return getattr(self._path, 'stem', None)
+
+    def _get_path(self) -> OptPath:
+        return self._path
+
+    def _get_changed(self) -> bool:
+        return self._changed
 
     def _get_folders(self) -> StrList:
         names: StrList = []
@@ -253,7 +312,6 @@ class WsFile:
 
         """
         # Initialize instance Variables, Buffer and buffered ZipFile
-        self._attr = {}
         self._changed = False
         self._path = npath.expand(filepath)
         self._pwd = pwd
@@ -264,9 +322,9 @@ class WsFile:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             try:
-                with ZipFile(self._path, mode='r') as zipfile:
-                    for zinfo in zipfile.infolist():
-                        data = zipfile.read(zinfo, pwd=pwd)
+                with ZipFile(self.path, mode='r') as fh:
+                    for zinfo in fh.infolist():
+                        data = fh.read(zinfo, pwd=pwd)
                         # TODO (patrick.michl@gmail.com): The zipfile standard
                         # module currently does not support encryption in write
                         # mode of new ZipFiles. See:
@@ -277,10 +335,10 @@ class WsFile:
                         self._file.writestr(zinfo, data)
             except FileNotFoundError as err:
                 raise FileNotFoundError(
-                    f"file '{self._path}' does not exist") from err
+                    f"file '{self.path}' does not exist") from err
             except BadZipFile as err:
                 raise BadZipFile(
-                    f"file '{self._path}' is not a valid ZIP file") from err
+                    f"file '{self.path}' is not a valid ZIP file") from err
 
         # Try to open and load workspace configuration from buffer
         try:
@@ -288,23 +346,23 @@ class WsFile:
                 cfg = inifile.load(file, self._CONFIG_STRUCT)
         except KeyError as err:
             raise BadWsFile(
-                f"workspace '{self._path}' is not valid: "
+                f"workspace '{self.path}' is not valid: "
                 "file '{self._CONFIG_FILE}' is missing") from err
 
         # Check if configuration contains required sections
         rsec = self._CONFIG_STRUCT.keys()
         if rsec > cfg.keys():
             raise BadWsFile(
-                f"workspace '{self._path}' is not valid: "
-                f"'{self._CONFIG_FILE}' requires sections '{rsec}'") from err
+                f"workspace '{self.path}' is not valid: "
+                f"'{self._CONFIG_FILE}' requires sections '{rsec}'")
 
         # Link configuration
-        self._attr = cfg.get('workspace', {})
+        self._set_dcmi(cfg.get('dcmi', {}))
 
     def save(self) -> None:
         """Save the workspace to it's filepath."""
-        if isinstance(self._path, Path):
-            self.saveas(self._path)
+        if isinstance(self.path, Path):
+            self.saveas(self.path)
         else:
             raise FileNotGivenError(
                 "use saveas() to save the workspace to a file")
@@ -321,7 +379,9 @@ class WsFile:
 
         # Update 'workspace.ini'
         with self.open(self._CONFIG_FILE, mode='w') as file:
-            inifile.save({'workspace': self._attr}, file)
+            inifile.save({
+                'dcmi': self._get_dcmi(),
+                'hooks': self._get_tech_metadata()}, file)
 
         # Remove duplicates from workspace
         self._remove_duplicates()
@@ -761,62 +821,3 @@ class WsFile:
 
         # Sort paths
         return sorted([str(path) for path in paths])
-
-    #
-    # Public Instance Attributes
-    #
-
-    about: property = Attr(str, bind='_attr')
-    about.__doc__ = """Summary of the workspace.
-
-    A short description of the contents, the purpose or the intended application
-    of the workspace. The attribute about is inherited by resources, that are
-    created inside the workspace and support the attribute.
-    """
-
-    email: property = Attr(str, bind='_attr')
-    email.__doc__ = """Email address of the maintainer of the workspace.
-
-    Email address to a person, an organization, or a service that is responsible
-    for the content of the workspace. The attribute email is inherited by
-    resources, that are created inside the workspace and support the attribute.
-    """
-
-    license: property = Attr(str, bind='_attr')
-    license.__doc__ = """License for the usage of the contents of the workspace.
-
-    Namereference to a legal document giving specified users an official
-    permission to do something with the contents of the workspace. The attribute
-    license is inherited by resources, that are created inside the workspace
-    and support the attribute.
-    """
-
-    maintainer: property = Attr(str, bind='_attr')
-    maintainer.__doc__ = """Name of the maintainer of the workspace.
-
-    A person, an organization, or a service that is responsible for the content
-    of the workspace. The attribute maintainer is inherited by resources, that
-    are created inside the workspace and support the attribute.
-    """
-
-    startup: property = Attr(Path, bind='_attr')
-    startup.__doc__ = """Startup script inside the workspace.
-
-    The startup script is a path, that points to a a python script inside the
-    workspace, which is intended to be executed after loading the workspace.
-    """
-
-    name: property = Attr(list, getter='_get_name', readonly=True)
-    name.__doc__ = """Filename of the workspace without file extension."""
-
-    path: property = Attr(Path, key='_path', readonly=True)
-    path.__doc__ = """Filepath of the workspace."""
-
-    files: property = Attr(list, getter='search', readonly=True)
-    files.__doc__ = """List of all files within the workspace."""
-
-    folders: property = Attr(list, getter='_get_folders', readonly=True)
-    folders.__doc__ = """List of all folders within the workspace."""
-
-    changed: property = Attr(bool, key='_changed', readonly=True)
-    changed.__doc__ = """Tells whether the workspace file has been changed."""
