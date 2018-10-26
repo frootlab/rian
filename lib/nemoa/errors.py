@@ -61,7 +61,7 @@ class NmAssert(AssertionError, NmException):
 # Assertion Errors
 ################################################################################
 
-class NotIsInstanceError(TypeError, NmAssert):
+class WrongTypeError(TypeError, NmAssert):
     """Raise when an object is required to be of a given type."""
 
     def __init__(self, name: str, obj: object, classinfo: ClassInfo) -> None:

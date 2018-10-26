@@ -17,17 +17,17 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from pathlib import Path
-from nemoa.classes import TechAttr, BaseContainer, ContentAttr, VirtualAttr
-from nemoa.classes import TransientAttr
 from nemoa.base import npath
 from nemoa.core import log
+from nemoa.core.container import ContentAttr, CoreContainer
+from nemoa.core.container import TechAttr, VirtualAttr, TransientAttr
 from nemoa.fileio import inifile, wsfile
 from nemoa.types import (
     Any, BytesLike, CManFileLike, ClassVar, Exc, ExcType, OptBytes, OptPath,
     OptPathLike, OptStr, PathLike, StrDict, StrDict2, StrList, StrOrInt,
     Traceback)
 
-class Session(BaseContainer):
+class Session(CoreContainer):
     """Session."""
 
     #

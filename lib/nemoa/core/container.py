@@ -27,9 +27,9 @@ class Attr(property):
         key:
         getter:
         setter:
-        default:
+        default: Default value, which is returned for a get request
         parent: Name of attribute, which references a parent object.
-        readonly:
+        readonly: Boolean value which determines if the attribute is read-only
 
     """
 
@@ -136,7 +136,7 @@ class ContentAttr(Attr):
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize Attribute Descriptor."""
-        kwds['bind'] = kwds.get('bind', '_content')
+        kwds['bind'] = kwds.get('bind', '_data')
         super().__init__(*args, **kwds)
 
 class MetadataAttr(Attr):
@@ -144,7 +144,8 @@ class MetadataAttr(Attr):
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize Attribute Descriptor."""
-        kwds['bind'] = kwds.get('bind', '_metadata')
+        kwds['bind'] = kwds.get('bind', '_meta')
+        kwds['parent'] = kwds.get('parent', 'parent')
         super().__init__(*args, **kwds)
 
 class TransientAttr(Attr):
@@ -169,11 +170,18 @@ class VirtualAttr(Attr):
 class DescrAttr(MetadataAttr):
     """Attributes for descriptive metadata."""
 
+    def __init__(self, *args: Any, **kwds: Any) -> None:
+        """Initialize Attribute Descriptor."""
+        kwds['classinfo'] = kwds.get('classinfo', str)
+        super().__init__(*args, **kwds)
+
 class RightsAttr(MetadataAttr):
     """Attributes for rights metadata."""
 
-class StructAttr(MetadataAttr):
-    """Attributes for structural metadata."""
+    def __init__(self, *args: Any, **kwds: Any) -> None:
+        """Initialize Attribute Descriptor."""
+        kwds['classinfo'] = kwds.get('classinfo', str)
+        super().__init__(*args, **kwds)
 
 class TechAttr(MetadataAttr):
     """Attributes for technical metadata."""
@@ -181,19 +189,16 @@ class TechAttr(MetadataAttr):
 class BaseContainer:
     """Base class for Container Objects."""
 
-    # Private Instance Variables
-
-    _content: StrDict
-    _metadata: StrDict
+    _data: StrDict
+    _meta: StrDict
     _temp: StrDict
-    _parent: Optional['BaseContainer']
 
     #
-    # Class Attributes
+    # Transient Attributes
     #
 
-    parent: property = StructAttr(object, key='_parent')
-    parent.__doc__ = """Parent object."""
+    parent: property = TransientAttr(object)
+    parent.__doc__ = """Reference to parent object."""
 
     #
     # Magic
@@ -203,10 +208,10 @@ class BaseContainer:
             self, metadata: OptStrDict = None, content: OptStrDict = None,
             parent: Optional['BaseContainer'] = None) -> None:
         """Initialize instance members."""
-        self._metadata = {}
-        self._content = {}
+        self._data = {}
+        self._meta = {}
         self._temp = {}
-        self._parent = parent
+        #self._parent = parent
 
         if metadata:
             self._set_metadata(metadata)
@@ -264,14 +269,6 @@ class BaseContainer:
         check.has_type("argument 'attrs'", attrs, dict)
         self._set_attrs(DescrAttr, attrs)
 
-    def _get_struct_metadata(self) -> dict:
-        attrs = self._get_attrs(StructAttr)
-        return {attr: getattr(self, attr) for attr in attrs}
-
-    def _set_struct_metadata(self, attrs: StrDict) -> None:
-        check.has_type("argument 'attrs'", attrs, dict)
-        self._set_attrs(StructAttr, attrs)
-
     def _get_tech_metadata(self) -> dict:
         attrs = self._get_attrs(TechAttr)
         return {attr: getattr(self, attr) for attr in attrs}
@@ -300,7 +297,7 @@ class BaseContainer:
 # Container class with Dublin Core metadata
 ################################################################################
 
-class DCContainer(BaseContainer):
+class CoreContainer(BaseContainer):
     """Container class, that implements the Dublin Core Schema.
 
     The Dublin Core Metadata Element Set is a vocabulary of fifteen properties

@@ -44,11 +44,13 @@ import tempfile
 import warnings
 from pathlib import Path
 from nemoa.base import env, npath
-from nemoa.classes import Attr
+from nemoa.core import container
 from nemoa.errors import AlreadyStartedError, NotStartedError
 from nemoa.types import (
     void, Any, AnyFunc, ClassVar, PathLike, StrList, StrOrInt, OptPath,
     VoidFunc)
+
+Attr = container.Attr
 
 #
 # Logger Class

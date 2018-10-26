@@ -21,7 +21,7 @@ from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
 
 from nemoa.base import npath, env
-from nemoa.classes import Attr
+from nemoa.core.container import Attr
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
 from nemoa.fileio import inifile
 from nemoa.types import (

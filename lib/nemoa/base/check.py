@@ -10,7 +10,7 @@ import inspect
 
 from nemoa.errors import (
     IsPositiveError, IsNegativeError,
-    NotIsInstanceError, NotIsSubclassError, NotIsClassError, NotIsCallableError,
+    WrongTypeError, NotIsSubclassError, NotIsClassError, NotIsCallableError,
     NotHasAttrError, NotIsSubsetError, NotIsPositiveError, NotIsNegativeError)
 from nemoa.types import Class, ClassInfo, RealNumber
 
@@ -21,12 +21,12 @@ from nemoa.types import Class, ClassInfo, RealNumber
 def has_type(name: str, obj: object, classinfo: ClassInfo) -> None:
     """Check type of object."""
     if not isinstance(obj, classinfo):
-        raise NotIsInstanceError(name, obj, classinfo)
+        raise WrongTypeError(name, obj, classinfo)
 
 def has_opt_type(name: str, obj: object, classinfo: ClassInfo) -> None:
     """Check type of optional object."""
     if obj is not None and not isinstance(obj, classinfo):
-        raise NotIsInstanceError(name, obj, classinfo)
+        raise WrongTypeError(name, obj, classinfo)
 
 def is_callable(name: str, obj: object) -> None:
     """Check if object is callable."""
