@@ -9,7 +9,7 @@ __docformat__ = 'google'
 from nemoa.base import check
 from nemoa.errors import ReadOnlyError
 from nemoa.types import Any, Callable, ClassInfo, OptClassInfo, Optional
-from nemoa.types import OptStr, OptStrDict, StrDict, StrList, void
+from nemoa.types import OptStr, OptStrDict, OptType, StrDict, StrList, void
 
 ################################################################################
 # Generic attribute descriptor for binding class instance attributes: When an
@@ -73,7 +73,7 @@ class Attr(property):
         """Set name of the Attribute."""
         self._name = name
 
-    def __get__(self, obj: object, owner: type) -> Any:
+    def __get__(self, obj: object, objtype: OptType = None) -> Any:
         """Bypass Attribute's get requests."""
         if self._getter:
             return self._get_getter(obj)()
@@ -87,7 +87,7 @@ class Attr(property):
         """Bypass and type check Attribute's set requests."""
         if self._readonly:
             raise ReadOnlyError(obj, self._name)
-        if self._classinfo:
+        if self._classinfo and not isinstance(val, type(self._default)):
             check.has_type(f"attribute '{self._name}'", val, self._classinfo)
         if self._setter:
             self._get_setter(obj)(val)
@@ -140,7 +140,7 @@ class ContentAttr(Attr):
         super().__init__(*args, **kwds)
 
 class MetadataAttr(Attr):
-    """Attributes for persistent metadata storage objects."""
+    """Attributes for persistent metadata objects."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize Attribute Descriptor."""
@@ -149,7 +149,7 @@ class MetadataAttr(Attr):
         super().__init__(*args, **kwds)
 
 class TransientAttr(Attr):
-    """Attributes for not persistent storage objects."""
+    """Attributes for non persistent objects."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize Attribute Descriptor."""
@@ -157,9 +157,11 @@ class TransientAttr(Attr):
         super().__init__(*args, **kwds)
 
 class VirtualAttr(Attr):
-    """Attributes for not pesistent virtual objects.
+    """Attributes for non persistent virtual objects.
 
-    Virtual objects require the implementation of a getter function.
+    Remark:
+        Virtual objects require the implementation of a getter function.
+
     """
 
     def __init__(self, *args: Any, **kwds: Any) -> None:

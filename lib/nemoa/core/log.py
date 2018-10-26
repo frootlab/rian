@@ -197,7 +197,7 @@ class Logger(BaseContainer):
         for handler in self.logger.handlers: # Close file handlers
             with contextlib.suppress(AttributeError):
                 handler.close()
-        delattr(self, '_logger')
+        self._logger = None
 
     def _get_logger(self, auto_start: bool = True) -> logging.Logger:
         if not self._logger:
