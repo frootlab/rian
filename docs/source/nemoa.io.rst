@@ -1,4 +1,4 @@
-nemoa.fileio package
+nemoa.file package
 ================
 
 Submodules
@@ -6,17 +6,17 @@ Submodules
 
 .. toctree::
 
-   nemoa.fileio.binfile
-   nemoa.fileio.csvfile
-   nemoa.fileio.inifile
-   nemoa.fileio.nplot
-   nemoa.fileio.textfile
-   nemoa.fileio.wsfile
+   nemoa.file.binfile
+   nemoa.file.csvfile
+   nemoa.file.inifile
+   nemoa.file.nplot
+   nemoa.file.textfile
+   nemoa.file.wsfile
 
 Module contents
 ---------------
 
-.. automodule:: nemoa.fileio
+.. automodule:: nemoa.file
     :members:
     :undoc-members:
     :show-inheritance:

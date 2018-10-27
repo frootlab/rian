@@ -49,7 +49,7 @@ class Csv:
 
         """
 
-        from nemoa.fileio import csvfile, inifile
+        from nemoa.file import csvfile, inifile
         from nemoa.base import npath
 
         # Get configuration from CSV header

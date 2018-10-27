@@ -8,7 +8,7 @@ __docformat__ = 'google'
 
 from pathlib import Path
 from nemoa.base import npath
-from nemoa.fileio import csvfile, inifile
+from nemoa.file import csvfile, inifile
 from nemoa.types import FileOrPathLike, OptStr, OptIntTuple, OptStrList, OptInt
 
 def load_csv(

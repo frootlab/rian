@@ -43,7 +43,7 @@ class Csv:
 
     def save(self, dataset, path):
 
-        from nemoa.fileio import csvfile, inifile
+        from nemoa.file import csvfile, inifile
 
         # create the configuration which is included in the CSV file
         # as header as a subset of the dataset configuration

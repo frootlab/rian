@@ -23,7 +23,7 @@ from nemoa.base import npath, env
 from nemoa.core.container import ContentAttr, CoreContainer, TechAttr
 from nemoa.core.container import TransientAttr, VirtualAttr
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
-from nemoa.fileio import inifile
+from nemoa.file import inifile
 from nemoa.types import BytesIOBaseClass, BytesIOLike, BytesLike, ClassVar
 from nemoa.types import IterFileLike, List, OptBytes, OptStr, OptPathLike
 from nemoa.types import PathLike, PathLikeList, TextIOBaseClass, Traceback

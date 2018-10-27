@@ -21,7 +21,7 @@ from nemoa.base import npath
 from nemoa.core import log
 from nemoa.core.container import ContentAttr, CoreContainer
 from nemoa.core.container import TechAttr, VirtualAttr, TransientAttr
-from nemoa.fileio import inifile, wsfile
+from nemoa.file import inifile, wsfile
 from nemoa.types import (
     Any, BytesLike, CManFileLike, ClassVar, Exc, ExcType, OptBytes, OptPath,
     OptPathLike, OptStr, PathLike, StrDict, StrDict2, StrList, StrOrInt,

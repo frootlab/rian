@@ -63,7 +63,7 @@ class Session:
         import os
         import sys
 
-        from nemoa.fileio import inifile
+        from nemoa.file import inifile
 
         self._config = {**self._default, **kwds}
 

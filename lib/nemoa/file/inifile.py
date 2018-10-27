@@ -19,7 +19,7 @@ from configparser import ConfigParser
 from io import StringIO
 import re
 from nemoa.base import literal
-from nemoa.fileio import textfile
+from nemoa.file import textfile
 from nemoa.types import FileOrPathLike, OptBool, OptStr, OptStrDict2, StrDict2
 from nemoa.types import Union, StrDict, Optional
 

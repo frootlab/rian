@@ -1,7 +1,7 @@
-nemoa.fileio.textfile module
+nemoa.file.textfile module
 ============================
 
-.. automodule:: nemoa.fileio.textfile
+.. automodule:: nemoa.file.textfile
     :members:
     :undoc-members:
     :show-inheritance:
