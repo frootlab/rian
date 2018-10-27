@@ -14,11 +14,9 @@ __docformat__ = 'google'
 
 import sys
 import time
-
 from abc import ABC, abstractmethod
 from queue import Empty, Queue
 from threading import Thread
-
 from nemoa.base import env, nmodule
 from nemoa.types import Module, OptModule
 

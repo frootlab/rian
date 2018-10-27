@@ -7,6 +7,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import array
+import datetime
 import io
 import os
 import types
@@ -41,6 +42,7 @@ BytesIOBaseClass = io.BufferedIOBase
 TextIOBaseClass = io.TextIOBase
 AnyFile = (BytesIOBaseClass, TextIOBaseClass)
 Array = array.ArrayType
+Date = datetime.datetime
 
 ################################################################################
 # Define generic Type Variables
@@ -68,9 +70,6 @@ OptStrOrBool = Optional[StrOrBool]
 StrOrInt = Union[str, int]
 BytesLike = Union[bytes, bytearray, memoryview]
 BytesLikeOrStr = Union[BytesLike, str]
-Num = Union[int, float, complex]
-OptNum = Optional[Num]
-Scalar = Union[int, float, complex]
 
 # Collections of Literals
 # TODO (patrick.michl@gmail.com): str is Hashable currently does not completely
@@ -90,8 +89,6 @@ IntDict = Dict[int, Any]
 FloatPair = Tuple[float, float]
 
 # Unions of Collections of Literals
-ClassInfo = Union[Type[Any], Tuple[Type[Any], ...]]
-OptClassInfo = Optional[ClassInfo]
 StrOrDict = Union[str, AnyDict]
 OptSet = Optional[Set[Any]]
 OptPair = Optional[Tuple[Any, Any]]
@@ -113,7 +110,6 @@ StrDict2 = Dict[str, StrDict]
 OptStrDict2 = Optional[StrDict2]
 RecDict = Dict[Any, StrDict]
 DictOfRecDicts = Dict[Hashable, RecDict]
-Vector = Sequence[Scalar]
 
 # Nested Types
 # TODO (patrick.michl@gmail.com): currently recursive type definition is not
@@ -123,32 +119,30 @@ Vector = Sequence[Scalar]
 AnyDict2 = Dict[Any, AnyDict]
 AnyDict3 = Dict[Any, AnyDict2]
 NestDict = Union[AnyDict, AnyDict2, AnyDict3]
-#NestDict = Dict[Hashable, Union[Any, 'NestDict']]
+#NestDict = Dict[Any, Union[Any, 'NestDict']]
 NestRecDict = Union[StrDict, RecDict, DictOfRecDicts]
-# NestRecDict = Dict[Hashable, Union[StrDict, 'NestRecDict']]
+# NestStrDict = Dict[Str, Union[StrDict, 'NestStrDict']]
 OptNestDict = Optional[NestDict]
 IterNestRecDict = Iterable[NestRecDict]
-
-################################################################################
-# Types for Iterators / Generators
-################################################################################
-
-IterAny = Iterator[Any]
-IterNone = Iterator[None]
 
 ################################################################################
 # Types for Callables
 ################################################################################
 
+# # Arguments
+# Args = Tuple[Any, ...]
+# Kwds = Dict[Any, Any]
+# FuncPar = Tuple[Args, Kwds]
+# FuncParList = List[FuncPar]
+
 # Elementary Callables
-VoidFunc = Callable[..., None]
 AnyFunc = Callable[..., Any]
+VoidFunc = Callable[..., None]
 BoolFunc = Callable[..., bool]
-ScalarFunc = Callable[..., Scalar]
-VectorFunc = Callable[..., Vector]
-UnaryFunc = Callable[[T], Any]
-BinaryFunc = Callable[[S, T], Any]
-TestFunc = Callable[[S, T], bool]
+UnaryFunc = Callable[[Any], Any]
+BinaryFunc = Callable[[Any, Any], Any]
+TernaryFunc = Callable[[Any, Any, Any], Any]
+TestFunc = Callable[[Any, Any], bool]
 
 # Unions of Callables and Literals
 OptVoidFunc = Optional[VoidFunc]
@@ -168,18 +162,39 @@ OptStrDictOfTestFuncs = Optional[StrDictOfTestFuncs]
 FuncWrapper = Callable[[Callable[..., T]], Callable[..., T]]
 
 ################################################################################
-# Types for Class Variables
+# Specific builtin Types
 ################################################################################
 
+# Iterators / Generators
+IterAny = Iterator[Any]
+IterNone = Iterator[None]
+
+# Numbers
+RealNumber = Union[int, float]
+Number = Union[RealNumber, complex]
+OptNumber = Optional[Number]
+RealVector = Sequence[RealNumber]
+Vector = Sequence[Number]
+RealFunc = Callable[..., RealNumber]
+ScalarFunc = Callable[..., Number]
+VectorFunc = Callable[..., Vector]
+
+# Classes
+Class = Type[Any]
+OptClass = Optional[Class]
+ClassInfo = Union[Class, Tuple[Class, ...]]
+OptClassInfo = Optional[ClassInfo]
+
+# Class Variables
 ClassStrList = ClassVar[StrList]
 ClassDict = ClassVar[AnyDict]
 ClassStrDict = ClassVar[StrDict]
 
 ################################################################################
-# Specific Types that use builtin Packages
+# Specific Types that are used within standard library packages
 ################################################################################
 
-# PathLike type for path references: os, pathlib
+# PathLike type
 Path = os.PathLike
 OptPath = Optional[Path]
 PathList = List[Path]
@@ -200,34 +215,34 @@ NestPath = Union[PathLike, PathLikeSeq, PathLikeSeq2, PathLikeSeq3]
 NestPathDict = Dict[str, NestPath]
 OptNestPathDict = Optional[NestPathDict]
 
-# Tracebacks
-ExcType = Optional[Type[BaseException]]
-ExcValue = Optional[BaseException]
-ExcTraceback = Optional[Traceback]
+# Exceptions
+Exc = BaseException
+ExcType = Type[Exc]
+ExcInfo = Union[ExcType, Tuple[ExcType, ...]]
 
-# BytesIO Like for binary files and buffers: io
+# BytesIO Like
 BytesIOLike = IO[bytes]
 IterBytesIOLike = Iterator[BytesIOLike]
 CManBytesIOLike = ContextManager[BytesIOLike]
 
-# StringIO Like for text files and buffers: io
+# StringIO Like
 StringIOLike = IO[str]
 IterStringIOLike = Iterator[StringIOLike]
 CManStringIOLike = ContextManager[StringIOLike]
 
-# FileLike for files and buffers: io
+# FileLike
 FileLike = Union[BytesIOLike, StringIOLike]
 IterFileLike = Iterator[FileLike]
 CManFileLike = ContextManager[FileLike]
 
-# FileOrPathLike for generic file references and buffers
+# FileOrPathLike
 FileOrPathLike = Union[FileLike, PathLike]
 
 ################################################################################
-# Specific Types for external Packages
+# Specific Types that are used within external Packages
 ################################################################################
 
-# NumPy types
+# Numpy
 # TODO (patrick.michl@gmail.com): Currently typing support for NumPy is not
 # available but on the road, see: https://github.com/numpy/numpy-stubs
 NpShape = Optional[IntTuple]
@@ -240,7 +255,7 @@ NpRecArray = Any # TODO: replace with numpy.recarray, when supported
 NpDtype = Any # TODO: replace with numpy.dtype, when supported
 NpArraySeq = Sequence[NpArray]
 NpMatrixSeq = Sequence[NpMatrix]
-NpArrayLike = Union[Num, NpArray, NpArraySeq, NpMatrix, NpMatrixSeq]
+NpArrayLike = Union[Number, NpArray, NpArraySeq, NpMatrix, NpMatrixSeq]
 OptNpRecArray = Optional[NpRecArray]
 OptNpArray = Optional[NpArray]
 NpArrayFunc = Callable[..., NpArray]
@@ -253,3 +268,5 @@ NpMatrixFunc = Callable[..., NpMatrix]
 # Use argument specification, when available:
 # FuncOfNpArray = Callable[[NpArray, ...], Any]
 # NpArrayFuncOfNpArray = Callable[[NpArray, ...], NpArray]
+
+# NetworkX

@@ -1,7 +1,7 @@
-nemoa.fileio.csvfile module
+nemoa.file.csvfile module
 =======================
 
-.. automodule:: nemoa.fileio.csvfile
+.. automodule:: nemoa.file.csvfile
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,9 +1,10 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""Command line scripts."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
+__docformat__ = 'google'
 
 import getopt
 import sys
@@ -104,8 +105,7 @@ def main() -> Any:
 
     dic = dict(opts)
     keys = dic.keys()
-    given: Callable[..., bool] = (
-        lambda *args: not keys.isdisjoint(set(args)))
+    given: Callable[..., bool] = (lambda *args: not keys.isdisjoint(set(args)))
 
     if given('-h', '--help'):
         return print_usage()

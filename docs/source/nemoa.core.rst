@@ -6,6 +6,7 @@ Submodules
 
 .. toctree::
 
+   nemoa.core.container
    nemoa.core.log
    nemoa.core.session
    nemoa.core.shell

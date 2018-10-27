@@ -1,7 +1,7 @@
-nemoa.fileio.wsfile module
+nemoa.file.wsfile module
 ==========================
 
-.. automodule:: nemoa.fileio.wsfile
+.. automodule:: nemoa.file.wsfile
     :members:
     :undoc-members:
     :show-inheritance:

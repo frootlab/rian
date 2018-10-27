@@ -15,17 +15,20 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import re
 from configparser import ConfigParser
 from io import StringIO
-
-from nemoa.base import ntext
-from nemoa.fileio import textfile
+import re
+from nemoa.base import literal
+from nemoa.file import textfile
 from nemoa.types import FileOrPathLike, OptBool, OptStr, OptStrDict2, StrDict2
+from nemoa.types import Union, StrDict, Optional
 
-FILEEXTS = ['.ini', '.cfg']
+StrucType = Union[StrDict, StrDict2]
+OptStrucType = Optional[StrucType]
 
-def load(file: FileOrPathLike, structure: OptStrDict2 = None) -> StrDict2:
+def load(
+        file: FileOrPathLike, structure: OptStrucType = None,
+        flat: OptBool = None) -> StrucType:
     """Import configuration dictionary from INI file.
 
     Args:
@@ -44,21 +47,77 @@ def load(file: FileOrPathLike, structure: OptStrDict2 = None) -> StrDict2:
             attributes by strings representing the name of the type, e.g. 'str',
             'int', 'float', 'path' etc. Accepted type names can be found in the
             documentation of the function `ntext.astype`_.
+        flat: Determines if the desired INI format structure contains sections
+            or not. By default sections are used, if the first non empty, non
+            comment line in the string identifies a section.
 
     Return:
         Structured configuration dictionary
 
     """
-    # Initialize Configuration Parser
+    # Read configuration from file-like or path-like object
+    with textfile.openx(file, mode='r') as fh:
+        return decode(fh.read(), structure=structure, flat=flat)
+
+def decode(
+        text: str, structure: OptStrucType = None,
+        flat: OptBool = None) -> StrucType:
+    """Load configuration dictionary from INI-formated text.
+
+    Args:
+        text: Text, that describes a configuration in INI-format.
+        structure: Dictionary of dictionaries, which determines the structure of
+            the configuration dictionary. If structure is None, the the INI-file
+            is completely imported and all values are interpreted as strings. If
+            the structure is a dictionary of dictionaries, the keys of the outer
+            dictionary describe valid section names by strings, that are
+            interpreted as regular expressions. Therupon, the keys of the
+            respective inner dictionaries describe valid attribute names as
+            strings, that are also interpreted as regular expressions. Finally
+            the values of the inner dictionaries describe the type of the
+            attributes by strings representing the name of the type, e.g. 'str',
+            'int', 'float', 'path' etc. Accepted type names can be found in the
+            documentation of the function `ntext.astype`_.
+        flat: Determines if the desired INI format structure contains sections
+            or not. By default sections are used, if the first non empty, non
+            comment line in the string identifies a section.
+
+    Return:
+        Structured configuration dictionary.
+
+    """
+    # If the usage of sections is not defined by the argument 'flat' their
+    # existence is determined by the first not blank and comment line. If this
+    # line does not start with the character '[', then the file structure is
+    # considered to be flat.
+    if flat is None:
+        flat = True
+        with StringIO(text) as fh:
+            line = ''
+            for line in fh:
+                content = line.strip()
+                if content and not content.startswith('#'):
+                    break
+            flat = not line.lstrip().startswith('[')
+
+    # For flat structured files a a temporary [root] section is created and the
+    # structure dictionary is embedded within the 'root' key of a wrapping
+    # dictionary.
+    if flat:
+        text = '\n'.join(['[root]', text])
+        if isinstance(structure, dict):
+            structure = {'root': structure}
+
+    # Parse inifile without literal decoding
     parser = ConfigParser()
     setattr(parser, 'optionxform', lambda key: key)
+    parser.read_string(text)
 
-    # Read configuration from file-like or path-like object
-    with textfile.openx(file, mode='r') as fd:
-        parser.read_file(fd)
+    # Decode literals by using the structure dictionary
+    config = parse(parser, structure=structure)
 
-    # Parse sections and create configuration dictionary
-    return parse(parser, structure=structure)
+    # If structure is flat collapse the 'root' key
+    return config.get('root') or {} if flat else config
 
 def save(
         config: dict, file: FileOrPathLike, flat: OptBool = None,
@@ -79,76 +138,15 @@ def save(
     """
     # Convert configuration dictionary to INI formated text
     try:
-        text = dumps(config, flat=flat, header=header)
+        text = encode(config, flat=flat, header=header)
     except Exception as err:
         raise ValueError("dictionary is not valid") from err
 
     # Write text to file
-    with textfile.openx(file, mode='w') as fd:
-        fd.write(text)
+    with textfile.openx(file, mode='w') as fh:
+        fh.write(text)
 
-def loads(
-        text: str, structure: OptStrDict2 = None,
-        flat: OptBool = None) -> StrDict2:
-    """Load configuration dictionary from INI-formated text.
-
-    Args:
-        text: Text, that describes a configuration in INI-format.
-        structure: Dictionary of dictionaries, which determines the structure of
-            the configuration dictionary. If structure is None, the the INI-file
-            is completely imported and all values are interpreted as strings. If
-            the structure is a dictionary of dictionaries, the keys of the outer
-            dictionary describe valid section names by strings, that are
-            interpreted as regular expressions. Therupon, the keys of the
-            respective inner dictionaries describe valid attribute names as
-            strings, that are also interpreted as regular expressions. Finally
-            the values of the inner dictionaries describe the type of the
-            attributes by strings representing the name of the type, e.g. 'str',
-            'int', 'float', 'path' etc. Accepted type names can be found in the
-            documentation of the function `ntext.astype`_.
-        flat: Determines if the desired INI format structure
-            contains sections or not. By default sections are used, if the
-            first non empty, non comment line in the string identifies a
-            section.
-
-    Return:
-        Structured configuration dictionary.
-
-    """
-    # If the usage of sections is not defined by the argument 'flat' their
-    # existence is determined by the appearance of a line, that starts with the
-    # character '['.
-    if flat is None:
-        flat = True
-        for line in [l.lstrip(' ') for l in text.split('\n')]:
-            if not line or line.startswith('#'):
-                continue
-            flat = not line.startswith('[')
-            break
-
-    # If no sections are to be used, a temporary [root] section is created and
-    # the structure dictionary is embedded within a further dicvtionary with a
-    # 'root' key.
-    if flat:
-        text = '\n'.join(['[root]', text])
-        if isinstance(structure, dict):
-            structure = {'root': structure.copy()}
-
-    # Strip leading and trailing white spaces from lines in INI formated text
-    text = '\n'.join([line.strip(' ') for line in text.split('\n')])
-
-    # Parse sections and create dictionary
-    parser = ConfigParser()
-    parser.read_string(text)
-    config = parse(parser, structure)
-
-    # If no sections are to be used collapse the 'root' key
-    if flat:
-        return config.get('root') or {}
-
-    return config
-
-def dumps(config: dict, flat: OptBool = None, header: OptStr = None) -> str:
+def encode(config: dict, flat: OptBool = None, header: OptStr = None) -> str:
     """Convert configuration dictionary to INI formated string.
 
     Args:
@@ -269,8 +267,8 @@ def parse(parser: ConfigParser, structure: OptStrDict2 = None) -> StrDict2:
             for key in parser.options(sec):
                 if not rekey.match(key):
                     continue
-                val = parser.get(sec, key)
-                dsec[key] = ntext.astype(val, fmt)
+                string = parser.get(sec, key)
+                dsec[key] = literal.decode(string, fmt)
 
         config[sec] = dsec
 

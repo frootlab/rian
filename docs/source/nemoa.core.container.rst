@@ -1,7 +1,7 @@
-nemoa.file.binfile module
+nemoa.core.container module
 ===========================
 
-.. automodule:: nemoa.file.binfile
+.. automodule:: nemoa.core.container
     :members:
     :undoc-members:
     :show-inheritance:

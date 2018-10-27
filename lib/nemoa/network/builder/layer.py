@@ -5,9 +5,8 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa
-import networkx
 
-from nemoa.base import nclass
+from nemoa.base import bare
 
 def types():
     """Get supported layer network types for network building."""
@@ -48,7 +47,7 @@ class AutoEncoder:
 
         # columns
         if 'columns' in self.settings: columns = self.settings['columns']
-        elif nclass.has_base(dataset, 'Dataset'): columns = dataset.columns
+        elif bare.has_base(dataset, 'Dataset'): columns = dataset.columns
         else: columns = ['i1', 'i2', 'i3', 'i4', 'o1', 'o2']
 
         self.settings['inputs'] = columns

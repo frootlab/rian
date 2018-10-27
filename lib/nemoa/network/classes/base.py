@@ -8,10 +8,11 @@ import importlib
 from typing import Any, Dict
 
 import networkx
-import nemoa
 
-from nemoa.base import nclass, nbase
+from nemoa.base import bare, nbase
 from nemoa.core import log
+
+import nemoa
 
 class Network(nbase.ObjectIP):
     """Network base class.
@@ -89,7 +90,7 @@ class Network(nbase.ObjectIP):
         """Configure network to dataset."""
 
         # check if dataset instance is available
-        if not nclass.has_base(dataset, 'Dataset'):
+        if not bare.has_base(dataset, 'Dataset'):
             raise TypeError("dataset is required to be of type dataset")
 
         log.info("configure network: '%s'" % (self._config['name']))
@@ -663,7 +664,7 @@ class Network(nbase.ObjectIP):
     def initialize(self, system = None):
         if not system:
             return False
-        if not nclass.has_base(system, 'System'):
+        if not bare.has_base(system, 'System'):
             raise ValueError("system is not valid")
 
         # get edge parameters from system links

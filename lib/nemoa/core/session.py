@@ -17,63 +17,71 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from pathlib import Path
-
-from nemoa.classes import ReadOnlyAttr, ReadWriteAttr
 from nemoa.base import npath
 from nemoa.core import log
-from nemoa.fileio import inifile, wsfile
+from nemoa.core.container import ContentAttr, CoreContainer
+from nemoa.core.container import TechAttr, VirtualAttr, TransientAttr
+from nemoa.file import inifile, wsfile
 from nemoa.types import (
-    Any, BytesLike, CManFileLike, ClassVar, OptBytes, OptPath, OptPathLike,
-    OptStr, PathLike, PathList, StrDict2, StrList, StrOrInt, Traceback)
+    Any, BytesLike, CManFileLike, ClassVar, Exc, ExcType, OptBytes, OptPath,
+    OptPathLike, OptStr, PathLike, StrDict, StrDict2, StrList, StrOrInt,
+    Traceback)
 
-# Module specific types
-WsFile = wsfile.WsFile
-
-class Session:
+class Session(CoreContainer):
     """Session."""
 
     #
     # Private Class Variables
     #
 
-    _CONFIG_FILE: ClassVar[str] = '%user_config_dir%/nemoa.ini'
-    _CONFIG_STRUCT: ClassVar[StrDict2] = {
+    _config_file_path: ClassVar[str] = '%user_config_dir%/nemoa.ini'
+    _config_file_struct: ClassVar[StrDict2] = {
         'session': {
             'path': 'path',
             'restore_on_startup': 'bool',
             'autosave_on_exit': 'bool'}}
-    _DEFAULT_CONFIG: ClassVar[StrDict2] = {
-        'session': {
-            'path': None,
-            'restore_on_startup': False,
-            'autosave_on_exit': False}}
-    _DEFAULT_PATHS: StrList = [
+    _default_config: ClassVar[StrDict] = {
+        'path': None,
+        'restore_on_startup': False,
+        'autosave_on_exit': False}
+    _default_paths: StrList = [
         '%user_data_dir%', '%site_data_dir%', '%package_data_dir%']
 
     #
-    # Private Instance Variables
+    # Content Attributes
     #
 
-    _cfg: StrDict2
-    _file: WsFile
-    _paths: PathList
-    _logger: log.Logger
+    workspace: property = ContentAttr(wsfile.WsFile)
 
     #
-    # Public Instance Properties
+    # Metadata Attributes
     #
 
-    paths: property = ReadWriteAttr(list, key='_paths')
+    config: property = TechAttr(dict)
+    config.__doc__ = """Session configuration."""
+
+    paths: property = TechAttr(list)
     paths.__doc__ = """Search paths for workspaces."""
 
-    path: property = ReadOnlyAttr(Path, getter='_get_path')
-    path.__doc__ = """Filepath of the current workspace."""
+    #
+    # Virtual Attributes
+    #
 
-    files: property = ReadOnlyAttr(list, getter='_get_files')
+    files: property = VirtualAttr(list, getter='_get_files', readonly=True)
     files.__doc__ = """Files within the current workspace."""
 
-    folders: property = ReadOnlyAttr(list, getter='_get_folders')
+    folders: property = VirtualAttr(list, getter='_get_folders', readonly=True)
     folders.__doc__ = """Folders within the current workspace."""
+
+    path: property = VirtualAttr(Path, getter='_get_path', readonly=True)
+    path.__doc__ = """Filepath of the current workspace."""
+
+    #
+    # Transient Attributes
+    #
+
+    logger: property = TransientAttr(log.Logger)
+    logger.__doc__ = """Logger instance."""
 
     #
     # Magic
@@ -83,22 +91,27 @@ class Session:
             self, workspace: OptPathLike = None, basedir: OptPathLike = None,
             pwd: OptBytes = None) -> None:
         """Initialize instance variables and load workspace from file."""
-        # Initialize instance variables with default values
-        self._cfg = self._DEFAULT_CONFIG.copy()
-        self._file = WsFile()
-        self._paths = [npath.expand(path) for path in self._DEFAULT_PATHS]
-        self._logger = log.get_instance()
+        super().__init__()
 
-        # Load configuration from file
-        if npath.is_file(self._CONFIG_FILE):
+        # Initialize instance variables with default values
+        self.config = self._default_config.copy()
+        self.workspace = wsfile.WsFile()
+        self.paths = [npath.expand(path) for path in self._default_paths]
+        self.logger = log.get_instance()
+
+        # Bind session to workspace
+        self.parent = self.workspace
+
+        # Load session configuration from file
+        if npath.is_file(self._config_file_path):
             self._load_config()
 
         # Load workspace from file
         filepath: OptPath = None
         if workspace and isinstance(workspace, (Path, str)):
             filepath = Path(workspace)
-        elif self._cfg.get('restore_on_startup'):
-            cfg_path = self._cfg.get('path')
+        elif self.config.get('restore_on_startup'):
+            cfg_path = self.config.get('path')
             if isinstance(cfg_path, (Path, str)):
                 filepath = Path(cfg_path)
         if isinstance(filepath, Path):
@@ -108,7 +121,7 @@ class Session:
         """Enter with statement."""
         return self
 
-    def __exit__(self, etype: str, value: int, tb: Traceback) -> None:
+    def __exit__(self, Error: ExcType, value: Exc, tb: Traceback) -> None:
         """Exit with statement."""
         self.close() # Close Workspace
         self._save_config() # Save config
@@ -122,7 +135,7 @@ class Session:
 
     def load(
             self, workspace: OptPathLike = None, basedir: OptPathLike = None,
-            pwd: OptBytes = None) -> 'Session':
+            pwd: OptBytes = None) -> None:
         """Load Workspace from file.
 
         Args:
@@ -132,12 +145,12 @@ class Session:
 
         """
         path = self._locate_path(workspace=workspace, basedir=basedir)
-        self._file = WsFile(filepath=path, pwd=pwd)
-        return self
+        self.workspace = wsfile.WsFile(filepath=path, pwd=pwd)
+        self.parent = self.workspace
 
     def save(self) -> None:
         """Save Workspace to current file."""
-        self._file.save()
+        self.workspace.save()
 
     def saveas(self, filepath: PathLike) -> None:
         """Save the workspace to a file.
@@ -147,14 +160,14 @@ class Session:
                 a workspace file.
 
         """
-        self._file.saveas(filepath)
+        self.workspace.saveas(filepath)
 
     def close(self) -> None:
         """Close current workspace."""
-        if self._cfg.get('autosave_on_exit') and self._file.changed:
+        if self.config.get('autosave_on_exit') and self.workspace.changed:
             self.save()
-        if hasattr(self._file, 'close'):
-            self._file.close()
+        if hasattr(self.workspace, 'close'):
+            self.workspace.close()
 
     def open(
             self, filepath: PathLike, workspace: OptPathLike = None,
@@ -194,10 +207,10 @@ class Session:
         """
         if workspace:
             path = self._locate_path(workspace=workspace, basedir=basedir)
-            ws = WsFile(filepath=path, pwd=pwd)
+            ws = wsfile.WsFile(filepath=path, pwd=pwd)
             return ws.open(
                 filepath, mode=mode, encoding=encoding, is_dir=is_dir)
-        return self._file.open(
+        return self.workspace.open(
             filepath, mode=mode, encoding=encoding, is_dir=is_dir)
 
     def append(self, source: PathLike, target: OptPathLike = None) -> bool:
@@ -219,7 +232,7 @@ class Session:
             Boolean value which is True if the file has been appended.
 
         """
-        return self._file.append(source, target=target)
+        return self.workspace.append(source, target=target)
 
     def unlink(self, filepath: PathLike, ignore_missing: bool = True) -> bool:
         """Remove file from the current workspace.
@@ -238,7 +251,7 @@ class Session:
             Boolean value, which is True if the given file was removed.
 
         """
-        return self._file.unlink(filepath, ignore_missing=ignore_missing)
+        return self.workspace.unlink(filepath, ignore_missing=ignore_missing)
 
     def mkdir(self, dirpath: PathLike, ignore_exists: bool = False) -> bool:
         """Create a new directory in current workspace.
@@ -256,7 +269,7 @@ class Session:
             Boolean value, which is True if the given directory was created.
 
         """
-        return self._file.mkdir(dirpath, ignore_exists=ignore_exists)
+        return self.workspace.mkdir(dirpath, ignore_exists=ignore_exists)
 
     def rmdir(
             self, dirpath: PathLike, recursive: bool = False,
@@ -281,7 +294,7 @@ class Session:
             Boolean value, which is True if the given directory was removed.
 
         """
-        return self._file.rmdir(
+        return self.workspace.rmdir(
             dirpath, recursive=recursive, ignore_missing=ignore_missing)
 
     def search(self, pattern: OptStr = None) -> StrList:
@@ -300,7 +313,7 @@ class Session:
             workspace, that match the search pattern.
 
         """
-        return self._file.search(pattern)
+        return self.workspace.search(pattern)
 
     def copy(self, source: PathLike, target: PathLike) -> bool:
         """Copy file within current workspace.
@@ -320,7 +333,7 @@ class Session:
             Boolean value which is True if the file was copied.
 
         """
-        return self._file.copy(source, target)
+        return self.workspace.copy(source, target)
 
     def move(self, source: PathLike, target: PathLike) -> bool:
         """Move file within current workspace.
@@ -340,7 +353,7 @@ class Session:
             Boolean value which is True if the file has been moved.
 
         """
-        return self._file.move(source, target)
+        return self.workspace.move(source, target)
 
     def read_text(self, filepath: PathLike, encoding: OptStr = None) -> str:
         """Read text from file in current workspace.
@@ -357,7 +370,7 @@ class Session:
             Contents of the given filepath encoded as string.
 
         """
-        return self._file.read_text(filepath, encoding=encoding)
+        return self.workspace.read_text(filepath, encoding=encoding)
 
     def read_bytes(self, filepath: PathLike) -> bytes:
         """Read bytes from file in current workspace.
@@ -371,7 +384,7 @@ class Session:
             Contents of the given filepath as bytes.
 
         """
-        return self._file.read_bytes(filepath)
+        return self.workspace.read_bytes(filepath)
 
     def write_text(
             self, text: str, filepath: PathLike,
@@ -390,7 +403,7 @@ class Session:
             Number of characters, that are written to the file.
 
         """
-        return self._file.write_text(text, filepath, encoding=encoding)
+        return self.workspace.write_text(text, filepath, encoding=encoding)
 
     def write_bytes(self, data: BytesLike, filepath: PathLike) -> int:
         """Write bytes to file.
@@ -404,7 +417,7 @@ class Session:
             Number of bytes, that are written to the file.
 
         """
-        return self._file.write_bytes(data, filepath)
+        return self.workspace.write_bytes(data, filepath)
 
     def log(self, level: StrOrInt, msg: str, *args: Any, **kwds: Any) -> None:
         """Log event.
@@ -424,28 +437,30 @@ class Session:
             **kwds: Additional Keywords, used by the function `Logger.log()`_.
 
         """
-        self._logger.log(level, msg, *args, **kwds)
+        self.logger.log(level, msg, *args, **kwds)
 
     #
     # Private Methods
     #
 
     def _load_config(self) -> None:
-        cfg = inifile.load(self._CONFIG_FILE, self._CONFIG_STRUCT)
-        self._cfg = cfg.get('session') or {}
+        config = inifile.load(self._config_file_path, self._config_file_struct)
+        if 'session' in config and isinstance(config['session'], dict):
+            for key, val in config['session'].items():
+                self.config[key] = val
 
     def _save_config(self) -> None:
-        cfg = {'session': self._cfg}
-        inifile.save(cfg, self._CONFIG_FILE)
+        config = {'session': self.config}
+        inifile.save(config, self._config_file_path)
 
     def _get_path(self) -> OptPath:
-        return self._file.path
+        return self.workspace.path
 
     def _get_files(self) -> StrList:
-        return self._file.search()
+        return self.workspace.search()
 
     def _get_folders(self) -> StrList:
-        return self._file.folders
+        return self.workspace.folders
 
     def _locate_path(
             self, workspace: OptPathLike = None,
@@ -458,7 +473,7 @@ class Session:
             if npath.is_file(workspace):
                 return npath.expand(workspace)
             # Use the 'paths' list to find a workspace
-            for path in self._paths:
+            for path in self.paths:
                 candidate = Path(path, workspace)
                 if candidate.is_file():
                     return candidate

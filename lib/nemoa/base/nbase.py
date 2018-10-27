@@ -8,7 +8,7 @@ __docformat__ = 'google'
 
 from pathlib import Path
 
-from nemoa.base import nclass, ndict, npath
+from nemoa.base import check, nclass, ndict, npath
 from nemoa.types import Any, ClassVar, Dict, OptInt, OptStr, PathLike
 
 class ObjectIP:
@@ -171,10 +171,7 @@ class ObjectIP:
             Dictionary containing a copy of configuration.
 
         """
-        if not isinstance(key, (str, type(None))):
-            raise TypeError(
-                "argument 'key' is required to be of type 'str' or 'None'"
-                f", not '{type(key)}'")
+        check.has_opt_type("argument 'key'", key, str)
 
         import copy
 
@@ -197,10 +194,7 @@ class ObjectIP:
             Copy of configuration and named resources.
 
         """
-        if not isinstance(key, (str, type(None))):
-            raise TypeError(
-                "argument 'key' is required to be of type 'str' or 'None'"
-                f", not '{type(key)}'")
+        check.has_opt_type("argument 'key'", key, str)
 
         import copy
 

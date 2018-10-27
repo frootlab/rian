@@ -1,7 +1,7 @@
-nemoa.file.gzfile module
+nemoa.base.bare module
 ======================
 
-.. automodule:: nemoa.file.gzfile
+.. automodule:: nemoa.base.bare
     :members:
     :undoc-members:
     :show-inheritance:

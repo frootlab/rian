@@ -4,8 +4,9 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
+from nemoa.base import bare
+
 from nemoa.dataset.exports import archive, text, image
-from nemoa.base import nclass
 
 def filetypes(filetype = None):
     """Get supported dataset export filetypes."""
@@ -34,8 +35,9 @@ def filetypes(filetype = None):
 
     return False
 
-def save(dataset, path = None, filetype = None, workspace = None,
-    base = 'user', **kwds):
+def save(
+        dataset, path = None, filetype = None, workspace = None,
+        base = 'user', **kwds):
     """Export dataset to file.
 
     Args:
@@ -49,7 +51,7 @@ def save(dataset, path = None, filetype = None, workspace = None,
 
     """
 
-    if not nclass.has_base(dataset, 'Dataset'):
+    if not bare.has_base(dataset, 'Dataset'):
         raise TypeError("dataset is not valid")
 
     from nemoa.base import npath

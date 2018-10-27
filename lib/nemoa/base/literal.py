@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Collection of frequently used string conversion functions."""
+"""String conversion functions."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -7,7 +7,9 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import ast
+import datetime
 import sys
+from pathlib import Path
 
 try:
     import pyparsing as pp
@@ -16,74 +18,35 @@ except ImportError as err:
         "requires package pyparsing: "
         "https://pypi.org/project/pyparsing/") from err
 
-from nemoa.base import check
-from nemoa.types import Any, OptStr, Tuple, Path
+from nemoa.base import check, npath
+from nemoa.types import Any, OptStr, Date
 
-def splitargs(text: str) -> Tuple[str, tuple, dict]:
-    """Split a function call in the function name, its arguments and keywords.
-
-    Args:
-        text: Function call given as valid Python code. Beware: Function
-            definitions are no valid function calls.
-
-    Returns:
-        A tuple consisting of the function name as string, the arguments as
-        tuple and the keywords as dictionary.
-
-    """
-    # Check type of 'text'
-    check.argtype(0, text, str)
-
-    # Get function name
-    try:
-        tree = ast.parse(text)
-        func = getattr(getattr(getattr(tree.body[0], 'value'), 'func'), 'id')
-    except SyntaxError as err:
-        raise ValueError(f"'{text}' is not a valid function call") from err
-    except AttributeError as err:
-        raise ValueError(f"'{text}' is not a valid function call") from err
-
-    # Get tuple with arguments
-    astargs = getattr(getattr(tree.body[0], 'value'), 'args')
-    largs = []
-    for astarg in astargs:
-        typ = astarg._fields[0]
-        val = getattr(astarg, typ)
-        largs.append(val)
-    args = tuple(largs)
-
-    # Get dictionary with keywords
-    astkwds = getattr(getattr(tree.body[0], 'value'), 'keywords')
-    kwds = {}
-    for astkw in astkwds:
-        key = astkw.arg
-        typ = astkw.value._fields[0]
-        val = getattr(astkw.value, typ)
-        kwds[key] = val
-
-    return func, args, kwds
-
-def astype(text: str, fmt: OptStr = None, **kwds: Any) -> Any:
+def decode(
+        text: str, fmt: OptStr = None, undef: str = 'None', **kwds: Any) -> Any:
     """Convert text into given target format.
 
     Args:
         text: String representing the value of a given type in it's respective
-            syntax format. Thereby the standard format corresponds to the
-            representation, which is obtained by an application of the 'str'
-            function. Some types however also accept additional formats, which
-            e.g. appear in the formatting of ini files.
+            syntax format. The standard format corresponds to the standard
+            Python representation if available. Some types also accept
+            further formats, which may use additional keywords.
         fmt: Target format in which the text is converted.
+        undef: String, which respresents an undefined value. If the given text
+            matches the string, None is returned.
         **kwds: Supplementary parameters, that specify the target format
 
     Returns:
-        Value of the text in given target format.
+        Value of the text in given target format or None.
 
     """
-    # Check type of Arguments
-    check.argtype(0, text, str)
-    check.argtype('fmt', fmt, (str, type(None)))
+    # Check Arguments
+    check.has_type("first argument 'text'", text, str)
+    check.has_opt_type("argument 'fmt'", fmt, str)
 
-    # Evaluate text if no format is given
+    if text == undef:
+        return None
+
+    # Evaluate text as Python literal if no format is given
     if fmt is None:
         return ast.literal_eval(text)
 
@@ -100,13 +63,13 @@ def astype(text: str, fmt: OptStr = None, **kwds: Any) -> Any:
         return complex(text)
 
     # Sequence and special types
-    stypes = ['list', 'tuple', 'set', 'dict', 'path']
+    stypes = ['list', 'tuple', 'set', 'dict', 'path', 'datetime']
     if fmt in stypes:
-        return getattr(sys.modules[__name__], 'as' + fmt)(text, **kwds)
+        return getattr(sys.modules[__name__], 'as_' + fmt)(text, **kwds)
 
     raise KeyError(f"type '{fmt}' is not supported")
 
-def aslist(text: str, delim: str = ',') -> list:
+def as_list(text: str, delim: str = ',') -> list:
     """Convert text into list.
 
     Args:
@@ -123,14 +86,14 @@ def aslist(text: str, delim: str = ',') -> list:
 
     """
     # Check types of Arguments
-    check.argtype(0, text, str)
-    check.argtype('delim', delim, str)
+    check.has_type("first argument 'text'", text, str)
+    check.has_type("argument 'delim'", delim, str)
 
-    # return empty list if the string is blank
+    # Return empty list if the string is blank
     if not text or not text.strip():
         return list()
 
-    # python format
+    # Python format
     val = None
     if delim == ',':
         try:
@@ -143,7 +106,7 @@ def aslist(text: str, delim: str = ',') -> list:
     # Delimited String Fromat: "<value>, ..."
     return [item.strip() for item in text.split(delim)]
 
-def astuple(text: str, delim: str = ',') -> tuple:
+def as_tuple(text: str, delim: str = ',') -> tuple:
     """Convert text into tuple.
 
     Args:
@@ -160,8 +123,8 @@ def astuple(text: str, delim: str = ',') -> tuple:
 
     """
     # Check types of Arguments
-    check.argtype(0, text, str)
-    check.argtype('delim', delim, str)
+    check.has_type("first argument 'text'", text, str)
+    check.has_type("argument 'delim'", delim, str)
 
     # Return empty tuple if the string is blank
     if not text or not text.strip():
@@ -180,7 +143,7 @@ def astuple(text: str, delim: str = ',') -> tuple:
     # Delimited string format
     return tuple([item.strip() for item in text.split(delim)])
 
-def asset(text: str, delim: str = ',') -> set:
+def as_set(text: str, delim: str = ',') -> set:
     """Convert text into set.
 
     Args:
@@ -197,8 +160,8 @@ def asset(text: str, delim: str = ',') -> set:
 
     """
     # Check types of Arguments
-    check.argtype(0, text, str)
-    check.argtype('delim', delim, str)
+    check.has_type("first argument 'text'", text, str)
+    check.has_type("argument 'delim'", delim, str)
 
     # Return empty set if the string is blank
     if not text or not text.strip():
@@ -217,7 +180,7 @@ def asset(text: str, delim: str = ',') -> set:
     # Delimited string format
     return {item.strip() for item in text.split(delim)}
 
-def asdict(text: str, delim: str = ',') -> dict:
+def as_dict(text: str, delim: str = ',') -> dict:
     """Convert text into dictionary.
 
     Args:
@@ -235,8 +198,8 @@ def asdict(text: str, delim: str = ',') -> dict:
 
     """
     # Check types of Arguments
-    check.argtype(0, text, str)
-    check.argtype('delim', delim, str)
+    check.has_type("first argument 'text'", text, str)
+    check.has_type("argumnt 'delim'", delim, str)
 
     # Return empty dict if the string is blank
     if not text or not text.strip():
@@ -286,21 +249,38 @@ def asdict(text: str, delim: str = ',') -> dict:
 
     return d
 
-def aspath(text: str, expand: bool = True) -> Path:
+def as_path(text: str, expand: bool = True) -> Path:
     """Convert text into list.
 
     Args:
         text: String representing a path.
-        unpack: Boolen value, whoch determines, if variables in the text
-            of format '%VARIABLA%' are expanded.
+        expand: Boolen value, whoch determines, if variables in environmental
+            path variables are expanded.
 
     Returns:
         Value of the text as Path.
 
     """
     # Check types of Arguments
-    check.argtype(0, text, str)
-    check.argtype('expand', expand, bool)
+    check.has_type("first argument 'text'", text, str)
+    check.has_type("argument 'expand'", expand, bool)
 
-    from nemoa.base import npath
-    return npath.expand(text)
+    if expand:
+        return npath.expand(text)
+    return Path(text)
+
+def as_datetime(text: str, fmt: OptStr = None) -> Date:
+    """Convert text into list.
+
+    Args:
+        text: String representing datetime.
+        fmt:
+
+    Returns:
+        Value of the text as datetime.
+
+    """
+    # Check types of Arguments
+    check.has_type("first argument 'text'", text, str)
+    fmt = '%Y-%m-%d %H:%M:%S.%f'
+    return datetime.datetime.strptime(text, fmt)

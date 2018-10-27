@@ -11,7 +11,7 @@ modeling``_ with ``structured data-analysis``_ and data visualization.
     https://en.wikipedia.org/wiki/Structured_data_analysis_(statistics)
 
 """
-__version__ = '0.5.203'
+__version__ = '0.5.212'
 __status__ = 'Development'
 __description__ = 'Network-based Modeling and Data Analysis'
 __url__ = 'https://frootlab.github.io/nemoa'
@@ -21,10 +21,8 @@ __organization__ = 'frootlab'
 __author__ = 'frootlab'
 __email__ = 'frootlab@gmail.com'
 __maintainer__ = 'Patrick Michl'
-__authors__ = [
-    'Patrick Michl <patrick.michl@gmail.com>']
-__credits__ = [
-    'Willi Jäger', 'Rainer König']
+__authors__ = ['Patrick Michl <patrick.michl@gmail.com>']
+__credits__ = ['Willi Jäger', 'Rainer König']
 
 import nemoa.dataset
 import nemoa.model

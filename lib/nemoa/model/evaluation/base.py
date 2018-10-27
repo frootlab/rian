@@ -5,9 +5,10 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import numpy
+
 import nemoa
 
-from nemoa.base import nclass
+from nemoa.base import bare, nclass
 
 class Evaluation:
 
@@ -100,13 +101,13 @@ class Evaluation:
         """
 
         # test type of model instance and subclasses
-        if not nclass.has_base(model, 'Model'):
+        if not bare.has_base(model, 'Model'):
             return False
-        if not nclass.has_base(model.dataset, 'Dataset'):
+        if not bare.has_base(model.dataset, 'Dataset'):
             return False
-        if not nclass.has_base(model.network, 'Network'):
+        if not bare.has_base(model.network, 'Network'):
             return False
-        if not nclass.has_base(model.system, 'System'):
+        if not bare.has_base(model.system, 'System'):
             return False
 
         # check dataset
@@ -191,10 +192,10 @@ class Evaluation:
                 return dict(list(zip(units, retval)))
         elif category == 'links':
             if retfmt == 'scalar':
-                from nemoa.base import narray
+                from nemoa.math import matrix
                 src = getunits(layer=kwds['mapping'][0])
                 tgt = getunits(layer=kwds['mapping'][-1])
-                return narray.as_dict(retval, labels=(src, tgt))
+                return matrix.as_dict(retval, labels=(src, tgt))
         elif category == 'relation':
             if algorithm['retfmt'] == 'scalar':
 
@@ -216,10 +217,10 @@ class Evaluation:
                 if rettype == 'array':
                     return retval
                 if rettype == 'dict':
-                    from nemoa.base import narray
+                    from nemoa.math import matrix
                     src = getunits(layer=kwds['mapping'][0])
                     tgt = getunits(layer=kwds['mapping'][-1])
-                    retval = narray.as_dict(retval, labels=(src, tgt))
+                    retval = matrix.as_dict(retval, labels=(src, tgt))
                     if not evalstat:
                         return retval
 

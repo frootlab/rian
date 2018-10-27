@@ -25,12 +25,10 @@ import os
 import shutil
 import string
 import sys
-
 from pathlib import Path, PurePath
-
 from nemoa.base import env
-from nemoa.types import (
-    Any, Iterable, IterAny, NestPath, OptStrDict, PathLikeList)
+from nemoa.types import Any, Iterable, IterAny, NestPath, OptStrDict
+from nemoa.types import PathLikeList
 
 _RECURSION_LIMIT = sys.getrecursionlimit()
 
@@ -51,7 +49,6 @@ def clear(fname: str) -> str:
     """
     valid = "-_.() " + string.ascii_letters + string.digits
     fname = ''.join(c for c in fname if c in valid).replace(' ', '_')
-
     return fname
 
 def match(paths: PathLikeList, pattern: str) -> PathLikeList:

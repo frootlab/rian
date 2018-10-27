@@ -53,19 +53,8 @@ def merge(*args: dict, mode: int = 1) -> dict:
         mode = 0
 
     # Check Type of first and second argument
-    check.argtype(1, d1, dict)
-    check.argtype(2, d1, dict)
-
-    if not isinstance(d1, dict):
-        raise TypeError(
-            "first argument is required to be of type dict"
-            f", not '{type(d1).__name__}'")
-
-    # Check Type of second argument
-    if not isinstance(d2, dict):
-        raise TypeError(
-            "second argument requires to be of type 'dict'"
-            f", not '{type(d2).__name__}'")
+    check.has_type("first argument", d1, dict)
+    check.has_type("second argument", d2, dict)
 
     # Create new dictionary
     if mode == 1:

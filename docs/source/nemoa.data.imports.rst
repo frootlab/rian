@@ -1,7 +1,7 @@
-nemoa.base.bare module
+nemoa.data.imports module
 =========================
 
-.. automodule:: nemoa.base.bare
+.. automodule:: nemoa.data.imports
     :members:
     :undoc-members:
     :show-inheritance:

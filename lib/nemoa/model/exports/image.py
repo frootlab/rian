@@ -10,15 +10,14 @@ import networkx
 import numpy
 import os
 
-from nemoa.base import ntext
-from nemoa.fileio import nplot
+from nemoa.base import nfunc
+from nemoa.file import nplot
 
 def filetypes():
     """Get supported image filetypes."""
     return nplot.filetypes()
 
 def save(model, path = None, filetype = None, plot = None, **kwds):
-
     # test if filetype is supported
     if filetype not in filetypes():
         raise ValueError(f"filetype '{filetype}' is not supported")
@@ -39,8 +38,8 @@ def save(model, path = None, filetype = None, plot = None, **kwds):
 
     # assert units
     mapping = model.system.mapping
-    in_units = model.system.get('units', layer = mapping[0])
-    out_units = model.system.get('units', layer = mapping[-1])
+    in_units = model.system.get('units', layer=mapping[0])
+    out_units = model.system.get('units', layer=mapping[-1])
     if not isinstance(plot._config['units'], tuple) \
         or not isinstance(plot._config['units'][0], list) \
         or not isinstance(plot._config['units'][1], list):
@@ -48,7 +47,7 @@ def save(model, path = None, filetype = None, plot = None, **kwds):
 
     # get information about relation
     if plot._config['show_title']:
-        rel_id = ntext.splitargs(plot._config['relation'])[0]
+        rel_id = nfunc.splitargs(plot._config['relation'])[0]
         rel_dict = model.system.get('algorithm', rel_id,
             category = ('system', 'relation', 'evaluation'))
         rel_name = rel_dict['name']
@@ -310,7 +309,7 @@ class Heatmap(nplot.Heatmap):
 
         # update title by evaluated relation
         if self._config['show_title']:
-            rel_id = ntext.splitargs(self._config['relation'])[0]
+            rel_id = nfunc.splitargs(self._config['relation'])[0]
             rel_dict = model.system.get('algorithm', rel_id,
                 category = ('system', 'relation', 'evaluation'))
             rel_name = rel_dict['name']
@@ -333,7 +332,7 @@ class Histogram(nplot.Histogram):
             'transform': '' })
 
         # get information about evaluation algorithm
-        rel_id = ntext.splitargs(self._config['evaluation'])[0]
+        rel_id = nfunc.splitargs(self._config['evaluation'])[0]
         rel_dict = model.system.get('algorithm', rel_id,
             category = ('system', 'relation', 'evaluation'))
 

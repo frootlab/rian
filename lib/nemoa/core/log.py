@@ -42,21 +42,18 @@ import importlib
 import logging
 import tempfile
 import warnings
-
 from pathlib import Path
-
 from nemoa.base import env, npath
-from nemoa.classes import ReadWriteAttr
+from nemoa.core.container import BaseContainer, TransientAttr, VirtualAttr
 from nemoa.errors import AlreadyStartedError, NotStartedError
-from nemoa.types import (
-    void, Any, AnyFunc, ClassVar, PathLike, StrList, StrOrInt, OptPath,
-    VoidFunc)
+from nemoa.types import void, Any, AnyFunc, ClassVar, PathLike, StrList
+from nemoa.types import StrOrInt, Optional, OptPath, OptStrDict, VoidFunc
 
 #
 # Logger Class
 #
 
-class Logger:
+class Logger(BaseContainer):
     """Logger class.
 
     Args:
@@ -82,41 +79,39 @@ class Logger:
     # Private Class Variables
     #
 
-    _LEVEL_NAMES: ClassVar[StrList] = [
+    _level_names: ClassVar[StrList] = [
         'NOTSET', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
-    _DEFAULT_NAME: ClassVar[str] = env.get_var('name') or __name__
-    _DEFAULT_FILE: ClassVar[Path] = Path(
-        env.get_dir('user_log_dir'), _DEFAULT_NAME + '.log')
-    _DEFAULT_LEVEL: ClassVar[StrOrInt] = logging.INFO
+    _default_name: ClassVar[str] = env.get_var('name') or __name__
+    _default_file: ClassVar[Path] = Path(
+        env.get_dir('user_log_dir'), _default_name + '.log')
+    _default_level: ClassVar[StrOrInt] = logging.INFO
 
     #
-    # Private Instance Variables
+    # Private Transient Attributes
     #
 
-    _logger: logging.Logger
+    _logger: property = TransientAttr(logging.Logger)
 
     #
-    # Public Instance Properties
+    # Public Virtual Attributes
     #
 
-    logger: property = ReadWriteAttr(
+    logger: property = VirtualAttr(
         logging.Logger, getter='_get_logger', setter='_set_logger')
 
-    name: property = ReadWriteAttr(
-        str, getter='_get_name', setter='_set_name', default=_DEFAULT_NAME)
-    name.__doc__ = """Name of logger.
-
+    name: property = VirtualAttr(
+        str, getter='_get_name', setter='_set_name', default=_default_name)
+    name.__doc__ = """
     String identifier of Logger, given as a period-separated hierarchical value
     like 'foo.bar.baz'. The name of a Logger also identifies respective parents
     and children by the name hierachy, which equals the Python package
     hierarchy.
     """
 
-    file: property = ReadWriteAttr(
-        (str, Path), getter='_get_file', setter='_set_file',
-        default=_DEFAULT_FILE)
-    file.__doc__ = """Log file.
-
+    file: property = VirtualAttr(
+        classinfo=(str, Path), getter='_get_file', setter='_set_file',
+        default=_default_file)
+    file.__doc__ = """
     String or `path-like object`_ that identifies a valid filename in the
     directory structure of the operating system. If they do not exist, the
     parent directories of the file are created. If no file is given, a default
@@ -125,11 +120,10 @@ class Logger:
     created as a fallback.
     """
 
-    level: property = ReadWriteAttr(
-        (str, int), getter='_get_level', setter='_set_level',
-        default=_DEFAULT_LEVEL)
-    level.__doc__ = """Log level.
-
+    level: property = VirtualAttr(
+        classinfo=(str, int), getter='_get_level', setter='_set_level',
+        default=_default_level)
+    level.__doc__ = """
     Integer value or string, which describes the minimum required severity of
     events, to be logged. Ordered by ascending severity, the allowed level names
     are: 'DEBUG', 'INFO', 'WARNING', 'ERROR' and 'CRITICAL'. The respectively
@@ -141,8 +135,11 @@ class Logger:
     # Magic
     #
 
-    def __init__(self, *args: Any, **kwds: Any) -> None:
+    def __init__(self, *args: Any,
+            metadata: OptStrDict = None, content: OptStrDict = None,
+            parent: Optional[BaseContainer] = None, **kwds: Any) -> None:
         """Initialize instance."""
+        super().__init__(metadata=metadata, content=content, parent=parent)
         self._start_logging(*args, **kwds)
 
     def __del__(self) -> None:
@@ -185,8 +182,8 @@ class Logger:
     #
 
     def _start_logging(
-            self, name: str = _DEFAULT_NAME, file: PathLike = _DEFAULT_FILE,
-            level: StrOrInt = _DEFAULT_LEVEL) -> bool:
+            self, name: str = _default_name, file: PathLike = _default_file,
+            level: StrOrInt = _default_level) -> bool:
         logger = logging.getLogger(name) # Create new logger instance
         self._set_logger(logger) # Bind new logger instance to global variable
         self._set_level(level) # Set log level
@@ -200,10 +197,10 @@ class Logger:
         for handler in self.logger.handlers: # Close file handlers
             with contextlib.suppress(AttributeError):
                 handler.close()
-        delattr(self, '_logger')
+        self._logger = None
 
     def _get_logger(self, auto_start: bool = True) -> logging.Logger:
-        if not hasattr(self, '_logger'):
+        if not self._logger:
             if auto_start:
                 self._start_logging()
             else:
@@ -212,7 +209,7 @@ class Logger:
 
     def _set_logger(
             self, logger: logging.Logger, auto_stop: bool = True) -> None:
-        if hasattr(self, '_logger'):
+        if self._logger:
             if auto_stop:
                 self._stop_logging()
             else:
@@ -231,7 +228,7 @@ class Logger:
                 return Path(handler.baseFilename)
         return None
 
-    def _set_file(self, filepath: PathLike = _DEFAULT_FILE) -> None:
+    def _set_file(self, filepath: PathLike = _default_file) -> None:
         # Locate valid logfile
         logfile = self._locate_logfile(filepath)
         if not isinstance(logfile, Path):
@@ -263,12 +260,12 @@ class Logger:
         return self._get_level_name(level)
 
     def _get_level_name(self, level: int) -> str:
-        names = self._LEVEL_NAMES
+        names = self._level_names
         return names[int(max(min(level, 50), 0) / 10)]
 
     def _get_level_number(self, name: str) -> int:
         name = name.upper()
-        names = self._LEVEL_NAMES
+        names = self._level_names
         if not name in names:
             allowed = ', '.join(names[1:])
             raise ValueError(
@@ -282,7 +279,7 @@ class Logger:
         getattr(self.logger, 'setLevel')(level)
 
     def _locate_logfile(
-            self, filepath: PathLike = _DEFAULT_FILE) -> OptPath:
+            self, filepath: PathLike = _default_file) -> OptPath:
         # Get valid logfile from filepath
         if isinstance(filepath, (str, Path)):
             logfile = npath.expand(filepath)

@@ -8,22 +8,22 @@ import numpy
 
 import nemoa
 
-from nemoa.base import nclass
-from nemoa.test import GenericTestCase
+from nemoa.base import bare
+from nemoa.test import BaseTestCase
 
-class TestCase(GenericTestCase):
+class TestCase(BaseTestCase):
 
     def test_dataset_import(self):
         import nemoa.dataset
 
         with self.subTest(filetype="csv"):
             dataset = nemoa.dataset.open('sinus', workspace='testsuite')
-            test = nclass.has_base(dataset, 'Dataset')
+            test = bare.has_base(dataset, 'Dataset')
             self.assertTrue(test)
 
         with self.subTest(filetype="tab"):
             dataset = nemoa.dataset.open('linear', workspace='testsuite')
-            test = nclass.has_base(dataset, 'Dataset')
+            test = bare.has_base(dataset, 'Dataset')
             self.assertTrue(test)
 
     def test_dataset_evaluate(self):
@@ -70,5 +70,5 @@ class TestCase(GenericTestCase):
                 rules = [('o1', 'i1 + i2'), ('o2', 'i3 + i4')],
                 normalize = 'gauss',
                 samples = 10000)
-            test = nclass.has_base(dataset, 'Dataset')
+            test = bare.has_base(dataset, 'Dataset')
             self.assertTrue(test)
