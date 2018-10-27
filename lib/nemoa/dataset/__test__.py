@@ -9,9 +9,9 @@ import numpy
 import nemoa
 
 from nemoa.base import bare
-from nemoa.test import GenericTestCase
+from nemoa.test import BaseTestCase
 
-class TestCase(GenericTestCase):
+class TestCase(BaseTestCase):
 
     def test_dataset_import(self):
         import nemoa.dataset

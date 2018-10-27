@@ -129,11 +129,11 @@ IterNestRecDict = Iterable[NestRecDict]
 # Types for Callables
 ################################################################################
 
-# Arguments
-Args = Tuple[Any, ...]
-Kwds = Dict[Any, Any]
-FuncPar = Tuple[Args, Kwds]
-FuncParList = List[FuncPar]
+# # Arguments
+# Args = Tuple[Any, ...]
+# Kwds = Dict[Any, Any]
+# FuncPar = Tuple[Args, Kwds]
+# FuncParList = List[FuncPar]
 
 # Elementary Callables
 AnyFunc = Callable[..., Any]

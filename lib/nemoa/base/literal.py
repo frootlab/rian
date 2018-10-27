@@ -21,16 +21,15 @@ except ImportError as err:
 from nemoa.base import check, npath
 from nemoa.types import Any, OptStr, Date
 
-def as_type(
+def decode(
         text: str, fmt: OptStr = None, undef: str = 'None', **kwds: Any) -> Any:
     """Convert text into given target format.
 
     Args:
         text: String representing the value of a given type in it's respective
-            syntax format. Thereby the standard format corresponds to the
-            representation, which is obtained by an application of the 'str'
-            function. Some types however also accept additional formats, which
-            e.g. appear in the formatting of ini files.
+            syntax format. The standard format corresponds to the standard
+            Python representation if available. Some types also accept
+            further formats, which may use additional keywords.
         fmt: Target format in which the text is converted.
         undef: String, which respresents an undefined value. If the given text
             matches the string, None is returned.
@@ -47,7 +46,7 @@ def as_type(
     if text == undef:
         return None
 
-    # Evaluate text as literal if no format is given
+    # Evaluate text as Python literal if no format is given
     if fmt is None:
         return ast.literal_eval(text)
 

@@ -7,12 +7,19 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import tempfile
+import datetime
 from pathlib import Path
 import numpy as np
 from nemoa.base import check, env, nbase, binary, nclass, ndict, nfunc, nmodule
-from nemoa.base import npath, table, text as nmtext
-from nemoa.test import ModuleTestCase
+from nemoa.base import npath, table, literal
+from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Any, Function, Module, PathLikeList
+
+class TestBare(ModuleTestCase):
+    """Testcase for the module nemoa.base.bare."""
+
+    module = 'nemoa.base.bare'
+
 
 class TestCheck(ModuleTestCase):
     """Testcase for the module nemoa.base.check."""
@@ -21,81 +28,120 @@ class TestCheck(ModuleTestCase):
 
     def test_has_type(self) -> None:
         self.assertNoneRaises(TypeError, check.has_type, [
-            (('', 0, int), {}), (('', '', str), {}),
-            (('', list(), list), {}), (('', dict(), dict), {})])
+            Case(args=('', 0, int)),
+            Case(args=('', '', str)),
+            Case(args=('', list(), list)),
+            Case(args=('', dict(), dict))])
         self.assertAllRaises(TypeError, check.has_type, [
-            (('', '', int), {}), (('', 1., int), {}),
-            (('', 1, float), {}), (('', dict(), list), {})])
+            Case(args=('', '', int)),
+            Case(args=('', 1., int)),
+            Case(args=('', 1, float)),
+            Case(args=('', dict(), list))])
 
     def test_has_opt_type(self) -> None:
         self.assertNoneRaises(TypeError, check.has_opt_type, [
-            (('', None, int), {}), (('', None, str), {}),
-            (('', list(), list), {}), (('', dict(), dict), {})])
+            Case(args=('', None, int)),
+            Case(args=('', None, str)),
+            Case(args=('', list(), list)),
+            Case(args=('', dict(), dict))])
         self.assertAllRaises(TypeError, check.has_opt_type, [
-            (('', '', int), {}), (('', 1., int), {}),
-            (('', 1, float), {}), (('', dict(), list), {})])
+            Case(args=('', '', int)),
+            Case(args=('', 1., int)),
+            Case(args=('', 1, float)),
+            Case(args=('', dict(), list))])
 
     def test_is_callable(self) -> None:
         self.assertNoneRaises(TypeError, check.is_callable, [
-            (('', int), {}), (('', dict), {}),
-            (('', list), {}), (('', str), {})])
+            Case(args=('', int)),
+            Case(args=('', dict)),
+            Case(args=('', list)),
+            Case(args=('', str))])
         self.assertAllRaises(TypeError, check.has_type, [
-            (('', None), {}), (('', 0), {}),
-            (('', ''), {}), (('', set()), {})])
+            Case(args=('', None)),
+            Case(args=('', 0)),
+            Case(args=('', '')),
+            Case(args=('', set()))])
 
     def test_is_class(self) -> None:
         self.assertNoneRaises(TypeError, check.is_class, [
-            (('', int), {}), (('', dict), {}),
-            (('', list), {}), (('', str), {})])
+            Case(args=('', int)),
+            Case(args=('', dict)),
+            Case(args=('', list)),
+            Case(args=('', str))])
         self.assertAllRaises(TypeError, check.is_class, [
-            (('', None), {}), (('', 0), {}),
-            (('', ''), {}), (('', set()), {})])
+            Case(args=('', None)),
+            Case(args=('', 0)),
+            Case(args=('', '')),
+            Case(args=('', set()))])
 
     def test_is_subclass(self) -> None:
         self.assertNoneRaises(TypeError, check.is_subclass, [
-            (('', int, object), {}), (('', dict, dict), {}),
-            (('', list, object), {}), (('', str, str), {})])
+            Case(args=('', int, object)),
+            Case(args=('', dict, dict)),
+            Case(args=('', list, object)),
+            Case(args=('', str, str))])
         self.assertAllRaises(TypeError, check.is_subclass, [
-            (('', int, str), {}), (('', dict, list), {}),
-            (('', object, float), {}), (('', str, complex), {})])
+            Case(args=('', int, str)),
+            Case(args=('', dict, list)),
+            Case(args=('', object, float)),
+            Case(args=('', str, complex))])
 
     def test_is_subset(self) -> None:
         self.assertNoneRaises(ValueError, check.is_subset, [
-            (('', set(), '', set()), {}), (('', {1}, '', {1, 2}), {}),
-            (('', {2}, '', {1, 2}), {}), (('', {2, 1}, '', {1, 2}), {})])
+            Case(args=('', set(), '', set())),
+            Case(args=('', {1}, '', {1, 2})),
+            Case(args=('', {2}, '', {1, 2})),
+            Case(args=('', {2, 1}, '', {1, 2}))])
         self.assertAllRaises(ValueError, check.is_subset, [
-            (('', {1}, '', set()), {}), (('', {2}, '', {1}), {}),
-            (('', {1, 2}, '', {1}), {}), (('', {1, 2, 3}, '', set()), {})])
+            Case(args=('', {1}, '', set())),
+            Case(args=('', {2}, '', {1})),
+            Case(args=('', {1, 2}, '', {1})),
+            Case(args=('', {1, 2, 3}, '', set()))])
 
     def test_is_positive(self) -> None:
         self.assertNoneRaises(ValueError, check.is_positive, [
-            (('', 1), {}), (('', 1.), {})])
+            Case(args=('', 1)),
+            Case(args=('', 1.))])
         self.assertAllRaises(ValueError, check.is_positive, [
-            (('', 0), {}), (('', -1), {}), (('', -1.), {})])
+            Case(args=('', 0)),
+            Case(args=('', -1)),
+            Case(args=('', -1.))])
 
     def test_is_negative(self) -> None:
         self.assertNoneRaises(ValueError, check.is_negative, [
-            (('', -1), {}), (('', -1.), {})])
+            Case(args=('', -1)),
+            Case(args=('', -1.))])
         self.assertAllRaises(ValueError, check.is_negative, [
-            (('', 0), {}), (('', 1), {}), (('', 1.), {})])
+            Case(args=('', 0)),
+            Case(args=('', 1)),
+            Case(args=('', 1.))])
 
     def test_is_not_positive(self) -> None:
         self.assertNoneRaises(ValueError, check.is_not_positive, [
-            (('', 0), {}), (('', -1), {}), (('', -1.), {})])
+            Case(args=('', 0)),
+            Case(args=('', -1)),
+            Case(args=('', -1.))])
         self.assertAllRaises(ValueError, check.is_not_positive, [
-            (('', 1), {}), (('', 1.), {})])
+            Case(args=('', 1)),
+            Case(args=('', 1.))])
 
     def test_is_not_negative(self) -> None:
         self.assertNoneRaises(ValueError, check.is_not_negative, [
-            (('', 0), {}), (('', 1), {}), (('', 1.), {})])
+            Case(args=('', 0)),
+            Case(args=('', 1)),
+            Case(args=('', 1.))])
         self.assertAllRaises(ValueError, check.is_not_negative, [
-            (('', -1), {}), (('', -1.), {})])
+            Case(args=('', -1)),
+            Case(args=('', -1.))])
 
     def test_has_attr(self) -> None:
         self.assertNoneRaises(AttributeError, check.has_attr, [
-            (('', 'format'), {}), ((0, 'real'), {}), ((1j, 'imag'), {})])
+            Case(args=('', 'format')),
+            Case(args=(0, 'real')),
+            Case(args=(1j, 'imag'))])
         self.assertAllRaises(AttributeError, check.has_attr, [
-            ((list(), 'keys'), {}), ((0, ''), {})])
+            Case(args=(list(), 'keys')),
+            Case(args=(0, ''))])
 
 class TestEnv(ModuleTestCase):
     """Testcase for the module nemoa.base.env."""
@@ -459,52 +505,56 @@ class TestTable(ModuleTestCase):
         new = table.addcols(tgt, src, 'z')
         self.assertEqual(new['z'][0], 'a')
 
-class TestText(ModuleTestCase):
-    """Testcase for the module nemoa.base.text."""
+class TestLiteral(ModuleTestCase):
+    """Testcase for the module nemoa.base.literal."""
 
-    module = 'nemoa.base.text'
+    module = 'nemoa.base.literal'
 
     def test_as_path(self) -> None:
-        val = nmtext.as_path('a/b/c')
+        val = literal.as_path('a/b/c')
         self.assertEqual(val, Path('a/b/c'))
-        val = nmtext.as_path('a\\b\\c')
+        val = literal.as_path('a\\b\\c')
         self.assertEqual(val, Path('a\\b\\c'))
-        val = nmtext.as_path('%home%/test')
+        val = literal.as_path('%home%/test')
         self.assertEqual(val, Path.home() / 'test')
 
+    def test_as_datetime(self) -> None:
+        val = datetime.datetime.now()
+        self.assertEqual(literal.as_datetime(str(val)), val)
+
     def test_as_list(self) -> None:
-        val = nmtext.as_list('a, 2, ()')
+        val = literal.as_list('a, 2, ()')
         self.assertEqual(val, ['a', '2', '()'])
-        val = nmtext.as_list('[1, 2, 3]')
+        val = literal.as_list('[1, 2, 3]')
         self.assertEqual(val, [1, 2, 3])
 
     def test_as_tuple(self) -> None:
-        val = nmtext.as_tuple('a, 2, ()')
+        val = literal.as_tuple('a, 2, ()')
         self.assertEqual(val, ('a', '2', '()'))
-        val = nmtext.as_tuple('(1, 2, 3)')
+        val = literal.as_tuple('(1, 2, 3)')
         self.assertEqual(val, (1, 2, 3))
 
     def test_as_set(self) -> None:
-        val = nmtext.as_set('a, 2, ()')
+        val = literal.as_set('a, 2, ()')
         self.assertEqual(val, {'a', '2', '()'})
-        val = nmtext.as_set('{1, 2, 3}')
+        val = literal.as_set('{1, 2, 3}')
         self.assertEqual(val, {1, 2, 3})
 
     def test_as_dict(self) -> None:
-        val = nmtext.as_dict("a = 'b', b = 1")
+        val = literal.as_dict("a = 'b', b = 1")
         self.assertEqual(val, {'a': 'b', 'b': 1})
-        val = nmtext.as_dict("'a': 'b', 'b': 1")
+        val = literal.as_dict("'a': 'b', 'b': 1")
         self.assertEqual(val, {'a': 'b', 'b': 1})
 
-    def test_as_type(self) -> None:
+    def test_decode(self) -> None:
         tests = [
             ('t', 'str'), (True, 'bool'), (1, 'int'), (.5, 'float'),
             ((1+1j), 'complex')]
-        for val, tname in tests:
-            text = str(val)
-            with self.subTest(f"astype({text}, {tname})"):
-                decode = nmtext.as_type(text, tname)
-                self.assertEqual(decode, val)
+        for value, fmt in tests:
+            string = str(value)
+            with self.subTest(f"decode({string}, {fmt})"):
+                decode = literal.decode(string, fmt)
+                self.assertEqual(decode, value)
 
 class TestNpath(ModuleTestCase):
     """Testcase for the module nemoa.base.npath."""

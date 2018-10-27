@@ -4,9 +4,9 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.test import GenericTestCase
+from nemoa.test import BaseTestCase
 
-# class TestCase(test.GenericTestCase):
+# class TestCase(test.BaseTestCase):
 #
 #     def test_init(self):
 #         with self.subTest(function = "algorithm"):

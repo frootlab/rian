@@ -10,10 +10,10 @@ import networkx as nx
 import numpy as np
 
 from nemoa.math import algo, curve, graph, matrix, regr, vector
-from nemoa.test import GenericTestCase, ModuleTestCase
+from nemoa.test import BaseTestCase, ModuleTestCase
 from nemoa.types import Any, Callable, NpArray, NaN
 
-class MathTestCase(GenericTestCase):
+class MathTestCase(BaseTestCase):
     """Additional asserts for math tests."""
 
     def assertCheckSum(self, func: Callable, x: NpArray, val: float) -> None:

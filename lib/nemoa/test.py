@@ -6,12 +6,13 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import unittest
-from unittest import TestCase, TestResult, TestLoader, TestSuite, TextTestRunner
 from io import StringIO
+from typing import NamedTuple
+from unittest import skipIf
+from unittest import TestCase, TestResult, TestLoader, TestSuite, TextTestRunner
 from nemoa.base import nmodule, bare
 from nemoa.types import Any, AnyFunc, ClassInfo, ExcType, Function, Method
-from nemoa.types import OptStr, StringIOLike, FuncParList
+from nemoa.types import OptStr, StringIOLike, Tuple, Dict, List
 
 ################################################################################
 # Global Setting
@@ -20,11 +21,48 @@ from nemoa.types import OptStr, StringIOLike, FuncParList
 skip_completeness_test: bool = False
 
 ################################################################################
+# Test Parameters
+################################################################################
+
+class Case(NamedTuple):
+    """Case parameter."""
+
+    args: Tuple[Any, ...] = tuple()
+    kwds: Dict[Any, Any] = {}
+    value: Any = None
+
+Cases = List[Case]
+
+################################################################################
 # Test Cases
 ################################################################################
 
-class GenericTestCase(TestCase):
+class BaseTestCase(TestCase):
     """Custom testcase."""
+
+    def assertAllTrue(self, func: AnyFunc, cases: Cases) -> None:
+        """Assert that all function evaluations cast to True."""
+        for case in cases:
+            with self.subTest(case):
+                self.assertTrue(func(*case.args, **case.kwds))
+
+    def assertNoneTrue(self, func: AnyFunc, cases: Cases) -> None:
+        """Assert that all function evaluations cast to False."""
+        for case in cases:
+            with self.subTest(case):
+                self.assertFalse(func(*case.args, **case.kwds))
+
+    def assertAllEqual(self, func: AnyFunc, cases: Cases) -> None:
+        """Assert that all function evaluations equal the given values."""
+        for case in cases:
+            with self.subTest(case):
+                self.assertEqual(func(*case.args, **case.kwds), case.value)
+
+    def assertNoneEqual(self, func: AnyFunc, cases: Cases) -> None:
+        """Assert that all function evaluations differ from the given values."""
+        for case in cases:
+            with self.subTest(case):
+                self.assertNotEqual(func(*case.args, **case.kwds), case.value)
 
     def assertNotRaises(
             self, Error: ExcType, func: AnyFunc, *args: Any,
@@ -37,20 +75,20 @@ class GenericTestCase(TestCase):
                 f"function {func.__name__} raises error {Error.__name__}")
 
     def assertAllRaises(
-            self, Error: ExcType, func: AnyFunc, cases: FuncParList) -> None:
+            self, Error: ExcType, func: AnyFunc, cases: Cases) -> None:
         """Assert that all function parameters raise an exception."""
-        for args, kwds in cases:
-            with self.subTest(args=args, kwds=kwds):
-                self.assertRaises(Error, func, *args, **kwds)
+        for case in cases:
+            with self.subTest(case):
+                self.assertRaises(Error, func, *case.args, **case.kwds)
 
     def assertNoneRaises(
-            self, Error: ExcType, func: AnyFunc, cases: FuncParList) -> None:
+            self, Error: ExcType, func: AnyFunc, cases: Cases) -> None:
         """Assert that no function parameter raises an exception."""
-        for args, kwds in cases:
-            with self.subTest(args=args, kwds=kwds):
-                self.assertNotRaises(Error, func, *args, **kwds)
+        for case in cases:
+            with self.subTest(case):
+                self.assertNotRaises(Error, func, *case.args, **case.kwds)
 
-class ModuleTestCase(GenericTestCase):
+class ModuleTestCase(BaseTestCase):
     """Custom testcase."""
 
     module: str
@@ -83,7 +121,7 @@ class ModuleTestCase(GenericTestCase):
         if not complete:
             raise AssertionError(msg)
 
-    @unittest.skipIf(skip_completeness_test, "completeness is not tested")
+    @skipIf(skip_completeness_test, "completeness is not tested")
     def test_completeness_of_module(self) -> None:
         self.assertModuleIsComplete()
 

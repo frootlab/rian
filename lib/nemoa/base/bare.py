@@ -13,15 +13,16 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import inspect
-
 from nemoa.base import ndict
-from nemoa.types import Any, ClassInfo, OptStr, OptStrDictOfTestFuncs
+from nemoa.types import Any, ClassInfo, OptStr, OptStrDictOfTestFuncs, Union
+
+TypeOrStr = Union[type, str]
 
 #
 # Public Module Functions
 #
 
-def has_base(obj: object, base: str) -> bool:
+def has_base(obj: object, base: TypeOrStr) -> bool:
     """Return true if the object has the given base.
 
     Args:
@@ -32,6 +33,8 @@ def has_base(obj: object, base: str) -> bool:
         True if the given object has the named base as base
 
     """
+    if isinstance(base, type):
+        return base in obj.__class__.__mro__
     return base in [o.__name__ for o in obj.__class__.__mro__]
 
 def get_name(obj: object) -> str:

@@ -18,7 +18,7 @@ __docformat__ = 'google'
 from configparser import ConfigParser
 from io import StringIO
 import re
-from nemoa.base import text as nmtext
+from nemoa.base import literal
 from nemoa.fileio import textfile
 from nemoa.types import FileOrPathLike, OptBool, OptStr, OptStrDict2, StrDict2
 from nemoa.types import Union, StrDict, Optional
@@ -59,33 +59,6 @@ def load(
     with textfile.openx(file, mode='r') as fh:
         return loads(fh.read(), structure=structure, flat=flat)
 
-def save(
-        config: dict, file: FileOrPathLike, flat: OptBool = None,
-        header: OptStr = None) -> None:
-    """Save configuration dictionary to INI-file.
-
-    Args:
-        config: Configuration dictionary
-        file: String or `path-like object`_ that represents to a writeable file
-            in the directory structure of the system, or a `file-like object`_
-            in write mode.
-        flat: Determines if the desired INI format structure contains sections.
-            By default sections are used, if the dictionary contains
-            subdictionaries.
-        header: The Header string is written in the INI-file as initial comment.
-            By default no header is written.
-
-    """
-    # Convert configuration dictionary to INI formated text
-    try:
-        text = dumps(config, flat=flat, header=header)
-    except Exception as err:
-        raise ValueError("dictionary is not valid") from err
-
-    # Write text to file
-    with textfile.openx(file, mode='w') as fh:
-        fh.write(text)
-
 def loads(
         text: str, structure: OptStrucType = None,
         flat: OptBool = None) -> StrucType:
@@ -114,37 +87,74 @@ def loads(
 
     """
     # If the usage of sections is not defined by the argument 'flat' their
-    # existence is determined by the appearance of a line, that starts with the
-    # character '['.
+    # existence is determined by the first not blank and comment line. If this
+    # line does not start with the character '[', then the file structure is
+    # considered to be flat.
     if flat is None:
         flat = True
-        for line in [l.lstrip(' ') for l in text.split('\n')]:
-            if not line or line.startswith('#'):
-                continue
-            flat = not line.startswith('[')
-            break
+        with StringIO(text) as fh:
+            for line in fh:
+                content = line.strip()
+                if content and not content.startswith('#'):
+                    break
+            flat = not line.lstrip().startswith('[')
+            #
+            # line = fh.readline()
+            # while line: # while not EOF
+            #     content = line.strip()
+            #     if content and not content.startswith('#'):
+            #         break
+            #     line = fh.readline()
+            # flat = not line.lstrip().startswith('[')
 
-    # If no sections are to be used, a temporary [root] section is created and
-    # the structure dictionary is embedded within a further dicvtionary with a
-    # 'root' key.
+    # For flat structured files a a temporary [root] section is created and the
+    # structure dictionary is embedded within the 'root' key of a wrapping
+    # dictionary.
     if flat:
         text = '\n'.join(['[root]', text])
         if isinstance(structure, dict):
-            structure = {'root': structure.copy()}
+            structure = {'root': structure}
 
-    # Strip leading and trailing white spaces from lines in INI formated text
-    text = '\n'.join([line.strip(' ') for line in text.split('\n')])
-
-    # Parse sections and create dictionary
+    # Parse sections from inifile as string values
     parser = ConfigParser()
+    setattr(parser, 'optionxform', lambda key: key)
     parser.read_string(text)
-    config = parse(parser, structure)
+
+    #
+    config = parse(parser, structure=structure)
 
     # If no sections are to be used collapse the 'root' key
     if flat:
         return config.get('root') or {}
 
     return config
+
+def save(
+        config: dict, file: FileOrPathLike, flat: OptBool = None,
+        header: OptStr = None) -> None:
+    """Save configuration dictionary to INI-file.
+
+    Args:
+        config: Configuration dictionary
+        file: String or `path-like object`_ that represents to a writeable file
+            in the directory structure of the system, or a `file-like object`_
+            in write mode.
+        flat: Determines if the desired INI format structure contains sections.
+            By default sections are used, if the dictionary contains
+            subdictionaries.
+        header: The Header string is written in the INI-file as initial comment.
+            By default no header is written.
+
+    """
+    # Convert configuration dictionary to INI formated text
+    try:
+        text = dumps(config, flat=flat, header=header)
+    except Exception as err:
+        raise ValueError("dictionary is not valid") from err
+
+    # Write text to file
+    with textfile.openx(file, mode='w') as fh:
+        fh.write(text)
 
 def dumps(config: dict, flat: OptBool = None, header: OptStr = None) -> str:
     """Convert configuration dictionary to INI formated string.
@@ -267,8 +277,8 @@ def parse(parser: ConfigParser, structure: OptStrDict2 = None) -> StrDict2:
             for key in parser.options(sec):
                 if not rekey.match(key):
                     continue
-                val = parser.get(sec, key)
-                dsec[key] = nmtext.as_type(val, fmt)
+                string = parser.get(sec, key)
+                dsec[key] = literal.decode(string, fmt)
 
         config[sec] = dsec
 

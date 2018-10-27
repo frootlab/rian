@@ -7,9 +7,9 @@ __license__ = 'GPLv3'
 import nemoa
 
 from nemoa.base import bare
-from nemoa.test import GenericTestCase
+from nemoa.test import BaseTestCase
 
-class TestCase(GenericTestCase):
+class TestCase(BaseTestCase):
     def test_system_import(self):
         with self.subTest(filetype="ini"):
             system = nemoa.system.open('dbn', workspace='testsuite')
