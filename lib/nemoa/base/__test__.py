@@ -234,9 +234,8 @@ class TestEnv(ModuleTestCase):
                 delattr(env, '_vars')
 
     def test_get_var(self) -> None:
-        for key in self.app_vars:
-            with self.subTest(f"get_var('{key}')"):
-                self.assertTrue(env.get_var(key))
+        cases = [Case(args=(key, )) for key in self.app_vars]
+        self.assertAllTrue(env.get_var, cases)
 
     def test_get_vars(self) -> None:
         envvars = env.get_vars()
@@ -511,50 +510,42 @@ class TestLiteral(ModuleTestCase):
     module = 'nemoa.base.literal'
 
     def test_as_path(self) -> None:
-        val = literal.as_path('a/b/c')
-        self.assertEqual(val, Path('a/b/c'))
-        val = literal.as_path('a\\b\\c')
-        self.assertEqual(val, Path('a\\b\\c'))
-        val = literal.as_path('%home%/test')
-        self.assertEqual(val, Path.home() / 'test')
+        self.assertAllEqual(literal.as_path, [
+            Case(args=('a/b/c', ), value=Path('a/b/c')),
+            Case(args=('a\\b\\c', ), value=Path('a/b/c')),
+            Case(args=('%home%/test', ), value=Path.home() / 'test')])
 
     def test_as_datetime(self) -> None:
         val = datetime.datetime.now()
         self.assertEqual(literal.as_datetime(str(val)), val)
 
     def test_as_list(self) -> None:
-        val = literal.as_list('a, 2, ()')
-        self.assertEqual(val, ['a', '2', '()'])
-        val = literal.as_list('[1, 2, 3]')
-        self.assertEqual(val, [1, 2, 3])
+        self.assertAllEqual(literal.as_list, [
+            Case(args=('a, 2, ()', ), value=['a', '2', '()']),
+            Case(args=('[1, 2, 3]', ), value=[1, 2, 3])])
 
     def test_as_tuple(self) -> None:
-        val = literal.as_tuple('a, 2, ()')
-        self.assertEqual(val, ('a', '2', '()'))
-        val = literal.as_tuple('(1, 2, 3)')
-        self.assertEqual(val, (1, 2, 3))
+        self.assertAllEqual(literal.as_tuple, [
+            Case(args=('a, 2, ()', ), value=('a', '2', '()')),
+            Case(args=('(1, 2, 3)', ), value=(1, 2, 3))])
 
     def test_as_set(self) -> None:
-        val = literal.as_set('a, 2, ()')
-        self.assertEqual(val, {'a', '2', '()'})
-        val = literal.as_set('{1, 2, 3}')
-        self.assertEqual(val, {1, 2, 3})
+        self.assertAllEqual(literal.as_set, [
+            Case(args=('a, 2, ()', ), value={'a', '2', '()'}),
+            Case(args=('{1, 2, 3}', ), value={1, 2, 3})])
 
     def test_as_dict(self) -> None:
-        val = literal.as_dict("a = 'b', b = 1")
-        self.assertEqual(val, {'a': 'b', 'b': 1})
-        val = literal.as_dict("'a': 'b', 'b': 1")
-        self.assertEqual(val, {'a': 'b', 'b': 1})
+        self.assertAllEqual(literal.as_dict, [
+            Case(args=("a = 'b', b = 1", ), value={'a': 'b', 'b': 1}),
+            Case(args=("'a': 'b', 'b': 1", ), value={'a': 'b', 'b': 1})])
 
     def test_decode(self) -> None:
-        tests = [
-            ('t', 'str'), (True, 'bool'), (1, 'int'), (.5, 'float'),
-            ((1+1j), 'complex')]
-        for value, fmt in tests:
-            string = str(value)
-            with self.subTest(f"decode({string}, {fmt})"):
-                decode = literal.decode(string, fmt)
-                self.assertEqual(decode, value)
+        self.assertAllEqual(literal.decode, [
+            Case(args=(str('t'), 'str'), value='t'),
+            Case(args=(str(True), 'bool'), value=True),
+            Case(args=(str(1), 'int'), value=1),
+            Case(args=(str(.5), 'float'), value=.5),
+            Case(args=(str(1+1j), 'complex'), value=1+1j)])
 
 class TestNpath(ModuleTestCase):
     """Testcase for the module nemoa.base.npath."""

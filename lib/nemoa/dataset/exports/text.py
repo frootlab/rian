@@ -55,12 +55,12 @@ class Csv:
             if key in keys: config[key] = val
 
         # prepare CSV parameters and write CSV file
-        header = inifile.dumps(config, flat = True).strip('\n')
+        header = inifile.encode(config, flat=True).strip('\n')
         delim = self.settings['delim']
-        cols, data = dataset.get('data', output = ('cols', 'recarray'))
+        cols, data = dataset.get('data', output=('cols', 'recarray'))
 
-        return csvfile.save(path, data, header = header, delim = delim,
-            labels = [''] + cols)
+        return csvfile.save(path, data, header=header, delim=delim,
+            labels=[''] + cols)
 
 class Tsv(Csv):
     """Export dataset to Tab Separated Values."""

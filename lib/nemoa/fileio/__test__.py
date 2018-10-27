@@ -6,11 +6,10 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+from configparser import ConfigParser
 import tempfile
 from pathlib import Path
-
 import numpy as np
-
 from nemoa.fileio import binfile, csvfile, inifile, textfile
 from nemoa.test import ModuleTestCase
 
@@ -185,19 +184,18 @@ class TestInifile(ModuleTestCase):
         inifile.save(self.obj, self.filepath, header=self.header)
 
     def test_parse(self) -> None:
-        from configparser import ConfigParser
         parser = ConfigParser()
         setattr(parser, 'optionxform', lambda key: key)
         parser.read_string(self.text)
         obj = inifile.parse(parser, structure=self.structure)
         self.assertEqual(obj, self.obj)
 
-    def test_dumps(self) -> None:
-        text = inifile.dumps(self.obj, header=self.header)
+    def test_encode(self) -> None:
+        text = inifile.encode(self.obj, header=self.header)
         self.assertEqual(text, self.text)
 
-    def test_loads(self) -> None:
-        obj = inifile.loads(self.text, structure=self.structure)
+    def test_decode(self) -> None:
+        obj = inifile.decode(self.text, structure=self.structure)
         self.assertEqual(obj, self.obj)
 
     def test_save(self) -> None:

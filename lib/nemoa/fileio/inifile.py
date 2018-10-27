@@ -57,9 +57,9 @@ def load(
     """
     # Read configuration from file-like or path-like object
     with textfile.openx(file, mode='r') as fh:
-        return loads(fh.read(), structure=structure, flat=flat)
+        return decode(fh.read(), structure=structure, flat=flat)
 
-def loads(
+def decode(
         text: str, structure: OptStrucType = None,
         flat: OptBool = None) -> StrucType:
     """Load configuration dictionary from INI-formated text.
@@ -93,19 +93,12 @@ def loads(
     if flat is None:
         flat = True
         with StringIO(text) as fh:
+            line = ''
             for line in fh:
                 content = line.strip()
                 if content and not content.startswith('#'):
                     break
             flat = not line.lstrip().startswith('[')
-            #
-            # line = fh.readline()
-            # while line: # while not EOF
-            #     content = line.strip()
-            #     if content and not content.startswith('#'):
-            #         break
-            #     line = fh.readline()
-            # flat = not line.lstrip().startswith('[')
 
     # For flat structured files a a temporary [root] section is created and the
     # structure dictionary is embedded within the 'root' key of a wrapping
@@ -115,19 +108,16 @@ def loads(
         if isinstance(structure, dict):
             structure = {'root': structure}
 
-    # Parse sections from inifile as string values
+    # Parse inifile without literal decoding
     parser = ConfigParser()
     setattr(parser, 'optionxform', lambda key: key)
     parser.read_string(text)
 
-    #
+    # Decode literals by using the structure dictionary
     config = parse(parser, structure=structure)
 
-    # If no sections are to be used collapse the 'root' key
-    if flat:
-        return config.get('root') or {}
-
-    return config
+    # If structure is flat collapse the 'root' key
+    return config.get('root') or {} if flat else config
 
 def save(
         config: dict, file: FileOrPathLike, flat: OptBool = None,
@@ -148,7 +138,7 @@ def save(
     """
     # Convert configuration dictionary to INI formated text
     try:
-        text = dumps(config, flat=flat, header=header)
+        text = encode(config, flat=flat, header=header)
     except Exception as err:
         raise ValueError("dictionary is not valid") from err
 
@@ -156,7 +146,7 @@ def save(
     with textfile.openx(file, mode='w') as fh:
         fh.write(text)
 
-def dumps(config: dict, flat: OptBool = None, header: OptStr = None) -> str:
+def encode(config: dict, flat: OptBool = None, header: OptStr = None) -> str:
     """Convert configuration dictionary to INI formated string.
 
     Args:

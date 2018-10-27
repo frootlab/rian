@@ -69,7 +69,7 @@ class Csv:
             'type': 'str',
             'labelformat': 'str'}
 
-        config = inifile.loads(header, flat=True, structure=structure)
+        config = inifile.decode(header, flat=True, structure=structure)
 
         if 'name' in config: name = config['name']
         else:
