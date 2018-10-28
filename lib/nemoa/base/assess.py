@@ -23,10 +23,10 @@ TypeOrStr = Union[type, str]
 #
 
 def has_base(obj: object, base: TypeOrStr) -> bool:
-    """Return true if the object has the given base.
+    """Return true if the object has the given base class.
 
     Args:
-        obj: Arbitrary object hierarchy
+        obj: Arbitrary object
         base: Class name of base class
 
     Returns:
@@ -35,7 +35,7 @@ def has_base(obj: object, base: TypeOrStr) -> bool:
     """
     if isinstance(base, type):
         return base in obj.__class__.__mro__
-    return base in [o.__name__ for o in obj.__class__.__mro__]
+    return base in [cl.__name__ for cl in obj.__class__.__mro__]
 
 def get_name(obj: object) -> str:
     """Get name of an object.
@@ -45,7 +45,7 @@ def get_name(obj: object) -> str:
     hierarchy.
 
     Args:
-        obj: Arbitrary object hierarchy
+        obj: Arbitrary object
 
     Returns:
         Name of an object.
@@ -58,17 +58,17 @@ def get_members(
         rules: OptStrDictOfTestFuncs = None, **kwds: Any) -> list:
     """List members of an object.
 
-    This is a wrapper function to `get_members_attr`, but only returns the
+    This is a wrapper function to `get_members_dict`, but only returns the
     names of the members instead of the respective dictionary of attributes.
     """
-    mattrs = get_members_attr(
+    mattrs = get_members_dict(
         obj, pattern=pattern, classinfo=classinfo, rules=rules, **kwds)
     return [each['name'] for each in mattrs.values()]
 
-def get_members_attr(
+def get_members_dict(
         obj: object, pattern: OptStr = None, classinfo: ClassInfo = object,
         rules: OptStrDictOfTestFuncs = None, **kwds: Any) -> dict:
-    """Get dictionary with an object's members attributes.
+    """Get dictionary with an object's members dict attributes.
 
     Args:
         obj: Arbitrary object
@@ -162,13 +162,14 @@ def get_summary(obj: object) -> str:
     provided the summary line is retrieved from the inheritance hierarchy.
 
     Args:
-        obj: Arbitrary object hierarchy
+        obj: Arbitrary object
 
     Returns:
         Summary line for an object.
 
     """
-    text = inspect.getdoc(obj) or ''
-    if not isinstance(text, str) or not text:
-        return ''
-    return text.splitlines()[0].strip('.')
+    if isinstance(obj, str):
+        if not obj:
+            return 'empty string'
+        return obj.split('\n', 1)[0].rstrip('\n\r .')
+    return get_summary(inspect.getdoc(obj) or ' ')

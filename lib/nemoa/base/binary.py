@@ -24,7 +24,6 @@ __all__ = ['as_bytes', 'compress', 'decompress', 'encode', 'decode', 'pack',
 import base64
 import pickle
 import zlib
-
 from nemoa.base import env
 from nemoa.types import Any, BytesLikeOrStr, OptInt, OptStr
 
@@ -49,11 +48,12 @@ def compress(data: BytesLikeOrStr, level: int = -1) -> bytes:
 
     Args:
         data: Binary data given as `bytes-like object`_ or string.
-        level: Compression level ranging from *-1* to *9*, where *-1* is the
-            default zlib compromise between speed and compression, *0* deflates
-            the given binary data without attempted compression, *1* is the
-            fastest compression with minimum compression capability and *9* is
-            the slowest compression with maximum compression capability.
+        level: Compression level ranging from *-1* to *9*, where the default
+            value of *-1* is a compromise between speed and compression. For
+            level *0* the given binary data is deflated without attempted
+            compression, *1* denotes the fastest compression with minimum
+            compression capability and *9* the slowest compression with maximum
+            compression capability.
 
     Returns:
          Binary data as bytes.
@@ -125,7 +125,7 @@ def pack(
     """Compress and encode arbitrary object to bytes.
 
     Args:
-        obj: Arbitrary object hierarchy
+        obj: Any object, that can be pickled
         encoding: Encodings specified in `RFC 3548`_. Allowed values are:
             'base16', 'base32', 'base64' and 'base85' or None for no encoding.
             By default no encoding is used.
@@ -163,7 +163,7 @@ def unpack(
             data shall be decompressed by using `zlib.decompress()`_.
 
     Returns:
-         Arbitry object hierarchy.
+         Arbitry object, that can be pickled.
 
     """
     if encoding:

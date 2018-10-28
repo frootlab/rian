@@ -6,24 +6,12 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-__all__ = ['get_summary', 'get_instance', 'get_kwds']
+__all__ = ['get_instance', 'get_kwds', 'splitargs']
 
 import ast
 import inspect
-from nemoa.base import bare, check, nmodule
+from nemoa.base import check, nmodule
 from nemoa.types import AnyFunc, StrDict, Function, OptFunction, OptDict, Tuple
-
-def get_summary(func: AnyFunc) -> str:
-    """Get summary line of a function.
-
-    Args:
-        func: Function instance
-
-    Returns:
-        Summary line of the docstring of a function.
-
-    """
-    return bare.get_summary(func)
 
 def get_instance(name: str) -> OptFunction:
     """Get function instance for a given function name.

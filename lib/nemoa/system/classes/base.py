@@ -5,10 +5,8 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import numpy
-
 import nemoa
-
-from nemoa.base import bare, nbase
+from nemoa.base import assess, nbase
 from nemoa.math import algo, curve
 from nemoa.types import Any, Dict
 
@@ -81,7 +79,7 @@ class System(nbase.ObjectIP):
     def configure(self, network = None):
         """Configure system to network."""
 
-        if not bare.has_base(network, 'Network'):
+        if not assess.has_base(network, 'Network'):
             raise ValueError("network is not valid")
 
         return self._set_params(network = network)
@@ -96,7 +94,7 @@ class System(nbase.ObjectIP):
 
         """
 
-        if not bare.has_base(dataset, 'Dataset'):
+        if not assess.has_base(dataset, 'Dataset'):
             raise ValueError("dataset is not valid")
 
         return self._set_params_init_units(dataset) \
@@ -104,12 +102,12 @@ class System(nbase.ObjectIP):
 
     def _check_network(self, network, *args, **kwds):
         """Check if network is valid for system."""
-        if not bare.has_base(network, 'Network'): return False
+        if not assess.has_base(network, 'Network'): return False
         return True
 
     def _check_dataset(self, dataset, *args, **kwds):
         """Check if network is valid for system."""
-        if not bare.has_base(dataset, 'Dataset'): return False
+        if not assess.has_base(dataset, 'Dataset'): return False
         return True
 
     def _get_algorithms(self, category = None, attribute = None, tree = False):
@@ -1363,7 +1361,7 @@ class System(nbase.ObjectIP):
 
         # get system parameters from network
         elif network:
-            if not bare.has_base(network, 'Network'):
+            if not assess.has_base(network, 'Network'):
                 raise ValueError("network is not valid")
 
             # get unit layers and unit params
@@ -1420,7 +1418,7 @@ class System(nbase.ObjectIP):
 
         # initialize system parameters if dataset is given
         if dataset:
-            if not bare.has_base(dataset, 'Dataset'):
+            if not assess.has_base(dataset, 'Dataset'):
                 raise ValueError("""could not initialize
                     system: dataset instance is not valid.""")
 
@@ -1483,7 +1481,7 @@ class System(nbase.ObjectIP):
 
         """
 
-        if dataset is not None and not bare.has_base(dataset, 'Dataset'):
+        if dataset is not None and not assess.has_base(dataset, 'Dataset'):
             raise TypeError("invalid dataset argument given")
 
         for layer in list(self._units.keys()):
@@ -1517,7 +1515,7 @@ class System(nbase.ObjectIP):
 
         """
 
-        if dataset and not bare.has_base(dataset, 'Dataset'):
+        if dataset and not assess.has_base(dataset, 'Dataset'):
             raise TypeError("dataset is required to be of type dataset")
 
         for links in self._params['links']:

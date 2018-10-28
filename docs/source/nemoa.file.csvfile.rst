@@ -1,7 +1,7 @@
-nemoa.base.assess module
+nemoa.file.csvfile module
 =========================
 
-.. automodule:: nemoa.base.assess
+.. automodule:: nemoa.file.csvfile
     :members:
     :undoc-members:
     :show-inheritance:

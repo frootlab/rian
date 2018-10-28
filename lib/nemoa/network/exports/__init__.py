@@ -4,8 +4,7 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.base import bare
-
+from nemoa.base import assess
 import nemoa
 from nemoa.network.exports import archive, graph, image
 
@@ -53,7 +52,7 @@ def save(network, path = None, filetype = None, workspace = None,
 
     from nemoa.base import nclass, npath
 
-    if not bare.has_base(network, 'Network'):
+    if not assess.has_base(network, 'Network'):
         raise ValueError("network is not valid")
 
     # get directory, filename and fileextension

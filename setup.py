@@ -10,9 +10,7 @@ __docformat__ = 'google'
 import os
 import re
 import sys
-
 from pathlib import Path
-
 import setuptools
 from setuptools.command.install import install as Installer
 

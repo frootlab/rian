@@ -5,12 +5,10 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import importlib
-from typing import Any, Dict
-
 import networkx
-
-from nemoa.base import bare, nbase
+from nemoa.base import assess, nbase
 from nemoa.core import log
+from nemoa.types import Any, Dict
 
 import nemoa
 
@@ -90,7 +88,7 @@ class Network(nbase.ObjectIP):
         """Configure network to dataset."""
 
         # check if dataset instance is available
-        if not bare.has_base(dataset, 'Dataset'):
+        if not assess.has_base(dataset, 'Dataset'):
             raise TypeError("dataset is required to be of type dataset")
 
         log.info("configure network: '%s'" % (self._config['name']))
@@ -664,7 +662,7 @@ class Network(nbase.ObjectIP):
     def initialize(self, system = None):
         if not system:
             return False
-        if not bare.has_base(system, 'System'):
+        if not assess.has_base(system, 'System'):
             raise ValueError("system is not valid")
 
         # get edge parameters from system links

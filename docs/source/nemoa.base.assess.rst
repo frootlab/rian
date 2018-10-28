@@ -1,5 +1,5 @@
 nemoa.base.assess module
-=========================
+========================
 
 .. automodule:: nemoa.base.assess
     :members:

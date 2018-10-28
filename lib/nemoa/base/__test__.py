@@ -10,16 +10,84 @@ import tempfile
 import datetime
 from pathlib import Path
 import numpy as np
-from nemoa.base import check, env, nbase, binary, nclass, ndict, nfunc, nmodule
-from nemoa.base import npath, table, literal
+from nemoa.base import assess, binary, check, env, nbase, nclass, ndict, nfunc
+from nemoa.base import nmodule, npath, table, literal
 from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Any, Function, Module, PathLikeList
 
-class TestBare(ModuleTestCase):
-    """Testcase for the module nemoa.base.bare."""
+class TestAssess(ModuleTestCase):
+    """Testcase for the module nemoa.base.assess."""
 
-    module = 'nemoa.base.bare'
+    module = 'nemoa.base.assess'
 
+    def test_has_base(self) -> None:
+        self.assertAllEqual(assess.has_base, [
+            Case(args=(object, object), value=True),
+            Case(args=(object, 'object'), value=True),
+            Case(args=('object', object), value=True),
+            Case(args=('object', str), value=True),
+            Case(args=(object, 'str'), value=False),
+            Case(args=(object, type), value=True),
+            Case(args=('object', type), value=False)])
+
+    def test_get_members(self) -> None:
+        self.assertAllComprise(assess.get_members, [
+            Case(args=(object, ), value='__class__'),
+            Case(args=(assess, ), value='get_members'),
+            Case(args=(assess, ), kwds={'classinfo': Function},
+                value='get_members'),
+            Case(args=(assess, ), kwds={'name': 'get_members'},
+                value='get_members'),
+            Case(args=(assess, ), kwds={
+                'rules': {'about': lambda arg, attr: arg in attr},
+                'about': 'members'}, value='get_members')])
+        self.assertNoneComprise(assess.get_members, [
+            Case(args=(object, '*dummy*'), value='__class__'),
+            Case(args=(assess, ), kwds={'classinfo': str},
+                value='get_members'),
+            Case(args=(assess, '*dummy*'), value='get_members'),
+            Case(args=(assess, ), kwds={'name': 'dummy'},
+                value='get_members'),
+            Case(args=(assess, ), kwds={
+                'rules': {'about': lambda arg, attr: arg == attr},
+                'about': 'members'}, value='get_members')])
+
+    def test_get_members_dict(self) -> None:
+        self.assertAllComprise(assess.get_members_dict, [
+            Case(args=(object, ), value='object.__class__'),
+            Case(args=(assess, ), value='nemoa.base.assess.get_members'),
+            Case(args=(assess, ), kwds={'classinfo': Function},
+                value='nemoa.base.assess.get_members'),
+            Case(args=(assess, ), kwds={'name': 'get_members'},
+                value='nemoa.base.assess.get_members'),
+            Case(args=(assess, ), kwds={
+                'rules': {'about': lambda arg, attr: arg in attr},
+                'about': 'members'}, value='nemoa.base.assess.get_members')])
+        self.assertNoneComprise(assess.get_members_dict, [
+            Case(args=(object, '*dummy*'), value='object.__class__'),
+            Case(args=(assess, ), kwds={'classinfo': str},
+                value='nemoa.base.assess.get_members'),
+            Case(args=(assess, '*dummy*'),
+                value='nemoa.base.assess.get_members'),
+            Case(args=(assess, ), kwds={'name': 'dummy'},
+                value='nemoa.base.assess.get_members'),
+            Case(args=(assess, ), kwds={
+                'rules': {'about': lambda arg, attr: arg == attr},
+                'about': 'members'}, value='nemoa.base.assess.get_members')])
+
+    def test_get_name(self) -> None:
+        self.assertAllEqual(assess.get_name, [
+            Case(args=('', ), value='str'),
+            Case(args=(0, ), value='int'),
+            Case(args=(object, ), value='object'),
+            Case(args=(object(), ), value='object'),
+            Case(args=(assess.get_name, ), value='get_name'),
+            Case(args=(assess, ), value='nemoa.base.assess')])
+
+    def test_get_summary(self) -> None:
+        self.assertAllEqual(assess.get_summary, [
+            Case(args=(object, ), value=assess.get_summary(object())),
+            Case(args=('summary.\n', ), value='summary')])
 
 class TestCheck(ModuleTestCase):
     """Testcase for the module nemoa.base.check."""
@@ -426,10 +494,6 @@ class TestNfunc(ModuleTestCase):
         self.assertEqual(
             nfunc.splitargs("f(1., 'a', b = 2)"),
             ('f', (1.0, 'a'), {'b': 2}))
-
-    def test_get_summary(self) -> None:
-        text = nfunc.get_summary(nfunc.get_summary)
-        self.assertEqual(text, 'Get summary line of a function')
 
     def test_get_instance(self) -> None:
         func = nfunc.get_instance(nfunc.__name__ + '.get_instance')

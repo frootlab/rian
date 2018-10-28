@@ -19,11 +19,9 @@ __all__ = [
 import importlib
 import inspect
 import pkgutil
-
-from nemoa.base import check, ndict, bare
-from nemoa.types import (
-    Any, ClassInfo, Function, Module, OptStr, OptModule, OptStrDictOfTestFuncs,
-    StrList)
+from nemoa.base import assess, check, ndict
+from nemoa.types import Any, ClassInfo, Function, Module, OptStr, OptModule
+from nemoa.types import OptStrDictOfTestFuncs, StrList
 
 def get_curname(frame: int = 0) -> str:
     """Get name of module, which calls this function.
@@ -264,7 +262,7 @@ def get_functions(
     # Set default value of 'ref' to module of caller
     ref = ref or get_caller_ref()
 
-    return bare.get_members_attr(
+    return assess.get_members_dict(
         ref, classinfo=Function, pattern=pattern, rules=rules, **kwds)
 
 def crop_functions(prefix: str, ref: OptModule = None) -> list:
@@ -354,7 +352,7 @@ def search(
         minst = get_instance(mname)
         if minst is None:
             continue
-        d = bare.get_members_attr(
+        d = assess.get_members_dict(
             minst, classinfo=classinfo, pattern=pattern, rules=rules, **kwds)
 
         # Ignore members if any required attribute is not available
