@@ -1,7 +1,7 @@
-nemoa.base.bare module
+nemoa.base.assess module
 ======================
 
-.. automodule:: nemoa.base.bare
+.. automodule:: nemoa.base.assess
     :members:
     :undoc-members:
     :show-inheritance:

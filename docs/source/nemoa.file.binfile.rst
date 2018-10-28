@@ -1,7 +1,7 @@
-nemoa.base.assess module
+nemoa.file.binfile module
 =========================
 
-.. automodule:: nemoa.base.assess
+.. automodule:: nemoa.file.binfile
     :members:
     :undoc-members:
     :show-inheritance:

@@ -6,7 +6,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from nemoa.base import bare
+from nemoa.base import assess
 from nemoa.types import Class, ClassInfo, Number
 
 #
@@ -36,7 +36,7 @@ def _repr_type(obj: object) -> str:
     return f"'{type(obj).__name__}'"
 
 def _repr_obj(obj: object) -> str:
-    return f"'{bare.get_name(obj)}'"
+    return f"'{assess.get_name(obj)}'"
 
 def _format_msg(msg: str) -> str:
     return msg.strip('.').capitalize()

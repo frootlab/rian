@@ -5,10 +5,8 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import numpy
-
 import nemoa
-
-from nemoa.base import bare, nclass
+from nemoa.base import assess, nclass
 
 class Evaluation:
 
@@ -101,13 +99,13 @@ class Evaluation:
         """
 
         # test type of model instance and subclasses
-        if not bare.has_base(model, 'Model'):
+        if not assess.has_base(model, 'Model'):
             return False
-        if not bare.has_base(model.dataset, 'Dataset'):
+        if not assess.has_base(model.dataset, 'Dataset'):
             return False
-        if not bare.has_base(model.network, 'Network'):
+        if not assess.has_base(model.network, 'Network'):
             return False
-        if not bare.has_base(model.system, 'System'):
+        if not assess.has_base(model.system, 'System'):
             return False
 
         # check dataset

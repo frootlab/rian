@@ -14,8 +14,7 @@ except ImportError as err:
         "https://pypi.org/project/numpy") from err
 
 import nemoa
-
-from nemoa.base import bare, nclass, nbase
+from nemoa.base import assess, nclass, nbase
 from nemoa.core import log, ui
 from nemoa.math import algo
 
@@ -286,7 +285,7 @@ class Dataset(nbase.ObjectIP):
                 transform = preprocessing['transform']
 
         # get preprocessing parameters from system
-        if bare.has_base(system, 'System'):
+        if assess.has_base(system, 'System'):
             input_layer = system.get('layers')[0]
             distribution = system.get('layer', input_layer)['class']
             if distribution == 'gauss': normalize = 'gauss'
@@ -533,7 +532,7 @@ class Dataset(nbase.ObjectIP):
         mapping = None, func: str = 'expect'):
         """ """
 
-        if not bare.has_base(system, 'System'):
+        if not assess.has_base(system, 'System'):
             raise ValueError("system is not valid")
 
         ui.info("transform data using model '%s'." % system.name)

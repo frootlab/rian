@@ -5,10 +5,8 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import numpy
-
 import nemoa
-
-from nemoa.base import bare
+from nemoa.base import assess
 from nemoa.test import BaseTestCase
 
 class TestCase(BaseTestCase):
@@ -18,12 +16,12 @@ class TestCase(BaseTestCase):
 
         with self.subTest(filetype="csv"):
             dataset = nemoa.dataset.open('sinus', workspace='testsuite')
-            test = bare.has_base(dataset, 'Dataset')
+            test = assess.has_base(dataset, 'Dataset')
             self.assertTrue(test)
 
         with self.subTest(filetype="tab"):
             dataset = nemoa.dataset.open('linear', workspace='testsuite')
-            test = bare.has_base(dataset, 'Dataset')
+            test = assess.has_base(dataset, 'Dataset')
             self.assertTrue(test)
 
     def test_dataset_evaluate(self):
@@ -70,5 +68,5 @@ class TestCase(BaseTestCase):
                 rules = [('o1', 'i1 + i2'), ('o2', 'i3 + i4')],
                 normalize = 'gauss',
                 samples = 10000)
-            test = bare.has_base(dataset, 'Dataset')
+            test = assess.has_base(dataset, 'Dataset')
             self.assertTrue(test)

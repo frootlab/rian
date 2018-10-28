@@ -11,7 +11,7 @@ from typing import NamedTuple
 from unittest import skipIf
 from unittest import TestCase, TestResult, TestLoader, TestSuite, TextTestRunner
 import numpy as np
-from nemoa.base import nmodule, bare
+from nemoa.base import assess, nmodule
 from nemoa.types import Any, AnyFunc, ClassInfo, ExcType, Function, Method
 from nemoa.types import OptStr, StringIOLike, Tuple, Dict, List, Callable
 from nemoa.types import NpArray
@@ -41,6 +41,30 @@ Cases = List[Case]
 
 class BaseTestCase(TestCase):
     """Custom testcase."""
+
+    def assertAllIn(self, func: AnyFunc, cases: Cases) -> None:
+        """Assert that all function evaluations are in the given values."""
+        for case in cases:
+            with self.subTest(case):
+                self.assertIn(func(*case.args, **case.kwds), case.value)
+
+    def assertNoneIn(self, func: AnyFunc, cases: Cases) -> None:
+        """Assert that all function evaluations are in the given values."""
+        for case in cases:
+            with self.subTest(case):
+                self.assertNotIn(func(*case.args, **case.kwds), case.value)
+
+    def assertAllComprise(self, func: AnyFunc, cases: Cases) -> None:
+        """Assert that all function evaluations comprise the given values."""
+        for case in cases:
+            with self.subTest(case):
+                self.assertIn(case.value, func(*case.args, **case.kwds))
+
+    def assertNoneComprise(self, func: AnyFunc, cases: Cases) -> None:
+        """Assert that all function evaluations comprise the given values."""
+        for case in cases:
+            with self.subTest(case):
+                self.assertNotIn(case.value, func(*case.args, **case.kwds))
 
     def assertAllTrue(self, func: AnyFunc, cases: Cases) -> None:
         """Assert that all function evaluations cast to True."""
@@ -105,12 +129,12 @@ class ModuleTestCase(BaseTestCase):
                 required = set(getattr(mref, '__all__'))
             else:
                 required = set()
-                fdict = bare.get_members_attr(mref, classinfo=Function)
+                fdict = assess.get_members_dict(mref, classinfo=Function)
                 for attr in fdict.values():
                     name = attr['name']
                     if not name.startswith('_'):
                         required.add(name)
-            tdict = bare.get_members_attr(
+            tdict = assess.get_members_dict(
                 self, classinfo=Method, pattern='test_*')
             implemented = set()
             for attr in tdict.values():
