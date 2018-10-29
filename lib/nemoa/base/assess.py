@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Bare object functions.
+"""Python object functions.
 
 .. References:
 .. _fnmatch: https://docs.python.org/3/library/fnmatch.html
@@ -12,9 +12,14 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import ast
+import importlib
 import inspect
-from nemoa.base import ndict
+import pkgutil
+from nemoa.base import check, ndict
 from nemoa.types import Any, ClassInfo, OptStr, OptStrDictOfTestFuncs, Union
+from nemoa.types import OptModule, Module, StrList, OptFunction, Function
+from nemoa.types import StrDict, AnyFunc, OptDict, Tuple
 
 TypeOrStr = Union[type, str]
 
@@ -173,3 +178,183 @@ def get_summary(obj: object) -> str:
             return 'empty string'
         return obj.split('\n', 1)[0].rstrip('\n\r .')
     return get_summary(inspect.getdoc(obj) or ' ')
+
+def get_module(name: str) -> OptModule:
+    """Get reference to module instance from a fully qualified module name.
+
+    Args:
+        name: Fully qualified name of module
+
+    Returns:
+        Module reference of the given module name or None, if the name does not
+        point to a valid module.
+
+    """
+    # Check type of 'name'
+    check.has_type("argument 'name'", name, str)
+
+    # Try to import module using importlib
+    module: OptModule = None
+    try:
+        module = importlib.import_module(name)
+    except ModuleNotFoundError:
+        return module
+
+    return module
+
+def get_submodules(
+        ref: Module, recursive: bool = False) -> StrList:
+    """Get list with submodule names.
+
+    Args:
+        module: Module reference to search for submodules.
+        recursive: Boolean value which determines, if the search is performed
+            recursively within all submodules. Default: False
+
+    Returns:
+        List with full qualified submodule names.
+
+    """
+    # Check if given module is a package by the existence of a path attribute.
+    # Otherwise the module does not contain any submodules and an empty list is
+    # returned.
+    subs: StrList = []
+    if not hasattr(ref, '__path__'):
+        return subs
+
+    # Iterate submodules within package by using pkgutil
+    prefix = ref.__name__ + '.'
+    path = getattr(ref, '__path__')
+    for finder, name, ispkg in pkgutil.iter_modules(path):
+        fullname = prefix + name
+        subs.append(fullname)
+        if ispkg and recursive:
+            sref = get_module(fullname)
+            if isinstance(sref, Module):
+                subs += get_submodules(sref, recursive=True)
+
+    return subs
+
+def get_function(name: str) -> OptFunction:
+    """Get function instance for a given function name.
+
+    Args:
+        name: fully qualified function name
+
+    Returns:
+        Function instance or None, if the function could not be found.
+
+    Examples:
+        >>> get_function('nemoa.base.assess.get_function')
+
+    """
+    mname, fname = name.rsplit('.', 1)
+    minst = get_module(mname)
+
+    if not minst:
+        return None
+
+    func = getattr(minst, fname)
+    if not isinstance(func, Function):
+        return None
+
+    return func
+
+def get_function_kwds(func: AnyFunc, default: OptDict = None) -> StrDict:
+    """Get keyword arguments of a function.
+
+    Args:
+        func: Function instance
+        default: Dictionary containing alternative default values.
+            If default is set to None, then all keywords of the function are
+            returned with their standard default values.
+            If default is a dictionary with string keys, then only
+            those keywords are returned, that are found within default,
+            and the returned values are taken from default.
+
+    Returns:
+        Dictionary of keyword arguments with default values.
+
+    Examples:
+        >>> get_kwds(get_kwds)
+        {'default': None}
+        >>> get_kwds(get_kwds, default = {'default': 'not None'})
+        {'default': 'not None'}
+
+    """
+    # Check Arguments
+    check.has_type("first argument 'key'", func, Function)
+    check.has_opt_type("argument 'default'", default, dict)
+
+    # Get keywords from inspect
+    kwds: StrDict = {}
+    struct = inspect.signature(func).parameters
+    for key, val in struct.items():
+        if '=' not in str(val):
+            continue
+        if default is None:
+            kwds[key] = val.default
+        elif key in default:
+            kwds[key] = default[key]
+
+    return kwds
+
+def splitargs(text: str) -> Tuple[str, tuple, dict]:
+    """Split a function call in the function name, its arguments and keywords.
+
+    Args:
+        text: Function call given as valid Python code. Beware: Function
+            definitions are no valid function calls.
+
+    Returns:
+        A tuple consisting of the function name as string, the arguments as
+        tuple and the keywords as dictionary.
+
+    """
+    # Check type of 'text'
+    check.has_type("first argument 'text'", text, str)
+
+    # Get function name
+    try:
+        tree = ast.parse(text)
+        func = getattr(getattr(getattr(tree.body[0], 'value'), 'func'), 'id')
+    except SyntaxError as err:
+        raise ValueError(f"'{text}' is not a valid function call") from err
+    except AttributeError as err:
+        raise ValueError(f"'{text}' is not a valid function call") from err
+
+    # Get tuple with arguments
+    astargs = getattr(getattr(tree.body[0], 'value'), 'args')
+    largs = []
+    for astarg in astargs:
+        typ = astarg._fields[0]
+        val = getattr(astarg, typ)
+        largs.append(val)
+    args = tuple(largs)
+
+    # Get dictionary with keywords
+    astkwds = getattr(getattr(tree.body[0], 'value'), 'keywords')
+    kwds = {}
+    for astkw in astkwds:
+        key = astkw.arg
+        typ = astkw.value._fields[0]
+        val = getattr(astkw.value, typ)
+        kwds[key] = val
+
+    return func, args, kwds
+
+# def get_root(obj: object) -> object:
+#     """Get top level object.
+#
+#     Args:
+#         obj: Arbitrary object
+#
+#     Returns:
+#         Reference to the top level object.
+#
+#     """
+#     # Get name of the top level object
+#     name = get_name(obj).split('.', 1)[0]
+#
+#     # Get reference to the top level module
+#     return get_instance(name)

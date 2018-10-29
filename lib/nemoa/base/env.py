@@ -46,7 +46,7 @@ except ImportError as err:
         "requires package appdirs: "
         "https://pypi.org/project/appdirs/") from err
 
-from nemoa.base import check, nmodule
+from nemoa.base import check, nmodule, this
 from nemoa.types import (
     Any, OptStr, OptStrOrBool, OptPathLike, StrDict, StrDictOfPaths)
 
@@ -171,7 +171,7 @@ def update_vars(filepath: OptPathLike = None) -> None:
     info = {}
     for match in re.finditer(pattern, text, re.M):
         info[str(match.group(1))] = str(match.group(2))
-    info['name'] = info.get('name', nmodule.get_curname().split('.', 1)[0])
+    info['name'] = info.get('name', this.get_module_name().split('.', 1)[0])
 
     # Get plattform specific environment variables
     info['encoding'] = get_encoding()

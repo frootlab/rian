@@ -6,7 +6,7 @@ __license__ = 'GPLv3'
 
 import nemoa
 import numpy
-
+from nemoa.base import assess
 from nemoa.file import nplot
 
 def filetypes():
@@ -80,8 +80,6 @@ class Heatmap(nplot.Heatmap):
 
     def create(self, dataset):
 
-        from nemoa.base import nfunc
-
         # set plot defaults
         self.set_default({
             'func': 'correlation' })
@@ -90,7 +88,7 @@ class Heatmap(nplot.Heatmap):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwds = nfunc.get_kwds(func, default = self._config)
+        kwds = assess.get_function_kwds(func, default = self._config)
         array  = dataset.evaluate(fname, **kwds)
 
         # check return value
@@ -120,8 +118,6 @@ class Histogram(nplot.Histogram):
 
     def create(self, dataset):
 
-        from nemoa.base import nfunc
-
         # set plot defaults
         self.set_default({
             'func': 'correlation' })
@@ -130,7 +126,7 @@ class Histogram(nplot.Histogram):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwds = nfunc.get_kwds(func, default=self._config)
+        kwds = assess.get_function_kwds(func, default=self._config)
         array  = dataset.evaluate(fname, **kwds)
 
         # check return value
@@ -157,19 +153,17 @@ class Scatter2D(nplot.Scatter2D):
 
     def create(self, dataset):
 
-        from nemoa.base import nfunc
-
         # set plot defaults
         self.set_default({
             'func': 'correlation',
             'pca': True })
 
         # evaluate function
-        fname  = self._config.get('func')
-        fdict  = dataset.get('algorithm', fname)
-        func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwds = nfunc.get_kwds(func, default = self._config)
-        array  = dataset.evaluate(fname, **kwds)
+        fname = self._config.get('func')
+        fdict = dataset.get('algorithm', fname)
+        func = fdict.get('func', None) or fdict.get('reference', None)
+        kwds = assess.get_function_kwds(func, default = self._config)
+        array = dataset.evaluate(fname, **kwds)
 
         # check return value
         if not isinstance(array, numpy.ndarray):
@@ -199,8 +193,6 @@ class Graph(nplot.Graph):
                 "requires package networkx: "
                 "https://networkx.github.io") from err
 
-        from nemoa.base import nfunc
-
         # set plot defaults
         self.set_default({
             'func': 'correlation',
@@ -214,7 +206,7 @@ class Graph(nplot.Graph):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwds = nfunc.get_kwds(func, default = self._config)
+        kwds = assess.get_function_kwds(func, default = self._config)
         array  = dataset.evaluate(fname, **kwds)
 
         # check if evaluation yields valid relation

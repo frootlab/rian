@@ -14,9 +14,8 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from nemoa.base import nmodule
-from nemoa.types import (
-    Any, FuncWrapper, Module, OptModule, OptStr, OptStrList)
+from nemoa.base import nmodule, this
+from nemoa.types import Any, FuncWrapper, OptModule, OptStr, OptStrList
 
 def search(module: OptModule = None, **kwds: Any) -> dict:
     """Search for algorithms, that pass given filters.
@@ -31,8 +30,8 @@ def search(module: OptModule = None, **kwds: Any) -> dict:
         Dictionary with function information.
 
     """
-    # Set default value of 'ref' to module of caller
-    module = module or nmodule.get_caller_ref()
+    # Set default value of 'module' to module of caller
+    module = module or this.get_caller_module()
 
     # create filter rules for algorithm attributes
     rules = {

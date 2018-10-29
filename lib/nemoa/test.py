@@ -124,7 +124,7 @@ class ModuleTestCase(BaseTestCase):
         """Assert that all members of module are tested."""
         msg: OptStr = None
         if hasattr(self, 'module') and self.test_completeness:
-            mref = nmodule.get_instance(self.module)
+            mref = assess.get_module(self.module)
             if hasattr(mref, '__all__'):
                 required = set(getattr(mref, '__all__'))
             else:

@@ -11,79 +11,12 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-__all__ = [
-    'get_curname', 'get_caller_ref', 'get_caller', 'get_root', 'get_parent',
-    'get_attr', 'get_submodule', 'get_submodules', 'get_instance',
-    'get_functions', 'crop_functions', 'search']
+__all__ = ['get_root', 'get_functions', 'crop_functions', 'search']
 
 import importlib
-import inspect
-import pkgutil
-from nemoa.base import assess, check, ndict
+from nemoa.base import assess, check, ndict, this
 from nemoa.types import Any, ClassInfo, Function, Module, OptStr, OptModule
-from nemoa.types import OptStrDictOfTestFuncs, StrList
-
-def get_curname(frame: int = 0) -> str:
-    """Get name of module, which calls this function.
-
-    Args:
-        frame: Frame index relative to the current frame in the callstack,
-            which is identified with 0. Negative values consecutively identify
-            previous modules within the callstack. Default: 0
-
-    Returns:
-        String with name of module.
-
-    """
-    # Check type of 'frame'
-    check.has_type("argument 'frame'", frame, int)
-
-    # Check value of 'frame'
-    if frame > 0:
-        raise ValueError(
-            "'frame' is required to be a negative number or zero")
-
-    # Traceback frames using inspect
-    mname: str = ''
-    cframe = inspect.currentframe()
-    for _ in range(abs(frame) + 1):
-        if cframe is None:
-            break
-        cframe = cframe.f_back
-    if cframe is not None:
-        mname = cframe.f_globals['__name__']
-
-    return mname
-
-def get_caller_ref() -> Module:
-    """Get reference to callers module."""
-    return inspect.getmodule(inspect.stack()[2][0])
-
-def get_caller(frame: int = 0) -> str:
-    """Get name of the callable, which calls this function.
-
-    Args:
-        frame: Frame index relative to the current frame in the callstack,
-            which is identified with 0. Negative values consecutively identify
-            previous modules within the callstack. Default: 0
-
-    Returns:
-        String with name of the caller.
-
-    """
-    # Check type of 'frame'
-    check.has_type("argument 'frame'", frame, int)
-
-    # Check value of 'frame'
-    if frame > 0:
-        raise ValueError(
-            "'frame' is required to be a negative number or zero")
-
-    # Get name of caller using inspect
-    stack = inspect.stack()[abs(frame - 1)]
-    mname = inspect.getmodule(stack[0]).__name__
-    fbase = stack[3]
-    return '.'.join([mname, fbase])
+from nemoa.types import OptStrDictOfTestFuncs
 
 def get_root(ref: OptModule = None) -> Module:
     """Get top level module.
@@ -98,134 +31,13 @@ def get_root(ref: OptModule = None) -> Module:
 
     """
     # Set default value of 'ref' to module of caller
-    ref = ref or get_caller_ref()
+    ref = ref or this.get_caller_module()
 
     # Get name of the top level module
     rootname = ref.__name__.split('.', 1)[0]
 
     # Get reference to the top level module
     return importlib.import_module(rootname)
-
-def get_parent(ref: OptModule = None) -> Module:
-    """Get parent module.
-
-    Args:
-        ref: Module reference. By default a reference to the module of the
-            caller is used.
-
-    Returns:
-        Module reference to the parent module of a given module reference or
-        the current callers module.
-
-    """
-    # Set default value of 'ref' to module of caller
-    ref = ref or get_caller_ref()
-
-    # Get name of the parent module
-    name = ref.__name__.rsplit('.', 1)[0]
-
-    # Get reference to the parent module
-    return importlib.import_module(name)
-
-def get_attr(name: str, default: Any = None, ref: OptModule = None) -> Any:
-    """Get attribute of a module.
-
-    Args:
-        name: Name of attribute.
-        default: Default value, which is returned, if the attribute does not
-            exist.
-        ref: Optional module reference. By default the current callers module
-            is used.
-
-    Returns:
-        Value of attribute.
-
-    """
-    # Set default value of 'ref' to module of caller
-    ref = ref or get_caller_ref()
-
-    return getattr(ref, name, default)
-
-def get_submodule(name: str, ref: OptModule = None) -> OptModule:
-    """Get instance from the name of a submodule of the current module.
-
-    Args:
-        name: Name of submodule of given module.
-        ref: Optional module reference. By default the current callers module
-            is used.
-
-    Returns:
-        Module reference of submodule or None, if the current module does not
-        contain the given module name.
-
-    """
-    # Check type of 'name'
-    check.has_type("argument 'name'", name, str)
-
-    # Set default value of 'ref' to module of caller
-    ref = ref or get_caller_ref()
-
-    # Get instance of submodule
-    return get_instance(ref.__name__ + '.' + name)
-
-def get_submodules(
-        ref: OptModule = None, recursive: bool = False) -> StrList:
-    """Get list with submodule names.
-
-    Args:
-        module: Module reference to search for submodules. By default the
-            module of the caller function is used.
-        recursive: Boolean value which determines, if the search is performed
-            recursively within the submodules. Default: False
-
-    Returns:
-        List with submodule names.
-
-    """
-    # Set default value of 'ref' to module of caller
-    ref = ref or get_caller_ref()
-
-    # Check if given module is a package by the existence of a path attribute.
-    # Otherwise the module does not contain any submodules and an empty list is
-    # returned.
-    subs: StrList = []
-    if not hasattr(ref, '__path__'):
-        return subs
-
-    # Iterate submodules within package by using pkgutil
-    prefix = ref.__name__ + '.'
-    path = getattr(ref, '__path__')
-    for finder, name, ispkg in pkgutil.iter_modules(path):
-        fullname = prefix + name
-        subs.append(fullname)
-        if ispkg and recursive:
-            sref = get_instance(fullname)
-            subs += get_submodules(sref, recursive=True)
-
-    return subs
-
-def get_instance(name: str) -> OptModule:
-    """Get reference to module instance from a fully qualified module name.
-
-    Args:
-        name: Fully qualified name of module
-
-    Returns:
-        Module reference of the given module name or None, if the name does not
-        point to a valid module.
-
-    """
-    # Check type of 'name'
-    check.has_type("argument 'name'", name, str)
-
-    # Try to import module using importlib
-    module: OptModule = None
-    try:
-        module = importlib.import_module(name)
-    except ModuleNotFoundError:
-        return module
-
-    return module
 
 def get_functions(
         pattern: OptStr = None, ref: OptModule = None,
@@ -260,7 +72,7 @@ def get_functions(
 
     """
     # Set default value of 'ref' to module of caller
-    ref = ref or get_caller_ref()
+    ref = ref or this.get_caller_module()
 
     return assess.get_members_dict(
         ref, classinfo=Function, pattern=pattern, rules=rules, **kwds)
@@ -278,7 +90,7 @@ def crop_functions(prefix: str, ref: OptModule = None) -> list:
 
     """
     # Set default value of 'ref' to module of caller
-    ref = ref or get_caller_ref()
+    ref = ref or this.get_caller_module()
 
     # Get functions dictionary
     funcs = get_functions(pattern=(prefix + '*'), ref=ref)
@@ -340,16 +152,16 @@ def search(
     check.has_opt_type("argument 'pattern'", pattern, str)
 
     # Set default value of 'ref' to module of caller
-    ref = ref or get_caller_ref()
+    ref = ref or this.get_caller_module()
 
     # Get list with submodules
-    mnames = [ref.__name__] + get_submodules(ref, recursive=recursive)
+    mnames = [ref.__name__] + assess.get_submodules(ref, recursive=recursive)
 
     # Create dictionary with member attributes
     fd = {}
     rules = rules or {}
     for mname in mnames:
-        minst = get_instance(mname)
+        minst = assess.get_module(mname)
         if minst is None:
             continue
         d = assess.get_members_dict(

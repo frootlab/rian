@@ -18,7 +18,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://pypi.org/project/numpy") from err
 
-from nemoa.base import check, nfunc, nmodule
+from nemoa.base import assess, check, nmodule, this
 from nemoa.math import vector
 from nemoa.types import Any, IntTuple, NpArray, NpArrayLike, StrList
 from nemoa.types import StrPairDict, StrListPair, NaN, Number, OptNumber
@@ -75,7 +75,7 @@ def norm(x: NpArrayLike, name: str = 'frobenius', **kwds: Any) -> NpArray:
 
     # Get norm function
     fname = _NORM_PREFIX + name.lower()
-    module = nmodule.get_instance(nmodule.get_curname())
+    module = assess.get_module(this.get_module_name())
     try:
         func = getattr(module, fname)
     except AttributeError as err:
@@ -83,7 +83,7 @@ def norm(x: NpArrayLike, name: str = 'frobenius', **kwds: Any) -> NpArray:
             f"norm with name '{str(norm)}' is not known") from err
 
     # Evaluate norm function
-    return func(x, **nfunc.get_kwds(func, default=kwds))
+    return func(x, **assess.get_function_kwds(func, default=kwds))
 
 def norm_pq(x: NpArray,
         p: float = 2., q: float = 2., axes: IntTuple = (0, 1)) -> NpArray:
@@ -248,7 +248,7 @@ def distance(
 
     # Get distance function
     fname = _DIST_PREFIX + metric.lower()
-    module = nmodule.get_instance(nmodule.get_curname())
+    module = assess.get_module(this.get_module_name())
     try:
         func = getattr(module, fname)
     except AttributeError as err:
@@ -256,7 +256,7 @@ def distance(
             f"argument 'metric' has an invalid value '{str(metric)}'")
 
     # Evaluate distance function
-    return func(x, y, **nfunc.get_kwds(func, default=kwds))
+    return func(x, y, **assess.get_function_kwds(func, default=kwds))
 
 def dist_frobenius(x: NpArray, y: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
     """Calculate Frobenius distances of two arrays along given axis.

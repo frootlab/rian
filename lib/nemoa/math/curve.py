@@ -28,7 +28,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://pypi.org/project/numpy") from err
 
-from nemoa.base import nfunc, nmodule
+from nemoa.base import assess, nmodule, this
 from nemoa.types import Any, NpArray, NpArrayLike, StrList
 
 _SIGM_PREFIX = 'sigm_'
@@ -71,7 +71,7 @@ def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
 
     # Get sigmoid function
     fname = _SIGM_PREFIX + name.lower()
-    module = nmodule.get_instance(nmodule.get_curname())
+    module = assess.get_module(this.get_module_name())
     try:
         func = getattr(module, fname)
     except AttributeError as err:
@@ -79,7 +79,7 @@ def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
             f"'name' has an unsupported value '{str(name)}'") from err
 
     # Evaluate norm function
-    return func(x, **nfunc.get_kwds(func, default=kwds))
+    return func(x, **assess.get_function_kwds(func, default=kwds))
 
 def sigm_logistic(x: NpArrayLike) -> NpArray:
     """Calculate standard logistic function.
@@ -226,7 +226,7 @@ def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
 
     # Get bell shaped function
     fname = _BELL_PREFIX + name.lower()
-    module = nmodule.get_instance(nmodule.get_curname())
+    module = assess.get_module(this.get_module_name())
     try:
         func = getattr(module, fname)
     except AttributeError as err:
@@ -234,7 +234,7 @@ def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
             f"function '{str(name)}' is not supported") from err
 
     # Evaluate norm function
-    return func(x, **nfunc.get_kwds(func, default=kwds))
+    return func(x, **assess.get_function_kwds(func, default=kwds))
 
 def bell_gauss(x: NpArrayLike, mu: float = 0., sigma: float = 1.) -> NpArray:
     """Calculate Gauss function.

@@ -17,7 +17,7 @@ import time
 from abc import ABC, abstractmethod
 from queue import Empty, Queue
 from threading import Thread
-from nemoa.base import env, nmodule
+from nemoa.base import assess, env
 from nemoa.types import Module, OptModule
 
 _DEFAULT_ENCODING = env.get_encoding()
@@ -37,7 +37,7 @@ def get_ttylib() -> OptModule:
     """
     libs = ['msvcrt', 'termios']
     for name in libs:
-        ref = nmodule.get_instance(name)
+        ref = assess.get_module(name)
         if ref:
             return ref
     return None
