@@ -686,6 +686,9 @@ class TestThis(ModuleTestCase):
     def test_get_root(self) -> None:
         self.assertEqual(this.get_root().__name__, 'nemoa')
 
+    def test_get_module(self) -> None:
+        self.assertEqual(this.get_module().__name__, __name__)
+
     def test_crop_functions(self) -> None:
         name = this.crop_functions.__name__
         fullname = this.crop_functions.__module__ + '.' + name
