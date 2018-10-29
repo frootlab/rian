@@ -10,35 +10,10 @@ import tempfile
 import datetime
 from pathlib import Path
 import numpy as np
-from nemoa.base import assess, binary, check, env, nbase, ndict
-from nemoa.base import nmodule, npath, table, literal, this
+from nemoa.base import assess, binary, check, env, table, literal, this
+from nemoa.base import npath, nbase, ndict
 from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Any, Function, Module, PathLikeList, StrList
-
-class TestThis(ModuleTestCase):
-    """Testcase for the module nemoa.base.this."""
-
-    module = 'nemoa.base.this'
-
-    def test_get_attr(self) -> None:
-        self.assertEqual(this.get_attr('__name__'), __name__)
-
-    def test_get_module_name(self) -> None:
-        self.assertEqual(this.get_module_name(), __name__)
-
-    def test_get_caller_module(self) -> None:
-        ref = this.get_caller_module()
-        self.assertIsInstance(ref, Module)
-
-    def test_get_caller_name(self) -> None:
-        self.assertEqual(
-            this.get_caller_name(), __name__ + '.test_get_caller_name')
-
-    def test_get_submodule(self) -> None:
-        self.assertIsNone(this.get_submodule('test'))
-
-    def test_get_parent(self) -> None:
-        self.assertEqual(this.get_parent().__name__, 'nemoa.base')
 
 class TestAssess(ModuleTestCase):
     """Testcase for the module nemoa.base.assess."""
@@ -144,9 +119,9 @@ class TestAssess(ModuleTestCase):
         func = assess.get_function(assess.__name__ + '.get_function')
         self.assertIsInstance(func, Function)
 
-    def test_splitargs(self) -> None:
+    def test_split_args(self) -> None:
         self.assertEqual(
-            assess.splitargs("f(1., 'a', b = 2)"),
+            assess.split_args("f(1., 'a', b = 2)"),
             ('f', (1.0, 'a'), {'b': 2}))
 
     def test_get_function_kwds(self) -> None:
@@ -167,6 +142,10 @@ class TestAssess(ModuleTestCase):
         obj = self.get_test_object()
         self.assertEqual(getattr(obj.geta, 'name', None), 'a')
         self.assertEqual(getattr(obj.getb, 'name', None), 'b')
+
+    def test_search(self) -> None:
+        count = len(assess.search(ref=assess, name='search'))
+        self.assertEqual(count, 1)
 
 class TestCheck(ModuleTestCase):
     """Testcase for the module nemoa.base.check."""
@@ -473,37 +452,6 @@ class TestBinary(ModuleTestCase):
             iscomp = isinstance(comp, int)
             self.assertEqual(binary.unpack(data, compressed=iscomp), obj)
 
-class TestNmodule(ModuleTestCase):
-    """Testcase for the module nemoa.base.nmodule."""
-
-    module = 'nemoa.base.nmodule'
-
-    def setUp(self) -> None:
-        self.this = assess.get_module(__name__)
-        self.parent = assess.get_module('nemoa.base')
-
-    def test_crop_functions(self) -> None:
-        name = nmodule.crop_functions.__name__
-        fullname = nmodule.crop_functions.__module__ + '.' + name
-        cropped = nmodule.crop_functions(prefix='crop_', ref=nmodule)
-        self.assertIn('functions', cropped)
-
-    def test_get_root(self) -> None:
-        self.assertEqual(nmodule.get_root().__name__, 'nemoa')
-
-    def test_get_functions(self) -> None:
-        name = nmodule.get_functions.__name__
-        fullname = nmodule.get_functions.__module__ + '.' + name
-        self.assertIn(fullname, nmodule.get_functions(ref=nmodule))
-        count = len(nmodule.get_functions(ref=nmodule, name=''))
-        self.assertEqual(count, 0)
-        count = len(nmodule.get_functions(ref=nmodule, name=name))
-        self.assertEqual(count, 1)
-
-    def test_search(self) -> None:
-        count = len(nmodule.search(ref=nmodule, name='search'))
-        self.assertEqual(count, 1)
-
 class TestNdict(ModuleTestCase):
     """Testcase for the module nemoa.base.ndict."""
 
@@ -708,3 +656,38 @@ class TestNpath(ModuleTestCase):
         dirpath.mkdir()
         npath.rmdir(dirpath)
         self.assertFalse(dirpath.is_dir())
+
+class TestThis(ModuleTestCase):
+    """Testcase for the module nemoa.base.this."""
+
+    module = 'nemoa.base.this'
+
+    def test_get_attr(self) -> None:
+        self.assertEqual(this.get_attr('__name__'), __name__)
+
+    def test_get_module_name(self) -> None:
+        self.assertEqual(this.get_module_name(), __name__)
+
+    def test_get_caller_module(self) -> None:
+        ref = this.get_caller_module()
+        self.assertIsInstance(ref, Module)
+
+    def test_get_caller_name(self) -> None:
+        self.assertEqual(
+            this.get_caller_name(), __name__ + '.test_get_caller_name')
+
+    def test_get_submodule(self) -> None:
+        self.assertIsInstance(
+            this.get_submodule('this', ref=this.get_parent(ref=this)), Module)
+
+    def test_get_parent(self) -> None:
+        self.assertEqual(this.get_parent().__name__, 'nemoa.base')
+
+    def test_get_root(self) -> None:
+        self.assertEqual(this.get_root().__name__, 'nemoa')
+
+    def test_crop_functions(self) -> None:
+        name = this.crop_functions.__name__
+        fullname = this.crop_functions.__module__ + '.' + name
+        cropped = this.crop_functions(prefix='crop_', ref=this)
+        self.assertIn('functions', cropped)

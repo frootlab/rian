@@ -28,7 +28,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://pypi.org/project/numpy") from err
 
-from nemoa.base import assess, nmodule, this
+from nemoa.base import assess, this
 from nemoa.types import Any, NpArray, NpArrayLike, StrList
 
 _SIGM_PREFIX = 'sigm_'
@@ -46,7 +46,7 @@ def sigmoids() -> StrList:
         module.
 
     """
-    return nmodule.crop_functions(prefix=_SIGM_PREFIX)
+    return this.crop_functions(prefix=_SIGM_PREFIX)
 
 def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
     """Evaluate sigmoidal shaped function.
@@ -201,7 +201,7 @@ def bells() -> StrList:
         the module.
 
     """
-    return nmodule.crop_functions(prefix=_BELL_PREFIX)
+    return this.crop_functions(prefix=_BELL_PREFIX)
 
 def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
     """Evaluate bell shaped function.

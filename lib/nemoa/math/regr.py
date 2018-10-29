@@ -13,7 +13,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://pypi.org/project/numpy") from err
 
-from nemoa.base import assess, nmodule, this
+from nemoa.base import assess, this
 from nemoa.math import vector
 from nemoa.types import Any, NpAxis, NpArray, NpArrayLike, StrList
 
@@ -44,7 +44,7 @@ def errors() -> StrList:
         [4] https://en.wikipedia.org/wiki/semimetrics
 
     """
-    return nmodule.crop_functions(prefix=_ERROR_PREFIX)
+    return this.crop_functions(prefix=_ERROR_PREFIX)
 
 def error(
         x: NpArrayLike, y: NpArrayLike, name: str, **kwds: Any) -> NpArray:

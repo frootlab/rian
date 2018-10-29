@@ -18,7 +18,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://pypi.org/project/numpy") from err
 
-from nemoa.base import assess, check, nmodule, this
+from nemoa.base import assess, check, this
 from nemoa.math import vector
 from nemoa.types import Any, IntTuple, NpArray, NpArrayLike, StrList
 from nemoa.types import StrPairDict, StrListPair, NaN, Number, OptNumber
@@ -37,7 +37,7 @@ def norms() -> StrList:
         Sorted list of all matrix norms, that are implemented within the module.
 
     """
-    return nmodule.crop_functions(prefix=_NORM_PREFIX)
+    return this.crop_functions(prefix=_NORM_PREFIX)
 
 def norm(x: NpArrayLike, name: str = 'frobenius', **kwds: Any) -> NpArray:
     """Calculate norm of matrix.
@@ -195,7 +195,7 @@ def metrices() -> StrList:
         module.
 
     """
-    return nmodule.crop_functions(prefix=_DIST_PREFIX)
+    return this.crop_functions(prefix=_DIST_PREFIX)
 
 def distance(
         x: NpArrayLike, y: NpArrayLike, metric: str = 'frobenius',

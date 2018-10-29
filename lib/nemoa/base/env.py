@@ -35,7 +35,6 @@ import getpass
 import locale
 import platform
 import re
-
 from distutils import sysconfig
 from pathlib import Path
 
@@ -46,9 +45,9 @@ except ImportError as err:
         "requires package appdirs: "
         "https://pypi.org/project/appdirs/") from err
 
-from nemoa.base import check, nmodule, this
-from nemoa.types import (
-    Any, OptStr, OptStrOrBool, OptPathLike, StrDict, StrDictOfPaths)
+from nemoa.base import check, this
+from nemoa.types import Any, OptStr, OptStrOrBool, OptPathLike, StrDict
+from nemoa.types import StrDictOfPaths
 
 #
 # Private Module Constants
@@ -163,7 +162,7 @@ def update_vars(filepath: OptPathLike = None) -> None:
     # is taken. If name is not given, then use the name of the current top level
     # module.
 
-    filepath = filepath or nmodule.get_root().__file__
+    filepath = filepath or this.get_root().__file__
     text = Path(filepath).read_text()
     rekey = "__([a-zA-Z][a-zA-Z0-9_]*)__"
     reval = r"['\"]([^'\"]*)['\"]"
@@ -297,7 +296,7 @@ def update_dirs(
     dirs['site_package_dir'] = path
 
     # Get current package directories from top level module
-    path = Path(nmodule.get_root().__file__).parent
+    path = Path(this.get_root().__file__).parent
     dirs['package_dir'] = path
     dirs['package_data_dir'] = path / 'data'
 

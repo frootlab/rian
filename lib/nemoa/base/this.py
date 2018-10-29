@@ -8,7 +8,7 @@ __docformat__ = 'google'
 
 import inspect
 from nemoa.base import assess, check
-from nemoa.types import Any, Module, OptModule
+from nemoa.types import Any, Module, OptModule, Function
 
 def get_caller_module() -> Module:
     """Get reference to callers module."""
@@ -76,13 +76,12 @@ def get_module() -> Module:
     """Get reference to current module."""
     return inspect.getmodule(inspect.stack()[1][0])
 
-def get_submodule(name: str) -> OptModule:
+def get_submodule(name: str, ref: OptModule = None) -> OptModule:
     """Get instance from the name of a submodule of the current module.
 
     Args:
         name: Name of submodule of given module.
-        ref: Optional module reference. By default the current callers module
-            is used.
+        ref: Module reference. By default the current callers module is used.
 
     Returns:
         Module reference of submodule or None, if the current module does not
@@ -92,38 +91,93 @@ def get_submodule(name: str) -> OptModule:
     # Check type of 'name'
     check.has_type("argument 'name'", name, str)
 
-    # Get module of caller
-    ref = get_caller_module()
+    # Set default module to callers module
+    ref = ref or get_caller_module()
 
     # Get instance of submodule
     return assess.get_module(ref.__name__ + '.' + name)
 
-def get_parent() -> Module:
+def get_parent(ref: OptModule = None) -> Module:
     """Get parent module.
 
+    Args:
+        ref: Module reference. By default the current callers module is used.
+
     Returns:
-        Module reference to the parent module of the callers module.
+        Module reference to the parent module of the current callers module.
 
     """
+    # Set default module to callers module
+    ref = ref or get_caller_module()
+
     # Get name of the parent module
-    name = get_caller_module().__name__.rsplit('.', 1)[0]
+    name = ref.__name__.rsplit('.', 1)[0]
 
     # Get reference to the parent module
-    ref = assess.get_module(name)
-    if not isinstance(ref, Module):
+    pref = assess.get_module(name)
+    if not isinstance(pref, Module):
         raise ModuleNotFoundError(f"module '{name}' does not exist")
-    return ref
+    return pref
 
-def get_attr(name: str, default: Any = None) -> Any:
+def get_root(ref: OptModule = None) -> Module:
+    """Get top level module.
+
+    Args:
+        ref: Module reference. By default the current callers module is used.
+
+    Returns:
+        Module reference to the top level module of the current callers module.
+
+    """
+    # Set default module to callers module
+    ref = ref or get_caller_module()
+
+    # Get name of the top level module
+    name = ref.__name__.split('.', 1)[0]
+
+    # Get reference to the top level module
+    tlref = assess.get_module(name)
+    if not isinstance(tlref, Module):
+        raise ModuleNotFoundError(f"module '{name}' does not exist")
+    return tlref
+
+def get_attr(name: str, default: Any = None, ref: OptModule = None) -> Any:
     """Get attribute of a module.
 
     Args:
         name: Name of attribute.
         default: Default value, which is returned, if the attribute does not
             exist.
+        ref: Module reference. By default the current callers module is used.
 
     Returns:
         Value of attribute.
 
     """
-    return getattr(get_caller_module(), name, default)
+    # Set default module to callers module
+    ref = ref or get_caller_module()
+
+    # Get attribute
+    return getattr(ref, name, default)
+
+def crop_functions(prefix: str, ref: OptModule = None) -> list:
+    """Get list of cropped function names that satisfy a given prefix.
+
+    Args:
+        prefix: String
+        ref: Module reference. By default the current callers module is used.
+
+    Returns:
+        List of functions, that match a given prefix.
+
+    """
+    # Set default module to callers module
+    ref = ref or get_caller_module()
+
+    # Get functions of current callers module
+    funcs = assess.get_members_dict(
+        ref, classinfo=Function, pattern=(prefix + '*'))
+
+    # Create list of cropped function names
+    i = len(prefix)
+    return [each['name'][i:] for each in funcs.values()]

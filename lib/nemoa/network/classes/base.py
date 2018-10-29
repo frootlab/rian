@@ -8,8 +8,7 @@ import importlib
 import networkx
 from nemoa.base import assess, nbase
 from nemoa.core import log
-from nemoa.types import Any, Dict
-
+from nemoa.types import Any, Dict, Function
 import nemoa
 
 class Network(nbase.ObjectIP):
@@ -359,11 +358,11 @@ class Network(nbase.ObjectIP):
 
     def _get_algorithms(self, category = None, attribute = None):
         """Get algorithms provided by network."""
+        funcs = assess.get_members_dict(
+            networkx.algorithms, classinfo=Function)
 
-        from nemoa.base import nmodule
-
-        funcs = nmodule.get_functions(ref=networkx.algorithms)
-        if attribute is None: return funcs
+        if attribute is None:
+            return funcs
 
         return {k: v.get(attribute, None) for k, v in funcs.items()}
 

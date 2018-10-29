@@ -379,7 +379,7 @@ def get_methods(
 
     return mdict
 
-def splitargs(text: str) -> Tuple[str, tuple, dict]:
+def split_args(text: str) -> Tuple[str, tuple, dict]:
     """Split a function call in the function name, its arguments and keywords.
 
     Args:
@@ -448,18 +448,103 @@ def wrap_attr(**attr: Any) -> FuncWrapper:
         return wrapped
     return wrapper
 
-# def get_root(obj: object) -> object:
-#     """Get top level object.
-#
-#     Args:
-#         obj: Arbitrary object
-#
-#     Returns:
-#         Reference to the top level object.
-#
-#     """
-#     # Get name of the top level object
-#     name = get_name(obj).split('.', 1)[0]
-#
-#     # Get reference to the top level module
-#     return get_instance(name)
+def search(
+        ref: Module, pattern: OptStr = None,
+        classinfo: ClassInfo = Function, key: OptStr = None, val: OptStr = None,
+        groupby: OptStr = None, recursive: bool = True,
+        rules: OptStrDictOfTestFuncs = None, **kwds: Any) -> dict:
+    """Recursively search for objects within submodules.
+
+    Args:
+        ref: Module reference in which objects are searched. If 'module' is
+            None, then the module of the caller function is used. Default: None
+        pattern: Only objects which names satisfy the wildcard pattern given
+            by 'pattern' are returned. The format of the wildcard pattern is
+            described in the standard library module `fnmatch`_. If pattern is
+            None, then all objects are returned. Default: None
+        classinfo: Classinfo given as a class, a type or a tuple containing
+            classes, types or other tuples. Only members, which are ether an
+            instance or a subclass of classinfo are returned. By default all
+            types are allowed.
+        key: Name of function attribute which is used as the key for the
+            returned dictionary. If 'key' is None, then the fully qualified
+            function names are used as keys. Default: None
+        val: Name of function attribute which is used as the value for the
+            returned dictionary. If 'val' is None, then all attributes of the
+            respective objects are returned. Default: None
+        groupby: Name of function attribute which is used to group the results.
+            If 'groupby' is None, then the results are not grouped. Default:
+            None
+        recursive: Boolean value which determines if the search is performed
+            recursively within all submodules. Default: True
+        rules: Dictionary with individual filter rules, used by the attribute
+            filter. The form is {<attribute>: <lambda>, ...}, where: <attribute>
+            is a string with the attribute name and <lambda> is a boolean valued
+            lambda function, which specifies the comparison of the attribute
+            value against the argument value. Example: {'tags': lambda arg,
+            attr: set(arg) <= set(attr)} By default any attribute, which is not
+            in the filter rules is compared to the argument value by equality.
+        **kwds: Keyword arguments, that define the attribute filter for the
+            returned dictionary. For example if the argument "tags = ['test']"
+            is given, then only objects are returned, which have the attribute
+            'tags' and the value of the attribute equals ['test']. If, however,
+            the filter rule of the above example is given, then any function,
+            with attribute 'tags' and a corresponding tag list, that comprises
+            'test' is returned.
+
+    Returns:
+        Dictionary with function information as specified in the arguments
+        'key' and 'val'.
+
+    """
+    # Check Arguments
+    check.has_opt_type("argument 'pattern'", pattern, str)
+
+    # Get list with submodules
+    mnames = [ref.__name__] + get_submodules(ref, recursive=recursive)
+
+    # Create dictionary with member attributes
+    fd = {}
+    rules = rules or {}
+    for mname in mnames:
+        minst = get_module(mname)
+        if minst is None:
+            continue
+        d = get_members_dict(
+            minst, classinfo=classinfo, pattern=pattern, rules=rules, **kwds)
+
+        # Ignore members if any required attribute is not available
+        for name, attr in d.items():
+            if key and not key in attr:
+                continue
+            if val and not val in attr:
+                continue
+            fd[name] = attr
+
+    # Rename key for returned dictionary
+    if key:
+        d = {}
+        for name, attr in fd.items():
+            if key not in attr:
+                continue
+            kval = attr[key]
+            if kval in d:
+                continue
+            d[kval] = attr
+        fd = d
+
+    # Group results
+    if groupby:
+        fd = ndict.groupby(fd, key=groupby)
+
+    # Set value for returned dictionary
+    if val:
+        if groupby:
+            for gn, group in fd.items():
+                for name, attr in group.items():
+                    fd[name] = attr[val]
+        else:
+            for name, attr in fd.items():
+                fd[name] = attr[val]
+
+    return fd

@@ -4,9 +4,10 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
+import logging
+import traceback
 import nemoa
-
-from nemoa.core import log
+from nemoa.base import env, this
 
 class Session:
     """Session Manager."""
@@ -467,11 +468,6 @@ class Session:
         """Log message to file and console output."""
 
         if not args: return True
-
-        import logging
-        import traceback
-
-        from nemoa.base import nmodule, env, this
 
         mode = self._get_mode()
         obj = args[0]

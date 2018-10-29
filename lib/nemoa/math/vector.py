@@ -13,7 +13,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://pypi.org/project/numpy") from err
 
-from nemoa.base import assess, nmodule, this
+from nemoa.base import assess, this
 from nemoa.types import Any, NpAxis, NpArray, NpArrayLike, StrList
 
 _NORM_PREFIX = 'norm_'
@@ -30,7 +30,7 @@ def norms() -> StrList:
         Sorted list of all vector norms, that are implemented within the module.
 
     """
-    return nmodule.crop_functions(prefix=_NORM_PREFIX)
+    return this.crop_functions(prefix=_NORM_PREFIX)
 
 def length(x: NpArrayLike, norm: str = 'euclid', **kwds: Any) -> NpArray:
     """Calculate generalized length of vector by given norm.
@@ -352,7 +352,7 @@ def metrices() -> StrList:
         metrices, that are implemented within the module.
 
     """
-    return nmodule.crop_functions(prefix=_DIST_PREFIX)
+    return this.crop_functions(prefix=_DIST_PREFIX)
 
 def distance(
         x: NpArrayLike, y: NpArrayLike, metric: str = 'euclid',
