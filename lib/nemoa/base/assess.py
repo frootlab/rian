@@ -19,7 +19,8 @@ import pkgutil
 from nemoa.base import check, ndict
 from nemoa.types import Any, ClassInfo, OptStr, OptStrDictOfTestFuncs, Union
 from nemoa.types import OptModule, Module, StrList, OptFunction, Function
-from nemoa.types import StrDict, AnyFunc, OptDict, Tuple
+from nemoa.types import StrDict, AnyFunc, OptDict, Tuple, RecDict, NestRecDict
+from nemoa.types import DictOfRecDicts, FuncWrapper, Method
 
 TypeOrStr = Union[type, str]
 
@@ -299,6 +300,85 @@ def get_function_kwds(func: AnyFunc, default: OptDict = None) -> StrDict:
 
     return kwds
 
+def get_methods(
+        obj: object, pattern: OptStr = None, groupby: OptStr = None,
+        key: OptStr = None, val: OptStr = None) -> NestRecDict:
+    """Get methods from a given class instance.
+
+    Args:
+        obj: Class
+        pattern: Only methods, which names satisfy the wildcard pattern given
+            by 'pattern' are returned. The format of the wildcard pattern
+            is described in the standard library module `fnmatch`_.
+        groupby: Name of attribute which value is used to group the results.
+            If groupby is None, then the results are not grouped.
+            Default: None
+        key: Name of the attribute which is used as the key for the returned
+            dictionary. If key is None, then the method names are used as key.
+            Default: None
+        val: Name of attribute which is used as the value for the returned
+            dictionary. If val is None, then all attributes of the respective
+            methods are returned. Default: None
+
+    Returns:
+        Dictionary containing all methods of a given class instance, which
+        names satisfy a given filter pattern.
+
+    """
+    # Declare and initialize return values
+    mdict: RecDict = {}
+    gdict: DictOfRecDicts = {}
+
+    # Get references from object inspection
+    ref = dict(inspect.getmembers(obj, inspect.ismethod))
+
+    # Filter dictionary to methods that match given pattern
+    if pattern:
+        ref = ndict.select(ref, pattern)
+
+    # Create dictionary with method attributes
+    for k, v in ref.items():
+        attr = v.__dict__
+
+        # Ignore method if any required attribute is not available
+        if key and key not in attr:
+            continue
+        if val and val not in attr:
+            continue
+        if groupby and groupby not in attr:
+            continue
+
+        doc = v.__doc__ or ''
+        about = doc.split('\n', 1)[0].strip(' .')
+        attr['reference'] = v
+        attr['about'] = attr.get('about', about)
+
+        # Change dictionary key, if argument 'key' is given
+        if key:
+            k = str(attr[key])
+            if k in mdict:
+                continue
+
+        mdict[k] = attr
+
+    # Group results
+    if groupby:
+        gdict = ndict.groupby(mdict, key=groupby)
+
+        # Set value for returned dictionary
+        if val:
+            for v in gdict.values():
+                for w in v.values():
+                    w = w[val]
+        return gdict
+
+    # Set value for returned dictionary
+    if val:
+        for v in mdict.values():
+            v = v[val]
+
+    return mdict
+
 def splitargs(text: str) -> Tuple[str, tuple, dict]:
     """Split a function call in the function name, its arguments and keywords.
 
@@ -342,6 +422,31 @@ def splitargs(text: str) -> Tuple[str, tuple, dict]:
         kwds[key] = val
 
     return func, args, kwds
+
+def wrap_attr(**attr: Any) -> FuncWrapper:
+    """Wrap callable with additional attributes.
+
+    Args:
+        **attr: Arbitrary attributes
+
+    Returns:
+        Wrapper function with additional attributes
+
+    """
+    def wrapper(procedure): # type: ignore
+        def wrapped_method(self, *args, **kwds): # type: ignore
+            return procedure(*args, **kwds)
+        def wrapped_function(*args, **kwds): # type: ignore
+            return procedure(*args, **kwds)
+        if isinstance(procedure, Method):
+            wrapped = wrapped_method
+        else:
+            wrapped = wrapped_function
+        for key, val in attr.items():
+            setattr(wrapped, key, val)
+        wrapped.__doc__ = procedure.__doc__
+        return wrapped
+    return wrapper
 
 # def get_root(obj: object) -> object:
 #     """Get top level object.

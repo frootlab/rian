@@ -112,12 +112,9 @@ class System(nbase.ObjectIP):
 
     def _get_algorithms(self, category = None, attribute = None, tree = False):
         """Get algorithms provided by system."""
-
-        from nemoa.base import nclass
-
         # get dictionary with all methods
         # with prefix '_get_' and attribute 'name'
-        methods = nclass.methods(self, pattern = '_get_*', val = 'name')
+        methods = assess.get_methods(self, pattern = '_get_*', val = 'name')
 
         # filter algorithms by given category
         if category is not None:

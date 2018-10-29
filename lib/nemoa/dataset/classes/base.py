@@ -14,7 +14,7 @@ except ImportError as err:
         "https://pypi.org/project/numpy") from err
 
 import nemoa
-from nemoa.base import assess, nclass, nbase
+from nemoa.base import assess, nbase
 from nemoa.core import log, ui
 from nemoa.math import algo
 
@@ -626,7 +626,7 @@ class Dataset(nbase.ObjectIP):
         """Get algorithms provided by dataset."""
         # get dictionary with all methods
         # with prefix '_get_' and attribute 'name'
-        methods = nclass.methods(self, pattern = '_get_*', val = 'name')
+        methods = assess.get_methods(self, pattern = '_get_*', val = 'name')
 
         # filter algorithms by given category
         if category is not None:

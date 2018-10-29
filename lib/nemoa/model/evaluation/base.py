@@ -6,7 +6,7 @@ __license__ = 'GPLv3'
 
 import numpy
 import nemoa
-from nemoa.base import assess, nclass
+from nemoa.base import assess
 
 class Evaluation:
 
@@ -46,7 +46,7 @@ class Evaluation:
             self._buffer['algorithms'] = {}
         algorithms = self._buffer['algorithms'].get(attribute, None)
         if not algorithms:
-            algorithms = nclass.methods(
+            algorithms = assess.get_methods(
                 self, key='name', val=attribute, groupby='category')
             self._buffer['algorithms'][attribute] = algorithms
         if category:

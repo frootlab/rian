@@ -10,7 +10,7 @@ import tempfile
 import datetime
 from pathlib import Path
 import numpy as np
-from nemoa.base import assess, binary, check, env, nbase, nclass, ndict
+from nemoa.base import assess, binary, check, env, nbase, ndict
 from nemoa.base import nmodule, npath, table, literal, this
 from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Any, Function, Module, PathLikeList, StrList
@@ -44,6 +44,20 @@ class TestAssess(ModuleTestCase):
     """Testcase for the module nemoa.base.assess."""
 
     module = 'nemoa.base.assess'
+
+    @staticmethod
+    def get_test_object() -> Any:
+        class Base:
+            @assess.wrap_attr(name='a', group=1)
+            def geta(self) -> None:
+                pass
+            @assess.wrap_attr(name='b', group=2)
+            def getb(self) -> None:
+                pass
+            @assess.wrap_attr(name='b', group=2)
+            def setb(self) -> None:
+                pass
+        return Base()
 
     def test_has_base(self) -> None:
         self.assertAllEqual(assess.has_base, [
@@ -141,6 +155,18 @@ class TestAssess(ModuleTestCase):
             Case(args=(assess.get_function_kwds, ),
                 kwds={'default': {'default': True}},
                 value={'default': True})])
+
+    def test_get_methods(self) -> None:
+        obj = self.get_test_object()
+        names = assess.get_methods(obj, pattern='get*').keys()
+        self.assertEqual(names, {'geta', 'getb'})
+        names = assess.get_methods(obj, pattern='*b').keys()
+        self.assertEqual(names, {'getb', 'setb'})
+
+    def test_wrap_attr(self) -> None:
+        obj = self.get_test_object()
+        self.assertEqual(getattr(obj.geta, 'name', None), 'a')
+        self.assertEqual(getattr(obj.getb, 'name', None), 'b')
 
 class TestCheck(ModuleTestCase):
     """Testcase for the module nemoa.base.check."""
@@ -477,45 +503,6 @@ class TestNmodule(ModuleTestCase):
     def test_search(self) -> None:
         count = len(nmodule.search(ref=nmodule, name='search'))
         self.assertEqual(count, 1)
-
-class TestNclass(ModuleTestCase):
-    """Testcase for the module nemoa.base.nclass."""
-
-    module = 'nemoa.base.nclass'
-
-    @staticmethod
-    def get_test_object() -> Any:
-        class Base:
-            @nclass.attributes(name='a', group=1)
-            def geta(self) -> None:
-                pass
-            @nclass.attributes(name='b', group=2)
-            def getb(self) -> None:
-                pass
-            @nclass.attributes(name='b', group=2)
-            def setb(self) -> None:
-                pass
-        return Base()
-
-    def test_attributes(self) -> None:
-        obj = self.get_test_object()
-        self.assertEqual(getattr(obj.geta, 'name', None), 'a')
-        self.assertEqual(getattr(obj.getb, 'name', None), 'b')
-
-    def test_methods(self) -> None:
-        obj = self.get_test_object()
-        names = nclass.methods(obj, pattern='get*').keys()
-        self.assertEqual(names, {'geta', 'getb'})
-        names = nclass.methods(obj, pattern='*b').keys()
-        self.assertEqual(names, {'getb', 'setb'})
-
-    def test_get_kwds(self) -> None:
-        kwds = assess.get_function_kwds(assess.get_function_kwds)
-        self.assertEqual(kwds, {'default': None})
-        kwds = assess.get_function_kwds(assess.get_function_kwds, default={})
-        self.assertEqual(kwds, {})
-        kwds = assess.get_function_kwds(assess.get_function_kwds, default={'default': True})
-        self.assertEqual(kwds, {'default': True})
 
 class TestNdict(ModuleTestCase):
     """Testcase for the module nemoa.base.ndict."""
