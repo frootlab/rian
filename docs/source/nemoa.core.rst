@@ -1,17 +1,24 @@
 nemoa.core package
 ==================
 
+Subpackages
+-----------
+
+.. toctree::
+
+    nemoa.core.db
+    nemoa.core.ui
+
 Submodules
 ----------
 
 .. toctree::
 
+   nemoa.core.cli
    nemoa.core.container
    nemoa.core.log
    nemoa.core.session
-   nemoa.core.shell
    nemoa.core.stdio
-   nemoa.core.ui
 
 Module contents
 ---------------

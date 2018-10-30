@@ -10,7 +10,7 @@ from nemoa.base import assess
 from nemoa.types import Class, ClassInfo, Number
 
 #
-# Informative Object Representation
+# Object Representation
 #
 
 def _repr_classinfo(obj: ClassInfo) -> str:

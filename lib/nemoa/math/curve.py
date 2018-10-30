@@ -69,17 +69,14 @@ def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
         raise TypeError(
             "First argument 'x' is required to be array-like") from err
 
-    # Get sigmoid function
-    fname = _SIGM_PREFIX + name.lower()
-    module = assess.get_module(this.get_module_name())
-    try:
-        func = getattr(module, fname)
-    except AttributeError as err:
-        raise ValueError(
-            f"'name' has an unsupported value '{str(name)}'") from err
+    # Get function
+    func = this.get_attr(_SIGM_PREFIX + name.lower())
+    if not callable(func):
+        raise ValueError(f"name '{str(name)}' is not supported")
 
-    # Evaluate norm function
-    return func(x, **assess.get_function_kwds(func, default=kwds))
+    # Evaluate function
+    supp_kwds = assess.get_function_kwds(func, default=kwds)
+    return func(x, **supp_kwds) # pylint: disable=E1102
 
 def sigm_logistic(x: NpArrayLike) -> NpArray:
     """Calculate standard logistic function.
@@ -224,17 +221,14 @@ def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
         raise TypeError(
             "First argument 'x' is required to be array-like") from err
 
-    # Get bell shaped function
-    fname = _BELL_PREFIX + name.lower()
-    module = assess.get_module(this.get_module_name())
-    try:
-        func = getattr(module, fname)
-    except AttributeError as err:
-        raise ValueError(
-            f"function '{str(name)}' is not supported") from err
+    # Get function
+    func = this.get_attr(_BELL_PREFIX + name.lower())
+    if not callable(func):
+        raise ValueError(f"name '{str(name)}' is not supported")
 
-    # Evaluate norm function
-    return func(x, **assess.get_function_kwds(func, default=kwds))
+    # Evaluate function
+    supp_kwds = assess.get_function_kwds(func, default=kwds)
+    return func(x, **supp_kwds) # pylint: disable=E1102
 
 def bell_gauss(x: NpArrayLike, mu: float = 0., sigma: float = 1.) -> NpArray:
     """Calculate Gauss function.

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Dataset imports."""
+"""DB-API 2.0 database interface for CSV-files."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -10,6 +10,10 @@ from pathlib import Path
 from nemoa.base import npath
 from nemoa.file import csvfile, inifile
 from nemoa.types import FileOrPathLike, OptStr, OptIntTuple, OptStrList, OptInt
+from nemoa.core import container
+
+class Connector(container.BaseContainer):
+    pass
 
 def load_csv(
         file: FileOrPathLike, delim: OptStr = None,

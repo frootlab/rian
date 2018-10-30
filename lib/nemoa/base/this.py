@@ -12,14 +12,12 @@ from nemoa.types import Any, Module, OptModule, Function
 
 def get_caller_module() -> Module:
     """Get reference to callers module."""
-    stack = inspect.stack()
-    if len(stack) < 3:
-        raise ModuleNotFoundError("could not detect current caller module")
-    for each in inspect.stack()[2:]:
-        ref = inspect.getmodule(each.frame)
+    name = get_module_name(-2)
+    if name:
+        ref = assess.get_module(name)
         if isinstance(ref, Module):
             return ref
-    raise ModuleNotFoundError("could not detect current caller module")
+    raise ModuleNotFoundError("could not detect module of caller")
 
 def get_caller_name(frame: int = 0) -> str:
     """Get name of the callable, which calls this function.
@@ -81,9 +79,9 @@ def get_module_name(frame: int = 0) -> str:
 
 def get_module() -> Module:
     """Get reference to current module."""
-    stack = inspect.stack()
-    for each in inspect.stack()[1:]:
-        ref = inspect.getmodule(each.frame)
+    name = get_module_name(-1)
+    if name:
+        ref = assess.get_module(name)
         if isinstance(ref, Module):
             return ref
     raise ModuleNotFoundError("could not detect current module")
