@@ -44,7 +44,7 @@ import tempfile
 import warnings
 from pathlib import Path
 from nemoa.base import env, npath
-from nemoa.core.container import BaseContainer, TransientAttr, VirtualAttr
+from nemoa.base.container import BaseContainer, TransientAttr, VirtualAttr
 from nemoa.errors import AlreadyStartedError, NotStartedError
 from nemoa.types import void, Any, AnyFunc, ClassVar, PathLike, StrList
 from nemoa.types import StrOrInt, Optional, OptPath, OptStrDict, VoidFunc

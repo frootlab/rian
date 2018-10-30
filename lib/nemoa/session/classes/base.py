@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import logging
 import traceback
 import nemoa
-from nemoa.base import env, this
+from nemoa.base import env, stdio, this
 
 class Session:
     """Session Manager."""
@@ -64,7 +64,7 @@ class Session:
         import os
         import sys
 
-        from nemoa.file import inifile
+        from nemoa.base.file import inifile
 
         self._config = {**self._default, **kwds}
 
@@ -734,7 +734,6 @@ class Session:
 
         if curmode == 'line' and mode == 'key':
             if not self._buffer.get('inkey', None):
-                from nemoa.core import stdio
                 self._buffer['inkey'] = stdio.Getch() # type: ignore
             self._buffer['inkey'].start()
             return True

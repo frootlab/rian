@@ -15,10 +15,8 @@ Submodules
 .. toctree::
 
    nemoa.core.cli
-   nemoa.core.container
    nemoa.core.log
    nemoa.core.session
-   nemoa.core.stdio
 
 Module contents
 ---------------

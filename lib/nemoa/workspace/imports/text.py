@@ -47,7 +47,7 @@ class Ini:
                 configuration dictionary.
 
         """
-        from nemoa.file import inifile
+        from nemoa.base.file import inifile
 
         structure = {
             'workspace': {

@@ -12,9 +12,9 @@ from nemoa.types import Any, Callable, ClassInfo, Date, OptClassInfo, Optional
 from nemoa.types import OptStr, OptStrDict, OptType, StrDict, StrList, void
 
 class Attr(property):
-    """Generic Descriptor Class for Attributes.
+    """Generic Descriptor Class for Container Attributes.
 
-    Generic attribute descriptor for binding class instance attributes: When an
+    Generic attribute descriptor for binding class instance attributes. When an
     instance of a class contains a descriptor class as a method, the descriptor
     class defines the accessor and mutator methods of the attribute, which is
     identified by the method's name.
@@ -40,8 +40,6 @@ class Attr(property):
     _parent: OptStr
     _classinfo: OptClassInfo
     _readonly: bool
-
-    # __Magic__
 
     def __init__(
             self, classinfo: OptClassInfo = None, bind: OptStr = None,

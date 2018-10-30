@@ -1,6 +1,13 @@
 nemoa.base package
 ==================
 
+Subpackages
+-----------
+
+.. toctree::
+
+    nemoa.base.file
+
 Submodules
 ----------
 
@@ -9,11 +16,13 @@ Submodules
    nemoa.base.assess
    nemoa.base.binary
    nemoa.base.check
+   nemoa.base.container
    nemoa.base.env
    nemoa.base.literal
    nemoa.base.nbase
    nemoa.base.ndict
    nemoa.base.npath
+   nemoa.base.stdio
    nemoa.base.table
    nemoa.base.this
    nemoa.base.thread

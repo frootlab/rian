@@ -7,12 +7,25 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from pathlib import Path
-from nemoa.base import npath
-from nemoa.file import csvfile, inifile
 from nemoa.types import FileOrPathLike, OptStr, OptIntTuple, OptStrList, OptInt
-from nemoa.core import container
+from nemoa.base import npath
+from nemoa.base.container import BaseContainer
+from nemoa.base.file import csvfile, inifile
+from nemoa.core.db import dbapi2
 
-class Connector(container.BaseContainer):
+#
+# Module globals
+#
+
+apilevel = '2.0'
+threadsafety = 0
+paramstyle = 'pyformat'
+
+#
+# DB-API 2.0 Connection Class
+#
+
+class Connection(dbapi2.Connection):
     pass
 
 def load_csv(
@@ -75,3 +88,11 @@ def load_csv(
     tables = {name: data}
 
     return {'config': config, 'tables': tables}
+
+
+#
+# DB-API 2.0 Cursor Class
+#
+
+class Cursor(dbapi2.Cursor):
+    pass

@@ -10,7 +10,7 @@ import tempfile
 import datetime
 from pathlib import Path
 import numpy as np
-from nemoa.base import assess, binary, check, env, table, literal, this
+from nemoa.base import assess, binary, check, env, table, literal, stdio, this
 from nemoa.base import npath, nbase, ndict
 from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Any, Function, Module, PathLikeList, StrList
@@ -499,6 +499,18 @@ class TestNdict(ModuleTestCase):
         self.assertEqual(
             ndict.sumjoin({1: 'a', 2: True}, {1: 'b', 2: True}),
             {1: 'ab', 2: 2})
+
+class TestStdio(ModuleTestCase):
+    """Testcase for the module nemoa.base.stdio."""
+
+    module = 'nemoa.base.stdio'
+
+    def test_get_ttylib(self) -> None:
+        self.assertIsInstance(stdio.get_ttylib(), Module)
+
+    def test_Getch(self) -> None:
+        obj = stdio.Getch() if callable(stdio.Getch) else None
+        self.assertIsInstance(obj, stdio.GetchBase)
 
 class TestTable(ModuleTestCase):
     """Testcase for the module nemoa.base.table."""

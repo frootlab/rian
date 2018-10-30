@@ -7,6 +7,7 @@ Submodules
 .. toctree::
 
    nemoa.core.db.csvdb
+   nemoa.core.db.dbapi2
 
 Module contents
 ---------------

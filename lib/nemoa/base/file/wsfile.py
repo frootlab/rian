@@ -20,10 +20,10 @@ from contextlib import contextmanager
 from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
 from nemoa.base import npath, env
-from nemoa.core.container import ContentAttr, CoreContainer, TechAttr
-from nemoa.core.container import TransientAttr, VirtualAttr
+from nemoa.base.container import ContentAttr, CoreContainer, TechAttr
+from nemoa.base.container import TransientAttr, VirtualAttr
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
-from nemoa.file import inifile
+from nemoa.base.file import inifile
 from nemoa.types import BytesIOBaseClass, BytesIOLike, BytesLike, ClassVar
 from nemoa.types import IterFileLike, List, OptBytes, OptStr, OptPathLike
 from nemoa.types import PathLike, PathLikeList, TextIOBaseClass, Traceback
