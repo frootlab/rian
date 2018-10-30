@@ -13,7 +13,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://pypi.org/project/numpy") from err
 
-from nemoa.base import nfunc, nmodule
+from nemoa.base import assess, this
 from nemoa.types import Any, NpAxis, NpArray, NpArrayLike, StrList
 
 _NORM_PREFIX = 'norm_'
@@ -30,7 +30,7 @@ def norms() -> StrList:
         Sorted list of all vector norms, that are implemented within the module.
 
     """
-    return nmodule.crop_functions(prefix=_NORM_PREFIX)
+    return this.crop_functions(prefix=_NORM_PREFIX)
 
 def length(x: NpArrayLike, norm: str = 'euclid', **kwds: Any) -> NpArray:
     """Calculate generalized length of vector by given norm.
@@ -66,17 +66,14 @@ def length(x: NpArrayLike, norm: str = 'euclid', **kwds: Any) -> NpArray:
         raise TypeError(
             "First argument 'x' is required to be array-like") from err
 
-    # Get norm function
-    fname = _NORM_PREFIX + norm.lower()
-    module = nmodule.get_instance(nmodule.get_curname())
-    try:
-        func = getattr(module, fname)
-    except AttributeError as err:
-        raise ValueError(
-            f"argument 'norm' has an invalid value '{str(norm)}'")
+    # Get function
+    func = this.get_attr(_NORM_PREFIX + norm.lower())
+    if not callable(func):
+        raise ValueError(f"name '{str(norm)}' is not supported")
 
-    # Evaluate norm function
-    return func(x, **nfunc.get_kwds(func, default=kwds))
+    # Evaluate function
+    supp_kwds = assess.get_function_kwds(func, default=kwds)
+    return func(x, **supp_kwds) # pylint: disable=E1102
 
 def norm_p(x: NpArray, p: float = 2., axis: NpAxis = 0) -> NpArray:
     """Calculate p-norm of an array along given axis.
@@ -352,7 +349,7 @@ def metrices() -> StrList:
         metrices, that are implemented within the module.
 
     """
-    return nmodule.crop_functions(prefix=_DIST_PREFIX)
+    return this.crop_functions(prefix=_DIST_PREFIX)
 
 def distance(
         x: NpArrayLike, y: NpArrayLike, metric: str = 'euclid',
@@ -411,17 +408,14 @@ def distance(
         raise ValueError(
             "arrays 'x' and 'y' can not be broadcasted together")
 
-    # Get distance function
-    fname = _DIST_PREFIX + metric.lower()
-    module = nmodule.get_instance(nmodule.get_curname())
-    try:
-        func = getattr(module, fname)
-    except AttributeError as err:
-        raise ValueError(
-            f"argument 'metric' has an invalid value '{str(metric)}'")
+    # Get function
+    func = this.get_attr(_DIST_PREFIX + metric.lower())
+    if not callable(func):
+        raise ValueError(f"name '{str(metric)}' is not supported")
 
-    # Evaluate distance function
-    return func(x, y, **nfunc.get_kwds(func, default=kwds))
+    # Evaluate function
+    supp_kwds = assess.get_function_kwds(func, default=kwds)
+    return func(x, y, **supp_kwds) # pylint: disable=E1102
 
 def dist_minkowski(
         x: NpArray, y: NpArray, p: float = 2., axis: NpAxis = 0) -> NpArray:

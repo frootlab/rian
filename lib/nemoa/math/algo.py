@@ -14,9 +14,8 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from nemoa.base import nmodule
-from nemoa.types import (
-    Any, FuncWrapper, Module, OptModule, OptStr, OptStrList)
+from nemoa.base import assess, this
+from nemoa.types import Any, FuncWrapper, OptModule, OptStr, OptStrList
 
 def search(module: OptModule = None, **kwds: Any) -> dict:
     """Search for algorithms, that pass given filters.
@@ -31,16 +30,16 @@ def search(module: OptModule = None, **kwds: Any) -> dict:
         Dictionary with function information.
 
     """
-    # Set default value of 'ref' to module of caller
-    module = module or nmodule.get_caller_ref()
+    # Set default value of 'module' to module of caller
+    module = module or this.get_caller_module()
 
-    # create filter rules for algorithm attributes
+    # Create filter rules for algorithm attributes
     rules = {
         'tags': lambda a, b: set(a) <= set(b), # requires all
         'classes': lambda a, b: bool(set(a) & set(b))} # requires any
 
-    # search for algorithms
-    return nmodule.search(ref=module, rules=rules, **kwds)
+    # Search for algorithms
+    return assess.search(ref=module, rules=rules, **kwds)
 
 def custom(
         name: OptStr = None, category: OptStr = None,
@@ -75,7 +74,7 @@ def custom(
         def wrapped(*args, **kwds): # type: ignore
             return func(*args, **kwds)
 
-        # set attributes with metainformation about algorithm
+        # Set attributes with metainformation about algorithm
         setattr(wrapped, 'name', name or func.__name__)
         setattr(wrapped, 'category', category)
         setattr(wrapped, 'classes', classes or [])

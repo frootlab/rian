@@ -18,7 +18,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://pypi.org/project/numpy") from err
 
-from nemoa.base import check, nfunc, nmodule
+from nemoa.base import assess, check, this
 from nemoa.math import vector
 from nemoa.types import Any, IntTuple, NpArray, NpArrayLike, StrList
 from nemoa.types import StrPairDict, StrListPair, NaN, Number, OptNumber
@@ -37,7 +37,7 @@ def norms() -> StrList:
         Sorted list of all matrix norms, that are implemented within the module.
 
     """
-    return nmodule.crop_functions(prefix=_NORM_PREFIX)
+    return this.crop_functions(prefix=_NORM_PREFIX)
 
 def norm(x: NpArrayLike, name: str = 'frobenius', **kwds: Any) -> NpArray:
     """Calculate norm of matrix.
@@ -73,17 +73,14 @@ def norm(x: NpArrayLike, name: str = 'frobenius', **kwds: Any) -> NpArray:
     if x.ndim < 2:
         raise ValueError("'x' is required to have dimension > 1")
 
-    # Get norm function
-    fname = _NORM_PREFIX + name.lower()
-    module = nmodule.get_instance(nmodule.get_curname())
-    try:
-        func = getattr(module, fname)
-    except AttributeError as err:
-        raise ValueError(
-            f"norm with name '{str(norm)}' is not known") from err
+    # Get function
+    func = this.get_attr(_NORM_PREFIX + name.lower())
+    if not callable(func):
+        raise ValueError(f"name '{str(name)}' is not supported")
 
-    # Evaluate norm function
-    return func(x, **nfunc.get_kwds(func, default=kwds))
+    # Evaluate function
+    supp_kwds = assess.get_function_kwds(func, default=kwds)
+    return func(x, **supp_kwds) # pylint: disable=E1102
 
 def norm_pq(x: NpArray,
         p: float = 2., q: float = 2., axes: IntTuple = (0, 1)) -> NpArray:
@@ -195,7 +192,7 @@ def metrices() -> StrList:
         module.
 
     """
-    return nmodule.crop_functions(prefix=_DIST_PREFIX)
+    return this.crop_functions(prefix=_DIST_PREFIX)
 
 def distance(
         x: NpArrayLike, y: NpArrayLike, metric: str = 'frobenius',
@@ -246,17 +243,14 @@ def distance(
         raise ValueError(
             "arrays 'x' and 'y' can not be broadcasted together")
 
-    # Get distance function
-    fname = _DIST_PREFIX + metric.lower()
-    module = nmodule.get_instance(nmodule.get_curname())
-    try:
-        func = getattr(module, fname)
-    except AttributeError as err:
-        raise ValueError(
-            f"argument 'metric' has an invalid value '{str(metric)}'")
+    # Get function
+    func = this.get_attr(_DIST_PREFIX + metric.lower())
+    if not callable(func):
+        raise ValueError(f"name '{str(metric)}' is not supported")
 
-    # Evaluate distance function
-    return func(x, y, **nfunc.get_kwds(func, default=kwds))
+    # Evaluate function
+    supp_kwds = assess.get_function_kwds(func, default=kwds)
+    return func(x, y, **supp_kwds) # pylint: disable=E1102
 
 def dist_frobenius(x: NpArray, y: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
     """Calculate Frobenius distances of two arrays along given axis.

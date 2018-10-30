@@ -11,15 +11,13 @@ from nemoa.errors import ReadOnlyError
 from nemoa.types import Any, Callable, ClassInfo, Date, OptClassInfo, Optional
 from nemoa.types import OptStr, OptStrDict, OptType, StrDict, StrList, void
 
-################################################################################
-# Generic attribute descriptor for binding class instance attributes: When an
-# instance of a class contains a descriptor class as a method, the descriptor
-# class defines the accessor and mutator methods of the attribute, which is
-# identified by the method's name.
-################################################################################
-
 class Attr(property):
-    """Generic Descriptor Class for Attributes.
+    """Generic Descriptor Class for Container Attributes.
+
+    Generic attribute descriptor for binding class instance attributes. When an
+    instance of a class contains a descriptor class as a method, the descriptor
+    class defines the accessor and mutator methods of the attribute, which is
+    identified by the method's name.
 
     Args:
         classinfo:
@@ -42,8 +40,6 @@ class Attr(property):
     _parent: OptStr
     _classinfo: OptClassInfo
     _readonly: bool
-
-    # __Magic__
 
     def __init__(
             self, classinfo: OptClassInfo = None, bind: OptStr = None,
@@ -127,9 +123,9 @@ class Attr(property):
             return self._default
         return getattr(parent, self._name, self._default)
 
-################################################################################
+#
 # Base Container Class
-################################################################################
+#
 
 class ContentAttr(Attr):
     """Attributes for persistent content storage objects."""
@@ -265,9 +261,9 @@ class BaseContainer:
         check.has_type("argument 'attrs'", attrs, dict)
         self._set_attrs(VirtualAttr, attrs)
 
-################################################################################
+#
 # Container class with Dublin Core metadata
-################################################################################
+#
 
 class DCMIAttr(MetadataAttr):
     """Attributes for Dublin Core metadata."""

@@ -1,4 +1,4 @@
-nemoa.core.ui package
+nemoa.core.db package
 =====================
 
 Submodules
@@ -6,12 +6,13 @@ Submodules
 
 .. toctree::
 
-   nemoa.core.ui.shell
+   nemoa.core.db.csvdb
+   nemoa.core.db.dbapi2
 
 Module contents
 ---------------
 
-.. automodule:: nemoa.core.ui
+.. automodule:: nemoa.core.db
     :members:
     :undoc-members:
     :show-inheritance:

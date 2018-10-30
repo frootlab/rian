@@ -27,7 +27,6 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import contextlib
-
 from nemoa.base import npath, binary
 from nemoa.types import (
     BytesIOBaseClass, BytesLikeOrStr, FileOrPathLike,

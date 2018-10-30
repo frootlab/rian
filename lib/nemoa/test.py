@@ -11,7 +11,7 @@ from typing import NamedTuple
 from unittest import skipIf
 from unittest import TestCase, TestResult, TestLoader, TestSuite, TextTestRunner
 import numpy as np
-from nemoa.base import assess, nmodule
+from nemoa.base import assess, this
 from nemoa.types import Any, AnyFunc, ClassInfo, ExcType, Function, Method
 from nemoa.types import OptStr, StringIOLike, Tuple, Dict, List, Callable
 from nemoa.types import NpArray
@@ -124,7 +124,7 @@ class ModuleTestCase(BaseTestCase):
         """Assert that all members of module are tested."""
         msg: OptStr = None
         if hasattr(self, 'module') and self.test_completeness:
-            mref = nmodule.get_instance(self.module)
+            mref = assess.get_module(self.module)
             if hasattr(mref, '__all__'):
                 required = set(getattr(mref, '__all__'))
             else:
@@ -319,8 +319,8 @@ def run(
     """Run all tests if given type."""
     loader = TestLoader()
     suite = TestSuite()
-    root = nmodule.get_root()
-    cases = nmodule.search(ref=root, classinfo=classinfo, val='reference')
+    root = this.get_root()
+    cases = assess.search(root, classinfo=classinfo, val='reference')
     for ref in cases.values():
         suite.addTests(loader.loadTestsFromTestCase(ref))
     return TextTestRunner(stream=stream, verbosity=verbosity).run(suite)

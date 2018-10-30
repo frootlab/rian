@@ -10,7 +10,7 @@ from nemoa.base import assess
 from nemoa.types import Class, ClassInfo, Number
 
 #
-# Informative Object Representation
+# Object Representation
 #
 
 def _repr_classinfo(obj: ClassInfo) -> str:
@@ -49,17 +49,17 @@ class NmException(Exception):
     """Base class for exceptions in nemoa."""
 
 class NmError(NmException):
-    """Exception for errors in nemoa."""
+    """Exception for standard errors in nemoa."""
 
 class NmWarning(Warning, NmException):
     """Exception for warnings in nemoa."""
 
-class NmAssert(AssertionError, NmException):
-    """Exception for assertions in nemoa."""
-
 ################################################################################
 # Assertion Errors
 ################################################################################
+
+class NmAssert(AssertionError, NmException):
+    """Exception for assertions in nemoa."""
 
 class WrongTypeError(TypeError, NmAssert):
     """Raise when an object is required to be of a given type."""
@@ -164,11 +164,21 @@ class FileNotGivenError(OSError, NmError):
     """Raise when a file or directory is required but not given."""
 
 ################################################################################
-# Singleton Design Errors
+# Database interface (DBI) Exceptions
 ################################################################################
 
-class AlreadyStartedError(LookupError, NmError):
-    """Raise when a singleton process shall be started twice."""
+class DBIError(NmError):
+    """Raise as standard error in database interfaces."""
+
+class DBIWarning(NmWarning):
+    """Raise as standard warning in database interfaces."""
+
+################################################################################
+# Singleton Errors
+################################################################################
+
+class SingletonExistsError(LookupError, NmError):
+    """Raise when a singleton which allready exists shall be initialized."""
 
 class NotStartedError(LookupError, NmError):
-    """Raise when a singleton process is called but not has been started."""
+    """Raise when a singleton is closed but not has been initialized."""

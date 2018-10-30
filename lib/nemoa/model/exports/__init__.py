@@ -43,8 +43,7 @@ def save(model, path = None, filetype = None, workspace = None,
         Boolean value which is True if file export was successful
 
     """
-
-    from nemoa.base import nclass, npath
+    from nemoa.base import npath
 
     if not assess.has_base(model, 'Model'):
         raise TypeError("model is not valid")

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Dataset imports."""
+"""DB-API 2.0 interface for CSV-file Database."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -7,9 +7,30 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from pathlib import Path
-from nemoa.base import npath
-from nemoa.file import csvfile, inifile
 from nemoa.types import FileOrPathLike, OptStr, OptIntTuple, OptStrList, OptInt
+from nemoa.base import npath
+from nemoa.base.container import BaseContainer
+from nemoa.base.file import csvfile, inifile
+from nemoa.core.db import dbapi2
+from nemoa.core.db.dbapi2 import Error, Warning, InterfaceError, DatabaseError
+from nemoa.core.db.dbapi2 import InternalError, OperationalError, DataError
+from nemoa.core.db.dbapi2 import ProgrammingError, IntegrityError
+from nemoa.core.db.dbapi2 import NotSupportedError
+
+#
+# Module globals
+#
+
+apilevel = '2.0'
+threadsafety = 0
+paramstyle = 'pyformat'
+
+#
+# DB-API 2.0 Connection Class
+#
+
+class Connection(dbapi2.Connection):
+    pass
 
 def load_csv(
         file: FileOrPathLike, delim: OptStr = None,
@@ -71,3 +92,11 @@ def load_csv(
     tables = {name: data}
 
     return {'config': config, 'tables': tables}
+
+
+#
+# DB-API 2.0 Cursor Class
+#
+
+class Cursor(dbapi2.Cursor):
+    pass

@@ -13,7 +13,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://pypi.org/project/numpy") from err
 
-from nemoa.base import nfunc, nmodule
+from nemoa.base import assess, this
 from nemoa.math import vector
 from nemoa.types import Any, NpAxis, NpArray, NpArrayLike, StrList
 
@@ -44,7 +44,7 @@ def errors() -> StrList:
         [4] https://en.wikipedia.org/wiki/semimetrics
 
     """
-    return nmodule.crop_functions(prefix=_ERROR_PREFIX)
+    return this.crop_functions(prefix=_ERROR_PREFIX)
 
 def error(
         x: NpArrayLike, y: NpArrayLike, name: str, **kwds: Any) -> NpArray:
@@ -99,7 +99,7 @@ def error(
 
     # Get discrepancy function
     fname = _ERROR_PREFIX + name.lower()
-    module = nmodule.get_instance(nmodule.get_curname())
+    module = assess.get_module(this.get_module_name())
     try:
         func = getattr(module, fname)
     except AttributeError as err:
@@ -107,7 +107,7 @@ def error(
             f"argument 'name' has an invalid value '{str(name)}'")
 
     # Evaluate distance function
-    return func(x, y, **nfunc.get_kwds(func, default=kwds))
+    return func(x, y, **assess.get_function_kwds(func, default=kwds))
 
 def error_rss(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
     """Calculate Residual Sum of Squares of two samples along given axis.

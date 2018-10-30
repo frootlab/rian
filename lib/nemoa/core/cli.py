@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Command line scripts."""
+"""Command line interface."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -8,16 +8,15 @@ __docformat__ = 'google'
 
 import getopt
 import sys
-
 from typing import Any, Callable
-
 from nemoa.base import env
 from nemoa.core import ui
+from nemoa.core.ui import shell
+import nemoa.test
+import nemoa
 
 def print_scripts(workspace: str) -> None:
     """Print list of scripts to standard output."""
-    import nemoa
-
     nemoa.set('mode', 'silent')
 
     if nemoa.open(workspace):
@@ -54,7 +53,6 @@ def print_version() -> None:
 
 def print_workspaces() -> None:
     """Print list of workspaces to standard output."""
-    import nemoa
     nemoa.set('mode', 'silent')
     workspaces = nemoa.list('workspaces', base='user')
     ui.info('Workspaces:\n')
@@ -64,23 +62,17 @@ def print_workspaces() -> None:
 
 def run_script(workspace: str, script: str, *args: Any) -> bool:
     """Run nemoa python script."""
-    import nemoa
     return nemoa.open(workspace) and nemoa.run(script, *args)
 
 def run_shell() -> None:
     """Start nemoa session in IPython interactive shell."""
-    from nemoa.core import shell
-
     name = env.get_var('name') or ''
     version = env.get_var('version') or ''
     banner = name + ' ' +  version
-
     shell.run(banner=banner)
 
 def run_unittest() -> None:
     """Run unittest."""
-    import nemoa.test
-
     ui.info(f"testing nemoa {env.get_var('version')}")
     cur_level = ui.get_notification_level()
     ui.set_notification_level('CRITICAL')

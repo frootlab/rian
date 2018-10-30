@@ -40,12 +40,9 @@ class Optimizer:
 
     def _get_algorithms(self, category = None, attribute = None):
         """Get optimization algorithms."""
-
-        from nemoa.base import nclass
-
         algorithms = self._buffer['algorithms'].get(attribute, None)
         if not algorithms:
-            algorithms = nclass.methods(self, key = 'name', val = attribute,
+            algorithms = assess.get_methods(self, key = 'name', val = attribute,
                 groupby = 'category')
             self._buffer['algorithms'][attribute] = algorithms
         if category:
