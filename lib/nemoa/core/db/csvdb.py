@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""DB-API 2.0 database interface for CSV-files."""
+"""DB-API 2.0 interface for CSV-file Database."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -12,6 +12,10 @@ from nemoa.base import npath
 from nemoa.base.container import BaseContainer
 from nemoa.base.file import csvfile, inifile
 from nemoa.core.db import dbapi2
+from nemoa.core.db.dbapi2 import Error, Warning, InterfaceError, DatabaseError
+from nemoa.core.db.dbapi2 import InternalError, OperationalError, DataError
+from nemoa.core.db.dbapi2 import ProgrammingError, IntegrityError
+from nemoa.core.db.dbapi2 import NotSupportedError
 
 #
 # Module globals

@@ -1,8 +1,26 @@
 # -*- coding: utf-8 -*-
 """DB-API 2.0 database interfaces.
 
-This module implements the exceptions and abstract base classes specified in the
-Python Database API Specification 2.0 for relational databases [PEP249]_.
+This module is a stub for the required exceptions and base classes specified in
+the Python Database API (DB-API) Specification 2.0 [PEP249]_. Thereupon the
+DB-API 2.0 specification requires a module interface, that comprises specific
+module attributes and a constructor function.
+
+Module attributes:
+    apilevel:
+        String constant stating the supported DB-API level.
+    threadsafety:
+        Integer constant stating the level of thread safety the interface
+        supports.
+    paramstyle:
+        String constant stating the type of parameter marker formatting expected
+        by the interface.
+
+Constructor function:
+    connect(...) -> Connection
+        Constructor for creating a connection to the database. Returns a
+        Connection Object. It takes a number of parameters which are database
+        dependent.
 
 .. [PEP249] https://www.python.org/dev/peps/pep-0249/
 
@@ -14,8 +32,97 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from abc import ABC, abstractmethod
-from nemoa.base.container import BaseContainer, VirtualAttr, MetadataAttr
 from nemoa.types import Any, OptList, OptInt, OptBool
+from nemoa.errors import DBIError, DBIWarning
+from nemoa.base.container import BaseContainer, VirtualAttr, MetadataAttr
+
+#
+# DB-API 2.0 Exceptions
+#
+
+class Error(DBIError):
+    """DB-API Error.
+
+    Exception that is the base class of all other error exceptions. You can use
+    this to catch all errors with one single except statement. Warnings are not
+    considered errors and thus should not use this class as base. It must be a
+    subclass of the Python StandardError (defined in the module exceptions).
+    """
+
+class Warning(DBIError):
+    """DB-API Warning.
+
+    Exception raised for important warnings like data truncations while
+    inserting, etc. It must be a subclass of the Standard DBIError.
+    """
+
+class InterfaceError(Error):
+    """DB-API InterfaceError.
+
+    Exception raised for errors that are related to the database interface
+    rather than the database itself. It must be a subclass of Error.
+    """
+
+class DatabaseError(Error):
+    """DB-API DatabaseError.
+
+    Exception raised for errors that are related to the database. It must be a
+    subclass of Error.
+    """
+
+class InternalError(DatabaseError):
+    """DB-API InternalError.
+
+    Exception raised when the database encounters an internal error, e.g. the
+    cursor is not valid anymore, the transaction is out of sync, etc. It must
+    be a subclass of DatabaseError.
+    """
+
+class OperationalError(DatabaseError):
+    """DB-API OperationalError.
+
+    Exception raised for errors that are related to the database's operation and
+    not necessarily under the control of the programmer, e.g. an unexpected
+    disconnect occurs, the data source name is not found, a transaction could
+    not be processed, a memory allocation error occurred during processing, etc.
+    It must be a subclass of DatabaseError.
+    """
+
+class ProgrammingError(DatabaseError):
+    """DB-API ProgrammingError.
+
+    Exception raised for programming errors, e.g. table not found or already
+    exists, syntax error in the SQL statement, wrong number of parameters
+    specified, etc. It must be a subclass of DatabaseError.
+    """
+
+class IntegrityError(DatabaseError):
+    """DB-API IntegrityError.
+
+    Exception raised when the relational integrity of the database is affected,
+    e.g. a foreign key check fails. It must be a subclass of DatabaseError.
+    """
+
+class DataError(DatabaseError):
+    """DB-API DataError.
+
+    Exception raised for errors that are due to problems with the processed data
+    like division by zero, numeric value out of range, etc. It must be a
+    subclass of DatabaseError.
+    """
+
+class NotSupportedError(DatabaseError):
+    """DB-API NotSupportedError.
+
+    Exception raised in case a method or database API was used which is not
+    supported by the database, e.g. requesting a `rollback` on a connection
+    that does not support transaction or has transactions turned off. It must be
+    a subclass of DatabaseError.
+    """
+
+#
+# DB-API 2.0 Cursor Class
+#
 
 class Cursor(ABC, BaseContainer):
     """Database Cursor.
@@ -250,7 +357,11 @@ class Cursor(ABC, BaseContainer):
         """
         pass
 
-class Connection(ABC):
+#
+# DB-API 2.0 Connection Class
+#
+
+class Connection(ABC, BaseContainer):
     """Database Connection."""
 
     @abstractmethod
