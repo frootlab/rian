@@ -36,9 +36,6 @@ ZipInfoList = List[ZipInfo]
 class BadWsFile(OSError):
     """Exception for invalid workspace files."""
 
-# Module constants
-FILEEXTS = ['.ws', '.ws.zip']
-
 class WsFile(CoreContainer):
     """Workspace File.
 
@@ -65,8 +62,8 @@ class WsFile(CoreContainer):
     # Private Class Variables
     #
 
-    _CONFIG_FILE: ClassVar[Path] = Path('workspace.ini')
-    _CONFIG_STRUCT: ClassVar[StrDict2] = {
+    _config_file: ClassVar[Path] = Path('workspace.ini')
+    _config_struct: ClassVar[StrDict2] = {
         'dcmi': {
             'identifier': 'str',
             'format': 'str',
@@ -85,13 +82,13 @@ class WsFile(CoreContainer):
             'date': 'datetime'},
         'hooks': {
             'startup': 'path'}}
-    _DEFAULT_CONFIG: ClassVar[StrDict2] = {
+    _default_config: ClassVar[StrDict2] = {
         'dcmi': {
             'creator': env.get_username(),
             'date': datetime.datetime.now()}}
-    _DEFAULT_DIR_LAYOUT: ClassVar[StrList] = [
+    _default_dir_layout: ClassVar[StrList] = [
         'dataset', 'network', 'system', 'model', 'script']
-    _DEFAULT_ENCODING = env.get_encoding()
+    _default_encoding = env.get_encoding()
 
     #
     # Private Instance Variables
@@ -172,7 +169,7 @@ class WsFile(CoreContainer):
 
     def _create_new(self) -> None:
         # Initialize instance Variables, Buffer and buffered ZipFile
-        self._set_dcmi(self._DEFAULT_CONFIG['dcmi'])
+        self._set_dcmi(self._default_config['dcmi'])
         self._path = None
         self._changed = False
         self._pwd = None
@@ -180,7 +177,7 @@ class WsFile(CoreContainer):
         self._file = ZipFile(self._buffer, mode='w')
 
         # Create folders
-        for folder in self._DEFAULT_DIR_LAYOUT:
+        for folder in self._default_dir_layout:
             self.mkdir(folder)
 
     def _open_read(self, path: PathLike) -> BytesIOLike:
@@ -344,19 +341,19 @@ class WsFile(CoreContainer):
 
         # Try to open and load workspace configuration from buffer
         try:
-            with self.open(self._CONFIG_FILE) as file:
-                cfg = inifile.load(file, self._CONFIG_STRUCT)
+            with self.open(self._config_file) as file:
+                cfg = inifile.load(file, self._config_struct)
         except KeyError as err:
             raise BadWsFile(
                 f"workspace '{self.path}' is not valid: "
-                f"file '{self._CONFIG_FILE}' could not be loaded") from err
+                f"file '{self._config_file}' could not be loaded") from err
 
         # Check if configuration contains required sections
-        rsec = self._CONFIG_STRUCT.keys()
+        rsec = self._config_struct.keys()
         if rsec > cfg.keys():
             raise BadWsFile(
                 f"workspace '{self.path}' is not valid: "
-                f"'{self._CONFIG_FILE}' requires sections '{rsec}'")
+                f"'{self._config_file}' requires sections '{rsec}'")
 
         # Link configuration
         self._set_dcmi(cfg.get('dcmi', {}))
@@ -383,7 +380,7 @@ class WsFile(CoreContainer):
         self.date = datetime.datetime.now()
 
         # Update 'workspace.ini'
-        with self.open(self._CONFIG_FILE, mode='w') as file:
+        with self.open(self._config_file, mode='w') as file:
             inifile.save({
                 'dcmi': self._get_dcmi(),
                 'hooks': self._get_tech_metadata()}, file)
@@ -469,7 +466,7 @@ class WsFile(CoreContainer):
                 yield file
             else:
                 yield TextIOWrapper(
-                    file, encoding=encoding or self._DEFAULT_ENCODING,
+                    file, encoding=encoding or self._default_encoding,
                     write_through=True)
         finally:
             file.close()

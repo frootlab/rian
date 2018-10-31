@@ -73,9 +73,9 @@ def load_csv(
     config['colfilter'] = {'*': ['*:*']}
     config['rowfilter'] = {'*': ['*:*'], name: [name + ':*']}
 
-    data = csvfile.load(
+    data = csvfile.CSVFile(
         file=file, delim=delim, labels=labels, usecols=usecols,
-        rowlabelcol=rowlabelcol)
+        rowlabelcol=rowlabelcol).select()
 
     config['table'] = {name: config.copy()}
     config['table'][name]['fraction'] = 1.0
