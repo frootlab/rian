@@ -52,8 +52,11 @@ class Csv:
         from nemoa.base.file import csvfile, inifile
         from nemoa.base import npath
 
+        # get CSVFile instance
+        file = csvfile.CSVFile(path)
+
         # Get configuration from CSV header
-        header = csvfile.get_header(path)
+        header = file.header
 
         structure = {
             'name': 'str',
@@ -71,17 +74,19 @@ class Csv:
 
         config = inifile.decode(header, flat=True, structure=structure)
 
-        if 'name' in config: name = config['name']
+        if 'name' in config:
+            name = config['name']
         else:
             name = npath.basename(path)
             config['name'] = name
-        if 'type' not in config: config['type'] = 'base.Dataset'
+        if 'type' not in config:
+            config['type'] = 'base.Dataset'
 
         # add column and row filters
         config['colfilter'] = {'*': ['*:*']}
         config['rowfilter'] = {'*': ['*:*'], name: [name + ':*']}
 
-        data = csvfile.load(path)
+        data = file.select()
 
         config['table'] = {name: config.copy()}
         config['table'][name]['fraction'] = 1.0

@@ -28,11 +28,8 @@ __docformat__ = 'google'
 
 import contextlib
 from nemoa.base import npath, binary
-from nemoa.types import (
-    BytesIOBaseClass, BytesLikeOrStr, FileOrPathLike,
-    IterBytesIOLike, OptInt, OptStr, Path, TextIOBaseClass)
-
-FILEEXTS = ['.gz', '.bin']
+from nemoa.types import BytesIOBaseClass, BytesLikeOrStr, FileOrPathLike
+from nemoa.types import IterBytesIOLike, OptInt, OptStr, Path, TextIOBaseClass
 
 @contextlib.contextmanager
 def openx(file: FileOrPathLike, mode: str = '') -> IterBytesIOLike:
