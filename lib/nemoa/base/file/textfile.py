@@ -15,7 +15,7 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
-__all__ = ['openx', 'load', 'save', 'get_header', 'get_content']
+__all__ = ['openx', 'load', 'save', 'get_comment', 'get_content']
 
 import contextlib
 from io import TextIOWrapper
@@ -110,8 +110,8 @@ def save(text: str, file: FileOrPathLike) -> None:
     with openx(file, mode='w') as fh:
         fh.write(text)
 
-def get_header(file: FileOrPathLike) -> str:
-    """Read header comment from text-file.
+def get_comment(file: FileOrPathLike) -> str:
+    """Read initial comment lines from text-file.
 
     Args:
         file: String or `path-like object`_ that points to a readable file in

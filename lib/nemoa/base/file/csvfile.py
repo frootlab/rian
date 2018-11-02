@@ -90,7 +90,7 @@ class CSVFile(BaseContainer):
     #
 
     _file: property = ContentAttr(FileClassInfo)
-    _header: property = MetadataAttr(str, default=None)
+    _comment: property = MetadataAttr(str, default=None)
     _delim: property = MetadataAttr(str, default=None)
     _format: property = MetadataAttr(str, default=None)
     _colnames: property = MetadataAttr(list, default=None)
@@ -101,10 +101,10 @@ class CSVFile(BaseContainer):
     # Public Attributes
     #
 
-    header: property = VirtualAttr(str, getter='_get_header', readonly=True)
-    header.__doc__ = """
-    String containing the header of the CSV-file or an empty string, if
-    no header could be detected.
+    comment: property = VirtualAttr(str, getter='_get_comment', readonly=True)
+    comment.__doc__ = """
+    String containing the initial '#' lines of the CSV-file or an empty string,
+    if no initial comment lines could be detected.
     """
 
     delim: property = VirtualAttr(str, getter='_get_delim', readonly=True)
@@ -144,23 +144,23 @@ class CSVFile(BaseContainer):
     """
 
     def __init__(self, file: FileOrPathLike, mode: str = '',
-        header: OptStr = None, delim: OptStr = None, format: OptStr = None,
+        comment: OptStr = None, delim: OptStr = None, format: OptStr = None,
         labels: OptStrList = None, usecols: OptIntTuple = None,
         labelid: OptInt = None) -> None:
         """Initialize instance attributes."""
         super().__init__()
         self._file = file
-        self._header = header
+        self._comment = comment
         self._delim = delim
         self._format = format
         self._colnames = labels
         self._labelid = labelid
 
-    def _get_header(self) -> str:
-        # Return header if set manually
-        if self._header is not None:
-            return self._header
-        return textfile.get_header(self._file)
+    def _get_comment(self) -> str:
+        # Return comment if set manually
+        if self._comment is not None:
+            return self._comment
+        return textfile.get_comment(self._file)
 
     def _get_delim(self,  maxcount: int = 100) -> OptStr:
         # Return delimiter if set manually
@@ -331,7 +331,7 @@ class CSVFile(BaseContainer):
             names = tuple(['label'] + [l for l in names if l != lbllbl])
             usecols = tuple([lblcol] + [c for c in usecols if c != lblcol])
 
-        # Import CSV-file to NumPy ndarray
+        # Import data from CSV-file as numpy array
         with textfile.openx(self._file, mode='r') as fh:
             return np.loadtxt(fh,
                 skiprows=self._get_skiprows(),
@@ -340,8 +340,8 @@ class CSVFile(BaseContainer):
                 dtype={'names': names, 'formats': formats})
 
 def save(
-        file: FileOrPathLike, data: NpArray, header: OptStr = None,
-        labels: OptStrList = None, delim: str = ',') -> None:
+        file: FileOrPathLike, data: NpArray, labels: OptStrList = None,
+        comment: OptStr = None, delim: str = ',') -> None:
     """Save NumPy array to CSV-file.
 
     Args:
@@ -349,10 +349,9 @@ def save(
             a valid CSV-file in the directory structure of the system.
         data: NumPy ndarray containing the data which is to be exported to
             a CSV-file.
-        header: String which is included in the CSV-file whithin an initial
-            comment. If 'header' is None, then no initial comment is created.
-            Default: None
-        labels: List of strings containing CSV Column labels.
+        comment: String, which is included in the CSV-file whithin initial
+            '#' lines. By default no initial lines are created.
+        labels: List of strings with column names.
         delim: String containing CSV-delimiter. The default value is ','
 
     Returns:
@@ -360,12 +359,12 @@ def save(
 
     """
     # Check and prepare arguments
-    if isinstance(header, str):
-        header = '# ' + header.replace('\n', '\n# ') + '\n\n'
+    if isinstance(comment, str):
+        comment = '# ' + comment.replace('\n', '\n# ') + '\n\n'
         if isinstance(labels, list):
-            header += delim.join(labels)
+            comment += delim.join(labels)
     elif isinstance(labels, list):
-        header = delim.join(labels)
+        comment = delim.join(labels)
 
     # Get number of columns from last entry in data.shape
     cols = list(getattr(data, 'shape'))[-1]
@@ -373,5 +372,5 @@ def save(
     # Get column format
     fmt = delim.join(['%s'] + ['%10.10f'] * (cols - 1))
 
-    with textfile.openx(file, mode='w') as fd:
-        np.savetxt(fd, data, fmt=fmt, header=header, comments='')
+    with textfile.openx(file, mode='w') as fh:
+        np.savetxt(fh, data, fmt=fmt, header=comment, comments='')
