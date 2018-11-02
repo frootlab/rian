@@ -15,9 +15,9 @@ import setuptools
 from setuptools.command.install import install as Installer
 
 # Module Constants
-APPNAME = 'nemoa'
-APPAUTHOR = 'frootlab'
+AUTHOR = 'frootlab'
 LIBDIR = 'lib'
+PKGNAME = 'nemoa'
 
 class CustomInstaller(Installer): # type: ignore
     """Customized setuptools install command."""
@@ -31,7 +31,7 @@ class CustomInstaller(Installer): # type: ignore
 
 def get_vars() -> dict:
     """Get __VAR__ module variables from package __init__ file."""
-    text = Path(LIBDIR, APPNAME, '__init__.py').read_text()
+    text = Path(LIBDIR, PKGNAME, '__init__.py').read_text()
     rekey = "__([a-zA-Z][a-zA-Z0-9_]*)__"
     reval = r"['\"]([^'\"]*)['\"]"
     pattern = f"^[ ]*{rekey}[ ]*=[ ]*{reval}"
@@ -43,13 +43,15 @@ def get_vars() -> dict:
 def install() -> None:
     """Setuptools based installation script."""
     # Update package variables from package init
-    pkgvars = get_vars()
+    pkg_vars = get_vars()
+
+    print(pkg_vars)
 
     # Install nemoa lib
     setuptools.setup(
-        name=APPNAME,
-        version=pkgvars['version'],
-        description=pkgvars['description'],
+        name=PKGNAME,
+        version=pkg_vars['version'],
+        description=pkg_vars['description'],
         long_description=Path('.', 'README.md').read_text(),
         classifiers=[
             'Development Status :: 3 - Alpha',
@@ -66,13 +68,13 @@ def install() -> None:
             "machine-learning "
             "deep-learning "
             "probabilistic-graphical-models "),
-        url=pkgvars['url'],
-        author=pkgvars['author'],
-        author_email=pkgvars['email'],
-        license=pkgvars['license'],
+        url=pkg_vars['url'],
+        author=pkg_vars['author'],
+        author_email=pkg_vars['email'],
+        license=pkg_vars['license'],
         packages=setuptools.find_packages(LIBDIR),
         package_dir={
-            '': LIBDIR},
+            'nemoa': str(Path(LIBDIR, PKGNAME))},
         package_data={
             'nemoa': ['data/*.zip']},
         cmdclass={
@@ -116,14 +118,14 @@ def post_install() -> None:
     # copy user workspaces
     user_src_base = str(Path('.', 'data', 'user'))
     user_tgt_base = appdirs.user_data_dir(
-        appname=APPNAME, appauthor=APPAUTHOR)
+        appname=PKGNAME, appauthor=AUTHOR)
     user_tgt_base = str(Path(user_tgt_base, 'workspaces'))
     copytree(user_src_base, user_tgt_base)
 
     # copy site workspaces
     site_src_base = str(Path('.', 'data', 'site'))
     site_tgt_base = appdirs.site_data_dir(
-        appname=APPNAME, appauthor=APPAUTHOR)
+        appname=PKGNAME, appauthor=AUTHOR)
     site_tgt_base = str(Path(site_tgt_base, 'workspaces'))
     copytree(site_src_base, site_tgt_base)
 
