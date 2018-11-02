@@ -38,7 +38,7 @@ def load_csv(
         rowlabelcol: OptInt = None) -> dict:
     """ """
     # Get configuration from CSV header
-    header = csvfile.get_header(file)
+    comment = csvfile.CSVFile(file).header
 
     structure = {
         'name': 'str',
@@ -54,7 +54,7 @@ def load_csv(
         'type': 'str',
         'labelformat': 'str'}
 
-    config = inifile.decode(header, flat=True, structure=structure)
+    config = inifile.decode(comment, flat=True, structure=structure)
 
     if 'name' in config:
         name = config['name']

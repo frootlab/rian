@@ -21,15 +21,17 @@ def run(banner: str = '', clear: bool = True) -> None:
     # uncaught exceptions
     IShell = IPython.core.interactiveshell.InteractiveShell
     func = IShell.showtraceback
-    hook = ui.hook_exception
-    IShell.showtraceback = ui.bypass_exceptions(func, hook)
+    IShell.showtraceback = ui.bypass_exceptions(func, ui.hook_exception)
 
     # Clear screen
     if clear:
         ui.clear()
 
     # Prepare arguments
-    kwds = {}
+    config = IPython.terminal.ipapp.load_default_config()
+    config.InteractiveShellEmbed = config.TerminalInteractiveShell
+    config.update({'InteractiveShellEmbed': {'colors': 'Neutral'}})
+    kwds = {'config': config}
     if banner:
         kwds['banner1'] = banner + '\n'
 

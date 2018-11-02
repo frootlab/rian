@@ -45,8 +45,8 @@ class Csv:
 
         from nemoa.base.file import csvfile, inifile
 
-        # create the configuration which is included in the CSV file
-        # as header as a subset of the dataset configuration
+        # Create the configuration which is included in the CSV file
+        # as initial comment lines
         keys = ['name', 'branch', 'version', 'about', 'author', 'email',
             'license', 'filetype', 'application', 'preprocessing',
             'type', 'labelformat']
@@ -55,11 +55,11 @@ class Csv:
             if key in keys: config[key] = val
 
         # prepare CSV parameters and write CSV file
-        header = inifile.encode(config, flat=True).strip('\n')
+        comment = inifile.encode(config, flat=True).strip('\n')
         delim = self.settings['delim']
         cols, data = dataset.get('data', output=('cols', 'recarray'))
 
-        return csvfile.save(path, data, header=header, delim=delim,
+        return csvfile.save(path, data, comment=comment, delim=delim,
             labels=[''] + cols)
 
 class Tsv(Csv):

@@ -64,9 +64,9 @@ class TestTextfile(ModuleTestCase):
 
     def setUp(self) -> None:
         self.filepath = Path(tempfile.NamedTemporaryFile().name + '.txt')
-        self.header = "-*- coding: utf-8 -*-"
-        self.content = ['first line', 'second line']
-        self.text = f"# {self.header}\n\n" + '\n'.join(self.content)
+        self.comment = "comment line"
+        self.content = ['first content line', 'second content line']
+        self.text = f"# {self.comment}\n\n" + '\n'.join(self.content)
         textfile.save(self.text, self.filepath)
 
     def test_openx(self) -> None:
@@ -99,9 +99,9 @@ class TestTextfile(ModuleTestCase):
         text = textfile.load(self.filepath)
         self.assertEqual(text, self.text)
 
-    def test_get_header(self) -> None:
-        header = textfile.get_header(self.filepath)
-        self.assertEqual(header, self.header)
+    def test_get_comment(self) -> None:
+        comment = textfile.get_comment(self.filepath)
+        self.assertEqual(comment, self.comment)
 
     def test_get_content(self) -> None:
         content = textfile.get_content(self.filepath)
@@ -118,7 +118,7 @@ class TestCsvfile(ModuleTestCase):
 
     def setUp(self) -> None:
         self.filepath = Path(tempfile.NamedTemporaryFile().name + '.csv')
-        self.header = '-*- coding: utf-8 -*-'
+        self.comment = '-*- coding: utf-8 -*-'
         self.data = np.array(
             [('row1', 1.1, 1.2), ('row2', 2.1, 2.2), ('row3', 3.1, 3.2)],
             dtype=[('label', 'U8'), ('col1', 'f8'), ('col2', 'f8')])
@@ -126,15 +126,15 @@ class TestCsvfile(ModuleTestCase):
         self.colnames = ['', 'col1', 'col2']
         self.rownames = list(self.data['label'].flat)
         csvfile.save(
-            self.filepath, self.data, header=self.header, labels=self.colnames,
-            delim=self.delim)
+            self.filepath, self.data, comment=self.comment,
+            labels=self.colnames, delim=self.delim)
         self.file = csvfile.CSVFile(self.filepath)
 
     def test_save(self) -> None:
         self.assertTrue(self.filepath.is_file())
 
-    def test_header(self) -> None:
-        self.assertEqual(self.file.header, self.header)
+    def test_comment(self) -> None:
+        self.assertEqual(self.file.comment, self.comment)
 
     def test_delim(self) -> None:
         self.assertEqual(self.file.delim, self.delim)
@@ -170,7 +170,7 @@ class TestInifile(ModuleTestCase):
 
     def setUp(self) -> None:
         self.filepath = Path(tempfile.NamedTemporaryFile().name + '.ini')
-        self.header = '-*- coding: utf-8 -*-'
+        self.comment = '-*- coding: utf-8 -*-'
         self.obj = {
             'n': {'a': 's', 'b': True, 'c': 1},
             'l1': {'a': 1}, 'l2': {'a': 2}}
@@ -181,7 +181,7 @@ class TestInifile(ModuleTestCase):
             "# -*- coding: utf-8 -*-\n\n"
             "[n]\na = s\nb = True\nc = 1\n\n"
             "[l1]\na = 1\n\n[l2]\na = 2\n\n")
-        inifile.save(self.obj, self.filepath, header=self.header)
+        inifile.save(self.obj, self.filepath, comment=self.comment)
 
     def test_parse(self) -> None:
         parser = ConfigParser()
@@ -191,7 +191,7 @@ class TestInifile(ModuleTestCase):
         self.assertEqual(obj, self.obj)
 
     def test_encode(self) -> None:
-        text = inifile.encode(self.obj, header=self.header)
+        text = inifile.encode(self.obj, comment=self.comment)
         self.assertEqual(text, self.text)
 
     def test_decode(self) -> None:
@@ -205,9 +205,9 @@ class TestInifile(ModuleTestCase):
         obj = inifile.load(self.filepath, structure=self.structure)
         self.assertEqual(obj, self.obj)
 
-    def test_get_header(self) -> None:
-        header = inifile.get_header(self.filepath)
-        self.assertEqual(header, self.header)
+    def test_get_comment(self) -> None:
+        comment = inifile.get_comment(self.filepath)
+        self.assertEqual(comment, self.comment)
 
     def tearDown(self) -> None:
         if self.filepath.is_file():

@@ -121,7 +121,7 @@ def decode(
 
 def save(
         config: dict, file: FileOrPathLike, flat: OptBool = None,
-        header: OptStr = None) -> None:
+        comment: OptStr = None) -> None:
     """Save configuration dictionary to INI-file.
 
     Args:
@@ -132,13 +132,13 @@ def save(
         flat: Determines if the desired INI format structure contains sections.
             By default sections are used, if the dictionary contains
             subdictionaries.
-        header: The Header string is written in the INI-file as initial comment.
-            By default no header is written.
+        comment: String containing comment lines, which are stored as initial
+            '#' lines in the INI-file. By default no comment is written.
 
     """
     # Convert configuration dictionary to INI formated text
     try:
-        text = encode(config, flat=flat, header=header)
+        text = encode(config, flat=flat, comment=comment)
     except Exception as err:
         raise ValueError("dictionary is not valid") from err
 
@@ -146,7 +146,7 @@ def save(
     with textfile.openx(file, mode='w') as fh:
         fh.write(text)
 
-def encode(config: dict, flat: OptBool = None, header: OptStr = None) -> str:
+def encode(config: dict, flat: OptBool = None, comment: OptStr = None) -> str:
     """Convert configuration dictionary to INI formated string.
 
     Args:
@@ -154,8 +154,8 @@ def encode(config: dict, flat: OptBool = None, header: OptStr = None) -> str:
         flat: Determines if the desired INI format structure contains sections
             or not. By default sections are used, if the dictionary contains
             subdictionaries.
-        header: The Header string is written in the INI format string as an
-            initial comment. By default no header is written.
+        comment: String containing comment lines, which are stored as initial
+            '#' lines in the INI-file. By default no comment is written.
 
     Returns:
         Text with INI-file structure.
@@ -192,15 +192,15 @@ def encode(config: dict, flat: OptBool = None, header: OptStr = None) -> str:
     if flat:
         text = text.replace('[root]\n', '')
 
-    # If header is given, write header as comments before text
-    if isinstance(header, str):
-        comments = ['# ' + line.strip() for line in header.splitlines()]
+    # If a comment is given, write initial '# ' lines
+    if isinstance(comment, str):
+        comments = ['# ' + line.strip() for line in comment.splitlines()]
         text = '\n'.join(comments) + '\n\n' + text
 
     return text
 
-def get_header(file: FileOrPathLike) -> str:
-    """Read header from INI-file.
+def get_comment(file: FileOrPathLike) -> str:
+    """Read initial comment lines from INI-file.
 
     Args:
         file: String or `path-like object`_ that points to a readable file in
@@ -208,11 +208,11 @@ def get_header(file: FileOrPathLike) -> str:
             reading mode.
 
     Returns:
-        String containing the header of the INI-file or an empty string, if no
-        header could be detected.
+        String containing the initial comment lines of the INI-file or an empty
+        string, if no initial comment lines could be detected.
 
     """
-    return textfile.get_header(file)
+    return textfile.get_comment(file)
 
 def parse(parser: ConfigParser, structure: OptStrDict2 = None) -> StrDict2:
     """Import configuration dictionary from INI formated text.

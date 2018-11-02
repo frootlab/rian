@@ -55,8 +55,8 @@ class Csv:
         # get CSVFile instance
         file = csvfile.CSVFile(path)
 
-        # Get configuration from CSV header
-        header = file.header
+        # Get configuration from CSV comment lines
+        comment = file.comment
 
         structure = {
             'name': 'str',
@@ -72,7 +72,7 @@ class Csv:
             'type': 'str',
             'labelformat': 'str'}
 
-        config = inifile.decode(header, flat=True, structure=structure)
+        config = inifile.decode(comment, flat=True, structure=structure)
 
         if 'name' in config:
             name = config['name']
