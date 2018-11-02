@@ -27,12 +27,13 @@ except ImportError as err:
         "https://pypi.org/project/numpy") from err
 
 from nemoa.base import check
-from nemoa.base.file import textfile
 from nemoa.base.container import BaseContainer, ContentAttr, MetadataAttr
 from nemoa.base.container import VirtualAttr
+from nemoa.base.file import textfile
+#from nemoa.base.table import Table
 from nemoa.types import FileOrPathLike, NpArray, OptInt, OptIntTuple, ClassVar
 from nemoa.types import OptNpArray, OptStr, OptStrList, TextIOBaseClass, StrList
-from nemoa.types import IntTuple, StrTuple, OptList, OptStrTuple
+from nemoa.types import IntTuple, StrTuple, OptList, OptStrTuple, NpDtype
 
 # Module specific exceptions
 class BadCSVFile(OSError):
@@ -90,6 +91,7 @@ class CSVFile(BaseContainer):
     #
 
     _file: property = ContentAttr(FileClassInfo)
+    #_table: property = ContentAttr(Table)
     _comment: property = MetadataAttr(str, default=None)
     _delim: property = MetadataAttr(str, default=None)
     _format: property = MetadataAttr(str, default=None)
@@ -144,9 +146,9 @@ class CSVFile(BaseContainer):
     """
 
     def __init__(self, file: FileOrPathLike, mode: str = '',
-        comment: OptStr = None, delim: OptStr = None, format: OptStr = None,
-        labels: OptStrList = None, usecols: OptIntTuple = None,
-        labelid: OptInt = None) -> None:
+            comment: OptStr = None, delim: OptStr = None, format: OptStr = None,
+            labels: OptStrList = None, usecols: OptIntTuple = None,
+            labelid: OptInt = None) -> None:
         """Initialize instance attributes."""
         super().__init__()
         self._file = file
@@ -298,6 +300,10 @@ class CSVFile(BaseContainer):
             "argument 'columns'", set(columns), 'column names', set(colnames))
         return tuple(colnames.index(col) for col in columns)
 
+    # def create(self, fields: NpDtype) -> None:
+    #     """Create table."""
+    #     self._table = Table(shape=(0, ), dtype=fields)
+
     def select(self, columns: OptStrTuple = None) -> OptNpArray:
         """Load numpy ndarray from CSV-file.
 
@@ -338,6 +344,7 @@ class CSVFile(BaseContainer):
                 delimiter=self._get_delim(),
                 usecols=usecols,
                 dtype={'names': names, 'formats': formats})
+
 
 def save(
         file: FileOrPathLike, data: NpArray, labels: OptStrList = None,

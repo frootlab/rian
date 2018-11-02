@@ -77,9 +77,10 @@ def install() -> None:
             'nemoa': ['data/*.zip']},
         cmdclass={
             'install': CustomInstaller},
-        python_requires='>=3.6',
+        python_requires='>=3.7',
         install_requires=[
             'appdirs>=1.4',
+            'ipython>=7.1',
             'matplotlib>=3.0',
             'networkx>=2.1',
             'numpy>=1.15',
