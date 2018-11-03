@@ -12,6 +12,8 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import dataclasses
+
 try:
     import numpy as np
 except ImportError as err:
@@ -21,74 +23,86 @@ except ImportError as err:
 
 from numpy.lib import recfunctions as nprf
 from nemoa.base import check
-from nemoa.base.container import BaseContainer, ContentAttr, VirtualAttr
-from nemoa.types import Any, NpFields, NpRecArray, StrTuple
+from nemoa.base.container import DCMContainer, ContentAttr
+from nemoa.base.container import MetadataAttr, VirtualAttr
+from nemoa.types import NpFields, NpRecArray, Tuple, Iterable
+from nemoa.types import Union, Optional, StrDict
 
-# class Table(BaseContainer):
-#     """Table Class."""
-#
-#     _rows: property = ContentAttr(list)
-#     _columns: property = MetadataAttr(tuple)
-#
-#     def __init__(self, columns: tuple) -> None:
-#         super().__init__()
+# Module specific types
+Field = dataclasses.Field
+FieldTuple = Tuple[Field, ...]
+Fields = Iterable[Union[str, Tuple[str, type], Tuple[str, type, Field]]]
+FieldLike = Union[Fields, Tuple[str, type, StrDict]]
+OptFieldLike = Optional[FieldLike]
 
-    # def create
+class Table(DCMContainer):
+    """Table Class."""
 
-#    colnames: property = VirtualAttr(getter='_get_colnames', readonly=True)
-    #
-    # def __new__(cls, *args, **kwds):
-    #     # Create the ndarray instance of our type, given the usual
-    #     # ndarray input arguments. This will call the standard
-    #     # ndarray constructor, but return an object of our type.
-    #     # It also triggers a call to InfoArray.__array_finalize__
-    #     obj = super().__new__(cls, *args, **kwds)
-    #     # set the new 'info' attribute to the value passed
-    #     obj.info = 'hi'
-    #     # Finally, we must return the newly created object:
-    #     return obj
-    #
-    # def _get_colnames(self) -> StrTuple:
-    #     return nprf.get_names(self.dtype)
-    #
-    # def __array_finalize__(self, obj):
-    #     # ``self`` is a new object resulting from
-    #     # ndarray.__new__(InfoArray, ...), therefore it only has
-    #     # attributes that the ndarray.__new__ constructor gave it -
-    #     # i.e. those of a standard ndarray.
-    #     #
-    #     # We could have got to the ndarray.__new__ call in 3 ways:
-    #     # From an explicit constructor - e.g. InfoArray():
-    #     #    obj is None
-    #     #    (we're in the middle of the InfoArray.__new__
-    #     #    constructor, and self.info will be set when we return to
-    #     #    InfoArray.__new__)
-    #     if obj is None:
-    #         return
-    #     # From view casting - e.g arr.view(InfoArray):
-    #     #    obj is arr
-    #     #    (type(obj) can be InfoArray)
-    #     # From new-from-template - e.g infoarr[:3]
-    #     #    type(obj) is InfoArray
-    #     #
-    #     # Note that it is here, rather than in the __new__ method,
-    #     # that we set the default value for 'info', because this
-    #     # method sees all creation of default objects - with the
-    #     # InfoArray.__new__ constructor, but also with
-    #     # arr.view(InfoArray).
-    #     self.info = getattr(obj, 'info', None)
-    #     # We do not need to return anything
-    #
-    #
-    # def append_fields(self, *args, **kwds):
-    #     """Add new fields to an existing array.
-    #
-    #     The names of the fields are given with the `names` arguments,
-    #     the corresponding values with the `data` arguments.
-    #     If a single field is appended, `names`, `data` and `dtypes` do not have
-    #     to be lists but just values.
-    #     """
-    #     return nprf.append_fields(self, *args, **kwds)
+    _Record: property = MetadataAttr(type)
+    _store: property = ContentAttr(list)
+
+    _iter: property = MetadataAttr()
+
+    fields: property = VirtualAttr(getter='_get_fields', readonly=True)
+
+    def __init__(self, columns: OptFieldLike = None) -> None:
+        """ """
+        super().__init__()
+        if columns:
+            self._create_header(columns)
+
+    def __iter__(self):
+        self._iter = iter(self._store)
+        return self._iter
+
+    def __next__(self):
+        return self._iter.next()
+
+    def append(self, values: tuple) -> None:
+        self._store.append(self._Record(*values))
+
+    def _create_header(self, columns: FieldLike) -> None:
+        """Create Record class for table."""
+        # Check types of fieldlike column descriptors and convert them to field
+        # descriptors, that are accepted by dataclasses.make_dataclass()
+        fields: list = []
+        for each in columns:
+            if isinstance(each, str):
+                fields.append(each)
+                continue
+            check.has_type(f"field {each}", each, tuple)
+            # check.has_len(f"field {field}", field, min = 2, max = 3)
+            check.has_type("first arg", each[0], str)
+            check.has_type("second arg", each[1], type)
+            if len(each) == 2:
+                fields.append(each)
+                continue
+            check.has_type("third arg", each[2], (Field, dict))
+            if isinstance(each[2], Field):
+                fields.append(each)
+                continue
+            field = dataclasses.field(**each[2])
+            fields.append(each[:2] + (field,))
+
+        self._Record = dataclasses.make_dataclass('Record', fields)
+
+        # Reset store
+        self._store = []
+
+    def as_tuples(self):
+        """ """
+        return [dataclasses.astuple(rec) for rec in self._store]
+
+    def as_dicts(self):
+        """ """
+        return [dataclasses.asdict(rec) for rec in self._store]
+
+    def as_array(self):
+        """ """
+        return np.array(self.as_tuples())
+
+    def _get_fields(self) -> FieldTuple:
+        return dataclasses.fields(self._Record)
 
 def addcols(
         base: NpRecArray, data: NpRecArray,

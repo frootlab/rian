@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Types."""
+from __future__ import annotations
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -13,7 +14,7 @@ import os
 import types
 from typing import Any, Callable, ClassVar, ContextManager, Dict, Hashable, IO
 from typing import Iterable, Iterator, List, Optional, Sequence, Set, Tuple
-from typing import Type, TypeVar, Union
+from typing import Type, TypeVar, Union, NamedTuple
 
 ################################################################################
 # Static Functions

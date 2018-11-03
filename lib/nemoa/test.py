@@ -7,14 +7,13 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from io import StringIO
-from typing import NamedTuple
 from unittest import skipIf
 from unittest import TestCase, TestResult, TestLoader, TestSuite, TextTestRunner
 import numpy as np
 from nemoa.base import assess, this
 from nemoa.types import Any, AnyFunc, ClassInfo, ExcType, Function, Method
 from nemoa.types import OptStr, StringIOLike, Tuple, Dict, List, Callable
-from nemoa.types import NpArray
+from nemoa.types import NpArray, NamedTuple
 
 ################################################################################
 # Global Setting
