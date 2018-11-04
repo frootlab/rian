@@ -79,7 +79,7 @@ def has_size(
     num = len(obj)
     if min_size and num < min_size:
         raise MinSizeError(name, obj, min_size)
-    if max_size and num > max_size:
+    if max_size is not None and num > max_size:
         raise MaxSizeError(name, obj, max_size)
 
 #

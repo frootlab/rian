@@ -26,7 +26,7 @@ from nemoa.base import check
 from nemoa.base.container import DCMContainer, ContentAttr
 from nemoa.base.container import MetadataAttr, VirtualAttr
 from nemoa.types import NpFields, NpRecArray, Tuple, Iterable
-from nemoa.types import Union, Optional, StrDict
+from nemoa.types import Union, Optional, StrDict, Iterator
 
 # Module specific types
 Field = dataclasses.Field
@@ -35,11 +35,17 @@ Fields = Iterable[Union[str, Tuple[str, type], Tuple[str, type, Field]]]
 FieldLike = Union[Fields, Tuple[str, type, StrDict]]
 OptFieldLike = Optional[FieldLike]
 
+class RowBase:
+    """Row Base Class."""
+
+    id: int
+    name: str = ''
+
 class Table(DCMContainer):
     """Table Class."""
 
     _Row: property = MetadataAttr(type)
-    _store: property = ContentAttr(list)
+    _store: property = ContentAttr(list, default=[])
 
     _iter: property = MetadataAttr()
 
@@ -51,14 +57,15 @@ class Table(DCMContainer):
         if columns:
             self._create_header(columns)
 
-    def __iter__(self):
-        """ """
+    def __iter__(self) -> Iterator:
         self._iter = iter(self._store)
         return self._iter
 
-    def __next__(self):
-        """ """
+    def __next__(self) -> RowBase:
         return self._iter.next()
+
+    def __len__(self) -> int:
+        return len(self._store)
 
     def append(self, values: tuple) -> None:
         self._store.append(self._Row(*values))
@@ -86,7 +93,7 @@ class Table(DCMContainer):
             field = dataclasses.field(**each[2])
             fields.append(each[:2] + (field,))
 
-        self._Row = dataclasses.make_dataclass('Row', fields)
+        self._Row = dataclasses.make_dataclass('Row', fields, bases=(RowBase, ))
 
         # Reset store
         self._store = []
