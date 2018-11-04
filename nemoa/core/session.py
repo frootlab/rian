@@ -19,7 +19,7 @@ __docformat__ = 'google'
 from pathlib import Path
 from nemoa.base import npath
 from nemoa.core import log
-from nemoa.base.container import ContentAttr, CoreContainer
+from nemoa.base.container import ContentAttr, DCMContainer
 from nemoa.base.container import TechAttr, VirtualAttr, TransientAttr
 from nemoa.base.file import inifile, wsfile
 from nemoa.types import (
@@ -27,7 +27,7 @@ from nemoa.types import (
     OptPathLike, OptStr, PathLike, StrDict, StrDict2, StrList, StrOrInt,
     Traceback)
 
-class Session(CoreContainer):
+class Session(DCMContainer):
     """Session."""
 
     #

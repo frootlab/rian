@@ -20,7 +20,7 @@ from contextlib import contextmanager
 from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
 from nemoa.base import npath, env
-from nemoa.base.container import ContentAttr, CoreContainer, TechAttr
+from nemoa.base.container import ContentAttr, DCMContainer, TechAttr
 from nemoa.base.container import TransientAttr, VirtualAttr
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
 from nemoa.base.file import inifile
@@ -36,7 +36,7 @@ ZipInfoList = List[ZipInfo]
 class BadWsFile(OSError):
     """Exception for invalid workspace files."""
 
-class WsFile(CoreContainer):
+class WsFile(DCMContainer):
     """Workspace File.
 
     Workspace files are Zip-Archives, that contain the INI-formatted
@@ -64,7 +64,7 @@ class WsFile(CoreContainer):
 
     _config_file: ClassVar[Path] = Path('workspace.ini')
     _config_struct: ClassVar[StrDict2] = {
-        'dcmi': {
+        'dcm': {
             'identifier': 'str',
             'format': 'str',
             'type': 'str',
@@ -83,7 +83,7 @@ class WsFile(CoreContainer):
         'hooks': {
             'startup': 'path'}}
     _default_config: ClassVar[StrDict2] = {
-        'dcmi': {
+        'dcm': {
             'creator': env.get_username(),
             'date': datetime.datetime.now()}}
     _default_dir_layout: ClassVar[StrList] = [
@@ -169,7 +169,7 @@ class WsFile(CoreContainer):
 
     def _create_new(self) -> None:
         # Initialize instance Variables, Buffer and buffered ZipFile
-        self._set_dcmi(self._default_config['dcmi'])
+        self._set_dcm(self._default_config['dcm'])
         self._path = None
         self._changed = False
         self._pwd = None
@@ -356,7 +356,7 @@ class WsFile(CoreContainer):
                 f"'{self._config_file}' requires sections '{rsec}'")
 
         # Link configuration
-        self._set_dcmi(cfg.get('dcmi', {}))
+        self._set_dcm(cfg.get('dcm', {}))
 
     def save(self) -> None:
         """Save the workspace to it's filepath."""
@@ -382,7 +382,7 @@ class WsFile(CoreContainer):
         # Update 'workspace.ini'
         with self.open(self._config_file, mode='w') as file:
             inifile.save({
-                'dcmi': self._get_dcmi(),
+                'dcm': self._get_dcm(),
                 'hooks': self._get_tech_metadata()}, file)
 
         # Remove duplicates from workspace

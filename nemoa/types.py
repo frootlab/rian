@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Types."""
+from __future__ import annotations
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -13,7 +14,7 @@ import os
 import types
 from typing import Any, Callable, ClassVar, ContextManager, Dict, Hashable, IO
 from typing import Iterable, Iterator, List, Optional, Sequence, Set, Tuple
-from typing import Type, TypeVar, Union
+from typing import Type, TypeVar, Union, NamedTuple, Container, Sized
 
 ################################################################################
 # Static Functions
@@ -125,14 +126,8 @@ OptNestDict = Optional[NestDict]
 IterNestRecDict = Iterable[NestRecDict]
 
 ################################################################################
-# Types for Callables
+# Define Types for Callables and Collections of Callables
 ################################################################################
-
-# # Arguments
-# Args = Tuple[Any, ...]
-# Kwds = Dict[Any, Any]
-# FuncPar = Tuple[Args, Kwds]
-# FuncParList = List[FuncPar]
 
 # Elementary Callables
 AnyFunc = Callable[..., Any]
@@ -164,10 +159,6 @@ FuncWrapper = Callable[[Callable[..., T]], Callable[..., T]]
 # Specific builtin Types
 ################################################################################
 
-# Iterators / Generators
-IterAny = Iterator[Any]
-IterNone = Iterator[None]
-
 # Numbers
 RealNumber = Union[int, float]
 Number = Union[RealNumber, complex]
@@ -178,16 +169,27 @@ RealFunc = Callable[..., RealNumber]
 ScalarFunc = Callable[..., Number]
 VectorFunc = Callable[..., Vector]
 
-# Classes
+# Classes and Class Variables
 Class = Type[Any]
 OptClass = Optional[Class]
 ClassInfo = Union[Class, Tuple[Class, ...]]
 OptClassInfo = Optional[ClassInfo]
-
-# Class Variables
 ClassStrList = ClassVar[StrList]
 ClassDict = ClassVar[AnyDict]
 ClassStrDict = ClassVar[StrDict]
+
+################################################################################
+# Specific Types that are defined by standard library packages
+################################################################################
+
+# Named Tuples
+OptNamedTuple = Optional[NamedTuple]
+
+# Dynamic Typed (Duck Typed) Classes
+IterAny = Iterator[Any] # methods: __next__
+IterNone = Iterator[None] # methods: __next__
+OptContainer = Optional[Container] # methods: __contains__
+OptSized = Optional[Sized] # methods: __len__
 
 ################################################################################
 # Specific Types that are used within standard library packages
@@ -202,10 +204,10 @@ PathLike = Union[str, Path]
 PathLikeList = List[PathLike]
 OptPathLike = Optional[PathLike]
 # Nested paths for tree structured path references
-# TODO (patrick.michl@gmail.com): currently recursive type definition is not
-# fully supported by the typing module. When recursive type definition is
-# available replace the following lines by their respective recursive
-# definitions
+# TODO (patrick.michl@gmail.com): currently (Python 3.7.1) recursive type
+# definition is not fully supported by the typing module. When recursive type
+# definition is available replace the following lines by their respective
+# recursive definitions
 PathLikeSeq = Sequence[PathLike]
 PathLikeSeq2 = Sequence[Union[PathLike, PathLikeSeq]]
 PathLikeSeq3 = Sequence[Union[PathLike, PathLikeSeq, PathLikeSeq2]]
@@ -242,8 +244,9 @@ FileOrPathLike = Union[FileLike, PathLike]
 ################################################################################
 
 # Numpy
-# TODO (patrick.michl@gmail.com): Currently typing support for NumPy is not
-# available but on the road, see: https://github.com/numpy/numpy-stubs
+# TODO (patrick.michl@gmail.com): Currently (numpy 1.15.3) typing support for
+# numpy is not available but a workaround is in progress, see:
+# https://github.com/numpy/numpy-stubs
 NpShape = Optional[IntTuple]
 NpShapeLike = Optional[Union[int, Sequence[int]]]
 NpAxis = Union[None, int, IntTuple]
@@ -260,9 +263,9 @@ OptNpArray = Optional[NpArray]
 NpArrayFunc = Callable[..., NpArray]
 NpRecArrayFunc = Callable[..., NpRecArray]
 NpMatrixFunc = Callable[..., NpMatrix]
-# TODO (patrick.michl@gmail.com): Currently the typing module does not support
-# argument specification for callables with variing numbers of arguments.
-# Nevertheless this feature is on the road: see:
+# TODO (patrick.michl@gmail.com): Currently (Python 3.7.1) the typing module
+# does not support argument specification for callables with variing numbers of
+# arguments, but this feature is in progress, see:
 # https://github.com/python/typing/issues/264
 # Use argument specification, when available:
 # FuncOfNpArray = Callable[[NpArray, ...], Any]

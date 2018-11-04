@@ -16,7 +16,6 @@ from setuptools.command.install import install as Installer
 
 # Module Constants
 AUTHOR = 'frootlab'
-LIBDIR = 'lib'
 PKGNAME = 'nemoa'
 
 class CustomInstaller(Installer): # type: ignore
@@ -31,7 +30,7 @@ class CustomInstaller(Installer): # type: ignore
 
 def get_vars() -> dict:
     """Get __VAR__ module variables from package __init__ file."""
-    text = Path(LIBDIR, PKGNAME, '__init__.py').read_text()
+    text = Path(PKGNAME, '__init__.py').read_text()
     rekey = "__([a-zA-Z][a-zA-Z0-9_]*)__"
     reval = r"['\"]([^'\"]*)['\"]"
     pattern = f"^[ ]*{rekey}[ ]*=[ ]*{reval}"
@@ -45,9 +44,7 @@ def install() -> None:
     # Update package variables from package init
     pkg_vars = get_vars()
 
-    print(pkg_vars)
-
-    # Install nemoa lib
+    # Install nemoa package
     setuptools.setup(
         name=PKGNAME,
         version=pkg_vars['version'],
@@ -60,7 +57,7 @@ def install() -> None:
             'Operating System :: OS Independent',
             'License :: OSI Approved :: GPLv3',
             'Programming Language :: Python :: 3',
-    		'Programming Language :: Python :: 3.6'],
+    		'Programming Language :: Python :: 3.7'],
         keywords=(
             "data-analysis "
             "data-science "
@@ -72,11 +69,11 @@ def install() -> None:
         author=pkg_vars['author'],
         author_email=pkg_vars['email'],
         license=pkg_vars['license'],
-        packages=setuptools.find_packages(LIBDIR),
+        packages=setuptools.find_packages(),
         package_dir={
-            'nemoa': str(Path(LIBDIR, PKGNAME))},
+            PKGNAME: PKGNAME},
         package_data={
-            'nemoa': ['data/*.zip']},
+            PKGNAME: ['data/*.zip']},
         cmdclass={
             'install': CustomInstaller},
         python_requires='>=3.7',
