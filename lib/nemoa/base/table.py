@@ -38,7 +38,7 @@ OptFieldLike = Optional[FieldLike]
 class Table(DCMContainer):
     """Table Class."""
 
-    _Record: property = MetadataAttr(type)
+    _Row: property = MetadataAttr(type)
     _store: property = ContentAttr(list)
 
     _iter: property = MetadataAttr()
@@ -52,14 +52,16 @@ class Table(DCMContainer):
             self._create_header(columns)
 
     def __iter__(self):
+        """ """
         self._iter = iter(self._store)
         return self._iter
 
     def __next__(self):
+        """ """
         return self._iter.next()
 
     def append(self, values: tuple) -> None:
-        self._store.append(self._Record(*values))
+        self._store.append(self._Row(*values))
 
     def _create_header(self, columns: FieldLike) -> None:
         """Create Record class for table."""
@@ -71,7 +73,7 @@ class Table(DCMContainer):
                 fields.append(each)
                 continue
             check.has_type(f"field {each}", each, tuple)
-            # check.has_len(f"field {field}", field, min = 2, max = 3)
+            check.has_size(f"field {each}", each, min_size=2, max_size=3)
             check.has_type("first arg", each[0], str)
             check.has_type("second arg", each[1], type)
             if len(each) == 2:
@@ -84,7 +86,7 @@ class Table(DCMContainer):
             field = dataclasses.field(**each[2])
             fields.append(each[:2] + (field,))
 
-        self._Record = dataclasses.make_dataclass('Record', fields)
+        self._Row = dataclasses.make_dataclass('Row', fields)
 
         # Reset store
         self._store = []
@@ -102,7 +104,7 @@ class Table(DCMContainer):
         return np.array(self.as_tuples())
 
     def _get_fields(self) -> FieldTuple:
-        return dataclasses.fields(self._Record)
+        return dataclasses.fields(self._Row)
 
 def addcols(
         base: NpRecArray, data: NpRecArray,

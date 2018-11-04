@@ -45,9 +45,7 @@ def install() -> None:
     # Update package variables from package init
     pkg_vars = get_vars()
 
-    print(pkg_vars)
-
-    # Install nemoa lib
+    # Install nemoa package
     setuptools.setup(
         name=PKGNAME,
         version=pkg_vars['version'],
@@ -74,7 +72,7 @@ def install() -> None:
         license=pkg_vars['license'],
         packages=setuptools.find_packages(LIBDIR),
         package_dir={
-            'nemoa': str(Path(LIBDIR, PKGNAME))},
+            '': LIBDIR}, # PKGNAME: str(Path(LIBDIR, PKGNAME))},
         package_data={
             'nemoa': ['data/*.zip']},
         cmdclass={
