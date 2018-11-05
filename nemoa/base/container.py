@@ -144,7 +144,7 @@ class InheritedAttr(Attr):
         kwds['parent'] = kwds.get('parent', 'parent')
         super().__init__(*args, **kwds)
 
-class TransientAttr(Attr):
+class TempAttr(Attr):
     """Attributes for non persistent objects."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
@@ -179,7 +179,7 @@ class BaseContainer:
     # Transient Attributes
     #
 
-    parent: property = TransientAttr(object)
+    parent: property = TempAttr(object)
     parent.__doc__ = """Reference to parent object."""
 
     #
@@ -246,12 +246,12 @@ class BaseContainer:
         self._set_attrs(TechAttr, attrs)
 
     def _get_transient(self) -> dict:
-        attrs = self._get_attrs(TransientAttr)
+        attrs = self._get_attrs(TempAttr)
         return {attr: getattr(self, attr) for attr in attrs}
 
     def _set_transient(self, attrs: StrDict) -> None:
         check.has_type("argument 'attrs'", attrs, dict)
-        self._set_attrs(TransientAttr, attrs)
+        self._set_attrs(TempAttr, attrs)
 
     def _get_virtual(self) -> dict:
         attrs = self._get_attrs(VirtualAttr)

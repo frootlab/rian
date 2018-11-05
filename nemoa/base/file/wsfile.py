@@ -21,7 +21,7 @@ from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
 from nemoa.base import npath, env
 from nemoa.base.container import ContentAttr, DCMContainer, TechAttr
-from nemoa.base.container import TransientAttr, VirtualAttr
+from nemoa.base.container import TempAttr, VirtualAttr
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
 from nemoa.base.file import inifile
 from nemoa.types import BytesIOBaseClass, BytesIOLike, BytesLike, ClassVar
@@ -138,9 +138,9 @@ class WsFile(DCMContainer):
     # Private Transient Attributes
     #
 
-    _path: property = TransientAttr(Path)
-    _pwd: property = TransientAttr(bytes)
-    _changed: property = TransientAttr(bool, default=False)
+    _path: property = TempAttr(Path)
+    _pwd: property = TempAttr(bytes)
+    _changed: property = TempAttr(bool, default=False)
 
     #
     # Magic

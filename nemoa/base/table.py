@@ -24,11 +24,12 @@ import dataclasses
 
 from numpy.lib import recfunctions as nprf
 from nemoa.base import check
-from nemoa.base.container import DCMContainer, ContentAttr, BaseContainer
-from nemoa.base.container import VirtualAttr, TransientAttr, InheritedAttr
+from nemoa.base.container import BaseContainer, ContentAttr, InheritedAttr
+from nemoa.base.container import TempAttr, VirtualAttr
 from nemoa.types import NpFields, NpRecArray, Tuple, Iterable
 from nemoa.types import Union, Optional, StrDict, StrTuple, Iterator, Any
-from nemoa.types import OptIntList, OptCallable
+from nemoa.types import OptIntList, OptCallable, CallableCI, Callable
+from nemoa.types import OptStrTuple
 
 # Module specific types
 Field = dataclasses.Field
@@ -99,34 +100,53 @@ class Record(abc.ABC):
 class Cursor(BaseContainer):
     """Cursor Class."""
 
-    _index: property = InheritedAttr(list, default=[])
-    func: property = TransientAttr()
-    _iter: property = TransientAttr()
+    _index: property = InheritedAttr()
+    _getter: property = TempAttr(CallableCI)
+    _mapper: property = TempAttr(CallableCI)
+    _predicate: property = TempAttr(CallableCI)
 
     def __init__(
-            self, index: OptIntList = None, func: OptCallable = None) -> None:
-        super().__init__()
+            self, index: OptIntList = None, getter: OptCallable = None,
+            predicate: OptCallable = None, mapper: OptCallable = None,
+            parent: Optional[BaseContainer] = None) -> None:
+        """Initialize Cursor."""
+        super().__init__(parent=parent)
         if index:
             self._index = index
-        if func and callable(func):
-            self.func = func
+        if getter:
+            check.is_callable("argument 'getter'", getter)
+            self._getter = getter
+        if predicate:
+            check.is_callable("argument 'predicate'", predicate)
+            self._predicate = predicate
+        if mapper:
+            check.is_callable("argument 'mapper'", mapper)
+            self._mapper = mapper
 
     def __iter__(self) -> Iterator:
         self._iter = iter(self._index)
         return self
 
     def __next__(self) -> Record:
-        return self.func[next(self._iter)]
+        rowid = next(self._iter)
+        if not self._getter:
+            return rowid
+        row = self._getter(rowid)
+        if not self._predicate or self._predicate(row):
+            if self._mapper:
+                return self._mapper(row)
+            return row
+        return next(self)
 
-class Table(DCMContainer):
+class Table(BaseContainer):
     """Table Class."""
 
     _store: property = ContentAttr(list, default=[])
 
-    _diff: property = TransientAttr(list, default=[])
-    _index: property = TransientAttr(list, default=[])
-    _iter_index: property = TransientAttr()
-    _Record: property = TransientAttr(type)
+    _diff: property = TempAttr(list, default=[])
+    _index: property = TempAttr(list, default=[])
+    _iter_index: property = TempAttr()
+    _Record: property = TempAttr(type)
 
     fields: property = VirtualAttr(getter='_get_fields', readonly=True)
     colnames: property = VirtualAttr(getter='_get_colnames', readonly=True)
@@ -135,30 +155,24 @@ class Table(DCMContainer):
         """ """
         super().__init__()
         if columns:
-            self._create_row_class(columns)
+            self._create_header(columns)
 
     def __iter__(self) -> Iterator:
         self._iter_index = iter(self._index)
         return self
 
     def __next__(self) -> Record:
-        return self.row(next(self._iter_index))
+        return self.get_row(next(self._iter_index))
 
     def __len__(self) -> int:
         return len(self._index)
-
-    def append(self, *args: Any, **kwds: Any) -> None:
-        row = self._create_row(*args, **kwds)
-        self._store.append(None)
-        self._diff.append(row)
-        self._append_row_id(row.id)
 
     def commit(self) -> None:
         """Apply changes to table."""
         # Delete and update rows in table store. The reversed order is required
         # to keep the position of the list index, when deleting rows
         for rowid in reversed(range(len(self._store))):
-            state = self.row(rowid).state
+            state = self.get_row(rowid).state
             if state & ROW_STATE_DELETE:
                 del self._store[rowid]
             elif state & (ROW_STATE_CREATE | ROW_STATE_UPDATE):
@@ -169,11 +183,11 @@ class Table(DCMContainer):
         self._create_index()
 
     def rollback(self) -> None:
-        """Revoke changes in table."""
-        # Delete new rows, that have not been commited. The reversed order is
-        # required to keep the position of the list index, when deleting rows
+        """Revoke changes from table."""
+        # Delete new rows, that have not yet been commited. The reversed order
+        # is required to keep the position of the list index, when deleting rows
         for rowid in reversed(range(len(self._store))):
-            state = self.row(rowid).state
+            state = self.get_row(rowid).state
             if state & ROW_STATE_CREATE:
                 del self._store[rowid]
             else:
@@ -181,6 +195,61 @@ class Table(DCMContainer):
 
         # Reassign row IDs and recreate diff table and index
         self._create_index()
+
+    def get_cursor(
+            self, predicate: OptCallable = None,
+            mapper: OptCallable = None) -> Cursor:
+        """ """
+        return Cursor(
+            index=self._index, getter=self.get_row, predicate=predicate,
+            mapper=mapper)
+
+    def get_row(self, rowid: int) -> Record:
+        """ """
+        return self._diff[rowid] or self._store[rowid]
+
+    def get_rows(self, predicate: OptCallable = None) -> Cursor:
+        """ """
+        return self.get_cursor(predicate=predicate)
+
+    def append_row(self, *args: Any, **kwds: Any) -> None:
+        """ """
+        row = self._create_row(*args, **kwds)
+        self._store.append(None)
+        self._diff.append(row)
+        self._append_row_id(row.id)
+
+    def delete_row(self, rowid: int) -> None:
+        """ """
+        self.get_row(rowid).delete()
+
+    def delete_rows(self, predicate: OptCallable = None) -> None:
+        """ """
+        for row in self.get_rows(predicate):
+            row.delete()
+
+    def update_row(self, rowid: int, **kwds: Any) -> None:
+        """ """
+        self.get_row(rowid).update(**kwds)
+
+    def update_rows(self, predicate: OptCallable = None, **kwds: Any) -> None:
+        """ """
+        for row in self.get_rows(predicate):
+            row.update(**kwds)
+
+    def select(
+            self, columns: OptStrTuple = None,
+            predicate: OptCallable = None) -> list:
+        """ """
+        if not columns:
+            mapper = self._get_col_mapper_tuple(self.colnames)
+        else:
+            check.is_subset(
+                "argument 'columns'", set(columns),
+                "table column names", set(self.colnames))
+            mapper = self._get_col_mapper_tuple(columns)
+        return self.get_cursor( # type: ignore
+            predicate=predicate, mapper=mapper)
 
     def _create_index(self) -> None:
         self._index = []
@@ -190,19 +259,10 @@ class Table(DCMContainer):
             self._diff.append(None)
             self._index.append(rowid)
 
-    def delete(self, rowid: int) -> None:
-        self.row(rowid).delete()
-
-    def select(self, columns: StrTuple) -> list:
-        cols = lambda row: tuple(getattr(row, col) for col in columns)
-        return list(map(cols, [self.row(rowid) for rowid in self._index]))
-
-    def row(self, rowid: int) -> Record:
-        return self._diff[rowid] or self._store[rowid]
-
-    # def get_cursor(
-    #         self, index: OptIntList = None, func: OptCallable = None) -> Cursor:
-    #     return Cursor(index, func)
+    def _get_col_mapper_tuple(self, columns: StrTuple) -> Callable:
+        def mapper(row: Record) -> tuple:
+            return tuple(getattr(row, col) for col in columns)
+        return mapper
 
     def _get_fields(self) -> FieldTuple:
         return dataclasses.fields(self._Record)
@@ -220,7 +280,7 @@ class Table(DCMContainer):
         self._index.remove(rowid)
 
     def _update_row_diff(self, rowid: int, **kwds: Any) -> None:
-        row = self.row(rowid)
+        row = self.get_row(rowid)
         new = dataclasses.replace(row, **kwds)
         new.id = rowid
         new.state = row.state
@@ -232,7 +292,7 @@ class Table(DCMContainer):
     def _create_row(self, *args: Any, **kwds: Any) -> Record:
         return self._Record(*args, **kwds) # pylint: disable=E0110
 
-    def _create_row_class(self, columns: FieldLike) -> None:
+    def _create_header(self, columns: FieldLike) -> None:
         # Check types of fieldlike column descriptors and convert them to field
         # descriptors, that are accepted by dataclasses.make_dataclass()
         fields: list = []
@@ -269,13 +329,6 @@ class Table(DCMContainer):
         # Create slots
         self._Record.__slots__ = ['id', 'state'] + [
             field.name for field in dataclasses.fields(self._Record)]
-
-        # Bind Record hooks to table methods
-        #setattr(self._Record, '_create_row_id', self._create_row_id)
-        # setattr(self._Record, '_delete_hook', self._remove_row_id)
-        # setattr(self._Record, '_restore_hook', self._append_row_id)
-        # setattr(self._Record, '_update_hook', self._update_row_diff)
-        # setattr(self._Record, '_revoke_hook', self._remove_row_diff)
 
         # Reset store, diff and index
         self._store = []

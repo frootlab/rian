@@ -20,7 +20,7 @@ from pathlib import Path
 from nemoa.base import npath
 from nemoa.core import log
 from nemoa.base.container import ContentAttr, DCMContainer
-from nemoa.base.container import TechAttr, VirtualAttr, TransientAttr
+from nemoa.base.container import TechAttr, VirtualAttr, TempAttr
 from nemoa.base.file import inifile, wsfile
 from nemoa.types import (
     Any, BytesLike, CManFileLike, ClassVar, Exc, ExcType, OptBytes, OptPath,
@@ -80,7 +80,7 @@ class Session(DCMContainer):
     # Transient Attributes
     #
 
-    logger: property = TransientAttr(log.Logger)
+    logger: property = TempAttr(log.Logger)
     logger.__doc__ = """Logger instance."""
 
     #
