@@ -44,7 +44,7 @@ import tempfile
 import warnings
 from pathlib import Path
 from nemoa.base import env, npath
-from nemoa.base.container import BaseContainer, TransientAttr, VirtualAttr
+from nemoa.base.container import BaseContainer, TempAttr, VirtualAttr
 from nemoa.errors import SingletonExistsError, NotStartedError
 from nemoa.types import void, Any, AnyFunc, ClassVar, PathLike, StrList
 from nemoa.types import StrOrInt, Optional, OptPath, OptStrDict, VoidFunc
@@ -90,7 +90,7 @@ class Logger(BaseContainer):
     # Private Transient Attributes
     #
 
-    _logger: property = TransientAttr(logging.Logger)
+    _logger: property = TempAttr(logging.Logger)
 
     #
     # Public Virtual Attributes

@@ -33,8 +33,8 @@ __docformat__ = 'google'
 
 from abc import ABC, abstractmethod
 from nemoa.types import Any, OptList, OptInt, OptBool
-from nemoa.errors import DBIError, DBIWarning
-from nemoa.base.container import BaseContainer, VirtualAttr, MetadataAttr
+from nemoa.errors import DBIError
+from nemoa.base.container import BaseContainer, VirtualAttr, InheritedAttr
 
 #
 # DB-API 2.0 Exceptions
@@ -141,7 +141,7 @@ class Cursor(ABC, BaseContainer):
     # Cursor attributes
     #
 
-    arraysize: property = MetadataAttr(int, default=1)
+    arraysize: property = InheritedAttr(int, default=1)
     arraysize.__doc__ = """
     This read/write attribute specifies the number of rows to fetch at a time
     with `fetchmany`. It defaults to 1 meaning to fetch a single row at a time.
@@ -287,8 +287,8 @@ class Cursor(ABC, BaseContainer):
 
         Note there are performance considerations involved with the size
         parameter. For optimal performance, it is usually best to use the
-        `arraysize` attribute. If the size parameter is used, then it is best for
-        it to retain the same value from one `fetchmany` call to the next.
+        `arraysize` attribute. If the size parameter is used, then it is best
+        for it to retain the same value from one `fetchmany` call to the next.
         """
         pass
 

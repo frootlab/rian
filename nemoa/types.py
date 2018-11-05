@@ -36,6 +36,7 @@ Infty = float('inf')
 Obj = object
 Function = types.FunctionType
 Method = types.MethodType
+CallableCI = (Function, Method)
 Module = types.ModuleType
 Traceback = types.TracebackType
 BytesIOBaseClass = io.BufferedIOBase

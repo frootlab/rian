@@ -135,7 +135,7 @@ class ContentAttr(Attr):
         kwds['bind'] = kwds.get('bind', '_data')
         super().__init__(*args, **kwds)
 
-class MetadataAttr(Attr):
+class InheritedAttr(Attr):
     """Attributes for persistent metadata objects."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
@@ -144,7 +144,7 @@ class MetadataAttr(Attr):
         kwds['parent'] = kwds.get('parent', 'parent')
         super().__init__(*args, **kwds)
 
-class TransientAttr(Attr):
+class TempAttr(Attr):
     """Attributes for non persistent objects."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
@@ -165,7 +165,7 @@ class VirtualAttr(Attr):
         check.has_type('getter', kwds.get('getter'), str)
         super().__init__(*args, **kwds)
 
-class TechAttr(MetadataAttr):
+class TechAttr(InheritedAttr):
     """Attributes for technical metadata."""
 
 class BaseContainer:
@@ -179,7 +179,7 @@ class BaseContainer:
     # Transient Attributes
     #
 
-    parent: property = TransientAttr(object)
+    parent: property = TempAttr(object)
     parent.__doc__ = """Reference to parent object."""
 
     #
@@ -230,12 +230,12 @@ class BaseContainer:
         self._set_attrs(ContentAttr, attrs)
 
     def _get_metadata(self) -> dict:
-        attrs = self._get_attrs(MetadataAttr)
+        attrs = self._get_attrs(InheritedAttr)
         return {attr: getattr(self, attr) for attr in attrs}
 
     def _set_metadata(self, attrs: StrDict) -> None:
         check.has_type("argument 'attrs'", attrs, dict)
-        self._set_attrs(MetadataAttr, attrs)
+        self._set_attrs(InheritedAttr, attrs)
 
     def _get_tech_metadata(self) -> dict:
         attrs = self._get_attrs(TechAttr)
@@ -246,12 +246,12 @@ class BaseContainer:
         self._set_attrs(TechAttr, attrs)
 
     def _get_transient(self) -> dict:
-        attrs = self._get_attrs(TransientAttr)
+        attrs = self._get_attrs(TempAttr)
         return {attr: getattr(self, attr) for attr in attrs}
 
     def _set_transient(self, attrs: StrDict) -> None:
         check.has_type("argument 'attrs'", attrs, dict)
-        self._set_attrs(TransientAttr, attrs)
+        self._set_attrs(TempAttr, attrs)
 
     def _get_virtual(self) -> dict:
         attrs = self._get_attrs(VirtualAttr)
@@ -265,7 +265,7 @@ class BaseContainer:
 # Container class with Dublin Core metadata
 #
 
-class DCMAttr(MetadataAttr):
+class DCMAttr(InheritedAttr):
     """Dublin Core Metadata Attribute."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:

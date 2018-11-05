@@ -27,7 +27,7 @@ except ImportError as err:
         "https://pypi.org/project/numpy") from err
 
 from nemoa.base import check
-from nemoa.base.container import BaseContainer, ContentAttr, MetadataAttr
+from nemoa.base.container import BaseContainer, ContentAttr, InheritedAttr
 from nemoa.base.container import VirtualAttr
 from nemoa.base.file import textfile
 #from nemoa.base.table import Table
@@ -92,12 +92,12 @@ class CSVFile(BaseContainer):
 
     _file: property = ContentAttr(FileClassInfo)
     #_table: property = ContentAttr(Table)
-    _comment: property = MetadataAttr(str, default=None)
-    _delim: property = MetadataAttr(str, default=None)
-    _format: property = MetadataAttr(str, default=None)
-    _colnames: property = MetadataAttr(list, default=None)
-    _rownames: property = MetadataAttr(list, default=None)
-    _labelid: property = MetadataAttr(int, default=None)
+    _comment: property = InheritedAttr(str, default=None)
+    _delim: property = InheritedAttr(str, default=None)
+    _format: property = InheritedAttr(str, default=None)
+    _colnames: property = InheritedAttr(list, default=None)
+    _rownames: property = InheritedAttr(list, default=None)
+    _labelid: property = InheritedAttr(int, default=None)
 
     #
     # Public Attributes
