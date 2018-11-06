@@ -44,7 +44,7 @@ import tempfile
 import warnings
 from pathlib import Path
 from nemoa.base import env, npath
-from nemoa.base.container import BaseContainer, TempAttr, VirtualAttr
+from nemoa.base.container import Container, TempAttr, VirtAttr
 from nemoa.errors import SingletonExistsError, NotStartedError
 from nemoa.types import void, Any, AnyFunc, ClassVar, PathLike, StrList
 from nemoa.types import StrOrInt, Optional, OptPath, OptStrDict, VoidFunc
@@ -53,7 +53,7 @@ from nemoa.types import StrOrInt, Optional, OptPath, OptStrDict, VoidFunc
 # Logger Class
 #
 
-class Logger(BaseContainer):
+class Logger(Container):
     """Logger class.
 
     Args:
@@ -96,10 +96,10 @@ class Logger(BaseContainer):
     # Public Virtual Attributes
     #
 
-    logger: property = VirtualAttr(
+    logger: property = VirtAttr(
         logging.Logger, getter='_get_logger', setter='_set_logger')
 
-    name: property = VirtualAttr(
+    name: property = VirtAttr(
         str, getter='_get_name', setter='_set_name', default=_default_name)
     name.__doc__ = """
     String identifier of Logger, given as a period-separated hierarchical value
@@ -108,7 +108,7 @@ class Logger(BaseContainer):
     hierarchy.
     """
 
-    file: property = VirtualAttr(
+    file: property = VirtAttr(
         classinfo=(str, Path), getter='_get_file', setter='_set_file',
         default=_default_file)
     file.__doc__ = """
@@ -120,7 +120,7 @@ class Logger(BaseContainer):
     created as a fallback.
     """
 
-    level: property = VirtualAttr(
+    level: property = VirtAttr(
         classinfo=(str, int), getter='_get_level', setter='_set_level',
         default=_default_level)
     level.__doc__ = """
@@ -137,7 +137,7 @@ class Logger(BaseContainer):
 
     def __init__(self, *args: Any,
             metadata: OptStrDict = None, content: OptStrDict = None,
-            parent: Optional[BaseContainer] = None, **kwds: Any) -> None:
+            parent: Optional[Container] = None, **kwds: Any) -> None:
         """Initialize instance."""
         super().__init__(metadata=metadata, content=content, parent=parent)
         self._start_logging(*args, **kwds)

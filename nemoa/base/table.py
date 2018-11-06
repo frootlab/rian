@@ -12,7 +12,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import abc
+from abc import ABC, abstractmethod
 import dataclasses
 
 # try:
@@ -24,34 +24,59 @@ import dataclasses
 
 from numpy.lib import recfunctions as nprf
 from nemoa.base import check
-from nemoa.base.container import BaseContainer, ContentAttr, InheritedAttr
-from nemoa.base.container import TempAttr, VirtualAttr
+from nemoa.base.container import Container, DataAttr, MetaAttr
+from nemoa.base.container import TempAttr, VirtAttr
 from nemoa.types import NpFields, NpRecArray, Tuple, Iterable
 from nemoa.types import Union, Optional, StrDict, StrTuple, Iterator, Any
 from nemoa.types import OptIntList, OptCallable, CallableCI, Callable
-from nemoa.types import OptStrTuple
+from nemoa.types import OptStrTuple, OptInt, ClassVar
 
-# Module specific types
+#
+# Module Types
+#
+
 Field = dataclasses.Field
 FieldTuple = Tuple[Field, ...]
 Fields = Iterable[Union[str, Tuple[str, type], Tuple[str, type, Field]]]
 FieldLike = Union[Fields, Tuple[str, type, StrDict]]
 OptFieldLike = Optional[FieldLike]
 
-# Module specific constants
+#
+# Module Constants
+#
+
 ROW_STATE_CREATE = 0b001
 ROW_STATE_UPDATE = 0b010
 ROW_STATE_DELETE = 0b100
+CURSOR_MODE_DYNAMIC = 0
+CURSOR_MODE_FIXED = 1
+CURSOR_MODE_STATIC = 2
 
-class Record(abc.ABC):
+#
+# Module Classes
+#
+
+class Record(ABC):
     """Record Base Class."""
+
+    #
+    # Public Instance Variables
+    #
 
     id: int
     state: int
 
+    #
+    # Events
+    #
+
     def __post_init__(self, *args: Any, **kwds: Any) -> None:
         self.id = self._create_row_id()
         self.state = ROW_STATE_CREATE
+
+    #
+    # Public Methods
+    #
 
     def delete(self) -> None:
         """Mark record as deleted and remove it's ID from index."""
@@ -77,82 +102,184 @@ class Record(abc.ABC):
             self.state &= ~ROW_STATE_UPDATE
             self._revoke_hook(self.id)
 
-    @abc.abstractmethod
+    #
+    # Protected Methods
+    #
+
+    @abstractmethod
     def _create_row_id(self) -> int:
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def _delete_hook(self, rowid: int) -> None:
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def _restore_hook(self, rowid: int) -> None:
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def _update_hook(self, rowid: int, **kwds: Any) -> None:
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def _revoke_hook(self, rowid: int) -> None:
         pass
 
-class Cursor(BaseContainer):
-    """Cursor Class."""
+class Cursor(Container):
+    """Cursor Class.
 
-    _index: property = InheritedAttr()
+    Args:
+        index: List of row IDs, that are traversed by the cursor. By default the
+            attribute '_index' of the parent object is used.
+        mode:
+            0: Dynamic Cursor:
+                Dynamic cursors are built on-the-fly and therefore comprise any
+                changes made to the rows in the result set during it's
+                traversal, as well as on the order of it's traversal. This
+                behaviour is regardless of whether the changes occur from inside
+                the cursor or by other users from outside the cursor. Dynamic
+                cursors are threadsafe but do not support counting the rows
+                with respect to a given filter or sorting the rows.
+            1: Fixed Cursor:
+                Fixed cursors are built on-the-fly with respect to an initial
+                copy of the table index and therefore comprise changes made to
+                the rows in the result set during it's traversal, but not on
+                the order of it's traversal. Fixed cursors are threadsafe but do
+                not support counting the rows with respect to a given filter or
+                sorting the rows.
+            2: Static Cursor:
+                Static cursors are buffered and built during it's creation time
+                and therfore always display the result set as it was when the
+                cursor was first opened. Static cursors are not threadsafe but
+                support counting the rows with respect to a given filter and
+                sorting the rows.
+
+    """
+
+    #
+    # Protected Class Variables
+    #
+
+    _default_mode: ClassVar[int] = CURSOR_MODE_DYNAMIC
+
+    #
+    # Public Attributes
+    #
+
+    mode: property = VirtAttr(getter='_get_mode', readonly=True)
+    rowcount: property = VirtAttr(getter='_get_rowcount', readonly=True)
+
+    #
+    # Protected Attributes
+    #
+
+    _mode: property = MetaAttr(int, default=_default_mode)
+    _index: property = MetaAttr(list, parent='parent')
     _getter: property = TempAttr(CallableCI)
+    _filter: property = TempAttr(CallableCI)
     _mapper: property = TempAttr(CallableCI)
-    _predicate: property = TempAttr(CallableCI)
+    _buffer: property = TempAttr(list, default=[])
+
+    #
+    # Events
+    #
 
     def __init__(
             self, index: OptIntList = None, getter: OptCallable = None,
             predicate: OptCallable = None, mapper: OptCallable = None,
-            parent: Optional[BaseContainer] = None) -> None:
+            parent: Optional[Container] = None,
+            mode: OptInt = None) -> None:
         """Initialize Cursor."""
-        super().__init__(parent=parent)
-        if index:
+        super().__init__(parent=parent) # Parent is set by container
+        if index is not None:
             self._index = index
-        if getter:
-            check.is_callable("argument 'getter'", getter)
-            self._getter = getter
-        if predicate:
-            check.is_callable("argument 'predicate'", predicate)
-            self._predicate = predicate
-        if mapper:
-            check.is_callable("argument 'mapper'", mapper)
-            self._mapper = mapper
+        self._getter = getter
+        self._filter = predicate
+        self._mapper = mapper
+        if mode is not None:
+            self._mode = mode
+        if self.mode == CURSOR_MODE_FIXED:
+            self._index = self._index.copy()
+        if self.mode == CURSOR_MODE_STATIC:
+            self._create_buffer()
 
     def __iter__(self) -> Iterator:
-        self._iter = iter(self._index)
+        mode = self._mode
+        if mode == CURSOR_MODE_DYNAMIC:
+            self._iter_index = iter(self._index)
+        elif mode == CURSOR_MODE_STATIC:
+            self._iter_buffer = iter(self._buffer)
+        else:
+            raise ValueError(f"unsupported cursor mode '{mode}'")
         return self
 
     def __next__(self) -> Record:
-        if not self._predicate:
-            row = self._getter(next(self._iter))
+        return self.fetchrow()
+
+    def __len__(self) -> int:
+        return self.rowcount
+
+    #
+    # Public Methods
+    #
+
+    def fetchrow(self) -> Record:
+        """Fetch single row from the result set."""
+        mode = self._mode
+        if mode == CURSOR_MODE_DYNAMIC:
+            if not self._filter:
+                row = self._getter(next(self._iter_index))
+                if self._mapper:
+                    return self._mapper(row)
+                return row
+            matches = False
+            while not matches:
+                row = self._getter(next(self._iter_index))
+                matches = self._filter(row)
             if self._mapper:
                 return self._mapper(row)
             return row
-        matches = False
-        while not matches:
-            row = self._getter(next(self._iter))
-            matches = self._predicate(row)
-        if self._mapper:
-            return self._mapper(row)
-        return row
+        if mode == CURSOR_MODE_STATIC:
+            return next(self._iter_buffer)
+        raise ValueError(f"unsupported cursor mode '{mode}'")
 
-class Table(BaseContainer):
+    #
+    # Protected Methods
+    #
+
+    def _get_mode(self) -> int:
+        return self._mode
+
+    def _get_rowcount(self) -> int:
+        mode = self._mode
+        if mode == CURSOR_MODE_DYNAMIC:
+            if not self._filter:
+                return len(self._index)
+            raise TypeError(
+                "dynamic cursors do not support counting rows with set filter")
+        if mode == CURSOR_MODE_STATIC:
+            return len(self._buffer)
+        raise ValueError(f"unsupported cursor mode '{mode}'")
+
+    def _create_buffer(self) -> None:
+        dyn_cur = self.__class__(
+            index=self._index, getter=self._getter, predicate=self._filter,
+            mapper=self._mapper, mode=CURSOR_MODE_DYNAMIC)
+        self._buffer = list(dyn_cur)
+
+class Table(Container):
     """Table Class."""
 
-    _store: property = ContentAttr(list, default=[])
+    _store: property = DataAttr(list, default=[])
 
     _diff: property = TempAttr(list, default=[])
     _index: property = TempAttr(list, default=[])
     _iter_index: property = TempAttr()
     _Record: property = TempAttr(type)
 
-    fields: property = VirtualAttr(getter='_get_fields', readonly=True)
-    colnames: property = VirtualAttr(getter='_get_colnames', readonly=True)
+    fields: property = VirtAttr(getter='_get_fields', readonly=True)
+    colnames: property = VirtAttr(getter='_get_colnames', readonly=True)
 
     def __init__(self, columns: OptFieldLike = None) -> None:
         """ """
@@ -200,20 +327,22 @@ class Table(BaseContainer):
         self._create_index()
 
     def get_cursor(
-            self, predicate: OptCallable = None,
-            mapper: OptCallable = None) -> Cursor:
+            self, predicate: OptCallable = None, mapper: OptCallable = None,
+            mode: OptInt = None) -> Cursor:
         """ """
         return Cursor(
-            index=self._index, getter=self.get_row, predicate=predicate,
-            mapper=mapper)
+            getter=self.get_row, predicate=predicate, mapper=mapper, mode=mode,
+            parent=self)
 
     def get_row(self, rowid: int) -> Record:
         """ """
         return self._diff[rowid] or self._store[rowid]
 
-    def get_rows(self, predicate: OptCallable = None) -> Cursor:
+    def get_rows(
+            self, predicate: OptCallable = None,
+            mode: int = CURSOR_MODE_DYNAMIC) -> Cursor:
         """ """
-        return self.get_cursor(predicate=predicate)
+        return self.get_cursor(predicate=predicate, mode=mode)
 
     def append_row(self, *args: Any, **kwds: Any) -> None:
         """ """
@@ -241,8 +370,8 @@ class Table(BaseContainer):
             row.update(**kwds)
 
     def select(
-            self, columns: OptStrTuple = None,
-            predicate: OptCallable = None) -> list:
+            self, columns: OptStrTuple = None, predicate: OptCallable = None,
+            mode: int = CURSOR_MODE_DYNAMIC) -> list:
         """ """
         if not columns:
             mapper = self._get_col_mapper_tuple(self.colnames)

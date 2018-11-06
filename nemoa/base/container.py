@@ -127,7 +127,7 @@ class Attr(property):
 # Base Container Class
 #
 
-class ContentAttr(Attr):
+class DataAttr(Attr):
     """Attributes for persistent content storage objects."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
@@ -135,7 +135,7 @@ class ContentAttr(Attr):
         kwds['bind'] = kwds.get('bind', '_data')
         super().__init__(*args, **kwds)
 
-class InheritedAttr(Attr):
+class MetaAttr(Attr):
     """Attributes for persistent metadata objects."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
@@ -152,7 +152,7 @@ class TempAttr(Attr):
         kwds['bind'] = kwds.get('bind', '_temp')
         super().__init__(*args, **kwds)
 
-class VirtualAttr(Attr):
+class VirtAttr(Attr):
     """Attributes for non persistent virtual objects.
 
     Remark:
@@ -165,10 +165,7 @@ class VirtualAttr(Attr):
         check.has_type('getter', kwds.get('getter'), str)
         super().__init__(*args, **kwds)
 
-class TechAttr(InheritedAttr):
-    """Attributes for technical metadata."""
-
-class BaseContainer:
+class Container:
     """Base class for Container Objects."""
 
     _data: StrDict
@@ -176,11 +173,11 @@ class BaseContainer:
     _temp: StrDict
 
     #
-    # Transient Attributes
+    # Temporary Attributes
     #
 
     parent: property = TempAttr(object)
-    parent.__doc__ = """Reference to parent object."""
+    parent.__doc__ = """Reference to parent container object."""
 
     #
     # Magic
@@ -188,7 +185,7 @@ class BaseContainer:
 
     def __init__(
             self, metadata: OptStrDict = None, content: OptStrDict = None,
-            parent: Optional['BaseContainer'] = None) -> None:
+            parent: Optional['Container'] = None) -> None:
         """Initialize instance."""
         self._data = {}
         self._meta = {}
@@ -222,50 +219,42 @@ class BaseContainer:
             setattr(self, attr, obj)
 
     def _get_content(self) -> dict:
-        attrs = self._get_attrs(ContentAttr)
+        attrs = self._get_attrs(DataAttr)
         return {attr: getattr(self, attr) for attr in attrs}
 
     def _set_content(self, attrs: StrDict) -> None:
         check.has_type("argument 'attrs'", attrs, dict)
-        self._set_attrs(ContentAttr, attrs)
+        self._set_attrs(DataAttr, attrs)
 
     def _get_metadata(self) -> dict:
-        attrs = self._get_attrs(InheritedAttr)
+        attrs = self._get_attrs(MetaAttr)
         return {attr: getattr(self, attr) for attr in attrs}
 
     def _set_metadata(self, attrs: StrDict) -> None:
         check.has_type("argument 'attrs'", attrs, dict)
-        self._set_attrs(InheritedAttr, attrs)
+        self._set_attrs(MetaAttr, attrs)
 
-    def _get_tech_metadata(self) -> dict:
-        attrs = self._get_attrs(TechAttr)
-        return {attr: getattr(self, attr) for attr in attrs}
-
-    def _set_tech_metadata(self, attrs: StrDict) -> None:
-        check.has_type("argument 'attrs'", attrs, dict)
-        self._set_attrs(TechAttr, attrs)
-
-    def _get_transient(self) -> dict:
+    def _get_temporary(self) -> dict:
         attrs = self._get_attrs(TempAttr)
         return {attr: getattr(self, attr) for attr in attrs}
 
-    def _set_transient(self, attrs: StrDict) -> None:
+    def _set_temporary(self, attrs: StrDict) -> None:
         check.has_type("argument 'attrs'", attrs, dict)
         self._set_attrs(TempAttr, attrs)
 
     def _get_virtual(self) -> dict:
-        attrs = self._get_attrs(VirtualAttr)
+        attrs = self._get_attrs(VirtAttr)
         return {attr: getattr(self, attr) for attr in attrs}
 
     def _set_virtual(self, attrs: StrDict) -> None:
         check.has_type("argument 'attrs'", attrs, dict)
-        self._set_attrs(VirtualAttr, attrs)
+        self._set_attrs(VirtAttr, attrs)
 
 #
 # Container class with Dublin Core metadata
 #
 
-class DCMAttr(InheritedAttr):
+class DCMAttr(MetaAttr):
     """Dublin Core Metadata Attribute."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
@@ -273,7 +262,7 @@ class DCMAttr(InheritedAttr):
         kwds['classinfo'] = kwds.get('classinfo', str)
         super().__init__(*args, **kwds)
 
-class DCMContainer(BaseContainer):
+class DCMContainer(Container):
     """Container class, that implements the Dublin Core Schema.
 
     The Dublin Core Metadata Element Set is a vocabulary of fifteen properties

@@ -19,8 +19,8 @@ __docformat__ = 'google'
 from pathlib import Path
 from nemoa.base import npath
 from nemoa.core import log
-from nemoa.base.container import ContentAttr, DCMContainer
-from nemoa.base.container import TechAttr, VirtualAttr, TempAttr
+from nemoa.base.container import DataAttr, DCMContainer
+from nemoa.base.container import MetaAttr, VirtAttr, TempAttr
 from nemoa.base.file import inifile, wsfile
 from nemoa.types import (
     Any, BytesLike, CManFileLike, ClassVar, Exc, ExcType, OptBytes, OptPath,
@@ -51,29 +51,29 @@ class Session(DCMContainer):
     # Content Attributes
     #
 
-    workspace: property = ContentAttr(wsfile.WsFile)
+    workspace: property = DataAttr(wsfile.WsFile)
 
     #
     # Metadata Attributes
     #
 
-    config: property = TechAttr(dict)
+    config: property = MetaAttr(dict)
     config.__doc__ = """Session configuration."""
 
-    paths: property = TechAttr(list)
+    paths: property = MetaAttr(list)
     paths.__doc__ = """Search paths for workspaces."""
 
     #
     # Virtual Attributes
     #
 
-    files: property = VirtualAttr(list, getter='_get_files', readonly=True)
+    files: property = VirtAttr(list, getter='_get_files', readonly=True)
     files.__doc__ = """Files within the current workspace."""
 
-    folders: property = VirtualAttr(list, getter='_get_folders', readonly=True)
+    folders: property = VirtAttr(list, getter='_get_folders', readonly=True)
     folders.__doc__ = """Folders within the current workspace."""
 
-    path: property = VirtualAttr(Path, getter='_get_path', readonly=True)
+    path: property = VirtAttr(Path, getter='_get_path', readonly=True)
     path.__doc__ = """Filepath of the current workspace."""
 
     #

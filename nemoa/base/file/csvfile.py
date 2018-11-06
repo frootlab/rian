@@ -27,8 +27,8 @@ except ImportError as err:
         "https://pypi.org/project/numpy") from err
 
 from nemoa.base import check
-from nemoa.base.container import BaseContainer, ContentAttr, InheritedAttr
-from nemoa.base.container import VirtualAttr
+from nemoa.base.container import Container, DataAttr, MetaAttr
+from nemoa.base.container import VirtAttr
 from nemoa.base.file import textfile
 #from nemoa.base.table import Table
 from nemoa.types import FileOrPathLike, NpArray, OptInt, OptIntTuple, ClassVar
@@ -46,7 +46,7 @@ FileClassInfo = (str, Path, TextIOBaseClass)
 FORMAT_STANDARD = 0
 FORMAT_RTABLE = 1
 
-class CSVFile(BaseContainer):
+class CSVFile(Container):
     """CSV File.
 
     Args:
@@ -87,35 +87,35 @@ class CSVFile(BaseContainer):
     """
 
     #
-    # Private Attributes
+    # Protected Attributes
     #
 
-    _file: property = ContentAttr(FileClassInfo)
-    #_table: property = ContentAttr(Table)
-    _comment: property = InheritedAttr(str, default=None)
-    _delim: property = InheritedAttr(str, default=None)
-    _format: property = InheritedAttr(str, default=None)
-    _colnames: property = InheritedAttr(list, default=None)
-    _rownames: property = InheritedAttr(list, default=None)
-    _labelid: property = InheritedAttr(int, default=None)
+    _file: property = DataAttr(FileClassInfo)
+    #_table: property = DataAttr(Table)
+    _comment: property = MetaAttr(str, default=None)
+    _delim: property = MetaAttr(str, default=None)
+    _format: property = MetaAttr(str, default=None)
+    _colnames: property = MetaAttr(list, default=None)
+    _rownames: property = MetaAttr(list, default=None)
+    _labelid: property = MetaAttr(int, default=None)
 
     #
     # Public Attributes
     #
 
-    comment: property = VirtualAttr(str, getter='_get_comment', readonly=True)
+    comment: property = VirtAttr(str, getter='_get_comment', readonly=True)
     comment.__doc__ = """
     String containing the initial '#' lines of the CSV-file or an empty string,
     if no initial comment lines could be detected.
     """
 
-    delim: property = VirtualAttr(str, getter='_get_delim', readonly=True)
+    delim: property = VirtAttr(str, getter='_get_delim', readonly=True)
     delim.__doc__ = """
     Delimiter string of the CSV-file or None, if the delimiter could not be
     detected.
     """
 
-    format: property = VirtualAttr(int, getter='_get_format', readonly=True)
+    format: property = VirtAttr(int, getter='_get_format', readonly=True)
     format.__doc__ = """
     Format of the column labels. The following formats are distinguished:
         0:
@@ -127,19 +127,19 @@ class CSVFile(BaseContainer):
             identification.
     """
 
-    colnames: property = VirtualAttr(getter='_get_colnames', readonly=True)
+    colnames: property = VirtAttr(getter='_get_colnames', readonly=True)
     colnames.__doc__ = """
     List of strings containing column names from first non comment, non empty
     line of CSV-file.
     """
 
-    rownames: property = VirtualAttr(getter='_get_rownames', readonly=True)
+    rownames: property = VirtAttr(getter='_get_rownames', readonly=True)
     rownames.__doc__ = """
     List of strings containing row names from column with id given by labelid or
     None, if labelid is not given.
     """
 
-    labelid: property = VirtualAttr(int, getter='_get_labelid', readonly=True)
+    labelid: property = VirtAttr(int, getter='_get_labelid', readonly=True)
     labelid.__doc__ = """
     Index of the column of a CSV-file that contains the row names. The value
     None is used for CSV-files that do not contain row names.
