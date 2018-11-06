@@ -26,6 +26,7 @@ from numpy.lib import recfunctions as nprf
 from nemoa.base import check
 from nemoa.base.container import Container, DataAttr, MetaAttr
 from nemoa.base.container import TempAttr, VirtAttr
+from nemoa.errors import NmError
 from nemoa.types import NpFields, NpRecArray, Tuple, Iterable
 from nemoa.types import Union, Optional, StrDict, StrTuple, Iterator, Any
 from nemoa.types import OptIntList, OptCallable, CallableCI, Callable
@@ -51,6 +52,19 @@ ROW_STATE_DELETE = 0b100
 CURSOR_MODE_DYNAMIC = 0
 CURSOR_MODE_FIXED = 1
 CURSOR_MODE_STATIC = 2
+
+#
+# Module Exceptions
+#
+
+class TableError(NmError):
+    """Default Table Error."""
+
+class RowLookupError(LookupError, TableError):
+    """Row Lookup Error."""
+
+class ColumnLookupError(LookupError, TableError):
+    """Column Lookup Error."""
 
 #
 # Record Class
@@ -130,6 +144,7 @@ class Record(ABC):
 # Record Types
 #
 
+OptRec = Optional[Record]
 RecList = List[Record]
 RecLike = Union[Record, tuple, dict]
 RecLikeList = List[RecLike]
@@ -310,7 +325,7 @@ class Cursor(Container):
         raise ValueError(f"unsupported cursor mode '{mode}'")
 
     def _create_index(self) -> None:
-        self._index = list(filter(None.__ne__, self._index))
+        self._index = list(self._index)
 
     def _create_buffer(self) -> None:
         dyn_cur = self.__class__(
@@ -342,39 +357,54 @@ class Table(Container):
         return self
 
     def __next__(self) -> Record:
-        return self.get_row(next(self._iter_index))
+        row = self.get_row(next(self._iter_index))
+        while not row:
+            row = self.get_row(next(self._iter_index))
+        return row
 
     def __len__(self) -> int:
         return len(self._index)
 
     def commit(self) -> None:
         """Apply changes to table."""
-        # Delete and update rows in table store. The reversed order is required
-        # to keep the position of the list index, when deleting rows
-        for rowid in reversed(range(len(self._store))):
-            state = self.get_row(rowid).state
+        # Delete / Update rows in storage table
+        for rowid in list(range(len(self._store))):
+            row = self.get_row(rowid)
+            if not row:
+                continue
+            state = row.state
             if state & ROW_STATE_DELETE:
-                del self._store[rowid]
+                self._store[rowid] = None
+                try:
+                    self._index.remove(rowid)
+                except ValueError:
+                    pass
             elif state & (ROW_STATE_CREATE | ROW_STATE_UPDATE):
                 self._store[rowid] = self._diff[rowid]
                 self._store[rowid].state = 0
 
-        # Reassign row IDs and recreate diff table and index
-        self._create_index()
+        # Flush diff table
+        self._diff = [None] * len(self._store)
 
     def rollback(self) -> None:
         """Revoke changes from table."""
-        # Delete new rows, that have not yet been commited. The reversed order
-        # is required to keep the position of the list index, when deleting rows
-        for rowid in reversed(range(len(self._store))):
-            state = self.get_row(rowid).state
+        # Remove newly created rows from index and reset states of already
+        # existing rows
+        for rowid in list(range(len(self._store))):
+            row = self.get_row(rowid)
+            if not row:
+                continue
+            state = row.state
             if state & ROW_STATE_CREATE:
-                del self._store[rowid]
+                try:
+                    self._index.remove(rowid)
+                except ValueError:
+                    pass
             else:
                 self._store[rowid].state = 0
 
-        # Reassign row IDs and recreate diff table and index
-        self._create_index()
+        # Flush diff table
+        self._diff = [None] * len(self._store)
 
     def get_cursor(
             self, predicate: OptCallable = None, mapper: OptCallable = None,
@@ -384,13 +414,12 @@ class Table(Container):
             getter=self.get_row, predicate=predicate, mapper=mapper, mode=mode,
             parent=self)
 
-    def get_row(self, rowid: int) -> Record:
+    def get_row(self, rowid: int) -> OptRec:
         """ """
         return self._diff[rowid] or self._store[rowid]
 
     def get_rows(
-            self, predicate: OptCallable = None,
-            mode: int = CURSOR_MODE_DYNAMIC) -> Cursor:
+            self, predicate: OptCallable = None, mode: OptInt = None) -> Cursor:
         """ """
         return self.get_cursor(predicate=predicate, mode=mode)
 
@@ -403,7 +432,10 @@ class Table(Container):
 
     def delete_row(self, rowid: int) -> None:
         """ """
-        self.get_row(rowid).delete()
+        row = self.get_row(rowid)
+        if not row:
+            raise RowLookupError(f"row index {rowid} is not valid")
+        row.delete()
 
     def delete_rows(self, predicate: OptCallable = None) -> None:
         """ """
@@ -412,7 +444,10 @@ class Table(Container):
 
     def update_row(self, rowid: int, **kwds: Any) -> None:
         """ """
-        self.get_row(rowid).update(**kwds)
+        row = self.get_row(rowid)
+        if not row:
+            raise RowLookupError(f"row index {rowid} is not valid")
+        row.update(**kwds)
 
     def update_rows(self, predicate: OptCallable = None, **kwds: Any) -> None:
         """ """
@@ -421,7 +456,7 @@ class Table(Container):
 
     def select(
             self, columns: OptStrTuple = None, predicate: OptCallable = None,
-            mode: int = CURSOR_MODE_DYNAMIC) -> list:
+            mode: OptInt = None) -> RecLikeList:
         """ """
         if not columns:
             mapper = self._get_col_mapper_tuple(self.colnames)
@@ -431,15 +466,23 @@ class Table(Container):
                 "table column names", set(self.colnames))
             mapper = self._get_col_mapper_tuple(columns)
         return self.get_cursor( # type: ignore
-            predicate=predicate, mapper=mapper)
+            predicate=predicate, mapper=mapper, mode=mode)
 
-    def _create_index(self) -> None:
-        self._index = []
-        self._diff = []
-        for rowid in range(len(self._store)):
+    def pack(self) -> None:
+        """Remove empty records from storage table and rebuild record IDs."""
+        # Commit pending changes
+        self.commit()
+
+        # Remove empty records
+        self._store = list(filter(None.__ne__, self._store))
+
+        # Rebuild index list and record IDs
+        self._index = list(range(len(self._store)))
+        for rowid in self._index:
             self._store[rowid].id = rowid
-            self._diff.append(None)
-            self._index.append(rowid)
+
+        # Rebuild diff table
+        self._diff = [None] * len(self._store)
 
     def _get_col_mapper_tuple(self, columns: StrTuple) -> Callable:
         def mapper(row: Record) -> tuple:
@@ -463,10 +506,12 @@ class Table(Container):
 
     def _update_row_diff(self, rowid: int, **kwds: Any) -> None:
         row = self.get_row(rowid)
-        new = dataclasses.replace(row, **kwds)
-        new.id = rowid
-        new.state = row.state
-        self._diff[rowid] = new
+        if not row:
+            raise RowLookupError(f"row index {rowid} is not valid")
+        upd = dataclasses.replace(row, **kwds)
+        upd.id = rowid
+        upd.state = row.state
+        self._diff[rowid] = upd
 
     def _remove_row_diff(self, rowid: int) -> None:
         self._diff[rowid] = None
