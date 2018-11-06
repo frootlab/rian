@@ -26,11 +26,11 @@ from numpy.lib import recfunctions as nprf
 from nemoa.base import check
 from nemoa.base.container import Container, DataAttr, MetaAttr
 from nemoa.base.container import TempAttr, VirtAttr
-from nemoa.errors import NmError
+from nemoa.errors import NemoaError
 from nemoa.types import NpFields, NpRecArray, Tuple, Iterable
 from nemoa.types import Union, Optional, StrDict, StrTuple, Iterator, Any
 from nemoa.types import OptIntList, OptCallable, CallableCI, Callable
-from nemoa.types import OptStrTuple, OptInt, ClassVar, List
+from nemoa.types import OptStrTuple, OptInt, ClassVar, List, OptStr
 
 #
 # Module Types
@@ -57,14 +57,30 @@ CURSOR_MODE_STATIC = 2
 # Module Exceptions
 #
 
-class TableError(NmError):
+class TableError(NemoaError):
     """Default Table Error."""
 
-class RowLookupError(LookupError, TableError):
+class RowLookupError(TableError, LookupError):
     """Row Lookup Error."""
 
-class ColumnLookupError(LookupError, TableError):
+    def __init__(self, rowid: int) -> None:
+        super().__init__(f"row index {rowid} is not valid")
+
+class ColumnLookupError(TableError, LookupError):
     """Column Lookup Error."""
+
+    def __init__(self, colname: int) -> None:
+        super().__init__(f"column name '{colname}' is not valid")
+
+class CursorModeError(TableError, LookupError):
+    """Raise when a procedure is not supported by a cursor."""
+
+    def __init__(self, mode: int, proc: OptStr = None) -> None:
+        if not proc:
+            msg = f"unknown cursor mode {mode}"
+        else:
+            msg = f"{proc} is not supported in cursor mode {mode}"
+        super().__init__(msg)
 
 #
 # Record Class
@@ -167,15 +183,14 @@ class Cursor(Container):
                 traversal. This behaviour is regardless of whether the changes
                 occur from inside the cursor or by other users from outside the
                 cursor. Dynamic cursors are threadsafe but do not support
-                counting the rows with respect to a given filter or sorting the
-                rows.
+                counting filtered rows or sorting rows.
             1: Fixed Cursor:
                 Fixed cursors are built on-the-fly with respect to an initial
                 copy of the table index and therefore comprise changes made to
                 the rows in the result set during it's traversal, but not new
-                appended rows or the order of it's traversal. Fixed cursors are
-                threadsafe but do not support counting the rows with respect to
-                a given filter or sorting the rows.
+                appended rows or the order of it's traversal. Dynamic cursors
+                are threadsafe but do not support counting filtered rows or
+                sorting rows.
             2: Static Cursor:
                 Static cursors are buffered and built during it's creation time
                 and therfore always display the result set as it was when the
@@ -259,7 +274,7 @@ class Cursor(Container):
         elif mode == CURSOR_MODE_STATIC:
             self._iter_buffer = iter(self._buffer)
         else:
-            raise ValueError(f"unsupported cursor mode '{mode}'")
+            raise CursorModeError(mode)
 
     def next(self) -> RecLike:
         """Return next row that matches the given filter."""
@@ -279,7 +294,7 @@ class Cursor(Container):
             return row
         if mode == CURSOR_MODE_STATIC:
             return next(self._iter_buffer)
-        raise ValueError(f"unsupported cursor mode '{mode}'")
+        raise CursorModeError(mode)
 
     def fetch(self, size: OptInt = None) -> RecLikeList:
         """Fetch rows from the result set.
@@ -316,13 +331,10 @@ class Cursor(Container):
         if mode in [CURSOR_MODE_DYNAMIC, CURSOR_MODE_FIXED]:
             if not self._filter:
                 return len(self._index)
-            name = 'dynamic' if mode == CURSOR_MODE_DYNAMIC else 'fixed'
-            raise TypeError(
-                f"{name} cursors do not support "
-                "counting rows with respect to a filter")
+            raise CursorModeError(mode, "counting filtered rows")
         if mode == CURSOR_MODE_STATIC:
             return len(self._buffer)
-        raise ValueError(f"unsupported cursor mode '{mode}'")
+        raise CursorModeError(mode)
 
     def _create_index(self) -> None:
         self._index = list(self._index)
@@ -434,7 +446,7 @@ class Table(Container):
         """ """
         row = self.get_row(rowid)
         if not row:
-            raise RowLookupError(f"row index {rowid} is not valid")
+            raise RowLookupError(rowid)
         row.delete()
 
     def delete_rows(self, predicate: OptCallable = None) -> None:
@@ -446,7 +458,7 @@ class Table(Container):
         """ """
         row = self.get_row(rowid)
         if not row:
-            raise RowLookupError(f"row index {rowid} is not valid")
+            raise RowLookupError(rowid)
         row.update(**kwds)
 
     def update_rows(self, predicate: OptCallable = None, **kwds: Any) -> None:
@@ -456,27 +468,27 @@ class Table(Container):
 
     def select(
             self, columns: OptStrTuple = None, predicate: OptCallable = None,
-            mode: OptInt = None) -> RecLikeList:
+            fmt: type = tuple, mode: OptInt = None) -> RecLikeList:
         """ """
         if not columns:
-            mapper = self._get_col_mapper_tuple(self.colnames)
+            mapper = self._get_mapper(self.colnames, fmt=fmt)
         else:
             check.is_subset(
                 "argument 'columns'", set(columns),
                 "table column names", set(self.colnames))
-            mapper = self._get_col_mapper_tuple(columns)
+            mapper = self._get_mapper(columns, fmt=fmt)
         return self.get_cursor( # type: ignore
             predicate=predicate, mapper=mapper, mode=mode)
 
     def pack(self) -> None:
-        """Remove empty records from storage table and rebuild record IDs."""
+        """Remove empty records from storage table and rebuild table index."""
         # Commit pending changes
         self.commit()
 
         # Remove empty records
         self._store = list(filter(None.__ne__, self._store))
 
-        # Rebuild index list and record IDs
+        # Rebuild table index
         self._index = list(range(len(self._store)))
         for rowid in self._index:
             self._store[rowid].id = rowid
@@ -484,10 +496,16 @@ class Table(Container):
         # Rebuild diff table
         self._diff = [None] * len(self._store)
 
-    def _get_col_mapper_tuple(self, columns: StrTuple) -> Callable:
-        def mapper(row: Record) -> tuple:
+    def _get_mapper(self, columns: StrTuple, fmt: type = tuple) -> Callable:
+        def mapper_tuple(row: Record) -> tuple:
             return tuple(getattr(row, col) for col in columns)
-        return mapper
+        def mapper_dict(row: Record) -> dict:
+            return {col: getattr(row, col) for col in columns}
+        if fmt == tuple:
+            return mapper_tuple
+        if fmt == dict:
+            return mapper_dict
+        raise TableError(f"argument 'fmt' requires to be tuple or dict")
 
     def _get_fields(self) -> FieldTuple:
         return dataclasses.fields(self._Record)
@@ -507,7 +525,7 @@ class Table(Container):
     def _update_row_diff(self, rowid: int, **kwds: Any) -> None:
         row = self.get_row(rowid)
         if not row:
-            raise RowLookupError(f"row index {rowid} is not valid")
+            raise RowLookupError(rowid)
         upd = dataclasses.replace(row, **kwds)
         upd.id = rowid
         upd.state = row.state
@@ -561,18 +579,6 @@ class Table(Container):
         self._store = []
         self._diff = []
         self._index = []
-
-    # def as_tuples(self):
-    #     """ """
-    #     return [dataclasses.astuple(rec) for rec in self._store]
-    #
-    # def as_dicts(self):
-    #     """ """
-    #     return [dataclasses.asdict(rec) for rec in self._store]
-    #
-    # def as_array(self):
-    #     """ """
-    #     return np.array(self.as_tuples())
 
 def addcols(
         base: NpRecArray, data: NpRecArray,
