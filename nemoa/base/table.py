@@ -29,7 +29,7 @@ from nemoa.base.container import TempAttr, VirtAttr
 from nemoa.types import NpFields, NpRecArray, Tuple, Iterable
 from nemoa.types import Union, Optional, StrDict, StrTuple, Iterator, Any
 from nemoa.types import OptIntList, OptCallable, CallableCI, Callable
-from nemoa.types import OptStrTuple, OptInt, ClassVar
+from nemoa.types import OptStrTuple, OptInt, ClassVar, List
 
 #
 # Module Types
@@ -53,7 +53,7 @@ CURSOR_MODE_FIXED = 1
 CURSOR_MODE_STATIC = 2
 
 #
-# Module Classes
+# Record Class
 #
 
 class Record(ABC):
@@ -126,6 +126,18 @@ class Record(ABC):
     def _revoke_hook(self, rowid: int) -> None:
         pass
 
+#
+# Record Types
+#
+
+RecList = List[Record]
+RecLike = Union[Record, tuple, dict]
+RecLikeList = List[RecLike]
+
+#
+# Cursor Class
+#
+
 class Cursor(Container):
     """Cursor Class.
 
@@ -163,6 +175,7 @@ class Cursor(Container):
     #
 
     _default_mode: ClassVar[int] = CURSOR_MODE_FIXED
+    _default_batchsize: ClassVar[int] = 1
 
     #
     # Public Attributes
@@ -170,6 +183,7 @@ class Cursor(Container):
 
     mode: property = VirtAttr(getter='_get_mode', readonly=True)
     rowcount: property = VirtAttr(getter='_get_rowcount', readonly=True)
+    batchsize: property = MetaAttr(int, default=_default_batchsize)
 
     #
     # Protected Attributes
@@ -189,8 +203,8 @@ class Cursor(Container):
     def __init__(
             self, index: OptIntList = None, getter: OptCallable = None,
             predicate: OptCallable = None, mapper: OptCallable = None,
-            parent: Optional[Container] = None,
-            mode: OptInt = None) -> None:
+            parent: Optional[Container] = None, mode: OptInt = None,
+            batchsize: OptInt = None) -> None:
         """Initialize Cursor."""
         super().__init__(parent=parent) # Parent is set by container
         if index is not None:
@@ -200,23 +214,20 @@ class Cursor(Container):
         self._mapper = mapper
         if mode is not None:
             self._mode = mode
+        if batchsize:
+            self.batchsize = batchsize
         if self.mode == CURSOR_MODE_FIXED:
             self._create_index()
         if self.mode == CURSOR_MODE_STATIC:
             self._create_buffer()
+        self.reset() # Initialize iterator
 
     def __iter__(self) -> Iterator:
-        mode = self._mode
-        if mode in [CURSOR_MODE_DYNAMIC, CURSOR_MODE_FIXED]:
-            self._iter_index = iter(self._index)
-        elif mode == CURSOR_MODE_STATIC:
-            self._iter_buffer = iter(self._buffer)
-        else:
-            raise ValueError(f"unsupported cursor mode '{mode}'")
+        self.reset()
         return self
 
-    def __next__(self) -> Record:
-        return self.fetchrow()
+    def __next__(self) -> RecLike:
+        return self.next()
 
     def __len__(self) -> int:
         return self.rowcount
@@ -225,8 +236,18 @@ class Cursor(Container):
     # Public Methods
     #
 
-    def fetchrow(self) -> Record:
-        """Fetch single row from the result set."""
+    def reset(self) -> None:
+        """Reset cursor position before the first record."""
+        mode = self._mode
+        if mode in [CURSOR_MODE_DYNAMIC, CURSOR_MODE_FIXED]:
+            self._iter_index = iter(self._index)
+        elif mode == CURSOR_MODE_STATIC:
+            self._iter_buffer = iter(self._buffer)
+        else:
+            raise ValueError(f"unsupported cursor mode '{mode}'")
+
+    def next(self) -> RecLike:
+        """Return next row that matches the given filter."""
         mode = self._mode
         if mode in [CURSOR_MODE_DYNAMIC, CURSOR_MODE_FIXED]:
             if not self._filter:
@@ -244,6 +265,29 @@ class Cursor(Container):
         if mode == CURSOR_MODE_STATIC:
             return next(self._iter_buffer)
         raise ValueError(f"unsupported cursor mode '{mode}'")
+
+    def fetch(self, size: OptInt = None) -> RecLikeList:
+        """Fetch rows from the result set.
+
+        Args:
+            size: Integer value which represents the number of rows, which are
+                to be fetched. For zero or negative values all remaining rows
+                are fetched. The default size is given by the cursor's
+                *batchsize*.
+
+        """
+        if size is None:
+            size = self.batchsize
+        finished = False
+        results: RecLikeList = []
+        while not finished:
+            try:
+                results.append(self.next())
+            except StopIteration:
+                finished = True
+            else:
+                finished = 0 < size <= len(results)
+        return results
 
     #
     # Protected Methods
