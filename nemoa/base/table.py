@@ -128,15 +128,18 @@ class Cursor(BaseContainer):
         return self
 
     def __next__(self) -> Record:
-        rowid = next(self._iter)
-        if not self._getter:
-            return rowid
-        row = self._getter(rowid)
-        if not self._predicate or self._predicate(row):
+        if not self._predicate:
+            row = self._getter(next(self._iter))
             if self._mapper:
                 return self._mapper(row)
             return row
-        return next(self)
+        matches = False
+        while not matches:
+            row = self._getter(next(self._iter))
+            matches = self._predicate(row)
+        if self._mapper:
+            return self._mapper(row)
+        return row
 
 class Table(BaseContainer):
     """Table Class."""
