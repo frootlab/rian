@@ -136,18 +136,19 @@ class Cursor(Container):
             0: Dynamic Cursor:
                 Dynamic cursors are built on-the-fly and therefore comprise any
                 changes made to the rows in the result set during it's
-                traversal, as well as on the order of it's traversal. This
-                behaviour is regardless of whether the changes occur from inside
-                the cursor or by other users from outside the cursor. Dynamic
-                cursors are threadsafe but do not support counting the rows
-                with respect to a given filter or sorting the rows.
+                traversal, including new appended rows and the order of it's
+                traversal. This behaviour is regardless of whether the changes
+                occur from inside the cursor or by other users from outside the
+                cursor. Dynamic cursors are threadsafe but do not support
+                counting the rows with respect to a given filter or sorting the
+                rows.
             1: Fixed Cursor:
                 Fixed cursors are built on-the-fly with respect to an initial
                 copy of the table index and therefore comprise changes made to
-                the rows in the result set during it's traversal, but not on
-                the order of it's traversal. Fixed cursors are threadsafe but do
-                not support counting the rows with respect to a given filter or
-                sorting the rows.
+                the rows in the result set during it's traversal, but not new
+                appended rows or the order of it's traversal. Fixed cursors are
+                threadsafe but do not support counting the rows with respect to
+                a given filter or sorting the rows.
             2: Static Cursor:
                 Static cursors are buffered and built during it's creation time
                 and therfore always display the result set as it was when the
@@ -161,7 +162,7 @@ class Cursor(Container):
     # Protected Class Variables
     #
 
-    _default_mode: ClassVar[int] = CURSOR_MODE_DYNAMIC
+    _default_mode: ClassVar[int] = CURSOR_MODE_FIXED
 
     #
     # Public Attributes
@@ -200,13 +201,13 @@ class Cursor(Container):
         if mode is not None:
             self._mode = mode
         if self.mode == CURSOR_MODE_FIXED:
-            self._index = self._index.copy()
+            self._create_index()
         if self.mode == CURSOR_MODE_STATIC:
             self._create_buffer()
 
     def __iter__(self) -> Iterator:
         mode = self._mode
-        if mode == CURSOR_MODE_DYNAMIC:
+        if mode in [CURSOR_MODE_DYNAMIC, CURSOR_MODE_FIXED]:
             self._iter_index = iter(self._index)
         elif mode == CURSOR_MODE_STATIC:
             self._iter_buffer = iter(self._buffer)
@@ -227,7 +228,7 @@ class Cursor(Container):
     def fetchrow(self) -> Record:
         """Fetch single row from the result set."""
         mode = self._mode
-        if mode == CURSOR_MODE_DYNAMIC:
+        if mode in [CURSOR_MODE_DYNAMIC, CURSOR_MODE_FIXED]:
             if not self._filter:
                 row = self._getter(next(self._iter_index))
                 if self._mapper:
@@ -253,14 +254,19 @@ class Cursor(Container):
 
     def _get_rowcount(self) -> int:
         mode = self._mode
-        if mode == CURSOR_MODE_DYNAMIC:
+        if mode in [CURSOR_MODE_DYNAMIC, CURSOR_MODE_FIXED]:
             if not self._filter:
                 return len(self._index)
+            name = 'dynamic' if mode == CURSOR_MODE_DYNAMIC else 'fixed'
             raise TypeError(
-                "dynamic cursors do not support counting rows with set filter")
+                f"{name} cursors do not support "
+                "counting rows with respect to a filter")
         if mode == CURSOR_MODE_STATIC:
             return len(self._buffer)
         raise ValueError(f"unsupported cursor mode '{mode}'")
+
+    def _create_index(self) -> None:
+        self._index = list(filter(None.__ne__, self._index))
 
     def _create_buffer(self) -> None:
         dyn_cur = self.__class__(
