@@ -64,7 +64,7 @@ class CSVFile(Container):
             labels is taken from the first content line in the CSV-file.
         usecols: Indices of the columns which are to be imported from the file.
             By default all columns are imported.
-        rowlabelcol: Column ID of column, which contains the row annotation.
+        namecol: Column ID of column, which contains the row annotation.
             By default the first column is used for annotation.
 
     """
@@ -109,14 +109,15 @@ class CSVFile(Container):
 
     format: property = VirtAttr(int, getter='_get_format', readonly=True)
     format.__doc__ = """
-    Format of the column labels. The following formats are distinguished:
-        0:
-            The number of column labels equals the size of the
-            CSV records, as desribed in `RFC4180`_.
-        1:
-            The first column always is used for record annotation
-            and therfore does not require a seperate column label for it's
-            identification.
+    CSV-File format. The following formats are supported:
+        0: `RFC4180`_:
+            The column header equals the size of the CSV records.
+        1: `R-Table`:
+            The column header equals the decremented size of the CSV records.
+            This follows by the convention, that in R-Tables the first column
+            always represents the record names, such that the respective field
+            is omitted within the header.
+
     """
 
     colnames: property = VirtAttr(getter='_get_colnames', readonly=True)
@@ -127,12 +128,12 @@ class CSVFile(Container):
 
     rownames: property = VirtAttr(getter='_get_rownames', readonly=True)
     rownames.__doc__ = """
-    List of strings containing row names from column with id given by labelid or
-    None, if labelid is not given.
+    List of strings containing row names from column with id given by namecol or
+    None, if namecol is not given.
     """
 
-    labelid: property = VirtAttr(int, getter='_get_namecol', readonly=True)
-    labelid.__doc__ = """
+    namecol: property = VirtAttr(int, getter='_get_namecol', readonly=True)
+    namecol.__doc__ = """
     Index of the column of a CSV-file that contains the row names. The value
     None is used for CSV-files that do not contain row names.
     """
@@ -147,7 +148,7 @@ class CSVFile(Container):
     _format: property = MetaAttr(str, default=None)
     _colnames: property = MetaAttr(list, default=None)
     _rownames: property = MetaAttr(list, default=None)
-    _labelid: property = MetaAttr(int, default=None)
+    _namecol: property = MetaAttr(int, default=None)
 
     #
     # Events
@@ -156,7 +157,7 @@ class CSVFile(Container):
     def __init__(self, file: FileOrPathLike, mode: str = '',
             comment: OptStr = None, delim: OptStr = None,
             csvformat: OptInt = None, labels: OptStrList = None,
-            usecols: OptIntTuple = None, labelid: OptInt = None) -> None:
+            usecols: OptIntTuple = None, namecol: OptInt = None) -> None:
         """Initialize instance attributes."""
         super().__init__()
         self._file = file
@@ -164,7 +165,7 @@ class CSVFile(Container):
         self._delim = delim
         self._csvformat = csvformat
         self._colnames = labels
-        self._labelid = labelid
+        self._namecol = namecol
 
     #
     # Public Methods
@@ -324,8 +325,8 @@ class CSVFile(Container):
 
     def _get_namecol(self) -> OptInt:
         # Return value if set manually
-        if self._labelid is not None:
-            return self._labelid
+        if self._namecol is not None:
+            return self._namecol
 
         # In R-tables the first column is always used for record names
         if self.format == CSV_FORMAT_RTABLE:

@@ -572,11 +572,11 @@ class TestLiteral(ModuleTestCase):
 
     def test_decode(self) -> None:
         self.assertAllEqual(literal.decode, [
-            Case(args=(str('t'), 'str'), value='t'),
-            Case(args=(str(True), 'bool'), value=True),
-            Case(args=(str(1), 'int'), value=1),
-            Case(args=(str(.5), 'float'), value=.5),
-            Case(args=(str(1+1j), 'complex'), value=1+1j)])
+            Case(args=(str('t'), str), value='t'),
+            Case(args=(str(True), bool), value=True),
+            Case(args=(str(1), int), value=1),
+            Case(args=(str(.5), float), value=.5),
+            Case(args=(str(1+1j), complex), value=1+1j)])
 
 class TestNpath(ModuleTestCase):
     """Testcase for the module nemoa.base.npath."""

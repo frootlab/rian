@@ -18,17 +18,26 @@ __docformat__ = 'google'
 from configparser import ConfigParser
 from io import StringIO
 import re
-from nemoa.base import literal
+from typing import cast
+from nemoa.base import literal, check
 from nemoa.base.file import textfile
-from nemoa.types import FileOrPathLike, OptBool, OptStr, OptStrDict2, StrDict2
-from nemoa.types import Union, StrDict, Optional
+from nemoa.types import FileOrPathLike, OptBool, OptStr, StrDict
+from nemoa.types import Union, Optional, OptType, Dict
 
-StrucType = Union[StrDict, StrDict2]
-OptStrucType = Optional[StrucType]
+#
+# Types
+#
+
+FlatDict = Dict[str, OptType]
+SecDict = Dict[str, FlatDict]
+OptSecDict = Optional[SecDict]
+StrucDict = Union[FlatDict, SecDict]
+OptStrucDict = Optional[StrucDict]
+ConfigDict = Dict[str, StrDict]
 
 def load(
-        file: FileOrPathLike, structure: OptStrucType = None,
-        flat: OptBool = None) -> StrucType:
+        file: FileOrPathLike, structure: OptStrucDict = None,
+        flat: OptBool = None) -> StrucDict:
     """Import configuration dictionary from INI file.
 
     Args:
@@ -36,17 +45,17 @@ def load(
             the directory structure of the system, or a `file-like object`_ in
             read mode.
         structure: Dictionary of dictionaries, which determines the structure of
-            the configuration dictionary. If structure is None, the the INI-file
-            is completely imported and all values are interpreted as strings. If
+            the configuration dictionary. If structure is None, the INI-file is
+            completely imported and all values are interpreted as strings. If
             the structure is a dictionary of dictionaries, the keys of the outer
             dictionary describe valid section names by strings, that are
             interpreted as regular expressions. Therupon, the keys of the
-            respective inner dictionaries describe valid attribute names as
+            respective inner dictionaries describe valid parameter names as
             strings, that are also interpreted as regular expressions. Finally
-            the values of the inner dictionaries describe the type of the
-            attributes by strings representing the name of the type, e.g. 'str',
-            'int', 'float', 'path' etc. Accepted type names can be found in the
-            documentation of the function `ntext.astype`_.
+            the values of the inner dictionaries define the type of the
+            parameters by their own type, e.g. str, int, float etc. Accepted
+            types can be found in the documentation of the function
+            `literal.decode`_.
         flat: Determines if the desired INI format structure contains sections
             or not. By default sections are used, if the first non empty, non
             comment line in the string identifies a section.
@@ -60,24 +69,24 @@ def load(
         return decode(fh.read(), structure=structure, flat=flat)
 
 def decode(
-        text: str, structure: OptStrucType = None,
-        flat: OptBool = None) -> StrucType:
+        text: str, structure: OptStrucDict = None,
+        flat: OptBool = None) -> StrucDict:
     """Load configuration dictionary from INI-formated text.
 
     Args:
         text: Text, that describes a configuration in INI-format.
         structure: Dictionary of dictionaries, which determines the structure of
-            the configuration dictionary. If structure is None, the the INI-file
+            the configuration dictionary. If structure is None, the INI-file
             is completely imported and all values are interpreted as strings. If
             the structure is a dictionary of dictionaries, the keys of the outer
             dictionary describe valid section names by strings, that are
             interpreted as regular expressions. Therupon, the keys of the
-            respective inner dictionaries describe valid attribute names as
+            respective inner dictionaries describe valid parameter names as
             strings, that are also interpreted as regular expressions. Finally
-            the values of the inner dictionaries describe the type of the
-            attributes by strings representing the name of the type, e.g. 'str',
-            'int', 'float', 'path' etc. Accepted type names can be found in the
-            documentation of the function `ntext.astype`_.
+            the values of the inner dictionaries define the type of the
+            parameters by their own type, e.g. str, int, float etc. Accepted
+            types can be found in the documentation of the function
+            `literal.decode`_.
         flat: Determines if the desired INI format structure contains sections
             or not. By default sections are used, if the first non empty, non
             comment line in the string identifies a section.
@@ -86,27 +95,34 @@ def decode(
         Structured configuration dictionary.
 
     """
-    # If the usage of sections is not defined by the argument 'flat' their
-    # existence is determined by the first not blank and comment line. If this
-    # line does not start with the character '[', then the file structure is
-    # considered to be flat.
-    if flat is None:
-        flat = True
-        with StringIO(text) as fh:
-            line = ''
-            for line in fh:
-                content = line.strip()
-                if content and not content.startswith('#'):
-                    break
-            flat = not line.lstrip().startswith('[')
+    # Check arguments
+    check.has_type("first argument", text, str)
 
-    # For flat structured files a a temporary [root] section is created and the
+    # If the usage of sections is not defined by the argument 'flat' their
+    # existence is determined from the given file structure. If the file
+    # structure also is not given, it is determined by the first not blank and
+    # non comment line in the text. If this line does not start with the
+    # character '[', then the file structure is considered to be flat.
+    if flat is None:
+        if isinstance(structure, dict):
+            flat = not any(isinstance(val, dict) for val in structure.values())
+        else:
+            flat = True
+            with StringIO(text) as fh:
+                line = ''
+                for line in fh:
+                    content = line.strip()
+                    if content and not content.startswith('#'):
+                        break
+                flat = not line.lstrip().startswith('[')
+
+    # For flat structured files a temporary [root] section is created and the
     # structure dictionary is embedded within the 'root' key of a wrapping
     # dictionary.
     if flat:
         text = '\n'.join(['[root]', text])
         if isinstance(structure, dict):
-            structure = {'root': structure}
+            structure = cast(SecDict, {'root': structure})
 
     # Parse inifile without literal decoding
     parser = ConfigParser()
@@ -114,7 +130,7 @@ def decode(
     parser.read_string(text)
 
     # Decode literals by using the structure dictionary
-    config = parse(parser, structure=structure)
+    config = parse(parser, structure=cast(SecDict, structure))
 
     # If structure is flat collapse the 'root' key
     return config.get('root') or {} if flat else config
@@ -214,24 +230,24 @@ def get_comment(file: FileOrPathLike) -> str:
     """
     return textfile.get_comment(file)
 
-def parse(parser: ConfigParser, structure: OptStrDict2 = None) -> StrDict2:
+def parse(parser: ConfigParser, structure: OptSecDict = None) -> ConfigDict:
     """Import configuration dictionary from INI formated text.
 
     Args:
         parser: ConfigParser instance that contains an unstructured
             configuration dictionary
         structure: Dictionary of dictionaries, which determines the structure of
-            the configuration dictionary. If structure is None, the the INI-file
+            the configuration dictionary. If structure is None, the INI-file
             is completely imported and all values are interpreted as strings. If
             the structure is a dictionary of dictionaries, the keys of the outer
             dictionary describe valid section names by strings, that are
             interpreted as regular expressions. Therupon, the keys of the
-            respective inner dictionaries describe valid attribute names as
+            respective inner dictionaries describe valid parameter names as
             strings, that are also interpreted as regular expressions. Finally
-            the values of the inner dictionaries describe the type of the
-            attributes by strings representing the name of the type, e.g. 'str',
-            'int', 'float', 'path' etc. Accepted type names can be found in the
-            documentation of the function `ntext.astype`_.
+            the values of the inner dictionaries define the type of the
+            parameters by their own type, e.g. str, int, float etc. Accepted
+            types can be found in the documentation of the function
+            `literal.decode`_.
 
     Return:
         Structured configuration dictionary.
@@ -262,13 +278,13 @@ def parse(parser: ConfigParser, structure: OptStrDict2 = None) -> StrDict2:
 
         # Use regular expression to match keys
         dsec = {}
-        for regexkey, fmt in getattr(structure[rsec], 'items')():
+        for regexkey, cls in getattr(structure[rsec], 'items')():
             rekey = re.compile(regexkey)
             for key in parser.options(sec):
                 if not rekey.match(key):
                     continue
                 string = parser.get(sec, key)
-                dsec[key] = literal.decode(string, fmt)
+                dsec[key] = literal.decode(string, cls)
 
         config[sec] = dsec
 

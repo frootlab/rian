@@ -22,10 +22,11 @@ from nemoa.core import log
 from nemoa.base.container import DataAttr, DCMContainer
 from nemoa.base.container import MetaAttr, VirtAttr, TempAttr
 from nemoa.base.file import inifile, wsfile
-from nemoa.types import (
-    Any, BytesLike, CManFileLike, ClassVar, Exc, ExcType, OptBytes, OptPath,
-    OptPathLike, OptStr, PathLike, StrDict, StrDict2, StrList, StrOrInt,
-    Traceback)
+from nemoa.types import Any, BytesLike, CManFileLike, ClassVar, Exc, ExcType
+from nemoa.types import OptBytes, OptPath, OptPathLike, OptStr, PathLike
+from nemoa.types import StrDict, StrList, StrOrInt, Traceback
+
+SecDict = inifile.SecDict
 
 class Session(DCMContainer):
     """Session."""
@@ -35,11 +36,11 @@ class Session(DCMContainer):
     #
 
     _config_file_path: ClassVar[str] = '%user_config_dir%/nemoa.ini'
-    _config_file_struct: ClassVar[StrDict2] = {
+    _config_file_struct: ClassVar[SecDict] = {
         'session': {
-            'path': 'path',
-            'restore_on_startup': 'bool',
-            'autosave_on_exit': 'bool'}}
+            'path': Path,
+            'restore_on_startup': bool,
+            'autosave_on_exit': bool}}
     _default_config: ClassVar[StrDict] = {
         'path': None,
         'restore_on_startup': False,

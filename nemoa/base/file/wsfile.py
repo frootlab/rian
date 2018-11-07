@@ -27,12 +27,15 @@ from nemoa.base.file import inifile
 from nemoa.types import BytesIOBaseClass, BytesIOLike, BytesLike, ClassVar
 from nemoa.types import IterFileLike, List, OptBytes, OptStr, OptPathLike
 from nemoa.types import PathLike, PathLikeList, TextIOBaseClass, Traceback
-from nemoa.types import StrDict2, StrList, OptPath, Optional
+from nemoa.types import StrList, OptPath, Optional
 
 #
 # Module types
 #
 
+StrucDict = inifile.StrucDict
+ConfigDict = inifile.ConfigDict
+SecDict = inifile.SecDict
 ZipInfoList = List[ZipInfo]
 
 #
@@ -73,26 +76,11 @@ class WsFile(DCMContainer):
     #
 
     _config_file: ClassVar[Path] = Path('workspace.ini')
-    _config_struct: ClassVar[StrDict2] = {
-        'dcm': {
-            'dcm_identifier': 'str',
-            'dcm_format': 'str',
-            'dcm_type': 'str',
-            'dcm_language': 'str',
-            'dcm_title': 'str',
-            'dcm_subject': 'str',
-            'dcm_coverage': 'str',
-            'dcm_description': 'str',
-            'dcm_creator': 'str',
-            'dcm_publisher': 'str',
-            'dcm_contributor': 'str',
-            'dcm_rights': 'str',
-            'dcm_source': 'str',
-            'dcm_relation': 'str',
-            'dcm_date': 'datetime'},
-        'hooks': {
-            'startup': 'path'}}
-    _default_config: ClassVar[StrDict2] = {
+    # _config_struct: ClassVar[SecDict] = {
+    #     'dcm': DCMContainer._get_attr_types(group='dcm'),
+    #     'hooks': {
+    #         'startup': Path}}
+    _default_config: ClassVar[ConfigDict] = {
         'dcm': {
             'dcm_creator': env.get_username(),
             'dcm_date': datetime.datetime.now()}}
@@ -205,23 +193,27 @@ class WsFile(DCMContainer):
                     f"file '{self.path}' is not a valid ZIP file") from err
 
         # Try to open and load workspace configuration from buffer
+        structure = {
+            'dcm': type(self)._get_attr_types(group='dcm'),
+            'hooks': type(self)._get_attr_types(group='hooks')}
+
         try:
             with self.open(self._config_file) as file:
-                cfg = inifile.load(file, self._config_struct)
+                cfg = inifile.load(file, structure=structure)
         except KeyError as err:
             raise BadWsFile(
                 f"workspace '{self.path}' is not valid: "
                 f"file '{self._config_file}' could not be loaded") from err
 
         # Check if configuration contains required sections
-        rsec = self._config_struct.keys()
-        if rsec > cfg.keys():
-            raise BadWsFile(
-                f"workspace '{self.path}' is not valid: "
-                f"'{self._config_file}' requires sections '{rsec}'")
+        # rsec = self._config_struct.keys()
+        # if rsec > cfg.keys():
+        #     raise BadWsFile(
+        #         f"workspace '{self.path}' is not valid: "
+        #         f"'{self._config_file}' requires sections '{rsec}'")
 
         # Link configuration
-        self._set_attributes('dcm', cfg.get('dcm', {}))
+        self._set_attr_values(cfg.get('dcm', {}), group='dcm')
 
     def save(self) -> None:
         """Save the workspace to it's filepath."""
@@ -247,8 +239,8 @@ class WsFile(DCMContainer):
         # Update 'workspace.ini'
         with self.open(self._config_file, mode='w') as file:
             inifile.save({
-                'dcm': self._get_attributes('dcm'),
-                'hooks': self._get_attributes('hooks')}, file)
+                'dcm': self._get_attr_values('dcm'),
+                'hooks': self._get_attr_values('hooks')}, file)
 
         # Remove duplicates from workspace
         self._remove_duplicates()
@@ -695,7 +687,7 @@ class WsFile(DCMContainer):
 
     def _create_new(self) -> None:
         # Initialize instance Variables, Buffer and buffered ZipFile
-        self._set_attributes('dcm', self._default_config['dcm'])
+        self._set_attr_values(self._default_config['dcm'], group='dcm')
         self._path = None
         self._changed = False
         self._pwd = None

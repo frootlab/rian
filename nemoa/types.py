@@ -111,8 +111,6 @@ OptIntTuple = Optional[IntTuple]
 StrPairDict = Dict[StrPair, Any]
 StrListPair = Tuple[StrList, StrList]
 StrTupleDict = Dict[Union[str, Tuple[str, ...]], Any]
-StrDict2 = Dict[str, StrDict]
-OptStrDict2 = Optional[StrDict2]
 RecDict = Dict[Any, StrDict]
 DictOfRecDicts = Dict[Any, RecDict]
 

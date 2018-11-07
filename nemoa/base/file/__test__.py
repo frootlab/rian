@@ -140,7 +140,7 @@ class TestCsvfile(ModuleTestCase):
         self.assertEqual(self.file.delim, self.delim)
 
     def test_format(self) -> None:
-        self.assertEqual(self.file.format, csvfile.FORMAT_STANDARD)
+        self.assertEqual(self.file.format, csvfile.CSV_FORMAT_STANDARD)
 
     def test_colnames(self) -> None:
         self.assertEqual(self.file.colnames, self.colnames)
@@ -148,16 +148,8 @@ class TestCsvfile(ModuleTestCase):
     def test_rownames(self) -> None:
         self.assertEqual(self.file.rownames, self.rownames)
 
-    def test_labelid(self) -> None:
-        self.assertEqual(self.file.labelid, 0)
-
-    # def test_load(self) -> None:
-    #     data = csvfile.load(self.filepath)
-    #     self.assertTrue(isinstance(data, np.ndarray))
-    #     col1 = np.array(data)['col1']
-    #     self.assertTrue(np.all(col1 == self.data['col1']))
-    #     col2 = np.array(data)['col2']
-    #     self.assertTrue(np.all(col2 == self.data['col2']))
+    def test_namecol(self) -> None:
+        self.assertEqual(self.file.namecol, 0)
 
     def tearDown(self) -> None:
         if self.filepath.is_file():
@@ -175,8 +167,8 @@ class TestInifile(ModuleTestCase):
             'n': {'a': 's', 'b': True, 'c': 1},
             'l1': {'a': 1}, 'l2': {'a': 2}}
         self.structure = {
-            'n': {'a': 'str', 'b': 'bool', 'c': 'int'},
-            'l[0-9]*': {'a': 'int'}}
+            'n': {'a': str, 'b': bool, 'c': int},
+            'l[0-9]*': {'a': int}}
         self.text = (
             "# -*- coding: utf-8 -*-\n\n"
             "[n]\na = s\nb = True\nc = 1\n\n"

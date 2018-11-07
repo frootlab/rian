@@ -152,8 +152,8 @@ class ModuleTestCase(BaseTestCase):
 
         # Raise error on untested module members
         raise AssertionError(
-            f"module {self.module} comprises "
-            f"untested members: {', '.join(untested)}")
+            f"module '{self.module}' comprises "
+            f"untested members: {', '.join(sorted(untested))}")
 
     @skipIf(skip_completeness_test, "completeness is not tested")
     def test_completeness_of_module(self) -> None:

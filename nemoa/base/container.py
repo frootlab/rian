@@ -10,7 +10,16 @@ from nemoa.base import check
 from nemoa.errors import ReadOnlyError
 from nemoa.types import Any, Callable, Date, OptClassInfo, Optional
 from nemoa.types import OptStr, OptStrDict, OptType, StrDict, StrList, void
-from nemoa.types import OptDict
+
+#
+# Types
+#
+
+OptContainer = Optional['Container']
+
+#
+# Attribute and Container Base Classes
+#
 
 class Attr(property):
     """Generic Descriptor Class for Container Attributes.
@@ -128,10 +137,6 @@ class Attr(property):
             return self._default
         return getattr(parent, self._name, self._default)
 
-#
-# Base Container Class
-#
-
 class DataAttr(Attr):
     """Attributes for persistent content storage objects."""
 
@@ -189,65 +194,72 @@ class Container:
 
     def __init__(
             self, data: OptStrDict = None, meta: OptStrDict = None,
-            parent: Optional['Container'] = None) -> None:
+            parent: OptContainer = None) -> None:
         """Initialize instance."""
         self._data = {}
         self._meta = {}
         self._temp = {}
 
         if data:
-            self._set_attributes(classinfo=DataAttr, data=data)
+            self._set_attr_values(data, classinfo=DataAttr)
         if meta:
-            self._set_attributes(classinfo=MetaAttr, data=meta)
+            self._set_attr_values(meta, classinfo=MetaAttr)
         if parent:
             self.parent = parent
 
     #
-    # Getters and Setters for Attributes by Groups and Types
+    # Getters and Setters for Attributes by Groups and ClassInfo
     #
 
-    def _get_attr_info(
-            self, group: OptStr = None,
+    @classmethod
+    def _get_attr_types(
+            cls, group: OptStr = None,
             classinfo: OptClassInfo = None) -> StrDict:
-        attr_info: StrDict = {}
-        for objtype in type(self).__mro__:
-            for attr, obj in objtype.__dict__.items():
+        types: StrDict = {}
+        for base in cls.__mro__:
+            for name, obj in base.__dict__.items():
                 if not isinstance(obj, Attr):
                     continue
                 if group and not getattr(obj, '_group', None) == group:
                     continue
                 if classinfo and not isinstance(obj, classinfo):
                     continue
-                attr_info[attr] = getattr(obj, '_classinfo', None)
-        return attr_info
+                types[name] = getattr(obj, '_classinfo', None)
+        return types
 
-    def _get_attributes(
-            self, group: OptStr = None,
+    @classmethod
+    def _get_attr_names(
+            cls, group: OptStr = None,
             classinfo: OptClassInfo = None) -> StrList:
-        attr_group: StrList = []
-        for objtype in type(self).__mro__:
-            for attr, obj in objtype.__dict__.items():
+        names: StrList = []
+        for base in cls.__mro__:
+            for name, obj in base.__dict__.items():
                 if not isinstance(obj, Attr):
                     continue
                 if group and not getattr(obj, '_group', None) == group:
                     continue
                 if classinfo and not isinstance(obj, classinfo):
                     continue
-                attr_group.append(attr)
-        return attr_group
+                names.append(name)
+        return names
 
-    def _set_attributes(self,
-            group: OptStr = None, classinfo: OptClassInfo = None,
-            data: OptDict = None) -> None:
+    def _get_attr_values(self,
+            group: OptStr = None, classinfo: OptClassInfo = None) -> StrDict:
+        names = self._get_attr_names(group=group, classinfo=classinfo)
+        return {name: getattr(self, name) for name in names}
+
+    def _set_attr_values(self,
+            values: dict, group: OptStr = None,
+            classinfo: OptClassInfo = None) -> None:
         check.has_opt_type("argument 'group'", group, str)
         check.has_opt_type("argument 'classinfo'", classinfo, (type, tuple))
-        check.has_opt_type("argument 'data'", data, dict)
-        if not data:
+        check.has_opt_type("argument 'values'", values, dict)
+        if not values:
             return
         check.is_subset(
-            "given values", set(data.keys()), "attributes",
-            set(self._get_attributes(group=group, classinfo=classinfo)))
-        for name, value in data.items():
+            "given values", set(values.keys()), "attributes",
+            set(self._get_attr_names(group=group, classinfo=classinfo)))
+        for name, value in values.items():
             setattr(self, name, value)
 
 #

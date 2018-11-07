@@ -51,18 +51,18 @@ class Ini:
 
         structure = {
             'workspace': {
-                'description': 'str',
-                'maintainer': 'str',
-                'email': 'str',
-                'startup_script': 'str' },
+                'description': str,
+                'maintainer': str,
+                'email': str,
+                'startup_script': str},
             'folders': {
-                'datasets': 'str',
-                'networks': 'str',
-                'systems': 'str',
-                'models': 'str',
-                'scripts': 'str' }}
+                'datasets': str,
+                'networks': str,
+                'systems': str,
+                'models': str,
+                'scripts': str}}
 
         config = inifile.load(path, structure)
         config['type'] = 'base.Workspace'
 
-        return { 'config': config }
+        return {'config': config}

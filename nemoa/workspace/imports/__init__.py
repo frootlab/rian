@@ -34,8 +34,9 @@ def load(arg, base = None, filetype = None, **kwds):
         workspace = os.path.basename(os.path.dirname(path))
         base = None # 2Do: get base and workspace from path
     else:
-        path = nemoa.path('inifile', workspace = arg, base = base)
-        if not path: return None
+        path = nemoa.path('inifile', workspace=arg, base=base)
+        if not path:
+            return None
         else: workspace = arg
 
     # get filtype from file extension if not given
