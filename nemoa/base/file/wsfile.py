@@ -221,7 +221,7 @@ class WsFile(DCMContainer):
                 f"'{self._config_file}' requires sections '{rsec}'")
 
         # Link configuration
-        self._set_attr_group('dcm', cfg.get('dcm', {}))
+        self._set_attributes('dcm', cfg.get('dcm', {}))
 
     def save(self) -> None:
         """Save the workspace to it's filepath."""
@@ -247,8 +247,8 @@ class WsFile(DCMContainer):
         # Update 'workspace.ini'
         with self.open(self._config_file, mode='w') as file:
             inifile.save({
-                'dcm': self._get_attr_group('dcm'),
-                'hooks': self._get_attr_group('hooks')}, file)
+                'dcm': self._get_attributes('dcm'),
+                'hooks': self._get_attributes('hooks')}, file)
 
         # Remove duplicates from workspace
         self._remove_duplicates()
@@ -695,7 +695,7 @@ class WsFile(DCMContainer):
 
     def _create_new(self) -> None:
         # Initialize instance Variables, Buffer and buffered ZipFile
-        self._set_attr_group('dcm', self._default_config['dcm'])
+        self._set_attributes('dcm', self._default_config['dcm'])
         self._path = None
         self._changed = False
         self._pwd = None

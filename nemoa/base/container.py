@@ -8,8 +8,9 @@ __docformat__ = 'google'
 
 from nemoa.base import check
 from nemoa.errors import ReadOnlyError
-from nemoa.types import Any, Callable, ClassInfo, Date, OptClassInfo, Optional
+from nemoa.types import Any, Callable, Date, OptClassInfo, Optional
 from nemoa.types import OptStr, OptStrDict, OptType, StrDict, StrList, void
+from nemoa.types import OptDict
 
 class Attr(property):
     """Generic Descriptor Class for Container Attributes.
@@ -195,50 +196,59 @@ class Container:
         self._temp = {}
 
         if data:
-            self._set_attr_type(DataAttr, data)
+            self._set_attributes(classinfo=DataAttr, data=data)
         if meta:
-            self._set_attr_type(MetaAttr, meta)
+            self._set_attributes(classinfo=MetaAttr, data=meta)
         if parent:
             self.parent = parent
 
     #
-    # Getters and Setters for Attribute Groups and Typed Groups
+    # Getters and Setters for Attributes by Groups and Types
     #
 
-    def _get_attr_group(self, group: str) -> StrList:
-        attrs: StrList = []
+    def _get_attr_info(
+            self, group: OptStr = None,
+            classinfo: OptClassInfo = None) -> StrDict:
+        attr_info: StrDict = {}
         for objtype in type(self).__mro__:
             for attr, obj in objtype.__dict__.items():
                 if not isinstance(obj, Attr):
                     continue
-                if not getattr(obj, '_group', None) == group:
+                if group and not getattr(obj, '_group', None) == group:
                     continue
-                attrs.append(attr)
-        return attrs
+                if classinfo and not isinstance(obj, classinfo):
+                    continue
+                attr_info[attr] = getattr(obj, '_classinfo', None)
+        return attr_info
 
-    def _set_attr_group(self, group: str, attrs: dict) -> None:
-        check.has_type("second argument 'attrs'", attrs, dict)
-        check.is_subset(
-            "given values", set(attrs.keys()),
-            "attributes", set(self._get_attr_group(group)))
-        for attr, obj in attrs.items():
-            setattr(self, attr, obj)
-
-    def _get_attr_type(self, classinfo: ClassInfo) -> StrList:
-        attrs: StrList = []
+    def _get_attributes(
+            self, group: OptStr = None,
+            classinfo: OptClassInfo = None) -> StrList:
+        attr_group: StrList = []
         for objtype in type(self).__mro__:
             for attr, obj in objtype.__dict__.items():
-                if isinstance(obj, classinfo):
-                    attrs.append(attr)
-        return attrs
+                if not isinstance(obj, Attr):
+                    continue
+                if group and not getattr(obj, '_group', None) == group:
+                    continue
+                if classinfo and not isinstance(obj, classinfo):
+                    continue
+                attr_group.append(attr)
+        return attr_group
 
-    def _set_attr_type(self, classinfo: ClassInfo, attrs: dict) -> None:
-        check.has_type("second argument 'attrs'", attrs, dict)
+    def _set_attributes(self,
+            group: OptStr = None, classinfo: OptClassInfo = None,
+            data: OptDict = None) -> None:
+        check.has_opt_type("argument 'group'", group, str)
+        check.has_opt_type("argument 'classinfo'", classinfo, (type, tuple))
+        check.has_opt_type("argument 'data'", data, dict)
+        if not data:
+            return
         check.is_subset(
-            "given values", set(attrs.keys()),
-            "attributes", set(self._get_attr_type(classinfo)))
-        for attr, obj in attrs.items():
-            setattr(self, attr, obj)
+            "given values", set(data.keys()), "attributes",
+            set(self._get_attributes(group=group, classinfo=classinfo)))
+        for name, value in data.items():
+            setattr(self, name, value)
 
 #
 # Container class with Dublin Core Metadata Attributes
