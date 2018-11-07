@@ -30,23 +30,25 @@ NaN = float('nan')
 Infty = float('inf')
 
 ################################################################################
-# Define Classinfos (which can be used with 'isinstance')
+# ClassInfos which can be used with 'isinstance' and 'issubclass'
 ################################################################################
 
-Obj = object
-Function = types.FunctionType
-Method = types.MethodType
-CallableCI = (Function, Method)
-Module = types.ModuleType
-Traceback = types.TracebackType
-BytesIOBaseClass = io.BufferedIOBase
-TextIOBaseClass = io.TextIOBase
-AnyFile = (BytesIOBaseClass, TextIOBaseClass)
 Array = array.ArrayType
 Date = datetime.datetime
+Function = types.FunctionType
+Method = types.MethodType
+CallableClasses = (Function, Method)
+Module = types.ModuleType
+Traceback = types.TracebackType
+Path = os.PathLike
+PathLikeClasses = (str, Path)
+BytesIOBaseClass = io.BufferedIOBase
+TextIOBaseClass = io.TextIOBase
+FileClasses = (BytesIOBaseClass, TextIOBaseClass)
+TextFileClasses = (str, Path, TextIOBaseClass)
 
 ################################################################################
-# Define generic Type Variables
+# Generic Type Variables
 ################################################################################
 
 # Generic Type-Variables
@@ -54,7 +56,7 @@ S = TypeVar('S')
 T = TypeVar('T')
 
 ################################################################################
-# Define Types for Literals and Collections of Literals
+# Types for Literals and Collections of Literals
 ################################################################################
 
 # Unions of Literals
@@ -73,9 +75,10 @@ BytesLike = Union[bytes, bytearray, memoryview]
 BytesLikeOrStr = Union[BytesLike, str]
 
 # Collections of Literals
-# TODO (patrick.michl@gmail.com): str is Hashable currently does not completely
-# work in mypi. When it works, the following line shall replace AnyDict:
+# TODO (patrick.michl@gmail.com): Hashable currently does not completely
+# work in mypi. When it works, the HashableDict shall replace AnyDict:
 # AnyDict = Dict[Hashable, Any]
+HashDict = Dict[Hashable, Any]
 AnyDict = Dict[Any, Any]
 StrSet = Set[str]
 StrPair = Tuple[str, str]
@@ -91,6 +94,7 @@ FloatPair = Tuple[float, float]
 
 # Unions of Collections of Literals
 StrOrDict = Union[str, AnyDict]
+StrOrType = Union[type, str]
 OptSet = Optional[Set[Any]]
 OptPair = Optional[Tuple[Any, Any]]
 OptTuple = Optional[Tuple[Any, ...]]
@@ -110,7 +114,7 @@ StrTupleDict = Dict[Union[str, Tuple[str, ...]], Any]
 StrDict2 = Dict[str, StrDict]
 OptStrDict2 = Optional[StrDict2]
 RecDict = Dict[Any, StrDict]
-DictOfRecDicts = Dict[Hashable, RecDict]
+DictOfRecDicts = Dict[Any, RecDict]
 
 # Nested Types
 # TODO (patrick.michl@gmail.com): currently recursive type definition is not
@@ -197,7 +201,6 @@ OptSized = Optional[Sized] # methods: __len__
 ################################################################################
 
 # PathLike type
-Path = os.PathLike
 OptPath = Optional[Path]
 PathList = List[Path]
 StrDictOfPaths = Dict[str, Path]

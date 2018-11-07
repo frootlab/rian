@@ -15,7 +15,6 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
-__all__ = ['openx', 'load', 'save', 'get_comment', 'get_content']
 
 import contextlib
 from io import TextIOWrapper

@@ -136,10 +136,10 @@ class Logger(Container):
     #
 
     def __init__(self, *args: Any,
-            metadata: OptStrDict = None, content: OptStrDict = None,
+            data: OptStrDict = None, meta: OptStrDict = None,
             parent: Optional[Container] = None, **kwds: Any) -> None:
         """Initialize instance."""
-        super().__init__(metadata=metadata, content=content, parent=parent)
+        super().__init__(data=data, meta=meta, parent=parent)
         self._start_logging(*args, **kwds)
 
     def __del__(self) -> None:

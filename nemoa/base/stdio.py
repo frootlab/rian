@@ -18,9 +18,7 @@ from abc import ABC, abstractmethod
 from queue import Empty, Queue
 from threading import Thread
 from nemoa.base import assess, env
-from nemoa.types import Module, OptModule
-
-_DEFAULT_ENCODING = env.get_encoding()
+from nemoa.types import Module, OptModule, ClassVar
 
 def get_ttylib() -> OptModule:
     """Get module for tty I/O control.
@@ -74,6 +72,7 @@ class GetchMsvcrt(GetchBase):
 
     """
 
+    encoding: ClassVar[str] = env.get_encoding()
     msvcrt: OptModule
 
     def __init__(self) -> None:
@@ -101,7 +100,7 @@ class GetchMsvcrt(GetchBase):
             return ''
         if not getattr(self.msvcrt, 'kbhit')():
             return ''
-        return str(getattr(self.msvcrt, 'getch')(), _DEFAULT_ENCODING)
+        return str(getattr(self.msvcrt, 'getch')(), self.encoding)
 
     def stop(self) -> None:
         """Stop handling of getch() requests."""

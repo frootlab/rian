@@ -7,7 +7,6 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import threading
-
 from nemoa.types import Any, AnyFunc, Obj
 
 def create(func: AnyFunc, *args: Any, **kwds: Any) -> Obj:

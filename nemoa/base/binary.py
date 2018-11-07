@@ -18,9 +18,6 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-__all__ = ['as_bytes', 'compress', 'decompress', 'encode', 'decode', 'pack',
-           'unpack']
-
 import base64
 import pickle
 import zlib
@@ -28,7 +25,7 @@ from nemoa.base import env
 from nemoa.types import Any, BytesLikeOrStr, OptInt, OptStr
 
 #
-# Public Module Functions
+# Module Functions
 #
 
 def as_bytes(data: BytesLikeOrStr, encoding: OptStr = None) -> bytes:

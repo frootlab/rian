@@ -28,6 +28,7 @@ class Attr(property):
         default: Default value, which is returned for a get request
         parent: Name of attribute, which references a parent object.
         readonly: Boolean value which determines if the attribute is read-only
+        group:
 
     """
 
@@ -39,18 +40,20 @@ class Attr(property):
     _default: Any
     _parent: OptStr
     _classinfo: OptClassInfo
+    _group: OptStr
     _readonly: bool
 
     def __init__(
             self, classinfo: OptClassInfo = None, bind: OptStr = None,
-            key: OptStr = None, default: Any = None, getter: OptStr = None,
-            setter: OptStr = None, parent: OptStr = None,
+            key: OptStr = None, default: Any = None, group: OptStr = None,
+            getter: OptStr = None, setter: OptStr = None, parent: OptStr = None,
             readonly: bool = False) -> None:
         """Initialize Attribute Descriptor."""
         # Check Types of Arguments
         check.has_opt_type("argument 'classinfo'", classinfo, (type, tuple))
         check.has_opt_type("argument 'bind'", bind, str)
         check.has_opt_type("argument 'key'", key, str)
+        check.has_opt_type("argument 'group'", group, str)
         check.has_opt_type("argument 'getter'", getter, str)
         check.has_opt_type("argument 'setter'", setter, str)
         check.has_type("argument 'readonly'", readonly, bool)
@@ -63,6 +66,7 @@ class Attr(property):
         self._key = key
         self._parent = parent
         self._default = default
+        self._group = group
         self._readonly = readonly
 
     def __set_name__(self, owner: type, name: str) -> None:
@@ -131,16 +135,18 @@ class DataAttr(Attr):
     """Attributes for persistent content storage objects."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
-        """Initialize Attribute Descriptor."""
+        """Initialize default values of attribute descriptor."""
         kwds['bind'] = kwds.get('bind', '_data')
+        kwds['group'] = kwds.get('group', 'data')
         super().__init__(*args, **kwds)
 
 class MetaAttr(Attr):
     """Attributes for persistent metadata objects."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
-        """Initialize Attribute Descriptor."""
+        """Initialize default values of attribute descriptor."""
         kwds['bind'] = kwds.get('bind', '_meta')
+        kwds['group'] = kwds.get('group', 'meta')
         kwds['parent'] = kwds.get('parent', 'parent')
         super().__init__(*args, **kwds)
 
@@ -148,21 +154,18 @@ class TempAttr(Attr):
     """Attributes for non persistent objects."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
-        """Initialize Attribute Descriptor."""
+        """Initialize default values of attribute descriptor."""
         kwds['bind'] = kwds.get('bind', '_temp')
+        kwds['group'] = kwds.get('group', 'temp')
         super().__init__(*args, **kwds)
 
 class VirtAttr(Attr):
-    """Attributes for non persistent virtual objects.
-
-    Remark:
-        Virtual objects require the implementation of a getter function.
-
-    """
+    """Attributes for non persistent virtual objects."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
-        """Initialize Attribute Descriptor."""
+        """Initialize default values of attribute descriptor."""
         check.has_type('getter', kwds.get('getter'), str)
+        kwds['group'] = kwds.get('group', 'virt')
         super().__init__(*args, **kwds)
 
 class Container:
@@ -184,25 +187,44 @@ class Container:
     #
 
     def __init__(
-            self, metadata: OptStrDict = None, content: OptStrDict = None,
+            self, data: OptStrDict = None, meta: OptStrDict = None,
             parent: Optional['Container'] = None) -> None:
         """Initialize instance."""
         self._data = {}
         self._meta = {}
         self._temp = {}
 
+        if data:
+            self._set_attr_type(DataAttr, data)
+        if meta:
+            self._set_attr_type(MetaAttr, meta)
         if parent:
             self.parent = parent
-        if content:
-            self._set_content(content)
-        if metadata:
-            self._set_metadata(metadata)
 
     #
-    # Getters and Setters for Attribute Groups
+    # Getters and Setters for Attribute Groups and Typed Groups
     #
 
-    def _get_attrs(self, classinfo: ClassInfo) -> StrList:
+    def _get_attr_group(self, group: str) -> StrList:
+        attrs: StrList = []
+        for objtype in type(self).__mro__:
+            for attr, obj in objtype.__dict__.items():
+                if not isinstance(obj, Attr):
+                    continue
+                if not getattr(obj, '_group', None) == group:
+                    continue
+                attrs.append(attr)
+        return attrs
+
+    def _set_attr_group(self, group: str, attrs: dict) -> None:
+        check.has_type("second argument 'attrs'", attrs, dict)
+        check.is_subset(
+            "given values", set(attrs.keys()),
+            "attributes", set(self._get_attr_group(group)))
+        for attr, obj in attrs.items():
+            setattr(self, attr, obj)
+
+    def _get_attr_type(self, classinfo: ClassInfo) -> StrList:
         attrs: StrList = []
         for objtype in type(self).__mro__:
             for attr, obj in objtype.__dict__.items():
@@ -210,56 +232,25 @@ class Container:
                     attrs.append(attr)
         return attrs
 
-    def _set_attrs(self, classinfo: ClassInfo, attrs: dict) -> None:
+    def _set_attr_type(self, classinfo: ClassInfo, attrs: dict) -> None:
         check.has_type("second argument 'attrs'", attrs, dict)
         check.is_subset(
             "given values", set(attrs.keys()),
-            "attributes", set(self._get_attrs(classinfo)))
+            "attributes", set(self._get_attr_type(classinfo)))
         for attr, obj in attrs.items():
             setattr(self, attr, obj)
 
-    def _get_content(self) -> dict:
-        attrs = self._get_attrs(DataAttr)
-        return {attr: getattr(self, attr) for attr in attrs}
-
-    def _set_content(self, attrs: StrDict) -> None:
-        check.has_type("argument 'attrs'", attrs, dict)
-        self._set_attrs(DataAttr, attrs)
-
-    def _get_metadata(self) -> dict:
-        attrs = self._get_attrs(MetaAttr)
-        return {attr: getattr(self, attr) for attr in attrs}
-
-    def _set_metadata(self, attrs: StrDict) -> None:
-        check.has_type("argument 'attrs'", attrs, dict)
-        self._set_attrs(MetaAttr, attrs)
-
-    def _get_temporary(self) -> dict:
-        attrs = self._get_attrs(TempAttr)
-        return {attr: getattr(self, attr) for attr in attrs}
-
-    def _set_temporary(self, attrs: StrDict) -> None:
-        check.has_type("argument 'attrs'", attrs, dict)
-        self._set_attrs(TempAttr, attrs)
-
-    def _get_virtual(self) -> dict:
-        attrs = self._get_attrs(VirtAttr)
-        return {attr: getattr(self, attr) for attr in attrs}
-
-    def _set_virtual(self, attrs: StrDict) -> None:
-        check.has_type("argument 'attrs'", attrs, dict)
-        self._set_attrs(VirtAttr, attrs)
-
 #
-# Container class with Dublin Core metadata
+# Container class with Dublin Core Metadata Attributes
 #
 
 class DCMAttr(MetaAttr):
     """Dublin Core Metadata Attribute."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
-        """Initialize Attribute Descriptor."""
+        """Initialize default values of attribute descriptor."""
         kwds['classinfo'] = kwds.get('classinfo', str)
+        kwds['group'] = kwds.get('group', 'dcm')
         super().__init__(*args, **kwds)
 
 class DCMContainer(Container):
@@ -409,11 +400,3 @@ class DCMContainer(Container):
     information includes a statement about various property rights associated
     with the resource, including intellectual property rights.
     """
-
-    def _get_dcm(self) -> dict:
-        attrs = self._get_attrs(DCMAttr)
-        return {attr: getattr(self, attr) for attr in attrs}
-
-    def _set_dcm(self, attrs: StrDict) -> None:
-        check.has_type("argument 'attrs'", attrs, dict)
-        self._set_attrs(DCMAttr, attrs)

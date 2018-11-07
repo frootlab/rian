@@ -12,8 +12,9 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from abc import ABC, abstractmethod
+
 import dataclasses
+from abc import ABC, abstractmethod
 
 # try:
 #     import numpy as np
@@ -29,7 +30,7 @@ from nemoa.base.container import TempAttr, VirtAttr
 from nemoa.errors import NemoaError
 from nemoa.types import NpFields, NpRecArray, Tuple, Iterable
 from nemoa.types import Union, Optional, StrDict, StrTuple, Iterator, Any
-from nemoa.types import OptIntList, OptCallable, CallableCI, Callable
+from nemoa.types import OptIntList, OptCallable, CallableClasses, Callable
 from nemoa.types import OptStrTuple, OptInt, ClassVar, List, OptStr
 
 #
@@ -221,9 +222,9 @@ class Cursor(Container):
 
     _mode: property = MetaAttr(int, default=_default_mode)
     _index: property = MetaAttr(list, parent='parent')
-    _getter: property = TempAttr(CallableCI)
-    _filter: property = TempAttr(CallableCI)
-    _mapper: property = TempAttr(CallableCI)
+    _getter: property = TempAttr(CallableClasses)
+    _filter: property = TempAttr(CallableClasses)
+    _mapper: property = TempAttr(CallableClasses)
     _buffer: property = TempAttr(list, default=[])
 
     #

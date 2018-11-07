@@ -20,14 +20,14 @@ from contextlib import contextmanager
 from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
 from nemoa.base import npath, env
-from nemoa.base.container import DataAttr, DCMContainer, MetaAttr
-from nemoa.base.container import TempAttr, VirtAttr
+from nemoa.base.container import Container, DCMContainer
+from nemoa.base.container import DataAttr, MetaAttr, TempAttr, VirtAttr
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
 from nemoa.base.file import inifile
 from nemoa.types import BytesIOBaseClass, BytesIOLike, BytesLike, ClassVar
 from nemoa.types import IterFileLike, List, OptBytes, OptStr, OptPathLike
 from nemoa.types import PathLike, PathLikeList, TextIOBaseClass, Traceback
-from nemoa.types import StrDict, StrDict2, StrList, OptPath
+from nemoa.types import StrDict2, StrList, OptPath, Optional
 
 #
 # Module types
@@ -75,44 +75,36 @@ class WsFile(DCMContainer):
     _config_file: ClassVar[Path] = Path('workspace.ini')
     _config_struct: ClassVar[StrDict2] = {
         'dcm': {
-            'identifier': 'str',
-            'format': 'str',
-            'type': 'str',
-            'language': 'str',
-            'title': 'str',
-            'subject': 'str',
-            'coverage': 'str',
-            'description': 'str',
-            'creator': 'str',
-            'publisher': 'str',
-            'contributor': 'str',
-            'rights': 'str',
-            'source': 'str',
-            'relation': 'str',
-            'date': 'datetime'},
+            'dcm_identifier': 'str',
+            'dcm_format': 'str',
+            'dcm_type': 'str',
+            'dcm_language': 'str',
+            'dcm_title': 'str',
+            'dcm_subject': 'str',
+            'dcm_coverage': 'str',
+            'dcm_description': 'str',
+            'dcm_creator': 'str',
+            'dcm_publisher': 'str',
+            'dcm_contributor': 'str',
+            'dcm_rights': 'str',
+            'dcm_source': 'str',
+            'dcm_relation': 'str',
+            'dcm_date': 'datetime'},
         'hooks': {
             'startup': 'path'}}
     _default_config: ClassVar[StrDict2] = {
         'dcm': {
-            'creator': env.get_username(),
-            'date': datetime.datetime.now()}}
+            'dcm_creator': env.get_username(),
+            'dcm_date': datetime.datetime.now()}}
     _default_dir_layout: ClassVar[StrList] = [
         'dataset', 'network', 'system', 'model', 'script']
     _default_encoding = env.get_encoding()
 
     #
-    # Protected Instance Variables
-    #
-
-    _data: StrDict
-    _meta: StrDict
-    _temp: StrDict
-
-    #
     # Public Attributes
     #
 
-    startup: property = MetaAttr(Path)
+    startup: property = MetaAttr(Path, group='hooks')
     startup.__doc__ = """
     The startup script is a path, that points to a python script inside the
     workspace, which is executed after loading the workspace.
@@ -148,7 +140,8 @@ class WsFile(DCMContainer):
     #
 
     def __init__(
-            self, filepath: OptPathLike = None, pwd: OptBytes = None) -> None:
+            self, filepath: OptPathLike = None, pwd: OptBytes = None,
+            parent: Optional[Container] = None) -> None:
         """Load Workspace from file."""
         super().__init__()
         if filepath:
@@ -228,7 +221,7 @@ class WsFile(DCMContainer):
                 f"'{self._config_file}' requires sections '{rsec}'")
 
         # Link configuration
-        self._set_dcm(cfg.get('dcm', {}))
+        self._set_attr_group('dcm', cfg.get('dcm', {}))
 
     def save(self) -> None:
         """Save the workspace to it's filepath."""
@@ -254,8 +247,8 @@ class WsFile(DCMContainer):
         # Update 'workspace.ini'
         with self.open(self._config_file, mode='w') as file:
             inifile.save({
-                'dcm': self._get_dcm(),
-                'hooks': self._get_tech_metadata()}, file)
+                'dcm': self._get_attr_group('dcm'),
+                'hooks': self._get_attr_group('hooks')}, file)
 
         # Remove duplicates from workspace
         self._remove_duplicates()
@@ -702,7 +695,7 @@ class WsFile(DCMContainer):
 
     def _create_new(self) -> None:
         # Initialize instance Variables, Buffer and buffered ZipFile
-        self._set_dcm(self._default_config['dcm'])
+        self._set_attr_group('dcm', self._default_config['dcm'])
         self._path = None
         self._changed = False
         self._pwd = None

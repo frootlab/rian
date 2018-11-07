@@ -17,18 +17,16 @@ import importlib
 import inspect
 import pkgutil
 from nemoa.base import check, ndict
-from nemoa.types import Any, ClassInfo, OptStr, OptStrDictOfTestFuncs, Union
+from nemoa.types import Any, ClassInfo, OptStr, OptStrDictOfTestFuncs
 from nemoa.types import OptModule, Module, StrList, OptFunction, Function
 from nemoa.types import StrDict, AnyFunc, OptDict, Tuple, RecDict, NestRecDict
-from nemoa.types import DictOfRecDicts, FuncWrapper, Method
-
-TypeOrStr = Union[type, str]
+from nemoa.types import DictOfRecDicts, FuncWrapper, Method, StrOrType
 
 #
-# Public Module Functions
+# Module Functions
 #
 
-def has_base(obj: object, base: TypeOrStr) -> bool:
+def has_base(obj: object, base: StrOrType) -> bool:
     """Return true if the object has the given base class.
 
     Args:
@@ -39,16 +37,16 @@ def has_base(obj: object, base: TypeOrStr) -> bool:
         True if the given object has the named base as base
 
     """
+    mro = getattr(obj, '__mro__', obj.__class__.__mro__)
     if isinstance(base, type):
-        return base in obj.__class__.__mro__
-    return base in [cl.__name__ for cl in obj.__class__.__mro__]
+        return base in mro
+    return base in [cls.__name__ for cls in mro]
 
 def get_name(obj: object) -> str:
     """Get name of an object.
 
     This function returns the name of an object. If the object does not have
-    a magic name attribute, the name is retrieved from the inheritance
-    hierarchy.
+    a name attribute, the name is retrieved from the object type.
 
     Args:
         obj: Arbitrary object
@@ -57,7 +55,7 @@ def get_name(obj: object) -> str:
         Name of an object.
 
     """
-    return getattr(obj, '__name__', None) or getattr(type(obj), '__name__')
+    return getattr(obj, '__name__', obj.__class__.__name__)
 
 def get_members(
         obj: object, pattern: OptStr = None, classinfo: ClassInfo = object,
@@ -67,9 +65,9 @@ def get_members(
     This is a wrapper function to `get_members_dict`, but only returns the
     names of the members instead of the respective dictionary of attributes.
     """
-    mattrs = get_members_dict(
+    dicts = get_members_dict(
         obj, pattern=pattern, classinfo=classinfo, rules=rules, **kwds)
-    return [each['name'] for each in mattrs.values()]
+    return [member['name'] for member in dicts.values()]
 
 def get_members_dict(
         obj: object, pattern: OptStr = None, classinfo: ClassInfo = object,
@@ -131,8 +129,11 @@ def get_members_dict(
             attr = ref.__dict__
         else:
             attr = ref.__dict__.copy()
-        attr['name'] = attr.get('name', name)
-        attr['about'] = attr.get('about', get_summary(ref))
+        if isinstance(attr.get('name'), str):
+            attr['name'] = attr.get('name')
+        else:
+            attr['name'] = name
+        attr['about'] = get_summary(ref)
         attr['reference'] = ref
 
         # Filter entry by attribute filter
@@ -203,8 +204,7 @@ def get_module(name: str) -> OptModule:
 
     return module
 
-def get_submodules(
-        ref: Module, recursive: bool = False) -> StrList:
+def get_submodules(ref: Module, recursive: bool = False) -> StrList:
     """Get list with submodule names.
 
     Args:
@@ -456,8 +456,7 @@ def search(
     """Recursively search for objects within submodules.
 
     Args:
-        ref: Module reference in which objects are searched. If 'module' is
-            None, then the module of the caller function is used. Default: None
+        ref: Reference to module or package, in which objects are searched.
         pattern: Only objects which names satisfy the wildcard pattern given
             by 'pattern' are returned. The format of the wildcard pattern is
             described in the standard library module `fnmatch`_. If pattern is

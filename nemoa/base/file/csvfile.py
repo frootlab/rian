@@ -17,7 +17,6 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import csv
-from pathlib import Path
 
 try:
     import numpy as np
@@ -30,21 +29,27 @@ from nemoa.base import check
 from nemoa.base.container import Container, DataAttr, MetaAttr
 from nemoa.base.container import VirtAttr
 from nemoa.base.file import textfile
-#from nemoa.base.table import Table
 from nemoa.types import FileOrPathLike, NpArray, OptInt, OptIntTuple, ClassVar
-from nemoa.types import OptNpArray, OptStr, OptStrList, TextIOBaseClass, StrList
-from nemoa.types import IntTuple, StrTuple, OptList, OptStrTuple, NpDtype
+from nemoa.types import OptNpArray, OptStr, OptStrList, StrList
+from nemoa.types import IntTuple, OptList, OptStrTuple, TextFileClasses
 
-# Module specific exceptions
+#
+# Module exceptions
+#
+
 class BadCSVFile(OSError):
     """Exception for invalid CSV-files."""
 
-# Module specific types and classinfos
-FileClassInfo = (str, Path, TextIOBaseClass)
-
+#
 # Module Constants
-FORMAT_STANDARD = 0
-FORMAT_RTABLE = 1
+#
+
+CSV_FORMAT_STANDARD = 0
+CSV_FORMAT_RTABLE = 1
+
+#
+# CSVFile Class
+#
 
 class CSVFile(Container):
     """CSV File.
@@ -87,19 +92,6 @@ class CSVFile(Container):
     """
 
     #
-    # Protected Attributes
-    #
-
-    _file: property = DataAttr(FileClassInfo)
-    #_table: property = DataAttr(Table)
-    _comment: property = MetaAttr(str, default=None)
-    _delim: property = MetaAttr(str, default=None)
-    _format: property = MetaAttr(str, default=None)
-    _colnames: property = MetaAttr(list, default=None)
-    _rownames: property = MetaAttr(list, default=None)
-    _labelid: property = MetaAttr(int, default=None)
-
-    #
     # Public Attributes
     #
 
@@ -139,24 +131,89 @@ class CSVFile(Container):
     None, if labelid is not given.
     """
 
-    labelid: property = VirtAttr(int, getter='_get_labelid', readonly=True)
+    labelid: property = VirtAttr(int, getter='_get_namecol', readonly=True)
     labelid.__doc__ = """
     Index of the column of a CSV-file that contains the row names. The value
     None is used for CSV-files that do not contain row names.
     """
 
+    #
+    # Protected Attributes
+    #
+
+    _file: property = DataAttr(TextFileClasses)
+    _comment: property = MetaAttr(str, default=None)
+    _delim: property = MetaAttr(str, default=None)
+    _format: property = MetaAttr(str, default=None)
+    _colnames: property = MetaAttr(list, default=None)
+    _rownames: property = MetaAttr(list, default=None)
+    _labelid: property = MetaAttr(int, default=None)
+
+    #
+    # Events
+    #
+
     def __init__(self, file: FileOrPathLike, mode: str = '',
-            comment: OptStr = None, delim: OptStr = None, format: OptStr = None,
-            labels: OptStrList = None, usecols: OptIntTuple = None,
-            labelid: OptInt = None) -> None:
+            comment: OptStr = None, delim: OptStr = None,
+            csvformat: OptInt = None, labels: OptStrList = None,
+            usecols: OptIntTuple = None, labelid: OptInt = None) -> None:
         """Initialize instance attributes."""
         super().__init__()
         self._file = file
         self._comment = comment
         self._delim = delim
-        self._format = format
+        self._csvformat = csvformat
         self._colnames = labels
         self._labelid = labelid
+
+    #
+    # Public Methods
+    #
+
+    def select(self, columns: OptStrTuple = None) -> OptNpArray:
+        """Load numpy ndarray from CSV-file.
+
+        Args:
+            columns: List of column labels in CSV-file. By default the list of
+                column labels is taken from the first content line in the
+                CSV-file.
+
+        Returns:
+            Numpy ndarray containing data from CSV-file, or None if the data
+            could not be imported.
+
+        """
+        # Check type of 'cols'
+        check.has_opt_type("argument 'columns'", columns, tuple)
+
+        # Get column names and formats
+        usecols = self._get_usecols(columns)
+        colnames = self._get_colnames()
+        names = tuple(colnames[colid] for colid in usecols)
+        lblcol = self._get_namecol()
+        if lblcol is None:
+            formats = tuple(['<f8'] * len(usecols))
+        elif lblcol not in usecols:
+            formats = tuple(['<U12'] + ['<f8'] * len(usecols))
+            names = ('label', ) + names
+            usecols = (lblcol, ) + usecols
+        else:
+            lbllbl = colnames[lblcol]
+            formats = tuple(['<U12'] + ['<f8'] * (len(usecols) - 1))
+            names = tuple(['label'] + [l for l in names if l != lbllbl])
+            usecols = tuple([lblcol] + [c for c in usecols if c != lblcol])
+
+        # Import data from CSV-file as numpy array
+        with textfile.openx(self._file, mode='r') as fh:
+            return np.loadtxt(fh,
+                skiprows=self._get_skiprows(),
+                delimiter=self._get_delim(),
+                usecols=usecols,
+                dtype={'names': names, 'formats': formats})
+
+    #
+    # Protected Methods
+    #
 
     def _get_comment(self) -> str:
         # Return comment if set manually
@@ -164,7 +221,7 @@ class CSVFile(Container):
             return self._comment
         return textfile.get_comment(self._file)
 
-    def _get_delim(self,  maxcount: int = 100) -> OptStr:
+    def _get_delim(self) -> OptStr:
         # Return delimiter if set manually
         if self._delim is not None:
             return self._delim
@@ -202,8 +259,8 @@ class CSVFile(Container):
 
     def _get_format(self) -> OptInt:
         # Return value if set manually
-        if self._format is not None:
-            return self._format
+        if self._csvformat is not None:
+            return self._csvformat
 
         # Get first and second content lines (non comment, non empty) of
         # CSV-file
@@ -213,9 +270,9 @@ class CSVFile(Container):
 
         # Determine column label format
         if lines[0].count(self.delim) == lines[1].count(self.delim):
-            return FORMAT_STANDARD
+            return CSV_FORMAT_STANDARD
         if lines[0].count(self.delim) == lines[1].count(self.delim) - 1:
-            return FORMAT_RTABLE
+            return CSV_FORMAT_RTABLE
         return None
 
     def _get_colnames(self) -> StrList:
@@ -230,16 +287,16 @@ class CSVFile(Container):
         labels = [col.strip('\"\'\n\r\t ') for col in line.split(self.delim)]
 
         # Format column labels
-        if self.format == FORMAT_STANDARD:
+        if self.format == CSV_FORMAT_STANDARD:
             return labels
-        if self.format == FORMAT_RTABLE:
+        if self.format == CSV_FORMAT_RTABLE:
             return [''] + labels
         # TODO (patrick.michl@gmail.com): Give filename!
         raise BadCSVFile("Bad file!")
 
     def _get_rownames(self) -> OptList:
         # Check type of 'cols'
-        lblcol = self._get_labelid()
+        lblcol = self._get_namecol()
         if lblcol is None:
             return None
         lbllbl = self.colnames[lblcol]
@@ -265,13 +322,13 @@ class CSVFile(Container):
                 break
         return skiprows
 
-    def _get_labelid(self) -> OptInt:
+    def _get_namecol(self) -> OptInt:
         # Return value if set manually
         if self._labelid is not None:
             return self._labelid
 
         # In R-tables the first column is always used for record names
-        if self.format == FORMAT_RTABLE:
+        if self.format == CSV_FORMAT_RTABLE:
             return 0
 
         # Get first and second content lines (non comment, non empty) of
@@ -280,8 +337,8 @@ class CSVFile(Container):
         if len(lines) != 2:
             return None
 
-        # Determine annotation column id from first value in the second line, that
-        # can not be converted to a float
+        # Determine annotation column id from first value in the second line,
+        # which can not be converted to a float
         values = [col.strip('\"\' \n') for col in lines[1].split(self.delim)]
         for cid, val in enumerate(values):
             try:
@@ -299,51 +356,6 @@ class CSVFile(Container):
         check.is_subset(
             "argument 'columns'", set(columns), 'column names', set(colnames))
         return tuple(colnames.index(col) for col in columns)
-
-    # def create(self, fields: NpDtype) -> None:
-    #     """Create table."""
-    #     self._table = Table(shape=(0, ), dtype=fields)
-
-    def select(self, columns: OptStrTuple = None) -> OptNpArray:
-        """Load numpy ndarray from CSV-file.
-
-        Args:
-            columns: List of column labels in CSV-file. By default the list of
-                column labels is taken from the first content line in the
-                CSV-file.
-
-        Returns:
-            Numpy ndarray containing data from CSV-file, or None if the data
-            could not be imported.
-
-        """
-        # Check type of 'cols'
-        check.has_opt_type("argument 'columns'", columns, tuple)
-
-        # Get column names and formats
-        usecols = self._get_usecols(columns)
-        colnames = self._get_colnames()
-        names = tuple(colnames[colid] for colid in usecols)
-        lblcol = self._get_labelid()
-        if lblcol is None:
-            formats = tuple(['<f8'] * len(usecols))
-        elif lblcol not in usecols:
-            formats = tuple(['<U12'] + ['<f8'] * len(usecols))
-            names = ('label', ) + names
-            usecols = (lblcol, ) + usecols
-        else:
-            lbllbl = colnames[lblcol]
-            formats = tuple(['<U12'] + ['<f8'] * (len(usecols) - 1))
-            names = tuple(['label'] + [l for l in names if l != lbllbl])
-            usecols = tuple([lblcol] + [c for c in usecols if c != lblcol])
-
-        # Import data from CSV-file as numpy array
-        with textfile.openx(self._file, mode='r') as fh:
-            return np.loadtxt(fh,
-                skiprows=self._get_skiprows(),
-                delimiter=self._get_delim(),
-                usecols=usecols,
-                dtype={'names': names, 'formats': formats})
 
 
 def save(

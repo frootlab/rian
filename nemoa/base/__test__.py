@@ -41,7 +41,7 @@ class TestAssess(ModuleTestCase):
             Case(args=('object', object), value=True),
             Case(args=('object', str), value=True),
             Case(args=(object, 'str'), value=False),
-            Case(args=(object, type), value=True),
+            Case(args=(object, type), value=False),
             Case(args=('object', type), value=False)])
 
     def test_get_members(self) -> None:
