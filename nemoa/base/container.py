@@ -9,7 +9,7 @@ __docformat__ = 'google'
 from abc import ABC, abstractmethod
 from nemoa.base import check
 from nemoa.errors import ReadOnlyError, InvalidAttrError
-from nemoa.types import Any, Callable, Date, OptClassInfo, Optional
+from nemoa.types import Any, Callable, Date, OptClassInfo, Optional, OptCallable
 from nemoa.types import OptStr, OptStrDict, OptType, StrDict, StrList, void
 
 #
@@ -63,7 +63,7 @@ class Attr(property):
         getter:
         setter:
         default: Default value, which is returned for a get request
-        parent: Name of attribute, which references a parent object.
+        parent: Name of attribute, which references a parent object
         readonly: Boolean value which determines if the attribute is read-only
         category: Attribute categories allow a free aggregation of attributes by
             their respective category values.
@@ -81,13 +81,21 @@ class Attr(property):
     _inherit: bool
     _category: OptStr
 
+    #
+    # Events
+    #
+
     def __init__(
             self, classinfo: OptClassInfo = None, bind: OptStr = None,
             key: OptStr = None, default: Any = None, category: OptStr = None,
             getter: OptStr = None, setter: OptStr = None, inherit: bool = False,
-            readonly: bool = False) -> None:
+            readonly: bool = False, fget: OptCallable = None,
+            fset: OptCallable = None, fdel: OptCallable = None,
+            doc: OptStr = None) -> None:
         """Initialize Attribute Descriptor."""
-        super().__init__()
+        # Initialize property base class
+        super().__init__(fget=fget, fset=fset, fdel=fdel, doc=doc)
+
         # Check Types of Arguments
         check.has_opt_type("argument 'classinfo'", classinfo, (type, tuple))
         check.has_type("argument 'readonly'", readonly, bool)
@@ -115,6 +123,8 @@ class Attr(property):
 
     def __get__(self, obj: BaseAttrGroup, cls: OptType = None) -> Any:
         """Bypass get request."""
+        if self.fget:
+            return self.fget(obj) # type: ignore
         if self._getter:
             return self._get_getter(obj)()
         name = self._get_name(obj)
@@ -129,11 +139,18 @@ class Attr(property):
             raise ReadOnlyError(obj, self._name)
         if self._classinfo and not isinstance(val, type(self._default)):
             check.has_type(f"attribute '{self._name}'", val, self._classinfo)
+        if self.fset:
+            self.fset(obj, val) # type: ignore
+            return
         if self._setter:
             self._get_setter(obj)(val)
-        else:
-            name = self._get_name(obj)
-            self._get_dict(obj)[name] = val
+            return
+        name = self._get_name(obj)
+        self._get_dict(obj)[name] = val
+
+    #
+    # Protected Methods
+    #
 
     def _get_name(self, obj: BaseAttrGroup) -> str:
         if isinstance(obj, AttrGroup):
