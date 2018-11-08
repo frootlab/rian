@@ -442,37 +442,27 @@ class DCAttrGroup(AttrGroup):
     .. [DCAM] http://dublincore.org/documents/2007/06/04/abstract-model/
     """
 
-    title: property = DCAttr()
+    title: property = DCAttr(category='content')
     title.__doc__ = """
     A name given to the resource. Typically, a Title will be a name by which the
     resource is formally known.
     """
 
-    subject: property = DCAttr()
+    subject: property = DCAttr(category='content')
     subject.__doc__ = """
     The topic of the resource. Typically, the subject will be represented using
     keywords, key phrases, or classification codes. Recommended best practice is
     to use a controlled vocabulary.
     """
 
-    description: property = DCAttr()
+    description: property = DCAttr(category='content')
     description.__doc__ = """
     An account of the resource. Description may include but is not limited to:
     an abstract, a table of contents, a graphical representation, or a free-text
     account of the resource.
     """
 
-    date: property = DCAttr(classinfo=Date)
-    date.__doc__ = """
-    A point or period of time associated with an event in the lifecycle of the
-    resource. Date may be used to express temporal information at any level of
-    granularity. Recommended best practice is to use an encoding scheme, such as
-    the W3CDTF profile of ISO 8601 [W3CDTF]_.
-
-    .. [W3CDTF] http://www.w3.org/TR/NOTE-datetime
-    """
-
-    type: property = DCAttr()
+    type: property = DCAttr(category='content')
     type.__doc__ = """
     The nature or genre of the resource. Recommended best practice is to use a
     controlled vocabulary such as the DCMI Type Vocabulary [DCMITYPE]_. To
@@ -482,26 +472,7 @@ class DCAttrGroup(AttrGroup):
     .. [DCMITYPE] http://dublincore.org/documents/dcmi-type-vocabulary/
     """
 
-    format: property = DCAttr()
-    format.__doc__ = """
-    The file format, physical medium, or dimensions of the resource. Examples of
-    dimensions include size and duration. Recommended best practice is to use a
-    controlled vocabulary such as the list of Internet Media Types [MIME]_.
-
-    .. [MIME] http://www.iana.org/assignments/media-types/
-    """
-
-    identifier: property = DCAttr()
-    identifier.__doc__ = """
-    An unambiguous reference to the resource within a given context. Recommended
-    best practice is to identify the resource by means of a string or number
-    conforming to a formal identification system. Examples of formal
-    identification systems include the Uniform Resource Identifier (URI)
-    (including the Uniform Resource Locator (URL), the Digital Object Identifier
-    (DOI) and the International Standard Book Number (ISBN).
-    """
-
-    source: property = DCAttr()
+    source: property = DCAttr(category='content')
     source.__doc__ = """
     A related resource from which the described resource is derived. The
     described resource may be derived from the related resource in whole or in
@@ -509,15 +480,7 @@ class DCAttrGroup(AttrGroup):
     of a string conforming to a formal identification system.
     """
 
-    language: property = DCAttr()
-    language.__doc__ = """
-    A language of the resource. Recommended best practice is to use a controlled
-    vocabulary such as RFC 4646 [RFC4646]_.
-
-    .. [RFC4646] http://www.ietf.org/rfc/rfc4646.txt
-    """
-
-    coverage: property = DCAttr()
+    coverage: property = DCAttr(category='content')
     coverage.__doc__ = """
     The spatial or temporal topic of the resource, the spatial applicability of
     the resource, or the jurisdiction under which the resource is relevant.
@@ -533,36 +496,73 @@ class DCAttrGroup(AttrGroup):
     .. [TGN] http://www.getty.edu/research/tools/vocabulary/tgn/index.html
     """
 
-    relation: property = DCAttr()
+    relation: property = DCAttr(category='content')
     relation.__doc__ = """
     A related resource. Recommended best practice is to identify the related
     resource by means of a string conforming to a formal identification system.
     """
 
-    creator: property = DCAttr()
+    creator: property = DCAttr(category='property')
     creator.__doc__ = """
     An entity primarily responsible for making the resource. Examples of a
     Creator include a person, an organization, or a service. Typically, the name
     of a Creator should be used to indicate the entity.
     """
 
-    publisher: property = DCAttr()
+    publisher: property = DCAttr(category='property')
     publisher.__doc__ = """
     An entity responsible for making the resource available. Examples of a
     Publisher include a person, an organization, or a service. Typically, the
     name of a Publisher should be used to indicate the entity.
     """
 
-    contributor: property = DCAttr()
+    contributor: property = DCAttr(category='property')
     contributor.__doc__ = """
     An entity responsible for making contributions to the resource. Examples of
     a Contributor include a person, an organization, or a service. Typically,
     the name of a Contributor should be used to indicate the entity.
     """
 
-    rights: property = DCAttr()
+    rights: property = DCAttr(category='property')
     rights.__doc__ = """
     Information about rights held in and over the resource. Typically, rights
     information includes a statement about various property rights associated
     with the resource, including intellectual property rights.
+    """
+
+    identifier: property = DCAttr(category='instantiation')
+    identifier.__doc__ = """
+    An unambiguous reference to the resource within a given context. Recommended
+    best practice is to identify the resource by means of a string or number
+    conforming to a formal identification system. Examples of formal
+    identification systems include the Uniform Resource Identifier (URI)
+    (including the Uniform Resource Locator (URL), the Digital Object Identifier
+    (DOI) and the International Standard Book Number (ISBN).
+    """
+
+    format: property = DCAttr(category='instantiation')
+    format.__doc__ = """
+    The file format, physical medium, or dimensions of the resource. Examples of
+    dimensions include size and duration. Recommended best practice is to use a
+    controlled vocabulary such as the list of Internet Media Types [MIME]_.
+
+    .. [MIME] http://www.iana.org/assignments/media-types/
+    """
+
+    language: property = DCAttr(category='instantiation')
+    language.__doc__ = """
+    A language of the resource. Recommended best practice is to use a controlled
+    vocabulary such as RFC 4646 [RFC4646]_.
+
+    .. [RFC4646] http://www.ietf.org/rfc/rfc4646.txt
+    """
+
+    date: property = DCAttr(classinfo=Date, category='instantiation')
+    date.__doc__ = """
+    A point or period of time associated with an event in the lifecycle of the
+    resource. Date may be used to express temporal information at any level of
+    granularity. Recommended best practice is to use an encoding scheme, such as
+    the W3CDTF profile of ISO 8601 [W3CDTF]_.
+
+    .. [W3CDTF] http://www.w3.org/TR/NOTE-datetime
     """
