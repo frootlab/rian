@@ -172,8 +172,14 @@ class Attr(property):
         parent = obj._get_parent() # pylint: disable=W0212
         if not parent:
             return self._default
+        # If the owner of the attribute is an attribute group, step downwards
+        # the attribute hierarchy within the parent
+        if isinstance(obj, AttrGroup):
+            prefix = getattr(obj, '_prefix', None)
+            if prefix:
+                for attr in prefix.split('.'):
+                    parent = getattr(parent, attr)
         return getattr(parent, self._name, self._default)
-
 
 #
 # Container Base Class and Container Attribute Classes
