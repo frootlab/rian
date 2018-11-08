@@ -20,7 +20,7 @@ from contextlib import contextmanager
 from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
 from nemoa.base import npath, env
-from nemoa.base.container import Container, AttrGroup, DCMAttrGroup
+from nemoa.base.container import Container, AttrGroup, DCAttrGroup
 from nemoa.base.container import DataAttr, MetaAttr, TempAttr, VirtAttr
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
 from nemoa.base.file import inifile
@@ -77,7 +77,7 @@ class WsFile(Container):
 
     _config_file: ClassVar[Path] = Path('workspace.ini')
     _default_config: ClassVar[ConfigDict] = {
-        'dcm': {
+        'dc': {
             'creator': env.get_username(),
             'date': datetime.datetime.now()}}
     _default_dir_layout: ClassVar[StrList] = [
@@ -88,13 +88,13 @@ class WsFile(Container):
     # Public Attribute Groups
     #
 
-    dcm: AttrGroup = DCMAttrGroup()
+    dc: AttrGroup = DCAttrGroup()
 
     #
     # Public Attributes
     #
 
-    startup: property = MetaAttr(Path, label='hooks')
+    startup: property = MetaAttr(Path, category='hooks')
     startup.__doc__ = """
     The startup script is a path, that points to a python script inside the
     workspace, which is executed after loading the workspace.
@@ -196,8 +196,8 @@ class WsFile(Container):
 
         # Try to open and load workspace configuration from buffer
         structure = {
-            'dcm': self._get_attr_types(group='dcm'),
-            'hooks': self._get_attr_types(label='hooks')}
+            'dc': self._get_attr_types(group='dc'),
+            'hooks': self._get_attr_types(category='hooks')}
         try:
             with self.open(self._config_file) as file:
                 cfg = inifile.load(file, structure=structure)
@@ -207,7 +207,7 @@ class WsFile(Container):
                 f"file '{self._config_file}' could not be loaded") from err
 
         # Link configuration
-        self._set_attr_values(cfg.get('dcm', {}), group='dcm')
+        self._set_attr_values(cfg.get('dc', {}), group='dc')
 
     def save(self) -> None:
         """Save the workspace to it's filepath."""
@@ -233,8 +233,8 @@ class WsFile(Container):
         # Update 'workspace.ini'
         with self.open(self._config_file, mode='w') as file:
             inifile.save({
-                'dcm': self._get_attr_values(group='dcm'),
-                'hooks': self._get_attr_values(label='hooks')}, file)
+                'dc': self._get_attr_values(group='dc'),
+                'hooks': self._get_attr_values(category='hooks')}, file)
 
         # Remove duplicates from workspace
         self._remove_duplicates()
@@ -681,7 +681,7 @@ class WsFile(Container):
 
     def _create_new(self) -> None:
         # Initialize instance Variables, Buffer and buffered ZipFile
-        self._set_attr_values(self._default_config['dcm'], group='dcm')
+        self._set_attr_values(self._default_config['dc'], group='dc')
         self._path = None
         self._changed = False
         self._pwd = None

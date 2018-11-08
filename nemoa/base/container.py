@@ -65,9 +65,8 @@ class Attr(property):
         default: Default value, which is returned for a get request
         parent: Name of attribute, which references a parent object.
         readonly: Boolean value which determines if the attribute is read-only
-        label: Attribute labels allow a free aggregation of attributes by
-            their respective label values, which indendend of attribute groups
-            or classes.
+        category: Attribute categories allow a free aggregation of attributes by
+            their respective category values.
 
     """
 
@@ -80,11 +79,11 @@ class Attr(property):
     _getter: OptStr
     _setter: OptStr
     _inherit: bool
-    _label: OptStr
+    _category: OptStr
 
     def __init__(
             self, classinfo: OptClassInfo = None, bind: OptStr = None,
-            key: OptStr = None, default: Any = None, label: OptStr = None,
+            key: OptStr = None, default: Any = None, category: OptStr = None,
             getter: OptStr = None, setter: OptStr = None, inherit: bool = False,
             readonly: bool = False) -> None:
         """Initialize Attribute Descriptor."""
@@ -97,7 +96,7 @@ class Attr(property):
         check.has_opt_type("argument 'getter'", getter, str)
         check.has_opt_type("argument 'setter'", setter, str)
         check.has_type("argument 'inherit'", inherit, bool)
-        check.has_opt_type("argument 'label'", label, str)
+        check.has_opt_type("argument 'category'", category, str)
 
         # Set Descriptor Instance Attributes to Argument Values
         self._classinfo = classinfo
@@ -108,7 +107,7 @@ class Attr(property):
         self._getter = getter
         self._setter = setter
         self._inherit = inherit
-        self._label = label
+        self._category = category
 
     def __set_name__(self, cls: type, name: str) -> None:
         """Set name of the Attribute."""
@@ -200,6 +199,125 @@ class AttrGroup(BaseAttrGroup):
             setattr(self, '_temp', {})
         self._temp['parent'] = obj
 
+    #
+    # Access Attributes by their group name, ClassInfo and category
+    #
+
+    @classmethod
+    def _get_attr_groups(cls) -> StrDict:
+        def get_groups(cls: type) -> StrDict:
+            groups: StrDict = {}
+            for base in cls.__mro__:
+                for name, obj in base.__dict__.items():
+                    if not isinstance(obj, AttrGroup):
+                        continue
+                    groups[name] = obj
+                    for key, val in get_groups(type(obj)).items():
+                        groups[name + '.' + key] = val
+            return groups
+        return get_groups(cls)
+
+    @classmethod
+    def _get_attr_names(
+            cls, group: OptStr = None, classinfo: OptClassInfo = None,
+            category: OptStr = None) -> StrList:
+        # Locate the attribute group, that corresponds to the given group name.
+        # By default identify the current class as attribute group
+        if group:
+            groups = cls._get_attr_groups()
+            if not group in groups:
+                raise InvalidAttrError(cls, group)
+            root = type(groups[group])
+        else:
+            root = cls
+
+        # Search for attributes within the attribute group, that match the
+        # given attribute class and category
+        names: StrList = []
+        for base in root.__mro__:
+            for name, val in base.__dict__.items():
+                if not isinstance(val, Attr):
+                    continue
+                if category and not getattr(val, '_category', None) == category:
+                    continue
+                if classinfo and not isinstance(val, classinfo):
+                    continue
+                names.append(name)
+        return names
+
+    @classmethod
+    def _get_attr_types(
+            cls, group: OptStr = None, category: OptStr = None,
+            classinfo: OptClassInfo = None) -> StrDict:
+        # Locate the attribute group, that corresponds to the given group name.
+        # By default identify the current class as attribute group
+        if group:
+            groups = cls._get_attr_groups()
+            if not group in groups:
+                raise InvalidAttrError(cls, group)
+            root = type(groups[group])
+        else:
+            root = cls
+
+        # Search for attributes within the attribute group, that match the
+        # given attribute class and category
+        types: StrDict = {}
+        for base in root.__mro__:
+            for name, obj in base.__dict__.items():
+                if not isinstance(obj, Attr):
+                    continue
+                if category and not getattr(obj, '_category', None) == category:
+                    continue
+                if classinfo and not isinstance(obj, classinfo):
+                    continue
+                types[name] = getattr(obj, '_classinfo', None)
+        return types
+
+    def _get_attr_values(self,
+            group: OptStr = None, classinfo: OptClassInfo = None,
+            category: OptStr = None) -> StrDict:
+        # Get attribute names
+        attrs = self._get_attr_names(
+            group=group, classinfo=classinfo, category=category)
+
+        # If a group name is given, get the respective attribute group by
+        # stepping downwards the attribute hierarchy. Otherwise identify self
+        # with the attribute group
+        obj = self
+        if group:
+            for attr in group.split('.'):
+                obj = getattr(obj, attr)
+
+        # Get and return attributes from attribute group
+        return {attr: getattr(obj, attr) for attr in attrs}
+
+    def _set_attr_values(self,
+            data: dict, group: OptStr = None,
+            classinfo: OptClassInfo = None, category: OptStr = None) -> None:
+        if not data:
+            return
+
+        # Check if the given attribute names are valid with respect
+        # to the group name, their class and the category
+        if group or classinfo or category:
+            valid = self._get_attr_names(
+                group=group, classinfo=classinfo, category=category)
+            check.is_subset(
+                "given names", set(data.keys()),
+                "attributes", set(valid))
+
+        # If a group name is given, get the respective attribute group by
+        # stepping downwards the attribute hierarchy. Otherwise identify self
+        # with the attribute group
+        obj = self
+        if group:
+            for attr in group.split('.'):
+                obj = getattr(obj, attr)
+
+        # Set attributes within the respective attribute group
+        for key, val in data.items():
+            setattr(obj, key, val)
+
 class DataAttr(Attr):
     """Attributes for persistent content objects."""
 
@@ -270,20 +388,6 @@ class Container(AttrGroup):
     # Accessors for Attribute Groups
     #
 
-    @classmethod
-    def _get_attr_groups(cls) -> StrDict:
-        def get_groups(cls: type) -> StrDict:
-            groups: StrDict = {}
-            for base in cls.__mro__:
-                for name, obj in base.__dict__.items():
-                    if not isinstance(obj, AttrGroup):
-                        continue
-                    groups[name] = obj
-                    for key, val in get_groups(type(obj)).items():
-                        groups[name + '.' + key] = val
-            return groups
-        return get_groups(cls)
-
     def _bind_attr_groups(self) -> None:
         for fqn in self._get_attr_groups():
             # Get attribute group by stepping the attribute hierarchy
@@ -302,116 +406,11 @@ class Container(AttrGroup):
             setattr(obj, '_meta', self._meta)
             setattr(obj, '_temp', self._temp)
 
-    #
-    # Access Attributes by their group name, ClassInfo and label
-    #
-
-    @classmethod
-    def _get_attr_names(
-            cls, group: OptStr = None, classinfo: OptClassInfo = None,
-            label: OptStr = None) -> StrList:
-        # Locate the attribute group, that corresponds to the given group name.
-        # By default identify the current class as attribute group
-        if group:
-            groups = cls._get_attr_groups()
-            if not group in groups:
-                raise InvalidAttrError(cls, group)
-            root = type(groups[group])
-        else:
-            root = cls
-
-        # Search for attributes within the attribute group, that match the
-        # given attribute class and label
-        names: StrList = []
-        for base in root.__mro__:
-            for name, val in base.__dict__.items():
-                if not isinstance(val, Attr):
-                    continue
-                if label and not getattr(val, '_label', None) == label:
-                    continue
-                if classinfo and not isinstance(val, classinfo):
-                    continue
-                names.append(name)
-        return names
-
-    @classmethod
-    def _get_attr_types(
-            cls, group: OptStr = None, label: OptStr = None,
-            classinfo: OptClassInfo = None) -> StrDict:
-        # Locate the attribute group, that corresponds to the given group name.
-        # By default identify the current class as attribute group
-        if group:
-            groups = cls._get_attr_groups()
-            if not group in groups:
-                raise InvalidAttrError(cls, group)
-            root = type(groups[group])
-        else:
-            root = cls
-
-        # Search for attributes within the attribute group, that match the
-        # given attribute class and label
-        types: StrDict = {}
-        for base in root.__mro__:
-            for name, obj in base.__dict__.items():
-                if not isinstance(obj, Attr):
-                    continue
-                if label and not getattr(obj, '_label', None) == label:
-                    continue
-                if classinfo and not isinstance(obj, classinfo):
-                    continue
-                types[name] = getattr(obj, '_classinfo', None)
-        return types
-
-    def _get_attr_values(self,
-            group: OptStr = None, label: OptStr = None,
-            classinfo: OptClassInfo = None) -> StrDict:
-        # Get attribute names
-        attrs = self._get_attr_names(
-            group=group, label=label, classinfo=classinfo)
-
-        # If a group name is given, get the respective attribute group by
-        # stepping downwards the attribute hierarchy. Otherwise identify self
-        # with the attribute group
-        obj = self
-        if group:
-            for attr in group.split('.'):
-                obj = getattr(obj, attr)
-
-        # Get and return attributes from attribute group
-        return {attr: getattr(obj, attr) for attr in attrs}
-
-    def _set_attr_values(self,
-            data: dict, group: OptStr = None,
-            classinfo: OptClassInfo = None, label: OptStr = None) -> None:
-        if not data:
-            return
-
-        # Check if the given attribute names are valid with respect
-        # to the group name, their class and the label
-        if group or classinfo or label:
-            valid = self._get_attr_names(
-                group=group, classinfo=classinfo, label=label)
-            check.is_subset(
-                "given names", set(data.keys()),
-                "attributes", set(valid))
-
-        # If a group name is given, get the respective attribute group by
-        # stepping downwards the attribute hierarchy. Otherwise identify self
-        # with the attribute group
-        obj = self
-        if group:
-            for attr in group.split('.'):
-                obj = getattr(obj, attr)
-
-        # Set attributes within the respective attribute group
-        for key, val in data.items():
-            setattr(obj, key, val)
-
 #
-# Dublin Core Metadata (DCM)
+# Dublin Core (DC) Attributes
 #
 
-class DCMAttr(MetaAttr):
+class DCAttr(MetaAttr):
     """Dublin Core Metadata Attribute."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
@@ -420,8 +419,8 @@ class DCMAttr(MetaAttr):
         kwds['inherit'] = kwds.get('inherit', True)
         super().__init__(*args, **kwds)
 
-class DCMAttrGroup(AttrGroup):
-    """Dublin Core Metadata Element Set.
+class DCAttrGroup(AttrGroup):
+    """Dublin Core Metadata Element Set, Version 1.1.
 
     The Dublin Core Metadata Element Set is a vocabulary of fifteen properties
     for use in resource description. The name "Dublin" is due to its origin at a
@@ -443,27 +442,27 @@ class DCMAttrGroup(AttrGroup):
     .. [DCAM] http://dublincore.org/documents/2007/06/04/abstract-model/
     """
 
-    title: property = DCMAttr()
+    title: property = DCAttr()
     title.__doc__ = """
     A name given to the resource. Typically, a Title will be a name by which the
     resource is formally known.
     """
 
-    subject: property = DCMAttr()
+    subject: property = DCAttr()
     subject.__doc__ = """
     The topic of the resource. Typically, the subject will be represented using
     keywords, key phrases, or classification codes. Recommended best practice is
     to use a controlled vocabulary.
     """
 
-    description: property = DCMAttr()
+    description: property = DCAttr()
     description.__doc__ = """
     An account of the resource. Description may include but is not limited to:
     an abstract, a table of contents, a graphical representation, or a free-text
     account of the resource.
     """
 
-    date: property = DCMAttr(classinfo=Date)
+    date: property = DCAttr(classinfo=Date)
     date.__doc__ = """
     A point or period of time associated with an event in the lifecycle of the
     resource. Date may be used to express temporal information at any level of
@@ -473,7 +472,7 @@ class DCMAttrGroup(AttrGroup):
     .. [W3CDTF] http://www.w3.org/TR/NOTE-datetime
     """
 
-    type: property = DCMAttr()
+    type: property = DCAttr()
     type.__doc__ = """
     The nature or genre of the resource. Recommended best practice is to use a
     controlled vocabulary such as the DCMI Type Vocabulary [DCMITYPE]_. To
@@ -483,7 +482,7 @@ class DCMAttrGroup(AttrGroup):
     .. [DCMITYPE] http://dublincore.org/documents/dcmi-type-vocabulary/
     """
 
-    format: property = DCMAttr()
+    format: property = DCAttr()
     format.__doc__ = """
     The file format, physical medium, or dimensions of the resource. Examples of
     dimensions include size and duration. Recommended best practice is to use a
@@ -492,7 +491,7 @@ class DCMAttrGroup(AttrGroup):
     .. [MIME] http://www.iana.org/assignments/media-types/
     """
 
-    identifier: property = DCMAttr()
+    identifier: property = DCAttr()
     identifier.__doc__ = """
     An unambiguous reference to the resource within a given context. Recommended
     best practice is to identify the resource by means of a string or number
@@ -502,7 +501,7 @@ class DCMAttrGroup(AttrGroup):
     (DOI) and the International Standard Book Number (ISBN).
     """
 
-    source: property = DCMAttr()
+    source: property = DCAttr()
     source.__doc__ = """
     A related resource from which the described resource is derived. The
     described resource may be derived from the related resource in whole or in
@@ -510,7 +509,7 @@ class DCMAttrGroup(AttrGroup):
     of a string conforming to a formal identification system.
     """
 
-    language: property = DCMAttr()
+    language: property = DCAttr()
     language.__doc__ = """
     A language of the resource. Recommended best practice is to use a controlled
     vocabulary such as RFC 4646 [RFC4646]_.
@@ -518,7 +517,7 @@ class DCMAttrGroup(AttrGroup):
     .. [RFC4646] http://www.ietf.org/rfc/rfc4646.txt
     """
 
-    coverage: property = DCMAttr()
+    coverage: property = DCAttr()
     coverage.__doc__ = """
     The spatial or temporal topic of the resource, the spatial applicability of
     the resource, or the jurisdiction under which the resource is relevant.
@@ -534,34 +533,34 @@ class DCMAttrGroup(AttrGroup):
     .. [TGN] http://www.getty.edu/research/tools/vocabulary/tgn/index.html
     """
 
-    relation: property = DCMAttr()
+    relation: property = DCAttr()
     relation.__doc__ = """
     A related resource. Recommended best practice is to identify the related
     resource by means of a string conforming to a formal identification system.
     """
 
-    creator: property = DCMAttr()
+    creator: property = DCAttr()
     creator.__doc__ = """
     An entity primarily responsible for making the resource. Examples of a
     Creator include a person, an organization, or a service. Typically, the name
     of a Creator should be used to indicate the entity.
     """
 
-    publisher: property = DCMAttr()
+    publisher: property = DCAttr()
     publisher.__doc__ = """
     An entity responsible for making the resource available. Examples of a
     Publisher include a person, an organization, or a service. Typically, the
     name of a Publisher should be used to indicate the entity.
     """
 
-    contributor: property = DCMAttr()
+    contributor: property = DCAttr()
     contributor.__doc__ = """
     An entity responsible for making contributions to the resource. Examples of
     a Contributor include a person, an organization, or a service. Typically,
     the name of a Contributor should be used to indicate the entity.
     """
 
-    rights: property = DCMAttr()
+    rights: property = DCAttr()
     rights.__doc__ = """
     Information about rights held in and over the resource. Typically, rights
     information includes a statement about various property rights associated

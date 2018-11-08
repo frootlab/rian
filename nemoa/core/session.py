@@ -19,7 +19,7 @@ __docformat__ = 'google'
 from pathlib import Path
 from nemoa.base import npath
 from nemoa.core import log
-from nemoa.base.container import Container, AttrGroup, DCMAttrGroup
+from nemoa.base.container import Container, AttrGroup, DCAttrGroup
 from nemoa.base.container import DataAttr, MetaAttr, VirtAttr, TempAttr
 from nemoa.base.file import inifile, wsfile
 from nemoa.types import Any, BytesLike, CManFileLike, ClassVar, Exc, ExcType
@@ -52,7 +52,7 @@ class Session(Container):
     # Public Attribute Groups
     #
 
-    dcm: AttrGroup = DCMAttrGroup()
+    dc: AttrGroup = DCAttrGroup()
 
     #
     # Public Attributes
