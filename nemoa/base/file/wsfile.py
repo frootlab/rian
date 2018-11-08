@@ -92,7 +92,7 @@ class WsFile(DCMContainer):
     # Public Attributes
     #
 
-    startup: property = MetaAttr(Path, group='hooks')
+    startup: property = MetaAttr(Path, label='hooks')
     startup.__doc__ = """
     The startup script is a path, that points to a python script inside the
     workspace, which is executed after loading the workspace.
@@ -194,8 +194,8 @@ class WsFile(DCMContainer):
 
         # Try to open and load workspace configuration from buffer
         structure = {
-            'dcm': type(self)._get_attr_types(group='dcm'),
-            'hooks': type(self)._get_attr_types(group='hooks')}
+            'dcm': self._get_attr_types(group='dcm'),
+            'hooks': self._get_attr_types(label='hooks')}
 
         try:
             with self.open(self._config_file) as file:

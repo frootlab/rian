@@ -221,7 +221,7 @@ class Cursor(Container):
     #
 
     _mode: property = MetaAttr(int, default=_default_mode)
-    _index: property = MetaAttr(list, parent='parent')
+    _index: property = MetaAttr(list, inherit=True)
     _getter: property = TempAttr(CallableClasses)
     _filter: property = TempAttr(CallableClasses)
     _mapper: property = TempAttr(CallableClasses)

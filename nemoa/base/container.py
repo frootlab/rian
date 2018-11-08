@@ -6,8 +6,9 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+from abc import ABC, abstractmethod
 from nemoa.base import check
-from nemoa.errors import ReadOnlyError
+from nemoa.errors import ReadOnlyError, InvalidAttrError
 from nemoa.types import Any, Callable, Date, OptClassInfo, Optional
 from nemoa.types import OptStr, OptStrDict, OptType, StrDict, StrList, void
 
@@ -18,16 +19,42 @@ from nemoa.types import OptStr, OptStrDict, OptType, StrDict, StrList, void
 OptContainer = Optional['Container']
 
 #
-# Attribute and Container Base Classes
+# Base Classes for Attribute Groups and Attributes
 #
 
-class Attr(property):
-    """Generic Descriptor Class for Container Attributes.
+class BaseAttrGroup(ABC):
+    """Abstract Base Class for Attribute Groups."""
 
-    Generic attribute descriptor for binding class instance attributes. When an
-    instance of a class contains a descriptor class as a method, the descriptor
-    class defines the accessor and mutator methods of the attribute, which is
-    identified by the method's name.
+    _name: str
+    _prefix: str
+
+    @abstractmethod
+    def _get_parent(self) -> Optional['BaseAttrGroup']:
+        pass
+
+    @abstractmethod
+    def _set_parent(self, obj: 'BaseAttrGroup') -> None:
+        pass
+
+class Attr(property):
+    """Base Class for Attributes.
+
+    Generally attribute descriptors are used for binding class instance
+    attributes. Thereby, when any instance of a class contains an attribute
+    descriptor as an attribute (i.e. a method), the descriptor class defines
+    accessor and mutator methods of the respective attribute.
+
+    The attribute descriptor features following extensions:
+        * Type checking against given classinfo
+        * Setting the default value of the property
+        * Declaration of getters and setters by forward references
+        * Attribute binding within a different object dictionaries. This is
+            used for a physical aggregation of attributes by their type, i.e.
+            content, metadata and temporary data.
+        * Attribute binding to a different key, then the attribute name. This
+            is used to provide different accessors for the same key e.g. for
+            a readonly public access and a readwritable protected access.
+        *
 
     Args:
         classinfo:
@@ -38,63 +65,67 @@ class Attr(property):
         default: Default value, which is returned for a get request
         parent: Name of attribute, which references a parent object.
         readonly: Boolean value which determines if the attribute is read-only
-        group:
+        label: Attribute labels allow a free aggregation of attributes by
+            their respective label values, which indendend of attribute groups
+            or classes.
 
     """
 
     _name: str
+    _classinfo: OptClassInfo
+    _default: Any
+    _readonly: bool
+    _bind: OptStr
+    _key: OptStr
     _getter: OptStr
     _setter: OptStr
-    _dict: OptStr
-    _key: OptStr
-    _default: Any
-    _parent: OptStr
-    _classinfo: OptClassInfo
-    _group: OptStr
-    _readonly: bool
+    _inherit: bool
+    _label: OptStr
 
     def __init__(
             self, classinfo: OptClassInfo = None, bind: OptStr = None,
-            key: OptStr = None, default: Any = None, group: OptStr = None,
-            getter: OptStr = None, setter: OptStr = None, parent: OptStr = None,
+            key: OptStr = None, default: Any = None, label: OptStr = None,
+            getter: OptStr = None, setter: OptStr = None, inherit: bool = False,
             readonly: bool = False) -> None:
         """Initialize Attribute Descriptor."""
+        super().__init__()
         # Check Types of Arguments
         check.has_opt_type("argument 'classinfo'", classinfo, (type, tuple))
+        check.has_type("argument 'readonly'", readonly, bool)
         check.has_opt_type("argument 'bind'", bind, str)
         check.has_opt_type("argument 'key'", key, str)
-        check.has_opt_type("argument 'group'", group, str)
         check.has_opt_type("argument 'getter'", getter, str)
         check.has_opt_type("argument 'setter'", setter, str)
-        check.has_type("argument 'readonly'", readonly, bool)
+        check.has_type("argument 'inherit'", inherit, bool)
+        check.has_opt_type("argument 'label'", label, str)
 
         # Set Descriptor Instance Attributes to Argument Values
         self._classinfo = classinfo
+        self._default = default
+        self._readonly = readonly
         self._dict = bind
+        self._key = key
         self._getter = getter
         self._setter = setter
-        self._key = key
-        self._parent = parent
-        self._default = default
-        self._group = group
-        self._readonly = readonly
+        self._inherit = inherit
+        self._label = label
 
-    def __set_name__(self, owner: type, name: str) -> None:
+    def __set_name__(self, cls: type, name: str) -> None:
         """Set name of the Attribute."""
         self._name = name
 
-    def __get__(self, obj: object, objtype: OptType = None) -> Any:
-        """Bypass Attribute's get requests."""
+    def __get__(self, obj: BaseAttrGroup, cls: OptType = None) -> Any:
+        """Bypass get request."""
         if self._getter:
             return self._get_getter(obj)()
-        key = self._key or self._name
+        name = self._get_name(obj)
         default = self._get_default(obj)
         if self._dict:
-            return self._get_dict(obj).get(key, default)
-        return obj.__dict__.get(key, default)
+            return self._get_dict(obj).get(name, default)
+        return obj.__dict__.get(name, default)
 
-    def __set__(self, obj: object, val: Any) -> None:
-        """Bypass and type check Attribute's set requests."""
+    def __set__(self, obj: BaseAttrGroup, val: Any) -> None:
+        """Bypass and type check set request."""
         if self._readonly:
             raise ReadOnlyError(obj, self._name)
         if self._classinfo and not isinstance(val, type(self._default)):
@@ -102,10 +133,17 @@ class Attr(property):
         if self._setter:
             self._get_setter(obj)(val)
         else:
-            key = self._key or self._name
-            self._get_dict(obj)[key] = val
+            name = self._get_name(obj)
+            self._get_dict(obj)[name] = val
 
-    def _get_dict(self, obj: object) -> dict:
+    def _get_name(self, obj: BaseAttrGroup) -> str:
+        if isinstance(obj, AttrGroup):
+            prefix = getattr(obj, '_prefix', None)
+            if prefix:
+                return '.'.join([prefix, self._key or self._name])
+        return self._key or self._name
+
+    def _get_dict(self, obj: BaseAttrGroup) -> dict:
         attr = self._dict
         if not attr:
             return obj.__dict__
@@ -113,7 +151,7 @@ class Attr(property):
         check.has_type(attr, getattr(obj, attr), dict)
         return getattr(obj, attr)
 
-    def _get_getter(self, obj: object) -> Callable:
+    def _get_getter(self, obj: BaseAttrGroup) -> Callable:
         attr = self._getter
         if not attr:
             return void
@@ -121,7 +159,7 @@ class Attr(property):
         check.is_callable(attr, getattr(obj, attr))
         return getattr(obj, attr)
 
-    def _get_setter(self, obj: object) -> Callable:
+    def _get_setter(self, obj: BaseAttrGroup) -> Callable:
         attr = self._setter
         if not attr:
             return void
@@ -129,21 +167,45 @@ class Attr(property):
         check.is_callable(attr, getattr(obj, attr))
         return getattr(obj, attr)
 
-    def _get_default(self, obj: object) -> Any:
-        if not self._parent:
+    def _get_default(self, obj: BaseAttrGroup) -> Any:
+        if not self._inherit:
             return self._default
-        parent = getattr(obj, self._parent, None)
+        parent = obj._get_parent() # pylint: disable=W0212
         if not parent:
             return self._default
         return getattr(parent, self._name, self._default)
 
+
+#
+# Container Base Class and Container Attribute Classes
+#
+
+class AttrGroup(BaseAttrGroup):
+    """Base class for Container Attribute Groups."""
+
+    _data: StrDict
+    _meta: StrDict
+    _temp: StrDict
+
+    def _get_parent(self) -> Optional[BaseAttrGroup]:
+        try:
+            return self._temp['parent']
+        except AttributeError:
+            return None
+        except KeyError:
+            return None
+
+    def _set_parent(self, obj: BaseAttrGroup) -> None:
+        if not hasattr(self, '_temp') or not isinstance(self._temp, dict):
+            setattr(self, '_temp', {})
+        self._temp['parent'] = obj
+
 class DataAttr(Attr):
-    """Attributes for persistent content storage objects."""
+    """Attributes for persistent content objects."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize default values of attribute descriptor."""
         kwds['bind'] = kwds.get('bind', '_data')
-        kwds['group'] = kwds.get('group', 'data')
         super().__init__(*args, **kwds)
 
 class MetaAttr(Attr):
@@ -152,17 +214,15 @@ class MetaAttr(Attr):
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize default values of attribute descriptor."""
         kwds['bind'] = kwds.get('bind', '_meta')
-        kwds['group'] = kwds.get('group', 'meta')
-        kwds['parent'] = kwds.get('parent', 'parent')
+        kwds['inherit'] = kwds.get('inherit', True)
         super().__init__(*args, **kwds)
 
 class TempAttr(Attr):
-    """Attributes for non persistent objects."""
+    """Attributes for non persistent stored objects."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize default values of attribute descriptor."""
         kwds['bind'] = kwds.get('bind', '_temp')
-        kwds['group'] = kwds.get('group', 'temp')
         super().__init__(*args, **kwds)
 
 class VirtAttr(Attr):
@@ -171,96 +231,183 @@ class VirtAttr(Attr):
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize default values of attribute descriptor."""
         check.has_type('getter', kwds.get('getter'), str)
-        kwds['group'] = kwds.get('group', 'virt')
         super().__init__(*args, **kwds)
 
-class Container:
+class Container(AttrGroup):
     """Base class for Container Objects."""
 
-    _data: StrDict
-    _meta: StrDict
-    _temp: StrDict
-
     #
-    # Temporary Attributes
+    # Public Attributes
     #
 
-    parent: property = TempAttr(object)
+    parent: property = VirtAttr(
+        BaseAttrGroup, getter='_get_parent', setter='_set_parent')
     parent.__doc__ = """Reference to parent container object."""
 
     #
-    # Magic
+    # Events
     #
 
     def __init__(
             self, data: OptStrDict = None, meta: OptStrDict = None,
             parent: OptContainer = None) -> None:
-        """Initialize instance."""
-        self._data = {}
-        self._meta = {}
-        self._temp = {}
+        """Initialize Container instance."""
+        self._data = {} # Initialize buffer for content attributes
+        self._meta = {} # Initialize buffer for metadata attributes
+        self._temp = {} # Initialize buffer for temporary attributes
 
-        if data:
+        if data: # Restore content attributes
             self._set_attr_values(data, classinfo=DataAttr)
-        if meta:
+        if meta: # Restore metadata attributes
             self._set_attr_values(meta, classinfo=MetaAttr)
-        if parent:
+        if parent: # Set parent container
             self.parent = parent
 
+        # Bind attribute groups within the container
+        self._bind_attr_groups()
+
     #
-    # Getters and Setters for Attributes by Groups and ClassInfo
+    # Accessors for Attribute Groups
     #
 
     @classmethod
+    def _get_attr_groups(cls) -> StrDict:
+        def get_groups(cls: type) -> StrDict:
+            groups: StrDict = {}
+            for base in cls.__mro__:
+                for name, obj in base.__dict__.items():
+                    if not isinstance(obj, AttrGroup):
+                        continue
+                    groups[name] = obj
+                    for key, val in get_groups(type(obj)).items():
+                        groups[name + '.' + key] = val
+            return groups
+        return get_groups(cls)
+
+    def _bind_attr_groups(self) -> None:
+        for fqn in self._get_attr_groups():
+            # Get attribute group by stepping the attribute hierarchy
+            # downwards the tokens of the fully qualified name
+            obj = self
+            for attr in fqn.split('.'):
+                obj = getattr(obj, attr)
+
+            # Set group name and prefix to avoid namespace collision
+            # within dictionary buffers
+            setattr(obj, '_name', fqn.rsplit('.', 1)[-1])
+            setattr(obj, '_prefix', fqn)
+
+            # Bind dictionary buffers
+            setattr(obj, '_data', self._data)
+            setattr(obj, '_meta', self._meta)
+            setattr(obj, '_temp', self._temp)
+
+    #
+    # Access Attributes by their group name, ClassInfo and label
+    #
+
+    @classmethod
+    def _get_attr_names(
+            cls, group: OptStr = None, classinfo: OptClassInfo = None,
+            label: OptStr = None) -> StrList:
+        # Locate the attribute group, that corresponds to the given group name.
+        # By default identify the current class as attribute group
+        if group:
+            groups = cls._get_attr_groups()
+            if not group in groups:
+                raise InvalidAttrError(cls, group)
+            root = type(groups[group])
+        else:
+            root = cls
+
+        # Search for attributes within the attribute group, that match the
+        # given attribute class and label
+        names: StrList = []
+        for base in root.__mro__:
+            for name, val in base.__dict__.items():
+                if not isinstance(val, Attr):
+                    continue
+                if label and not getattr(val, '_label', None) == label:
+                    continue
+                if classinfo and not isinstance(val, classinfo):
+                    continue
+                names.append(name)
+        return names
+
+    @classmethod
     def _get_attr_types(
-            cls, group: OptStr = None,
+            cls, group: OptStr = None, label: OptStr = None,
             classinfo: OptClassInfo = None) -> StrDict:
+        # Locate the attribute group, that corresponds to the given group name.
+        # By default identify the current class as attribute group
+        if group:
+            groups = cls._get_attr_groups()
+            if not group in groups:
+                raise InvalidAttrError(cls, group)
+            root = type(groups[group])
+        else:
+            root = cls
+
+        # Search for attributes within the attribute group, that match the
+        # given attribute class and label
         types: StrDict = {}
-        for base in cls.__mro__:
+        for base in root.__mro__:
             for name, obj in base.__dict__.items():
                 if not isinstance(obj, Attr):
                     continue
-                if group and not getattr(obj, '_group', None) == group:
+                if label and not getattr(obj, '_label', None) == label:
                     continue
                 if classinfo and not isinstance(obj, classinfo):
                     continue
                 types[name] = getattr(obj, '_classinfo', None)
         return types
 
-    @classmethod
-    def _get_attr_names(
-            cls, group: OptStr = None,
-            classinfo: OptClassInfo = None) -> StrList:
-        names: StrList = []
-        for base in cls.__mro__:
-            for name, obj in base.__dict__.items():
-                if not isinstance(obj, Attr):
-                    continue
-                if group and not getattr(obj, '_group', None) == group:
-                    continue
-                if classinfo and not isinstance(obj, classinfo):
-                    continue
-                names.append(name)
-        return names
-
     def _get_attr_values(self,
-            group: OptStr = None, classinfo: OptClassInfo = None) -> StrDict:
-        names = self._get_attr_names(group=group, classinfo=classinfo)
-        return {name: getattr(self, name) for name in names}
+            group: OptStr = None, label: OptStr = None,
+            classinfo: OptClassInfo = None) -> StrDict:
+        # Get attribute names
+        attrs = self._get_attr_names(
+            group=group, label=label, classinfo=classinfo)
+
+        # If a group name is given, get the respective attribute group by
+        # stepping downwards the attribute hierarchy. Otherwise identify self
+        # with the attribute group
+        obj = self
+        if group:
+            for attr in group.split('.'):
+                obj = getattr(obj, attr)
+
+        # Get and return attributes from attribute group
+        return {attr: getattr(obj, attr) for attr in attrs}
 
     def _set_attr_values(self,
-            values: dict, group: OptStr = None,
-            classinfo: OptClassInfo = None) -> None:
-        check.has_opt_type("argument 'group'", group, str)
-        check.has_opt_type("argument 'classinfo'", classinfo, (type, tuple))
-        check.has_opt_type("argument 'values'", values, dict)
-        if not values:
+            data: dict, group: OptStr = None,
+            classinfo: OptClassInfo = None, label: OptStr = None) -> None:
+        if not data:
             return
-        check.is_subset(
-            "given values", set(values.keys()), "attributes",
-            set(self._get_attr_names(group=group, classinfo=classinfo)))
-        for name, value in values.items():
-            setattr(self, name, value)
+
+        # Check if the given attribute names are valid with respect
+        # to the group name, their class and the label
+        if group or classinfo or label:
+            valid = self._get_attr_names(
+                group=group, classinfo=classinfo, label=label)
+            check.is_subset(
+                "given names", set(data.keys()),
+                "attributes", set(valid))
+
+        # If a group name is given, get the respective attribute group by
+        # stepping downwards the attribute hierarchy. Otherwise identify self
+        # with the attribute group
+        obj = self
+        if group:
+            for attr in group.split('.'):
+                obj = getattr(obj, attr)
+
+        # Set attributes within the respective attribute group
+        for key, val in data.items():
+            setattr(obj, key, val)
+
+
 
 #
 # Container class with Dublin Core Metadata Attributes
@@ -272,7 +419,8 @@ class DCMAttr(MetaAttr):
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize default values of attribute descriptor."""
         kwds['classinfo'] = kwds.get('classinfo', str)
-        kwds['group'] = kwds.get('group', 'dcm')
+        kwds['label'] = kwds.get('label', 'dcm')
+        kwds['inherit'] = kwds.get('inherit', True)
         super().__init__(*args, **kwds)
 
 class DCMContainer(Container):

@@ -10,7 +10,7 @@ import inspect
 from nemoa.errors import (
     IsPositiveError, IsNegativeError,
     InvalidTypeError, InvalidClassError, NotClassError, NotCallableError,
-    NotHasAttrError, NotIsSubsetError, NotIsPositiveError, NotIsNegativeError,
+    InvalidAttrError, NotIsSubsetError, NotIsPositiveError, NotIsNegativeError,
     MinSizeError, MaxSizeError)
 from nemoa.types import Class, ClassInfo, Sized, RealNumber, OptInt
 
@@ -89,4 +89,4 @@ def has_size(
 def has_attr(obj: object, attr: str) -> None:
     """Check if object has an attribute."""
     if not hasattr(obj, attr):
-        raise NotHasAttrError(obj, attr)
+        raise InvalidAttrError(obj, attr)

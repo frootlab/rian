@@ -7,40 +7,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from nemoa.base import assess
-from nemoa.types import Class, Iterable, Number, Sized
-
-#
-# Object Representation
-#
-
-def _repr_classinfo(obj: object) -> str:
-    if isinstance(obj, str):
-        return repr(obj)
-    if isinstance(obj, Iterable):
-        return ' or '.join([_repr_classinfo(each) for each in obj])
-    if isinstance(obj, type):
-        return repr(obj.__name__)
-    if hasattr(obj, '__repr__'):
-        return repr(obj)
-    return '?'
-
-def _repr_set(obj: set) -> str:
-    num = len(obj)
-    if num == 0:
-        return "no elements"
-    if num > 3:
-        return "some elements"
-    if num > 1:
-        names = [str(o) for o in obj]
-        return "elements " + "' and '".join(names).join(["'", "'"])
-    # Get single element without pop()
-    return f"element '{obj.__iter__().__next__()}'"
-
-def _repr_type(obj: object) -> str:
-    return f"'{type(obj).__name__}'"
-
-def _repr_obj(obj: object) -> str:
-    return f"'{assess.get_name(obj)}'"
+from nemoa.types import Any, Class, Iterable, Number, Sized
 
 ################################################################################
 # Generic Exceptions
@@ -58,12 +25,12 @@ class NemoaError(NemoaException):
 class NemoaWarning(NemoaException, Warning):
     """Exception for warnings in nemoa."""
 
-################################################################################
-# Assertion Errors
-################################################################################
-
 class NemoaAssert(NemoaError, AssertionError):
     """Exception for assertions in nemoa."""
+
+################################################################################
+# Type Errors
+################################################################################
 
 class InvalidTypeError(NemoaAssert, TypeError):
     """Raise when an object is required to be of a given type."""
@@ -99,6 +66,10 @@ class NotCallableError(NemoaAssert, TypeError):
         msg = f"{name} requires to be callable not {that}"
         super().__init__(msg)
 
+################################################################################
+# Value Errors
+################################################################################
+
 class IsNegativeError(NemoaAssert, ValueError):
     """Raise when a number may not be negative."""
 
@@ -127,11 +98,18 @@ class NotIsNegativeError(NemoaAssert, ValueError):
         msg = f"{name} is required to be a strictly negative number not {val}"
         super().__init__(msg)
 
+class NotInSequenceError(NemoaAssert, ValueError):
+    """Raise when an element is not contained within a sequence."""
+
+    def __init__(self, name: str, val: Any, seqname: str) -> None:
+        msg = f"value {val} of {name} is not contained in {seqname}"
+        super().__init__(msg)
+
 class NotIsSubsetError(NemoaAssert, ValueError):
-    """Raise when a set not is a subset of another."""
+    """Raise when sequence elements are not contained within another."""
 
     def __init__(self, a: str, seta: set, b: str, setb: set) -> None:
-        diff = seta - setb
+        diff = set(seta) - set(setb)
         elements = _repr_set(diff)
         are = 'are' if len(diff) > 1 else 'is'
         msg = f"{elements} of {a} {are} not contained in {b}"
@@ -159,7 +137,7 @@ class MaxSizeError(NemoaAssert, ValueError):
 # Attribute Errors
 ################################################################################
 
-class ReadOnlyError(AttributeError, NemoaError):
+class ReadOnlyError(NemoaAssert, AttributeError):
     """Raise when a read-only attributes setter method is called."""
 
     def __init__(self, obj: object, attr: str) -> None:
@@ -167,7 +145,7 @@ class ReadOnlyError(AttributeError, NemoaError):
         msg = f"'{attr}' is a read-only property of {that}"
         super().__init__(msg)
 
-class NotHasAttrError(AttributeError, NemoaError):
+class InvalidAttrError(NemoaAssert, AttributeError):
     """Raise when a not existing attribute is called."""
 
     def __init__(self, obj: object, attr: str) -> None:
@@ -176,31 +154,54 @@ class NotHasAttrError(AttributeError, NemoaError):
         super().__init__(msg)
 
 ################################################################################
-# File Errors
+# OS Errors
 ################################################################################
 
-class DirNotEmptyError(OSError, NemoaError):
+class DirNotEmptyError(NemoaAssert, OSError):
     """Raise on remove() requests on a non-empty directory."""
 
-class FileNotGivenError(OSError, NemoaError):
+class FileNotGivenError(NemoaAssert, OSError):
     """Raise when a file or directory is required but not given."""
 
 ################################################################################
-# Database interface (DBI) Exceptions
+# Lookup Errors
 ################################################################################
 
-class DBIError(NemoaError):
-    """Raise as standard error in database interfaces."""
-
-class DBIWarning(NemoaWarning):
-    """Raise as standard warning in database interfaces."""
-
-################################################################################
-# Singleton Errors
-################################################################################
-
-class SingletonExistsError(LookupError, NemoaError):
+class SingletonExistsError(NemoaAssert, LookupError):
     """Raise when a singleton which allready exists shall be initialized."""
 
-class NotStartedError(LookupError, NemoaError):
+class NotStartedError(NemoaAssert, LookupError):
     """Raise when a singleton is closed but not has been initialized."""
+
+################################################################################
+# String Representation of Objects
+################################################################################
+
+def _repr_classinfo(obj: object) -> str:
+    if isinstance(obj, str):
+        return repr(obj)
+    if isinstance(obj, Iterable):
+        return ' or '.join([_repr_classinfo(each) for each in obj])
+    if isinstance(obj, type):
+        return repr(obj.__name__)
+    if hasattr(obj, '__repr__'):
+        return repr(obj)
+    return '?'
+
+def _repr_set(obj: set) -> str:
+    num = len(obj)
+    if num == 0:
+        return "no elements"
+    if num > 3:
+        return "some elements"
+    if num > 1:
+        names = [str(o) for o in obj]
+        return "elements " + "' and '".join(names).join(["'", "'"])
+    # Get single element without pop()
+    return f"element '{obj.__iter__().__next__()}'"
+
+def _repr_type(obj: object) -> str:
+    return f"'{type(obj).__name__}'"
+
+def _repr_obj(obj: object) -> str:
+    return f"'{assess.get_name(obj)}'"
