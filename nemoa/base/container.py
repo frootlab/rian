@@ -407,10 +407,8 @@ class Container(AttrGroup):
         for key, val in data.items():
             setattr(obj, key, val)
 
-
-
 #
-# Container class with Dublin Core Metadata Attributes
+# Dublin Core Metadata (DCM)
 #
 
 class DCMAttr(MetaAttr):
@@ -419,12 +417,11 @@ class DCMAttr(MetaAttr):
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize default values of attribute descriptor."""
         kwds['classinfo'] = kwds.get('classinfo', str)
-        kwds['label'] = kwds.get('label', 'dcm')
         kwds['inherit'] = kwds.get('inherit', True)
         super().__init__(*args, **kwds)
 
-class DCMContainer(Container):
-    """Container class, that implements the Dublin Core Schema.
+class DCMAttrGroup(AttrGroup):
+    """Dublin Core Metadata Element Set.
 
     The Dublin Core Metadata Element Set is a vocabulary of fifteen properties
     for use in resource description. The name "Dublin" is due to its origin at a
@@ -446,28 +443,28 @@ class DCMContainer(Container):
     .. [DCAM] http://dublincore.org/documents/2007/06/04/abstract-model/
     """
 
-    dcm_title: property = DCMAttr()
-    dcm_title.__doc__ = """
+    title: property = DCMAttr()
+    title.__doc__ = """
     A name given to the resource. Typically, a Title will be a name by which the
     resource is formally known.
     """
 
-    dcm_subject: property = DCMAttr()
-    dcm_subject.__doc__ = """
+    subject: property = DCMAttr()
+    subject.__doc__ = """
     The topic of the resource. Typically, the subject will be represented using
     keywords, key phrases, or classification codes. Recommended best practice is
     to use a controlled vocabulary.
     """
 
-    dcm_description: property = DCMAttr()
-    dcm_description.__doc__ = """
+    description: property = DCMAttr()
+    description.__doc__ = """
     An account of the resource. Description may include but is not limited to:
     an abstract, a table of contents, a graphical representation, or a free-text
     account of the resource.
     """
 
-    dcm_date: property = DCMAttr(classinfo=Date)
-    dcm_date.__doc__ = """
+    date: property = DCMAttr(classinfo=Date)
+    date.__doc__ = """
     A point or period of time associated with an event in the lifecycle of the
     resource. Date may be used to express temporal information at any level of
     granularity. Recommended best practice is to use an encoding scheme, such as
@@ -476,8 +473,8 @@ class DCMContainer(Container):
     .. [W3CDTF] http://www.w3.org/TR/NOTE-datetime
     """
 
-    dcm_type: property = DCMAttr()
-    dcm_type.__doc__ = """
+    type: property = DCMAttr()
+    type.__doc__ = """
     The nature or genre of the resource. Recommended best practice is to use a
     controlled vocabulary such as the DCMI Type Vocabulary [DCMITYPE]_. To
     describe the file format, physical medium, or dimensions of the resource,
@@ -486,8 +483,8 @@ class DCMContainer(Container):
     .. [DCMITYPE] http://dublincore.org/documents/dcmi-type-vocabulary/
     """
 
-    dcm_format: property = DCMAttr()
-    dcm_format.__doc__ = """
+    format: property = DCMAttr()
+    format.__doc__ = """
     The file format, physical medium, or dimensions of the resource. Examples of
     dimensions include size and duration. Recommended best practice is to use a
     controlled vocabulary such as the list of Internet Media Types [MIME]_.
@@ -495,8 +492,8 @@ class DCMContainer(Container):
     .. [MIME] http://www.iana.org/assignments/media-types/
     """
 
-    dcm_identifier: property = DCMAttr()
-    dcm_identifier.__doc__ = """
+    identifier: property = DCMAttr()
+    identifier.__doc__ = """
     An unambiguous reference to the resource within a given context. Recommended
     best practice is to identify the resource by means of a string or number
     conforming to a formal identification system. Examples of formal
@@ -505,24 +502,24 @@ class DCMContainer(Container):
     (DOI) and the International Standard Book Number (ISBN).
     """
 
-    dcm_source: property = DCMAttr()
-    dcm_source.__doc__ = """
+    source: property = DCMAttr()
+    source.__doc__ = """
     A related resource from which the described resource is derived. The
     described resource may be derived from the related resource in whole or in
     part. Recommended best practice is to identify the related resource by means
     of a string conforming to a formal identification system.
     """
 
-    dcm_language: property = DCMAttr()
-    dcm_language.__doc__ = """
+    language: property = DCMAttr()
+    language.__doc__ = """
     A language of the resource. Recommended best practice is to use a controlled
     vocabulary such as RFC 4646 [RFC4646]_.
 
     .. [RFC4646] http://www.ietf.org/rfc/rfc4646.txt
     """
 
-    dcm_coverage: property = DCMAttr()
-    dcm_coverage.__doc__ = """
+    coverage: property = DCMAttr()
+    coverage.__doc__ = """
     The spatial or temporal topic of the resource, the spatial applicability of
     the resource, or the jurisdiction under which the resource is relevant.
     Spatial topic and spatial applicability may be a named place or a location
@@ -537,35 +534,35 @@ class DCMContainer(Container):
     .. [TGN] http://www.getty.edu/research/tools/vocabulary/tgn/index.html
     """
 
-    dcm_relation: property = DCMAttr()
-    dcm_relation.__doc__ = """
+    relation: property = DCMAttr()
+    relation.__doc__ = """
     A related resource. Recommended best practice is to identify the related
     resource by means of a string conforming to a formal identification system.
     """
 
-    dcm_creator: property = DCMAttr()
-    dcm_creator.__doc__ = """
+    creator: property = DCMAttr()
+    creator.__doc__ = """
     An entity primarily responsible for making the resource. Examples of a
     Creator include a person, an organization, or a service. Typically, the name
     of a Creator should be used to indicate the entity.
     """
 
-    dcm_publisher: property = DCMAttr()
-    dcm_publisher.__doc__ = """
+    publisher: property = DCMAttr()
+    publisher.__doc__ = """
     An entity responsible for making the resource available. Examples of a
     Publisher include a person, an organization, or a service. Typically, the
     name of a Publisher should be used to indicate the entity.
     """
 
-    dcm_contributor: property = DCMAttr()
-    dcm_contributor.__doc__ = """
+    contributor: property = DCMAttr()
+    contributor.__doc__ = """
     An entity responsible for making contributions to the resource. Examples of
     a Contributor include a person, an organization, or a service. Typically,
     the name of a Contributor should be used to indicate the entity.
     """
 
-    dcm_rights: property = DCMAttr()
-    dcm_rights.__doc__ = """
+    rights: property = DCMAttr()
+    rights.__doc__ = """
     Information about rights held in and over the resource. Typically, rights
     information includes a statement about various property rights associated
     with the resource, including intellectual property rights.

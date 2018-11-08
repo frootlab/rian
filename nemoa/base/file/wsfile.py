@@ -20,7 +20,7 @@ from contextlib import contextmanager
 from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
 from nemoa.base import npath, env
-from nemoa.base.container import Container, DCMContainer
+from nemoa.base.container import Container, AttrGroup, DCMAttrGroup
 from nemoa.base.container import DataAttr, MetaAttr, TempAttr, VirtAttr
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
 from nemoa.base.file import inifile
@@ -49,7 +49,7 @@ class BadWsFile(OSError):
 # Module classes
 #
 
-class WsFile(DCMContainer):
+class WsFile(Container):
     """Workspace File.
 
     Workspace files are Zip-Archives, that contain a INI-formatted
@@ -76,17 +76,19 @@ class WsFile(DCMContainer):
     #
 
     _config_file: ClassVar[Path] = Path('workspace.ini')
-    # _config_struct: ClassVar[SecDict] = {
-    #     'dcm': DCMContainer._get_attr_types(group='dcm'),
-    #     'hooks': {
-    #         'startup': Path}}
     _default_config: ClassVar[ConfigDict] = {
         'dcm': {
-            'dcm_creator': env.get_username(),
-            'dcm_date': datetime.datetime.now()}}
+            'creator': env.get_username(),
+            'date': datetime.datetime.now()}}
     _default_dir_layout: ClassVar[StrList] = [
         'dataset', 'network', 'system', 'model', 'script']
     _default_encoding = env.get_encoding()
+
+    #
+    # Public Attribute Groups
+    #
+
+    dcm: AttrGroup = DCMAttrGroup()
 
     #
     # Public Attributes
@@ -196,7 +198,6 @@ class WsFile(DCMContainer):
         structure = {
             'dcm': self._get_attr_types(group='dcm'),
             'hooks': self._get_attr_types(label='hooks')}
-
         try:
             with self.open(self._config_file) as file:
                 cfg = inifile.load(file, structure=structure)
@@ -204,13 +205,6 @@ class WsFile(DCMContainer):
             raise BadWsFile(
                 f"workspace '{self.path}' is not valid: "
                 f"file '{self._config_file}' could not be loaded") from err
-
-        # Check if configuration contains required sections
-        # rsec = self._config_struct.keys()
-        # if rsec > cfg.keys():
-        #     raise BadWsFile(
-        #         f"workspace '{self.path}' is not valid: "
-        #         f"'{self._config_file}' requires sections '{rsec}'")
 
         # Link configuration
         self._set_attr_values(cfg.get('dcm', {}), group='dcm')
@@ -239,8 +233,8 @@ class WsFile(DCMContainer):
         # Update 'workspace.ini'
         with self.open(self._config_file, mode='w') as file:
             inifile.save({
-                'dcm': self._get_attr_values('dcm'),
-                'hooks': self._get_attr_values('hooks')}, file)
+                'dcm': self._get_attr_values(group='dcm'),
+                'hooks': self._get_attr_values(label='hooks')}, file)
 
         # Remove duplicates from workspace
         self._remove_duplicates()
