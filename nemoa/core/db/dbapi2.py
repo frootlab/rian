@@ -141,7 +141,7 @@ class Cursor(Container, ABC):
     # Cursor attributes
     #
 
-    arraysize: property = MetaAttr(int, default=1)
+    arraysize: property = MetaAttr(classinfo=int, default=1)
     arraysize.__doc__ = """
     This read/write attribute specifies the number of rows to fetch at a time
     with `fetchmany`. It defaults to 1 meaning to fetch a single row at a time.
@@ -150,8 +150,7 @@ class Cursor(Container, ABC):
     It may also be used in the implementation of `executemany`.
     """
 
-    description: property = VirtAttr(
-        list, getter='_get_description', readonly=True)
+    description: property = VirtAttr(getter='_get_description', readonly=True)
     description.__doc__ = """
     Sequence of 7-item sequences containing information about one result column:
     name, type_code, display_size, internal_size, precision, scale, null_ok
@@ -165,7 +164,7 @@ class Cursor(Container, ABC):
     def _get_description(self) -> list:
         pass
 
-    rowcount: property = VirtAttr(int, getter='_get_rowcount', readonly=True)
+    rowcount: property = VirtAttr(getter='_get_rowcount', readonly=True)
     description.__doc__ = """
     This read-only attribute specifies the number of rows that the last
     execute*() produced (for DQL statements like SELECT) or affected (for DML

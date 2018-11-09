@@ -76,7 +76,7 @@ class Logger(Container):
     """
 
     #
-    # Private Class Variables
+    # Protected Class Variables
     #
 
     _level_names: ClassVar[StrList] = [
@@ -87,20 +87,15 @@ class Logger(Container):
     _default_level: ClassVar[StrOrInt] = logging.INFO
 
     #
-    # Private Transient Attributes
-    #
-
-    _logger: property = TempAttr(logging.Logger)
-
-    #
-    # Public Virtual Attributes
+    # Public Attributes
     #
 
     logger: property = VirtAttr(
-        logging.Logger, getter='_get_logger', setter='_set_logger')
+        classinfo=logging.Logger, getter='_get_logger', setter='_set_logger')
 
     name: property = VirtAttr(
-        str, getter='_get_name', setter='_set_name', default=_default_name)
+        classinfo=str, getter='_get_name', setter='_set_name',
+        default=_default_name)
     name.__doc__ = """
     String identifier of Logger, given as a period-separated hierarchical value
     like 'foo.bar.baz'. The name of a Logger also identifies respective parents
@@ -130,6 +125,13 @@ class Logger(Container):
     corresponding level numbers are 10, 20, 30, 40 and 50. The default level is
     'INFO'.
     """
+
+
+    #
+    # Private Transient Attributes
+    #
+
+    _logger: property = TempAttr(classinfo=logging.Logger)
 
     #
     # Magic

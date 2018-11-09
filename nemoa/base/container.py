@@ -6,11 +6,12 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from abc import ABC, abstractmethod
+from typing import cast
 from nemoa.base import check
-from nemoa.errors import ReadOnlyError, InvalidAttrError
+from nemoa.errors import ReadOnlyAttrError, InvalidAttrError
 from nemoa.types import Any, Callable, Date, OptClassInfo, Optional, OptCallable
 from nemoa.types import OptStr, OptStrDict, OptType, StrDict, StrList, void
+from nemoa.types import OptDict
 
 #
 # Types
@@ -22,19 +23,25 @@ OptContainer = Optional['Container']
 # Base Classes for Attribute Groups and Attributes
 #
 
-class BaseAttrGroup(ABC):
-    """Abstract Base Class for Attribute Groups."""
+class AttrGroup:
+    """Base Class for Attribute Groups."""
 
-    _name: str
-    _prefix: str
+    #_attr_group_built: bool = False
+    _attr_group_name: str
+    _attr_group_prefix: str
+    _attr_group_parent: Optional['AttrGroup']
+    _attr_group_defaults: dict
 
-    @abstractmethod
-    def _get_parent(self) -> Optional['BaseAttrGroup']:
-        pass
+    # def __new__(cls) -> 'AttrGroup':
+    #     return cast(AttrGroup, type(cls.__name__, (cls,), {}))
+        #new._attr_group_built = True # pylint: disable=W0212
+        #return new
 
-    @abstractmethod
-    def _set_parent(self, obj: 'BaseAttrGroup') -> None:
-        pass
+    def __init__(self, **kwds: Any) -> None:
+        self._attr_group_name = ''
+        self._attr_group_prefix = ''
+        self._attr_group_parent = None
+        self._attr_group_defaults = kwds
 
 class Attr(property):
     """Base Class for Attributes.
@@ -58,8 +65,8 @@ class Attr(property):
 
     Args:
         classinfo:
-        bind:
-        key:
+        binddict:
+        bindkey:
         getter:
         setter:
         default: Default value, which is returned for a get request
@@ -70,104 +77,119 @@ class Attr(property):
 
     """
 
-    _name: str
-    _classinfo: OptClassInfo
-    _default: Any
-    _readonly: bool
-    _bind: OptStr
-    _key: OptStr
+    #
+    # Instance Variables
+    #
+
+    name: str
+    classinfo: OptClassInfo
+    default: Any
+    readonly: bool
+    binddict: OptStr
+    bindkey: OptStr
     _getter: OptStr
     _setter: OptStr
-    _inherit: bool
-    _category: OptStr
+    inherit: bool
+    category: OptStr
 
     #
     # Events
     #
 
-    def __init__(
-            self, classinfo: OptClassInfo = None, bind: OptStr = None,
-            key: OptStr = None, default: Any = None, category: OptStr = None,
-            getter: OptStr = None, setter: OptStr = None, inherit: bool = False,
-            readonly: bool = False, fget: OptCallable = None,
-            fset: OptCallable = None, fdel: OptCallable = None,
-            doc: OptStr = None) -> None:
+    def __init__(self,
+            fget: OptCallable = None, fset: OptCallable = None,
+            fdel: OptCallable = None, doc: OptStr = None,
+            classinfo: OptClassInfo = None,
+            binddict: OptStr = None, bindkey: OptStr = None,
+            default: Any = None,
+            category: OptStr = None, getter: OptStr = None,
+            setter: OptStr = None, inherit: bool = False,
+            readonly: bool = False) -> None:
         """Initialize Attribute Descriptor."""
-        # Initialize property base class
+        # Initialize Property Class
         super().__init__(fget=fget, fset=fset, fdel=fdel, doc=doc)
 
         # Check Types of Arguments
         check.has_opt_type("argument 'classinfo'", classinfo, (type, tuple))
         check.has_type("argument 'readonly'", readonly, bool)
-        check.has_opt_type("argument 'bind'", bind, str)
-        check.has_opt_type("argument 'key'", key, str)
+        check.has_opt_type("argument 'binddict'", binddict, str)
+        check.has_opt_type("argument 'bindkey'", bindkey, str)
         check.has_opt_type("argument 'getter'", getter, str)
         check.has_opt_type("argument 'setter'", setter, str)
         check.has_type("argument 'inherit'", inherit, bool)
         check.has_opt_type("argument 'category'", category, str)
 
-        # Set Descriptor Instance Attributes to Argument Values
-        self._classinfo = classinfo
-        self._default = default
-        self._readonly = readonly
-        self._dict = bind
-        self._key = key
+        # Set Instance Attributes to Argument Values
+        self.classinfo = classinfo
+        self.default = default
+        self.readonly = readonly
+        self.binddict = binddict
+        self.bindkey = bindkey
         self._getter = getter
         self._setter = setter
-        self._inherit = inherit
-        self._category = category
+        self.inherit = inherit
+        self.category = category
 
     def __set_name__(self, cls: type, name: str) -> None:
         """Set name of the Attribute."""
-        self._name = name
+        self.name = name
 
-    def __get__(self, obj: BaseAttrGroup, cls: OptType = None) -> Any:
+    def __get__(self, obj: AttrGroup, cls: OptType = None) -> Any:
         """Bypass get request."""
-        if self.fget:
+        if callable(self.fget):
             return self.fget(obj) # type: ignore
         if self._getter:
             return self._get_getter(obj)()
         name = self._get_name(obj)
         default = self._get_default(obj)
-        if self._dict:
-            return self._get_dict(obj).get(name, default)
-        return obj.__dict__.get(name, default)
+        binddict = self._get_bindict(obj)
+        return binddict.get(name, default)
 
-    def __set__(self, obj: BaseAttrGroup, val: Any) -> None:
+    def __set__(self, obj: AttrGroup, val: Any) -> None:
         """Bypass and type check set request."""
-        if self._readonly:
-            raise ReadOnlyError(obj, self._name)
-        if self._classinfo and not isinstance(val, type(self._default)):
-            check.has_type(f"attribute '{self._name}'", val, self._classinfo)
-        if self.fset:
+        if self._get_readonly(obj):
+            raise ReadOnlyAttrError(obj, self.name)
+        classinfo = self._get_classinfo(obj)
+        if classinfo and not isinstance(val, type(self.default)):
+            check.has_type(f"attribute '{self.name}'", val, classinfo)
+        if callable(self.fset):
             self.fset(obj, val) # type: ignore
             return
         if self._setter:
             self._get_setter(obj)(val)
             return
         name = self._get_name(obj)
-        self._get_dict(obj)[name] = val
+        self._get_bindict(obj)[name] = val
 
     #
     # Protected Methods
     #
 
-    def _get_name(self, obj: BaseAttrGroup) -> str:
-        if isinstance(obj, AttrGroup):
-            prefix = getattr(obj, '_prefix', None)
-            if prefix:
-                return '.'.join([prefix, self._key or self._name])
-        return self._key or self._name
+    def _get_name(self, obj: AttrGroup) -> str:
+        prefix = obj._attr_group_prefix # pylint: disable=W0212
+        name = self.bindkey or self.name
+        if prefix:
+            return '.'.join([prefix, name])
+        return name
 
-    def _get_dict(self, obj: BaseAttrGroup) -> dict:
-        attr = self._dict
-        if not attr:
+    def _get_bindict(self, obj: AttrGroup) -> dict:
+        binddict = obj._attr_group_defaults.get( # pylint: disable=W0212
+            'binddict', self.binddict)
+        if not binddict:
             return obj.__dict__
-        check.has_attr(obj, attr)
-        check.has_type(attr, getattr(obj, attr), dict)
-        return getattr(obj, attr)
+        check.has_attr(obj, binddict)
+        check.has_type(binddict, getattr(obj, binddict), dict)
+        return getattr(obj, binddict)
 
-    def _get_getter(self, obj: BaseAttrGroup) -> Callable:
+    def _get_readonly(self, obj: AttrGroup) -> bool:
+        return obj._attr_group_defaults.get( # pylint: disable=W0212
+            'readonly', self.readonly)
+
+    def _get_classinfo(self, obj: AttrGroup) -> OptClassInfo:
+        return obj._attr_group_defaults.get( # pylint: disable=W0212
+            'classinfo', self.classinfo)
+
+    def _get_getter(self, obj: AttrGroup) -> Callable:
         attr = self._getter
         if not attr:
             return void
@@ -175,7 +197,7 @@ class Attr(property):
         check.is_callable(attr, getattr(obj, attr))
         return getattr(obj, attr)
 
-    def _get_setter(self, obj: BaseAttrGroup) -> Callable:
+    def _get_setter(self, obj: AttrGroup) -> Callable:
         attr = self._setter
         if not attr:
             return void
@@ -183,44 +205,101 @@ class Attr(property):
         check.is_callable(attr, getattr(obj, attr))
         return getattr(obj, attr)
 
-    def _get_default(self, obj: BaseAttrGroup) -> Any:
-        if not self._inherit:
-            return self._default
-        parent = obj._get_parent() # pylint: disable=W0212
+    def _get_default(self, obj: AttrGroup) -> Any:
+        attrs = obj._attr_group_defaults # pylint: disable=W0212
+        inherit = attrs.get('inherit', self.inherit)
+        default = attrs.get('default', self.default)
+        if not inherit:
+            return default
+        parent = obj._attr_group_parent # pylint: disable=W0212
         if not parent:
-            return self._default
-        # If the owner of the attribute is an attribute group, step downwards
-        # the attribute hierarchy within the parent
-        if isinstance(obj, AttrGroup):
-            prefix = getattr(obj, '_prefix', None)
-            if prefix:
-                for attr in prefix.split('.'):
-                    parent = getattr(parent, attr)
-        return getattr(parent, self._name, self._default)
+            return default
+        prefix = obj._attr_group_prefix # pylint: disable=W0212
+        if not prefix:
+            return default
+        return getattr(parent, self.name, self.default)
 
 #
 # Container Base Class and Container Attribute Classes
 #
 
-class AttrGroup(BaseAttrGroup):
-    """Base class for Container Attribute Groups."""
+class DataAttr(Attr):
+    """Attributes for persistent content objects."""
 
-    _data: StrDict
-    _meta: StrDict
-    _temp: StrDict
+    def __init__(self, *args: Any, **kwds: Any) -> None:
+        """Initialize default values of attribute descriptor."""
+        super().__init__(*args, **kwds)
+        self.binddict = '_dict_data'
 
-    def _get_parent(self) -> Optional[BaseAttrGroup]:
-        try:
-            return self._temp['parent']
-        except AttributeError:
-            return None
-        except KeyError:
-            return None
+class MetaAttr(Attr):
+    """Attributes for persistent metadata objects."""
 
-    def _set_parent(self, obj: BaseAttrGroup) -> None:
-        if not hasattr(self, '_temp') or not isinstance(self._temp, dict):
-            setattr(self, '_temp', {})
-        self._temp['parent'] = obj
+    def __init__(self, *args: Any, **kwds: Any) -> None:
+        """Initialize default values of attribute descriptor."""
+        kwds['inherit'] = kwds.get('inherit', True)
+        super().__init__(*args, **kwds)
+        self.binddict = '_dict_meta'
+
+class TempAttr(Attr):
+    """Attributes for non persistent stored objects."""
+
+    def __init__(self, *args: Any, **kwds: Any) -> None:
+        """Initialize default values of attribute descriptor."""
+        super().__init__(*args, **kwds)
+        self.binddict = '_dict_temp'
+
+class VirtAttr(Attr):
+    """Attributes for non persistent virtual objects."""
+
+    def __init__(self, *args: Any, **kwds: Any) -> None:
+        """Initialize default values of attribute descriptor."""
+        check.has_type('getter', kwds.get('getter'), str)
+        super().__init__(*args, **kwds)
+        self.binddict = None
+
+class Container(AttrGroup):
+    """Base class for Container Objects."""
+
+    _dict_data: StrDict
+    _dict_meta: StrDict
+    _dict_temp: StrDict
+
+    #
+    # Public Attributes
+    #
+
+    parent: property = VirtAttr(classinfo=AttrGroup,
+        getter='_get_attr_group_parent', setter='_set_attr_group_parent')
+    parent.__doc__ = """Reference to parent container object."""
+
+    #
+    # Events
+    #
+
+    def __init__(
+            self, data: OptStrDict = None, meta: OptStrDict = None,
+            parent: Optional[AttrGroup] = None, **kwds: Any) -> None:
+        """Initialize Container instance."""
+        # Initialize Attribute Group
+        super().__init__(**kwds)
+
+        # Initialize dicts for content, metadata and temp
+        self._dict_data = {}
+        self._dict_meta = {}
+        self._dict_temp = {}
+
+        # Bind attribute groups to dicts and update group defaults and parents
+        self._bind_attr_groups()
+        if parent:
+            self._set_attr_group_parent(parent)
+        if kwds:
+            self._update_attr_group_defaults(**kwds)
+
+        # Update dicts from arguments
+        if data:
+            self._set_attr_values(data, classinfo=DataAttr)
+        if meta:
+            self._set_attr_values(meta, classinfo=MetaAttr)
 
     #
     # Access Attributes by their group name, ClassInfo and category
@@ -244,6 +323,7 @@ class AttrGroup(BaseAttrGroup):
     def _get_attr_names(
             cls, group: OptStr = None, classinfo: OptClassInfo = None,
             category: OptStr = None) -> StrList:
+
         # Locate the attribute group, that corresponds to the given group name.
         # By default identify the current class as attribute group
         if group:
@@ -261,7 +341,7 @@ class AttrGroup(BaseAttrGroup):
             for name, val in base.__dict__.items():
                 if not isinstance(val, Attr):
                     continue
-                if category and not getattr(val, '_category', None) == category:
+                if category and not getattr(val, 'category', None) == category:
                     continue
                 if classinfo and not isinstance(val, classinfo):
                     continue
@@ -272,6 +352,7 @@ class AttrGroup(BaseAttrGroup):
     def _get_attr_types(
             cls, group: OptStr = None, category: OptStr = None,
             classinfo: OptClassInfo = None) -> StrDict:
+
         # Locate the attribute group, that corresponds to the given group name.
         # By default identify the current class as attribute group
         if group:
@@ -289,17 +370,68 @@ class AttrGroup(BaseAttrGroup):
             for name, obj in base.__dict__.items():
                 if not isinstance(obj, Attr):
                     continue
-                if category and not getattr(obj, '_category', None) == category:
+                if category and not getattr(obj, 'category', None) == category:
                     continue
                 if classinfo and not isinstance(obj, classinfo):
                     continue
-                types[name] = getattr(obj, '_classinfo', None)
+                types[name] = getattr(obj, 'classinfo', None)
         return types
+
+    def _bind_attr_groups(self) -> None:
+        for fqn in self._get_attr_groups():
+
+            # Get attribute group by stepping the attribute hierarchy
+            # downwards the tokens of the fully qualified name
+            obj = self
+            for attr in fqn.split('.'):
+                obj = getattr(obj, attr)
+
+            # Set group name and prefix to avoid namespace collision
+            # within dictionary buffers
+            setattr(obj, '_attr_group_name', fqn.rsplit('.', 1)[-1])
+            setattr(obj, '_attr_group_prefix', fqn)
+
+            # Bind dictionary buffers
+            setattr(obj, '_dict_data', self._dict_data)
+            setattr(obj, '_dict_meta', self._dict_meta)
+            setattr(obj, '_dict_temp', self._dict_temp)
+
+    def _get_attr_group_parent(self) -> Optional[AttrGroup]:
+        return self._attr_group_parent
+
+    def _set_attr_group_parent(self, parent: AttrGroup) -> None:
+        self._attr_group_parent = parent
+
+        # Update group parents by simultaneously stepping downwards the object
+        # hierachy, within self and within the parent, to obtain the same
+        # attribute hierarchy: e.g. parent.group.attr -> child.group.attr
+        for fqn in self._get_attr_groups():
+            obj = self
+            for attr in fqn.split('.'):
+                obj = getattr(obj, attr)
+                if parent:
+                    parent = getattr(parent, attr, None)
+            obj._attr_group_parent = parent # pylint: disable=W0212
+
+    def _get_attr_group_defaults(self) -> OptDict:
+        return self._attr_group_defaults
+
+    def _update_attr_group_defaults(self, **kwds: Any) -> None:
+        self._attr_group_defaults = {**self._attr_group_defaults, **kwds}
+
+        # Update groups defaults by stepping downwards the object hierarchy
+        for fqn in self._get_attr_groups():
+            obj = self
+            for attr in fqn.split('.'):
+                obj = getattr(obj, attr)
+            obj._attr_group_defaults = { # pylint: disable=W0212
+                **obj._attr_group_defaults, **kwds} # pylint: disable=W0212
 
     def _get_attr_values(self,
             group: OptStr = None, classinfo: OptClassInfo = None,
             category: OptStr = None) -> StrDict:
         # Get attribute names
+
         attrs = self._get_attr_names(
             group=group, classinfo=classinfo, category=category)
 
@@ -340,94 +472,6 @@ class AttrGroup(BaseAttrGroup):
         # Set attributes within the respective attribute group
         for key, val in data.items():
             setattr(obj, key, val)
-
-class DataAttr(Attr):
-    """Attributes for persistent content objects."""
-
-    def __init__(self, *args: Any, **kwds: Any) -> None:
-        """Initialize default values of attribute descriptor."""
-        kwds['bind'] = kwds.get('bind', '_data')
-        super().__init__(*args, **kwds)
-
-class MetaAttr(Attr):
-    """Attributes for persistent metadata objects."""
-
-    def __init__(self, *args: Any, **kwds: Any) -> None:
-        """Initialize default values of attribute descriptor."""
-        kwds['bind'] = kwds.get('bind', '_meta')
-        kwds['inherit'] = kwds.get('inherit', True)
-        super().__init__(*args, **kwds)
-
-class TempAttr(Attr):
-    """Attributes for non persistent stored objects."""
-
-    def __init__(self, *args: Any, **kwds: Any) -> None:
-        """Initialize default values of attribute descriptor."""
-        kwds['bind'] = kwds.get('bind', '_temp')
-        super().__init__(*args, **kwds)
-
-class VirtAttr(Attr):
-    """Attributes for non persistent virtual objects."""
-
-    def __init__(self, *args: Any, **kwds: Any) -> None:
-        """Initialize default values of attribute descriptor."""
-        check.has_type('getter', kwds.get('getter'), str)
-        super().__init__(*args, **kwds)
-
-class Container(AttrGroup):
-    """Base class for Container Objects."""
-
-    #
-    # Public Attributes
-    #
-
-    parent: property = VirtAttr(
-        BaseAttrGroup, getter='_get_parent', setter='_set_parent')
-    parent.__doc__ = """Reference to parent container object."""
-
-    #
-    # Events
-    #
-
-    def __init__(
-            self, data: OptStrDict = None, meta: OptStrDict = None,
-            parent: OptContainer = None) -> None:
-        """Initialize Container instance."""
-        self._data = {} # Initialize buffer for content attributes
-        self._meta = {} # Initialize buffer for metadata attributes
-        self._temp = {} # Initialize buffer for temporary attributes
-
-        if data: # Restore content attributes
-            self._set_attr_values(data, classinfo=DataAttr)
-        if meta: # Restore metadata attributes
-            self._set_attr_values(meta, classinfo=MetaAttr)
-        if parent: # Set parent container
-            self.parent = parent
-
-        # Bind attribute groups within the container
-        self._bind_attr_groups()
-
-    #
-    # Accessors for Attribute Groups
-    #
-
-    def _bind_attr_groups(self) -> None:
-        for fqn in self._get_attr_groups():
-            # Get attribute group by stepping the attribute hierarchy
-            # downwards the tokens of the fully qualified name
-            obj = self
-            for attr in fqn.split('.'):
-                obj = getattr(obj, attr)
-
-            # Set group name and prefix to avoid namespace collision
-            # within dictionary buffers
-            setattr(obj, '_name', fqn.rsplit('.', 1)[-1])
-            setattr(obj, '_prefix', fqn)
-
-            # Bind dictionary buffers
-            setattr(obj, '_data', self._data)
-            setattr(obj, '_meta', self._meta)
-            setattr(obj, '_temp', self._temp)
 
 #
 # Dublin Core (DC) Attributes
@@ -589,3 +633,11 @@ class DCAttrGroup(AttrGroup):
 
     .. [W3CDTF] http://www.w3.org/TR/NOTE-datetime
     """
+
+#
+# Constructor for attribute groups
+#
+
+def create_attr_group(cls: type, **kwds: Any) -> AttrGroup:
+    """Constructor for attribute groups."""
+    return type(cls.__name__, (cls,), {})(**kwds)

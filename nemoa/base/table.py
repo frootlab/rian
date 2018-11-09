@@ -214,18 +214,18 @@ class Cursor(Container):
 
     mode: property = VirtAttr(getter='_get_mode', readonly=True)
     rowcount: property = VirtAttr(getter='_get_rowcount', readonly=True)
-    batchsize: property = MetaAttr(int, default=_default_batchsize)
+    batchsize: property = MetaAttr(classinfo=int, default=_default_batchsize)
 
     #
     # Protected Attributes
     #
 
-    _mode: property = MetaAttr(int, default=_default_mode)
-    _index: property = MetaAttr(list, inherit=True)
-    _getter: property = TempAttr(CallableClasses)
-    _filter: property = TempAttr(CallableClasses)
-    _mapper: property = TempAttr(CallableClasses)
-    _buffer: property = TempAttr(list, default=[])
+    _mode: property = MetaAttr(classinfo=int, default=_default_mode)
+    _index: property = MetaAttr(classinfo=list, inherit=True)
+    _getter: property = TempAttr(classinfo=CallableClasses)
+    _filter: property = TempAttr(classinfo=CallableClasses)
+    _mapper: property = TempAttr(classinfo=CallableClasses)
+    _buffer: property = TempAttr(classinfo=list, default=[])
 
     #
     # Events
@@ -349,15 +349,22 @@ class Cursor(Container):
 class Table(Container):
     """Table Class."""
 
-    _store: property = DataAttr(list, default=[])
-
-    _diff: property = TempAttr(list, default=[])
-    _index: property = TempAttr(list, default=[])
-    _iter_index: property = TempAttr()
-    _Record: property = TempAttr(type)
+    #
+    # Public Attributes
+    #
 
     fields: property = VirtAttr(getter='_get_fields', readonly=True)
     colnames: property = VirtAttr(getter='_get_colnames', readonly=True)
+
+    #
+    # Protected Attributes
+    #
+
+    _store: property = DataAttr(classinfo=list, default=[])
+    _diff: property = TempAttr(classinfo=list, default=[])
+    _index: property = TempAttr(classinfo=list, default=[])
+    _iter_index: property = TempAttr()
+    _Record: property = TempAttr(classinfo=type)
 
     def __init__(self, columns: OptFieldLike = None) -> None:
         """ """

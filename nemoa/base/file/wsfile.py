@@ -21,6 +21,7 @@ from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
 from nemoa.base import npath, env
 from nemoa.base.container import Container, AttrGroup, DCAttrGroup
+from nemoa.base.container import create_attr_group
 from nemoa.base.container import DataAttr, MetaAttr, TempAttr, VirtAttr
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
 from nemoa.base.file import inifile
@@ -88,42 +89,42 @@ class WsFile(Container):
     # Public Attribute Groups
     #
 
-    dc: AttrGroup = DCAttrGroup()
+    dc: AttrGroup = create_attr_group(DCAttrGroup)
 
     #
     # Public Attributes
     #
 
-    startup: property = MetaAttr(Path, category='hooks')
+    startup: property = MetaAttr(classinfo=Path, category='hooks')
     startup.__doc__ = """
     The startup script is a path, that points to a python script inside the
     workspace, which is executed after loading the workspace.
     """
 
-    path: property = VirtAttr(Path, getter='_get_path', readonly=True)
+    path: property = VirtAttr(getter='_get_path', readonly=True)
     path.__doc__ = """Filepath of the workspace."""
 
-    name: property = VirtAttr(list, getter='_get_name', readonly=True)
+    name: property = VirtAttr(getter='_get_name', readonly=True)
     name.__doc__ = """Filename of the workspace without file extension."""
 
-    files: property = VirtAttr(list, getter='search', readonly=True)
+    files: property = VirtAttr(getter='search', readonly=True)
     files.__doc__ = """List of all files within the workspace."""
 
-    folders: property = VirtAttr(list, getter='_get_folders', readonly=True)
+    folders: property = VirtAttr(getter='_get_folders', readonly=True)
     folders.__doc__ = """List of all folders within the workspace."""
 
-    changed: property = VirtAttr(bool, getter='_get_changed', readonly=True)
+    changed: property = VirtAttr(getter='_get_changed', readonly=True)
     changed.__doc__ = """Tells whether the workspace file has been changed."""
 
     #
     # Protected Attributes
     #
 
-    _file: property = DataAttr(ZipFile)
-    _buffer: property = DataAttr(BytesIOBaseClass)
-    _path: property = TempAttr(Path)
-    _pwd: property = TempAttr(bytes)
-    _changed: property = TempAttr(bool, default=False)
+    _file: property = DataAttr(classinfo=ZipFile)
+    _buffer: property = DataAttr(classinfo=BytesIOBaseClass)
+    _path: property = TempAttr(classinfo=Path)
+    _pwd: property = TempAttr(classinfo=bytes)
+    _changed: property = TempAttr(classinfo=bool, default=False)
 
     #
     # Events

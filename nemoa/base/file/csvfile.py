@@ -95,19 +95,19 @@ class CSVFile(Container):
     # Public Attributes
     #
 
-    comment: property = VirtAttr(str, getter='_get_comment', readonly=True)
+    comment: property = VirtAttr(getter='_get_comment', readonly=True)
     comment.__doc__ = """
     String containing the initial '#' lines of the CSV-file or an empty string,
     if no initial comment lines could be detected.
     """
 
-    delim: property = VirtAttr(str, getter='_get_delim', readonly=True)
+    delim: property = VirtAttr(getter='_get_delim', readonly=True)
     delim.__doc__ = """
     Delimiter string of the CSV-file or None, if the delimiter could not be
     detected.
     """
 
-    format: property = VirtAttr(int, getter='_get_format', readonly=True)
+    format: property = VirtAttr(getter='_get_format', readonly=True)
     format.__doc__ = """
     CSV-File format. The following formats are supported:
         0: `RFC4180`_:
@@ -132,7 +132,7 @@ class CSVFile(Container):
     None, if namecol is not given.
     """
 
-    namecol: property = VirtAttr(int, getter='_get_namecol', readonly=True)
+    namecol: property = VirtAttr(getter='_get_namecol', readonly=True)
     namecol.__doc__ = """
     Index of the column of a CSV-file that contains the row names. The value
     None is used for CSV-files that do not contain row names.
@@ -142,13 +142,13 @@ class CSVFile(Container):
     # Protected Attributes
     #
 
-    _file: property = DataAttr(TextFileClasses)
-    _comment: property = MetaAttr(str, default=None)
-    _delim: property = MetaAttr(str, default=None)
-    _format: property = MetaAttr(str, default=None)
-    _colnames: property = MetaAttr(list, default=None)
-    _rownames: property = MetaAttr(list, default=None)
-    _namecol: property = MetaAttr(int, default=None)
+    _file: property = DataAttr(classinfo=TextFileClasses)
+    _comment: property = MetaAttr(classinfo=str, default=None)
+    _delim: property = MetaAttr(classinfo=str, default=None)
+    _format: property = MetaAttr(classinfo=str, default=None)
+    _colnames: property = MetaAttr(classinfo=list, default=None)
+    _rownames: property = MetaAttr(classinfo=list, default=None)
+    _namecol: property = MetaAttr(classinfo=int, default=None)
 
     #
     # Events

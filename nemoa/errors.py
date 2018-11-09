@@ -137,20 +137,20 @@ class MaxSizeError(NemoaAssert, ValueError):
 # Attribute Errors
 ################################################################################
 
-class ReadOnlyError(NemoaAssert, AttributeError):
-    """Raise when a read-only attributes setter method is called."""
-
-    def __init__(self, obj: object, attr: str) -> None:
-        that = _repr_type(obj)
-        msg = f"'{attr}' is a read-only property of {that}"
-        super().__init__(msg)
-
 class InvalidAttrError(NemoaAssert, AttributeError):
     """Raise when a not existing attribute is called."""
 
     def __init__(self, obj: object, attr: str) -> None:
-        that = _repr_type(obj)
+        that = _repr_obj(obj)
         msg = f"{that} has no attribute '{attr}'"
+        super().__init__(msg)
+
+class ReadOnlyAttrError(NemoaAssert, AttributeError):
+    """Raise when a read-only attribute's setter method is called."""
+
+    def __init__(self, obj: object, attr: str) -> None:
+        that = _repr_obj(obj)
+        msg = f"'{attr}' is a read-only attribute of {that}"
         super().__init__(msg)
 
 ################################################################################
