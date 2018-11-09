@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
-"""Classes."""
+"""Attributes, Attribute Groups and Containers."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from typing import cast
 from nemoa.base import check
 from nemoa.errors import ReadOnlyAttrError, InvalidAttrError
-from nemoa.types import Any, Callable, Date, OptClassInfo, Optional, OptCallable
+from nemoa.errors import MissingKwargError
+from nemoa.types import Any, Date, OptClassInfo, Optional, OptCallable
 from nemoa.types import OptStr, OptStrDict, OptType, StrDict, StrList, void
-from nemoa.types import OptDict
+from nemoa.types import OptDict, Function, Method
 
 #
-# Types
+# Types and ClassInfos
 #
 
+CallOrStr = (Function, Method, str)
 OptContainer = Optional['Container']
 
 #
@@ -26,16 +27,10 @@ OptContainer = Optional['Container']
 class AttrGroup:
     """Base Class for Attribute Groups."""
 
-    #_attr_group_built: bool = False
     _attr_group_name: str
     _attr_group_prefix: str
     _attr_group_parent: Optional['AttrGroup']
     _attr_group_defaults: dict
-
-    # def __new__(cls) -> 'AttrGroup':
-    #     return cast(AttrGroup, type(cls.__name__, (cls,), {}))
-        #new._attr_group_built = True # pylint: disable=W0212
-        #return new
 
     def __init__(self, **kwds: Any) -> None:
         self._attr_group_name = ''
@@ -99,11 +94,9 @@ class Attr(property):
     def __init__(self,
             fget: OptCallable = None, fset: OptCallable = None,
             fdel: OptCallable = None, doc: OptStr = None,
-            classinfo: OptClassInfo = None,
+            classinfo: OptClassInfo = None, default: Any = None,
             binddict: OptStr = None, bindkey: OptStr = None,
-            default: Any = None,
-            category: OptStr = None, getter: OptStr = None,
-            setter: OptStr = None, inherit: bool = False,
+            category: OptStr = None, inherit: bool = False,
             readonly: bool = False) -> None:
         """Initialize Attribute Descriptor."""
         # Initialize Property Class
@@ -114,8 +107,6 @@ class Attr(property):
         check.has_type("argument 'readonly'", readonly, bool)
         check.has_opt_type("argument 'binddict'", binddict, str)
         check.has_opt_type("argument 'bindkey'", bindkey, str)
-        check.has_opt_type("argument 'getter'", getter, str)
-        check.has_opt_type("argument 'setter'", setter, str)
         check.has_type("argument 'inherit'", inherit, bool)
         check.has_opt_type("argument 'category'", category, str)
 
@@ -125,8 +116,6 @@ class Attr(property):
         self.readonly = readonly
         self.binddict = binddict
         self.bindkey = bindkey
-        self._getter = getter
-        self._setter = setter
         self.inherit = inherit
         self.category = category
 
@@ -138,12 +127,12 @@ class Attr(property):
         """Bypass get request."""
         if callable(self.fget):
             return self.fget(obj) # type: ignore
-        if self._getter:
-            return self._get_getter(obj)()
-        name = self._get_name(obj)
-        default = self._get_default(obj)
+        if isinstance(self.fget, str):
+            return getattr(obj, self.fget, void)()
         binddict = self._get_bindict(obj)
-        return binddict.get(name, default)
+        bindkey = self._get_bindkey(obj)
+        default = self._get_default(obj)
+        return binddict.get(bindkey, default)
 
     def __set__(self, obj: AttrGroup, val: Any) -> None:
         """Bypass and type check set request."""
@@ -155,17 +144,18 @@ class Attr(property):
         if callable(self.fset):
             self.fset(obj, val) # type: ignore
             return
-        if self._setter:
-            self._get_setter(obj)(val)
+        if isinstance(self.fset, str):
+            getattr(obj, self.fset, void)(val)
             return
-        name = self._get_name(obj)
-        self._get_bindict(obj)[name] = val
+        binddict = self._get_bindict(obj)
+        bindkey = self._get_bindkey(obj)
+        binddict[bindkey] = val
 
     #
     # Protected Methods
     #
 
-    def _get_name(self, obj: AttrGroup) -> str:
+    def _get_bindkey(self, obj: AttrGroup) -> str:
         prefix = obj._attr_group_prefix # pylint: disable=W0212
         name = self.bindkey or self.name
         if prefix:
@@ -188,22 +178,6 @@ class Attr(property):
     def _get_classinfo(self, obj: AttrGroup) -> OptClassInfo:
         return obj._attr_group_defaults.get( # pylint: disable=W0212
             'classinfo', self.classinfo)
-
-    def _get_getter(self, obj: AttrGroup) -> Callable:
-        attr = self._getter
-        if not attr:
-            return void
-        check.has_attr(obj, attr)
-        check.is_callable(attr, getattr(obj, attr))
-        return getattr(obj, attr)
-
-    def _get_setter(self, obj: AttrGroup) -> Callable:
-        attr = self._setter
-        if not attr:
-            return void
-        check.has_attr(obj, attr)
-        check.is_callable(attr, getattr(obj, attr))
-        return getattr(obj, attr)
 
     def _get_default(self, obj: AttrGroup) -> Any:
         attrs = obj._attr_group_defaults # pylint: disable=W0212
@@ -253,8 +227,9 @@ class VirtAttr(Attr):
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize default values of attribute descriptor."""
-        check.has_type('getter', kwds.get('getter'), str)
         super().__init__(*args, **kwds)
+        if not isinstance(self.fget, CallOrStr):
+            raise MissingKwargError('fget', self)
         self.binddict = None
 
 class Container(AttrGroup):
@@ -269,7 +244,7 @@ class Container(AttrGroup):
     #
 
     parent: property = VirtAttr(classinfo=AttrGroup,
-        getter='_get_attr_group_parent', setter='_set_attr_group_parent')
+        fget='_get_attr_group_parent', fset='_set_attr_group_parent')
     parent.__doc__ = """Reference to parent container object."""
 
     #

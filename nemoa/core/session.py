@@ -67,13 +67,13 @@ class Session(Container):
     paths: property = MetaAttr(classinfo=list)
     paths.__doc__ = """Search paths for workspaces."""
 
-    files: property = VirtAttr(getter='_get_files', readonly=True)
+    files: property = VirtAttr(fget='_get_files', readonly=True)
     files.__doc__ = """Files within the current workspace."""
 
-    folders: property = VirtAttr(getter='_get_folders', readonly=True)
+    folders: property = VirtAttr(fget='_get_folders', readonly=True)
     folders.__doc__ = """Folders within the current workspace."""
 
-    path: property = VirtAttr(getter='_get_path', readonly=True)
+    path: property = VirtAttr(fget='_get_path', readonly=True)
     path.__doc__ = """Filepath of the current workspace."""
 
     logger: property = TempAttr(classinfo=log.Logger)
