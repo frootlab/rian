@@ -12,7 +12,7 @@ from unittest import TestCase, TestResult, TestLoader, TestSuite, TextTestRunner
 import numpy as np
 from nemoa.base import assess, this
 from nemoa.types import Any, AnyFunc, ClassInfo, ExcType, Function, Method
-from nemoa.types import OptStr, StringIOLike, Tuple, Dict, List, Callable
+from nemoa.types import StringIOLike, Tuple, Dict, List, Callable
 from nemoa.types import NpArray, NamedTuple
 
 ################################################################################
@@ -121,30 +121,39 @@ class ModuleTestCase(BaseTestCase):
 
     def assertModuleIsComplete(self) -> None:
         """Assert that all members of module are tested."""
-        msg: OptStr = None
-        if hasattr(self, 'module') and self.test_completeness:
-            mref = assess.get_module(self.module)
-            if hasattr(mref, '__all__'):
-                required = set(getattr(mref, '__all__'))
-            else:
-                required = set()
-                fdict = assess.get_members_dict(mref, classinfo=Function)
-                for attr in fdict.values():
-                    name = attr['name']
-                    if not name.startswith('_'):
-                        required.add(name)
-            tdict = assess.get_members_dict(
-                self, classinfo=Method, pattern='test_*')
-            implemented = set()
-            for attr in tdict.values():
-                implemented.add(attr['name'][5:])
-            complete = required <= implemented
-            untested = ', '.join(required - implemented)
-            msg = f"untested functions: {untested}"
-        else:
-            complete = True
-        if not complete:
-            raise AssertionError(msg)
+        if not hasattr(self, 'module') or not self.test_completeness:
+            return
+
+        # Get reference to module
+        ref = assess.get_module(self.module)
+        if not ref:
+            raise AssertionError(f"module {self.module} does not exist")
+
+        # Get module members
+        members = set()
+        for name in getattr(ref, '__all__',
+            assess.get_members(ref, classinfo=(type, Function))):
+            if name.startswith('_'):
+                continue # Filter protected members
+            if getattr(ref, name).__module__ != ref.__name__:
+                continue # Filter imported members
+            if BaseException in getattr(getattr(ref, name), '__mro__', []):
+                continue # Filter exceptions
+            members.add(name)
+
+        # Get tested module members
+        tested = set(name[5:] for name in assess.get_members(
+            self, classinfo=Method, pattern='test_*'))
+
+        # Get untested module members
+        untested = members - tested
+        if not untested:
+            return
+
+        # Raise error on untested module members
+        raise AssertionError(
+            f"module '{self.module}' comprises "
+            f"untested members: {', '.join(sorted(untested))}")
 
     @skipIf(skip_completeness_test, "completeness is not tested")
     def test_completeness_of_module(self) -> None:

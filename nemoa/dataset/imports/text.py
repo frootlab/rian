@@ -59,18 +59,18 @@ class Csv:
         comment = file.comment
 
         structure = {
-            'name': 'str',
-            'branch': 'str',
-            'version': 'int',
-            'about': 'str',
-            'author': 'str',
-            'email': 'str',
-            'license': 'str',
-            'filetype': 'str',
-            'application': 'str',
-            'preprocessing': 'dict',
-            'type': 'str',
-            'labelformat': 'str'}
+            'name': str,
+            'branch': str,
+            'version': int,
+            'about': str,
+            'author': str,
+            'email': str,
+            'license': str,
+            'filetype': str,
+            'application': str,
+            'preprocessing': dict,
+            'type': str,
+            'labelformat': str}
 
         config = inifile.decode(comment, flat=True, structure=structure)
 

@@ -55,10 +55,10 @@ class Ini:
         # described with regular expressions
         system = inifile.load(path, {
             'system': {
-                'name': 'str',
-                'type': 'str' },
+                'name': str,
+                'type': str},
             'schedule [.0-9a-zA-Z]*': {
-                'system [.0-9a-zA-Z]*': 'dict' }})
+                'system [.0-9a-zA-Z]*': dict}})
 
         if not system \
             or not 'system' in system \

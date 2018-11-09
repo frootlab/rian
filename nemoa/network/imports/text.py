@@ -48,7 +48,9 @@ class Ini:
         """
         from nemoa.base.file import inifile
 
-        structure = {'network': { 'type': 'str' }}
+        structure = {
+            'network': {
+                'type': str}}
         network = inifile.load(path, structure)
         if not network \
             or not 'network' in network \
@@ -70,31 +72,31 @@ class Ini:
 
         structure = {
             'network': {
-                'name': 'str',
-                'description': 'str',
-                'branch': 'str',
-                'version': 'str',
-                'about': 'str',
-                'author': 'str',
-                'email': 'str',
-                'license': 'str',
-                'type': 'str',
-                'layers': 'list',
-                'directed': 'bool',
-                'labelformat': 'str'},
+                'name': str,
+                'description': str,
+                'branch': str,
+                'version': str,
+                'about': str,
+                'author': str,
+                'email': str,
+                'license': str,
+                'type': str,
+                'layers': list,
+                'directed': bool,
+                'labelformat': str},
             'layer [0-9a-zA-Z]*': {
-                'name': 'str',
-                'function': 'str',
-                'distribution': 'str',
-                'type': 'str',
-                'visible': 'bool',
-                'file': 'str',
-                'nodes': 'list',
-                'size': 'int' },
+                'name': str,
+                'function': str,
+                'distribution': str,
+                'type': str,
+                'visible': bool,
+                'file': str,
+                'nodes': list,
+                'size': int},
             'binding [0-9a-zA-Z]*-[0-9a-zA-Z]*': {
-                '[0-9a-zA-Z]*': 'list' }}
+                '[0-9a-zA-Z]*': list}}
 
-        ini_dict = inifile.load(path, structure = structure)
+        ini_dict = inifile.load(path, structure=structure)
         config = ini_dict['network'].copy()
 
         # layers

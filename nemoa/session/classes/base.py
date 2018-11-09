@@ -16,11 +16,11 @@ class Session:
     _config = None
     _struct: dict = {
         'folders': {
-            'user': 'str',
-            'cache': 'str',
-            'site': 'str'},
+            'user': str,
+            'cache': str,
+            'site': str},
         'files': {
-            'logfile': 'str'}}
+            'logfile': str}}
     _default: dict = {
         'current': {
             'workspace': None,

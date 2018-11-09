@@ -19,10 +19,11 @@ except ImportError as err:
         "https://pypi.org/project/pyparsing/") from err
 
 from nemoa.base import check, npath
-from nemoa.types import Any, OptStr, Date
+from nemoa.types import Any, OptStr, Date, OptType
 
 def decode(
-        text: str, fmt: OptStr = None, undef: str = 'None', **kwds: Any) -> Any:
+        text: str, cls: OptType = None, undef: str = 'None',
+        **kwds: Any) -> Any:
     """Convert text into given target format.
 
     Args:
@@ -30,7 +31,7 @@ def decode(
             syntax format. The standard format corresponds to the standard
             Python representation if available. Some types also accept
             further formats, which may use additional keywords.
-        fmt: Target format in which the text is converted.
+        cls: Target type in which the text is to be converted.
         undef: String, which respresents an undefined value. If the given text
             matches the string, None is returned.
         **kwds: Supplementary parameters, that specify the target format
@@ -41,33 +42,29 @@ def decode(
     """
     # Check Arguments
     check.has_type("first argument 'text'", text, str)
-    check.has_opt_type("argument 'fmt'", fmt, str)
+    check.has_opt_type("argument 'cls'", cls, type)
 
     if text == undef:
         return None
 
-    # Evaluate text as Python literal if no format is given
-    if fmt is None:
+    # Evaluate text as Python literal if no type is given
+    if cls is None:
         return ast.literal_eval(text)
 
     # Basic types
-    if fmt == 'str':
+    if cls == str:
         return text.strip().replace('\n', '')
-    if fmt == 'bool':
+    if cls == bool:
         return text.lower().strip() == 'true'
-    if fmt == 'int':
-        return int(text)
-    if fmt == 'float':
-        return float(text)
-    if fmt == 'complex':
-        return complex(text)
+    if cls in [int, float, complex]:
+        return cls(text)
 
     # Sequence and special types
-    stypes = ['list', 'tuple', 'set', 'dict', 'path', 'datetime']
-    if fmt in stypes:
-        return getattr(sys.modules[__name__], 'as_' + fmt)(text, **kwds)
-
-    raise KeyError(f"type '{fmt}' is not supported")
+    fname = 'as_' + cls.__name__.lower()
+    try:
+        return getattr(sys.modules[__name__], fname)(text, **kwds)
+    except AttributeError as err:
+        raise ValueError(f"type '{cls}' is not supported") from err
 
 def as_list(text: str, delim: str = ',') -> list:
     """Convert text into list.

@@ -19,15 +19,17 @@ __docformat__ = 'google'
 from pathlib import Path
 from nemoa.base import npath
 from nemoa.core import log
-from nemoa.base.container import ContentAttr, DCMContainer
-from nemoa.base.container import TechAttr, VirtualAttr, TempAttr
+from nemoa.base.container import create_attr_group
+from nemoa.base.container import Container, AttrGroup, DCAttrGroup
+from nemoa.base.container import DataAttr, MetaAttr, VirtAttr, TempAttr
 from nemoa.base.file import inifile, wsfile
-from nemoa.types import (
-    Any, BytesLike, CManFileLike, ClassVar, Exc, ExcType, OptBytes, OptPath,
-    OptPathLike, OptStr, PathLike, StrDict, StrDict2, StrList, StrOrInt,
-    Traceback)
+from nemoa.types import Any, BytesLike, CManFileLike, ClassVar, Exc, ExcType
+from nemoa.types import OptBytes, OptPath, OptPathLike, OptStr, PathLike
+from nemoa.types import StrDict, StrList, StrOrInt, Traceback
 
-class Session(DCMContainer):
+SecDict = inifile.SecDict
+
+class Session(Container):
     """Session."""
 
     #
@@ -35,11 +37,11 @@ class Session(DCMContainer):
     #
 
     _config_file_path: ClassVar[str] = '%user_config_dir%/nemoa.ini'
-    _config_file_struct: ClassVar[StrDict2] = {
+    _config_file_struct: ClassVar[SecDict] = {
         'session': {
-            'path': 'path',
-            'restore_on_startup': 'bool',
-            'autosave_on_exit': 'bool'}}
+            'path': Path,
+            'restore_on_startup': bool,
+            'autosave_on_exit': bool}}
     _default_config: ClassVar[StrDict] = {
         'path': None,
         'restore_on_startup': False,
@@ -48,43 +50,37 @@ class Session(DCMContainer):
         '%user_data_dir%', '%site_data_dir%', '%package_data_dir%']
 
     #
-    # Content Attributes
+    # Public Attribute Groups
     #
 
-    workspace: property = ContentAttr(wsfile.WsFile)
+    dc: AttrGroup = create_attr_group(DCAttrGroup)
 
     #
-    # Metadata Attributes
+    # Public Attributes
     #
 
-    config: property = TechAttr(dict)
+    workspace: property = DataAttr(classinfo=wsfile.WsFile)
+
+    config: property = MetaAttr(classinfo=dict)
     config.__doc__ = """Session configuration."""
 
-    paths: property = TechAttr(list)
+    paths: property = MetaAttr(classinfo=list)
     paths.__doc__ = """Search paths for workspaces."""
 
-    #
-    # Virtual Attributes
-    #
-
-    files: property = VirtualAttr(list, getter='_get_files', readonly=True)
+    files: property = VirtAttr(getter='_get_files', readonly=True)
     files.__doc__ = """Files within the current workspace."""
 
-    folders: property = VirtualAttr(list, getter='_get_folders', readonly=True)
+    folders: property = VirtAttr(getter='_get_folders', readonly=True)
     folders.__doc__ = """Folders within the current workspace."""
 
-    path: property = VirtualAttr(Path, getter='_get_path', readonly=True)
+    path: property = VirtAttr(getter='_get_path', readonly=True)
     path.__doc__ = """Filepath of the current workspace."""
 
-    #
-    # Transient Attributes
-    #
-
-    logger: property = TempAttr(log.Logger)
+    logger: property = TempAttr(classinfo=log.Logger)
     logger.__doc__ = """Logger instance."""
 
     #
-    # Magic
+    # Events
     #
 
     def __init__(

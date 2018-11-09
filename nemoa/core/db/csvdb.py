@@ -9,7 +9,7 @@ __docformat__ = 'google'
 from pathlib import Path
 from nemoa.types import FileOrPathLike, OptStr, OptIntTuple, OptStrList, OptInt
 from nemoa.base import npath
-from nemoa.base.container import BaseContainer
+from nemoa.base.container import Container
 from nemoa.base.file import csvfile, inifile
 from nemoa.core.db import dbapi2
 from nemoa.core.db.dbapi2 import Error, Warning, InterfaceError, DatabaseError
@@ -35,24 +35,24 @@ class Connection(dbapi2.Connection):
 def load_csv(
         file: FileOrPathLike, delim: OptStr = None,
         labels: OptStrList = None, usecols: OptIntTuple = None,
-        rowlabelcol: OptInt = None) -> dict:
+        namecol: OptInt = None) -> dict:
     """ """
     # Get configuration from CSV header
-    comment = csvfile.CSVFile(file).header
+    comment = csvfile.CSVFile(file).comment
 
     structure = {
-        'name': 'str',
-        'branch': 'str',
-        'version': 'int',
-        'about': 'str',
-        'author': 'str',
-        'email': 'str',
-        'license': 'str',
-        'filetype': 'str',
-        'application': 'str',
-        'preprocessing': 'dict',
-        'type': 'str',
-        'labelformat': 'str'}
+        'name': str,
+        'branch': str,
+        'version': int,
+        'about': str,
+        'author': str,
+        'email': str,
+        'license': str,
+        'filetype': str,
+        'application': str,
+        'preprocessing': dict,
+        'type': str,
+        'labelformat': str}
 
     config = inifile.decode(comment, flat=True, structure=structure)
 
@@ -75,7 +75,7 @@ def load_csv(
 
     data = csvfile.CSVFile(
         file=file, delim=delim, labels=labels, usecols=usecols,
-        rowlabelcol=rowlabelcol).select()
+        namecol=namecol).select()
 
     config['table'] = {name: config.copy()}
     config['table'][name]['fraction'] = 1.0

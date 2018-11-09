@@ -12,7 +12,6 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import fnmatch
-
 from nemoa.base import check
 from nemoa.types import RecDict, DictOfRecDicts, StrTupleDict, OptStr
 

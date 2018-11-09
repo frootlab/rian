@@ -12,8 +12,9 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import abc
+
 import dataclasses
+from abc import ABC, abstractmethod
 
 # try:
 #     import numpy as np
@@ -24,34 +25,89 @@ import dataclasses
 
 from numpy.lib import recfunctions as nprf
 from nemoa.base import check
-from nemoa.base.container import BaseContainer, ContentAttr, InheritedAttr
-from nemoa.base.container import TempAttr, VirtualAttr
+from nemoa.base.container import Container, DataAttr, MetaAttr
+from nemoa.base.container import TempAttr, VirtAttr
+from nemoa.errors import NemoaError
 from nemoa.types import NpFields, NpRecArray, Tuple, Iterable
 from nemoa.types import Union, Optional, StrDict, StrTuple, Iterator, Any
-from nemoa.types import OptIntList, OptCallable, CallableCI, Callable
-from nemoa.types import OptStrTuple
+from nemoa.types import OptIntList, OptCallable, CallableClasses, Callable
+from nemoa.types import OptStrTuple, OptInt, ClassVar, List, OptStr
 
-# Module specific types
+#
+# Module Types
+#
+
 Field = dataclasses.Field
 FieldTuple = Tuple[Field, ...]
 Fields = Iterable[Union[str, Tuple[str, type], Tuple[str, type, Field]]]
 FieldLike = Union[Fields, Tuple[str, type, StrDict]]
 OptFieldLike = Optional[FieldLike]
 
-# Module specific constants
+#
+# Module Constants
+#
+
 ROW_STATE_CREATE = 0b001
 ROW_STATE_UPDATE = 0b010
 ROW_STATE_DELETE = 0b100
+CURSOR_MODE_DYNAMIC = 0
+CURSOR_MODE_FIXED = 1
+CURSOR_MODE_STATIC = 2
 
-class Record(abc.ABC):
+#
+# Module Exceptions
+#
+
+class TableError(NemoaError):
+    """Default Table Error."""
+
+class RowLookupError(TableError, LookupError):
+    """Row Lookup Error."""
+
+    def __init__(self, rowid: int) -> None:
+        super().__init__(f"row index {rowid} is not valid")
+
+class ColumnLookupError(TableError, LookupError):
+    """Column Lookup Error."""
+
+    def __init__(self, colname: int) -> None:
+        super().__init__(f"column name '{colname}' is not valid")
+
+class CursorModeError(TableError, LookupError):
+    """Raise when a procedure is not supported by a cursor."""
+
+    def __init__(self, mode: int, proc: OptStr = None) -> None:
+        if not proc:
+            msg = f"unknown cursor mode {mode}"
+        else:
+            msg = f"{proc} is not supported in cursor mode {mode}"
+        super().__init__(msg)
+
+#
+# Record Class
+#
+
+class Record(ABC):
     """Record Base Class."""
+
+    #
+    # Public Instance Variables
+    #
 
     id: int
     state: int
 
+    #
+    # Events
+    #
+
     def __post_init__(self, *args: Any, **kwds: Any) -> None:
         self.id = self._create_row_id()
         self.state = ROW_STATE_CREATE
+
+    #
+    # Public Methods
+    #
 
     def delete(self) -> None:
         """Mark record as deleted and remove it's ID from index."""
@@ -77,79 +133,238 @@ class Record(abc.ABC):
             self.state &= ~ROW_STATE_UPDATE
             self._revoke_hook(self.id)
 
-    @abc.abstractmethod
+    #
+    # Protected Methods
+    #
+
+    @abstractmethod
     def _create_row_id(self) -> int:
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def _delete_hook(self, rowid: int) -> None:
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def _restore_hook(self, rowid: int) -> None:
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def _update_hook(self, rowid: int, **kwds: Any) -> None:
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def _revoke_hook(self, rowid: int) -> None:
         pass
 
-class Cursor(BaseContainer):
-    """Cursor Class."""
+#
+# Record Types
+#
 
-    _index: property = InheritedAttr()
-    _getter: property = TempAttr(CallableCI)
-    _mapper: property = TempAttr(CallableCI)
-    _predicate: property = TempAttr(CallableCI)
+OptRec = Optional[Record]
+RecList = List[Record]
+RecLike = Union[Record, tuple, dict]
+RecLikeList = List[RecLike]
+
+#
+# Cursor Class
+#
+
+class Cursor(Container):
+    """Cursor Class.
+
+    Args:
+        index: List of row IDs, that are traversed by the cursor. By default the
+            attribute '_index' of the parent object is used.
+        mode:
+            0: Dynamic Cursor:
+                Dynamic cursors are built on-the-fly and therefore comprise any
+                changes made to the rows in the result set during it's
+                traversal, including new appended rows and the order of it's
+                traversal. This behaviour is regardless of whether the changes
+                occur from inside the cursor or by other users from outside the
+                cursor. Dynamic cursors are threadsafe but do not support
+                counting filtered rows or sorting rows.
+            1: Fixed Cursor:
+                Fixed cursors are built on-the-fly with respect to an initial
+                copy of the table index and therefore comprise changes made to
+                the rows in the result set during it's traversal, but not new
+                appended rows or the order of it's traversal. Dynamic cursors
+                are threadsafe but do not support counting filtered rows or
+                sorting rows.
+            2: Static Cursor:
+                Static cursors are buffered and built during it's creation time
+                and therfore always display the result set as it was when the
+                cursor was first opened. Static cursors are not threadsafe but
+                support counting the rows with respect to a given filter and
+                sorting the rows.
+
+    """
+
+    #
+    # Protected Class Variables
+    #
+
+    _default_mode: ClassVar[int] = CURSOR_MODE_FIXED
+    _default_batchsize: ClassVar[int] = 1
+
+    #
+    # Public Attributes
+    #
+
+    mode: property = VirtAttr(getter='_get_mode', readonly=True)
+    rowcount: property = VirtAttr(getter='_get_rowcount', readonly=True)
+    batchsize: property = MetaAttr(classinfo=int, default=_default_batchsize)
+
+    #
+    # Protected Attributes
+    #
+
+    _mode: property = MetaAttr(classinfo=int, default=_default_mode)
+    _index: property = MetaAttr(classinfo=list, inherit=True)
+    _getter: property = TempAttr(classinfo=CallableClasses)
+    _filter: property = TempAttr(classinfo=CallableClasses)
+    _mapper: property = TempAttr(classinfo=CallableClasses)
+    _buffer: property = TempAttr(classinfo=list, default=[])
+
+    #
+    # Events
+    #
 
     def __init__(
             self, index: OptIntList = None, getter: OptCallable = None,
             predicate: OptCallable = None, mapper: OptCallable = None,
-            parent: Optional[BaseContainer] = None) -> None:
+            parent: Optional[Container] = None, mode: OptInt = None,
+            batchsize: OptInt = None) -> None:
         """Initialize Cursor."""
-        super().__init__(parent=parent)
-        if index:
+        super().__init__(parent=parent) # Parent is set by container
+        if index is not None:
             self._index = index
-        if getter:
-            check.is_callable("argument 'getter'", getter)
-            self._getter = getter
-        if predicate:
-            check.is_callable("argument 'predicate'", predicate)
-            self._predicate = predicate
-        if mapper:
-            check.is_callable("argument 'mapper'", mapper)
-            self._mapper = mapper
+        self._getter = getter
+        self._filter = predicate
+        self._mapper = mapper
+        if mode is not None:
+            self._mode = mode
+        if batchsize:
+            self.batchsize = batchsize
+        if self.mode == CURSOR_MODE_FIXED:
+            self._create_index()
+        if self.mode == CURSOR_MODE_STATIC:
+            self._create_buffer()
+        self.reset() # Initialize iterator
 
     def __iter__(self) -> Iterator:
-        self._iter = iter(self._index)
+        self.reset()
         return self
 
-    def __next__(self) -> Record:
-        rowid = next(self._iter)
-        if not self._getter:
-            return rowid
-        row = self._getter(rowid)
-        if not self._predicate or self._predicate(row):
+    def __next__(self) -> RecLike:
+        return self.next()
+
+    def __len__(self) -> int:
+        return self.rowcount
+
+    #
+    # Public Methods
+    #
+
+    def reset(self) -> None:
+        """Reset cursor position before the first record."""
+        mode = self._mode
+        if mode in [CURSOR_MODE_DYNAMIC, CURSOR_MODE_FIXED]:
+            self._iter_index = iter(self._index)
+        elif mode == CURSOR_MODE_STATIC:
+            self._iter_buffer = iter(self._buffer)
+        else:
+            raise CursorModeError(mode)
+
+    def next(self) -> RecLike:
+        """Return next row that matches the given filter."""
+        mode = self._mode
+        if mode in [CURSOR_MODE_DYNAMIC, CURSOR_MODE_FIXED]:
+            if not self._filter:
+                row = self._getter(next(self._iter_index))
+                if self._mapper:
+                    return self._mapper(row)
+                return row
+            matches = False
+            while not matches:
+                row = self._getter(next(self._iter_index))
+                matches = self._filter(row)
             if self._mapper:
                 return self._mapper(row)
             return row
-        return next(self)
+        if mode == CURSOR_MODE_STATIC:
+            return next(self._iter_buffer)
+        raise CursorModeError(mode)
 
-class Table(BaseContainer):
+    def fetch(self, size: OptInt = None) -> RecLikeList:
+        """Fetch rows from the result set.
+
+        Args:
+            size: Integer value which represents the number of rows, which are
+                to be fetched. For zero or negative values all remaining rows
+                are fetched. The default size is given by the cursor's
+                *batchsize*.
+
+        """
+        if size is None:
+            size = self.batchsize
+        finished = False
+        results: RecLikeList = []
+        while not finished:
+            try:
+                results.append(self.next())
+            except StopIteration:
+                finished = True
+            else:
+                finished = 0 < size <= len(results)
+        return results
+
+    #
+    # Protected Methods
+    #
+
+    def _get_mode(self) -> int:
+        return self._mode
+
+    def _get_rowcount(self) -> int:
+        mode = self._mode
+        if mode in [CURSOR_MODE_DYNAMIC, CURSOR_MODE_FIXED]:
+            if not self._filter:
+                return len(self._index)
+            raise CursorModeError(mode, "counting filtered rows")
+        if mode == CURSOR_MODE_STATIC:
+            return len(self._buffer)
+        raise CursorModeError(mode)
+
+    def _create_index(self) -> None:
+        self._index = list(self._index)
+
+    def _create_buffer(self) -> None:
+        dyn_cur = self.__class__(
+            index=self._index, getter=self._getter, predicate=self._filter,
+            mapper=self._mapper, mode=CURSOR_MODE_DYNAMIC)
+        self._buffer = list(dyn_cur)
+
+class Table(Container):
     """Table Class."""
 
-    _store: property = ContentAttr(list, default=[])
+    #
+    # Public Attributes
+    #
 
-    _diff: property = TempAttr(list, default=[])
-    _index: property = TempAttr(list, default=[])
+    fields: property = VirtAttr(getter='_get_fields', readonly=True)
+    colnames: property = VirtAttr(getter='_get_colnames', readonly=True)
+
+    #
+    # Protected Attributes
+    #
+
+    _store: property = DataAttr(classinfo=list, default=[])
+    _diff: property = TempAttr(classinfo=list, default=[])
+    _index: property = TempAttr(classinfo=list, default=[])
     _iter_index: property = TempAttr()
-    _Record: property = TempAttr(type)
-
-    fields: property = VirtualAttr(getter='_get_fields', readonly=True)
-    colnames: property = VirtualAttr(getter='_get_colnames', readonly=True)
+    _Record: property = TempAttr(classinfo=type)
 
     def __init__(self, columns: OptFieldLike = None) -> None:
         """ """
@@ -162,55 +377,71 @@ class Table(BaseContainer):
         return self
 
     def __next__(self) -> Record:
-        return self.get_row(next(self._iter_index))
+        row = self.get_row(next(self._iter_index))
+        while not row:
+            row = self.get_row(next(self._iter_index))
+        return row
 
     def __len__(self) -> int:
         return len(self._index)
 
     def commit(self) -> None:
         """Apply changes to table."""
-        # Delete and update rows in table store. The reversed order is required
-        # to keep the position of the list index, when deleting rows
-        for rowid in reversed(range(len(self._store))):
-            state = self.get_row(rowid).state
+        # Delete / Update rows in storage table
+        for rowid in list(range(len(self._store))):
+            row = self.get_row(rowid)
+            if not row:
+                continue
+            state = row.state
             if state & ROW_STATE_DELETE:
-                del self._store[rowid]
+                self._store[rowid] = None
+                try:
+                    self._index.remove(rowid)
+                except ValueError:
+                    pass
             elif state & (ROW_STATE_CREATE | ROW_STATE_UPDATE):
                 self._store[rowid] = self._diff[rowid]
                 self._store[rowid].state = 0
 
-        # Reassign row IDs and recreate diff table and index
-        self._create_index()
+        # Flush diff table
+        self._diff = [None] * len(self._store)
 
     def rollback(self) -> None:
         """Revoke changes from table."""
-        # Delete new rows, that have not yet been commited. The reversed order
-        # is required to keep the position of the list index, when deleting rows
-        for rowid in reversed(range(len(self._store))):
-            state = self.get_row(rowid).state
+        # Remove newly created rows from index and reset states of already
+        # existing rows
+        for rowid in list(range(len(self._store))):
+            row = self.get_row(rowid)
+            if not row:
+                continue
+            state = row.state
             if state & ROW_STATE_CREATE:
-                del self._store[rowid]
+                try:
+                    self._index.remove(rowid)
+                except ValueError:
+                    pass
             else:
                 self._store[rowid].state = 0
 
-        # Reassign row IDs and recreate diff table and index
-        self._create_index()
+        # Flush diff table
+        self._diff = [None] * len(self._store)
 
     def get_cursor(
-            self, predicate: OptCallable = None,
-            mapper: OptCallable = None) -> Cursor:
+            self, predicate: OptCallable = None, mapper: OptCallable = None,
+            mode: OptInt = None) -> Cursor:
         """ """
         return Cursor(
-            index=self._index, getter=self.get_row, predicate=predicate,
-            mapper=mapper)
+            getter=self.get_row, predicate=predicate, mapper=mapper, mode=mode,
+            parent=self)
 
-    def get_row(self, rowid: int) -> Record:
+    def get_row(self, rowid: int) -> OptRec:
         """ """
         return self._diff[rowid] or self._store[rowid]
 
-    def get_rows(self, predicate: OptCallable = None) -> Cursor:
+    def get_rows(
+            self, predicate: OptCallable = None, mode: OptInt = None) -> Cursor:
         """ """
-        return self.get_cursor(predicate=predicate)
+        return self.get_cursor(predicate=predicate, mode=mode)
 
     def append_row(self, *args: Any, **kwds: Any) -> None:
         """ """
@@ -221,7 +452,10 @@ class Table(BaseContainer):
 
     def delete_row(self, rowid: int) -> None:
         """ """
-        self.get_row(rowid).delete()
+        row = self.get_row(rowid)
+        if not row:
+            raise RowLookupError(rowid)
+        row.delete()
 
     def delete_rows(self, predicate: OptCallable = None) -> None:
         """ """
@@ -230,7 +464,10 @@ class Table(BaseContainer):
 
     def update_row(self, rowid: int, **kwds: Any) -> None:
         """ """
-        self.get_row(rowid).update(**kwds)
+        row = self.get_row(rowid)
+        if not row:
+            raise RowLookupError(rowid)
+        row.update(**kwds)
 
     def update_rows(self, predicate: OptCallable = None, **kwds: Any) -> None:
         """ """
@@ -238,31 +475,45 @@ class Table(BaseContainer):
             row.update(**kwds)
 
     def select(
-            self, columns: OptStrTuple = None,
-            predicate: OptCallable = None) -> list:
+            self, columns: OptStrTuple = None, predicate: OptCallable = None,
+            fmt: type = tuple, mode: OptInt = None) -> RecLikeList:
         """ """
         if not columns:
-            mapper = self._get_col_mapper_tuple(self.colnames)
+            mapper = self._get_mapper(self.colnames, fmt=fmt)
         else:
             check.is_subset(
                 "argument 'columns'", set(columns),
                 "table column names", set(self.colnames))
-            mapper = self._get_col_mapper_tuple(columns)
+            mapper = self._get_mapper(columns, fmt=fmt)
         return self.get_cursor( # type: ignore
-            predicate=predicate, mapper=mapper)
+            predicate=predicate, mapper=mapper, mode=mode)
 
-    def _create_index(self) -> None:
-        self._index = []
-        self._diff = []
-        for rowid in range(len(self._store)):
+    def pack(self) -> None:
+        """Remove empty records from storage table and rebuild table index."""
+        # Commit pending changes
+        self.commit()
+
+        # Remove empty records
+        self._store = list(filter(None.__ne__, self._store))
+
+        # Rebuild table index
+        self._index = list(range(len(self._store)))
+        for rowid in self._index:
             self._store[rowid].id = rowid
-            self._diff.append(None)
-            self._index.append(rowid)
 
-    def _get_col_mapper_tuple(self, columns: StrTuple) -> Callable:
-        def mapper(row: Record) -> tuple:
+        # Rebuild diff table
+        self._diff = [None] * len(self._store)
+
+    def _get_mapper(self, columns: StrTuple, fmt: type = tuple) -> Callable:
+        def mapper_tuple(row: Record) -> tuple:
             return tuple(getattr(row, col) for col in columns)
-        return mapper
+        def mapper_dict(row: Record) -> dict:
+            return {col: getattr(row, col) for col in columns}
+        if fmt == tuple:
+            return mapper_tuple
+        if fmt == dict:
+            return mapper_dict
+        raise TableError(f"argument 'fmt' requires to be tuple or dict")
 
     def _get_fields(self) -> FieldTuple:
         return dataclasses.fields(self._Record)
@@ -281,10 +532,12 @@ class Table(BaseContainer):
 
     def _update_row_diff(self, rowid: int, **kwds: Any) -> None:
         row = self.get_row(rowid)
-        new = dataclasses.replace(row, **kwds)
-        new.id = rowid
-        new.state = row.state
-        self._diff[rowid] = new
+        if not row:
+            raise RowLookupError(rowid)
+        upd = dataclasses.replace(row, **kwds)
+        upd.id = rowid
+        upd.state = row.state
+        self._diff[rowid] = upd
 
     def _remove_row_diff(self, rowid: int) -> None:
         self._diff[rowid] = None
@@ -334,18 +587,6 @@ class Table(BaseContainer):
         self._store = []
         self._diff = []
         self._index = []
-
-    # def as_tuples(self):
-    #     """ """
-    #     return [dataclasses.astuple(rec) for rec in self._store]
-    #
-    # def as_dicts(self):
-    #     """ """
-    #     return [dataclasses.asdict(rec) for rec in self._store]
-    #
-    # def as_array(self):
-    #     """ """
-    #     return np.array(self.as_tuples())
 
 def addcols(
         base: NpRecArray, data: NpRecArray,
