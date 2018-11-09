@@ -457,9 +457,9 @@ class DCAttr(MetaAttr):
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize default values of attribute descriptor."""
-        kwds['classinfo'] = kwds.get('classinfo', str)
-        kwds['inherit'] = kwds.get('inherit', True)
         super().__init__(*args, **kwds)
+        self.classinfo = self.classinfo or str
+        self.inherit = True
 
 class DCAttrGroup(AttrGroup):
     """Dublin Core Metadata Element Set, Version 1.1.
