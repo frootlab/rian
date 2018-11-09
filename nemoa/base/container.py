@@ -230,7 +230,7 @@ class VirtAttr(Attr):
         super().__init__(*args, **kwds)
         if not isinstance(self.fget, CallOrStr):
             raise MissingKwargError('fget', self)
-        self.binddict = None
+        self.readonly = not isinstance(self.fset, CallOrStr)
 
 class Container(AttrGroup):
     """Base class for Container Objects."""

@@ -95,19 +95,19 @@ class CSVFile(Container):
     # Public Attributes
     #
 
-    comment: property = VirtAttr(fget='_get_comment', readonly=True)
+    comment: property = VirtAttr(fget='_get_comment')
     comment.__doc__ = """
     String containing the initial '#' lines of the CSV-file or an empty string,
     if no initial comment lines could be detected.
     """
 
-    delim: property = VirtAttr(fget='_get_delim', readonly=True)
+    delim: property = VirtAttr(fget='_get_delim')
     delim.__doc__ = """
     Delimiter string of the CSV-file or None, if the delimiter could not be
     detected.
     """
 
-    format: property = VirtAttr(fget='_get_format', readonly=True)
+    format: property = VirtAttr(fget='_get_format')
     format.__doc__ = """
     CSV-File format. The following formats are supported:
         0: `RFC4180`_:
@@ -119,19 +119,19 @@ class CSVFile(Container):
             is omitted within the header.
     """
 
-    colnames: property = VirtAttr(fget='_get_colnames', readonly=True)
+    colnames: property = VirtAttr(fget='_get_colnames')
     colnames.__doc__ = """
     List of strings containing column names from first non comment, non empty
     line of CSV-file.
     """
 
-    rownames: property = VirtAttr(fget='_get_rownames', readonly=True)
+    rownames: property = VirtAttr(fget='_get_rownames')
     rownames.__doc__ = """
     List of strings containing row names from column with id given by namecol or
     None, if namecol is not given.
     """
 
-    namecol: property = VirtAttr(fget='_get_namecol', readonly=True)
+    namecol: property = VirtAttr(fget='_get_namecol')
     namecol.__doc__ = """
     Index of the column of a CSV-file that contains the row names. The value
     None is used for CSV-files that do not contain row names.
