@@ -18,7 +18,6 @@ from nemoa.types import OptDict, Function, Method
 #
 
 CallOrStr = (Function, Method, str)
-OptContainer = Optional['Container']
 
 #
 # Base Classes for Attribute Groups and Attributes
@@ -59,13 +58,16 @@ class Attr(property):
         *
 
     Args:
+        fget:
+        fset:
+        fdel:
+        doc:
         classinfo:
+        default: Default value, which is returned for a get request
         binddict:
         bindkey:
-        getter:
-        setter:
-        default: Default value, which is returned for a get request
-        parent: Name of attribute, which references a parent object
+        remote:
+        inherit:
         readonly: Boolean value which determines if the attribute is read-only
         category: Attribute categories allow a free aggregation of attributes by
             their respective category values.
@@ -82,9 +84,8 @@ class Attr(property):
     readonly: bool
     binddict: OptStr
     bindkey: OptStr
-    _getter: OptStr
-    _setter: OptStr
     inherit: bool
+    remote: bool
     category: OptStr
 
     #
@@ -96,8 +97,8 @@ class Attr(property):
             fdel: OptCallable = None, doc: OptStr = None,
             classinfo: OptClassInfo = None, default: Any = None,
             binddict: OptStr = None, bindkey: OptStr = None,
-            category: OptStr = None, inherit: bool = False,
-            readonly: bool = False) -> None:
+            remote: bool = False, inherit: bool = False,
+            readonly: bool = False, category: OptStr = None) -> None:
         """Initialize Attribute Descriptor."""
         # Initialize Property Class
         super().__init__(fget=fget, fset=fset, fdel=fdel, doc=doc)
@@ -107,6 +108,7 @@ class Attr(property):
         check.has_type("argument 'readonly'", readonly, bool)
         check.has_opt_type("argument 'binddict'", binddict, str)
         check.has_opt_type("argument 'bindkey'", bindkey, str)
+        check.has_type("argument 'remote'", inherit, bool)
         check.has_type("argument 'inherit'", inherit, bool)
         check.has_opt_type("argument 'category'", category, str)
 
@@ -116,6 +118,7 @@ class Attr(property):
         self.readonly = readonly
         self.binddict = binddict
         self.bindkey = bindkey
+        self.remote = remote
         self.inherit = inherit
         self.category = category
 
@@ -125,6 +128,8 @@ class Attr(property):
 
     def __get__(self, obj: AttrGroup, cls: OptType = None) -> Any:
         """Bypass get request."""
+        if self._is_remote(obj):
+            return self._get_remote(obj)
         if callable(self.fget):
             return self.fget(obj) # type: ignore
         if isinstance(self.fget, str):
@@ -138,6 +143,9 @@ class Attr(property):
         """Bypass and type check set request."""
         if self._get_readonly(obj):
             raise ReadOnlyAttrError(obj, self.name)
+        if self._is_remote(obj):
+            self._set_remote(obj, val)
+            return
         classinfo = self._get_classinfo(obj)
         if classinfo and not isinstance(val, type(self.default)):
             check.has_type(f"attribute '{self.name}'", val, classinfo)
@@ -155,13 +163,6 @@ class Attr(property):
     # Protected Methods
     #
 
-    def _get_bindkey(self, obj: AttrGroup) -> str:
-        prefix = obj._attr_group_prefix # pylint: disable=W0212
-        name = self.bindkey or self.name
-        if prefix:
-            return '.'.join([prefix, name])
-        return name
-
     def _get_bindict(self, obj: AttrGroup) -> dict:
         binddict = obj._attr_group_defaults.get( # pylint: disable=W0212
             'binddict', self.binddict)
@@ -171,9 +172,12 @@ class Attr(property):
         check.has_type(binddict, getattr(obj, binddict), dict)
         return getattr(obj, binddict)
 
-    def _get_readonly(self, obj: AttrGroup) -> bool:
-        return obj._attr_group_defaults.get( # pylint: disable=W0212
-            'readonly', self.readonly)
+    def _get_bindkey(self, obj: AttrGroup) -> str:
+        prefix = obj._attr_group_prefix # pylint: disable=W0212
+        name = self.bindkey or self.name
+        if prefix:
+            return '.'.join([prefix, name])
+        return name
 
     def _get_classinfo(self, obj: AttrGroup) -> OptClassInfo:
         return obj._attr_group_defaults.get( # pylint: disable=W0212
@@ -192,6 +196,26 @@ class Attr(property):
         if not prefix:
             return default
         return getattr(parent, self.name, self.default)
+
+    def _get_readonly(self, obj: AttrGroup) -> bool:
+        return obj._attr_group_defaults.get( # pylint: disable=W0212
+            'readonly', self.readonly)
+
+    def _is_remote(self, obj: AttrGroup) -> bool:
+        return obj._attr_group_defaults.get( # pylint: disable=W0212
+            'remote', self.remote)
+
+    def _get_remote(self, obj: AttrGroup) -> bool:
+        parent = obj._attr_group_parent # pylint: disable=W0212
+        if not parent:
+            raise ReferenceError() # TODO
+        return getattr(parent, self.name, self.default)
+
+    def _set_remote(self, obj: AttrGroup, val: Any) -> None:
+        parent = obj._attr_group_parent # pylint: disable=W0212
+        if not parent:
+            raise ReferenceError() # TODO
+        setattr(parent, self.name, val)
 
 #
 # Container Base Class and Container Attribute Classes
