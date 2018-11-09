@@ -91,11 +91,11 @@ class Logger(Container):
     #
 
     logger: property = VirtAttr(
-        classinfo=logging.Logger, getter='_get_logger', setter='_set_logger')
+        fget='_get_logger', fset='_set_logger', classinfo=logging.Logger)
 
     name: property = VirtAttr(
-        classinfo=str, getter='_get_name', setter='_set_name',
-        default=_default_name)
+        fget='_get_name', fset='_set_name',
+        classinfo=str, default=_default_name)
     name.__doc__ = """
     String identifier of Logger, given as a period-separated hierarchical value
     like 'foo.bar.baz'. The name of a Logger also identifies respective parents
@@ -104,8 +104,8 @@ class Logger(Container):
     """
 
     file: property = VirtAttr(
-        classinfo=(str, Path), getter='_get_file', setter='_set_file',
-        default=_default_file)
+        fget='_get_file', fset='_set_file',
+        classinfo=(str, Path), default=_default_file)
     file.__doc__ = """
     String or `path-like object`_ that identifies a valid filename in the
     directory structure of the operating system. If they do not exist, the
@@ -116,8 +116,8 @@ class Logger(Container):
     """
 
     level: property = VirtAttr(
-        classinfo=(str, int), getter='_get_level', setter='_set_level',
-        default=_default_level)
+        fget='_get_level', fset='_set_level',
+        classinfo=(str, int), default=_default_level)
     level.__doc__ = """
     Integer value or string, which describes the minimum required severity of
     events, to be logged. Ordered by ascending severity, the allowed level names

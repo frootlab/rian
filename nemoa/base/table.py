@@ -212,8 +212,8 @@ class Cursor(Container):
     # Public Attributes
     #
 
-    mode: property = VirtAttr(getter='_get_mode', readonly=True)
-    rowcount: property = VirtAttr(getter='_get_rowcount', readonly=True)
+    mode: property = VirtAttr(fget='_get_mode')
+    rowcount: property = VirtAttr(fget='_get_rowcount')
     batchsize: property = MetaAttr(classinfo=int, default=_default_batchsize)
 
     #
@@ -353,8 +353,8 @@ class Table(Container):
     # Public Attributes
     #
 
-    fields: property = VirtAttr(getter='_get_fields', readonly=True)
-    colnames: property = VirtAttr(getter='_get_colnames', readonly=True)
+    fields: property = VirtAttr(fget='_get_fields')
+    colnames: property = VirtAttr(fget='_get_colnames')
 
     #
     # Protected Attributes

@@ -1,47 +1,49 @@
 # -*- coding: utf-8 -*-
-"""Classes."""
+"""Attributes, Attribute Groups and Containers."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from typing import cast
 from nemoa.base import check
 from nemoa.errors import ReadOnlyAttrError, InvalidAttrError
-from nemoa.types import Any, Callable, Date, OptClassInfo, Optional, OptCallable
+from nemoa.errors import MissingKwargError
+from nemoa.types import Any, Date, OptClassInfo, Optional, OptCallable
 from nemoa.types import OptStr, OptStrDict, OptType, StrDict, StrList, void
-from nemoa.types import OptDict
+from nemoa.types import OptDict, Union, Callable, CallableClasses
 
 #
 # Types
 #
 
-OptContainer = Optional['Container']
+OptCallOrStr = Optional[Union[Callable, str]]
 
 #
-# Base Classes for Attribute Groups and Attributes
+# Attribute Group Base Class and constructor
 #
 
 class AttrGroup:
     """Base Class for Attribute Groups."""
 
-    #_attr_group_built: bool = False
     _attr_group_name: str
     _attr_group_prefix: str
     _attr_group_parent: Optional['AttrGroup']
     _attr_group_defaults: dict
-
-    # def __new__(cls) -> 'AttrGroup':
-    #     return cast(AttrGroup, type(cls.__name__, (cls,), {}))
-        #new._attr_group_built = True # pylint: disable=W0212
-        #return new
 
     def __init__(self, **kwds: Any) -> None:
         self._attr_group_name = ''
         self._attr_group_prefix = ''
         self._attr_group_parent = None
         self._attr_group_defaults = kwds
+
+def create_attr_group(cls: type, **kwds: Any) -> AttrGroup:
+    """Constructor for attribute groups."""
+    return type(cls.__name__, (cls,), {})(**kwds)
+
+#
+# Attribute Base Class
+#
 
 class Attr(property):
     """Base Class for Attributes.
@@ -64,13 +66,21 @@ class Attr(property):
         *
 
     Args:
+        fget:
+        fset:
+        fdel:
+        doc:
         classinfo:
+        default: Default value, which is returned for a get request to an unset
+            field.
+        default_factory: If provided, it must be a zero-argument callable that
+            will be called when a default value is needed for this field. Among
+            other purposes, this can be used to specify fields with mutable
+            default values.
         binddict:
         bindkey:
-        getter:
-        setter:
-        default: Default value, which is returned for a get request
-        parent: Name of attribute, which references a parent object
+        remote:
+        inherit:
         readonly: Boolean value which determines if the attribute is read-only
         category: Attribute categories allow a free aggregation of attributes by
             their respective category values.
@@ -82,14 +92,17 @@ class Attr(property):
     #
 
     name: str
+    sget: OptStr
+    sset: OptStr
+    sdel: OptStr
     classinfo: OptClassInfo
     default: Any
+    default_factory: OptCallable
     readonly: bool
     binddict: OptStr
     bindkey: OptStr
-    _getter: OptStr
-    _setter: OptStr
     inherit: bool
+    remote: bool
     category: OptStr
 
     #
@@ -97,36 +110,42 @@ class Attr(property):
     #
 
     def __init__(self,
-            fget: OptCallable = None, fset: OptCallable = None,
-            fdel: OptCallable = None, doc: OptStr = None,
-            classinfo: OptClassInfo = None,
+            fget: OptCallOrStr = None, fset: OptCallOrStr = None,
+            fdel: OptCallOrStr = None, doc: OptStr = None,
+            classinfo: OptClassInfo = None, readonly: bool = False,
+            default: Any = None, default_factory: OptCallable = None,
             binddict: OptStr = None, bindkey: OptStr = None,
-            default: Any = None,
-            category: OptStr = None, getter: OptStr = None,
-            setter: OptStr = None, inherit: bool = False,
-            readonly: bool = False) -> None:
+            remote: bool = False, inherit: bool = False,
+            category: OptStr = None) -> None:
         """Initialize Attribute Descriptor."""
         # Initialize Property Class
-        super().__init__(fget=fget, fset=fset, fdel=fdel, doc=doc)
+        super_kwds: dict = {
+            'fget': fget if callable(fget) else None,
+            'fset': fget if callable(fset) else None,
+            'fdel': fdel if callable(fdel) else None,
+            'doc': doc}
+        super().__init__(**super_kwds)
 
         # Check Types of Arguments
         check.has_opt_type("argument 'classinfo'", classinfo, (type, tuple))
         check.has_type("argument 'readonly'", readonly, bool)
         check.has_opt_type("argument 'binddict'", binddict, str)
         check.has_opt_type("argument 'bindkey'", bindkey, str)
-        check.has_opt_type("argument 'getter'", getter, str)
-        check.has_opt_type("argument 'setter'", setter, str)
+        check.has_type("argument 'remote'", inherit, bool)
         check.has_type("argument 'inherit'", inherit, bool)
         check.has_opt_type("argument 'category'", category, str)
 
         # Set Instance Attributes to Argument Values
+        self.sget = fget if isinstance(fget, str) else None
+        self.sset = fset if isinstance(fset, str) else None
+        self.sdel = fdel if isinstance(fdel, str) else None
         self.classinfo = classinfo
         self.default = default
+        self.default_factory = default_factory
         self.readonly = readonly
         self.binddict = binddict
         self.bindkey = bindkey
-        self._getter = getter
-        self._setter = setter
+        self.remote = remote
         self.inherit = inherit
         self.category = category
 
@@ -136,41 +155,40 @@ class Attr(property):
 
     def __get__(self, obj: AttrGroup, cls: OptType = None) -> Any:
         """Bypass get request."""
+        if self._is_remote(obj):
+            return self._get_remote(obj)
         if callable(self.fget):
             return self.fget(obj) # type: ignore
-        if self._getter:
-            return self._get_getter(obj)()
-        name = self._get_name(obj)
-        default = self._get_default(obj)
+        if isinstance(self.sget, str):
+            return getattr(obj, self.sget, void)()
         binddict = self._get_bindict(obj)
-        return binddict.get(name, default)
+        bindkey = self._get_bindkey(obj)
+        default = self._get_default(obj)
+        return binddict.get(bindkey, default)
 
     def __set__(self, obj: AttrGroup, val: Any) -> None:
         """Bypass and type check set request."""
         if self._get_readonly(obj):
             raise ReadOnlyAttrError(obj, self.name)
+        if self._is_remote(obj):
+            self._set_remote(obj, val)
+            return
         classinfo = self._get_classinfo(obj)
         if classinfo and not isinstance(val, type(self.default)):
             check.has_type(f"attribute '{self.name}'", val, classinfo)
         if callable(self.fset):
             self.fset(obj, val) # type: ignore
             return
-        if self._setter:
-            self._get_setter(obj)(val)
+        if isinstance(self.sset, str):
+            getattr(obj, self.sset, void)(val)
             return
-        name = self._get_name(obj)
-        self._get_bindict(obj)[name] = val
+        binddict = self._get_bindict(obj)
+        bindkey = self._get_bindkey(obj)
+        binddict[bindkey] = val
 
     #
     # Protected Methods
     #
-
-    def _get_name(self, obj: AttrGroup) -> str:
-        prefix = obj._attr_group_prefix # pylint: disable=W0212
-        name = self.bindkey or self.name
-        if prefix:
-            return '.'.join([prefix, name])
-        return name
 
     def _get_bindict(self, obj: AttrGroup) -> dict:
         binddict = obj._attr_group_defaults.get( # pylint: disable=W0212
@@ -181,43 +199,52 @@ class Attr(property):
         check.has_type(binddict, getattr(obj, binddict), dict)
         return getattr(obj, binddict)
 
-    def _get_readonly(self, obj: AttrGroup) -> bool:
-        return obj._attr_group_defaults.get( # pylint: disable=W0212
-            'readonly', self.readonly)
+    def _get_bindkey(self, obj: AttrGroup) -> str:
+        prefix = obj._attr_group_prefix # pylint: disable=W0212
+        name = self.bindkey or self.name
+        if prefix:
+            return '.'.join([prefix, name])
+        return name
 
     def _get_classinfo(self, obj: AttrGroup) -> OptClassInfo:
         return obj._attr_group_defaults.get( # pylint: disable=W0212
             'classinfo', self.classinfo)
 
-    def _get_getter(self, obj: AttrGroup) -> Callable:
-        attr = self._getter
-        if not attr:
-            return void
-        check.has_attr(obj, attr)
-        check.is_callable(attr, getattr(obj, attr))
-        return getattr(obj, attr)
-
-    def _get_setter(self, obj: AttrGroup) -> Callable:
-        attr = self._setter
-        if not attr:
-            return void
-        check.has_attr(obj, attr)
-        check.is_callable(attr, getattr(obj, attr))
-        return getattr(obj, attr)
-
     def _get_default(self, obj: AttrGroup) -> Any:
         attrs = obj._attr_group_defaults # pylint: disable=W0212
+
+        # Inherit default value from parent
         inherit = attrs.get('inherit', self.inherit)
-        default = attrs.get('default', self.default)
-        if not inherit:
-            return default
+        if inherit:
+            parent = obj._attr_group_parent # pylint: disable=W0212
+            if parent and hasattr(parent, self.name):
+                return getattr(parent, self.name)
+
+        # Get default value from factory
+        if callable(self.default_factory):
+            return self.default_factory()
+
+        return attrs.get('default', self.default)
+
+    def _get_readonly(self, obj: AttrGroup) -> bool:
+        return obj._attr_group_defaults.get( # pylint: disable=W0212
+            'readonly', self.readonly)
+
+    def _is_remote(self, obj: AttrGroup) -> bool:
+        return obj._attr_group_defaults.get( # pylint: disable=W0212
+            'remote', self.remote)
+
+    def _get_remote(self, obj: AttrGroup) -> bool:
         parent = obj._attr_group_parent # pylint: disable=W0212
         if not parent:
-            return default
-        prefix = obj._attr_group_prefix # pylint: disable=W0212
-        if not prefix:
-            return default
+            raise ReferenceError() # TODO
         return getattr(parent, self.name, self.default)
+
+    def _set_remote(self, obj: AttrGroup, val: Any) -> None:
+        parent = obj._attr_group_parent # pylint: disable=W0212
+        if not parent:
+            raise ReferenceError() # TODO
+        setattr(parent, self.name, val)
 
 #
 # Container Base Class and Container Attribute Classes
@@ -253,9 +280,13 @@ class VirtAttr(Attr):
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize default values of attribute descriptor."""
-        check.has_type('getter', kwds.get('getter'), str)
         super().__init__(*args, **kwds)
-        self.binddict = None
+        if not isinstance(self.fget, CallableClasses):
+            if not isinstance(self.sget, str):
+                raise MissingKwargError('fget', self)
+        self.readonly = not (
+            isinstance(self.fset, CallableClasses)
+            or isinstance(self.sget, str))
 
 class Container(AttrGroup):
     """Base class for Container Objects."""
@@ -269,7 +300,7 @@ class Container(AttrGroup):
     #
 
     parent: property = VirtAttr(classinfo=AttrGroup,
-        getter='_get_attr_group_parent', setter='_set_attr_group_parent')
+        fget='_get_attr_group_parent', fset='_set_attr_group_parent')
     parent.__doc__ = """Reference to parent container object."""
 
     #
@@ -482,9 +513,9 @@ class DCAttr(MetaAttr):
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize default values of attribute descriptor."""
-        kwds['classinfo'] = kwds.get('classinfo', str)
-        kwds['inherit'] = kwds.get('inherit', True)
         super().__init__(*args, **kwds)
+        self.classinfo = self.classinfo or str
+        self.inherit = True
 
 class DCAttrGroup(AttrGroup):
     """Dublin Core Metadata Element Set, Version 1.1.
@@ -624,7 +655,8 @@ class DCAttrGroup(AttrGroup):
     .. [RFC4646] http://www.ietf.org/rfc/rfc4646.txt
     """
 
-    date: property = DCAttr(classinfo=Date, category='instantiation')
+    date: property = DCAttr(
+        classinfo=Date, default_factory=Date.now, category='instantiation')
     date.__doc__ = """
     A point or period of time associated with an event in the lifecycle of the
     resource. Date may be used to express temporal information at any level of
@@ -633,11 +665,3 @@ class DCAttrGroup(AttrGroup):
 
     .. [W3CDTF] http://www.w3.org/TR/NOTE-datetime
     """
-
-#
-# Constructor for attribute groups
-#
-
-def create_attr_group(cls: type, **kwds: Any) -> AttrGroup:
-    """Constructor for attribute groups."""
-    return type(cls.__name__, (cls,), {})(**kwds)

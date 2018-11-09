@@ -32,6 +32,14 @@ class NemoaAssert(NemoaError, AssertionError):
 # Type Errors
 ################################################################################
 
+class MissingKwargError(NemoaAssert, TypeError):
+    """Raise when a required keyword argument is not given."""
+
+    def __init__(self, name: str, obj: object) -> None:
+        this = _repr_obj(obj)
+        msg = f"{this} missing required keyword argument '{name}'"
+        super().__init__(msg)
+
 class InvalidTypeError(NemoaAssert, TypeError):
     """Raise when an object is required to be of a given type."""
 

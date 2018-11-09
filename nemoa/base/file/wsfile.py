@@ -101,19 +101,19 @@ class WsFile(Container):
     workspace, which is executed after loading the workspace.
     """
 
-    path: property = VirtAttr(getter='_get_path', readonly=True)
+    path: property = VirtAttr(fget='_get_path')
     path.__doc__ = """Filepath of the workspace."""
 
-    name: property = VirtAttr(getter='_get_name', readonly=True)
+    name: property = VirtAttr(fget='_get_name')
     name.__doc__ = """Filename of the workspace without file extension."""
 
-    files: property = VirtAttr(getter='search', readonly=True)
+    files: property = VirtAttr(fget='search')
     files.__doc__ = """List of all files within the workspace."""
 
-    folders: property = VirtAttr(getter='_get_folders', readonly=True)
+    folders: property = VirtAttr(fget='_get_folders')
     folders.__doc__ = """List of all folders within the workspace."""
 
-    changed: property = VirtAttr(getter='_get_changed', readonly=True)
+    changed: property = VirtAttr(fget='_get_changed')
     changed.__doc__ = """Tells whether the workspace file has been changed."""
 
     #

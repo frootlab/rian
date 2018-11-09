@@ -53,13 +53,12 @@ class Session(Container):
     # Public Attribute Groups
     #
 
-    dc: AttrGroup = create_attr_group(DCAttrGroup)
+    dc: AttrGroup = create_attr_group(DCAttrGroup, remote=True)
+    dc.__doc__ = """Dublin Core Metadata Element Set, Version 1.1."""
 
     #
     # Public Attributes
     #
-
-    workspace: property = DataAttr(classinfo=wsfile.WsFile)
 
     config: property = MetaAttr(classinfo=dict)
     config.__doc__ = """Session configuration."""
@@ -67,17 +66,23 @@ class Session(Container):
     paths: property = MetaAttr(classinfo=list)
     paths.__doc__ = """Search paths for workspaces."""
 
-    files: property = VirtAttr(getter='_get_files', readonly=True)
+    files: property = VirtAttr(fget='_get_files')
     files.__doc__ = """Files within the current workspace."""
 
-    folders: property = VirtAttr(getter='_get_folders', readonly=True)
+    folders: property = VirtAttr(fget='_get_folders')
     folders.__doc__ = """Folders within the current workspace."""
 
-    path: property = VirtAttr(getter='_get_path', readonly=True)
+    path: property = VirtAttr(fget='_get_path')
     path.__doc__ = """Filepath of the current workspace."""
 
     logger: property = TempAttr(classinfo=log.Logger)
     logger.__doc__ = """Logger instance."""
+
+    #
+    # Protected Attributes
+    #
+
+    _ws: property = DataAttr(classinfo=wsfile.WsFile)
 
     #
     # Events
@@ -91,12 +96,12 @@ class Session(Container):
 
         # Initialize instance variables with default values
         self.config = self._default_config.copy()
-        self.workspace = wsfile.WsFile()
+        self._ws = wsfile.WsFile()
         self.paths = [npath.expand(path) for path in self._default_paths]
         self.logger = log.get_instance()
 
         # Bind session to workspace
-        self.parent = self.workspace
+        self.parent = self._ws
 
         # Load session configuration from file
         if npath.is_file(self._config_file_path):
@@ -141,12 +146,12 @@ class Session(Container):
 
         """
         path = self._locate_path(workspace=workspace, basedir=basedir)
-        self.workspace = wsfile.WsFile(filepath=path, pwd=pwd)
-        self.parent = self.workspace
+        self._ws = wsfile.WsFile(filepath=path, pwd=pwd)
+        self.parent = self._ws
 
     def save(self) -> None:
         """Save Workspace to current file."""
-        self.workspace.save()
+        self._ws.save()
 
     def saveas(self, filepath: PathLike) -> None:
         """Save the workspace to a file.
@@ -156,14 +161,14 @@ class Session(Container):
                 a workspace file.
 
         """
-        self.workspace.saveas(filepath)
+        self._ws.saveas(filepath)
 
     def close(self) -> None:
         """Close current workspace."""
-        if self.config.get('autosave_on_exit') and self.workspace.changed:
+        if self.config.get('autosave_on_exit') and self._ws.changed:
             self.save()
-        if hasattr(self.workspace, 'close'):
-            self.workspace.close()
+        if hasattr(self._ws, 'close'):
+            self._ws.close()
 
     def open(
             self, filepath: PathLike, workspace: OptPathLike = None,
@@ -206,7 +211,7 @@ class Session(Container):
             ws = wsfile.WsFile(filepath=path, pwd=pwd)
             return ws.open(
                 filepath, mode=mode, encoding=encoding, is_dir=is_dir)
-        return self.workspace.open(
+        return self._ws.open(
             filepath, mode=mode, encoding=encoding, is_dir=is_dir)
 
     def append(self, source: PathLike, target: OptPathLike = None) -> bool:
@@ -228,7 +233,7 @@ class Session(Container):
             Boolean value which is True if the file has been appended.
 
         """
-        return self.workspace.append(source, target=target)
+        return self._ws.append(source, target=target)
 
     def unlink(self, filepath: PathLike, ignore_missing: bool = True) -> bool:
         """Remove file from the current workspace.
@@ -247,7 +252,7 @@ class Session(Container):
             Boolean value, which is True if the given file was removed.
 
         """
-        return self.workspace.unlink(filepath, ignore_missing=ignore_missing)
+        return self._ws.unlink(filepath, ignore_missing=ignore_missing)
 
     def mkdir(self, dirpath: PathLike, ignore_exists: bool = False) -> bool:
         """Create a new directory in current workspace.
@@ -265,7 +270,7 @@ class Session(Container):
             Boolean value, which is True if the given directory was created.
 
         """
-        return self.workspace.mkdir(dirpath, ignore_exists=ignore_exists)
+        return self._ws.mkdir(dirpath, ignore_exists=ignore_exists)
 
     def rmdir(
             self, dirpath: PathLike, recursive: bool = False,
@@ -290,7 +295,7 @@ class Session(Container):
             Boolean value, which is True if the given directory was removed.
 
         """
-        return self.workspace.rmdir(
+        return self._ws.rmdir(
             dirpath, recursive=recursive, ignore_missing=ignore_missing)
 
     def search(self, pattern: OptStr = None) -> StrList:
@@ -309,7 +314,7 @@ class Session(Container):
             workspace, that match the search pattern.
 
         """
-        return self.workspace.search(pattern)
+        return self._ws.search(pattern)
 
     def copy(self, source: PathLike, target: PathLike) -> bool:
         """Copy file within current workspace.
@@ -329,7 +334,7 @@ class Session(Container):
             Boolean value which is True if the file was copied.
 
         """
-        return self.workspace.copy(source, target)
+        return self._ws.copy(source, target)
 
     def move(self, source: PathLike, target: PathLike) -> bool:
         """Move file within current workspace.
@@ -349,7 +354,7 @@ class Session(Container):
             Boolean value which is True if the file has been moved.
 
         """
-        return self.workspace.move(source, target)
+        return self._ws.move(source, target)
 
     def read_text(self, filepath: PathLike, encoding: OptStr = None) -> str:
         """Read text from file in current workspace.
@@ -366,7 +371,7 @@ class Session(Container):
             Contents of the given filepath encoded as string.
 
         """
-        return self.workspace.read_text(filepath, encoding=encoding)
+        return self._ws.read_text(filepath, encoding=encoding)
 
     def read_bytes(self, filepath: PathLike) -> bytes:
         """Read bytes from file in current workspace.
@@ -380,7 +385,7 @@ class Session(Container):
             Contents of the given filepath as bytes.
 
         """
-        return self.workspace.read_bytes(filepath)
+        return self._ws.read_bytes(filepath)
 
     def write_text(
             self, text: str, filepath: PathLike,
@@ -399,7 +404,7 @@ class Session(Container):
             Number of characters, that are written to the file.
 
         """
-        return self.workspace.write_text(text, filepath, encoding=encoding)
+        return self._ws.write_text(text, filepath, encoding=encoding)
 
     def write_bytes(self, data: BytesLike, filepath: PathLike) -> int:
         """Write bytes to file.
@@ -413,7 +418,7 @@ class Session(Container):
             Number of bytes, that are written to the file.
 
         """
-        return self.workspace.write_bytes(data, filepath)
+        return self._ws.write_bytes(data, filepath)
 
     def log(self, level: StrOrInt, msg: str, *args: Any, **kwds: Any) -> None:
         """Log event.
@@ -450,13 +455,13 @@ class Session(Container):
         inifile.save(config, self._config_file_path)
 
     def _get_path(self) -> OptPath:
-        return self.workspace.path
+        return self._ws.path
 
     def _get_files(self) -> StrList:
-        return self.workspace.search()
+        return self._ws.search()
 
     def _get_folders(self) -> StrList:
-        return self.workspace.folders
+        return self._ws.folders
 
     def _locate_path(
             self, workspace: OptPathLike = None,

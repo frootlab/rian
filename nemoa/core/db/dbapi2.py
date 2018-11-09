@@ -150,7 +150,7 @@ class Cursor(Container, ABC):
     It may also be used in the implementation of `executemany`.
     """
 
-    description: property = VirtAttr(getter='_get_description', readonly=True)
+    description: property = VirtAttr(fget='_get_description')
     description.__doc__ = """
     Sequence of 7-item sequences containing information about one result column:
     name, type_code, display_size, internal_size, precision, scale, null_ok
@@ -164,7 +164,7 @@ class Cursor(Container, ABC):
     def _get_description(self) -> list:
         pass
 
-    rowcount: property = VirtAttr(getter='_get_rowcount', readonly=True)
+    rowcount: property = VirtAttr(fget='_get_rowcount')
     description.__doc__ = """
     This read-only attribute specifies the number of rows that the last
     execute*() produced (for DQL statements like SELECT) or affected (for DML
