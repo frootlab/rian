@@ -11,16 +11,16 @@ from nemoa.errors import ReadOnlyAttrError, InvalidAttrError
 from nemoa.errors import MissingKwargError
 from nemoa.types import Any, Date, OptClassInfo, Optional, OptCallable
 from nemoa.types import OptStr, OptStrDict, OptType, StrDict, StrList, void
-from nemoa.types import OptDict, Function, Method
+from nemoa.types import OptDict, Union, Callable, CallableClasses
 
 #
-# Types and ClassInfos
+# Types
 #
 
-CallOrStr = (Function, Method, str)
+OptCallOrStr = Optional[Union[Callable, str]]
 
 #
-# Base Classes for Attribute Groups and Attributes
+# Attribute Group Base Class and constructor
 #
 
 class AttrGroup:
@@ -36,6 +36,14 @@ class AttrGroup:
         self._attr_group_prefix = ''
         self._attr_group_parent = None
         self._attr_group_defaults = kwds
+
+def create_attr_group(cls: type, **kwds: Any) -> AttrGroup:
+    """Constructor for attribute groups."""
+    return type(cls.__name__, (cls,), {})(**kwds)
+
+#
+# Attribute Base Class
+#
 
 class Attr(property):
     """Base Class for Attributes.
@@ -63,7 +71,12 @@ class Attr(property):
         fdel:
         doc:
         classinfo:
-        default: Default value, which is returned for a get request
+        default: Default value, which is returned for a get request to an unset
+            field.
+        default_factory: If provided, it must be a zero-argument callable that
+            will be called when a default value is needed for this field. Among
+            other purposes, this can be used to specify fields with mutable
+            default values.
         binddict:
         bindkey:
         remote:
@@ -79,8 +92,12 @@ class Attr(property):
     #
 
     name: str
+    sget: OptStr
+    sset: OptStr
+    sdel: OptStr
     classinfo: OptClassInfo
     default: Any
+    default_factory: OptCallable
     readonly: bool
     binddict: OptStr
     bindkey: OptStr
@@ -93,15 +110,21 @@ class Attr(property):
     #
 
     def __init__(self,
-            fget: OptCallable = None, fset: OptCallable = None,
-            fdel: OptCallable = None, doc: OptStr = None,
-            classinfo: OptClassInfo = None, default: Any = None,
+            fget: OptCallOrStr = None, fset: OptCallOrStr = None,
+            fdel: OptCallOrStr = None, doc: OptStr = None,
+            classinfo: OptClassInfo = None, readonly: bool = False,
+            default: Any = None, default_factory: OptCallable = None,
             binddict: OptStr = None, bindkey: OptStr = None,
             remote: bool = False, inherit: bool = False,
-            readonly: bool = False, category: OptStr = None) -> None:
+            category: OptStr = None) -> None:
         """Initialize Attribute Descriptor."""
         # Initialize Property Class
-        super().__init__(fget=fget, fset=fset, fdel=fdel, doc=doc)
+        super_kwds: dict = {
+            'fget': fget if callable(fget) else None,
+            'fset': fget if callable(fset) else None,
+            'fdel': fdel if callable(fdel) else None,
+            'doc': doc}
+        super().__init__(**super_kwds)
 
         # Check Types of Arguments
         check.has_opt_type("argument 'classinfo'", classinfo, (type, tuple))
@@ -113,8 +136,12 @@ class Attr(property):
         check.has_opt_type("argument 'category'", category, str)
 
         # Set Instance Attributes to Argument Values
+        self.sget = fget if isinstance(fget, str) else None
+        self.sset = fset if isinstance(fset, str) else None
+        self.sdel = fdel if isinstance(fdel, str) else None
         self.classinfo = classinfo
         self.default = default
+        self.default_factory = default_factory
         self.readonly = readonly
         self.binddict = binddict
         self.bindkey = bindkey
@@ -132,8 +159,8 @@ class Attr(property):
             return self._get_remote(obj)
         if callable(self.fget):
             return self.fget(obj) # type: ignore
-        if isinstance(self.fget, str):
-            return getattr(obj, self.fget, void)()
+        if isinstance(self.sget, str):
+            return getattr(obj, self.sget, void)()
         binddict = self._get_bindict(obj)
         bindkey = self._get_bindkey(obj)
         default = self._get_default(obj)
@@ -152,8 +179,8 @@ class Attr(property):
         if callable(self.fset):
             self.fset(obj, val) # type: ignore
             return
-        if isinstance(self.fset, str):
-            getattr(obj, self.fset, void)(val)
+        if isinstance(self.sset, str):
+            getattr(obj, self.sset, void)(val)
             return
         binddict = self._get_bindict(obj)
         bindkey = self._get_bindkey(obj)
@@ -185,17 +212,19 @@ class Attr(property):
 
     def _get_default(self, obj: AttrGroup) -> Any:
         attrs = obj._attr_group_defaults # pylint: disable=W0212
+
+        # Inherit default value from parent
         inherit = attrs.get('inherit', self.inherit)
-        default = attrs.get('default', self.default)
-        if not inherit:
-            return default
-        parent = obj._attr_group_parent # pylint: disable=W0212
-        if not parent:
-            return default
-        prefix = obj._attr_group_prefix # pylint: disable=W0212
-        if not prefix:
-            return default
-        return getattr(parent, self.name, self.default)
+        if inherit:
+            parent = obj._attr_group_parent # pylint: disable=W0212
+            if parent and hasattr(parent, self.name):
+                return getattr(parent, self.name)
+
+        # Get default value from factory
+        if callable(self.default_factory):
+            return self.default_factory()
+
+        return attrs.get('default', self.default)
 
     def _get_readonly(self, obj: AttrGroup) -> bool:
         return obj._attr_group_defaults.get( # pylint: disable=W0212
@@ -252,9 +281,12 @@ class VirtAttr(Attr):
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize default values of attribute descriptor."""
         super().__init__(*args, **kwds)
-        if not isinstance(self.fget, CallOrStr):
-            raise MissingKwargError('fget', self)
-        self.readonly = not isinstance(self.fset, CallOrStr)
+        if not isinstance(self.fget, CallableClasses):
+            if not isinstance(self.sget, str):
+                raise MissingKwargError('fget', self)
+        self.readonly = not (
+            isinstance(self.fset, CallableClasses)
+            or isinstance(self.sget, str))
 
 class Container(AttrGroup):
     """Base class for Container Objects."""
@@ -623,7 +655,8 @@ class DCAttrGroup(AttrGroup):
     .. [RFC4646] http://www.ietf.org/rfc/rfc4646.txt
     """
 
-    date: property = DCAttr(classinfo=Date, category='instantiation')
+    date: property = DCAttr(
+        classinfo=Date, default_factory=Date.now, category='instantiation')
     date.__doc__ = """
     A point or period of time associated with an event in the lifecycle of the
     resource. Date may be used to express temporal information at any level of
@@ -632,11 +665,3 @@ class DCAttrGroup(AttrGroup):
 
     .. [W3CDTF] http://www.w3.org/TR/NOTE-datetime
     """
-
-#
-# Constructor for attribute groups
-#
-
-def create_attr_group(cls: type, **kwds: Any) -> AttrGroup:
-    """Constructor for attribute groups."""
-    return type(cls.__name__, (cls,), {})(**kwds)
