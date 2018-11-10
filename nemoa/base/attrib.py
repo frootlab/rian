@@ -59,19 +59,22 @@ class Group:
     _attr_group_defaults: dict
 
     def __init__(
-            self, readonly: OptBool = None, remote: bool = False,
-            inherit: bool = False) -> None:
+            self, readonly: OptBool = None, remote: OptBool = None,
+            inherit: OptBool = None) -> None:
         self._attr_group_name = ''
         self._attr_group_prefix = ''
         self._attr_group_parent = None
-        self._attr_group_defaults = {
-            'readonly': readonly,
-            'inherit': inherit,
-            'remote': remote}
+        self._attr_group_defaults = {}
+        if readonly is not None:
+            self._attr_group_defaults['readonly'] = readonly
+        if remote is not None:
+            self._attr_group_defaults['remote'] = remote
+        if inherit is not None:
+            self._attr_group_defaults['inherit'] = inherit
 
 def create_group(
-        cls: type, readonly: OptBool = None, remote: bool = False,
-        inherit: bool = False) -> Group:
+        cls: type, readonly: OptBool = None, remote: OptBool = None,
+        inherit: OptBool = None) -> Group:
     """Create new Attribute Group.
 
     Creates a new Attribute Group of a given Attribute Group Class with given,
@@ -324,7 +327,7 @@ class Attribute(property):
         setattr(parent, self.name, val)
 
 #
-# Standard Attribute Classes
+# Attribute Container Base Class Standard Attribute Classes for Containers
 #
 
 class Content(Attribute):
@@ -365,12 +368,37 @@ class Virtual(Attribute):
             isinstance(self.fset, CallableClasses)
             or isinstance(self.sget, str))
 
-#
-# Attribute Container Base Class
-#
-
 class Container(Group):
-    """Base class for Attribute Container Objects."""
+    """Base class for Attribute Containers.
+
+    Attribute Containers are Attribute Groups, which support Standard Attribute
+    Classes for Content, MetaData, Temporary Data and Virtual Attributes.
+    Thereupon Attribute Containers provide a public interface to access and
+    control it's contained Attributes and Attribute Groups.
+
+    Args:
+        parent:
+        readonly: Boolean value, which superseeds the contained attributes
+            read-only behaviour. For the values True or False, all contained
+            attributes respectively are read-only or read-writable. By the
+            default value None, the attributes' settings are not superseeded.
+        remote: Boolean value, which superseeds the contained attributes remote
+            behaviour. For the value True, all contained attributes are shared
+            attributes of the parent attribute group, which must be referenced
+            and contain the respetive attributes, or an error is raised. For the
+            value False, all contained atributes are handled locally, regardless
+            of a parent group. By the default value None, the attributes'
+            settings are not superseeded.
+        inherit: Boolean value, which superseeds the contained attributes
+            inheritance behaviour. For the value True, all contained attributes
+            inherit their default values from the attribute values of the parent
+            attribute group, which must be referenced and contain the respetive
+            attributes, or an error is raised. For the value False, the default
+            values of the contained atributes are handled locally, regardless of
+            a parent group. By the default value None, the attributes settings
+            are not superseeded.
+
+    """
 
     _dict_data: StrDict
     _dict_meta: StrDict
@@ -389,23 +417,24 @@ class Container(Group):
     #
 
     def __init__(
-            self, data: OptStrDict = None, meta: OptStrDict = None,
-            parent: Optional[Group] = None, **kwds: Any) -> None:
+            self, parent: Optional[Group] = None, readonly: OptBool = None,
+            remote: OptBool = None, inherit: OptBool = None,
+            data: OptStrDict = None, meta: OptStrDict = None) -> None:
         """Initialize Instance Variables."""
         # Initialize Attribute Group
-        super().__init__(**kwds)
+        super().__init__(readonly=readonly, remote=remote, inherit=inherit)
 
         # Initialize dictinaries for content, metadata and temporary fields
         self._dict_data = {}
         self._dict_meta = {}
         self._dict_temp = {}
 
-        # Bind attribute groups to fields and update group settings
+        # Bind attribute subgroups to fields and update subgroup settings
         self._bind_attr_groups()
         if parent:
             self._set_attr_group_parent(parent)
-        if kwds:
-            self._set_attr_group_defaults(**kwds)
+        self._set_attr_group_defaults(
+            readonly=readonly, remote=remote, inherit=inherit)
 
         # Update content and metedata field values from given arguments
         if data:
@@ -529,7 +558,8 @@ class Container(Group):
         return self._attr_group_defaults
 
     def _set_attr_group_defaults(self, **kwds: Any) -> None:
-        self._attr_group_defaults = {**self._attr_group_defaults, **kwds}
+        stated = {key: val for key, val in kwds.items() if val is not None}
+        self._attr_group_defaults = {**self._attr_group_defaults, **stated}
 
         # Update groups defaults by stepping downwards the object hierarchy
         for fqn in self._get_attr_groups():
@@ -537,7 +567,7 @@ class Container(Group):
             for attr in fqn.split('.'):
                 obj = getattr(obj, attr)
             obj._attr_group_defaults = { # pylint: disable=W0212
-                **obj._attr_group_defaults, **kwds} # pylint: disable=W0212
+                **obj._attr_group_defaults, **stated} # pylint: disable=W0212
 
     def _get_attr_values(self,
             group: OptStr = None, classinfo: OptClassInfo = None,
