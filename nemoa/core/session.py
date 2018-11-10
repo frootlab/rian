@@ -17,11 +17,8 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from pathlib import Path
-from nemoa.base import npath
+from nemoa.base import attrib, npath
 from nemoa.core import log
-from nemoa.base.container import create_attr_group
-from nemoa.base.container import AttrContainer, AttrGroup, DCAttrGroup
-from nemoa.base.container import DataAttr, MetaAttr, VirtAttr, TempAttr
 from nemoa.base.file import inifile, wsfile
 from nemoa.types import Any, BytesLike, CManFileLike, ClassVar, Exc, ExcType
 from nemoa.types import OptBytes, OptPath, OptPathLike, OptStr, PathLike
@@ -29,7 +26,7 @@ from nemoa.types import StrDict, StrList, StrOrInt, Traceback
 
 SecDict = inifile.SecDict
 
-class Session(AttrContainer):
+class Session(attrib.Container):
     """Session."""
 
     #
@@ -50,39 +47,34 @@ class Session(AttrContainer):
         '%user_data_dir%', '%site_data_dir%', '%package_data_dir%']
 
     #
-    # Public Attribute Groups
+    # Public Attributes and Attribute Groups
     #
 
-    dc: AttrGroup = create_attr_group(DCAttrGroup, remote=True)
-    dc.__doc__ = """Dublin Core Metadata Element Set, Version 1.1."""
+    dc: attrib.Group = attrib.create_group(attrib.DCGroup, remote=True)
 
-    #
-    # Public Attributes
-    #
-
-    config: property = MetaAttr(classinfo=dict)
+    config: property = attrib.MetaData(classinfo=dict)
     config.__doc__ = """Session configuration."""
 
-    paths: property = MetaAttr(classinfo=list)
+    paths: property = attrib.MetaData(classinfo=list)
     paths.__doc__ = """Search paths for workspaces."""
 
-    files: property = VirtAttr(fget='_get_files')
+    files: property = attrib.Virtual(fget='_get_files')
     files.__doc__ = """Files within the current workspace."""
 
-    folders: property = VirtAttr(fget='_get_folders')
+    folders: property = attrib.Virtual(fget='_get_folders')
     folders.__doc__ = """Folders within the current workspace."""
 
-    path: property = VirtAttr(fget='_get_path')
+    path: property = attrib.Virtual(fget='_get_path')
     path.__doc__ = """Filepath of the current workspace."""
 
-    logger: property = TempAttr(classinfo=log.Logger)
+    logger: property = attrib.Temporary(classinfo=log.Logger)
     logger.__doc__ = """Logger instance."""
 
     #
     # Protected Attributes
     #
 
-    _ws: property = DataAttr(classinfo=wsfile.WsFile)
+    _ws: property = attrib.Content(classinfo=wsfile.WsFile)
 
     #
     # Events

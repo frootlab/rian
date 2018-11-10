@@ -8,8 +8,7 @@ __docformat__ = 'google'
 
 from pathlib import Path
 from nemoa.types import FileOrPathLike, OptStr, OptIntTuple, OptStrList, OptInt
-from nemoa.base import npath
-from nemoa.base.container import AttrContainer
+from nemoa.base import attrib, npath
 from nemoa.base.file import csvfile, inifile
 from nemoa.data.db import dbapi2
 from nemoa.data.db.dbapi2 import Error, Warning, InterfaceError, DatabaseError

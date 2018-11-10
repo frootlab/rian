@@ -7,8 +7,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from nemoa.base import check
-from nemoa.errors import ReadOnlyAttrError, InvalidAttrError
-from nemoa.errors import MissingKwargError
+from nemoa.errors import InvalidAttrError, MissingKwError, ReadOnlyAttrError
 from nemoa.types import Any, Date, OptClassInfo, Optional, OptCallable
 from nemoa.types import OptStr, OptStrDict, OptType, StrDict, StrList, void
 from nemoa.types import OptDict, Union, Callable, CallableClasses
@@ -23,12 +22,12 @@ OptCallOrStr = Optional[Union[Callable, str]]
 # Attribute Group Base Class and Constructor
 #
 
-class AttrGroup:
+class Group:
     """Base Class for Attribute Groups."""
 
     _attr_group_name: str
     _attr_group_prefix: str
-    _attr_group_parent: Optional['AttrGroup']
+    _attr_group_parent: Optional['Group']
     _attr_group_defaults: dict
 
     def __init__(self, **kwds: Any) -> None:
@@ -37,7 +36,7 @@ class AttrGroup:
         self._attr_group_parent = None
         self._attr_group_defaults = kwds
 
-def create_attr_group(cls: type, **kwds: Any) -> AttrGroup:
+def create_group(cls: type, **kwds: Any) -> Group:
     """Constructor for attribute groups."""
     return type(cls.__name__, (cls,), {})(**kwds)
 
@@ -159,7 +158,7 @@ class Attr(property):
         """Set name of the Attribute."""
         self.name = name
 
-    def __get__(self, obj: AttrGroup, cls: OptType = None) -> Any:
+    def __get__(self, obj: Group, cls: OptType = None) -> Any:
         """Bypass get request."""
         if self._is_remote(obj):
             return self._get_remote(obj)
@@ -172,7 +171,7 @@ class Attr(property):
         default = self._get_default(obj)
         return binddict.get(bindkey, default)
 
-    def __set__(self, obj: AttrGroup, val: Any) -> None:
+    def __set__(self, obj: Group, val: Any) -> None:
         """Bypass and type check set request."""
         if self._get_readonly(obj):
             raise ReadOnlyAttrError(obj, self.name)
@@ -196,7 +195,7 @@ class Attr(property):
     # Protected Methods
     #
 
-    def _get_bindict(self, obj: AttrGroup) -> dict:
+    def _get_bindict(self, obj: Group) -> dict:
         binddict = obj._attr_group_defaults.get( # pylint: disable=W0212
             'binddict', self.binddict)
         if not binddict:
@@ -205,18 +204,18 @@ class Attr(property):
         check.has_type(binddict, getattr(obj, binddict), dict)
         return getattr(obj, binddict)
 
-    def _get_bindkey(self, obj: AttrGroup) -> str:
+    def _get_bindkey(self, obj: Group) -> str:
         prefix = obj._attr_group_prefix # pylint: disable=W0212
         name = self.bindkey or self.name
         if prefix:
             return '.'.join([prefix, name])
         return name
 
-    def _get_classinfo(self, obj: AttrGroup) -> OptClassInfo:
+    def _get_classinfo(self, obj: Group) -> OptClassInfo:
         return obj._attr_group_defaults.get( # pylint: disable=W0212
             'classinfo', self.classinfo)
 
-    def _get_default(self, obj: AttrGroup) -> Any:
+    def _get_default(self, obj: Group) -> Any:
         attrs = obj._attr_group_defaults # pylint: disable=W0212
 
         # Inherit default value from parent
@@ -232,31 +231,31 @@ class Attr(property):
 
         return attrs.get('default', self.default)
 
-    def _get_readonly(self, obj: AttrGroup) -> bool:
+    def _get_readonly(self, obj: Group) -> bool:
         return obj._attr_group_defaults.get( # pylint: disable=W0212
             'readonly', self.readonly)
 
-    def _is_remote(self, obj: AttrGroup) -> bool:
+    def _is_remote(self, obj: Group) -> bool:
         return obj._attr_group_defaults.get( # pylint: disable=W0212
             'remote', self.remote)
 
-    def _get_remote(self, obj: AttrGroup) -> bool:
+    def _get_remote(self, obj: Group) -> bool:
         parent = obj._attr_group_parent # pylint: disable=W0212
         if not parent:
             raise ReferenceError() # TODO
         return getattr(parent, self.name, self.default)
 
-    def _set_remote(self, obj: AttrGroup, val: Any) -> None:
+    def _set_remote(self, obj: Group, val: Any) -> None:
         parent = obj._attr_group_parent # pylint: disable=W0212
         if not parent:
             raise ReferenceError() # TODO
         setattr(parent, self.name, val)
 
 #
-# Attribute Classes for Attribute Containers
+# Attribute Standard Classes
 #
 
-class DataAttr(Attr):
+class Content(Attr):
     """Attributes for persistent content objects."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
@@ -264,7 +263,7 @@ class DataAttr(Attr):
         super().__init__(*args, **kwds)
         self.binddict = '_dict_data'
 
-class MetaAttr(Attr):
+class MetaData(Attr):
     """Attributes for persistent metadata objects."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
@@ -273,7 +272,7 @@ class MetaAttr(Attr):
         super().__init__(*args, **kwds)
         self.binddict = '_dict_meta'
 
-class TempAttr(Attr):
+class Temporary(Attr):
     """Attributes for non persistent stored objects."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
@@ -281,7 +280,7 @@ class TempAttr(Attr):
         super().__init__(*args, **kwds)
         self.binddict = '_dict_temp'
 
-class VirtAttr(Attr):
+class Virtual(Attr):
     """Attributes for non persistent virtual objects."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
@@ -289,16 +288,16 @@ class VirtAttr(Attr):
         super().__init__(*args, **kwds)
         if not isinstance(self.fget, CallableClasses):
             if not isinstance(self.sget, str):
-                raise MissingKwargError('fget', self)
+                raise MissingKwError('fget', self)
         self.readonly = not (
             isinstance(self.fset, CallableClasses)
             or isinstance(self.sget, str))
 
 #
-# Attribute Container Case Class
+# Attribute Container Base Class
 #
 
-class AttrContainer(AttrGroup):
+class Container(Group):
     """Base class for Attribute Container Objects."""
 
     _dict_data: StrDict
@@ -309,7 +308,7 @@ class AttrContainer(AttrGroup):
     # Public Attributes
     #
 
-    parent: property = VirtAttr(classinfo=AttrGroup,
+    parent: property = Virtual(classinfo=Group,
         fget='_get_attr_group_parent', fset='_set_attr_group_parent')
     parent.__doc__ = """Reference to parent container object."""
 
@@ -319,7 +318,7 @@ class AttrContainer(AttrGroup):
 
     def __init__(
             self, data: OptStrDict = None, meta: OptStrDict = None,
-            parent: Optional[AttrGroup] = None, **kwds: Any) -> None:
+            parent: Optional[Group] = None, **kwds: Any) -> None:
         """Initialize Instance Variables."""
         # Initialize Attribute Group
         super().__init__(**kwds)
@@ -338,9 +337,9 @@ class AttrContainer(AttrGroup):
 
         # Update content and metedata field values from given arguments
         if data:
-            self._set_attr_values(data, classinfo=DataAttr)
+            self._set_attr_values(data, classinfo=Content)
         if meta:
-            self._set_attr_values(meta, classinfo=MetaAttr)
+            self._set_attr_values(meta, classinfo=MetaData)
 
     #
     # Access Attributes by their group name, ClassInfo and category
@@ -352,7 +351,7 @@ class AttrContainer(AttrGroup):
             groups: StrDict = {}
             for base in cls.__mro__:
                 for name, obj in base.__dict__.items():
-                    if not isinstance(obj, AttrGroup):
+                    if not isinstance(obj, Group):
                         continue
                     groups[name] = obj
                     for key, val in get_groups(type(obj)).items():
@@ -437,10 +436,10 @@ class AttrContainer(AttrGroup):
             setattr(obj, '_dict_meta', self._dict_meta)
             setattr(obj, '_dict_temp', self._dict_temp)
 
-    def _get_attr_group_parent(self) -> Optional[AttrGroup]:
+    def _get_attr_group_parent(self) -> Optional[Group]:
         return self._attr_group_parent
 
-    def _set_attr_group_parent(self, parent: AttrGroup) -> None:
+    def _set_attr_group_parent(self, parent: Group) -> None:
         self._attr_group_parent = parent
 
         # Update group parents by simultaneously stepping downwards the object
@@ -518,7 +517,7 @@ class AttrContainer(AttrGroup):
 # Dublin Core (DC) Attributes
 #
 
-class DCAttr(MetaAttr):
+class DCAttr(MetaData):
     """Dublin Core Metadata Attribute."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
@@ -527,7 +526,7 @@ class DCAttr(MetaAttr):
         self.classinfo = self.classinfo or str
         self.inherit = True
 
-class DCAttrGroup(AttrGroup):
+class DCGroup(Group):
     """Dublin Core Metadata Element Set, Version 1.1.
 
     The Dublin Core Metadata Element Set is a vocabulary of fifteen properties

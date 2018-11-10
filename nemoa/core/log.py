@@ -43,8 +43,7 @@ import logging
 import tempfile
 import warnings
 from pathlib import Path
-from nemoa.base import env, npath
-from nemoa.base.container import AttrContainer, TempAttr, VirtAttr
+from nemoa.base import attrib, env, npath
 from nemoa.errors import SingletonExistsError, NotStartedError
 from nemoa.types import void, Any, AnyFunc, ClassVar, PathLike, StrList
 from nemoa.types import StrOrInt, Optional, OptPath, OptStrDict, VoidFunc
@@ -53,7 +52,7 @@ from nemoa.types import StrOrInt, Optional, OptPath, OptStrDict, VoidFunc
 # Logger Class
 #
 
-class Logger(AttrContainer):
+class Logger(attrib.Container):
     """Logger class.
 
     Args:
@@ -90,10 +89,10 @@ class Logger(AttrContainer):
     # Public Attributes
     #
 
-    logger: property = VirtAttr(
+    logger: property = attrib.Virtual(
         fget='_get_logger', fset='_set_logger', classinfo=logging.Logger)
 
-    name: property = VirtAttr(
+    name: property = attrib.Virtual(
         fget='_get_name', fset='_set_name',
         classinfo=str, default=_default_name)
     name.__doc__ = """
@@ -103,7 +102,7 @@ class Logger(AttrContainer):
     hierarchy.
     """
 
-    file: property = VirtAttr(
+    file: property = attrib.Virtual(
         fget='_get_file', fset='_set_file',
         classinfo=(str, Path), default=_default_file)
     file.__doc__ = """
@@ -115,7 +114,7 @@ class Logger(AttrContainer):
     created as a fallback.
     """
 
-    level: property = VirtAttr(
+    level: property = attrib.Virtual(
         fget='_get_level', fset='_set_level',
         classinfo=(str, int), default=_default_level)
     level.__doc__ = """
@@ -131,7 +130,7 @@ class Logger(AttrContainer):
     # Private Transient Attributes
     #
 
-    _logger: property = TempAttr(classinfo=logging.Logger)
+    _logger: property = attrib.Temporary(classinfo=logging.Logger)
 
     #
     # Magic
@@ -139,7 +138,7 @@ class Logger(AttrContainer):
 
     def __init__(self, *args: Any,
             data: OptStrDict = None, meta: OptStrDict = None,
-            parent: Optional[AttrContainer] = None, **kwds: Any) -> None:
+            parent: Optional[attrib.Container] = None, **kwds: Any) -> None:
         """Initialize instance."""
         super().__init__(data=data, meta=meta, parent=parent)
         self._start_logging(*args, **kwds)

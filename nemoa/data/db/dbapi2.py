@@ -32,9 +32,9 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from abc import ABC, abstractmethod
+from nemoa.base import attrib
 from nemoa.types import Any, OptList, OptInt, OptBool
 from nemoa.errors import NemoaError
-from nemoa.base.container import AttrContainer, VirtAttr, MetaAttr
 
 #
 # DB-API 2.0 Exceptions
@@ -124,7 +124,7 @@ class NotSupportedError(DatabaseError):
 # DB-API 2.0 Cursor Class
 #
 
-class Cursor(AttrContainer, ABC):
+class Cursor(attrib.Container, ABC):
     """Database Cursor.
 
     These objects represent a database cursor, which is used to manage the
@@ -141,7 +141,7 @@ class Cursor(AttrContainer, ABC):
     # Cursor attributes
     #
 
-    arraysize: property = MetaAttr(classinfo=int, default=1)
+    arraysize: property = attrib.MetaData(classinfo=int, default=1)
     arraysize.__doc__ = """
     This read/write attribute specifies the number of rows to fetch at a time
     with `fetchmany`. It defaults to 1 meaning to fetch a single row at a time.
@@ -150,7 +150,7 @@ class Cursor(AttrContainer, ABC):
     It may also be used in the implementation of `executemany`.
     """
 
-    description: property = VirtAttr(fget='_get_description')
+    description: property = attrib.Virtual(fget='_get_description')
     description.__doc__ = """
     Sequence of 7-item sequences containing information about one result column:
     name, type_code, display_size, internal_size, precision, scale, null_ok
@@ -164,7 +164,7 @@ class Cursor(AttrContainer, ABC):
     def _get_description(self) -> list:
         pass
 
-    rowcount: property = VirtAttr(fget='_get_rowcount')
+    rowcount: property = attrib.Virtual(fget='_get_rowcount')
     description.__doc__ = """
     This read-only attribute specifies the number of rows that the last
     execute*() produced (for DQL statements like SELECT) or affected (for DML
@@ -360,7 +360,7 @@ class Cursor(AttrContainer, ABC):
 # DB-API 2.0 Connection Class
 #
 
-class Connection(AttrContainer, ABC):
+class Connection(attrib.Container, ABC):
     """Database Connection."""
 
     @abstractmethod

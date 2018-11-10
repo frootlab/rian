@@ -16,7 +16,7 @@ Submodules
    nemoa.base.assess
    nemoa.base.binary
    nemoa.base.check
-   nemoa.base.container
+   nemoa.base.attrib
    nemoa.base.env
    nemoa.base.literal
    nemoa.base.nbase

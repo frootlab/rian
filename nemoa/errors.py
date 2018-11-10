@@ -32,7 +32,7 @@ class NemoaAssert(NemoaError, AssertionError):
 # Type Errors
 ################################################################################
 
-class MissingKwargError(NemoaAssert, TypeError):
+class MissingKwError(NemoaAssert, TypeError):
     """Raise when a required keyword argument is not given."""
 
     def __init__(self, name: str, obj: object) -> None:

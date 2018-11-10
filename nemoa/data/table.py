@@ -24,9 +24,7 @@ from abc import ABC, abstractmethod
 #         "https://pypi.org/project/numpy/") from err
 
 from numpy.lib import recfunctions as nprf
-from nemoa.base import check
-from nemoa.base.container import AttrContainer, DataAttr, MetaAttr
-from nemoa.base.container import TempAttr, VirtAttr
+from nemoa.base import attrib, check
 from nemoa.errors import NemoaError
 from nemoa.types import NpFields, NpRecArray, Tuple, Iterable
 from nemoa.types import Union, Optional, StrDict, StrTuple, Iterator, Any
@@ -170,7 +168,7 @@ RecLikeList = List[RecLike]
 # Cursor Class
 #
 
-class Cursor(AttrContainer):
+class Cursor(attrib.Container):
     """Cursor Class.
 
     Args:
@@ -212,20 +210,21 @@ class Cursor(AttrContainer):
     # Public Attributes
     #
 
-    mode: property = VirtAttr(fget='_get_mode')
-    rowcount: property = VirtAttr(fget='_get_rowcount')
-    batchsize: property = MetaAttr(classinfo=int, default=_default_batchsize)
+    mode: property = attrib.Virtual(fget='_get_mode')
+    rowcount: property = attrib.Virtual(fget='_get_rowcount')
+    batchsize: property = attrib.MetaData(
+        classinfo=int, default=_default_batchsize)
 
     #
     # Protected Attributes
     #
 
-    _mode: property = MetaAttr(classinfo=int, default=_default_mode)
-    _index: property = MetaAttr(classinfo=list, inherit=True)
-    _getter: property = TempAttr(classinfo=CallableClasses)
-    _filter: property = TempAttr(classinfo=CallableClasses)
-    _mapper: property = TempAttr(classinfo=CallableClasses)
-    _buffer: property = TempAttr(classinfo=list, default=[])
+    _mode: property = attrib.MetaData(classinfo=int, default=_default_mode)
+    _index: property = attrib.MetaData(classinfo=list, inherit=True)
+    _getter: property = attrib.Temporary(classinfo=CallableClasses)
+    _filter: property = attrib.Temporary(classinfo=CallableClasses)
+    _mapper: property = attrib.Temporary(classinfo=CallableClasses)
+    _buffer: property = attrib.Temporary(classinfo=list, default=[])
 
     #
     # Events
@@ -234,7 +233,7 @@ class Cursor(AttrContainer):
     def __init__(
             self, index: OptIntList = None, getter: OptCallable = None,
             predicate: OptCallable = None, mapper: OptCallable = None,
-            parent: Optional[AttrContainer] = None, mode: OptInt = None,
+            parent: Optional[attrib.Container] = None, mode: OptInt = None,
             batchsize: OptInt = None) -> None:
         """Initialize Cursor."""
         super().__init__(parent=parent) # Parent is set by container
@@ -346,25 +345,25 @@ class Cursor(AttrContainer):
             mapper=self._mapper, mode=CURSOR_MODE_DYNAMIC)
         self._buffer = list(dyn_cur)
 
-class Table(AttrContainer):
+class Table(attrib.Container):
     """Table Class."""
 
     #
     # Public Attributes
     #
 
-    fields: property = VirtAttr(fget='_get_fields')
-    colnames: property = VirtAttr(fget='_get_colnames')
+    fields: property = attrib.Virtual(fget='_get_fields')
+    colnames: property = attrib.Virtual(fget='_get_colnames')
 
     #
     # Protected Attributes
     #
 
-    _store: property = DataAttr(classinfo=list, default=[])
-    _diff: property = TempAttr(classinfo=list, default=[])
-    _index: property = TempAttr(classinfo=list, default=[])
-    _iter_index: property = TempAttr()
-    _Record: property = TempAttr(classinfo=type)
+    _store: property = attrib.Content(classinfo=list, default=[])
+    _diff: property = attrib.Temporary(classinfo=list, default=[])
+    _index: property = attrib.Temporary(classinfo=list, default=[])
+    _iter_index: property = attrib.Temporary()
+    _Record: property = attrib.Temporary(classinfo=type)
 
     def __init__(self, columns: OptFieldLike = None) -> None:
         """ """

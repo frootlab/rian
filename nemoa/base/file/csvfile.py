@@ -25,8 +25,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://pypi.org/project/numpy") from err
 
-from nemoa.base import check
-from nemoa.base.container import AttrContainer, DataAttr, MetaAttr, VirtAttr
+from nemoa.base import attrib, check
 from nemoa.base.file import textfile
 from nemoa.types import FileOrPathLike, NpArray, OptInt, OptIntTuple, ClassVar
 from nemoa.types import OptNpArray, OptStr, OptStrList, StrList
@@ -50,7 +49,7 @@ CSV_FORMAT_RTABLE = 1
 # CSVFile Class
 #
 
-class CSVFile(AttrContainer):
+class CSVFile(attrib.Container):
     """CSV File.
 
     Args:
@@ -94,19 +93,19 @@ class CSVFile(AttrContainer):
     # Public Attributes
     #
 
-    comment: property = VirtAttr(fget='_get_comment')
+    comment: property = attrib.Virtual(fget='_get_comment')
     comment.__doc__ = """
     String containing the initial '#' lines of the CSV-file or an empty string,
     if no initial comment lines could be detected.
     """
 
-    delim: property = VirtAttr(fget='_get_delim')
+    delim: property = attrib.Virtual(fget='_get_delim')
     delim.__doc__ = """
     Delimiter string of the CSV-file or None, if the delimiter could not be
     detected.
     """
 
-    format: property = VirtAttr(fget='_get_format')
+    format: property = attrib.Virtual(fget='_get_format')
     format.__doc__ = """
     CSV-File format. The following formats are supported:
         0: `RFC4180`_:
@@ -118,19 +117,19 @@ class CSVFile(AttrContainer):
             is omitted within the header.
     """
 
-    colnames: property = VirtAttr(fget='_get_colnames')
+    colnames: property = attrib.Virtual(fget='_get_colnames')
     colnames.__doc__ = """
     List of strings containing column names from first non comment, non empty
     line of CSV-file.
     """
 
-    rownames: property = VirtAttr(fget='_get_rownames')
+    rownames: property = attrib.Virtual(fget='_get_rownames')
     rownames.__doc__ = """
     List of strings containing row names from column with id given by namecol or
     None, if namecol is not given.
     """
 
-    namecol: property = VirtAttr(fget='_get_namecol')
+    namecol: property = attrib.Virtual(fget='_get_namecol')
     namecol.__doc__ = """
     Index of the column of a CSV-file that contains the row names. The value
     None is used for CSV-files that do not contain row names.
@@ -140,13 +139,13 @@ class CSVFile(AttrContainer):
     # Protected Attributes
     #
 
-    _file: property = DataAttr(classinfo=TextFileClasses)
-    _comment: property = MetaAttr(classinfo=str, default=None)
-    _delim: property = MetaAttr(classinfo=str, default=None)
-    _format: property = MetaAttr(classinfo=str, default=None)
-    _colnames: property = MetaAttr(classinfo=list, default=None)
-    _rownames: property = MetaAttr(classinfo=list, default=None)
-    _namecol: property = MetaAttr(classinfo=int, default=None)
+    _file: property = attrib.Content(classinfo=TextFileClasses)
+    _comment: property = attrib.MetaData(classinfo=str, default=None)
+    _delim: property = attrib.MetaData(classinfo=str, default=None)
+    _format: property = attrib.MetaData(classinfo=str, default=None)
+    _colnames: property = attrib.MetaData(classinfo=list, default=None)
+    _rownames: property = attrib.MetaData(classinfo=list, default=None)
+    _namecol: property = attrib.MetaData(classinfo=int, default=None)
 
     #
     # Events
