@@ -7,7 +7,7 @@ installing the full `scientific Python stack <https://scipy.org/install.html>`_.
 
 .. note::
    If you are using the Windows platform and want to install optional packages
-   (e.g., `scipy`), then it may be usefull to install a Python distribution such
+   (e.g., `scipy`), then it may be useful to install a Python distribution such
    as:
    `Anaconda <https://www.anaconda.com/download/>`_,
    `Enthought Canopy <https://www.enthought.com/product/canopy>`_,
@@ -26,8 +26,8 @@ environments <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_.
 Install the nemoa development branch
 ------------------------------------
 
-The installation requires thet you have `Git <https://git-scm.com/>`_ installed
-on your system. Under this prereqisite the first step is to clone the github
+The installation requires that you have `Git <https://git-scm.com/>`_ installed
+on your system. Under this prerequisite the first step is to clone the github
 repository of `nemoa`::
 
 $ git clone https://github.com/frootlab/nemoa.git

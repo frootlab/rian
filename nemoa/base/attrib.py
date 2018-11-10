@@ -135,18 +135,19 @@ class Attribute(property):
     method from it's passed arguments. Thereupon the `Attribute` class extends
     the options to control the behaviour of the Attribute by the following
     amplifications:
-        * Declaration of accessor and mutator by forward references
-        * Type checking against given classinfo
-        * Read-only attributes
-        * Default values by a fixed value, a factory function or by inheritance
-            from a parent attribute group
-        * Binding of fields within a different dictionary of the, e.g. to allow
-            an aggregation of the fields by their respective attribute type.
-        * Binding of fields to different keys, then the attributes name, e.g. to
-            provide different accessors for the same key
-        * Remote attribute handling of a parent attribute, to allow shared
-            attributes
-        * Aggregation of attributes by categories
+
+        * Declaration of accessor and mutator by *forward references*
+        * *Type checking* against given classinfo
+        * *Read-only* attributes
+        * *Default values* by a fixed value, a factory function or by
+          inheritance from a parent attribute group
+        * Binding of fields to a *different dictionary or mapping*, e.g. to
+          allow an aggregation of the fields by their respective attribute type
+        * Binding of fields to *different keys*, then the attributes name, e.g.
+          to provide different accessors for the same key
+        * *Remote attribute* handling of a parent attribute, to allow shared
+          attributes
+        * Aggregation of attributes by *category* names
 
     Args:
         fget: Callable or String, which points to a valid Method of the
@@ -158,21 +159,47 @@ class Attribute(property):
         fdel: Callable or String, which points to a valid Method of the
             underlying Attribute Group, which is used as the destructor method
             of the attribute.
-        doc:
-        classinfo:
+        doc: Docstring of the Attribute, which is retained throughout the
+            runtime of the application. For more information and convention
+            see [PEP257]_.
+        classinfo: Type or tuple of types, which is used to check the validity
+            of assignments to the attribute. If the passed value in an
+            assignment is not an instance of any of the given types in the
+            classinfo, then a TypeError is raised. For the default value None
+            type checking is disabed.
         default: Default value, which is returned for a get request to an unset
-            field.
+            field. By default None is returned.
         default_factory: If provided, it must be a zero-argument callable that
             will be called when a default value is needed for this field. Among
             other purposes, this can be used to specify fields with mutable
             default values.
-        binddict:
-        bindkey:
-        remote:
-        inherit:
-        readonly: Boolean value which determines if the attribute is read-only
+        binddict: Name of dictionary or other mapping object used to store
+            the Attribute. By the default value None, the `standard dictionary`_
+            is used.
+        bindkey: Key within bound dictionary used to store the Attribute. By
+            default the name of the Attribute is used.
+        remote: Boolean value which determines, if the accessor, mutator and
+            destructor methods are bypassed to the currently referenced parent
+            attribute group. If no attribute group is referenced or the
+            referenced attribute group, does not contain an attribute of the
+            same name, a ReferenceError is raised on any request to the
+            Attribute.
+        inherit: Boolean value which determines, if the default value is
+            retrieved from the current value of the currently referenced parent
+            attribute group. If no attribute group is referenced or the
+            referenced attribute group, does not contain an attribute of the
+            same name, the default value is retrieved from the default factory,
+            or if not given, from the default value.
+        readonly: Boolean value which determines, if the attribute is a
+            read-only attribute. For read-only attributes the mutator method
+            raises an AttributeError on requests to assign a different value
+            to the attribute. By the default value None, the attribute is
+            read-writable.
         category: Attribute categories allow a free aggregation of attributes by
             their respective category values.
+
+    .. _standard dictionary:
+        https://docs.python.org/3/library/stdtypes.html#object.__dict__
 
     """
 
@@ -335,7 +362,7 @@ class Attribute(property):
 #
 
 class Content(Attribute):
-    """Attributes for persistent content objects."""
+    """Attributes for persistent content storage objects."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize default values of attribute descriptor."""
@@ -343,7 +370,7 @@ class Content(Attribute):
         self.binddict = '_data_content'
 
 class MetaData(Attribute):
-    """Attributes for persistent metadata objects."""
+    """Attributes for persistent metadata storage objects."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize default values of attribute descriptor."""
@@ -352,7 +379,7 @@ class MetaData(Attribute):
         self.binddict = '_data_metadata'
 
 class Temporary(Attribute):
-    """Attributes for non persistent stored objects."""
+    """Attributes for non persistent storage objects."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize default values of attribute descriptor."""
@@ -402,6 +429,8 @@ class Container(Group):
             values of the contained atributes are handled locally, regardless of
             a parent group. By the default value None, the attributes settings
             are not superseeded.
+        content:
+        metadata:
 
     """
 
@@ -647,10 +676,6 @@ class DCGroup(Group):
     intended to be used in combination with terms from other, compatible
     vocabularies in the context of application profiles and on the basis of the
     DCMI Abstract Model [DCAM]_.
-
-    .. [DCMI-TERMS] http://dublincore.org/documents/dcmi-terms/
-    .. [DCMI-TYPE] http://dublincore.org/documents/dcmi-type-vocabulary/
-    .. [DCAM] http://dublincore.org/documents/2007/06/04/abstract-model/
     """
 
     title: property = DCAttr(category='content')
@@ -668,19 +693,17 @@ class DCGroup(Group):
 
     description: property = DCAttr(category='content')
     description.__doc__ = """
-    An account of the resource. Description may include but is not limited to:
-    an abstract, a table of contents, a graphical representation, or a free-text
-    account of the resource.
+    An account of the resource. Description may include - but is not limited to
+    - an abstract, a table of contents, a graphical representation, or a
+    free-text account of the resource.
     """
 
     type: property = DCAttr(category='content')
     type.__doc__ = """
     The nature or genre of the resource. Recommended best practice is to use a
-    controlled vocabulary such as the DCMI Type Vocabulary [DCMITYPE]_. To
+    controlled vocabulary such as the DCMI Type Vocabulary [DCMI-TYPE]_. To
     describe the file format, physical medium, or dimensions of the resource,
     use the Format element.
-
-    .. [DCMITYPE] http://dublincore.org/documents/dcmi-type-vocabulary/
     """
 
     source: property = DCAttr(category='content')
@@ -703,8 +726,6 @@ class DCGroup(Group):
     Geographic Names [TGN]_. Where appropriate, named places or time periods can
     be used in preference to numeric identifiers such as sets of coordinates or
     date ranges.
-
-    .. [TGN] http://www.getty.edu/research/tools/vocabulary/tgn/index.html
     """
 
     relation: property = DCAttr(category='content')
@@ -756,16 +777,12 @@ class DCGroup(Group):
     The file format, physical medium, or dimensions of the resource. Examples of
     dimensions include size and duration. Recommended best practice is to use a
     controlled vocabulary such as the list of Internet Media Types [MIME]_.
-
-    .. [MIME] http://www.iana.org/assignments/media-types/
     """
 
     language: property = DCAttr(category='instantiation')
     language.__doc__ = """
     A language of the resource. Recommended best practice is to use a controlled
     vocabulary such as RFC 4646 [RFC4646]_.
-
-    .. [RFC4646] http://www.ietf.org/rfc/rfc4646.txt
     """
 
     date: property = DCAttr(
@@ -775,6 +792,4 @@ class DCGroup(Group):
     resource. Date may be used to express temporal information at any level of
     granularity. Recommended best practice is to use an encoding scheme, such as
     the W3CDTF profile of ISO 8601 [W3CDTF]_.
-
-    .. [W3CDTF] http://www.w3.org/TR/NOTE-datetime
     """
