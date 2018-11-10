@@ -20,9 +20,9 @@ from contextlib import contextmanager
 from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
 from nemoa.base import npath, env
-from nemoa.base.container import Container, AttrGroup, DCAttrGroup
-from nemoa.base.container import create_attr_group
+from nemoa.base.container import AttrContainer, AttrGroup, DCAttrGroup
 from nemoa.base.container import DataAttr, MetaAttr, TempAttr, VirtAttr
+from nemoa.base.container import create_attr_group
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
 from nemoa.base.file import inifile
 from nemoa.types import BytesIOBaseClass, BytesIOLike, BytesLike, ClassVar
@@ -50,7 +50,7 @@ class BadWsFile(OSError):
 # Module classes
 #
 
-class WsFile(Container):
+class WsFile(AttrContainer):
     """Workspace File.
 
     Workspace files are Zip-Archives, that contain a INI-formatted
@@ -132,7 +132,7 @@ class WsFile(Container):
 
     def __init__(
             self, filepath: OptPathLike = None, pwd: OptBytes = None,
-            parent: Optional[Container] = None) -> None:
+            parent: Optional[AttrContainer] = None) -> None:
         """Load Workspace from file."""
         super().__init__()
         if filepath:

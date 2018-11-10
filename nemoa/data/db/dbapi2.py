@@ -34,7 +34,7 @@ __docformat__ = 'google'
 from abc import ABC, abstractmethod
 from nemoa.types import Any, OptList, OptInt, OptBool
 from nemoa.errors import NemoaError
-from nemoa.base.container import Container, VirtAttr, MetaAttr
+from nemoa.base.container import AttrContainer, VirtAttr, MetaAttr
 
 #
 # DB-API 2.0 Exceptions
@@ -49,7 +49,7 @@ class Error(NemoaError):
     subclass of the Python StandardError (defined in the module exceptions).
     """
 
-class Warning(NemoaError):
+class Warning(NemoaError): # pylint: disable=W0622
     """DB-API Warning.
 
     Exception raised for important warnings like data truncations while
@@ -124,7 +124,7 @@ class NotSupportedError(DatabaseError):
 # DB-API 2.0 Cursor Class
 #
 
-class Cursor(Container, ABC):
+class Cursor(AttrContainer, ABC):
     """Database Cursor.
 
     These objects represent a database cursor, which is used to manage the
@@ -360,7 +360,7 @@ class Cursor(Container, ABC):
 # DB-API 2.0 Connection Class
 #
 
-class Connection(Container, ABC):
+class Connection(AttrContainer, ABC):
     """Database Connection."""
 
     @abstractmethod

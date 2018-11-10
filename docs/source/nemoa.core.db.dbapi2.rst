@@ -1,7 +1,7 @@
-nemoa.core.db.dbapi2 module
+nemoa.data.db.dbapi2 module
 ===========================
 
-.. automodule:: nemoa.core.db.dbapi2
+.. automodule:: nemoa.data.db.dbapi2
     :members:
     :undoc-members:
     :show-inheritance:

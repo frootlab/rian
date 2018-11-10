@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""NumPy recarray functions.
+"""Numpy recarray functions.
 
 .. References:
 .. _rec_append_fields:
@@ -25,7 +25,7 @@ from abc import ABC, abstractmethod
 
 from numpy.lib import recfunctions as nprf
 from nemoa.base import check
-from nemoa.base.container import Container, DataAttr, MetaAttr
+from nemoa.base.container import AttrContainer, DataAttr, MetaAttr
 from nemoa.base.container import TempAttr, VirtAttr
 from nemoa.errors import NemoaError
 from nemoa.types import NpFields, NpRecArray, Tuple, Iterable
@@ -170,7 +170,7 @@ RecLikeList = List[RecLike]
 # Cursor Class
 #
 
-class Cursor(Container):
+class Cursor(AttrContainer):
     """Cursor Class.
 
     Args:
@@ -234,7 +234,7 @@ class Cursor(Container):
     def __init__(
             self, index: OptIntList = None, getter: OptCallable = None,
             predicate: OptCallable = None, mapper: OptCallable = None,
-            parent: Optional[Container] = None, mode: OptInt = None,
+            parent: Optional[AttrContainer] = None, mode: OptInt = None,
             batchsize: OptInt = None) -> None:
         """Initialize Cursor."""
         super().__init__(parent=parent) # Parent is set by container
@@ -346,7 +346,7 @@ class Cursor(Container):
             mapper=self._mapper, mode=CURSOR_MODE_DYNAMIC)
         self._buffer = list(dyn_cur)
 
-class Table(Container):
+class Table(AttrContainer):
     """Table Class."""
 
     #

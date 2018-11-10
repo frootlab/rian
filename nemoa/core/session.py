@@ -20,7 +20,7 @@ from pathlib import Path
 from nemoa.base import npath
 from nemoa.core import log
 from nemoa.base.container import create_attr_group
-from nemoa.base.container import Container, AttrGroup, DCAttrGroup
+from nemoa.base.container import AttrContainer, AttrGroup, DCAttrGroup
 from nemoa.base.container import DataAttr, MetaAttr, VirtAttr, TempAttr
 from nemoa.base.file import inifile, wsfile
 from nemoa.types import Any, BytesLike, CManFileLike, ClassVar, Exc, ExcType
@@ -29,7 +29,7 @@ from nemoa.types import StrDict, StrList, StrOrInt, Traceback
 
 SecDict = inifile.SecDict
 
-class Session(Container):
+class Session(AttrContainer):
     """Session."""
 
     #

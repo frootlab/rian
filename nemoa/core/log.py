@@ -44,7 +44,7 @@ import tempfile
 import warnings
 from pathlib import Path
 from nemoa.base import env, npath
-from nemoa.base.container import Container, TempAttr, VirtAttr
+from nemoa.base.container import AttrContainer, TempAttr, VirtAttr
 from nemoa.errors import SingletonExistsError, NotStartedError
 from nemoa.types import void, Any, AnyFunc, ClassVar, PathLike, StrList
 from nemoa.types import StrOrInt, Optional, OptPath, OptStrDict, VoidFunc
@@ -53,7 +53,7 @@ from nemoa.types import StrOrInt, Optional, OptPath, OptStrDict, VoidFunc
 # Logger Class
 #
 
-class Logger(Container):
+class Logger(AttrContainer):
     """Logger class.
 
     Args:
@@ -139,7 +139,7 @@ class Logger(Container):
 
     def __init__(self, *args: Any,
             data: OptStrDict = None, meta: OptStrDict = None,
-            parent: Optional[Container] = None, **kwds: Any) -> None:
+            parent: Optional[AttrContainer] = None, **kwds: Any) -> None:
         """Initialize instance."""
         super().__init__(data=data, meta=meta, parent=parent)
         self._start_logging(*args, **kwds)

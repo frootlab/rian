@@ -26,8 +26,7 @@ except ImportError as err:
         "https://pypi.org/project/numpy") from err
 
 from nemoa.base import check
-from nemoa.base.container import Container, DataAttr, MetaAttr
-from nemoa.base.container import VirtAttr
+from nemoa.base.container import AttrContainer, DataAttr, MetaAttr, VirtAttr
 from nemoa.base.file import textfile
 from nemoa.types import FileOrPathLike, NpArray, OptInt, OptIntTuple, ClassVar
 from nemoa.types import OptNpArray, OptStr, OptStrList, StrList
@@ -51,7 +50,7 @@ CSV_FORMAT_RTABLE = 1
 # CSVFile Class
 #
 
-class CSVFile(Container):
+class CSVFile(AttrContainer):
     """CSV File.
 
     Args:

@@ -1,7 +1,7 @@
-nemoa.core.db.csvdb module
+nemoa.data.db.csvdb module
 ==========================
 
-.. automodule:: nemoa.core.db.csvdb
+.. automodule:: nemoa.data.db.csvdb
     :members:
     :undoc-members:
     :show-inheritance:

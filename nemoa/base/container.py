@@ -20,7 +20,7 @@ from nemoa.types import OptDict, Union, Callable, CallableClasses
 OptCallOrStr = Optional[Union[Callable, str]]
 
 #
-# Attribute Group Base Class and constructor
+# Attribute Group Base Class and Constructor
 #
 
 class AttrGroup:
@@ -48,22 +48,27 @@ def create_attr_group(cls: type, **kwds: Any) -> AttrGroup:
 class Attr(property):
     """Base Class for Attributes.
 
-    Generally attribute descriptors are used for binding class instance
-    attributes. Thereby, when any instance of a class contains an attribute
-    descriptor as an attribute (i.e. a method), the descriptor class defines
-    accessor and mutator methods of the respective attribute.
+    Generally data descriptors are classes, used for binding attributes to
+    fields. Thereby, when any class contains a data descriptor as a class
+    attribute (i.e. a method), the data descriptor defines the getter, the
+    setter and the deleter of the respective attribute.
 
-    The attribute descriptor features following extensions:
-        * Type checking against given classinfo
-        * Setting the default value of the property
+    The class `property`_ is a succinct way of building a data descriptor, that
+    triggers these respective function calls. This class is compatibly with
+    the signature of the standard property, but provides additional keywords
+    for the following amplifications:
         * Declaration of getters and setters by forward references
-        * Attribute binding within a different object dictionaries. This is
-            used for a physical aggregation of attributes by their type, i.e.
-            content, metadata and temporary data.
-        * Attribute binding to a different key, then the attribute name. This
-            is used to provide different accessors for the same key e.g. for
-            a readonly public access and a readwritable protected access.
-        *
+        * Type checking against a given classinfo
+        * Read-only attributes
+        * Default values by a single value, a factory function or by inheritance
+            from a parent attribute group
+        * Binding of fields within a different dictionary of the, e.g. to allow
+            an aggregation of the fields by their respective attribute type.
+        * Binding of fields to different keys, then the attributes name, e.g. to
+            provide different accessors for the same key
+        * Remote attribute handling of a parent attribute, to allow shared
+            attributes
+        * Aggregation of attributes by categories
 
     Args:
         fget:
@@ -81,6 +86,7 @@ class Attr(property):
         bindkey:
         remote:
         inherit:
+        remote
         readonly: Boolean value which determines if the attribute is read-only
         category: Attribute categories allow a free aggregation of attributes by
             their respective category values.
@@ -96,9 +102,9 @@ class Attr(property):
     sset: OptStr
     sdel: OptStr
     classinfo: OptClassInfo
+    readonly: bool
     default: Any
     default_factory: OptCallable
-    readonly: bool
     binddict: OptStr
     bindkey: OptStr
     inherit: bool
@@ -247,7 +253,7 @@ class Attr(property):
         setattr(parent, self.name, val)
 
 #
-# Container Base Class and Container Attribute Classes
+# Attribute Classes for Attribute Containers
 #
 
 class DataAttr(Attr):
@@ -288,8 +294,12 @@ class VirtAttr(Attr):
             isinstance(self.fset, CallableClasses)
             or isinstance(self.sget, str))
 
-class Container(AttrGroup):
-    """Base class for Container Objects."""
+#
+# Attribute Container Case Class
+#
+
+class AttrContainer(AttrGroup):
+    """Base class for Attribute Container Objects."""
 
     _dict_data: StrDict
     _dict_meta: StrDict
@@ -310,23 +320,23 @@ class Container(AttrGroup):
     def __init__(
             self, data: OptStrDict = None, meta: OptStrDict = None,
             parent: Optional[AttrGroup] = None, **kwds: Any) -> None:
-        """Initialize Container instance."""
+        """Initialize Instance Variables."""
         # Initialize Attribute Group
         super().__init__(**kwds)
 
-        # Initialize dicts for content, metadata and temp
+        # Initialize dictinaries for content, metadata and temporary fields
         self._dict_data = {}
         self._dict_meta = {}
         self._dict_temp = {}
 
-        # Bind attribute groups to dicts and update group defaults and parents
+        # Bind attribute groups to fields and update group settings
         self._bind_attr_groups()
         if parent:
             self._set_attr_group_parent(parent)
         if kwds:
-            self._update_attr_group_defaults(**kwds)
+            self._set_attr_group_defaults(**kwds)
 
-        # Update dicts from arguments
+        # Update content and metedata field values from given arguments
         if data:
             self._set_attr_values(data, classinfo=DataAttr)
         if meta:
@@ -447,7 +457,7 @@ class Container(AttrGroup):
     def _get_attr_group_defaults(self) -> OptDict:
         return self._attr_group_defaults
 
-    def _update_attr_group_defaults(self, **kwds: Any) -> None:
+    def _set_attr_group_defaults(self, **kwds: Any) -> None:
         self._attr_group_defaults = {**self._attr_group_defaults, **kwds}
 
         # Update groups defaults by stepping downwards the object hierarchy
