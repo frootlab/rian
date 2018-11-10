@@ -1,7 +1,7 @@
-nemoa.base.binary module
+nemoa.base.attrib module
 ========================
 
-.. automodule:: nemoa.base.binary
+.. automodule:: nemoa.base.attrib
     :members:
     :undoc-members:
     :show-inheritance:

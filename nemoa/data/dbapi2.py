@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """DB-API 2.0 database interfaces.
 
-This module is a stub for the required exceptions and base classes specified in
-the Python Database API (DB-API) Specification 2.0 [PEP249]_. Thereupon the
-DB-API 2.0 specification requires a module interface, that comprises specific
-module attributes and a constructor function.
+This module is a reference for the required exceptions, base classes, module
+attributes and module functions specified in the Python Database API (DB-API)
+Specification 2.0 [PEP249]_.
 
 Module attributes:
     apilevel:
@@ -32,9 +31,9 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from abc import ABC, abstractmethod
+from nemoa.base import attrib
 from nemoa.types import Any, OptList, OptInt, OptBool
 from nemoa.errors import NemoaError
-from nemoa.base.container import Container, VirtAttr, MetaAttr
 
 #
 # DB-API 2.0 Exceptions
@@ -49,7 +48,7 @@ class Error(NemoaError):
     subclass of the Python StandardError (defined in the module exceptions).
     """
 
-class Warning(NemoaError):
+class Warning(NemoaError): # pylint: disable=W0622
     """DB-API Warning.
 
     Exception raised for important warnings like data truncations while
@@ -124,7 +123,7 @@ class NotSupportedError(DatabaseError):
 # DB-API 2.0 Cursor Class
 #
 
-class Cursor(Container, ABC):
+class Cursor(attrib.Container, ABC):
     """Database Cursor.
 
     These objects represent a database cursor, which is used to manage the
@@ -141,7 +140,7 @@ class Cursor(Container, ABC):
     # Cursor attributes
     #
 
-    arraysize: property = MetaAttr(classinfo=int, default=1)
+    arraysize: property = attrib.MetaData(classinfo=int, default=1)
     arraysize.__doc__ = """
     This read/write attribute specifies the number of rows to fetch at a time
     with `fetchmany`. It defaults to 1 meaning to fetch a single row at a time.
@@ -150,7 +149,7 @@ class Cursor(Container, ABC):
     It may also be used in the implementation of `executemany`.
     """
 
-    description: property = VirtAttr(fget='_get_description')
+    description: property = attrib.Virtual(fget='_get_description')
     description.__doc__ = """
     Sequence of 7-item sequences containing information about one result column:
     name, type_code, display_size, internal_size, precision, scale, null_ok
@@ -164,7 +163,7 @@ class Cursor(Container, ABC):
     def _get_description(self) -> list:
         pass
 
-    rowcount: property = VirtAttr(fget='_get_rowcount')
+    rowcount: property = attrib.Virtual(fget='_get_rowcount')
     description.__doc__ = """
     This read-only attribute specifies the number of rows that the last
     execute*() produced (for DQL statements like SELECT) or affected (for DML
@@ -360,7 +359,7 @@ class Cursor(Container, ABC):
 # DB-API 2.0 Connection Class
 #
 
-class Connection(Container, ABC):
+class Connection(attrib.Container, ABC):
     """Database Connection."""
 
     @abstractmethod

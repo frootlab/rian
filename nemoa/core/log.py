@@ -34,26 +34,22 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-__all__ = ['get_instance', 'debug', 'info', 'warning', 'error', 'critical',
-           'exception']
-
 import contextlib
 import importlib
 import logging
 import tempfile
 import warnings
 from pathlib import Path
-from nemoa.base import env, npath
-from nemoa.base.container import Container, TempAttr, VirtAttr
+from nemoa.base import attrib, env, npath
 from nemoa.errors import SingletonExistsError, NotStartedError
 from nemoa.types import void, Any, AnyFunc, ClassVar, PathLike, StrList
-from nemoa.types import StrOrInt, Optional, OptPath, OptStrDict, VoidFunc
+from nemoa.types import StrOrInt, OptPath, VoidFunc
 
 #
 # Logger Class
 #
 
-class Logger(Container):
+class Logger(attrib.Container):
     """Logger class.
 
     Args:
@@ -90,12 +86,11 @@ class Logger(Container):
     # Public Attributes
     #
 
-    logger: property = VirtAttr(
+    logger: property = attrib.Virtual(
         fget='_get_logger', fset='_set_logger', classinfo=logging.Logger)
 
-    name: property = VirtAttr(
-        fget='_get_name', fset='_set_name',
-        classinfo=str, default=_default_name)
+    name: property = attrib.Virtual(
+        fget='_get_name', fset='_set_name', classinfo=str)
     name.__doc__ = """
     String identifier of Logger, given as a period-separated hierarchical value
     like 'foo.bar.baz'. The name of a Logger also identifies respective parents
@@ -103,9 +98,8 @@ class Logger(Container):
     hierarchy.
     """
 
-    file: property = VirtAttr(
-        fget='_get_file', fset='_set_file',
-        classinfo=(str, Path), default=_default_file)
+    file: property = attrib.Virtual(
+        fget='_get_file', fset='_set_file', classinfo=(str, Path))
     file.__doc__ = """
     String or `path-like object`_ that identifies a valid filename in the
     directory structure of the operating system. If they do not exist, the
@@ -115,9 +109,8 @@ class Logger(Container):
     created as a fallback.
     """
 
-    level: property = VirtAttr(
-        fget='_get_level', fset='_set_level',
-        classinfo=(str, int), default=_default_level)
+    level: property = attrib.Virtual(
+        fget='_get_level', fset='_set_level', classinfo=(str, int))
     level.__doc__ = """
     Integer value or string, which describes the minimum required severity of
     events, to be logged. Ordered by ascending severity, the allowed level names
@@ -128,21 +121,25 @@ class Logger(Container):
 
 
     #
-    # Private Transient Attributes
+    # Protected Attributes
     #
 
-    _logger: property = TempAttr(classinfo=logging.Logger)
+    _logger: property = attrib.Temporary(classinfo=logging.Logger)
 
     #
     # Magic
     #
 
-    def __init__(self, *args: Any,
-            data: OptStrDict = None, meta: OptStrDict = None,
-            parent: Optional[Container] = None, **kwds: Any) -> None:
+    def __init__(self,
+            name: str = _default_name,
+            file: PathLike = _default_file,
+            level: StrOrInt = _default_level) -> None:
         """Initialize instance."""
-        super().__init__(data=data, meta=meta, parent=parent)
-        self._start_logging(*args, **kwds)
+        # Initialize Attribute Container
+        super().__init__()
+
+        # Start logging
+        self._start_logging(name=name, file=file, level=level)
 
     def __del__(self) -> None:
         """Run destructor for instance."""

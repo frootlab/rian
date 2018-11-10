@@ -1,7 +1,7 @@
-nemoa.base.binary module
+nemoa.data.dbapi2 module
 ========================
 
-.. automodule:: nemoa.base.binary
+.. automodule:: nemoa.data.dbapi2
     :members:
     :undoc-members:
     :show-inheritance:

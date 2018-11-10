@@ -9,8 +9,7 @@ __docformat__ = 'google'
 import tempfile
 import datetime
 from pathlib import Path
-import numpy as np
-from nemoa.base import assess, binary, check, env, table, literal, stdio, this
+from nemoa.base import assess, binary, check, env, literal, stdio, this
 from nemoa.base import npath, nbase, ndict
 from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Any, Function, Module, PathLikeList, StrList
@@ -521,19 +520,6 @@ class TestStdio(ModuleTestCase):
     def test_Getch(self) -> None:
         obj = stdio.Getch() if callable(stdio.Getch) else None
         self.assertIsInstance(obj, stdio.GetchBase)
-
-class TestTable(ModuleTestCase):
-    """Testcase for the module nemoa.base.table."""
-
-    module = 'nemoa.base.table'
-
-    def test_addcols(self) -> None:
-        src = np.array(
-            [('a'), ('b')], dtype=[('z', 'U4')])
-        tgt = np.array(
-            [(1., 2), (3., 4)], dtype=[('x', float), ('y', int)])
-        new = table.addcols(tgt, src, 'z')
-        self.assertEqual(new['z'][0], 'a')
 
 class TestLiteral(ModuleTestCase):
     """Testcase for the module nemoa.base.literal."""

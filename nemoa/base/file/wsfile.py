@@ -19,10 +19,7 @@ from zipfile import BadZipFile, ZipFile, ZipInfo
 from contextlib import contextmanager
 from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
-from nemoa.base import npath, env
-from nemoa.base.container import Container, AttrGroup, DCAttrGroup
-from nemoa.base.container import create_attr_group
-from nemoa.base.container import DataAttr, MetaAttr, TempAttr, VirtAttr
+from nemoa.base import attrib, env, npath
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
 from nemoa.base.file import inifile
 from nemoa.types import BytesIOBaseClass, BytesIOLike, BytesLike, ClassVar
@@ -50,7 +47,7 @@ class BadWsFile(OSError):
 # Module classes
 #
 
-class WsFile(Container):
+class WsFile(attrib.Container):
     """Workspace File.
 
     Workspace files are Zip-Archives, that contain a INI-formatted
@@ -89,42 +86,42 @@ class WsFile(Container):
     # Public Attribute Groups
     #
 
-    dc: AttrGroup = create_attr_group(DCAttrGroup)
+    dc: attrib.Group = attrib.create_group(attrib.DCGroup)
 
     #
     # Public Attributes
     #
 
-    startup: property = MetaAttr(classinfo=Path, category='hooks')
+    startup: property = attrib.MetaData(classinfo=Path, category='hooks')
     startup.__doc__ = """
     The startup script is a path, that points to a python script inside the
     workspace, which is executed after loading the workspace.
     """
 
-    path: property = VirtAttr(fget='_get_path')
+    path: property = attrib.Virtual(fget='_get_path')
     path.__doc__ = """Filepath of the workspace."""
 
-    name: property = VirtAttr(fget='_get_name')
+    name: property = attrib.Virtual(fget='_get_name')
     name.__doc__ = """Filename of the workspace without file extension."""
 
-    files: property = VirtAttr(fget='search')
+    files: property = attrib.Virtual(fget='search')
     files.__doc__ = """List of all files within the workspace."""
 
-    folders: property = VirtAttr(fget='_get_folders')
+    folders: property = attrib.Virtual(fget='_get_folders')
     folders.__doc__ = """List of all folders within the workspace."""
 
-    changed: property = VirtAttr(fget='_get_changed')
+    changed: property = attrib.Virtual(fget='_get_changed')
     changed.__doc__ = """Tells whether the workspace file has been changed."""
 
     #
     # Protected Attributes
     #
 
-    _file: property = DataAttr(classinfo=ZipFile)
-    _buffer: property = DataAttr(classinfo=BytesIOBaseClass)
-    _path: property = TempAttr(classinfo=Path)
-    _pwd: property = TempAttr(classinfo=bytes)
-    _changed: property = TempAttr(classinfo=bool, default=False)
+    _file: property = attrib.Content(classinfo=ZipFile)
+    _buffer: property = attrib.Content(classinfo=BytesIOBaseClass)
+    _path: property = attrib.Temporary(classinfo=Path)
+    _pwd: property = attrib.Temporary(classinfo=bytes)
+    _changed: property = attrib.Temporary(classinfo=bool, default=False)
 
     #
     # Events
@@ -132,7 +129,7 @@ class WsFile(Container):
 
     def __init__(
             self, filepath: OptPathLike = None, pwd: OptBytes = None,
-            parent: Optional[Container] = None) -> None:
+            parent: Optional[attrib.Container] = None) -> None:
         """Load Workspace from file."""
         super().__init__()
         if filepath:
