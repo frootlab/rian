@@ -117,19 +117,21 @@ def create_group(
 class Attribute(property):
     """Extended data descriptor for Attributes.
 
-    Generally data descriptors are classes, used for binding attributes to
-    fields. Thereby, when any class contains a data descriptor as a class
-    attribute (i.e. a method), the data descriptor defines the getter, the
-    setter and the deleter of the respective attribute.
+    Data descriptors are classes, used for binding attributes to fields and
+    thereby provide an abstraction layer that facilitates encapsulation and
+    modularity. When any class contains a data descriptor as a class attribute
+    (i.e. a method), then the data descriptor class defines the accessor,
+    mutator and manager methods of the respective attribute.
 
-    The class `property`_ is a succinct way of building a data descriptor, that
-    triggers these respective function calls. This class is compatibly with
-    the signature of the standard property, but provides additional keywords
-    for the following amplifications:
-        * Declaration of getters and setters by forward references
-        * Type checking against a given classinfo
+    A succinct way of building data descriptors is given by the `property`_
+    factory, which automatically creates a getter, a setters and a deleter
+    method from it's passed arguments. Thereupon the `Attribute` class extends
+    the options to control the behaviour of the Attribute by the following
+    amplifications:
+        * Declaration of accessor and mutator by forward references
+        * Type checking against given classinfo
         * Read-only attributes
-        * Default values by a single value, a factory function or by inheritance
+        * Default values by a fixed value, a factory function or by inheritance
             from a parent attribute group
         * Binding of fields within a different dictionary of the, e.g. to allow
             an aggregation of the fields by their respective attribute type.
@@ -140,9 +142,15 @@ class Attribute(property):
         * Aggregation of attributes by categories
 
     Args:
-        fget:
-        fset:
-        fdel:
+        fget: Callable or String, which points to a valid Method of the
+            underlying Attribute Group, which is used as the accessor method
+            of the attribute.
+        fset: Callable or String, which points to a valid Method of the
+            underlying Attribute Group, which is used as the mutator method
+            of the attribute.
+        fdel: Callable or String, which points to a valid Method of the
+            underlying Attribute Group, which is used as the destructor method
+            of the attribute.
         doc:
         classinfo:
         default: Default value, which is returned for a get request to an unset

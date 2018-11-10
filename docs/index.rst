@@ -17,11 +17,11 @@ classification tasks and data dimensionality reduction.
    :alt: Nemoa Deep Belief Model
 
 .. toctree::
-   :maxdepth: 8
+   :maxdepth: 3
    :caption: Contents:
 
    install
-   source/modules
+   API Documentation <source/modules>
    license
 
 

@@ -6,7 +6,6 @@ Subpackages
 
 .. toctree::
 
-    nemoa.data.db
     nemoa.core.ui
 
 Submodules

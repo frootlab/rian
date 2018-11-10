@@ -14,16 +14,15 @@ Submodules
 .. toctree::
 
    nemoa.base.assess
+   nemoa.base.attrib
    nemoa.base.binary
    nemoa.base.check
-   nemoa.base.attrib
    nemoa.base.env
    nemoa.base.literal
    nemoa.base.nbase
    nemoa.base.ndict
    nemoa.base.npath
    nemoa.base.stdio
-   nemoa.base.table
    nemoa.base.this
    nemoa.base.thread
 
