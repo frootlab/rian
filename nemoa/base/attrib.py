@@ -31,6 +31,8 @@ class Group:
     control the group behaviour in different applications.
 
     Args:
+        parent: Reference to parent attribute group. By the default value None
+            no parent is referenced.
         readonly: Boolean value, which superseeds the contained attributes
             read-only behaviour. For the values True or False, all contained
             attributes respectively are read-only or read-writable. By the
@@ -59,11 +61,11 @@ class Group:
     _attr_group_defaults: dict
 
     def __init__(
-            self, readonly: OptBool = None, remote: OptBool = None,
-            inherit: OptBool = None) -> None:
+            self, parent: Optional['Group'] = None, readonly: OptBool = None,
+            remote: OptBool = None, inherit: OptBool = None) -> None:
         self._attr_group_name = ''
         self._attr_group_prefix = ''
-        self._attr_group_parent = None
+        self._attr_group_parent = parent
         self._attr_group_defaults = {}
         if readonly is not None:
             self._attr_group_defaults['readonly'] = readonly
@@ -73,8 +75,8 @@ class Group:
             self._attr_group_defaults['inherit'] = inherit
 
 def create_group(
-        cls: type, readonly: OptBool = None, remote: OptBool = None,
-        inherit: OptBool = None) -> Group:
+        cls: type, parent: Optional[Group] = None, readonly: OptBool = None,
+        remote: OptBool = None, inherit: OptBool = None) -> Group:
     """Create new Attribute Group.
 
     Creates a new Attribute Group of a given Attribute Group Class with given,
@@ -84,6 +86,8 @@ def create_group(
 
     Args:
         cls: Attribute Group Class
+        parent: Reference to parent attribute group. By the default value None
+            no parent is referenced.
         readonly: Boolean value, which superseeds the contained attributes
             read-only behaviour. For the values True or False, all contained
             attributes respectively are read-only or read-writable. By the
@@ -336,7 +340,7 @@ class Content(Attribute):
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize default values of attribute descriptor."""
         super().__init__(*args, **kwds)
-        self.binddict = '_dict_data'
+        self.binddict = '_data_content'
 
 class MetaData(Attribute):
     """Attributes for persistent metadata objects."""
@@ -345,7 +349,7 @@ class MetaData(Attribute):
         """Initialize default values of attribute descriptor."""
         kwds['inherit'] = kwds.get('inherit', True)
         super().__init__(*args, **kwds)
-        self.binddict = '_dict_meta'
+        self.binddict = '_data_metadata'
 
 class Temporary(Attribute):
     """Attributes for non persistent stored objects."""
@@ -353,7 +357,7 @@ class Temporary(Attribute):
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize default values of attribute descriptor."""
         super().__init__(*args, **kwds)
-        self.binddict = '_dict_temp'
+        self.binddict = '_data_temporary'
 
 class Virtual(Attribute):
     """Attributes for non persistent virtual objects."""
@@ -377,7 +381,8 @@ class Container(Group):
     control it's contained Attributes and Attribute Groups.
 
     Args:
-        parent:
+        parent: Reference to parent attribute group. By the default value None
+            no parent is referenced.
         readonly: Boolean value, which superseeds the contained attributes
             read-only behaviour. For the values True or False, all contained
             attributes respectively are read-only or read-writable. By the
@@ -400,9 +405,9 @@ class Container(Group):
 
     """
 
-    _dict_data: StrDict
-    _dict_meta: StrDict
-    _dict_temp: StrDict
+    _data_content: StrDict
+    _data_metadata: StrDict
+    _data_temporary: StrDict
 
     #
     # Public Attributes
@@ -410,7 +415,7 @@ class Container(Group):
 
     parent: property = Virtual(classinfo=Group,
         fget='_get_attr_group_parent', fset='_set_attr_group_parent')
-    parent.__doc__ = """Reference to parent container object."""
+    parent.__doc__ = """Reference to parent Attribute Group."""
 
     #
     # Events
@@ -419,35 +424,28 @@ class Container(Group):
     def __init__(
             self, parent: Optional[Group] = None, readonly: OptBool = None,
             remote: OptBool = None, inherit: OptBool = None,
-            data: OptStrDict = None, meta: OptStrDict = None) -> None:
+            content: OptStrDict = None, metadata: OptStrDict = None) -> None:
         """Initialize Instance Variables."""
         # Initialize Attribute Group
-        super().__init__(readonly=readonly, remote=remote, inherit=inherit)
+        super().__init__(
+            parent=parent, readonly=readonly, remote=remote, inherit=inherit)
 
         # Initialize dictinaries for content, metadata and temporary fields
-        self._dict_data = {}
-        self._dict_meta = {}
-        self._dict_temp = {}
+        self._data_content = content or {}
+        self._data_metadata = metadata or {}
+        self._data_temporary = {}
 
-        # Bind attribute subgroups to fields and update subgroup settings
-        self._bind_attr_groups()
-        if parent:
-            self._set_attr_group_parent(parent)
-        self._set_attr_group_defaults(
-            readonly=readonly, remote=remote, inherit=inherit)
-
-        # Update content and metedata field values from given arguments
-        if data:
-            self._set_attr_values(data, classinfo=Content)
-        if meta:
-            self._set_attr_values(meta, classinfo=MetaData)
+        # Bind Attribute Subgroups to fields and update Subgroup Settings
+        self._bind_attr_subgroups()
+        self._upd_attr_subgroup_parent()
+        self._upd_attr_subgroup_defaults()
 
     #
     # Access Attributes by their group name, ClassInfo and category
     #
 
     @classmethod
-    def _get_attr_groups(cls) -> StrDict:
+    def _get_attr_subgroups(cls) -> StrDict:
         def get_groups(cls: type) -> StrDict:
             groups: StrDict = {}
             for base in cls.__mro__:
@@ -465,10 +463,10 @@ class Container(Group):
             cls, group: OptStr = None, classinfo: OptClassInfo = None,
             category: OptStr = None) -> StrList:
 
-        # Locate the attribute group, that corresponds to the given group name.
-        # By default identify the current class as attribute group
+        # Locate the attribute subgroup, that corresponds to the given group
+        # name. By default identify the current class as attribute group
         if group:
-            groups = cls._get_attr_groups()
+            groups = cls._get_attr_subgroups()
             if not group in groups:
                 raise InvalidAttrError(cls, group)
             root = type(groups[group])
@@ -497,7 +495,7 @@ class Container(Group):
         # Locate the attribute group, that corresponds to the given group name.
         # By default identify the current class as attribute group
         if group:
-            groups = cls._get_attr_groups()
+            groups = cls._get_attr_subgroups()
             if not group in groups:
                 raise InvalidAttrError(cls, group)
             root = type(groups[group])
@@ -518,8 +516,18 @@ class Container(Group):
                 types[name] = getattr(obj, 'classinfo', None)
         return types
 
-    def _bind_attr_groups(self) -> None:
-        for fqn in self._get_attr_groups():
+    def _get_attr_group_parent(self) -> Optional[Group]:
+        return self._attr_group_parent
+
+    def _set_attr_group_parent(self, group: Group) -> None:
+        self._attr_group_parent = group
+        self._upd_attr_subgroup_parent()
+
+    def _get_attr_group_defaults(self) -> OptDict:
+        return self._attr_group_defaults
+
+    def _bind_attr_subgroups(self) -> None:
+        for fqn in self._get_attr_subgroups():
 
             # Get attribute group by stepping the attribute hierarchy
             # downwards the tokens of the fully qualified name
@@ -533,20 +541,19 @@ class Container(Group):
             setattr(obj, '_attr_group_prefix', fqn)
 
             # Bind dictionary buffers
-            setattr(obj, '_dict_data', self._dict_data)
-            setattr(obj, '_dict_meta', self._dict_meta)
-            setattr(obj, '_dict_temp', self._dict_temp)
+            setattr(obj, '_data_content', self._data_content)
+            setattr(obj, '_data_metadata', self._data_metadata)
+            setattr(obj, '_data_temporary', self._data_temporary)
 
-    def _get_attr_group_parent(self) -> Optional[Group]:
-        return self._attr_group_parent
-
-    def _set_attr_group_parent(self, parent: Group) -> None:
-        self._attr_group_parent = parent
+    def _upd_attr_subgroup_parent(self) -> None:
+        parent = self._attr_group_parent
+        if not parent:
+            return
 
         # Update group parents by simultaneously stepping downwards the object
         # hierachy, within self and within the parent, to obtain the same
         # attribute hierarchy: e.g. parent.group.attr -> child.group.attr
-        for fqn in self._get_attr_groups():
+        for fqn in self._get_attr_subgroups():
             obj = self
             for attr in fqn.split('.'):
                 obj = getattr(obj, attr)
@@ -554,26 +561,21 @@ class Container(Group):
                     parent = getattr(parent, attr, None)
             obj._attr_group_parent = parent # pylint: disable=W0212
 
-    def _get_attr_group_defaults(self) -> OptDict:
-        return self._attr_group_defaults
-
-    def _set_attr_group_defaults(self, **kwds: Any) -> None:
-        stated = {key: val for key, val in kwds.items() if val is not None}
-        self._attr_group_defaults = {**self._attr_group_defaults, **stated}
+    def _upd_attr_subgroup_defaults(self) -> None:
+        defaults = self._attr_group_defaults
 
         # Update groups defaults by stepping downwards the object hierarchy
-        for fqn in self._get_attr_groups():
+        for fqn in self._get_attr_subgroups():
             obj = self
             for attr in fqn.split('.'):
                 obj = getattr(obj, attr)
-            obj._attr_group_defaults = { # pylint: disable=W0212
-                **obj._attr_group_defaults, **stated} # pylint: disable=W0212
+            obj._attr_group_defaults.update(defaults) # pylint: disable=W0212
 
     def _get_attr_values(self,
             group: OptStr = None, classinfo: OptClassInfo = None,
             category: OptStr = None) -> StrDict:
-        # Get attribute names
 
+        # Get attribute names
         attrs = self._get_attr_names(
             group=group, classinfo=classinfo, category=category)
 

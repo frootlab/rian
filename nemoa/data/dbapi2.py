@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """DB-API 2.0 database interfaces.
 
-This module is a stub for the required exceptions and base classes specified in
-the Python Database API (DB-API) Specification 2.0 [PEP249]_. Thereupon the
-DB-API 2.0 specification requires a module interface, that comprises specific
-module attributes and a constructor function.
+This module is a reference for the required exceptions, base classes, module
+attributes and module functions specified in the Python Database API (DB-API)
+Specification 2.0 [PEP249]_.
 
 Module attributes:
     apilevel:

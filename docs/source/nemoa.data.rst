@@ -1,18 +1,13 @@
 nemoa.data package
 ==================
 
-Subpackages
------------
-
-.. toctree::
-
-    nemoa.data.db
-
 Submodules
 ----------
 
 .. toctree::
 
+   nemoa.data.csvdb
+   nemoa.data.dbapi2
    nemoa.data.table
 
 Module contents
