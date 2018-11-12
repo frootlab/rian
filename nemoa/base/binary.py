@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 """Binary object functions.
 
-.. References:
 .. _bytes-like object:
     https://docs.python.org/3/glossary.html#term-bytes-like-object
 .. _zlib.compress():
     https://docs.python.org/3/library/zlib.html#zlib.compress
 .. _zlib.decompress():
     https://docs.python.org/3/library/zlib.html#zlib.decompress
-.. _RFC 3548:
-    https://tools.ietf.org/html/rfc3548.html
 
 """
 
@@ -80,7 +77,7 @@ def encode(data: BytesLikeOrStr, encoding: OptStr = None) -> bytes:
 
     Args:
         data: Binary data given as `bytes-like object`_ or string
-        encoding: Encodings specified in `RFC 3548`_. Allowed values are:
+        encoding: Encodings specified in [RFC3548]_. Allowed values are:
             *base16*, *base32*, *base64* and *base85* or None for no encoding.
             By default no encoding is used.
 

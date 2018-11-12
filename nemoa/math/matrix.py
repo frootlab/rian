@@ -84,15 +84,7 @@ def norm(x: NpArrayLike, name: str = 'frobenius', **kwds: Any) -> NpArray:
 
 def norm_pq(x: NpArray,
         p: float = 2., q: float = 2., axes: IntTuple = (0, 1)) -> NpArray:
-    """Calculate pq-norm of an array along given axes.
-
-    The class of pq-norms generalizes the p-norms by a twice application in
-    two dimensions [1]. Thereby a 'p-norm', which is parametrized by 'p', is
-    applied to the columns of the matrix (more generally: the first axis index
-    withon the parameter 'axes'). Afterwards a further 'p-norm', which is
-    parametrized by 'q' is applied to the rows of the matrix (more generally:
-    the second axis index within the parameter 'axes'). For the case that
-    p = q = 2, the pq-norm is the Frobenius norm.
+    """Calculate :term:`pq-norm` of an array along given axes.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of two or
@@ -101,7 +93,7 @@ def norm_pq(x: NpArray,
         p: Positive real number, which determines the first p-norm by the p-th
             root of the summed p-th powered absolute values. For p < 1, the
             function does not satisfy the triangle inequality and yields a
-            quasi-norm [2]. For p >= 1 the p-norm is a norm.
+            quasi-norm. For p >= 1 the p-norm is a norm.
             Default: 2.
         q: Positive real number, which determines the second p-norm by the q-th
             root of the summed q-th powered absolute values. For q < 1, the
@@ -116,10 +108,6 @@ def norm_pq(x: NpArray,
 
     Returns:
         NumPy ndarray of dimension <dim x> - <number of axes>.
-
-    References:
-        [1] https://en.wikipedia.org/wiki/matrix_norm#L2,1_and_Lp,q_norms
-        [2] https://en.wikipedia.org/wiki/quasinorm
 
     """
     # Check type of 'axes'
@@ -154,12 +142,7 @@ def norm_pq(x: NpArray,
     return np.power(qsum, 1. / q)
 
 def norm_frobenius(x: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
-    """Calculate Frobenius norm of an array along given axes.
-
-    The Frobenius norm is the Euclidean norm on the space of (m, n) matrices.
-    It equals the pq-norm for p = q = 2 and thus is calculated by the entrywise
-    root sum of squared values [1]. From this it follows, that the Frobenius is
-    sub-multiplicative.
+    """Calculate :term:`Frobenius norm` of an array along given axes.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of two or
@@ -173,9 +156,6 @@ def norm_frobenius(x: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
 
     Returns:
         NumPy ndarray of dimension <dim x> - <number of axes>.
-
-    References:
-        [1] https://en.wikipedia.org/wiki/frobenius_norm
 
     """
     return vector.norm_euclid(x, axis=axes)
@@ -253,10 +233,7 @@ def distance(
     return func(x, y, **supp_kwds) # pylint: disable=E1102
 
 def dist_frobenius(x: NpArray, y: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
-    """Calculate Frobenius distances of two arrays along given axis.
-
-    The Frobenius distance is induced by the Frobenius norm [1] and the natural
-    distance in geometric interpretations.
+    """Calculate :term:`Frobenius metric` of two arrays along given axes.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of two or
@@ -272,9 +249,6 @@ def dist_frobenius(x: NpArray, y: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
 
     Returns:
         NumPy ndarray of dimension dim *x* - 2.
-
-    References:
-        [1] https://en.wikipedia.org/wiki/frobenius_norm
 
     """
     return norm_frobenius(np.add(x, np.multiply(y, -1)), axes=axes)

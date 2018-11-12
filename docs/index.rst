@@ -24,9 +24,9 @@ classification tasks and data dimensionality reduction.
 
    Installation <install>
    Reference <source/modules>
+   Glossary <glossary>
    License <license>
    Bibliography <bibliography>
-
 
 Indices and tables
 ==================
