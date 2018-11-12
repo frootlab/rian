@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 """Python object functions.
 
-.. References:
 .. _fnmatch: https://docs.python.org/3/library/fnmatch.html
-.. _PEP 257: https://www.python.org/dev/peps/pep-0257/
 
 """
 
@@ -165,7 +163,7 @@ def get_summary(obj: object) -> str:
     """Get summary line for an object.
 
     This function returns the summary line of the documentation string for an
-    object as specified in `PEP 257`_. If the documentation string is not
+    object as specified in [PEP257]_. If the documentation string is not
     provided the summary line is retrieved from the inheritance hierarchy.
 
     Args:
