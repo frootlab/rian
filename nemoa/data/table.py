@@ -14,15 +14,8 @@ __docformat__ = 'google'
 
 
 import dataclasses
+import random
 from abc import ABC, abstractmethod
-
-# try:
-#     import numpy as np
-# except ImportError as err:
-#     raise ImportError(
-#         "requires package numpy: "
-#         "https://pypi.org/project/numpy/") from err
-
 from numpy.lib import recfunctions as nprf
 from nemoa.base import attrib, check
 from nemoa.errors import NemoaError
@@ -32,7 +25,7 @@ from nemoa.types import OptIntList, OptCallable, CallableClasses, Callable
 from nemoa.types import OptStrTuple, OptInt, ClassVar, List, OptStr
 
 #
-# Module Types
+# Types
 #
 
 Field = dataclasses.Field
@@ -42,18 +35,20 @@ FieldLike = Union[Fields, Tuple[str, type, StrDict]]
 OptFieldLike = Optional[FieldLike]
 
 #
-# Module Constants
+# Constants
 #
 
 ROW_STATE_CREATE = 0b001
 ROW_STATE_UPDATE = 0b010
 ROW_STATE_DELETE = 0b100
+
 CURSOR_MODE_DYNAMIC = 0
 CURSOR_MODE_FIXED = 1
 CURSOR_MODE_STATIC = 2
+CURSOR_MODE_RANDOM = 3
 
 #
-# Module Exceptions
+# Exceptions
 #
 
 class TableError(NemoaError):
@@ -86,7 +81,7 @@ class CursorModeError(TableError, LookupError):
 #
 
 class Record(ABC):
-    """Record Base Class."""
+    """Abstract Base Class for Records."""
 
     #
     # Public Instance Variables
@@ -156,7 +151,7 @@ class Record(ABC):
         pass
 
 #
-# Record Types
+# Types (Record)
 #
 
 OptRec = Optional[Record]
@@ -196,6 +191,12 @@ class Cursor(attrib.Container):
                 cursor was first opened. Static cursors are not threadsafe but
                 support counting the rows with respect to a given filter and
                 sorting the rows.
+            3: Random Cursor:
+                Random cursors randomly fetch and return rows from the result
+                set. In difference to a random sorted cursor, the rows are
+                not unique and the number of fetched rows is not limited to the
+                size of the result set. If the method ``fetch`` is called with
+                a zero or negative value for size, a CursorModeError is raised.
 
     """
 
@@ -273,6 +274,8 @@ class Cursor(attrib.Container):
             self._iter_index = iter(self._index)
         elif mode == CURSOR_MODE_STATIC:
             self._iter_buffer = iter(self._buffer)
+        elif mode == CURSOR_MODE_RANDOM:
+            pass
         else:
             raise CursorModeError(mode)
 
@@ -280,20 +283,11 @@ class Cursor(attrib.Container):
         """Return next row that matches the given filter."""
         mode = self._mode
         if mode in [CURSOR_MODE_DYNAMIC, CURSOR_MODE_FIXED]:
-            if not self._filter:
-                row = self._getter(next(self._iter_index))
-                if self._mapper:
-                    return self._mapper(row)
-                return row
-            matches = False
-            while not matches:
-                row = self._getter(next(self._iter_index))
-                matches = self._filter(row)
-            if self._mapper:
-                return self._mapper(row)
-            return row
+            return self._get_next_from_index()
         if mode == CURSOR_MODE_STATIC:
-            return next(self._iter_buffer)
+            return self._get_next_from_buffer()
+        if mode == CURSOR_MODE_RANDOM:
+            return self._get_rand_from_index()
         raise CursorModeError(mode)
 
     def fetch(self, size: OptInt = None) -> RecLikeList:
@@ -308,6 +302,9 @@ class Cursor(attrib.Container):
         """
         if size is None:
             size = self.batchsize
+        mode = self._mode
+        if mode == CURSOR_MODE_RANDOM and size <= 0:
+            CursorModeError(mode, "fetching all rows")
         finished = False
         results: RecLikeList = []
         while not finished:
@@ -322,6 +319,35 @@ class Cursor(attrib.Container):
     #
     # Protected Methods
     #
+
+    def _get_rand_from_index(self) -> RecLike:
+        matches = False
+        while not matches:
+            row_id = random.randrange(len(self._index))
+            row = self._getter(row_id)
+            if self._filter:
+                matches = self._filter(row)
+            else:
+                matches = True
+        if self._mapper:
+            return self._mapper(row)
+        return row
+
+    def _get_next_from_index(self) -> RecLike:
+        matches = False
+        while not matches:
+            row_id = next(self._iter_index)
+            row = self._getter(row_id)
+            if self._filter:
+                matches = self._filter(row)
+            else:
+                matches = True
+        if self._mapper:
+            return self._mapper(row)
+        return row
+
+    def _get_next_from_buffer(self) -> RecLike:
+        return next(self._iter_buffer)
 
     def _get_mode(self) -> int:
         return self._mode
