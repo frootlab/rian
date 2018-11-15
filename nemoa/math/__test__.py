@@ -200,9 +200,6 @@ class TestVector(MathTestCase, ModuleTestCase):
     def test_norm_qmean(self) -> None:
         self.assertIsVectorNorm(vector.norm_qmean)
 
-    def test_norm_sd(self) -> None:
-        self.assertIsVectorNorm(vector.norm_sd)
-
     def test_metrices(self) -> None:
         metrices = vector.metrices()
         self.assertIsInstance(metrices, list)

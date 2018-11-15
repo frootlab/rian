@@ -38,14 +38,14 @@ OptFieldLike = Optional[FieldLike]
 # Constants
 #
 
-ROW_STATE_CREATE = 0b001
-ROW_STATE_UPDATE = 0b010
-ROW_STATE_DELETE = 0b100
+ROW_STATE_CREATE = 0b0001
+ROW_STATE_UPDATE = 0b0010
+ROW_STATE_DELETE = 0b0100
 
-CURSOR_MODE_DYNAMIC = 0
-CURSOR_MODE_FIXED = 1
-CURSOR_MODE_STATIC = 2
-CURSOR_MODE_RANDOM = 3
+CUR_MODE_BUFFERED = 0b0001
+CUR_MODE_INDEXED = 0b0010
+CUR_MODE_SCROLLABLE = 0b0100
+CUR_MODE_RANDOM = 0b1000
 
 #
 # Exceptions
@@ -69,11 +69,11 @@ class ColumnLookupError(TableError, LookupError):
 class CursorModeError(TableError, LookupError):
     """Raise when a procedure is not supported by a cursor."""
 
-    def __init__(self, mode: int, proc: OptStr = None) -> None:
-        if not proc:
-            msg = f"unknown cursor mode {mode}"
+    def __init__(self, mode: str, operation: OptStr = None) -> None:
+        if not operation:
+            msg = f"unknown cursor mode '{mode}'"
         else:
-            msg = f"{proc} is not supported in cursor mode {mode}"
+            msg = f"{operation} is not supported by {mode} cursors"
         super().__init__(msg)
 
 #
@@ -169,34 +169,55 @@ class Cursor(attrib.Container):
     Args:
         index: List of row IDs, that are traversed by the cursor. By default the
             attribute '_index' of the parent object is used.
-        mode:
-            0: Dynamic Cursor:
-                Dynamic cursors are built on-the-fly and therefore comprise any
-                changes made to the rows in the result set during it's
-                traversal, including new appended rows and the order of it's
+        mode: Name of frequently used cursor mode:
+            'dynamic': Dynamic cursors are built on-the-fly and therefore
+                comprise any changes made to the rows in the result set during
+                it's traversal, including new appended rows and the order of
+                it's traversal. This behaviour is regardless of whether the
+                changes occur from inside the cursor or by other users from
+                outside the cursor. Dynamic cursors are threadsafe but do not
+                support counting filtered rows or sorting rows.
+            'indexed': Indexed (aka Keyset-driven) cursors are built on-the-fly
+                with respect to an initial copy of the table index and therefore
+                comprise changes made to the rows in the result set during it's
+                traversal, but not new appended rows nor changes within their
+                order. Keyset driven cursors are threadsafe but do not support
+                sorting rows or counting filtered rows.
+            'static': Static cursors are buffered and built during it's creation
+                time and therfore always display the result set as it was when
+                the cursor was first opened. Static cursors are not threadsafe
+                but support counting the rows with respect to a given filter and
+                sorting the rows.
+            'scrollable': Scrollable cursor
+            'random': Random cursors randomly fetch and return rows from the
+                result set. In difference to a randomly sorted cursor, the rows
+                are not unique and the number of fetched rows is not limited to
+                the size of the result set. If the method ``fetch`` is called
+                with a zero or negative value for size, a CursorModeError is
+                raised.
+        flags: Binary mask representation of cursor mode:
+            Flag 0b0001: Determines if the cursor is buffered. If the cursor is
+                buffered, then the result set is retrieved during the
+                initialization of the cursor and stored in a temporary buffer.
+                In this case, the result set is always displayed as it was, when
+                the cursor was first opened, which allows the result set to be
+                sorted and counted. If the cursor is not buffered, the result
+                set is built on-the-fly and therefore comprises any changes,
+                made to the rows in the result set during it's traversal,
+                including new appended rows, as well as the order of it's
                 traversal. This behaviour is regardless of whether the changes
                 occur from inside the cursor or by other users from outside the
-                cursor. Dynamic cursors are threadsafe but do not support
-                counting filtered rows or sorting rows.
-            1: Fixed Cursor:
-                Fixed cursors are built on-the-fly with respect to an initial
-                copy of the table index and therefore comprise changes made to
-                the rows in the result set during it's traversal, but not new
-                appended rows or the order of it's traversal. Dynamic cursors
-                are threadsafe but do not support counting filtered rows or
-                sorting rows.
-            2: Static Cursor:
-                Static cursors are buffered and built during it's creation time
-                and therfore always display the result set as it was when the
-                cursor was first opened. Static cursors are not threadsafe but
-                support counting the rows with respect to a given filter and
-                sorting the rows.
-            3: Random Cursor:
-                Random cursors randomly fetch and return rows from the result
-                set. In difference to a random sorted cursor, the rows are
-                not unique and the number of fetched rows is not limited to the
-                size of the result set. If the method ``fetch`` is called with
-                a zero or negative value for size, a CursorModeError is raised.
+                cursor. Unbuffered cursors, however, do not support sorting, nor
+                counting the result set. By default, cursors are not buffered.
+            Flag 0b0010: Determines if the traversal order is fixed. If the
+                traversal order is fixed, then a copy of the active table index
+                is created during the initialization of the cursor and used for
+                the traversal of the result set. If the traversal order is not
+                fixed, any moves in the result set are performed with respect to
+                the currently active table index and therefore also considers
+                new appended rows, as well as changes in the order.
+            Flag 0b0100: Determines if the cursor is scrollable.
+            Flag 0b1000: Determines if the cursor is random.
 
     """
 
@@ -204,7 +225,7 @@ class Cursor(attrib.Container):
     # Protected Class Variables
     #
 
-    _default_mode: ClassVar[int] = CURSOR_MODE_FIXED
+    _default_mode: ClassVar[int] = CUR_MODE_INDEXED
     _default_batchsize: ClassVar[int] = 1
 
     #
@@ -220,7 +241,7 @@ class Cursor(attrib.Container):
     # Protected Attributes
     #
 
-    _mode: property = attrib.MetaData(classinfo=int, default=_default_mode)
+    _flags: property = attrib.MetaData(classinfo=int, default=_default_mode)
     _index: property = attrib.MetaData(classinfo=list, inherit=True)
     _getter: property = attrib.Temporary(classinfo=CallableClasses)
     _filter: property = attrib.Temporary(classinfo=CallableClasses)
@@ -234,8 +255,8 @@ class Cursor(attrib.Container):
     def __init__(
             self, index: OptIntList = None, getter: OptCallable = None,
             predicate: OptCallable = None, mapper: OptCallable = None,
-            parent: Optional[attrib.Container] = None, mode: OptInt = None,
-            batchsize: OptInt = None) -> None:
+            batchsize: OptInt = None, mode: OptStr = None, flags: OptInt = None,
+            parent: Optional[attrib.Container] = None) -> None:
         """Initialize Cursor."""
         super().__init__(parent=parent) # Parent is set by container
         if index is not None:
@@ -243,13 +264,15 @@ class Cursor(attrib.Container):
         self._getter = getter
         self._filter = predicate
         self._mapper = mapper
-        if mode is not None:
-            self._mode = mode
+        if flags is not None:
+            self._flags = flags
+        elif mode:
+            self._flags = self._get_flags_from_mode(mode)
         if batchsize:
             self.batchsize = batchsize
-        if self.mode == CURSOR_MODE_FIXED:
+        if self._flags & CUR_MODE_INDEXED:
             self._create_index()
-        if self.mode == CURSOR_MODE_STATIC:
+        if self._flags & CUR_MODE_BUFFERED:
             self._create_buffer()
         self.reset() # Initialize iterator
 
@@ -269,42 +292,38 @@ class Cursor(attrib.Container):
 
     def reset(self) -> None:
         """Reset cursor position before the first record."""
-        mode = self._mode
-        if mode in [CURSOR_MODE_DYNAMIC, CURSOR_MODE_FIXED]:
-            self._iter_index = iter(self._index)
-        elif mode == CURSOR_MODE_STATIC:
+        mode = self._flags
+        if mode & CUR_MODE_BUFFERED: # Iterate over fixed result set
             self._iter_buffer = iter(self._buffer)
-        elif mode == CURSOR_MODE_RANDOM:
-            pass
-        else:
-            raise CursorModeError(mode)
+        elif mode & CUR_MODE_INDEXED: # Iterate over fixed index
+            self._iter_index = iter(self._index)
+        else: # TODO: handle case for dynamic cursors by self._iter_table
+            self._iter_index = iter(self._index)
 
     def next(self) -> RecLike:
         """Return next row that matches the given filter."""
-        mode = self._mode
-        if mode in [CURSOR_MODE_DYNAMIC, CURSOR_MODE_FIXED]:
-            return self._get_next_from_index()
-        if mode == CURSOR_MODE_STATIC:
+        mode = self._flags
+        if mode & CUR_MODE_BUFFERED:
             return self._get_next_from_buffer()
-        if mode == CURSOR_MODE_RANDOM:
-            return self._get_rand_from_index()
-        raise CursorModeError(mode)
+        if mode & CUR_MODE_INDEXED:
+            return self._get_next_from_fixed_index()
+        # TODO: For dynamic cursors implement _get_next_from_dynamic_index()
+        return self._get_next_from_fixed_index()
 
     def fetch(self, size: OptInt = None) -> RecLikeList:
         """Fetch rows from the result set.
 
         Args:
-            size: Integer value which represents the number of rows, which are
-                to be fetched. For zero or negative values all remaining rows
-                are fetched. The default size is given by the cursor's
-                *batchsize*.
+            size: Integer value, which represents the number of rows, which is
+                fetched from the result set. For the given size 0 all remaining
+                rows from the result set are fetched. By default the number of
+                rows is given by the cursors batchsize.
 
         """
         if size is None:
             size = self.batchsize
-        mode = self._mode
-        if mode == CURSOR_MODE_RANDOM and size <= 0:
-            CursorModeError(mode, "fetching all rows")
+        if self._flags & CUR_MODE_RANDOM and size <= 0:
+            raise CursorModeError('random', 'fetching all rows')
         finished = False
         results: RecLikeList = []
         while not finished:
@@ -320,23 +339,14 @@ class Cursor(attrib.Container):
     # Protected Methods
     #
 
-    def _get_rand_from_index(self) -> RecLike:
+    def _get_next_from_fixed_index(self) -> RecLike:
+        is_random = self._flags & CUR_MODE_RANDOM
         matches = False
         while not matches:
-            row_id = random.randrange(len(self._index))
-            row = self._getter(row_id)
-            if self._filter:
-                matches = self._filter(row)
+            if is_random:
+                row_id = random.randrange(len(self._index))
             else:
-                matches = True
-        if self._mapper:
-            return self._mapper(row)
-        return row
-
-    def _get_next_from_index(self) -> RecLike:
-        matches = False
-        while not matches:
-            row_id = next(self._iter_index)
+                row_id = next(self._iter_index)
             row = self._getter(row_id)
             if self._filter:
                 matches = self._filter(row)
@@ -347,29 +357,48 @@ class Cursor(attrib.Container):
         return row
 
     def _get_next_from_buffer(self) -> RecLike:
+        if self._flags & CUR_MODE_RANDOM:
+            row_id = random.randrange(len(self._buffer))
+            return self._buffer[row_id]
         return next(self._iter_buffer)
 
     def _get_mode(self) -> int:
-        return self._mode
+        return self._flags
+
+    def _get_flags_from_mode(self, name: str) -> int:
+        if name == 'dynamic':
+            return 0
+        if name == 'indexed':
+            return CUR_MODE_INDEXED
+        if name == 'static':
+            return CUR_MODE_INDEXED | CUR_MODE_BUFFERED
+        if name == 'scrollable':
+            return CUR_MODE_INDEXED | CUR_MODE_SCROLLABLE
+        if name == 'random':
+            return CUR_MODE_RANDOM
+        raise CursorModeError(name)
 
     def _get_rowcount(self) -> int:
-        mode = self._mode
-        if mode in [CURSOR_MODE_DYNAMIC, CURSOR_MODE_FIXED]:
-            if not self._filter:
-                return len(self._index)
-            raise CursorModeError(mode, "counting filtered rows")
-        if mode == CURSOR_MODE_STATIC:
+        mode = self._flags
+        if mode & CUR_MODE_RANDOM:
+            raise CursorModeError('random', 'counting rows')
+        if mode & CUR_MODE_BUFFERED:
             return len(self._buffer)
-        raise CursorModeError(mode)
+        if self._filter:
+            if mode & CUR_MODE_INDEXED:
+                raise CursorModeError('fixed', 'counting filtered rows')
+            else:
+                raise CursorModeError('dynamic', 'counting filtered rows')
+        return len(self._index)
 
     def _create_index(self) -> None:
-        self._index = list(self._index)
+        self._index = self._index.copy()
 
     def _create_buffer(self) -> None:
-        dyn_cur = self.__class__(
+        cur = self.__class__( # Create new dynamic cursor
             index=self._index, getter=self._getter, predicate=self._filter,
-            mapper=self._mapper, mode=CURSOR_MODE_DYNAMIC)
-        self._buffer = list(dyn_cur)
+            mapper=self._mapper, flags=0b000)
+        self._buffer = cur.fetch(0) # Fetch all from result set
 
 class Table(attrib.Container):
     """Table Class."""
@@ -453,20 +482,21 @@ class Table(attrib.Container):
 
     def get_cursor(
             self, predicate: OptCallable = None, mapper: OptCallable = None,
-            mode: OptInt = None) -> Cursor:
+            mode: OptStr = None, flags: OptInt = None) -> Cursor:
         """ """
         return Cursor(
-            getter=self.get_row, predicate=predicate, mapper=mapper, mode=mode,
-            parent=self)
+            getter=self.get_row, predicate=predicate, mapper=mapper,
+            mode=mode, flags=flags, parent=self)
 
     def get_row(self, rowid: int) -> OptRec:
         """ """
         return self._diff[rowid] or self._store[rowid]
 
     def get_rows(
-            self, predicate: OptCallable = None, mode: OptInt = None) -> Cursor:
+            self, predicate: OptCallable = None, mode: OptStr = None,
+            flags: OptInt = None) -> Cursor:
         """ """
-        return self.get_cursor(predicate=predicate, mode=mode)
+        return self.get_cursor(predicate=predicate, mode=mode, flags=flags)
 
     def append_row(self, *args: Any, **kwds: Any) -> None:
         """ """
@@ -501,7 +531,8 @@ class Table(attrib.Container):
 
     def select(
             self, columns: OptStrTuple = None, predicate: OptCallable = None,
-            fmt: type = tuple, mode: OptInt = None) -> RecLikeList:
+            fmt: type = tuple, mode: OptStr = None,
+            flags: OptInt = None) -> RecLikeList:
         """ """
         if not columns:
             mapper = self._get_mapper(self.colnames, fmt=fmt)
@@ -511,7 +542,7 @@ class Table(attrib.Container):
                 "table column names", set(self.colnames))
             mapper = self._get_mapper(columns, fmt=fmt)
         return self.get_cursor( # type: ignore
-            predicate=predicate, mapper=mapper, mode=mode)
+            predicate=predicate, mapper=mapper, mode=mode, flags=flags)
 
     def pack(self) -> None:
         """Remove empty records from storage table and rebuild table index."""
