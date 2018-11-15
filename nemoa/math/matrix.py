@@ -40,26 +40,23 @@ def norms() -> StrList:
     return this.crop_functions(prefix=_NORM_PREFIX)
 
 def norm(x: NpArrayLike, name: str = 'frobenius', **kwds: Any) -> NpArray:
-    """Calculate norm of matrix.
-
-    References:
-        [1] https://en.wikipedia.org/wiki/magnitude_(mathematics)
+    """Calculate magnitude of matrix with respect to given norm.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of two or
             more dimensions. This includes nested lists, tuples, scalars and
             existing arrays.
         name: Name of matrix norm. Accepted values are:
-            'pq': pq-norm (induces: pq-distances)
-                Remark: requires additional parameters 'p' and 'q'
-            'frobenius': Frobenius norm (induces: Frobenius distance)
-            Default: 'frobenius'
+
+            :pq: :term:`pq-Norm`. Remark: requires additional parameters *p* and
+                *q*
+            :frobenius: The default norm is the :term:`Frobenius Norm`
         **kwds: Parameters of the given norm / class of norms.
             The norm Parameters are documented within the respective 'norm'
             functions.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - 2.
+        `Numpy.ndarray`_ of dimension dim(*x*) - 2.
 
     """
     # Check Type of 'x'
@@ -100,14 +97,14 @@ def norm_pq(x: NpArray,
             function does not satisfy the triangle inequality and yields a
             quasi-norm [2]. For q >= 1 the p-norm is a norm.
             Default: 2.
-        axes: Axes along which the norm is calculated. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1).
-            Default: (0, 1)
+        axes: Pair of integers, that identify the array axes, along which the
+            function is evaluated. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. The default value is (0, 1), which is an evaluation
+            with respect to the first two axis in the array.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
+        `Numpy.ndarray`_ of dimension dim(*x*) - 2.
 
     """
     # Check type of 'axes'
@@ -128,7 +125,7 @@ def norm_pq(x: NpArray,
     if p == q == 2.: # Use the Frobenius norm
         return norm_frobenius(x, axes=axes)
     if p == q: # Use the p-norm in two dimensions
-        return vector.norm_p(x, p=p, axis=axes)
+        return vector.norm_p(x, p=p, axes=axes)
 
     # If the first axis id is smaller then the second, then the second one
     # has to be corrected by the collapsed dimension of the first sum
@@ -148,17 +145,17 @@ def norm_frobenius(x: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
         x: Any sequence that can be interpreted as a numpy ndarray of two or
             more dimensions. This includes nested lists, tuples, scalars and
             existing arrays.
-        axes: Axes along which the norm is calculated. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1).
-            Default: (0, 1)
+        axes: Pair of integers, that identify the array axes, along which the
+            function is evaluated. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. The default value is (0, 1), which is an evaluation
+            with respect to the first two axis in the array.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
+        `Numpy.ndarray`_ of dimension dim(*x*) - 2.
 
     """
-    return vector.norm_euclid(x, axis=axes)
+    return vector.norm_euclid(x, axes=axes)
 
 #
 # Matrix Metrices
@@ -182,8 +179,8 @@ def distance(
     A matrix distance function, also known as metric, is a function d(x, y),
     which quantifies the proximity of matrices in a vector space as non-negative
     real numbers. If the distance is zero, then the matrices are equivalent with
-    respect to the distance function [1]. Distance functions are often used as
-    error, loss or risk functions, to evaluate statistical estimations [2].
+    respect to the distance function. Distance functions are often used as
+    error, loss or risk functions, to evaluate statistical estimations.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of two or
@@ -199,11 +196,7 @@ def distance(
             functions.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
-
-    References:
-        [1] https://en.wikipedia.org/wiki/metric_(mathematics)
-        [2] https://en.wikipedia.org/wiki/loss_function
+        `Numpy.ndarray`_ of dimension dim(*x*) - 2.
 
     """
     # Check 'x' and 'y' to be array-like
@@ -241,14 +234,14 @@ def dist_frobenius(x: NpArray, y: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
             existing arrays.
         y: Any sequence that can be interpreted as a numpy ndarray with the same
             dimension, shape and datatypes as 'x'.
-        axes: Axes along which the norm is calculated. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1).
-            Default: (0, 1)
+        axes: Pair of integers, that identify the array axes, along which the
+            function is evaluated. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. The default value is (0, 1), which is an evaluation
+            with respect to the first two axis in the array.
 
     Returns:
-        NumPy ndarray of dimension dim *x* - 2.
+        `Numpy.ndarray`_ of dimension dim(*x*) - 2.
 
     """
     return norm_frobenius(np.add(x, np.multiply(y, -1)), axes=axes)

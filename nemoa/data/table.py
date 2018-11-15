@@ -95,12 +95,20 @@ class Record(ABC):
     #
 
     def __post_init__(self, *args: Any, **kwds: Any) -> None:
+        self.validate()
         self.id = self._create_row_id()
         self.state = ROW_STATE_CREATE
 
     #
     # Public Methods
     #
+
+    def validate(self) -> None:
+        """Check types of fields."""
+        fields = getattr(self, '__dataclass_fields__', {})
+        for name, field in fields.items():
+            value = getattr(self, name)
+            check.has_type(f"field '{name}'", value, field.type)
 
     def delete(self) -> None:
         """Mark record as deleted and remove it's ID from index."""
@@ -169,39 +177,9 @@ class Cursor(attrib.Container):
     Args:
         index: List of row IDs, that are traversed by the cursor. By default the
             attribute '_index' of the parent object is used.
-        mode: Named string identifier of frequently used cursor modes. This
-            identifier can be any space seperated combination of a *traversal
-            mode* and an *operation mode*, or only one of them. Valid traversal
-            modes are 'forward-only', 'scrollable' and 'random' with default
-            value 'forward-only'. Valid operation modes are 'dynamic', 'indexed'
-            and 'static', with default value 'indexed':
-
-            :dynamic: Dynamic cursors are built on-the-fly and therefore
-                comprise any changes made to the rows in the result set during
-                it's traversal, including new appended rows and the order of
-                it's traversal. This behaviour is regardless of whether the
-                changes occur from inside the cursor or by other users from
-                outside the cursor. Dynamic cursors are threadsafe but do not
-                support counting filtered rows or sorting rows.
-            :indexed: Indexed (aka Keyset-driven) cursors are built on-the-fly
-                with respect to an initial copy of the table index and therefore
-                comprise changes made to the rows in the result set during it's
-                traversal, but not new appended rows nor changes within their
-                order. Keyset driven cursors are threadsafe but do not support
-                sorting rows or counting filtered rows.
-            :static: Static cursors are buffered and built during it's creation
-                time and therfore always display the result set as it was when
-                the cursor was first opened. Static cursors are not threadsafe
-                but support counting the rows with respect to a given filter and
-                sorting the rows.
-            :forward-only: Forward-only cursor
-            :scrollable: Scrollable cursor
-            :random: Random cursors randomly fetch and return rows from the
-                result set. In difference to a randomly sorted cursor, the rows
-                are not unique and the number of fetched rows is not limited to
-                the size of the result set. If the method ``fetch`` is called
-                with a zero or negative value for size, a CursorModeError is
-                raised.
+        mode: Named string identifier for the cursor :py:attr:`~mode`. The
+            default cursor mode is 'forward-only indexed'. Note: After
+            initializing the curser, it's mode can not be changed anymore.
 
     """
 
@@ -210,16 +188,64 @@ class Cursor(attrib.Container):
     #
 
     _default_mode: ClassVar[int] = CUR_MODE_INDEXED
-    _default_batchsize: ClassVar[int] = 1
 
     #
     # Public Attributes
     #
 
     mode: property = attrib.Virtual(fget='_get_mode')
+    mode.__doc__ = """
+    Named string identifier for cursor modes, given by a space seperated
+    combination of a *moving type* and an *operation type*.
+    Supported moving types are:
+
+    :forward-only: The default moving type of cursors is called a forward-only
+        cursor and can move only forward through the result set. A forward-only
+        cursor does not support scrolling but only fetching rows from the start
+        to the end of the result set.
+    :scrollable: A scrollable cursor is commonly used in screen-based
+        interactive applications, like spreadsheets, in which users are allowed
+        to scroll back and forth through the result set. However, applications
+        should use scrollable cursors only when forward-only cursors will not do
+        the job, as scrollable cursors are generally more expensive, than
+        forward-only cursors.
+    :random: Random cursors move randomly through the result set. In difference
+        to a randomly sorted cursor, the rows are not unique and the number of
+        fetched rows is not limited to the size of the result set. If the method
+        :py:meth:`.fetch` is called with a zero value for size, a
+        CursorModeError is raised.
+
+    Supported operation types are:
+
+    :dynamic: A **dynamic cursor** is built on-the-fly and therefore comprises
+        any changes made to the rows in the result set during it's traversal,
+        including new appended rows and the order of it's traversal. This
+        behaviour is regardless of whether the changes occur from inside the
+        cursor or by other users from outside the cursor. Dynamic cursors are
+        threadsafe but do not support counting filtered rows or sorting rows.
+    :indexed: Indexed cursors (aka Keyset-driven cursors) are built on-the-fly
+        with respect to an initial copy of the table index and therefore
+        comprise changes made to the rows in the result set during it's
+        traversal, but not new appended rows nor changes within their order.
+        Keyset driven cursors are threadsafe but do not support sorting rows or
+        counting filtered rows.
+    :static: Static cursors are buffered and built during it's creation time and
+        therfore always display the result set as it was when the cursor was
+        first opened. Static cursors are not threadsafe but support counting the
+        rows with respect to a given filter and sorting the rows.
+
+    """
+
+    batchsize: property = attrib.MetaData(classinfo=int, default=1)
+    """
+    The batchsize specifies the default number of rows which is to be fetched
+    by the mothod :py:meth:`.fetch`. It defaults to 1, meaning to fetch a single
+    row at a time. Whether and which batchsize to use depends on the application
+    and should be considered with care. The batchsize can also be adapted during
+    the lifetime of the cursor, which allows dynamic performance optimization.
+    """
+
     rowcount: property = attrib.Virtual(fget='_get_rowcount')
-    batchsize: property = attrib.MetaData(
-        classinfo=int, default=_default_batchsize)
 
     #
     # Protected Attributes
@@ -363,6 +389,7 @@ class Cursor(attrib.Container):
 
     def _set_mode(self, name: str) -> None:
         mode = 0
+        name = name.strip(' ').lower()
 
         # Set traversal mode flags
         if 'random' in name:

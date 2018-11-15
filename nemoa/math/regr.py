@@ -15,7 +15,7 @@ except ImportError as err:
 
 from nemoa.base import assess, this
 from nemoa.math import vector
-from nemoa.types import Any, NpAxis, NpArray, NpArrayLike, StrList
+from nemoa.types import Any, NpAxes, NpArray, NpArrayLike, StrList
 
 _ERROR_PREFIX = 'error_'
 
@@ -34,7 +34,7 @@ def errors() -> StrList:
     semi-metrices [4].
 
     Returns:
-        Sorted list of all discrepany functions, that are implemented within
+        Sorted list of all discrepancy functions, that are implemented within
         the module.
 
     References:
@@ -48,7 +48,7 @@ def errors() -> StrList:
 
 def error(
         x: NpArrayLike, y: NpArrayLike, name: str, **kwds: Any) -> NpArray:
-    """Calculate discrepancy of samples along given axis.
+    """Calculate discrepancy of samples along given axes.
 
     A 'discrepancy' is a sample statistic, that quantifies the difference of
     realized random variables [1]. In regression analysis discrepancy functions
@@ -73,7 +73,7 @@ def error(
             functions.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
+        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     References:
         [1] https://en.wikipedia.org/wiki/metric_(mathematics)
@@ -109,8 +109,8 @@ def error(
     # Evaluate distance function
     return func(x, y, **assess.get_function_kwds(func, default=kwds))
 
-def error_rss(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
-    """Calculate Residual Sum of Squares of two samples along given axis.
+def error_rss(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
+    """Calculate Residual Sum of Squares of two samples along given axes.
 
     The Residual Sum of Squares (RSS), also known as the the Sum of squared
     errors (SSE), is a sample statistic on in the space of random variables [1],
@@ -125,14 +125,16 @@ def error_rss(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
         y: NumPy ndarray with same dimension, shape and datatypes as 'x'
-        axis: Axis (or axes) along which the distance is calculated. Within a
-            one-dimensional array the axis always has index 0. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1). Default: 0
+        axes: Integer or tuple of integers, that identify the array axes, along
+            which the function is evaluated. In a one-dimensional array the
+            single axis has ID 0. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. For the value None, the function is evaluated with
+            respect to all axes of the array. The default value is 0, which
+            is an evaluation with respect to the first axis in the array.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
+        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     References:
         [1] https://en.wikipedia.org/wiki/residual_sum_of_squares
@@ -141,9 +143,9 @@ def error_rss(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
         [3] https://en.wikipedia.org/wiki/explained_variation
 
     """
-    return np.sum(np.square(np.add(x, np.multiply(y, -1))), axis=axis)
+    return np.sum(np.square(np.add(x, np.multiply(y, -1))), axis=axes)
 
-def error_mse(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
+def error_mse(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate Mean Squared Error of two samples along given axis.
 
     The Mean Squared Error (MSE) is a sample statistic on in the space of random
@@ -158,14 +160,16 @@ def error_mse(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
         y: NumPy ndarray with same dimension, shape and datatypes as 'x'
-        axis: Axis (or axes) along which the distance is calculated. Within a
-            one-dimensional array the axis always has index 0. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1). Default: 0
+        axes: Integer or tuple of integers, that identify the array axes, along
+            which the function is evaluated. In a one-dimensional array the
+            single axis has ID 0. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. For the value None, the function is evaluated with
+            respect to all axes of the array. The default value is 0, which
+            is an evaluation with respect to the first axis in the array.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
+        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     References:
         [1] https://en.wikipedia.org/wiki/mean_squared_error
@@ -174,9 +178,9 @@ def error_mse(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
         [4] https://en.wikipedia.org/wiki/risk_function
 
     """
-    return np.mean(np.square(np.add(x, np.multiply(y, -1))), axis=axis)
+    return np.mean(np.square(np.add(x, np.multiply(y, -1))), axis=axes)
 
-def error_mae(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
+def error_mae(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate Mean Absolute Error of two samples along given axis.
 
     The Mean Absolute Error (MAE) is a sample statistic on in the space of
@@ -190,14 +194,16 @@ def error_mae(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
         y: NumPy ndarray with same dimension, shape and datatypes as 'x'
-        axis: Axis (or axes) along which the distance is calculated. Within a
-            one-dimensional array the axis always has index 0. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1). Default: 0
+        axes: Integer or tuple of integers, that identify the array axes, along
+            which the function is evaluated. In a one-dimensional array the
+            single axis has ID 0. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. For the value None, the function is evaluated with
+            respect to all axes of the array. The default value is 0, which
+            is an evaluation with respect to the first axis in the array.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
+        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     References:
         [1] https://en.wikipedia.org/wiki/mean_absolute_error
@@ -206,9 +212,9 @@ def error_mae(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
         [4] https://en.wikipedia.org/wiki/risk_function
 
     """
-    return vector.dist_amean(x, y, axis=axis)
+    return vector.dist_amean(x, y, axes=axes)
 
-def error_rmse(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
+def error_rmse(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate Root-Mean-Square Error of two samples along given axis.
 
     The Root-Mean-Square Error (RMSE) is a sample statistic on in the space of
@@ -222,14 +228,16 @@ def error_rmse(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
         y: NumPy ndarray with same dimension, shape and datatypes as 'x'
-        axis: Axis (or axes) along which the distance is calculated. Within a
-            one-dimensional array the axis always has index 0. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1). Default: 0
+        axes: Integer or tuple of integers, that identify the array axes, along
+            which the function is evaluated. In a one-dimensional array the
+            single axis has ID 0. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. For the value None, the function is evaluated with
+            respect to all axes of the array. The default value is 0, which
+            is an evaluation with respect to the first axis in the array.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
+        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     References:
         [1] https://en.wikipedia.org/wiki/root-mean-square_error
@@ -237,7 +245,7 @@ def error_rmse(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
         [3] https://en.wikipedia.org/wiki/discrepancy_function
 
     """
-    return vector.dist_qmean(x, y, axis=axis)
+    return vector.dist_qmean(x, y, axes=axes)
 
 # TODO (patrick.michl@gmail.com): Add RSSE
 # norm_euclid
