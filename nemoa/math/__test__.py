@@ -8,7 +8,7 @@ __docformat__ = 'google'
 
 import networkx as nx
 import numpy as np
-from nemoa.math import algo, curve, graph, matrix, regr, vector
+from nemoa.math import algo, curve, graph, matrix, regression, vector
 from nemoa.test import ModuleTestCase, MathTestCase
 from nemoa.types import NaN
 
@@ -200,15 +200,15 @@ class TestVector(MathTestCase, ModuleTestCase):
     def test_norm_qmean(self) -> None:
         self.assertIsVectorNorm(vector.norm_qmean)
 
-    def test_metrices(self) -> None:
-        metrices = vector.metrices()
-        self.assertIsInstance(metrices, list)
-        self.assertTrue(metrices)
+    def test_distances(self) -> None:
+        distances = vector.distances()
+        self.assertIsInstance(distances, list)
+        self.assertTrue(distances)
 
     def test_distance(self) -> None:
-        for metric in vector.metrices():
-            with self.subTest(metric=metric):
-                self.assertIsVectorMetric(vector.distance, metric=metric)
+        for name in vector.distances():
+            with self.subTest(name=name):
+                self.assertIsVectorMetric(vector.distance, name=name)
 
     def test_dist_chebyshev(self) -> None:
         self.assertIsVectorMetric(vector.dist_chebyshev)
@@ -270,45 +270,48 @@ class TestMatrix(MathTestCase, ModuleTestCase):
                 with self.subTest(p=p, q=q):
                     self.assertIsMatrixNorm(matrix.norm_pq, p=p, q=q)
 
-    def test_metrices(self) -> None:
-        metrices = matrix.metrices()
-        self.assertIsInstance(metrices, list)
-        self.assertTrue(metrices)
+    def test_distances(self) -> None:
+        distances = matrix.distances()
+        self.assertIsInstance(distances, list)
+        self.assertTrue(distances)
 
     def test_distance(self) -> None:
-        for metric in matrix.metrices():
-            with self.subTest(metric=metric):
-                self.assertIsMatrixMetric(matrix.distance, metric=metric)
+        for name in matrix.distances():
+            with self.subTest(name=name):
+                self.assertIsMatrixMetric(matrix.distance, name=name)
 
     def test_dist_frobenius(self) -> None:
         self.assertIsMatrixMetric(matrix.dist_frobenius)
 
 class TestRegr(MathTestCase, ModuleTestCase):
-    """Testcase for the module nemoa.math.regr."""
+    """Testcase for the module nemoa.math.regression."""
 
-    module = 'nemoa.math.regr'
+    module = 'nemoa.math.regression'
 
     def test_errors(self) -> None:
-        errors = regr.errors()
+        errors = regression.errors()
         self.assertIsInstance(errors, list)
         self.assertTrue(errors)
 
     def test_error(self) -> None:
-        for error in regr.errors():
-            with self.subTest(name=error):
-                self.assertIsSemiMetric(regr.error, name=error)
+        for name in regression.errors():
+            with self.subTest(name=name):
+                self.assertIsSemiMetric(regression.error, name=name)
 
-    def test_error_mae(self) -> None:
-        self.assertIsSemiMetric(regr.error_mae)
-
-    def test_error_mse(self) -> None:
-        self.assertIsSemiMetric(regr.error_mse)
-
-    def test_error_rmse(self) -> None:
-        self.assertIsSemiMetric(regr.error_rmse)
+    def test_error_sad(self) -> None:
+        self.assertIsSemiMetric(regression.error_sad)
 
     def test_error_rss(self) -> None:
-        self.assertIsSemiMetric(regr.error_rss)
+        self.assertIsSemiMetric(regression.error_rss)
+
+    def test_error_mae(self) -> None:
+        self.assertIsSemiMetric(regression.error_mae)
+
+    def test_error_mse(self) -> None:
+        self.assertIsSemiMetric(regression.error_mse)
+
+    def test_error_rmse(self) -> None:
+        self.assertIsSemiMetric(regression.error_rmse)
 
 class TestGraph(ModuleTestCase):
     """Testsuite for modules within the package 'nemoa.math.graph'."""

@@ -48,12 +48,12 @@ def length(
         norm: String, which identifies the used vector norm:
 
             :p: The :term:`p-norm` requires an additional parameter *p* and
-                induces the :term:`Minkowski metric`.
-            :1: The :term:`1-norm` induces the :term:`Manhatten metric`.
+                induces the :term:`Minkowski distance`.
+            :1: The :term:`1-norm` induces the :term:`Manhatten distance`.
             :euclid: The :term:`Euclidean norm` is the default norm and induces
-                the :term:`Euclidean metric`.
+                the :term:`Euclidean distance`.
             :max: The :term:`Maximum norm` induces the
-                :term:`Chebyshev metric`.
+                :term:`Chebyshev distance`.
             :pmean: The :term:`Hölder mean` requires an additional parameter
                 *p* and induces the :term:`Power-Mean difference`.
             :amean: The :term:`Mean-Absolute` induces the
@@ -260,23 +260,23 @@ def norm_qmean(x: NpArray, axes: NpAxes = 0) -> NpArray:
     return np.sqrt(np.mean(np.square(x), axis=axes))
 
 #
-# Vector Metrices
+# Distances
 #
 
-def metrices() -> StrList:
-    """Get sorted list of vector space metrices.
+def distances() -> StrList:
+    """Get sorted list of vector space distances.
 
     Returns:
-        Sorted list of all vector space metrices and generalized vector space
-        metrices, that are implemented within the module.
+        Sorted list of all vector space distances and generalized vector space
+        distances, that are implemented within the module.
 
     """
     return this.crop_functions(prefix=_DIST_PREFIX)
 
 def distance(
-        x: NpArrayLike, y: NpArrayLike, metric: str = 'euclid',
+        x: NpArrayLike, y: NpArrayLike, name: str = 'euclid',
         **kwds: Any) -> NpArray:
-    """Calculate vector distances of two arrays along given axis.
+    """Calculate distance of two arrays along given axes.
 
     A vector distance function, also known as metric, is a function d(x, y),
     which quantifies the proximity of vectors in a vector space as non-negative
@@ -290,18 +290,17 @@ def distance(
             arrays.
         y: Any sequence that can be interpreted as a numpy ndarray with the same
             dimension, shape and datatypes as 'x'.
-        metric: Name of metric. Accepted values are:
-            'minkowski': Minkowski distances (induced by p-norms)
+        name: Name of distance. Accepted values are:
+            'minkowski': :term:`Minkowski distance`
                 Remark: requires additional parameter 'p'
-            'manhatten': Manhatten distance (induced by 1-norm)
-            'euclid': Euclidean distance (induced by Euclidean norm)
-            'chebyshev': Chebyshev distance (induced by Maximum norm)
-            'pmean': Class of Power mean differences (induced by Power Means)
+            'manhatten': :term:`Manhatten distance`
+            'euclid': :term:`Euclidean distance` (default)
+            'chebyshev': :term:`Chebyshev distance`
+            'pmean': :term:`Power mean difference`
                 Remark: requires additional parameter 'p'
-            'amean': Arithmetic mean difference (induced by Arithmetic Mean)
-            'qmean': Quadratic mean difference (induced by Quadratic Mean)
-            Default: 'euclid'
-        **kwds: Parameters of the given metric or class of metrices.
+            'amean': :term:`Mean absolute difference`
+            'qmean': :term:`Quadratic mean difference`
+        **kwds: Parameters of the given distance or class of distances.
             The Parameters are documented within the respective 'dist'
             functions.
 
@@ -327,9 +326,9 @@ def distance(
             "arrays 'x' and 'y' can not be broadcasted together")
 
     # Get function
-    func = this.get_attr(_DIST_PREFIX + metric.lower())
+    func = this.get_attr(_DIST_PREFIX + name.lower())
     if not callable(func):
-        raise ValueError(f"name '{str(metric)}' is not supported")
+        raise ValueError(f"name '{name}' is not supported")
 
     # Evaluate function
     supp_kwds = assess.get_function_kwds(func, default=kwds)
@@ -337,7 +336,7 @@ def distance(
 
 def dist_minkowski(
         x: NpArray, y: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
-    """Calculate distance along given axes for :term:`Minkowski metric`.
+    """Calculate :term:`Minkowski distance` along given axes.
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
@@ -362,7 +361,7 @@ def dist_minkowski(
     return norm_p(np.add(x, np.multiply(y, -1)), p=p, axes=axes)
 
 def dist_manhatten(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
-    """Calculate distance along given axes for :term:`Manhattan metric`.
+    """Calculate :term:`Manhattan distance` along given axes.
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
@@ -381,7 +380,7 @@ def dist_manhatten(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     return norm_1(np.add(x, np.multiply(y, -1)), axes=axes)
 
 def dist_euclid(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
-    """Calculate distance along given axes for :term:`Euclidean metric`.
+    """Calculate :term:`Euclidean distance` along given axes for.
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
@@ -401,7 +400,7 @@ def dist_euclid(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     return norm_euclid(np.add(x, np.multiply(y, -1)), axes=axes)
 
 def dist_chebyshev(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
-    """Calculate distance along given axes for :term:`Chebyshev metric`.
+    """Calculate :term:`Chebyshev distance` along given axes.
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
@@ -422,7 +421,7 @@ def dist_chebyshev(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
 
 def dist_pmean(
         x: NpArray, y: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
-    """Calculate the :term:`Power-Mean difference` along given axes.
+    """Calculate :term:`power mean difference` along given axes.
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
@@ -448,7 +447,7 @@ def dist_pmean(
     return norm_pmean(np.add(x, np.multiply(y, -1)), p=p, axes=axes)
 
 def dist_amean(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
-    """Calculate the :term:`Mean-Absolute difference` along given axes.
+    """Calculate :term:`mean absolute difference` along given axes.
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
@@ -468,7 +467,7 @@ def dist_amean(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     return norm_amean(np.add(x, np.multiply(y, -1)), axes=axes)
 
 def dist_qmean(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
-    """Calculate the :term:`Quadratic-Mean difference` along given axes.
+    """Calculate :term:`quadratic mean difference` along given axes.
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.

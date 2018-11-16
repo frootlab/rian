@@ -10,7 +10,7 @@ Submodules
    nemoa.math.curve
    nemoa.math.graph
    nemoa.math.matrix
-   nemoa.math.regr
+   nemoa.math.regression
    nemoa.math.vector
 
 Module contents

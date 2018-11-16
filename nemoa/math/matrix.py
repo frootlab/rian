@@ -161,23 +161,23 @@ def norm_frobenius(x: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
 # Matrix Metrices
 #
 
-def metrices() -> StrList:
-    """Get sorted list of matrix metrices.
+def distances() -> StrList:
+    """Get sorted list of matrix distances.
 
     Returns:
-        Sorted list of all matrix metrices, that are implemented within the
+        Sorted list of all matrix distances, that are implemented within the
         module.
 
     """
     return this.crop_functions(prefix=_DIST_PREFIX)
 
 def distance(
-        x: NpArrayLike, y: NpArrayLike, metric: str = 'frobenius',
+        x: NpArrayLike, y: NpArrayLike, name: str = 'frobenius',
         **kwds: Any) -> NpArray:
     """Calculate matrix distances of two arrays along given axis.
 
-    A matrix distance function, also known as metric, is a function d(x, y),
-    which quantifies the proximity of matrices in a vector space as non-negative
+    A matrix distance function, is a function d(x, y), which quantifies the
+    proximity of matrices in a vector space as non-negative
     real numbers. If the distance is zero, then the matrices are equivalent with
     respect to the distance function. Distance functions are often used as
     error, loss or risk functions, to evaluate statistical estimations.
@@ -188,10 +188,10 @@ def distance(
             existing arrays.
         y: Any sequence that can be interpreted as a numpy ndarray with the same
             dimension, shape and datatypes as 'x'.
-        metric: Name of the matrix distance function. Accepted values are:
+        name: Name of the matrix distance function. Accepted values are:
             'frobenius': Frobenius distance (induced by Frobenius norm)
             Default: 'frobenius'
-        **kwds: Parameters of the given metric or class of metrices.
+        **kwds: Parameters of the given distance or class of distances.
             The Parameters are documented within the respective 'dist'
             functions.
 
@@ -217,16 +217,16 @@ def distance(
             "arrays 'x' and 'y' can not be broadcasted together")
 
     # Get function
-    func = this.get_attr(_DIST_PREFIX + metric.lower())
+    func = this.get_attr(_DIST_PREFIX + name.lower())
     if not callable(func):
-        raise ValueError(f"name '{str(metric)}' is not supported")
+        raise ValueError(f"name '{name}' is not supported")
 
     # Evaluate function
     supp_kwds = assess.get_function_kwds(func, default=kwds)
     return func(x, y, **supp_kwds) # pylint: disable=E1102
 
 def dist_frobenius(x: NpArray, y: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
-    """Calculate :term:`Frobenius metric` of two arrays along given axes.
+    """Calculate :term:`Frobenius distance` of two arrays along given axes.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of two or
