@@ -46,6 +46,7 @@ BytesIOBaseClass = io.BufferedIOBase
 TextIOBaseClass = io.TextIOBase
 FileClasses = (BytesIOBaseClass, TextIOBaseClass)
 TextFileClasses = (str, Path, TextIOBaseClass)
+ClassInfoClasses = (type, tuple)
 
 ################################################################################
 # Generic Type Variables
@@ -251,7 +252,7 @@ FileOrPathLike = Union[FileLike, PathLike]
 # https://github.com/numpy/numpy-stubs
 NpShape = Optional[IntTuple]
 NpShapeLike = Optional[Union[int, Sequence[int]]]
-NpAxis = Union[None, int, IntTuple]
+NpAxes = Union[None, int, IntTuple]
 NpFields = Union[None, str, Iterable[str]]
 NpArray = Any # TODO: Replace with numpy.ndarray, when supported
 NpMatrix = Any # TODO: replace with numpy.matrix, when supported

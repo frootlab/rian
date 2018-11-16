@@ -13,6 +13,7 @@ from nemoa.errors import (
     InvalidAttrError, NotIsSubsetError, NotIsPositiveError, NotIsNegativeError,
     MinSizeError, MaxSizeError)
 from nemoa.types import Class, ClassInfo, Sized, RealNumber, OptInt
+from nemoa.types import ClassInfoClasses
 
 #
 # Check Type of Objects
@@ -20,6 +21,9 @@ from nemoa.types import Class, ClassInfo, Sized, RealNumber, OptInt
 
 def has_type(name: str, obj: object, classinfo: ClassInfo) -> None:
     """Check type of object."""
+    if not isinstance(classinfo, ClassInfoClasses):
+        if hasattr(classinfo, '__origin__'):
+            classinfo = classinfo.__origin__
     if not isinstance(obj, classinfo):
         raise InvalidTypeError(name, obj, classinfo)
 

@@ -6,6 +6,7 @@ Bibliography
 .. [DCMI-TERMS] http://dublincore.org/documents/dcmi-terms/
 .. [DCMI-TYPE] http://dublincore.org/documents/dcmi-type-vocabulary/
 .. [GPLV3] https://www.gnu.org/licenses/gpl.txt
+.. [IEEE 754] https://ieeexplore.ieee.org/document/4610935/
 .. [MIME] http://www.iana.org/assignments/media-types/
 .. [PEP257] https://www.python.org/dev/peps/pep-0257/
 .. [RFC3548] https://tools.ietf.org/html/rfc3548.html

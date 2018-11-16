@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Vector Norms and Metrices."""
+"""Vector Norms and Metrices.
+
+.. _`numpy.ndarray`:
+    https://www.numpy.org/devdocs/reference/arrays.ndarray
+"""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -14,7 +18,7 @@ except ImportError as err:
         "https://pypi.org/project/numpy") from err
 
 from nemoa.base import assess, this
-from nemoa.types import Any, NpAxis, NpArray, NpArrayLike, StrList
+from nemoa.types import Any, NpAxes, NpArray, NpArrayLike, StrList
 
 _NORM_PREFIX = 'norm_'
 _DIST_PREFIX = 'dist_'
@@ -32,40 +36,42 @@ def norms() -> StrList:
     """
     return this.crop_functions(prefix=_NORM_PREFIX)
 
-def length(x: NpArrayLike, norm: str = 'euclid', **kwds: Any) -> NpArray:
-    """Calculate length of a vector by given norm.
+def length(
+        x: NpArrayLike, norm: str = 'euclid', axes: NpAxes = 0,
+        **kwds: Any) -> NpArray:
+    r"""Calculate the length of a vector with respect to a given norm.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
             dimension. This includes nested lists, tuples, scalars and existing
             arrays.
-        norm: Name of Vector Norm:
+        norm: String, which identifies the used vector norm:
 
-            :p:
-                The :term:`p-norm`_ requires an additional parameter *p* and
-                induces the :term:`Minkowski metric`_.
-            :1:
-                The :term:`1-norm`_ induces the :term:`Manhatten metric`_.
-            :euclid:
-                The :term:`Euclidean norm`_ is the default norm and induces the
-                :term:`Euclidean metric`_.
-            :max:
-                The :term:`Maximum norm`_ induces the :term:`Chebyshev metric`.
-            :pmean:
-                The :term:`Hölder mean`_ requires an additional parameter *p*
-                and induces the :term:`Power-Mean difference`.
-            :amean:
-                The :term:`Mean-Absolute` induces the
-                :term:`Mean-Absolute` difference
-            :qmean:
-                The :term:`Quadratic-Mean` induces the
+            :p: The :term:`p-norm` requires an additional parameter *p* and
+                induces the :term:`Minkowski distance`.
+            :1: The :term:`1-norm` induces the :term:`Manhatten distance`.
+            :euclid: The :term:`Euclidean norm` is the default norm and induces
+                the :term:`Euclidean distance`.
+            :max: The :term:`Maximum norm` induces the
+                :term:`Chebyshev distance`.
+            :pmean: The :term:`Hölder mean` requires an additional parameter
+                *p* and induces the :term:`Power-Mean difference`.
+            :amean: The :term:`Mean-Absolute` induces the
+                :term:`Mean-Absolute difference`
+            :qmean: The :term:`Quadratic-Mean` induces the
                 :term:`Quadratic-Mean difference`
-
+        axes: Integer or tuple of integers, that identify the array axes, along
+            which the function is evaluated. In a one-dimensional array the
+            single axis has ID 0. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. For the value None, the function is evaluated with
+            respect to all axes of the array. The default value is 0, which
+            is an evaluation with respect to the first axis in the array.
         **kwds: Additional parameters of the given norm. These norm parameters
             are documented within the respective 'norm' functions.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
+        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     """
     # Check type of 'x'
@@ -82,9 +88,9 @@ def length(x: NpArrayLike, norm: str = 'euclid', **kwds: Any) -> NpArray:
 
     # Evaluate function
     supp_kwds = assess.get_function_kwds(func, default=kwds)
-    return func(x, **supp_kwds) # pylint: disable=E1102
+    return func(x, axes=axes, **supp_kwds) # pylint: disable=E1102
 
-def norm_p(x: NpArray, p: float = 2., axis: NpAxis = 0) -> NpArray:
+def norm_p(x: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
     r"""Calculate a :term:`p-Norm` of an array along given axes.
 
     Args:
@@ -96,86 +102,92 @@ def norm_p(x: NpArray, p: float = 2., axis: NpAxis = 0) -> NpArray:
             does not satisfy the triangle inequality and yields a quasi-norm.
             For p >= 1 the p-norm is a norm.
             Default: 2.
-        axis: Index of axis (or axes) along which the function is performed.
-            Within a 1d array the axis has index 0. In a 2d array the axis with
-            index 0 is running across rows, and the axis with index 1 is running
-            across columns. If axis is a tuple of ints, the function is
-            performed over all axes in the tuple. If axis is None, the function
-            is performed over all axes.
-            Default: 0
+        axes: Integer or tuple of integers, that identify the array axes, along
+            which the function is evaluated. In a one-dimensional array the
+            single axis has ID 0. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. For the value None, the function is evaluated with
+            respect to all axes of the array. The default value is 0, which
+            is an evaluation with respect to the first axis in the array.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
+        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     """
     # For special cases prefer individual implementations, which are faster then
     # the generic implementation of the p-norm
     if p == 1.: # Use the 1-norm
-        return norm_1(x, axis=axis)
+        return norm_1(x, axes=axes)
     if p == 2.: # Use the Euclidean norm
-        return norm_euclid(x, axis=axis)
+        return norm_euclid(x, axes=axes)
 
-    psum = np.sum(np.power(np.abs(x), p), axis=axis)
+    psum = np.sum(np.power(np.abs(x), p), axis=axes)
     return np.power(psum, 1. / p)
 
-def norm_1(x: NpArray, axis: NpAxis = 0) -> NpArray:
-    r"""Calculate the :term:`1-Norm` of an array along given axis.
+def norm_1(x: NpArray, axes: NpAxes = 0) -> NpArray:
+    r"""Calculate the :term:`1-Norm` of an array along given axes.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
             dimension. This includes nested lists, tuples, scalars and existing
             arrays.
-        axis: Axis (or axes) along which the norm is calculated. Within a
-            one-dimensional array the axis always has index 0. A two-dimensional
-            array has two corresponding axes. The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1). Default 0
+        axes: Integer or tuple of integers, that identify the array axes, along
+            which the function is evaluated. In a one-dimensional array the
+            single axis has ID 0. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. For the value None, the function is evaluated with
+            respect to all axes of the array. The default value is 0, which
+            is an evaluation with respect to the first axis in the array.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
+        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     """
-    return np.sum(np.abs(x), axis=axis)
+    return np.sum(np.abs(x), axis=axes)
 
-def norm_euclid(x: NpArray, axis: NpAxis = 0) -> NpArray:
+def norm_euclid(x: NpArray, axes: NpAxes = 0) -> NpArray:
     r"""Calculate the :term:`Euclidean norm` of an array along given axes.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
             dimension. This includes nested lists, tuples, scalars and existing
             arrays.
-        axis: Axis (or axes) along which the norm is calculated. Within a
-            one-dimensional array the axis always has index 0. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1). Default is 0.
+        axes: Integer or tuple of integers, that identify the array axes, along
+            which the function is evaluated. In a one-dimensional array the
+            single axis has ID 0. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. For the value None, the function is evaluated with
+            respect to all axes of the array. The default value is 0, which
+            is an evaluation with respect to the first axis in the array.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
+        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     """
-    return np.sqrt(np.sum(np.square(x), axis=axis))
+    return np.sqrt(np.sum(np.square(x), axis=axes))
 
-def norm_max(x: NpArray, axis: NpAxis = 0) -> NpArray:
+def norm_max(x: NpArray, axes: NpAxes = 0) -> NpArray:
     r"""Calculate the :term:`Maximum norm` of an array along given axes.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
             dimension. This includes nested lists, tuples, scalars and existing
             arrays.
-        axis: Axis (or axes) along which the norm is calculated. Within a
-            one-dimensional array the axis always has index 0. A two-dimensional
-            array has two corresponding axes. The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1). Default is 0
+        axes: Integer or tuple of integers, that identify the array axes, along
+            which the function is evaluated. In a one-dimensional array the
+            single axis has ID 0. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. For the value None, the function is evaluated with
+            respect to all axes of the array. The default value is 0, which
+            is an evaluation with respect to the first axis in the array.
 
     Returns:
-        Numpy ndarray of dimension dim(*x*) - #*axes*.
+        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     """
-    return np.amax(np.abs(x), axis=axis)
+    return np.amax(np.abs(x), axis=axes)
 
-def norm_pmean(x: NpArray, p: float = 2., axis: NpAxis = 0) -> NpArray:
+def norm_pmean(x: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
     r"""Calculate a :term:`Hölder mean` of an array along given axes.
 
     Args:
@@ -187,121 +199,90 @@ def norm_pmean(x: NpArray, p: float = 2., axis: NpAxis = 0) -> NpArray:
             function does not satisfy the triangle inequality and yields a
             quasi-norm. For p >= 1 the power mean is a norm.
             Default: 2
-        axis: Axis (or axes) along which the norm is calculated. Within a
-            one-dimensional array the axis always has index 0. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1).
-            Default: 0
+        axes: Integer or tuple of integers, that identify the array axes, along
+            which the function is evaluated. In a one-dimensional array the
+            single axis has ID 0. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. For the value None, the function is evaluated with
+            respect to all axes of the array. The default value is 0, which
+            is an evaluation with respect to the first axis in the array.
 
     Returns:
-        Numpy ndarray of dimension <dim x> - <number of axes>.
+        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     """
     if p == 1.:
-        return norm_amean(x, axis=axis) # faster then generic implementation
+        return norm_amean(x, axes=axes) # faster then generic implementation
     if p == 2.:
-        return norm_qmean(x, axis=axis) # faster then generic implementation
-    return np.power(np.mean(np.power(np.abs(x), p), axis=axis), 1. / float(p))
+        return norm_qmean(x, axes=axes) # faster then generic implementation
+    return np.power(np.mean(np.power(np.abs(x), p), axis=axes), 1. / float(p))
 
-def norm_amean(x: NpArray, axis: NpAxis = 0) -> NpArray:
+def norm_amean(x: NpArray, axes: NpAxes = 0) -> NpArray:
     r"""Calculate :term:`Mean-Absolute` of an array along given axes.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
             dimension. This includes nested lists, tuples, scalars and existing
             arrays.
-        axis: Axis (or axes) along which the norm is calculated. Within a
-            one-dimensional array the axis always has index 0. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1).
-            Default: 0
+        axes: Integer or tuple of integers, that identify the array axes, along
+            which the function is evaluated. In a one-dimensional array the
+            single axis has ID 0. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. For the value None, the function is evaluated with
+            respect to all axes of the array. The default value is 0, which
+            is an evaluation with respect to the first axis in the array.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
+        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     """
-    return np.mean(np.abs(x), axis=axis)
+    return np.mean(np.abs(x), axis=axes)
 
-def norm_qmean(x: NpArray, axis: NpAxis = 0) -> NpArray:
+def norm_qmean(x: NpArray, axes: NpAxes = 0) -> NpArray:
     r"""Calculate the :term:`Quadratic-Mean` of an array along given axes.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
             dimension. This includes nested lists, tuples, scalars and existing
             arrays.
-        axis: Axis (or axes) along which the norm is calculated. Within a
-            one-dimensional array the axis always has index 0. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1).
-            Default: 0
+        axes: Integer or tuple of integers, that identify the array axes, along
+            which the function is evaluated. In a one-dimensional array the
+            single axis has ID 0. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. For the value None, the function is evaluated with
+            respect to all axes of the array. The default value is 0, which
+            is an evaluation with respect to the first axis in the array.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
+        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     """
-    return np.sqrt(np.mean(np.square(x), axis=axis))
-
-# def norm_sd(x: NpArray, axis: NpAxis = 0) -> NpArray:
-#     """Calculate Corrected Standard Deviation of an array along given axis.
-#
-#     The 'Corrected Standard Deviation' (SD) equals the Euclidean norm except for
-#     the additional preliminary factor sqrt(1 / (n - 1)), where n is the
-#     dimension of the vector space [1]. Due to this linear dependency the
-#     Standard Deviation is a valid vector norm and thus induces a metric within
-#     its domain.
-#
-#     .. math::
-#         SD(\vec{x})
-#             := \left({\frac{1}{n}}\sum_{i=1}^{n}|x_{i}|^{2}\right)^{1/2}
-#             = \left(\frac{1}{n}\right)^{1/2}\|\vec{x}\|_{2}
-#
-#     Args:
-#         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
-#             dimension. This includes nested lists, tuples, scalars and existing
-#             arrays.
-#         axis: Axis (or axes) along which the norm is calculated. Within a
-#             one-dimensional array the axis always has index 0. A two-dimensional
-#             array has two corresponding axes: The first running vertically
-#             downwards across rows (axis 0), and the second running horizontally
-#             across columns (axis 1).
-#             Default: 0
-#
-#     Returns:
-#         NumPy ndarray of dimension <dim x> - <number of axes>.
-#
-#     References:
-#         [1] https://en.wikipedia.org/wiki/sample_standard_deviation
-#
-#     """
-#     return np.std(x, axis=axis)
+    return np.sqrt(np.mean(np.square(x), axis=axes))
 
 #
-# Vector Metrices
+# Distances
 #
 
-def metrices() -> StrList:
-    """Get sorted list of vector space metrices.
+def distances() -> StrList:
+    """Get sorted list of vector space distances.
 
     Returns:
-        Sorted list of all vector space metrices and generalized vector space
-        metrices, that are implemented within the module.
+        Sorted list of all vector space distances and generalized vector space
+        distances, that are implemented within the module.
 
     """
     return this.crop_functions(prefix=_DIST_PREFIX)
 
 def distance(
-        x: NpArrayLike, y: NpArrayLike, metric: str = 'euclid',
+        x: NpArrayLike, y: NpArrayLike, name: str = 'euclid',
         **kwds: Any) -> NpArray:
-    """Calculate vector distances of two arrays along given axis.
+    """Calculate distance of two arrays along given axes.
 
     A vector distance function, also known as metric, is a function d(x, y),
     which quantifies the proximity of vectors in a vector space as non-negative
     real numbers. If the distance is zero, then the vectors are equivalent with
-    respect to the distance function [1]. Distance functions are often used as
-    error, loss or risk functions, to evaluate statistical estimations [2].
+    respect to the distance function. Distance functions are often used as
+    error, loss or risk functions, to evaluate statistical estimations.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
@@ -309,27 +290,22 @@ def distance(
             arrays.
         y: Any sequence that can be interpreted as a numpy ndarray with the same
             dimension, shape and datatypes as 'x'.
-        metric: Name of metric. Accepted values are:
-            'minkowski': Minkowski distances (induced by p-norms)
+        name: Name of distance. Accepted values are:
+            'minkowski': :term:`Minkowski distance`
                 Remark: requires additional parameter 'p'
-            'manhatten': Manhatten distance (induced by 1-norm)
-            'euclid': Euclidean distance (induced by Euclidean norm)
-            'chebyshev': Chebyshev distance (induced by Maximum norm)
-            'pmean': Class of Power mean differences (induced by Power Means)
+            'manhatten': :term:`Manhatten distance`
+            'euclid': :term:`Euclidean distance` (default)
+            'chebyshev': :term:`Chebyshev distance`
+            'pmean': :term:`Power mean difference`
                 Remark: requires additional parameter 'p'
-            'amean': Arithmetic mean difference (induced by Arithmetic Mean)
-            'qmean': Quadratic mean difference (induced by Quadratic Mean)
-            Default: 'euclid'
-        **kwds: Parameters of the given metric or class of metrices.
+            'amean': :term:`Mean absolute difference`
+            'qmean': :term:`Quadratic mean difference`
+        **kwds: Parameters of the given distance or class of distances.
             The Parameters are documented within the respective 'dist'
             functions.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
-
-    References:
-        [1] https://en.wikipedia.org/wiki/metric_(mathematics)
-        [2] https://en.wikipedia.org/wiki/loss_function
+        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     """
     # Check 'x' and 'y' to be array-like
@@ -350,17 +326,17 @@ def distance(
             "arrays 'x' and 'y' can not be broadcasted together")
 
     # Get function
-    func = this.get_attr(_DIST_PREFIX + metric.lower())
+    func = this.get_attr(_DIST_PREFIX + name.lower())
     if not callable(func):
-        raise ValueError(f"name '{str(metric)}' is not supported")
+        raise ValueError(f"name '{name}' is not supported")
 
     # Evaluate function
     supp_kwds = assess.get_function_kwds(func, default=kwds)
     return func(x, y, **supp_kwds) # pylint: disable=E1102
 
 def dist_minkowski(
-        x: NpArray, y: NpArray, p: float = 2., axis: NpAxis = 0) -> NpArray:
-    """Calculate distance along given axes for :term:`Minksowski metric`.
+        x: NpArray, y: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
+    """Calculate :term:`Minkowski distance` along given axes.
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
@@ -370,30 +346,27 @@ def dist_minkowski(
             triangle inequality and thus is not a valid metric, but a
             quasi-metric. For p >= 1 the Minkowski distance is a metric.
             Default: 2.
-        axis: Axis (or axes) along which the distance is calculated. Within a
-            one-dimensional array the axis always has index 0. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1).
-            Default: 0
+        axes: Integer or tuple of integers, that identify the array axes, along
+            which the function is evaluated. In a one-dimensional array the
+            single axis has ID 0. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. For the value None, the function is evaluated with
+            respect to all axes of the array. The default value is 0, which
+            is an evaluation with respect to the first axis in the array.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
-
-    References:
-        [1] https://en.wikipedia.org/wiki/p_norm
-        [2] https://en.wikipedia.org/wiki/minkowski_distance
+        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     """
-    return norm_p(np.add(x, np.multiply(y, -1)), p=p, axis=axis)
+    return norm_p(np.add(x, np.multiply(y, -1)), p=p, axes=axes)
 
-def dist_manhatten(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
-    """Calculate distance along given axes for :term:`Manhattan metric`.
+def dist_manhatten(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
+    """Calculate :term:`Manhattan distance` along given axes.
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
         y: NumPy ndarray with same dimension, shape and datatypes as 'x'
-        axis: Axis (or axes) along which the distance is calculated. Within a
+        axes: Axis (or axes) along which the distance is calculated. Within a
             one-dimensional array the axis always has index 0. A two-dimensional
             array has two corresponding axes: The first running vertically
             downwards across rows (axis 0), and the second running horizontally
@@ -401,56 +374,54 @@ def dist_manhatten(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
             Default: 0
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
+        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     """
-    return norm_1(np.add(x, np.multiply(y, -1)), axis=axis)
+    return norm_1(np.add(x, np.multiply(y, -1)), axes=axes)
 
-def dist_euclid(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
-    """Calculate distance along given axes for :term:`Euclidean metric`.
+def dist_euclid(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
+    """Calculate :term:`Euclidean distance` along given axes for.
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
         y: NumPy ndarray with same shape and datatypes as 'x'
-        axis: Axis (or axes) along which the distance is calculated. Within a
-            one-dimensional array the axis always has index 0. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1).
-            Default: 0
+        axes: Integer or tuple of integers, that identify the array axes, along
+            which the function is evaluated. In a one-dimensional array the
+            single axis has ID 0. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. For the value None, the function is evaluated with
+            respect to all axes of the array. The default value is 0, which
+            is an evaluation with respect to the first axis in the array.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
+        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     """
-    return norm_euclid(np.add(x, np.multiply(y, -1)), axis=axis)
+    return norm_euclid(np.add(x, np.multiply(y, -1)), axes=axes)
 
-def dist_chebyshev(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
-    """Calculate distance along given axes for :term:`Chebyshev metric`.
+def dist_chebyshev(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
+    """Calculate :term:`Chebyshev distance` along given axes.
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
         y: NumPy ndarray with same dimension, shape and datatypes as 'x'
-        axis: Axis (or axes) along which the distance is calculated. Within a
-            one-dimensional array the axis always has index 0. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1).
-            Default: 0
+        axes: Integer or tuple of integers, that identify the array axes, along
+            which the function is evaluated. In a one-dimensional array the
+            single axis has ID 0. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. For the value None, the function is evaluated with
+            respect to all axes of the array. The default value is 0, which
+            is an evaluation with respect to the first axis in the array.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
-
-    References:
-        [1] https://en.wikipedia.org/wiki/maximum_norm
-        [2] https://en.wikipedia.org/wiki/chebyshev_distance
+        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     """
-    return norm_max(np.add(x, np.multiply(y, -1)), axis=axis)
+    return norm_max(np.add(x, np.multiply(y, -1)), axes=axes)
 
 def dist_pmean(
-        x: NpArray, y: NpArray, p: float = 2., axis: NpAxis = 0) -> NpArray:
-    """Calculate the :term:`Power-Mean difference` along given axes.
+        x: NpArray, y: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
+    """Calculate :term:`power mean difference` along given axes.
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
@@ -461,53 +432,56 @@ def dist_pmean(
             difference is not a valid metric, but a quasi-metric. For p >= 1
             the power mean difference is a metric.
             Default: 2.
-        axis: Axis (or axes) along which the distance is calculated. Within a
-            one-dimensional array the axis always has index 0. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1).
-            Default: 0
+        axes: Integer or tuple of integers, that identify the array axes, along
+            which the function is evaluated. In a one-dimensional array the
+            single axis has ID 0. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. For the value None, the function is evaluated with
+            respect to all axes of the array. The default value is 0, which
+            is an evaluation with respect to the first axis in the array.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
+        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     """
-    return norm_pmean(np.add(x, np.multiply(y, -1)), p=p, axis=axis)
+    return norm_pmean(np.add(x, np.multiply(y, -1)), p=p, axes=axes)
 
-def dist_amean(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
-    """Calculate the :term:`Mean-Absolute difference` along given axes.
+def dist_amean(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
+    """Calculate :term:`mean absolute difference` along given axes.
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
         y: NumPy ndarray with same dimension, shape and datatypes as 'x'
-        axis: Axis (or axes) along which the distance is calculated. Within a
-            one-dimensional array the axis always has index 0. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1).
-            Default: 0
+        axes: Integer or tuple of integers, that identify the array axes, along
+            which the function is evaluated. In a one-dimensional array the
+            single axis has ID 0. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. For the value None, the function is evaluated with
+            respect to all axes of the array. The default value is 0, which
+            is an evaluation with respect to the first axis in the array.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
+        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     """
-    return norm_amean(np.add(x, np.multiply(y, -1)), axis=axis)
+    return norm_amean(np.add(x, np.multiply(y, -1)), axes=axes)
 
-def dist_qmean(x: NpArray, y: NpArray, axis: NpAxis = 0) -> NpArray:
-    """Calculate the :term:`Quadratic-Mean difference` along given axes.
+def dist_qmean(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
+    """Calculate :term:`quadratic mean difference` along given axes.
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
         y: NumPy ndarray with same dimension, shape and datatypes as 'x'
-        axis: Axis (or axes) along which the distance is calculated. Within a
-            one-dimensional array the axis always has index 0. A two-dimensional
-            array has two corresponding axes: The first running vertically
-            downwards across rows (axis 0), and the second running horizontally
-            across columns (axis 1).
-            Default: 0
+        axes: Integer or tuple of integers, that identify the array axes, along
+            which the function is evaluated. In a one-dimensional array the
+            single axis has ID 0. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. For the value None, the function is evaluated with
+            respect to all axes of the array. The default value is 0, which
+            is an evaluation with respect to the first axis in the array.
 
     Returns:
-        NumPy ndarray of dimension <dim x> - <number of axes>.
+        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     """
-    return norm_qmean(np.add(x, np.multiply(y, -1)), axis=axis)
+    return norm_qmean(np.add(x, np.multiply(y, -1)), axes=axes)
