@@ -316,13 +316,13 @@ Regression
 .. glossary::
 
     Discrepancy
-        A *measure of discrepancy* is a binary function in a space of random
-        variables, that induces a semi-metric to the underlying random
-        variables. [#discrepancy]_ In regression analysis discrepancies are used
-        to assess the accuracy of a predictor by quantifying the expected
-        deviation between observed and predicted realizations.
-        By minimizing the discrepancy, it serves as an objective function for
-        parameter and model selection.
+        A *discrepancy* is a binary function in a space of random variables,
+        that induces a semi-metric to the underlying space. [#discrepancy]_ In
+        regression analysis discrepancies are used to assess the accuracy of a
+        predictor, by quantifying the expected deviation between observed and
+        predicted realizations. By minimizing a discrepancy with respect to
+        parameters, it serves as an objective function for parameter and model
+        selection.
 
     Sum of Absolute Differences
         The *Sum of Absolute Differences* (SAD) is a measure of
@@ -333,8 +333,8 @@ Regression
         predictions :math:`\hat{\mathbf{y}}` the RSS is given by:
 
         .. math::
-            \mathrm{SAD}(Y,\,\hat{Y})
-                := \sum_{i=1}^{n}|s_{i}-\hat{s}_{i}|
+            \mathrm{SAD}(\mathbf{y},\,\hat{\mathbf{y}})
+                := \sum_{i=1}^{n}|y_{i}-\hat{y}_{i}|
 
         The SAD equals the :term:`Manhattan distance` and therefore is also a
         valid distance measure within the underlying space of random variables.
@@ -351,7 +351,7 @@ Regression
         predictions :math:`\hat{\mathbf{y}}` the RSS is given by:
 
         .. math::
-            \mathrm{RSS}(Y,\,\hat{Y})
+            \mathrm{RSS}(\mathbf{y},\,\hat{\mathbf{y}})
                 := \sum_{i=1}^{n}(y_{i}-\hat{y}_{i})^2
 
         The RSS equals the squared :term:`Euclidean distance`, which does not
@@ -367,7 +367,7 @@ Regression
         is defined by:
 
         .. math::
-            \mathrm{MSE}(Y,\,\hat{Y})
+            \mathrm{MSE}
                 := \mathrm{E}\left[(Y-\hat{Y})^2\right]
 
         The MSE has a consistent and unbiased estimator, given by the
@@ -376,8 +376,8 @@ Regression
         predictions :math:`\hat{\mathbf{y}}` the MSE is estimated by:
 
         .. math::
-            \mathrm{MD}_2^2(\mathbf{y},\,\hat{\mathbf{y}})
-                \xrightarrow{\, n \to \infty \, } \mathrm{MSE}(Y,\,\hat{Y})
+            \mathrm{MD}_2(\mathbf{y},\,\hat{\mathbf{y}})^2
+                \xrightarrow{\, n \to \infty \, } \mathrm{MSE}
 
         In difference to the :term:`Root-Mean-Square Error`, the MSE does not
         satisfy the triangle inequality and therefore does not define a valid
@@ -392,7 +392,7 @@ Regression
         is defined by:
 
         .. math::
-            \mathrm{MAE}(Y,\,\hat{Y})
+            \mathrm{MAE}
                 := \mathrm{E}\left[|Y-\hat{Y}|\right]
 
         The MAE has a consistent and unbiased estimator, given by the
@@ -402,7 +402,7 @@ Regression
 
         .. math::
             \mathrm{MD}_1(\mathbf{y},\,\hat{\mathbf{y}})
-                \xrightarrow{\, n \to \infty \, } \mathrm{MAE}(Y,\,\hat{Y})
+                \xrightarrow{\, n \to \infty \, } \mathrm{MAE}
 
         Due to this transition, the MAE adopts all required properties from the
         mean absolute difference, to induce a valid metric to the space of
@@ -415,7 +415,7 @@ Regression
         RMSE is defined by:
 
         .. math::
-            \mathrm{RMSE}(Y,\,\hat{Y})
+            \mathrm{RMSE}
                 := \mathrm{E}\left[(Y-\hat{Y})^2\right]^{1/2}
 
         The RMSE has a consistent and unbiased estimator, given by the
@@ -425,7 +425,7 @@ Regression
 
         .. math::
             \mathrm{MD}_2(\mathbf{y},\,\hat{\mathbf{y}})
-                \xrightarrow{\, n \to \infty \, } \mathrm{RMSE}(Y,\,\hat{Y})
+                \xrightarrow{\, n \to \infty \, } \mathrm{RMSE}
 
         Due to this transition, the RMSE adopts all required properties from the
         quadratic mean difference, to induce a valid metric to the space of

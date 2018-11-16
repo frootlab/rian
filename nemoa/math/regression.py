@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Regression Analysis Functions."""
+"""Regression Analysis Functions.
+
+.. _`numpy.ndarray`:
+    https://www.numpy.org/devdocs/reference/arrays.ndarray
+"""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'

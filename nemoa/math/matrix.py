@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 """Matrix Norms and Metrices.
 
-.. References:
-.. _IEEE 754: https://ieeexplore.ieee.org/document/4610935/
-
+.. _`numpy.ndarray`:
+    https://www.numpy.org/devdocs/reference/arrays.ndarray
 """
 
 __author__ = 'Patrick Michl'
@@ -263,7 +262,7 @@ def from_dict(
             list of column labels, e.g. ['col1', 'col2', ...].
         nan: Value to mask Not Not a Number (NaN) entries. Missing entries in
             the dictionary are replenished by the NaN value in the array.
-            Default: `IEEE 754`_ floating point representation of NaN.
+            Default: [IEEE 754]_ floating point representation of NaN.
 
     Returns:
         NumPy ndarray of shape (*n*, *m*), where *n* equals the number of
@@ -297,7 +296,7 @@ def as_dict(
         na: Optional value to mask Not a Number (NaN) entries. For cells in the
             array, which have this value, no entry in the returned dictionary
             is created. If nan is None, then for all numbers entries are
-            created. Default: `IEEE 754`_ floating point representation of NaN.
+            created. Default: [IEEE 754]_ floating point representation of NaN.
 
     Returns:
          Dictionary with keys (<*row*>, <*col*>), where the elemns <*row*> are
