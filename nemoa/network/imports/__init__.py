@@ -37,7 +37,7 @@ def load(path, filetype = None, **kwds):
     """Import network dictionary from file or workspace."""
 
     import os
-    from nemoa.base import npath
+    from nemoa.base import env
     import nemoa
 
     # get path (if necessary)
@@ -58,7 +58,7 @@ def load(path, filetype = None, **kwds):
 
     # get filetype (from file extension if not given)
     # and check if filetype is supported
-    if not filetype: filetype = npath.fileext(path).lower()
+    if not filetype: filetype = env.fileext(path).lower()
     if filetype not in filetypes():
         raise ValueError(f"filetype '{filetype}' is not supported")
 

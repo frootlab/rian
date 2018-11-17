@@ -213,8 +213,8 @@ class TestVector(MathTestCase, ModuleTestCase):
     def test_dist_chebyshev(self) -> None:
         self.assertIsVectorDistance(vector.dist_chebyshev)
 
-    def test_dist_manhatten(self) -> None:
-        self.assertIsVectorDistance(vector.dist_manhatten)
+    def test_dist_manhattan(self) -> None:
+        self.assertIsVectorDistance(vector.dist_manhattan)
 
     def test_dist_minkowski(self) -> None:
         self.assertIsVectorDistance(vector.dist_minkowski)

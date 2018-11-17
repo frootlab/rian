@@ -2,30 +2,14 @@
 """Logging.
 
 This module implements application global logging by a singleton design class
-and module level wrappers to convenience functions of the ``logging``_ module
-from standard library.
+and module level wrappers to convenience functions of the standard library
+module :py:mod:`logging`.
 
 .. References:
-.. _logging:
-    https://docs.python.org/3/library/logging.html
-.. _path-like object:
-    https://docs.python.org/3/glossary.html#term-path-like-object
 .. _Format String:
     https://docs.python.org/3/library/string.html#format-string-syntax
-.. _Logger.log():
-    https://docs.python.org/3/library/logging.html#logging.Logger.log
-.. _Logger.debug():
-    https://docs.python.org/3/library/logging.html#logging.Logger.debug
-.. _Logger.info():
-    https://docs.python.org/3/library/logging.html#logging.Logger.info
-.. _Logger.warning():
-    https://docs.python.org/3/library/logging.html#logging.Logger.warning
-.. _Logger.error():
-    https://docs.python.org/3/library/logging.html#logging.Logger.error
-.. _Logger.critical():
-    https://docs.python.org/3/library/logging.html#logging.Logger.critical
-.. _Logger.exception():
-    https://docs.python.org/3/library/logging.html#logging.Logger.exception
+
+:py:ref:`format string syntax`
 
 """
 
@@ -40,7 +24,7 @@ import logging
 import tempfile
 import warnings
 from pathlib import Path
-from nemoa.base import attrib, env, npath
+from nemoa.base import attrib, env
 from nemoa.errors import SingletonExistsError, NotStartedError
 from nemoa.types import void, Any, AnyFunc, ClassVar, PathLike, StrList
 from nemoa.types import StrOrInt, OptPath, VoidFunc
@@ -57,12 +41,13 @@ class Logger(attrib.Container):
             hierarchical value like 'foo.bar.baz'. The name of a Logger also
             identifies respective parents and children by the name hierachy,
             which equals the Python package hierarchy.
-        file: String or `path-like object`_ that identifies a valid filename in
-            the directory structure of the operating system. If they do not
-            exist, the parent directories of the file are created. If no file is
-            given, a default logfile within the applications *user-log-dir* is
-            created. If the logfile can not be created a temporary logfile in
-            the systems *temp* folder is created as a fallback.
+        file: String or :term:`path-like object` that identifies a valid
+            filename in the directory structure of the operating system. If they
+            do not exist, the parent directories of the file are created. If no
+            file is given, a default logfile within the applications
+            *user-log-dir* is created. If the logfile can not be created a
+            temporary logfile in the systems *temp* folder is created as a
+            fallback.
         level: Integer value or string, which describes the minimum required
             severity of events, to be logged. Ordered by ascending severity, the
             allowed level names are: 'DEBUG', 'INFO', 'WARNING', 'ERROR' and
@@ -101,7 +86,7 @@ class Logger(attrib.Container):
     file: property = attrib.Virtual(
         fget='_get_file', fset='_set_file', classinfo=(str, Path))
     file.__doc__ = """
-    String or `path-like object`_ that identifies a valid filename in the
+    String or :term:`path-like object` that identifies a valid filename in the
     directory structure of the operating system. If they do not exist, the
     parent directories of the file are created. If no file is given, a default
     logfile within the applications *user-log-dir* is created. If the logfile
@@ -162,14 +147,13 @@ class Logger(attrib.Container):
                 names are: 'DEBUG', 'INFO', 'WARNING', 'ERROR' and 'CRITICAL'.
                 The respectively corresponding level numbers are 10, 20, 30, 40
                 and 50.
-            msg: Message ``format string``_, which may can contain literal text
+            msg: Message `format string`_, which may can contain literal text
                 or replacement fields delimited by braces. Each replacement
                 field contains either the numeric index of a positional
                 argument, given by *args, or the name of a keyword argument,
                 given by the keyword *extra*.
             *args: Arguments, which can be used by the message format string.
-            **kwds: Additional Keywords, used by the function by
-                `Logger.log()`_.
+            **kwds: Additional Keywords, used by :py:meth:`logging.Logger.log`.
 
         """
         if isinstance(level, str):
@@ -281,13 +265,13 @@ class Logger(attrib.Container):
             self, filepath: PathLike = _default_file) -> OptPath:
         # Get valid logfile from filepath
         if isinstance(filepath, (str, Path)):
-            logfile = npath.expand(filepath)
-            if npath.touch(logfile):
+            logfile = env.expand(filepath)
+            if env.touch(logfile):
                 return logfile
 
         # Get temporary logfile
         logfile = Path(tempfile.NamedTemporaryFile().name + '.log')
-        if npath.touch(logfile):
+        if env.touch(logfile):
             warnings.warn(
                 f"logfile '{filepath}' is not valid: "
                 f"using temporary logfile '{logfile}'")
@@ -317,19 +301,31 @@ def get_method(name: str) -> AnyFunc:
 #
 
 debug: VoidFunc = get_method('debug')
-debug.__doc__ = """Wrapper function to `Logger.debug()`_."""
+debug.__doc__ = """
+Wrapper function to :py:meth:`logging.Logger.debug`
+"""
 
 info: VoidFunc = get_method('info')
-info.__doc__ = """Wrapper function to `Logger.info()`_."""
+info.__doc__ = """
+Wrapper function to :py:meth:`logging.Logger.info`.
+"""
 
 warning: VoidFunc = get_method('warning')
-warning.__doc__ = """Wrapper function to `Logger.warning()`_."""
+warning.__doc__ = """
+Wrapper function to :py:meth:`logging.Logger.warning`.
+"""
 
 error: VoidFunc = get_method('error')
-error.__doc__ = """Wrapper function to `Logger.error()`_."""
+error.__doc__ = """
+Wrapper function to :py:meth:`logging.Logger.error`.
+"""
 
 critical: VoidFunc = get_method('critical')
-critical.__doc__ = """Wrapper function to `Logger.critical()`_."""
+critical.__doc__ = """
+Wrapper function to :py:meth:`logging.Logger.critical`.
+"""
 
 exception: VoidFunc = get_method('exception')
-exception.__doc__ = """Wrapper function to `Logger.exception()`_."""
+exception.__doc__ = """
+Wrapper function to :py:meth:`logging.Logger.exceptions`.
+"""

@@ -1,25 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Environment Information.
+"""Environmentan information and functions for filesystem operations.
 
 .. References:
-.. _PEP 345:
-    https://www.python.org/dev/peps/pep-0345/
-.. _RFC 822:
-    https://www.w3.org/Protocols/rfc822/
 .. _appdirs:
     http://github.com/ActiveState/appdirs
-.. _termios:
-    https://docs.python.org/3/library/termios.html
-.. _msvcrt:
-    https://docs.python.org/3/library/msvcrt.html
-.. _locale.getpreferredencoding():
-    https://docs.python.org/3/library/locale.html#locale.getpreferredencoding
-.. _platform.node():
-    https://docs.python.org/3/library/platform.html#platform.node
-.. _platform.system():
-    https://docs.python.org/3/library/platform.html#platform.system
-.. _getpass.getuser():
-    https://docs.python.org/3/library/getpass.html#getpass.getuser
 
 .. TODO::
     * Add get_file for 'user_package_log', 'temp_log' etc.
@@ -31,12 +15,17 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import fnmatch
+import os
+import shutil
+import string
+import sys
 import getpass
 import locale
 import platform
 import re
 from distutils import sysconfig
-from pathlib import Path
+from pathlib import Path, PurePath
 
 try:
     from appdirs import AppDirs
@@ -46,7 +35,8 @@ except ImportError as err:
         "https://pypi.org/project/appdirs/") from err
 
 from nemoa.base import check, this
-from nemoa.types import Any, OptStr, OptStrOrBool, OptPathLike, StrDict
+from nemoa.types import Any, Iterable, IterAny, NestPath, OptStrDict
+from nemoa.types import PathLikeList, OptStr, OptStrOrBool, OptPathLike, StrDict
 from nemoa.types import StrDictOfPaths
 
 #
@@ -55,6 +45,7 @@ from nemoa.types import StrDictOfPaths
 
 _DEFAULT_APPNAME = 'nemoa'
 _DEFAULT_APPAUTHOR = 'frootlab'
+_RECURSION_LIMIT = sys.getrecursionlimit()
 
 #
 # Public Module Functions
@@ -67,7 +58,7 @@ def get_var(varname: str, *args: Any, **kwds: Any) -> OptStr:
     operating system like 'username' or 'hostname'. Application variables in
     turn, are intended to describe the application distribution by authorship
     information, bibliographic information, status, formal conditions and notes
-    or warnings. For mor information see `PEP 345`_.
+    or warnings. For mor information see :pep:`345`.
 
     Args:
         varname: Name of environment variable. Typical application variable
@@ -88,7 +79,7 @@ def get_var(varname: str, *args: Any, **kwds: Any) -> OptStr:
             'author': A string containing the author's name at a minimum;
                 additional contact information may be provided.
             'email': A string containing the author's e-mail address. It can
-                contain a name and e-mail address, as described in `[RFC822]`_.
+                contain a name and e-mail address, as described in :rfc:`822`.
             'maintainer': A string containing the maintainer's name at a
                 minimum; additional contact information may be provided.
             'company': The company, which created or maintains the distribution.
@@ -122,7 +113,7 @@ def get_vars(*args: Any, **kwds: Any) -> StrDict:
     operating system like 'username' or 'hostname'. Application variables in
     turn, are intended to describe the application distribution by authorship
     information, bibliographic information, status, formal conditions and notes
-    or warnings. For mor information see `PEP 345`_.
+    or warnings. For mor information see :pep:`345`.
 
     Args:
         *args: Optional arguments that specify the application, as required by
@@ -146,15 +137,12 @@ def update_vars(filepath: OptPathLike = None) -> None:
     operating system like 'username' or 'hostname'. Application variables in
     turn, are intended to describe the application distribution by authorship
     information, bibliographic information, status, formal conditions and notes
-    or warnings. For mor information see `PEP 345`_.
+    or warnings. For mor information see :pep:`345`.
 
     Args:
         filepath: Valid filepath to python module, that contains the application
             variables as module attributes. By default the current top level
             module is used.
-
-    Returns:
-        Dictionary with application variables.
 
     """
     # Get package specific environment variables by parsing a given file for
@@ -269,10 +257,6 @@ def update_dirs(
         **kwds: Optional directory name specific keyword arguments. For more
             information see `appdirs`_.
 
-    Returns:
-        Dictionary containing paths of application specific environmental
-        directories.
-
     """
     dirs: StrDictOfPaths = {}
 
@@ -306,9 +290,9 @@ def get_encoding() -> str:
     """Get preferred encoding used for text data.
 
     This is a wrapper function to the standard library function
-    `locale.getpreferredencoding()`_. This function returns the encoding used
-    for text data, according to user preferences. User preferences are expressed
-    differently on different systems, and might not be available
+    :py:func:`locale.getpreferredencoding`. This function returns the encoding
+    used for text data, according to user preferences. User preferences are
+    expressed differently on different systems, and might not be available
     programmatically on some systems, so this function only returns a guess.
 
     Returns:
@@ -321,8 +305,8 @@ def get_hostname() -> str:
     """Get hostname of the computer.
 
     This is a wrapper function to the standard library function
-    `platform.node()`_. This function returns the computer’s hostname. If the
-    value cannot be determined, an empty string is returned.
+    :py:func`platform.node`. This function returns the computer’s hostname. If
+    the value cannot be determined, an empty string is returned.
 
     Returns:
         String representing the computer’s hostname or None.
@@ -334,7 +318,7 @@ def get_osname() -> str:
     """Get name of the Operating System.
 
     This is a wrapper function to the standard library function
-    `platform.system()`_. This function returns the OS name, e.g. 'Linux',
+    :py:func`platform.system`. This function returns the OS name, e.g. 'Linux',
     'Windows', or 'Java'. If the value cannot be determined, an empty string is
     returned.
 
@@ -348,7 +332,7 @@ def get_username() -> str:
     """Login name of the current user.
 
     This is a wrapper function to the standard library function
-    `getpass.getuser()`_. This function checks the environment variables
+    :py:func`getpass.getuser`. This function checks the environment variables
     LOGNAME, USER, LNAME and USERNAME, in order, and returns the value of the
     first one which is set to a non-empty string. If none are set, the login
     name from the password database is returned on systems which support the
@@ -377,3 +361,364 @@ def get_home() -> Path:
 
     """
     return Path.home()
+
+def clear_filename(fname: str) -> str:
+    r"""Clear filename from invalid characters.
+
+    Args:
+        fname: Arbitrary string, which is be cleared from invalid filename
+            characters.
+
+    Returns:
+        String containing valid path syntax.
+
+    Examples:
+        >>> clear_filename('3/\nE{$5}.e')
+        '3E5.e'
+
+    """
+    valid = "-_.() " + string.ascii_letters + string.digits
+    fname = ''.join(c for c in fname if c in valid).replace(' ', '_')
+    return fname
+
+def match_paths(paths: PathLikeList, pattern: str) -> PathLikeList:
+    """Filter pathlist to matches with wildcard pattern.
+
+    Args:
+        paths: List of paths, which is filtered to matches with pattern.
+        pattern: String pattern, containing Unix shell-style wildcards:
+            '*': matches arbitrary strings
+            '?': matches single characters
+            [seq]: matches any character in seq
+            [!seq]: matches any character not in seq
+
+    Returns:
+        Filtered list of paths.
+
+    Examples:
+        >>> match_paths([Path('a.b'), Path('b.a')], '*.b')
+        [Path('a.b')]
+
+    """
+    # Normalize path and pattern representation using POSIX standard
+    mapping = {PurePath(path).as_posix(): path for path in paths}
+    pattern = PurePath(pattern).as_posix()
+
+    # Match normalized paths with normalized pattern
+    names = list(mapping.keys())
+    matches = fnmatch.filter(names, pattern)
+
+    # Return original paths
+    return [mapping[name] for name in matches]
+
+def join_path(*args: NestPath) -> Path:
+    r"""Join nested iterable path-like structure to single path object.
+
+    Args:
+        *args: Arguments containing nested iterable paths of strings and
+            PathLike objects.
+
+    Returns:
+        Single Path comprising all arguments.
+
+    Examples:
+        >>> join_path(('a', ('b', 'c')), 'd')
+        Path('a\\b\\c\\d')
+
+    """
+    # Generate flat structure
+    def flatten(tower: Any) -> IterAny:
+        for token in tower:
+            if not isinstance(token, Iterable):
+                yield token
+            elif isinstance(token, str):
+                yield token
+            else:
+                yield from flatten(token)
+    flat = [token for token in flatten(args)]
+
+    # Create path from flat structure
+    try:
+        path = Path(*flat)
+    except TypeError as err:
+        raise TypeError(
+            "the tokens of nested paths require to be of types "
+            "str, bytes or path-like") from err
+
+    return path
+
+def expand(
+        *args: NestPath, udict: OptStrDict = None,
+        envdirs: bool = True) -> Path:
+    r"""Expand path variables.
+
+    Args:
+        *args: Path like arguments, respectively given by a tree of strings,
+            which can be joined to a path.
+        udict: dictionary for user variables.
+            Thereby the keys in the dictionary are encapsulated
+            by the symbol '%'. The user variables may also include references.
+        envdirs: Boolen value which determines if environmental path variables
+            are expanded. For a full list of valid environmental path variables
+            see 'nemoa.base.env.get_dirs'. Default is True
+
+    Returns:
+        String containing valid path syntax.
+
+    Examples:
+        >>> expand('%var1%/c', 'd', udict = {'var1': 'a/%var2%', 'var2': 'b'})
+        'a\\b\\c\\d'
+
+    """
+    path = join_path(*args)
+    udict = udict or {}
+
+    # Create mapping with path variables
+    pvars = {}
+    if envdirs:
+        for key, val in get_dirs().items():
+            pvars[key] = str(val)
+    if udict:
+        for key, val in udict.items():
+            pvars[key] = str(join_path(val))
+
+    # Itereratively expand directories
+    update = True
+    i = 0
+    while update:
+        update = False
+        for key, val in pvars.items():
+            if '%' + key + '%' not in str(path):
+                continue
+            try:
+                path = Path(str(path).replace('%' + key + '%', val))
+            except TypeError:
+                del pvars[key]
+            update = True
+        i += 1
+        if i > _RECURSION_LIMIT:
+            raise RecursionError('cyclic dependency in variables detected')
+        path = Path(path)
+
+    # Expand unix style home path '~'
+    if envdirs:
+        path = path.expanduser()
+
+    return path
+
+def get_dirname(*args: NestPath) -> str:
+    r"""Extract directory name from a path like structure.
+
+    Args:
+        *args: Path like arguments, respectively given by a tree of strings,
+            which can be joined to a path.
+
+    Returns:
+        String containing normalized directory path of file.
+
+    Examples:
+        >>> get_dirname(('a', ('b', 'c'), 'd'), 'base.ext')
+        'a\\b\\c\\d'
+
+    """
+    path = expand(*args)
+    if path.is_dir():
+        return str(path)
+    return str(path.parent)
+
+def filename(*args: NestPath) -> str:
+    """Extract file name from a path like structure.
+
+    Args:
+        *args: Path like arguments, respectively given by a tree of strings,
+            which can be joined to a path.
+
+    Returns:
+        String containing normalized directory path of file.
+
+    Examples:
+        >>> filename(('a', ('b', 'c')), 'base.ext')
+        'base.ext'
+
+    """
+    path = expand(*args)
+    if path.is_dir():
+        return ''
+    return str(path.name)
+
+def basename(*args: NestPath) -> str:
+    """Extract file basename from a path like structure.
+
+    Args:
+        *args: Path like arguments, respectively given by a tree of strings,
+            which can be joined to a path.
+
+    Returns:
+        String containing basename of file.
+
+    Examples:
+        >>> filename(('a', ('b', 'c')), 'base.ext')
+        'base'
+
+    """
+    path = expand(*args)
+    if path.is_dir():
+        return ''
+    return str(path.stem)
+
+def fileext(*args: NestPath) -> str:
+    """Fileextension of file.
+
+    Args:
+        *args: Path like arguments, respectively given by a tree of strings,
+            which can be joined to a path.
+
+    Returns:
+        String containing fileextension of file.
+
+    Examples:
+        >>> fileext(('a', ('b', 'c')), 'base.ext')
+        'ext'
+
+    """
+    path = expand(*args)
+    if path.is_dir():
+        return ''
+    return str(path.suffix).lstrip('.')
+
+def is_dir(path: NestPath) -> bool:
+    """Determine if given path points to a directory.
+
+    Extends :py:meth:`pathlib.Path.is_dir` by nested paths and path variable
+    expansion.
+
+    Args:
+        path: Path like structure, which is expandable to a valid path
+
+    Returns:
+        True if the path points to a regular file (or a symbolic link pointing
+        to a regular file), False if it points to another kind of file.
+
+    """
+    return expand(path).is_dir()
+
+def is_file(path: NestPath) -> bool:
+    """Determine if given path points to a file.
+
+    Extends :py:meth:`pathlib.Path.is_file` by nested paths and path variable
+    expansion.
+
+    Args:
+        path: Path like structure, which is expandable to a valid path.
+
+    Returns:
+        True if the path points to a directory (or a symbolic link pointing
+        to a directory), False if it points to another kind of file.
+
+    """
+    return expand(path).is_file()
+
+def copytree(source: NestPath, target: NestPath) -> None:
+    """Copy directory structure from given source to target directory.
+
+    Args:
+        source: Path like structure, which comprises the path of a source folder
+        target: Path like structure, which comprises the path of a destination
+            folder
+
+    Returns:
+        True if the operation was successful.
+
+    """
+    # Recursive copy function, that allows existing files
+    def copy(source: Path, target: Path) -> None:
+        if source.is_dir():
+            if not target.is_dir():
+                target.mkdir()
+            for each in source.glob('*'):
+                copy(each, target / each.name)
+        else:
+            shutil.copy(source, target)
+    copy(expand(source), expand(target))
+
+def mkdir(*args: NestPath) -> bool:
+    """Create directory.
+
+    Args:
+        *args: Path like structure, which comprises the path of a new directory
+
+    Returns:
+        True if the directory already exists, or the operation was successful.
+
+    """
+    path = expand(*args)
+    if path.is_dir():
+        return True
+
+    try:
+        os.makedirs(path)
+    except Exception as err:
+        raise OSError("could not create directory") from err
+
+    return path.is_dir()
+
+def rmdir(*args: NestPath) -> bool:
+    """Remove directory.
+
+    Args:
+        *args: Path like structure, which identifies the path of a directory
+
+    Returns:
+        True if the directory could be deleted
+
+    """
+    path = expand(*args)
+
+    if not path.is_dir():
+        return False
+    shutil.rmtree(str(path), ignore_errors=True)
+
+    return not path.exists()
+
+def touch(
+        path: NestPath, parents: bool = True, mode: int = 0o666,
+        exist_ok: bool = True) -> bool:
+    """Create an empty file at the specified path.
+
+    Args:
+        path: Nested :term:`path-like object`, which represents a valid filename
+            in the directory structure of the operating system.
+        parents: Boolean value, which determines if missing parents of the path
+            are created as needed.
+        mode: Integer value, which specifies the properties if the file. For
+            more information see :func:`os.chmod`.
+        exist_ok: Boolean value which determines, if the function returns False,
+            if the file already exists.
+
+    Returns:
+        True if the file could be created, else False.
+
+    """
+    filepath = expand(path)
+
+    # Check type of 'filepath'
+    if not isinstance(filepath, Path):
+        return False
+
+    # Check if directory exists and optionally create it
+    dirpath = filepath.parent
+    if not dirpath.is_dir():
+        if not parents:
+            return False
+        dirpath.mkdir(parents=True, exist_ok=True)
+        if not dirpath.is_dir():
+            return False
+
+    # Check if file already exsists
+    if filepath.is_file() and not exist_ok:
+        return False
+
+    # Touch file with given
+    filepath.touch(mode=mode, exist_ok=exist_ok)
+
+    return filepath.is_file()

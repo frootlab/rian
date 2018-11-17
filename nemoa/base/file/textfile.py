@@ -18,7 +18,7 @@ __docformat__ = 'google'
 
 import contextlib
 from io import TextIOWrapper
-from nemoa.base import npath
+from nemoa.base import env
 from nemoa.types import BytesIOBaseClass, FileOrPathLike, IterStringIOLike
 from nemoa.types import Path, StrList, TextIOBaseClass
 
@@ -27,9 +27,9 @@ def openx(file: FileOrPathLike, mode: str = '') -> IterStringIOLike:
     """Contextmanager to provide a unified interface to text files.
 
     This context manager extends the standard implementation of `open()`_ by
-    allowing the passed *file* argument to be a str or `path-like object`_,
+    allowing the passed *file* argument to be a str or :term:`path-like object`,
     which points to a valid filename in the directory structure of the system,
-    or a `file-like object`_. If the *file* argument is a str or a path-like
+    or a :term:`file object`. If the *file* argument is a str or a path-like
     object, the given path may contain application variables, like '%home%' or
     '%user_data_dir%', which are extended before returning a file handler to a
     `text-file`_. Afterwards, when exiting the *with* statement, the file is
@@ -37,8 +37,8 @@ def openx(file: FileOrPathLike, mode: str = '') -> IterStringIOLike:
     not closed, when exiting the *with* statement.
 
     Args:
-        file: String or `path-like object`_ that points to a valid filename in
-            the directory structure of the system, or a `file-like object`_.
+        file: String or :term:`path-like object` that points to a valid filename in
+            the directory structure of the system, or a :term:`file object`.
         mode: String, which characters specify the mode in which the file stream
             is wrapped. The default mode is reading mode. Suported characters
             are:
@@ -59,7 +59,7 @@ def openx(file: FileOrPathLike, mode: str = '') -> IterStringIOLike:
             fh = TextIOWrapper(file)
         close = False
     elif isinstance(file, (str, Path)):
-        path = npath.expand(file)
+        path = env.expand(file)
         if 'w' in mode:
             try:
                 fh = open(path, 'w')
@@ -85,8 +85,8 @@ def load(file: FileOrPathLike) -> str:
     """Load text from file.
 
     Args:
-        file: String or `path-like object`_ that points to a readable file in
-            the directory structure of the system, or a `file-like object`_ in
+        file: String or :term:`path-like object` that points to a readable file in
+            the directory structure of the system, or a :term:`file object` in
             reading mode.
 
     Returns:
@@ -101,8 +101,8 @@ def save(text: str, file: FileOrPathLike) -> None:
 
     Args:
         text: Text given as string
-        file: String or `path-like object`_ that points to a writable file in
-            the directory structure of the system, or a `file-like object`_ in
+        file: String or :term:`path-like object` that points to a writable file in
+            the directory structure of the system, or a :term:`file object` in
             writing mode.
 
     """
@@ -113,8 +113,8 @@ def get_comment(file: FileOrPathLike) -> str:
     """Read initial comment lines from text-file.
 
     Args:
-        file: String or `path-like object`_ that points to a readable file in
-            the directory structure of the system, or a `file-like object`_ in
+        file: String or :term:`path-like object` that points to a readable file in
+            the directory structure of the system, or a :term:`file object` in
             reading mode.
 
     Returns:
@@ -136,8 +136,8 @@ def get_content(file: FileOrPathLike, lines: int = 0) -> StrList:
     """Read non-blank non-comment lines from text-file.
 
     Args:
-        file: String or `path-like object`_ that points to a readable file in
-            the directory structure of the system, or a `file-like object`_ in
+        file: String or :term:`path-like object` that points to a readable file in
+            the directory structure of the system, or a :term:`file object` in
             reading mode.
         lines: Number of content lines, that are returned. By default all lines
             are returned.

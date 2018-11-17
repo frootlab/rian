@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Python object functions.
-
-.. _fnmatch: https://docs.python.org/3/library/fnmatch.html
-
-"""
+"""Arbitrary objects."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -17,7 +13,7 @@ import pkgutil
 from nemoa.base import check, ndict
 from nemoa.types import Any, ClassInfo, OptStr, OptStrDictOfTestFuncs
 from nemoa.types import OptModule, Module, StrList, OptFunction, Function
-from nemoa.types import StrDict, Tuple, RecDict, NestRecDict
+from nemoa.types import Tuple, RecDict, NestRecDict
 from nemoa.types import DictOfRecDicts, FuncWrapper, Method, StrOrType
 from nemoa.types import Callable, OrderedDict
 
@@ -57,8 +53,9 @@ def get_members(
         rules: OptStrDictOfTestFuncs = None, **kwds: Any) -> list:
     """List members of an object.
 
-    This is a wrapper function to `get_members_dict`, but only returns the
-    names of the members instead of the respective dictionary of attributes.
+    This is a wrapper function to :func:`nemoa.base.assess.get_members_dict`,
+    but only returns the names of the members instead of the respective
+    dictionary of attributes.
     """
     dicts = get_members_dict(
         obj, pattern=pattern, classinfo=classinfo, rules=rules, **kwds)
@@ -73,8 +70,8 @@ def get_members_dict(
         obj: Arbitrary object
         pattern: Only members which names satisfy the wildcard pattern given
             by 'pattern' are returned. The format of the wildcard pattern is
-            described in the standard library module `fnmatch`_. By default all
-            names are allowed.
+            described in the standard library module :py:mod:`fnmatch`. By
+            default all names are allowed.
         classinfo: Classinfo given as a class, a type or a tuple containing
             classes, types or other tuples. Only members, which are ether an
             instance or a subclass of classinfo are returned. By default all
@@ -87,7 +84,7 @@ def get_members_dict(
             respectively give the value of the keyword argument and the member
             attribute. A member passes the rules, if all <*test*> functions
             evaluate to True against the given keyword arguments::
-                Example: ``{'tags': lambda arg, attr: set(arg) <= set(attr)}``
+                rules = {'tags': lambda arg, attr: set(arg) <= set(attr)}
             By default any attribute, which is not in the filter rules is
             compared to the argument value by equality.
         **kwds: Keyword arguments, that define the attribute filter for the
@@ -160,7 +157,7 @@ def get_summary(obj: object) -> str:
     """Get summary line for an object.
 
     This function returns the summary line of the documentation string for an
-    object as specified in [PEP257]_. If the documentation string is not
+    object as specified in :PEP:`257`. If the documentation string is not
     provided the summary line is retrieved from the inheritance hierarchy.
 
     Args:
@@ -331,10 +328,10 @@ def get_methods(
     """Get methods from a given class instance.
 
     Args:
-        obj: Class
+        obj: Class object
         pattern: Only methods, which names satisfy the wildcard pattern given
             by 'pattern' are returned. The format of the wildcard pattern
-            is described in the standard library module `fnmatch`_.
+            is described in the standard library module :py:mod:`fnmatch`.
         groupby: Name of attribute which value is used to group the results.
             If groupby is None, then the results are not grouped.
             Default: None
@@ -484,8 +481,8 @@ def search(
         ref: Reference to module or package, in which objects are searched.
         pattern: Only objects which names satisfy the wildcard pattern given
             by 'pattern' are returned. The format of the wildcard pattern is
-            described in the standard library module `fnmatch`_. If pattern is
-            None, then all objects are returned. Default: None
+            described in the standard library module :py:mod:`fnmatch`. If
+            pattern is None, then all objects are returned. Default: None
         classinfo: Classinfo given as a class, a type or a tuple containing
             classes, types or other tuples. Only members, which are ether an
             instance or a subclass of classinfo are returned. By default all

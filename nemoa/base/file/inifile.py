@@ -41,8 +41,8 @@ def load(
     """Import configuration dictionary from INI file.
 
     Args:
-        file: String or `path-like object`_ that points to a readable file in
-            the directory structure of the system, or a `file-like object`_ in
+        file: String or :term:`path-like object` that points to a readable file in
+            the directory structure of the system, or a :term:`file object` in
             read mode.
         structure: Dictionary of dictionaries, which determines the structure of
             the configuration dictionary. If structure is None, the INI-file is
@@ -142,8 +142,8 @@ def save(
 
     Args:
         config: Configuration dictionary
-        file: String or `path-like object`_ that represents to a writeable file
-            in the directory structure of the system, or a `file-like object`_
+        file: String or :term:`path-like object` that represents to a writeable file
+            in the directory structure of the system, or a :term:`file object`
             in write mode.
         flat: Determines if the desired INI format structure contains sections.
             By default sections are used, if the dictionary contains
@@ -219,8 +219,8 @@ def get_comment(file: FileOrPathLike) -> str:
     """Read initial comment lines from INI-file.
 
     Args:
-        file: String or `path-like object`_ that points to a readable file in
-            the directory structure of the system, or a `file-like object`_ in
+        file: String or :term:`path-like object` that points to a readable file in
+            the directory structure of the system, or a :term:`file object` in
             reading mode.
 
     Returns:

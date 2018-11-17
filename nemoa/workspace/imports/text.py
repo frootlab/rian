@@ -15,10 +15,10 @@ def filetypes():
 def load(path, **kwds):
     """Import workspace from text file."""
 
-    from nemoa.base import npath
+    from nemoa.base import env
 
     # extract filetype from path
-    filetype = npath.fileext(path).lower()
+    filetype = env.fileext(path).lower()
 
     # test if filetype is supported
     if filetype not in filetypes():

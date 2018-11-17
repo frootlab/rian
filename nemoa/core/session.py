@@ -3,12 +3,6 @@
 
 This module implements session management by a singleton design pattern.
 
-.. References:
-.. _file-like object:
-    https://docs.python.org/3/glossary.html#term-file-like-object
-.. _path-like object:
-    https://docs.python.org/3/glossary.html#term-path-like-object
-
 """
 
 __author__ = 'Patrick Michl'
@@ -17,12 +11,16 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from pathlib import Path
-from nemoa.base import attrib, npath
+from nemoa.base import attrib, env
 from nemoa.core import log
 from nemoa.base.file import inifile, wsfile
 from nemoa.types import Any, BytesLike, CManFileLike, ClassVar, Exc, ExcType
 from nemoa.types import OptBytes, OptPath, OptPathLike, OptStr, PathLike
 from nemoa.types import StrDict, StrList, StrOrInt, Traceback
+
+#
+# Types
+#
 
 SecDict = inifile.SecDict
 
@@ -89,14 +87,14 @@ class Session(attrib.Container):
         # Initialize instance variables with default values
         self.config = self._default_config.copy()
         self._ws = wsfile.WsFile()
-        self.paths = [npath.expand(path) for path in self._default_paths]
+        self.paths = [env.expand(path) for path in self._default_paths]
         self.logger = log.get_instance()
 
         # Bind session to workspace
         self.parent = self._ws
 
         # Load session configuration from file
-        if npath.is_file(self._config_file_path):
+        if env.is_file(self._config_file_path):
             self._load_config()
 
         # Load workspace from file
@@ -149,8 +147,8 @@ class Session(attrib.Container):
         """Save the workspace to a file.
 
         Args:
-            filepath: String or `path-like object`_, that represents the name of
-                a workspace file.
+            filepath: String or :term:`path-like object`, that represents the
+                name of a workspace file.
 
         """
         self._ws.saveas(filepath)
@@ -169,10 +167,10 @@ class Session(attrib.Container):
         """Open file within current or given workspace.
 
         Args:
-            filepath: String or `path-like object`_, that represents a workspace
-                member. In reading mode the path has to point to a valid
-                workspace file, or a FileNotFoundError is raised. In writing
-                mode the path by default is treated as a file path. New
+            filepath: String or :term:`path-like object`, that represents a
+                workspace member. In reading mode the path has to point to a
+                valid workspace file, or a FileNotFoundError is raised. In
+                writing mode the path by default is treated as a file path. New
                 directories can be written by setting the argument is_dir to
                 True.
             workspace:
@@ -195,7 +193,7 @@ class Session(attrib.Container):
                 treat paths as directories.
 
         Returns:
-            Context manager for `file-like object`_ in reading or writing mode.
+            Context manager for :term:`file object` in reading or writing mode.
 
         """
         if workspace:
@@ -210,11 +208,11 @@ class Session(attrib.Container):
         """Append file to the current workspace.
 
         Args:
-            source: String or `path-like object`_, that points to a valid file
-                in the directory structure if the system. If the file does not
-                exist, a FileNotFoundError is raised. If the filepath points to
-                a directory, a IsADirectoryError is raised.
-            target: String or `path-like object`_, that points to a valid
+            source: String or :term:`path-like object`, that points to a valid
+                file in the directory structure if the system. If the file does
+                not exist, a FileNotFoundError is raised. If the filepath points
+                to a directory, a IsADirectoryError is raised.
+            target: String or :term:`path-like object`, that points to a valid
                 directory in the directory structure of the workspace. By
                 default the root directory is used. If the directory does not
                 exist, a FileNotFoundError is raised. If the target directory
@@ -231,10 +229,10 @@ class Session(attrib.Container):
         """Remove file from the current workspace.
 
         Args:
-            filepath: String or `path-like object`_, that points to a file in
-                the directory structure of the workspace. If the filapath points
-                to a directory, an IsADirectoryError is raised. For the case,
-                that the file does not exist, the argument ignore_missing
+            filepath: String or :term:`path-like object`, that points to a file
+                in the directory structure of the workspace. If the filapath
+                points to a directory, an IsADirectoryError is raised. For the
+                case, that the file does not exist, the argument ignore_missing
                 determines, if a FileNotFoundError is raised.
             ignore_missing: Boolean value which determines, if FileNotFoundError
                 is raised, if the target file does not exist. The default
@@ -250,7 +248,7 @@ class Session(attrib.Container):
         """Create a new directory in current workspace.
 
         Args:
-            dirpath: String or `path-like object`_, that represents a valid
+            dirpath: String or :term:`path-like object`, that represents a valid
                 directory name in the directory structure of the workspace. If
                 the directory already exists, the argument ignore_exists
                 determines, if a FileExistsError is raised.
@@ -270,10 +268,10 @@ class Session(attrib.Container):
         """Remove directory from current workspace.
 
         Args:
-            dirpath: String or `path-like object`_, that points to a directory
-                in the directory structure of the workspace. If the directory
-                does not exist, the argument ignore_missing determines, if a
-                FileNotFoundError is raised.
+            dirpath: String or :term:`path-like object`, that points to a
+                directory in the directory structure of the workspace. If the
+                directory does not exist, the argument ignore_missing
+                determines, if a FileNotFoundError is raised.
             ignore_missing: Boolean value which determines, if FileNotFoundError
                 is raised, if the target directory does not exist. The default
                 behaviour, is to raise an error if the directory is missing.
@@ -312,15 +310,15 @@ class Session(attrib.Container):
         """Copy file within current workspace.
 
         Args:
-            source: String or `path-like object`_, that points to a file in the
-                directory structure of the workspace. If the file does not
+            source: String or :term:`path-like object`, that points to a file in
+                the directory structure of the workspace. If the file does not
                 exist, a FileNotFoundError is raised. If the filepath points to
                 a directory, an IsADirectoryError is raised.
-            target: String or `path-like object`_, that points to a new filename
-                or an existing directory in the directory structure of the
-                workspace. If the target is a directory the target file consists
-                of the directory and the basename of the source file. If the
-                target file already exists a FileExistsError is raised.
+            target: String or :term:`path-like object`, that points to a new
+                filename or an existing directory in the directory structure of
+                the workspace. If the target is a directory the target file
+                consists of the directory and the basename of the source file.
+                If the target file already exists a FileExistsError is raised.
 
         Returns:
             Boolean value which is True if the file was copied.
@@ -332,15 +330,15 @@ class Session(attrib.Container):
         """Move file within current workspace.
 
         Args:
-            source: String or `path-like object`_, that points to a file in the
-                directory structure of the workspace. If the file does not
+            source: String or :term:`path-like object`, that points to a file in
+                the directory structure of the workspace. If the file does not
                 exist, a FileNotFoundError is raised. If the filepath points to
                 a directory, an IsADirectoryError is raised.
-            target: String or `path-like object`_, that points to a new filename
-                or an existing directory in the directory structure of the
-                workspace. If the target is a directory the target file consists
-                of the directory and the basename of the source file. If the
-                target file already exists a FileExistsError is raised.
+            target: String or :term:`path-like object`, that points to a new
+                filename or an existing directory in the directory structure of
+                the workspace. If the target is a directory the target file
+                consists of the directory and the basename of the source file.
+                If the target file already exists a FileExistsError is raised.
 
         Returns:
             Boolean value which is True if the file has been moved.
@@ -352,9 +350,9 @@ class Session(attrib.Container):
         """Read text from file in current workspace.
 
         Args:
-            filepath: String or `path-like object`_, that points to a valid file
-                in the directory structure of the workspace. If the file does
-                not exist a FileNotFoundError is raised.
+            filepath: String or :term:`path-like object`, that points to a valid
+                file in the directory structure of the workspace. If the file
+                does not exist a FileNotFoundError is raised.
             encoding: Specifies the name of the encoding, which is used to
                 decode the stream’s bytes into strings. By default the preferred
                 encoding of the operating system is used.
@@ -369,9 +367,9 @@ class Session(attrib.Container):
         """Read bytes from file in current workspace.
 
         Args:
-            filepath: String or `path-like object`_, that points to a valid file
-                in the dirctory structure of the workspace. If the file does not
-                exist a FileNotFoundError is raised.
+            filepath: String or :term:`path-like object`, that points to a valid
+                file in the dirctory structure of the workspace. If the file
+                does not exist a FileNotFoundError is raised.
 
         Returns:
             Contents of the given filepath as bytes.
@@ -386,8 +384,8 @@ class Session(attrib.Container):
 
         Args:
             text: String, which has to be written to the given file.
-            filepath: String or `path-like object`_, that represents a valid
-                filename in the dirctory structure of the workspace.
+            filepath: String or :term:`path-like object`, that represents a
+                valid filename in the dirctory structure of the workspace.
             encoding: Specifies the name of the encoding, which is used to
                 encode strings into bytes. By default the preferred encoding of
                 the operating system is used.
@@ -403,8 +401,8 @@ class Session(attrib.Container):
 
         Args:
             data: Bytes, which are to be written to the given file.
-            filepath: String or `path-like object`_, that represents a valid
-                filename in the dirctory structure of the workspace.
+            filepath: String or :term:`path-like object`, that represents a
+                valid filename in the dirctory structure of the workspace.
 
         Returns:
             Number of bytes, that are written to the file.
@@ -463,8 +461,8 @@ class Session(attrib.Container):
         if not basedir:
             # If workspace is a fully qualified file path in the directory
             # structure of the system, ignore the 'paths' list
-            if npath.is_file(workspace):
-                return npath.expand(workspace)
+            if env.is_file(workspace):
+                return env.expand(workspace)
             # Use the 'paths' list to find a workspace
             for path in self.paths:
                 candidate = Path(path, workspace)

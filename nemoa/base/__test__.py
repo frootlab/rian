@@ -10,7 +10,7 @@ import tempfile
 import datetime
 from pathlib import Path
 from nemoa.base import assess, binary, check, env, literal, stdio, this
-from nemoa.base import npath, nbase, ndict
+from nemoa.base import nbase, ndict
 from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Any, Function, Module, PathLikeList, StrList
 from nemoa.types import OrderedDict
@@ -408,6 +408,102 @@ class TestEnv(ModuleTestCase):
     def test_get_home(self) -> None:
         self.assertTrue(env.get_home().is_dir())
 
+    def test_clear_filename(self) -> None:
+        self.assertEqual(env.clear_filename('3/\nE{$5}.e'), '3E5.e')
+
+    def test_match_paths(self) -> None:
+        paths: PathLikeList = [Path('a.b'), Path('b.a'), Path('c/a.b')]
+        val = env.match_paths(paths, 'a.*')
+        self.assertEqual(val, [Path('a.b')])
+        val = env.match_paths(paths, '*.a')
+        self.assertEqual(val, [Path('b.a')])
+        val = env.match_paths(paths, 'c\\*')
+        self.assertEqual(val, [Path('c/a.b')])
+        val = env.match_paths(paths, 'c/*')
+        self.assertEqual(val, [Path('c/a.b')])
+
+    def test_join_path(self) -> None:
+        val = env.join_path(('a', ('b', 'c')), 'd')
+        self.assertEqual(val, Path('a/b/c/d'))
+
+    def test_expand(self) -> None:
+        udict = {'var1': 'a/%var2%', 'var2': 'b'}
+        val = env.expand('%var1%/c', 'd', udict=udict)
+        self.assertEqual(val, Path('a/b/c/d'))
+
+    def test_get_dirname(self) -> None:
+        path = (('a', ('b', 'c')), 'd', 'base.ext')
+        val = env.get_dirname(*path)
+        self.assertEqual(val, str(Path('a/b/c/d')))
+
+    def test_filename(self) -> None:
+        path = (('a', ('b', 'c')), 'd', 'base.ext')
+        val = env.filename(*path)
+        self.assertEqual(val, 'base.ext')
+
+    def test_basename(self) -> None:
+        path = (('a', ('b', 'c')), 'd', 'base.ext')
+        val = env.basename(*path)
+        self.assertEqual(val, 'base')
+
+    def test_fileext(self) -> None:
+        path = (('a', ('b', 'c')), 'd', 'base.ext')
+        val = env.fileext(*path)
+        self.assertEqual(val, 'ext')
+
+    def test_mkdir(self) -> None:
+        dirpath = Path(tempfile.TemporaryDirectory().name)
+        env.mkdir(dirpath)
+        self.assertTrue(dirpath.is_dir())
+        dirpath.rmdir()
+
+    def test_is_dir(self) -> None:
+        dirpath = Path(tempfile.TemporaryDirectory().name)
+        dirpath.mkdir()
+        self.assertTrue(env.is_dir(dirpath))
+        dirpath.rmdir()
+        self.assertFalse(env.is_dir(dirpath))
+
+    def test_touch(self) -> None:
+        dirpath = Path(tempfile.TemporaryDirectory().name)
+        filepath = dirpath / 'test'
+        env.touch(filepath)
+        self.assertTrue(filepath.is_file())
+        filepath.unlink()
+        dirpath.rmdir()
+
+    def test_copytree(self) -> None:
+        root = Path(tempfile.TemporaryDirectory().name)
+        root.mkdir()
+        source = root / 'source'
+        source.mkdir()
+        (source / 'file').touch()
+        (source / 'dir').mkdir()
+        target = root / 'target'
+        target.mkdir()
+        env.copytree(source, target)
+        self.assertTrue((target / 'file').is_file())
+        (source / 'file').unlink()
+        (target / 'file').unlink()
+        self.assertTrue((target / 'dir').is_dir())
+        (source / 'dir').rmdir()
+        (target / 'dir').rmdir()
+        source.rmdir()
+        target.rmdir()
+
+    def test_is_file(self) -> None:
+        file = Path(tempfile.NamedTemporaryFile().name)
+        file.touch()
+        self.assertTrue(env.is_file(file))
+        file.unlink()
+        self.assertFalse(env.is_file(file))
+
+    def test_rmdir(self) -> None:
+        dirpath = Path(tempfile.TemporaryDirectory().name)
+        dirpath.mkdir()
+        env.rmdir(dirpath)
+        self.assertFalse(dirpath.is_dir())
+
 class TestNbase(ModuleTestCase):
     """Testcase for the module nemoa.base.nbase."""
 
@@ -577,107 +673,6 @@ class TestLiteral(ModuleTestCase):
             Case(args=(str(1), int), value=1),
             Case(args=(str(.5), float), value=.5),
             Case(args=(str(1+1j), complex), value=1+1j)])
-
-class TestNpath(ModuleTestCase):
-    """Testcase for the module nemoa.base.npath."""
-
-    module = 'nemoa.base.npath'
-
-    def test_clear(self) -> None:
-        self.assertEqual(npath.clear('3/\nE{$5}.e'), '3E5.e')
-
-    def test_match(self) -> None:
-        paths: PathLikeList = [Path('a.b'), Path('b.a'), Path('c/a.b')]
-        val = npath.match(paths, 'a.*')
-        self.assertEqual(val, [Path('a.b')])
-        val = npath.match(paths, '*.a')
-        self.assertEqual(val, [Path('b.a')])
-        val = npath.match(paths, 'c\\*')
-        self.assertEqual(val, [Path('c/a.b')])
-        val = npath.match(paths, 'c/*')
-        self.assertEqual(val, [Path('c/a.b')])
-
-    def test_join(self) -> None:
-        val = npath.join(('a', ('b', 'c')), 'd')
-        self.assertEqual(val, Path('a/b/c/d'))
-
-    def test_expand(self) -> None:
-        udict = {'var1': 'a/%var2%', 'var2': 'b'}
-        val = npath.expand('%var1%/c', 'd', udict=udict)
-        self.assertEqual(val, Path('a/b/c/d'))
-
-    def test_dirname(self) -> None:
-        path = (('a', ('b', 'c')), 'd', 'base.ext')
-        val = npath.dirname(*path)
-        self.assertEqual(val, str(Path('a/b/c/d')))
-
-    def test_filename(self) -> None:
-        path = (('a', ('b', 'c')), 'd', 'base.ext')
-        val = npath.filename(*path)
-        self.assertEqual(val, 'base.ext')
-
-    def test_basename(self) -> None:
-        path = (('a', ('b', 'c')), 'd', 'base.ext')
-        val = npath.basename(*path)
-        self.assertEqual(val, 'base')
-
-    def test_fileext(self) -> None:
-        path = (('a', ('b', 'c')), 'd', 'base.ext')
-        val = npath.fileext(*path)
-        self.assertEqual(val, 'ext')
-
-    def test_mkdir(self) -> None:
-        dirpath = Path(tempfile.TemporaryDirectory().name)
-        npath.mkdir(dirpath)
-        self.assertTrue(dirpath.is_dir())
-        dirpath.rmdir()
-
-    def test_is_dir(self) -> None:
-        dirpath = Path(tempfile.TemporaryDirectory().name)
-        dirpath.mkdir()
-        self.assertTrue(npath.is_dir(dirpath))
-        dirpath.rmdir()
-        self.assertFalse(npath.is_dir(dirpath))
-
-    def test_touch(self) -> None:
-        dirpath = Path(tempfile.TemporaryDirectory().name)
-        filepath = dirpath / 'test'
-        npath.touch(filepath)
-        self.assertTrue(filepath.is_file())
-        filepath.unlink()
-        dirpath.rmdir()
-
-    def test_copytree(self) -> None:
-        root = Path(tempfile.TemporaryDirectory().name)
-        root.mkdir()
-        source = root / 'source'
-        source.mkdir()
-        (source / 'file').touch()
-        (source / 'dir').mkdir()
-        target = root / 'target'
-        target.mkdir()
-        npath.copytree(source, target)
-        self.assertTrue((target / 'file').is_file())
-        (source / 'file').unlink()
-        (target / 'file').unlink()
-        self.assertTrue((target / 'dir').is_dir())
-        (source / 'dir').rmdir()
-        (target / 'dir').rmdir()
-        source.rmdir()
-        target.rmdir()
-
-    def test_is_file(self) -> None:
-        file = Path(tempfile.NamedTemporaryFile().name)
-        file.touch()
-        self.assertTrue(npath.is_file(file))
-        file.unlink()
-        self.assertFalse(npath.is_file(file))
-
-    def test_rmdir(self) -> None:
-        dirpath = Path(tempfile.TemporaryDirectory().name)
-        dirpath.mkdir()
-        npath.rmdir(dirpath)
-        self.assertFalse(dirpath.is_dir())
 
 class TestThis(ModuleTestCase):
     """Testcase for the module nemoa.base.this."""

@@ -27,7 +27,7 @@ def load(path, filetype = None, **kwds):
     """Import model dictionary from file or workspace."""
 
     import os
-    from nemoa.base import npath
+    from nemoa.base import env
 
     # get path (if necessary)
     if 'workspace' in kwds or not os.path.isfile(path):
@@ -50,7 +50,7 @@ def load(path, filetype = None, **kwds):
 
     # get filtype from file extension if not given
     # and check if filetype is supported
-    if not filetype: filetype = npath.fileext(path).lower()
+    if not filetype: filetype = env.fileext(path).lower()
     if filetype not in filetypes():
         raise ValueError(f"filetype '{filetype}' is not supported")
 

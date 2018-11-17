@@ -17,10 +17,10 @@ def filetypes():
 def load(path, **kwds):
     """Import dataset from text file."""
 
-    from nemoa.base import npath
+    from nemoa.base import env
 
     # get extract filetype from file extension
-    filetype = npath.fileext(path).lower()
+    filetype = env.fileext(path).lower()
 
     # test if filetype is supported
     if filetype not in filetypes():
@@ -50,7 +50,7 @@ class Csv:
         """
 
         from nemoa.base.file import csvfile, inifile
-        from nemoa.base import npath
+        from nemoa.base import env
 
         # get CSVFile instance
         file = csvfile.CSVFile(path)
@@ -77,7 +77,7 @@ class Csv:
         if 'name' in config:
             name = config['name']
         else:
-            name = npath.basename(path)
+            name = env.basename(path)
             config['name'] = name
         if 'type' not in config:
             config['type'] = 'base.Dataset'

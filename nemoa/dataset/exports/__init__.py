@@ -53,27 +53,27 @@ def save(
     if not assess.has_base(dataset, 'Dataset'):
         raise TypeError("dataset is not valid")
 
-    from nemoa.base import npath
+    from nemoa.base import env
     import nemoa
 
     # get directory, filename and fileextension
     if isinstance(workspace, str) and not workspace == 'None':
         dname = nemoa.path('datasets', workspace=workspace, base=base)
     elif isinstance(path, str):
-        dname = npath.dirname(path)
+        dname = env.get_dirname(path)
     else:
-        dname = npath.dirname(dataset.path)
+        dname = env.get_dirname(dataset.path)
     if isinstance(path, str):
-        fbase = npath.basename(path)
+        fbase = env.basename(path)
     else:
         fbase = dataset.fullname
     if isinstance(filetype, str):
         fext = filetype
     elif isinstance(path, str):
-        fext = npath.fileext(path) or npath.fileext(dataset.path)
+        fext = env.fileext(path) or env.fileext(dataset.path)
     else:
-        fext = npath.fileext(dataset.path)
-    path = str(npath.join(dname, fbase + '.' + fext))
+        fext = env.fileext(dataset.path)
+    path = str(env.join_path(dname, fbase + '.' + fext))
 
     # get filetype from file extension if not given
     # and test if filetype is supported

@@ -1,14 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Binary object functions.
-
-.. _bytes-like object:
-    https://docs.python.org/3/glossary.html#term-bytes-like-object
-.. _zlib.compress():
-    https://docs.python.org/3/library/zlib.html#zlib.compress
-.. _zlib.decompress():
-    https://docs.python.org/3/library/zlib.html#zlib.decompress
-
-"""
+"""Binary object functions."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -29,7 +20,7 @@ def as_bytes(data: BytesLikeOrStr, encoding: OptStr = None) -> bytes:
     """Convert bytes-like object or str to bytes.
 
     Args:
-        data: Binary data given as `bytes-like object`_ or string
+        data: Binary data given as :term:`bytes-like object` or string
 
     """
     if isinstance(data, str):
@@ -41,7 +32,7 @@ def compress(data: BytesLikeOrStr, level: int = -1) -> bytes:
     """Compress binary data using the gzip standard.
 
     Args:
-        data: Binary data given as `bytes-like object`_ or string.
+        data: Binary data given as :term:`bytes-like object` or string.
         level: Compression level ranging from *-1* to *9*, where the default
             value of *-1* is a compromise between speed and compression. For
             level *0* the given binary data is deflated without attempted
@@ -59,7 +50,7 @@ def decompress(data: BytesLikeOrStr) -> bytes:
     """Decompress gzip compressed binary data.
 
     Args:
-        data: Binary data given as `bytes-like object`_ or string.
+        data: Binary data given as :term:`bytes-like object` or string.
 
     Returns:
          Binary data as bytes.
@@ -76,8 +67,8 @@ def encode(data: BytesLikeOrStr, encoding: OptStr = None) -> bytes:
     """Encode bytes-like object or str.
 
     Args:
-        data: Binary data given as `bytes-like object`_ or string
-        encoding: Encodings specified in [RFC3548]_. Allowed values are:
+        data: Binary data given as :term:`bytes-like object` or string
+        encoding: Encodings specified in :rfc:`3548`. Allowed values are:
             *base16*, *base32*, *base64* and *base85* or None for no encoding.
             By default no encoding is used.
 
@@ -98,8 +89,8 @@ def decode(
     """Decode bytes-like object or str.
 
     Args:
-        data: Binary data given as `bytes-like object`_ or string
-        encoding: Encodings specified in `RFC 3548`_. Allowed values are:
+        data: Binary data given as :term:`bytes-like object` or string
+        encoding: Encodings specified in :rfc:`3548`. Allowed values are:
             *base16*, *base32*, *base64* and *base85* or None for no encoding.
             By default no encoding is used.
 
@@ -120,17 +111,17 @@ def pack(
 
     Args:
         obj: Any object, that can be pickled
-        encoding: Encodings specified in `RFC 3548`_. Allowed values are:
+        encoding: Encodings specified in :rfc:`3548`. Allowed values are:
             'base16', 'base32', 'base64' and 'base85' or None for no encoding.
             By default no encoding is used.
-        compression: Determines the compression level for `zlib.compress()`_.
-            By default no zlib compression is used. For an integer ranging from
-            -1 to 9, a zlib compression with the respective compression level is
-            used. Thereby *-1* is the default zlib compromise between speed and
-            compression, *0* deflates the given binary data without attempted
-            compression, *1* is the fastest compression with minimum compression
-            capability and *9* is the slowest compression with maximum
-            compression capability.
+        compression: Determines the compression level for
+            :py:func:`zlib.compress`. By default no zlib compression is used.
+            For an integer ranging from -1 to 9, a zlib compression with the
+            respective compression level is used. Thereby *-1* is the default
+            zlib compromise between speed and compression, *0* deflates the
+            given binary data without attempted compression, *1* is the fastest
+            compression with minimum compression capability and *9* is the
+            slowest compression with maximum compression capability.
 
     Returns:
         Compressed and encoded byte representation of given object hierachy.
@@ -149,12 +140,12 @@ def unpack(
     """Decompress and decode object from binary data.
 
     Args:
-        data: Binary data given as `bytes-like object`_ or string.
-        encoding: Encodings specified in `RFC 3548`_. Allowed values are:
+        data: Binary data given as :term:`bytes-like object` or string.
+        encoding: Encodings specified in :rfc:`3548`. Allowed values are:
             'base16', 'base32', 'base64' and 'base85' or None for no encoding.
             By default no encoding is used.
         compressed: Boolean value which determines, if the returned binary
-            data shall be decompressed by using `zlib.decompress()`_.
+            data shall be decompressed by using :py:func:`zlib.decompress`.
 
     Returns:
          Arbitry object, that can be pickled.

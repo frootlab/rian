@@ -130,11 +130,11 @@ class Attribute(property):
     (i.e. a method), then the data descriptor class defines the accessor,
     mutator and manager methods of the respective attribute.
 
-    A succinct way of building data descriptors is given by the `property`_
-    factory, which automatically creates a getter, a setters and a deleter
-    method from it's passed arguments. Thereupon the `Attribute` class extends
-    the options to control the behaviour of the Attribute by the following
-    amplifications:
+    A succinct way of building data descriptors is given by the class
+    :class:`property`, which automatically creates a getter, a setters and a
+    deleter method from it's passed arguments. Thereupon the `Attribute` class
+    extends the options to control the behaviour of the Attribute by the
+    following amplifications:
 
         * Declaration of accessor and mutator by *forward references*
         * *Type checking* against given classinfo
@@ -161,7 +161,7 @@ class Attribute(property):
             of the attribute.
         doc: Docstring of the Attribute, which is retained throughout the
             runtime of the application. For more information and convention
-            see [PEP257]_.
+            see :PEP:`257`.
         classinfo: Type or tuple of types, which is used to check the validity
             of assignments to the attribute. If the passed value in an
             assignment is not an instance of any of the given types in the
@@ -174,8 +174,8 @@ class Attribute(property):
             other purposes, this can be used to specify fields with mutable
             default values.
         binddict: Name of dictionary or other mapping object used to store
-            the Attribute. By the default value None, the `standard dictionary`_
-            is used.
+            the Attribute. By the default value None, the dictionary
+            :py:attr:`~object.__dict__` is used.
         bindkey: Key within bound dictionary used to store the Attribute. By
             default the name of the Attribute is used.
         remote: Boolean value which determines, if the accessor, mutator and
@@ -197,9 +197,6 @@ class Attribute(property):
             read-writable.
         category: Attribute categories allow a free aggregation of attributes by
             their respective category values.
-
-    .. _standard dictionary:
-        https://docs.python.org/3/library/stdtypes.html#object.__dict__
 
     """
 
@@ -782,7 +779,7 @@ class DCGroup(Group):
     language: property = DCAttr(category='instantiation')
     language.__doc__ = """
     A language of the resource. Recommended best practice is to use a controlled
-    vocabulary such as RFC 4646 [RFC4646]_.
+    vocabulary such as :RFC:`4646`.
     """
 
     date: property = DCAttr(
