@@ -33,7 +33,6 @@ project = nemoa.__name__
 copyright = nemoa.__copyright__
 author = nemoa.__author__
 version = nemoa.__version__
-# The full version, including alpha/beta/rc tags
 release = nemoa.__version__
 
 add_module_names = False
@@ -51,10 +50,10 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'sphinx.ext.todo',
-    'sphinx_autodoc_typehints',
+    #'sphinx_autodoc_typehints',
     'sphinx.ext.mathjax',
     'sphinx.ext.githubpages',
-]
+    'sphinx.ext.intersphinx']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -95,8 +94,22 @@ html_theme = 'sphinx_rtd_theme'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#
-# html_theme_options = {}
+
+#html_theme_options = {
+    #'canonical_url': '',
+    #'analytics_id': '',
+    #'logo_only': False,
+    #'display_version': True,
+    #'prev_next_buttons_location': 'bottom',
+    #'style_external_links': False,
+    #'vcs_pageview_mode': '',
+    # Toc options
+    #'collapse_navigation': True,
+    #'sticky_navigation': False,
+    #'navigation_depth': 6,
+    #'includehidden': True,
+    #'titles_only': False
+#}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -122,7 +135,7 @@ htmlhelp_basename = 'nemoadoc'
 
 # -- Options for LaTeX output ------------------------------------------------
 
-latex_elements = {
+latex_elements = { # type: ignore
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
@@ -195,3 +208,9 @@ epub_exclude_files = ['search.html']
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
+
+
+# Intersphinx Mapping
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'numpy': ('http://docs.scipy.org/doc/numpy/', None)}

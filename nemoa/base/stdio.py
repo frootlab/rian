@@ -24,9 +24,10 @@ def get_ttylib() -> OptModule:
     """Get module for tty I/O control.
 
     Depending on the plattform the module within the standard library, which is
-    required for tty I/O control differs. The module `termios`_ provides an
-    interface to the POSIX calls for tty I/O control. The module `msvcrt`_
-    provides access to some useful capabilities on Windows platforms.
+    required for tty I/O control differs. The module :py:mod:`termios` provides
+    an interface to the POSIX calls for tty I/O control. The module
+    :py:mod:`msvcrt` provides access to some useful capabilities on Windows
+    platforms.
 
     Returns:
         Reference to module for tty I/O control or None, if the module could
@@ -44,16 +45,16 @@ class GetchBase(ABC):
     """Abstract base class for Getch classes."""
 
     def __init__(self) -> None:
-        """Initialize resources required for handling of getch() requests."""
+        """Initialize instance."""
         self.start()
 
     def __del__(self) -> None:
-        """Release resources required for handling getch() requests."""
+        """Release resources required for handling :meth:`.getch` requests."""
         self.stop()
 
     @abstractmethod
     def start(self) -> None:
-        """Start handling of getch() requests."""
+        """Start handling of :meth:`.getch` requests."""
         pass
     @abstractmethod
     def getch(self) -> str:
@@ -61,14 +62,14 @@ class GetchBase(ABC):
         pass
     @abstractmethod
     def stop(self) -> None:
-        """Stop handling of getch() requests."""
+        """Stop handling of :meth:`.getch` requests."""
         pass
 
 class GetchMsvcrt(GetchBase):
     """Windows/msvcrt implementation of Getch.
 
     This implementation supports Microsoft Windows by using the Microsoft Visual
-    C/C++ Runtime Library (`msvcrt`_).
+    C/C++ Runtime Library for Python :py:mod:`msvcrt`.
 
     """
 
@@ -76,7 +77,7 @@ class GetchMsvcrt(GetchBase):
     msvcrt: OptModule
 
     def __init__(self) -> None:
-        """Initialize resources required for handling of getch() requests."""
+        """Initialize instance."""
         try:
             import msvcrt
         except ImportError as err:
@@ -87,11 +88,11 @@ class GetchMsvcrt(GetchBase):
         super().__init__()
 
     def __del__(self) -> None:
-        """Release resources required for handling getch() requests."""
+        """Release resources required for handling :meth:`.getch` requests."""
         self.msvcrt = None
 
     def start(self) -> None:
-        """Start handling of getch() requests."""
+        """Start handling of :meth:`.getch` requests."""
         pass
 
     def getch(self) -> str:
@@ -103,14 +104,14 @@ class GetchMsvcrt(GetchBase):
         return str(getattr(self.msvcrt, 'getch')(), self.encoding)
 
     def stop(self) -> None:
-        """Stop handling of getch() requests."""
+        """Stop handling of :meth:`.getch` requests."""
         pass
 
 class GetchTermios(GetchBase):
     """Unix/Termios implementation of Getch.
 
-    This implementation supports Unix-like Systems by using the Unix Terminal
-    I/O API (`termios`_).
+    This implementation supports Unix-like systems by using the Unix Terminal
+    I/O API for Python :py:mod:`termios`.
 
     """
 
@@ -123,7 +124,7 @@ class GetchTermios(GetchBase):
     thread: Thread
 
     def __init__(self) -> None:
-        """Initialize resources required for handling of getch() requests."""
+        """Initialize instance."""
         try:
             import termios
         except ImportError as err:
@@ -134,7 +135,7 @@ class GetchTermios(GetchBase):
         super().__init__()
 
     def __del__(self) -> None:
-        """Release resources required for handling getch() requests."""
+        """Release resources required for handling :meth:`.getch` requests."""
         self.termios = None
 
     def start(self) -> None:
@@ -190,7 +191,7 @@ class GetchTermios(GetchBase):
             return ''
 
     def stop(self) -> None:
-        """Stop handling of getch() requests."""
+        """Stop handling of :meth:`.getch` requests."""
         if not isinstance(self.termios, Module):
             raise ImportError(
                 "required module termios from standard library "
@@ -210,9 +211,9 @@ class GetchTermios(GetchBase):
 def getch_class() -> GetchBase:
     """Get platform specific class to handle getch() requests.
 
-    This implementation supports Microsoft Windows by using the Microsoft
-    Visual C/C++ Runtime Library (`msvcrt`_) and Unix-like Systems by
-    using the Unix Terminal I/O API (`termios`_).
+    This implementation supports Microsoft Windows by using the Microsoft Visual
+    C/C++ Runtime Library for Python :py:mod:`msvcrt` and Unix-like systems by
+    using the Unix Terminal I/O API for Python :py:mod:`termios`.
 
     """
     # Get platform specific tty I/O module.

@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Vector Norms and Metrices.
-
-.. _`numpy.ndarray`:
-    https://www.numpy.org/devdocs/reference/arrays.ndarray
-"""
+"""Vector Norms and Metrices."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -44,13 +40,13 @@ def length(
 
             :p: The :term:`p-norm` requires an additional parameter *p* and
                 induces the :term:`Minkowski distance`.
-            :1: The :term:`1-norm` induces the :term:`Manhatten distance`.
+            :1: The :term:`1-norm` induces the :term:`Manhattan distance`.
             :euclid: The :term:`Euclidean norm` is the default norm and induces
                 the :term:`Euclidean distance`.
             :max: The :term:`Maximum norm` induces the
                 :term:`Chebyshev distance`.
             :pmean: The :term:`Hölder mean` requires an additional parameter
-                *p* and induces the :term:`Power-Mean difference`.
+                *p* and induces the :term:`power mean difference`.
             :amean: The :term:`mean absolute` induces the
                 :term:`mean absolute difference`
             :qmean: The :term:`quadratic mean` induces the
@@ -66,7 +62,7 @@ def length(
             are documented within the respective 'norm' functions.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
     # Try to create numpy array from argument 'x'
@@ -103,7 +99,7 @@ def norm_p(x: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
             is an evaluation with respect to the first axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
     # For special cases prefer individual implementations, which are faster then
@@ -131,7 +127,7 @@ def norm_1(x: NpArray, axes: NpAxes = 0) -> NpArray:
             is an evaluation with respect to the first axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
     return np.sum(np.abs(x), axis=axes)
@@ -152,7 +148,7 @@ def norm_euclid(x: NpArray, axes: NpAxes = 0) -> NpArray:
             is an evaluation with respect to the first axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
     return np.sqrt(np.sum(np.square(x), axis=axes))
@@ -173,7 +169,7 @@ def norm_max(x: NpArray, axes: NpAxes = 0) -> NpArray:
             is an evaluation with respect to the first axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
     return np.amax(np.abs(x), axis=axes)
@@ -199,7 +195,7 @@ def norm_pmean(x: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
             is an evaluation with respect to the first axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
     if p == 1.:
@@ -209,7 +205,7 @@ def norm_pmean(x: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
     return np.power(np.mean(np.power(np.abs(x), p), axis=axes), 1. / float(p))
 
 def norm_amean(x: NpArray, axes: NpAxes = 0) -> NpArray:
-    r"""Calculate :term:`Mean-Absolute` of an array along given axes.
+    r"""Calculate :term:`mean absolute` of an array along given axes.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
@@ -224,13 +220,13 @@ def norm_amean(x: NpArray, axes: NpAxes = 0) -> NpArray:
             is an evaluation with respect to the first axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
     return np.mean(np.abs(x), axis=axes)
 
 def norm_qmean(x: NpArray, axes: NpAxes = 0) -> NpArray:
-    r"""Calculate the :term:`Quadratic-Mean` of an array along given axes.
+    r"""Calculate the :term:`quadratic mean` of an array along given axes.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
@@ -245,7 +241,7 @@ def norm_qmean(x: NpArray, axes: NpAxes = 0) -> NpArray:
             is an evaluation with respect to the first axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
     return np.sqrt(np.mean(np.square(x), axis=axes))
@@ -284,7 +280,7 @@ def distance(
         name: Name of distance. Accepted values are:
             'minkowski': :term:`Minkowski distance`
                 Remark: requires additional parameter 'p'
-            'manhatten': :term:`Manhatten distance`
+            'manhattan': :term:`Manhattan distance`
             'euclid': :term:`Euclidean distance` (default)
             'chebyshev': :term:`Chebyshev distance`
             'pmean': :term:`Power mean difference`
@@ -303,7 +299,7 @@ def distance(
             functions.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
     # Try to create numpy arrays from 'x' and 'y'
@@ -348,12 +344,12 @@ def dist_minkowski(
             is an evaluation with respect to the first axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
     return norm_p(np.add(x, np.multiply(y, -1)), p=p, axes=axes)
 
-def dist_manhatten(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
+def dist_manhattan(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate :term:`Manhattan distance` along given axes.
 
     Args:
@@ -367,7 +363,7 @@ def dist_manhatten(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
             Default: 0
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
     return norm_1(np.add(x, np.multiply(y, -1)), axes=axes)
@@ -387,7 +383,7 @@ def dist_euclid(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
             is an evaluation with respect to the first axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
     return norm_euclid(np.add(x, np.multiply(y, -1)), axes=axes)
@@ -407,7 +403,7 @@ def dist_chebyshev(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
             is an evaluation with respect to the first axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
     return norm_max(np.add(x, np.multiply(y, -1)), axes=axes)
@@ -434,7 +430,7 @@ def dist_pmean(
             is an evaluation with respect to the first axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
     return norm_pmean(np.add(x, np.multiply(y, -1)), p=p, axes=axes)
@@ -454,7 +450,7 @@ def dist_amean(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
             is an evaluation with respect to the first axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
     return norm_amean(np.add(x, np.multiply(y, -1)), axes=axes)
@@ -474,7 +470,7 @@ def dist_qmean(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
             is an evaluation with respect to the first axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
     return norm_qmean(np.add(x, np.multiply(y, -1)), axes=axes)

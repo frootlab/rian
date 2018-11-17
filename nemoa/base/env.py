@@ -2,34 +2,8 @@
 """Environmentan information and functions for filesystem operations.
 
 .. References:
-.. _PEP 345:
-    https://www.python.org/dev/peps/pep-0345/
-.. _RFC 822:
-    https://www.w3.org/Protocols/rfc822/
 .. _appdirs:
     http://github.com/ActiveState/appdirs
-.. _termios:
-    https://docs.python.org/3/library/termios.html
-.. _msvcrt:
-    https://docs.python.org/3/library/msvcrt.html
-.. _locale.getpreferredencoding():
-    https://docs.python.org/3/library/locale.html#locale.getpreferredencoding
-.. _platform.node():
-    https://docs.python.org/3/library/platform.html#platform.node
-.. _platform.system():
-    https://docs.python.org/3/library/platform.html#platform.system
-.. _getpass.getuser():
-    https://docs.python.org/3/library/getpass.html#getpass.getuser
-.. _path-like object:
-    https://docs.python.org/3/glossary.html#term-path-like-object
-.. _pathlib:
-    https://docs.python.org/3/library/pathlib.html
-.. _Path.is_file():
-    https://docs.python.org/3/library/pathlib.html#pathlib.Path.is_file
-.. _Path.is_dir():
-    https://docs.python.org/3/library/pathlib.html#pathlib.Path.is_dir
-.. _os.chmod():
-    https://docs.python.org/3/library/os.html#os.chmod
 
 .. TODO::
     * Add get_file for 'user_package_log', 'temp_log' etc.
@@ -84,7 +58,7 @@ def get_var(varname: str, *args: Any, **kwds: Any) -> OptStr:
     operating system like 'username' or 'hostname'. Application variables in
     turn, are intended to describe the application distribution by authorship
     information, bibliographic information, status, formal conditions and notes
-    or warnings. For mor information see `PEP 345`_.
+    or warnings. For mor information see :pep:`345`.
 
     Args:
         varname: Name of environment variable. Typical application variable
@@ -105,7 +79,7 @@ def get_var(varname: str, *args: Any, **kwds: Any) -> OptStr:
             'author': A string containing the author's name at a minimum;
                 additional contact information may be provided.
             'email': A string containing the author's e-mail address. It can
-                contain a name and e-mail address, as described in `[RFC822]`_.
+                contain a name and e-mail address, as described in :rfc:`822`.
             'maintainer': A string containing the maintainer's name at a
                 minimum; additional contact information may be provided.
             'company': The company, which created or maintains the distribution.
@@ -139,7 +113,7 @@ def get_vars(*args: Any, **kwds: Any) -> StrDict:
     operating system like 'username' or 'hostname'. Application variables in
     turn, are intended to describe the application distribution by authorship
     information, bibliographic information, status, formal conditions and notes
-    or warnings. For mor information see `PEP 345`_.
+    or warnings. For mor information see :pep:`345`.
 
     Args:
         *args: Optional arguments that specify the application, as required by
@@ -163,15 +137,12 @@ def update_vars(filepath: OptPathLike = None) -> None:
     operating system like 'username' or 'hostname'. Application variables in
     turn, are intended to describe the application distribution by authorship
     information, bibliographic information, status, formal conditions and notes
-    or warnings. For mor information see `PEP 345`_.
+    or warnings. For mor information see :pep:`345`.
 
     Args:
         filepath: Valid filepath to python module, that contains the application
             variables as module attributes. By default the current top level
             module is used.
-
-    Returns:
-        Dictionary with application variables.
 
     """
     # Get package specific environment variables by parsing a given file for
@@ -286,10 +257,6 @@ def update_dirs(
         **kwds: Optional directory name specific keyword arguments. For more
             information see `appdirs`_.
 
-    Returns:
-        Dictionary containing paths of application specific environmental
-        directories.
-
     """
     dirs: StrDictOfPaths = {}
 
@@ -323,9 +290,9 @@ def get_encoding() -> str:
     """Get preferred encoding used for text data.
 
     This is a wrapper function to the standard library function
-    `locale.getpreferredencoding()`_. This function returns the encoding used
-    for text data, according to user preferences. User preferences are expressed
-    differently on different systems, and might not be available
+    :py:func:`locale.getpreferredencoding`. This function returns the encoding
+    used for text data, according to user preferences. User preferences are
+    expressed differently on different systems, and might not be available
     programmatically on some systems, so this function only returns a guess.
 
     Returns:
@@ -338,8 +305,8 @@ def get_hostname() -> str:
     """Get hostname of the computer.
 
     This is a wrapper function to the standard library function
-    `platform.node()`_. This function returns the computer’s hostname. If the
-    value cannot be determined, an empty string is returned.
+    :py:func`platform.node`. This function returns the computer’s hostname. If
+    the value cannot be determined, an empty string is returned.
 
     Returns:
         String representing the computer’s hostname or None.
@@ -351,7 +318,7 @@ def get_osname() -> str:
     """Get name of the Operating System.
 
     This is a wrapper function to the standard library function
-    `platform.system()`_. This function returns the OS name, e.g. 'Linux',
+    :py:func`platform.system`. This function returns the OS name, e.g. 'Linux',
     'Windows', or 'Java'. If the value cannot be determined, an empty string is
     returned.
 
@@ -365,7 +332,7 @@ def get_username() -> str:
     """Login name of the current user.
 
     This is a wrapper function to the standard library function
-    `getpass.getuser()`_. This function checks the environment variables
+    :py:func`getpass.getuser`. This function checks the environment variables
     LOGNAME, USER, LNAME and USERNAME, in order, and returns the value of the
     first one which is set to a non-empty string. If none are set, the login
     name from the password database is returned on systems which support the
@@ -622,8 +589,8 @@ def fileext(*args: NestPath) -> str:
 def is_dir(path: NestPath) -> bool:
     """Determine if given path points to a directory.
 
-    Extends `Path.is_dir()`_ from standard library `pathlib`_ by nested paths
-    and path variable expansion.
+    Extends :py:meth:`pathlib.Path.is_dir` by nested paths and path variable
+    expansion.
 
     Args:
         path: Path like structure, which is expandable to a valid path
@@ -638,8 +605,8 @@ def is_dir(path: NestPath) -> bool:
 def is_file(path: NestPath) -> bool:
     """Determine if given path points to a file.
 
-    Extends `Path.is_file()`_ from standard library `pathlib`_ by nested paths
-    and path variable expansion.
+    Extends :py:meth:`pathlib.Path.is_file` by nested paths and path variable
+    expansion.
 
     Args:
         path: Path like structure, which is expandable to a valid path.
@@ -719,12 +686,12 @@ def touch(
     """Create an empty file at the specified path.
 
     Args:
-        path: Nested `path-like object`_, which represents a valid filename in
-            the directory structure of the operating system.
+        path: Nested :term:`path-like object`, which represents a valid filename
+            in the directory structure of the operating system.
         parents: Boolean value, which determines if missing parents of the path
             are created as needed.
         mode: Integer value, which specifies the properties if the file. For
-            more information see `os.chmod()`_.
+            more information see :func:`os.chmod`.
         exist_ok: Boolean value which determines, if the function returns False,
             if the file already exists.
 

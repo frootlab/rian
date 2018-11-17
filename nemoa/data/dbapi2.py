@@ -3,7 +3,7 @@
 
 This module is a reference for the required exceptions, base classes, module
 attributes and module functions specified in the Python Database API (DB-API)
-Specification 2.0 [PEP249]_.
+Specification 2.0 :PEP:`249`.
 
 Module attributes:
     apilevel:
@@ -20,8 +20,6 @@ Constructor function:
         Constructor for creating a connection to the database. Returns a
         Connection Object. It takes a number of parameters which are database
         dependent.
-
-.. [PEP249] https://www.python.org/dev/peps/pep-0249/
 
 """
 

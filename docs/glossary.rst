@@ -9,7 +9,7 @@ Norms and Metrices
     1-Norm
         The *1-norm* provides a length measure for the interpretation of
         vector spaces as orthogonal lattices. For a vector space of dimension
-        *n*, the norm is defined by: [#taxicab]_
+        *n*, the norm is given by: [#]_
 
         .. math::
             \|\vec{x}\|_{1}
@@ -20,10 +20,13 @@ Norms and Metrices
         When applied to a random sample, the Manhattan distance is also known as
         the :term:`sum of absolute differences`.
 
+        .. rubric:: References
+        .. [#] https://en.wikipedia.org/wiki/Taxicab_geometry
+
     Chebyshev Distance
         The *Chebyshev Distance* generates the *Chebyshev Metric*. For a
-        vector space of dimension *n*, the Chebyshev distance is defined by:
-        [#chebyshev]_
+        vector space of dimension *n*, the Chebyshev distance is given by:
+        [#]_
 
         .. math::
             d_{\infty}(\vec{x},\,\vec{y})
@@ -33,10 +36,12 @@ Norms and Metrices
         specifies the :term:`Minkowski distance` for the transition
         :math:`p\rightarrow\infty`.
 
+        .. [#] https://en.wikipedia.org/wiki/Chebyshev_distance
+
     Euclidean Distance
         The *Euclidean Distance* corresponds to the natural geometric
         interpretation of a vector space. For an underlying vector space of
-        dimension *n*, the Euclidean distance is given by: [#euclid]_
+        dimension *n*, the Euclidean distance is given by: [#]_
 
         .. math::
             d_{2}(\vec{x},\,\vec{y})
@@ -48,12 +53,15 @@ Norms and Metrices
         components of a random sample with a discrepancy measure,
         between observed an estimated realizations. This discrepancy measure is
         commonly referred as :term:`Residual sum of squares` (RSS) and provides
-        the foundation for the method of least squares. [#leastsquares]_
+        the foundation for the method of least squares. [#]_
+
+        .. [#] https://en.wikipedia.org/wiki/Euclidean_distance
+        .. [#] https://en.wikipedia.org/wiki/Least_squares
 
     Euclidean Norm
         The *Euclidean norm* provides the fundamental length measure for
         natural geometric interpretations of vector spaces. For a vector space
-        of dimension *n*, the Euclidean norm is defined by: [#euclidnorm]_
+        of dimension *n*, the Euclidean norm is given by: [#]_
 
         .. math::
             \|\vec{x}\|_{2}
@@ -62,10 +70,12 @@ Norms and Metrices
         The Euclidean norm equals the :term:`p-norm` for :math:`p=2` and induces
         a the :term:`Euclidean distance` to it's domain.
 
+        .. [#] https://en.wikipedia.org/wiki/Euclidean_norm
+
     Frobenius Distance
         The *Frobenius Distance* is a distance measure for matrices. For a
         vector space of dimension :math:`n \times m`, the Frobenius distance is
-        defined by: [#frobenius]_
+        defined by: [#]_
 
         .. math::
             d_{F}(A,\,B)
@@ -73,13 +83,15 @@ Norms and Metrices
                     |b_{ij} - a_{ij}|^{2}\right)}^{1/2}
 
         The Frobenius distance is induced by the :term:`Frobenius norm` and
-        specifies the :term:`pq-mdistance` for the case :math:`p=q=1`.
+        specifies the :term:`pq-distance` for the case :math:`p=q=1`.
+
+        .. [#] https://en.wikipedia.org/wiki/Frobenius_norm
 
     Frobenius Norm
         The *Frobenius norm* is a matrix norm, which is derived by the
         consecutive evaluation of the :term:`Euclidean norm` for the rows and
         columns of a matrix. For an underlying vector space of dimension
-        :math:`n \times m`, the Frobenius norm is defined by: [#frobenius]_
+        :math:`n \times m`, the Frobenius norm is given by: [#]_
 
         .. math::
             \|A\|_{F}
@@ -89,12 +101,14 @@ Norms and Metrices
         The Frobenius norm specifies the :term:`pq-norm` for the case
         :math:`p=q=2`.
 
+        .. [#] https://en.wikipedia.org/wiki/Frobenius_norm
+
     Hölder Mean
         The *Hölder means* generalize the *Arithmetic mean* and the *Geometric
         mean*, in the same way as the :term:`p-norm` generalizes the
-        :term:`Euclidean norm` and the :term:`1-norm`. For a positive
-        real number *p* and a vector space of dimension *n*, the
-        Hölder mean for absolute values is defined by: [#powermean]_
+        :term:`Euclidean norm` and the :term:`1-norm`. For a positive real
+        number *p* and a vector space of dimension *n*, the Hölder mean for
+        absolute values is given by: [#]_
 
         .. math::
             M_{p}(\vec{x})
@@ -109,7 +123,7 @@ Norms and Metrices
 
         As a consequence for :math:`p \geq 1` the Hölder means of absolute
         values are norms and thus induce distances to their underlying domains.
-        These are occasionally referred as :term:`Power-Mean difference`.
+        These are occasionally referred as :term:`power mean difference`.
 
         The Hölder means and their respective distances, have important
         applications in regression analysis. When applied to the components of a
@@ -117,10 +131,12 @@ Norms and Metrices
         absolute sample moments and their induces metrices provide normalized
         measures of statistical dispersion.
 
+        .. [#] https://en.wikipedia.org/wiki/Power_mean
+
     Manhattan Distance
         The *Manhattan Distance* corresponds to the interpretation of vector
         spaces as orthogonal lattices. For a vector space of dimension *n*, the
-        Manhattan distance is defined by: [#taxicab]_
+        Manhattan distance is given by: [#]_
 
         .. math::
             d_{1}(\vec{x},\,\vec{y})
@@ -129,13 +145,14 @@ Norms and Metrices
         The Manhattan distance is induced by the :term:`1-norm` and specifies
         the :term:`Minkowski distance` for :math:`p=1`. When applied to a fixed
         set of outcomes of a random variable, the Minkowski distance is a
-        measure of :term:`discrepancy` and referred as
-        :term:`Sum of Absolute Differences`.
+        measure of :term:`discrepancy measure` and referred as :term:`Sum of
+        Absolute Differences`.
+
+        .. [#] https://en.wikipedia.org/wiki/Taxicab_geometry
 
     Maximum Norm
         The *Maximum norm* provides a length measure for vector spaces. For a
-        vector space of dimension *n*, the Maximum norm is defined by:
-        [#maxnorm]_
+        vector space of dimension *n*, the Maximum norm is given by: [#]_
 
         .. math::
             \|\vec{x}\|_{\infty}
@@ -145,10 +162,12 @@ Norms and Metrices
         :math:`p\rightarrow\infty` and induces the :term:`Chebyshev distance`
         to it's domain.
 
+        .. [#] https://en.wikipedia.org/wiki/Maximum_norm
+
     Mean Absolute
         The *Mean Absolute* provides a normalized length measure for the
         interpretation of vector spaces as orthogonal lattices. For a
-        vector space of dimension *n*, it is defined by:
+        vector space of dimension *n*, it is given by:
 
         .. math::
             M_{1}(\vec{x})
@@ -168,14 +187,14 @@ Norms and Metrices
     Mean Absolute Difference
         The *Mean Absolute Difference* (MD) is a normalized distance measure
         for the interpretation of vector spaces as orthogonal lattices. For a
-        vector space of dimension *n*, this distance is defined by:
+        vector space of dimension *n*, this distance is given by:
 
         .. math::
             \mathrm{MD}_{1}(\vec{x},\,\vec{y})
                 := \frac{1}{n}\sum_{i=1}^n|y_{i}-x_{i}|
 
         The mean absolute difference is induced by the :term:`mean absolute`
-        and specifies the :term:`Power-Mean difference` for the case
+        and specifies the :term:`power mean difference` for the case
         :math:`p=1`. Furthermore the mean absolute difference is linear
         dependent to the :term:`Manhattan distance`:
 
@@ -184,15 +203,17 @@ Norms and Metrices
                 = \frac{d_{1}(\vec{x},\,\vec{y})}{n}
 
         The term 'mean absolute difference' is frequently associated with it's
-        application to sampled values [#mad]_. In regression analysis it
+        application to sampled values [#]_. In regression analysis it
         provides a consistent and unbiased estimator for the
         :term:`mean absolute error` of a predictor.
+
+        .. [#] https://en.wikipedia.org/wiki/Mean_absolute_difference
 
     Minkowski Distance
         The class of *Minkowski Distances* provides different geometric
         interpretations of vector spaces. For a real number :math:`p \geq 1` and
-        a vector space of dimension *n*, the Minkowski distance is defined by:
-        [#minkowski]_
+        a vector space of dimension *n*, the Minkowski distance is given by:
+        [#]_
 
         .. math::
             d_{p}(\vec{x},\,\vec{y})
@@ -202,10 +223,12 @@ Norms and Metrices
         comprises the :term:`Euclidean distance` the :term:`Manhattan distance`
         and the :term:`Chebyshev distance`
 
+        .. [#] https://en.wikipedia.org/wiki/Minkowski_distance
+
     p-Norm
         The *p-norms* provide length measures for different geometric
         interpretations of vector spaces. For a real number :math:`p \geq 1`
-        and a vector space of dimension *n*, the p-norm is defined by: [#pnorm]_
+        and a vector space of dimension *n*, the p-norm is given by: [#]_
 
         .. math::
             \|\vec{x}\|_{p}
@@ -218,13 +241,15 @@ Norms and Metrices
         and the :term:`Maximum Norm`. The class of distances, induced by the
         p-norms are referred as :term:`Minkowski distance`.
 
+        .. [#] https://en.wikipedia.org/wiki/P_norm
+
     pq-Distance
         The *pq-Distances* are matrix distances, which are derived by an
         elementwise application of the :term:`p-norm` to the rows of two
         matrices, followed by an elementwise application of another
         p-norm to the columns. For real numbers :math:`p,\,q \geq 1` and
         an underlying vector space of dimension :math:`n \times m`, the
-        pq-distance is defined by: [#pqdistance]_
+        pq-distance is given by: [#]_
 
         .. math::
             d_{p,q}(A,\,B)
@@ -235,15 +260,14 @@ Norms and Metrices
         For the case :math:`p = q = 2`, the pq-distance is also referred
         as :term:`Frobenius distance`.
 
-        .. [#pqdistance]
-            https://en.wikipedia.org/wiki/Matrix_norm#L2,1_and_Lp,q_norms
+        .. [#] https://en.wikipedia.org/wiki/Matrix_norm#L2,1_and_Lp,q_norms
 
     pq-Norm
         The *pq-Norms* are matrix norms, which are derived by an elementwise
         application of the :term:`p-norm` to the rows of a matrix, followed by
         an elementwise application of another p-norm to the columns.
         For real numbers :math:`p,\,q \geq 1` and an underlying vector space of
-        dimension :math:`n \times m`, the pq-norm is defined by: [#pqnorm]_
+        dimension :math:`n \times m`, the pq-norm is given by: [#]_
 
         .. math::
             \|A\|_{p,q}
@@ -253,17 +277,19 @@ Norms and Metrices
         For the case :math:`p = q = 2`, the pq-norm is also referred as
         :term:`Frobenius norm`.
 
-    Power-Mean Difference
-        The *Power-Mean Differences* are normalized distance measures for
+        .. [#] https://en.wikipedia.org/wiki/Matrix_norm#L2,1_and_Lp,q_norms
+
+    Power Mean Difference
+        The *Power Mean Differences* are normalized distance measures for
         different geometric interpretations of vector spaces. For a real number
         :math:`p \geq 1` and a vector space of dimension *n*, the
-        Power-Mean difference is defined by:
+        power mean difference is given by:
 
         .. math::
             \mathrm{MD}_p(\vec{x},\,\vec{y})
                 := \left(\frac{1}{n}\sum_{i=1}^n|y_{i}-x_{i}|^p\right)^{1/p}
 
-        The Power-Mean differences are induced by the :term:`Hölder mean`
+        The power mean differences are induced by the :term:`Hölder mean`
         for absolute values and linear related to the
         :term:`Minkowski distance`:
 
@@ -277,7 +303,7 @@ Norms and Metrices
     Quadratic Mean
         The *Quadratic Mean* is a normalized length measure for the geometric
         interpretation of vector spaces. For a vector space of dimension *n*,
-        it is defined by: [#qmean]_
+        it is given by: [#]_
 
         .. math::
             M_{2}(\vec{x})
@@ -295,21 +321,23 @@ Norms and Metrices
         which occasionally is referred as the :term:`quadratic mean difference`.
         When applied to the components of a random sample, the quadratic mean
         norm is a sample statistic, which is referred as
-        :term:`Root-Mean-Square`.
+        :term:`Root-Mean-Square error`.
+
+        .. [#] https://en.wikipedia.org/wiki/Quadratic_mean
 
     Quadratic Mean Difference
         The *Quadratic Mean Difference* is a normalized distance measure
         for the natural geometric interpretation of vector spaces. For a
-        vector space of dimension *n*, the distance is defined by:
+        vector space of dimension *n*, the distance is given by:
 
         .. math::
             \mathrm{MD}_2(\vec{x},\,\vec{y})
                 := {\left(\frac{1}{n}\sum_{i=1}^n|y_{i}-x_{i}|\right)}^{1/2}
 
         The quadratic mean difference is induced by the :term:`quadratic mean`
-        and specifies the :term:`Power-Mean difference` for the case
-        :math:`p=2`. Furthermore the quadratic mean difference is linear
-        dependent to the :term:`Euclidean distance`:
+        and specifies the :term:`power mean difference` for :math:`p=2`.
+        Furthermore the quadratic mean difference is linear dependent to the
+        :term:`Euclidean distance`:
 
         .. math::
             \mathrm{MD}_{2}(\vec{x},\,\vec{y})
@@ -319,76 +347,58 @@ Norms and Metrices
         quadratic mean difference is a measure of statistical dispersion and
         referred as :term:`Root-Mean-Square Error`.
 
-.. rubric:: References
-.. [#pnorm] https://en.wikipedia.org/wiki/P_norm
-.. [#pqnorm] https://en.wikipedia.org/wiki/Matrix_norm#L2,1_and_Lp,q_norms
-.. [#frobenius] https://en.wikipedia.org/wiki/Frobenius_norm
-.. [#taxicab] https://en.wikipedia.org/wiki/Taxicab_geometry
-.. [#euclidnorm] https://en.wikipedia.org/wiki/Euclidean_norm
-.. [#maxnorm] https://en.wikipedia.org/wiki/Maximum_norm
-.. [#powermean] https://en.wikipedia.org/wiki/Power_mean
-.. [#qmean] https://en.wikipedia.org/wiki/Quadratic_mean
-.. [#minkowski] https://en.wikipedia.org/wiki/Minkowski_distance
-.. [#euclid] https://en.wikipedia.org/wiki/Euclidean_distance
-.. [#chebyshev] https://en.wikipedia.org/wiki/Chebyshev_distance
-.. [#mad] https://en.wikipedia.org/wiki/Mean_absolute_difference
-.. [#leastsquares] https://en.wikipedia.org/wiki/Least_squares
-
 Regression
 ----------
 
 .. glossary::
 
-    Discrepancy
-        A *discrepancy* is a binary function in a space of random variables,
-        that induces a semi-metric to the underlying space. [#discrepancy]_ In
-        regression analysis discrepancies are used to assess the accuracy of a
-        predictor, by quantifying the expected deviation between observed and
-        predicted realizations. By minimizing a discrepancy with respect to
-        parameters, it serves as an objective function for parameter and model
-        selection.
+    Association Measure
+        *Association measures* refer to a wide variety of coefficients,
+        that measure the statistical strength of relationships between the
+        variables of interest. These measures can be directed / undirected,
+        signed / unsigned and normalized or unnormalized. Examples for measures
+        of association are the Pearson correlation coefficient, Mutual
+        information or Statistical Interactions.
 
-    Sum of Absolute Differences
-        The *Sum of Absolute Differences* (SAD) is a measure of
-        :term:`discrepancy`, that assesses the accuracy of a predictor with
-        respect to a fixed (finite) set of observations. For an
-        observable random variable :math:`Y` with *n* fixed observations
-        :math:`\mathbf{y}` and a predictor :math:`\hat{Y}` with corresponding
-        predictions :math:`\hat{\mathbf{y}}` the RSS is given by:
+    Discrepancy Measure
+        A *discrepancy measure* is a binary function in a space of random
+        variables, that induces a semi-metric to the underlying space.
+        [#disc]_ In regression analysis discrepancies are used to assess
+        the accuracy of a predictor, by quantifying the expected deviation
+        between observed and predicted realizations. By minimizing a discrepancy
+        with respect to parameters, it serves as an objective function for
+        parameter and model selection.
 
-        .. math::
-            \mathrm{SAD}(\mathbf{y},\,\hat{\mathbf{y}})
-                := \sum_{i=1}^{n}|y_{i}-\hat{y}_{i}|
+        .. [#disc] https://en.wikipedia.org/wiki/discrepancy_function
 
-        The SAD equals the :term:`Manhattan distance` and therefore is also a
-        valid distance measure within the underlying space of random variables.
-        The SAD is effectively the simplest possible distance, that takes into
-        account every observation of a fixed finite set. This makes SAD an
-        extremely fast distance measure.
-
-    Residual Sum of Squares
-        The *Residual Sum of Squares* (RSS) is a measure of
-        :term:`discrepancy`, that assesses the accuracy of a predictor with
-        respect to a fixed (finite) set of observations. For an
-        observable random variable :math:`Y` with *n* fixed observations
-        :math:`\mathbf{y}` and a predictor :math:`\hat{Y}` with corresponding
-        predictions :math:`\hat{\mathbf{y}}` the RSS is given by:
+    Mean Absolute Error
+        The *Mean Absolute Error* (MAE) is a :term:`discrepancy measure`,
+        that assesses the accuracy of a predictor. For an observable random
+        variable :math:`Y` and a corresponding predictor :math:`\hat{Y}` the MAE
+        is given by:
 
         .. math::
-            \mathrm{RSS}(\mathbf{y},\,\hat{\mathbf{y}})
-                := \sum_{i=1}^{n}(y_{i}-\hat{y}_{i})^2
+            \mathrm{MAE}
+                := \mathrm{E}\left[|Y-\hat{Y}|\right]
 
-        The RSS equals the squared :term:`Euclidean distance`, which does not
-        satisfy the triangle inequality and therefore does not define a valid
-        distance measure. Since the RSS, however, is positive definite and
-        subhomogeneous, it induces a semi-metric to the underlying space of
+        The MAE has a consistent and unbiased estimator, given by the
+        :term:`mean absolute difference` of observations and predictions. For
+        *n* observations :math:`\mathbf{y}` with corresponding predictions
+        :math:`\hat{\mathbf{y}}` the MAE is estimated by:
+
+        .. math::
+            \mathrm{MD}_1(\mathbf{y},\,\hat{\mathbf{y}})
+                \xrightarrow{\, n \to \infty \, } \mathrm{MAE}
+
+        Due to this transition, the MAE adopts all required properties from the
+        mean absolute difference, to induce a valid metric to the space of
         random variables.
 
     Mean Squared Error
-        The *Mean Squared Error* (MSE) is a measure of :term:`discrepancy`,
+        The *Mean Squared Error* (MSE) is a :term:`discrepancy measure`,
         that assesses the accuracy of a predictor. For an observable random
         variable :math:`Y` and a corresponding predictor :math:`\hat{Y}` the MSE
-        is defined by:
+        is given by:
 
         .. math::
             \mathrm{MSE}
@@ -409,34 +419,29 @@ Regression
         subhomogeneous, it induces a semi-metric to the underlying space of
         random variables.
 
-    Mean Absolute Error
-        The *Mean Absolute Error* (MAE) is a measure of :term:`discrepancy`,
-        that assesses the accuracy of a predictor. For an observable random
-        variable :math:`Y` and a corresponding predictor :math:`\hat{Y}` the MAE
-        is defined by:
+    Residual Sum of Squares
+        The *Residual Sum of Squares* (RSS) is a :term:`discrepancy measure`,
+        that assesses the accuracy of a predictor with respect to a fixed
+        (finite) set of observations. For an observable random variable
+        :math:`Y` with *n* fixed observations :math:`\mathbf{y}` and a predictor
+        :math:`\hat{Y}` with corresponding predictions :math:`\hat{\mathbf{y}}`
+        the RSS is given by:
 
         .. math::
-            \mathrm{MAE}
-                := \mathrm{E}\left[|Y-\hat{Y}|\right]
+            \mathrm{RSS}(\mathbf{y},\,\hat{\mathbf{y}})
+                := \sum_{i=1}^{n}(y_{i}-\hat{y}_{i})^2
 
-        The MAE has a consistent and unbiased estimator, given by the
-        :term:`mean absolute difference` of observations and predictions. For
-        *n* observations :math:`\mathbf{y}` with corresponding predictions
-        :math:`\hat{\mathbf{y}}` the MAE is estimated by:
-
-        .. math::
-            \mathrm{MD}_1(\mathbf{y},\,\hat{\mathbf{y}})
-                \xrightarrow{\, n \to \infty \, } \mathrm{MAE}
-
-        Due to this transition, the MAE adopts all required properties from the
-        mean absolute difference, to induce a valid metric to the space of
+        The RSS equals the squared :term:`Euclidean distance`, which does not
+        satisfy the triangle inequality and therefore does not define a valid
+        distance measure. Since the RSS, however, is positive definite and
+        subhomogeneous, it induces a semi-metric to the underlying space of
         random variables.
 
     Root-Mean-Square Error
-        The *Root-Mean-Square Error* (RMSE) is a measure of :term:`discrepancy`,
+        The *Root-Mean-Square Error* (RMSE) is a :term:`discrepancy measure`,
         that assesses the accuracy of a predictor. For an observable random
         variable :math:`Y` and a corresponding predictor :math:`\hat{Y}` the
-        RMSE is defined by:
+        RMSE is given by:
 
         .. math::
             \mathrm{RMSE}
@@ -455,5 +460,20 @@ Regression
         quadratic mean difference, to induce a valid metric to the space of
         random variables.
 
-.. rubric:: References
-.. [#discrepancy] https://en.wikipedia.org/wiki/discrepancy_function
+    Sum of Absolute Differences
+        The *Sum of Absolute Differences* (SAD) is a :term:`discrepancy
+        measure`, that assesses the accuracy of a predictor with respect to a
+        fixed (finite) set of observations. For an observable random variable
+        :math:`Y` with *n* fixed observations :math:`\mathbf{y}` and a predictor
+        :math:`\hat{Y}` with corresponding predictions :math:`\hat{\mathbf{y}}`
+        the RSS is given by:
+
+        .. math::
+            \mathrm{SAD}(\mathbf{y},\,\hat{\mathbf{y}})
+                := \sum_{i=1}^{n}|y_{i}-\hat{y}_{i}|
+
+        The SAD equals the :term:`Manhattan distance` and therefore is also a
+        valid distance measure within the underlying space of random variables.
+        The SAD is effectively the simplest possible distance, that takes into
+        account every observation of a fixed finite set. This makes SAD an
+        extremely fast distance measure.

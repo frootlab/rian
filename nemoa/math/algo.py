@@ -2,8 +2,6 @@
 """Organization and handling of algorithms.
 
 .. References:
-.. _Measures of association:
-    https://en.wikipedia.org/wiki/Correlation_and_dependence
 .. _Objective functions:
     https://en.wikipedia.org/wiki/Objective_function
 
@@ -250,14 +248,7 @@ def association(
         classes: OptStrList = None, plot: OptStr = 'Histogram',
         directed: bool = True, signed: bool = True, normal: bool = False,
         **attr: Any) -> FuncWrapper:
-    """Attribute decorator for statistical measures of association.
-
-    `Measures of association`_ refer to a wide variety of coefficients that
-    measure the statistical strength of relationships between the variables of
-    interest. These measures can be directed / undirected, signed / unsigned and
-    normalized or unnormalized. Examples for measures of association are the
-    Pearson correlation coefficient, Mutual information or Statistical
-    Interactions.
+    """Attribute decorator for :term:`association measures`.
 
     Args:
         name: Name of the measure of association

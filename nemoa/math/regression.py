@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Regression Analysis Functions.
-
-.. _`numpy.ndarray`:
-    https://www.numpy.org/devdocs/reference/arrays.ndarray
-"""
+"""Regression Analysis Functions."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -28,7 +24,7 @@ _ERROR_PREFIX = 'error_'
 #
 
 def errors() -> StrList:
-    """Get sorted list of :term:`discrepancy` measures.
+    """Get sorted list of :term:`discrepancy measures<discrepancy measure>`.
 
     Returns:
         Sorted list of all discrepancy functions, that are implemented within
@@ -40,7 +36,7 @@ def errors() -> StrList:
 def error(
         x: NpArrayLike, y: NpArrayLike, name: str, axes: NpAxes = 0,
         **kwds: Any) -> NpArray:
-    """Calculate :term:`discrepancy` of a prediction along given axes.
+    """Calculate :term:`discrepancy<discrepancy measure>` of a prediction.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
@@ -66,7 +62,7 @@ def error(
             functions.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
     # Check arguments 'x' and 'y' to be array like
@@ -105,10 +101,10 @@ def error_sad(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
             is an evaluation with respect to the first axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
-    return vector.dist_manhatten(x, y, axes=axes)
+    return vector.dist_manhattan(x, y, axes=axes)
 
 def error_rss(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate :term:`Residual Sum of Squares` along given axes.
@@ -125,7 +121,7 @@ def error_rss(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
             is an evaluation with respect to the first axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
     return np.sum(np.square(np.add(x, np.multiply(y, -1))), axis=axes)
@@ -145,7 +141,7 @@ def error_mse(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
             is an evaluation with respect to the first axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
     return np.mean(np.square(np.add(x, np.multiply(y, -1))), axis=axes)
@@ -165,7 +161,7 @@ def error_mae(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
             is an evaluation with respect to the first axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
     return vector.dist_amean(x, y, axes=axes)
@@ -185,7 +181,7 @@ def error_rmse(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
             is an evaluation with respect to the first axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
+        :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
     return vector.dist_qmean(x, y, axes=axes)

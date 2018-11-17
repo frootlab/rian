@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Extended handling of collection type objects like dictionaries.
-
-.. References:
-.. _fnmatch: https://docs.python.org/3/library/fnmatch.html
-
-"""
+"""Extended handling of collection type objects like dictionaries."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -76,7 +71,7 @@ def select(d: dict, pattern: str) -> dict:
     Args:
         d: Dictionary with string keys
         pattern: Wildcard pattern as described in the standard library module
-            `fnmatch`_.
+            :py:mod:`fnmatch`.
 
     Returns:
         Subdictionary of the original dictionary, which only contains keys

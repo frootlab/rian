@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Matrix Norms and Metrices.
-
-.. _`numpy.ndarray`:
-    https://www.numpy.org/devdocs/reference/arrays.ndarray
-"""
+"""Matrix Norms and Metrices."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -58,7 +54,7 @@ def norm(
             functions.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - 2.
+        :class:`numpy.ndarray` of dimension dim(*x*) - 2.
 
     """
     # Convert numpy array like 'x' to numpy array
@@ -105,7 +101,7 @@ def norm_pq(x: NpArray,
             evaluation with respect to the first two axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - 2.
+        :class:`numpy.ndarray` of dimension dim(*x*) - 2.
 
     """
     # For special cases prefer specific implementations for faster calculation
@@ -139,7 +135,7 @@ def norm_frobenius(x: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
             evaluation with respect to the first two axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - 2.
+        :class:`numpy.ndarray` of dimension dim(*x*) - 2.
 
     """
     return vector.norm_euclid(x, axes=axes)
@@ -187,7 +183,7 @@ def distance(
             functions.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - 2.
+        :class:`numpy.ndarray` of dimension dim(*x*) - 2.
 
     """
     # Try to create numpy arrays from 'x' and 'y'
@@ -233,7 +229,7 @@ def dist_frobenius(x: NpArray, y: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
             evaluation with respect to the first two axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - 2.
+        :class:`numpy.ndarray` of dimension dim(*x*) - 2.
 
     """
     return norm_frobenius(np.add(x, np.multiply(y, -1)), axes=axes)
@@ -262,7 +258,7 @@ def dist_pq(
             evaluation with respect to the first two axis in the array.
 
     Returns:
-        `Numpy.ndarray`_ of dimension dim(*x*) - 2.
+        :class:`numpy.ndarray` of dimension dim(*x*) - 2.
 
     """
     return norm_pq(x - y, p=p, q=q, axes=axes)
@@ -284,11 +280,11 @@ def from_dict(
             list of column labels, e.g. ['col1', 'col2', ...].
         nan: Value to mask Not Not a Number (NaN) entries. Missing entries in
             the dictionary are replenished by the NaN value in the array.
-            Default: [IEEE 754]_ floating point representation of NaN.
+            Default: [IEEE754]_ floating point representation of NaN.
 
     Returns:
-        NumPy ndarray of shape (*n*, *m*), where *n* equals the number of
-        <*rows*> and *m* the number of <*columns*>.
+        :class:`numpy.ndarray` of shape (*n*, *m*), where *n* equals the number
+        of <*rows*> and *m* the number of <*columns*>.
 
     """
     # Check type of 'd'
@@ -318,7 +314,7 @@ def as_dict(
         na: Optional value to mask Not a Number (NaN) entries. For cells in the
             array, which have this value, no entry in the returned dictionary
             is created. If nan is None, then for all numbers entries are
-            created. Default: [IEEE 754]_ floating point representation of NaN.
+            created. Default: [IEEE754]_ floating point representation of NaN.
 
     Returns:
          Dictionary with keys (<*row*>, <*col*>), where the elemns <*row*> are

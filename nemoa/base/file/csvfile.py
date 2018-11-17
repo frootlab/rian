@@ -50,11 +50,11 @@ CSV_FORMAT_RTABLE = 1
 #
 
 class CSVFile(attrib.Container):
-    """CSV File.
+    """CSV-File Class.
 
     Args:
-        file: String or `path-like object`_ that points to a readable CSV-file
-            in the directory structure of the system, or a `file-like object`_
+        file: String or :term:`path-like object` that points to a readable CSV-file
+            in the directory structure of the system, or a :term:`file object`
             in read mode.
         delim: String containing CSV-delimiter. By default the CSV-delimiter is
             detected from the CSV-file.
@@ -362,7 +362,7 @@ def save(
     """Save NumPy array to CSV-file.
 
     Args:
-        file: String, `path-like object`_ or `file-like object`_ that points to
+        file: String, :term:`path-like object` or :term:`file object` that points to
             a valid CSV-file in the directory structure of the system.
         data: NumPy ndarray containing the data which is to be exported to
             a CSV-file.

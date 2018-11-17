@@ -559,7 +559,7 @@ class Table(attrib.Container):
             mapper = self._get_mapper(self.colnames, fmt=fmt)
         else:
             check.is_subset(
-                "argument 'columns'", set(columns),
+                "'columns'", set(columns),
                 "table column names", set(self.colnames))
             mapper = self._get_mapper(columns, fmt=fmt)
         return self.get_cursor( # type: ignore
@@ -590,7 +590,7 @@ class Table(attrib.Container):
             return mapper_tuple
         if fmt == dict:
             return mapper_dict
-        raise TableError(f"argument 'fmt' requires to be tuple or dict")
+        raise TableError(f"'fmt' requires to be tuple or dict")
 
     def _get_fields(self) -> FieldTuple:
         return dataclasses.fields(self._Record)
@@ -685,7 +685,7 @@ def addcols(
 
     """
     cols = cols or getattr(data, 'dtype').names
-    check.has_type("argument 'cols'", cols, (tuple, str))
+    check.has_type("'cols'", cols, (tuple, str))
     cols = list(cols) # make cols mutable
 
     # Append fields

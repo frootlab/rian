@@ -12,10 +12,6 @@
     https://docs.python.org/3/glossary.html#term-path-like-object
 .. _open():
     https://docs.python.org/3/library/functions.html#open
-.. _zlib.compress():
-    https://docs.python.org/3/library/zlib.html#zlib.compress
-.. _zlib.decompress():
-    https://docs.python.org/3/library/zlib.html#zlib.decompress
 .. _RFC 3548:
     https://tools.ietf.org/html/rfc3548.html
 
@@ -36,9 +32,9 @@ def openx(file: FileOrPathLike, mode: str = '') -> IterBytesIOLike:
     """Context manager to provide a unified interface to binary files.
 
     This context manager extends the standard implementation of `open()`_ by
-    allowing the passed *file* argument to be a str or `path-like object`_,
+    allowing the passed *file* argument to be a str or :term:`path-like object`,
     which points to a valid filename in the directory structure of the system,
-    or a `file-like object`_. If the *file* argument is a str or a path-like
+    or a :term:`file object`. If the *file* argument is a str or a path-like
     object, the given path may contain application variables, like '%home%' or
     '%user_data_dir%', which are extended before returning a file handler to a
     `binary-file`_. Afterwards, when exiting the *with* statement, the file is
@@ -46,8 +42,8 @@ def openx(file: FileOrPathLike, mode: str = '') -> IterBytesIOLike:
     not closed, when exiting the *with* statement.
 
     Args:
-        file: String or `path-like object`_ that points to a valid filename in
-            the directory structure of the system, or a `file-like object`_.
+        file: String or :term:`path-like object` that points to a valid filename in
+            the directory structure of the system, or a :term:`file object`.
         mode: String, which characters specify the mode in which the file stream
             is opened or wrapped. The default mode is reading mode. Suported
             characters are:
@@ -93,14 +89,14 @@ def load(
     """Load binary data from file.
 
     Args:
-        file: String or `path-like object`_ that points to a readable file in
-            the directory structure of the system, or a `file-like object`_ in
-            reading mode.
+        file: String or :term:`path-like object` that points to a readable file
+            in the directory structure of the system, or a :term:`file object`
+            in reading mode.
         encoding: Encodings specified in `RFC 3548`_. Allowed values are:
             'base16', 'base32', 'base64' and 'base85' or None for no encoding.
             By default no encoding is used.
         compressed: Boolean value which determines, if the returned binary
-            data shall be decompressed by using `zlib.decompress()`_.
+            data shall be decompressed by using :py:func:zlib.decompress.
 
     Returns:
         Content of the given file as bytes object.
@@ -120,21 +116,21 @@ def save(
     """Save binary data to file.
 
     Args:
-        data: Binary data given as `bytes-like object`_ or string
-        file: String or `path-like object`_ that points to a writable file in
-            the directory structure of the system, or a `file-like object`_ in
-            writing mode.
+        data: Binary data given as :term:`bytes-like object` or string
+        file: String or :term:`path-like object` that points to a writable file
+            in the directory structure of the system, or a :term:`file object`
+            in writing mode.
         encoding: Encodings specified in `RFC 3548`_. Allowed values are:
             'base16', 'base32', 'base64' and 'base85' or None for no encoding.
             By default no encoding is used.
-        compression: Determines the compression level for `zlib.compress()`_.
-            By default no zlib compression is used. For an integer ranging from
-            -1 to 9, a zlib compression with the respective compression level is
-            used. Thereby *-1* is the default zlib compromise between speed and
-            compression, *0* deflates the given binary data without attempted
-            compression, *1* is the fastest compression with minimum compression
-            capability and *9* is the slowest compression with maximum
-            compression capability.
+        compression: Determines the compression level for
+            :py:func:`zlib.compress`. By default no zlib compression is used.
+            For an integer ranging from -1 to 9, a zlib compression with the
+            respective compression level is used. Thereby *-1* is the default
+            zlib compromise between speed and compression, *0* deflates the
+            given binary data without attempted compression, *1* is the fastest
+            compression with minimum compression capability and *9* is the
+            slowest compression with maximum compression capability.
 
     """
     if isinstance(compression, int):
