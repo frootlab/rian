@@ -8,6 +8,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import array
+import collections
 import datetime
 import io
 import os
@@ -30,10 +31,11 @@ NaN = float('nan')
 Infty = float('inf')
 
 ################################################################################
-# ClassInfos which can be used with 'isinstance' and 'issubclass'
+# Classes and ClassInfos
 ################################################################################
 
 Array = array.ArrayType
+OrderedDict = collections.OrderedDict
 Date = datetime.datetime
 Function = types.FunctionType
 Method = types.MethodType

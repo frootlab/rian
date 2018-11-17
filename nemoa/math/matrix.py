@@ -86,7 +86,7 @@ def norm(
     check.is_callable(fname, func)
 
     # Evaluate function
-    supp_kwds = assess.get_function_kwds(func, default=kwds)
+    supp_kwds = assess.get_parameters(func, default=kwds)
     return func(x, axes=axes, **supp_kwds) # pylint: disable=E1102
 
 def norm_pq(x: NpArray,
@@ -224,7 +224,7 @@ def distance(
     check.is_callable(fname, func)
 
     # Evaluate function
-    supp_kwds = assess.get_function_kwds(func, default=kwds)
+    supp_kwds = assess.get_parameters(func, default=kwds)
     return func(x, y, axes=axes, **supp_kwds) # pylint: disable=E1102
 
 def dist_frobenius(x: NpArray, y: NpArray, axes: IntTuple = (0, 1)) -> NpArray:

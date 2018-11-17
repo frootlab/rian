@@ -17,12 +17,9 @@ import pkgutil
 from nemoa.base import check, ndict
 from nemoa.types import Any, ClassInfo, OptStr, OptStrDictOfTestFuncs
 from nemoa.types import OptModule, Module, StrList, OptFunction, Function
-from nemoa.types import StrDict, AnyFunc, OptDict, Tuple, RecDict, NestRecDict
+from nemoa.types import StrDict, Tuple, RecDict, NestRecDict
 from nemoa.types import DictOfRecDicts, FuncWrapper, Method, StrOrType
-
-#
-# Module Functions
-#
+from nemoa.types import Callable, OrderedDict
 
 def has_base(obj: object, base: StrOrType) -> bool:
     """Return true if the object has the given base class.
@@ -259,44 +256,63 @@ def get_function(name: str) -> OptFunction:
 
     return func
 
-def get_function_kwds(func: AnyFunc, default: OptDict = None) -> StrDict:
-    """Get keyword arguments of a function.
+def get_parameters(obj: Callable, *args: Any, **kwds: Any) -> OrderedDict:
+    """Get parameters of a callable.
 
     Args:
-        func: Function instance
-        default: Dictionary containing alternative default values.
-            If default is set to None, then all keywords of the function are
-            returned with their standard default values.
-            If default is a dictionary with string keys, then only
-            those keywords are returned, that are found within default,
-            and the returned values are taken from default.
+        obj: Callable object
+        *args: Arbitrary arguments, that are zipped into the returned
+            parameter dictionary.
+        *kwds: Arbitrary keyword arguments, that respectively if declared
+            within the callable object are merged into the returned parameter
+            dictionary. If the callable object allows a variable number of
+            keyword arguments, all given keyword arguments are merged into the
+            parameter dictionary.
 
     Returns:
-        Dictionary of keyword arguments with default values.
+        Ordered Dictionary of parameters.
 
     Examples:
-        >>> get_kwds(get_kwds)
-        {'default': None}
-        >>> get_kwds(get_kwds, default = {'default': 'not None'})
-        {'default': 'not None'}
+        >>> get_parameters(get_parameters)
+        OrderedDict()
+        >>> get_parameters(get_parameters, list)
+        OrderedDict([('obj', list)])
 
     """
-    # Check Arguments
-    check.has_type("first argument 'key'", func, Function)
-    check.has_opt_type("argument 'default'", default, dict)
+    # Check 'obj'
+    check.is_callable("first argument", obj)
 
-    # Get keywords from inspect
-    kwds: StrDict = {}
-    struct = inspect.signature(func).parameters
-    for key, val in struct.items():
-        if '=' not in str(val):
-            continue
-        if default is None:
-            kwds[key] = val.default
-        elif key in default:
-            kwds[key] = default[key]
+    # Get Arguments
+    spec = inspect.getfullargspec(obj)
+    params = OrderedDict(zip(spec.args, args))
 
-    return kwds
+    # Get Keyword Arguments
+    if spec.varkw:
+        params.update(kwds)
+    else:
+        for key, val in kwds.items():
+            if key in params:
+                params[key] = val
+
+    return params
+
+def call_attr(obj: object, attr: str, *args: Any, **kwds: Any) -> Any:
+    """Call an object attribute with given arguments.
+
+    Args:
+        obj: Arbitrary object
+        attr: Name of callable object attribute
+        *args: Arbitrary arguments, that are passed to the call
+        *kwds: Arbitrary keyword arguments, that are passes to the call, if
+            supported by the member attribute.
+
+    Returns:
+        Result of call.
+
+    """
+    func = getattr(obj, attr)
+    params = get_parameters(func, *args, **kwds)
+    return func(*params.values())
 
 def get_methods(
         obj: object, pattern: OptStr = None, groupby: OptStr = None,

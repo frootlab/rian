@@ -75,7 +75,7 @@ def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
         raise ValueError(f"name '{str(name)}' is not supported")
 
     # Evaluate function
-    supp_kwds = assess.get_function_kwds(func, default=kwds)
+    supp_kwds = assess.get_parameters(func, default=kwds)
     return func(x, **supp_kwds) # pylint: disable=E1102
 
 def sigm_logistic(x: NpArrayLike) -> NpArray:
@@ -227,7 +227,7 @@ def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
         raise ValueError(f"name '{str(name)}' is not supported")
 
     # Evaluate function
-    supp_kwds = assess.get_function_kwds(func, default=kwds)
+    supp_kwds = assess.get_parameters(func, default=kwds)
     return func(x, **supp_kwds) # pylint: disable=E1102
 
 def bell_gauss(x: NpArrayLike, mu: float = 0., sigma: float = 1.) -> NpArray:

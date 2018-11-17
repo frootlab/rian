@@ -84,7 +84,7 @@ def length(
     check.is_callable(fname, func)
 
     # Evaluate function
-    supp_kwds = assess.get_function_kwds(func, default=kwds)
+    supp_kwds = assess.get_parameters(func, default=kwds)
     return func(x, axes=axes, **supp_kwds) # pylint: disable=E1102
 
 def norm_p(x: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
@@ -334,7 +334,7 @@ def distance(
     check.is_callable(fname, func)
 
     # Evaluate function
-    supp_kwds = assess.get_function_kwds(func, default=kwds)
+    supp_kwds = assess.get_parameters(func, default=kwds)
     return func(x, y, axes=axes, **supp_kwds) # pylint: disable=E1102
 
 def dist_minkowski(

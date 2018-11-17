@@ -13,6 +13,7 @@ from nemoa.base import assess, binary, check, env, literal, stdio, this
 from nemoa.base import npath, nbase, ndict
 from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Any, Function, Module, PathLikeList, StrList
+from nemoa.types import OrderedDict
 
 class TestAssess(ModuleTestCase):
     """Testcase for the module nemoa.base.assess."""
@@ -123,12 +124,23 @@ class TestAssess(ModuleTestCase):
             assess.split_args("f(1., 'a', b = 2)"),
             ('f', (1.0, 'a'), {'b': 2}))
 
-    def test_get_function_kwds(self) -> None:
-        self.assertAllEqual(assess.get_function_kwds, [
-            Case(args=(assess.get_function_kwds, ), value={'default': None}),
-            Case(args=(assess.get_function_kwds, ),
-                kwds={'default': {'default': True}},
-                value={'default': True})])
+    def test_get_parameters(self) -> None:
+        self.assertAllEqual(assess.get_parameters, [
+            Case(args=(assess.get_parameters, ),
+                value=OrderedDict()),
+            Case(args=(assess.get_parameters, list),
+                value=OrderedDict([('obj', list)])),
+            Case(args=(assess.get_parameters, list),
+                kwds={'test': True},
+                value=OrderedDict([('obj', list), ('test', True)]))])
+
+    def test_call_attr(self) -> None:
+        self.assertAllEqual(assess.call_attr, [
+            Case(args=(assess, 'get_name', list),
+                value='list'),
+            Case(args=(assess, 'get_name', list),
+                kwds={'test': True},
+                value='list')])
 
     def test_get_methods(self) -> None:
         obj = self.get_test_object()
@@ -671,6 +683,9 @@ class TestThis(ModuleTestCase):
     """Testcase for the module nemoa.base.this."""
 
     module = 'nemoa.base.this'
+
+    def test_call_attr(self) -> None:
+        pass # Function is testet in assess.call_attr
 
     def test_get_attr(self) -> None:
         self.assertEqual(this.get_attr('__name__'), __name__)

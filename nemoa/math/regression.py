@@ -38,7 +38,8 @@ def errors() -> StrList:
     return this.crop_functions(prefix=_ERROR_PREFIX)
 
 def error(
-        x: NpArrayLike, y: NpArrayLike, name: str, **kwds: Any) -> NpArray:
+        x: NpArrayLike, y: NpArrayLike, name: str, axes: NpAxes = 0,
+        **kwds: Any) -> NpArray:
     """Calculate :term:`discrepancy` of a prediction along given axes.
 
     Args:
@@ -53,6 +54,13 @@ def error(
             'mse': :term:`Mean Squared Error`
             'mae': :term:`Mean Absolute Error`
             'rmse': :term:`Root-Mean-Square Error`
+        axes: Integer or tuple of integers, that identify the array axes, along
+            which the function is evaluated. In a one-dimensional array the
+            single axis has ID 0. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. For the value None, the function is evaluated with
+            respect to all axes of the array. The default value is 0, which
+            is an evaluation with respect to the first axis in the array.
         **kwds: Additional parameters for the given discrepancy function. The
             function specific parameters are documented within the respective
             functions.
@@ -87,7 +95,7 @@ def error(
         raise ValueError(f"name '{name}' is not valid")
 
     # Evaluate distance function
-    return func(x, y, **assess.get_function_kwds(func, default=kwds))
+    return func(x, y, axes=axes, **assess.get_parameters(func, default=kwds))
 
 def error_sad(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate :term:`Sum of Absolute Differences` along given axes.
