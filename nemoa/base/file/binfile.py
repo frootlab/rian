@@ -27,7 +27,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import contextlib
-from nemoa.base import npath, binary
+from nemoa.base import env, binary
 from nemoa.types import BytesIOBaseClass, BytesLikeOrStr, FileOrPathLike
 from nemoa.types import IterBytesIOLike, OptInt, OptStr, Path, TextIOBaseClass
 
@@ -65,7 +65,7 @@ def openx(file: FileOrPathLike, mode: str = '') -> IterBytesIOLike:
     elif isinstance(file, BytesIOBaseClass):
         fd, close = file, False
     elif isinstance(file, (str, Path)):
-        path = npath.expand(file)
+        path = env.expand(file)
         if 'w' in mode:
             try:
                 fd, close = open(path, 'wb'), True

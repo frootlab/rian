@@ -16,10 +16,10 @@ def filetypes():
 def load(path, **kwds):
     """Import network from text file."""
 
-    from nemoa.base import npath
+    from nemoa.base import env
 
     # extract filetype from path
-    filetype = npath.fileext(path).lower()
+    filetype = env.fileext(path).lower()
 
     # test if filetype is supported
     if filetype not in filetypes():
@@ -67,7 +67,7 @@ class Ini:
             "type '%s'." % (path, network['network']['type']))
 
     def _parse_layer_network(self, path):
-        from nemoa.base import npath
+        from nemoa.base import env
         from nemoa.base.file import inifile
 
         structure = {
@@ -107,7 +107,7 @@ class Ini:
         del config['layers']
 
         # name
-        if 'name' not in config: config['name'] = npath.basename(path)
+        if 'name' not in config: config['name'] = env.basename(path)
 
         # directed
         if 'directed' not in config: config['directed'] = True

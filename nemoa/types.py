@@ -51,7 +51,7 @@ TextFileClasses = (str, Path, TextIOBaseClass)
 ClassInfoClasses = (type, tuple)
 
 ################################################################################
-# Generic Type Variables
+# Generic Type Variables for Special Types
 ################################################################################
 
 # Generic Type-Variables
@@ -59,10 +59,15 @@ S = TypeVar('S')
 T = TypeVar('T')
 
 ################################################################################
-# Types for Literals and Collections of Literals
+# Special Types for Literals and Collections of Literals
 ################################################################################
 
-# Unions of Literals
+# Numbers
+RealNumber = Union[int, float]
+Number = Union[RealNumber, complex]
+OptNumber = Optional[Number]
+
+# Literals
 OptType = Optional[type]
 OptStr = Optional[str]
 OptInt = Optional[int]
@@ -77,10 +82,17 @@ StrOrInt = Union[str, int]
 BytesLike = Union[bytes, bytearray, memoryview]
 BytesLikeOrStr = Union[BytesLike, str]
 
-# Collections of Literals
-# TODO (patrick.michl@gmail.com): Hashable currently does not completely
-# work in mypi. When it works, the HashableDict shall replace AnyDict:
-# AnyDict = Dict[Hashable, Any]
+# Classes
+Class = Type[Any]
+OptClass = Optional[Class]
+ClassInfo = Union[Class, Tuple[Class, ...]]
+OptClassInfo = Optional[ClassInfo]
+
+# Collections of numbers
+RealVector = Sequence[RealNumber]
+Vector = Sequence[Number]
+
+# Collections of literals
 HashDict = Dict[Hashable, Any]
 AnyDict = Dict[Any, Any]
 StrSet = Set[str]
@@ -117,6 +129,11 @@ StrTupleDict = Dict[Union[str, Tuple[str, ...]], Any]
 RecDict = Dict[Any, StrDict]
 DictOfRecDicts = Dict[Any, RecDict]
 
+# Classvariables of Compounds
+ClassStrList = ClassVar[StrList]
+ClassDict = ClassVar[AnyDict]
+ClassStrDict = ClassVar[StrDict]
+
 # Nested Types
 # TODO (patrick.michl@gmail.com): currently recursive type definition is not
 # fully supported by the typing module. When recursive type definition is
@@ -132,13 +149,16 @@ OptNestDict = Optional[NestDict]
 IterNestRecDict = Iterable[NestRecDict]
 
 ################################################################################
-# Define Types for Callables and Collections of Callables
+# Special Types for Callables and Collections of Callables
 ################################################################################
 
 # Elementary Callables
 AnyFunc = Callable[..., Any]
 VoidFunc = Callable[..., None]
 BoolFunc = Callable[..., bool]
+RealFunc = Callable[..., RealNumber]
+ScalarFunc = Callable[..., Number]
+VectorFunc = Callable[..., Vector]
 UnaryFunc = Callable[[Any], Any]
 BinaryFunc = Callable[[Any, Any], Any]
 TernaryFunc = Callable[[Any, Any, Any], Any]
@@ -162,30 +182,7 @@ OptStrDictOfTestFuncs = Optional[StrDictOfTestFuncs]
 FuncWrapper = Callable[[Callable[..., T]], Callable[..., T]]
 
 ################################################################################
-# Specific builtin Types
-################################################################################
-
-# Numbers
-RealNumber = Union[int, float]
-Number = Union[RealNumber, complex]
-OptNumber = Optional[Number]
-RealVector = Sequence[RealNumber]
-Vector = Sequence[Number]
-RealFunc = Callable[..., RealNumber]
-ScalarFunc = Callable[..., Number]
-VectorFunc = Callable[..., Vector]
-
-# Classes and Class Variables
-Class = Type[Any]
-OptClass = Optional[Class]
-ClassInfo = Union[Class, Tuple[Class, ...]]
-OptClassInfo = Optional[ClassInfo]
-ClassStrList = ClassVar[StrList]
-ClassDict = ClassVar[AnyDict]
-ClassStrDict = ClassVar[StrDict]
-
-################################################################################
-# Specific Types that are defined by standard library packages
+# Special Types that are used for standard library packages
 ################################################################################
 
 # Named Tuples
@@ -196,10 +193,6 @@ IterAny = Iterator[Any] # methods: __next__
 IterNone = Iterator[None] # methods: __next__
 OptContainer = Optional[Container] # methods: __contains__
 OptSized = Optional[Sized] # methods: __len__
-
-################################################################################
-# Specific Types that are used within standard library packages
-################################################################################
 
 # PathLike type
 OptPath = Optional[Path]
@@ -245,7 +238,7 @@ CManFileLike = ContextManager[FileLike]
 FileOrPathLike = Union[FileLike, PathLike]
 
 ################################################################################
-# Specific Types that are used within external Packages
+# Special Types that are used for external Packages
 ################################################################################
 
 # Numpy

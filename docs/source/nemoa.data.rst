@@ -6,8 +6,8 @@ Submodules
 
 .. toctree::
 
-   nemoa.data.csvdb
    nemoa.data.dbapi2
+   nemoa.data.mapper
    nemoa.data.table
 
 Module contents

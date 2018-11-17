@@ -18,7 +18,7 @@ except ImportError as err:
         "requires package pyparsing: "
         "https://pypi.org/project/pyparsing/") from err
 
-from nemoa.base import check, npath
+from nemoa.base import check, env
 from nemoa.types import Any, OptStr, Date, OptType
 
 def decode(
@@ -263,7 +263,7 @@ def as_path(text: str, expand: bool = True) -> Path:
     check.has_type("argument 'expand'", expand, bool)
 
     if expand:
-        return npath.expand(text)
+        return env.expand(text)
     return Path(text)
 
 def as_datetime(text: str, fmt: OptStr = None) -> Date:

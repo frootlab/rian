@@ -17,7 +17,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from pathlib import Path
-from nemoa.base import attrib, npath
+from nemoa.base import attrib, env
 from nemoa.core import log
 from nemoa.base.file import inifile, wsfile
 from nemoa.types import Any, BytesLike, CManFileLike, ClassVar, Exc, ExcType
@@ -89,14 +89,14 @@ class Session(attrib.Container):
         # Initialize instance variables with default values
         self.config = self._default_config.copy()
         self._ws = wsfile.WsFile()
-        self.paths = [npath.expand(path) for path in self._default_paths]
+        self.paths = [env.expand(path) for path in self._default_paths]
         self.logger = log.get_instance()
 
         # Bind session to workspace
         self.parent = self._ws
 
         # Load session configuration from file
-        if npath.is_file(self._config_file_path):
+        if env.is_file(self._config_file_path):
             self._load_config()
 
         # Load workspace from file
@@ -463,8 +463,8 @@ class Session(attrib.Container):
         if not basedir:
             # If workspace is a fully qualified file path in the directory
             # structure of the system, ignore the 'paths' list
-            if npath.is_file(workspace):
-                return npath.expand(workspace)
+            if env.is_file(workspace):
+                return env.expand(workspace)
             # Use the 'paths' list to find a workspace
             for path in self.paths:
                 candidate = Path(path, workspace)

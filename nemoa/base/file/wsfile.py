@@ -19,7 +19,7 @@ from zipfile import BadZipFile, ZipFile, ZipInfo
 from contextlib import contextmanager
 from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
-from nemoa.base import attrib, env, npath
+from nemoa.base import attrib, env, env
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
 from nemoa.base.file import inifile
 from nemoa.types import BytesIOBaseClass, BytesIOLike, BytesLike, ClassVar
@@ -165,7 +165,7 @@ class WsFile(attrib.Container):
         """
         # Initialize instance Variables, Buffer and buffered ZipFile
         self._changed = False
-        self._path = npath.expand(filepath)
+        self._path = env.expand(filepath)
         self._pwd = pwd
         self._buffer = BytesIO()
         self._file = ZipFile(self._buffer, mode='w')
@@ -223,7 +223,7 @@ class WsFile(attrib.Container):
                 a workspace file.
 
         """
-        path = npath.expand(filepath)
+        path = env.expand(filepath)
 
         # Update datetime
         self.date = datetime.datetime.now()
@@ -434,7 +434,7 @@ class WsFile(attrib.Container):
 
         """
         # Check source file
-        src_file = npath.expand(source)
+        src_file = env.expand(source)
         if not src_file.exists():
             raise FileNotFoundError(f"file '{src_file}' does not exist")
         if src_file.is_dir():
@@ -668,7 +668,7 @@ class WsFile(attrib.Container):
 
         # Match path list with given pattern
         if pattern:
-            paths = npath.match(paths, pattern)
+            paths = env.match_paths(paths, pattern)
 
         # Sort paths
         return sorted([str(path) for path in paths])

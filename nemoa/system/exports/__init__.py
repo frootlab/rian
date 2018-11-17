@@ -43,26 +43,26 @@ def save(system, path = None, filetype = None, workspace = None,
     if not assess.has_base(system, 'System'):
         raise ValueError("system is not valid")
 
-    from nemoa.base import npath
+    from nemoa.base import env
 
     # get directory, filename and fileextension
     if isinstance(workspace, str) and not workspace == 'None':
         directory = nemoa.path('systems',
             workspace=workspace, base=base)
     elif isinstance(path, str):
-        directory = npath.dirname(path)
-    else: directory = npath.dirname(system.path)
+        directory = env.get_dirname(path)
+    else: directory = env.get_dirname(system.path)
     if isinstance(path, str):
-        name = npath.basename(path)
+        name = env.basename(path)
     else:
         name = system.fullname
     if isinstance(filetype, str):
         fileext = filetype
     elif isinstance(path, str):
-        fileext = npath.fileext(path) or npath.fileext(system.path)
+        fileext = env.fileext(path) or env.fileext(system.path)
     else:
-        fileext = npath.fileext(system.path)
-    path = str(npath.join(directory, name + '.' + fileext))
+        fileext = env.fileext(system.path)
+    path = str(env.join_path(directory, name + '.' + fileext))
 
     # get filetype from file extension if not given
     # and test if filetype is supported

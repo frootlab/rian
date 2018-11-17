@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from pathlib import Path
-from nemoa.base import assess, check, ndict, npath
+from nemoa.base import assess, check, ndict, env
 from nemoa.types import Any, ClassVar, Dict, OptInt, OptStr, PathLike
 
 class ObjectIP:
@@ -320,13 +320,13 @@ class ObjectIP:
         dname = session.path(mname + 's')
         if not dname:
             return None
-        fbase = npath.clear(self._get_fullname())
+        fbase = env.clear_filename(self._get_fullname())
         if not fbase:
             return None
         fext = session.get('default', 'filetype', mname)
         if not fext:
             return None
-        return str(npath.join(dname, fbase + '.' + fext))
+        return str(env.join_path(dname, fbase + '.' + fext))
 
     def _get_setter(self) -> list:
         """Get sorted list of keys, which are accepted by the 'set' method.
@@ -561,7 +561,7 @@ class ObjectIP:
                 "attribute 'path' is required to be path-like"
                 f", not '{type(path)}'")
 
-        self._config['path'] = npath.expand(path)
+        self._config['path'] = env.expand(path)
 
         return True
 

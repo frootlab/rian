@@ -18,7 +18,7 @@ __docformat__ = 'google'
 
 import contextlib
 from io import TextIOWrapper
-from nemoa.base import npath
+from nemoa.base import env
 from nemoa.types import BytesIOBaseClass, FileOrPathLike, IterStringIOLike
 from nemoa.types import Path, StrList, TextIOBaseClass
 
@@ -59,7 +59,7 @@ def openx(file: FileOrPathLike, mode: str = '') -> IterStringIOLike:
             fh = TextIOWrapper(file)
         close = False
     elif isinstance(file, (str, Path)):
-        path = npath.expand(file)
+        path = env.expand(file)
         if 'w' in mode:
             try:
                 fh = open(path, 'w')

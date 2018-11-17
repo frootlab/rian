@@ -16,10 +16,10 @@ def filetypes():
 def load(path, **kwds):
     """Import system from text file."""
 
-    from nemoa.base import npath
+    from nemoa.base import env
 
     # extract filetype from path
-    filetype = npath.fileext(path).lower()
+    filetype = env.fileext(path).lower()
 
     # test if filetype is supported
     if filetype not in filetypes():
@@ -48,7 +48,7 @@ class Ini:
                 configuration dictionary.
 
         """
-        from nemoa.base import npath
+        from nemoa.base import env
         from nemoa.base.file import inifile
 
         # import ini file to dictionary, using ini file structure
@@ -69,7 +69,7 @@ class Ini:
         config = system['system'].copy()
 
         # update / set name
-        if 'name' not in config: config['name'] = npath.basename(path)
+        if 'name' not in config: config['name'] = env.basename(path)
 
         # update / set optimization schedules
         schedules = {}

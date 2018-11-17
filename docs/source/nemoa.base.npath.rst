@@ -1,7 +1,7 @@
-nemoa.base.npath module
+nemoa.base.env module
 =======================
 
-.. automodule:: nemoa.base.npath
+.. automodule:: nemoa.base.env
     :members:
     :undoc-members:
     :show-inheritance:

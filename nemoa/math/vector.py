@@ -12,7 +12,7 @@ __docformat__ = 'google'
 
 import contextlib
 import numpy as np
-from nemoa.base import assess, check, this
+from nemoa.base import check, this
 from nemoa.types import Any, NpAxes, NpArray, NpArrayLike, StrList
 
 _NORM_PREFIX = 'norm_'
@@ -81,14 +81,6 @@ def length(
     # Evaluate function
     fname = _NORM_PREFIX + norm.lower()
     return this.call_attr(fname, x, axes=axes, **kwds)
-    # # Get function
-    # fname = _NORM_PREFIX + norm.lower()
-    # func = this.get_attr(fname)
-    # check.is_callable(fname, func)
-    #
-    # # Evaluate function
-    # supp_kwds = assess.get_parameters(func, default=kwds)
-    # return func(x, axes=axes, **supp_kwds) # pylint: disable=E1102
 
 def norm_p(x: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
     r"""Calculate a :term:`p-Norm` of an array along given axes.
@@ -334,15 +326,6 @@ def distance(
     # Evaluate function
     fname = _DIST_PREFIX + name.lower()
     return this.call_attr(fname, x, y, axes=axes, **kwds)
-
-    # # Get function
-    # fname = _DIST_PREFIX + name.lower()
-    # func = this.get_attr(fname)
-    # check.is_callable(fname, func)
-    #
-    # # Evaluate function
-    # supp_kwds = assess.get_parameters(func, default=kwds)
-    # return func(x, y, axes=axes, **supp_kwds) # pylint: disable=E1102
 
 def dist_minkowski(
         x: NpArray, y: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:

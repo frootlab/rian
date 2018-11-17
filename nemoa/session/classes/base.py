@@ -242,7 +242,7 @@ class Session:
 
         import glob
         import os
-        from nemoa.base import npath
+        from nemoa.base import env
 
         basepath = self._config['default']['basepath'][base]
         baseglob = self._get_path_expand((basepath, '*'))
@@ -252,7 +252,7 @@ class Session:
         for subdir in glob.iglob(baseglob):
             if not os.path.isdir(subdir):
                 continue
-            fpath = str(npath.join(subdir, fname))
+            fpath = str(env.join_path(subdir, fname))
             if not os.path.isfile(fpath):
                 continue
             workspaces.append(os.path.basename(subdir))
@@ -431,9 +431,9 @@ class Session:
         """
 
         import os
-        from nemoa.base import npath
+        from nemoa.base import env
 
-        path = str(npath.join(args))
+        path = str(env.join_path(args))
 
         # expand nemoa environment variables
         base = self._get_base()
@@ -441,18 +441,18 @@ class Session:
             'workspace': self._get_workspace() or 'none',
             'base': self._get_base() or 'none',
             'basepath': str(
-                npath.join(self._config['default']['basepath'][base]))}
+                env.join_path(self._config['default']['basepath'][base]))}
 
         for key, val in self._config['default']['basepath'].items():
-            udict[key] = str(npath.join(val))
+            udict[key] = str(env.join_path(val))
         for key, val in self._config['current']['path'].items():
-            udict[key] = str(npath.join(val))
+            udict[key] = str(env.join_path(val))
 
-        path = str(npath.expand(path, udict=udict))
+        path = str(env.expand(path, udict=udict))
 
         # (optional) create directory
         if create:
-            npath.mkdir(path)
+            env.mkdir(path)
 
         # (optional) check path
         if check and not os.path.exists(path):
@@ -836,7 +836,7 @@ class Session:
         """Scan workspace for files."""
 
         import glob
-        from nemoa.base import npath
+        from nemoa.base import env
 
         # change current base and workspace (if necessary)
         cur_workspace = self._get_workspace()
@@ -879,10 +879,10 @@ class Session:
             # scan for files
             objregister = self._config['register'][objtype]
             for filepath in glob.iglob(filemask):
-                filetype = npath.fileext(filepath)
+                filetype = env.fileext(filepath)
                 if filetype not in filetypes:
                     continue
-                basename = npath.basename(filepath)
+                basename = env.basename(filepath)
                 filespace = self._get_workspace()
                 filebase = self._get_base()
                 fullname = '%s.%s.%s' % (filebase, filespace, basename)

@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Numpy recarray functions.
-
-.. References:
-.. _rec_append_fields:
-    https://www.numpy.org/devdocs/user/basics.rec.html
-
-"""
+"""Nemoa Tables."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'

@@ -40,7 +40,7 @@ import logging
 import tempfile
 import warnings
 from pathlib import Path
-from nemoa.base import attrib, env, npath
+from nemoa.base import attrib, env, env
 from nemoa.errors import SingletonExistsError, NotStartedError
 from nemoa.types import void, Any, AnyFunc, ClassVar, PathLike, StrList
 from nemoa.types import StrOrInt, OptPath, VoidFunc
@@ -281,13 +281,13 @@ class Logger(attrib.Container):
             self, filepath: PathLike = _default_file) -> OptPath:
         # Get valid logfile from filepath
         if isinstance(filepath, (str, Path)):
-            logfile = npath.expand(filepath)
-            if npath.touch(logfile):
+            logfile = env.expand(filepath)
+            if env.touch(logfile):
                 return logfile
 
         # Get temporary logfile
         logfile = Path(tempfile.NamedTemporaryFile().name + '.log')
-        if npath.touch(logfile):
+        if env.touch(logfile):
             warnings.warn(
                 f"logfile '{filepath}' is not valid: "
                 f"using temporary logfile '{logfile}'")
