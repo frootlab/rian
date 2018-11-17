@@ -211,23 +211,47 @@ Norms and Metrices
             \|\vec{x}\|_{p}
                 := \left(\sum_{i=1}^{n} |x_{i}|^{p}\right)^{1/p}
 
-        The p_norms generalize the :term:`1-Norm`, the :term:`Euclidean Norm`
+        For :math:`0 \leq p < 1` an evaluation according to the p-norm does not
+        satisfy the triangle inequality and yields a quasi-norm.
+
+        The p-norms generalize the :term:`1-Norm`, the :term:`Euclidean Norm`
         and the :term:`Maximum Norm`. The class of distances, induced by the
         p-norms are referred as :term:`Minkowski distance`.
 
+    pq-Distance
+        The *pq-Distances* are matrix distances, which are derived by an
+        elementwise application of the :term:`p-norm` to the rows of two
+        matrices, followed by an elementwise application of another
+        p-norm to the columns. For real numbers :math:`p,\,q \geq 1` and
+        an underlying vector space of dimension :math:`n \times m`, the
+        pq-distance is defined by: [#pqdistance]_
+
+        .. math::
+            d_{p,q}(A,\,B)
+                := \left(\sum_{j=1}^{m}
+                    \left(\sum_{i=1}^{n}|a_{ij}-b_{ij}|^{p}\right)^{q/p}
+                    \right)^{1/q}
+
+        For the case :math:`p = q = 2`, the pq-distance is also referred
+        as :term:`Frobenius distance`.
+
+        .. [#pqdistance]
+            https://en.wikipedia.org/wiki/Matrix_norm#L2,1_and_Lp,q_norms
+
     pq-Norm
-        The *pq-norms* are matrix norms, which are derived by consecutively
-        applying a respective :term:`p-norm` to the rows and the columns of a
-        matrix. For real numbers :math:`p,\,q \geq 1` and a vector space of
-        dimension :math:`n \times m`, the pq-norms are defined by: [#pqnorm]_
+        The *pq-Norms* are matrix norms, which are derived by an elementwise
+        application of the :term:`p-norm` to the rows of a matrix, followed by
+        an elementwise application of another p-norm to the columns.
+        For real numbers :math:`p,\,q \geq 1` and an underlying vector space of
+        dimension :math:`n \times m`, the pq-norm is defined by: [#pqnorm]_
 
         .. math::
             \|A\|_{p,q}
                 := \left(\sum_{j=1}^{m}
                     \left(\sum_{i=1}^{n}|a_{ij}|^{p}\right)^{q/p}\right)^{1/q}
 
-        For the case that :math:`p = q = 2`, the respective pq-norm is referred
-        as the :term:`Frobenius norm`.
+        For the case :math:`p = q = 2`, the pq-norm is also referred as
+        :term:`Frobenius norm`.
 
     Power-Mean Difference
         The *Power-Mean Differences* are normalized distance measures for

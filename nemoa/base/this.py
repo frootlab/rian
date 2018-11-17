@@ -152,7 +152,7 @@ def get_root(ref: OptModule = None) -> Module:
     return tlref
 
 def get_attr(name: str, default: Any = None, ref: OptModule = None) -> Any:
-    """Get attribute of a module.
+    """Get an attribute of current module.
 
     Args:
         name: Name of attribute.
@@ -169,6 +169,21 @@ def get_attr(name: str, default: Any = None, ref: OptModule = None) -> Any:
 
     # Get attribute
     return getattr(ref, name, default)
+
+def call_attr(attr: str, *args: Any, **kwds: Any) -> Any:
+    """Call an attribute of current module with given arguments.
+
+    Args:
+        attr: Name of callable attribute
+        *args: Arbitrary arguments, that are passed to the call
+        *kwds: Arbitrary keyword arguments, that are passes to the call, if
+            supported by the member attribute.
+
+    Returns:
+        Result of call.
+
+    """
+    return assess.call_attr(get_caller_module(), attr, *args, **kwds)
 
 def crop_functions(prefix: str, ref: OptModule = None) -> list:
     """Get list of cropped function names that satisfy a given prefix.

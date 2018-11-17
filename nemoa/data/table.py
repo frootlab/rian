@@ -177,7 +177,7 @@ class Cursor(attrib.Container):
     Args:
         index: List of row IDs, that are traversed by the cursor. By default the
             attribute '_index' of the parent object is used.
-        mode: Named string identifier for the cursor :py:attr:`~mode`. The
+        mode: Named string identifier for the cursor :py:attr:`.mode`. The
             default cursor mode is 'forward-only indexed'. Note: After
             initializing the curser, it's mode can not be changed anymore.
 
@@ -195,14 +195,14 @@ class Cursor(attrib.Container):
 
     mode: property = attrib.Virtual(fget='_get_mode')
     mode.__doc__ = """
-    Named string identifier for cursor modes, given by a space seperated
-    combination of a *moving type* and an *operation type*.
-    Supported moving types are:
+    The read-only string attribute *cursor mode* specifies the space separated
+    *scrolling type* and the *operation mode* of the cursor. Supported scrolling
+    types are:
 
-    :forward-only: The default moving type of cursors is called a forward-only
-        cursor and can move only forward through the result set. A forward-only
-        cursor does not support scrolling but only fetching rows from the start
-        to the end of the result set.
+    :forward-only: The default scrolling type of cursors is called a
+        forward-only cursor and can move only forward through the result set. A
+        forward-only cursor does not support scrolling but only fetching rows
+        from the start to the end of the result set.
     :scrollable: A scrollable cursor is commonly used in screen-based
         interactive applications, like spreadsheets, in which users are allowed
         to scroll back and forth through the result set. However, applications
@@ -215,7 +215,7 @@ class Cursor(attrib.Container):
         :py:meth:`.fetch` is called with a zero value for size, a
         CursorModeError is raised.
 
-    Supported operation types are:
+    Supported operation modes are:
 
     :dynamic: A **dynamic cursor** is built on-the-fly and therefore comprises
         any changes made to the rows in the result set during it's traversal,
@@ -238,14 +238,19 @@ class Cursor(attrib.Container):
 
     batchsize: property = attrib.MetaData(classinfo=int, default=1)
     """
-    The batchsize specifies the default number of rows which is to be fetched
-    by the mothod :py:meth:`.fetch`. It defaults to 1, meaning to fetch a single
-    row at a time. Whether and which batchsize to use depends on the application
-    and should be considered with care. The batchsize can also be adapted during
-    the lifetime of the cursor, which allows dynamic performance optimization.
+    The read-writable integer attribute *batchsize* specifies the default number
+    of rows which is to be fetched by the method :py:meth:`.fetch`. It defaults
+    to 1, meaning to fetch a single row at a time. Whether and which batchsize
+    to use depends on the application and should be considered with care. The
+    batchsize can also be adapted during the lifetime of the cursor, which
+    allows dynamic performance optimization.
     """
 
     rowcount: property = attrib.Virtual(fget='_get_rowcount')
+    """
+    The read-only integer attribute *rowcount* specifies the current number of
+    rows within the cursor.
+    """
 
     #
     # Protected Attributes

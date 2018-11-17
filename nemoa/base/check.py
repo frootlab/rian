@@ -8,7 +8,7 @@ __docformat__ = 'google'
 
 import inspect
 from nemoa.errors import (
-    IsPositiveError, IsNegativeError,
+    IsPositiveError, IsNegativeError, EqualSizeError,
     InvalidTypeError, InvalidClassError, NotClassError, NotCallableError,
     InvalidAttrError, NotIsSubsetError, NotIsPositiveError, NotIsNegativeError,
     MinSizeError, MaxSizeError)
@@ -77,10 +77,12 @@ def is_not_negative(name: str, obj: RealNumber) -> None:
         raise IsNegativeError(name, obj)
 
 def has_size(
-        name: str, obj: Sized, min_size: OptInt = None,
-        max_size: OptInt = None) -> None:
-    """Check if sized object has a size between given bounds."""
+        name: str, obj: Sized, size: OptInt = None,
+        min_size: OptInt = None, max_size: OptInt = None, ) -> None:
+    """Check the size of a sized object."""
     num = len(obj)
+    if size and num != size:
+        raise EqualSizeError(name, obj, size)
     if min_size and num < min_size:
         raise MinSizeError(name, obj, min_size)
     if max_size is not None and num > max_size:
