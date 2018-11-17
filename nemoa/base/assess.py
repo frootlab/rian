@@ -282,16 +282,26 @@ def get_parameters(obj: Callable, *args: Any, **kwds: Any) -> OrderedDict:
     # Check 'obj'
     check.is_callable("first argument", obj)
 
-    # Get Arguments
+    # Get all Arguments
     spec = inspect.getfullargspec(obj)
-    params = OrderedDict(zip(spec.args, args))
+    spec_args = spec.args
+    spec_defaults = spec.defaults or []
+    args_list = list(zip(spec_args, args))
 
-    # Get Keyword Arguments
+    # Update Defaults
+    args_keys = dict(args_list).keys()
+    defaults_list = list(zip(spec_args, spec_defaults[::-1]))[::-1]
+    for key, val in defaults_list:
+        if key not in args_keys:
+            args_list.append((key, val))
+    params = OrderedDict(args_list)
+
+    # Update Keyword Arguments
     if spec.varkw:
         params.update(kwds)
     else:
         for key, val in kwds.items():
-            if key in params:
+            if key in spec.args:
                 params[key] = val
 
     return params
@@ -310,9 +320,10 @@ def call_attr(obj: object, attr: str, *args: Any, **kwds: Any) -> Any:
         Result of call.
 
     """
+    check.has_attr(obj, attr)
     func = getattr(obj, attr)
-    params = get_parameters(func, *args, **kwds)
-    return func(*params.values())
+    check.is_callable(attr, func)
+    return func(**get_parameters(func, *args, **kwds))
 
 def get_methods(
         obj: object, pattern: OptStr = None, groupby: OptStr = None,

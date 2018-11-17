@@ -12,7 +12,7 @@ __docformat__ = 'google'
 
 import contextlib
 import numpy as np
-from nemoa.base import assess, check, this
+from nemoa.base import check, this
 from nemoa.math import vector
 from nemoa.types import Any, IntTuple, NpArray, NpArrayLike, StrList
 from nemoa.types import StrPairDict, StrListPair, NaN, Number, OptNumber
@@ -80,14 +80,9 @@ def norm(
         raise np.AxisError(
             "first and second axis have to be different")
 
-    # Get function
-    fname = _NORM_PREFIX + name.lower()
-    func = this.get_attr(fname)
-    check.is_callable(fname, func)
-
     # Evaluate function
-    supp_kwds = assess.get_parameters(func, default=kwds)
-    return func(x, axes=axes, **supp_kwds) # pylint: disable=E1102
+    fname = _NORM_PREFIX + name.lower()
+    return this.call_attr(fname, x=x, axes=axes, **kwds)
 
 def norm_pq(x: NpArray,
         p: float = 2., q: float = 2., axes: IntTuple = (0, 1)) -> NpArray:
@@ -218,14 +213,9 @@ def distance(
         raise np.AxisError(
             "first and second axis have to be different")
 
-    # Get function
-    fname = _DIST_PREFIX + name.lower()
-    func = this.get_attr(fname)
-    check.is_callable(fname, func)
-
     # Evaluate function
-    supp_kwds = assess.get_parameters(func, default=kwds)
-    return func(x, y, axes=axes, **supp_kwds) # pylint: disable=E1102
+    fname = _DIST_PREFIX + name.lower()
+    return this.call_attr(fname, x=x, y=y, axes=axes, **kwds)
 
 def dist_frobenius(x: NpArray, y: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
     """Calculate :term:`Frobenius distance` of two arrays along given axes.

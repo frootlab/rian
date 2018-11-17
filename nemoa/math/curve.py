@@ -28,7 +28,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://pypi.org/project/numpy") from err
 
-from nemoa.base import assess, this
+from nemoa.base import this
 from nemoa.types import Any, NpArray, NpArrayLike, StrList
 
 _SIGM_PREFIX = 'sigm_'
@@ -69,14 +69,9 @@ def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
         raise TypeError(
             "First argument 'x' is required to be array-like") from err
 
-    # Get function
-    func = this.get_attr(_SIGM_PREFIX + name.lower())
-    if not callable(func):
-        raise ValueError(f"name '{str(name)}' is not supported")
-
     # Evaluate function
-    supp_kwds = assess.get_parameters(func, default=kwds)
-    return func(x, **supp_kwds) # pylint: disable=E1102
+    fname = _SIGM_PREFIX + name.lower()
+    return this.call_attr(fname, x=x, **kwds)
 
 def sigm_logistic(x: NpArrayLike) -> NpArray:
     """Calculate standard logistic function.
@@ -221,14 +216,9 @@ def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
         raise TypeError(
             "First argument 'x' is required to be array-like") from err
 
-    # Get function
-    func = this.get_attr(_BELL_PREFIX + name.lower())
-    if not callable(func):
-        raise ValueError(f"name '{str(name)}' is not supported")
-
     # Evaluate function
-    supp_kwds = assess.get_parameters(func, default=kwds)
-    return func(x, **supp_kwds) # pylint: disable=E1102
+    fname = _BELL_PREFIX + name.lower()
+    return this.call_attr(fname, x=x, **kwds)
 
 def bell_gauss(x: NpArrayLike, mu: float = 0., sigma: float = 1.) -> NpArray:
     """Calculate Gauss function.

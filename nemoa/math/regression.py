@@ -17,7 +17,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://pypi.org/project/numpy") from err
 
-from nemoa.base import assess, this
+from nemoa.base import this
 from nemoa.math import vector
 from nemoa.types import Any, NpAxes, NpArray, NpArrayLike, StrList
 
@@ -86,16 +86,9 @@ def error(
         raise ValueError(
             "arrays 'x' and 'y' can not be broadcasted together")
 
-    # Get discrepancy function
+    # Evaluate function
     fname = _ERROR_PREFIX + name.lower()
-    module = assess.get_module(this.get_module_name())
-    try:
-        func = getattr(module, fname)
-    except AttributeError as err:
-        raise ValueError(f"name '{name}' is not valid")
-
-    # Evaluate distance function
-    return func(x, y, axes=axes, **assess.get_parameters(func, default=kwds))
+    return this.call_attr(fname, x=x, y=y, axes=axes, **kwds)
 
 def error_sad(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate :term:`Sum of Absolute Differences` along given axes.
@@ -138,7 +131,7 @@ def error_rss(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     return np.sum(np.square(np.add(x, np.multiply(y, -1))), axis=axes)
 
 def error_mse(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
-    """Calculate :term:`Mean Squared Error` along given axes.
+    """Estimate :term:`Mean Squared Error` along given axes.
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
@@ -158,7 +151,7 @@ def error_mse(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     return np.mean(np.square(np.add(x, np.multiply(y, -1))), axis=axes)
 
 def error_mae(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
-    """Calculate :term:`Mean Absolute Error` along given axes.
+    """Estimate :term:`Mean Absolute Error` along given axes.
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
@@ -178,7 +171,7 @@ def error_mae(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     return vector.dist_amean(x, y, axes=axes)
 
 def error_rmse(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
-    """Calculate :term:`Root-Mean-Square Error` along given axes.
+    """Estimate :term:`Root-Mean-Square Error` along given axes.
 
     Args:
         x: NumPy ndarray with numeric values of arbitrary dimension.
@@ -196,13 +189,6 @@ def error_rmse(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
 
     """
     return vector.dist_qmean(x, y, axes=axes)
-
-# TODO (patrick.michl@gmail.com): Add RSSE
-# norm_euclid
-# With respect to a given sample the induced metric, is a sample statistic and
-# referred as the 'Root-Sum-Square Difference' (RSSD). An important
-# application is the method of least squares [3].
-# [3] https://en.wikipedia.org/wiki/least_squares
 
 # TODO (patrick.michl@gmail.com): Goodness of fit Measures
 # https://en.wikipedia.org/wiki/Goodness_of_fit

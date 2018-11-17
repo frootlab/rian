@@ -75,17 +75,20 @@ def length(
             x = np.array(x)
 
     # Check types of 'x' and 'axes'
-    check.has_type("argument 'x'", x, np.ndarray)
-    check.has_type("argument 'axes'", axes, (int, tuple))
-
-    # Get function
-    fname = _NORM_PREFIX + norm.lower()
-    func = this.get_attr(fname)
-    check.is_callable(fname, func)
+    check.has_type("'x'", x, np.ndarray)
+    check.has_type("'axes'", axes, (int, tuple))
 
     # Evaluate function
-    supp_kwds = assess.get_parameters(func, default=kwds)
-    return func(x, axes=axes, **supp_kwds) # pylint: disable=E1102
+    fname = _NORM_PREFIX + norm.lower()
+    return this.call_attr(fname, x, axes=axes, **kwds)
+    # # Get function
+    # fname = _NORM_PREFIX + norm.lower()
+    # func = this.get_attr(fname)
+    # check.is_callable(fname, func)
+    #
+    # # Evaluate function
+    # supp_kwds = assess.get_parameters(func, default=kwds)
+    # return func(x, axes=axes, **supp_kwds) # pylint: disable=E1102
 
 def norm_p(x: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
     r"""Calculate a :term:`p-Norm` of an array along given axes.
@@ -319,23 +322,27 @@ def distance(
             y = np.array(y)
 
     # Check types of 'x', 'y' and 'axes'
-    check.has_type("argument 'x'", x, np.ndarray)
-    check.has_type("argument 'y'", y, np.ndarray)
-    check.has_type("argument 'axes'", axes, (int, tuple))
+    check.has_type("'x'", x, np.ndarray)
+    check.has_type("'y'", y, np.ndarray)
+    check.has_type("'axes'", axes, (int, tuple))
 
     # Check dimensions of 'x' and 'y'
     if x.shape != y.shape:
         raise ValueError(
             "arrays 'x' and 'y' can not be broadcasted together")
 
-    # Get function
-    fname = _DIST_PREFIX + name.lower()
-    func = this.get_attr(fname)
-    check.is_callable(fname, func)
-
     # Evaluate function
-    supp_kwds = assess.get_parameters(func, default=kwds)
-    return func(x, y, axes=axes, **supp_kwds) # pylint: disable=E1102
+    fname = _DIST_PREFIX + name.lower()
+    return this.call_attr(fname, x, y, axes=axes, **kwds)
+
+    # # Get function
+    # fname = _DIST_PREFIX + name.lower()
+    # func = this.get_attr(fname)
+    # check.is_callable(fname, func)
+    #
+    # # Evaluate function
+    # supp_kwds = assess.get_parameters(func, default=kwds)
+    # return func(x, y, axes=axes, **supp_kwds) # pylint: disable=E1102
 
 def dist_minkowski(
         x: NpArray, y: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
