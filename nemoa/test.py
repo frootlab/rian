@@ -305,13 +305,13 @@ class MathTestCase(BaseTestCase):
         # Test triangle inequality
         self.assertTriangleInequality(f, **kwds)
 
-    def assertIsVectorMetric(self, f: Callable, **kwds: Any) -> None:
+    def assertIsVectorDistance(self, f: Callable, **kwds: Any) -> None:
         # Test of codimension of function is 1
         self.assertBinFuncCoDim(f, codim=1, **kwds)
         # Test if function is metric
         self.assertIsMetric(f, **kwds)
 
-    def assertIsMatrixMetric(self, f: Callable, **kwds: Any) -> None:
+    def assertIsMatrixDistance(self, f: Callable, **kwds: Any) -> None:
         # Test of codimension of function is 2
         self.assertBinFuncCoDim(f, codim=2, **kwds)
         # Test if function is metric

@@ -10,13 +10,8 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-try:
-    import numpy as np
-except ImportError as err:
-    raise ImportError(
-        "requires package numpy: "
-        "https://pypi.org/project/numpy") from err
-
+import contextlib
+import numpy as np
 from nemoa.base import assess, check, this
 from nemoa.math import vector
 from nemoa.types import Any, IntTuple, NpArray, NpArrayLike, StrList
@@ -38,7 +33,9 @@ def norms() -> StrList:
     """
     return this.crop_functions(prefix=_NORM_PREFIX)
 
-def norm(x: NpArrayLike, name: str = 'frobenius', **kwds: Any) -> NpArray:
+def norm(
+        x: NpArrayLike, name: str = 'frobenius', axes: IntTuple = (0, 1),
+        **kwds: Any) -> NpArray:
     """Calculate magnitude of matrix with respect to given norm.
 
     Args:
@@ -50,6 +47,12 @@ def norm(x: NpArrayLike, name: str = 'frobenius', **kwds: Any) -> NpArray:
             :pq: :term:`pq-Norm`. Remark: requires additional parameters *p* and
                 *q*
             :frobenius: The default norm is the :term:`Frobenius Norm`
+
+        axes: Pair (2-tuple) of integers, that identify the array axes, along
+            which the function is evaluated. In a two-dimensional array the axis
+            with ID 0 is running across the rows and the axis with ID 1 is
+            running across the columns. The default value is (0, 1), which is an
+            evaluation with respect to the first two axis in the array.
         **kwds: Parameters of the given norm / class of norms.
             The norm Parameters are documented within the respective 'norm'
             functions.
@@ -58,25 +61,33 @@ def norm(x: NpArrayLike, name: str = 'frobenius', **kwds: Any) -> NpArray:
         `Numpy.ndarray`_ of dimension dim(*x*) - 2.
 
     """
-    # Check Type of 'x'
-    try:
-        x = np.array(x)
-    except TypeError as err:
-        raise TypeError(
-            "first argument 'x' is required to be array-like") from err
+    # Convert numpy array like 'x' to numpy array
+    with contextlib.suppress(TypeError):
+        if not isinstance(x, np.ndarray):
+            x = np.array(x)
+
+    # Check types of 'x' and 'axes'
+    check.has_type("argument 'x'", x, np.ndarray)
+    check.has_type("argument 'axes'", axes, tuple)
 
     # Check dimension of 'x'
     if x.ndim < 2:
         raise ValueError("'x' is required to have dimension > 1")
 
+    # Check value of 'axes'
+    check.has_size("argument 'axes'", axes, size=2)
+    if axes[0] == axes[1]:
+        raise np.AxisError(
+            "first and second axis have to be different")
+
     # Get function
-    func = this.get_attr(_NORM_PREFIX + name.lower())
-    if not callable(func):
-        raise ValueError(f"name '{str(name)}' is not supported")
+    fname = _NORM_PREFIX + name.lower()
+    func = this.get_attr(fname)
+    check.is_callable(fname, func)
 
     # Evaluate function
     supp_kwds = assess.get_function_kwds(func, default=kwds)
-    return func(x, **supp_kwds) # pylint: disable=E1102
+    return func(x, axes=axes, **supp_kwds) # pylint: disable=E1102
 
 def norm_pq(x: NpArray,
         p: float = 2., q: float = 2., axes: IntTuple = (0, 1)) -> NpArray:
@@ -86,47 +97,29 @@ def norm_pq(x: NpArray,
         x: Any sequence that can be interpreted as a numpy ndarray of two or
             more dimensions. This includes nested lists, tuples, scalars and
             existing arrays.
-        p: Positive real number, which determines the first p-norm by the p-th
-            root of the summed p-th powered absolute values. For p < 1, the
-            function does not satisfy the triangle inequality and yields a
-            quasi-norm. For p >= 1 the p-norm is a norm.
-            Default: 2.
-        q: Positive real number, which determines the second p-norm by the q-th
-            root of the summed q-th powered absolute values. For q < 1, the
-            function does not satisfy the triangle inequality and yields a
-            quasi-norm [2]. For q >= 1 the p-norm is a norm.
-            Default: 2.
-        axes: Pair of integers, that identify the array axes, along which the
-            function is evaluated. In a two-dimensional array the axis with ID 0
-            is running across the rows and the axis with ID 1 is running across
-            the columns. The default value is (0, 1), which is an evaluation
-            with respect to the first two axis in the array.
+        p: Positive real number, which determines the parameter *p* of the
+            :term:`p-norm`, which is performed along the first given axes. The
+            default value is 2.
+        q: Positive real number, which determines the parameter *p* of the
+            :term:`p-norm`, which is performed along the second given axes. The
+            default value is 2.
+        axes: Pair (2-tuple) of integers, that identify the array axes, along
+            which the function is evaluated. In a two-dimensional array the axis
+            with ID 0 is running across the rows and the axis with ID 1 is
+            running across the columns. The default value is (0, 1), which is an
+            evaluation with respect to the first two axis in the array.
 
     Returns:
         `Numpy.ndarray`_ of dimension dim(*x*) - 2.
 
     """
-    # Check type of 'axes'
-    if not isinstance(axes, tuple):
-        raise TypeError(
-            "argument 'axes' is required to be of type 'tuple'"
-            f", not '{type(axes)}'")
-
-    # Check value of 'axes'
-    if len(axes) != 2:
-        raise np.AxisError(
-            f"exactly two axes are required but {len(axes)} were given")
-    if axes[0] == axes[1]:
-        raise np.AxisError(
-            "first and second axis have to be different")
-
     # For special cases prefer specific implementations for faster calculation
     if p == q == 2.: # Use the Frobenius norm
         return norm_frobenius(x, axes=axes)
-    if p == q: # Use the p-norm in two dimensions
+    if p == q: # Use an elementwise p-norm
         return vector.norm_p(x, p=p, axes=axes)
 
-    # If the first axis id is smaller then the second, then the second one
+    # If the first axis id is smaller then the second, the latter
     # has to be corrected by the collapsed dimension of the first sum
     if axes[0] < axes[1]:
         axisp, axisq = axes[0], axes[1] - 1
@@ -144,11 +137,11 @@ def norm_frobenius(x: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
         x: Any sequence that can be interpreted as a numpy ndarray of two or
             more dimensions. This includes nested lists, tuples, scalars and
             existing arrays.
-        axes: Pair of integers, that identify the array axes, along which the
-            function is evaluated. In a two-dimensional array the axis with ID 0
-            is running across the rows and the axis with ID 1 is running across
-            the columns. The default value is (0, 1), which is an evaluation
-            with respect to the first two axis in the array.
+        axes: Pair (2-tuple) of integers, that identify the array axes, along
+            which the function is evaluated. In a two-dimensional array the axis
+            with ID 0 is running across the rows and the axis with ID 1 is
+            running across the columns. The default value is (0, 1), which is an
+            evaluation with respect to the first two axis in the array.
 
     Returns:
         `Numpy.ndarray`_ of dimension dim(*x*) - 2.
@@ -172,8 +165,8 @@ def distances() -> StrList:
 
 def distance(
         x: NpArrayLike, y: NpArrayLike, name: str = 'frobenius',
-        **kwds: Any) -> NpArray:
-    """Calculate matrix distances of two arrays along given axis.
+        axes: IntTuple = (0, 1), **kwds: Any) -> NpArray:
+    """Calculate matrix distances of two arrays along given axes.
 
     A matrix distance function, is a function d(x, y), which quantifies the
     proximity of matrices in a vector space as non-negative
@@ -187,9 +180,13 @@ def distance(
             existing arrays.
         y: Any sequence that can be interpreted as a numpy ndarray with the same
             dimension, shape and datatypes as 'x'.
-        name: Name of the matrix distance function. Accepted values are:
-            'frobenius': Frobenius distance (induced by Frobenius norm)
-            Default: 'frobenius'
+        name: Name of used matrix distance. Accepted values are:
+            'frobenius': :term:`Frobenius distance` (default)
+        axes: Pair (2-tuple) of integers, that identify the array axes, along
+            which the function is evaluated. In a two-dimensional array the axis
+            with ID 0 is running across the rows and the axis with ID 1 is
+            running across the columns. The default value is (0, 1), which is an
+            evaluation with respect to the first two axis in the array.
         **kwds: Parameters of the given distance or class of distances.
             The Parameters are documented within the respective 'dist'
             functions.
@@ -198,31 +195,37 @@ def distance(
         `Numpy.ndarray`_ of dimension dim(*x*) - 2.
 
     """
-    # Check 'x' and 'y' to be array-like
-    try:
-        x = np.array(x)
-    except TypeError as err:
-        raise TypeError(
-            "first argument 'x' is required to be array-like") from err
-    try:
-        y = np.array(y)
-    except TypeError as err:
-        raise TypeError(
-            "second argument 'y' is required to be array-like") from err
+    # Try to create numpy arrays from 'x' and 'y'
+    with contextlib.suppress(TypeError):
+        if not isinstance(x, np.ndarray):
+            x = np.array(x)
+        if not isinstance(y, np.ndarray):
+            y = np.array(y)
 
-    # Check shapes and dtypes of 'x' and 'y'
+    # Check types of 'x', 'y' and 'axes'
+    check.has_type("argument 'x'", x, np.ndarray)
+    check.has_type("argument 'y'", y, np.ndarray)
+    check.has_type("argument 'axes'", axes, tuple)
+
+    # Check dimensions of 'x' and 'y'
     if x.shape != y.shape:
         raise ValueError(
             "arrays 'x' and 'y' can not be broadcasted together")
 
+    # Check value of 'axes'
+    check.has_size("argument 'axes'", axes, size=2)
+    if axes[0] == axes[1]:
+        raise np.AxisError(
+            "first and second axis have to be different")
+
     # Get function
-    func = this.get_attr(_DIST_PREFIX + name.lower())
-    if not callable(func):
-        raise ValueError(f"name '{name}' is not supported")
+    fname = _DIST_PREFIX + name.lower()
+    func = this.get_attr(fname)
+    check.is_callable(fname, func)
 
     # Evaluate function
     supp_kwds = assess.get_function_kwds(func, default=kwds)
-    return func(x, y, **supp_kwds) # pylint: disable=E1102
+    return func(x, y, axes=axes, **supp_kwds) # pylint: disable=E1102
 
 def dist_frobenius(x: NpArray, y: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
     """Calculate :term:`Frobenius distance` of two arrays along given axes.
@@ -233,17 +236,46 @@ def dist_frobenius(x: NpArray, y: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
             existing arrays.
         y: Any sequence that can be interpreted as a numpy ndarray with the same
             dimension, shape and datatypes as 'x'.
-        axes: Pair of integers, that identify the array axes, along which the
-            function is evaluated. In a two-dimensional array the axis with ID 0
-            is running across the rows and the axis with ID 1 is running across
-            the columns. The default value is (0, 1), which is an evaluation
-            with respect to the first two axis in the array.
+        axes: Pair (2-tuple) of integers, that identify the array axes, along
+            which the function is evaluated. In a two-dimensional array the axis
+            with ID 0 is running across the rows and the axis with ID 1 is
+            running across the columns. The default value is (0, 1), which is an
+            evaluation with respect to the first two axis in the array.
 
     Returns:
         `Numpy.ndarray`_ of dimension dim(*x*) - 2.
 
     """
     return norm_frobenius(np.add(x, np.multiply(y, -1)), axes=axes)
+
+def dist_pq(
+        x: NpArray, y: NpArray, p: float = 2., q: float = 2.,
+        axes: IntTuple = (0, 1)) -> NpArray:
+    """Calculate :term:`pq-distance` of two arrays along given axes.
+
+    Args:
+        x: Any sequence that can be interpreted as a numpy ndarray of two or
+            more dimensions. This includes nested lists, tuples, scalars and
+            existing arrays.
+        y: Any sequence that can be interpreted as a numpy ndarray with equal
+            dimension, shape and datatypes as 'x'.
+        p: Positive real number, which determines the parameter *p* of the
+            :term:`p-norm`, which is performed along the first given axes. The
+            default value is 2.
+        q: Positive real number, which determines the parameter *p* of the
+            :term:`p-norm`, which is performed along the second given axes. The
+            default value is 2.
+        axes: Pair (2-tuple) of integers, that identify the array axes, along
+            which the function is evaluated. In a two-dimensional array the axis
+            with ID 0 is running across the rows and the axis with ID 1 is
+            running across the columns. The default value is (0, 1), which is an
+            evaluation with respect to the first two axis in the array.
+
+    Returns:
+        `Numpy.ndarray`_ of dimension dim(*x*) - 2.
+
+    """
+    return norm_pq(x - y, p=p, q=q, axes=axes)
 
 #
 # Matrix type transformation

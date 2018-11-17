@@ -270,10 +270,12 @@ class TestCheck(ModuleTestCase):
 
     def test_has_size(self) -> None:
         self.assertNoneRaises(ValueError, check.has_size, [
+            Case(args=('', set([])), kwds={'size': 0}),
             Case(args=('', set([])), kwds={'min_size': 0}),
             Case(args=('', tuple([1])), kwds={'max_size': 1}),
             Case(args=('', [1, 2]), kwds={'min_size': 1, 'max_size': 3})])
         self.assertAllRaises(ValueError, check.has_size, [
+            Case(args=('', set([])), kwds={'size': 1}),
             Case(args=('', tuple([])), kwds={'min_size': 1}),
             Case(args=('', set([1])), kwds={'max_size': 0}),
             Case(args=('', [1, 2]), kwds={'min_size': 3, 'max_size': 5})])

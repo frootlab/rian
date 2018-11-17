@@ -176,7 +176,7 @@ class TestVector(MathTestCase, ModuleTestCase):
                 self.assertIsVectorNorm(vector.length, norm=norm)
 
     def test_norm_p(self) -> None:
-        for p in range(1, 10):
+        for p in range(1, 5):
             with self.subTest(p=p):
                 self.assertIsVectorNorm(vector.norm_p, p=p)
 
@@ -190,7 +190,7 @@ class TestVector(MathTestCase, ModuleTestCase):
         self.assertIsVectorNorm(vector.norm_max)
 
     def test_norm_pmean(self) -> None:
-        for p in range(1, 10):
+        for p in range(1, 5):
             with self.subTest(p=p):
                 self.assertIsVectorNorm(vector.norm_pmean, p=p)
 
@@ -208,30 +208,30 @@ class TestVector(MathTestCase, ModuleTestCase):
     def test_distance(self) -> None:
         for name in vector.distances():
             with self.subTest(name=name):
-                self.assertIsVectorMetric(vector.distance, name=name)
+                self.assertIsVectorDistance(vector.distance, name=name)
 
     def test_dist_chebyshev(self) -> None:
-        self.assertIsVectorMetric(vector.dist_chebyshev)
+        self.assertIsVectorDistance(vector.dist_chebyshev)
 
     def test_dist_manhatten(self) -> None:
-        self.assertIsVectorMetric(vector.dist_manhatten)
+        self.assertIsVectorDistance(vector.dist_manhatten)
 
     def test_dist_minkowski(self) -> None:
-        self.assertIsVectorMetric(vector.dist_minkowski)
+        self.assertIsVectorDistance(vector.dist_minkowski)
 
     def test_dist_amean(self) -> None:
-        self.assertIsVectorMetric(vector.dist_amean)
+        self.assertIsVectorDistance(vector.dist_amean)
 
     def test_dist_qmean(self) -> None:
-        self.assertIsVectorMetric(vector.dist_qmean)
+        self.assertIsVectorDistance(vector.dist_qmean)
 
     def test_dist_pmean(self) -> None:
-        for p in range(1, 10):
+        for p in range(1, 5):
             with self.subTest(p=p):
-                self.assertIsVectorMetric(vector.dist_pmean, p=p)
+                self.assertIsVectorDistance(vector.dist_pmean, p=p)
 
     def test_dist_euclid(self) -> None:
-        self.assertIsVectorMetric(vector.dist_euclid)
+        self.assertIsVectorDistance(vector.dist_euclid)
 
 class TestMatrix(MathTestCase, ModuleTestCase):
     """Testcase for the module nemoa.math.matrix."""
@@ -265,8 +265,8 @@ class TestMatrix(MathTestCase, ModuleTestCase):
         self.assertIsMatrixNorm(matrix.norm_frobenius)
 
     def test_norm_pq(self) -> None:
-        for p in range(1, 10):
-            for q in range(1, 10):
+        for p in range(1, 5):
+            for q in range(1, 5):
                 with self.subTest(p=p, q=q):
                     self.assertIsMatrixNorm(matrix.norm_pq, p=p, q=q)
 
@@ -278,10 +278,16 @@ class TestMatrix(MathTestCase, ModuleTestCase):
     def test_distance(self) -> None:
         for name in matrix.distances():
             with self.subTest(name=name):
-                self.assertIsMatrixMetric(matrix.distance, name=name)
+                self.assertIsMatrixDistance(matrix.distance, name=name)
 
     def test_dist_frobenius(self) -> None:
-        self.assertIsMatrixMetric(matrix.dist_frobenius)
+        self.assertIsMatrixDistance(matrix.dist_frobenius)
+
+    def test_dist_pq(self) -> None:
+        for p in range(1, 5):
+            for q in range(1, 5):
+                with self.subTest(p=p, q=q):
+                    self.assertIsMatrixDistance(matrix.dist_pq, p=p, q=q)
 
 class TestRegr(MathTestCase, ModuleTestCase):
     """Testcase for the module nemoa.math.regression."""

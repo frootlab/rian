@@ -10,14 +10,9 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-try:
-    import numpy as np
-except ImportError as err:
-    raise ImportError(
-        "requires package numpy: "
-        "https://pypi.org/project/numpy") from err
-
-from nemoa.base import assess, this
+import contextlib
+import numpy as np
+from nemoa.base import assess, check, this
 from nemoa.types import Any, NpAxes, NpArray, NpArrayLike, StrList
 
 _NORM_PREFIX = 'norm_'
@@ -56,10 +51,10 @@ def length(
                 :term:`Chebyshev distance`.
             :pmean: The :term:`Hölder mean` requires an additional parameter
                 *p* and induces the :term:`Power-Mean difference`.
-            :amean: The :term:`Mean-Absolute` induces the
-                :term:`Mean-Absolute difference`
-            :qmean: The :term:`Quadratic-Mean` induces the
-                :term:`Quadratic-Mean difference`
+            :amean: The :term:`mean absolute` induces the
+                :term:`mean absolute difference`
+            :qmean: The :term:`quadratic mean` induces the
+                :term:`quadratic mean difference`
         axes: Integer or tuple of integers, that identify the array axes, along
             which the function is evaluated. In a one-dimensional array the
             single axis has ID 0. In a two-dimensional array the axis with ID 0
@@ -74,17 +69,19 @@ def length(
         `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     """
-    # Check type of 'x'
-    try:
-        x = np.array(x)
-    except TypeError as err:
-        raise TypeError(
-            "First argument 'x' is required to be array-like") from err
+    # Try to create numpy array from argument 'x'
+    with contextlib.suppress(TypeError):
+        if not isinstance(x, np.ndarray):
+            x = np.array(x)
+
+    # Check types of 'x' and 'axes'
+    check.has_type("argument 'x'", x, np.ndarray)
+    check.has_type("argument 'axes'", axes, (int, tuple))
 
     # Get function
-    func = this.get_attr(_NORM_PREFIX + norm.lower())
-    if not callable(func):
-        raise ValueError(f"name '{str(norm)}' is not supported")
+    fname = _NORM_PREFIX + norm.lower()
+    func = this.get_attr(fname)
+    check.is_callable(fname, func)
 
     # Evaluate function
     supp_kwds = assess.get_function_kwds(func, default=kwds)
@@ -121,8 +118,7 @@ def norm_p(x: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
     if p == 2.: # Use the Euclidean norm
         return norm_euclid(x, axes=axes)
 
-    psum = np.sum(np.power(np.abs(x), p), axis=axes)
-    return np.power(psum, 1. / p)
+    return np.power(np.sum(np.power(np.abs(x), p), axis=axes), 1. / p)
 
 def norm_1(x: NpArray, axes: NpAxes = 0) -> NpArray:
     r"""Calculate the :term:`1-Norm` of an array along given axes.
@@ -275,7 +271,7 @@ def distances() -> StrList:
 
 def distance(
         x: NpArrayLike, y: NpArrayLike, name: str = 'euclid',
-        **kwds: Any) -> NpArray:
+        axes: NpAxes = 0, **kwds: Any) -> NpArray:
     """Calculate distance of two arrays along given axes.
 
     A vector distance function, also known as metric, is a function d(x, y),
@@ -300,6 +296,13 @@ def distance(
                 Remark: requires additional parameter 'p'
             'amean': :term:`Mean absolute difference`
             'qmean': :term:`Quadratic mean difference`
+        axes: Integer or tuple of integers, that identify the array axes, along
+            which the function is evaluated. In a one-dimensional array the
+            single axis has ID 0. In a two-dimensional array the axis with ID 0
+            is running across the rows and the axis with ID 1 is running across
+            the columns. For the value None, the function is evaluated with
+            respect to all axes of the array. The default value is 0, which
+            is an evaluation with respect to the first axis in the array.
         **kwds: Parameters of the given distance or class of distances.
             The Parameters are documented within the respective 'dist'
             functions.
@@ -308,31 +311,31 @@ def distance(
         `Numpy.ndarray`_ of dimension dim(*x*) - len(*axes*).
 
     """
-    # Check 'x' and 'y' to be array-like
-    try:
-        x = np.array(x)
-    except TypeError as err:
-        raise TypeError(
-            "argument 'x' is required to be 'Array like'") from err
-    try:
-        y = np.array(y)
-    except TypeError as err:
-        raise TypeError(
-            "argument 'y' is required to be 'Array like'") from err
+    # Try to create numpy arrays from 'x' and 'y'
+    with contextlib.suppress(TypeError):
+        if not isinstance(x, np.ndarray):
+            x = np.array(x)
+        if not isinstance(y, np.ndarray):
+            y = np.array(y)
 
-    # Check shapes and dtypes of 'x' and 'y'
+    # Check types of 'x', 'y' and 'axes'
+    check.has_type("argument 'x'", x, np.ndarray)
+    check.has_type("argument 'y'", y, np.ndarray)
+    check.has_type("argument 'axes'", axes, (int, tuple))
+
+    # Check dimensions of 'x' and 'y'
     if x.shape != y.shape:
         raise ValueError(
             "arrays 'x' and 'y' can not be broadcasted together")
 
     # Get function
-    func = this.get_attr(_DIST_PREFIX + name.lower())
-    if not callable(func):
-        raise ValueError(f"name '{name}' is not supported")
+    fname = _DIST_PREFIX + name.lower()
+    func = this.get_attr(fname)
+    check.is_callable(fname, func)
 
     # Evaluate function
     supp_kwds = assess.get_function_kwds(func, default=kwds)
-    return func(x, y, **supp_kwds) # pylint: disable=E1102
+    return func(x, y, axes=axes, **supp_kwds) # pylint: disable=E1102
 
 def dist_minkowski(
         x: NpArray, y: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:

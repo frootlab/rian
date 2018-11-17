@@ -123,6 +123,15 @@ class NotIsSubsetError(NemoaAssert, ValueError):
         msg = f"{elements} of {a} {are} not contained in {b}"
         super().__init__(msg)
 
+class EqualSizeError(NemoaAssert, ValueError):
+    """Raise when a sized object has an invalid size."""
+
+    def __init__(self, name: str, obj: Sized, size: int) -> None:
+        msg = (
+            f"{name} contains {len(obj)} elements"
+            f", but exactly {size} are required")
+        super().__init__(msg)
+
 class MinSizeError(NemoaAssert, ValueError):
     """Raise when a sized object has too few elements."""
 
