@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import numpy
 import nemoa
 from nemoa.base import assess, nbase
-from nemoa.math import algo, curve
+from nemoa.math import meta, curve
 from nemoa.types import Any, Dict
 
 class System(nbase.ObjectIP):
@@ -493,7 +493,7 @@ class System(nbase.ObjectIP):
         raise ValueError("""could not get parameters:
             unknown key '%s'.""" % key)
 
-    @algo.objective(
+    @meta.objective(
         name     = 'error',
         category = ('system', 'evaluation'),
         args     = 'all',
@@ -504,7 +504,7 @@ class System(nbase.ObjectIP):
         """Mean data reconstruction error of output units."""
         return numpy.mean(self._get_uniterror(*args, **kwds))
 
-    @algo.custom(
+    @meta.custom(
         name     = 'accuracy',
         category = ('system', 'evaluation'),
         args     = 'all',
@@ -515,7 +515,7 @@ class System(nbase.ObjectIP):
         """Mean data reconstruction accuracy of output units."""
         return numpy.mean(self._get_unitaccuracy(*args, **kwds))
 
-    @algo.custom(
+    @meta.custom(
         name     = 'precision',
         category = ('system', 'evaluation'),
         args     = 'all',
@@ -526,7 +526,7 @@ class System(nbase.ObjectIP):
         """Mean data reconstruction precision of output units."""
         return numpy.mean(self._get_unitprecision(*args, **kwds))
 
-    @algo.custom(
+    @meta.custom(
         name     = 'units_mean',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -563,7 +563,7 @@ class System(nbase.ObjectIP):
 
         return model_out.mean(axis = 0)
 
-    @algo.custom(
+    @meta.custom(
         name     = 'units_variance',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -595,7 +595,7 @@ class System(nbase.ObjectIP):
 
         return model_out.var(axis = 0)
 
-    @algo.custom(
+    @meta.custom(
         name     = 'units_expect',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -636,7 +636,7 @@ class System(nbase.ObjectIP):
         return out_data
 
 
-    @algo.custom(
+    @meta.custom(
         name     = 'units_values',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -694,7 +694,7 @@ class System(nbase.ObjectIP):
                     self._units[mapping[id]].params))
             return data
 
-    @algo.custom(
+    @meta.custom(
         name     = 'units_samples',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -751,7 +751,7 @@ class System(nbase.ObjectIP):
                     data, self._units[mapping[id]].params)
             return data
 
-    @algo.custom(
+    @meta.custom(
         name     = 'units_residuals',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -794,7 +794,7 @@ class System(nbase.ObjectIP):
         # calculate residuals
         return d_tgt - m_out
 
-    @algo.custom(
+    @meta.custom(
         name     = 'units_error',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -832,7 +832,7 @@ class System(nbase.ObjectIP):
 
         return error
 
-    @algo.custom(
+    @meta.custom(
         name     = 'units_accuracy',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -870,7 +870,7 @@ class System(nbase.ObjectIP):
 
         return 1. - normres / normdat
 
-    @algo.custom(
+    @meta.custom(
         name     = 'units_precision',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -907,7 +907,7 @@ class System(nbase.ObjectIP):
 
         return 1. - devres / devdat
 
-    @algo.custom(
+    @meta.custom(
         name     = 'correlation',
         category = ('system', 'relation', 'evaluation'),
         directed = False,
@@ -955,7 +955,7 @@ class System(nbase.ObjectIP):
 
         return R
 
-    @algo.custom(
+    @meta.custom(
         name     = 'weightsumproduct',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -995,7 +995,7 @@ class System(nbase.ObjectIP):
 
         return wsp.T
 
-    @algo.custom(
+    @meta.custom(
         name     = 'knockout',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -1055,7 +1055,7 @@ class System(nbase.ObjectIP):
 
         return R
 
-    @algo.custom(
+    @meta.custom(
         name     = 'coinduction',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -1126,7 +1126,7 @@ class System(nbase.ObjectIP):
 
         return coop
 
-    @algo.custom(
+    @meta.custom(
         name     = 'induction',
         category = ('system', 'relation', 'evaluation'),
         directed = True,

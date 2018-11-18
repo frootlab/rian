@@ -248,7 +248,7 @@ def association(
         classes: OptStrList = None, plot: OptStr = 'Histogram',
         directed: bool = True, signed: bool = True, normal: bool = False,
         **attr: Any) -> FuncWrapper:
-    """Attribute decorator for :term:`association measures`.
+    """Attribute decorator for :term:`association measure`.
 
     Args:
         name: Name of the measure of association
@@ -279,7 +279,7 @@ def association(
     #     def wrapped(data: NpArrayLike, *args: Any, **kwds: Any) -> NpArray:
     #         return func(data, *args, **kwds)
 
-        # set attributes with metainformation about algorithm
+        # Set attributes with metainformation about algorithm
         setattr(wrapped, 'name', name or func.__name__)
         setattr(wrapped, 'category', 'association')
         setattr(wrapped, 'classes', classes or [])

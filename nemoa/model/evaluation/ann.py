@@ -15,15 +15,15 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
 import numpy
+import nemoa
 
 from nemoa.model.evaluation.base import Evaluation
-from nemoa.math import curve, algo
+from nemoa.math import curve, meta
 
 class ANN(Evaluation):
 
-    @algo.objective(
+    @meta.objective(
         name     = 'error',
         title    = 'Average Reconstruction Error',
         category = 'model',
@@ -35,7 +35,7 @@ class ANN(Evaluation):
         """Mean data reconstruction error of output units."""
         return numpy.mean(self.uniterror(*args, **kwds))
 
-    @algo.objective(
+    @meta.objective(
         name     = 'accuracy',
         title    = 'Average Reconstruction Accuracy',
         category = 'model',
@@ -47,7 +47,7 @@ class ANN(Evaluation):
         """Mean data reconstruction accuracy of output units."""
         return numpy.mean(self.unitaccuracy(*args, **kwds))
 
-    @algo.objective(
+    @meta.objective(
         name     = 'precision',
         title    = 'Average Reconstruction Pricision',
         category = 'model',
@@ -59,7 +59,7 @@ class ANN(Evaluation):
         """Mean data reconstruction precision of output units."""
         return numpy.mean(self.unitprecision(*args, **kwds))
 
-    @algo.custom(
+    @meta.custom(
         name     = 'mean',
         title    = 'Average Target Reconstruction Values',
         category = 'units',
@@ -98,7 +98,7 @@ class ANN(Evaluation):
 
         return model_out.mean(axis = 0)
 
-    @algo.custom(
+    @meta.custom(
         name     = 'variance',
         category = 'units',
         args     = 'input',
@@ -130,7 +130,7 @@ class ANN(Evaluation):
 
         return model_out.var(axis = 0)
 
-    @algo.custom(
+    @meta.custom(
         name     = 'expect',
         category = 'units',
         args     = 'input',
@@ -158,7 +158,7 @@ class ANN(Evaluation):
 
         return self.model.system._get_unitexpect(*args, **kwds)
 
-    @algo.custom(
+    @meta.custom(
         name     = 'values',
         category = 'units',
         args     = 'input',
@@ -188,7 +188,7 @@ class ANN(Evaluation):
 
         return self.model.system._get_unitvalues(*args, **kwds)
 
-    @algo.custom(
+    @meta.custom(
         name     = 'samples',
         category = 'units',
         args     = 'input',
@@ -218,7 +218,7 @@ class ANN(Evaluation):
 
         return self.model.system._get_unitsamples(*args, **kwds)
 
-    @algo.custom(
+    @meta.custom(
         name     = 'residuals',
         category = 'units',
         args     = 'all',
@@ -261,7 +261,7 @@ class ANN(Evaluation):
         # calculate residuals
         return d_tgt - m_out
 
-    @algo.custom(
+    @meta.custom(
         name     = 'error',
         category = 'units',
         args     = 'all',
@@ -298,7 +298,7 @@ class ANN(Evaluation):
 
         return error
 
-    @algo.custom(
+    @meta.custom(
         name     = 'accuracy',
         category = 'units',
         args     = 'all',
@@ -336,7 +336,7 @@ class ANN(Evaluation):
 
         return 1. - normres / normdat
 
-    @algo.custom(
+    @meta.custom(
         name     = 'precision',
         category = 'units',
         args     = 'all',
@@ -372,7 +372,7 @@ class ANN(Evaluation):
 
         return 1. - devres / devdat
 
-    @algo.custom(
+    @meta.custom(
         name     = 'correlation',
         category = 'relation',
         directed = False,
@@ -420,7 +420,7 @@ class ANN(Evaluation):
 
         return relation
 
-    @algo.custom(
+    @meta.custom(
         name     = 'connectionweight',
         category = 'relation',
         directed = True,
@@ -460,7 +460,7 @@ class ANN(Evaluation):
 
         return wsp.T
 
-    @algo.custom(
+    @meta.custom(
         name     = 'knockout',
         category = 'relation',
         directed = True,
@@ -522,7 +522,7 @@ class ANN(Evaluation):
 
         return R
 
-    @algo.custom(
+    @meta.custom(
         name     = 'coinduction',
         category = 'relation',
         directed = True,
@@ -593,7 +593,7 @@ class ANN(Evaluation):
 
         return coop
 
-    @algo.custom(
+    @meta.custom(
         name     = 'induction',
         category = 'relation',
         directed = True,
@@ -683,7 +683,7 @@ class ANN(Evaluation):
 
         return curve.dialogistic(R, scale = bound, sigma = contrast)
 
-    @algo.custom(
+    @meta.custom(
         name     = 'energy',
         category = 'model',
         args     = 'all',
@@ -709,7 +709,7 @@ class ANN(Evaluation):
         # calculate (pseudo) energy of system
         return numpy.log(1. + numpy.exp(-energy).sum())
 
-    @algo.custom(
+    @meta.custom(
         name     = 'energy',
         category = 'units',
         args     = 'input',
@@ -737,7 +737,7 @@ class ANN(Evaluation):
         data = self.unitexpect(data, mapping)
         return self.model.system._units[mapping[-1]].energy(data)
 
-    @algo.custom(
+    @meta.custom(
         name     = 'links_energy',
         category = ('system', 'links', 'evaluation'),
         args     = 'input',

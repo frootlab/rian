@@ -29,16 +29,15 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
 import numpy
 
-from nemoa.math import curve, algo
+from nemoa.math import curve, meta
 
 #
 # (1) Sampler for Bayesian Networks
 #
 
-@algo.sampler(
+@meta.sampler(
     name    = 'forward',
     title   = 'Forward Sampling',
     classes = ['LM', 'ANN']
@@ -83,7 +82,7 @@ def draw_forward_sample(model, *args, **kwds):
 
     return None
 
-@algo.sampler(
+@meta.sampler(
     name    = 'ancestral_residual',
     title   = 'Ancestral Residual Sampler',
     classes = ['LM', 'ANN']
@@ -127,7 +126,7 @@ def get_forward_residuals(model, data, mapping = None, block = None):
 # (2) Sample statistics for Bayesian Networks
 #
 
-@algo.statistic(
+@meta.statistic(
     name    = 'errorvector',
     title   = 'Reconstruction Error',
     classes = ['LM', 'ANN'],
@@ -162,7 +161,7 @@ def get_error_vector(model, data, norm: str = 'MSE', **kwds):
 
     return error
 
-@algo.custom(
+@meta.custom(
     name     = 'accuracyvector',
     category = 'units',
     args     = 'all',
@@ -200,7 +199,7 @@ def get_accuracy_vector(model, data, norm: str = 'MSE', **kwds):
 
     return 1. - normres / normdat
 
-@algo.custom(
+@meta.custom(
     name     = 'precisiovector',
     category = 'units',
     args     = 'all',
@@ -237,7 +236,7 @@ def get_precision_vector(model, data, norm = 'SD', **kwds):
 
     return 1. - devres / devdat
 
-@algo.custom(
+@meta.custom(
     name     = 'mean',
     title    = 'Reconstructed Mean Values',
     category = 'units',
@@ -271,7 +270,7 @@ def get_mean_vector(model, data, mapping = None, block = None):
 
     return model_out.mean(axis = 0)
 
-@algo.custom(
+@meta.custom(
     name     = 'variance',
     category = 'units',
     args     = 'input',
@@ -306,7 +305,7 @@ def get_variance_vector(model, data, mapping = None, block = None):
 # (3) Objective Functions for Bayesian Networks
 #
 
-@algo.objective(
+@meta.objective(
     name    = 'error',
     title   = 'Mean Reconstruction Error',
     classes = ['LM', 'ANN'],
@@ -316,7 +315,7 @@ def get_error(model, *args, **kwds):
     """Return mean error of regressands."""
     return numpy.mean(get_error_vector(model, *args, **kwds))
 
-@algo.objective(
+@meta.objective(
     name    = 'accuracy',
     title   = 'Mean Reconstruction Accuracy',
     classes = ['LM', 'ANN'],
@@ -326,7 +325,7 @@ def get_accuracy(model, *args, **kwds):
     """Return mean accuracy of regressands."""
     return numpy.mean(get_accuracy_vector(model, *args, **kwds))
 
-@algo.objective(
+@meta.objective(
     name    = 'precision',
     title   = 'Mean Reconstruction Pricision',
     classes = ['LM', 'ANN'],
@@ -340,7 +339,7 @@ def get_precision(model, *args, **kwds):
 # (4) Association Measures for Bayesian Networks
 #
 
-@algo.custom(
+@meta.custom(
     name     = 'correlation',
     category = 'relation',
     directed = False,
@@ -389,7 +388,7 @@ def correlation(model, data, mapping = None, **kwds):
     return relation
 
 
-@algo.custom(
+@meta.custom(
     name     = 'knockout',
     category = 'relation',
     directed = True,
@@ -452,7 +451,7 @@ def knockout(model, data, mapping = None, **kwds):
 
     return R
 
-@algo.custom(
+@meta.custom(
     name     = 'connectionweight',
     category = 'relation',
     directed = True,
@@ -492,7 +491,7 @@ def connectionweight(model, data, mapping = None, **kwds):
 
     return wsp.T
 
-@algo.custom(
+@meta.custom(
     name     = 'coinduction',
     category = 'relation',
     directed = True,
@@ -563,7 +562,7 @@ def coinduction(model, data, *args, **kwds):
 
     return coop
 
-@algo.custom(
+@meta.custom(
     name     = 'induction',
     category = 'relation',
     directed = True,
