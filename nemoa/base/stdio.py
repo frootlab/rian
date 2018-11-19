@@ -17,7 +17,7 @@ import time
 from abc import ABC, abstractmethod
 from queue import Empty, Queue
 from threading import Thread
-from nemoa.base import assess, env
+from nemoa.base import entity, env
 from nemoa.types import Module, OptModule, ClassVar
 
 def get_ttylib() -> OptModule:
@@ -36,7 +36,7 @@ def get_ttylib() -> OptModule:
     """
     libs = ['msvcrt', 'termios']
     for name in libs:
-        ref = assess.get_module(name)
+        ref = entity.get_module(name)
         if ref:
             return ref
     return None

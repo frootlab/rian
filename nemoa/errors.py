@@ -6,7 +6,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from nemoa.base import assess
+from nemoa.base import entity
 from nemoa.types import Any, Class, Number, Sized
 
 ################################################################################
@@ -36,7 +36,7 @@ class MissingKwError(NemoaAssert, TypeError):
     """Raise when a required keyword argument is not given."""
 
     def __init__(self, name: str, obj: object) -> None:
-        this = assess.get_name(obj)
+        this = entity.get_name(obj)
         msg = f"{this} missing required keyword argument '{name}'"
         super().__init__(msg)
 
@@ -44,8 +44,8 @@ class InvalidTypeError(NemoaAssert, TypeError):
     """Raise when an object is required to be of a given type."""
 
     def __init__(self, name: str, obj: object, classinfo: object) -> None:
-        this = assess.get_lang_repr(classinfo, separator='or')
-        that = assess.get_name(type(obj))
+        this = entity.get_lang_repr(classinfo, separator='or')
+        that = entity.get_name(type(obj))
         msg = f"{name} requires to be of type {this} not {that}"
         super().__init__(msg)
 
@@ -53,8 +53,8 @@ class InvalidClassError(NemoaAssert, TypeError):
     """Raise when an object is required to be of a given subclass."""
 
     def __init__(self, name: str, obj: object, ref: Class) -> None:
-        this = assess.get_name(ref)
-        that = assess.get_name(obj)
+        this = entity.get_name(ref)
+        that = entity.get_name(obj)
         msg = f"{name} requires to be a subclass of {this} not {that}"
         super().__init__(msg)
 
@@ -62,7 +62,7 @@ class NotClassError(NemoaAssert, TypeError):
     """Raise when an object is required to be a class."""
 
     def __init__(self, name: str, obj: object) -> None:
-        that = assess.get_name(type(obj))
+        that = entity.get_name(type(obj))
         msg = f"{name} requires to be a class not {that}"
         super().__init__(msg)
 
@@ -70,7 +70,7 @@ class NotCallableError(NemoaAssert, TypeError):
     """Raise when an object is required to be callable."""
 
     def __init__(self, name: str, obj: object) -> None:
-        that = assess.get_name(type(obj))
+        that = entity.get_name(type(obj))
         msg = f"{name} requires to be callable not {that}"
         super().__init__(msg)
 
@@ -118,7 +118,7 @@ class NotIsSubsetError(NemoaAssert, ValueError):
 
     def __init__(self, a: str, seta: set, b: str, setb: set) -> None:
         diff = set(seta) - set(setb)
-        elements = assess.get_lang_repr(diff)
+        elements = entity.get_lang_repr(diff)
         are = 'are' if len(diff) > 1 else 'is'
         msg = f"{elements} of {a} {are} not contained in {b}"
         super().__init__(msg)
@@ -158,7 +158,7 @@ class InvalidAttrError(NemoaAssert, AttributeError):
     """Raise when a not existing attribute is called."""
 
     def __init__(self, obj: object, attr: str) -> None:
-        that = assess.get_name(obj)
+        that = entity.get_name(obj)
         msg = f"{that} has no attribute '{attr}'"
         super().__init__(msg)
 
@@ -166,7 +166,7 @@ class ReadOnlyAttrError(NemoaAssert, AttributeError):
     """Raise when a read-only attribute's setter method is called."""
 
     def __init__(self, obj: object, attr: str) -> None:
-        that = assess.get_name(obj)
+        that = entity.get_name(obj)
         msg = f"'{attr}' is a read-only attribute of {that}"
         super().__init__(msg)
 

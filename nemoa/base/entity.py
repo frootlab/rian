@@ -106,7 +106,7 @@ def get_members(
         rules: OptStrDictOfTestFuncs = None, **kwds: Any) -> list:
     """List members of an object.
 
-    This is a wrapper function to :func:`nemoa.base.assess.get_members_dict`,
+    This is a wrapper function to :func:`nemoa.base.entity.get_members_dict`,
     but only returns the names of the members instead of the respective
     dictionary of attributes.
     """
@@ -271,7 +271,7 @@ def get_function(name: str) -> OptFunction:
         Function instance or None, if the function could not be found.
 
     Examples:
-        >>> get_function('nemoa.base.assess.get_function')
+        >>> get_function('nemoa.base.entity.get_function')
 
     """
     mname, fname = name.rsplit('.', 1)

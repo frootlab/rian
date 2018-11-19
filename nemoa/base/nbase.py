@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from pathlib import Path
-from nemoa.base import assess, check, ndict, env
+from nemoa.base import entity, check, ndict, env
 from nemoa.types import Any, ClassVar, Dict, OptInt, OptStr, PathLike
 
 class ObjectIP:
@@ -270,7 +270,7 @@ class ObjectIP:
             Sorted list of keys, which are accepted by the 'get' method.
 
         """
-        gdict = assess.get_methods(self, pattern='_get_*')
+        gdict = entity.get_methods(self, pattern='_get_*')
         glist = sorted(ndict.crop(gdict, '_get_'))
 
         return glist
@@ -339,7 +339,7 @@ class ObjectIP:
             Sorted list of keys, which are accepted by the 'set' method.
 
         """
-        sdict = assess.get_methods(self, pattern='_set_*')
+        sdict = entity.get_methods(self, pattern='_set_*')
         slist = sorted(ndict.crop(sdict, '_set_'))
 
         return slist

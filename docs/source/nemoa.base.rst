@@ -13,10 +13,10 @@ Submodules
 
 .. toctree::
 
-   nemoa.base.assess
    nemoa.base.attrib
    nemoa.base.binary
    nemoa.base.check
+   nemoa.base.entity
    nemoa.base.env
    nemoa.base.literal
    nemoa.base.nbase

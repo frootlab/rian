@@ -6,7 +6,7 @@ __license__ = 'GPLv3'
 
 import numpy
 import nemoa
-from nemoa.base import assess
+from nemoa.base import entity
 
 class Evaluation:
 
@@ -46,7 +46,7 @@ class Evaluation:
             self._buffer['algorithms'] = {}
         algorithms = self._buffer['algorithms'].get(attribute, None)
         if not algorithms:
-            algorithms = assess.get_methods(
+            algorithms = entity.get_methods(
                 self, key='name', val=attribute, groupby='category')
             self._buffer['algorithms'][attribute] = algorithms
         if category:
@@ -99,13 +99,13 @@ class Evaluation:
         """
 
         # test type of model instance and subclasses
-        if not assess.has_base(model, 'Model'):
+        if not entity.has_base(model, 'Model'):
             return False
-        if not assess.has_base(model.dataset, 'Dataset'):
+        if not entity.has_base(model.dataset, 'Dataset'):
             return False
-        if not assess.has_base(model.network, 'Network'):
+        if not entity.has_base(model.network, 'Network'):
             return False
-        if not assess.has_base(model.system, 'System'):
+        if not entity.has_base(model.system, 'System'):
             return False
 
         # check dataset
