@@ -170,11 +170,22 @@ def get_attr(name: str, default: Any = None, ref: OptModule = None) -> Any:
     # Get attribute
     return getattr(ref, name, default)
 
-def call_attr(attr: str, *args: Any, **kwds: Any) -> Any:
+def has_attr(name: str) -> bool:
+    """Determine if current module has an attribute of given name.
+
+    Args:
+        name: Name of callable attribute
+
+    Returns:
+        Result of call.
+    """
+    return hasattr(get_caller_module(), name)
+
+def call_attr(name: str, *args: Any, **kwds: Any) -> Any:
     """Call an attribute of current module with given arguments.
 
     Args:
-        attr: Name of callable attribute
+        name: Name of callable attribute
         *args: Arbitrary arguments, that are passed to the call
         *kwds: Arbitrary keyword arguments, that are passes to the call, if
             supported by the member attribute.
@@ -183,7 +194,7 @@ def call_attr(attr: str, *args: Any, **kwds: Any) -> Any:
         Result of call.
 
     """
-    return assess.call_attr(get_caller_module(), attr, *args, **kwds)
+    return assess.call_attr(get_caller_module(), name, *args, **kwds)
 
 def crop_functions(prefix: str, ref: OptModule = None) -> list:
     """Get list of cropped function names that satisfy a given prefix.

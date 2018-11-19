@@ -44,6 +44,7 @@ Function = types.FunctionType
 Method = types.MethodType
 Module = types.ModuleType
 OrderedDict = collections.OrderedDict
+Collection = collections.Collection
 Path = os.PathLike
 BytesIOBaseClass = io.BufferedIOBase
 TextIOBaseClass = io.TextIOBase

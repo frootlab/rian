@@ -98,6 +98,14 @@ class TestAssess(ModuleTestCase):
             Case(args=(assess.get_name, ), value='get_name'),
             Case(args=(assess, ), value='nemoa.base.assess')])
 
+    def test_get_lang_repr(self) -> None:
+        self.assertAllEqual(assess.get_lang_repr, [
+            Case(args=(set(), ), value='no elements'),
+            Case(args=([], ), value='no items'),
+            Case(args=(['a'], ), value="item 'a'"),
+            Case(args=([1, 2], ), value="items '1' and '2'"),
+            Case(args=(['a', 'b'], 'or'), value="items 'a' or 'b'")])
+
     def test_get_summary(self) -> None:
         self.assertAllEqual(assess.get_summary, [
             Case(args=(object, ), value=assess.get_summary(object())),
@@ -668,16 +676,28 @@ class TestLiteral(ModuleTestCase):
 
     def test_decode(self) -> None:
         self.assertAllEqual(literal.decode, [
-            Case(args=(str('t'), str), value='t'),
-            Case(args=(str(True), bool), value=True),
-            Case(args=(str(1), int), value=1),
-            Case(args=(str(.5), float), value=.5),
-            Case(args=(str(1+1j), complex), value=1+1j)])
+            Case(args=('text', str), value='text'),
+            Case(args=(repr(True), bool), value=True),
+            Case(args=(repr(1), int), value=1),
+            Case(args=(repr(.5), float), value=.5),
+            Case(args=(repr(1+1j), complex), value=1+1j)])
+
+    def test_estimate(self) -> None:
+        self.assertAllEqual(literal.estimate, [
+            Case(args=('text', ), value=None),
+            Case(args=(repr('text'), ), value=str),
+            Case(args=(repr(True), ), value=bool),
+            Case(args=(repr(1), ), value=int),
+            Case(args=(repr(1.), ), value=float),
+            Case(args=(repr(1j), ), value=complex)])
 
 class TestThis(ModuleTestCase):
     """Testcase for the module nemoa.base.this."""
 
     module = 'nemoa.base.this'
+
+    def test_has_attr(self) -> None:
+        pass # Function is testet in this.get_module
 
     def test_call_attr(self) -> None:
         pass # Function is testet in assess.call_attr

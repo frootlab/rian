@@ -15,7 +15,7 @@ from nemoa.types import Any, ClassInfo, OptStr, OptStrDictOfTestFuncs
 from nemoa.types import OptModule, Module, StrList, OptFunction, Function
 from nemoa.types import Tuple, RecDict, NestRecDict
 from nemoa.types import DictOfRecDicts, FuncWrapper, Method, StrOrType
-from nemoa.types import Callable, OrderedDict
+from nemoa.types import Callable, OrderedDict, Collection
 
 def has_base(obj: object, base: StrOrType) -> bool:
     """Return true if the object has the given base class.
@@ -34,10 +34,10 @@ def has_base(obj: object, base: StrOrType) -> bool:
     return base in [cls.__name__ for cls in mro]
 
 def get_name(obj: object) -> str:
-    """Get name of an object.
+    """Get name identifier for an object.
 
-    This function returns the name of an object. If the object does not have
-    a name attribute, the name is retrieved from the object type.
+    This function returns the name identifier of an object. If the object does
+    not have a name attribute, the name is retrieved from the object class.
 
     Args:
         obj: Arbitrary object
@@ -47,6 +47,59 @@ def get_name(obj: object) -> str:
 
     """
     return getattr(obj, '__name__', obj.__class__.__name__)
+
+
+def get_lang_repr(obj: object, separator: str = 'and') -> str:
+    """Get natural language representation of an object.
+
+    Args:
+        seperator: String separator for collection items.
+
+    Returns:
+        Natural language representation of object.
+
+    """
+    if hasattr(obj, '__name__'):
+        return repr(obj.__name__) # type: ignore
+    if isinstance(obj, str):
+        return repr(obj)
+    if isinstance(obj, Collection):
+        if isinstance(obj, set):
+            item = 'element'
+        else:
+            item = 'item'
+        size = len(obj)
+        if size == 0:
+            return f'no {item}s'
+        if size == 1:
+            name = repr(str(obj.__iter__().__next__()))
+            return f'{item} {name}'
+        if size < 4:
+            sep = f' {separator} '
+            items = [repr(str(each)) for each in obj]
+            return f'{item}s ' + sep.join(items)
+        return f'some {item}s'
+    return repr(obj)
+
+def get_summary(obj: object) -> str:
+    """Get summary line for an object.
+
+    This function returns the summary line of the documentation string for an
+    object as specified in :PEP:`257`. If the documentation string is not
+    provided the summary line is retrieved from the inheritance hierarchy.
+
+    Args:
+        obj: Arbitrary object
+
+    Returns:
+        Summary line for an object.
+
+    """
+    if isinstance(obj, str):
+        if not obj:
+            return 'empty string'
+        return obj.split('\n', 1)[0].rstrip('\n\r .')
+    return get_summary(inspect.getdoc(obj) or ' ')
 
 def get_members(
         obj: object, pattern: OptStr = None, classinfo: ClassInfo = object,
@@ -152,26 +205,6 @@ def get_members_dict(
         valid[prefix + name] = attr
 
     return valid
-
-def get_summary(obj: object) -> str:
-    """Get summary line for an object.
-
-    This function returns the summary line of the documentation string for an
-    object as specified in :PEP:`257`. If the documentation string is not
-    provided the summary line is retrieved from the inheritance hierarchy.
-
-    Args:
-        obj: Arbitrary object
-
-    Returns:
-        Summary line for an object.
-
-    """
-    if isinstance(obj, str):
-        if not obj:
-            return 'empty string'
-        return obj.split('\n', 1)[0].rstrip('\n\r .')
-    return get_summary(inspect.getdoc(obj) or ' ')
 
 def get_module(name: str) -> OptModule:
     """Get reference to module instance from a fully qualified module name.

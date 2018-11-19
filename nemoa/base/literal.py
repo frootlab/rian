@@ -8,63 +8,61 @@ __docformat__ = 'google'
 
 import ast
 import datetime
-import sys
 from pathlib import Path
-
-try:
-    import pyparsing as pp
-except ImportError as err:
-    raise ImportError(
-        "requires package pyparsing: "
-        "https://pypi.org/project/pyparsing/") from err
-
-from nemoa.base import check, env
+import pyparsing as pp
+from nemoa.base import check, env, this
 from nemoa.types import Any, OptStr, Date, OptType
 
+def encode(obj: object, **kwds: Any) -> str:
+    """ """
+    source = type(obj)
+    fname = 'from_' + source.__name__.lower()
+    if this.has_attr(fname):
+        return this.call_attr(fname, **kwds)
+    return repr(obj)
+
 def decode(
-        text: str, cls: OptType = None, undef: str = 'None',
+        text: str, target: OptType = None, undef: OptStr = 'None',
         **kwds: Any) -> Any:
-    """Convert text into given target format.
+    """Convert text into given target type.
 
     Args:
         text: String representing the value of a given type in it's respective
             syntax format. The standard format corresponds to the standard
             Python representation if available. Some types also accept
             further formats, which may use additional keywords.
-        cls: Target type in which the text is to be converted.
-        undef: String, which respresents an undefined value. If the given text
-            matches the string, None is returned.
-        **kwds: Supplementary parameters, that specify the target format
+        target: Target type, in which the text is to be converted.
+        undef: Optional string, which respresents an undefined value. If undef
+            is a string, then the any text, the matches the string is decoded
+            as None, independent from the given target type.
+        **kwds: Supplementary parameters, that specify the encoding format of
+            the target type.
 
     Returns:
         Value of the text in given target format or None.
 
     """
     # Check Arguments
-    check.has_type("first argument 'text'", text, str)
-    check.has_opt_type("argument 'cls'", cls, type)
+    check.has_type("'text'", text, str)
+    check.has_opt_type("'target'", target, type)
 
+    # Check for undefined value
     if text == undef:
         return None
 
-    # Evaluate text as Python literal if no type is given
-    if cls is None:
-        return ast.literal_eval(text)
+    # If no target type is given, estimate type
+    target = target or estimate(text) or str
 
-    # Basic types
-    if cls == str:
+    # Elementary literals
+    if target == str:
         return text.strip().replace('\n', '')
-    if cls == bool:
+    if target == bool:
         return text.lower().strip() == 'true'
-    if cls in [int, float, complex]:
-        return cls(text)
+    if target in [int, float, complex]:
+        return target(text, **kwds)
 
-    # Sequence and special types
-    fname = 'as_' + cls.__name__.lower()
-    try:
-        return getattr(sys.modules[__name__], fname)(text, **kwds)
-    except AttributeError as err:
-        raise ValueError(f"type '{cls}' is not supported") from err
+    fname = 'as_' + target.__name__.lower()
+    return this.call_attr(fname, text, **kwds)
 
 def as_list(text: str, delim: str = ',') -> list:
     """Convert text into list.
@@ -281,3 +279,18 @@ def as_datetime(text: str, fmt: OptStr = None) -> Date:
     check.has_type("first argument 'text'", text, str)
     fmt = '%Y-%m-%d %H:%M:%S.%f'
     return datetime.datetime.strptime(text, fmt)
+
+def estimate(text: str) -> OptType:
+    """Estimate type of text by using :py:func:`~ast.literal_eval`.
+
+    Args:
+        text: String representation of python object.
+
+    Returns:
+        Type of text or None, if the type could not be determined.
+
+    """
+    try:
+        return type(ast.literal_eval(text))
+    except ValueError:
+        return None
