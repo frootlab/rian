@@ -49,7 +49,7 @@ class Csv:
 
         """
 
-        from nemoa.base.file import csvfile, inifile
+        from nemoa.file import csvfile, inifile
         from nemoa.base import env
 
         # get CSVFile instance

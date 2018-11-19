@@ -10,7 +10,7 @@ import networkx
 import numpy
 import nemoa
 from nemoa.base import entity
-from nemoa.base.file import nplot
+from nemoa.file import nplot
 
 def filetypes():
     """Get supported image filetypes."""

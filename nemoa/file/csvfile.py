@@ -9,7 +9,7 @@ __docformat__ = 'google'
 import csv
 import numpy as np
 from nemoa.base import attrib, check, literal
-from nemoa.base.file import textfile
+from nemoa.file import textfile
 from nemoa.types import FileOrPathLike, NpArray, OptInt, OptIntTuple, ClassVar
 from nemoa.types import OptNpArray, OptStr, OptStrList, StrList, List, Tuple
 from nemoa.types import IntTuple, OptList, OptStrTuple, TextFileClasses

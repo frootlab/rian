@@ -1,7 +1,7 @@
-nemoa.base.file.binfile module
+nemoa.file.binfile module
 ==============================
 
-.. automodule:: nemoa.base.file.binfile
+.. automodule:: nemoa.file.binfile
     :members:
     :undoc-members:
     :show-inheritance:

@@ -13,7 +13,7 @@ __docformat__ = 'google'
 from pathlib import Path
 from nemoa.base import attrib, env
 from nemoa.core import log
-from nemoa.base.file import inifile, wsfile
+from nemoa.file import inifile, wsfile
 from nemoa.types import Any, BytesLike, CManFileLike, ClassVar, Exc, ExcType
 from nemoa.types import OptBytes, OptPath, OptPathLike, OptStr, PathLike
 from nemoa.types import StrDict, StrList, StrOrInt, Traceback

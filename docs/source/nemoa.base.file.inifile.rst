@@ -1,7 +1,7 @@
-nemoa.base.file.inifile module
+nemoa.file.inifile module
 ==============================
 
-.. automodule:: nemoa.base.file.inifile
+.. automodule:: nemoa.file.inifile
     :members:
     :undoc-members:
     :show-inheritance:

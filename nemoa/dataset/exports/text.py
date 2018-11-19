@@ -43,7 +43,7 @@ class Csv:
 
     def save(self, dataset, path):
 
-        from nemoa.base.file import csvfile, inifile
+        from nemoa.file import csvfile, inifile
 
         # Create the configuration which is included in the CSV file
         # as initial comment lines

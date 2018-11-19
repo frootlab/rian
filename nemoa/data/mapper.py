@@ -8,7 +8,7 @@ __docformat__ = 'google'
 
 from pathlib import Path
 from nemoa.types import FileOrPathLike, OptStr, OptIntTuple, OptStrList, OptInt
-from nemoa.base.file import csvfile, inifile
+from nemoa.file import csvfile, inifile
 from nemoa.data.table import Table
 
 class ProxyTable(Table):

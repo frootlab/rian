@@ -20,7 +20,7 @@ from io import StringIO
 import re
 from typing import cast
 from nemoa.base import literal, check
-from nemoa.base.file import textfile
+from nemoa.file import textfile
 from nemoa.types import FileOrPathLike, OptBool, OptStr, StrDict
 from nemoa.types import Union, Optional, OptType, Dict
 

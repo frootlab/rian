@@ -21,7 +21,7 @@ from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
 from nemoa.base import attrib, env, env
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
-from nemoa.base.file import inifile
+from nemoa.file import inifile
 from nemoa.types import BytesIOBaseClass, BytesIOLike, BytesLike, ClassVar
 from nemoa.types import IterFileLike, List, OptBytes, OptStr, OptPathLike
 from nemoa.types import PathLike, PathLikeList, TextIOBaseClass, Traceback
