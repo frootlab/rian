@@ -38,9 +38,9 @@ def save(system, path = None, filetype = None, workspace = None,
 
     """
 
-    from nemoa.base import assess
+    from nemoa.base import entity
 
-    if not assess.has_base(system, 'System'):
+    if not entity.has_base(system, 'System'):
         raise ValueError("system is not valid")
 
     from nemoa.base import env

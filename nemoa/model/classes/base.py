@@ -5,7 +5,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa
-from nemoa.base import assess, nbase
+from nemoa.base import entity, nbase
 from nemoa.types import Any, Dict
 
 class Model(nbase.ObjectIP):
@@ -91,11 +91,11 @@ class Model(nbase.ObjectIP):
     def configure(self):
         """Configure model."""
 
-        if not assess.has_base(self.dataset, 'Dataset'):
+        if not entity.has_base(self.dataset, 'Dataset'):
             raise ValueError("dataset is not valid")
-        if not assess.has_base(self.network, 'Network'):
+        if not entity.has_base(self.network, 'Network'):
             raise ValueError("network is not valid")
-        if not assess.has_base(self.system, 'System'):
+        if not entity.has_base(self.system, 'System'):
             raise ValueError("system is not valid")
 
         retval = True
@@ -112,11 +112,11 @@ class Model(nbase.ObjectIP):
     def initialize(self):
         """Initialize model parameters."""
 
-        if not assess.has_base(self.dataset, 'Dataset'):
+        if not entity.has_base(self.dataset, 'Dataset'):
             raise ValueError("dataset is not valid")
-        if not assess.has_base(self.network, 'Network'):
+        if not entity.has_base(self.network, 'Network'):
             raise ValueError("network is not valid")
-        if not assess.has_base(self.system, 'System'):
+        if not entity.has_base(self.system, 'System'):
             raise ValueError("system is not valid")
 
         retval = True
@@ -299,13 +299,13 @@ class Model(nbase.ObjectIP):
 
         """
 
-        if assess.has_base(dataset, 'Dataset'):
+        if entity.has_base(dataset, 'Dataset'):
             self.dataset = dataset
             return True
 
         if not isinstance(dataset, dict): return False
 
-        if assess.has_base(self.dataset, 'Dataset'):
+        if entity.has_base(self.dataset, 'Dataset'):
             return self.dataset.set('copy', **dataset)
 
         self.dataset = nemoa.dataset.new(**dataset)
@@ -328,13 +328,13 @@ class Model(nbase.ObjectIP):
 
         """
 
-        if assess.has_base(network, 'Network'):
+        if entity.has_base(network, 'Network'):
             self.network = network
             return True
 
         if not isinstance(network, dict): return False
 
-        if assess.has_base(self.network, 'Network'):
+        if entity.has_base(self.network, 'Network'):
             return self.network.set('copy', **network)
 
         self.network = nemoa.network.new(**network)
@@ -357,13 +357,13 @@ class Model(nbase.ObjectIP):
 
         """
 
-        if assess.has_base(system, 'System'):
+        if entity.has_base(system, 'System'):
             self.system = system
             return True
 
         if not isinstance(system, dict): return False
 
-        if assess.has_base(self.system, 'System'):
+        if entity.has_base(self.system, 'System'):
             return self.system.set('copy', **system)
 
         self.system = nemoa.system.new(**system)

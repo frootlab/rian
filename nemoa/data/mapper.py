@@ -11,7 +11,10 @@ from nemoa.types import FileOrPathLike, OptStr, OptIntTuple, OptStrList, OptInt
 from nemoa.base.file import csvfile, inifile
 from nemoa.data.table import Table
 
-class CSVTable(Table):
+class ProxyTable(Table):
+    pass
+
+class CSVProxyTable(ProxyTable):
     def __init__(
             self, file: FileOrPathLike, delim: OptStr = None,
             labels: OptStrList = None, usecols: OptIntTuple = None,

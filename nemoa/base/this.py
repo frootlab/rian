@@ -7,14 +7,14 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import inspect
-from nemoa.base import assess, check
+from nemoa.base import entity, check
 from nemoa.types import Any, Module, OptModule, Function
 
 def get_caller_module() -> Module:
     """Get reference to callers module."""
     name = get_module_name(-2)
     if name:
-        ref = assess.get_module(name)
+        ref = entity.get_module(name)
         if isinstance(ref, Module):
             return ref
     raise ModuleNotFoundError("could not detect module of caller")
@@ -81,7 +81,7 @@ def get_module() -> Module:
     """Get reference to current module."""
     name = get_module_name(-1)
     if name:
-        ref = assess.get_module(name)
+        ref = entity.get_module(name)
         if isinstance(ref, Module):
             return ref
     raise ModuleNotFoundError("could not detect current module")
@@ -105,7 +105,7 @@ def get_submodule(name: str, ref: OptModule = None) -> OptModule:
     ref = ref or get_caller_module()
 
     # Get instance of submodule
-    return assess.get_module(ref.__name__ + '.' + name)
+    return entity.get_module(ref.__name__ + '.' + name)
 
 def get_parent(ref: OptModule = None) -> Module:
     """Get parent module.
@@ -124,7 +124,7 @@ def get_parent(ref: OptModule = None) -> Module:
     name = ref.__name__.rsplit('.', 1)[0]
 
     # Get reference to the parent module
-    pref = assess.get_module(name)
+    pref = entity.get_module(name)
     if not isinstance(pref, Module):
         raise ModuleNotFoundError(f"module '{name}' does not exist")
     return pref
@@ -146,7 +146,7 @@ def get_root(ref: OptModule = None) -> Module:
     name = ref.__name__.split('.', 1)[0]
 
     # Get reference to the top level module
-    tlref = assess.get_module(name)
+    tlref = entity.get_module(name)
     if not isinstance(tlref, Module):
         raise ModuleNotFoundError(f"module '{name}' does not exist")
     return tlref
@@ -170,11 +170,22 @@ def get_attr(name: str, default: Any = None, ref: OptModule = None) -> Any:
     # Get attribute
     return getattr(ref, name, default)
 
-def call_attr(attr: str, *args: Any, **kwds: Any) -> Any:
+def has_attr(name: str) -> bool:
+    """Determine if current module has an attribute of given name.
+
+    Args:
+        name: Name of callable attribute
+
+    Returns:
+        Result of call.
+    """
+    return hasattr(get_caller_module(), name)
+
+def call_attr(name: str, *args: Any, **kwds: Any) -> Any:
     """Call an attribute of current module with given arguments.
 
     Args:
-        attr: Name of callable attribute
+        name: Name of callable attribute
         *args: Arbitrary arguments, that are passed to the call
         *kwds: Arbitrary keyword arguments, that are passes to the call, if
             supported by the member attribute.
@@ -183,7 +194,7 @@ def call_attr(attr: str, *args: Any, **kwds: Any) -> Any:
         Result of call.
 
     """
-    return assess.call_attr(get_caller_module(), attr, *args, **kwds)
+    return entity.call_attr(get_caller_module(), name, *args, **kwds)
 
 def crop_functions(prefix: str, ref: OptModule = None) -> list:
     """Get list of cropped function names that satisfy a given prefix.
@@ -200,7 +211,7 @@ def crop_functions(prefix: str, ref: OptModule = None) -> list:
     ref = ref or get_caller_module()
 
     # Get functions of current callers module
-    funcs = assess.get_members_dict(
+    funcs = entity.get_members_dict(
         ref, classinfo=Function, pattern=(prefix + '*'))
 
     # Create list of cropped function names

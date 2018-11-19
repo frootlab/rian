@@ -347,7 +347,7 @@ Norms and Metrices
         quadratic mean difference is a measure of statistical dispersion and
         referred as :term:`Root-Mean-Square Error`.
 
-Regression
+Statistics
 ----------
 
 .. glossary::
@@ -356,20 +356,20 @@ Regression
         *Association measures* refer to a wide variety of coefficients,
         that measure the statistical strength of relationships between the
         variables of interest. These measures can be directed / undirected,
-        signed / unsigned and normalized or unnormalized. Examples for measures
-        of association are the Pearson correlation coefficient, Mutual
+        signed / unsigned and normalized or unnormalized. Examples for
+        association measures are the Pearson correlation coefficient, Mutual
         information or Statistical Interactions.
 
     Discrepancy Measure
-        A *discrepancy measure* is a binary function in a space of random
-        variables, that induces a semi-metric to the underlying space.
-        [#disc]_ In regression analysis discrepancies are used to assess
+        *Discrepancy measures* are binary functions in spaces of random
+        variables, that induce a semi-metric to the underlying space.
+        [#]_ In regression analysis discrepancies are used to assess
         the accuracy of a predictor, by quantifying the expected deviation
         between observed and predicted realizations. By minimizing a discrepancy
         with respect to parameters, it serves as an objective function for
         parameter and model selection.
 
-        .. [#disc] https://en.wikipedia.org/wiki/discrepancy_function
+        .. [#] https://en.wikipedia.org/wiki/discrepancy_function
 
     Mean Absolute Error
         The *Mean Absolute Error* (MAE) is a :term:`discrepancy measure`,

@@ -134,26 +134,26 @@ class Record(ABC):
 
     @abstractmethod
     def _create_row_id(self) -> int:
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def _delete_hook(self, rowid: int) -> None:
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def _restore_hook(self, rowid: int) -> None:
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def _update_hook(self, rowid: int, **kwds: Any) -> None:
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def _revoke_hook(self, rowid: int) -> None:
-        pass
+        raise NotImplementedError()
 
 #
-# Types (Record)
+# Structural types using the Record class
 #
 
 OptRec = Optional[Record]

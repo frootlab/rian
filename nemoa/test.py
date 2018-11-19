@@ -10,7 +10,7 @@ from io import StringIO
 from unittest import skipIf
 from unittest import TestCase, TestResult, TestLoader, TestSuite, TextTestRunner
 import numpy as np
-from nemoa.base import assess, this
+from nemoa.base import entity, this
 from nemoa.types import Any, AnyFunc, ClassInfo, ExcType, Function, Method
 from nemoa.types import StringIOLike, Tuple, Dict, List, Callable
 from nemoa.types import NpArray, NamedTuple
@@ -125,14 +125,14 @@ class ModuleTestCase(BaseTestCase):
             return
 
         # Get reference to module
-        ref = assess.get_module(self.module)
+        ref = entity.get_module(self.module)
         if not ref:
             raise AssertionError(f"module {self.module} does not exist")
 
         # Get module members
         members = set()
         for name in getattr(ref, '__all__',
-            assess.get_members(ref, classinfo=(type, Function))):
+            entity.get_members(ref, classinfo=(type, Function))):
             if name.startswith('_'):
                 continue # Filter protected members
             if getattr(ref, name).__module__ != ref.__name__:
@@ -142,7 +142,7 @@ class ModuleTestCase(BaseTestCase):
             members.add(name)
 
         # Get tested module members
-        tested = set(name[5:] for name in assess.get_members(
+        tested = set(name[5:] for name in entity.get_members(
             self, classinfo=Method, pattern='test_*'))
 
         # Get untested module members
@@ -328,7 +328,7 @@ def run(
     loader = TestLoader()
     suite = TestSuite()
     root = this.get_root()
-    cases = assess.search(root, classinfo=classinfo, val='reference')
+    cases = entity.search(root, classinfo=classinfo, val='reference')
     for ref in cases.values():
         suite.addTests(loader.loadTestsFromTestCase(ref))
     return TextTestRunner(stream=stream, verbosity=verbosity).run(suite)

@@ -14,9 +14,9 @@ except ImportError as err:
         "https://pypi.org/project/numpy") from err
 
 import nemoa
-from nemoa.base import assess, nbase
+from nemoa.base import entity, nbase
 from nemoa.core import log, ui
-from nemoa.math import algo
+from nemoa.math import meta
 
 class Dataset(nbase.ObjectIP):
     """Dataset base class.
@@ -285,7 +285,7 @@ class Dataset(nbase.ObjectIP):
                 transform = preprocessing['transform']
 
         # get preprocessing parameters from system
-        if assess.has_base(system, 'System'):
+        if entity.has_base(system, 'System'):
             input_layer = system.get('layers')[0]
             distribution = system.get('layer', input_layer)['class']
             if distribution == 'gauss': normalize = 'gauss'
@@ -532,7 +532,7 @@ class Dataset(nbase.ObjectIP):
         mapping = None, func: str = 'expect'):
         """ """
 
-        if not assess.has_base(system, 'System'):
+        if not entity.has_base(system, 'System'):
             raise ValueError("system is not valid")
 
         ui.info("transform data using model '%s'." % system.name)
@@ -626,7 +626,7 @@ class Dataset(nbase.ObjectIP):
         """Get algorithms provided by dataset."""
         # get dictionary with all methods
         # with prefix '_get_' and attribute 'name'
-        methods = assess.get_methods(self, pattern = '_get_*', val = 'name')
+        methods = entity.get_methods(self, pattern = '_get_*', val = 'name')
 
         # filter algorithms by given category
         if category is not None:
@@ -1128,7 +1128,7 @@ class Dataset(nbase.ObjectIP):
                 type = np.recarray, dtype = dtype)
 
             if labels:
-                from nemoa.base import table as modtable
+                from nemoa.data import table as modtable
                 table_colsel = modtable.addcols(
                     arr, self._tables[table], 'label')
             else:
@@ -1328,7 +1328,7 @@ class Dataset(nbase.ObjectIP):
 
         return algorithms[name](*args, **kwds)
 
-    @algo.custom(
+    @meta.custom(
         name     = 'sample',
         title    = 'Sample Values',
         category = ('dataset', 'evaluation'),
@@ -1339,7 +1339,7 @@ class Dataset(nbase.ObjectIP):
 
         return self._get_data(*args, **kwds)
 
-    @algo.custom(
+    @meta.custom(
         name     = 'covariance',
         title    = 'Covariance',
         category = ('dataset', 'columns', 'evaluation'),
@@ -1365,7 +1365,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @algo.custom(
+    @meta.custom(
         name     = 'correlation',
         title    = 'Pearson Correlation',
         category = ('dataset', 'columns', 'evaluation'),
@@ -1391,7 +1391,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @algo.custom(
+    @meta.custom(
         name     = 'pca-sample',
         title    = 'PCA Sample Values',
         category = ('dataset', 'evaluation'),
@@ -1420,7 +1420,7 @@ class Dataset(nbase.ObjectIP):
 
         return pca_data
 
-    @algo.custom(
+    @meta.custom(
         name      = 'k-covariance',
         title     = 'k-Covariance',
         title_tex = '$k$-Covariance',
@@ -1453,7 +1453,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @algo.custom(
+    @meta.custom(
         name      = 'k-correlation',
         title     = 'k-Correlation',
         title_tex = '$k$-Correlation',
@@ -1486,7 +1486,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @algo.custom(
+    @meta.custom(
         name     = 'test_binary',
         title    = None,
         category = ('dataset', 'evaluation'),
@@ -1513,7 +1513,7 @@ class Dataset(nbase.ObjectIP):
 
         return isbinary
 
-    @algo.custom(
+    @meta.custom(
         name     = 'test_gauss',
         title    = None,
         category = ('dataset', 'evaluation'),

@@ -6,11 +6,11 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from nemoa.base import assess
-from nemoa.types import Any, Class, Iterable, Number, Sized
+from nemoa.base import entity
+from nemoa.types import Any, Class, Number, Sized
 
 ################################################################################
-# Generic Exceptions
+# Generic Application Exceptions
 ################################################################################
 
 class NemoaException(Exception):
@@ -29,14 +29,14 @@ class NemoaAssert(NemoaError, AssertionError):
     """Exception for assertions in nemoa."""
 
 ################################################################################
-# Type Errors
+# Application specific Type Errors
 ################################################################################
 
 class MissingKwError(NemoaAssert, TypeError):
     """Raise when a required keyword argument is not given."""
 
     def __init__(self, name: str, obj: object) -> None:
-        this = _repr_obj(obj)
+        this = entity.get_name(obj)
         msg = f"{this} missing required keyword argument '{name}'"
         super().__init__(msg)
 
@@ -44,8 +44,8 @@ class InvalidTypeError(NemoaAssert, TypeError):
     """Raise when an object is required to be of a given type."""
 
     def __init__(self, name: str, obj: object, classinfo: object) -> None:
-        this = _repr_classinfo(classinfo)
-        that = _repr_type(obj)
+        this = entity.get_lang_repr(classinfo, separator='or')
+        that = entity.get_name(type(obj))
         msg = f"{name} requires to be of type {this} not {that}"
         super().__init__(msg)
 
@@ -53,8 +53,8 @@ class InvalidClassError(NemoaAssert, TypeError):
     """Raise when an object is required to be of a given subclass."""
 
     def __init__(self, name: str, obj: object, ref: Class) -> None:
-        this = _repr_obj(ref)
-        that = _repr_obj(obj)
+        this = entity.get_name(ref)
+        that = entity.get_name(obj)
         msg = f"{name} requires to be a subclass of {this} not {that}"
         super().__init__(msg)
 
@@ -62,7 +62,7 @@ class NotClassError(NemoaAssert, TypeError):
     """Raise when an object is required to be a class."""
 
     def __init__(self, name: str, obj: object) -> None:
-        that = _repr_type(obj)
+        that = entity.get_name(type(obj))
         msg = f"{name} requires to be a class not {that}"
         super().__init__(msg)
 
@@ -70,12 +70,12 @@ class NotCallableError(NemoaAssert, TypeError):
     """Raise when an object is required to be callable."""
 
     def __init__(self, name: str, obj: object) -> None:
-        that = _repr_type(obj)
+        that = entity.get_name(type(obj))
         msg = f"{name} requires to be callable not {that}"
         super().__init__(msg)
 
 ################################################################################
-# Value Errors
+# Application specific Value Errors
 ################################################################################
 
 class IsNegativeError(NemoaAssert, ValueError):
@@ -118,7 +118,7 @@ class NotIsSubsetError(NemoaAssert, ValueError):
 
     def __init__(self, a: str, seta: set, b: str, setb: set) -> None:
         diff = set(seta) - set(setb)
-        elements = _repr_set(diff)
+        elements = entity.get_lang_repr(diff)
         are = 'are' if len(diff) > 1 else 'is'
         msg = f"{elements} of {a} {are} not contained in {b}"
         super().__init__(msg)
@@ -151,14 +151,14 @@ class MaxSizeError(NemoaAssert, ValueError):
         super().__init__(msg)
 
 ################################################################################
-# Attribute Errors
+# Application specific Attribute Errors
 ################################################################################
 
 class InvalidAttrError(NemoaAssert, AttributeError):
     """Raise when a not existing attribute is called."""
 
     def __init__(self, obj: object, attr: str) -> None:
-        that = _repr_obj(obj)
+        that = entity.get_name(obj)
         msg = f"{that} has no attribute '{attr}'"
         super().__init__(msg)
 
@@ -166,12 +166,12 @@ class ReadOnlyAttrError(NemoaAssert, AttributeError):
     """Raise when a read-only attribute's setter method is called."""
 
     def __init__(self, obj: object, attr: str) -> None:
-        that = _repr_obj(obj)
+        that = entity.get_name(obj)
         msg = f"'{attr}' is a read-only attribute of {that}"
         super().__init__(msg)
 
 ################################################################################
-# OS Errors
+# Application specific OS Errors
 ################################################################################
 
 class DirNotEmptyError(NemoaAssert, OSError):
@@ -181,7 +181,7 @@ class FileNotGivenError(NemoaAssert, OSError):
     """Raise when a file or directory is required but not given."""
 
 ################################################################################
-# Lookup Errors
+# Application specific Lookup Errors
 ################################################################################
 
 class SingletonExistsError(NemoaAssert, LookupError):
@@ -189,36 +189,3 @@ class SingletonExistsError(NemoaAssert, LookupError):
 
 class NotStartedError(NemoaAssert, LookupError):
     """Raise when a singleton is closed but not has been initialized."""
-
-################################################################################
-# String Representation of Objects
-################################################################################
-
-def _repr_classinfo(obj: object) -> str:
-    if isinstance(obj, str):
-        return repr(obj)
-    if isinstance(obj, Iterable):
-        return ' or '.join([_repr_classinfo(each) for each in obj])
-    if isinstance(obj, type):
-        return repr(obj.__name__)
-    if hasattr(obj, '__repr__'):
-        return repr(obj)
-    return '?'
-
-def _repr_set(obj: set) -> str:
-    num = len(obj)
-    if num == 0:
-        return "no elements"
-    if num > 3:
-        return "some elements"
-    if num > 1:
-        names = [str(o) for o in obj]
-        return "elements " + "' and '".join(names).join(["'", "'"])
-    # Get single element without pop()
-    return f"element '{obj.__iter__().__next__()}'"
-
-def _repr_type(obj: object) -> str:
-    return f"'{type(obj).__name__}'"
-
-def _repr_obj(obj: object) -> str:
-    return f"'{assess.get_name(obj)}'"

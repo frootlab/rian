@@ -13,7 +13,7 @@ __license__ = 'GPLv3'
 import nemoa.model.morphisms.ann
 
 from nemoa.core import ui
-from nemoa.math import algo
+from nemoa.math import meta
 
 class DBN(nemoa.model.morphisms.ann.ANN):
     """Deep Belief Network (DBN) Optimizer."""
@@ -28,7 +28,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
         'schedule_rbm.rbm': 'default',
         'schedule_rbm.grbm': 'default' }
 
-    @algo.custom(
+    @meta.custom(
         name     = 'dbn',
         longname = 'deep belief network optimization',
         category = 'optimization',
@@ -47,7 +47,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
 
         return retval
 
-    @algo.custom(
+    @meta.custom(
         name     = 'pretraining',
         longname = 'deep belief network pretraining',
         category = 'optimization',
@@ -217,7 +217,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
 
         return True
 
-    @algo.custom(
+    @meta.custom(
         name     = 'finetuning',
         longname = 'deep belief network finetuning',
         category = 'optimization',

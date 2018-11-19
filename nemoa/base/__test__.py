@@ -9,33 +9,33 @@ __docformat__ = 'google'
 import tempfile
 import datetime
 from pathlib import Path
-from nemoa.base import assess, binary, check, env, literal, stdio, this
+from nemoa.base import entity, binary, check, env, literal, stdio, this
 from nemoa.base import nbase, ndict
 from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Any, Function, Module, PathLikeList, StrList
 from nemoa.types import OrderedDict
 
 class TestAssess(ModuleTestCase):
-    """Testcase for the module nemoa.base.assess."""
+    """Testcase for the module nemoa.base.entity."""
 
-    module = 'nemoa.base.assess'
+    module = 'nemoa.base.entity'
 
     @staticmethod
     def get_test_object() -> Any:
         class Base:
-            @assess.wrap_attr(name='a', group=1)
+            @entity.wrap_attr(name='a', group=1)
             def geta(self) -> None:
                 pass
-            @assess.wrap_attr(name='b', group=2)
+            @entity.wrap_attr(name='b', group=2)
             def getb(self) -> None:
                 pass
-            @assess.wrap_attr(name='b', group=2)
+            @entity.wrap_attr(name='b', group=2)
             def setb(self) -> None:
                 pass
         return Base()
 
     def test_has_base(self) -> None:
-        self.assertAllEqual(assess.has_base, [
+        self.assertAllEqual(entity.has_base, [
             Case(args=(object, object), value=True),
             Case(args=(object, 'object'), value=True),
             Case(args=('object', object), value=True),
@@ -45,108 +45,116 @@ class TestAssess(ModuleTestCase):
             Case(args=('object', type), value=False)])
 
     def test_get_members(self) -> None:
-        self.assertAllComprise(assess.get_members, [
+        self.assertAllComprise(entity.get_members, [
             Case(args=(object, ), value='__class__'),
-            Case(args=(assess, ), value='get_members'),
-            Case(args=(assess, ), kwds={'classinfo': Function},
+            Case(args=(entity, ), value='get_members'),
+            Case(args=(entity, ), kwds={'classinfo': Function},
                 value='get_members'),
-            Case(args=(assess, ), kwds={'name': 'get_members'},
+            Case(args=(entity, ), kwds={'name': 'get_members'},
                 value='get_members'),
-            Case(args=(assess, ), kwds={
+            Case(args=(entity, ), kwds={
                 'rules': {'about': lambda arg, attr: arg in attr},
                 'about': 'members'}, value='get_members')])
-        self.assertNoneComprise(assess.get_members, [
+        self.assertNoneComprise(entity.get_members, [
             Case(args=(object, '*dummy*'), value='__class__'),
-            Case(args=(assess, ), kwds={'classinfo': str},
+            Case(args=(entity, ), kwds={'classinfo': str},
                 value='get_members'),
-            Case(args=(assess, '*dummy*'), value='get_members'),
-            Case(args=(assess, ), kwds={'name': 'dummy'},
+            Case(args=(entity, '*dummy*'), value='get_members'),
+            Case(args=(entity, ), kwds={'name': 'dummy'},
                 value='get_members'),
-            Case(args=(assess, ), kwds={
+            Case(args=(entity, ), kwds={
                 'rules': {'about': lambda arg, attr: arg == attr},
                 'about': 'members'}, value='get_members')])
 
     def test_get_members_dict(self) -> None:
-        self.assertAllComprise(assess.get_members_dict, [
+        self.assertAllComprise(entity.get_members_dict, [
             Case(args=(object, ), value='object.__class__'),
-            Case(args=(assess, ), value='nemoa.base.assess.get_members'),
-            Case(args=(assess, ), kwds={'classinfo': Function},
-                value='nemoa.base.assess.get_members'),
-            Case(args=(assess, ), kwds={'name': 'get_members'},
-                value='nemoa.base.assess.get_members'),
-            Case(args=(assess, ), kwds={
+            Case(args=(entity, ), value='nemoa.base.entity.get_members'),
+            Case(args=(entity, ), kwds={'classinfo': Function},
+                value='nemoa.base.entity.get_members'),
+            Case(args=(entity, ), kwds={'name': 'get_members'},
+                value='nemoa.base.entity.get_members'),
+            Case(args=(entity, ), kwds={
                 'rules': {'about': lambda arg, attr: arg in attr},
-                'about': 'members'}, value='nemoa.base.assess.get_members')])
-        self.assertNoneComprise(assess.get_members_dict, [
+                'about': 'members'}, value='nemoa.base.entity.get_members')])
+        self.assertNoneComprise(entity.get_members_dict, [
             Case(args=(object, '*dummy*'), value='object.__class__'),
-            Case(args=(assess, ), kwds={'classinfo': str},
-                value='nemoa.base.assess.get_members'),
-            Case(args=(assess, '*dummy*'),
-                value='nemoa.base.assess.get_members'),
-            Case(args=(assess, ), kwds={'name': 'dummy'},
-                value='nemoa.base.assess.get_members'),
-            Case(args=(assess, ), kwds={
+            Case(args=(entity, ), kwds={'classinfo': str},
+                value='nemoa.base.entity.get_members'),
+            Case(args=(entity, '*dummy*'),
+                value='nemoa.base.entity.get_members'),
+            Case(args=(entity, ), kwds={'name': 'dummy'},
+                value='nemoa.base.entity.get_members'),
+            Case(args=(entity, ), kwds={
                 'rules': {'about': lambda arg, attr: arg == attr},
-                'about': 'members'}, value='nemoa.base.assess.get_members')])
+                'about': 'members'}, value='nemoa.base.entity.get_members')])
 
     def test_get_name(self) -> None:
-        self.assertAllEqual(assess.get_name, [
+        self.assertAllEqual(entity.get_name, [
             Case(args=('', ), value='str'),
             Case(args=(0, ), value='int'),
             Case(args=(object, ), value='object'),
             Case(args=(object(), ), value='object'),
-            Case(args=(assess.get_name, ), value='get_name'),
-            Case(args=(assess, ), value='nemoa.base.assess')])
+            Case(args=(entity.get_name, ), value='get_name'),
+            Case(args=(entity, ), value='nemoa.base.entity')])
+
+    def test_get_lang_repr(self) -> None:
+        self.assertAllEqual(entity.get_lang_repr, [
+            Case(args=(set(), ), value='no elements'),
+            Case(args=([], ), value='no items'),
+            Case(args=(['a'], ), value="item 'a'"),
+            Case(args=([1, 2], ), value="items '1' and '2'"),
+            Case(args=(['a', 'b'], 'or'), value="items 'a' or 'b'")])
 
     def test_get_summary(self) -> None:
-        self.assertAllEqual(assess.get_summary, [
-            Case(args=(object, ), value=assess.get_summary(object())),
+        self.assertAllEqual(entity.get_summary, [
+            Case(args=(object, ), value=entity.get_summary(object())),
             Case(args=('summary.\n', ), value='summary')])
 
     def test_get_module(self) -> None:
-        ref = assess.get_module(__name__)
+        ref = entity.get_module(__name__)
         self.assertIsInstance(ref, Module)
         self.assertEqual(getattr(ref, '__name__'), __name__)
 
     def test_get_submodules(self) -> None:
-        parent = assess.get_module('nemoa.base')
+        parent = entity.get_module('nemoa.base')
         subs: StrList = []
         if isinstance(parent, Module):
-            subs = assess.get_submodules(ref=parent)
+            subs = entity.get_submodules(ref=parent)
         self.assertIn(__name__, subs)
 
     def test_get_function(self) -> None:
-        func = assess.get_function(assess.__name__ + '.get_function')
+        func = entity.get_function(entity.__name__ + '.get_function')
         self.assertIsInstance(func, Function)
 
     def test_split_args(self) -> None:
         self.assertEqual(
-            assess.split_args("f(1., 'a', b = 2)"),
+            entity.split_args("f(1., 'a', b = 2)"),
             ('f', (1.0, 'a'), {'b': 2}))
 
     def test_get_parameters(self) -> None:
-        self.assertAllEqual(assess.get_parameters, [
-            Case(args=(assess.get_parameters, ),
+        self.assertAllEqual(entity.get_parameters, [
+            Case(args=(entity.get_parameters, ),
                 value=OrderedDict()),
-            Case(args=(assess.get_parameters, list),
+            Case(args=(entity.get_parameters, list),
                 value=OrderedDict([('obj', list)])),
-            Case(args=(assess.get_parameters, list),
+            Case(args=(entity.get_parameters, list),
                 kwds={'test': True},
                 value=OrderedDict([('obj', list), ('test', True)]))])
 
     def test_call_attr(self) -> None:
-        self.assertAllEqual(assess.call_attr, [
-            Case(args=(assess, 'get_name', list),
+        self.assertAllEqual(entity.call_attr, [
+            Case(args=(entity, 'get_name', list),
                 value='list'),
-            Case(args=(assess, 'get_name', list),
+            Case(args=(entity, 'get_name', list),
                 kwds={'test': True},
                 value='list')])
 
     def test_get_methods(self) -> None:
         obj = self.get_test_object()
-        names = assess.get_methods(obj, pattern='get*').keys()
+        names = entity.get_methods(obj, pattern='get*').keys()
         self.assertEqual(names, {'geta', 'getb'})
-        names = assess.get_methods(obj, pattern='*b').keys()
+        names = entity.get_methods(obj, pattern='*b').keys()
         self.assertEqual(names, {'getb', 'setb'})
 
     def test_wrap_attr(self) -> None:
@@ -155,7 +163,7 @@ class TestAssess(ModuleTestCase):
         self.assertEqual(getattr(obj.getb, 'name', None), 'b')
 
     def test_search(self) -> None:
-        count = len(assess.search(ref=assess, name='search'))
+        count = len(entity.search(ref=entity, name='search'))
         self.assertEqual(count, 1)
 
 class TestCheck(ModuleTestCase):
@@ -668,19 +676,43 @@ class TestLiteral(ModuleTestCase):
 
     def test_decode(self) -> None:
         self.assertAllEqual(literal.decode, [
-            Case(args=(str('t'), str), value='t'),
-            Case(args=(str(True), bool), value=True),
-            Case(args=(str(1), int), value=1),
-            Case(args=(str(.5), float), value=.5),
-            Case(args=(str(1+1j), complex), value=1+1j)])
+            Case(args=('text', str), value='text'),
+            Case(args=(repr(True), bool), value=True),
+            Case(args=(repr(1), int), value=1),
+            Case(args=(repr(.5), float), value=.5),
+            Case(args=(repr(1+1j), complex), value=1+1j)])
+
+    def test_from_str(self) -> None:
+        self.assertAllEqual(literal.from_str, [
+            Case(args=(chr(1) + 'a', 'printable'), value='a'),
+            Case(args=('a, b', 'uax-31'), value='a_b')])
+
+    def test_encode(self) -> None:
+        self.assertAllEqual(literal.encode, [
+            Case(args=(chr(1) + 'a', ),
+                kwds={'charset': 'printable'}, value='a'),
+            Case(args=('a, b', ),
+                kwds={'charset': 'uax-31'}, value='a_b')])
+
+    def test_estimate(self) -> None:
+        self.assertAllEqual(literal.estimate, [
+            Case(args=('text', ), value=None),
+            Case(args=(repr('text'), ), value=str),
+            Case(args=(repr(True), ), value=bool),
+            Case(args=(repr(1), ), value=int),
+            Case(args=(repr(1.), ), value=float),
+            Case(args=(repr(1j), ), value=complex)])
 
 class TestThis(ModuleTestCase):
     """Testcase for the module nemoa.base.this."""
 
     module = 'nemoa.base.this'
 
+    def test_has_attr(self) -> None:
+        pass # Function is testet in this.get_module
+
     def test_call_attr(self) -> None:
-        pass # Function is testet in assess.call_attr
+        pass # Function is testet in entity.call_attr
 
     def test_get_attr(self) -> None:
         self.assertEqual(this.get_attr('__name__'), __name__)

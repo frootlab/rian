@@ -10,7 +10,7 @@ import numpy
 import nemoa.model.morphisms.ann
 
 from nemoa.core import ui
-from nemoa.math import algo
+from nemoa.math import meta
 
 class RBM(nemoa.model.morphisms.ann.ANN):
     """Restricted Boltzmann Machine (RBM) Optimizer.
@@ -73,7 +73,7 @@ class RBM(nemoa.model.morphisms.ann.ANN):
         'tracker_eval_time_interval': 10.,
         'ignore_units': [] }
 
-    @algo.custom(
+    @meta.custom(
         name     = 'cd',
         longname = 'contrastive divergency',
         category = 'optimization',

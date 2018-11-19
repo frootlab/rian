@@ -12,7 +12,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from nemoa.base import assess, this
+from nemoa.base import entity, this
 from nemoa.types import Any, FuncWrapper, OptModule, OptStr, OptStrList
 
 def search(module: OptModule = None, **kwds: Any) -> dict:
@@ -37,7 +37,7 @@ def search(module: OptModule = None, **kwds: Any) -> dict:
         'classes': lambda a, b: bool(set(a) & set(b))} # requires any
 
     # Search for algorithms
-    return assess.search(ref=module, rules=rules, **kwds)
+    return entity.search(ref=module, rules=rules, **kwds)
 
 def custom(
         name: OptStr = None, category: OptStr = None,
@@ -248,7 +248,7 @@ def association(
         classes: OptStrList = None, plot: OptStr = 'Histogram',
         directed: bool = True, signed: bool = True, normal: bool = False,
         **attr: Any) -> FuncWrapper:
-    """Attribute decorator for :term:`association measures`.
+    """Attribute decorator for :term:`association measure`.
 
     Args:
         name: Name of the measure of association
@@ -279,7 +279,7 @@ def association(
     #     def wrapped(data: NpArrayLike, *args: Any, **kwds: Any) -> NpArray:
     #         return func(data, *args, **kwds)
 
-        # set attributes with metainformation about algorithm
+        # Set attributes with metainformation about algorithm
         setattr(wrapped, 'name', name or func.__name__)
         setattr(wrapped, 'category', 'association')
         setattr(wrapped, 'classes', classes or [])

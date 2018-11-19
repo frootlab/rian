@@ -34,9 +34,9 @@ import numpy
 # (1) Sampler for Markov Random Fields
 #
 
-from nemoa.math import algo
+from nemoa.math import meta
 
-@algo.objective(
+@meta.objective(
     name     = 'error',
     title    = 'Average Reconstruction Error',
     category = 'model',
@@ -48,7 +48,7 @@ def modelerror(model, *args, **kwds):
     """Mean data reconstruction error of output units."""
     return numpy.mean(uniterror(model, *args, **kwds))
 
-@algo.custom(
+@meta.custom(
     name     = 'energy',
     category = 'model',
     args     = 'all',
@@ -74,7 +74,7 @@ def modelenergy(model, data, *args, **kwds):
     # calculate (pseudo) energy of system
     return numpy.log(1. + numpy.exp(-energy).sum())
 
-@algo.custom(
+@meta.custom(
     name     = 'energy',
     category = 'units',
     args     = 'input',
@@ -102,7 +102,7 @@ def unitenergy(model, data, mapping = None):
     data = unitexpect(model, data, mapping)
     return model.system._units[mapping[-1]].energy(data)
 
-@algo.custom(
+@meta.custom(
     name     = 'links_energy',
     category = ('system', 'links', 'evaluation'),
     args     = 'input',

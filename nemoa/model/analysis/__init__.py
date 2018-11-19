@@ -6,5 +6,5 @@ __license__ = 'GPLv3'
 
 def algorithms(*args, **kwds):
     """Returns dictionary of algorithms, that pass given filters. """
-    from nemoa.math import algo
-    return algo.search(*args, **kwds)
+    from nemoa.math import meta
+    return meta.search(*args, **kwds)

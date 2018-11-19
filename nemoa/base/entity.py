@@ -10,12 +10,12 @@ import ast
 import importlib
 import inspect
 import pkgutil
-from nemoa.base import check, ndict
+from nemoa.base import check, literal, ndict
 from nemoa.types import Any, ClassInfo, OptStr, OptStrDictOfTestFuncs
 from nemoa.types import OptModule, Module, StrList, OptFunction, Function
 from nemoa.types import Tuple, RecDict, NestRecDict
 from nemoa.types import DictOfRecDicts, FuncWrapper, Method, StrOrType
-from nemoa.types import Callable, OrderedDict
+from nemoa.types import Callable, OrderedDict, Collection
 
 def has_base(obj: object, base: StrOrType) -> bool:
     """Return true if the object has the given base class.
@@ -34,10 +34,10 @@ def has_base(obj: object, base: StrOrType) -> bool:
     return base in [cls.__name__ for cls in mro]
 
 def get_name(obj: object) -> str:
-    """Get name of an object.
+    """Get name identifier for an object.
 
-    This function returns the name of an object. If the object does not have
-    a name attribute, the name is retrieved from the object type.
+    This function returns the name identifier of an object. If the object does
+    not have a name attribute, the name is retrieved from the object class.
 
     Args:
         obj: Arbitrary object
@@ -48,12 +48,65 @@ def get_name(obj: object) -> str:
     """
     return getattr(obj, '__name__', obj.__class__.__name__)
 
+
+def get_lang_repr(obj: object, separator: str = 'and') -> str:
+    """Get natural language representation of an object.
+
+    Args:
+        seperator: String separator for collection items.
+
+    Returns:
+        Natural language representation of object.
+
+    """
+    if hasattr(obj, '__name__'):
+        return repr(obj.__name__) # type: ignore
+    if isinstance(obj, str):
+        return repr(obj)
+    if isinstance(obj, Collection):
+        if isinstance(obj, set):
+            item = 'element'
+        else:
+            item = 'item'
+        size = len(obj)
+        if size == 0:
+            return f'no {item}s'
+        if size == 1:
+            name = repr(str(obj.__iter__().__next__()))
+            return f'{item} {name}'
+        if size < 4:
+            sep = f' {separator} '
+            items = [repr(str(each)) for each in obj]
+            return f'{item}s ' + sep.join(items)
+        return f'some {item}s'
+    return repr(obj)
+
+def get_summary(obj: object) -> str:
+    """Get summary line for an object.
+
+    This function returns the summary line of the documentation string for an
+    object as specified in :PEP:`257`. If the documentation string is not
+    provided the summary line is retrieved from the inheritance hierarchy.
+
+    Args:
+        obj: Arbitrary object
+
+    Returns:
+        Summary line for an object.
+
+    """
+    if isinstance(obj, str):
+        if not obj:
+            return 'empty string'
+        return obj.split('\n', 1)[0].rstrip('\n\r .')
+    return get_summary(inspect.getdoc(obj) or ' ')
+
 def get_members(
         obj: object, pattern: OptStr = None, classinfo: ClassInfo = object,
         rules: OptStrDictOfTestFuncs = None, **kwds: Any) -> list:
     """List members of an object.
 
-    This is a wrapper function to :func:`nemoa.base.assess.get_members_dict`,
+    This is a wrapper function to :func:`nemoa.base.entity.get_members_dict`,
     but only returns the names of the members instead of the respective
     dictionary of attributes.
     """
@@ -153,26 +206,6 @@ def get_members_dict(
 
     return valid
 
-def get_summary(obj: object) -> str:
-    """Get summary line for an object.
-
-    This function returns the summary line of the documentation string for an
-    object as specified in :PEP:`257`. If the documentation string is not
-    provided the summary line is retrieved from the inheritance hierarchy.
-
-    Args:
-        obj: Arbitrary object
-
-    Returns:
-        Summary line for an object.
-
-    """
-    if isinstance(obj, str):
-        if not obj:
-            return 'empty string'
-        return obj.split('\n', 1)[0].rstrip('\n\r .')
-    return get_summary(inspect.getdoc(obj) or ' ')
-
 def get_module(name: str) -> OptModule:
     """Get reference to module instance from a fully qualified module name.
 
@@ -238,7 +271,7 @@ def get_function(name: str) -> OptFunction:
         Function instance or None, if the function could not be found.
 
     Examples:
-        >>> get_function('nemoa.base.assess.get_function')
+        >>> get_function('nemoa.base.entity.get_function')
 
     """
     mname, fname = name.rsplit('.', 1)
@@ -317,6 +350,7 @@ def call_attr(obj: object, attr: str, *args: Any, **kwds: Any) -> Any:
         Result of call.
 
     """
+    attr = literal.from_str(attr, charset='uax-31') # Enforce identifier
     check.has_attr(obj, attr)
     func = getattr(obj, attr)
     check.is_callable(attr, func)
