@@ -10,7 +10,7 @@ import contextlib
 import numpy as np
 from nemoa.base import check, this
 from nemoa.math import vector
-from nemoa.types import Any, IntTuple, NpArray, NpArrayLike, StrList
+from nemoa.types import Any, IntPair, NpArray, NpArrayLike, StrList
 from nemoa.types import StrPairDict, StrListPair, NaN, Number, OptNumber
 
 _NORM_PREFIX = 'norm_'
@@ -30,7 +30,7 @@ def norms() -> StrList:
     return this.crop_functions(prefix=_NORM_PREFIX)
 
 def norm(
-        x: NpArrayLike, name: str = 'frobenius', axes: IntTuple = (0, 1),
+        x: NpArrayLike, name: str = 'frobenius', axes: IntPair = (0, 1),
         **kwds: Any) -> NpArray:
     """Calculate magnitude of matrix with respect to given norm.
 
@@ -81,7 +81,7 @@ def norm(
     return this.call_attr(fname, x=x, axes=axes, **kwds)
 
 def norm_pq(x: NpArray,
-        p: float = 2., q: float = 2., axes: IntTuple = (0, 1)) -> NpArray:
+        p: float = 2., q: float = 2., axes: IntPair = (0, 1)) -> NpArray:
     """Calculate :term:`pq-norm` of an array along given axes.
 
     Args:
@@ -121,7 +121,7 @@ def norm_pq(x: NpArray,
     qsum = np.sum(np.power(psum, q / p), axis=axisq)
     return np.power(qsum, 1. / q)
 
-def norm_frobenius(x: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
+def norm_frobenius(x: NpArray, axes: IntPair = (0, 1)) -> NpArray:
     """Calculate :term:`Frobenius norm` of an array along given axes.
 
     Args:
@@ -156,7 +156,7 @@ def distances() -> StrList:
 
 def distance(
         x: NpArrayLike, y: NpArrayLike, name: str = 'frobenius',
-        axes: IntTuple = (0, 1), **kwds: Any) -> NpArray:
+        axes: IntPair = (0, 1), **kwds: Any) -> NpArray:
     """Calculate matrix distances of two arrays along given axes.
 
     A matrix distance function, is a function d(x, y), which quantifies the
@@ -213,7 +213,7 @@ def distance(
     fname = _DIST_PREFIX + name.lower()
     return this.call_attr(fname, x=x, y=y, axes=axes, **kwds)
 
-def dist_frobenius(x: NpArray, y: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
+def dist_frobenius(x: NpArray, y: NpArray, axes: IntPair = (0, 1)) -> NpArray:
     """Calculate :term:`Frobenius distance` of two arrays along given axes.
 
     Args:
@@ -236,7 +236,7 @@ def dist_frobenius(x: NpArray, y: NpArray, axes: IntTuple = (0, 1)) -> NpArray:
 
 def dist_pq(
         x: NpArray, y: NpArray, p: float = 2., q: float = 2.,
-        axes: IntTuple = (0, 1)) -> NpArray:
+        axes: IntPair = (0, 1)) -> NpArray:
     """Calculate :term:`pq-distance` of two arrays along given axes.
 
     Args:

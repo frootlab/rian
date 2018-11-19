@@ -153,7 +153,7 @@ class Record(ABC):
         pass
 
 #
-# Types (Record)
+# Structural types using the Record class
 #
 
 OptRec = Optional[Record]

@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
-"""Types."""
+"""Types.
+
+
+
+
+"""
 from __future__ import annotations
 
 __author__ = 'Patrick Michl'
@@ -17,49 +22,45 @@ from typing import Any, Callable, ClassVar, ContextManager, Dict, Hashable, IO
 from typing import Iterable, Iterator, List, Optional, Sequence, Set, Tuple
 from typing import Type, TypeVar, Union, NamedTuple, Container, Sized
 
-################################################################################
-# Static Functions
-################################################################################
-
-void: Callable[..., None] = lambda *args, **kwds: None
+# Type-Variables for Generic Structural Types
+S = TypeVar('S')
+T = TypeVar('T')
 
 ################################################################################
-# Numerical Constants
+# Constants
 ################################################################################
 
 NaN = float('nan')
 Infty = float('inf')
+void: Callable[..., None] = lambda *args, **kwds: None
 
 ################################################################################
-# Classes and ClassInfos
+# Classes
 ################################################################################
 
 Array = array.ArrayType
-OrderedDict = collections.OrderedDict
 Date = datetime.datetime
 Function = types.FunctionType
 Method = types.MethodType
-CallableClasses = (Function, Method)
 Module = types.ModuleType
-Traceback = types.TracebackType
+OrderedDict = collections.OrderedDict
 Path = os.PathLike
-PathLikeClasses = (str, Path)
 BytesIOBaseClass = io.BufferedIOBase
 TextIOBaseClass = io.TextIOBase
+Traceback = types.TracebackType
+
+################################################################################
+# ClassInfos
+################################################################################
+
+CallableClasses = (Function, Method)
+PathLikeClasses = (str, Path)
 FileClasses = (BytesIOBaseClass, TextIOBaseClass)
 TextFileClasses = (str, Path, TextIOBaseClass)
 ClassInfoClasses = (type, tuple)
 
 ################################################################################
-# Generic Type Variables for Special Types
-################################################################################
-
-# Generic Type-Variables
-S = TypeVar('S')
-T = TypeVar('T')
-
-################################################################################
-# Special Types for Literals and Collections of Literals
+# Structural Types for Literals and Collections of Literals
 ################################################################################
 
 # Numbers
@@ -149,7 +150,7 @@ OptNestDict = Optional[NestDict]
 IterNestRecDict = Iterable[NestRecDict]
 
 ################################################################################
-# Special Types for Callables and Collections of Callables
+# Structural Types for Callables and Collections of Callables
 ################################################################################
 
 # Elementary Callables
@@ -182,7 +183,7 @@ OptStrDictOfTestFuncs = Optional[StrDictOfTestFuncs]
 FuncWrapper = Callable[[Callable[..., T]], Callable[..., T]]
 
 ################################################################################
-# Special Types that are used for standard library packages
+# Structural Types for standard library packages
 ################################################################################
 
 # Named Tuples
@@ -194,7 +195,7 @@ IterNone = Iterator[None] # methods: __next__
 OptContainer = Optional[Container] # methods: __contains__
 OptSized = Optional[Sized] # methods: __len__
 
-# PathLike type
+# Path Like
 OptPath = Optional[Path]
 PathList = List[Path]
 StrDictOfPaths = Dict[str, Path]
@@ -229,16 +230,16 @@ StringIOLike = IO[str]
 IterStringIOLike = Iterator[StringIOLike]
 CManStringIOLike = ContextManager[StringIOLike]
 
-# FileLike
+# File Like
 FileLike = Union[BytesIOLike, StringIOLike]
 IterFileLike = Iterator[FileLike]
 CManFileLike = ContextManager[FileLike]
 
-# FileOrPathLike
+# File like or Path like
 FileOrPathLike = Union[FileLike, PathLike]
 
 ################################################################################
-# Special Types that are used for external Packages
+# Structural Types for external Packages
 ################################################################################
 
 # Numpy
