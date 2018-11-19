@@ -1,15 +1,5 @@
 # -*- coding: utf-8 -*-
-"""I/O functions for CSV-files.
-
-.. References:
-.. _path-like object:
-    https://docs.python.org/3/glossary.html#term-path-like-object
-.. _file-like object:
-    https://docs.python.org/3/glossary.html#term-file-like-object
-.. _RFC4180:
-    https://tools.ietf.org/html/rfc4180
-
-"""
+"""CSV-file I/O."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -17,29 +7,29 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import csv
-
-try:
-    import numpy as np
-except ImportError as err:
-    raise ImportError(
-        "requires package numpy: "
-        "https://pypi.org/project/numpy") from err
-
-from nemoa.base import attrib, check
+import numpy as np
+from nemoa.base import attrib, check, literal
 from nemoa.base.file import textfile
 from nemoa.types import FileOrPathLike, NpArray, OptInt, OptIntTuple, ClassVar
-from nemoa.types import OptNpArray, OptStr, OptStrList, StrList
+from nemoa.types import OptNpArray, OptStr, OptStrList, StrList, List, Tuple
 from nemoa.types import IntTuple, OptList, OptStrTuple, TextFileClasses
 
 #
-# Module exceptions
+# Stuctural Types
+#
+
+Fields = List[Tuple[str, type]]
+
+
+#
+# Exceptions
 #
 
 class BadCSVFile(OSError):
     """Exception for invalid CSV-files."""
 
 #
-# Module Constants
+# Constants
 #
 
 CSV_FORMAT_STANDARD = 0
@@ -53,9 +43,9 @@ class CSVFile(attrib.Container):
     """CSV-File Class.
 
     Args:
-        file: String or :term:`path-like object` that points to a readable CSV-file
-            in the directory structure of the system, or a :term:`file object`
-            in read mode.
+        file: String or :term:`path-like object`, which points to a readable
+            CSV-file in the directory structure of the system, or a :term:`file
+            object` in reading mode.
         delim: String containing CSV-delimiter. By default the CSV-delimiter is
             detected from the CSV-file.
         labels: List of column labels in CSV-file. By default the list of column
@@ -107,20 +97,27 @@ class CSVFile(attrib.Container):
 
     format: property = attrib.Virtual(fget='_get_format')
     format.__doc__ = """
-    CSV-File format. The following formats are supported:
-        0: `RFC4180`_:
-            The column header equals the size of the CSV records.
+    CSV-Header format. The following formats are supported:
+        0: :RFC:`4180`:
+            The column header equals the size of the rows.
         1: `R-Table`:
-            The column header equals the decremented size of the CSV records.
-            This follows by the convention, that in R-Tables the first column
-            always represents the record names, such that the respective field
-            is omitted within the header.
+            The column header has a size that is reduced by one, compared to the
+            rows. This smaller number of entries follows by the convention, that
+            in R the CSV export of tables adds an extra column with row names
+            as the first column. The column name of this column is omitted
+            within the header.
     """
 
     colnames: property = attrib.Virtual(fget='_get_colnames')
     colnames.__doc__ = """
     List of strings containing column names from first non comment, non empty
     line of CSV-file.
+    """
+
+    fields: property = attrib.Virtual(fget='_get_fields')
+    colnames.__doc__ = """
+    List of pairs containing the column names and the estimated or given column
+    types of the CSV-file.
     """
 
     rownames: property = attrib.Virtual(fget='_get_rownames')
@@ -177,12 +174,12 @@ class CSVFile(attrib.Container):
                 CSV-file.
 
         Returns:
-            Numpy ndarray containing data from CSV-file, or None if the data
-            could not be imported.
+            :py:class:`numpy.ndarray` containing data from CSV-file, or None if
+            the data could not be imported.
 
         """
         # Check type of 'cols'
-        check.has_opt_type("argument 'columns'", columns, tuple)
+        check.has_opt_type("'columns'", columns, tuple)
 
         # Get column names and formats
         usecols = self._get_usecols(columns)
@@ -267,9 +264,10 @@ class CSVFile(attrib.Container):
             return None
 
         # Determine column label format
-        if lines[0].count(self.delim) == lines[1].count(self.delim):
+        delim = self.delim
+        if lines[0].count(delim) == lines[1].count(delim):
             return CSV_FORMAT_STANDARD
-        if lines[0].count(self.delim) == lines[1].count(self.delim) - 1:
+        if lines[0].count(delim) == lines[1].count(delim) - 1:
             return CSV_FORMAT_RTABLE
         return None
 
@@ -281,16 +279,35 @@ class CSVFile(attrib.Container):
         # Get first content line (non comment, non empty) of CSV-file
         line = textfile.get_content(self._file, lines=1)[0]
 
-        # Get column labels from first content
-        labels = [col.strip('\"\'\n\r\t ') for col in line.split(self.delim)]
+        # Get column names from first content line
+        names = [col.strip('\"\'\n\r\t ') for col in line.split(self.delim)]
 
         # Format column labels
         if self.format == CSV_FORMAT_STANDARD:
-            return labels
+            return names
         if self.format == CSV_FORMAT_RTABLE:
-            return [''] + labels
+            return [''] + names
         # TODO (patrick.michl@gmail.com): Give filename!
         raise BadCSVFile("Bad file!")
+
+    def _get_fields(self) -> Fields:
+        colnames = self.colnames
+        delim = self.delim
+        lines = textfile.get_content(self._file, lines=3)
+        if len(lines) != 3:
+            return []
+        row1 = lines[1].split(delim)
+        row2 = lines[2].split(delim)
+        fields = []
+        for colname, str1, str2 in zip(colnames, row1, row2):
+            type1 = literal.estimate(str1)
+            if type1:
+                type2 = literal.estimate(str1)
+                if type2 == type1:
+                    fields.append((colname, type1))
+                    continue
+            fields.append((colname, str))
+        return fields
 
     def _get_rownames(self) -> OptList:
         # Check type of 'cols'
@@ -362,10 +379,10 @@ def save(
     """Save NumPy array to CSV-file.
 
     Args:
-        file: String, :term:`path-like object` or :term:`file object` that points to
-            a valid CSV-file in the directory structure of the system.
-        data: NumPy ndarray containing the data which is to be exported to
-            a CSV-file.
+        file: String, :term:`path-like object` or :term:`file object` that
+            points to a valid CSV-file in the directory structure of the system.
+        data: :py:class:`numpy.ndarray` containing the data which is to be
+            exported to a CSV-file.
         comment: String, which is included in the CSV-file whithin initial
             '#' lines. By default no initial lines are created.
         labels: List of strings with column names.

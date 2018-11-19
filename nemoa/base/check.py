@@ -8,9 +8,9 @@ __docformat__ = 'google'
 
 import inspect
 from nemoa.errors import (
-    IsPositiveError, IsNegativeError, EqualSizeError,
+    IsPositiveError, IsNegativeError, SizeError,
     InvalidTypeError, InvalidClassError, NotClassError, NotCallableError,
-    InvalidAttrError, NotIsSubsetError, NotIsPositiveError, NotIsNegativeError,
+    InvalidAttrError, NoSubsetError, NotPositiveError, NotNegativeError,
     MinSizeError, MaxSizeError)
 from nemoa.types import Class, ClassInfo, Sized, RealNumber, OptInt
 from nemoa.types import ClassInfoClasses
@@ -54,17 +54,17 @@ def is_subclass(name: str, obj: object, ref: Class) -> None:
 def is_subset(a: str, seta: set, b: str, setb: set) -> None:
     """Check if set is a subset of another set."""
     if not seta.issubset(setb):
-        raise NotIsSubsetError(a, seta, b, setb)
+        raise NoSubsetError(a, seta, b, setb)
 
 def is_positive(name: str, obj: RealNumber) -> None:
     """Check if number is positive."""
     if obj <= 0:
-        raise NotIsPositiveError(name, obj)
+        raise NotPositiveError(name, obj)
 
 def is_negative(name: str, obj: RealNumber) -> None:
     """Check if number is negative."""
     if obj >= 0:
-        raise NotIsNegativeError(name, obj)
+        raise NotNegativeError(name, obj)
 
 def is_not_positive(name: str, obj: RealNumber) -> None:
     """Check if number is not positive."""
@@ -82,7 +82,7 @@ def has_size(
     """Check the size of a sized object."""
     num = len(obj)
     if size and num != size:
-        raise EqualSizeError(name, obj, size)
+        raise SizeError(name, obj, size)
     if min_size and num < min_size:
         raise MinSizeError(name, obj, min_size)
     if max_size is not None and num > max_size:

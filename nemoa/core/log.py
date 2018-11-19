@@ -25,7 +25,7 @@ import tempfile
 import warnings
 from pathlib import Path
 from nemoa.base import attrib, env
-from nemoa.errors import SingletonExistsError, NotStartedError
+from nemoa.errors import ExistsError, NotExistsError
 from nemoa.types import void, Any, AnyFunc, ClassVar, PathLike, StrList
 from nemoa.types import StrOrInt, OptPath, VoidFunc
 
@@ -187,7 +187,7 @@ class Logger(attrib.Container):
             if auto_start:
                 self._start_logging()
             else:
-                raise NotStartedError("logging has not been started")
+                raise NotExistsError("logging has not been started")
         return self._logger
 
     def _set_logger(
@@ -196,7 +196,7 @@ class Logger(attrib.Container):
             if auto_stop:
                 self._stop_logging()
             else:
-                raise SingletonExistsError("logging has already been started")
+                raise ExistsError("logging has already been started")
         self._logger = logger
 
     def _get_name(self) -> str:
