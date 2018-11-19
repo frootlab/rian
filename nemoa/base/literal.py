@@ -8,23 +8,63 @@ __docformat__ = 'google'
 
 import ast
 import datetime
+import string
 from pathlib import Path
 import pyparsing as pp
 from nemoa.base import check, env, this
 from nemoa.types import Any, OptStr, Date, OptType
 
 def encode(obj: object, **kwds: Any) -> str:
-    """ """
+    """Encode simple object to literal text representation.
+
+    Args:
+        obj: Simple object
+
+    """
     source = type(obj)
     fname = 'from_' + source.__name__.lower()
     if this.has_attr(fname):
-        return this.call_attr(fname, **kwds)
+        return this.call_attr(fname, obj, **kwds)
     return repr(obj)
+
+def from_str(text: str, charset: OptStr = None) -> str:
+    """Filter text to given character set.
+
+    Args:
+        charset: Name of used character set. Supportet options are:
+
+            :printable: Printable characters
+            :UAX-31: ASCII identifier characters as defined in [UAX31]_
+
+    Return:
+        String, which is filtered to the chiven character set.
+
+    """
+    if charset:
+        charset = charset.lower()
+    if charset == 'printable':
+        # Get set of non-printable ASCII characters
+        ascii_charset = set(chr(i) for i in range(128))
+        ascii_non_printable = ascii_charset.difference(string.printable)
+        # Translate non printable characters to None
+        mapping = {ord(char): None for char in ascii_non_printable}
+        return text.translate(mapping)
+    if charset in ['uax-31', 'identifier']:
+        # Interpret '-' and ' ' as '_'
+        text = text.strip(' ').translate(str.maketrans('- ', '__'))
+        # Get set of non-identifier ASCII characters
+        ascii_charset = set(chr(i) for i in range(128))
+        ascii_id_charset = string.ascii_letters + string.digits + '_'
+        ascii_nonid_charset = ascii_charset.difference(ascii_id_charset)
+        # Translate non identifiable characters to None
+        mapping = {ord(char): None for char in ascii_nonid_charset}
+        return text.translate(mapping)
+    return text
 
 def decode(
         text: str, target: OptType = None, undef: OptStr = 'None',
         **kwds: Any) -> Any:
-    """Convert text into given target type.
+    """Decode literal text representation to object of given target type.
 
     Args:
         text: String representing the value of a given type in it's respective

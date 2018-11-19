@@ -9,4 +9,5 @@ Bibliography
 .. [IEEE754] https://ieeexplore.ieee.org/document/4610935/
 .. [MIME] http://www.iana.org/assignments/media-types/
 .. [TGN] http://www.getty.edu/research/tools/vocabulary/tgn/
+.. [UAX31] http://unicode.org/reports/tr31/
 .. [W3CDTF] http://www.w3.org/TR/NOTE-datetime

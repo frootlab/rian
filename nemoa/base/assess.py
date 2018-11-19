@@ -10,7 +10,7 @@ import ast
 import importlib
 import inspect
 import pkgutil
-from nemoa.base import check, ndict
+from nemoa.base import check, literal, ndict
 from nemoa.types import Any, ClassInfo, OptStr, OptStrDictOfTestFuncs
 from nemoa.types import OptModule, Module, StrList, OptFunction, Function
 from nemoa.types import Tuple, RecDict, NestRecDict
@@ -350,6 +350,7 @@ def call_attr(obj: object, attr: str, *args: Any, **kwds: Any) -> Any:
         Result of call.
 
     """
+    attr = literal.from_str(attr, charset='uax-31') # Enforce identifier
     check.has_attr(obj, attr)
     func = getattr(obj, attr)
     check.is_callable(attr, func)

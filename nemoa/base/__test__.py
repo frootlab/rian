@@ -682,6 +682,18 @@ class TestLiteral(ModuleTestCase):
             Case(args=(repr(.5), float), value=.5),
             Case(args=(repr(1+1j), complex), value=1+1j)])
 
+    def test_from_str(self) -> None:
+        self.assertAllEqual(literal.from_str, [
+            Case(args=(chr(1) + 'a', 'printable'), value='a'),
+            Case(args=('a, b', 'uax-31'), value='a_b')])
+
+    def test_encode(self) -> None:
+        self.assertAllEqual(literal.encode, [
+            Case(args=(chr(1) + 'a', ),
+                kwds={'charset': 'printable'}, value='a'),
+            Case(args=('a, b', ),
+                kwds={'charset': 'uax-31'}, value='a_b')])
+
     def test_estimate(self) -> None:
         self.assertAllEqual(literal.estimate, [
             Case(args=('text', ), value=None),
