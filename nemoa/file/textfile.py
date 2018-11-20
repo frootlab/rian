@@ -1,15 +1,5 @@
 # -*- coding: utf-8 -*-
-"""I/O functions for Text-files.
-
-.. References:
-.. _path-like object:
-    https://docs.python.org/3/glossary.html#term-path-like-object
-.. _file-like object:
-    https://docs.python.org/3/glossary.html#term-file-like-object
-.. _text-file:
-    https://docs.python.org/3/glossary.html#term-text-file
-
-"""
+"""Text-file I/O."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -26,19 +16,20 @@ from nemoa.types import Path, StrList, TextIOBaseClass
 def openx(file: FileOrPathLike, mode: str = '') -> IterStringIOLike:
     """Contextmanager to provide a unified interface to text files.
 
-    This context manager extends the standard implementation of `open()`_ by
-    allowing the passed *file* argument to be a str or :term:`path-like object`,
-    which points to a valid filename in the directory structure of the system,
-    or a :term:`file object`. If the *file* argument is a str or a path-like
-    object, the given path may contain application variables, like '%home%' or
-    '%user_data_dir%', which are extended before returning a file handler to a
-    `text-file`_. Afterwards, when exiting the *with* statement, the file is
-    closed. If the *file* argument, however, is a file-like object, the file is
-    not closed, when exiting the *with* statement.
+    This context manager extends the standard implementation of :py:func:`open`
+    by allowing the passed argument `file` to be a str or :term:`path-like
+    object`, which points to a valid filename in the directory structure of the
+    system, or a :term:`file object`. If the *file* argument is a str or a
+    path-like object, the given path may contain application variables, like
+    '%home%' or '%user_data_dir%', which are extended before returning a file
+    handler to a :term:`text file`. Afterwards, when exiting the *with*
+    statement, the file is closed. If the argument `file`, however, is a
+    :term:`file-like object`, the file is not closed, when exiting the *with*
+    statement.
 
     Args:
-        file: String or :term:`path-like object` that points to a valid filename in
-            the directory structure of the system, or a :term:`file object`.
+        file: String or :term:`path-like object` that points to a valid filename
+            in the directory structure of the system, or a :term:`file object`.
         mode: String, which characters specify the mode in which the file stream
             is wrapped. The default mode is reading mode. Suported characters
             are:
@@ -46,7 +37,7 @@ def openx(file: FileOrPathLike, mode: str = '') -> IterStringIOLike:
             'w': Writing mode
 
     Yields:
-        `text-file`_ in reading or writing mode.
+        :term:`text file` in reading or writing mode.
 
     """
     # Get file handler from file-like or path-like objects
@@ -85,9 +76,9 @@ def load(file: FileOrPathLike) -> str:
     """Load text from file.
 
     Args:
-        file: String or :term:`path-like object` that points to a readable file in
-            the directory structure of the system, or a :term:`file object` in
-            reading mode.
+        file: String or :term:`path-like object` that points to a readable file
+            in the directory structure of the system, or a :term:`file object`
+            in reading mode.
 
     Returns:
         Content of the given file as text.
@@ -101,24 +92,24 @@ def save(text: str, file: FileOrPathLike) -> None:
 
     Args:
         text: Text given as string
-        file: String or :term:`path-like object` that points to a writable file in
-            the directory structure of the system, or a :term:`file object` in
-            writing mode.
+        file: String or :term:`path-like object` that points to a writable file
+            in the directory structure of the system, or a :term:`file object`
+            in writing mode.
 
     """
     with openx(file, mode='w') as fh:
         fh.write(text)
 
 def get_comment(file: FileOrPathLike) -> str:
-    """Read initial comment lines from text-file.
+    """Read initial comment lines from :term:`text file`.
 
     Args:
-        file: String or :term:`path-like object` that points to a readable file in
-            the directory structure of the system, or a :term:`file object` in
-            reading mode.
+        file: String or :term:`path-like object` that points to a readable file
+            in the directory structure of the system, or a :term:`file object`
+            in reading mode.
 
     Returns:
-        String containing the header of given text-file.
+        String containing the header of given text file.
 
     """
     lines = []
@@ -133,12 +124,12 @@ def get_comment(file: FileOrPathLike) -> str:
     return ''.join(lines).rstrip()
 
 def get_content(file: FileOrPathLike, lines: int = 0) -> StrList:
-    """Read non-blank non-comment lines from text-file.
+    """Read non-blank non-comment lines from :term:`text file`.
 
     Args:
-        file: String or :term:`path-like object` that points to a readable file in
-            the directory structure of the system, or a :term:`file object` in
-            reading mode.
+        file: String or :term:`path-like object` that points to a readable file
+            in the directory structure of the system, or a :term:`file object`
+            in reading mode.
         lines: Number of content lines, that are returned. By default all lines
             are returned.
 

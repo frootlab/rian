@@ -1,21 +1,5 @@
 # -*- coding: utf-8 -*-
-"""I/O functions for binary-files.
-
-.. References:
-.. _binary-file:
-    https://docs.python.org/3/glossary.html#term-binary-file
-.. _bytes-like object:
-    https://docs.python.org/3/glossary.html#term-bytes-like-object
-.. _file-like object:
-    https://docs.python.org/3/glossary.html#term-file-like-object
-.. _path-like object:
-    https://docs.python.org/3/glossary.html#term-path-like-object
-.. _open():
-    https://docs.python.org/3/library/functions.html#open
-.. _RFC 3548:
-    https://tools.ietf.org/html/rfc3548.html
-
-"""
+"""Binary-file I/O."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -31,19 +15,20 @@ from nemoa.types import IterBytesIOLike, OptInt, OptStr, Path, TextIOBaseClass
 def openx(file: FileOrPathLike, mode: str = '') -> IterBytesIOLike:
     """Context manager to provide a unified interface to binary files.
 
-    This context manager extends the standard implementation of `open()`_ by
-    allowing the passed *file* argument to be a str or :term:`path-like object`,
-    which points to a valid filename in the directory structure of the system,
-    or a :term:`file object`. If the *file* argument is a str or a path-like
-    object, the given path may contain application variables, like '%home%' or
-    '%user_data_dir%', which are extended before returning a file handler to a
-    `binary-file`_. Afterwards, when exiting the *with* statement, the file is
-    closed. If the *file* argument, however, is a file-like object, the file is
-    not closed, when exiting the *with* statement.
+    This context manager extends the standard implementation of :py:func`open`
+    by allowing the passed `file` argument to be a str or :term:`path-like
+    object`, which points to a valid filename in the directory structure of the
+    system, or a :term:`file object`. If the `file` argument is a str or a
+    path-like object, the given path may contain application variables, like
+    `%home%` or `%user_data_dir%`, which are extended before returning a file
+    handler to a :term:`binary file`. Afterwards, when exiting the
+    `with`-statement, the file is closed. If the *file* argument, however, is a
+    :term:`file object`, the file is not closed, when exiting the
+    `with`-statement.
 
     Args:
-        file: String or :term:`path-like object` that points to a valid filename in
-            the directory structure of the system, or a :term:`file object`.
+        file: String or :term:`path-like object` that points to a valid filename
+            in the directory structure of the system, or a :term:`file object`.
         mode: String, which characters specify the mode in which the file stream
             is opened or wrapped. The default mode is reading mode. Suported
             characters are:
@@ -51,7 +36,7 @@ def openx(file: FileOrPathLike, mode: str = '') -> IterBytesIOLike:
             'w': Writing mode
 
     Yields:
-        `binary-file`_ in reading or writing mode.
+        :term:`binary file` in reading or writing mode.
 
     """
     # Get file handler from file-like or path-like objects
@@ -92,7 +77,7 @@ def load(
         file: String or :term:`path-like object` that points to a readable file
             in the directory structure of the system, or a :term:`file object`
             in reading mode.
-        encoding: Encodings specified in `RFC 3548`_. Allowed values are:
+        encoding: Encodings specified in :RFC:`3548`. Allowed values are:
             'base16', 'base32', 'base64' and 'base85' or None for no encoding.
             By default no encoding is used.
         compressed: Boolean value which determines, if the returned binary
@@ -120,7 +105,7 @@ def save(
         file: String or :term:`path-like object` that points to a writable file
             in the directory structure of the system, or a :term:`file object`
             in writing mode.
-        encoding: Encodings specified in `RFC 3548`_. Allowed values are:
+        encoding: Encodings specified in :RFC:`3548`. Allowed values are:
             'base16', 'base32', 'base64' and 'base85' or None for no encoding.
             By default no encoding is used.
         compression: Determines the compression level for

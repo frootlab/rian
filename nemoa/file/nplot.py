@@ -6,13 +6,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-try:
-    import numpy as np
-except ImportError as err:
-    raise ImportError(
-        "requires package numpy: "
-        "https://pypi.org/project/numpy") from err
-
+import numpy as np
 from nemoa.types import OptDict
 
 class Plot:

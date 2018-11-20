@@ -7,19 +7,23 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import csv
+from contextlib import contextmanager
+from io import TextIOWrapper
+from pathlib import Path
 import numpy as np
-from nemoa.base import attrib, check, literal
+from nemoa.base import attrib, check, env, literal
 from nemoa.file import textfile
 from nemoa.types import FileOrPathLike, NpArray, OptInt, OptIntTuple, ClassVar
 from nemoa.types import OptNpArray, OptStr, OptStrList, StrList, List, Tuple
 from nemoa.types import IntTuple, OptList, OptStrTuple, TextFileClasses
+from nemoa.types import Iterator, StringIOLike, TextIOBaseClass, IterFileLike
+from nemoa.types import BytesIOBaseClass, Traceback, ExcType, Exc
 
 #
 # Stuctural Types
 #
 
 Fields = List[Tuple[str, type]]
-
 
 #
 # Exceptions
@@ -34,6 +38,75 @@ class BadCSVFile(OSError):
 
 CSV_FORMAT_STANDARD = 0
 CSV_FORMAT_RTABLE = 1
+
+#
+# CSVReader Class
+#
+
+class CSVReader:
+    """CSVReader Class."""
+
+    _file: StringIOLike
+    _reader: Iterator
+    _usecols: OptIntTuple
+    _fields: Fields
+    _close: bool
+
+    def __init__(
+            self, file: FileOrPathLike, delim: str,
+            skiprows: int, usecols: OptIntTuple, fields: Fields) -> None:
+        if isinstance(file, TextIOBaseClass):
+            self._file = file
+            self._close = False
+        elif isinstance(file, BytesIOBaseClass):
+            self._file = TextIOWrapper(file, write_through=True)
+            self._close = False
+        elif isinstance(file, (str, Path)):
+            self._file = open(env.expand(file), 'r')
+            self._close = True
+        else:
+            raise ValueError("given 'file' is not valid")
+        self._reader = csv.reader(self._file, delimiter=delim)
+        for i in range(skiprows):
+            next(self._reader)
+        self._usecols = usecols
+        self._fields = fields
+
+    def __iter__(self) -> 'CSVReader':
+        return self
+
+    def __next__(self) -> tuple:
+        return self.readline()
+
+    def __enter__(self) -> 'CSVReader':
+        return self
+
+    def __exit__(self, cls: ExcType, obj: Exc, tb: Traceback) -> None:
+        self.close()
+
+    def __del__(self) -> None:
+        self.close()
+
+    def readline(self) -> tuple:
+        row = next(self._reader)
+        decode = lambda i: literal.decode(row[i[1]], self._fields[i[0]][1])
+        usecols = self._usecols or range(row)
+        return tuple(map(decode, enumerate(usecols)))
+
+    def close(self) -> None:
+        if self._close:
+            self._file.close()
+            self._close = False
+
+#
+# CSVWriter Class
+#
+
+class CSVWriter:
+    """CSVWriter Class."""
+
+    def close(self) -> None:
+        pass
 
 #
 # CSVFile Class
@@ -206,6 +279,41 @@ class CSVFile(attrib.Container):
                 usecols=usecols,
                 dtype={'names': names, 'formats': formats})
 
+    @contextmanager
+    def open(self, mode: str = '', columns: OptStrTuple = None) -> IterFileLike:
+        """Open CSV-file in reading or writing mode.
+
+        Args:
+            mode: String, which characters specify the mode in which the file is
+                to be opened. The default mode is reading mode. Supported
+                characters are:
+                'r': Reading mode (default)
+                'w': Writing mode
+            columns:
+
+        Yields:
+            :term:`File object`, that supports the given mode.
+
+        """
+        # Open file handler
+        if 'w' in mode:
+            if 'r' in mode:
+                raise ValueError(
+                    "'mode' is not allowed to contain characters 'r' AND 'w'")
+            file = self._open_write(columns)
+        else:
+            file = self._open_read(columns)
+
+        try:
+            yield file
+        finally:
+            file.close()
+
+    def read(self) -> List[tuple]:
+        with self.open(mode='r') as fp:
+            content = [row for row in fp]
+        return content
+
     #
     # Protected Methods
     #
@@ -287,8 +395,7 @@ class CSVFile(attrib.Container):
             return names
         if self.format == CSV_FORMAT_RTABLE:
             return [''] + names
-        # TODO (patrick.michl@gmail.com): Give filename!
-        raise BadCSVFile("Bad file!")
+        raise BadCSVFile(f"file {self._file.name} is not valid")
 
     def _get_fields(self) -> Fields:
         colnames = self.colnames
@@ -368,10 +475,19 @@ class CSVFile(attrib.Container):
         if not columns:
             return tuple(range(len(colnames)))
         # Check if columns exist
-        check.is_subset(
-            "argument 'columns'", set(columns), 'column names', set(colnames))
+        check.is_subset("'columns'", set(columns), 'colnames', set(colnames))
         return tuple(colnames.index(col) for col in columns)
 
+    def _open_read(self, columns: OptStrTuple = None) -> CSVReader:
+        fields = self.fields
+        usecols = self._get_usecols(columns)
+        usefields = [fields[colid] for colid in usecols]
+        return CSVReader(
+            self._file, delim=self.delim, skiprows=self._get_skiprows(),
+            usecols=usecols, fields=usefields)
+
+    def _open_write(self, columns: OptStrTuple = None) -> CSVWriter:
+        return CSVWriter()
 
 def save(
         file: FileOrPathLike, data: NpArray, labels: OptStrList = None,

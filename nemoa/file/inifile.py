@@ -1,14 +1,5 @@
 # -*- coding: utf-8 -*-
-"""I/O functions for INI-files.
-
-.. References:
-.. _path-like object:
-    https://docs.python.org/3/glossary.html#term-path-like-object
-.. _file-like object:
-    https://docs.python.org/3/glossary.html#term-file-like-object
-.. _ntext.astype:
-    https://frootlab.github.io/nemoa-doc/latest/source/nemoa.base.ntext.html#nemoa.base.ntext.astype
-"""
+"""INI-file I/O."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -25,7 +16,7 @@ from nemoa.types import FileOrPathLike, OptBool, OptStr, StrDict
 from nemoa.types import Union, Optional, OptType, Dict
 
 #
-# Types
+# Structural Types
 #
 
 FlatDict = Dict[str, OptType]
@@ -35,15 +26,19 @@ StrucDict = Union[FlatDict, SecDict]
 OptStrucDict = Optional[StrucDict]
 ConfigDict = Dict[str, StrDict]
 
+#
+# Functions
+#
+
 def load(
         file: FileOrPathLike, structure: OptStrucDict = None,
         flat: OptBool = None) -> StrucDict:
     """Import configuration dictionary from INI file.
 
     Args:
-        file: String or :term:`path-like object` that points to a readable file in
-            the directory structure of the system, or a :term:`file object` in
-            read mode.
+        file: String or :term:`path-like object` that points to a readable file
+            in the directory structure of the system, or a :term:`file object`
+            in read mode.
         structure: Dictionary of dictionaries, which determines the structure of
             the configuration dictionary. If structure is None, the INI-file is
             completely imported and all values are interpreted as strings. If
@@ -86,7 +81,7 @@ def decode(
             the values of the inner dictionaries define the type of the
             parameters by their own type, e.g. str, int, float etc. Accepted
             types can be found in the documentation of the function
-            `literal.decode`_.
+            :py:func:`~nemoa.base.literal.decode`.
         flat: Determines if the desired INI format structure contains sections
             or not. By default sections are used, if the first non empty, non
             comment line in the string identifies a section.
@@ -142,9 +137,9 @@ def save(
 
     Args:
         config: Configuration dictionary
-        file: String or :term:`path-like object` that represents to a writeable file
-            in the directory structure of the system, or a :term:`file object`
-            in write mode.
+        file: String or :term:`path-like object` that represents to a writeable
+            file in the directory structure of the system, or a :term:`file
+            object` in write mode.
         flat: Determines if the desired INI format structure contains sections.
             By default sections are used, if the dictionary contains
             subdictionaries.
@@ -219,9 +214,9 @@ def get_comment(file: FileOrPathLike) -> str:
     """Read initial comment lines from INI-file.
 
     Args:
-        file: String or :term:`path-like object` that points to a readable file in
-            the directory structure of the system, or a :term:`file object` in
-            reading mode.
+        file: String or :term:`path-like object` that points to a readable file
+            in the directory structure of the system, or a :term:`file object`
+            in reading mode.
 
     Returns:
         String containing the initial comment lines of the INI-file or an empty
@@ -247,7 +242,7 @@ def parse(parser: ConfigParser, structure: OptSecDict = None) -> ConfigDict:
             the values of the inner dictionaries define the type of the
             parameters by their own type, e.g. str, int, float etc. Accepted
             types can be found in the documentation of the function
-            `literal.decode`_.
+            :py:func:`~nemoa.base.literal.decode`.
 
     Return:
         Structured configuration dictionary.
