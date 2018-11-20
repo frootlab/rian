@@ -35,12 +35,27 @@ except ImportError as err:
         "https://pypi.org/project/appdirs/") from err
 
 from nemoa.base import check, this
-from nemoa.types import Any, Iterable, IterAny, NestPath, OptStrDict
-from nemoa.types import PathLikeList, OptStr, OptStrOrBool, OptPathLike, StrDict
-from nemoa.types import StrDictOfPaths
+from nemoa.types import Any, Iterable, IterAny, OptStrDict
+from nemoa.types import PathLikeList, OptStr, OptStrOrBool, OptPathLike
+from nemoa.types import PathLike, StrDict, Sequence, StrDictOfPaths, Union
 
 #
-# Private Module Constants
+# Structural Types
+#
+
+# Nested paths for tree structured path references
+# TODO (patrick.michl@gmail.com): currently (Python 3.7.1) recursive type
+# definition is not fully supported by the typing module. When recursive type
+# definition is available replace the following lines by their respective
+# recursive definitions
+PathLikeSeq = Sequence[PathLike]
+PathLikeSeq2 = Sequence[Union[PathLike, PathLikeSeq]]
+PathLikeSeq3 = Sequence[Union[PathLike, PathLikeSeq, PathLikeSeq2]]
+NestPath = Union[PathLike, PathLikeSeq, PathLikeSeq2, PathLikeSeq3]
+#NestPath = Sequence[Union[str, Path, 'NestPath']]
+
+#
+# Constants
 #
 
 _DEFAULT_APPNAME = 'nemoa'
@@ -58,7 +73,7 @@ def get_var(varname: str, *args: Any, **kwds: Any) -> OptStr:
     operating system like 'username' or 'hostname'. Application variables in
     turn, are intended to describe the application distribution by authorship
     information, bibliographic information, status, formal conditions and notes
-    or warnings. For mor information see :pep:`345`.
+    or warnings. For mor information see :PEP:`345`.
 
     Args:
         varname: Name of environment variable. Typical application variable
@@ -97,7 +112,7 @@ def get_var(varname: str, *args: Any, **kwds: Any) -> OptStr:
 
     """
     # Check type of 'varname'
-    check.has_type("Argument 'varname'", varname, str)
+    check.has_type("'varname'", varname, str)
 
     # Update variables if not present or if optional arguments are given
     if not '_vars' in globals() or args or kwds:
@@ -113,13 +128,13 @@ def get_vars(*args: Any, **kwds: Any) -> StrDict:
     operating system like 'username' or 'hostname'. Application variables in
     turn, are intended to describe the application distribution by authorship
     information, bibliographic information, status, formal conditions and notes
-    or warnings. For mor information see :pep:`345`.
+    or warnings. For mor information see :PEP:`345`.
 
     Args:
         *args: Optional arguments that specify the application, as required by
-            the function 'nemoa.base.env.update_vars'.
+            :func:`~nemoa.base.env.update_vars`.
         **kwds: Optional keyword arguments that specify the application, as
-            required by the function 'nemoa.base.env.update_vars'.
+            required by :func:`~nemoa.base.env.update_vars`.
 
     Returns:
         Dictionary containing application variables.
@@ -137,7 +152,7 @@ def update_vars(filepath: OptPathLike = None) -> None:
     operating system like 'username' or 'hostname'. Application variables in
     turn, are intended to describe the application distribution by authorship
     information, bibliographic information, status, formal conditions and notes
-    or warnings. For mor information see :pep:`345`.
+    or warnings. For mor information see :PEP:`345`.
 
     Args:
         filepath: Valid filepath to python module, that contains the application
@@ -178,15 +193,16 @@ def get_dir(dirname: str, *args: Any, **kwds: Any) -> Path:
 
     Args:
         dirname: Environmental directory name. Allowed values are:
-            'user_cache_dir': Cache directory of user
-            'user_config_dir': Configuration directory of user
-            'user_data_dir': Data directory of user
-            'user_log_dir': Logging directory of user
-            'site_config_dir': Site global configuration directory
-            'site_data_dir': Site global data directory
-            'site_package_dir': Site global package directory
-            'package_dir': Current package directory
-            'package_data_dir': Current package data directory
+
+            :user_cache_dir: Cache directory of user
+            :user_config_dir: Configuration directory of user
+            :user_data_dir: Data directory of user
+            :user_log_dir: Logging directory of user
+            :site_config_dir: Site global configuration directory
+            :site_data_dir: Site global data directory
+            :site_package_dir: Site global package directory
+            :package_dir: Current package directory
+            :package_data_dir: Current package data directory
         *args: Optional arguments that specify the application, as required by
             the function 'nemoa.base.env.update_dirs'.
         **kwds: Optional keyword arguments that specify the application, as
@@ -290,7 +306,7 @@ def get_encoding() -> str:
     """Get preferred encoding used for text data.
 
     This is a wrapper function to the standard library function
-    :py:func:`locale.getpreferredencoding`. This function returns the encoding
+    :func:`locale.getpreferredencoding`. This function returns the encoding
     used for text data, according to user preferences. User preferences are
     expressed differently on different systems, and might not be available
     programmatically on some systems, so this function only returns a guess.
@@ -305,7 +321,7 @@ def get_hostname() -> str:
     """Get hostname of the computer.
 
     This is a wrapper function to the standard library function
-    :py:func`platform.node`. This function returns the computer’s hostname. If
+    :func:`platform.node`. This function returns the computer’s hostname. If
     the value cannot be determined, an empty string is returned.
 
     Returns:
@@ -318,7 +334,7 @@ def get_osname() -> str:
     """Get name of the Operating System.
 
     This is a wrapper function to the standard library function
-    :py:func`platform.system`. This function returns the OS name, e.g. 'Linux',
+    :func:`platform.system`. This function returns the OS name, e.g. 'Linux',
     'Windows', or 'Java'. If the value cannot be determined, an empty string is
     returned.
 
@@ -332,7 +348,7 @@ def get_username() -> str:
     """Login name of the current user.
 
     This is a wrapper function to the standard library function
-    :py:func`getpass.getuser`. This function checks the environment variables
+    :func:`getpass.getuser`. This function checks the environment variables
     LOGNAME, USER, LNAME and USERNAME, in order, and returns the value of the
     first one which is set to a non-empty string. If none are set, the login
     name from the password database is returned on systems which support the
@@ -589,7 +605,7 @@ def fileext(*args: NestPath) -> str:
 def is_dir(path: NestPath) -> bool:
     """Determine if given path points to a directory.
 
-    Extends :py:meth:`pathlib.Path.is_dir` by nested paths and path variable
+    Extends :meth:`pathlib.Path.is_dir` by nested paths and path variable
     expansion.
 
     Args:
@@ -605,7 +621,7 @@ def is_dir(path: NestPath) -> bool:
 def is_file(path: NestPath) -> bool:
     """Determine if given path points to a file.
 
-    Extends :py:meth:`pathlib.Path.is_file` by nested paths and path variable
+    Extends :meth:`pathlib.Path.is_file` by nested paths and path variable
     expansion.
 
     Args:

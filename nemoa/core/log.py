@@ -1,17 +1,8 @@
 # -*- coding: utf-8 -*-
 """Logging.
 
-This module implements application global logging by a singleton design class
-and module level wrappers to convenience functions of the standard library
-module :py:mod:`logging`.
-
-.. References:
-.. _Format String:
-    https://docs.python.org/3/library/string.html#format-string-syntax
-
-:py:ref:`format string syntax`
-:term:`format string syntax`
-
+This module implements application global logging as a singleton, using the
+standard library module :py:mod:`logging`.
 """
 
 __author__ = 'Patrick Michl'
@@ -105,7 +96,6 @@ class Logger(attrib.Container):
     'INFO'.
     """
 
-
     #
     # Protected Attributes
     #
@@ -113,7 +103,7 @@ class Logger(attrib.Container):
     _logger: property = attrib.Temporary(classinfo=logging.Logger)
 
     #
-    # Magic
+    # Events
     #
 
     def __init__(self,
@@ -136,7 +126,7 @@ class Logger(attrib.Container):
         return str(self.logger)
 
     #
-    # Public Instance Methods
+    # Public Methods
     #
 
     def log(self, level: StrOrInt, msg: str, *args: Any, **kwds: Any) -> None:
@@ -148,13 +138,13 @@ class Logger(attrib.Container):
                 names are: 'DEBUG', 'INFO', 'WARNING', 'ERROR' and 'CRITICAL'.
                 The respectively corresponding level numbers are 10, 20, 30, 40
                 and 50.
-            msg: Message `format string`_, which may can contain literal text
-                or replacement fields delimited by braces. Each replacement
-                field contains either the numeric index of a positional
-                argument, given by *args, or the name of a keyword argument,
-                given by the keyword *extra*.
+            msg: Message :ref:`format string <formatstrings>`, containing
+                literal text or braces delimited replacement fields. Each
+                replacement field contains either the numeric index of a
+                positional argument, given by *args, or the name of a keyword
+                argument, given by the keyword *extra*.
             *args: Arguments, which can be used by the message format string.
-            **kwds: Additional Keywords, used by :py:meth:`logging.Logger.log`.
+            **kwds: Additional Keywords, used by :meth:`logging.Logger.log`.
 
         """
         if isinstance(level, str):
@@ -162,7 +152,7 @@ class Logger(attrib.Container):
         self.logger.log(level, msg, *args, **kwds)
 
     #
-    # Private Instance Methods
+    # Protected Methods
     #
 
     def _start_logging(
@@ -284,49 +274,33 @@ class Logger(attrib.Container):
 #
 
 def get_instance() -> Logger:
-    """Get logger instance."""
+    """Get current logger instance."""
     if not '_logger' in globals():
         globals()['_logger'] = Logger()
     return globals()['_logger']
 
 def get_method(name: str) -> AnyFunc:
-    """Get method of logger instance."""
+    """Get method of current logger instance."""
     def wrapper(*args: Any, **kwds: Any) -> Any:
         self = get_instance()
         method = getattr(self.logger, name, void)
         return method(*args, **kwds)
     return wrapper
 
-#
-# Convenience Functions
-#
-
 debug: VoidFunc = get_method('debug')
-debug.__doc__ = """
-Wrapper function to :py:meth:`logging.Logger.debug`
-"""
+"""Call :meth:`~logging.Logger.debug` of current Logger instance."""
 
 info: VoidFunc = get_method('info')
-info.__doc__ = """
-Wrapper function to :py:meth:`logging.Logger.info`.
-"""
+"""Call :meth:`~logging.Logger.info` of current Logger instance."""
 
 warning: VoidFunc = get_method('warning')
-warning.__doc__ = """
-Wrapper function to :py:meth:`logging.Logger.warning`.
-"""
+"""Call :meth:`~logging.Logger.warning` of current Logger instance."""
 
 error: VoidFunc = get_method('error')
-error.__doc__ = """
-Wrapper function to :py:meth:`logging.Logger.error`.
-"""
+"""Call :meth:`~logging.Logger.error` of current Logger instance."""
 
 critical: VoidFunc = get_method('critical')
-critical.__doc__ = """
-Wrapper function to :py:meth:`logging.Logger.critical`.
-"""
+"""Call :meth:`~logging.Logger.critical` of current Logger instance."""
 
 exception: VoidFunc = get_method('exception')
-exception.__doc__ = """
-Wrapper function to :py:meth:`logging.Logger.exceptions`.
-"""
+"""Call :meth:`~logging.Logger.exceptions` of current Logger instance."""

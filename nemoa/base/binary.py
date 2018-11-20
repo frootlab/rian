@@ -115,7 +115,7 @@ def pack(
             'base16', 'base32', 'base64' and 'base85' or None for no encoding.
             By default no encoding is used.
         compression: Determines the compression level for
-            :py:func:`zlib.compress`. By default no zlib compression is used.
+            :func:`zlib.compress`. By default no zlib compression is used.
             For an integer ranging from -1 to 9, a zlib compression with the
             respective compression level is used. Thereby *-1* is the default
             zlib compromise between speed and compression, *0* deflates the
@@ -145,7 +145,7 @@ def unpack(
             'base16', 'base32', 'base64' and 'base85' or None for no encoding.
             By default no encoding is used.
         compressed: Boolean value which determines, if the returned binary
-            data shall be decompressed by using :py:func:`zlib.decompress`.
+            data shall be decompressed by using :func:`zlib.decompress`.
 
     Returns:
          Arbitry object, that can be pickled.

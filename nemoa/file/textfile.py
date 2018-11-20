@@ -16,7 +16,7 @@ from nemoa.types import Path, StrList, TextIOBaseClass
 def openx(file: FileOrPathLike, mode: str = '') -> IterStringIOLike:
     """Contextmanager to provide a unified interface to text files.
 
-    This context manager extends the standard implementation of :py:func:`open`
+    This context manager extends the standard implementation of :func:`open`
     by allowing the passed argument `file` to be a str or :term:`path-like
     object`, which points to a valid filename in the directory structure of the
     system, or a :term:`file object`. If the *file* argument is a str or a

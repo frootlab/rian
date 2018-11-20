@@ -183,7 +183,7 @@ class Cursor(attrib.Container):
     :random: Random cursors move randomly through the result set. In difference
         to a randomly sorted cursor, the rows are not unique and the number of
         fetched rows is not limited to the size of the result set. If the method
-        :py:meth:`.fetch` is called with a zero value for size, a
+        :meth:`.fetch` is called with a zero value for size, a
         CursorModeError is raised.
 
     Supported operation modes are:
@@ -210,7 +210,7 @@ class Cursor(attrib.Container):
     batchsize: property = attrib.MetaData(classinfo=int, default=1)
     """
     The read-writable integer attribute *batchsize* specifies the default number
-    of rows which is to be fetched by the method :py:meth:`.fetch`. It defaults
+    of rows which is to be fetched by the method :meth:`.fetch`. It defaults
     to 1, meaning to fetch a single row at a time. Whether and which batchsize
     to use depends on the application and should be considered with care. The
     batchsize can also be adapted during the lifetime of the cursor, which

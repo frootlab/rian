@@ -112,7 +112,7 @@ class Session(attrib.Container):
         """Enter with statement."""
         return self
 
-    def __exit__(self, Error: ExcType, value: Exc, tb: Traceback) -> None:
+    def __exit__(self, cls: ExcType, obj: Exc, tb: Traceback) -> None:
         """Exit with statement."""
         self.close() # Close Workspace
         self._save_config() # Save config

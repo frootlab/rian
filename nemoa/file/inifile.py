@@ -81,7 +81,7 @@ def decode(
             the values of the inner dictionaries define the type of the
             parameters by their own type, e.g. str, int, float etc. Accepted
             types can be found in the documentation of the function
-            :py:func:`~nemoa.base.literal.decode`.
+            :func:`~nemoa.base.literal.decode`.
         flat: Determines if the desired INI format structure contains sections
             or not. By default sections are used, if the first non empty, non
             comment line in the string identifies a section.
@@ -242,7 +242,7 @@ def parse(parser: ConfigParser, structure: OptSecDict = None) -> ConfigDict:
             the values of the inner dictionaries define the type of the
             parameters by their own type, e.g. str, int, float etc. Accepted
             types can be found in the documentation of the function
-            :py:func:`~nemoa.base.literal.decode`.
+            :func:`~nemoa.base.literal.decode`.
 
     Return:
         Structured configuration dictionary.

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Data mappers."""
+"""Table Proxy Classes."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'

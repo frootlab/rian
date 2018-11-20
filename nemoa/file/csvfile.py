@@ -255,7 +255,7 @@ class CSVFile(attrib.Container):
                 CSV-file.
 
         Returns:
-            :py:class:`numpy.ndarray` containing data from CSV-file, or None if
+            :class:`numpy.ndarray` containing data from CSV-file, or None if
             the data could not be imported.
 
         """
@@ -507,7 +507,7 @@ def save(
     Args:
         file: String, :term:`path-like object` or :term:`file object` that
             points to a valid CSV-file in the directory structure of the system.
-        data: :py:class:`numpy.ndarray` containing the data which is to be
+        data: :class:`numpy.ndarray` containing the data which is to be
             exported to a CSV-file.
         comment: String, which is included in the CSV-file whithin initial
             '#' lines. By default no initial lines are created.

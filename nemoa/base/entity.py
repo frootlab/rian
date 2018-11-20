@@ -13,9 +13,19 @@ import pkgutil
 from nemoa.base import check, literal, ndict
 from nemoa.types import Any, ClassInfo, OptStr, OptStrDictOfTestFuncs
 from nemoa.types import OptModule, Module, StrList, OptFunction, Function
-from nemoa.types import Tuple, RecDict, NestRecDict
+from nemoa.types import Tuple, RecDict, Union, StrDict
 from nemoa.types import DictOfRecDicts, FuncWrapper, Method, StrOrType
 from nemoa.types import Callable, OrderedDict, Collection
+
+#
+# Structural Types
+#
+
+NestRecDict = Union[StrDict, RecDict, DictOfRecDicts]
+
+#
+# Functions
+#
 
 def has_base(obj: object, base: StrOrType) -> bool:
     """Return true if the object has the given base class.
