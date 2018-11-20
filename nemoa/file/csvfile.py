@@ -16,14 +16,16 @@ from nemoa.file import textfile
 from nemoa.types import FileOrPathLike, NpArray, OptInt, OptIntTuple, ClassVar
 from nemoa.types import OptNpArray, OptStr, OptStrList, StrList, List, Tuple
 from nemoa.types import IntTuple, OptList, OptStrTuple, TextFileClasses
-from nemoa.types import Iterator, StringIOLike, TextIOBaseClass, IterFileLike
-from nemoa.types import BytesIOBaseClass, Traceback, ExcType, Exc
+from nemoa.types import Iterator, StringIOLike, TextIOBaseClass
+from nemoa.types import BytesIOBaseClass, Traceback, ExcType, Exc, Union
 
 #
 # Stuctural Types
 #
 
 Fields = List[Tuple[str, type]]
+CSVStream = Union['CSVReader', 'CSVWriter']
+IterCSVStream = Iterator[CSVStream]
 
 #
 # Exceptions
@@ -104,6 +106,12 @@ class CSVReader:
 
 class CSVWriter:
     """CSVWriter Class."""
+
+    def __iter__(self) -> 'CSVWriter':
+        return self
+
+    def __next__(self) -> None:
+        return None
 
     def close(self) -> None:
         pass
@@ -280,7 +288,8 @@ class CSVFile(attrib.Container):
                 dtype={'names': names, 'formats': formats})
 
     @contextmanager
-    def open(self, mode: str = '', columns: OptStrTuple = None) -> IterFileLike:
+    def open(
+            self, mode: str = '', columns: OptStrTuple = None) -> IterCSVStream:
         """Open CSV-file in reading or writing mode.
 
         Args:
@@ -296,6 +305,7 @@ class CSVFile(attrib.Container):
 
         """
         # Open file handler
+        file: CSVStream
         if 'w' in mode:
             if 'r' in mode:
                 raise ValueError(

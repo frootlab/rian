@@ -10,6 +10,7 @@ Subpackages
     nemoa.core
     nemoa.data
     nemoa.dataset
+    nemoa.file
     nemoa.math
     nemoa.model
     nemoa.network

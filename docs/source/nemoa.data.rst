@@ -7,7 +7,7 @@ Submodules
 .. toctree::
 
    nemoa.data.dbapi2
-   nemoa.data.mapper
+   nemoa.data.proxy
    nemoa.data.table
 
 Module contents

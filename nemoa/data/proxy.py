@@ -7,14 +7,22 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from pathlib import Path
-from nemoa.types import FileOrPathLike, OptStr, OptIntTuple, OptStrList, OptInt
 from nemoa.file import csvfile, inifile
-from nemoa.data.table import Table
+from nemoa.data import table
+from nemoa.types import FileOrPathLike, OptStr, OptIntTuple, OptStrList, OptInt
+from nemoa.types import Any
 
-class ProxyTable(Table):
+class Table(table.Table):
+    """Table Proxy Base Class."""
+    def __init__(self, *args: Any, **kwds: Any) -> None:
+        super().__init__(*args, **kwds)
+
+class SQLTable(Table):
+    """SQL-Table Proxy."""
     pass
 
-class CSVProxyTable(ProxyTable):
+class CSVTable(Table):
+    """CSV-Table Proxy."""
     def __init__(
             self, file: FileOrPathLike, delim: OptStr = None,
             labels: OptStrList = None, usecols: OptIntTuple = None,

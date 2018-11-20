@@ -10,6 +10,7 @@ module :py:mod:`logging`.
     https://docs.python.org/3/library/string.html#format-string-syntax
 
 :py:ref:`format string syntax`
+:term:`format string syntax`
 
 """
 
